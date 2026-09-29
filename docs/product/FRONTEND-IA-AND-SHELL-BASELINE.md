@@ -31,7 +31,7 @@ Agent 工作区状态为 idle、typing、searching、results、conversation。�
 - Explore 的地图渲染、City/Place 公开读取和来源信息进入 Map Workspace / Entity Layer；Place 只在任务相关且满足公开位置精度时显示。
 - Network 的 People、Group、同意与可见性边界进入 Agent Entity 及 Sidebar。配置 API 时，公开 Intent 人员和已审核公开 Group 来自 City Graph；未配置 API 时只允许隔离且明确标识的本地演示数据。
 - Now 的即时 Activity 和城市内容进入 Agent Context 与地图结果；已审核公开 Activity 优先读取真实 City API。没有公开坐标的 Activity 只进入结果列表，不猜测位置。
-- Inbox 保留并升级为 Action Center。My Birdtie 的 Profile、Settings、Saved 与私人草稿管理从 Sidebar 进入。
+- Inbox 保留并升级为 Action Center。真实 API 已接入 Place、Activity、Group 审核结果更新；Messages、Requests、Agent Updates 仍待后续 producer。My Birdtie 的 Profile、Settings、Saved 与私人草稿管理从 Sidebar 进入。
 
 ## 数据与权限边界
 
@@ -39,4 +39,4 @@ Agent 工作区状态为 idle、typing、searching、results、conversation。�
 
 ## 本轮实现范围
 
-Flutter Shell 继续使用既有 Go/PostgreSQL、PublicCityController、认证、Moment 草稿和 Mapbox adapter；未增加大型状态管理依赖。第二阶段已接入规则式 Agent 查询 API 与登录用户任务历史。结果列表、地图实体由同一次查询驱动；本机暂存对话和视角。下一阶段完善经审核内容供给、真实 Inbox 读模型、任务上下文持久化和安全限流。旧产品文档中 Now/Explore/Network 底栏描述属于此前版本，不再约束当前 Shell。
+Flutter Shell 继续使用既有 Go/PostgreSQL、PublicCityController、认证、Moment 草稿和 Mapbox adapter；未增加大型状态管理依赖。规则式 Agent 查询 API、登录用户任务历史、Group 独立审核与 Owner Inbox 更新已接入。结果列表、地图实体由同一次查询驱动；本机暂存对话和视角。下一阶段完善公开 Intent 人员供给、消息与请求 producer、任务上下文持久化和安全限流。旧产品文档中 Now/Explore/Network 底栏描述属于此前版本，不再约束当前 Shell。

@@ -64,7 +64,7 @@ func main() {
 	}
 	server := &http.Server{
 		Addr:              address,
-		Handler:           httpapi.New(store, store, store, store, store, oidc, pool, allowedOrigins),
+		Handler:           httpapi.New(store, store, store, store, store, store, store, oidc, pool, allowedOrigins),
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       10 * time.Second,
 		WriteTimeout:      15 * time.Second,

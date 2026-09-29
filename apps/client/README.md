@@ -1,6 +1,6 @@
 # Birdtie client
 
-Flutter shell for Birdtie V2's Map Workspace + Agent + Sidebar + Inbox architecture. The home map fills the viewport, with a floating intent composer and a contextual result sheet. With `BIRDTIE_API_BASE_URL` configured, Agent tasks use the Birdtie API's rule-based City Graph query and signed-in task history. Without an API URL, the isolated local task source labels People, Group and badminton map entities as previews. The prior Now and Explore UI remains in `lib/src/legacy/` during migration; the Sidebar exposes published city activities and the existing Profile/Moment draft surface. Public user content and the social graph remain disconnected.
+Flutter shell for Birdtie V2's Map Workspace + Agent + Sidebar + Inbox architecture. The home map fills the viewport, with a floating intent composer and a contextual result sheet. With `BIRDTIE_API_BASE_URL` configured, Agent tasks use the Birdtie API's rule-based City Graph query and signed-in task history. Sidebar → Groups lists and submits owner-confirmed Groups for independent review. Inbox reads real owner-only review updates and supports marking them read. Without an API URL, the isolated local task source and Inbox label previews. The prior Now and Explore UI remains in `lib/src/legacy/` during migration; the Sidebar exposes published city activities and the existing Profile/Moment draft surface. Messages, connection requests and Agent updates remain disconnected.
 
 ## Public city data
 

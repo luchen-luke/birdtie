@@ -17,6 +17,7 @@ docker compose exec db psql -U birdtie -d birdtie -v ON_ERROR_STOP=1 -f /migrati
 docker compose exec db psql -U birdtie -d birdtie -v ON_ERROR_STOP=1 -f /migrations/007_city_seed_activities.sql
 docker compose exec db psql -U birdtie -d birdtie -v ON_ERROR_STOP=1 -f /migrations/008_city_map_viewports.sql
 docker compose exec db psql -U birdtie -d birdtie -v ON_ERROR_STOP=1 -f /migrations/009_agent_workspace.sql
+docker compose exec db psql -U birdtie -d birdtie -v ON_ERROR_STOP=1 -f /migrations/010_community_review_and_inbox.sql
 $env:BIRDTIE_DATABASE_URL = 'postgres://birdtie:birdtie_local_only@127.0.0.1:55432/birdtie?sslmode=disable'
 go run .
 ```
@@ -24,6 +25,8 @@ go run .
 The Compose database binds only to local loopback. Its password is for local development, not deployment. Migration `001` is idempotent for the initial schema and seed; `002` adds the coordinate privacy constraint to older local databases; `003` adds Session and Profile Consent; `004` adds City Seed Place editorial tables; `005` adds short-lived OIDC state and one-time Birdtie exchange codes; `006` adds draft-by-default City Graph content tables; `007` adds reviewed City Seed Activity candidates; `008` adds per-City map provider and sourced, display-only viewport. Use an independent credential and managed migration process before deployment.
 
 Migration `009` adds private Agent task history and draft-by-default Communities. No Community or Agent task data is seeded.
+
+Migration `010` adds independent Community review evidence and owner-only Inbox items. It has no seed content.
 
 `BIRDTIE_DATABASE_URL` is required. `BIRDTIE_API_ADDR` defaults to `127.0.0.1:8080`. `BIRDTIE_ALLOWED_ORIGINS` is an optional comma-separated allowlist for browser clients; no cross-origin access is enabled by default.
 
@@ -40,7 +43,7 @@ Migration `009` adds private Agent task history and draft-by-default Communities
 - `GET /v1/accounts/{accountID}/profile` (only explicitly public Profiles for anonymous callers)
 - `POST /v1/cities/{cityID}/agent/tasks` with JSON `{"query":"Find badminton this weekend"}` (anonymous or Bearer; query up to 240 UTF-8 bytes)
 
-The Agent endpoint returns `{data:{cityId,query,mode:"rules",activities,people,groups,places,taskId?}}`. It searches published, current records in one City using up to six significant query terms and bounded lists. This is literal text matching, not semantic matching, recommendation or an LLM. People come from owner-confirmed, active public Intents joined to explicitly public Profiles; only a coarse area label is returned. Groups come from owner-confirmed, verified, published public Communities. Neither People nor Groups have seeded records or an open publishing flow. Signed-in searches apply mutual Account blocks to person-owned results. Public point coordinates can come only from an eligible published, unexpired Place; People have no map point. Anonymous searches are not saved.
+The Agent endpoint returns `{data:{cityId,query,mode:"rules",activities,people,groups,places,taskId?}}`. It searches published, current records in one City using up to six significant query terms and bounded lists. This is literal text matching, not semantic matching, recommendation or an LLM. People come from owner-confirmed, active public Intents joined to explicitly public Profiles; only a coarse area label is returned. Groups come from owner-confirmed, independently reviewed, published public Communities. Neither People nor Groups have seeded records; Group submission and review routes are available, while public Intent publishing is still closed. Signed-in searches apply mutual Account blocks to person-owned results. Public point coordinates can come only from an eligible published, unexpired Place; People have no map point. Anonymous searches are not saved.
 
 The City Place list accepts optional `q` (up to 240 UTF-8 bytes) for a literal, case-insensitive name/summary substring search. It searches published Places in the selected published City and returns at most 100 results ordered by name, with the same provenance and location-precision rules as the unfiltered list. It does not use a map provider or location permission. Pagination, category/time filters and a search index remain future work.
 
@@ -52,6 +55,18 @@ Published City responses may include `map: {provider, latitude, longitude, defau
 - `GET /v1/me/agent-tasks/{taskID}`: restore one owned task. A task owned by another Account returns 404.
 
 Signed-in `POST /v1/cities/{cityID}/agent/tasks` saves the query and City after a successful search and returns `taskId`. Restore reruns the query against current publication, expiry and block rules; result snapshots and conversation turns are not stored. The client currently keeps conversation and viewport state in memory only. No task deletion or completion route exists yet. Apply rate limits and a fuller identity review before external rollout.
+
+## Reviewed Groups and Inbox
+
+- `POST /v1/cities/{cityID}/communities`: an authenticated owner submits a group for review. Body: `name`, optional `summary` and published `placeId`, `sourceLabel`, HTTPS `sourceUrl`, `rightsNote`, and `expiresAt` within one year.
+- `GET /v1/me/communities`: list up to 100 of the owner's own draft, published and hidden Groups, including review status.
+- `POST /v1/me/communities/{communityID}/withdraw`: hide an own draft or published Group immediately.
+- `GET /v1/cities/{cityID}/community-candidates`: an active city reviewer sees the pending, owner-confirmed Group queue.
+- `POST /v1/community-candidates/{communityID}/review`: a different city reviewer submits `{"decision":"publish|reject","note":"..."}`. The note must have at least ten characters. Publishing requires a current source and, if linked, an eligible published Place.
+- `GET /v1/me/inbox`: list up to 100 of the signed-in Account's Inbox items.
+- `POST /v1/me/inbox/{itemID}/read`: mark one owned item read; another Account's item returns 404.
+
+Submission confirms the owner request but never publishes directly. The reviewer must check the source and rights outside the software; a URL and rights statement alone are not proof. Group review and existing Place/Activity candidate reviews atomically create an `updates` Inbox item for the submitter. Messages, requests, Agent updates and general notifications have no producers yet. The client shows an empty authenticated Inbox until a real review event exists. No real editor membership or OIDC provider is configured in this repository, so production publication still needs identity and editorial setup.
 
 ## Session and Profile Consent routes
 

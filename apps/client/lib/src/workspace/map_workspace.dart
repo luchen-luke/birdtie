@@ -10,6 +10,7 @@ import 'agent_composer.dart';
 import 'agent_result_sheet.dart';
 import 'agent_workspace_controller.dart';
 import 'inbox.dart';
+import 'group_page.dart';
 import 'map_canvas.dart';
 import 'remote_agent_task_source.dart';
 import 'sidebar.dart';
@@ -89,7 +90,7 @@ class _MapWorkspaceState extends State<MapWorkspace> {
       ),
       builder: (context) => SizedBox(
         height: MediaQuery.sizeOf(context).height * 0.82,
-        child: const InboxPanel(),
+        child: InboxPanel(auth: widget.auth),
       ),
     );
   }
@@ -121,6 +122,10 @@ class _MapWorkspaceState extends State<MapWorkspace> {
       SidebarDestination.profile => LegacyProfilePage(
         auth: widget.auth,
         moments: widget.moments,
+        city: widget.city,
+      ),
+      SidebarDestination.groups => GroupPage(
+        auth: widget.auth,
         city: widget.city,
       ),
       _ => Center(

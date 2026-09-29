@@ -2,6 +2,8 @@
 
 2026-09-30 Birdtie V2 补充：Agent-first 首页复用的是本仓已有的 `PublicCityMapView`、原生 Mapbox adapter、`PublicCityController` 和 City API。新增 Entity Layer、Agent Workspace 状态、规则查询及任务历史均为 Birdtie 自有实现；没有从 Civu 仓库复制代码或引入新的 Civu 运行时依赖。已审核 Activity 仅通过关联的公开点精度 Place 提供地图坐标；客户端不推测私有位置。未配置 API 时的演示 People、Group、Activity 地图实体与真实 API 模型隔离。
 
+2026-09-30 内容供给与 Inbox 补充：Community Owner 提交、独立城市审核、撤回和审核结果 Inbox 事件均为 Birdtie 自有代码与数据表。本阶段没有从 Civu 复制消息、社交关系、群组内容或通知数据；它们不构成 Birdtie 的授权或内容来源。
+
 审计日期：2026-09-29  
 状态：完成路径、依赖、Git 状态及关键代码的只读盘点；未执行构建/测试、未连接生产环境、未复制或修改 Civu 文件。  
 参考仓：`D:\Program\Civu`；Birdtie 正式仓：`D:\Project\birdtie`。

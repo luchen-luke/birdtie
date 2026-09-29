@@ -222,6 +222,14 @@ func (s *Store) Review(ctx context.Context, actorID, candidateID string, input c
 	if err != nil {
 		return cityseed.Candidate{}, err
 	}
+	detail := "Your place suggestion was not published after review."
+	if status == "published" || status == "linked_duplicate" {
+		detail = "Your place suggestion has been added to Birdtie's public city records."
+	}
+	if err := insertReviewInboxItem(ctx, tx, c.SubmittedBy, "place_candidate", c.ID,
+		"Place suggestion reviewed", detail); err != nil {
+		return cityseed.Candidate{}, err
+	}
 	if err := tx.Commit(ctx); err != nil {
 		return cityseed.Candidate{}, err
 	}

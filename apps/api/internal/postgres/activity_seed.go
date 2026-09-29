@@ -204,6 +204,14 @@ func (s *Store) ReviewActivity(ctx context.Context, actorID, candidateID string,
 	if err != nil {
 		return cityseed.ActivityCandidate{}, err
 	}
+	detail := "Your activity suggestion was not published after review."
+	if status == "published" {
+		detail = "Your activity suggestion is now visible in Birdtie's public city results."
+	}
+	if err := insertReviewInboxItem(ctx, tx, c.SubmittedBy, "activity_candidate", c.ID,
+		"Activity suggestion reviewed", detail); err != nil {
+		return cityseed.ActivityCandidate{}, err
+	}
 	if err := tx.Commit(ctx); err != nil {
 		return cityseed.ActivityCandidate{}, err
 	}

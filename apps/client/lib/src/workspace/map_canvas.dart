@@ -32,14 +32,7 @@ class MapCanvas extends StatelessWidget {
         ),
       );
     }
-    final demoAllowed =
-        workspace.demoMode &&
-        selectedCity.name.toLowerCase().contains('aberdeen');
-    final entities = demoAllowed
-        ? (workspace.task == null
-              ? demoIdleEntities
-              : workspace.result?.entities ?? const <MapEntity>[])
-        : (workspace.task == null
+    final entities = workspace.task == null
               ? [
                   for (final activity in city.activities.take(8))
                     if (activity.status == 'upcoming' ||
@@ -55,7 +48,7 @@ class MapCanvas extends StatelessWidget {
                             longitude: location.longitude!,
                           ),
                 ]
-              : workspace.result?.entities ?? const <MapEntity>[]);
+              : workspace.result?.entities ?? const <MapEntity>[];
     final places =
         workspace.result?.places
             .where((place) => place.location.hasPublicPoint)
@@ -89,29 +82,6 @@ class MapCanvas extends StatelessWidget {
             fullBleed: true,
           ),
         ),
-        if (entities.any((entity) => entity.isDemo))
-          const Positioned(
-            top: 105,
-            left: 16,
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                color: Color(0xF5FCFBF8),
-                borderRadius: BorderRadius.all(Radius.circular(18)),
-              ),
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                child: Text(
-                  'LOCAL MAP PREVIEW',
-                  style: TextStyle(
-                    fontSize: 10,
-                    letterSpacing: 1,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF193B32),
-                  ),
-                ),
-              ),
-            ),
-          ),
       ],
     );
   }

@@ -10,6 +10,7 @@ services:
     volumes:
       - birdtie_pgdata:/var/lib/postgresql/data
       - ./migrations:/migrations:ro
+      - ./dev-seeds:/dev-seeds:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U birdtie -d birdtie"]
       interval: 5s

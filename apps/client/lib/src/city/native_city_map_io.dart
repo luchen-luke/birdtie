@@ -118,6 +118,36 @@ class _NativeCityMapViewState extends State<NativeCityMapView> {
         ? selectedPlace.first.location.longitude!
         : points.map((point) => point.$2).reduce((a, b) => a + b) /
               points.length;
+    if (selected.isEmpty &&
+        selectedPlace.isEmpty &&
+        points.toSet().length > 1) {
+      final latitudes = points.map((point) => point.$1).toList();
+      final longitudes = points.map((point) => point.$2).toList();
+      final camera = await map.cameraForCoordinateBounds(
+        CoordinateBounds(
+          southwest: Point(
+            coordinates: Position(
+              longitudes.reduce((a, b) => a < b ? a : b),
+              latitudes.reduce((a, b) => a < b ? a : b),
+            ),
+          ),
+          northeast: Point(
+            coordinates: Position(
+              longitudes.reduce((a, b) => a > b ? a : b),
+              latitudes.reduce((a, b) => a > b ? a : b),
+            ),
+          ),
+          infiniteBounds: false,
+        ),
+        MbxEdgeInsets(top: 150, left: 48, bottom: 180, right: 48),
+        0,
+        0,
+        14,
+        null,
+      );
+      await map.flyTo(camera, MapAnimationOptions(duration: 450));
+      return;
+    }
     await map.flyTo(
       CameraOptions(
         center: Point(coordinates: Position(longitude, latitude)),

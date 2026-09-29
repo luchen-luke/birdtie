@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"time"
 
@@ -159,11 +160,45 @@ func (s *Store) Search(ctx context.Context, cityID, viewerID string, terms []str
 	return result, err
 }
 
-const agentTaskColumns = `id, city_id, query, status, created_at, updated_at`
+const agentTaskColumns = `id, principal_type, owner_account_id, acting_user_account_id,
+    query, intent, status, city_context_id, filters, conversation, created_at, updated_at`
 
-func (s *Store) SaveTask(ctx context.Context, ownerID, cityID, query string) (agentworkspace.Task, error) {
-	row := s.pool.QueryRow(ctx, `INSERT INTO agent_tasks (owner_account_id, city_id, query)
-        VALUES ($1, $2, $3) RETURNING `+agentTaskColumns, ownerID, cityID, query)
+func (s *Store) SaveTask(ctx context.Context, task agentworkspace.Task) (agentworkspace.Task, error) {
+	filters, err := json.Marshal(task.Filters)
+	if err != nil {
+		return agentworkspace.Task{}, err
+	}
+	conversation, err := json.Marshal(task.Conversation)
+	if err != nil {
+		return agentworkspace.Task{}, err
+	}
+	var actingUser any
+	if task.ActingUserID != "" {
+		actingUser = task.ActingUserID
+	}
+	row := s.pool.QueryRow(ctx, `INSERT INTO agent_tasks
+        (principal_type, owner_account_id, acting_user_account_id, city_id, city_context_id,
+         query, intent, status, filters, conversation)
+        VALUES ($1, $2, $3, $4, $4, $5, $6, $7, $8, $9) RETURNING `+agentTaskColumns,
+		task.PrincipalType, task.PrincipalID, actingUser, task.CityID, task.Query,
+		task.Intent, task.Status, filters, conversation)
+	return scanAgentTask(row)
+}
+
+func (s *Store) UpdateTask(ctx context.Context, task agentworkspace.Task) (agentworkspace.Task, error) {
+	filters, err := json.Marshal(task.Filters)
+	if err != nil {
+		return agentworkspace.Task{}, err
+	}
+	conversation, err := json.Marshal(task.Conversation)
+	if err != nil {
+		return agentworkspace.Task{}, err
+	}
+	row := s.pool.QueryRow(ctx, `UPDATE agent_tasks SET intent=$3, status=$4, filters=$5,
+        conversation=$6, updated_at=now()
+        WHERE id=$1 AND owner_account_id=$2
+        RETURNING `+agentTaskColumns, task.ID, task.PrincipalID, task.Intent,
+		task.Status, filters, conversation)
 	return scanAgentTask(row)
 }
 
@@ -193,9 +228,31 @@ func (s *Store) GetTask(ctx context.Context, ownerID, id string) (agentworkspace
 
 func scanAgentTask(row scanner) (agentworkspace.Task, error) {
 	var task agentworkspace.Task
-	err := row.Scan(&task.ID, &task.CityID, &task.Query, &task.Status, &task.CreatedAt, &task.UpdatedAt)
+	var actingUser *string
+	var filters, conversation []byte
+	err := row.Scan(&task.ID, &task.PrincipalType, &task.PrincipalID, &actingUser,
+		&task.Query, &task.Intent, &task.Status, &task.CityID, &filters,
+		&conversation, &task.CreatedAt, &task.UpdatedAt)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return agentworkspace.Task{}, agentworkspace.ErrNotFound
+	}
+	if err != nil {
+		return agentworkspace.Task{}, err
+	}
+	if actingUser != nil {
+		task.ActingUserID = *actingUser
+	}
+	if err := json.Unmarshal(filters, &task.Filters); err != nil {
+		return agentworkspace.Task{}, err
+	}
+	if err := json.Unmarshal(conversation, &task.Conversation); err != nil {
+		return agentworkspace.Task{}, err
+	}
+	if task.Filters == nil {
+		task.Filters = map[string]string{}
+	}
+	if task.Conversation == nil {
+		task.Conversation = []agentworkspace.Message{}
 	}
 	return task, err
 }

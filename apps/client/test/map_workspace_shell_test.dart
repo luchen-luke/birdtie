@@ -22,7 +22,10 @@ void main() {
       expect(find.byType(AgentResultSheet), findsOneWidget);
       await tester.pump(const Duration(milliseconds: 700));
       await tester.pumpAndSettle();
-      expect(find.textContaining('demo map entities'), findsOneWidget);
+      expect(
+        find.textContaining('No matching published activities'),
+        findsOneWidget,
+      );
 
       await tester.tap(find.byTooltip('Open sidebar'));
       await tester.pumpAndSettle();

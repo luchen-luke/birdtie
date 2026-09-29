@@ -14,12 +14,54 @@ class AgentTask {
     required this.status,
     this.intent,
     this.cityID,
+    this.principalType = 'PERSON',
+    this.principalID = '',
+    this.actingUserID = '',
+    this.filters = const {},
+    this.messages = const [],
+    this.createdAt,
+    this.updatedAt,
   });
   final String id;
   final String query;
   final String status;
   final String? intent;
   final String? cityID;
+  final String principalType;
+  final String principalID;
+  final String actingUserID;
+  final Map<String, String> filters;
+  final List<AgentMessage> messages;
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
+
+  factory AgentTask.fromJson(Map<String, dynamic> json) => AgentTask(
+    id: json['id'] as String,
+    query: json['query'] as String,
+    status: json['status'] as String,
+    intent: json['intent'] as String?,
+    cityID: json['cityContext'] as String? ?? json['cityId'] as String?,
+    principalType: json['principalType'] as String? ?? 'PERSON',
+    principalID: json['principalId'] as String? ?? '',
+    actingUserID: json['actingUserId'] as String? ?? '',
+    filters: (json['filters'] as Map<String, dynamic>? ?? const {}).map(
+      (key, value) => MapEntry(key, value as String),
+    ),
+    messages: [
+      for (final item in json['conversation'] as List<dynamic>? ?? const [])
+        AgentMessage.fromJson(item as Map<String, dynamic>),
+    ],
+    createdAt: DateTime.tryParse(json['createdAt'] as String? ?? ''),
+    updatedAt: DateTime.tryParse(json['updatedAt'] as String? ?? ''),
+  );
+}
+
+class AgentMessage {
+  const AgentMessage({required this.role, required this.text});
+  final String role;
+  final String text;
+  factory AgentMessage.fromJson(Map<String, dynamic> json) =>
+      AgentMessage(role: json['role'] as String, text: json['text'] as String);
 }
 
 class AgentResult {
@@ -31,6 +73,7 @@ class AgentResult {
     this.people = const [],
     this.groups = const [],
     this.taskID,
+    this.task,
   });
   final List<MapEntity> entities;
   final List<PublicActivity> activities;
@@ -39,6 +82,7 @@ class AgentResult {
   final List<AgentPerson> people;
   final List<AgentGroup> groups;
   final String? taskID;
+  final AgentTask? task;
 }
 
 class AgentPerson {
@@ -80,6 +124,12 @@ abstract class AgentTaskSource {
     List<PublicPlace> places,
   );
   Future<List<AgentTask>> loadRecent() async => [];
+  Future<AgentResult> followUp(
+    AgentTask task,
+    String query,
+    List<PublicActivity> activities,
+    List<PublicPlace> places,
+  ) => resolve(query, activities, places);
   Future<AgentResult> restore(
     AgentTask task,
     List<PublicActivity> activities,
@@ -98,34 +148,39 @@ class LocalAgentTaskSource extends AgentTaskSource {
     List<PublicPlace> places,
   ) async {
     await Future<void>.delayed(const Duration(milliseconds: 650));
-    final words = query
-        .toLowerCase()
-        .split(RegExp(r'\s+'))
-        .where((word) => word.length > 2);
-    final matching = activities.where((activity) {
-      final text = '${activity.title} ${activity.summary}'.toLowerCase();
-      return words.any(text.contains);
-    }).toList();
-    final matchingPlaces = places.where((place) {
-      final text = '${place.name} ${place.summary} ${place.categoryCode}'
-          .toLowerCase();
-      return words.any(text.contains);
-    }).toList();
-    if (query.toLowerCase().contains('badminton')) {
-      return AgentResult(
-        entities: demoBadmintonEntities,
-        activities: matching,
-        places: matchingPlaces,
-        note: 'Local demo suggestions. People and groups are not live matches.',
+    if (!query.toLowerCase().contains('badminton')) {
+      return const AgentResult(
+        entities: [],
+        activities: [],
+        places: [],
+        note:
+            'I can currently help you find nearby activities. Try: Find badminton this weekend.',
       );
     }
+    final matching = activities.where((activity) {
+      final text = '${activity.title} ${activity.summary}'.toLowerCase();
+      return text.contains('badminton') &&
+          (activity.status == 'upcoming' || activity.status == 'ongoing');
+    }).toList();
+    final entities = [
+      for (final activity in matching)
+        if (activity.location?.hasPublicPoint == true)
+          MapEntity(
+            id: 'activity:${activity.id}',
+            kind: MapEntityKind.activity,
+            title: activity.title,
+            subtitle: activity.status,
+            latitude: activity.location!.latitude!,
+            longitude: activity.location!.longitude!,
+          ),
+    ];
     return AgentResult(
-      entities: const [],
+      entities: entities,
       activities: matching,
-      places: matchingPlaces,
-      note: matching.isEmpty && matchingPlaces.isEmpty
-          ? 'No matching published activities yet. Agent search is a local preview.'
-          : 'Published records from Birdtie City API. Agent search is a local preview.',
+      places: const <PublicPlace>[],
+      note: matching.isEmpty
+          ? 'No matching published activities are available. Connect the local API and development seed to try the full Agent loop.'
+          : 'Published Birdtie activities · local rule-based preview',
     );
   }
 }
@@ -134,7 +189,6 @@ class AgentWorkspaceController extends ChangeNotifier {
   AgentWorkspaceController({AgentTaskSource? source})
     : _source = source ?? const LocalAgentTaskSource();
   final AgentTaskSource _source;
-  bool get demoMode => _source is LocalAgentTaskSource;
   AgentViewState state = AgentViewState.idle;
   AgentSheetExtent sheetExtent = AgentSheetExtent.compact;
   AgentTask? task;
@@ -194,24 +248,37 @@ class AgentWorkspaceController extends ChangeNotifier {
     final query = raw.trim();
     if (query.isEmpty) return;
     final serial = ++_serial;
-    task = AgentTask(
-      id: 'local-$serial',
-      query: query,
-      status: 'active',
-      cityID: cityID,
-    );
+    final continuing = task != null && result != null;
+    final previousTask = task;
+    if (!continuing) {
+      task = AgentTask(
+        id: 'local-$serial',
+        query: query,
+        status: 'ACTIVE',
+        cityID: cityID,
+      );
+      conversation.clear();
+    }
     result = null;
     selectedEntityId = null;
     sheetExtent = AgentSheetExtent.compact;
     state = AgentViewState.searching;
-    conversation.clear();
     conversation.add(query);
     notifyListeners();
     AgentResult resolved;
     try {
-      resolved = await _source.resolve(query, activities, places);
+      resolved = continuing
+          ? await _source.followUp(previousTask!, query, activities, places)
+          : await _source.resolve(query, activities, places);
     } catch (_) {
       if (serial != _serial) return;
+      task = AgentTask(
+        id: task!.id,
+        query: task!.query,
+        status: 'FAILED',
+        cityID: task!.cityID,
+        intent: task!.intent,
+      );
       result = const AgentResult(
         entities: [],
         activities: [],
@@ -224,18 +291,33 @@ class AgentWorkspaceController extends ChangeNotifier {
       return;
     }
     if (serial != _serial) return;
-    if (resolved.taskID != null) {
+    if (resolved.task != null) {
+      task = resolved.task;
+      conversation
+        ..clear()
+        ..addAll(resolved.task!.messages.map((message) => message.text));
+    } else if (resolved.taskID != null) {
       task = AgentTask(
         id: resolved.taskID!,
         query: query,
-        status: 'active',
+        status: 'COMPLETED',
         cityID: cityID,
       );
     }
     result = resolved;
-    if (demoMode || resolved.taskID == null) {
+    if (task != null && resolved.task == null) {
+      task = AgentTask(
+        id: task!.id,
+        query: task!.query,
+        status: 'COMPLETED',
+        cityID: task!.cityID,
+        intent: task!.intent,
+      );
+    }
+    if (resolved.taskID == null && resolved.task == null) {
       _savedConversation[task!.id] = List.of(conversation);
     }
+    recent.removeWhere((item) => item.id == task!.id);
     recent.insert(0, task!);
     if (recent.length > 50) {
       for (final removed in recent.skip(50)) {
@@ -281,7 +363,11 @@ class AgentWorkspaceController extends ChangeNotifier {
     newTask();
     final serial = _serial;
     task = previous;
-    conversation.addAll(_savedConversation[previous.id] ?? [previous.query]);
+    conversation.addAll(
+      previous.messages.isNotEmpty
+          ? previous.messages.map((message) => message.text)
+          : _savedConversation[previous.id] ?? [previous.query],
+    );
     state = AgentViewState.searching;
     notifyListeners();
     AgentResult restored;
@@ -297,6 +383,7 @@ class AgentWorkspaceController extends ChangeNotifier {
     }
     if (serial != _serial || task?.id != previous.id) return;
     result = restored;
+    if (restored.task != null) task = restored.task;
     state = AgentViewState.results;
     sheetExtent = AgentSheetExtent.half;
     notifyListeners();

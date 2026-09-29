@@ -26,6 +26,8 @@ docker compose exec db psql -U birdtie -d birdtie -v ON_ERROR_STOP=1 -f /migrati
 docker compose exec db psql -U birdtie -d birdtie -v ON_ERROR_STOP=1 -f /migrations/016_activity_plans.sql
 docker compose exec db psql -U birdtie -d birdtie -v ON_ERROR_STOP=1 -f /migrations/017_connections_and_messages.sql
 docker compose exec db psql -U birdtie -d birdtie -v ON_ERROR_STOP=1 -f /migrations/018_public_intent_area_markers.sql
+docker compose exec db psql -U birdtie -d birdtie -v ON_ERROR_STOP=1 -f /migrations/019_agent_identity_organizations.sql
+docker compose exec db psql -U birdtie -d birdtie -v ON_ERROR_STOP=1 -f /migrations/020_agent_task_context.sql
 $env:BIRDTIE_DATABASE_URL = 'postgres://birdtie:birdtie_local_only@127.0.0.1:55432/birdtie?sslmode=disable'
 go run .
 ```
@@ -50,6 +52,16 @@ Migration `017` adds explicit human contact requests and one-to-one conversation
 
 Migration `018` adds an optional broad map-zone code to public Intent. It stores no personal coordinates.
 
+Migration `019` adds Personal and Organization Agents, platform-managed City Contexts, organization principals and role-based memberships. It creates no City Agent. Migration `020` stores principal, human actor, intent, filters and conversation on Agent tasks; organization tasks require an active member actor.
+
+For an end-to-end local Agent demonstration only, apply the synthetic fixture after migrations `019` and `020`:
+
+```powershell
+docker compose exec db psql -U birdtie -d birdtie -v ON_ERROR_STOP=1 -f /dev-seeds/001_badminton.sql
+```
+
+It creates a clearly named local development organization, a synthetic sports venue and two synthetic weekend Activities with map points. The fixture is outside `migrations/`, is never loaded by the API, and must not be applied to shared or production databases. It is safe to reapply to the local Compose database.
+
 `BIRDTIE_DATABASE_URL` is required. `BIRDTIE_API_ADDR` defaults to `127.0.0.1:8080`. `BIRDTIE_ALLOWED_ORIGINS` is an optional comma-separated allowlist for browser clients; no cross-origin access is enabled by default.
 
 ## Public read routes
@@ -65,7 +77,7 @@ Migration `018` adds an optional broad map-zone code to public Intent. It stores
 - `GET /v1/accounts/{accountID}/profile` (only explicitly public Profiles for anonymous callers)
 - `POST /v1/cities/{cityID}/agent/tasks` with JSON `{"query":"Find badminton this weekend"}` (anonymous or Bearer; query up to 240 UTF-8 bytes)
 
-The Agent endpoint returns `{data:{cityId,query,mode:"rules",activities,people,groups,places,taskId?}}`. It searches published, current records in one City using up to six significant query terms and bounded lists. This is literal text matching, not semantic matching, recommendation or an LLM. People come from owner-confirmed, active public Intents joined to explicitly public Profiles; a coarse area label is returned, plus an approximate City view anchor only when the owner opted into a broad public map zone. Groups come from owner-confirmed, published public Communities. Neither People nor Groups have seeded records. Signed-in searches apply mutual Account blocks to person-owned results. Public point coordinates can come only from an eligible published, unexpired Place; People never return a personal coordinate; opt-in broad-zone anchors are illustrative. Anonymous searches are not saved.
+The deterministic MVP recognizes `Find badminton this weekend` and a context-aware `Anything closer?` follow-up. It filters current published Activities by badminton and the selected City-local weekend, then orders a closer follow-up by distance from the configured City view center without requesting device location. Result Activities include public Place name, schedule and point coordinates when available. Unsupported requests receive a capability message instead of fabricated results. The general Agent endpoint still supports bounded literal matching for other queries; this is not semantic matching, recommendation or an LLM.
 
 The City Place list accepts optional `q` (up to 240 UTF-8 bytes) for a literal, case-insensitive name/summary substring search. It searches published Places in the selected published City and returns at most 100 results ordered by name, with the same provenance and location-precision rules as the unfiltered list. It does not use a map provider or location permission. Pagination, category/time filters and a search index remain future work.
 
@@ -73,10 +85,10 @@ Published City responses may include `map: {provider, latitude, longitude, defau
 
 ## Private Agent task history
 
-- `GET /v1/me/agent-tasks`: list up to 50 recent tasks belonging to the Bearer Session's Account.
-- `GET /v1/me/agent-tasks/{taskID}`: restore one owned task. A task owned by another Account returns 404.
+- `GET /v1/me/agent-tasks`: list up to 50 recent tasks belonging to the active Personal or Organization workspace principal.
+- `GET /v1/me/agent-tasks/{taskID}`: restore one task owned by that workspace principal. Another principal's task returns 404.
 
-Signed-in `POST /v1/cities/{cityID}/agent/tasks` saves the query and City after a successful search and returns `taskId`. Restore reruns the query against current publication, expiry and block rules; result snapshots and conversation turns are not stored. The client shows the current task's single input and result in memory; it does not restore a per-task map viewport or multi-turn conversation. No task deletion or completion route exists yet. Apply rate limits and a fuller identity review before external rollout.
+Signed-in `POST /v1/cities/{cityID}/agent/tasks` creates an `ACTIVE` task before resolving and returns its `taskId`, principal type/ID, acting user, intent, City Context, filters and conversation. Follow-ups send the same task ID and append to its conversation. Tasks end in `COMPLETED` or `FAILED`; Recent restores the stored context and reruns against current publication, expiry and block rules rather than storing result snapshots. An unauthenticated local follow-up is stateless and carries its original query forward. Organization reads and task writes require a current membership role. Apply rate limits and a fuller identity review before external rollout.
 
 ## Profile and owner-published People intents
 

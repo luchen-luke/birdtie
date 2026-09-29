@@ -44,13 +44,27 @@ class RemoteAgentTaskSource extends AgentTaskSource {
     List<PublicActivity> activities,
     List<PublicPlace> places,
   ) async {
+    return _submit(query, null);
+  }
+
+  @override
+  Future<AgentResult> followUp(
+    AgentTask task,
+    String query,
+    List<PublicActivity> activities,
+    List<PublicPlace> places,
+  ) => task.id.startsWith('local-')
+      ? _submit('${task.query}. $query', null)
+      : _submit(query, task.id);
+
+  Future<AgentResult> _submit(String query, String? taskID) async {
     final selected = cityID();
     if (selected == null) throw StateError('No selected city');
     final response = await _client
         .post(
           _endpoint('/v1/cities/${Uri.encodeComponent(selected)}/agent/tasks'),
           headers: _headers(json: true),
-          body: jsonEncode({'query': query}),
+          body: jsonEncode({'query': query, 'taskId': ?taskID}),
         )
         .timeout(const Duration(seconds: 12));
     if (response.statusCode != 200) throw StateError('Agent query unavailable');
@@ -74,12 +88,7 @@ class RemoteAgentTaskSource extends AgentTaskSource {
             as List<dynamic>;
     return [
       for (final raw in records)
-        AgentTask(
-          id: (raw as Map<String, dynamic>)['id'] as String,
-          query: raw['query'] as String,
-          status: raw['status'] as String,
-          cityID: raw['cityId'] as String,
-        ),
+        AgentTask.fromJson(raw as Map<String, dynamic>),
     ];
   }
 
@@ -89,7 +98,7 @@ class RemoteAgentTaskSource extends AgentTaskSource {
     List<PublicActivity> activities,
     List<PublicPlace> places,
   ) async {
-    if (task.id == 'demo-recent' || task.id.startsWith('local-')) {
+    if (task.id.startsWith('local-')) {
       return resolve(task.query, activities, places);
     }
     if (authorizationHeader() == null) {
@@ -182,9 +191,14 @@ class RemoteAgentTaskSource extends AgentTaskSource {
       groups: groups,
       places: places,
       taskID: data['taskId'] as String?,
-      note: count == 0
-          ? 'No visible matches yet. Birdtie used published records and simple text matching.'
-          : 'Published Birdtie records · simple text matching',
+      task: data['task'] is Map<String, dynamic>
+          ? AgentTask.fromJson(data['task'] as Map<String, dynamic>)
+          : null,
+      note:
+          data['note'] as String? ??
+          (count == 0
+              ? 'No visible matches yet. Birdtie used published records and simple text matching.'
+              : 'Published Birdtie records · simple text matching'),
     );
   }
 

@@ -121,6 +121,7 @@ class _PublicCityMapViewState extends State<PublicCityMapView> {
             taskPoints.map((point) => point.longitude).reduce((a, b) => a + b) /
                 taskPoints.length,
           );
+    final distinctTaskPoints = taskPoints.toSet();
     final points = widget.places.where(
       (place) => place.location.hasPublicPoint,
     );
@@ -137,6 +138,13 @@ class _PublicCityMapViewState extends State<PublicCityMapView> {
               options: MapOptions(
                 initialCenter: mapCenter,
                 initialZoom: taskPoints.isEmpty ? viewport.defaultZoom : 12.8,
+                initialCameraFit: distinctTaskPoints.length > 1
+                    ? CameraFit.bounds(
+                        bounds: LatLngBounds.fromPoints(taskPoints),
+                        padding: const EdgeInsets.fromLTRB(48, 150, 48, 180),
+                        maxZoom: 14,
+                      )
+                    : null,
                 minZoom: 3,
                 maxZoom: 18,
                 backgroundColor: const Color(0xFFE9ECE4),

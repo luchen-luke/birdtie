@@ -200,18 +200,6 @@ class Sidebar extends StatelessWidget {
                       task.query,
                       () => onRecent(task),
                     ),
-                  if (workspace.recent.isEmpty && workspace.demoMode)
-                    _item(
-                      Icons.auto_awesome_outlined,
-                      'Badminton this weekend · demo',
-                      () => onRecent(
-                        const AgentTask(
-                          id: 'demo-recent',
-                          query: 'Find someone to play badminton this weekend',
-                          status: 'completed',
-                        ),
-                      ),
-                    ),
                 ],
               ),
             ),

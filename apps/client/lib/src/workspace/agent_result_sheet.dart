@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'agent_conversation.dart';
 import 'agent_workspace_controller.dart';
 import 'activity_plans.dart';
-import 'map_entities.dart';
 import 'saved_items.dart';
 
 class AgentResultSheet extends StatelessWidget {
@@ -117,8 +116,6 @@ class AgentResultSheet extends StatelessWidget {
                       child: Text(
                         workspace.state == AgentViewState.searching
                             ? 'Looking around…'
-                            : workspace.demoMode
-                            ? '${workspace.result?.activities.length ?? 0} published activities · ${workspace.result?.entities.length ?? 0} demo map entities'
                             : '${workspace.result?.activities.length ?? 0} activities · ${workspace.result?.people.length ?? 0} people · ${workspace.result?.groups.length ?? 0} groups',
                         style: const TextStyle(
                           color: Color(0xFF747B73),
@@ -204,18 +201,6 @@ class _ResultList extends StatelessWidget {
   Widget build(BuildContext context) {
     final result = workspace.result;
     if (result == null) return const Center(child: CircularProgressIndicator());
-    final activities = result.entities.where(
-      (entity) => entity.isDemo && entity.kind == MapEntityKind.activity,
-    );
-    final people = result.entities.where(
-      (entity) =>
-          entity.isDemo &&
-          (entity.kind == MapEntityKind.person ||
-              entity.kind == MapEntityKind.peopleCluster),
-    );
-    final groups = result.entities.where(
-      (entity) => entity.isDemo && entity.kind == MapEntityKind.group,
-    );
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
       children: [
@@ -223,14 +208,18 @@ class _ResultList extends StatelessWidget {
           result.note,
           style: const TextStyle(color: Color(0xFF747B73), fontSize: 12),
         ),
-        if (result.activities.isNotEmpty || activities.isNotEmpty) ...[
+        if (result.activities.isNotEmpty) ...[
           const _Heading('Activities'),
           for (final activity in result.activities)
             _Row(
               icon: Icons.event_outlined,
               title: activity.title,
-              subtitle:
-                  '${activity.status} · Published City API · ${activity.source.label}',
+              subtitle: [
+                if (activity.schedule.isNotEmpty) activity.schedule,
+                if (activity.placeName.isNotEmpty) activity.placeName,
+                activity.status,
+                activity.source.label,
+              ].join(' · '),
               onTap: activity.location?.hasPublicPoint == true
                   ? () => workspace.selectEntity('activity:${activity.id}')
                   : null,
@@ -248,15 +237,8 @@ class _ResultList extends StatelessWidget {
                   ? null
                   : () => _togglePlanned(context, activity.id),
             ),
-          for (final entity in activities)
-            _Row(
-              icon: Icons.sports_tennis,
-              title: entity.title,
-              subtitle: 'Local demo · map preview',
-              onTap: () => workspace.selectEntity(entity.id),
-            ),
         ],
-        if (people.isNotEmpty || result.people.isNotEmpty) ...[
+        if (result.people.isNotEmpty) ...[
           const _Heading('People'),
           for (final person in result.people)
             _Row(
@@ -269,15 +251,8 @@ class _ResultList extends StatelessWidget {
                   : () => workspace.selectEntity('person:${person.accountID}'),
               onContact: onContact == null ? null : () => onContact!(person),
             ),
-          for (final entity in people)
-            _Row(
-              icon: Icons.person_outline,
-              title: entity.title,
-              subtitle: 'Local demo · no live profile',
-              onTap: () => workspace.selectEntity(entity.id),
-            ),
         ],
-        if (groups.isNotEmpty || result.groups.isNotEmpty) ...[
+        if (result.groups.isNotEmpty) ...[
           const _Heading('Groups'),
           for (final group in result.groups)
             _Row(
@@ -295,13 +270,6 @@ class _ResultList extends StatelessWidget {
               onSave: saved == null
                   ? null
                   : () => _toggleSaved(context, 'group', group.id),
-            ),
-          for (final entity in groups)
-            _Row(
-              icon: Icons.group_outlined,
-              title: entity.title,
-              subtitle: 'Local demo · no live group',
-              onTap: () => workspace.selectEntity(entity.id),
             ),
         ],
         if (result.places.isNotEmpty) ...[
@@ -329,9 +297,7 @@ class _ResultList extends StatelessWidget {
           Padding(
             padding: EdgeInsets.only(top: 24),
             child: Text(
-              workspace.demoMode
-                  ? 'Try “Find someone to play badminton this weekend” to see the local demo.'
-                  : 'Try another intent or check back as more public city data is added.',
+              'No matching public activities were found. Try another time or check back as more city data is added.',
               style: const TextStyle(color: Color(0xFF747B73)),
             ),
           ),

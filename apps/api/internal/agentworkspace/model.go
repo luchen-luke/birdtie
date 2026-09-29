@@ -12,6 +12,12 @@ import (
 
 var ErrNotFound = errors.New("agent task not found")
 
+const (
+	TaskActive    = "ACTIVE"
+	TaskCompleted = "COMPLETED"
+	TaskFailed    = "FAILED"
+)
+
 type Person struct {
 	AccountID     string   `json:"accountId"`
 	DisplayName   string   `json:"displayName"`
@@ -34,7 +40,9 @@ type Results struct {
 	CityID        string                `json:"cityId"`
 	Query         string                `json:"query"`
 	Mode          string                `json:"mode"`
+	Note          string                `json:"note"`
 	TaskID        string                `json:"taskId,omitempty"`
+	Task          *Task                 `json:"task,omitempty"`
 	PrincipalType string                `json:"principalType"`
 	PrincipalID   string                `json:"principalId"`
 	Workspace     string                `json:"workspace"`
@@ -47,19 +55,32 @@ type Results struct {
 }
 
 type Task struct {
-	ID        string    `json:"id"`
-	CityID    string    `json:"cityId"`
-	Query     string    `json:"query"`
-	Status    string    `json:"status"`
-	CreatedAt time.Time `json:"createdAt"`
-	UpdatedAt time.Time `json:"updatedAt"`
+	ID            string            `json:"id"`
+	PrincipalType string            `json:"principalType"`
+	PrincipalID   string            `json:"principalId"`
+	ActingUserID  string            `json:"actingUserId"`
+	CityID        string            `json:"cityContext"`
+	Query         string            `json:"query"`
+	Intent        string            `json:"intent"`
+	Status        string            `json:"status"`
+	Filters       map[string]string `json:"filters"`
+	Conversation  []Message         `json:"conversation"`
+	CreatedAt     time.Time         `json:"createdAt"`
+	UpdatedAt     time.Time         `json:"updatedAt"`
+}
+
+type Message struct {
+	Role string `json:"role"`
+	Text string `json:"text"`
 }
 
 type Store interface {
 	Search(context.Context, string, string, []string) (Results, error)
-	SaveTask(context.Context, string, string, string) (Task, error)
+	SaveTask(context.Context, Task) (Task, error)
+	UpdateTask(context.Context, Task) (Task, error)
 	ListTasks(context.Context, string) ([]Task, error)
 	GetTask(context.Context, string, string) (Task, error)
+	SearchActivities(context.Context, string, string, string, string, bool) ([]foundation.Activity, error)
 }
 
 var ignored = map[string]bool{

@@ -67,7 +67,7 @@ class _AgentComposerState extends State<AgentComposer> {
               IconButton(
                 tooltip: 'Try an intent',
                 onPressed: () {
-                  _text.text = 'Find someone to play badminton this weekend';
+                  _text.text = 'Find badminton this weekend';
                   _text.selection = TextSelection.collapsed(
                     offset: _text.text.length,
                   );

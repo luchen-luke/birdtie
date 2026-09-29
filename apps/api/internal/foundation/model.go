@@ -71,12 +71,14 @@ type Activity struct {
 	ID        string    `json:"id"`
 	CityID    string    `json:"cityId"`
 	PlaceID   string    `json:"placeId,omitempty"`
+	PlaceName string    `json:"placeName,omitempty"`
 	HostLabel string    `json:"hostLabel"`
 	Title     string    `json:"title"`
 	Summary   string    `json:"summary"`
 	StartsAt  time.Time `json:"startsAt"`
 	EndsAt    time.Time `json:"endsAt"`
 	TimeZone  string    `json:"timeZone"`
+	Schedule  string    `json:"schedule"`
 	Status    string    `json:"status"`
 	Location  *Location `json:"location,omitempty"`
 	Source    Source    `json:"source"`

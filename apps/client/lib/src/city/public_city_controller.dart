@@ -142,11 +142,13 @@ class PublicActivity {
   const PublicActivity({
     required this.id,
     required this.hostLabel,
+    required this.placeName,
     required this.title,
     required this.summary,
     required this.startsAt,
     required this.endsAt,
     required this.timeZone,
+    required this.schedule,
     required this.status,
     required this.source,
     required this.location,
@@ -154,11 +156,13 @@ class PublicActivity {
 
   final String id;
   final String hostLabel;
+  final String placeName;
   final String title;
   final String summary;
   final DateTime startsAt;
   final DateTime endsAt;
   final String timeZone;
+  final String schedule;
   final String status;
   final PublicSource source;
   final PublicPlaceLocation? location;
@@ -166,11 +170,13 @@ class PublicActivity {
   factory PublicActivity.fromJson(Map<String, dynamic> json) => PublicActivity(
     id: json['id'] as String,
     hostLabel: json['hostLabel'] as String? ?? '',
+    placeName: json['placeName'] as String? ?? '',
     title: json['title'] as String,
     summary: json['summary'] as String? ?? '',
     startsAt: DateTime.parse(json['startsAt'] as String),
     endsAt: DateTime.parse(json['endsAt'] as String),
     timeZone: json['timeZone'] as String,
+    schedule: json['schedule'] as String? ?? '',
     status: json['status'] as String,
     source: PublicSource.fromJson(json['source'] as Map<String, dynamic>),
     location: json['location'] is Map<String, dynamic>

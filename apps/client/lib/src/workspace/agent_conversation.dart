@@ -35,9 +35,11 @@ class AgentConversation extends StatelessWidget {
         style: const TextStyle(height: 1.5),
       ),
       const SizedBox(height: 14),
-      const Text(
-        'Each intent starts a new task. Live Agent replies and follow-up context are not connected.',
-        style: TextStyle(color: Color(0xFF747B73), fontSize: 12),
+      Text(
+        workspace.task?.intent == 'FIND_ACTIVITY'
+            ? 'This conversation stays with your activity search and map context.'
+            : 'Ask about published Birdtie activities to start a task.',
+        style: const TextStyle(color: Color(0xFF747B73), fontSize: 12),
       ),
     ],
   );

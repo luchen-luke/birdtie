@@ -1,5 +1,7 @@
 # Civu 只读现状审计与 Birdtie 复用清单
 
+2026-09-30 Birdtie V2 补充：Agent-first 首页复用的是本仓已有的 `PublicCityMapView`、原生 Mapbox adapter、`PublicCityController` 和 City API。新增 Entity Layer 与 Agent Workspace 状态均为 Birdtie 自有实现；本轮没有从 Civu 仓库复制代码或引入新的 Civu 运行时依赖。已审核 Activity 进入结果列表，但现有 API 未提供 Activity 坐标，客户端不推测其地图位置。演示 People、Group、Activity 地图实体与真实 API 模型隔离。
+
 审计日期：2026-09-29  
 状态：完成路径、依赖、Git 状态及关键代码的只读盘点；未执行构建/测试、未连接生产环境、未复制或修改 Civu 文件。  
 参考仓：`D:\Program\Civu`；Birdtie 正式仓：`D:\Project\birdtie`。

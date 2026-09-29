@@ -9,6 +9,7 @@ import 'mapbox_style.dart';
 import 'native_city_map_stub.dart'
     if (dart.library.io) 'native_city_map_io.dart';
 import 'public_city_controller.dart';
+import '../workspace/map_entities.dart';
 
 const _mapboxPublicToken = String.fromEnvironment(
   'BIRDTIE_MAPBOX_PUBLIC_TOKEN',
@@ -25,12 +26,22 @@ class PublicCityMapView extends StatefulWidget {
     required this.places,
     required this.onPlaceSelected,
     this.placeStateMessage,
+    this.entities = const [],
+    this.selectedEntityId,
+    this.onEntitySelected,
+    this.fullBleed = false,
+    this.contextKey = '',
   });
 
   final PublicCity city;
   final List<PublicPlace> places;
   final ValueChanged<PublicPlace> onPlaceSelected;
   final String? placeStateMessage;
+  final List<MapEntity> entities;
+  final String? selectedEntityId;
+  final ValueChanged<MapEntity>? onEntitySelected;
+  final bool fullBleed;
+  final String contextKey;
 
   @override
   State<PublicCityMapView> createState() => _PublicCityMapViewState();
@@ -67,6 +78,11 @@ class _PublicCityMapViewState extends State<PublicCityMapView> {
           accessToken: _mapboxMobileToken,
           onPlaceSelected: widget.onPlaceSelected,
           placeStateMessage: widget.placeStateMessage,
+          entities: widget.entities,
+          selectedEntityId: widget.selectedEntityId,
+          onEntitySelected: widget.onEntitySelected,
+          fullBleed: widget.fullBleed,
+          contextKey: widget.contextKey,
         );
       }
       return const _MapUnavailable('该城市地图暂不可用，请使用地点列表。');
@@ -74,20 +90,37 @@ class _PublicCityMapViewState extends State<PublicCityMapView> {
     if (!_mapboxPublicToken.startsWith('pk.')) {
       return const _MapUnavailable('地图暂不可用，请使用地点列表。');
     }
+    final taskPoints = <LatLng>[
+      for (final entity in widget.entities)
+        LatLng(entity.latitude, entity.longitude),
+      for (final place in widget.places)
+        if (place.location.hasPublicPoint)
+          LatLng(place.location.latitude!, place.location.longitude!),
+    ];
+    final mapCenter = taskPoints.isEmpty
+        ? LatLng(viewport.latitude, viewport.longitude)
+        : LatLng(
+            taskPoints.map((point) => point.latitude).reduce((a, b) => a + b) /
+                taskPoints.length,
+            taskPoints.map((point) => point.longitude).reduce((a, b) => a + b) /
+                taskPoints.length,
+          );
     final points = widget.places.where(
       (place) => place.location.hasPublicPoint,
     );
     return ClipRRect(
-      borderRadius: BorderRadius.circular(18),
+      borderRadius: BorderRadius.circular(widget.fullBleed ? 0 : 18),
       child: SizedBox(
-        height: 430,
+        height: widget.fullBleed ? double.infinity : 430,
         child: Stack(
           children: [
             FlutterMap(
-              key: ValueKey(widget.city.id),
+              key: ValueKey(
+                '${widget.city.id}-${widget.contextKey}-${widget.entities.map((e) => e.id).join(',')}-${widget.places.map((p) => p.id).join(',')}',
+              ),
               options: MapOptions(
-                initialCenter: LatLng(viewport.latitude, viewport.longitude),
-                initialZoom: viewport.defaultZoom,
+                initialCenter: mapCenter,
+                initialZoom: taskPoints.isEmpty ? viewport.defaultZoom : 12.8,
                 minZoom: 3,
                 maxZoom: 18,
                 backgroundColor: const Color(0xFFE9ECE4),
@@ -123,10 +156,17 @@ class _PublicCityMapViewState extends State<PublicCityMapView> {
                       ),
                   ],
                 ),
+                if (widget.entities.isNotEmpty &&
+                    widget.onEntitySelected != null)
+                  MapEntityLayer(
+                    entities: widget.entities,
+                    selectedId: widget.selectedEntityId,
+                    onSelected: widget.onEntitySelected!,
+                  ),
               ],
             ),
             if (_tilesFailed ||
-                points.isEmpty ||
+                (!widget.fullBleed && points.isEmpty) ||
                 widget.placeStateMessage != null)
               Positioned(
                 top: 12,
@@ -138,11 +178,12 @@ class _PublicCityMapViewState extends State<PublicCityMapView> {
                       : widget.placeStateMessage ?? '当前列表没有可公开的精确地点标记。',
                 ),
               ),
-            const Positioned(
+            Positioned(
               left: 8,
               right: 8,
-              bottom: 8,
-              child: _MapboxAttribution(),
+              top: widget.fullBleed ? 142 : null,
+              bottom: widget.fullBleed ? null : 8,
+              child: const _MapboxAttribution(),
             ),
           ],
         ),
@@ -157,7 +198,7 @@ class _MapUnavailable extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-    height: 330,
+    height: double.infinity,
     alignment: Alignment.center,
     decoration: BoxDecoration(
       color: const Color(0xFFE9ECE4),

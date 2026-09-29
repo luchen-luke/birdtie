@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../auth/birdtie_auth_controller.dart';
 import 'remote_inbox_source.dart';
+import 'connections.dart';
 
 class InboxPanel extends StatefulWidget {
   const InboxPanel({super.key, required this.auth, this.source});
@@ -151,8 +152,13 @@ class _InboxPanelState extends State<InboxPanel> {
       );
     }
     if (_items.isEmpty) {
-      return const _InboxMessage(
-        'No updates yet. Reviewed submissions will appear here.',
+      return ListView(
+        children: [
+          SocialInboxSection(auth: widget.auth),
+          const _InboxMessage(
+            'Place and Activity review results will appear here.',
+          ),
+        ],
       );
     }
     const sections = [
@@ -166,6 +172,7 @@ class _InboxPanelState extends State<InboxPanel> {
       onRefresh: _load,
       child: ListView(
         children: [
+          SocialInboxSection(auth: widget.auth),
           for (final (key, label) in sections)
             if (_items.any((item) => item.category == key)) ...[
               _SectionHeading(label),
@@ -176,7 +183,11 @@ class _InboxPanelState extends State<InboxPanel> {
                   leading: CircleAvatar(
                     backgroundColor: const Color(0xFFE7EDE2),
                     child: Icon(
-                      item.resourceType == 'community'
+                      item.resourceType == 'connection_request'
+                          ? Icons.person_add_alt_outlined
+                          : item.resourceType == 'conversation_message'
+                          ? Icons.chat_bubble_outline
+                          : item.resourceType == 'community'
                           ? Icons.group_outlined
                           : item.resourceType == 'activity_candidate'
                           ? Icons.event_outlined

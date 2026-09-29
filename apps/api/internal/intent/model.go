@@ -20,6 +20,7 @@ type Input struct {
 	AvailableUntil  time.Time `json:"availableUntil"`
 	TimeZone        string    `json:"timeZone"`
 	CoarseAreaLabel string    `json:"coarseAreaLabel"`
+	PublicMapZone   string    `json:"publicMapZone,omitempty"`
 	ExpiresAt       time.Time `json:"expiresAt"`
 }
 
@@ -33,6 +34,7 @@ type Record struct {
 	AvailableUntil  time.Time  `json:"availableUntil"`
 	TimeZone        string     `json:"timeZone"`
 	CoarseAreaLabel string     `json:"coarseAreaLabel"`
+	PublicMapZone   string     `json:"publicMapZone,omitempty"`
 	Audience        string     `json:"audience"`
 	State           string     `json:"state"`
 	ExpiresAt       time.Time  `json:"expiresAt"`
@@ -43,15 +45,8 @@ type Record struct {
 	UpdatedAt       time.Time  `json:"updatedAt"`
 }
 
-type ReviewInput struct {
-	Decision string `json:"decision"`
-	Note     string `json:"note"`
-}
-
 type Store interface {
 	SubmitIntent(context.Context, string, string, Input) (Record, error)
 	ListOwnIntents(context.Context, string) ([]Record, error)
-	ListIntentQueue(context.Context, string, string) ([]Record, error)
-	ReviewIntent(context.Context, string, string, ReviewInput) (Record, error)
 	WithdrawIntent(context.Context, string, string) error
 }

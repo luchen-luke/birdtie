@@ -47,11 +47,17 @@ class AgentPerson {
     required this.displayName,
     required this.topic,
     required this.areaLabel,
+    this.publicMapZone = '',
+    this.mapLatitude,
+    this.mapLongitude,
   });
   final String accountID;
   final String displayName;
   final String topic;
   final String areaLabel;
+  final String publicMapZone;
+  final double? mapLatitude;
+  final double? mapLongitude;
 }
 
 class AgentGroup {
@@ -136,7 +142,6 @@ class AgentWorkspaceController extends ChangeNotifier {
   String? selectedEntityId;
   final List<AgentTask> recent = [];
   final List<String> conversation = [];
-  final Map<String, AgentResult> _savedResults = {};
   final Map<String, List<String>> _savedConversation = {};
   int _serial = 0;
   int _historySerial = 0;
@@ -162,7 +167,6 @@ class AgentWorkspaceController extends ChangeNotifier {
     ++_historySerial;
     newTask();
     recent.clear();
-    _savedResults.clear();
     _savedConversation.clear();
     notifyListeners();
   }
@@ -200,6 +204,7 @@ class AgentWorkspaceController extends ChangeNotifier {
     selectedEntityId = null;
     sheetExtent = AgentSheetExtent.compact;
     state = AgentViewState.searching;
+    conversation.clear();
     conversation.add(query);
     notifyListeners();
     AgentResult resolved;
@@ -229,11 +234,15 @@ class AgentWorkspaceController extends ChangeNotifier {
     }
     result = resolved;
     if (demoMode || resolved.taskID == null) {
-      _savedResults[task!.id] = resolved;
       _savedConversation[task!.id] = List.of(conversation);
     }
-    recent.removeWhere((item) => item.query == query);
     recent.insert(0, task!);
+    if (recent.length > 50) {
+      for (final removed in recent.skip(50)) {
+        _savedConversation.remove(removed.id);
+      }
+      recent.removeRange(50, recent.length);
+    }
     state = AgentViewState.results;
     sheetExtent = AgentSheetExtent.half;
     notifyListeners();
@@ -270,26 +279,24 @@ class AgentWorkspaceController extends ChangeNotifier {
     List<PublicPlace> places,
   ) async {
     newTask();
-    final saved = _savedResults[previous.id];
+    final serial = _serial;
     task = previous;
     conversation.addAll(_savedConversation[previous.id] ?? [previous.query]);
     state = AgentViewState.searching;
     notifyListeners();
-    if (saved != null) {
-      result = saved;
-    } else {
-      try {
-        result = await _source.restore(previous, activities, places);
-      } catch (_) {
-        result = const AgentResult(
-          entities: [],
-          activities: [],
-          places: [],
-          note: 'This task could not be restored. Please try again.',
-        );
-      }
+    AgentResult restored;
+    try {
+      restored = await _source.restore(previous, activities, places);
+    } catch (_) {
+      restored = const AgentResult(
+        entities: [],
+        activities: [],
+        places: [],
+        note: 'This task could not be restored. Please try again.',
+      );
     }
-    if (task?.id != previous.id) return;
+    if (serial != _serial || task?.id != previous.id) return;
+    result = restored;
     state = AgentViewState.results;
     sheetExtent = AgentSheetExtent.half;
     notifyListeners();

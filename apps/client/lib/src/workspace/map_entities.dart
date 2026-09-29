@@ -170,7 +170,8 @@ class SelectedMarkerState extends StatelessWidget {
   Widget build(BuildContext context) => Center(
     child: Semantics(
       button: true,
-      label: '${entity.title}${entity.isDemo ? ', demo' : ''}',
+      label:
+          '${entity.title}${entity.kind == MapEntityKind.person ? ', approximate public area' : ''}${entity.isDemo ? ', demo' : ''}',
       child: Material(
         color: selected ? const Color(0xFF193B32) : Colors.white,
         elevation: selected ? 7 : 3,
@@ -191,7 +192,9 @@ class SelectedMarkerState extends StatelessWidget {
                 const SizedBox(width: 5),
                 Flexible(
                   child: Text(
-                    entity.title,
+                    entity.kind == MapEntityKind.person && !entity.isDemo
+                        ? '≈ ${entity.title}'
+                        : entity.title,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(

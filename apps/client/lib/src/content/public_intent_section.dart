@@ -35,6 +35,8 @@ class _PublicIntentSectionState extends State<PublicIntentSection> {
   bool _saving = false;
   bool _signedIn = false;
   bool _failed = false;
+  int _durationDays = 7;
+  String _publicMapZone = '';
   int _serial = 0;
   String? _message;
 
@@ -70,6 +72,8 @@ class _PublicIntentSectionState extends State<PublicIntentSection> {
         _intents = const [];
         _public = false;
         _confirmed = false;
+        _durationDays = 7;
+        _publicMapZone = '';
         _message = null;
         _loading = false;
         _saving = false;
@@ -146,7 +150,10 @@ class _PublicIntentSectionState extends State<PublicIntentSection> {
       widget.auth.updateProfileDisplayName(_name.text.trim());
       await _load();
       if (mounted) {
-        setState(() => _message = '资料已保存。若资料有变动，原待审或公开意图已撤回；如需展示，请重新提交。');
+        setState(
+          () =>
+              _message = _public ? '资料已保存。原公开意图仍按有效期展示。' : '资料已设为私密，原公开意图已撤回。',
+        );
       }
     } catch (_) {
       if (mounted && serial == _serial) {
@@ -175,7 +182,7 @@ class _PublicIntentSectionState extends State<PublicIntentSection> {
     });
     try {
       final start = DateTime.now().toUtc();
-      final end = start.add(const Duration(days: 7));
+      final end = start.add(Duration(days: _durationDays));
       final response = await _client
           .post(
             _endpoint('/v1/cities/${Uri.encodeComponent(city.id)}/intents'),
@@ -185,6 +192,7 @@ class _PublicIntentSectionState extends State<PublicIntentSection> {
               'topic': _topic.text.trim(),
               'details': _details.text.trim(),
               'coarseAreaLabel': _area.text.trim(),
+              'publicMapZone': _publicMapZone,
               'availableFrom': start.toIso8601String(),
               'availableUntil': end.toIso8601String(),
               'expiresAt': end.toIso8601String(),
@@ -192,14 +200,21 @@ class _PublicIntentSectionState extends State<PublicIntentSection> {
             }),
           )
           .timeout(const Duration(seconds: 12));
+      if (response.statusCode == 409) {
+        if (mounted && serial == _serial) {
+          setState(() => _message = '请先保存公开个人资料；每人暂时最多同时发布 3 条有效意图。');
+        }
+        return;
+      }
       if (response.statusCode != 201) throw StateError('Intent rejected');
       if (!mounted || serial != _serial || !widget.auth.signedIn) return;
       _topic.clear();
       _details.clear();
       _area.clear();
       _confirmed = false;
+      _publicMapZone = '';
       await _load();
-      if (mounted) setState(() => _message = '已提交城市审核；审核通过后才会进入 People 结果。');
+      if (mounted) setState(() => _message = '意图已公开；在有效期内可进入 People 结果。');
     } catch (_) {
       if (mounted && serial == _serial) {
         setState(() => _message = '提交失败。请确认资料已保存为公开，或稍后重试。');
@@ -294,11 +309,13 @@ class _PublicIntentSectionState extends State<PublicIntentSection> {
           ListTile(
             contentPadding: EdgeInsets.zero,
             title: Text(item['topic'] as String),
-            subtitle: Text(switch (item['state'] as String) {
-              'draft' => '待城市审核',
-              'active' => '已公开 · 到期前可被发现',
-              _ => '已撤回或未通过',
-            }),
+            subtitle: Text(
+              '${switch (item['state'] as String) {
+                'draft' => '未公开的旧提交',
+                'active' => '已公开 · 到期前可被发现',
+                _ => '已撤回或未通过',
+              }}${(item['publicMapZone'] as String? ?? '').isEmpty ? '' : ' · 已主动公开粗略地图区域'}',
+            ),
             trailing: item['state'] == 'draft' || item['state'] == 'active'
                 ? TextButton(
                     onPressed: _saving
@@ -312,7 +329,7 @@ class _PublicIntentSectionState extends State<PublicIntentSection> {
           '提交一个意图',
           style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
         ),
-        const Text('将在当前城市的未来 7 天有效；审核通过且个人资料保持公开后，才会出现在 People 结果。'),
+        const Text('从提交时起在当前城市有效；个人资料保持公开时，可出现在 People 结果。'),
         TextField(
           controller: _topic,
           enabled: !_loading && !_saving,
@@ -332,17 +349,60 @@ class _PublicIntentSectionState extends State<PublicIntentSection> {
           maxLength: 160,
           decoration: const InputDecoration(labelText: '粗略区域，例如 Aberdeen 市中心'),
         ),
+        const Text(
+          '地图区域标记可选；仅展示城市级大范围的示意锚点，不代表你的位置。',
+          style: TextStyle(color: Color(0xFF747B73), fontSize: 12),
+        ),
+        DropdownButtonFormField<String>(
+          key: ValueKey(_publicMapZone),
+          initialValue: _publicMapZone,
+          decoration: const InputDecoration(labelText: '公开地图区域（可选）'),
+          items: const [
+            DropdownMenuItem(value: '', child: Text('不在地图上显示')),
+            DropdownMenuItem(value: 'city_centre', child: Text('城市中心范围')),
+            DropdownMenuItem(value: 'north', child: Text('城市北部范围')),
+            DropdownMenuItem(value: 'south', child: Text('城市南部范围')),
+            DropdownMenuItem(value: 'east', child: Text('城市东部范围')),
+            DropdownMenuItem(value: 'west', child: Text('城市西部范围')),
+          ],
+          onChanged:
+              _saving || _loading || widget.city.selectedCity?.map == null
+              ? null
+              : (value) => setState(() => _publicMapZone = value ?? ''),
+        ),
+        Row(
+          children: [
+            const Text('有效期：'),
+            DropdownButton<int>(
+              value: _durationDays,
+              items: const [
+                DropdownMenuItem(value: 1, child: Text('1 天')),
+                DropdownMenuItem(value: 3, child: Text('3 天')),
+                DropdownMenuItem(value: 7, child: Text('7 天')),
+                DropdownMenuItem(value: 14, child: Text('14 天')),
+                DropdownMenuItem(value: 30, child: Text('30 天')),
+              ],
+              onChanged: _saving || _loading
+                  ? null
+                  : (value) => setState(() => _durationDays = value ?? 7),
+            ),
+          ],
+        ),
+        const Text(
+          '每人暂时最多同时发布 3 条有效意图。',
+          style: TextStyle(color: Color(0xFF747B73), fontSize: 12),
+        ),
         CheckboxListTile(
           contentPadding: EdgeInsets.zero,
           value: _confirmed,
           onChanged: _saving || _loading
               ? null
               : (value) => setState(() => _confirmed = value ?? false),
-          title: const Text('我确认提交此公开意图，并同意城市审核'),
+          title: const Text('我确认公开此意图'),
         ),
         FilledButton(
           onPressed: _saving || _loading ? null : _submit,
-          child: const Text('提交审核'),
+          child: const Text('公开意图'),
         ),
         if (_message != null)
           Padding(

@@ -16,6 +16,22 @@ class _Source extends AgentTaskSource {
   );
 }
 
+class _ChangingSource extends AgentTaskSource {
+  int calls = 0;
+
+  @override
+  Future<AgentResult> resolve(
+    String query,
+    List<PublicActivity> activities,
+    List<PublicPlace> places,
+  ) async => AgentResult(
+    entities: const [],
+    activities: const [],
+    places: const [],
+    note: 'version ${++calls}',
+  );
+}
+
 void main() {
   test(
     'intent moves through typing, results and conversation, then New clears context',
@@ -39,4 +55,31 @@ void main() {
       workspace.dispose();
     },
   );
+
+  test('Recent refreshes results instead of reusing an old snapshot', () async {
+    final source = _ChangingSource();
+    final workspace = AgentWorkspaceController(source: source);
+    await workspace.submit('badminton', [], []);
+    final previous = workspace.task!;
+    expect(workspace.result?.note, 'version 1');
+    await workspace.reopen(previous, [], []);
+    expect(source.calls, 2);
+    expect(workspace.result?.note, 'version 2');
+    workspace.dispose();
+  });
+
+  test('each intent starts its own task and conversation preview', () async {
+    final workspace = AgentWorkspaceController(source: _Source());
+    await workspace.submit('badminton', [], [], cityID: 'aberdeen');
+    final first = workspace.task!;
+    await workspace.submit('badminton', [], [], cityID: 'edinburgh');
+    expect(workspace.conversation, ['badminton']);
+    expect(workspace.recent, hasLength(2));
+    expect(workspace.recent.first.cityID, 'edinburgh');
+    expect(workspace.recent.last.cityID, 'aberdeen');
+    expect(workspace.recent.last.id, first.id);
+    await workspace.reopen(first, [], []);
+    expect(workspace.conversation, ['badminton']);
+    workspace.dispose();
+  });
 }

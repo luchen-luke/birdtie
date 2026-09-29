@@ -14,6 +14,12 @@ func validIntentInput(input *intent.Input) bool {
 	input.Details = strings.TrimSpace(input.Details)
 	input.TimeZone = strings.TrimSpace(input.TimeZone)
 	input.CoarseAreaLabel = strings.TrimSpace(input.CoarseAreaLabel)
+	input.PublicMapZone = strings.TrimSpace(input.PublicMapZone)
+	if input.PublicMapZone != "" && input.PublicMapZone != "city_centre" &&
+		input.PublicMapZone != "north" && input.PublicMapZone != "south" &&
+		input.PublicMapZone != "east" && input.PublicMapZone != "west" {
+		return false
+	}
 	now := time.Now()
 	if !input.Confirmed || len(input.Topic) == 0 || len(input.Topic) > 160 ||
 		len(input.Details) > 3000 || len(input.TimeZone) == 0 ||
@@ -72,54 +78,6 @@ func (s *server) listOwnIntents(w http.ResponseWriter, r *http.Request) {
 		serverError(w, err)
 	} else {
 		respond(w, http.StatusOK, map[string]any{"data": records})
-	}
-}
-
-func (s *server) listIntentQueue(w http.ResponseWriter, r *http.Request) {
-	actor, _, err := s.actor(r, true)
-	if authFailed(w, err) {
-		return
-	}
-	records, err := s.intents.ListIntentQueue(r.Context(), actor.ID, r.PathValue("cityID"))
-	if errors.Is(err, intent.ErrForbidden) {
-		respondError(w, http.StatusForbidden, "reviewer_required")
-	} else if err != nil {
-		serverError(w, err)
-	} else {
-		respond(w, http.StatusOK, map[string]any{"data": records})
-	}
-}
-
-func (s *server) reviewIntent(w http.ResponseWriter, r *http.Request) {
-	actor, _, err := s.actor(r, true)
-	if authFailed(w, err) {
-		return
-	}
-	id := r.PathValue("intentID")
-	if !uuidPath.MatchString(id) {
-		respondError(w, http.StatusBadRequest, "invalid_intent_id")
-		return
-	}
-	var input intent.ReviewInput
-	if !decodeStrictJSON(w, r, &input) {
-		return
-	}
-	input.Note = strings.TrimSpace(input.Note)
-	if len(input.Note) < 10 || len(input.Note) > 1000 ||
-		(input.Decision != "publish" && input.Decision != "reject") {
-		respondError(w, http.StatusBadRequest, "invalid_review")
-		return
-	}
-	record, err := s.intents.ReviewIntent(r.Context(), actor.ID, id, input)
-	switch {
-	case errors.Is(err, intent.ErrForbidden):
-		respondError(w, http.StatusForbidden, "reviewer_required")
-	case errors.Is(err, intent.ErrConflict):
-		respondError(w, http.StatusConflict, "review_conflict")
-	case err != nil:
-		serverError(w, err)
-	default:
-		respond(w, http.StatusOK, map[string]any{"data": record})
 	}
 }
 

@@ -20,6 +20,10 @@ func (s *server) createAgentTask(w http.ResponseWriter, r *http.Request) {
 	if _, err := s.catalog.GetCity(r.Context(), cityID); handleReadError(w, err) {
 		return
 	}
+	principalID, role, organizationWorkspace := s.workspacePrincipal(w, r, actor)
+	if principalID == "" {
+		return
+	}
 	mediaType, _, err := mime.ParseMediaType(r.Header.Get("Content-Type"))
 	if err != nil || mediaType != "application/json" {
 		respondError(w, http.StatusUnsupportedMediaType, "json_required")
@@ -50,8 +54,18 @@ func (s *server) createAgentTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	result.Query = query
+	result.PrincipalID = principalID
+	result.PrincipalType = "PERSON"
+	result.Workspace = "PERSONAL"
+	result.Permissions = []string{"city_context.read"}
+	if organizationWorkspace {
+		result.PrincipalType = "ORGANIZATION"
+		result.Workspace = "ORGANIZATION"
+		result.Role = strings.ToUpper(role)
+		result.Permissions = []string{"city_context.read", "organization_context.read"}
+	}
 	if actor.ID != "" {
-		task, err := s.agent.SaveTask(r.Context(), actor.ID, cityID, query)
+		task, err := s.agent.SaveTask(r.Context(), principalID, cityID, query)
 		if err != nil {
 			serverError(w, err)
 			return
@@ -66,7 +80,11 @@ func (s *server) listAgentTasks(w http.ResponseWriter, r *http.Request) {
 	if authFailed(w, err) {
 		return
 	}
-	tasks, err := s.agent.ListTasks(r.Context(), actor.ID)
+	principalID, _, _ := s.workspacePrincipal(w, r, actor)
+	if principalID == "" {
+		return
+	}
+	tasks, err := s.agent.ListTasks(r.Context(), principalID)
 	if err != nil {
 		serverError(w, err)
 		return
@@ -84,7 +102,11 @@ func (s *server) getAgentTask(w http.ResponseWriter, r *http.Request) {
 		respondError(w, http.StatusBadRequest, "invalid_task_id")
 		return
 	}
-	task, err := s.agent.GetTask(r.Context(), actor.ID, id)
+	principalID, role, organizationWorkspace := s.workspacePrincipal(w, r, actor)
+	if principalID == "" {
+		return
+	}
+	task, err := s.agent.GetTask(r.Context(), principalID, id)
 	if errors.Is(err, agentworkspace.ErrNotFound) {
 		respondError(w, http.StatusNotFound, "not_found")
 		return
@@ -103,5 +125,15 @@ func (s *server) getAgentTask(w http.ResponseWriter, r *http.Request) {
 	}
 	result.Query = task.Query
 	result.TaskID = task.ID
+	result.PrincipalID = principalID
+	result.PrincipalType = "PERSON"
+	result.Workspace = "PERSONAL"
+	result.Permissions = []string{"city_context.read"}
+	if organizationWorkspace {
+		result.PrincipalType = "ORGANIZATION"
+		result.Workspace = "ORGANIZATION"
+		result.Role = strings.ToUpper(role)
+		result.Permissions = []string{"city_context.read", "organization_context.read"}
+	}
 	respond(w, http.StatusOK, map[string]any{"data": result})
 }

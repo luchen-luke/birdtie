@@ -59,6 +59,10 @@ func (s *Store) SaveOIDCExchangeCode(
 		if err != nil {
 			return err
 		}
+		if _, err := tx.Exec(ctx, `INSERT INTO agents (agent_type, principal_account_id)
+            VALUES ('personal', $1) ON CONFLICT (agent_type, principal_account_id) DO NOTHING`, accountID); err != nil {
+			return err
+		}
 		if _, err := tx.Exec(ctx, `INSERT INTO user_profiles
             (account_id, display_name, visibility)
             VALUES ($1, $2, 'private')`, accountID, displayName); err != nil {

@@ -5,6 +5,8 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:latlong2/latlong.dart';
 
 import 'map_link.dart';
+import 'amap_city_map_stub.dart'
+    if (dart.library.html) 'amap_city_map_web.dart';
 import 'mapbox_style.dart';
 import 'native_city_map_stub.dart'
     if (dart.library.io) 'native_city_map_io.dart';
@@ -61,6 +63,20 @@ class _PublicCityMapViewState extends State<PublicCityMapView> {
     final viewport = widget.city.map;
     if (viewport == null) {
       return const _MapUnavailable('该城市尚未配置地图视图。');
+    }
+    if (viewport.provider == 'amap') {
+      return AMapCityMapView(
+        key: ValueKey(
+          '${widget.city.id}-${widget.contextKey}-${widget.selectedEntityId}-${widget.entities.map((e) => e.id).join(',')}-${widget.places.map((p) => p.id).join(',')}',
+        ),
+        city: widget.city,
+        places: widget.places,
+        entities: widget.entities,
+        selectedEntityId: widget.selectedEntityId,
+        onPlaceSelected: widget.onPlaceSelected,
+        onEntitySelected: widget.onEntitySelected,
+        fullBleed: widget.fullBleed,
+      );
     }
     if (viewport.provider != 'mapbox') {
       return const _MapUnavailable('该城市地图暂不可用，请使用地点列表。');

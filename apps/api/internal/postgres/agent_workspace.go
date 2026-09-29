@@ -47,8 +47,20 @@ func (s *Store) Search(ctx context.Context, cityID, viewerID string, terms []str
 	}
 
 	people, err := s.pool.Query(ctx, `SELECT DISTINCT ON (i.owner_account_id)
-            i.owner_account_id, p.display_name, i.topic, i.coarse_area_label
+            i.owner_account_id, p.display_name, i.topic, i.coarse_area_label,
+            COALESCE(i.public_map_zone, ''),
+            CASE WHEN i.public_map_zone IS NOT NULL AND c.map_center_latitude IS NOT NULL THEN
+                GREATEST(-89.0, LEAST(89.0, c.map_center_latitude +
+                    CASE i.public_map_zone
+                        WHEN 'north' THEN 0.04 WHEN 'south' THEN -0.04
+                        ELSE 0 END)) END,
+            CASE WHEN i.public_map_zone IS NOT NULL AND c.map_center_longitude IS NOT NULL THEN
+                GREATEST(-179.0, LEAST(179.0, c.map_center_longitude +
+                    CASE i.public_map_zone
+                        WHEN 'east' THEN 0.06 WHEN 'west' THEN -0.06
+                        ELSE 0 END)) END
         FROM intents i
+        JOIN cities c ON c.id = i.city_id AND c.publication_status = 'published'
         JOIN accounts a ON a.id = i.owner_account_id AND a.status = 'active'
         JOIN user_profiles p ON p.account_id = a.id AND p.visibility = 'public'
         WHERE i.city_id = $1 AND i.state = 'active' AND i.audience = 'public'
@@ -65,7 +77,9 @@ func (s *Store) Search(ctx context.Context, cityID, viewerID string, terms []str
 	}
 	for people.Next() {
 		var person agentworkspace.Person
-		if err := people.Scan(&person.AccountID, &person.DisplayName, &person.Topic, &person.AreaLabel); err != nil {
+		if err := people.Scan(&person.AccountID, &person.DisplayName, &person.Topic,
+			&person.AreaLabel, &person.PublicMapZone, &person.MapLatitude,
+			&person.MapLongitude); err != nil {
 			people.Close()
 			return result, err
 		}

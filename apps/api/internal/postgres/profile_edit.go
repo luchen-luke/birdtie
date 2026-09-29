@@ -33,11 +33,13 @@ func (s *Store) UpdateOwnProfile(ctx context.Context, ownerID string, input iden
 	if err != nil {
 		return identity.Profile{}, err
 	}
-	_, err = tx.Exec(ctx, `UPDATE intents SET state = 'withdrawn', updated_at = now()
-        WHERE owner_account_id = $1 AND audience = 'public'
-          AND state IN ('draft', 'active')`, ownerID)
-	if err != nil {
-		return identity.Profile{}, err
+	if input.Visibility != "public" {
+		_, err = tx.Exec(ctx, `UPDATE intents SET state = 'withdrawn', updated_at = now()
+            WHERE owner_account_id = $1 AND audience = 'public'
+              AND state IN ('draft', 'active')`, ownerID)
+		if err != nil {
+			return identity.Profile{}, err
+		}
 	}
 	_, err = tx.Exec(ctx, `INSERT INTO audit_events
         (actor_account_id, action, resource_type, resource_id, decision, purpose)

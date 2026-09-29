@@ -1,7 +1,7 @@
 # ADR 0008: Community 独立审核与 Inbox 事件
 
 日期：2026-09-30
-状态：已采用，首个真实内容供给与 Inbox 事件切片
+状态：Group 人工审核决定已由 ADR 0011 取代；Place/Activity 审核与 Inbox 事件边界仍有效
 
 ## 决定
 
@@ -9,6 +9,8 @@
 
 Place、Activity 与 Community 的审核决定在同一事务中写入属于提交者的 Inbox `updates` 项。Inbox 的 Account 来自数据库中提交者身份，客户端不能代他人生成消息。列表与已读操作都用 Session 中的 Account 限定，其他 Account 的条目返回 404。标题和摘要仅包含审核结果，不把审核注释、私有权利证据或账户标识放入通知。没有人工审核身份或来源验证时，不发布真实 Group 数据。
 
-## 当前限制
+## 当时限制（现行 Group 发布规则见 ADR 0011）
 
 Inbox 的首个真实 producer 只有内容审核决定。`messages`、`requests`、`agent_updates` 与一般系统通知仍无 producer；客户端在 API 模式下显示真实空状态，不显示演示通知。Group 暂不支持编辑或再次提交，Owner 可撤回并重新提交新记录。公开 Intent 人员供给仍缺少用户可控的 Profile 与 Intent 发布流程。OIDC、编辑角色与实际审核运营尚未配置，当前仓库无公开内容种子。部署前还需限流、滥用举报、审核工作台和审计复核。
+
+更新（2026-09-30）：ADR 0014 已为 Requests 和 Messages 接入明确的人类操作 producer。上文描述的是此 ADR 首次落地时的状态；Agent Updates 与一般系统通知仍无 producer。

@@ -10,6 +10,7 @@ class RemoteAgentTaskSource extends AgentTaskSource {
   RemoteAgentTaskSource({
     required this.cityID,
     required this.authorizationHeader,
+    this.organizationWorkspaceID,
     http.Client? client,
     String? apiBaseUrl,
   }) : _client = client ?? http.Client(),
@@ -18,6 +19,7 @@ class RemoteAgentTaskSource extends AgentTaskSource {
   static const apiBase = String.fromEnvironment('BIRDTIE_API_BASE_URL');
   final String? Function() cityID;
   final String? Function() authorizationHeader;
+  final String? Function()? organizationWorkspaceID;
   final http.Client _client;
   final String _apiBaseUrl;
 
@@ -29,6 +31,10 @@ class RemoteAgentTaskSource extends AgentTaskSource {
     if (json) headers['Content-Type'] = 'application/json';
     final bearer = authorizationHeader();
     if (bearer != null) headers['Authorization'] = bearer;
+    final organizationID = organizationWorkspaceID?.call();
+    if (organizationID != null) {
+      headers['X-Birdtie-Organization-Workspace'] = organizationID;
+    }
     return headers;
   }
 
@@ -83,7 +89,7 @@ class RemoteAgentTaskSource extends AgentTaskSource {
     List<PublicActivity> activities,
     List<PublicPlace> places,
   ) async {
-    if (task.id == 'demo-recent') {
+    if (task.id == 'demo-recent' || task.id.startsWith('local-')) {
       return resolve(task.query, activities, places);
     }
     if (authorizationHeader() == null) {
@@ -118,6 +124,9 @@ class RemoteAgentTaskSource extends AgentTaskSource {
           displayName: raw['displayName'] as String,
           topic: raw['topic'] as String,
           areaLabel: raw['areaLabel'] as String,
+          publicMapZone: raw['publicMapZone'] as String? ?? '',
+          mapLatitude: (raw['mapLatitude'] as num?)?.toDouble(),
+          mapLongitude: (raw['mapLongitude'] as num?)?.toDouble(),
         ),
     ];
     final groups = [
@@ -129,6 +138,16 @@ class RemoteAgentTaskSource extends AgentTaskSource {
         ),
     ];
     final entities = <MapEntity>[
+      for (final person in people)
+        if (person.mapLatitude != null && person.mapLongitude != null)
+          MapEntity(
+            id: 'person:${person.accountID}',
+            kind: MapEntityKind.person,
+            title: person.displayName,
+            subtitle: 'Approximate area · ${person.areaLabel}',
+            latitude: person.mapLatitude!,
+            longitude: person.mapLongitude!,
+          ),
       for (final activity in activities)
         if (activity.location case final location?)
           if (location.hasPublicPoint)

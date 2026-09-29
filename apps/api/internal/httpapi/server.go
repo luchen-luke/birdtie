@@ -10,9 +10,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/birdtie/birdtie/apps/api/internal/activityplan"
 	"github.com/birdtie/birdtie/apps/api/internal/agentworkspace"
 	"github.com/birdtie/birdtie/apps/api/internal/cityseed"
 	"github.com/birdtie/birdtie/apps/api/internal/community"
+	"github.com/birdtie/birdtie/apps/api/internal/connection"
 	"github.com/birdtie/birdtie/apps/api/internal/content"
 	"github.com/birdtie/birdtie/apps/api/internal/devauth"
 	"github.com/birdtie/birdtie/apps/api/internal/foundation"
@@ -20,6 +22,8 @@ import (
 	"github.com/birdtie/birdtie/apps/api/internal/inbox"
 	"github.com/birdtie/birdtie/apps/api/internal/intent"
 	"github.com/birdtie/birdtie/apps/api/internal/oidcauth"
+	"github.com/birdtie/birdtie/apps/api/internal/organization"
+	"github.com/birdtie/birdtie/apps/api/internal/saved"
 )
 
 type pinger interface {
@@ -35,16 +39,21 @@ type server struct {
 	communities     community.Store
 	inbox           inbox.Store
 	intents         intent.Store
+	saved           saved.Store
+	activityPlans   activityplan.Store
+	connections     connection.Store
 	devPhone        devauth.Store
 	devPhoneEnabled bool
 	oidc            *oidcauth.Service
 	db              pinger
+	organizations   organization.Store
 }
 
 var uuidPath = regexp.MustCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`)
 
-func New(catalog foundation.PublicCatalog, access identity.AccessStore, seed cityseed.Store, contentStore content.MomentStore, agentStore agentworkspace.Store, communityStore community.Store, inboxStore inbox.Store, intentStore intent.Store, devPhoneStore devauth.Store, devPhoneEnabled bool, oidc *oidcauth.Service, db pinger, allowedOrigins []string) http.Handler {
-	s := &server{catalog: catalog, access: access, seed: seed, content: contentStore, agent: agentStore, communities: communityStore, inbox: inboxStore, intents: intentStore, devPhone: devPhoneStore, devPhoneEnabled: devPhoneEnabled, oidc: oidc, db: db}
+func New(catalog foundation.PublicCatalog, access identity.AccessStore, seed cityseed.Store, contentStore content.MomentStore, agentStore agentworkspace.Store, communityStore community.Store, inboxStore inbox.Store, intentStore intent.Store, savedStore saved.Store, activityPlans activityplan.Store, connectionStore connection.Store, devPhoneStore devauth.Store, devPhoneEnabled bool, oidc *oidcauth.Service, db pinger, allowedOrigins []string) http.Handler {
+	orgStore, _ := catalog.(organization.Store)
+	s := &server{catalog: catalog, access: access, seed: seed, content: contentStore, agent: agentStore, communities: communityStore, inbox: inboxStore, intents: intentStore, saved: savedStore, activityPlans: activityPlans, connections: connectionStore, devPhone: devPhoneStore, devPhoneEnabled: devPhoneEnabled, oidc: oidc, db: db, organizations: orgStore}
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", s.health)
 	mux.HandleFunc("GET /readyz", s.ready)
@@ -58,22 +67,32 @@ func New(catalog foundation.PublicCatalog, access identity.AccessStore, seed cit
 	mux.HandleFunc("GET /v1/me/agent-tasks", s.listAgentTasks)
 	mux.HandleFunc("GET /v1/me/agent-tasks/{taskID}", s.getAgentTask)
 	mux.HandleFunc("POST /v1/cities/{cityID}/communities", s.submitCommunity)
-	mux.HandleFunc("GET /v1/cities/{cityID}/community-candidates", s.listCommunityQueue)
-	mux.HandleFunc("POST /v1/community-candidates/{communityID}/review", s.reviewCommunity)
 	mux.HandleFunc("GET /v1/me/communities", s.listOwnCommunities)
 	mux.HandleFunc("POST /v1/me/communities/{communityID}/withdraw", s.withdrawCommunity)
+	mux.HandleFunc("GET /v1/me/saved", s.listSaved)
+	mux.HandleFunc("POST /v1/me/saved", s.saveItem)
+	mux.HandleFunc("DELETE /v1/me/saved/{savedID}", s.removeSaved)
+	mux.HandleFunc("GET /v1/me/activity-plans", s.listActivityPlans)
+	mux.HandleFunc("POST /v1/me/activity-plans", s.planActivity)
+	mux.HandleFunc("DELETE /v1/me/activity-plans/{planID}", s.removeActivityPlan)
+	mux.HandleFunc("GET /v1/me/connection-requests", s.listConnectionRequests)
+	mux.HandleFunc("POST /v1/me/connection-requests", s.createConnectionRequest)
+	mux.HandleFunc("POST /v1/me/connection-requests/{requestID}/decision", s.decideConnectionRequest)
+	mux.HandleFunc("GET /v1/me/conversations", s.listConversations)
+	mux.HandleFunc("GET /v1/me/conversations/{conversationID}/messages", s.listMessages)
+	mux.HandleFunc("POST /v1/me/conversations/{conversationID}/messages", s.sendMessage)
 	mux.HandleFunc("GET /v1/me/inbox", s.listInbox)
 	mux.HandleFunc("POST /v1/me/inbox/{itemID}/read", s.markInboxRead)
 	mux.HandleFunc("GET /v1/cities/{cityID}/activity-candidates", s.listActivityCandidates)
 	mux.HandleFunc("POST /v1/cities/{cityID}/activity-candidates", s.submitActivityCandidate)
 	mux.HandleFunc("POST /v1/activity-candidates/{candidateID}/review", s.reviewActivityCandidate)
 	mux.HandleFunc("GET /v1/me", s.me)
+	mux.HandleFunc("GET /v1/me/organizations", s.listOrganizations)
+	mux.HandleFunc("POST /v1/me/organizations", s.createOrganization)
 	mux.HandleFunc("PUT /v1/me/profile", s.updateOwnProfile)
 	mux.HandleFunc("POST /v1/cities/{cityID}/intents", s.submitIntent)
 	mux.HandleFunc("GET /v1/me/intents", s.listOwnIntents)
 	mux.HandleFunc("POST /v1/me/intents/{intentID}/withdraw", s.withdrawIntent)
-	mux.HandleFunc("GET /v1/cities/{cityID}/intent-candidates", s.listIntentQueue)
-	mux.HandleFunc("POST /v1/intent-candidates/{intentID}/review", s.reviewIntent)
 	mux.HandleFunc("GET /v1/me/moments", s.listOwnMoments)
 	mux.HandleFunc("POST /v1/me/moments", s.createMomentDraft)
 	mux.HandleFunc("GET /v1/me/moments/{momentID}", s.getOwnMoment)

@@ -13,10 +13,13 @@ import (
 var ErrNotFound = errors.New("agent task not found")
 
 type Person struct {
-	AccountID   string `json:"accountId"`
-	DisplayName string `json:"displayName"`
-	Topic       string `json:"topic"`
-	AreaLabel   string `json:"areaLabel"`
+	AccountID     string   `json:"accountId"`
+	DisplayName   string   `json:"displayName"`
+	Topic         string   `json:"topic"`
+	AreaLabel     string   `json:"areaLabel"`
+	PublicMapZone string   `json:"publicMapZone,omitempty"`
+	MapLatitude   *float64 `json:"mapLatitude,omitempty"`
+	MapLongitude  *float64 `json:"mapLongitude,omitempty"`
 }
 
 type Group struct {
@@ -28,14 +31,19 @@ type Group struct {
 }
 
 type Results struct {
-	CityID     string                `json:"cityId"`
-	Query      string                `json:"query"`
-	Mode       string                `json:"mode"`
-	TaskID     string                `json:"taskId,omitempty"`
-	Activities []foundation.Activity `json:"activities"`
-	People     []Person              `json:"people"`
-	Groups     []Group               `json:"groups"`
-	Places     []foundation.Place    `json:"places"`
+	CityID        string                `json:"cityId"`
+	Query         string                `json:"query"`
+	Mode          string                `json:"mode"`
+	TaskID        string                `json:"taskId,omitempty"`
+	PrincipalType string                `json:"principalType"`
+	PrincipalID   string                `json:"principalId"`
+	Workspace     string                `json:"workspace"`
+	Role          string                `json:"role,omitempty"`
+	Permissions   []string              `json:"permissions"`
+	Activities    []foundation.Activity `json:"activities"`
+	People        []Person              `json:"people"`
+	Groups        []Group               `json:"groups"`
+	Places        []foundation.Place    `json:"places"`
 }
 
 type Task struct {

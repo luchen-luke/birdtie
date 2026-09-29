@@ -1,5 +1,7 @@
 # Birdtie 技术架构 V1.0
 
+身份、Organization ownership、Agent uniqueness、Workspace authority 与 CityContext 的 Accepted 规范见 [AGENT-IDENTITY-AND-OWNERSHIP-MODEL.md](AGENT-IDENTITY-AND-OWNERSHIP-MODEL.md)。本文历史章节中称作 “City Context” 的运行职责均指共享 Agent Runtime 可调用的公共检索上下文，不指独立 Agent 账号。
+
 **版本：** 1.0  
 **日期：** 2026-09-29  
 **状态：** 目标架构建议；不代表已部署、已验证容量或已取得安全认证。  
@@ -15,7 +17,7 @@
 - **Memory ≠ Moment：** 私有原始素材和公开业务对象拥有独立生命周期、授权、存储与索引。
 - **One object, multiple contexts：** Moment、Journey、Activity 只保留一份权威实体，通过关联边投影到 User、Place、City、Community、地图与搜索。
 - 内容闭环：Discovery → Desire → Intent → Connection → Activity → Experience/Moment/Journey → Discovery。
-- Personal Agent 与 City Agent 只能在服务端授权边界内读取数据；Agent 建议不构成权限判断或用户确认。
+- Personal Agent 与 City Context 只能在服务端授权边界内读取数据；Agent 建议不构成权限判断或用户确认。
 
 ## 1. 目标、非目标与质量属性
 
@@ -24,7 +26,7 @@
 1. 采用 Go/PostgreSQL 与 Flutter 架构，优先模块化单体 + Worker，避免早期微服务分散事务。
 2. 让个人、组织、内容、地点、城市和社交关系在明确授权下互相关联。
 3. 支持历史素材导入、AI 草稿、用户审阅、显式发布、撤权/删除和索引清理闭环。
-4. 对地图、搜索、推荐及 City Agent 执行相同的硬 ACL/受众/屏蔽过滤。
+4. 对地图、搜索、推荐及 City Context 执行相同的硬 ACL/受众/屏蔽过滤。
 5. 异步任务可重试、幂等、可取消、可审计；外部副作用以领域回执确认。
 6. 可先服务单城，之后扩展多城市、内容量和查询负载。
 
@@ -74,7 +76,7 @@ API Gateway / Auth / Rate Limit
 | Intent & Social | Intent、发现授权、连接请求、关系边、会话启动 | 出席、浏览或相似度不自动创建关系 |
 | Discovery & Search | 可见对象过滤、检索、排序、解释 | ACL 与屏蔽先于全文/向量排序；LLM 不裁决可见性 |
 | Map Query | 视窗、图层、聚合与地点关联查询 | 索引是派生视图；数据库授权真相优先 |
-| Agent Orchestration | Personal/City Agent runs、上下文构建、工具调用、审批 | 模型只能调用类型化内部工具；外部写操作需人确认 |
+| Agent Orchestration | Personal/City Context runs、上下文构建、工具调用、审批 | 模型只能调用类型化内部工具；外部写操作需人确认 |
 | Media Pipeline | 上传授权、恶意文件扫描、EXIF/派生处理、转码 | 上传原图受限；导出/公开媒体单独授权 |
 | Audit & Moderation | 举报、屏蔽、申诉、管理员操作、AI 工具审计 | 私人内容不进入普通运营仪表板；访问本身受审计 |
 
@@ -154,13 +156,13 @@ Moment / Journey / Experience 事务写入 + relations + outbox
 ### 导入原则
 
 - 外部平台内容以用户自行提供的文件或明确授权的官方接口为准；不假设能登录或抓取微信/小红书私域内容。
-- `memories` 与发布对象分域，表层 ACL/存储桶策略隔离；memory 不进入公共检索、向量库、地图或 City Agent。
+- `memories` 与发布对象分域，表层 ACL/存储桶策略隔离；memory 不进入公共检索、向量库、地图或 City Context。
 - 模型输出为 `draft`，包含字段置信度、来源资产引用、候选 Place 和建议时间；低置信/冲突时要求用户编辑。
 - 公开前针对对象、受众、时间范围、地点精度、媒体选择和关联城市做显式确认；不得把一次同意扩展到整批素材。
 - 用户撤权立即阻断后续读取/处理；未完成任务取消。若用户删除源 Memory，可选择保留其已确认发布的 Moment，提示两者独立。
 - 用户删除公开对象时，领域记录标记删除并发出媒体/索引/缓存清理事件；审计保留最小删除回执，不保留可还原的正文。
 
-## 5. Personal Agent 与 City Agent 编排
+## 5. Personal Agent 与 City Context 编排
 
 ### Runtime
 
@@ -183,16 +185,16 @@ queued → context_building → model_running → proposal_ready
 - 对外接待模式：仅检索用户授权发布的 Profile/Knowledge/Experience；依据 reception mode 答复或转人工。
 - 联系/发布/报名：生成 proposal；确认时绑定 payload hash、对象版本、recipient、受众与授权版本；执行前再次鉴权。
 
-### City Agent
+### City Context
 
-- 以 city_id 与请求者权限构建上下文，只检索有效 City Seed、公开 Place/Moment/Activity/Journey/Community/组织知识。
+- CityContext 是平台管理的检索配置，不是 Agent 或 account。共享 Agent Runtime 以当前 User/Organization principal 与 city_id 检索有效 City Seed、公开 Place/Moment/Activity/Journey/Community/组织知识。
 - 输出结构化答案和 `source_refs[]`，附内容发生时间、最后核验时间、来源类型和对象 ID。
 - 允许的工具例：`search_city_objects`, `get_place_context`, `get_activity_state`, `get_journey`, `search_public_intents`, `create_intent_draft`。
 - 不允许公开创建内容、代表组织确认活动、编造现状或把 private memory 加入公共知识。
 
-### 双 Agent 查询
+### Workspace 主体查询
 
-Personal Agent 可把用户批准的有限查询特征（例如主题标签和选定城市）传给 City Agent 搜索。服务端构建匿名化最小检索条件；不传递私人 Memory 原文或完整个人画像。工具回包仅含已通过权限过滤的对象。
+Personal 或 Organization Workspace 都可调用 CityContext。请求者账号来自 Session；Organization principal 与 role 来自服务器端有效 Membership。响应和任务历史归属当前 principal。组织管理员身份不扩大 personal data 权限；Personal Workspace 也不能代表 Organization 执行写操作。工具回包仅含已通过权限过滤的对象。
 
 ### 审批与审计
 
@@ -249,7 +251,7 @@ Request + actor scope
  → paginated results + impression/feedback event
 ```
 
-首版规则权重可配置且可解释；不使用敏感特征或私人行为做排序。City Agent 检索和 UI Discovery 共享候选访问层与过滤器，避免 AI 路径绕过普通 ACL。
+首版规则权重可配置且可解释；不使用敏感特征或私人行为做排序。City Context 检索和 UI Discovery 共享候选访问层与过滤器，避免 AI 路径绕过普通 ACL。
 
 ## 8. 地图索引、多层显示与聚合
 
@@ -324,7 +326,7 @@ ALLOW = authenticated actor
 
 - Memory 表/桶默认 owner-only，独立加密密钥策略和访问审计；不纳入通用备份导出分享链接。
 - 人脸识别、人物标记、敏感属性推断不作为默认导入步骤。
-- Memory 的原始内容不能被 City Agent、组织工作台、公共搜索或其他用户使用。
+- Memory 的原始内容不能被 City Context、组织工作台、公共搜索或其他用户使用。
 - Moment/Experience/Journey 的发布需明确选择受众、地点精度、时间精度和关联上下文。
 - 共同参与者、被拍摄者或引用作者的权利与报告路径要在产品流程中支持。
 
@@ -402,7 +404,7 @@ Memory 页面始终标明“仅自己可见”；导入草稿与公开个人页/
 | T2 City Graph 内容对象 | Moment/Experience、Activity、Journey、Intent 及 typed relations；对象版本、来源和生命周期 | 同一对象多上下文不复制；Past Activity 状态正确；Intent 有有效期；坐标精度受控 |
 | T3 城市发现 | Now/Explore 查询、地图/列表投影与筛选、确定性排序、来源/新鲜度 | UI/地图/搜索共享 ACL；空城真实；地图聚合无权限侧信道；定位可选 |
 | T4 双向连接 | Connection Request 状态机、接受后的会话/活动协作、频控、举报与屏蔽 | 双方明确同意；共同参加不自动成为好友；拒绝/屏蔽后无继续触达 |
-| T5 Agent | Personal Agent 私有草稿辅助；City Agent 授权检索、来源引用；副作用提案审批 | 私人/公共上下文隔离；撤权即时阻断新读取；发布、联系和报名必须由人确认 |
+| T5 Agent | Personal Agent 私有草稿辅助；City Context 授权检索、来源引用；副作用提案审批 | 私人/公共上下文隔离；撤权即时阻断新读取；发布、联系和报名必须由人确认 |
 | T6 Pilot hardening 与扩展 | 运营/备份/恢复/观测、组织轮替、多城、全文/地理索引、按需语义检索 | 删除/撤权投影一致；时效/维护成本与现实行动价值可测；供应商/隐私审查通过 |
 | T7 商业与高负载 | 组织席位、清晰标记的商业内容、搜索/Worker 独立扩容 | 单位经济、供应商合同、隐私与支持能力均通过评审 |
 
@@ -414,7 +416,7 @@ Memory 页面始终标明“仅自己可见”；导入草稿与公开个人页/
 2. 当前 PostgreSQL 托管服务是否支持 PostGIS/pgvector、索引备份与恢复？
 3. 地图供应商的聚合/瓦片/地理编码条款、坐标存储、缓存和城市边界来源是什么？
 4. 历史媒体上传格式、相册规模、EXIF 处理准确率、成本和目标保留周期是什么？
-5. Personal/City Agent 使用哪些模型区域、日志保留和供应商处理条款？
+5. Personal/City Context 使用哪些模型区域、日志保留和供应商处理条款？
 6. Birdtie 的组织、消息、屏蔽/举报和活动报名 API 应如何实现权限状态机与事务回执？
 7. 何种实测负载才需要独立搜索、Redis/托管队列、Temporal 或服务拆分？
 

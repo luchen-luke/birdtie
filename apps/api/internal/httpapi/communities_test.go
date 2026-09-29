@@ -16,9 +16,16 @@ func TestValidCommunityInput(t *testing.T) {
 	if !validCommunityInput(&base) || base.Name != "Aberdeen players" {
 		t.Fatal("valid owner submission was rejected or not normalized")
 	}
+	selfCreated := base
+	selfCreated.SourceLabel = ""
+	selfCreated.SourceURL = ""
+	selfCreated.RightsNote = ""
+	if !validCommunityInput(&selfCreated) {
+		t.Fatal("owner-created group without an external source was rejected")
+	}
 	for _, change := range []func(*community.Input){
 		func(i *community.Input) { i.SourceURL = "http://example.org/club" },
-		func(i *community.Input) { i.RightsNote = "unknown" },
+		func(i *community.Input) { i.SourceLabel = "" },
 		func(i *community.Input) { i.ExpiresAt = time.Now().Add(-time.Hour) },
 		func(i *community.Input) { i.PlaceID = "not-a-uuid" },
 	} {

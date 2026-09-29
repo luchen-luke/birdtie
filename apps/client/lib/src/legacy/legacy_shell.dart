@@ -120,7 +120,7 @@ class _ActivitySection extends StatelessWidget {
       return const _EmptySection(
         icon: Icons.event_outlined,
         title: '目前没有已发布活动',
-        detail: 'City Seed 活动完成来源审核后才会显示。Moment 和 Intent 尚未接入。',
+        detail: 'City Seed 活动完成来源审核后才会显示。公开 Moment 尚未接入；Intent 可在 Profile 中管理。',
       );
     }
     return Column(

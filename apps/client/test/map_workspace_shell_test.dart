@@ -27,6 +27,18 @@ void main() {
       await tester.tap(find.byTooltip('Open sidebar'));
       await tester.pumpAndSettle();
       expect(find.text('RECENT AGENT TASKS'), findsOneWidget);
+      await tester.tap(find.text('Profile'));
+      await tester.pumpAndSettle();
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+      expect(find.byType(AgentResultSheet), findsOneWidget);
+      expect(
+        find.text('Find someone to play badminton this weekend'),
+        findsWidgets,
+      );
+
+      await tester.tap(find.byTooltip('Open sidebar'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('New'));
       await tester.pumpAndSettle();
       expect(find.byType(AgentResultSheet), findsNothing);

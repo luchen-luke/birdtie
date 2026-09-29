@@ -36,7 +36,7 @@ class AgentConversation extends StatelessWidget {
       ),
       const SizedBox(height: 14),
       const Text(
-        'This conversation uses local task state. Live Agent replies are not connected.',
+        'Each intent starts a new task. Live Agent replies and follow-up context are not connected.',
         style: TextStyle(color: Color(0xFF747B73), fontSize: 12),
       ),
     ],

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../city/public_city_controller.dart';
 import 'agent_workspace_controller.dart';
+import 'organization_workspaces.dart';
 
 enum SidebarDestination { home, activities, groups, saved, profile, settings }
 
@@ -14,6 +15,8 @@ class Sidebar extends StatelessWidget {
     required this.onNew,
     required this.onDestination,
     required this.onRecent,
+    required this.organizations,
+    required this.onCreateOrganization,
   });
   final AgentWorkspaceController workspace;
   final PublicCityController city;
@@ -21,6 +24,8 @@ class Sidebar extends StatelessWidget {
   final VoidCallback onNew;
   final ValueChanged<SidebarDestination> onDestination;
   final ValueChanged<AgentTask> onRecent;
+  final OrganizationWorkspaceController organizations;
+  final VoidCallback onCreateOrganization;
 
   @override
   Widget build(BuildContext context) => Drawer(
@@ -53,7 +58,65 @@ class Sidebar extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 6),
+          AnimatedBuilder(
+            animation: organizations,
+            builder: (context, _) => Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: PopupMenuButton<String>(
+                onSelected: (value) {
+                  if (value == '__personal') {
+                    organizations.select(null);
+                  } else if (value == '__create') {
+                    onCreateOrganization();
+                  } else {
+                    for (final item in organizations.organizations) {
+                      if (item.id == value) organizations.select(item);
+                    }
+                  }
+                },
+                itemBuilder: (context) => [
+                  const PopupMenuItem(
+                    value: '__personal',
+                    child: Text('Personal Workspace'),
+                  ),
+                  for (final item in organizations.organizations)
+                    PopupMenuItem(
+                      value: item.id,
+                      child: Text('${item.name} · ${item.role.toUpperCase()}'),
+                    ),
+                  const PopupMenuDivider(),
+                  const PopupMenuItem(
+                    value: '__create',
+                    child: Text('Create organization'),
+                  ),
+                ],
+                child: ListTile(
+                  dense: true,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  tileColor: const Color(0xFFF0F1EC),
+                  leading: Icon(
+                    organizations.active == null
+                        ? Icons.person_outline
+                        : Icons.apartment_outlined,
+                  ),
+                  title: Text(
+                    organizations.active?.name ?? 'Personal Workspace',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  subtitle: Text(
+                    organizations.active == null
+                        ? 'Personal Agent'
+                        : 'Organization Agent · ${organizations.active!.role.toUpperCase()}',
+                  ),
+                  trailing: const Icon(Icons.unfold_more, size: 18),
+                ),
+              ),
+            ),
+          ),
           if (city.selectedCity != null)
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 0, 24, 10),

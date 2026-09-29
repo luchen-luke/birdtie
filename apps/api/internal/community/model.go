@@ -41,15 +41,8 @@ type Record struct {
 	UpdatedAt   time.Time  `json:"updatedAt"`
 }
 
-type ReviewInput struct {
-	Decision string `json:"decision"`
-	Note     string `json:"note"`
-}
-
 type Store interface {
 	SubmitCommunity(context.Context, string, string, Input) (Record, error)
 	ListOwnCommunities(context.Context, string) ([]Record, error)
-	ListCommunityQueue(context.Context, string, string) ([]Record, error)
-	ReviewCommunity(context.Context, string, string, ReviewInput) (Record, error)
 	WithdrawCommunity(context.Context, string, string) error
 }

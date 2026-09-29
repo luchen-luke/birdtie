@@ -2,15 +2,26 @@ import 'package:flutter/material.dart';
 
 import 'agent_conversation.dart';
 import 'agent_workspace_controller.dart';
+import 'activity_plans.dart';
 import 'map_entities.dart';
+import 'saved_items.dart';
 
 class AgentResultSheet extends StatelessWidget {
-  const AgentResultSheet({super.key, required this.workspace});
+  const AgentResultSheet({
+    super.key,
+    required this.workspace,
+    this.saved,
+    this.plans,
+    this.onContact,
+  });
   final AgentWorkspaceController workspace;
+  final SavedController? saved;
+  final ActivityPlansController? plans;
+  final ValueChanged<AgentPerson>? onContact;
 
   @override
   Widget build(BuildContext context) => AnimatedBuilder(
-    animation: workspace,
+    animation: Listenable.merge([workspace, ?saved, ?plans]),
     builder: (context, _) {
       if (workspace.task == null) return const SizedBox.shrink();
       final extent = workspace.sheetExtent;
@@ -123,7 +134,12 @@ class AgentResultSheet extends StatelessWidget {
               Expanded(
                 child: extent == AgentSheetExtent.full
                     ? AgentConversation(workspace: workspace)
-                    : _ResultList(workspace: workspace),
+                    : _ResultList(
+                        workspace: workspace,
+                        saved: saved,
+                        plans: plans,
+                        onContact: onContact,
+                      ),
               ),
           ],
         ),
@@ -133,8 +149,56 @@ class AgentResultSheet extends StatelessWidget {
 }
 
 class _ResultList extends StatelessWidget {
-  const _ResultList({required this.workspace});
+  const _ResultList({
+    required this.workspace,
+    required this.saved,
+    required this.plans,
+    required this.onContact,
+  });
   final AgentWorkspaceController workspace;
+  final SavedController? saved;
+  final ActivityPlansController? plans;
+  final ValueChanged<AgentPerson>? onContact;
+
+  Future<void> _toggleSaved(
+    BuildContext context,
+    String kind,
+    String targetId,
+  ) async {
+    try {
+      await saved!.toggle(kind, targetId);
+    } catch (_) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              saved!.authorizationHeader() == null
+                  ? 'Sign in to save Birdtie items.'
+                  : 'Could not update Saved. Please try again.',
+            ),
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _togglePlanned(BuildContext context, String activityId) async {
+    try {
+      await plans!.toggle(activityId);
+    } catch (_) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              plans!.authorizationHeader() == null
+                  ? 'Sign in to plan an Activity.'
+                  : 'Could not update My Activities. Please try again.',
+            ),
+          ),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -170,6 +234,19 @@ class _ResultList extends StatelessWidget {
               onTap: activity.location?.hasPublicPoint == true
                   ? () => workspace.selectEntity('activity:${activity.id}')
                   : null,
+              saved: saved?.contains('activity', activity.id) ?? false,
+              saving: saved?.isBusy('activity', activity.id) ?? false,
+              onSave: saved == null
+                  ? null
+                  : () => _toggleSaved(context, 'activity', activity.id),
+              planned: plans?.contains(activity.id) ?? false,
+              planning: plans?.busy.contains(activity.id) ?? false,
+              onPlan:
+                  plans == null ||
+                      (activity.status != 'upcoming' &&
+                          activity.status != 'ongoing')
+                  ? null
+                  : () => _togglePlanned(context, activity.id),
             ),
           for (final entity in activities)
             _Row(
@@ -185,7 +262,12 @@ class _ResultList extends StatelessWidget {
             _Row(
               icon: Icons.person_outline,
               title: person.displayName,
-              subtitle: '${person.topic} · ${person.areaLabel} · public Intent',
+              subtitle:
+                  '${person.topic} · ${person.areaLabel} (approximate area)${person.mapLatitude == null || person.mapLongitude == null ? ' · no map marker' : ' · public area marker'}',
+              onTap: person.mapLatitude == null || person.mapLongitude == null
+                  ? null
+                  : () => workspace.selectEntity('person:${person.accountID}'),
+              onContact: onContact == null ? null : () => onContact!(person),
             ),
           for (final entity in people)
             _Row(
@@ -208,6 +290,11 @@ class _ResultList extends StatelessWidget {
                   )
                   ? () => workspace.selectEntity('group:${group.id}')
                   : null,
+              saved: saved?.contains('group', group.id) ?? false,
+              saving: saved?.isBusy('group', group.id) ?? false,
+              onSave: saved == null
+                  ? null
+                  : () => _toggleSaved(context, 'group', group.id),
             ),
           for (final entity in groups)
             _Row(
@@ -227,6 +314,11 @@ class _ResultList extends StatelessWidget {
               onTap: place.location.hasPublicPoint
                   ? () => workspace.selectEntity('place:${place.id}')
                   : null,
+              saved: saved?.contains('place', place.id) ?? false,
+              saving: saved?.isBusy('place', place.id) ?? false,
+              onSave: saved == null
+                  ? null
+                  : () => _toggleSaved(context, 'place', place.id),
             ),
         ],
         if (result.entities.isEmpty &&
@@ -271,11 +363,25 @@ class _Row extends StatelessWidget {
     required this.title,
     required this.subtitle,
     this.onTap,
+    this.onSave,
+    this.onPlan,
+    this.onContact,
+    this.saved = false,
+    this.saving = false,
+    this.planned = false,
+    this.planning = false,
   });
   final IconData icon;
   final String title;
   final String subtitle;
   final VoidCallback? onTap;
+  final VoidCallback? onSave;
+  final VoidCallback? onPlan;
+  final VoidCallback? onContact;
+  final bool saved;
+  final bool saving;
+  final bool planned;
+  final bool planning;
   @override
   Widget build(BuildContext context) => Material(
     color: Colors.transparent,
@@ -286,9 +392,37 @@ class _Row extends StatelessWidget {
       leading: Icon(icon, color: const Color(0xFF193B32)),
       title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
       subtitle: Text(subtitle, maxLines: 2, overflow: TextOverflow.ellipsis),
-      trailing: onTap == null
-          ? null
-          : const Icon(Icons.arrow_outward, size: 16),
+      trailing: onSave == null && onPlan == null && onContact == null
+          ? (onTap == null ? null : const Icon(Icons.arrow_outward, size: 16))
+          : Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (onContact != null)
+                  IconButton(
+                    tooltip: 'Request contact',
+                    onPressed: onContact,
+                    icon: const Icon(Icons.person_add_alt_outlined),
+                  ),
+                if (onPlan != null)
+                  IconButton(
+                    tooltip: planned
+                        ? 'Remove activity plan'
+                        : 'Plan to attend',
+                    onPressed: planning ? null : onPlan,
+                    icon: Icon(
+                      planned
+                          ? Icons.event_available
+                          : Icons.event_available_outlined,
+                    ),
+                  ),
+                if (onSave != null)
+                  IconButton(
+                    tooltip: saved ? 'Remove from Saved' : 'Save item',
+                    onPressed: saving ? null : onSave,
+                    icon: Icon(saved ? Icons.bookmark : Icons.bookmark_outline),
+                  ),
+              ],
+            ),
     ),
   );
 }

@@ -122,7 +122,7 @@ class _GroupPageState extends State<GroupPage> {
           )
           .timeout(const Duration(seconds: 12));
       if (response.statusCode != 201) {
-        throw StateError('Check the source, rights note and required fields.');
+        throw StateError('Check the group details and optional source.');
       }
       if (!mounted || serial != _serial || !widget.auth.signedIn) return;
       _name.clear();
@@ -131,7 +131,9 @@ class _GroupPageState extends State<GroupPage> {
       _sourceURL.clear();
       _rightsNote.clear();
       if (!mounted) return;
-      setState(() => _message = 'Submitted for independent city review.');
+      setState(
+        () => _message = 'Group published. You can withdraw it at any time.',
+      );
       await _load();
     } catch (_) {
       if (mounted && serial == _serial && widget.auth.signedIn) {
@@ -203,7 +205,7 @@ class _GroupPageState extends State<GroupPage> {
         ),
         const SizedBox(height: 8),
         const Text(
-          'Public groups appear in Birdtie only after a different city reviewer checks the source and rights.',
+          'Groups you publish can appear in Birdtie until they expire or you withdraw them.',
           style: TextStyle(color: Color(0xFF747B73)),
         ),
         if (_busy) const LinearProgressIndicator(),
@@ -222,7 +224,7 @@ class _GroupPageState extends State<GroupPage> {
             contentPadding: EdgeInsets.zero,
             title: Text(group['name'] as String),
             subtitle: Text(switch (group['status'] as String) {
-              'draft' => 'Awaiting city review',
+              'draft' => 'Unpublished legacy submission',
               'published' => 'Published',
               _ => 'Hidden',
             }),
@@ -237,21 +239,21 @@ class _GroupPageState extends State<GroupPage> {
           ),
         const Divider(height: 36),
         const Text(
-          'Submit a group',
+          'Publish a group',
           style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
         ),
         const SizedBox(height: 8),
         const Text(
-          'Only submit a group you own or are authorized to represent. Provide a public HTTPS source and explain your right to publish it.',
+          'Publish only a group you own or are authorized to represent. An external source is optional; if provided, use a public HTTPS link.',
           style: TextStyle(color: Color(0xFF747B73)),
         ),
         _field(_name, 'Group name', 160),
         _field(_summary, 'What the group does', 3000, lines: 3),
-        _field(_sourceLabel, 'Source name', 120),
-        _field(_sourceURL, 'Public HTTPS source URL', 1000),
+        _field(_sourceLabel, 'External source name (optional)', 120),
+        _field(_sourceURL, 'Public HTTPS source URL (optional)', 1000),
         _field(
           _rightsNote,
-          'Your authority or rights to publish',
+          'Your authority or rights to publish (optional)',
           1000,
           lines: 3,
         ),
@@ -266,7 +268,7 @@ class _GroupPageState extends State<GroupPage> {
         const SizedBox(height: 12),
         FilledButton(
           onPressed: _busy ? null : _submit,
-          child: const Text('Submit for review'),
+          child: const Text('Publish group'),
         ),
       ],
     );

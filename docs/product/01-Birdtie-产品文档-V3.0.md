@@ -48,7 +48,7 @@ Birdtie 不以无限 Feed 消费为目标。内容首先帮助用户理解“这
 | 本地居民与兴趣社群成员 | 找同好、组织活动、分享经历 | 兴趣/地点发现、社区空间、活动与 Moment 关联 |
 | 往届学生与 Alumni | 保存城市经历、帮助后来者 | 历史内容整理、城市贡献者身份、经验持续可用 |
 | 计划来访者/远程探索者 | 在出发前研究城市与路线 | Explore Anywhere、历史 Journey、活动与地点记忆 |
-| 学联、学校社团、社区组织 | 发布活动、维护资料、持续服务不同届成员 | 组织主页、City Seed 内容、活动管理、City Agent 知识来源 |
+| 学联、学校社团、社区组织 | 发布活动、维护资料、持续服务不同届成员 | 组织主页、City Seed 内容、活动管理、City Context 知识来源 |
 | 场馆与本地商家（后续） | 被合适的人发现、承接到访 | 地点与活动关系、透明的商业信息与转化入口 |
 
 首发可从 Aberdeen 华人人留学生、学联和往届学生切入。这是试点方向，不表示合作已签订或供给已确认。
@@ -63,7 +63,7 @@ Birdtie
 ├─ Inbox：联系请求、真人会话、Agent 接待、组织人工接管
 ├─ My Birdtie：个人主页、Memory 私库、公开 Moments/Journeys、收藏、Intent
 ├─ Personal Agent：私人素材整理、个人偏好、授权、建议与运行记录
-└─ Organization / City workspace：组织内容、City Seed、活动、City Agent 知识与审核
+└─ Organization / City workspace：组织内容、City Seed、活动、City Context 知识与审核
 ```
 
 首页提供 Now、Explore、Network 与 Inbox 的清晰入口。地图和列表共享筛选、对象卡片和返回位置。自然语言输入可作为创建 Intent、搜索或整理素材的快捷入口；重要业务对象仍提供可编辑表单和明确预览。
@@ -103,7 +103,7 @@ City Seed Layer 是内容起点，不是平台虚构的用户热度。官方来�
 
 | 对象 | 定义 | 关键规则 |
 |---|---|---|
-| Memory | 私人原始素材，如相册、旧动态导出、笔记、私人照片或文本 | 默认仅所有者可见；不进入城市公共搜索/地图/City Agent |
+| Memory | 私人原始素材，如相册、旧动态导出、笔记、私人照片或文本 | 默认仅所有者可见；不进入城市公共搜索/地图/City Context |
 | Moment | 某个时间段发生的一段生活内容，可含图片、文本、地点、主题 | 发布前作者确认；一个对象可链接 User/Place/City/Community/Activity/Journey |
 | Experience | 用户确认的经历或建议，强调可复用的个人经验 | 与 Moment 可分开，也可从 Moment 中提炼；来源和时间保留 |
 | Journey | 一段路线或多站点旅程，可关联 Moments、Places、Activities | 每站点精度和共享范围可控；可保存/复刻，复刻创建新对象并保留来源 |
@@ -155,21 +155,21 @@ Agent 是整理器，不是自动发布器。它不得从照片推断并公开�
 - Activity：过去活动置于历史筛选，标注 Past；近期/当前活动提供主办方和参与入口。
 - 无定位模式：用户搜索城市、点选城市或输入地址范围即可探索。
 
-**Explore Anywhere** 支持“人在上海看 Aberdeen”“在伦敦计划 Edinburgh 周末”这类跨城探索。用户可保存地点、收藏 Journey、关注主题、向 City Agent 提问，并在感兴趣后创建 Intent 或提醒。城市切换不改变用户当前地理隐私设置。
+**Explore Anywhere** 支持“人在上海看 Aberdeen”“在伦敦计划 Edinburgh 周末”这类跨城探索。用户可保存地点、收藏 Journey、关注主题、向 City Context 提问，并在感兴趣后创建 Intent 或提醒。城市切换不改变用户当前地理隐私设置。
 
-## 10. Personal Agent 与 City Agent
+## 10. Personal Agent 与 City Context
 
 ### Personal Agent
 
 理解用户显式提供的兴趣、目标和个人授权资料；帮助创建 Intent、整理私有 Memory、从公开内容生成计划、找到相关人/活动。私人上下文与对外接待知识分开。对外发布、创建联系请求、报名和承诺前提供对象、文本、范围与来源预览，等待本人确认。
 
-### City Agent
+### City Context
 
-以城市为入口，回答“这个周末有什么适合我”“以前的学生常去哪徒步”“这个地点过去发生过什么”等问题。它只使用访问者当前有权看到的 City Graph 对象、经审核的组织知识和用户公开内容。答案引用 Place、Moment、Activity、Journey 或组织资料，并标明时间与来源。资料稀少、过期或冲突时说明不确定并引导查看来源/联系组织。
+CityContext 是平台管理的城市公开现实世界上下文和检索能力，不是可独立登录、关注或私聊的 Agent 身份。共享 Agent Runtime 可用它检索当前主体有权看到的 City Graph 对象，包括经确认公开的 People、Activities、Groups、Organizations、Places 与 Events。结果须标注来源和时效；资料稀少、过期或冲突时说明不确定。它不读取 private Memory，也不因城市聚合而扩大可见性。
 
-### 两 Agent 协作
+### 组织主体与运行时
 
-用户可问“结合我保存的兴趣，Aberdeen 有什么适合我”。Personal Agent 可提供最少化的兴趣查询条件给 City Agent 检索；不会把私人 Memory、完整偏好档案或身份资料写入城市公共知识。Agent 生成的解释不改变权限判断。
+学联、社团、商家、大学、社区、Club、Venue 与 Nonprofit 均使用独立 Organization principal，由真实用户通过 Membership 管理。一个 User 对应一个 Personal Agent，一个 Organization 对应一个 Organization Agent。共享 Agent Runtime 根据当前 Personal 或 Organization Workspace 组合主体上下文、CityContext 与允许的工具；personal 与 organization 数据严格隔离。个人查询可检索公开 CityContext，但不会把完整私人偏好档案写入公共城市知识。详见 [Agent Identity and Ownership Model](../architecture/AGENT-IDENTITY-AND-OWNERSHIP-MODEL.md)。
 
 ## 11. 从历史内容到新行动：Future Utility
 
@@ -193,7 +193,7 @@ Alumni Contributor 邀请 → 选择相册/导出材料 → 私人 Memory 导入
 
 ### C. 组织建立 City Seed
 
-组织核验/角色设置 → 导入地点、活动、Starter Journey 与 FAQ → 指定来源/负责人/有效期 → 发布后进入组织页和城市层 → City Agent 引用 → 组织可更新、过期、撤下或交接。
+组织核验/角色设置 → 导入地点、活动、Starter Journey 与 FAQ → 指定来源/负责人/有效期 → 发布后进入组织页和城市层 → City Context 引用 → 组织可更新、过期、撤下或交接。
 
 ### D. 历史活动激发未来 Intent
 
@@ -228,7 +228,7 @@ Explore Anywhere 看到 Past Activity → 阅读活动时间与回顾 → 选择
 - 用户 Intent、发现、Connection Request、双向同意和真人会话。
 - Moment 基础发布及 User/Place/City 多关系；地图/列表和地点聚合。
 - Personal Agent 对用户手选文件做私有整理草稿；确认后发布；完整撤回/删除路径。
-- 组织内容来源/有效期、City Agent 基于已授权内容检索和引用。
+- 组织内容来源/有效期、City Context 基于已授权内容检索和引用。
 - 举报、屏蔽、速率限制、授权/审计、人工接管。
 
 ### 后续阶段
@@ -245,7 +245,7 @@ Explore Anywhere 看到 Past Activity → 阅读活动时间与回顾 → 选择
 3. 同一 Moment 在个人、地点、城市页呈现一致对象，不产生副本。
 4. 过去活动明显标记为已结束；历史 Journey 能触发收藏、复刻或 Intent。
 5. 地图不会因内容量增加而满屏 Pin；无定位用户仍可完整探索。
-6. City Agent 的建议有可点击来源；无来源时明确表示资料不足。
+6. City Context 的建议有可点击来源；无来源时明确表示资料不足。
 
 ## 16. 指标
 

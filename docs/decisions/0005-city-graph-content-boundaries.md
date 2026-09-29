@@ -1,7 +1,7 @@
 # ADR 0005: First City Graph content boundaries
 
 Date: 2026-09-30  
-Status: Schema, reviewed public Activity read path and owner-only Moment drafts added; user content publishing remains gated.
+Status: Schema, reviewed public Activity read path and owner-only Moment drafts added; public Moment/Journey publishing remains gated. Group/Intent publication follows ADR 0011.
 
 ## Decision
 
@@ -16,8 +16,8 @@ City Seed Activity candidates use active editor membership and a different revie
 
 Owner-only Moment draft creation, listing, detail, revision-checked update and withdrawal are now implemented with Session-derived authors and audit events. The initial client supports text-only City-level drafts and has no public publish control. Withdrawal removes a Moment from the active draft list. Real user exercise depends on an OIDC provider configuration.
 
-Schema constraints alone do not make user content safe for public release. Before opening user Moment/Journey/Intent publishing and public reads, implement moderation/block handling, author confirmation, rate limits and a shared visibility policy. UI, public search, maps and Agents must call the same policy. No generic arbitrary graph edge writer is exposed.
+Schema constraints alone do not make user content safe for public release. Before opening public Moment/Journey publishing and reads, implement moderation/block handling, author confirmation, rate limits and a shared visibility policy. UI, public search, maps and Agents must call the same policy. No generic arbitrary graph edge writer is exposed.
 
-Update (2026-09-30): ADR 0010 opens a narrow, independently reviewed public Intent path with explicit Owner confirmation, public Profile requirement, Account block filtering, a per-Owner active/pending cap, expiry and transactional withdrawal on Profile changes. Moment and Journey public publishing remain closed. External rollout still requires broader rate limiting, abuse reporting and operational review.
+Historical update (2026-09-30): ADR 0010 initially opened an independently reviewed public Intent path. ADR 0011 supersedes that review requirement: an eligible Owner confirms and directly publishes a public Intent, subject to public Profile, Account block filtering, at most three active Intents and expiry. Switching the Profile to private withdraws active Intents; changing display name or bio does not. Moment and Journey public publishing remain closed. External rollout still requires broader rate limiting, abuse reporting and operational review.
 
 The earlier Civu audit remains a reference only. No Civu migration, data or business code was copied.

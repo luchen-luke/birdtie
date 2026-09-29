@@ -1,10 +1,14 @@
 # Civu 只读现状审计与 Birdtie 复用清单
 
+Birdtie 当前身份和 Agent 权限边界以 [Accepted Agent Identity and Ownership Model](AGENT-IDENTITY-AND-OWNERSHIP-MODEL.md) 为准；早期复用表中平行 City Agent 的表述已被 shared Agent Runtime + CityContext 设计替代。
+
 2026-09-30 Birdtie V2 补充：Agent-first 首页复用的是本仓已有的 `PublicCityMapView`、原生 Mapbox adapter、`PublicCityController` 和 City API。新增 Entity Layer、Agent Workspace 状态、规则查询及任务历史均为 Birdtie 自有实现；没有从 Civu 仓库复制代码或引入新的 Civu 运行时依赖。已审核 Activity 仅通过关联的公开点精度 Place 提供地图坐标；客户端不推测私有位置。未配置 API 时的演示 People、Group、Activity 地图实体与真实 API 模型隔离。
 
 2026-09-30 内容供给与 Inbox 补充：Community Owner 提交、独立城市审核、撤回和审核结果 Inbox 事件均为 Birdtie 自有代码与数据表。本阶段没有从 Civu 复制消息、社交关系、群组内容或通知数据；它们不构成 Birdtie 的授权或内容来源。
 
 2026-09-30 人员供给补充：Profile 编辑、本人确认的公开 Intent、独立城市审核、撤回及 Agent People 发现均在 Birdtie 模型中实现；没有复用 Civu Profile、Intent 或社交关系代码/数据。固定码测试身份仍与 Civu 用户隔离，正式身份绑定和联系请求尚待设计。
+
+2026-09-30 边界修正：根据产品方决定，Group 和公开 Intent 的独立人工审核已由 ADR 0011 取代为本人确认后直接发布。此修正只修改 Birdtie 自有代码、迁移和文档，没有新增 Civu 复用；Place/Activity 的 City Seed 来源审核保持原边界。
 
 审计日期：2026-09-29  
 状态：完成路径、依赖、Git 状态及关键代码的只读盘点；未执行构建/测试、未连接生产环境、未复制或修改 Civu 文件。  
@@ -66,7 +70,7 @@ Civu 根仓是编排仓，不直接承载正式业务应用代码；由以下独
 | Feed / Moment stream | Client `discover_feed_providers.dart`, `discover_screen.dart`, `mixed_discover_screen.dart`; Server `feed_*`, social store | 重写 | Birdtie 不是无限滚动社交 Feed。以 City Graph 查询（类型、时间窗、城市/地点、权限和维护新鲜度）组合 Now/Explore 页面；仅需有限分页/时间序。不得直接搬 feed scope、曝光模型或关注流语义。 |
 | Recommendation / ranking | Civu journey/place recommendation、用户偏好反馈、外部 AI/路线 provider 和 exposure schema | 重写 | 第一阶段使用确定性筛选与可解释规则（topic、时间、粗粒度距离、freshness）；硬 ACL/consent/block 过滤在排序前执行。达到真实规模且能证明提升行动转化时，再评估推荐。Civu 权重、曝光历史和用户数据不迁移。 |
 | Search | Civu grouped search/provider 接入与 Place 搜索 | 重构 | 统一搜索可见 City Graph 对象；先 Postgres FTS/trigram + 地理过滤。Provider Search 只对 Place 补全使用。Agent 与 UI 共用授权过滤。 |
-| AI/Agent | Civu journey generation/context recommendations/provider config | 设计参考，Birdtie 重写 | Birdtie Personal Agent/City Agent 权限与上下文分离；Agent 只能生成提案，不替用户发布/联系/报名。城市回答要求来源对象引用和 freshness。不要迁移 journey prompt、外部服务日志策略或 Civu tool 权限。 |
+| AI/Agent | Civu journey generation/context recommendations/provider config | 设计参考，Birdtie 重写 | Birdtie Personal Agent/City Context 权限与上下文分离；Agent 只能生成提案，不替用户发布/联系/报名。城市回答要求来源对象引用和 freshness。不要迁移 journey prompt、外部服务日志策略或 Civu tool 权限。 |
 
 ## 4. Birdtie Foundation 与 City Graph
 
@@ -96,7 +100,7 @@ Civu 根仓是编排仓，不直接承载正式业务应用代码；由以下独
 | D. Journey + Intent | 可读历史 Journey/Experience；限时 Intent（主题、时间窗、粗区域、受众、过期）；未来再做多站点 | Intent 到期退出发现；地点精度可控；Journey 站点按对象授权；复刻创建新 ID 并保留来源。 |
 | E. 城市发现 | Now/Explore Anywhere 城市查询、地图与列表、确定性过滤/有限排序 | UI/API/地图共享权限过滤；城市空态和来源新鲜度真实；地图聚合无 ACL 侧信道；无需无限 Feed。 |
 | F. 双向连接 | 对 Intent/Activity 的联系请求、accept/decline/expire/block/report；之后才开放真人会话 | 双方明确接受才建 Connection；共同活动、浏览、收藏不自动建关系；拒绝/屏蔽后 Agent 不继续联系。 |
-| G. Agent | Personal Agent 私有素材整理草稿；City Agent 仅检索获授权 City Graph 并附来源；动作 proposal + 人工确认 | 撤权立即阻断新读取；Agent 无法绕过 ACL、直接发布或建连接；引用可回到来源对象；数据不足时明确说明。 |
+| G. Agent | Personal Agent 私有素材整理草稿；City Context 仅检索获授权 City Graph 并附来源；动作 proposal + 人工确认 | 撤权立即阻断新读取；Agent 无法绕过 ACL、直接发布或建连接；引用可回到来源对象；数据不足时明确说明。 |
 
 ## 6. 继续正式开发前必须过的审计门
 

@@ -1,6 +1,6 @@
 # Birdtie Foundation API
 
-Birdtie's Go API reads published City, Place and Activity records from a Birdtie-owned PostgreSQL schema. The initial Aberdeen city is marked `building` and `unverified`; no sample Places, Activities, People or Groups are presented as live data. The Agent task endpoint searches public, current City Graph records with transparent text matching. Session and Profile Consent routes establish the private access boundary. City Seed Place and Activity editorial routes can publish only after separate reviewer approval. A generic OIDC login flow is implemented but remains disabled until an issuer and client registration are configured. Owner-only Moment drafts and Agent task history are available after login. Profile editing, media upload and user content publishing are not implemented.
+Birdtie's Go API reads published City, Place and Activity records from a Birdtie-owned PostgreSQL schema. The initial Aberdeen city is marked `building` and `unverified`; no sample Places, Activities, People or Groups are presented as live data. The Agent task endpoint searches public, current City Graph records with transparent text matching. Session and Profile Consent routes establish the private access boundary. City Seed Place and Activity editorial routes can publish only after separate reviewer approval. A generic OIDC login flow is implemented but remains disabled until an issuer and client registration are configured. Owner-only Moment drafts, Agent task history, Profile editing and owner-published Group/Intent routes are available after login. Media upload is not implemented.
 
 ## Local database
 
@@ -20,6 +20,12 @@ docker compose exec db psql -U birdtie -d birdtie -v ON_ERROR_STOP=1 -f /migrati
 docker compose exec db psql -U birdtie -d birdtie -v ON_ERROR_STOP=1 -f /migrations/010_community_review_and_inbox.sql
 docker compose exec db psql -U birdtie -d birdtie -v ON_ERROR_STOP=1 -f /migrations/011_dev_phone_auth.sql
 docker compose exec db psql -U birdtie -d birdtie -v ON_ERROR_STOP=1 -f /migrations/012_reviewed_public_intents.sql
+docker compose exec db psql -U birdtie -d birdtie -v ON_ERROR_STOP=1 -f /migrations/013_owner_published_groups_and_intents.sql
+docker compose exec db psql -U birdtie -d birdtie -v ON_ERROR_STOP=1 -f /migrations/014_optional_group_source.sql
+docker compose exec db psql -U birdtie -d birdtie -v ON_ERROR_STOP=1 -f /migrations/015_saved_items.sql
+docker compose exec db psql -U birdtie -d birdtie -v ON_ERROR_STOP=1 -f /migrations/016_activity_plans.sql
+docker compose exec db psql -U birdtie -d birdtie -v ON_ERROR_STOP=1 -f /migrations/017_connections_and_messages.sql
+docker compose exec db psql -U birdtie -d birdtie -v ON_ERROR_STOP=1 -f /migrations/018_public_intent_area_markers.sql
 $env:BIRDTIE_DATABASE_URL = 'postgres://birdtie:birdtie_local_only@127.0.0.1:55432/birdtie?sslmode=disable'
 go run .
 ```
@@ -32,7 +38,17 @@ Migration `010` adds independent Community review evidence and owner-only Inbox 
 
 Migration `011` adds short-lived, local development phone challenges. It stores a phone digest, not a clear-text phone number, and has no seed content.
 
-Migration `012` requires independent review for newly published public Intents and allows their review outcomes in the owner's Inbox. It has no seed content. Check existing active public Intents before applying to a non-local database; they must be reconciled with the new review rule.
+Migration `012` introduced independent Intent review. Migration `013` supersedes that requirement for Group and public Intent, and keeps old pending submissions hidden; owners can submit them again. Apply `013` before running the current API. These migrations contain no seed content.
+
+Migration `014` allows an owner-created Group without an external source URL. It does not mark owner claims as verified.
+
+Migration `015` adds owner-only Saved references to public Place, Activity and Group objects. Saved does not duplicate the content or grant access to a now-hidden object.
+
+Migration `016` adds owner-only Activity plans. A plan is a private intention to attend, not registration or confirmed participation.
+
+Migration `017` adds explicit human contact requests and one-to-one conversations; it seeds no accounts or messages.
+
+Migration `018` adds an optional broad map-zone code to public Intent. It stores no personal coordinates.
 
 `BIRDTIE_DATABASE_URL` is required. `BIRDTIE_API_ADDR` defaults to `127.0.0.1:8080`. `BIRDTIE_ALLOWED_ORIGINS` is an optional comma-separated allowlist for browser clients; no cross-origin access is enabled by default.
 
@@ -49,7 +65,7 @@ Migration `012` requires independent review for newly published public Intents a
 - `GET /v1/accounts/{accountID}/profile` (only explicitly public Profiles for anonymous callers)
 - `POST /v1/cities/{cityID}/agent/tasks` with JSON `{"query":"Find badminton this weekend"}` (anonymous or Bearer; query up to 240 UTF-8 bytes)
 
-The Agent endpoint returns `{data:{cityId,query,mode:"rules",activities,people,groups,places,taskId?}}`. It searches published, current records in one City using up to six significant query terms and bounded lists. This is literal text matching, not semantic matching, recommendation or an LLM. People come from owner-confirmed, active public Intents joined to explicitly public Profiles; only a coarse area label is returned. Groups come from owner-confirmed, independently reviewed, published public Communities. Neither People nor Groups have seeded records; Group submission and review routes are available, while public Intent publishing is still closed. Signed-in searches apply mutual Account blocks to person-owned results. Public point coordinates can come only from an eligible published, unexpired Place; People have no map point. Anonymous searches are not saved.
+The Agent endpoint returns `{data:{cityId,query,mode:"rules",activities,people,groups,places,taskId?}}`. It searches published, current records in one City using up to six significant query terms and bounded lists. This is literal text matching, not semantic matching, recommendation or an LLM. People come from owner-confirmed, active public Intents joined to explicitly public Profiles; a coarse area label is returned, plus an approximate City view anchor only when the owner opted into a broad public map zone. Groups come from owner-confirmed, published public Communities. Neither People nor Groups have seeded records. Signed-in searches apply mutual Account blocks to person-owned results. Public point coordinates can come only from an eligible published, unexpired Place; People never return a personal coordinate; opt-in broad-zone anchors are illustrative. Anonymous searches are not saved.
 
 The City Place list accepts optional `q` (up to 240 UTF-8 bytes) for a literal, case-insensitive name/summary substring search. It searches published Places in the selected published City and returns at most 100 results ordered by name, with the same provenance and location-precision rules as the unfiltered list. It does not use a map provider or location permission. Pagination, category/time filters and a search index remain future work.
 
@@ -60,30 +76,53 @@ Published City responses may include `map: {provider, latitude, longitude, defau
 - `GET /v1/me/agent-tasks`: list up to 50 recent tasks belonging to the Bearer Session's Account.
 - `GET /v1/me/agent-tasks/{taskID}`: restore one owned task. A task owned by another Account returns 404.
 
-Signed-in `POST /v1/cities/{cityID}/agent/tasks` saves the query and City after a successful search and returns `taskId`. Restore reruns the query against current publication, expiry and block rules; result snapshots and conversation turns are not stored. The client currently keeps conversation and viewport state in memory only. No task deletion or completion route exists yet. Apply rate limits and a fuller identity review before external rollout.
+Signed-in `POST /v1/cities/{cityID}/agent/tasks` saves the query and City after a successful search and returns `taskId`. Restore reruns the query against current publication, expiry and block rules; result snapshots and conversation turns are not stored. The client shows the current task's single input and result in memory; it does not restore a per-task map viewport or multi-turn conversation. No task deletion or completion route exists yet. Apply rate limits and a fuller identity review before external rollout.
 
-## Profile and reviewed People intents
+## Profile and owner-published People intents
 
-- `PUT /v1/me/profile`: edit the Session owner's `displayName` (2–80 characters), `bio` (up to 500 characters), and `visibility` (`private` or `public`). This is an explicit public Profile choice; anonymous users can read a public Profile. Any actual Profile change atomically withdraws the owner's pending and active public Intents.
-- `POST /v1/cities/{cityID}/intents`: submit an owner-confirmed public Intent for an existing published City. Body: `confirmed:true`, `topic`, optional `details`, `availableFrom`, `availableUntil`, IANA `timeZone`, `coarseAreaLabel`, `expiresAt`. Availability is within 31 days; expiry is at least an hour away and no later than the availability end. A saved public Profile is required. At most three unexpired pending or active Intents are allowed per owner.
-- `GET /v1/me/intents`: list up to 100 of the owner's Intents, including review state.
+- `PUT /v1/me/profile`: edit the Session owner's `displayName` (2–80 characters), `bio` (up to 500 characters), and `visibility` (`private` or `public`). This is an explicit public Profile choice; anonymous users can read a public Profile. Switching to `private` atomically withdraws the owner's public Intents; editing a still-public Profile does not withdraw them.
+- `POST /v1/cities/{cityID}/intents`: publish an owner-confirmed public Intent for an existing published City. Body: `confirmed:true`, `topic`, optional `details`, `availableFrom`, `availableUntil`, IANA `timeZone`, `coarseAreaLabel`, optional `publicMapZone` (`city_centre`, `north`, `south`, `east`, `west`), `expiresAt`. Availability is within 31 days; expiry is at least an hour away and no later than the availability end. The client currently offers 1, 3, 7, 14 or 30 days from submission. A saved public Profile is required. At most three unexpired active Intents are allowed per owner as a temporary limit.
+- `GET /v1/me/intents`: list up to 100 of the owner's Intents, including publication state.
 - `POST /v1/me/intents/{intentID}/withdraw`: immediately remove an own pending or active Intent from discovery.
-- `GET /v1/cities/{cityID}/intent-candidates`: list pending Intents for an active City reviewer.
-- `POST /v1/intent-candidates/{intentID}/review`: a different City reviewer submits `{"decision":"publish|reject","note":"at least ten characters"}`. Only a reviewed, still-current public Profile and Intent may be published.
 
-The Agent People query reads only active, independently reviewed, owner-confirmed public Intents joined to public Profiles. It returns a display name, topic and coarse area, never a precise coordinate or Intent details. Viewer Account blocks filter results. Review decisions create an owner-only Inbox update. These routes do not provide contact requests or messages. Local fixed-code accounts are testing identities, not proof of real-world identity. See ADR 0010.
+The Agent People query reads only active, owner-confirmed public Intents joined to public Profiles. It returns a display name, topic and coarse area, never a precise personal coordinate or Intent details. An optional broad-zone display anchor is derived from the City view, not supplied by a device. Viewer Account blocks filter results. Explicit contact requests and human messages are described below. Local fixed-code accounts are testing identities, not proof of real-world identity. See ADRs 0011, 0014 and 0015.
 
-## Reviewed Groups and Inbox
+## Owner-published Groups and Inbox
 
-- `POST /v1/cities/{cityID}/communities`: an authenticated owner submits a group for review. Body: `name`, optional `summary` and published `placeId`, `sourceLabel`, HTTPS `sourceUrl`, `rightsNote`, and `expiresAt` within one year.
-- `GET /v1/me/communities`: list up to 100 of the owner's own draft, published and hidden Groups, including review status.
+- `POST /v1/cities/{cityID}/communities`: an authenticated owner publishes a group. Body: `name`, optional `summary`, published `placeId`, `sourceLabel`, HTTPS `sourceUrl`, `rightsNote`, and required `expiresAt` within one year. External source fields and rights note are optional; if a URL is given, it must be HTTPS and have a source label.
+- `GET /v1/me/communities`: list up to 100 of the owner's own Groups, including publication status.
 - `POST /v1/me/communities/{communityID}/withdraw`: hide an own draft or published Group immediately.
-- `GET /v1/cities/{cityID}/community-candidates`: an active city reviewer sees the pending, owner-confirmed Group queue.
-- `POST /v1/community-candidates/{communityID}/review`: a different city reviewer submits `{"decision":"publish|reject","note":"..."}`. The note must have at least ten characters. Publishing requires a current source and, if linked, an eligible published Place.
 - `GET /v1/me/inbox`: list up to 100 of the signed-in Account's Inbox items.
 - `POST /v1/me/inbox/{itemID}/read`: mark one owned item read; another Account's item returns 404.
 
-Submission confirms the owner request but never publishes directly. The reviewer must check the source and rights outside the software; a URL and rights statement alone are not proof. Group review and existing Place/Activity candidate reviews atomically create an `updates` Inbox item for the submitter. Messages, requests, Agent updates and general notifications have no producers yet. The client shows an empty authenticated Inbox until a real review event exists. No real editor membership or OIDC provider is configured in this repository, so production publication still needs identity and editorial setup.
+Group submission publishes directly after owner confirmation. An optional HTTPS URL and rights statement are owner-provided and are not independent verification. Place/Activity review decisions and human contact/message events now produce Inbox items; Agent updates and general notifications have no producers. No real OIDC provider is configured in this repository; fixed-code accounts remain local development identities. See ADRs 0011 and 0014.
+
+## Owner-only Saved
+
+- `GET /v1/me/saved`: list up to 100 own Place/Activity/Group bookmarks. Current publication, expiry and viewer blocks are checked on every read. Unavailable targets return no title, summary or City.
+- `POST /v1/me/saved`: idempotently save a visible target with `{"kind":"place|activity|group","targetId":"<UUID>"}`. A hidden or inaccessible target returns 404.
+- `DELETE /v1/me/saved/{savedID}`: remove only the caller's bookmark. Another Account's ID returns 404.
+
+All routes require a Birdtie Session. Saving does not contact a person, join a Group or Activity, or expand Agent access. See ADR 0012.
+
+## My Activities: private plans
+
+- `GET /v1/me/activity-plans`: list up to 100 own plans, rechecking current visibility and block rules. Hidden targets return an unavailable placeholder without old title, City or time.
+- `POST /v1/me/activity-plans`: idempotently add a currently visible, upcoming or ongoing Activity with `{"activityId":"<UUID>"}`. Past, cancelled, expired or inaccessible targets return 404.
+- `DELETE /v1/me/activity-plans/{planID}`: remove only the caller's plan.
+
+These routes do not register a participant, notify a host or change an Activity's attendee count. See ADR 0013.
+
+## Explicit human contact
+
+- `POST /v1/me/connection-requests`: send an explicit request with `recipientAccountId`, `cityId` and a 1–280 byte `note`, only to a currently visible public Intent owner in that City.
+- `GET /v1/me/connection-requests`: list up to 100 own incoming and outgoing requests. Hidden or blocked counterpart names and notes are redacted.
+- `POST /v1/me/connection-requests/{requestID}/decision`: recipient chooses `accept` or `decline`; sender chooses `withdraw`. An accepted request creates a one-to-one conversation.
+- `GET /v1/me/conversations`: list up to 100 current unblocked conversations.
+- `GET /v1/me/conversations/{conversationID}/messages`: read the latest 100 messages as a member, oldest first.
+- `POST /v1/me/conversations/{conversationID}/messages`: send a 1–2000 byte human message after acceptance. Members, Account status and blocks are rechecked.
+
+Requests expire after seven days. Sender limits are ten live outgoing requests and sixty messages per hour. Inbox request/message events contain no private body. The client offers manual refresh, without push, read receipts or Agent access to messages. See ADR 0014.
 
 ## Session and Profile Consent routes
 
@@ -153,7 +192,7 @@ The reviewer must use a different Account from the submitter; operational policy
 
 An Activity candidate is private until review. Publishing writes one canonical Activity, source evidence and City Seed maintenance relation in a transaction. `hostLabel` is source-provided information, not a verified Birdtie organization identity. Public Activity status is computed from start/end and cancellation time: `upcoming`, `ongoing`, `past` or `cancelled`; the API offers no participation action for past/cancelled records. No Activity candidate or editor membership is seeded.
 
-Media upload remains disabled. `docs/decisions/0004-media-storage-and-exif-boundary.md` records the provider-neutral storage contract; object storage, scanner and key management have not been chosen. Moment, Journey and Intent tables exist as private/draft-first schema; only owner-only Moment draft operations are open, with no publishing routes.
+Media upload remains disabled. `docs/decisions/0004-media-storage-and-exif-boundary.md` records the provider-neutral storage contract; object storage, scanner and key management have not been chosen. Moment drafts remain owner-only and private, and Journey publishing is not open. Owner-confirmed public Intent and Group publication is available as described above.
 
 Successful domain responses use `{ "data": ... }`. Missing published objects return 404. Places are empty until reviewed and sourced City Seed records are added. Source metadata includes maintainer, update time, optional verification/expiry times, and a computed freshness state. API responses never include private EXIF fields or original media storage keys.
 

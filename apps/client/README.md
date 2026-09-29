@@ -20,6 +20,8 @@ The web build can begin the Birdtie OIDC flow from Sidebar → Profile when the 
 
 The Profile surface lets signed-in users create, edit and withdraw own private Moment drafts. The client does not offer a publish control, media input, Place attachment or EXIF handling. An API running with `BIRDTIE_DEV_PHONE_AUTH=1` also offers a local testing login: request a challenge, then use the prefilled `123456` code. No SMS is sent and the phone number is not verified. This test Account is separate from any existing Civu or future verified phone identity. See the API README for the loopback restrictions and migration.
 
+Sidebar → Profile also lets signed-in users edit their display name, bio and public/private visibility. It can submit a seven-day, owner-confirmed public Intent in the selected City with a manually supplied coarse area. The Intent stays pending until another City reviewer approves it; then it may appear in Agent People results. The owner can withdraw it. Changing Profile content or visibility withdraws pending and active public Intents so new content must be reviewed again. Reviewer membership and the review API are operator-managed; this client has no reviewer workspace yet.
+
 Run the client with the API URL set at build time, for example:
 
 ```powershell

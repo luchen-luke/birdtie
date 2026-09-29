@@ -4,6 +4,8 @@
 
 2026-09-30 内容供给与 Inbox 补充：Community Owner 提交、独立城市审核、撤回和审核结果 Inbox 事件均为 Birdtie 自有代码与数据表。本阶段没有从 Civu 复制消息、社交关系、群组内容或通知数据；它们不构成 Birdtie 的授权或内容来源。
 
+2026-09-30 人员供给补充：Profile 编辑、本人确认的公开 Intent、独立城市审核、撤回及 Agent People 发现均在 Birdtie 模型中实现；没有复用 Civu Profile、Intent 或社交关系代码/数据。固定码测试身份仍与 Civu 用户隔离，正式身份绑定和联系请求尚待设计。
+
 审计日期：2026-09-29  
 状态：完成路径、依赖、Git 状态及关键代码的只读盘点；未执行构建/测试、未连接生产环境、未复制或修改 Civu 文件。  
 参考仓：`D:\Program\Civu`；Birdtie 正式仓：`D:\Project\birdtie`。

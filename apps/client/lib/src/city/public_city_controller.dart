@@ -30,6 +30,7 @@ class PublicCity {
     required this.id,
     required this.name,
     required this.region,
+    this.timeZone = 'UTC',
     required this.contentStatus,
     required this.source,
     required this.map,
@@ -38,6 +39,7 @@ class PublicCity {
   final String id;
   final String name;
   final String region;
+  final String timeZone;
   final String contentStatus;
   final PublicSource source;
   final PublicCityMap? map;
@@ -46,6 +48,7 @@ class PublicCity {
     id: json['id'] as String,
     name: json['name'] as String,
     region: json['region'] as String? ?? '',
+    timeZone: json['timeZone'] as String? ?? 'UTC',
     contentStatus: json['contentStatus'] as String? ?? 'building',
     source: PublicSource.fromJson(json['source'] as Map<String, dynamic>),
     map: json['map'] is Map<String, dynamic>

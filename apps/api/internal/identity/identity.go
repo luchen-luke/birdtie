@@ -32,6 +32,12 @@ type Profile struct {
 	Visibility  string `json:"visibility"`
 }
 
+type ProfileInput struct {
+	DisplayName string `json:"displayName"`
+	Bio         string `json:"bio"`
+	Visibility  string `json:"visibility"`
+}
+
 type Grant struct {
 	ID                 string     `json:"id"`
 	RecipientAccountID string     `json:"recipientAccountId"`
@@ -56,6 +62,7 @@ type AccessStore interface {
 	Authenticate(context.Context, [32]byte) (Actor, error)
 	RevokeSession(context.Context, [32]byte) error
 	ReadProfile(context.Context, string, string) (Profile, error)
+	UpdateOwnProfile(context.Context, string, ProfileInput) (Profile, error)
 	ListProfileGrants(context.Context, string) ([]Grant, error)
 	GrantProfileRead(context.Context, string, string, time.Time) (Grant, error)
 	RevokeProfileGrant(context.Context, string, string) error

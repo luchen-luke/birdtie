@@ -19,6 +19,7 @@ docker compose exec db psql -U birdtie -d birdtie -v ON_ERROR_STOP=1 -f /migrati
 docker compose exec db psql -U birdtie -d birdtie -v ON_ERROR_STOP=1 -f /migrations/009_agent_workspace.sql
 docker compose exec db psql -U birdtie -d birdtie -v ON_ERROR_STOP=1 -f /migrations/010_community_review_and_inbox.sql
 docker compose exec db psql -U birdtie -d birdtie -v ON_ERROR_STOP=1 -f /migrations/011_dev_phone_auth.sql
+docker compose exec db psql -U birdtie -d birdtie -v ON_ERROR_STOP=1 -f /migrations/012_reviewed_public_intents.sql
 $env:BIRDTIE_DATABASE_URL = 'postgres://birdtie:birdtie_local_only@127.0.0.1:55432/birdtie?sslmode=disable'
 go run .
 ```
@@ -30,6 +31,8 @@ Migration `009` adds private Agent task history and draft-by-default Communities
 Migration `010` adds independent Community review evidence and owner-only Inbox items. It has no seed content.
 
 Migration `011` adds short-lived, local development phone challenges. It stores a phone digest, not a clear-text phone number, and has no seed content.
+
+Migration `012` requires independent review for newly published public Intents and allows their review outcomes in the owner's Inbox. It has no seed content. Check existing active public Intents before applying to a non-local database; they must be reconciled with the new review rule.
 
 `BIRDTIE_DATABASE_URL` is required. `BIRDTIE_API_ADDR` defaults to `127.0.0.1:8080`. `BIRDTIE_ALLOWED_ORIGINS` is an optional comma-separated allowlist for browser clients; no cross-origin access is enabled by default.
 
@@ -58,6 +61,17 @@ Published City responses may include `map: {provider, latitude, longitude, defau
 - `GET /v1/me/agent-tasks/{taskID}`: restore one owned task. A task owned by another Account returns 404.
 
 Signed-in `POST /v1/cities/{cityID}/agent/tasks` saves the query and City after a successful search and returns `taskId`. Restore reruns the query against current publication, expiry and block rules; result snapshots and conversation turns are not stored. The client currently keeps conversation and viewport state in memory only. No task deletion or completion route exists yet. Apply rate limits and a fuller identity review before external rollout.
+
+## Profile and reviewed People intents
+
+- `PUT /v1/me/profile`: edit the Session owner's `displayName` (2–80 characters), `bio` (up to 500 characters), and `visibility` (`private` or `public`). This is an explicit public Profile choice; anonymous users can read a public Profile. Any actual Profile change atomically withdraws the owner's pending and active public Intents.
+- `POST /v1/cities/{cityID}/intents`: submit an owner-confirmed public Intent for an existing published City. Body: `confirmed:true`, `topic`, optional `details`, `availableFrom`, `availableUntil`, IANA `timeZone`, `coarseAreaLabel`, `expiresAt`. Availability is within 31 days; expiry is at least an hour away and no later than the availability end. A saved public Profile is required. At most three unexpired pending or active Intents are allowed per owner.
+- `GET /v1/me/intents`: list up to 100 of the owner's Intents, including review state.
+- `POST /v1/me/intents/{intentID}/withdraw`: immediately remove an own pending or active Intent from discovery.
+- `GET /v1/cities/{cityID}/intent-candidates`: list pending Intents for an active City reviewer.
+- `POST /v1/intent-candidates/{intentID}/review`: a different City reviewer submits `{"decision":"publish|reject","note":"at least ten characters"}`. Only a reviewed, still-current public Profile and Intent may be published.
+
+The Agent People query reads only active, independently reviewed, owner-confirmed public Intents joined to public Profiles. It returns a display name, topic and coarse area, never a precise coordinate or Intent details. Viewer Account blocks filter results. Review decisions create an owner-only Inbox update. These routes do not provide contact requests or messages. Local fixed-code accounts are testing identities, not proof of real-world identity. See ADR 0010.
 
 ## Reviewed Groups and Inbox
 

@@ -18,4 +18,6 @@ Owner-only Moment draft creation, listing, detail, revision-checked update and w
 
 Schema constraints alone do not make user content safe for public release. Before opening user Moment/Journey/Intent publishing and public reads, implement moderation/block handling, author confirmation, rate limits and a shared visibility policy. UI, public search, maps and Agents must call the same policy. No generic arbitrary graph edge writer is exposed.
 
+Update (2026-09-30): ADR 0010 opens a narrow, independently reviewed public Intent path with explicit Owner confirmation, public Profile requirement, Account block filtering, a per-Owner active/pending cap, expiry and transactional withdrawal on Profile changes. Moment and Journey public publishing remain closed. External rollout still requires broader rate limiting, abuse reporting and operational review.
+
 The earlier Civu audit remains a reference only. No Civu migration, data or business code was copied.

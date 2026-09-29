@@ -3,6 +3,8 @@
 Date: 2026-09-29
 Status: Initial implementation sequence; product and architecture assumptions remain subject to validation.
 
+Update (2026-09-30): The Agent-first shell supersedes the older navigation wording below. Owner Profile editing and public Intent submission now exist; a different City reviewer must approve an Intent before it enters People results. No real reviewer operation or content seed is configured. Contact requests, messaging and production identity remain later slices.
+
 ## MVP outcome
 
 Prepare a usable first-city product for an initial Aberdeen cohort. The first release should help a newcomer discover trustworthy local information and upcoming activities, express interest, contact another person or organizer with consent, take part, and optionally share a recap.

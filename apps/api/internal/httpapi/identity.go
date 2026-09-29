@@ -6,6 +6,7 @@ import (
 	"io"
 	"mime"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/birdtie/birdtie/apps/api/internal/identity"
@@ -61,6 +62,31 @@ func (s *server) logout(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Cache-Control", "no-store")
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func (s *server) updateOwnProfile(w http.ResponseWriter, r *http.Request) {
+	actor, _, err := s.actor(r, true)
+	if authFailed(w, err) {
+		return
+	}
+	var input identity.ProfileInput
+	if !decodeStrictJSON(w, r, &input) {
+		return
+	}
+	input.DisplayName = strings.TrimSpace(input.DisplayName)
+	input.Bio = strings.TrimSpace(input.Bio)
+	if len(input.DisplayName) < 2 || len(input.DisplayName) > 80 ||
+		len(input.Bio) > 500 ||
+		(input.Visibility != "private" && input.Visibility != "public") {
+		respondError(w, http.StatusBadRequest, "invalid_profile")
+		return
+	}
+	profile, err := s.access.UpdateOwnProfile(r.Context(), actor.ID, input)
+	if err != nil {
+		serverError(w, err)
+	} else {
+		respond(w, http.StatusOK, map[string]any{"data": profile})
+	}
 }
 
 func (s *server) getProfile(w http.ResponseWriter, r *http.Request) {

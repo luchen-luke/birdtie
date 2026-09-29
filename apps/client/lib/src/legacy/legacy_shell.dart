@@ -8,6 +8,7 @@ import '../auth/dev_phone_login_sheet.dart';
 import '../city/public_city_controller.dart';
 import '../city/public_city_map.dart';
 import '../content/private_moment_controller.dart';
+import '../content/public_intent_section.dart';
 
 // Existing City and private Moment surfaces remain available from the V2 sidebar.
 class LegacyProfilePage extends StatelessWidget {
@@ -754,6 +755,8 @@ class _MyBirdtiePage extends StatelessWidget {
             ),
           const SizedBox(height: 28),
           if (auth.signedIn) ...[
+            PublicIntentSection(auth: auth, city: city),
+            const SizedBox(height: 28),
             Row(
               children: [
                 const Expanded(child: _SectionLabel('PRIVATE MOMENT DRAFTS')),

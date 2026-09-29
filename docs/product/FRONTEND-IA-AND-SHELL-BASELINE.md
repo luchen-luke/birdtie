@@ -35,8 +35,8 @@ Agent 工作区状态为 idle、typing、searching、results、conversation。�
 
 ## 数据与权限边界
 
-地图、结果及 Agent 共用 City Graph 的可见性、block、时间有效性和位置精度规则。Go API 已提供按 City 的规则文本查询：Activity、公开且经本人确认的 Intent 人员、已审核公开 Group、Place。人员只有粗略区域，不返回精确坐标；Group/Activity 仅在关联 Place 可公开点坐标时上图。查询不使用私有 Profile consent 授权扩大公开发现。登录用户的任务查询与 City 私有保存，恢复时重新按当前权限检索。当前没有消息接口、AI 匹配或公开 Group 发布流程；未配置 API 时使用明确标注的本地演示数据，不能把演示人物、参与人数或回复伪装成在线数据。Agent 不替用户联系、发布或报名。
+地图、结果及 Agent 共用 City Graph 的可见性、block、时间有效性和位置精度规则。Go API 已提供按 City 的规则文本查询：Activity、公开且经本人确认的 Intent 人员、已审核公开 Group、Place。人员只有粗略区域，不返回精确坐标；Group/Activity 仅在关联 Place 可公开点坐标时上图。查询不使用私有 Profile consent 授权扩大公开发现。登录用户的任务查询与 City 私有保存，恢复时重新按当前权限检索。当前没有消息接口或 AI 匹配；未配置 API 时使用明确标注的本地演示数据，不能把演示人物、参与人数或回复伪装成在线数据。Agent 不替用户联系、发布或报名。
 
 ## 本轮实现范围
 
-Flutter Shell 继续使用既有 Go/PostgreSQL、PublicCityController、认证、Moment 草稿和 Mapbox adapter；未增加大型状态管理依赖。规则式 Agent 查询 API、登录用户任务历史、Group 独立审核与 Owner Inbox 更新已接入。结果列表、地图实体由同一次查询驱动；本机暂存对话和视角。下一阶段完善公开 Intent 人员供给、消息与请求 producer、任务上下文持久化和安全限流。旧产品文档中 Now/Explore/Network 底栏描述属于此前版本，不再约束当前 Shell。
+Flutter Shell 继续使用既有 Go/PostgreSQL、PublicCityController、认证、Moment 草稿和 Mapbox adapter；未增加大型状态管理依赖。规则式 Agent 查询 API、登录用户任务历史、Group 独立审核与 Owner Inbox 更新已接入。Profile 编辑和本人确认的 Intent 提交也已接入；另一位 City reviewer 审核通过后，真实 People 可进入 Agent 结果。结果列表、地图实体由同一次查询驱动；本机暂存对话和视角。下一阶段完善联系请求、任务上下文持久化和安全限流。旧产品文档中 Now/Explore/Network 底栏描述属于此前版本，不再约束当前 Shell。

@@ -39,6 +39,12 @@ class BirdtieAuthController extends ChangeNotifier {
   String? get authorizationHeader =>
       _accessToken == null ? null : 'Bearer $_accessToken';
 
+  void updateProfileDisplayName(String name) {
+    if (!signedIn) return;
+    _displayName = name;
+    _notify();
+  }
+
   Uri _endpoint(String path) =>
       Uri.parse('${_apiBase.replaceFirst(RegExp(r'/$'), '')}$path');
 

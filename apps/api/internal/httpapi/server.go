@@ -18,6 +18,7 @@ import (
 	"github.com/birdtie/birdtie/apps/api/internal/foundation"
 	"github.com/birdtie/birdtie/apps/api/internal/identity"
 	"github.com/birdtie/birdtie/apps/api/internal/inbox"
+	"github.com/birdtie/birdtie/apps/api/internal/intent"
 	"github.com/birdtie/birdtie/apps/api/internal/oidcauth"
 )
 
@@ -33,6 +34,7 @@ type server struct {
 	agent           agentworkspace.Store
 	communities     community.Store
 	inbox           inbox.Store
+	intents         intent.Store
 	devPhone        devauth.Store
 	devPhoneEnabled bool
 	oidc            *oidcauth.Service
@@ -41,8 +43,8 @@ type server struct {
 
 var uuidPath = regexp.MustCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`)
 
-func New(catalog foundation.PublicCatalog, access identity.AccessStore, seed cityseed.Store, contentStore content.MomentStore, agentStore agentworkspace.Store, communityStore community.Store, inboxStore inbox.Store, devPhoneStore devauth.Store, devPhoneEnabled bool, oidc *oidcauth.Service, db pinger, allowedOrigins []string) http.Handler {
-	s := &server{catalog: catalog, access: access, seed: seed, content: contentStore, agent: agentStore, communities: communityStore, inbox: inboxStore, devPhone: devPhoneStore, devPhoneEnabled: devPhoneEnabled, oidc: oidc, db: db}
+func New(catalog foundation.PublicCatalog, access identity.AccessStore, seed cityseed.Store, contentStore content.MomentStore, agentStore agentworkspace.Store, communityStore community.Store, inboxStore inbox.Store, intentStore intent.Store, devPhoneStore devauth.Store, devPhoneEnabled bool, oidc *oidcauth.Service, db pinger, allowedOrigins []string) http.Handler {
+	s := &server{catalog: catalog, access: access, seed: seed, content: contentStore, agent: agentStore, communities: communityStore, inbox: inboxStore, intents: intentStore, devPhone: devPhoneStore, devPhoneEnabled: devPhoneEnabled, oidc: oidc, db: db}
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", s.health)
 	mux.HandleFunc("GET /readyz", s.ready)
@@ -66,6 +68,12 @@ func New(catalog foundation.PublicCatalog, access identity.AccessStore, seed cit
 	mux.HandleFunc("POST /v1/cities/{cityID}/activity-candidates", s.submitActivityCandidate)
 	mux.HandleFunc("POST /v1/activity-candidates/{candidateID}/review", s.reviewActivityCandidate)
 	mux.HandleFunc("GET /v1/me", s.me)
+	mux.HandleFunc("PUT /v1/me/profile", s.updateOwnProfile)
+	mux.HandleFunc("POST /v1/cities/{cityID}/intents", s.submitIntent)
+	mux.HandleFunc("GET /v1/me/intents", s.listOwnIntents)
+	mux.HandleFunc("POST /v1/me/intents/{intentID}/withdraw", s.withdrawIntent)
+	mux.HandleFunc("GET /v1/cities/{cityID}/intent-candidates", s.listIntentQueue)
+	mux.HandleFunc("POST /v1/intent-candidates/{intentID}/review", s.reviewIntent)
 	mux.HandleFunc("GET /v1/me/moments", s.listOwnMoments)
 	mux.HandleFunc("POST /v1/me/moments", s.createMomentDraft)
 	mux.HandleFunc("GET /v1/me/moments/{momentID}", s.getOwnMoment)

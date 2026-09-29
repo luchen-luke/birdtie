@@ -1,0 +1,2 @@
+// Copy to Runner/AMapKeys.xcconfig after creating the Birdtie iOS SDK Key.
+AMAP_IOS_KEY=YOUR_BIRDTIE_IOS_AMAP_KEY

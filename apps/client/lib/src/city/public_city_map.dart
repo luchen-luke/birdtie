@@ -1,0 +1,256 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:latlong2/latlong.dart';
+
+import 'map_link.dart';
+import 'mapbox_style.dart';
+import 'native_city_map_stub.dart'
+    if (dart.library.io) 'native_city_map_io.dart';
+import 'public_city_controller.dart';
+
+const _mapboxPublicToken = String.fromEnvironment(
+  'BIRDTIE_MAPBOX_PUBLIC_TOKEN',
+);
+const _mapboxMobileToken = String.fromEnvironment(
+  'BIRDTIE_MAPBOX_MOBILE_PUBLIC_TOKEN',
+);
+// The public token used with Static Tiles must include styles:tiles.
+
+class PublicCityMapView extends StatefulWidget {
+  const PublicCityMapView({
+    super.key,
+    required this.city,
+    required this.places,
+    required this.onPlaceSelected,
+    this.placeStateMessage,
+  });
+
+  final PublicCity city;
+  final List<PublicPlace> places;
+  final ValueChanged<PublicPlace> onPlaceSelected;
+  final String? placeStateMessage;
+
+  @override
+  State<PublicCityMapView> createState() => _PublicCityMapViewState();
+}
+
+class _PublicCityMapViewState extends State<PublicCityMapView> {
+  bool _tilesFailed = false;
+
+  @override
+  void didUpdateWidget(covariant PublicCityMapView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.city.id != widget.city.id) _tilesFailed = false;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final viewport = widget.city.map;
+    if (viewport == null) {
+      return const _MapUnavailable('该城市尚未配置地图视图。');
+    }
+    if (viewport.provider != 'mapbox') {
+      return const _MapUnavailable('该城市地图暂不可用，请使用地点列表。');
+    }
+    if (!kIsWeb) {
+      if (defaultTargetPlatform == TargetPlatform.iOS ||
+          defaultTargetPlatform == TargetPlatform.android) {
+        if (!_mapboxMobileToken.startsWith('pk.')) {
+          return const _MapUnavailable('地图暂不可用，请使用地点列表。');
+        }
+        return NativeCityMapView(
+          key: ValueKey(widget.city.id),
+          city: widget.city,
+          places: widget.places,
+          accessToken: _mapboxMobileToken,
+          onPlaceSelected: widget.onPlaceSelected,
+          placeStateMessage: widget.placeStateMessage,
+        );
+      }
+      return const _MapUnavailable('该城市地图暂不可用，请使用地点列表。');
+    }
+    if (!_mapboxPublicToken.startsWith('pk.')) {
+      return const _MapUnavailable('地图暂不可用，请使用地点列表。');
+    }
+    final points = widget.places.where(
+      (place) => place.location.hasPublicPoint,
+    );
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(18),
+      child: SizedBox(
+        height: 430,
+        child: Stack(
+          children: [
+            FlutterMap(
+              key: ValueKey(widget.city.id),
+              options: MapOptions(
+                initialCenter: LatLng(viewport.latitude, viewport.longitude),
+                initialZoom: viewport.defaultZoom,
+                minZoom: 3,
+                maxZoom: 18,
+                backgroundColor: const Color(0xFFE9ECE4),
+              ),
+              children: [
+                TileLayer(
+                  urlTemplate:
+                      'https://api.mapbox.com/styles/v1/$mapboxStylePath/tiles/512/{z}/{x}/{y}?access_token=$_mapboxPublicToken',
+                  tileSize: 512,
+                  zoomOffset: -1,
+                  userAgentPackageName: 'com.birdtie.client',
+                  errorTileCallback: (tile, error, stackTrace) {
+                    if (mounted && !_tilesFailed) {
+                      setState(() => _tilesFailed = true);
+                    }
+                  },
+                ),
+                MarkerLayer(
+                  markers: [
+                    for (final place in points)
+                      Marker(
+                        point: LatLng(
+                          place.location.latitude!,
+                          place.location.longitude!,
+                        ),
+                        width: 44,
+                        height: 44,
+                        child: IconButton.filled(
+                          tooltip: place.name,
+                          onPressed: () => widget.onPlaceSelected(place),
+                          icon: const Icon(Icons.place, size: 20),
+                        ),
+                      ),
+                  ],
+                ),
+              ],
+            ),
+            if (_tilesFailed ||
+                points.isEmpty ||
+                widget.placeStateMessage != null)
+              Positioned(
+                top: 12,
+                left: 12,
+                right: 12,
+                child: _MapNote(
+                  _tilesFailed
+                      ? '地图底图暂不可用，请使用地点列表。'
+                      : widget.placeStateMessage ?? '当前列表没有可公开的精确地点标记。',
+                ),
+              ),
+            const Positioned(
+              left: 8,
+              right: 8,
+              bottom: 8,
+              child: _MapboxAttribution(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _MapUnavailable extends StatelessWidget {
+  const _MapUnavailable(this.message);
+  final String message;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    height: 330,
+    alignment: Alignment.center,
+    decoration: BoxDecoration(
+      color: const Color(0xFFE9ECE4),
+      borderRadius: BorderRadius.circular(18),
+    ),
+    child: Padding(
+      padding: const EdgeInsets.all(24),
+      child: Text(message, textAlign: TextAlign.center),
+    ),
+  );
+}
+
+class _MapNote extends StatelessWidget {
+  const _MapNote(this.message);
+  final String message;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+    decoration: BoxDecoration(
+      color: Colors.white.withValues(alpha: 0.94),
+      borderRadius: BorderRadius.circular(8),
+    ),
+    child: Text(message, style: const TextStyle(fontSize: 12)),
+  );
+}
+
+class _MapboxAttribution extends StatelessWidget {
+  const _MapboxAttribution();
+
+  static void _open(String address) => openMapAttribution(address);
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+    decoration: BoxDecoration(
+      color: Colors.white.withValues(alpha: 0.96),
+      borderRadius: BorderRadius.circular(8),
+    ),
+    child: Wrap(
+      spacing: 8,
+      runSpacing: 4,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        Semantics(
+          label: 'Mapbox',
+          child: SvgPicture.asset(
+            'assets/images/mapbox-logo.svg',
+            width: 121.5,
+            height: 30,
+          ),
+        ),
+        _AttributionLink(
+          label: '© Mapbox',
+          address: 'https://www.mapbox.com/about/maps/',
+          onOpen: _open,
+        ),
+        _AttributionLink(
+          label: '© OpenStreetMap',
+          address: 'https://www.openstreetmap.org/copyright',
+          onOpen: _open,
+        ),
+        _AttributionLink(
+          label: '改进地图',
+          address: 'https://apps.mapbox.com/feedback/',
+          onOpen: _open,
+        ),
+      ],
+    ),
+  );
+}
+
+class _AttributionLink extends StatelessWidget {
+  const _AttributionLink({
+    required this.label,
+    required this.address,
+    required this.onOpen,
+  });
+
+  final String label;
+  final String address;
+  final void Function(String) onOpen;
+
+  @override
+  Widget build(BuildContext context) => InkWell(
+    onTap: () => onOpen(address),
+    child: Text(
+      label,
+      style: const TextStyle(
+        fontSize: 11,
+        color: Color(0xFF193B32),
+        decoration: TextDecoration.underline,
+      ),
+    ),
+  );
+}

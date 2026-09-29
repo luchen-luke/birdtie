@@ -1,0 +1,44 @@
+# Birdtie map provider configuration
+
+Status: 2026-09-30. Overseas City provider: Mapbox; mainland China provider: AMap. Civu is a read-only configuration reference. This page records the exact values to create and where they belong; it does not include any key value.
+
+## Reuse inventory
+
+| Civu item | Read-only source | Birdtie use |
+|---|---|---|
+| Mapbox custom style | `D:\Program\Civu\Civu-client\lib\src\widgets\civu_explore_map_mapbox.dart`, `mapbox://styles/lookluo/cmth7kwad001p01ssc9kw7kco` | Selected as Birdtie's overseas style. The Web Static Tiles URL and the Birdtie iOS/Android Mapbox SDK adapter use the same style ID. |
+| Mapbox public token | `D:\Program\Civu\Civu-client\.env.local`, `MAPBOX_PUBLIC_TOKEN` | Reusable for Styles API and potentially native SDK where account restrictions permit. A direct Static Tiles request returned 403, `This API requires a token with styles:tiles scope.` Create a public Birdtie token in the same Mapbox account with `styles:tiles` before using the Web map. |
+| AMap Web Service Key | `D:\Program\Civu\Civu-server\api\.env.local`, `AMAP_WEB_SERVICE_KEY` | Candidate for future server-side geocoding/Place lookup only. It is not a browser JS API or native SDK key. No Birdtie geocoding route currently consumes it. Confirm service scope, billing and quotas before use. |
+| AMap Android Key | `D:\Program\Civu\Civu-client\android\amap.properties`, `android.key` | Reusable for the final `app.civu.civu_mobile` app only with Civu's registered release signing SHA1. Copied to ignored `apps/client/android/amap.properties`; Birdtie's side-by-side debug package has suffix `.birdtiepreview` and cannot use this registration. |
+| AMap iOS Key | `D:\Program\Civu\Civu-client\ios\Runner\AMapKeys.xcconfig.example` | The actual `AMapKeys.xcconfig` is absent in the current Civu checkout. Birdtie retains the existing `app.civu.civuMobile` bundle ID; retrieve the existing Key from the AMap account or register one for that same ID. |
+| AMap Web JS Key | No matching key/security configuration found in the reviewed Civu client/server files | Create a Web JS API Key and security key for Birdtie. |
+
+The reviewed Civu local environment files did not contain configured Mapbox Directions, Google Routes or Pelias keys, although the Civu server has optional configuration fields for them. They are not part of Birdtie's current map display path.
+
+The Civu Mapbox public token was copied to ignored `apps/client/.env.maps.mobile.local.json` for local native configuration. The Web token file is absent until the new token is created. The Civu AMap Web Service Key was copied to ignored `apps/api/.env.maps.local` for a future server adapter; no current route reads it. The Civu Android AMap Key was copied to ignored `apps/client/android/amap.properties`, but its registered package/signature cannot authenticate the debug preview. No key value, signing material, map widget or customer data is committed to Birdtie. Account owner should confirm that the `lookluo` Mapbox style is published and permitted for Birdtie distribution. AMap Key registration and Mapbox scopes are platform constraints, not code substitutions.
+
+## Create in provider consoles
+
+1. **Mapbox**: In the existing `lookluo` account, create a **public** token named `Birdtie web map`. Enable `styles:read`, `styles:tiles` and `fonts:read`. For a URL-restricted Web token, allow each exact Birdtie production/staging origin and `http://localhost:7357` for local development. Mapbox URL restrictions do not accept IP addresses; `127.0.0.1` is unsuitable. Copy `apps/client/map-config.web.example.json` to ignored `apps/client/.env.maps.web.local.json` and set `BIRDTIE_MAPBOX_PUBLIC_TOKEN`. The native SDK reads the existing Civu unrestricted public token from a separate mobile file; Mapbox URL-restricted tokens do not support mobile Maps SDK requests. The style is already selected in the shared `apps/client/lib/src/city/mapbox_style.dart`. Existing Civu `MAPBOX_PUBLIC_TOKEN` reads the style but lacks `styles:tiles`; Birdtie's Android preview has loaded the native custom style on a real device.
+2. **AMap Web**: In the existing AMap account, create an application `Birdtie`, then a Key named `Birdtie Web`, service platform **Web端 (JS API)**. Record both Key and 安全密钥. Configure Birdtie's server proxy (`serviceHost` ending in `/_AMapService`) before enabling a Web renderer; do not put 安全密钥 in Flutter Web source or `--dart-define`. If the console offers a domain whitelist, include the exact Birdtie domains and development host.
+3. **AMap Android**: The final app retains `applicationId` **`app.civu.civu_mobile`**. Use the existing Civu Key and registered release SHA1 only after the original release signing credential is securely available and verified. The current ignored `apps/client/android/amap.properties` contains that Key, and the build injects it into the manifest. For side-by-side debug testing, register a separate **Android平台 SDK** Key for package **`app.civu.civu_mobile.birdtiepreview`** and this workstation's debug SHA1 **`73:84:0A:17:D0:CA:7B:4B:F4:15:41:B4:2C:EC:B7:A2:34:D5:05:23`**, then temporarily set `android.key` to that debug Key. Restore the release Key for release builds. A different workstation has a different debug SHA1. The AMap renderer is not implemented yet, so Key registration alone cannot validate its map.
+4. **AMap iOS**: The final Xcode bundle identifier is **`app.civu.civuMobile`**. Retrieve the existing iOS Key from the AMap account, or create one for this same bundle ID. Copy `apps/client/ios/Runner/AMapKeys.xcconfig.example` to ignored `AMapKeys.xcconfig` and set `AMAP_IOS_KEY`; the iOS build configuration loads it into `Info.plist`. The actual Civu Key file is absent in the read-only checkout. Build and validate on a Mac/iOS device before release.
+5. **AMap Web Service**: Reuse the Civu Key only in Birdtie server configuration after confirming account/service authorization and request quota. It must stay server-side. No Birdtie route needs it today.
+
+Official setup: [Mapbox token guidance](https://docs.mapbox.com/accounts/guides/tokens/), [Static Tiles API](https://docs.mapbox.com/api/maps/static-tiles/), [AMap Web setup](https://lbs.amap.com/api/javascript-api-v2/prerequisites), [AMap JS security proxy](https://lbs.amap.com/api/javascript-api-v2/guide/abc/jscode), [AMap Android Key](https://lbs.amap.com/api/maps-sdk-for-android/guide/create-project/get-key), [AMap iOS Key](https://lbs.amap.com/api/ios-sdk/guide/create-project/get-key).
+
+## Local Web run
+
+After filling ignored `apps/client/.env.maps.web.local.json` with the newly scoped Web token, run from `apps/client`:
+
+```powershell
+flutter run -d chrome --web-hostname=localhost --web-port=7357 --dart-define-from-file=.env.maps.web.local.json --dart-define=BIRDTIE_API_BASE_URL=http://127.0.0.1:8080
+```
+
+Build native targets with `--dart-define-from-file=.env.maps.mobile.local.json`. Keep the Web and mobile files separate so the Web build does not carry the unrestricted mobile token. URL restrictions and scoped permissions protect the Web token; a mobile SDK token cannot be URL-restricted. Set the API's `BIRDTIE_ALLOWED_ORIGINS` and OIDC client redirect to the `localhost:7357` origin for this development command. Do not put an AMap security key, Web Service Key, Mapbox secret token or mobile signing secret in a client Dart define.
+
+## Next implementation boundary
+
+Birdtie's Android/iOS Flutter targets retain the Civu release application IDs. Android debug uses `.birdtiepreview` as an application ID suffix, so both apps can coexist on one device. The Birdtie-native Mapbox SDK adapter uses Birdtie's public City/Place state and the Civu custom style URI. On 2026-09-30 the Android preview installed and launched on a Xiaomi Android 16 device, loaded Aberdeen from the local Birdtie API through `adb reverse`, and displayed the custom Mapbox style. No published Place marker was available in the local seed data. iOS requires a Mac/Xcode build and device review. AMap platform Key injection is prepared, but there is no AMap renderer yet. The China Web adapter additionally needs the AMap JS proxy and WGS84-to-GCJ02 display conversion. Until those are in place the City API can select `amap` but the client shows the Place list.
+
+Local verification: Flutter analysis and the Web build completed earlier. The Android debug build completed using an isolated Gradle home, then `adb install --no-streaming -r` installed `app.civu.civu_mobile.birdtiepreview` without replacing the existing `app.civu.civu_mobile`. Android native Mapbox loading was visually confirmed on that device. iOS compilation and AMap rendering remain unverified. The final release requires the original Android signing identity and a versionCode greater than the current production release.

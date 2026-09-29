@@ -1,0 +1,2 @@
+# Copy to android/amap.properties after creating the Birdtie Android SDK Key.
+android.key=YOUR_BIRDTIE_ANDROID_AMAP_KEY

@@ -1,0 +1,28 @@
+name: birdtie_client
+description: "Birdtie's Agent-native local social client."
+publish_to: 'none'
+version: 0.1.0+1
+
+environment:
+  sdk: ^3.12.2
+
+dependencies:
+  crypto: 3.0.7
+  flutter:
+    sdk: flutter
+  flutter_map: 7.0.2
+  flutter_svg: ^2.3.0
+  http: ^1.6.0
+  latlong2: 0.9.1
+  mapbox_maps_flutter: 2.26.0
+  web: 1.1.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/mapbox-logo.svg

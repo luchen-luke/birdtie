@@ -1,0 +1,33 @@
+# Local configuration and credentials
+**/.env
+**/.env.*
+!**/.env.example
+!**/.env.*.example
+**/*local*.json
+!**/*local*.example.json
+**/amap.properties
+**/AMapKeys.xcconfig
+**/local.properties
+**/key.properties
+**/*.keystore
+**/*.jks
+**/*.p12
+**/*.p8
+**/*.pem
+
+# Flutter, Dart, Android and editor output
+**/.dart_tool/
+**/.flutter-plugins-dependencies
+**/.gradle/
+**/.gradle-user-home/
+**/.kotlin/
+**/build/
+**/coverage/
+**/.idea/
+**/.vscode/
+**/*.iml
+**/*.log
+**/.DS_Store
+**/ios/Flutter/Generated.xcconfig
+**/ios/Flutter/ephemeral/
+**/ios/Flutter/flutter_export_environment.sh

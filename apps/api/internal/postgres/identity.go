@@ -18,7 +18,8 @@ func (s *Store) Authenticate(ctx context.Context, digest [32]byte) (identity.Act
         WHERE s.token_sha256 = $1 AND a.id = s.account_id
           AND a.status = 'active' AND s.revoked_at IS NULL
           AND s.expires_at > now() AND s.idle_expires_at > now()
-        RETURNING a.id, a.account_type, a.handle`, digest[:]).
+          AND ($2::boolean OR s.authentication_method <> 'dev_phone')
+        RETURNING a.id, a.account_type, a.handle`, digest[:], s.devPhoneEnabled).
 		Scan(&actor.ID, &actor.AccountType, &actor.Handle)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return identity.Actor{}, identity.ErrUnauthorized

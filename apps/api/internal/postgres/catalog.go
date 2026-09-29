@@ -11,10 +11,13 @@ import (
 )
 
 type Store struct {
-	pool *pgxpool.Pool
+	pool            *pgxpool.Pool
+	devPhoneEnabled bool
 }
 
-func New(pool *pgxpool.Pool) *Store { return &Store{pool: pool} }
+func New(pool *pgxpool.Pool, devPhoneEnabled bool) *Store {
+	return &Store{pool: pool, devPhoneEnabled: devPhoneEnabled}
+}
 
 const cityColumns = `id, name, region, country_code, time_zone, content_status,
     source_label, source_ref, maintainer_label, updated_at, verified_at, expires_at,

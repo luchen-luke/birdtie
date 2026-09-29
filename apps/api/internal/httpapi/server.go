@@ -14,6 +14,7 @@ import (
 	"github.com/birdtie/birdtie/apps/api/internal/cityseed"
 	"github.com/birdtie/birdtie/apps/api/internal/community"
 	"github.com/birdtie/birdtie/apps/api/internal/content"
+	"github.com/birdtie/birdtie/apps/api/internal/devauth"
 	"github.com/birdtie/birdtie/apps/api/internal/foundation"
 	"github.com/birdtie/birdtie/apps/api/internal/identity"
 	"github.com/birdtie/birdtie/apps/api/internal/inbox"
@@ -25,21 +26,23 @@ type pinger interface {
 }
 
 type server struct {
-	catalog     foundation.PublicCatalog
-	access      identity.AccessStore
-	seed        cityseed.Store
-	content     content.MomentStore
-	agent       agentworkspace.Store
-	communities community.Store
-	inbox       inbox.Store
-	oidc        *oidcauth.Service
-	db          pinger
+	catalog         foundation.PublicCatalog
+	access          identity.AccessStore
+	seed            cityseed.Store
+	content         content.MomentStore
+	agent           agentworkspace.Store
+	communities     community.Store
+	inbox           inbox.Store
+	devPhone        devauth.Store
+	devPhoneEnabled bool
+	oidc            *oidcauth.Service
+	db              pinger
 }
 
 var uuidPath = regexp.MustCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`)
 
-func New(catalog foundation.PublicCatalog, access identity.AccessStore, seed cityseed.Store, contentStore content.MomentStore, agentStore agentworkspace.Store, communityStore community.Store, inboxStore inbox.Store, oidc *oidcauth.Service, db pinger, allowedOrigins []string) http.Handler {
-	s := &server{catalog: catalog, access: access, seed: seed, content: contentStore, agent: agentStore, communities: communityStore, inbox: inboxStore, oidc: oidc, db: db}
+func New(catalog foundation.PublicCatalog, access identity.AccessStore, seed cityseed.Store, contentStore content.MomentStore, agentStore agentworkspace.Store, communityStore community.Store, inboxStore inbox.Store, devPhoneStore devauth.Store, devPhoneEnabled bool, oidc *oidcauth.Service, db pinger, allowedOrigins []string) http.Handler {
+	s := &server{catalog: catalog, access: access, seed: seed, content: contentStore, agent: agentStore, communities: communityStore, inbox: inboxStore, devPhone: devPhoneStore, devPhoneEnabled: devPhoneEnabled, oidc: oidc, db: db}
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", s.health)
 	mux.HandleFunc("GET /readyz", s.ready)
@@ -83,6 +86,9 @@ func New(catalog foundation.PublicCatalog, access identity.AccessStore, seed cit
 	mux.HandleFunc("GET /v1/auth/oidc/status", s.oidcStatus)
 	mux.HandleFunc("GET /v1/auth/oidc/callback", s.completeOIDC)
 	mux.HandleFunc("POST /v1/auth/oidc/exchange", s.exchangeOIDC)
+	mux.HandleFunc("GET /v1/auth/dev-phone/status", s.devPhoneStatus)
+	mux.HandleFunc("POST /v1/auth/dev-phone/code", s.requestDevPhoneCode)
+	mux.HandleFunc("POST /v1/auth/dev-phone/verify", s.verifyDevPhoneCode)
 	return cors(mux, allowedOrigins)
 }
 

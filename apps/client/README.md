@@ -18,7 +18,7 @@ Android release builds require the original Civu signing keystore through `BIRDT
 
 The web build can begin the Birdtie OIDC flow from Sidebar → Profile when the API reports that an identity provider is configured. The browser keeps the pending PKCE verifier in tab session storage until the redirect returns. The Birdtie Bearer session is held only in running memory, so a page reload requires another login. The login callback URL is cleared from browser history before code exchange.
 
-The Profile surface lets signed-in users create, edit and withdraw own private Moment drafts. The client does not offer a publish control, media input, Place attachment or EXIF handling. Without a configured OIDC provider, these signed-in actions cannot yet be exercised with a real user.
+The Profile surface lets signed-in users create, edit and withdraw own private Moment drafts. The client does not offer a publish control, media input, Place attachment or EXIF handling. An API running with `BIRDTIE_DEV_PHONE_AUTH=1` also offers a local testing login: request a challenge, then use the prefilled `123456` code. No SMS is sent and the phone number is not verified. This test Account is separate from any existing Civu or future verified phone identity. See the API README for the loopback restrictions and migration.
 
 Run the client with the API URL set at build time, for example:
 
@@ -27,3 +27,5 @@ flutter run -d chrome --web-hostname=localhost --web-port=7357 --dart-define-fro
 ```
 
 For a real login using the command above, allow `http://localhost:7357` through the API's `BIRDTIE_ALLOWED_ORIGINS` and set `BIRDTIE_OIDC_CLIENT_REDIRECT=http://localhost:7357/`. Register the API's `/v1/auth/oidc/callback` URL with the provider. Flutter's development port can vary, so keep it fixed when setting the redirect and origin. No issuer or client credentials are included in this repository. Native mobile and desktop login callbacks are not implemented.
+
+For local development login, the same API URL and allowed origin work without OIDC configuration when the API's development phone flag is enabled. Android Emulator clients can reach the host API with `--dart-define=BIRDTIE_API_BASE_URL=http://10.0.2.2:8080`; a physical device needs an explicit local tunnel such as `adb reverse tcp:8080 tcp:8080` and `http://127.0.0.1:8080`. The API itself remains bound to loopback.

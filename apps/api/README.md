@@ -18,6 +18,7 @@ docker compose exec db psql -U birdtie -d birdtie -v ON_ERROR_STOP=1 -f /migrati
 docker compose exec db psql -U birdtie -d birdtie -v ON_ERROR_STOP=1 -f /migrations/008_city_map_viewports.sql
 docker compose exec db psql -U birdtie -d birdtie -v ON_ERROR_STOP=1 -f /migrations/009_agent_workspace.sql
 docker compose exec db psql -U birdtie -d birdtie -v ON_ERROR_STOP=1 -f /migrations/010_community_review_and_inbox.sql
+docker compose exec db psql -U birdtie -d birdtie -v ON_ERROR_STOP=1 -f /migrations/011_dev_phone_auth.sql
 $env:BIRDTIE_DATABASE_URL = 'postgres://birdtie:birdtie_local_only@127.0.0.1:55432/birdtie?sslmode=disable'
 go run .
 ```
@@ -27,6 +28,8 @@ The Compose database binds only to local loopback. Its password is for local dev
 Migration `009` adds private Agent task history and draft-by-default Communities. No Community or Agent task data is seeded.
 
 Migration `010` adds independent Community review evidence and owner-only Inbox items. It has no seed content.
+
+Migration `011` adds short-lived, local development phone challenges. It stores a phone digest, not a clear-text phone number, and has no seed content.
 
 `BIRDTIE_DATABASE_URL` is required. `BIRDTIE_API_ADDR` defaults to `127.0.0.1:8080`. `BIRDTIE_ALLOWED_ORIGINS` is an optional comma-separated allowlist for browser clients; no cross-origin access is enabled by default.
 
@@ -80,7 +83,22 @@ Submission confirms the owner request but never publishes directly. The reviewer
 - `DELETE /v1/me/consents/{grantID}`: revoke one of the caller's Profile grants.
 - `GET /v1/accounts/{accountID}/profile`: allow the owner, an eligible grant recipient, or an anonymous viewer of an explicitly public Profile; inaccessible Profiles return 404.
 
-The protected routes require `Authorization: Bearer <opaque session>`. The server creates a Session only after the OIDC callback verifies an ID Token and a client redeems a one-time, PKCE-bound Birdtie code. Never use a client-supplied Account ID as the actor. Sessions have an eight-hour absolute lifetime and a rolling thirty-minute idle limit.
+The protected routes require `Authorization: Bearer <opaque session>`. A production Session requires a verified OIDC callback and a one-time, PKCE-bound Birdtie code exchange. The explicitly enabled local development flow below can also issue a Session, but does not verify phone ownership. Never use a client-supplied Account ID as the actor. Sessions have an eight-hour absolute lifetime and a rolling thirty-minute idle limit.
+
+## Local development phone login
+
+OIDC is a protocol for login through an external identity provider; it is not an SMS code. To develop signed-in Birdtie flows before a provider or SMS service is ready, set `BIRDTIE_DEV_PHONE_AUTH=1` when starting the API after migration `011`. It is off by default. For Flutter web, set `BIRDTIE_ALLOWED_ORIGINS` to the exact loopback client origin, for example `http://localhost:7357`.
+
+```powershell
+$env:BIRDTIE_DATABASE_URL = 'postgres://birdtie:birdtie_local_only@127.0.0.1:55432/birdtie?sslmode=disable'
+$env:BIRDTIE_ALLOWED_ORIGINS = 'http://localhost:7357'
+$env:BIRDTIE_DEV_PHONE_AUTH = '1'
+go run .
+```
+
+The API and database must both use loopback hosts, and every allowed browser origin must use a loopback host; startup fails otherwise. `GET /v1/auth/dev-phone/status` reports whether the flow is enabled. `POST /v1/auth/dev-phone/code` with `{"phone":"13800138000"}` creates a five-minute challenge but sends no SMS and returns no code. `POST /v1/auth/dev-phone/verify` with `{"phone":"13800138000","code":"123456"}` consumes it and returns an opaque Birdtie Bearer Session. Requests have a 60-second per-phone cooldown and at most five incorrect attempts per challenge. Disabling the flag immediately makes development Sessions unusable.
+
+This fixed code proves nothing about ownership of the supplied number. The resulting identity uses a separate `urn:birdtie:local-dev-phone` namespace and a private Profile; it does not match or import Civu accounts, grant editorial roles, or become a verified phone identity. A future real SMS flow and existing-account binding require their own verification and migration design. Never enable this mode on an externally reachable API or against a production database.
 
 An authenticated Activity read filters records hosted by an Account involved in a block with the viewer. Anonymous public reads cannot apply a viewer-specific block. The Flutter web shell sends its in-memory Bearer credential on Activity reads after login and refreshes that list when login state changes. Place and external-host City Seed Activity records are not person-owned social content.
 

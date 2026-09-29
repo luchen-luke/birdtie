@@ -4,7 +4,9 @@ import (
 	"context"
 	"errors"
 	"log"
+	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"os/signal"
 	"strings"
@@ -42,7 +44,30 @@ func main() {
 		address = "127.0.0.1:8080"
 	}
 	allowedOrigins := strings.Split(os.Getenv("BIRDTIE_ALLOWED_ORIGINS"), ",")
-	store := postgres.New(pool)
+	devSetting := strings.TrimSpace(os.Getenv("BIRDTIE_DEV_PHONE_AUTH"))
+	devPhoneEnabled := devSetting == "1" || strings.EqualFold(devSetting, "true")
+	if devSetting != "" && devSetting != "0" && !strings.EqualFold(devSetting, "false") && !devPhoneEnabled {
+		log.Fatal("BIRDTIE_DEV_PHONE_AUTH must be true or false")
+	}
+	if devPhoneEnabled {
+		host, _, err := net.SplitHostPort(address)
+		if err != nil || !isLoopbackHost(host) ||
+			!isLoopbackHost(pool.Config().ConnConfig.Host) {
+			log.Fatal("development phone auth requires loopback API and database hosts")
+		}
+		for _, origin := range allowedOrigins {
+			origin = strings.TrimSpace(origin)
+			if origin == "" {
+				continue
+			}
+			parsed, err := url.Parse(origin)
+			if err != nil || !isLoopbackHost(parsed.Hostname()) ||
+				(parsed.Scheme != "http" && parsed.Scheme != "https") {
+				log.Fatal("development phone auth requires loopback browser origins")
+			}
+		}
+	}
+	store := postgres.New(pool, devPhoneEnabled)
 	var oidc *oidcauth.Service
 	if os.Getenv("BIRDTIE_OIDC_ISSUER") != "" ||
 		os.Getenv("BIRDTIE_OIDC_CLIENT_ID") != "" ||
@@ -64,7 +89,7 @@ func main() {
 	}
 	server := &http.Server{
 		Addr:              address,
-		Handler:           httpapi.New(store, store, store, store, store, store, store, oidc, pool, allowedOrigins),
+		Handler:           httpapi.New(store, store, store, store, store, store, store, store, devPhoneEnabled, oidc, pool, allowedOrigins),
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       10 * time.Second,
 		WriteTimeout:      15 * time.Second,
@@ -84,4 +109,12 @@ func main() {
 	if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		log.Fatal(err)
 	}
+}
+
+func isLoopbackHost(host string) bool {
+	if strings.EqualFold(host, "localhost") {
+		return true
+	}
+	ip := net.ParseIP(host)
+	return ip != nil && ip.IsLoopback()
 }

@@ -3,6 +3,8 @@
 Date: 2026-09-29  
 Status: Accepted for local Foundation implementation; identity-provider integration is pending.
 
+Update (2026-09-30): ADR 0009 adds a separately gated local development phone identity with fixed code `123456`. It is not a verified external identity or production Account binding; development Sessions are rejected when that mode is disabled.
+
 ## Decision
 
 1. Birdtie maps a verified external issuer/subject to an Account. The generic OIDC callback validates the provider ID Token, and a one-time PKCE-bound Birdtie exchange code is required before Session issuance. No public route accepts an Account ID, issuer, subject or arbitrary token as proof of identity. Account recovery and provider-specific onboarding remain open.

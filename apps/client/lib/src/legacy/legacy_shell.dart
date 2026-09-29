@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 
 import '../auth/birdtie_auth_controller.dart';
+import '../auth/dev_phone_login_sheet.dart';
 import '../city/public_city_controller.dart';
 import '../city/public_city_map.dart';
 import '../content/private_moment_controller.dart';
@@ -656,6 +657,16 @@ class _MyBirdtiePage extends StatelessWidget {
   final PrivateMomentController moments;
   final PublicCityController city;
 
+  Future<void> _openDevPhoneLogin(BuildContext context) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      backgroundColor: _surface,
+      builder: (context) => DevPhoneLoginSheet(auth: auth),
+    );
+  }
+
   Future<void> _createMoment(BuildContext context) async {
     final selected = city.selectedCity;
     if (!auth.signedIn || selected == null) return;
@@ -708,8 +719,10 @@ class _MyBirdtiePage extends StatelessWidget {
                 ? (auth.displayName ?? 'Birdtie account')
                 : 'Account not connected',
             detail: auth.signedIn
-                ? '已通过 OIDC 登录。个人内容和编辑工作区会按权限逐步开放。'
-                : '可使用已配置的身份提供方登录；浏览城市不需要登录。',
+                ? auth.loginMethod == 'dev_phone'
+                      ? '本地测试会话；手机号所有权尚未验证。'
+                      : '已通过 OIDC 登录。个人内容和编辑工作区会按权限逐步开放。'
+                : '可使用下方可用的登录方式；浏览城市不需要登录。',
             accent: _forest,
           ),
           if (auth.error != null) ...[
@@ -721,13 +734,18 @@ class _MyBirdtiePage extends StatelessWidget {
             OutlinedButton(
               onPressed: auth.busy ? null : auth.signOut,
               child: const Text('Sign out'),
-            )
-          else if (auth.available)
+            ),
+          if (!auth.signedIn && auth.available)
             FilledButton(
               onPressed: auth.busy ? null : auth.signIn,
               child: Text(auth.busy ? 'Connecting…' : 'Sign in'),
-            )
-          else
+            ),
+          if (!auth.signedIn && auth.devPhoneAvailable)
+            FilledButton(
+              onPressed: auth.busy ? null : () => _openDevPhoneLogin(context),
+              child: const Text('手机号测试登录'),
+            ),
+          if (!auth.signedIn && !auth.available && !auth.devPhoneAvailable)
             Text(
               auth.configurationChecked
                   ? '登录服务尚未配置或暂不可用。当前仍可浏览公开城市内容。'

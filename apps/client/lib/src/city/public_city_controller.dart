@@ -146,6 +146,7 @@ class PublicActivity {
     required this.timeZone,
     required this.status,
     required this.source,
+    required this.location,
   });
 
   final String id;
@@ -157,6 +158,7 @@ class PublicActivity {
   final String timeZone;
   final String status;
   final PublicSource source;
+  final PublicPlaceLocation? location;
 
   factory PublicActivity.fromJson(Map<String, dynamic> json) => PublicActivity(
     id: json['id'] as String,
@@ -168,6 +170,9 @@ class PublicActivity {
     timeZone: json['timeZone'] as String,
     status: json['status'] as String,
     source: PublicSource.fromJson(json['source'] as Map<String, dynamic>),
+    location: json['location'] is Map<String, dynamic>
+        ? PublicPlaceLocation.fromJson(json['location'] as Map<String, dynamic>)
+        : null,
   );
 }
 

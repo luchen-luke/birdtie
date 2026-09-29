@@ -10,12 +10,14 @@ class Sidebar extends StatelessWidget {
     super.key,
     required this.workspace,
     required this.city,
+    required this.onCitySelected,
     required this.onNew,
     required this.onDestination,
     required this.onRecent,
   });
   final AgentWorkspaceController workspace;
   final PublicCityController city;
+  final ValueChanged<String> onCitySelected;
   final VoidCallback onNew;
   final ValueChanged<SidebarDestination> onDestination;
   final ValueChanged<AgentTask> onRecent;
@@ -57,7 +59,7 @@ class Sidebar extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(24, 0, 24, 10),
               child: PopupMenuButton<String>(
                 enabled: city.cities.length > 1,
-                onSelected: city.selectCity,
+                onSelected: onCitySelected,
                 itemBuilder: (context) => [
                   for (final option in city.cities)
                     PopupMenuItem(value: option.id, child: Text(option.name)),
@@ -135,7 +137,7 @@ class Sidebar extends StatelessWidget {
                       task.query,
                       () => onRecent(task),
                     ),
-                  if (workspace.recent.isEmpty)
+                  if (workspace.recent.isEmpty && workspace.demoMode)
                     _item(
                       Icons.auto_awesome_outlined,
                       'Badminton this weekend · demo',

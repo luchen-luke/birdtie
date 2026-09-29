@@ -106,7 +106,9 @@ class AgentResultSheet extends StatelessWidget {
                       child: Text(
                         workspace.state == AgentViewState.searching
                             ? 'Looking around…'
-                            : '${workspace.result?.activities.length ?? 0} published activities · ${workspace.result?.entities.length ?? 0} demo map entities',
+                            : workspace.demoMode
+                            ? '${workspace.result?.activities.length ?? 0} published activities · ${workspace.result?.entities.length ?? 0} demo map entities'
+                            : '${workspace.result?.activities.length ?? 0} activities · ${workspace.result?.people.length ?? 0} people · ${workspace.result?.groups.length ?? 0} groups',
                         style: const TextStyle(
                           color: Color(0xFF747B73),
                           fontSize: 12,
@@ -139,15 +141,16 @@ class _ResultList extends StatelessWidget {
     final result = workspace.result;
     if (result == null) return const Center(child: CircularProgressIndicator());
     final activities = result.entities.where(
-      (entity) => entity.kind == MapEntityKind.activity,
+      (entity) => entity.isDemo && entity.kind == MapEntityKind.activity,
     );
     final people = result.entities.where(
       (entity) =>
-          entity.kind == MapEntityKind.person ||
-          entity.kind == MapEntityKind.peopleCluster,
+          entity.isDemo &&
+          (entity.kind == MapEntityKind.person ||
+              entity.kind == MapEntityKind.peopleCluster),
     );
     final groups = result.entities.where(
-      (entity) => entity.kind == MapEntityKind.group,
+      (entity) => entity.isDemo && entity.kind == MapEntityKind.group,
     );
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
@@ -164,6 +167,9 @@ class _ResultList extends StatelessWidget {
               title: activity.title,
               subtitle:
                   '${activity.status} · Published City API · ${activity.source.label}',
+              onTap: activity.location?.hasPublicPoint == true
+                  ? () => workspace.selectEntity('activity:${activity.id}')
+                  : null,
             ),
           for (final entity in activities)
             _Row(
@@ -173,8 +179,14 @@ class _ResultList extends StatelessWidget {
               onTap: () => workspace.selectEntity(entity.id),
             ),
         ],
-        if (people.isNotEmpty) ...[
+        if (people.isNotEmpty || result.people.isNotEmpty) ...[
           const _Heading('People'),
+          for (final person in result.people)
+            _Row(
+              icon: Icons.person_outline,
+              title: person.displayName,
+              subtitle: '${person.topic} · ${person.areaLabel} · public Intent',
+            ),
           for (final entity in people)
             _Row(
               icon: Icons.person_outline,
@@ -183,8 +195,20 @@ class _ResultList extends StatelessWidget {
               onTap: () => workspace.selectEntity(entity.id),
             ),
         ],
-        if (groups.isNotEmpty) ...[
+        if (groups.isNotEmpty || result.groups.isNotEmpty) ...[
           const _Heading('Groups'),
+          for (final group in result.groups)
+            _Row(
+              icon: Icons.group_outlined,
+              title: group.name,
+              subtitle: '${group.summary} · published group',
+              onTap:
+                  result.entities.any(
+                    (entity) => entity.id == 'group:${group.id}',
+                  )
+                  ? () => workspace.selectEntity('group:${group.id}')
+                  : null,
+            ),
           for (final entity in groups)
             _Row(
               icon: Icons.group_outlined,
@@ -200,16 +224,23 @@ class _ResultList extends StatelessWidget {
               icon: Icons.place_outlined,
               title: place.name,
               subtitle: 'Published City API · ${place.source.label}',
+              onTap: place.location.hasPublicPoint
+                  ? () => workspace.selectEntity('place:${place.id}')
+                  : null,
             ),
         ],
         if (result.entities.isEmpty &&
             result.activities.isEmpty &&
+            result.people.isEmpty &&
+            result.groups.isEmpty &&
             result.places.isEmpty)
-          const Padding(
+          Padding(
             padding: EdgeInsets.only(top: 24),
             child: Text(
-              'Try “Find someone to play badminton this weekend” to see the local demo.',
-              style: TextStyle(color: Color(0xFF747B73)),
+              workspace.demoMode
+                  ? 'Try “Find someone to play badminton this weekend” to see the local demo.'
+                  : 'Try another intent or check back as more public city data is added.',
+              style: const TextStyle(color: Color(0xFF747B73)),
             ),
           ),
       ],

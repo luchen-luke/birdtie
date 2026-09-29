@@ -1,6 +1,6 @@
 # Birdtie Foundation API
 
-Birdtie's Go API reads published City, Place and Activity records from a Birdtie-owned PostgreSQL schema. The initial Aberdeen city is marked `building` and `unverified`; no sample Places or Activities are presented as live data. Session and Profile Consent routes establish the first private access boundary. City Seed Place and Activity editorial routes can publish only after separate reviewer approval. A generic OIDC login flow is implemented but remains disabled until an issuer and client registration are configured. Owner-only Moment draft routes are available after login. Profile editing, media upload and user content publishing are not implemented.
+Birdtie's Go API reads published City, Place and Activity records from a Birdtie-owned PostgreSQL schema. The initial Aberdeen city is marked `building` and `unverified`; no sample Places, Activities, People or Groups are presented as live data. The Agent task endpoint searches public, current City Graph records with transparent text matching. Session and Profile Consent routes establish the private access boundary. City Seed Place and Activity editorial routes can publish only after separate reviewer approval. A generic OIDC login flow is implemented but remains disabled until an issuer and client registration are configured. Owner-only Moment drafts and Agent task history are available after login. Profile editing, media upload and user content publishing are not implemented.
 
 ## Local database
 
@@ -16,11 +16,14 @@ docker compose exec db psql -U birdtie -d birdtie -v ON_ERROR_STOP=1 -f /migrati
 docker compose exec db psql -U birdtie -d birdtie -v ON_ERROR_STOP=1 -f /migrations/006_city_graph_content.sql
 docker compose exec db psql -U birdtie -d birdtie -v ON_ERROR_STOP=1 -f /migrations/007_city_seed_activities.sql
 docker compose exec db psql -U birdtie -d birdtie -v ON_ERROR_STOP=1 -f /migrations/008_city_map_viewports.sql
+docker compose exec db psql -U birdtie -d birdtie -v ON_ERROR_STOP=1 -f /migrations/009_agent_workspace.sql
 $env:BIRDTIE_DATABASE_URL = 'postgres://birdtie:birdtie_local_only@127.0.0.1:55432/birdtie?sslmode=disable'
 go run .
 ```
 
 The Compose database binds only to local loopback. Its password is for local development, not deployment. Migration `001` is idempotent for the initial schema and seed; `002` adds the coordinate privacy constraint to older local databases; `003` adds Session and Profile Consent; `004` adds City Seed Place editorial tables; `005` adds short-lived OIDC state and one-time Birdtie exchange codes; `006` adds draft-by-default City Graph content tables; `007` adds reviewed City Seed Activity candidates; `008` adds per-City map provider and sourced, display-only viewport. Use an independent credential and managed migration process before deployment.
+
+Migration `009` adds private Agent task history and draft-by-default Communities. No Community or Agent task data is seeded.
 
 `BIRDTIE_DATABASE_URL` is required. `BIRDTIE_API_ADDR` defaults to `127.0.0.1:8080`. `BIRDTIE_ALLOWED_ORIGINS` is an optional comma-separated allowlist for browser clients; no cross-origin access is enabled by default.
 
@@ -35,10 +38,20 @@ The Compose database binds only to local loopback. Its password is for local dev
 - `GET /v1/cities/{cityID}/activities`
 - `GET /v1/activities/{activityID}`
 - `GET /v1/accounts/{accountID}/profile` (only explicitly public Profiles for anonymous callers)
+- `POST /v1/cities/{cityID}/agent/tasks` with JSON `{"query":"Find badminton this weekend"}` (anonymous or Bearer; query up to 240 UTF-8 bytes)
+
+The Agent endpoint returns `{data:{cityId,query,mode:"rules",activities,people,groups,places,taskId?}}`. It searches published, current records in one City using up to six significant query terms and bounded lists. This is literal text matching, not semantic matching, recommendation or an LLM. People come from owner-confirmed, active public Intents joined to explicitly public Profiles; only a coarse area label is returned. Groups come from owner-confirmed, verified, published public Communities. Neither People nor Groups have seeded records or an open publishing flow. Signed-in searches apply mutual Account blocks to person-owned results. Public point coordinates can come only from an eligible published, unexpired Place; People have no map point. Anonymous searches are not saved.
 
 The City Place list accepts optional `q` (up to 240 UTF-8 bytes) for a literal, case-insensitive name/summary substring search. It searches published Places in the selected published City and returns at most 100 results ordered by name, with the same provenance and location-precision rules as the unfiltered list. It does not use a map provider or location permission. Pagination, category/time filters and a search index remain future work.
 
 Published City responses may include `map: {provider, latitude, longitude, defaultZoom, sourceRef}`. This is a display viewport, not a City centroid or a Place. Aberdeen selects `mapbox`; no other City is seeded. Public Place coordinates remain WGS84, and only `location.precision=point` is eligible for an exact map marker. See ADR 0006 for the Mapbox/AMap boundary.
+
+## Private Agent task history
+
+- `GET /v1/me/agent-tasks`: list up to 50 recent tasks belonging to the Bearer Session's Account.
+- `GET /v1/me/agent-tasks/{taskID}`: restore one owned task. A task owned by another Account returns 404.
+
+Signed-in `POST /v1/cities/{cityID}/agent/tasks` saves the query and City after a successful search and returns `taskId`. Restore reruns the query against current publication, expiry and block rules; result snapshots and conversation turns are not stored. The client currently keeps conversation and viewport state in memory only. No task deletion or completion route exists yet. Apply rate limits and a fuller identity review before external rollout.
 
 ## Session and Profile Consent routes
 

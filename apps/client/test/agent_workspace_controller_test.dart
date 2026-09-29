@@ -2,7 +2,7 @@ import 'package:birdtie_client/src/city/public_city_controller.dart';
 import 'package:birdtie_client/src/workspace/agent_workspace_controller.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-class _Source implements AgentTaskSource {
+class _Source extends AgentTaskSource {
   @override
   Future<AgentResult> resolve(
     String query,

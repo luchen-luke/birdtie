@@ -123,7 +123,7 @@ func scanPlace(row scanner) (foundation.Place, error) {
 	if err != nil {
 		return foundation.Place{}, notFound(err)
 	}
-	if place.Location.Precision == "none" {
+	if place.Location.Precision != "point" || place.Location.CoordinateSystem != "wgs84" {
 		place.Location.Latitude = nil
 		place.Location.Longitude = nil
 	}

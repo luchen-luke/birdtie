@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/foundation.dart';
 
 import '../city/public_city_controller.dart';
@@ -30,23 +28,61 @@ class AgentResult {
     required this.activities,
     required this.places,
     required this.note,
+    this.people = const [],
+    this.groups = const [],
+    this.taskID,
   });
   final List<MapEntity> entities;
   final List<PublicActivity> activities;
   final List<PublicPlace> places;
   final String note;
+  final List<AgentPerson> people;
+  final List<AgentGroup> groups;
+  final String? taskID;
 }
 
-/// A replaceable boundary for the future Agent API. No network or LLM calls here.
+class AgentPerson {
+  const AgentPerson({
+    required this.accountID,
+    required this.displayName,
+    required this.topic,
+    required this.areaLabel,
+  });
+  final String accountID;
+  final String displayName;
+  final String topic;
+  final String areaLabel;
+}
+
+class AgentGroup {
+  const AgentGroup({
+    required this.id,
+    required this.name,
+    required this.summary,
+  });
+  final String id;
+  final String name;
+  final String summary;
+}
+
+/// A replaceable task source. The remote implementation uses the Birdtie API.
 abstract class AgentTaskSource {
+  const AgentTaskSource();
   Future<AgentResult> resolve(
     String query,
     List<PublicActivity> activities,
     List<PublicPlace> places,
   );
+  Future<List<AgentTask>> loadRecent() async => [];
+  Future<AgentResult> restore(
+    AgentTask task,
+    List<PublicActivity> activities,
+    List<PublicPlace> places,
+  ) => resolve(task.query, activities, places);
+  void dispose() {}
 }
 
-class LocalAgentTaskSource implements AgentTaskSource {
+class LocalAgentTaskSource extends AgentTaskSource {
   const LocalAgentTaskSource();
 
   @override
@@ -92,6 +128,7 @@ class AgentWorkspaceController extends ChangeNotifier {
   AgentWorkspaceController({AgentTaskSource? source})
     : _source = source ?? const LocalAgentTaskSource();
   final AgentTaskSource _source;
+  bool get demoMode => _source is LocalAgentTaskSource;
   AgentViewState state = AgentViewState.idle;
   AgentSheetExtent sheetExtent = AgentSheetExtent.compact;
   AgentTask? task;
@@ -102,6 +139,33 @@ class AgentWorkspaceController extends ChangeNotifier {
   final Map<String, AgentResult> _savedResults = {};
   final Map<String, List<String>> _savedConversation = {};
   int _serial = 0;
+  int _historySerial = 0;
+
+  Future<void> loadRecent() async {
+    final serial = ++_historySerial;
+    try {
+      final stored = await _source.loadRecent();
+      if (serial != _historySerial) return;
+      final local = recent
+          .where((item) => item.id.startsWith('local-'))
+          .toList();
+      recent
+        ..clear()
+        ..addAll([...local, ...stored]);
+      notifyListeners();
+    } catch (_) {
+      // Keep current-session tasks if history is unavailable.
+    }
+  }
+
+  void clearAccountContext() {
+    ++_historySerial;
+    newTask();
+    recent.clear();
+    _savedResults.clear();
+    _savedConversation.clear();
+    notifyListeners();
+  }
 
   void beginTyping() {
     if (state == AgentViewState.idle || state == AgentViewState.results) {
@@ -138,11 +202,36 @@ class AgentWorkspaceController extends ChangeNotifier {
     state = AgentViewState.searching;
     conversation.add(query);
     notifyListeners();
-    final resolved = await _source.resolve(query, activities, places);
+    AgentResult resolved;
+    try {
+      resolved = await _source.resolve(query, activities, places);
+    } catch (_) {
+      if (serial != _serial) return;
+      result = const AgentResult(
+        entities: [],
+        activities: [],
+        places: [],
+        note: 'Results are unavailable right now. Please try again.',
+      );
+      state = AgentViewState.results;
+      sheetExtent = AgentSheetExtent.half;
+      notifyListeners();
+      return;
+    }
     if (serial != _serial) return;
+    if (resolved.taskID != null) {
+      task = AgentTask(
+        id: resolved.taskID!,
+        query: query,
+        status: 'active',
+        cityID: cityID,
+      );
+    }
     result = resolved;
-    _savedResults[task!.id] = resolved;
-    _savedConversation[task!.id] = List.of(conversation);
+    if (demoMode || resolved.taskID == null) {
+      _savedResults[task!.id] = resolved;
+      _savedConversation[task!.id] = List.of(conversation);
+    }
     recent.removeWhere((item) => item.query == query);
     recent.insert(0, task!);
     state = AgentViewState.results;
@@ -175,24 +264,40 @@ class AgentWorkspaceController extends ChangeNotifier {
     notifyListeners();
   }
 
-  void reopen(
+  Future<void> reopen(
     AgentTask previous,
     List<PublicActivity> activities,
     List<PublicPlace> places,
-  ) {
+  ) async {
     newTask();
     final saved = _savedResults[previous.id];
-    if (saved == null) {
-      unawaited(
-        submit(previous.query, activities, places, cityID: previous.cityID),
-      );
-      return;
-    }
     task = previous;
-    result = saved;
     conversation.addAll(_savedConversation[previous.id] ?? [previous.query]);
+    state = AgentViewState.searching;
+    notifyListeners();
+    if (saved != null) {
+      result = saved;
+    } else {
+      try {
+        result = await _source.restore(previous, activities, places);
+      } catch (_) {
+        result = const AgentResult(
+          entities: [],
+          activities: [],
+          places: [],
+          note: 'This task could not be restored. Please try again.',
+        );
+      }
+    }
+    if (task?.id != previous.id) return;
     state = AgentViewState.results;
     sheetExtent = AgentSheetExtent.half;
     notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _source.dispose();
+    super.dispose();
   }
 }

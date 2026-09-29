@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/birdtie/birdtie/apps/api/internal/agentworkspace"
 	"github.com/birdtie/birdtie/apps/api/internal/cityseed"
 	"github.com/birdtie/birdtie/apps/api/internal/content"
 	"github.com/birdtie/birdtie/apps/api/internal/foundation"
@@ -26,14 +27,15 @@ type server struct {
 	access  identity.AccessStore
 	seed    cityseed.Store
 	content content.MomentStore
+	agent   agentworkspace.Store
 	oidc    *oidcauth.Service
 	db      pinger
 }
 
 var uuidPath = regexp.MustCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`)
 
-func New(catalog foundation.PublicCatalog, access identity.AccessStore, seed cityseed.Store, contentStore content.MomentStore, oidc *oidcauth.Service, db pinger, allowedOrigins []string) http.Handler {
-	s := &server{catalog: catalog, access: access, seed: seed, content: contentStore, oidc: oidc, db: db}
+func New(catalog foundation.PublicCatalog, access identity.AccessStore, seed cityseed.Store, contentStore content.MomentStore, agentStore agentworkspace.Store, oidc *oidcauth.Service, db pinger, allowedOrigins []string) http.Handler {
+	s := &server{catalog: catalog, access: access, seed: seed, content: contentStore, agent: agentStore, oidc: oidc, db: db}
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", s.health)
 	mux.HandleFunc("GET /readyz", s.ready)
@@ -43,6 +45,9 @@ func New(catalog foundation.PublicCatalog, access identity.AccessStore, seed cit
 	mux.HandleFunc("GET /v1/places/{placeID}", s.getPlace)
 	mux.HandleFunc("GET /v1/cities/{cityID}/activities", s.listActivities)
 	mux.HandleFunc("GET /v1/activities/{activityID}", s.getActivity)
+	mux.HandleFunc("POST /v1/cities/{cityID}/agent/tasks", s.createAgentTask)
+	mux.HandleFunc("GET /v1/me/agent-tasks", s.listAgentTasks)
+	mux.HandleFunc("GET /v1/me/agent-tasks/{taskID}", s.getAgentTask)
 	mux.HandleFunc("GET /v1/cities/{cityID}/activity-candidates", s.listActivityCandidates)
 	mux.HandleFunc("POST /v1/cities/{cityID}/activity-candidates", s.submitActivityCandidate)
 	mux.HandleFunc("POST /v1/activity-candidates/{candidateID}/review", s.reviewActivityCandidate)

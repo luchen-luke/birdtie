@@ -78,6 +78,7 @@ type Activity struct {
 	EndsAt    time.Time `json:"endsAt"`
 	TimeZone  string    `json:"timeZone"`
 	Status    string    `json:"status"`
+	Location  *Location `json:"location,omitempty"`
 	Source    Source    `json:"source"`
 }
 

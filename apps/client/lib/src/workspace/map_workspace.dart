@@ -11,6 +11,7 @@ import 'agent_result_sheet.dart';
 import 'agent_workspace_controller.dart';
 import 'inbox.dart';
 import 'map_canvas.dart';
+import 'remote_agent_task_source.dart';
 import 'sidebar.dart';
 import 'top_controls.dart';
 
@@ -31,10 +32,38 @@ class MapWorkspace extends StatefulWidget {
 
 class _MapWorkspaceState extends State<MapWorkspace> {
   final _scaffold = GlobalKey<ScaffoldState>();
-  final _workspace = AgentWorkspaceController();
+  late final AgentWorkspaceController _workspace;
+  bool _wasSignedIn = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _workspace = AgentWorkspaceController(
+      source: RemoteAgentTaskSource.apiBase.isEmpty
+          ? const LocalAgentTaskSource()
+          : RemoteAgentTaskSource(
+              cityID: () => widget.city.selectedCity?.id,
+              authorizationHeader: () => widget.auth.authorizationHeader,
+            ),
+    );
+    widget.auth.addListener(_onAuthChange);
+    _wasSignedIn = widget.auth.signedIn;
+    if (widget.auth.signedIn) unawaited(_workspace.loadRecent());
+  }
+
+  void _onAuthChange() {
+    if (_wasSignedIn == widget.auth.signedIn) return;
+    _wasSignedIn = widget.auth.signedIn;
+    if (_wasSignedIn) {
+      unawaited(_workspace.loadRecent());
+    } else {
+      _workspace.clearAccountContext();
+    }
+  }
 
   @override
   void dispose() {
+    widget.auth.removeListener(_onAuthChange);
     _workspace.dispose();
     super.dispose();
   }
@@ -125,6 +154,10 @@ class _MapWorkspaceState extends State<MapWorkspace> {
       drawer: Sidebar(
         workspace: _workspace,
         city: widget.city,
+        onCitySelected: (id) {
+          _workspace.newTask();
+          widget.city.selectCity(id);
+        },
         onNew: () {
           _workspace.newTask();
           Navigator.pop(context);
@@ -133,7 +166,9 @@ class _MapWorkspaceState extends State<MapWorkspace> {
         onRecent: (task) {
           Navigator.pop(context);
           if (task.cityID != null) widget.city.selectCity(task.cityID!);
-          _workspace.reopen(task, widget.city.activities, widget.city.places);
+          unawaited(
+            _workspace.reopen(task, widget.city.activities, widget.city.places),
+          );
         },
       ),
       body: LayoutBuilder(

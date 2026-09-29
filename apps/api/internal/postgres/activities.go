@@ -9,12 +9,15 @@ import (
 
 const activityColumns = `a.id, a.city_id, COALESCE(p.id::text, ''), a.host_label,
     a.title, a.summary, a.starts_at, a.ends_at, a.time_zone, a.cancelled_at,
+    CASE WHEN p.location_precision = 'point' AND p.coordinate_system = 'wgs84' THEN p.latitude END,
+    CASE WHEN p.location_precision = 'point' AND p.coordinate_system = 'wgs84' THEN p.longitude END,
     a.source_label, a.source_ref, a.maintainer_label,
     a.updated_at, a.verified_at, a.expires_at`
 
 const publishedActivityFrom = ` FROM activities a
     JOIN cities c ON c.id = a.city_id AND c.publication_status = 'published'
     LEFT JOIN places p ON p.id = a.place_id AND p.publication_status = 'published'
+      AND (p.expires_at IS NULL OR p.expires_at > now())
     WHERE a.publication_status = 'published'
       AND NOT EXISTS (
         SELECT 1 FROM account_blocks b
@@ -61,16 +64,24 @@ func (s *Store) GetActivity(ctx context.Context, id, viewerID string) (foundatio
 func scanActivity(row scanner) (foundation.Activity, error) {
 	var activity foundation.Activity
 	var cancelledAt *time.Time
+	var latitude, longitude *float64
 	err := row.Scan(
 		&activity.ID, &activity.CityID, &activity.PlaceID, &activity.HostLabel,
 		&activity.Title, &activity.Summary, &activity.StartsAt,
 		&activity.EndsAt, &activity.TimeZone, &cancelledAt,
+		&latitude, &longitude,
 		&activity.Source.Label, &activity.Source.Reference,
 		&activity.Source.Maintainer, &activity.Source.UpdatedAt,
 		&activity.Source.VerifiedAt, &activity.Source.ExpiresAt,
 	)
 	if err != nil {
 		return foundation.Activity{}, notFound(err)
+	}
+	if latitude != nil && longitude != nil {
+		activity.Location = &foundation.Location{
+			CoordinateSystem: "wgs84", Precision: "point",
+			Latitude: latitude, Longitude: longitude,
+		}
 	}
 	now := time.Now().UTC()
 	activity.Source.SetFreshness(now)

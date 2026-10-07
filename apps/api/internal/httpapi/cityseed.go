@@ -41,6 +41,7 @@ func validCandidate(input *cityseed.SubmitInput) bool {
 	input.Name = strings.TrimSpace(input.Name)
 	input.CategoryCode = strings.TrimSpace(input.CategoryCode)
 	input.Summary = strings.TrimSpace(input.Summary)
+	input.AddressLabel = strings.TrimSpace(input.AddressLabel)
 	input.SourceLabel = strings.TrimSpace(input.SourceLabel)
 	input.SourceURL = strings.TrimSpace(input.SourceURL)
 	input.RightsNote = strings.TrimSpace(input.RightsNote)
@@ -57,6 +58,8 @@ func validCandidate(input *cityseed.SubmitInput) bool {
 		len(input.Summary) > 1000 || len(input.SourceLabel) == 0 ||
 		len(input.SourceLabel) > 120 || len(input.SourceURL) > 1000 ||
 		len(input.RightsNote) < 10 || len(input.RightsNote) > 1000 ||
+		len([]rune(input.AddressLabel)) > 240 ||
+		(input.AddressLabel != "" && input.LocationPrecision != "point") ||
 		input.ExpiresAt.Before(now.Add(time.Hour)) ||
 		input.ExpiresAt.After(now.Add(365*24*time.Hour)) {
 		return false

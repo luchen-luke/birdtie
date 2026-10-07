@@ -3,22 +3,26 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import '../config/birdtie_environment.dart';
 
 class PublicSource {
   const PublicSource({
     required this.label,
+    this.reference = '',
     required this.maintainer,
     required this.freshness,
     required this.updatedAt,
   });
 
   final String label;
+  final String reference;
   final String maintainer;
   final String freshness;
   final DateTime? updatedAt;
 
   factory PublicSource.fromJson(Map<String, dynamic> json) => PublicSource(
     label: json['label'] as String? ?? '',
+    reference: json['reference'] as String? ?? '',
     maintainer: json['maintainer'] as String? ?? '',
     freshness: json['freshness'] as String? ?? 'unverified',
     updatedAt: DateTime.tryParse(json['updatedAt'] as String? ?? ''),
@@ -87,6 +91,7 @@ class PublicPlace {
     required this.name,
     required this.categoryCode,
     required this.summary,
+    this.addressLabel = '',
     required this.source,
     required this.location,
   });
@@ -95,6 +100,7 @@ class PublicPlace {
   final String name;
   final String categoryCode;
   final String summary;
+  final String addressLabel;
   final PublicSource source;
   final PublicPlaceLocation location;
 
@@ -103,6 +109,7 @@ class PublicPlace {
     name: json['name'] as String,
     categoryCode: json['categoryCode'] as String? ?? '',
     summary: json['summary'] as String? ?? '',
+    addressLabel: json['addressLabel'] as String? ?? '',
     source: PublicSource.fromJson(json['source'] as Map<String, dynamic>),
     location: PublicPlaceLocation.fromJson(
       json['location'] as Map<String, dynamic>,
@@ -141,42 +148,88 @@ class PublicPlaceLocation {
 class PublicActivity {
   const PublicActivity({
     required this.id,
+    this.organizer,
+    this.organizationID,
     required this.hostLabel,
     required this.placeName,
+    this.modality = 'unspecified',
+    this.physicalPlaceStatus = 'unknown',
     required this.title,
     required this.summary,
+    this.description = '',
+    this.categoryCode = '',
+    this.capacity,
+    this.participantCount,
+    this.priceMinor = 0,
+    this.currency = '',
+    this.eligibility = '',
+    this.languageCode = '',
+    this.officialURL = '',
     required this.startsAt,
     required this.endsAt,
     required this.timeZone,
     required this.schedule,
+    this.endSchedule = '',
     required this.status,
     required this.source,
     required this.location,
   });
 
   final String id;
+  final PublicActivityOrganizer? organizer;
+  final String? organizationID;
   final String hostLabel;
   final String placeName;
+  final String modality;
+  final String physicalPlaceStatus;
   final String title;
   final String summary;
+  final String description;
+  final String categoryCode;
+  final int? capacity;
+  final int? participantCount;
+  final int priceMinor;
+  final String currency;
+  final String eligibility;
+  final String languageCode;
+  final String officialURL;
   final DateTime startsAt;
   final DateTime endsAt;
   final String timeZone;
   final String schedule;
+  final String endSchedule;
   final String status;
   final PublicSource source;
   final PublicPlaceLocation? location;
 
   factory PublicActivity.fromJson(Map<String, dynamic> json) => PublicActivity(
     id: json['id'] as String,
+    organizer: json['organizer'] is Map<String, dynamic>
+        ? PublicActivityOrganizer.fromJson(
+            json['organizer'] as Map<String, dynamic>,
+          )
+        : null,
+    organizationID: json['organizationId'] as String?,
     hostLabel: json['hostLabel'] as String? ?? '',
     placeName: json['placeName'] as String? ?? '',
+    modality: json['modality'] as String? ?? 'unspecified',
+    physicalPlaceStatus: json['physicalPlaceStatus'] as String? ?? 'unknown',
     title: json['title'] as String,
     summary: json['summary'] as String? ?? '',
+    description: json['description'] as String? ?? '',
+    categoryCode: json['categoryCode'] as String? ?? '',
+    capacity: json['capacity'] as int?,
+    participantCount: json['participantCount'] as int?,
+    priceMinor: json['priceMinor'] as int? ?? 0,
+    currency: json['currency'] as String? ?? '',
+    eligibility: json['eligibility'] as String? ?? '',
+    languageCode: json['languageCode'] as String? ?? '',
+    officialURL: json['officialUrl'] as String? ?? '',
     startsAt: DateTime.parse(json['startsAt'] as String),
     endsAt: DateTime.parse(json['endsAt'] as String),
     timeZone: json['timeZone'] as String,
     schedule: json['schedule'] as String? ?? '',
+    endSchedule: json['endSchedule'] as String? ?? '',
     status: json['status'] as String,
     source: PublicSource.fromJson(json['source'] as Map<String, dynamic>),
     location: json['location'] is Map<String, dynamic>
@@ -185,15 +238,66 @@ class PublicActivity {
   );
 }
 
-class PublicCityController extends ChangeNotifier {
-  PublicCityController({this.authorizationHeader}) : _client = http.Client();
+class PublicActivityOrganizer {
+  const PublicActivityOrganizer({
+    required this.type,
+    required this.id,
+    required this.name,
+    this.avatarUrl,
+  });
+  final String type;
+  final String id;
+  final String name;
+  final String? avatarUrl;
 
-  static const _apiBase = String.fromEnvironment('BIRDTIE_API_BASE_URL');
+  factory PublicActivityOrganizer.fromJson(Map<String, dynamic> json) =>
+      PublicActivityOrganizer(
+        type: json['type'] as String? ?? '',
+        id: json['id'] as String? ?? '',
+        name: json['name'] as String? ?? '',
+        avatarUrl: json['avatarUrl'] as String?,
+      );
+}
+
+class PublicOrganizationPin {
+  const PublicOrganizationPin({
+    required this.id,
+    required this.name,
+    required this.latitude,
+    required this.longitude,
+  });
+
+  final String id;
+  final String name;
+  final double latitude;
+  final double longitude;
+
+  factory PublicOrganizationPin.fromJson(Map<String, dynamic> json) =>
+      PublicOrganizationPin(
+        id: json['id'] as String,
+        name: json['name'] as String,
+        latitude: (json['latitude'] as num).toDouble(),
+        longitude: (json['longitude'] as num).toDouble(),
+      );
+}
+
+class PublicCityController extends ChangeNotifier {
+  PublicCityController({
+    this.authorizationHeader,
+    http.Client? client,
+    String? apiBaseUrl,
+  }) : _client = client ?? http.Client(),
+       _ownsClient = client == null,
+       _apiBase = (apiBaseUrl ?? BirdtieEnvironment.apiBaseUrl).trim();
+
+  final String _apiBase;
   final http.Client _client;
+  final bool _ownsClient;
   final String? Function()? authorizationHeader;
   List<PublicCity> _cities = const [];
   List<PublicPlace> _places = const [];
   List<PublicActivity> _activities = const [];
+  List<PublicOrganizationPin> _organizationPins = const [];
   String? _selectedCityID;
   String _placeQuery = '';
   String? _cityError;
@@ -205,12 +309,14 @@ class PublicCityController extends ChangeNotifier {
   bool _closed = false;
   int _placeRequest = 0;
   int _activityRequest = 0;
+  int _organizationPinRequest = 0;
 
   bool get configured => _apiBase.isNotEmpty;
   List<PublicCity> get cities => _cities;
   List<PublicPlace> get places => _places;
   String get placeQuery => _placeQuery;
   List<PublicActivity> get activities => _activities;
+  List<PublicOrganizationPin> get organizationPins => _organizationPins;
   PublicCity? get selectedCity {
     for (final city in _cities) {
       if (city.id == _selectedCityID) return city;
@@ -233,7 +339,12 @@ class PublicCityController extends ChangeNotifier {
   }
 
   Future<void> loadCities() async {
-    if (!configured || _citiesLoading) return;
+    if (_closed || _citiesLoading) return;
+    if (!configured) {
+      _cityError = '尚未配置城市服务，请检查运行设置后重试。';
+      _notify();
+      return;
+    }
     _citiesLoading = true;
     _cityError = null;
     _notify();
@@ -251,7 +362,9 @@ class PublicCityController extends ChangeNotifier {
           .toList(growable: false);
       _cities = List.unmodifiable(next);
       if (!next.any((city) => city.id == _selectedCityID)) {
-        _selectedCityID = next.isEmpty ? null : next.first.id;
+        // A catalog option is not a location observation. First load or removal
+        // of an explicit choice requires the person to choose again.
+        _selectedCityID = null;
         _placeRequest++;
         _places = const [];
         _placesLoading = false;
@@ -260,10 +373,16 @@ class PublicCityController extends ChangeNotifier {
         _activities = const [];
         _activitiesLoading = false;
         _activityError = null;
+        _organizationPinRequest++;
+        _organizationPins = const [];
       }
       _notify();
       if (_selectedCityID != null) {
-        await Future.wait([loadPlaces(), loadActivities()]);
+        await Future.wait([
+          loadPlaces(),
+          loadActivities(),
+          loadOrganizationPins(),
+        ]);
       }
     } catch (_) {
       _cityError = '无法读取城市，请稍后重试。';
@@ -274,7 +393,9 @@ class PublicCityController extends ChangeNotifier {
   }
 
   void selectCity(String cityID) {
-    if (cityID == _selectedCityID || !cities.any((city) => city.id == cityID)) {
+    if (_closed ||
+        cityID == _selectedCityID ||
+        !cities.any((city) => city.id == cityID)) {
       return;
     }
     _selectedCityID = cityID;
@@ -285,9 +406,12 @@ class PublicCityController extends ChangeNotifier {
     _activities = const [];
     _activitiesLoading = false;
     _activityError = null;
+    _organizationPinRequest++;
+    _organizationPins = const [];
     _notify();
     unawaited(loadPlaces());
     unawaited(loadActivities());
+    unawaited(loadOrganizationPins());
   }
 
   void searchPlaces(String query) {
@@ -376,10 +500,45 @@ class PublicCityController extends ChangeNotifier {
     }
   }
 
+  Future<void> loadOrganizationPins() async {
+    final cityID = _selectedCityID;
+    if (!configured || cityID == null) return;
+    final request = ++_organizationPinRequest;
+    try {
+      final response = await _client
+          .get(
+            _endpoint(
+              '/v1/cities/${Uri.encodeComponent(cityID)}/organizations/map',
+            ),
+          )
+          .timeout(const Duration(seconds: 10));
+      if (response.statusCode != 200) {
+        throw const FormatException('organization map unavailable');
+      }
+      final records =
+          (jsonDecode(response.body) as Map<String, dynamic>)['data']
+              as List<dynamic>;
+      final next = records
+          .map(
+            (item) =>
+                PublicOrganizationPin.fromJson(item as Map<String, dynamic>),
+          )
+          .toList(growable: false);
+      if (request == _organizationPinRequest) {
+        _organizationPins = List.unmodifiable(next);
+      }
+    } catch (_) {
+      // A failed public read must never leave a previously approved point visible.
+      if (request == _organizationPinRequest) _organizationPins = const [];
+    } finally {
+      if (request == _organizationPinRequest) _notify();
+    }
+  }
+
   @override
   void dispose() {
     _closed = true;
-    _client.close();
+    if (_ownsClient) _client.close();
     super.dispose();
   }
 }

@@ -44,3 +44,6 @@ Agent 工作区状态为 idle、typing、searching、results、conversation。�
 ## 本轮实现范围
 
 Flutter Shell 继续使用既有 Go/PostgreSQL、PublicCityController、认证、Moment 草稿和 Mapbox adapter；未增加大型状态管理依赖。规则式 Agent 查询 API、登录用户任务历史、Owner 发布和撤回 Group 已接入。Group 可不附外部链接；Profile 编辑和本人确认后直接发布的公开 Intent 也已接入。满足可见性和有效期条件时，真实 People 可进入 Agent 结果；仅主动公开地图区域的人员显示近似示意锚点（ADR 0015）。结果列表、地图实体由同一次查询驱动；当前只暂存单次输入的展示状态，地图视角不随 Recent 任务持久化。后续独立切片已实现 Place/Activity/Group 的 Owner-only Saved（ADR 0012）和 My Activities 私人计划（ADR 0013），均不扩大目标可见性或表示已报名。Settings 使用既有 Session/Consent/Block API，不另存客户端隐私状态。真人联系请求和消息经双方明确操作后接入 Inbox（ADR 0014），Agent Updates 尚无 producer。带上下文的多轮 Agent、个人精确地图点、真实活动报名/主办、高德 Web 实际加载与原生高德渲染尚未验证或完成。旧产品文档中 Now/Explore/Network 底栏描述属于此前版本，不再约束当前 Shell。
+# Status and ownership
+
+This document remains the accepted Birdtie shell/navigation baseline. Its earlier Now/Map interaction details are superseded by the canonical [Now — Agent Map Workspace](NOW-AGENT-MAP-WORKSPACE.md) and the global [UX Interaction Contract](../ux/GLOBAL-UX-INTERACTION-CONTRACT.md). Do not copy the superseded screen behaviors into new implementation work.

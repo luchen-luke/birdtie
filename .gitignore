@@ -20,6 +20,7 @@
 **/.flutter-plugins-dependencies
 **/.gradle/
 **/.gradle-user-home/
+/.gradle-build-audit/
 **/.kotlin/
 **/build/
 **/coverage/
@@ -31,3 +32,13 @@
 **/ios/Flutter/Generated.xcconfig
 **/ios/Flutter/ephemeral/
 **/ios/Flutter/flutter_export_environment.sh
+
+# Local validation captures, copied evidence inventories and provided archives
+/work/
+/docs/testing/evidence/
+**/__pycache__/
+*.py[cod]
+/automation/codex_task_queue.json.lock
+/*.zip
+/Birdtie-UI-Repair-2026-10-06/
+/device-input-audit.png

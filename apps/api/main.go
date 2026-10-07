@@ -13,6 +13,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/birdtie/birdtie/apps/api/internal/agentcognitive"
+	"github.com/birdtie/birdtie/apps/api/internal/agentfeature"
 	"github.com/birdtie/birdtie/apps/api/internal/httpapi"
 	"github.com/birdtie/birdtie/apps/api/internal/oidcauth"
 	"github.com/birdtie/birdtie/apps/api/internal/postgres"
@@ -20,6 +22,10 @@ import (
 )
 
 func main() {
+	featureConfig, err := agentfeature.LoadConfig(os.LookupEnv)
+	if err != nil {
+		log.Fatal("Agent 功能配置无效或边界不可用")
+	}
 	databaseURL := os.Getenv("BIRDTIE_DATABASE_URL")
 	if databaseURL == "" {
 		log.Fatal("BIRDTIE_DATABASE_URL is required")
@@ -68,6 +74,26 @@ func main() {
 		}
 	}
 	store := postgres.New(pool, devPhoneEnabled)
+	go func() {
+		ticker := time.NewTicker(5 * time.Minute)
+		defer ticker.Stop()
+		for {
+			runCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
+			started := time.Now()
+			count, err := store.EnqueueStartsSoonReminders(runCtx)
+			if err != nil && ctx.Err() == nil {
+				log.Printf("activity_reminder_run status=failed source=api stage=enqueue duration_ms=%d error=%q", time.Since(started).Milliseconds(), err)
+			} else if err == nil {
+				log.Printf("activity_reminder_run status=ok source=api inserted=%d duration_ms=%d", count, time.Since(started).Milliseconds())
+			}
+			cancel()
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+			}
+		}
+	}()
 	var oidc *oidcauth.Service
 	if os.Getenv("BIRDTIE_OIDC_ISSUER") != "" ||
 		os.Getenv("BIRDTIE_OIDC_CLIENT_ID") != "" ||
@@ -87,12 +113,47 @@ func main() {
 			log.Fatalf("configure OIDC: %v", err)
 		}
 	}
+	featureController, err := agentfeature.NewController(featureConfig)
+	if err != nil {
+		log.Fatal("Agent 功能配置无效或边界不可用")
+	}
+	candidates := postgres.NewMemoryCandidateHumanGateway(store, featureController)
+	candidatePipeline := postgres.NewCandidatePipeline(store, featureController)
+	multiCandidates := postgres.NewMultiCandidatePipeline(store, featureController)
+	agentRuns := postgres.NewAgentRuns(store, featureController)
+	sandboxRecovery := postgres.NewHumanSandboxRecovery(store, featureController)
+	humanActiveIntents, err := postgres.NewHumanActiveIntents(store)
+	if err != nil {
+		log.Fatal("当前意图管理边界初始化失败")
+	}
+	humanIntentConversions, err := postgres.NewHumanIntentConversions(store)
+	if err != nil {
+		log.Fatal("意图转活动边界初始化失败")
+	}
+	nowContextSelection, err := postgres.NewNowContextSelection(store)
+	if err != nil {
+		log.Fatal("情境选择边界初始化失败")
+	}
+	liveAnswers, err := loadNowLiveStartup(os.Getenv("BIRDTIE_NOW_LIVE_CONFIG"), address, devPhoneEnabled, store, featureController)
+	if err != nil {
+		log.Fatal("Now 真实检索与回答配置无效")
+	}
+	baseHandler := httpapi.New(store, store, store, store, store, store, store, store, store, store, store, store, devPhoneEnabled, oidc, pool, allowedOrigins, httpapi.WithMemoryCandidates(candidates), httpapi.WithCandidatePipeline(candidatePipeline), httpapi.WithMultiCandidates(multiCandidates), httpapi.WithHumanActiveIntents(humanActiveIntents), httpapi.WithHumanIntentConversions(humanIntentConversions), httpapi.WithAgentRuns(agentRuns), httpapi.WithNowContextSelection(nowContextSelection), httpapi.WithSandboxRecovery(sandboxRecovery), httpapi.WithNowLiveAnswers(liveAnswers))
+	handler, err := newAgentFeatureBoundaryWithController(featureController, store, baseHandler)
+	if err != nil {
+		log.Fatal("Agent 功能配置无效或边界不可用")
+	}
+	handler = withNowLiveDeadline(liveAnswers, store, handler)
+	writeTimeout := 15 * time.Second
+	if liveAnswers != nil {
+		writeTimeout = 35 * time.Second
+	}
 	server := &http.Server{
 		Addr:              address,
-		Handler:           httpapi.New(store, store, store, store, store, store, store, store, store, store, store, store, devPhoneEnabled, oidc, pool, allowedOrigins),
+		Handler:           handler,
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       10 * time.Second,
-		WriteTimeout:      15 * time.Second,
+		WriteTimeout:      writeTimeout,
 		IdleTimeout:       60 * time.Second,
 	}
 
@@ -109,6 +170,26 @@ func main() {
 	if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		log.Fatal(err)
 	}
+}
+
+// This composes the configured server adapter into the real request handler;
+// it creates no enrichment/model HTTP route and changes no direct human ACL.
+func newAgentFeatureBoundary(config agentfeature.Config, store agentcognitive.CurrentDomainStore, next http.Handler) (http.Handler, error) {
+	controller, err := agentfeature.NewController(config)
+	if err != nil {
+		return nil, err
+	}
+	return newAgentFeatureBoundaryWithController(controller, store, next)
+}
+
+// Cognitive, manual-candidate and purpose-bound candidate gates share the same
+// configured controller. HTTP input cannot replace that startup dependency.
+func newAgentFeatureBoundaryWithController(controller *agentfeature.Controller, store agentcognitive.CurrentDomainStore, next http.Handler) (http.Handler, error) {
+	domains, err := agentcognitive.NewFeatureGatedDomains(controller, store)
+	if err != nil {
+		return nil, err
+	}
+	return agentcognitive.FeatureBoundary(next, domains), nil
 }
 
 func isLoopbackHost(host string) bool {

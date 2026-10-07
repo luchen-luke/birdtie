@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -5,24 +6,73 @@ import 'package:http/http.dart' as http;
 
 import '../auth/birdtie_auth_controller.dart';
 import '../city/public_city_controller.dart';
+import '../config/birdtie_environment.dart';
+
+typedef _PublicIntentBinding = (
+  BirdtieAuthController,
+  String?,
+  String?,
+  http.Client,
+  String,
+  String?,
+);
 
 class PublicIntentSection extends StatefulWidget {
   const PublicIntentSection({
     super.key,
     required this.auth,
     required this.city,
+    this.client,
+    this.apiBaseUrl,
+    this.workspaceChanges,
+    this.organizationWorkspaceID,
   });
 
   final BirdtieAuthController auth;
   final PublicCityController city;
+  final http.Client? client;
+  final String? apiBaseUrl;
+  final Listenable? workspaceChanges;
+  final String? Function()? organizationWorkspaceID;
 
   @override
   State<PublicIntentSection> createState() => _PublicIntentSectionState();
 }
 
 class _PublicIntentSectionState extends State<PublicIntentSection> {
-  static const _apiBase = String.fromEnvironment('BIRDTIE_API_BASE_URL');
-  final _client = http.Client();
+  late http.Client _client;
+  late bool _ownsClient;
+  late _PublicIntentBinding _binding;
+  int _bindingEpoch = 0;
+  String get _apiBase => widget.apiBaseUrl ?? BirdtieEnvironment.apiBaseUrl;
+  _PublicIntentBinding get _currentBinding => (
+    widget.auth,
+    widget.auth.accountID,
+    widget.auth.authorizationHeader,
+    _client,
+    _apiBase,
+    widget.organizationWorkspaceID?.call(),
+  );
+  bool get _personalReady =>
+      widget.auth.signedIn &&
+      widget.auth.accountID?.isNotEmpty == true &&
+      widget.auth.authorizationHeader != null &&
+      _apiBase.isNotEmpty &&
+      widget.organizationWorkspaceID?.call() == null;
+  bool _current(_PublicIntentBinding binding, int epoch) =>
+      mounted &&
+      _personalReady &&
+      epoch == _bindingEpoch &&
+      binding == _currentBinding;
+  static Uri _boundEndpoint(_PublicIntentBinding binding, String path) =>
+      Uri.parse('${binding.$5.replaceFirst(RegExp(r'/$'), '')}$path');
+  static Map<String, String> _boundHeaders(
+    _PublicIntentBinding binding, {
+    bool json = false,
+  }) => {
+    'Authorization': binding.$3!,
+    if (json) 'Content-Type': 'application/json',
+  };
   final _name = TextEditingController();
   final _bio = TextEditingController();
   final _topic = TextEditingController();
@@ -33,76 +83,109 @@ class _PublicIntentSectionState extends State<PublicIntentSection> {
   bool _confirmed = false;
   bool _loading = false;
   bool _saving = false;
-  bool _signedIn = false;
+  bool _profileLoaded = false;
   bool _failed = false;
   int _durationDays = 7;
   String _publicMapZone = '';
   int _serial = 0;
   String? _message;
 
-  Uri _endpoint(String path) =>
-      Uri.parse('${_apiBase.replaceFirst(RegExp(r'/$'), '')}$path');
-
-  Map<String, String> _headers({bool json = false}) => {
-    'Authorization': widget.auth.authorizationHeader!,
-    if (json) 'Content-Type': 'application/json',
-  };
-
   @override
   void initState() {
     super.initState();
-    _signedIn = widget.auth.signedIn;
-    widget.auth.addListener(_onAuthChanged);
-    if (_signedIn && _apiBase.isNotEmpty) _load();
+    _client = widget.client ?? http.Client();
+    _ownsClient = widget.client == null;
+    _binding = _currentBinding;
+    widget.auth.addListener(_onBindingChanged);
+    widget.workspaceChanges?.addListener(_onBindingChanged);
+    if (_personalReady) unawaited(_load());
   }
 
-  void _onAuthChanged() {
-    if (_signedIn == widget.auth.signedIn) return;
-    _signedIn = widget.auth.signedIn;
-    if (_signedIn) {
-      if (_apiBase.isNotEmpty) _load();
-    } else {
-      ++_serial;
-      _name.clear();
-      _bio.clear();
-      _topic.clear();
-      _details.clear();
-      _area.clear();
-      setState(() {
-        _intents = const [];
-        _public = false;
-        _confirmed = false;
-        _durationDays = 7;
-        _publicMapZone = '';
-        _message = null;
-        _loading = false;
-        _saving = false;
-      });
+  void _onBindingChanged() {
+    if (_binding == _currentBinding) return;
+    _resetBinding();
+  }
+
+  void _resetBinding() {
+    ++_bindingEpoch;
+    ++_serial;
+    _binding = _currentBinding;
+    _name.clear();
+    _bio.clear();
+    _topic.clear();
+    _details.clear();
+    _area.clear();
+    setState(() {
+      _intents = const [];
+      _public = _confirmed = _profileLoaded = false;
+      _durationDays = 7;
+      _publicMapZone = '';
+      _message = null;
+      _loading = _saving = _failed = false;
+    });
+    if (_personalReady) unawaited(_load());
+  }
+
+  @override
+  void didUpdateWidget(PublicIntentSection old) {
+    super.didUpdateWidget(old);
+    if (old.auth != widget.auth) {
+      old.auth.removeListener(_onBindingChanged);
+      widget.auth.addListener(_onBindingChanged);
+    }
+    if (old.workspaceChanges != widget.workspaceChanges) {
+      old.workspaceChanges?.removeListener(_onBindingChanged);
+      widget.workspaceChanges?.addListener(_onBindingChanged);
+    }
+    if (old.client != widget.client) {
+      if (_ownsClient) _client.close();
+      _client = widget.client ?? http.Client();
+      _ownsClient = widget.client == null;
+    }
+    if (old.auth != widget.auth ||
+        old.client != widget.client ||
+        old.apiBaseUrl != widget.apiBaseUrl ||
+        old.workspaceChanges != widget.workspaceChanges ||
+        old.organizationWorkspaceID != widget.organizationWorkspaceID ||
+        _binding != _currentBinding) {
+      _resetBinding();
     }
   }
 
   Future<void> _load() async {
+    if (!_personalReady) return;
+    final binding = _currentBinding, epoch = _bindingEpoch;
     final serial = ++_serial;
+    bool current() => _current(binding, epoch) && serial == _serial;
     setState(() {
       _loading = true;
       _failed = false;
     });
     try {
-      final me = await _client
-          .get(_endpoint('/v1/me'), headers: _headers())
+      final me = await binding.$4
+          .get(
+            _boundEndpoint(binding, '/v1/me'),
+            headers: _boundHeaders(binding),
+          )
           .timeout(const Duration(seconds: 10));
+      if (!current()) return;
       if (me.statusCode != 200) throw StateError('Account unavailable');
       final accountID =
           ((jsonDecode(me.body) as Map<String, dynamic>)['data']
                   as Map<String, dynamic>)['id']
               as String;
+      if (accountID != binding.$2) throw StateError('Account binding changed');
       final responses = await Future.wait([
-        _client.get(
-          _endpoint('/v1/accounts/$accountID/profile'),
-          headers: _headers(),
+        binding.$4.get(
+          _boundEndpoint(binding, '/v1/accounts/$accountID/profile'),
+          headers: _boundHeaders(binding),
         ),
-        _client.get(_endpoint('/v1/me/intents'), headers: _headers()),
+        binding.$4.get(
+          _boundEndpoint(binding, '/v1/me/intents'),
+          headers: _boundHeaders(binding),
+        ),
       ]).timeout(const Duration(seconds: 10));
+      if (!current()) return;
       if (responses.any((response) => response.statusCode != 200)) {
         throw StateError('Profile or intents unavailable');
       }
@@ -112,59 +195,63 @@ class _PublicIntentSectionState extends State<PublicIntentSection> {
       final records =
           (jsonDecode(responses[1].body) as Map<String, dynamic>)['data']
               as List<dynamic>;
-      if (!mounted || serial != _serial || !widget.auth.signedIn) return;
+      if (profile['accountId'] != null && profile['accountId'] != accountID) {
+        throw StateError('Profile binding changed');
+      }
       setState(() {
         _name.text = profile['displayName'] as String;
         _bio.text = profile['bio'] as String;
         _public = profile['visibility'] == 'public';
         _intents = [for (final raw in records) raw as Map<String, dynamic>];
+        _profileLoaded = true;
       });
     } catch (_) {
-      if (mounted && serial == _serial) setState(() => _failed = true);
+      if (current()) setState(() => _failed = true);
     } finally {
-      if (mounted && serial == _serial) setState(() => _loading = false);
+      if (current()) setState(() => _loading = false);
     }
   }
 
   Future<void> _saveProfile() async {
-    if (_saving || !widget.auth.signedIn) return;
-    final serial = _serial;
+    if (_saving || _loading || !_profileLoaded || !_personalReady) return;
+    final binding = _currentBinding, epoch = _bindingEpoch;
+    final name = _name.text.trim(), bio = _bio.text.trim(), public = _public;
     setState(() {
       _saving = true;
       _message = null;
     });
     try {
-      final response = await _client
+      final response = await binding.$4
           .put(
-            _endpoint('/v1/me/profile'),
-            headers: _headers(json: true),
+            _boundEndpoint(binding, '/v1/me/profile'),
+            headers: _boundHeaders(binding, json: true),
             body: jsonEncode({
-              'displayName': _name.text.trim(),
-              'bio': _bio.text.trim(),
-              'visibility': _public ? 'public' : 'private',
+              'displayName': name,
+              'bio': bio,
+              'visibility': public ? 'public' : 'private',
             }),
           )
           .timeout(const Duration(seconds: 10));
       if (response.statusCode != 200) throw StateError('Profile rejected');
-      if (!mounted || serial != _serial || !widget.auth.signedIn) return;
-      widget.auth.updateProfileDisplayName(_name.text.trim());
+      if (!_current(binding, epoch)) return;
+      binding.$1.updateProfileDisplayName(name);
       await _load();
-      if (mounted) {
+      if (_current(binding, epoch)) {
         setState(
-          () =>
-              _message = _public ? '资料已保存。原公开意图仍按有效期展示。' : '资料已设为私密，原公开意图已撤回。',
+          () => _message = public ? '资料已保存。原公开意图仍按有效期展示。' : '资料已设为私密，原公开意图已撤回。',
         );
       }
     } catch (_) {
-      if (mounted && serial == _serial) {
+      if (_current(binding, epoch)) {
         setState(() => _message = '资料保存失败，请检查名称并重试。');
       }
     } finally {
-      if (mounted) setState(() => _saving = false);
+      if (_current(binding, epoch)) setState(() => _saving = false);
     }
   }
 
   Future<void> _submit() async {
+    if (!_personalReady || !_profileLoaded || _loading || _saving) return;
     final city = widget.city.selectedCity;
     if (city == null ||
         !_public ||
@@ -175,7 +262,7 @@ class _PublicIntentSectionState extends State<PublicIntentSection> {
       setState(() => _message = '请选择城市、公开资料并确认意图和粗略区域。');
       return;
     }
-    final serial = _serial;
+    final binding = _currentBinding, epoch = _bindingEpoch;
     setState(() {
       _saving = true;
       _message = null;
@@ -183,10 +270,13 @@ class _PublicIntentSectionState extends State<PublicIntentSection> {
     try {
       final start = DateTime.now().toUtc();
       final end = start.add(Duration(days: _durationDays));
-      final response = await _client
+      final response = await binding.$4
           .post(
-            _endpoint('/v1/cities/${Uri.encodeComponent(city.id)}/intents'),
-            headers: _headers(json: true),
+            _boundEndpoint(
+              binding,
+              '/v1/cities/${Uri.encodeComponent(city.id)}/intents',
+            ),
+            headers: _boundHeaders(binding, json: true),
             body: jsonEncode({
               'confirmed': true,
               'topic': _topic.text.trim(),
@@ -200,56 +290,62 @@ class _PublicIntentSectionState extends State<PublicIntentSection> {
             }),
           )
           .timeout(const Duration(seconds: 12));
+      if (!_current(binding, epoch)) return;
       if (response.statusCode == 409) {
-        if (mounted && serial == _serial) {
-          setState(() => _message = '请先保存公开个人资料；每人暂时最多同时发布 3 条有效意图。');
-        }
+        setState(() => _message = '请先保存公开个人资料；每人暂时最多同时发布 3 条有效意图。');
         return;
       }
       if (response.statusCode != 201) throw StateError('Intent rejected');
-      if (!mounted || serial != _serial || !widget.auth.signedIn) return;
       _topic.clear();
       _details.clear();
       _area.clear();
       _confirmed = false;
       _publicMapZone = '';
       await _load();
-      if (mounted) setState(() => _message = '意图已公开；在有效期内可进入 People 结果。');
+      if (_current(binding, epoch)) {
+        setState(() => _message = '意图已公开；在有效期内可出现在用户搜索结果中。');
+      }
     } catch (_) {
-      if (mounted && serial == _serial) {
+      if (_current(binding, epoch)) {
         setState(() => _message = '提交失败。请确认资料已保存为公开，或稍后重试。');
       }
     } finally {
-      if (mounted) setState(() => _saving = false);
+      if (_current(binding, epoch)) setState(() => _saving = false);
     }
   }
 
   Future<void> _withdraw(String id) async {
-    final serial = _serial;
+    if (!_personalReady || !_profileLoaded || _loading || _saving) return;
+    final binding = _currentBinding, epoch = _bindingEpoch;
     setState(() => _saving = true);
     try {
-      final response = await _client
+      final response = await binding.$4
           .post(
-            _endpoint('/v1/me/intents/${Uri.encodeComponent(id)}/withdraw'),
-            headers: _headers(),
+            _boundEndpoint(
+              binding,
+              '/v1/me/intents/${Uri.encodeComponent(id)}/withdraw',
+            ),
+            headers: _boundHeaders(binding),
           )
           .timeout(const Duration(seconds: 10));
       if (response.statusCode != 204) throw StateError('Withdraw failed');
-      if (mounted && serial == _serial) await _load();
+      if (_current(binding, epoch)) await _load();
     } catch (_) {
-      if (mounted && serial == _serial) {
+      if (_current(binding, epoch)) {
         setState(() => _message = '撤回失败，请重试。');
       }
     } finally {
-      if (mounted) setState(() => _saving = false);
+      if (_current(binding, epoch)) setState(() => _saving = false);
     }
   }
 
   @override
   void dispose() {
     ++_serial;
-    widget.auth.removeListener(_onAuthChanged);
-    _client.close();
+    ++_bindingEpoch;
+    widget.auth.removeListener(_onBindingChanged);
+    widget.workspaceChanges?.removeListener(_onBindingChanged);
+    if (_ownsClient) _client.close();
     _name.dispose();
     _bio.dispose();
     _topic.dispose();
@@ -263,26 +359,29 @@ class _PublicIntentSectionState extends State<PublicIntentSection> {
     if (_apiBase.isEmpty || !widget.auth.signedIn) {
       return const SizedBox.shrink();
     }
+    if (widget.organizationWorkspaceID?.call() != null) {
+      return const Text('请切换到个人身份后管理个人资料和人员意图。');
+    }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          'PROFILE & PEOPLE',
+          '个人资料与社交',
           style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
         ),
         const SizedBox(height: 8),
-        const Text('公开资料和人员意图会用于 Agent 的 People 结果。只填写粗略区域，不填写住址。'),
+        const Text('公开资料和人员意图会用于智能体的用户搜索结果。只填写大致区域，不要填写住址。'),
         if (_loading) const LinearProgressIndicator(),
         if (_failed) TextButton(onPressed: _load, child: const Text('读取失败，重试')),
         TextField(
           controller: _name,
-          enabled: !_loading && !_saving,
+          enabled: _profileLoaded && !_loading && !_saving,
           maxLength: 80,
           decoration: const InputDecoration(labelText: '显示名称'),
         ),
         TextField(
           controller: _bio,
-          enabled: !_loading && !_saving,
+          enabled: _profileLoaded && !_loading && !_saving,
           maxLength: 500,
           maxLines: 2,
           decoration: const InputDecoration(labelText: '简介（可选）'),
@@ -292,12 +391,14 @@ class _PublicIntentSectionState extends State<PublicIntentSection> {
           title: const Text('公开个人资料'),
           subtitle: const Text('公开后，任何人都可能看到名称与简介。'),
           value: _public,
-          onChanged: _saving || _loading
+          onChanged: !_profileLoaded || _saving || _loading
               ? null
               : (value) => setState(() => _public = value),
         ),
         OutlinedButton(
-          onPressed: _saving || _loading ? null : _saveProfile,
+          onPressed: !_profileLoaded || _saving || _loading
+              ? null
+              : _saveProfile,
           child: const Text('保存个人资料'),
         ),
         const Divider(height: 36),
@@ -329,7 +430,7 @@ class _PublicIntentSectionState extends State<PublicIntentSection> {
           '提交一个意图',
           style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
         ),
-        const Text('从提交时起在当前城市有效；个人资料保持公开时，可出现在 People 结果。'),
+        const Text('从提交时起在当前城市有效；个人资料保持公开时，可出现在用户搜索结果中。'),
         TextField(
           controller: _topic,
           enabled: !_loading && !_saving,

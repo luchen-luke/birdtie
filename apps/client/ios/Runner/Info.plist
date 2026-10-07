@@ -8,10 +8,23 @@
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
 	<string>Birdtie</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>仅在你选择图片时读取所选图片，用于本人私人记录的附件；不会自动分析或公开。</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
 	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>birdtie-auth</string>
+			</array>
+		</dict>
+	</array>
+	<key>FlutterDeepLinkingEnabled</key>
+	<false/>
 	<key>AMapApiKey</key>
 	<string>$(AMAP_IOS_KEY)</string>
 	<key>CFBundleInfoDictionaryVersion</key>

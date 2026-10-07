@@ -1,0 +1,114 @@
+{
+  "wrapperTag": "4.9.0",
+  "modelCommit": "87416418657359cb625c412a48b6e1d6d41c29bd",
+  "sources": [
+    {
+      "url": "https://raw.githubusercontent.com/adaptech-cz/Tesseract4Android/4.9.0/README.md",
+      "path": "D:\\Project\\birdtie\\work\\private-moment-local-image-text-2026-10-07\\upstream\\README.md",
+      "bytes": 6982,
+      "sha256": "6c88b5458deb45c9f994e7bcc115b07c2f884b5086d7bb0bcd0a00591e55aa7e"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/adaptech-cz/Tesseract4Android/4.9.0/LICENSE",
+      "path": "D:\\Project\\birdtie\\work\\private-moment-local-image-text-2026-10-07\\upstream\\LICENSE",
+      "bytes": 11357,
+      "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/adaptech-cz/Tesseract4Android/4.9.0/tesseract4android/build.gradle",
+      "path": "D:\\Project\\birdtie\\work\\private-moment-local-image-text-2026-10-07\\upstream\\tesseract4android\\build.gradle",
+      "bytes": 3697,
+      "sha256": "e1a8a4267dd2f70c25c75ed393dd316d032c60c6aa3afb1171d1bc94b281a763"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/adaptech-cz/Tesseract4Android/4.9.0/tesseract4android/src/main/AndroidManifest.xml",
+      "path": "D:\\Project\\birdtie\\work\\private-moment-local-image-text-2026-10-07\\upstream\\tesseract4android\\src\\main\\AndroidManifest.xml",
+      "bytes": 83,
+      "sha256": "12bf7eb261bdb9ac37f6082fe37c1c458efbe34560d1013c5dbe280c0bdef2c2"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/adaptech-cz/Tesseract4Android/4.9.0/tesseract4android/src/main/java/com/googlecode/tesseract/android/TessBaseAPI.java",
+      "path": "D:\\Project\\birdtie\\work\\private-moment-local-image-text-2026-10-07\\upstream\\tesseract4android\\src\\main\\java\\com\\googlecode\\tesseract\\android\\TessBaseAPI.java",
+      "bytes": 35414,
+      "sha256": "348becf2a7b5ea358f195484334e57593960832e661804286dd1e0de8221bc3a"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/adaptech-cz/Tesseract4Android/4.9.0/tesseract4android/src/main/java/com/googlecode/tesseract/android/ResultIterator.java",
+      "path": "D:\\Project\\birdtie\\work\\private-moment-local-image-text-2026-10-07\\upstream\\tesseract4android\\src\\main\\java\\com\\googlecode\\tesseract\\android\\ResultIterator.java",
+      "bytes": 5582,
+      "sha256": "d7164d484a65a63bd5f5df9d4b76885ae4b654094c7590936aef2ef05fe05ae7"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/adaptech-cz/Tesseract4Android/4.9.0/tesseract4android/src/main/java/com/googlecode/tesseract/android/PageIterator.java",
+      "path": "D:\\Project\\birdtie\\work\\private-moment-local-image-text-2026-10-07\\upstream\\tesseract4android\\src\\main\\java\\com\\googlecode\\tesseract\\android\\PageIterator.java",
+      "bytes": 4117,
+      "sha256": "b9cd3817c39541ad631911613d94f27353618a3f207bf26bc9cd3830c5e6152e"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/tesseract-ocr/tessdata_fast/87416418657359cb625c412a48b6e1d6d41c29bd/LICENSE",
+      "path": "D:\\Project\\birdtie\\work\\private-moment-local-image-text-2026-10-07\\upstream\\models\\LICENSE",
+      "bytes": 11358,
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/tesseract-ocr/tessdata_fast/87416418657359cb625c412a48b6e1d6d41c29bd/README.md",
+      "path": "D:\\Project\\birdtie\\work\\private-moment-local-image-text-2026-10-07\\upstream\\models\\README.md",
+      "bytes": 4353,
+      "sha256": "22fee9835bff02fb7013aa9786a2144ae3d4c219083089375985a62808e7215e"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/tesseract-ocr/tessdata_fast/87416418657359cb625c412a48b6e1d6d41c29bd/eng.traineddata",
+      "path": "D:\\Project\\birdtie\\work\\private-moment-local-image-text-2026-10-07\\upstream\\models\\eng.traineddata",
+      "bytes": 4113088,
+      "sha256": "7d4322bd2a7749724879683fc3912cb542f19906c83bcc1a52132556427170b2"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/tesseract-ocr/tessdata_fast/87416418657359cb625c412a48b6e1d6d41c29bd/chi_sim.traineddata",
+      "path": "D:\\Project\\birdtie\\work\\private-moment-local-image-text-2026-10-07\\upstream\\models\\chi_sim.traineddata",
+      "bytes": 2469156,
+      "sha256": "a5fcb6f0db1e1d6d8522f39db4e848f05984669172e584e8d76b6b3141e1f730"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/adaptech-cz/Tesseract4Android/4.9.0/tesseract4android/src/main/cpp/tesseract/src/LICENSE",
+      "asset": "apps\\client\\android\\app\\src\\main\\assets\\birdtie_ocr\\licenses\\Tesseract-LICENSE.txt",
+      "bytes": 11358,
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/adaptech-cz/Tesseract4Android/4.9.0/tesseract4android/src/main/cpp/leptonica/src/leptonica-license.txt",
+      "asset": "apps\\client\\android\\app\\src\\main\\assets\\birdtie_ocr\\licenses\\Leptonica-LICENSE.txt",
+      "bytes": 1521,
+      "sha256": "87829abb5bbb00b55a107365da89e9a33f86c4250169e5a1e5588505be7d5806"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/adaptech-cz/Tesseract4Android/4.9.0/tesseract4android/src/main/cpp/libjpeg/src/README",
+      "asset": "apps\\client\\android\\app\\src\\main\\assets\\birdtie_ocr\\licenses\\libjpeg-README.txt",
+      "bytes": 18719,
+      "sha256": "7c25493a9f64fed34d01445467341bda77bc1cdbeccbe33558659ef173fb9ff2"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/adaptech-cz/Tesseract4Android/4.9.0/tesseract4android/src/main/cpp/libpng/src/LICENSE",
+      "asset": "apps\\client\\android\\app\\src\\main\\assets\\birdtie_ocr\\licenses\\libpng-LICENSE.txt",
+      "bytes": 5345,
+      "sha256": "16d9daaafbf63a31a5bdc91d4600972548fef5aaa1244202393288dbd079c49a"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/adaptech-cz/Tesseract4Android/4.9.0/tesseract4android/src/main/cpp/tesseract/tessbaseapi.cpp",
+      "path": "D:\\Project\\birdtie\\work\\private-moment-local-image-text-2026-10-07\\upstream\\tesseract4android\\src\\main\\cpp\\tesseract\\tessbaseapi.cpp",
+      "bytes": 28309,
+      "sha256": "ce91f17312a9b0bf5abfb009a179d2859af6f0699d154c6df7501ceed6914525"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/adaptech-cz/Tesseract4Android/4.9.0/tesseract4android/src/main/cpp/CMakeLists.txt",
+      "path": "D:\\Project\\birdtie\\work\\private-moment-local-image-text-2026-10-07\\upstream\\tesseract4android\\src\\main\\cpp\\CMakeLists.txt",
+      "bytes": 1259,
+      "sha256": "c45842ec710f7f26ffdab1e63511f618c94c3868402bd47ce8fd17146f28fcea"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/adaptech-cz/Tesseract4Android/4.9.0/tesseract4android/src/main/cpp/tesseract/CMakeLists.txt",
+      "path": "D:\\Project\\birdtie\\work\\private-moment-local-image-text-2026-10-07\\upstream\\tesseract4android\\src\\main\\cpp\\tesseract\\CMakeLists.txt",
+      "bytes": 5860,
+      "sha256": "1dfb5940662de6a5e72746f32b4d22c267dd16a22a7fe787a90ca863c6b7665d"
+    }
+  ]
+}

@@ -14,11 +14,16 @@ class NativeCityMapView extends StatelessWidget {
     this.entities = const [],
     this.selectedEntityId,
     this.onEntitySelected,
+    this.onViewportSettled,
+    this.onViewportInitialized,
+    this.onCameraMotion,
+    this.onMapUnavailable,
     this.fullBleed = false,
     this.contextKey = '',
+    this.ornamentTop,
   });
 
-  final PublicCity city;
+  final PublicCity? city;
   final List<PublicPlace> places;
   final String accessToken;
   final ValueChanged<PublicPlace> onPlaceSelected;
@@ -26,8 +31,13 @@ class NativeCityMapView extends StatelessWidget {
   final List<MapEntity> entities;
   final String? selectedEntityId;
   final ValueChanged<MapEntity>? onEntitySelected;
+  final ValueChanged<MapBounds>? onViewportSettled;
+  final ValueChanged<MapBounds>? onViewportInitialized;
+  final VoidCallback? onCameraMotion;
+  final ValueChanged<String>? onMapUnavailable;
   final bool fullBleed;
   final String contextKey;
+  final double? ornamentTop;
 
   @override
   Widget build(BuildContext context) => const SizedBox.shrink();

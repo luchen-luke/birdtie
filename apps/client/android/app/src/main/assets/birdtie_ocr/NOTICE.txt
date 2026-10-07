@@ -1,0 +1,3 @@
+Birdtie local text check bundles Tesseract4Android 4.9.0 standard (Tesseract 5.5.1, Leptonica 1.85.0, libjpeg v9f, libpng 1.6.48) and eng/chi_sim tessdata_fast at commit 87416418657359cb625c412a48b6e1d6d41c29bd.
+Tesseract4Android wrapper: Copyright 2019 Adaptech s.r.o., Robert Pösel; portions Copyright 2012 Google Inc., tess-two/Tesseract Tools for Android.
+Full Apache-2.0, Leptonica, Independent JPEG Group and libpng notices are preserved in licenses/. No runtime model download. Source hashes and origins: PROVENANCE.json.

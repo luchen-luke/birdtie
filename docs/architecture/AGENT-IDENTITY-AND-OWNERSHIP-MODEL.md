@@ -4,6 +4,16 @@ Date: 2026-09-30
 Status: **Accepted**  
 Scope: Birdtie V2 identity, Agent authority, organizations, workspaces and city context.
 
+V4 target evolution: [ADR 0017](../decisions/0017-v4-actor-agent-context-place-model.md) adds a typed ActorRef and plans an independent Business domain. Existing `organization_type='business'`/`venue` rows remain Organization principals until an explicit verified migration; this document continues to govern their current runtime identity and authorization. Community remains without Agent in the current release.
+
+V4 runtime implementation: `apps/api/internal/agentruntime/policy.go` holds the shared role and capability packs. Personal Agent has `city_context.read`; Organization Agent adds `organization_context.read` after live membership/workspace resolution. The Business role is reserved but unavailable until independent Business ownership checks and schema exist. Community has no Agent role. HTTP Agent task creation, continuation, list and read use this server-side policy; these capabilities describe permitted tool scope after authentication, and do not themselves prove ownership or authorize data access.
+
+V4 resource scopes and private-memory isolation are specified in the [Agent Context Access Policy](AGENT-CONTEXT-ACCESS-POLICY.md). A member's Organization Agent never inherits the member's private Personal Agent memory or social ties.
+
+The V4 [Agent-to-Agent permission contract](AGENT-TO-AGENT-PERMISSION-CONTRACT-V4.md) defines separate purpose/task/recipient/resource consent and minimal responses. Its pure policy does not create transport, live cross-agent grants or a callable runtime capability; existing privacy switches do not authorize sharing.
+
+Organization actor ID (`organizations.id`) and its Agent account principal ID (`organizations.account_id`) are separate stable IDs. `ActorRef` and `PrincipalRef` are distinct Go types; the existing `agent_tasks.principalId` response remains the account principal ID for compatibility. Agent task operations require an active Agent row and server-resolved workspace, while Organization workspace resolution also requires an active person membership, Organization, organization account and Organization Agent. Anonymous public discovery does not create or claim an owned Agent.
+
 This document is the canonical identity and ownership decision for Birdtie. It supersedes earlier proposals that treated City Agent as a third social identity or allowed organizations to act as ordinary human accounts.
 
 ## Product requirements and accepted decisions
@@ -11,7 +21,8 @@ This document is the canonical identity and ownership decision for Birdtie. It s
 Birdtie models authority as **Identity → Principal → Agent → Authority → Tools/Data**. Every Agent action is performed for an explicit principal and workspace. The server resolves the human actor from the authenticated session and checks membership, role, permission, visibility and consent; client context is never authoritative.
 
 - A verified person account automatically has exactly one Personal Agent. Users cannot create multiple independent personal identities; future personas are modes of that Agent.
-- Organizations are separate principals, never people. Societies, clubs, businesses, universities, communities, venues, nonprofits and other organizations share one model distinguished by `organizationType`.
+- Organizations are separate principals, never people. Societies, clubs, businesses, universities, venues and nonprofits share one model distinguished by `organizationType`. A formally managed organization historically typed `community` remains an Organization; an informal Birdtie Community is a separate social entity and must not be inferred from that type.
+- A Community is a persistent social container owned and administered by real people through CommunityMembership. One person may join many Communities and Organizations. Community has no account, login, independent Agent or Agent principal authority in the current release; authorized people act through their Personal Agent and server-checked Community roles.
 - Real people administer an organization through membership. Initial roles are OWNER, ADMIN, MODERATOR and MEMBER.
 - Each organization has exactly one Organization Agent representing the organization, independent of any administrator. Membership and ownership transfer do not replace the organization or its Agent.
 - A person has a Personal Workspace and may access one or more Organization Workspaces. Personal is the default. Switching workspace changes the principal context, not the signed-in person.
@@ -26,6 +37,7 @@ Birdtie models authority as **Identity → Principal → Agent → Authority →
 ```text
 Person account ──1:1── Personal Agent
 Person ──N:M via OrganizationMembership── Organization ──1:1── Organization Agent
+Person ──N:M via CommunityMembership── Community (no Agent)
 City ──1:1 logical── CityContext (platform-managed; no account)
 ```
 
@@ -43,6 +55,8 @@ CityContext is created/configured by platform operations for a City and has no l
 - `Agent(id, type, principal_type, principal_id, status, created_at)`, unique on principal and type. MVP types: PERSONAL, ORGANIZATION, SYSTEM. No City Agent record.
 - `Organization(id, account_id, organization_type, name, profile, status, created_at)`; `account_id` is an organization principal, not a User.
 - `OrganizationMembership(id, organization_id, user_account_id, role, status, created_at, updated_at)` with one active membership per person/organization.
+- `Community(id, created_by_account_id, visibility, join_policy, status, ...)` and `CommunityMembership(community_id, user_account_id, role, status, ...)`; a Community is not a principal in the Agent table.
+- `ActivityOrganizer(activity_id, person_account_id?, community_id?, organization_id?)` has exactly one non-null organizer reference. Activity visibility is checked independently of organizer type and Community visibility.
 - `CityContext(city_id, geographic_boundary, metadata, discovery_configuration, status)` as platform configuration attached to City, without account ownership.
 - Agent invocation/audit context records the actor, principal, workspace, action, permission decision and purpose; never accept these authority claims from request JSON.
 
@@ -86,7 +100,7 @@ erDiagram
 
 ## Non-goals and implementation boundary
 
-This decision does not create City social accounts, organization login credentials, multiple Personal Agents, implicit admin access to personal data, or AI authority inferred from generated text. It does not open unrestricted Agent-to-Agent messaging. Existing human-owned community submissions are not silently converted into Organizations; future organization publishing must use explicit organization principal authorization.
+This decision does not create City social accounts, organization login credentials, multiple Personal Agents, Community Agents, implicit admin access to personal data, or AI authority inferred from generated text. It does not open unrestricted Agent-to-Agent messaging. Existing human-owned community submissions are not silently converted into Organizations; future organization publishing must use explicit organization principal authorization. See [Community and Activity Social Model](COMMUNITY-AND-ACTIVITY-SOCIAL-MODEL.md) and ADR 0016 for the social entity and organizer rules.
 
 The model and API are foundational MVP slices. Invitations, ownership transfer, full permission administration, organization content publishing, production city-boundary geometry and Agent-to-Agent transport remain follow-up work.
 

@@ -1,0 +1,14 @@
+{
+  "epic_id": "BT-V5-AGE",
+  "status": "READY",
+  "received_at": "2026-10-01",
+  "source": "C:\\Users\\chens\\.codex\\attachments\\740182d5-1cae-4a04-b288-7f58711b226f\\已粘贴的文本.txt",
+  "canonical_document": "docs/product/BT-V5-AGE-AGENT-ENRICHMENT-EPIC.md",
+  "activates_after": "BT-V4-SAF-004 verified atomic checkpoint; 2026-10-02 user requires incremental AGE/AIR interface dependencies, not a mechanical all-V4/all-AGE sequence",
+  "active_queue": "automation/codex_task_queue.json",
+  "note": "SAF004 actual checkpoint, 108 reviewed delta tasks appended preserving original144. Phase0 and AgentProfile metadata foundation verified; all task status/evidence is solely in active_queue. AGE/AIR follow actual interface dependencies; no intake or foundation activates Memory/model/live functionality. Existing release gates remain NO.",
+  "checkpoint_task": "BT-V4-SAF-004",
+  "phase0_task": "BT-V5-INT-001",
+  "requirement_mapping": "automation/v5_requirement_mapping.json",
+  "ready_at": "2026-10-02T11:26:41.4527051Z"
+}

@@ -3,48 +3,79 @@ package httpapi
 import (
 	"errors"
 	"net/http"
+	"net/url"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/birdtie/birdtie/apps/api/internal/content"
+	"github.com/birdtie/birdtie/apps/api/internal/identity"
 )
 
+func (s *server) momentActor(w http.ResponseWriter, r *http.Request) (identity.Actor, [32]byte, bool) {
+	w.Header().Set("Cache-Control", "no-store")
+	if s.access == nil {
+		respondError(w, 503, "moment_unavailable")
+		return identity.Actor{}, [32]byte{}, false
+	}
+	actor, digest, err := s.actor(r, true)
+	if authFailed(w, err) {
+		return identity.Actor{}, [32]byte{}, false
+	}
+	if actor.AccountType != "person" || len(r.Header.Values("X-Birdtie-Organization-Workspace")) != 0 {
+		respondError(w, 403, "person_account_required")
+		return identity.Actor{}, [32]byte{}, false
+	}
+	return actor, digest, true
+}
+func (s *server) humanMomentGateway(w http.ResponseWriter) (content.HumanMomentStore, bool) {
+	store, ok := s.content.(content.HumanMomentStore)
+	if !ok || store == nil {
+		respondError(w, 503, "moment_unavailable")
+		return nil, false
+	}
+	return store, true
+}
 func validMomentInput(input *content.MomentInput) bool {
-	input.CityID = strings.TrimSpace(input.CityID)
-	input.Title = strings.TrimSpace(input.Title)
-	input.Body = strings.TrimSpace(input.Body)
-	if len(input.CityID) == 0 || len(input.CityID) > 80 ||
-		len(input.Title) == 0 || len(input.Title) > 160 ||
-		len(input.Body) > 5000 ||
-		(input.PlaceID != "" && !uuidPath.MatchString(input.PlaceID)) {
+	normalized, err := content.NormalizeMomentInput(*input)
+	if err != nil {
 		return false
 	}
-	switch input.TimePrecision {
-	case "unknown":
-		if input.OccurredAt != nil {
-			return false
-		}
-	case "year", "month", "day", "instant":
-		if input.OccurredAt == nil || input.OccurredAt.After(time.Now().Add(24*time.Hour)) {
-			return false
-		}
-	default:
+	if normalized.OccurredAt != nil && normalized.OccurredAt.After(time.Now().Add(24*time.Hour)) {
 		return false
 	}
-	switch input.LocationPrecision {
-	case "none", "city":
-		return true
-	case "place":
-		return input.PlaceID != ""
+	*input = normalized
+	return true
+}
+func momentFailure(w http.ResponseWriter, err error) {
+	switch {
+	case errors.Is(err, identity.ErrUnauthorized):
+		authFailed(w, err)
+	case errors.Is(err, content.ErrNotFound):
+		respondError(w, 404, "not_found")
+	case errors.Is(err, content.ErrConflict):
+		respondError(w, 409, "draft_conflict")
+	case errors.Is(err, content.ErrInvalid):
+		respondError(w, 400, "invalid_moment_draft")
+	case errors.Is(err, content.ErrUnavailable):
+		respondError(w, 503, "moment_unavailable")
 	default:
-		return false
+		serverError(w, err)
 	}
 }
-
+func momentNoQuery(w http.ResponseWriter, r *http.Request) bool {
+	if r.URL.RawQuery != "" || r.URL.ForceQuery {
+		respondError(w, 400, "invalid_moment_query")
+		return false
+	}
+	return true
+}
 func (s *server) createMomentDraft(w http.ResponseWriter, r *http.Request) {
-	actor, _, err := s.actor(r, true)
-	if authFailed(w, err) {
+	actor, digest, ok := s.momentActor(w, r)
+	if !ok {
+		return
+	}
+	store, ok := s.humanMomentGateway(w)
+	if !ok || !momentNoQuery(w, r) {
 		return
 	}
 	var input content.MomentInput
@@ -52,60 +83,65 @@ func (s *server) createMomentDraft(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !validMomentInput(&input) {
-		respondError(w, http.StatusBadRequest, "invalid_moment_draft")
+		respondError(w, 400, "invalid_moment_draft")
 		return
 	}
-	moment, err := s.content.CreateMomentDraft(r.Context(), actor.ID, input)
-	if errors.Is(err, content.ErrConflict) {
-		respondError(w, http.StatusConflict, "city_or_place_unavailable")
-	} else if err != nil {
-		serverError(w, err)
-	} else {
-		respond(w, http.StatusCreated, map[string]any{"data": moment})
-	}
-}
-
-func (s *server) listOwnMoments(w http.ResponseWriter, r *http.Request) {
-	actor, _, err := s.actor(r, true)
-	if authFailed(w, err) {
-		return
-	}
-	moments, err := s.content.ListOwnMoments(r.Context(), actor.ID)
+	m, err := store.CreateHumanMomentDraft(r.Context(), digest, actor, input)
 	if err != nil {
-		serverError(w, err)
+		momentFailure(w, err)
 	} else {
-		respond(w, http.StatusOK, map[string]any{"data": moments})
+		respond(w, 201, map[string]any{"data": m})
 	}
 }
-
+func (s *server) listOwnMoments(w http.ResponseWriter, r *http.Request) {
+	actor, digest, ok := s.momentActor(w, r)
+	if !ok {
+		return
+	}
+	store, ok := s.humanMomentGateway(w)
+	if !ok || !momentNoQuery(w, r) {
+		return
+	}
+	rows, err := store.ListHumanMoments(r.Context(), digest, actor)
+	if err != nil {
+		momentFailure(w, err)
+	} else {
+		respond(w, 200, map[string]any{"data": rows})
+	}
+}
 func (s *server) getOwnMoment(w http.ResponseWriter, r *http.Request) {
-	actor, _, err := s.actor(r, true)
-	if authFailed(w, err) {
+	actor, digest, ok := s.momentActor(w, r)
+	if !ok {
+		return
+	}
+	store, ok := s.humanMomentGateway(w)
+	if !ok || !momentNoQuery(w, r) {
 		return
 	}
 	id := r.PathValue("momentID")
 	if !uuidPath.MatchString(id) {
-		respondError(w, http.StatusBadRequest, "invalid_moment_id")
+		respondError(w, 400, "invalid_moment_id")
 		return
 	}
-	moment, err := s.content.GetOwnMoment(r.Context(), actor.ID, id)
-	if errors.Is(err, content.ErrNotFound) {
-		respondError(w, http.StatusNotFound, "not_found")
-	} else if err != nil {
-		serverError(w, err)
+	m, err := store.GetHumanMoment(r.Context(), digest, actor, id)
+	if err != nil {
+		momentFailure(w, err)
 	} else {
-		respond(w, http.StatusOK, map[string]any{"data": moment})
+		respond(w, 200, map[string]any{"data": m})
 	}
 }
-
 func (s *server) updateMomentDraft(w http.ResponseWriter, r *http.Request) {
-	actor, _, err := s.actor(r, true)
-	if authFailed(w, err) {
+	actor, digest, ok := s.momentActor(w, r)
+	if !ok {
+		return
+	}
+	store, ok := s.humanMomentGateway(w)
+	if !ok || !momentNoQuery(w, r) {
 		return
 	}
 	id := r.PathValue("momentID")
 	if !uuidPath.MatchString(id) {
-		respondError(w, http.StatusBadRequest, "invalid_moment_id")
+		respondError(w, 400, "invalid_moment_id")
 		return
 	}
 	var request struct {
@@ -116,38 +152,35 @@ func (s *server) updateMomentDraft(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if request.Revision < 1 || !validMomentInput(&request.MomentInput) {
-		respondError(w, http.StatusBadRequest, "invalid_moment_draft")
+		respondError(w, 400, "invalid_moment_draft")
 		return
 	}
-	moment, err := s.content.UpdateMomentDraft(
-		r.Context(), actor.ID, id, request.Revision, request.MomentInput)
-	if errors.Is(err, content.ErrConflict) {
-		respondError(w, http.StatusConflict, "draft_conflict")
-	} else if err != nil {
-		serverError(w, err)
+	m, err := store.UpdateHumanMomentDraft(r.Context(), digest, actor, id, request.Revision, request.MomentInput)
+	if err != nil {
+		momentFailure(w, err)
 	} else {
-		respond(w, http.StatusOK, map[string]any{"data": moment})
+		respond(w, 200, map[string]any{"data": m})
 	}
 }
-
 func (s *server) withdrawMoment(w http.ResponseWriter, r *http.Request) {
-	actor, _, err := s.actor(r, true)
-	if authFailed(w, err) {
+	actor, digest, ok := s.momentActor(w, r)
+	if !ok {
+		return
+	}
+	store, ok := s.humanMomentGateway(w)
+	if !ok {
 		return
 	}
 	id := r.PathValue("momentID")
-	revision, parseErr := strconv.ParseInt(r.URL.Query().Get("revision"), 10, 64)
-	if !uuidPath.MatchString(id) || parseErr != nil || revision < 1 {
-		respondError(w, http.StatusBadRequest, "invalid_moment_revision")
+	query, queryErr := url.ParseQuery(r.URL.RawQuery)
+	revision, parseErr := strconv.ParseInt(query.Get("revision"), 10, 64)
+	if !uuidPath.MatchString(id) || queryErr != nil || parseErr != nil || revision < 1 || len(query) != 1 || len(query["revision"]) != 1 {
+		respondError(w, 400, "invalid_moment_revision")
 		return
 	}
-	err = s.content.WithdrawMoment(r.Context(), actor.ID, id, revision)
-	if errors.Is(err, content.ErrConflict) {
-		respondError(w, http.StatusConflict, "draft_conflict")
-	} else if err != nil {
-		serverError(w, err)
+	if err := store.WithdrawHumanMoment(r.Context(), digest, actor, id, revision); err != nil {
+		momentFailure(w, err)
 	} else {
-		w.Header().Set("Cache-Control", "no-store")
-		w.WriteHeader(http.StatusNoContent)
+		w.WriteHeader(204)
 	}
 }

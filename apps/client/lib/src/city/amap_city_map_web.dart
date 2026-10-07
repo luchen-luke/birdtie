@@ -4,6 +4,7 @@ import 'dart:js_interop';
 import 'package:flutter/material.dart';
 import 'package:web/web.dart' as web;
 
+import '../config/birdtie_environment.dart';
 import 'public_city_controller.dart';
 import '../workspace/map_entities.dart';
 
@@ -42,10 +43,8 @@ class AMapCityMapView extends StatefulWidget {
 }
 
 class _AMapCityMapViewState extends State<AMapCityMapView> {
-  static const _key = String.fromEnvironment('BIRDTIE_AMAP_WEB_PUBLIC_KEY');
-  static const _serviceHost = String.fromEnvironment(
-    'BIRDTIE_AMAP_SERVICE_HOST',
-  );
+  static const _key = BirdtieEnvironment.amapWebPublicKey;
+  static const _serviceHost = BirdtieEnvironment.amapServiceHost;
   static int _nextID = 0;
   JSNumber? _handle;
   JSFunction? _onSelectCallback;

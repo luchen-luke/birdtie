@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 
 import '../auth/birdtie_auth_controller.dart';
 import '../city/public_city_controller.dart';
+import '../config/birdtie_environment.dart';
 
 class GroupPage extends StatefulWidget {
   const GroupPage({super.key, required this.auth, required this.city});
@@ -16,7 +17,7 @@ class GroupPage extends StatefulWidget {
 }
 
 class _GroupPageState extends State<GroupPage> {
-  static const _apiBase = String.fromEnvironment('BIRDTIE_API_BASE_URL');
+  static const _apiBase = BirdtieEnvironment.apiBaseUrl;
   final _client = http.Client();
   final _name = TextEditingController();
   final _summary = TextEditingController();
@@ -96,7 +97,7 @@ class _GroupPageState extends State<GroupPage> {
     final serial = _serial;
     final cityID = widget.city.selectedCity?.id;
     if (cityID == null) {
-      setState(() => _message = 'Choose a city first.');
+      setState(() => _message = '请先选择城市。');
       return;
     }
     setState(() {
@@ -122,7 +123,7 @@ class _GroupPageState extends State<GroupPage> {
           )
           .timeout(const Duration(seconds: 12));
       if (response.statusCode != 201) {
-        throw StateError('Check the group details and optional source.');
+        throw StateError('请检查社群资料和可选的来源信息。');
       }
       if (!mounted || serial != _serial || !widget.auth.signedIn) return;
       _name.clear();
@@ -131,15 +132,11 @@ class _GroupPageState extends State<GroupPage> {
       _sourceURL.clear();
       _rightsNote.clear();
       if (!mounted) return;
-      setState(
-        () => _message = 'Group published. You can withdraw it at any time.',
-      );
+      setState(() => _message = '社群已发布，你可以随时撤回。');
       await _load();
     } catch (_) {
       if (mounted && serial == _serial && widget.auth.signedIn) {
-        setState(
-          () => _message = 'Could not submit. Check all fields and try again.',
-        );
+        setState(() => _message = '提交失败，请检查填写内容后重试。');
       }
     } finally {
       if (mounted && widget.auth.signedIn) setState(() => _busy = false);
@@ -164,7 +161,7 @@ class _GroupPageState extends State<GroupPage> {
       await _load();
     } catch (_) {
       if (mounted && serial == _serial && widget.auth.signedIn) {
-        setState(() => _message = 'Could not withdraw this group.');
+        setState(() => _message = '撤回社群失败，请重试。');
       }
     } finally {
       if (mounted && widget.auth.signedIn) setState(() => _busy = false);
@@ -187,46 +184,39 @@ class _GroupPageState extends State<GroupPage> {
   @override
   Widget build(BuildContext context) {
     if (_apiBase.isEmpty) {
-      return const Center(
-        child: Text('Connect the Birdtie API to manage groups.'),
-      );
+      return const Center(child: Text('请连接 Birdtie API 后管理社群。'));
     }
     if (!widget.auth.signedIn) {
-      return const Center(
-        child: Text('Sign in from Profile to manage your groups.'),
-      );
+      return const Center(child: Text('请先在个人资料页面登录，再管理社群。'));
     }
     return ListView(
       padding: const EdgeInsets.all(20),
       children: [
         const Text(
-          'My groups',
+          '我的社群',
           style: TextStyle(fontSize: 21, fontWeight: FontWeight.w700),
         ),
         const SizedBox(height: 8),
         const Text(
-          'Groups you publish can appear in Birdtie until they expire or you withdraw them.',
+          '你发布的社群会在 Birdtie 展示，直到内容过期或你主动撤回。',
           style: TextStyle(color: Color(0xFF747B73)),
         ),
         if (_busy) const LinearProgressIndicator(),
         if (_failed)
-          TextButton(
-            onPressed: _load,
-            child: const Text('Could not load groups. Retry'),
-          ),
+          TextButton(onPressed: _load, child: const Text('社群加载失败，点击重试')),
         if (!_failed && !_busy && _groups.isEmpty)
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 20),
-            child: Text('You have not submitted a group yet.'),
+            child: Text('你还没有提交社群。'),
           ),
         for (final group in _groups)
           ListTile(
             contentPadding: EdgeInsets.zero,
             title: Text(group['name'] as String),
             subtitle: Text(switch (group['status'] as String) {
-              'draft' => 'Unpublished legacy submission',
-              'published' => 'Published',
-              _ => 'Hidden',
+              'draft' => '未发布的历史提交',
+              'published' => '已发布',
+              _ => '已隐藏',
             }),
             trailing: group['status'] == 'hidden'
                 ? null
@@ -234,29 +224,24 @@ class _GroupPageState extends State<GroupPage> {
                     onPressed: _busy
                         ? null
                         : () => _withdraw(group['id'] as String),
-                    child: const Text('Withdraw'),
+                    child: const Text('撤回'),
                   ),
           ),
         const Divider(height: 36),
         const Text(
-          'Publish a group',
+          '发布社群',
           style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
         ),
         const SizedBox(height: 8),
         const Text(
-          'Publish only a group you own or are authorized to represent. An external source is optional; if provided, use a public HTTPS link.',
+          '仅发布你拥有或获授权代表的社群。外部来源为可选项；如填写，请提供公开 HTTPS 链接。',
           style: TextStyle(color: Color(0xFF747B73)),
         ),
-        _field(_name, 'Group name', 160),
-        _field(_summary, 'What the group does', 3000, lines: 3),
-        _field(_sourceLabel, 'External source name (optional)', 120),
-        _field(_sourceURL, 'Public HTTPS source URL (optional)', 1000),
-        _field(
-          _rightsNote,
-          'Your authority or rights to publish (optional)',
-          1000,
-          lines: 3,
-        ),
+        _field(_name, '社群名称', 160),
+        _field(_summary, '社群介绍', 3000, lines: 3),
+        _field(_sourceLabel, '外部来源名称（选填）', 120),
+        _field(_sourceURL, '公开 HTTPS 来源链接（选填）', 1000),
+        _field(_rightsNote, '你的发布权限或授权说明（选填）', 1000, lines: 3),
         if (_message != null)
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 8),
@@ -268,7 +253,7 @@ class _GroupPageState extends State<GroupPage> {
         const SizedBox(height: 12),
         FilledButton(
           onPressed: _busy ? null : _submit,
-          child: const Text('Publish group'),
+          child: const Text('发布社群'),
         ),
       ],
     );

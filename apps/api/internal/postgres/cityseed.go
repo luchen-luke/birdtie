@@ -11,14 +11,14 @@ import (
 )
 
 const candidateColumns = `id, city_id, submitted_by, name, category_code,
-    summary, latitude, longitude, location_precision, source_label, source_url,
+    summary, COALESCE(address_label,''), latitude, longitude, location_precision, source_label, source_url,
     rights_note, provider_code, provider_place_id, attribution, expires_at,
     status, reviewed_by, reviewed_at, review_note, resolved_place_id, created_at`
 
 func scanCandidate(row scanner) (cityseed.Candidate, error) {
 	var c cityseed.Candidate
 	err := row.Scan(&c.ID, &c.CityID, &c.SubmittedBy, &c.Name,
-		&c.CategoryCode, &c.Summary, &c.Latitude, &c.Longitude,
+		&c.CategoryCode, &c.Summary, &c.AddressLabel, &c.Latitude, &c.Longitude,
 		&c.LocationPrecision, &c.SourceLabel, &c.SourceURL, &c.RightsNote,
 		&c.ProviderCode, &c.ProviderPlaceID, &c.Attribution,
 		&c.ExpiresAt, &c.Status, &c.ReviewedBy, &c.ReviewedAt,
@@ -27,29 +27,32 @@ func scanCandidate(row scanner) (cityseed.Candidate, error) {
 }
 
 func (s *Store) Submit(ctx context.Context, actorID, cityID string, input cityseed.SubmitInput) (cityseed.Candidate, error) {
-	var providerCode, providerPlaceID, attribution any
+	var providerCode, providerPlaceID, attribution, addressLabel any
+	if input.AddressLabel != "" {
+		addressLabel = input.AddressLabel
+	}
 	if input.ProviderCode != "" {
 		providerCode, providerPlaceID, attribution =
 			input.ProviderCode, input.ProviderPlaceID, input.Attribution
 	}
-	tx, err := s.pool.Begin(ctx)
+	tx, err := s.pool.BeginTx(ctx, pgx.TxOptions{IsoLevel: pgx.ReadCommitted})
 	if err != nil {
 		return cityseed.Candidate{}, err
 	}
 	defer tx.Rollback(ctx)
 	row := tx.QueryRow(ctx, `INSERT INTO place_candidates (
-        city_id, submitted_by, name, category_code, summary, latitude, longitude,
+        city_id, submitted_by, name, category_code, summary, address_label, latitude, longitude,
         location_precision, source_label, source_url, rights_note,
         provider_code, provider_place_id, attribution, expires_at
     )
-    SELECT c.id, a.id, $3, $4, $5, $6, $7, $8, $9, $10, $11,
-        $12, $13, $14, $15
+    SELECT c.id, a.id, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12,
+        $13, $14, $15, $16
     FROM city_editor_memberships m
     JOIN cities c ON c.id = m.city_id AND c.publication_status = 'published'
     JOIN accounts a ON a.id = m.account_id AND a.status = 'active'
     WHERE m.city_id = $1 AND m.account_id = $2 AND m.state = 'active'
     RETURNING `+candidateColumns,
-		cityID, actorID, input.Name, input.CategoryCode, input.Summary,
+		cityID, actorID, input.Name, input.CategoryCode, input.Summary, addressLabel,
 		input.Latitude, input.Longitude, input.LocationPrecision,
 		input.SourceLabel, input.SourceURL, input.RightsNote,
 		providerCode, providerPlaceID, attribution, input.ExpiresAt)
@@ -106,7 +109,7 @@ func (s *Store) List(ctx context.Context, actorID, cityID string) ([]cityseed.Ca
 }
 
 func (s *Store) Review(ctx context.Context, actorID, candidateID string, input cityseed.ReviewInput) (cityseed.Candidate, error) {
-	tx, err := s.pool.Begin(ctx)
+	tx, err := s.pool.BeginTx(ctx, pgx.TxOptions{IsoLevel: pgx.ReadCommitted})
 	if err != nil {
 		return cityseed.Candidate{}, err
 	}
@@ -139,16 +142,16 @@ func (s *Store) Review(ctx context.Context, actorID, candidateID string, input c
 		}
 		var placeID string
 		if err := tx.QueryRow(ctx, `INSERT INTO places (
-            id, city_id, name, category_code, summary, latitude, longitude,
+            id, city_id, name, category_code, summary, address_label, latitude, longitude,
             location_precision, publication_status, source_label, source_ref,
             maintainer_label, maintainer_account_id, verified_at, expires_at
         )
-        SELECT gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, 'published',
-            $8, $9, COALESCE(NULLIF(a.handle, ''), 'Birdtie city editor'),
-            a.id, now(), $10
-        FROM accounts a WHERE a.id = $11 AND a.status = 'active'
+        SELECT gen_random_uuid(), $1, $2, $3, $4, NULLIF($5,''), $6, $7, $8, 'published',
+            $9, $10, '城市维护者',
+            a.id, now(), $11
+        FROM accounts a WHERE a.id = $12 AND a.status = 'active'
         RETURNING id`, c.CityID, c.Name, c.CategoryCode, c.Summary,
-			c.Latitude, c.Longitude, c.LocationPrecision, c.SourceLabel,
+			c.AddressLabel, c.Latitude, c.Longitude, c.LocationPrecision, c.SourceLabel,
 			c.SourceURL, c.ExpiresAt, actorID).Scan(&placeID); err != nil {
 			return cityseed.Candidate{}, seedWriteError(err)
 		}
@@ -187,9 +190,16 @@ func (s *Store) Review(ctx context.Context, actorID, candidateID string, input c
 			return cityseed.Candidate{}, err
 		}
 		if input.Decision == "link_existing" {
+			if c.AddressLabel != "" {
+				if _, err := tx.Exec(ctx, `UPDATE places SET address_label=$2,updated_at=now()
+					WHERE id=$1 AND address_label IS NULL AND location_precision='point'`,
+					resolvedPlaceID, c.AddressLabel); err != nil {
+					return cityseed.Candidate{}, err
+				}
+			}
 			_, err = tx.Exec(ctx, `UPDATE places p
                 SET source_label = $2, source_ref = $3,
-                    maintainer_label = COALESCE(NULLIF(a.handle, ''), 'Birdtie city editor'),
+                    maintainer_label = '城市维护者',
                     maintainer_account_id = a.id, updated_at = now(),
                     verified_at = now(), expires_at = $4
                 FROM accounts a

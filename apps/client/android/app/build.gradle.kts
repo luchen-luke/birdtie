@@ -6,6 +6,18 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+repositories {
+    maven {
+        url = uri("https://jitpack.io")
+        content { includeGroup("cz.adaptech.tesseract4android") }
+    }
+}
+
+dependencies {
+    // Bundled, single-threaded local OCR. No cloud or runtime model download.
+    implementation("cz.adaptech.tesseract4android:tesseract4android:4.9.0")
+}
+
 val amapProperties = Properties()
 val amapPropertiesFile = rootProject.file("amap.properties")
 if (amapPropertiesFile.exists()) {
@@ -70,6 +82,11 @@ android {
     buildTypes {
         debug {
             // Side-by-side phone testing must not replace the installed Civu app.
+            applicationIdSuffix = ".birdtiepreview"
+        }
+        getByName("profile") {
+            // Flutter creates profile from debug before the project adds its
+            // suffix. Keep physical profiling on the same isolated preview ID.
             applicationIdSuffix = ".birdtiepreview"
         }
         release {

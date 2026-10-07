@@ -45,27 +45,56 @@ func (s *Store) BlockAccount(ctx context.Context, actorID, targetID string) erro
 	if err != nil {
 		return err
 	}
-	_, err = tx.Exec(ctx, `INSERT INTO account_blocks (
+	inserted, err := tx.Exec(ctx, `INSERT INTO account_blocks (
         blocker_account_id, blocked_account_id
     ) VALUES ($1, $2) ON CONFLICT DO NOTHING`, actorID, targetID)
 	if err != nil {
 		return err
 	}
-	_, err = tx.Exec(ctx, `UPDATE consent_grants
+	_, err = auditExec(ctx, tx, `WITH removed AS (
+		UPDATE person_ties SET status='removed',updated_at=now()
+		WHERE status='active' AND
+		  ((person_a_account_id=$1 AND person_b_account_id=$2) OR
+		   (person_a_account_id=$2 AND person_b_account_id=$1))
+		RETURNING id)
+		INSERT INTO audit_events(actor_account_id,action,resource_type,resource_id,decision,purpose)
+		SELECT $1,'remove','person_tie',id::text,'allowed','personal_safety' FROM removed`, actorID, targetID)
+	if err != nil {
+		return err
+	}
+	_, err = auditExec(ctx, tx, `WITH ended AS (
+		UPDATE connection_requests SET
+		  state=CASE WHEN sender_account_id=$1 THEN 'withdrawn' ELSE 'declined' END,
+		  decided_at=now()
+		WHERE state='pending' AND
+		  ((sender_account_id=$1 AND recipient_account_id=$2) OR
+		   (sender_account_id=$2 AND recipient_account_id=$1))
+		RETURNING id)
+		INSERT INTO audit_events(actor_account_id,action,resource_type,resource_id,decision,purpose)
+		SELECT $1,'end','connection_request',id::text,'allowed','personal_safety' FROM ended`, actorID, targetID)
+	if err != nil {
+		return err
+	}
+	_, err = auditExec(ctx, tx, `WITH revoked AS (UPDATE consent_grants
         SET revoked_at = now(), revision = revision + 1
         WHERE revoked_at IS NULL AND recipient_account_id IS NOT NULL
           AND ((owner_account_id = $1 AND recipient_account_id = $2)
-            OR (owner_account_id = $2 AND recipient_account_id = $1))`,
+            OR (owner_account_id = $2 AND recipient_account_id = $1))
+        RETURNING id,resource_type,resource_id,purpose)
+        INSERT INTO audit_events(actor_account_id,action,resource_type,resource_id,decision,purpose,target_resource_id)
+        SELECT $1,'revoke',resource_type,resource_id,'allowed','personal_safety',id FROM revoked`,
 		actorID, targetID)
 	if err != nil {
 		return err
 	}
-	_, err = tx.Exec(ctx, `INSERT INTO audit_events (
+	if inserted.RowsAffected() == 1 {
+		_, err = auditExec(ctx, tx, `INSERT INTO audit_events (
         actor_account_id, action, resource_type, resource_id, decision, purpose
     ) VALUES ($1, 'block', 'account', $2, 'allowed', 'personal_safety')`,
-		actorID, targetID)
-	if err != nil {
-		return err
+			actorID, targetID)
+		if err != nil {
+			return err
+		}
 	}
 	return tx.Commit(ctx)
 }
@@ -86,7 +115,7 @@ func (s *Store) UnblockAccount(ctx context.Context, actorID, targetID string) er
 	if err != nil {
 		return err
 	}
-	_, err = tx.Exec(ctx, `INSERT INTO audit_events (
+	_, err = auditExec(ctx, tx, `INSERT INTO audit_events (
         actor_account_id, action, resource_type, resource_id, decision, purpose
     ) VALUES ($1, 'unblock', 'account', $2, 'allowed', 'personal_safety')`,
 		actorID, targetID)

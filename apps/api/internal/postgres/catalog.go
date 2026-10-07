@@ -48,18 +48,32 @@ func (s *Store) GetCity(ctx context.Context, id string) (foundation.City, error)
 	return scanCity(row)
 }
 
+// Source review facts identify an automatic editor label independently of
+// current reviewer/candidate eligibility. A later revocation must not restore
+// a historical private handle. Unlinked/manual source metadata stays intact.
+const reviewedPlaceMaintainerSQL = `CASE WHEN p.maintainer_account_id IS NOT NULL
+    AND EXISTS(SELECT 1 FROM place_sources maintainer_origin
+      WHERE maintainer_origin.place_id=p.id
+        AND maintainer_origin.reviewer_account_id=p.maintainer_account_id
+        AND maintainer_origin.source_url=p.source_ref
+        AND maintainer_origin.source_label=p.source_label)
+    THEN '城市维护者' ELSE p.maintainer_label END`
+
 const placeColumns = `p.id, p.city_id, p.name, p.category_code, p.summary,
+    COALESCE(p.address_label,''),
     p.coordinate_system, p.location_precision, p.latitude, p.longitude,
-    p.source_label, p.source_ref, p.maintainer_label,
+    p.source_label, p.source_ref, ` + reviewedPlaceMaintainerSQL + `,
     p.updated_at, p.verified_at, p.expires_at`
 
 func (s *Store) ListPlaces(ctx context.Context, cityID, query string) ([]foundation.Place, error) {
 	rows, err := s.pool.Query(ctx, `SELECT `+placeColumns+`
         FROM places p JOIN cities c ON c.id = p.city_id
-        WHERE p.city_id = $1 AND p.publication_status = 'published'
-          AND c.publication_status = 'published'
-          AND ($2 = '' OR strpos(lower(p.name), lower($2)) > 0
-            OR strpos(lower(p.summary), lower($2)) > 0)
+		WHERE p.city_id = $1 AND p.publication_status = 'published'
+		  AND c.publication_status = 'published'
+		  AND (p.expires_at IS NULL OR p.expires_at > now())
+		  AND ($2 = '' OR strpos(lower(p.name), lower($2)) > 0
+		    OR strpos(lower(p.summary), lower($2)) > 0
+		    OR strpos(lower(p.category_code), lower($2)) > 0)
         ORDER BY p.name, p.id LIMIT 100`, cityID, query)
 	if err != nil {
 		return nil, err
@@ -80,7 +94,8 @@ func (s *Store) GetPlace(ctx context.Context, id string) (foundation.Place, erro
 	row := s.pool.QueryRow(ctx, `SELECT `+placeColumns+`
         FROM places p JOIN cities c ON c.id = p.city_id
         WHERE p.id = $1 AND p.publication_status = 'published'
-          AND c.publication_status = 'published'`, id)
+          AND c.publication_status = 'published'
+          AND (p.expires_at IS NULL OR p.expires_at > now())`, id)
 	return scanPlace(row)
 }
 
@@ -116,7 +131,7 @@ func scanPlace(row scanner) (foundation.Place, error) {
 	var place foundation.Place
 	err := row.Scan(
 		&place.ID, &place.CityID, &place.Name, &place.CategoryCode,
-		&place.Summary, &place.Location.CoordinateSystem,
+		&place.Summary, &place.AddressLabel, &place.Location.CoordinateSystem,
 		&place.Location.Precision, &place.Location.Latitude,
 		&place.Location.Longitude, &place.Source.Label,
 		&place.Source.Reference, &place.Source.Maintainer,

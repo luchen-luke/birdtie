@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 
+	ea "github.com/birdtie/birdtie/apps/api/internal/entityaction"
 	"github.com/birdtie/birdtie/apps/api/internal/saved"
 	"github.com/jackc/pgx/v5"
 )
@@ -11,6 +12,29 @@ import (
 // Save only accepts a target that is currently visible to this owner. It is
 // idempotent; a later visibility change cannot turn a bookmark into access.
 func (s *Store) Save(ctx context.Context, ownerID, kind, targetID string) (string, error) {
+	tx, e := s.pool.Begin(ctx)
+	if e != nil {
+		return "", e
+	}
+	defer tx.Rollback(ctx)
+	var created bool
+	id, e := saveInQuery(ctx, tx, ownerID, kind, targetID, &created)
+	if e != nil {
+		return "", e
+	}
+	if created {
+		if e = insertDomainAudit(ctx, tx, ownerID, "create", "saved_item", id, "human_bookmark", &targetID); e != nil {
+			return "", e
+		}
+	}
+	return id, tx.Commit(ctx)
+}
+
+type savedQuery interface {
+	QueryRow(context.Context, string, ...any) pgx.Row
+}
+
+func saveInQuery(ctx context.Context, q savedQuery, ownerID, kind, targetID string, created *bool) (string, error) {
 	var insert string
 	var existing string
 	switch kind {
@@ -32,6 +56,7 @@ func (s *Store) Save(ctx context.Context, ownerID, kind, targetID string) (strin
             SELECT $1, a.id FROM activities a
             JOIN cities c ON c.id = a.city_id AND c.publication_status = 'published'
             WHERE a.id = $2 AND a.publication_status = 'published'
+              AND a.visibility = 'public'
               AND (a.expires_at IS NULL OR a.expires_at > now())
               AND NOT EXISTS (SELECT 1 FROM account_blocks b
                   WHERE a.host_account_id IS NOT NULL AND
@@ -43,6 +68,7 @@ func (s *Store) Save(ctx context.Context, ownerID, kind, targetID string) (strin
             JOIN cities c ON c.id = a.city_id AND c.publication_status = 'published'
             WHERE s.owner_account_id = $1 AND s.activity_id = $2
               AND a.publication_status = 'published'
+              AND a.visibility = 'public'
               AND (a.expires_at IS NULL OR a.expires_at > now())
               AND NOT EXISTS (SELECT 1 FROM account_blocks b
                   WHERE a.host_account_id IS NOT NULL AND
@@ -75,18 +101,128 @@ func (s *Store) Save(ctx context.Context, ownerID, kind, targetID string) (strin
 		return "", saved.ErrNotFound
 	}
 	var id string
-	err := s.pool.QueryRow(ctx, insert, ownerID, targetID).Scan(&id)
+	err := q.QueryRow(ctx, insert, ownerID, targetID).Scan(&id)
 	if err == nil {
+		if created != nil {
+			*created = true
+		}
 		return id, nil
 	}
 	if !errors.Is(err, pgx.ErrNoRows) {
 		return "", err
 	}
-	err = s.pool.QueryRow(ctx, existing, ownerID, targetID).Scan(&id)
+	err = q.QueryRow(ctx, existing, ownerID, targetID).Scan(&id)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return "", saved.ErrNotFound
 	}
 	return id, err
+}
+
+func lockSavedTarget(ctx context.Context, tx pgx.Tx, ref ea.Ref) error {
+	var table string
+	switch ref.Type {
+	case "place":
+		table = "places"
+	case "activity":
+		table = "activities"
+	case "community":
+		table = "communities"
+	default:
+		return ea.ErrInvalid
+	}
+	var id string
+	if e := tx.QueryRow(ctx, `SELECT id FROM `+table+` WHERE id=$1 FOR UPDATE`, ref.ID).Scan(&id); e != nil {
+		return saved.ErrNotFound
+	}
+	return nil
+}
+func (s *Store) SaveBound(ctx context.Context, a ea.Access, kind, id string, b ea.BoundCondition) (string, error) {
+	ref := ea.Ref{Type: kind, ID: id}
+	if kind == "group" {
+		ref.Type = "community"
+	}
+	if b.Kind != ea.Save || b.Operation != "SAVE" {
+		return "", ea.ErrInvalid
+	}
+	tx, e := s.pool.Begin(ctx)
+	if e != nil {
+		return "", ea.ErrUnavailable
+	}
+	defer tx.Rollback(ctx)
+	if e = s.lockEntityActionWriter(ctx, tx, a); e != nil {
+		return "", e
+	}
+	if e = lockSavedTarget(ctx, tx, ref); e != nil {
+		return "", e
+	}
+	fence, e := s.checkEntityActionWrite(ctx, tx, a, ref, b)
+	if e != nil {
+		return "", e
+	}
+	var created bool
+	result, e := saveInQuery(ctx, tx, a.Actor.ID, kind, id, &created)
+	if e != nil {
+		return "", e
+	}
+	if created {
+		if e = insertDomainAudit(ctx, tx, a.Actor.ID, "create", "saved_item", result, "human_bookmark", &id); e != nil {
+			return "", e
+		}
+	}
+	var exact bool
+	if e = tx.QueryRow(ctx, `SELECT count(*)=1 AND bool_and(id=$3::uuid) FROM saved_items WHERE owner_account_id=$1 AND coalesce(place_id,activity_id,community_id)=$2`, a.Actor.ID, id, result).Scan(&exact); e != nil || !exact {
+		return "", ea.ErrChanged
+	}
+	if e = s.finishEntityActionWrite(ctx, tx, fence); e != nil {
+		return "", e
+	}
+	return result, tx.Commit(ctx)
+}
+func (s *Store) RemoveSavedBound(ctx context.Context, a ea.Access, id string, b ea.BoundCondition) error {
+	if b.Kind != ea.Save || b.Operation != "UNSAVE" {
+		return ea.ErrInvalid
+	}
+	tx, e := s.pool.Begin(ctx)
+	if e != nil {
+		return ea.ErrUnavailable
+	}
+	defer tx.Rollback(ctx)
+	if e = s.lockEntityActionWriter(ctx, tx, a); e != nil {
+		return e
+	}
+	var ref ea.Ref
+	if e = tx.QueryRow(ctx, `SELECT CASE WHEN place_id IS NOT NULL THEN 'place' WHEN activity_id IS NOT NULL THEN 'activity' ELSE 'community' END,coalesce(place_id,activity_id,community_id)::text FROM saved_items WHERE id=$1 AND owner_account_id=$2`, id, a.Actor.ID).Scan(&ref.Type, &ref.ID); e != nil {
+		return saved.ErrNotFound
+	}
+	if e = lockSavedTarget(ctx, tx, ref); e != nil {
+		return e
+	}
+	var actual string
+	if e = tx.QueryRow(ctx, `SELECT id FROM saved_items WHERE id=$1 AND owner_account_id=$2 AND coalesce(place_id,activity_id,community_id)=$3 FOR UPDATE`, id, a.Actor.ID, ref.ID).Scan(&actual); e != nil {
+		return saved.ErrNotFound
+	}
+	fence, e := s.checkEntityActionWrite(ctx, tx, a, ref, b)
+	if e != nil {
+		return e
+	}
+	removed, e := tx.Exec(ctx, `DELETE FROM saved_items WHERE id=$1 AND owner_account_id=$2`, actual, a.Actor.ID)
+	if e != nil {
+		return e
+	}
+	if removed.RowsAffected() != 1 {
+		return ea.ErrChanged
+	}
+	if e = insertDomainAudit(ctx, tx, a.Actor.ID, "delete", "saved_item", actual, "human_bookmark", &ref.ID); e != nil {
+		return e
+	}
+	var empty bool
+	if e = tx.QueryRow(ctx, `SELECT NOT EXISTS(SELECT 1 FROM saved_items WHERE owner_account_id=$1 AND coalesce(place_id,activity_id,community_id)=$2)`, a.Actor.ID, ref.ID).Scan(&empty); e != nil || !empty {
+		return ea.ErrChanged
+	}
+	if e = s.finishEntityActionWrite(ctx, tx, fence); e != nil {
+		return e
+	}
+	return tx.Commit(ctx)
 }
 
 func (s *Store) ListSaved(ctx context.Context, ownerID string) ([]saved.Item, error) {
@@ -107,6 +243,7 @@ func (s *Store) ListSaved(ctx context.Context, ownerID string) ([]saved.Item, er
                       AND c.publication_status = 'published')
         LEFT JOIN activities a ON a.id = s.activity_id
           AND a.publication_status = 'published'
+          AND a.visibility = 'public'
           AND (a.expires_at IS NULL OR a.expires_at > now())
           AND EXISTS (SELECT 1 FROM cities c WHERE c.id = a.city_id
                       AND c.publication_status = 'published')
@@ -144,13 +281,21 @@ func (s *Store) ListSaved(ctx context.Context, ownerID string) ([]saved.Item, er
 }
 
 func (s *Store) RemoveSaved(ctx context.Context, ownerID, id string) error {
-	command, err := s.pool.Exec(ctx, `DELETE FROM saved_items
-        WHERE id = $1 AND owner_account_id = $2`, id, ownerID)
-	if err != nil {
-		return err
+	tx, e := s.pool.Begin(ctx)
+	if e != nil {
+		return e
 	}
-	if command.RowsAffected() == 0 {
+	defer tx.Rollback(ctx)
+	var target string
+	e = tx.QueryRow(ctx, `DELETE FROM saved_items WHERE id=$1 AND owner_account_id=$2 RETURNING coalesce(place_id,activity_id,community_id)::text`, id, ownerID).Scan(&target)
+	if errors.Is(e, pgx.ErrNoRows) {
 		return saved.ErrNotFound
 	}
-	return nil
+	if e != nil {
+		return e
+	}
+	if e = insertDomainAudit(ctx, tx, ownerID, "delete", "saved_item", id, "human_bookmark", &target); e != nil {
+		return e
+	}
+	return tx.Commit(ctx)
 }

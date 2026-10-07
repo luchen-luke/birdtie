@@ -1,0 +1,17 @@
+BEGIN;
+DO $$ BEGIN IF EXISTS(SELECT 1 FROM agent_memory_corrections) OR EXISTS(SELECT 1 FROM agent_memory_suppressions) OR EXISTS(SELECT 1 FROM agent_memory_source_invalidations) THEN RAISE EXCEPTION 'used correction and source invalidation history prevents down' USING ERRCODE='55000';END IF;END $$;
+DROP TRIGGER memory_moment_invalidated ON moments;
+DROP TRIGGER memory_participation_invalidated ON activity_participations;
+DROP TRIGGER memory_saved_invalidated ON saved_items;
+DROP TRIGGER memory_candidate_correction_guard ON agent_memory_candidates;
+DROP FUNCTION birdtie_memory_source_invalidated();
+DROP FUNCTION birdtie_memory_candidate_correction_guard();
+DROP TABLE agent_memory_source_invalidations;
+DROP FUNCTION birdtie_memory_source_invalidation_guard();
+DROP TABLE agent_memory_suppressions;
+DROP FUNCTION birdtie_memory_suppression_guard();
+DROP TABLE agent_memory_corrections;
+DROP FUNCTION birdtie_memory_correction_guard();
+DROP FUNCTION birdtie_memory_correction_binding(uuid,uuid,text,uuid,text);
+DROP FUNCTION birdtie_memory_correction_authority(uuid,uuid,uuid);
+COMMIT;

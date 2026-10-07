@@ -8,7 +8,7 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-const communityColumns = `id, city_id, owner_account_id,
+const communityColumns = `id, COALESCE(city_id, ''), owner_account_id,
     COALESCE(place_id::text, ''), name, summary, source_label, source_ref,
     rights_note, expires_at, publication_status,
     COALESCE(reviewed_by::text, ''), reviewed_at, COALESCE(review_note, ''),
@@ -49,7 +49,7 @@ func (s *Store) SubmitCommunity(ctx context.Context, ownerID, cityID string, inp
     )
     SELECT c.id, a.id, NULLIF($3, '')::uuid, $4, $5, 'public',
            'published', now(), COALESCE(NULLIF($6, ''), 'Owner-published group'), $7, $8,
-           COALESCE(NULLIF(a.handle, ''), 'Birdtie community owner'), $9
+           '社区维护者', $9
     FROM cities c JOIN accounts a ON a.id = $2 AND a.status = 'active'
     WHERE c.id = $1 AND c.publication_status = 'published'
     RETURNING `+communityColumns,
@@ -99,7 +99,10 @@ func (s *Store) WithdrawCommunity(ctx context.Context, ownerID, id string) error
 	defer tx.Rollback(ctx)
 	var withdrawnID string
 	err = tx.QueryRow(ctx, `UPDATE communities SET publication_status = 'hidden',
-        updated_at = now() WHERE id = $1 AND owner_account_id = $2
+		updated_at = now() WHERE id = $1 AND owner_account_id = $2
+		  AND EXISTS (SELECT 1 FROM community_memberships m
+		      WHERE m.community_id=communities.id AND m.user_account_id=$2
+		        AND m.role='owner' AND m.status='active')
           AND publication_status IN ('draft', 'published') RETURNING id`, id, ownerID).Scan(&withdrawnID)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return community.ErrNotFound

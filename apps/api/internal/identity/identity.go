@@ -8,13 +8,17 @@ import (
 	"errors"
 	"strings"
 	"time"
+	"unicode"
+	"unicode/utf8"
 )
 
 var (
-	ErrUnauthorized = errors.New("unauthorized")
-	ErrNotFound     = errors.New("not found")
-	ErrInvalidGrant = errors.New("invalid grant")
-	ErrConflict     = errors.New("conflict")
+	ErrUnauthorized       = errors.New("unauthorized")
+	ErrNotFound           = errors.New("not found")
+	ErrInvalidGrant       = errors.New("invalid grant")
+	ErrConflict           = errors.New("conflict")
+	ErrInvalidProfile     = errors.New("invalid profile")
+	ErrProfileUnavailable = errors.New("profile unavailable")
 )
 
 const tokenPrefix = "bts1_"
@@ -36,6 +40,39 @@ type ProfileInput struct {
 	DisplayName string `json:"displayName"`
 	Bio         string `json:"bio"`
 	Visibility  string `json:"visibility"`
+}
+
+// HumanProfileStore preserves the original public Profile source while
+// rechecking its real session inside the write transaction. initialActor is
+// obtained by server Authenticate, never an owner selector from request JSON.
+// This interface grants no Agent, organization role, analysis or model access.
+type HumanProfileStore interface {
+	UpdateHumanProfile(context.Context, [32]byte, Actor, ProfileInput) (Profile, error)
+}
+
+// NormalizeHumanProfileInput retains the original byte-length limits and
+// trim behavior. Display names contain no control characters; bios may use
+// tabs/newlines. This is ordinary explicit user text, not inferred context.
+func NormalizeHumanProfileInput(input ProfileInput) (ProfileInput, error) {
+	if !utf8.ValidString(input.DisplayName) || !utf8.ValidString(input.Bio) {
+		return ProfileInput{}, ErrInvalidProfile
+	}
+	for _, r := range input.DisplayName {
+		if unicode.IsControl(r) {
+			return ProfileInput{}, ErrInvalidProfile
+		}
+	}
+	for _, r := range input.Bio {
+		if unicode.IsControl(r) && r != '\n' && r != '\r' && r != '\t' {
+			return ProfileInput{}, ErrInvalidProfile
+		}
+	}
+	input.DisplayName = strings.TrimSpace(input.DisplayName)
+	input.Bio = strings.TrimSpace(input.Bio)
+	if len(input.DisplayName) < 2 || len(input.DisplayName) > 80 || len(input.Bio) > 500 || (input.Visibility != "public" && input.Visibility != "private") {
+		return ProfileInput{}, ErrInvalidProfile
+	}
+	return input, nil
 }
 
 type Grant struct {

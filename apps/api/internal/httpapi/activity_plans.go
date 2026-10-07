@@ -1,15 +1,35 @@
 package httpapi
 
 import (
+	"context"
+	"encoding/json"
 	"errors"
 	"net/http"
 
 	"github.com/birdtie/birdtie/apps/api/internal/activityplan"
+	"github.com/birdtie/birdtie/apps/api/internal/identity"
 )
 
 func (s *server) listActivityPlans(w http.ResponseWriter, r *http.Request) {
 	actor, _, err := s.actor(r, true)
 	if authFailed(w, err) {
+		return
+	}
+	if actor.AccountType != "person" {
+		respondError(w, 403, "person_account_required")
+		return
+	}
+	if native, ok := s.activityPlans.(activityplan.HumanStore); ok {
+		current, digest, e := s.humanSocialActor(r, true)
+		if authFailed(w, e) {
+			return
+		}
+		if current.AccountType != "person" || current.ID != actor.ID {
+			respondError(w, 403, "person_account_required")
+			return
+		}
+		plans, check, e := native.ListActivityPlansCurrent(r.Context(), activityplan.CurrentAccess{OwnerID: current.ID, SessionDigest: digest})
+		respondOwnPlansCurrent(w, r, plans, check, e)
 		return
 	}
 	plans, err := s.activityPlans.ListActivityPlans(r.Context(), actor.ID)
@@ -18,6 +38,42 @@ func (s *server) listActivityPlans(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	respond(w, http.StatusOK, map[string]any{"data": plans})
+}
+
+func respondOwnPlansCurrent(w http.ResponseWriter, r *http.Request, data any, check activityplan.CurrentValidation, err error) {
+	if err == nil && check == nil {
+		err = activityplan.ErrChanged
+	}
+	var raw []byte
+	if err == nil {
+		raw, err = json.Marshal(map[string]any{"data": data})
+	}
+	if err == nil {
+		err = check(r.Context())
+	}
+	if err == nil {
+		err = r.Context().Err()
+	}
+	if errors.Is(err, identity.ErrUnauthorized) {
+		respondError(w, 401, "unauthorized")
+		return
+	}
+	if errors.Is(err, activityplan.ErrChanged) {
+		respondError(w, 409, "plans_source_changed")
+		return
+	}
+	if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+		respondError(w, 503, "plans_unavailable")
+		return
+	}
+	if err != nil {
+		serverError(w, err)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Cache-Control", "no-store")
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write(raw)
 }
 
 func (s *server) planActivity(w http.ResponseWriter, r *http.Request) {

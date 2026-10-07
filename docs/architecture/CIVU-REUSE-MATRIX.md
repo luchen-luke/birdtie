@@ -4,6 +4,8 @@ Birdtie 当前身份和 Agent 权限边界以 [Accepted Agent Identity and Owner
 
 2026-09-30 Birdtie V2 补充：Agent-first 首页复用的是本仓已有的 `PublicCityMapView`、原生 Mapbox adapter、`PublicCityController` 和 City API。新增 Entity Layer、Agent Workspace 状态、规则查询及任务历史均为 Birdtie 自有实现；没有从 Civu 仓库复制代码或引入新的 Civu 运行时依赖。已审核 Activity 仅通过关联的公开点精度 Place 提供地图坐标；客户端不推测私有位置。未配置 API 时的演示 People、Group、Activity 地图实体与真实 API 模型隔离。
 
+2026-10-01 Mapbox 凭据补充：用户提供的新 `lookluo` 公共令牌自检有效、样式可读，但标准公开矢量瓦片返回 403；之前已获准复用的 Civu 公共令牌在同一请求返回 200，复合源 TileJSON 与复合矢量瓦片也返回 200。旧令牌仅从 `D:\Program\Civu\Civu-client\.env.local` 只读取得并写入 Birdtie 被 Git 忽略的 `apps/client/.env.maps.mobile.local.json` 供本地 Android 验收；用户提供的新令牌保留在另一个忽略的 `apps/client/.env.maps.mobile.provided.local.json`。没有复制 Civu 代码、数据或提交令牌。该发现不改变 Mapbox 作为海外地图 provider 的架构选择；正式分发仍需在 Mapbox 账号核对令牌限制、额度及发布许可。
+
 2026-09-30 内容供给与 Inbox 补充：Community Owner 提交、独立城市审核、撤回和审核结果 Inbox 事件均为 Birdtie 自有代码与数据表。本阶段没有从 Civu 复制消息、社交关系、群组内容或通知数据；它们不构成 Birdtie 的授权或内容来源。
 
 2026-09-30 人员供给补充：Profile 编辑、本人确认的公开 Intent、独立城市审核、撤回及 Agent People 发现均在 Birdtie 模型中实现；没有复用 Civu Profile、Intent 或社交关系代码/数据。固定码测试身份仍与 Civu 用户隔离，正式身份绑定和联系请求尚待设计。
@@ -117,3 +119,20 @@ Civu 根仓是编排仓，不直接承载正式业务应用代码；由以下独
 - 未检索/导出 Civu 生产数据库，不审查或搬运其用户内容、地点库、媒体或分析数据。
 - 未确认各子仓完整许可证与第三方 SDK 商用/缓存条款；这属于任何实际代码迁移的先决条件。
 - Birdtie 本身尚无首个 Git commit（检查时所有项目文件均未跟踪），故本文更新后的文档也尚未处于提交版本控制状态。
+
+## 8. 2026-10-08 UI 修复包接续核验
+
+本节为原矩阵的增量复核；来源均在只读的 `D:\Program\Civu`。本轮没有复制 Civu 代码、数据库、用户内容或媒体。以下只选择可借鉴的边界，实际实现继续沿用 Birdtie 的领域对象和已有服务。
+
+| 能力 | 已核验的具体来源 | Birdtie 接续结论 |
+|---|---|---|
+| Place/provider 身份 | `Civu-server/api/internal/placeprovider/provider.go` 的 provider、external ID、来源、attribution、CRS、Search/Detail；`store/migrations/018_place_provider_refs.sql` 的 provider/external ID 别名 | 可借鉴显式供应商身份和详情路由；不把网页结果或外部 ID 冒充 Birdtie canonical Place，不搬目录或原 migration。 |
+| Post/Moment | `Civu-server/api/internal/store/note_types.go` 的稳定 Note ID、媒体/地点/线程/协作者/version 与查看权限 | 关系概念可参考，正文和权限继续由 Birdtie `content/moment.go` 管理；不复制 Civu 社交 ACL 或保存时的隐式写入。 |
+| 单媒体地理关系 | `store/photo_locations.go`、`photo_locations_postgres.go`；`Civu-client/lib/src/models/moment_media_metadata.dart`、`moment_place_selection.dart` 和 `services/photo_location_metadata.dart` | 参考按媒体 ID 关联、显式 mapEnabled、归属及地点有效性校验。Note 的地点不能扩散成每张照片的精确坐标；EXIF 不直接公开。Birdtie 保留自己的私人媒体隔离契约。 |
+| 收藏 | `store/places_postgres.go` 的 SavePlaceWithSource、`place_save_sources_postgres.go` 的可见性处理；`notes_postgres.go` 的 SaveNote | Place 幂等及不可见来源的处理可参考。SaveNote 会验证 friends 关系、通知作者并同步公开 Note 的地点，因此不能直接复用为 Birdtie 通用 SAVE。继续使用现有 SavedController 与 `/v1/me/saved`。 |
+
+许可证检查发现：Civu 根及主要子仓未找到 LICENSE/COPYING/NOTICE，不能据此认定源文件可以直接复制。已抽查 exif、dio、pgx 的 MIT 与 AMap 依赖的 Apache-2.0；Mapbox SDK 仍受其服务条款约束。这是部分依赖复核，尚未完成全量许可证、数据权属和生产服务审查。
+
+本轮先前的网页公开地图令牌在真机及有限 HTTP 诊断中出现“样式 200、瓦片 403”。用户提供的设置截图确认它仅允许 `http://localhost:7357`，而 Mapbox 的 URL restriction 不支持原生移动 SDK。此结论只针对该令牌与构建，不覆盖或撤销此前版本的地图证据。
+
+2026-10-08 用户另提供移动端公开令牌后，实际瓦片预检 HTTP 200，Android build04 在 Xiaomi 25098PN5AC / Android 16 已显示 Mapbox 底图，完成开发地点卡片→地图→原生领域详情→返回流程。凭据仅存被 Git 忽略的本地配置，未从 Civu 复制。对应 APK、源码及视频 hash 见 `work/ui-repair-2026-10-07/device/BUILD04-EVIDENCE.json`。这些地点仍是 dev-seed 开发示例；底图可用不等于真实城市供给、联网发现或基础 Agent 已完成。

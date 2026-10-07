@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:latlong2/latlong.dart';
 
+import '../config/birdtie_environment.dart';
 import 'map_link.dart';
 import 'amap_city_map_stub.dart'
     if (dart.library.html) 'amap_city_map_web.dart';
@@ -13,12 +16,8 @@ import 'native_city_map_stub.dart'
 import 'public_city_controller.dart';
 import '../workspace/map_entities.dart';
 
-const _mapboxPublicToken = String.fromEnvironment(
-  'BIRDTIE_MAPBOX_PUBLIC_TOKEN',
-);
-const _mapboxMobileToken = String.fromEnvironment(
-  'BIRDTIE_MAPBOX_MOBILE_PUBLIC_TOKEN',
-);
+const _mapboxPublicToken = BirdtieEnvironment.mapboxWebPublicToken;
+const _mapboxMobileToken = BirdtieEnvironment.mapboxMobilePublicToken;
 // The public token used with Static Tiles must include styles:tiles.
 
 class PublicCityMapView extends StatefulWidget {
@@ -31,19 +30,31 @@ class PublicCityMapView extends StatefulWidget {
     this.entities = const [],
     this.selectedEntityId,
     this.onEntitySelected,
+    this.onViewportSettled,
+    this.onViewportInitialized,
+    this.onCameraMotion,
+    this.onMapUnavailable,
     this.fullBleed = false,
     this.contextKey = '',
+    this.ornamentTop,
+    this.onOrnamentHeightChanged,
   });
 
-  final PublicCity city;
+  final PublicCity? city;
   final List<PublicPlace> places;
   final ValueChanged<PublicPlace> onPlaceSelected;
   final String? placeStateMessage;
   final List<MapEntity> entities;
   final String? selectedEntityId;
   final ValueChanged<MapEntity>? onEntitySelected;
+  final ValueChanged<MapBounds>? onViewportSettled;
+  final ValueChanged<MapBounds>? onViewportInitialized;
+  final VoidCallback? onCameraMotion;
+  final ValueChanged<String>? onMapUnavailable;
   final bool fullBleed;
   final String contextKey;
+  final double? ornamentTop;
+  final ValueChanged<double>? onOrnamentHeightChanged;
 
   @override
   State<PublicCityMapView> createState() => _PublicCityMapViewState();
@@ -51,25 +62,56 @@ class PublicCityMapView extends StatefulWidget {
 
 class _PublicCityMapViewState extends State<PublicCityMapView> {
   bool _tilesFailed = false;
+  final MapController _webMapController = MapController();
 
   @override
   void didUpdateWidget(covariant PublicCityMapView oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.city.id != widget.city.id) _tilesFailed = false;
+    if (oldWidget.city?.id != widget.city?.id) _tilesFailed = false;
   }
 
   @override
   Widget build(BuildContext context) {
-    final viewport = widget.city.map;
+    final city = widget.city;
+    final viewport = city?.map;
+    // The native basemap uses public build configuration, not business catalog
+    // availability. A world camera is a view, never a guessed city or GPS fix.
+    if (!kIsWeb &&
+        (defaultTargetPlatform == TargetPlatform.iOS ||
+            defaultTargetPlatform == TargetPlatform.android) &&
+        _mapboxMobileToken.startsWith('pk.') &&
+        (viewport == null || viewport.provider == 'mapbox')) {
+      return NativeCityMapView(
+        key: const ValueKey('now-mapbox-native'),
+        city: city,
+        places: city == null ? const [] : widget.places,
+        accessToken: _mapboxMobileToken,
+        onPlaceSelected: widget.onPlaceSelected,
+        placeStateMessage: widget.placeStateMessage,
+        entities: city == null ? const [] : widget.entities,
+        selectedEntityId: city == null ? null : widget.selectedEntityId,
+        onEntitySelected: widget.onEntitySelected,
+        onViewportSettled: city == null ? null : widget.onViewportSettled,
+        onViewportInitialized: city == null
+            ? null
+            : widget.onViewportInitialized,
+        onCameraMotion: city == null ? null : widget.onCameraMotion,
+        onMapUnavailable: widget.onMapUnavailable,
+        fullBleed: widget.fullBleed,
+        contextKey: city == null ? 'idle' : widget.contextKey,
+        ornamentTop: widget.ornamentTop,
+      );
+    }
+    if (city == null) {
+      return const _MapUnavailable('当前平台的底图暂不可用，可选择城市查看公开内容。');
+    }
     if (viewport == null) {
       return const _MapUnavailable('该城市尚未配置地图视图。');
     }
     if (viewport.provider == 'amap') {
       return AMapCityMapView(
-        key: ValueKey(
-          '${widget.city.id}-${widget.contextKey}-${widget.selectedEntityId}-${widget.entities.map((e) => e.id).join(',')}-${widget.places.map((p) => p.id).join(',')}',
-        ),
-        city: widget.city,
+        key: ValueKey('${city.id}-amap'),
+        city: city,
         places: widget.places,
         entities: widget.entities,
         selectedEntityId: widget.selectedEntityId,
@@ -87,19 +129,8 @@ class _PublicCityMapViewState extends State<PublicCityMapView> {
         if (!_mapboxMobileToken.startsWith('pk.')) {
           return const _MapUnavailable('地图暂不可用，请使用地点列表。');
         }
-        return NativeCityMapView(
-          key: ValueKey(widget.city.id),
-          city: widget.city,
-          places: widget.places,
-          accessToken: _mapboxMobileToken,
-          onPlaceSelected: widget.onPlaceSelected,
-          placeStateMessage: widget.placeStateMessage,
-          entities: widget.entities,
-          selectedEntityId: widget.selectedEntityId,
-          onEntitySelected: widget.onEntitySelected,
-          fullBleed: widget.fullBleed,
-          contextKey: widget.contextKey,
-        );
+        // Valid native configuration returned above independently of catalog.
+        return const _MapUnavailable('地图配置暂不可用，可选择城市查看公开内容。');
       }
       return const _MapUnavailable('该城市地图暂不可用，请使用地点列表。');
     }
@@ -132,9 +163,8 @@ class _PublicCityMapViewState extends State<PublicCityMapView> {
         child: Stack(
           children: [
             FlutterMap(
-              key: ValueKey(
-                '${widget.city.id}-${widget.contextKey}-${widget.entities.map((e) => e.id).join(',')}-${widget.places.map((p) => p.id).join(',')}',
-              ),
+              key: ValueKey('${city.id}-mapbox-web'),
+              mapController: _webMapController,
               options: MapOptions(
                 initialCenter: mapCenter,
                 initialZoom: taskPoints.isEmpty ? viewport.defaultZoom : 12.8,
@@ -148,6 +178,24 @@ class _PublicCityMapViewState extends State<PublicCityMapView> {
                 minZoom: 3,
                 maxZoom: 18,
                 backgroundColor: const Color(0xFFE9ECE4),
+                onMapEvent: (event) {
+                  if (event is! MapEventMoveEnd &&
+                      event is! MapEventFlingAnimationEnd) {
+                    return;
+                  }
+                  final visibleBounds = event.camera.visibleBounds;
+                  final settled = MapBounds(
+                    west: visibleBounds.west,
+                    south: visibleBounds.south,
+                    east: visibleBounds.east,
+                    north: visibleBounds.north,
+                  );
+                  if (settled.isValid) {
+                    scheduleMicrotask(() {
+                      if (mounted) widget.onViewportSettled?.call(settled);
+                    });
+                  }
+                },
               ),
               children: [
                 TileLayer(
@@ -205,9 +253,22 @@ class _PublicCityMapViewState extends State<PublicCityMapView> {
             Positioned(
               left: 8,
               right: 8,
-              top: widget.fullBleed ? 142 : null,
+              top: widget.fullBleed
+                  ? widget.ornamentTop ?? MediaQuery.paddingOf(context).top + 8
+                  : null,
               bottom: widget.fullBleed ? null : 8,
-              child: const _MapboxAttribution(),
+              child: Builder(
+                builder: (attributionContext) {
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (!attributionContext.mounted) return;
+                    final box = attributionContext.findRenderObject();
+                    if (box is RenderBox && box.hasSize) {
+                      widget.onOrnamentHeightChanged?.call(box.size.height);
+                    }
+                  });
+                  return const _MapboxAttribution();
+                },
+              ),
             ),
           ],
         ),

@@ -6,7 +6,6 @@ import (
 	"io"
 	"mime"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/birdtie/birdtie/apps/api/internal/identity"
@@ -65,26 +64,38 @@ func (s *server) logout(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *server) updateOwnProfile(w http.ResponseWriter, r *http.Request) {
-	actor, _, err := s.actor(r, true)
-	if authFailed(w, err) {
+	w.Header().Set("Cache-Control", "no-store")
+	if len(r.Header.Values("X-Birdtie-Organization-Workspace")) != 0 {
+		publicProfileError(w, http.StatusForbidden, "forbidden", "请在当前账号的本人资料中修改")
 		return
 	}
-	var input identity.ProfileInput
-	if !decodeStrictJSON(w, r, &input) {
+	if r.URL.RawQuery != "" || r.URL.ForceQuery {
+		publicProfileError(w, http.StatusBadRequest, "invalid_profile", "本人资料不接受目标选择参数")
 		return
 	}
-	input.DisplayName = strings.TrimSpace(input.DisplayName)
-	input.Bio = strings.TrimSpace(input.Bio)
-	if len(input.DisplayName) < 2 || len(input.DisplayName) > 80 ||
-		len(input.Bio) > 500 ||
-		(input.Visibility != "private" && input.Visibility != "public") {
-		respondError(w, http.StatusBadRequest, "invalid_profile")
+	if s.access == nil || s.humanProfiles == nil {
+		publicProfileError(w, http.StatusServiceUnavailable, "profile_unavailable", "资料服务暂不可用，请稍后重试")
 		return
 	}
-	profile, err := s.access.UpdateOwnProfile(r.Context(), actor.ID, input)
+	actor, digest, err := s.actor(r, true)
 	if err != nil {
-		serverError(w, err)
+		publicProfileFailure(w, err)
+		return
+	}
+	input, err := decodePublicProfile(w, r)
+	if err != nil {
+		publicProfileFailure(w, err)
+		return
+	}
+	profile, err := s.humanProfiles.UpdateHumanProfile(r.Context(), digest, actor, input)
+	if err != nil {
+		publicProfileFailure(w, err)
 	} else {
+		returned, validErr := identity.NormalizeHumanProfileInput(identity.ProfileInput{DisplayName: profile.DisplayName, Bio: profile.Bio, Visibility: profile.Visibility})
+		if validErr != nil || profile.AccountID != actor.ID || returned != input || profile.DisplayName != returned.DisplayName || profile.Bio != returned.Bio {
+			publicProfileFailure(w, identity.ErrProfileUnavailable)
+			return
+		}
 		respond(w, http.StatusOK, map[string]any{"data": profile})
 	}
 }

@@ -1,0 +1,1387 @@
+{
+  "version": 1,
+  "snapshot_of": "legacy 57 task records preserved after V4 import",
+  "source_updated": "2026-10-01T08:11:08.052743+00:00",
+  "tasks": [
+    {
+      "id": "BT-AUD-001",
+      "epic": "Audit",
+      "priority": "P0",
+      "title": "Create functional MVP gap audit",
+      "depends_on": [],
+      "status": "DONE",
+      "goal": "Inventory current implementation as REAL/PARTIAL/MOCK/HARDCODED/NOT_IMPLEMENTED across core domains.",
+      "acceptance": [
+        "Audit covers Auth/User/Org/Membership/Activity/Place/AreaPulse/Agent/ResultSet/RSVP/Plans/Notifications/Analytics",
+        "Each item links to actual code path or states not implemented",
+        "No feature is marked real from UI appearance alone"
+      ],
+      "verify": [
+        "Review generated docs/product/FUNCTIONAL-MVP-GAP-ANALYSIS.md"
+      ],
+      "started_at": "2026-09-30T13:41:16.356089+00:00",
+      "completed_at": "2026-09-30T13:52:26.861338+00:00",
+      "evidence": "Reviewed Flutter/Go/SQL code paths in docs/product/FUNCTIONAL-MVP-GAP-ANALYSIS.md; 13/13 domains classified with 50 resolvable code links; 39 queue IDs match workbook Requirements; local API at 127.0.0.1:3692 unavailable during audit, so live DB behavior not claimed."
+    },
+    {
+      "id": "BT-RUN-001",
+      "epic": "Runtime",
+      "priority": "P0",
+      "title": "Fix physical-device API connectivity and environment config",
+      "depends_on": [
+        "BT-AUD-001"
+      ],
+      "status": "DONE",
+      "goal": "A physical device can reliably reach the intended development backend.",
+      "acceptance": [
+        "No accidental localhost/127.0.0.1 dependency on physical device",
+        "Environment/base URL is explicit",
+        "Network/cleartext/HTTPS issues resolved or documented",
+        "A real endpoint returns expected response on device"
+      ],
+      "verify": [
+        "flutter analyze",
+        "physical-device connectivity smoke test"
+      ],
+      "started_at": "2026-09-30T13:53:01.505091+00:00",
+      "completed_at": "2026-09-30T13:59:27.310233+00:00",
+      "evidence": "apps/client/tool/run_device_debug.ps1 -CheckOnly passed on ADB device c641566b; explicit adb reverse tcp:3692 to tcp:3692; device curl /readyz HTTP 200 and /v1/cities/aberdeen-gb/activities HTTP 200 with 2 DB-backed development records and stable IDs; Android debug manifest permits loopback cleartext; apps/client/README.md documents setup and Mapbox 403 boundary; flutter analyze PASS (No issues found)."
+    },
+    {
+      "id": "BT-RUN-002",
+      "epic": "Runtime",
+      "priority": "P0",
+      "title": "Add request tracing and debug diagnostics",
+      "depends_on": [
+        "BT-RUN-001"
+      ],
+      "status": "DONE",
+      "goal": "Stop guessing when real-device requests fail.",
+      "acceptance": [
+        "requestId is traceable client->server",
+        "debug-only panel/log exposes env/auth/last status/result count/error",
+        "production build does not expose sensitive diagnostics"
+      ],
+      "verify": [
+        "flutter test",
+        "go test ./...",
+        "debug build smoke"
+      ],
+      "started_at": "2026-09-30T14:05:13.555983+00:00",
+      "completed_at": "2026-09-30T14:59:45.145621+00:00",
+      "evidence": "Go request-ID tests, go test ./..., go vet ./..., go build ./...; Flutter analyze and 27 tests passed; debug APK built and installed on c641566b; device /readyz echoed request ID; Agent badminton returned 2 activities and Settings showed HTTP 200/result count 2/request ID matching server log 7c168b06497ff253317b435994fe80d4; debug panel guarded by kDebugMode."
+    },
+    {
+      "id": "BT-DAT-001",
+      "epic": "Data",
+      "priority": "P0",
+      "title": "Finalize core schema for Organization Activity Place Participation",
+      "depends_on": [
+        "BT-AUD-001"
+      ],
+      "status": "DONE",
+      "goal": "Core vertical-slice entities are persisted with stable IDs and constraints.",
+      "acceptance": [
+        "Organization/Membership/Activity/Place/Participation schema exists",
+        "Draft/published/cancelled lifecycle represented",
+        "Participation uniqueness prevents duplicate RSVP",
+        "Migrations are reversible/safe for dev data"
+      ],
+      "verify": [
+        "go test ./...",
+        "migration applies in dev DB"
+      ],
+      "started_at": "2026-09-30T15:00:16.614926+00:00",
+      "completed_at": "2026-09-30T15:13:34.453817+00:00",
+      "evidence": "Migration 021 applied twice idempotently on local PostgreSQL, down migration succeeded and 021 reapplied; core_schema_021_verify.sql transaction passed organization host, cancellation, person-only RSVP and duplicate RSVP constraints with ROLLBACK; go test ./... passed; existing Agent API still returned 2 activities and no test rows persisted."
+    },
+    {
+      "id": "BT-DAT-002",
+      "epic": "Data",
+      "priority": "P0",
+      "title": "Create development seed fixtures through real database path",
+      "depends_on": [
+        "BT-DAT-001"
+      ],
+      "status": "DONE",
+      "goal": "Develop/test with useful Aberdeen data without UI hardcoding.",
+      "acceptance": [
+        "Seed creates sample orgs/activities/places in DB",
+        "UI fetches seed via real API",
+        "Seed is dev-only and clearly identified"
+      ],
+      "verify": [
+        "seed command/script",
+        "API returns seeded entities"
+      ],
+      "started_at": "2026-10-01T01:47:17.699599+00:00",
+      "completed_at": "2026-10-01T02:02:09.048857+00:00",
+      "evidence": "Clean isolated DB: 27 migrations PASS; seed 001+002 twice PASS, CityContext/Places/Organizations/future Activities/People/Memberships=1/3/2/5/2/3; isolated API and physical-device Now show 5 activities and Chinese category labels; Flutter analyze/67 tests/debug APK build+install PASS; Go test/vet/build PASS; see docs/research/2026-10-01-functional-mvp-seed-verification.md."
+    },
+    {
+      "id": "BT-AUT-001",
+      "epic": "Auth",
+      "priority": "P0",
+      "title": "Ensure real authentication session reaches backend",
+      "depends_on": [
+        "BT-RUN-001"
+      ],
+      "status": "DONE",
+      "goal": "Authenticated identity is real and usable for mutations.",
+      "acceptance": [
+        "Login/session works on device",
+        "API receives user identity",
+        "Logout invalidates client state",
+        "Unauthorized mutation is rejected"
+      ],
+      "verify": [
+        "flutter test",
+        "go test ./...",
+        "device login/logout smoke"
+      ],
+      "started_at": "2026-09-30T15:19:17.228535+00:00",
+      "completed_at": "2026-09-30T16:07:23.944089+00:00",
+      "evidence": "Physical device c641566b local dev-phone login succeeded, secure Session survived force-stop/relaunch, logout remained signed out after another relaunch; API /v1/me identified a person, anonymous Activity Plan mutation returned 401, authenticated create/list/delete returned 201/1/204, logout 204 and revoked Session /v1/me 401; Flutter analyze, 28 tests and debug APK build passed; go test ./..., go vet ./..., go build ./... passed. Production OIDC/SMS remains partial and is documented separately."
+    },
+    {
+      "id": "BT-ORG-001",
+      "epic": "Organization",
+      "priority": "P0",
+      "title": "Implement organization membership and admin authorization",
+      "depends_on": [
+        "BT-DAT-001",
+        "BT-AUT-001"
+      ],
+      "status": "DONE",
+      "goal": "Only authorized organization admins can mutate organization-owned data.",
+      "acceptance": [
+        "Admin role persisted",
+        "Backend enforces role",
+        "Non-admin receives forbidden",
+        "UI does not rely solely on hidden controls"
+      ],
+      "verify": [
+        "go test ./...",
+        "authorization integration test"
+      ],
+      "started_at": "2026-09-30T16:09:14.308964+00:00",
+      "completed_at": "2026-09-30T16:26:23.878230+00:00",
+      "evidence": "Owner/admin membership persisted in DB and SQL-gated organization profile update passed local API integration: owner 200, admin 200, member 403, nonmember 403, anonymous 401. Agent workspace denial now returns immediately. Organization profile validation unit test passed; go test ./..., go vet ./..., go build ./... passed. No membership invitation UI or activity publisher claimed."
+    },
+    {
+      "id": "BT-ACT-001",
+      "epic": "Activity Supply",
+      "priority": "P0",
+      "title": "Implement Activity create/edit/publish/cancel APIs",
+      "depends_on": [
+        "BT-ORG-001",
+        "BT-DAT-001"
+      ],
+      "status": "DONE",
+      "goal": "Organizations can manage real activities.",
+      "acceptance": [
+        "Create draft",
+        "Edit draft/published allowed per policy",
+        "Publish makes activity discoverable",
+        "Cancel changes state and prevents new RSVP",
+        "Validation returns actionable errors"
+      ],
+      "verify": [
+        "go test ./...",
+        "API integration tests"
+      ],
+      "started_at": "2026-09-30T16:26:37.939178+00:00",
+      "completed_at": "2026-09-30T16:46:49.130642+00:00",
+      "evidence": "Local API+Postgres integration passed: validation 400, member create/edit/publish 403, draft 201 and absent from public list, edit revision 2, publish 200 and visible publicly, duplicate publish 409, edit published 200, cancel 200 with cancelled public detail, duplicate cancel 409, managed list 200. SQL rollback test confirmed valid Participation and rejection after cancellation. Agent query found Chinese-titled category-coded badminton Activity. Anonymous Agent query regression fixed and HTTP 200 response body rechecked. go test ./..., go vet ./..., go build ./... passed."
+    },
+    {
+      "id": "BT-ORG-002",
+      "epic": "Organization",
+      "priority": "P0",
+      "title": "Build minimal Organization Console activity publisher",
+      "depends_on": [
+        "BT-ACT-001"
+      ],
+      "status": "DONE",
+      "goal": "Admin publishes without developer/database intervention.",
+      "acceptance": [
+        "Form supports required fields",
+        "Place/date/time validation",
+        "Draft and publish states visible",
+        "Typical event can be published in under 3 minutes after onboarding"
+      ],
+      "verify": [
+        "flutter/web tests as applicable",
+        "manual publish scenario"
+      ],
+      "started_at": "2026-09-30T16:47:08.201549+00:00",
+      "completed_at": "2026-09-30T17:40:56.271527+00:00",
+      "evidence": "Chinese-first self-service organization activity console implemented; Flutter analyze 0 issues, 32 tests passed, debug APK built and reinstalled on c641566b; real device created, previewed, published and canceled test activities with persisted database state; local test activities cleaned. Scope and map limitation documented in docs/research/2026-10-01-organization-console-device-acceptance.md."
+    },
+    {
+      "id": "BT-SRC-001",
+      "epic": "Discovery",
+      "priority": "P0",
+      "title": "Implement real nearby Activity search",
+      "depends_on": [
+        "BT-ACT-001",
+        "BT-DAT-002"
+      ],
+      "status": "DONE",
+      "goal": "Published activities are retrievable by bounds/time/category.",
+      "acceptance": [
+        "Only published/eligible activities returned",
+        "Bounds/time filtering works",
+        "Empty is distinct from error",
+        "Stable entity IDs returned"
+      ],
+      "verify": [
+        "go test ./...",
+        "API query tests"
+      ],
+      "started_at": "2026-09-30T17:41:17.577469+00:00",
+      "completed_at": "2026-09-30T17:50:47.040115+00:00",
+      "evidence": "GET city activities supports validated bounds, RFC3339 interval and category filters against PostgreSQL; live API checks returned 2 in bounds, 0 outside, 1 in interval, empty array for unmatched category, and HTTP 400 for invalid bounds. Temporary live fixtures proved draft, cancelled, expired and unlisted rows excluded while published control remained visible; fixtures cleaned. Stable UUIDs observed. Go test ./..., vet ./..., build ./... passed. API and contract docs updated."
+    },
+    {
+      "id": "BT-PUL-001",
+      "epic": "Discovery",
+      "priority": "P0",
+      "title": "Implement Area Pulse API from real data",
+      "depends_on": [
+        "BT-SRC-001"
+      ],
+      "status": "DONE",
+      "goal": "Local Pulse reflects the current map/time context.",
+      "acceptance": [
+        "Counts derive from real published data",
+        "No hardcoded labels/counts",
+        "Zero-data behavior defined",
+        "Viewport/time input supported"
+      ],
+      "verify": [
+        "go test ./...",
+        "API examples for populated/empty areas"
+      ],
+      "started_at": "2026-09-30T17:51:01.806910+00:00",
+      "completed_at": "2026-09-30T17:56:27.002230+00:00",
+      "evidence": "Area Pulse API aggregates real public eligible Activity rows with required viewport and optional RFC3339 time; live API returned populated total 2/category badminton 2, empty area and time total 0/categories [], and HTTP 400 for missing bounds. Shares discovery predicate with search; Go test, vet and build passed; contract/API docs updated. Client consumption remains next task."
+    },
+    {
+      "id": "BT-NOW-001",
+      "epic": "Now",
+      "priority": "P0",
+      "title": "Connect Now Workspace to real Area Pulse and Activity data",
+      "depends_on": [
+        "BT-PUL-001",
+        "BT-SRC-001",
+        "BT-RUN-002"
+      ],
+      "status": "DONE",
+      "goal": "Now is no longer a static shell.",
+      "acceptance": [
+        "Local Pulse is API-driven",
+        "Map pins come from real entities",
+        "Loading/empty/error states truthful",
+        "No hardcoded badminton/current-count demo data"
+      ],
+      "verify": [
+        "flutter test",
+        "device smoke"
+      ],
+      "started_at": "2026-09-30T17:56:41.071890+00:00",
+      "completed_at": "2026-09-30T18:28:07.892058+00:00",
+      "evidence": "Now connects to real Pulse API for viewport counts and stable Activity ID map pins; initial valid viewport or explicit area action requests snapshot, camera movement does not. Client no longer selects local badminton demo without API; loading/empty/error and stale responses covered by 36 Flutter tests and analyze 0 issues. Debug APK built, installed and Flutter debugger attached on c641566b. Physical-device Mapbox source remains HTTP 403, so pin rendering could not be observed there; truthful Chinese city-level API activity fallback and detail were device-tested, screenshots documented in docs/research/2026-10-01-now-discovery-device-acceptance.md. Go test/vet/build passed."
+    },
+    {
+      "id": "BT-MAP-001",
+      "epic": "Now",
+      "priority": "P0",
+      "title": "Stabilize persistent map and keyboard lifecycle",
+      "depends_on": [
+        "BT-NOW-001"
+      ],
+      "status": "DONE",
+      "goal": "Keyboard and input state never recreate the map or markers.",
+      "acceptance": [
+        "keyboard x20 no visible marker flicker",
+        "typing does not clear markers",
+        "map controller/key stable",
+        "hot paths avoid whole-screen rebuild"
+      ],
+      "verify": [
+        "flutter test",
+        "real-device keyboard stress"
+      ],
+      "started_at": "2026-09-30T22:33:58.638177+00:00",
+      "completed_at": "2026-09-30T22:33:59.147964+00:00",
+      "evidence": "Android device c641566b shows real Aberdeen Mapbox basemap and cluster pin; automation/verify_map_keyboard.ps1 passed 20/20 keyboard cycles with Now foreground, composer relocation and restoration; open/closed evidence screenshots show same pin and camera. Flutter MapCanvas Widget/Element identity 20-cycle test and bounded rebuild implementation documented in docs/research/2026-10-01-map-keyboard-lifecycle-audit.md."
+    },
+    {
+      "id": "BT-MAP-002",
+      "epic": "Now",
+      "priority": "P0",
+      "title": "Implement stable semantic marker system and selection persistence",
+      "depends_on": [
+        "BT-MAP-001"
+      ],
+      "status": "DONE",
+      "goal": "Production markers communicate entity type and selection without debug-dot appearance.",
+      "acceptance": [
+        "Activity/Org/Place/Cluster marker support",
+        "Stable Entity ID mapping",
+        "Incremental marker diff",
+        "Selected pin survives camera movement"
+      ],
+      "verify": [
+        "widget/integration test",
+        "device map interaction"
+      ],
+      "started_at": "2026-09-30T22:34:08.751299+00:00",
+      "completed_at": "2026-09-30T23:00:28.263934+00:00",
+      "evidence": "Native Mapbox semantic marker bitmap covers Activity/Group/Place/Person/Cluster; stable entity and sorted cluster IDs plus incremental annotation fingerprint diff. Fixed cluster tap to show members and idle Place selection card. Real device c641566b: cluster list, Activity card, selected Pin and card persisted after pan, Place card, Chinese status labels; screenshots and report docs/research/2026-10-01-map-marker-selection-verification.md. Flutter analyze, 54 tests and Android debug build/install passed."
+    },
+    {
+      "id": "BT-MAP-003",
+      "epic": "Now",
+      "priority": "P1",
+      "title": "Implement explicit Search this area flow",
+      "depends_on": [
+        "BT-MAP-002",
+        "BT-SRC-001"
+      ],
+      "status": "DONE",
+      "goal": "Camera movement changes viewport without destructive automatic search.",
+      "acceptance": [
+        "Move map preserves current ResultSet/selection",
+        "CTA appears after settle",
+        "New results replace atomically after explicit action",
+        "stale request cannot overwrite latest"
+      ],
+      "verify": [
+        "flutter tests",
+        "device scenario"
+      ],
+      "started_at": "2026-09-30T23:13:21.129735+00:00",
+      "completed_at": "2026-09-30T23:23:35.436447+00:00",
+      "evidence": "Camera drag preserves ResultSet/selection and clears stale CTA until latest settled bounds; explicit tap requests Pulse and Agent for those bounds; stale async responses ignored and results atomically replaced. Flutter analyze and 57 tests pass; latest APK built/installed on c641566b, real map pan exposes CTA and tap returns 3 published activities. See docs/research/2026-10-01-search-this-area-verification.md."
+    },
+    {
+      "id": "BT-NOW-002",
+      "epic": "Now",
+      "priority": "P1",
+      "title": "Implement Local Pulse and Active Intent as separate UI models",
+      "depends_on": [
+        "BT-NOW-001",
+        "BT-MAP-003"
+      ],
+      "status": "DONE",
+      "goal": "Users can distinguish area discovery from their active task.",
+      "acceptance": [
+        "Local Pulse appears under top-left control",
+        "2-3 compact items max by default",
+        "Active Intent is structured not a long query sentence",
+        "movement/collapse behavior implemented"
+      ],
+      "verify": [
+        "golden/widget tests",
+        "device visual review"
+      ],
+      "started_at": "2026-09-30T23:56:12.781164+00:00",
+      "completed_at": "2026-10-01T00:07:45.971231+00:00",
+      "evidence": "Separate NowPulse and ActiveIntentSummary UI models; top-left Pulse capped at total plus two factual categories, hidden on camera move/active task; structured action/category/time heading keeps original query in conversation. Flutter analyze, 63 tests, Android build/install pass; real device c641566b screenshots of Pulse and badminton/weekend intent at docs/research/2026-10-01-local-pulse-active-intent-verification.md."
+    },
+    {
+      "id": "BT-AGT-001",
+      "epic": "Agent",
+      "priority": "P0",
+      "title": "Implement normalized MVP intent parser/router",
+      "depends_on": [
+        "BT-SRC-001",
+        "BT-AUT-001"
+      ],
+      "status": "DONE",
+      "goal": "Agent maps supported natural-language tasks to real search operations.",
+      "acceptance": [
+        "Supports find_activity/find_organization/find_place/area_discovery/refine_results/compare_results/create_activity",
+        "Slots include time/location/category where applicable",
+        "Unknown/unsupported handled explicitly",
+        "No fake result generation"
+      ],
+      "verify": [
+        "go test ./...",
+        "intent test corpus"
+      ],
+      "started_at": "2026-09-30T18:37:22.241004+00:00",
+      "completed_at": "2026-09-30T18:54:01.543659+00:00",
+      "evidence": "Intent corpus, real API activity/organization/place and signed-in two-turn refine/compare/restore; Go test/vet/build and Flutter analyze/39 tests passed; docs/research/2026-10-01-agent-intent-router-verification.md"
+    },
+    {
+      "id": "BT-AGT-002",
+      "epic": "Agent",
+      "priority": "P0",
+      "title": "Implement AgentResponse and ResultSet contract",
+      "depends_on": [
+        "BT-AGT-001"
+      ],
+      "status": "DONE",
+      "goal": "Conversation answer and structured results share a stable contract.",
+      "acceptance": [
+        "message/resultSet/actions/followUps/mapEffects represented",
+        "ResultSet references stable entities",
+        "zero result is successful empty not generic failure",
+        "request/task IDs available"
+      ],
+      "verify": [
+        "go test ./...",
+        "contract tests"
+      ],
+      "started_at": "2026-09-30T18:54:51.897644+00:00",
+      "completed_at": "2026-09-30T19:11:18.655609+00:00",
+      "evidence": "Go contract unit tests + go test/vet/build, Flutter analyze and parser/action widget tests; live API result refs for 1 organization/2 places/2 activities, empty and unsupported states; docs/research/2026-10-01-agent-response-contract-verification.md"
+    },
+    {
+      "id": "BT-AGT-003",
+      "epic": "Agent",
+      "priority": "P0",
+      "title": "Connect Now composer to real Agent query flow",
+      "depends_on": [
+        "BT-AGT-002",
+        "BT-NOW-001"
+      ],
+      "status": "DONE",
+      "goal": "User query produces natural-language response + real results + pins.",
+      "acceptance": [
+        "User turn displayed",
+        "Agent message precedes result cards",
+        "Map syncs same entity IDs",
+        "Errors have one owner",
+        "+ menu not hardcoded to badminton"
+      ],
+      "verify": [
+        "flutter tests",
+        "device query smoke"
+      ],
+      "started_at": "2026-09-30T19:11:25.509049+00:00",
+      "completed_at": "2026-09-30T19:32:16.401677+00:00",
+      "evidence": "Flutter analyze/41 tests, Go test/vet/build, debug APK installed and DevTools attached; device query answer before 2 real test results, Chinese follow-up distance response, unobstructed conversation screenshots; docs/research/2026-10-01-now-agent-composer-device-acceptance.md. Visible map Pin remains blocked by Mapbox tile 403."
+    },
+    {
+      "id": "BT-AGT-004",
+      "epic": "Agent",
+      "priority": "P0",
+      "title": "Persist conversation task context for follow-ups",
+      "depends_on": [
+        "BT-AGT-003"
+      ],
+      "status": "DONE",
+      "goal": "Follow-up queries refine current task instead of starting from scratch.",
+      "acceptance": [
+        "Anything closer? reuses prior intent/results",
+        "time/category/location context retained",
+        "conversation/task IDs stable",
+        "context reset action exists"
+      ],
+      "verify": [
+        "integration tests",
+        "two-turn device scenario"
+      ],
+      "started_at": "2026-09-30T19:32:28.228940+00:00",
+      "completed_at": "2026-09-30T19:40:13.872317+00:00",
+      "evidence": "Signed-in two-turn area API integration retained task/resultSet IDs and badminton/weekend filters through restore; anonymous bounds request worked without local task ID; Go test/vet/build, Flutter analyze/42 tests/debug APK and device install; docs/research/2026-10-01-agent-conversation-context-verification.md"
+    },
+    {
+      "id": "BT-NOW-003",
+      "epic": "Now",
+      "priority": "P1",
+      "title": "Split EntityPeekCard from AgentResultsSheet",
+      "depends_on": [
+        "BT-MAP-002",
+        "BT-AGT-003"
+      ],
+      "status": "DONE",
+      "goal": "Single pin selection stays map-centric while Agent tasks support richer multi-result conversation.",
+      "acceptance": [
+        "Pin -> compact EntityPeekCard",
+        "Agent query -> AgentResultsSheet",
+        "Sheet detents explicit",
+        "long titles resilient"
+      ],
+      "verify": [
+        "flutter widget tests",
+        "device interaction review"
+      ],
+      "started_at": "2026-10-01T00:09:11.602183+00:00",
+      "completed_at": "2026-10-01T00:20:20.114691+00:00",
+      "evidence": "Flutter analyze and 66 tests passed; Android debug APK built and installed on c641566b; pin card, Agent results, expanded conversation and detents reviewed on device; docs/research/2026-10-01-entity-peek-results-sheet-verification.md"
+    },
+    {
+      "id": "BT-RSV-001",
+      "epic": "Participation",
+      "priority": "P0",
+      "title": "Implement RSVP persistence and Activity detail primary action",
+      "depends_on": [
+        "BT-ACT-001",
+        "BT-AUT-001"
+      ],
+      "status": "DONE",
+      "goal": "A user can truly join/cancel a real activity.",
+      "acceptance": [
+        "Join persists",
+        "duplicate join prevented",
+        "Cancel updates persistence",
+        "cancelled/full activity behavior defined",
+        "UI reload reflects server truth"
+      ],
+      "verify": [
+        "go test ./...",
+        "flutter test",
+        "device RSVP + restart"
+      ],
+      "started_at": "2026-09-30T19:40:37.236313+00:00",
+      "completed_at": "2026-09-30T19:59:14.228691+00:00",
+      "evidence": "docs/research/2026-10-01-rsvp-device-verification.md: Go test/vet/build, Flutter analyze/43 tests/build, real API duplicate/full/cancelled cases, Android RSVP cancellation/rejoin and force-stop restart persisted"
+    },
+    {
+      "id": "BT-PLN-001",
+      "epic": "Plans",
+      "priority": "P0",
+      "title": "Implement Plans from real participation/save data",
+      "depends_on": [
+        "BT-RSV-001"
+      ],
+      "status": "DONE",
+      "goal": "Joined activities create retention and remain after restart.",
+      "acceptance": [
+        "Upcoming shows going/pending",
+        "Past separates ended activities",
+        "server-backed load",
+        "restart preserves"
+      ],
+      "verify": [
+        "flutter test",
+        "device restart scenario"
+      ],
+      "started_at": "2026-09-30T19:59:23.391492+00:00",
+      "completed_at": "2026-09-30T20:06:45.531438+00:00",
+      "evidence": "docs/research/2026-10-01-my-activities-verification.md: real participation list, API upcoming/past, Flutter 44 tests/analyze, Go test/vet/build, APK install and device restart screenshot"
+    },
+    {
+      "id": "BT-SAV-001",
+      "epic": "Plans",
+      "priority": "P1",
+      "title": "Implement Save independent from RSVP",
+      "depends_on": [
+        "BT-AUT-001",
+        "BT-ACT-001"
+      ],
+      "status": "DONE",
+      "goal": "Users can bookmark without declaring attendance.",
+      "acceptance": [
+        "Save/unsave persists",
+        "Plans Saved section reads it",
+        "RSVP does not implicitly equal save unless product rule explicitly chosen"
+      ],
+      "verify": [
+        "go test ./...",
+        "flutter test"
+      ],
+      "started_at": "2026-09-30T20:34:53.248395+00:00",
+      "completed_at": "2026-09-30T20:39:58.613367+00:00",
+      "evidence": "docs/research/2026-10-01-save-rsvp-independence.md: E2E API save/unsave without RSVP change, Android detail save/unsave while joined, Go test/vet/build, Flutter analyze/46 tests"
+    },
+    {
+      "id": "BT-DET-001",
+      "epic": "Activity Detail",
+      "priority": "P0",
+      "title": "Complete consumer-grade Activity Detail page",
+      "depends_on": [
+        "BT-RSV-001"
+      ],
+      "status": "DONE",
+      "goal": "User can confidently decide and act on an activity.",
+      "acceptance": [
+        "Full title/organizer/date/time/place/price/eligibility/description",
+        "Join/Save/Share/Navigate states",
+        "cancelled/full/loading/error handled",
+        "official/source link shown where appropriate"
+      ],
+      "verify": [
+        "flutter tests",
+        "device content-resilience review"
+      ],
+      "started_at": "2026-09-30T20:06:56.298278+00:00",
+      "completed_at": "2026-09-30T20:24:56.752178+00:00",
+      "evidence": "docs/research/2026-10-01-activity-detail-verification.md: Flutter analyze/46 tests/debug APK/device; Go test/vet/build; real API full fields; native share, map navigation, save, long content screenshot"
+    },
+    {
+      "id": "BT-NTF-001",
+      "epic": "Notifications",
+      "priority": "P1",
+      "title": "Implement critical activity notifications",
+      "depends_on": [
+        "BT-RSV-001",
+        "BT-ACT-001"
+      ],
+      "status": "DONE",
+      "goal": "Joined users are informed of important changes.",
+      "acceptance": [
+        "time/venue change notification",
+        "cancellation notification",
+        "starts-soon reminder mechanism",
+        "notification links to activity"
+      ],
+      "verify": [
+        "go test ./...",
+        "notification integration test"
+      ],
+      "started_at": "2026-09-30T20:40:18.442472+00:00",
+      "completed_at": "2026-09-30T20:57:07.808749+00:00",
+      "evidence": "Migration 023 and atomic participant notifications; idempotent reminder worker; loopback integration script PASS for reminder/edit/cancel/link/read/targeting; Android device inbox-to-cancelled-detail observed; Go test/vet/build and Flutter analyze/46 tests/debug APK PASS; docs/research/2026-10-01-activity-notification-verification.md"
+    },
+    {
+      "id": "BT-INB-001",
+      "epic": "Inbox",
+      "priority": "P1",
+      "title": "Build Inbox notification center",
+      "depends_on": [
+        "BT-NTF-001"
+      ],
+      "status": "DONE",
+      "goal": "Users can review operational updates without full stranger messaging.",
+      "acceptance": [
+        "Unread/read state",
+        "links to relevant entity",
+        "empty/error states",
+        "no fake chat features"
+      ],
+      "verify": [
+        "flutter test"
+      ],
+      "started_at": "2026-09-30T20:57:55.665342+00:00",
+      "completed_at": "2026-09-30T21:10:44.895612+00:00",
+      "evidence": "Migration 024 conversation target/backfill and Chinese message notifications; removed fake preview messages; Inbox empty/error/retry/read/link behavior and Flutter widget tests; local conversation integration PASS with cleanup; Android inbox message to real conversation observed; Flutter analyze/48 tests/debug APK and Go test/vet/build PASS; docs/research/2026-10-01-inbox-verification.md"
+    },
+    {
+      "id": "BT-ORG-003",
+      "epic": "Organization",
+      "priority": "P1",
+      "title": "Build verified Organization profile and public activity list",
+      "depends_on": [
+        "BT-ACT-001"
+      ],
+      "status": "DONE",
+      "goal": "Users can understand organizer trust/context.",
+      "acceptance": [
+        "Verification state shown truthfully",
+        "Upcoming activities",
+        "official links",
+        "Follow/Ask only if actually supported"
+      ],
+      "verify": [
+        "flutter tests",
+        "device review"
+      ],
+      "started_at": "2026-09-30T21:12:32.453893+00:00",
+      "completed_at": "2026-09-30T21:23:23.693115+00:00",
+      "evidence": "Public Organization API exposes stored verification state, HTTPS links and upcoming public Activities; private profile 404 and synthetic integration PASS with original data restored; Chinese-first Flutter profile and Activity host link; device navigation observed; Go test/vet/build, Flutter analyze/49 tests/debug APK PASS; docs/research/2026-10-01-public-organization-verification.md"
+    },
+    {
+      "id": "BT-OAG-001",
+      "epic": "Organization Agent",
+      "priority": "P1",
+      "title": "Implement organization verified FAQ knowledge",
+      "depends_on": [
+        "BT-ORG-003",
+        "BT-ORG-002"
+      ],
+      "status": "DONE",
+      "goal": "Organization Agent answers only from verified organization data.",
+      "acceptance": [
+        "Admin can maintain FAQ",
+        "Answers cite/derive only from org profile/activities/FAQ",
+        "Unknown is explicit",
+        "No hallucinated policy/event details"
+      ],
+      "verify": [
+        "go test ./...",
+        "FAQ scenarios"
+      ],
+      "started_at": "2026-09-30T21:44:39.566775+00:00",
+      "completed_at": "2026-09-30T21:44:49.188081+00:00",
+      "evidence": "Migration 025 and Chinese FAQ admin/public ask UI; verified public FAQ/profile/activity/link answers cite stored sources, unknown and unverified questions do not invent facts; synthetic API scenario PASS with data restored; Android device sourced answer observed and screenshot; Go test/vet/build, Flutter analyze/51 tests/debug APK PASS; docs/research/2026-10-01-organization-agent-faq-verification.md"
+    },
+    {
+      "id": "BT-ANA-001",
+      "epic": "Analytics",
+      "priority": "P1",
+      "title": "Implement pilot funnel analytics",
+      "depends_on": [
+        "BT-DET-001",
+        "BT-RSV-001"
+      ],
+      "status": "DONE",
+      "goal": "Measure whether Birdtie creates discovery and participation value.",
+      "acceptance": [
+        "activity impression/detail/RSVP/save tracked",
+        "entry source where feasible",
+        "organization sees aggregate basic metrics",
+        "no unnecessary sensitive data"
+      ],
+      "verify": [
+        "event logging tests",
+        "sample pilot report"
+      ],
+      "started_at": "2026-09-30T21:45:03.644853+00:00",
+      "completed_at": "2026-09-30T22:02:56.622538+00:00",
+      "evidence": "Migration 026 and privacy-limited activity events; Now/Agent impressions and sourced detail openings, server-side idempotent RSVP/save conversions, admin-only aggregate Chinese metrics UI; synthetic integration PASS and fixture cleaned; Android display/detail events and admin metrics screen observed; Go test/vet/build, Flutter analyze/53 tests/debug APK PASS; docs/research/2026-10-01-activity-analytics-verification.md"
+    },
+    {
+      "id": "BT-SAF-001",
+      "epic": "Safety",
+      "priority": "P0",
+      "title": "Enforce map privacy boundary",
+      "depends_on": [
+        "BT-MAP-002"
+      ],
+      "status": "DONE",
+      "goal": "Public map never exposes ordinary users' real-time precise location.",
+      "acceptance": [
+        "Map entities limited to permitted public/coarse entities",
+        "No precise user tracking endpoint exposed to public flow",
+        "docs/tests reflect boundary"
+      ],
+      "verify": [
+        "code audit",
+        "privacy tests"
+      ],
+      "started_at": "2026-09-30T23:00:54.882390+00:00",
+      "completed_at": "2026-09-30T23:12:50.822675+00:00",
+      "evidence": "Audited Android manifest, API routes, published Place/Activity/Group and opt-in Person area query; no device GPS permission or public precise tracking route. Added server response sanitization of non-opted person coordinates and client map-pin guard. Go privacy table tests and Flutter malicious-response test pass; go test ./..., flutter analyze, 55 Flutter tests passed. See docs/research/2026-10-01-map-privacy-audit.md."
+    },
+    {
+      "id": "BT-SAF-002",
+      "epic": "Safety",
+      "priority": "P1",
+      "title": "Add report/support entry points and audit log baseline",
+      "depends_on": [
+        "BT-AUT-001"
+      ],
+      "status": "DONE",
+      "goal": "Pilot has a minimal incident path.",
+      "acceptance": [
+        "Report entity/action exists or clear support path",
+        "Organization/admin mutations are auditable",
+        "User-facing support route exists"
+      ],
+      "verify": [
+        "go test ./...",
+        "UI smoke"
+      ],
+      "started_at": "2026-09-30T22:03:12.324367+00:00",
+      "completed_at": "2026-09-30T22:19:55.666970+00:00",
+      "evidence": "Migration 027, owner-private report/support API with rate limit and operator queue; same-transaction person-attributed organization/activity/FAQ audit; Chinese Settings/Activity/Organization support entry; API and audit scenario scripts PASS with all fixtures cleaned; Android report form and Settings entry observed; Go test/vet/build, Flutter analyze/54 tests/debug APK PASS; docs/research/2026-10-01-safety-support-verification.md"
+    },
+    {
+      "id": "BT-PER-001",
+      "epic": "Quality",
+      "priority": "P0",
+      "title": "Protect async flows from stale responses",
+      "depends_on": [
+        "BT-AGT-003",
+        "BT-MAP-003"
+      ],
+      "status": "DONE",
+      "goal": "Old search/agent responses never overwrite newer state.",
+      "acceptance": [
+        "request/task/turn identity used",
+        "rapid A/B/C query test ends on C",
+        "cancel or ignore semantics documented"
+      ],
+      "verify": [
+        "automated concurrency test",
+        "device rapid-query test"
+      ],
+      "started_at": "2026-09-30T23:24:09.660981+00:00",
+      "completed_at": "2026-09-30T23:47:48.412612+00:00",
+      "evidence": "Client turn serial ignores stale Agent responses; Pulse serial also invalidates pending area when returning to cached area. Composer permits next send during loading. Automated reverse-completion A/B/C, Pulse return and pending-submit tests; Flutter analyze, 60 tests and Android debug build/install passed. Device c641566b conversation shows badminton, football, tennis with tennis as final response. Local ignore semantics and cross-device persistence limitation documented in docs/architecture/AGENT-DATA-API-CONTRACTS.md and docs/research/2026-10-01-stale-response-verification.md."
+    },
+    {
+      "id": "BT-PER-002",
+      "epic": "Quality",
+      "priority": "P1",
+      "title": "Profile Now hot paths and remove avoidable jank",
+      "depends_on": [
+        "BT-MAP-001",
+        "BT-NOW-003"
+      ],
+      "status": "DONE",
+      "goal": "Consumer-grade map/composer/sheet interaction on target device.",
+      "acceptance": [
+        "no network calls in onCameraMove",
+        "no bitmap recreation in hot rebuilds",
+        "localized rebuilds",
+        "no obvious keyboard/sheet jank"
+      ],
+      "verify": [
+        "Flutter performance profile",
+        "real-device review"
+      ],
+      "started_at": "2026-10-01T00:20:50.844518+00:00",
+      "completed_at": "2026-10-01T00:50:40.194766+00:00",
+      "evidence": "Flutter profile VM timeline captured pan, keyboard and sheet; removed per-frame timer churn and same-zoom marker sync; Flutter analyze and 66 tests pass; updated debug APK installed, 8 pan gestures and keyboard cycles 21-24 pass; post-change profile install denied by device, documented in docs/research/2026-10-01-now-performance-profile.md"
+    },
+    {
+      "id": "BT-TST-001",
+      "epic": "Quality",
+      "priority": "P0",
+      "title": "Create end-to-end vertical-slice integration test/checklist",
+      "depends_on": [
+        "BT-ORG-002",
+        "BT-AGT-004",
+        "BT-DET-001",
+        "BT-PLN-001"
+      ],
+      "status": "DONE",
+      "goal": "Prove real Organization->Activity->Discovery->RSVP->Plans flow.",
+      "acceptance": [
+        "Admin publish",
+        "Student discover",
+        "Agent result",
+        "Detail",
+        "RSVP",
+        "Plans",
+        "restart persistence all verified"
+      ],
+      "verify": [
+        "documented E2E run with PASS/FAIL evidence"
+      ],
+      "started_at": "2026-09-30T20:25:17.741591+00:00",
+      "completed_at": "2026-09-30T20:34:33.275735+00:00",
+      "evidence": "docs/research/2026-10-01-vertical-slice-e2e.md: repeatable loopback API script twice (retained and cleanup), admin publish/student discovery/Agent/detail/RSVP/Plans PASS, Android app and Go restart persistence screenshots"
+    },
+    {
+      "id": "BT-REL-001",
+      "epic": "Release",
+      "priority": "P0",
+      "title": "Pass closed-pilot release gate",
+      "depends_on": [
+        "BT-TST-001",
+        "BT-SAF-001",
+        "BT-PER-001",
+        "BT-RUN-002",
+        "BT-RUN-003",
+        "BT-AUT-002",
+        "BT-ORG-004",
+        "BT-MAP-004",
+        "BT-NTF-002",
+        "BT-TST-002"
+      ],
+      "status": "BLOCKED",
+      "goal": "No known P0 blocker remains before CSSA live event.",
+      "acceptance": [
+        "flutter analyze/test/build pass",
+        "go test/vet pass",
+        "P0 backlog zero or explicitly waived by human",
+        "support/rollback plan ready",
+        "real event data verified"
+      ],
+      "verify": [
+        "release checklist"
+      ],
+      "started_at": "2026-09-30T23:48:21.992098+00:00",
+      "blocked_reason": "2026-10-01 Closed Pilot Ready NO. All repository-executable P0 code tasks RUN-003/ORG-004/MAP-004/NTF-002 completed with local evidence, but AUT-002 lacks configured real IdP/HTTPS device login and TST-002 real A-H cannot start. No verified organizer/event/location rights, production map/API deployment, named duty/backup channel, independent production reminder schedule/alert/log access, or real-device/restart evidence. Release only after every gate in docs/product/RELEASE-QUALITY-GATES.md and docs/testing/FUNCTIONAL-MVP-E2E.md has actual evidence; no waiver recorded."
+    },
+    {
+      "id": "BT-RUN-003",
+      "epic": "Runtime",
+      "priority": "P0",
+      "title": "Centralize environment configuration and reject release loopback API",
+      "depends_on": [
+        "BT-RUN-001"
+      ],
+      "status": "DONE",
+      "goal": "Debug, staging and production clients use explicit, validated API and map configuration.",
+      "acceptance": [
+        "One client environment contract",
+        "Release build cannot silently use localhost or HTTP",
+        "Staging/production configuration documented without secrets"
+      ],
+      "verify": [
+        "Flutter analyze/test/build",
+        "device debug connectivity",
+        "release configuration check"
+      ],
+      "started_at": "2026-10-01T02:27:47.053020+00:00",
+      "completed_at": "2026-10-01T02:44:40.930073+00:00",
+      "evidence": "Central BirdtieEnvironment across API and map; flutter analyze PASS; flutter test PASS 72; direct release build rejected; release wrapper rejected missing, localhost and HTTP fixtures; debug APK build/install and c641566b ADB reverse /readyz plus app API GET 200 PASS. docs/research/2026-10-01-runtime-environment-verification.md. No real staging/production credentials or endpoint validated."
+    },
+    {
+      "id": "BT-AUT-002",
+      "epic": "Auth",
+      "priority": "P0",
+      "title": "Complete verified native sign-in path and production auth boundary",
+      "depends_on": [
+        "BT-AUT-001",
+        "BT-RUN-003"
+      ],
+      "status": "BLOCKED",
+      "goal": "Native app can complete a provider-verified sign-in without relying on local dev phone code.",
+      "acceptance": [
+        "Native callback/session flow implemented",
+        "Development auth disabled outside loopback",
+        "Unauthenticated and revoked sessions denied",
+        "Provider-dependent end-to-end acceptance explicitly recorded"
+      ],
+      "verify": [
+        "Go/Flutter tests",
+        "configured provider device acceptance when credentials exist"
+      ],
+      "started_at": "2026-10-01T02:45:00.237854+00:00",
+      "blocked_reason": "Native Android/iOS OIDC callback, secure 5-minute PKCE pending state, API verified account check, secure session restoration and revocation implemented. Flutter analyze PASS, 74 tests PASS, debug APK installed, adb callback Activity route PASS, Go OIDC redirect test PASS, loopback auth boundary script PASS. apps/api /v1/auth/oidc/status remains configured:false: no trusted issuer, client registration/secret, HTTPS API callback, deployed service or real verified user; production provider-device E2E cannot run. Need those exact IdP/deployment inputs and real-device verification before DONE. See docs/research/2026-10-01-native-oidc-boundary-verification.md."
+    },
+    {
+      "id": "BT-ORG-004",
+      "epic": "Organization",
+      "priority": "P0",
+      "title": "Complete membership invite, role and revoke lifecycle",
+      "depends_on": [
+        "BT-ORG-001"
+      ],
+      "status": "DONE",
+      "goal": "Organization owner can manage real individual memberships without database edits.",
+      "acceptance": [
+        "Invite/accept or verified add flow",
+        "Owner/admin role changes and removal enforced by API",
+        "Last owner and cross-organization privilege escalation prevented",
+        "Chinese admin UI and audit entries"
+      ],
+      "verify": [
+        "API authorization integration",
+        "Flutter UI test",
+        "physical-device role change"
+      ],
+      "started_at": "2026-10-01T02:57:48.575573+00:00",
+      "completed_at": "2026-10-01T03:23:04.020537+00:00",
+      "evidence": "Migration 028 forward 28/28 blank DB, 028 down/reapply and dev seeds PASS. Go test/vet/build PASS. Flutter analyze 0, test 76, debug APK build/install c641566b PASS. automation/verify_membership_lifecycle.py PASS owner/admin/member/nonmember, invite/accept/duplicate, last owner, revoke and cross-org. PostgreSQL audit 8 rows with target and old/new role/status. Physical device Birdtie device QA member changed to admin; screenshot docs/research/evidence/2026-10-01-member-role-device.png. See docs/research/2026-10-01-organization-membership-verification.md. Synthetic development identities only."
+    },
+    {
+      "id": "BT-MAP-004",
+      "epic": "Map",
+      "priority": "P0",
+      "title": "Show public Organization markers only from explicit location data",
+      "depends_on": [
+        "BT-MAP-002",
+        "BT-ORG-003"
+      ],
+      "status": "DONE",
+      "goal": "Organization map markers have honest public coordinates and stable IDs.",
+      "acceptance": [
+        "Explicit public Organization location/precision contract",
+        "No inferred member or activity location",
+        "Organization marker and card with stable ID",
+        "Empty and unlocated organization behavior"
+      ],
+      "verify": [
+        "Go location/privacy tests",
+        "Flutter marker/selection tests",
+        "device map check"
+      ],
+      "started_at": "2026-10-01T03:23:22.430157+00:00",
+      "completed_at": "2026-10-01T03:40:14.155356+00:00",
+      "evidence": "2026-10-01: migration 029 forward/down/up PASS; loopback API privacy matrix PASS via automation/verify_organization_map.py (pending/private/unverified/hidden/reedited absent; independent review, audit); Flutter analyze 0/test 76 + marker tests 2; Go test/vet/build PASS; debug APK installed on c641566b and cluster->organization card->detail screenshots in docs/research/2026-10-01-organization-map-verification.md. Synthetic local verification flag reset; no pilot claim."
+    },
+    {
+      "id": "BT-NTF-002",
+      "epic": "Notifications",
+      "priority": "P0",
+      "title": "Make starts-soon reminders durable across service downtime",
+      "depends_on": [
+        "BT-NTF-001"
+      ],
+      "status": "DONE",
+      "goal": "Critical reminders do not depend solely on one continuously running API process.",
+      "acceptance": [
+        "Restart and downtime behavior defined",
+        "Idempotent scheduled delivery",
+        "Failed reminder run observable",
+        "No duplicate or stale reminder after edit/cancel"
+      ],
+      "verify": [
+        "Go integration",
+        "restart/downtime simulation",
+        "Inbox check"
+      ],
+      "started_at": "2026-10-01T03:40:31.641067+00:00",
+      "completed_at": "2026-10-01T03:45:59.697043+00:00",
+      "evidence": "2026-10-01 code/local acceptance: independent worker while API stopped inserted=1, retry inserted=0, API restart Inbox exactly one; wrong DB port exit 1 status=failed; edit resets reminder, cancellation removes it, audit/Inbox PASS via automation/verify_activity_notifications.ps1; Go test/vet/build PASS. SQL locks Activity and Participation rows; docs/research/2026-10-01-activity-reminder-reliability.md. Production scheduler/log alert still required by BT-REL-001."
+    },
+    {
+      "id": "BT-TST-002",
+      "epic": "Quality",
+      "priority": "P0",
+      "title": "Run real closed-pilot staging E2E and verify external dependencies",
+      "depends_on": [
+        "BT-TST-001",
+        "BT-RUN-003",
+        "BT-AUT-002",
+        "BT-ORG-004",
+        "BT-MAP-004",
+        "BT-NTF-002"
+      ],
+      "status": "BLOCKED",
+      "goal": "A verified organizer and student complete the full loop on a deployed service.",
+      "acceptance": [
+        "Verified organizer and event",
+        "Production-like identity/API/map",
+        "Publish to discovery to Agent to detail to RSVP to Plans to restart",
+        "Notification, error and support channel checks"
+      ],
+      "verify": [
+        "docs/testing/FUNCTIONAL-MVP-E2E.md real-run evidence",
+        "physical-device screenshots and request IDs"
+      ],
+      "blocked_reason": "2026-10-01 dependency BT-AUT-002 BLOCKED and real A-H prerequisites absent: verified organizer authority/organization; organizer-confirmed activity and public location rights; configured production IdP and real user; HTTPS API plus deployed DB/log access; valid production Mapbox config; named Birdtie/CSSA duty operators and backup contact. Local seeds, fixed dev code, Debug APK and synthetic map point are not pilot evidence. Resume only after these inputs, then execute docs/testing/FUNCTIONAL-MVP-E2E.md on physical device and capture environment, activity/request IDs, participants, screenshots, restart, notifications and support evidence."
+    },
+    {
+      "id": "BT-PIL-001",
+      "epic": "Pilot",
+      "priority": "P1",
+      "title": "Prepare CSSA verified profile and one-event pilot",
+      "depends_on": [
+        "BT-REL-001",
+        "BT-ORG-003",
+        "BT-ANA-001"
+      ],
+      "status": "TODO",
+      "goal": "Run smallest truthful partner pilot.",
+      "acceptance": [
+        "CSSA confirms profile/event facts",
+        "5-10 testers invited",
+        "monitoring owner assigned",
+        "feedback/debrief scheduled"
+      ],
+      "verify": [
+        "partner confirmation",
+        "pilot checklist"
+      ]
+    },
+    {
+      "id": "BT-PIL-002",
+      "epic": "Pilot",
+      "priority": "P1",
+      "title": "Run CSSA pilot and produce post-event learning report",
+      "depends_on": [
+        "BT-PIL-001"
+      ],
+      "status": "TODO",
+      "goal": "Turn real usage into product decisions and case-study evidence.",
+      "acceptance": [
+        "Funnel captured",
+        "student feedback collected",
+        "CSSA debrief completed",
+        "next iteration decisions documented",
+        "no inflated success claims"
+      ],
+      "verify": [
+        "pilot report"
+      ]
+    },
+    {
+      "id": "BT-POL-001",
+      "epic": "Polish",
+      "priority": "P2",
+      "title": "Finalize visual motion and micro-interaction polish",
+      "depends_on": [
+        "BT-REL-001"
+      ],
+      "status": "TODO",
+      "goal": "Polish only after functional reliability is proven.",
+      "acceptance": [
+        "Consistent tokens/elevation/motion",
+        "No visual polish regresses runtime",
+        "Accessibility review"
+      ],
+      "verify": [
+        "design QA",
+        "device review"
+      ]
+    },
+    {
+      "id": "BT-COM-001",
+      "epic": "Community Social Layer",
+      "priority": "P1",
+      "title": "Community domain specification",
+      "depends_on": [],
+      "status": "DONE",
+      "goal": "Define Community separately from Organization, Person and CityContext without adding a Community Agent.",
+      "acceptance": [
+        "Canonical identity model and social model agree",
+        "Membership, organizer and visibility rules are explicit",
+        "Superseded ADR wording retains decision history"
+      ],
+      "verify": [
+        "architecture and ADR review"
+      ],
+      "started_at": "2026-10-01T04:35:43.698302+00:00",
+      "completed_at": "2026-10-01T04:38:56.879286+00:00",
+      "evidence": "Canonical identity model, COMMUNITY-AND-ACTIVITY-SOCIAL-MODEL.md (10 sections), ADR 0016 and architecture index updated; rg confirmed links and definitions; git diff --check exit 0."
+    },
+    {
+      "id": "BT-COM-002",
+      "epic": "Community Social Layer",
+      "priority": "P1",
+      "title": "Community database and membership model",
+      "depends_on": [
+        "BT-COM-001"
+      ],
+      "status": "DONE",
+      "goal": "Extend the existing Community entity into a persistent social container with memberships.",
+      "acceptance": [
+        "Creator and active owner integrity",
+        "Unique person-community membership and lifecycle",
+        "Existing Community submissions preserved"
+      ],
+      "verify": [
+        "migration up/down/reapply",
+        "database constraints"
+      ],
+      "started_at": "2026-10-01T04:42:34.111283+00:00",
+      "completed_at": "2026-10-01T04:42:34.605404+00:00",
+      "evidence": "030 migration up/down/reapply all psql exit 0 on local Postgres; synthetic two-person Community and membership transaction passed and rolled back; deleting sole owner rejected at deferred constraint (expected psql exit 1); go test ./internal/community ./internal/postgres passed. Existing IDs preserved; no real Community data written."
+    },
+    {
+      "id": "BT-COM-003",
+      "epic": "Community Social Layer",
+      "priority": "P1",
+      "title": "Activity organizer abstraction",
+      "depends_on": [
+        "BT-COM-002"
+      ],
+      "status": "DONE",
+      "goal": "Represent exactly one Person, Community or Organization organizer for each Activity.",
+      "acceptance": [
+        "Constrained organizer FKs",
+        "Existing organization activities and City Seed activities backfilled",
+        "No Activity lost or orphaned"
+      ],
+      "verify": [
+        "migration integrity counts",
+        "existing Activity regression"
+      ],
+      "started_at": "2026-10-01T04:44:51.066224+00:00",
+      "completed_at": "2026-10-01T04:44:51.579765+00:00",
+      "evidence": "031 organizer migration up/down/reapply passed; existing Activity count 9, organizer count 9, all 9 Organization, 0 orphan; synthetic Person and Community organizer insert/rollback passed; go test ./internal/activitypublish ./internal/postgres ./internal/httpapi passed."
+    },
+    {
+      "id": "BT-COM-004",
+      "epic": "Community Social Layer",
+      "priority": "P1",
+      "title": "Community authorization",
+      "depends_on": [
+        "BT-COM-003"
+      ],
+      "status": "DONE",
+      "goal": "Enforce Community owner, admin and member permissions in the Go service.",
+      "acceptance": [
+        "Join/request/invite/review/leave rules",
+        "Admin cannot remove owner or claim ownership",
+        "Archive and ownership transfer protected"
+      ],
+      "verify": [
+        "Go permission tests",
+        "API boundary checks"
+      ],
+      "started_at": "2026-10-01T04:50:31.050579+00:00",
+      "completed_at": "2026-10-01T04:50:31.542761+00:00",
+      "evidence": "Server-side PostgreSQL methods enforce owner/admin/member/outsider boundaries, invite, role, transfer and archive; TestCommunitySocialPermissionsIntegration passed against local Postgres (owner approval, duplicate join conflict, member self-promotion forbidden, admin archive/transfer forbidden, old owner revoked, archived join 404); synthetic rows cleaned."
+    },
+    {
+      "id": "BT-COM-005",
+      "epic": "Community Social Layer",
+      "priority": "P1",
+      "title": "Community API",
+      "depends_on": [
+        "BT-COM-004"
+      ],
+      "status": "DONE",
+      "goal": "Expose Community creation, discovery, detail and membership lifecycle.",
+      "acceptance": [
+        "Create/detail/edit/archive/members endpoints",
+        "Open/request/invite paths",
+        "Private and hidden disclosure limits"
+      ],
+      "verify": [
+        "Go API integration",
+        "authorization and empty/error responses"
+      ],
+      "started_at": "2026-10-01T04:52:59.833574+00:00",
+      "completed_at": "2026-10-01T04:53:00.316906+00:00",
+      "evidence": "Community REST routes and PostgreSQL CRUD/membership/request/invite/role/transfer/archive implemented; TestCommunitySocialHTTPIntegration passed against local Postgres: anonymous 401, create 201, private detail 200, request 200, member/outsider approval 403, owner approval 200, repeat join 409, leave 204; synthetic sessions/data cleaned."
+    },
+    {
+      "id": "BT-COM-006",
+      "epic": "Community Social Layer",
+      "priority": "P1",
+      "title": "Activity visibility and organizer permissions",
+      "depends_on": [
+        "BT-COM-005"
+      ],
+      "status": "DONE",
+      "goal": "Apply public, organizer-members and invite-only Activity ACL independently of organizer type.",
+      "acceptance": [
+        "Person members-only rejected",
+        "Public Community Activity accessible to outsiders",
+        "Members-only and invitation visibility enforced",
+        "RSVP never auto-joins Community"
+      ],
+      "verify": [
+        "Go visibility matrix",
+        "participation integration"
+      ],
+      "started_at": "2026-10-01T05:04:39.100280+00:00",
+      "completed_at": "2026-10-01T05:04:39.581826+00:00",
+      "evidence": "032 migration up/down/reapply passed; shared SQL ACL enforces public, organizer_members and invite_only in list/detail/RSVP and DB participation guard; local Postgres TestSocialActivityVisibilityIntegration passed private Community public RSVP without auto-membership, member-only member access/outsider 404, explicit invite access; Organization matrix SQL BEGIN/DO/ROLLBACK passed; Person members-only HTTP validation test passed; Go postgres/httpapi tests passed."
+    },
+    {
+      "id": "BT-COM-007",
+      "epic": "Community Social Layer",
+      "priority": "P1",
+      "title": "Flutter Community UI",
+      "depends_on": [
+        "BT-COM-006"
+      ],
+      "status": "DONE",
+      "goal": "Provide Chinese-first My Communities, discovery, detail, create and membership flows.",
+      "acceptance": [
+        "Create and join/request/leave",
+        "Managed membership requests and members",
+        "Loading/empty/error/permission states"
+      ],
+      "verify": [
+        "Flutter tests",
+        "device flow"
+      ],
+      "started_at": "2026-10-01T05:15:48.860647+00:00",
+      "completed_at": "2026-10-01T06:02:28.943282+00:00",
+      "evidence": "2026-10-01 Flutter test/community_api_test.dart + community_page_test.dart 4/4 PASS; Go postgres/httpapi integration PASS with local PostgreSQL. Android c641566b debug build installed: owner created synthetic Community bf427e93-934a-4c68-8fe1-c7f45703917c, second local test account submitted request, owner approved, detail showed 2 members. Screenshots work/community-created.png, work/community-request.png, work/community-owner-detail.png, work/community-approved.png. Dev fixed-code identities only; no production identity evidence."
+    },
+    {
+      "id": "BT-COM-008",
+      "epic": "Community Social Layer",
+      "priority": "P1",
+      "title": "Activity organizer UI",
+      "depends_on": [
+        "BT-COM-007"
+      ],
+      "status": "DONE",
+      "goal": "Select authorized Person, Community or Organization organizer and show it on Activity surfaces.",
+      "acceptance": [
+        "Only authorized organizers selectable",
+        "Correct source default",
+        "Organizer card/detail navigation"
+      ],
+      "verify": [
+        "Flutter tests",
+        "device creation flows"
+      ],
+      "started_at": "2026-10-01T06:03:41.017658+00:00",
+      "completed_at": "2026-10-01T07:07:08.933708+00:00",
+      "evidence": "Flutter analyze PASS; flutter test activity_detail_sheet_test.dart activity_organizer_test.dart community_page_test.dart PASS; physical Android c641566b screenshots work/activity-organizers.png, work/activity-post-result.png, work/activity-person-created.png, work/org-activity-created.png, work/community-activity-default.png, work/org-activity-default.png, work/community-activity-detail.png; local DB activity_organizers confirms Person 9dc357e0-6752-46db-9793-afe131819b76, Community 37d7ceac-f86f-4998-acdd-1eae15d7d21d, Organization cfd739ba-345a-4aef-94cf-2217b7b3da15; map Activity detail routes all three organizer types."
+    },
+    {
+      "id": "BT-COM-009",
+      "epic": "Community Social Layer",
+      "priority": "P1",
+      "title": "Community synthetic seed and E2E",
+      "depends_on": [
+        "BT-COM-008"
+      ],
+      "status": "DONE",
+      "goal": "Verify relationship and Activity scenarios using explicitly synthetic local identities.",
+      "acceptance": [
+        "Public/open, private/request, hidden/invite samples",
+        "Person/Community/Organization Activity scenarios",
+        "No synthetic pilot claim"
+      ],
+      "verify": [
+        "local database/API E2E",
+        "seed repeatability"
+      ],
+      "started_at": "2026-10-01T07:07:24.040608+00:00",
+      "completed_at": "2026-10-01T07:11:26.362640+00:00",
+      "evidence": "Local-only dev-seeds/003_community_social.sql applied twice: INSERT 3+2 then 0+0; DB verifies 3 fixtures/3 active owners/0 Community agents. automation/verify_community_social.ps1 against loopback API :3696 PASS public/open, private/request, hidden/invite discovery; Person/Community/Organization publish, public outsider RSVP without membership, members-only 404, invite-only grant; 4 synthetic Activities all cancelled. Go PostgreSQL/HTTP integration tests TestCommunitySocial* and TestSocialActivity* PASS with BIRDTIE_DATABASE_URL."
+    },
+    {
+      "id": "BT-COM-010",
+      "epic": "Community Social Layer",
+      "priority": "P1",
+      "title": "Community regression verification",
+      "depends_on": [
+        "BT-COM-009"
+      ],
+      "status": "DONE",
+      "goal": "Protect all previously completed P0 behavior after social-layer changes.",
+      "acceptance": [
+        "Flutter and Go quality gates",
+        "Migration/seed/E2E pass",
+        "Auth/Org/Map/Reminder regressions absent"
+      ],
+      "verify": [
+        "flutter analyze/test/build",
+        "go test/vet/build",
+        "migration and synthetic E2E"
+      ],
+      "started_at": "2026-10-01T07:11:54.181285+00:00",
+      "completed_at": "2026-10-01T07:15:41.243230+00:00",
+      "evidence": "Flutter analyze PASS; flutter test PASS 87 tests; flutter build apk --debug PASS (app-debug.apk 241659750 bytes). Go test ./... -count=1 with PostgreSQL PASS; go vet ./... PASS; go build ./... PASS. automation/verify_community_migrations.ps1 PASS on disposable DB: migrations 001-032, existing Activities 5->5 and 5 organizers, 032/031/030 down then 030/031/032 reapply, SQL invariants and seed twice. automation/verify_community_social.ps1 PASS; automation/verify_vertical_slice.ps1 PASS existing Organization->Agent discovery->RSVP->Plans flow. No observed auth/org/map/reminder regression in suite; operational production evidence remains blocked."
+    },
+    {
+      "id": "BT-COM-011",
+      "epic": "Community Social Layer",
+      "priority": "P1",
+      "title": "Community physical-device verification",
+      "depends_on": [
+        "BT-COM-010"
+      ],
+      "status": "DONE",
+      "goal": "Exercise Community and all three organizer flows on a physical Android device.",
+      "acceptance": [
+        "Create/join/approve",
+        "Public outsider discovery and RSVP",
+        "Members-only outsider denial",
+        "Existing Organization Activity unaffected"
+      ],
+      "verify": [
+        "device screenshots",
+        "API request and state evidence"
+      ],
+      "started_at": "2026-10-01T07:16:10.628151+00:00",
+      "completed_at": "2026-10-01T08:07:18.076788+00:00",
+      "evidence": "Physical Android c641566b 10/10 synthetic scenarios; docs/testing/COMMUNITY-SOCIAL-PHYSICAL-DEVICE-2026-10-01.md; C public RSVP activity 37d7ceac-f86f-4998-acdd-1eae15d7d21d going with zero Community memberships; B sees members-only, C does not; Organization Activity cfd739ba-345a-4aef-94cf-2217b7b3da15 remains published; flutter analyze and community_page_test PASS after refresh fix."
+    },
+    {
+      "id": "BT-COM-012",
+      "epic": "Community Social Layer",
+      "priority": "P1",
+      "title": "Community completion report",
+      "depends_on": [
+        "BT-COM-011"
+      ],
+      "status": "DONE",
+      "goal": "Report Community readiness separately from the unchanged Closed Pilot gate.",
+      "acceptance": [
+        "Twelve task statuses and evidence",
+        "Architecture and files documented",
+        "Existing P0 statuses preserved"
+      ],
+      "verify": [
+        "completion report review",
+        "task queue summary"
+      ],
+      "started_at": "2026-10-01T08:08:09.621962+00:00",
+      "completed_at": "2026-10-01T08:11:08.052743+00:00",
+      "evidence": "docs/reports/FUNCTIONAL-MVP-COMPLETION-REPORT.md Community section lists all BT-COM-001..012, migration/Go/Flutter files, full verification and separate Community YES (local synthetic) vs Closed Pilot NO; docs/product/FUNCTIONAL-MVP-GAP-ANALYSIS.md and docs/testing/FUNCTIONAL-MVP-E2E.md updated; P0 28 DONE/3 BLOCKED preserved; taskctl summary reviewed."
+    }
+  ]
+}

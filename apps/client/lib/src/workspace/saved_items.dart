@@ -3,6 +3,8 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import '../config/birdtie_environment.dart';
+import 'entity_action_contract.dart';
 
 class SavedItem {
   const SavedItem({
@@ -40,11 +42,17 @@ class SavedController extends ChangeNotifier {
     http.Client? client,
     String? apiBaseUrl,
   }) : _client = client ?? http.Client(),
+       _ownsClient = client == null,
        _apiBaseUrl = apiBaseUrl ?? apiBase;
 
-  static const apiBase = String.fromEnvironment('BIRDTIE_API_BASE_URL');
+  static const apiBase = BirdtieEnvironment.apiBaseUrl;
   final String? Function() authorizationHeader;
   final http.Client _client;
+  final bool _ownsClient;
+  bool _disposed = false;
+  int _generation = 0;
+  http.Client get followClient => _client;
+  String get followApiBaseUrl => _apiBaseUrl;
   final String _apiBaseUrl;
   bool get configured => _apiBaseUrl.isNotEmpty;
   List<SavedItem> items = const [];
@@ -70,6 +78,8 @@ class SavedController extends ChangeNotifier {
   }
 
   void clear() {
+    if (_disposed) return;
+    ++_generation;
     ++_serial;
     items = const [];
     loading = false;
@@ -79,6 +89,8 @@ class SavedController extends ChangeNotifier {
   }
 
   Future<void> load() async {
+    if (_disposed) return;
+    final capturedToken = authorizationHeader();
     if (!configured || authorizationHeader() == null) {
       clear();
       return;
@@ -95,26 +107,52 @@ class SavedController extends ChangeNotifier {
       final rows =
           (jsonDecode(response.body) as Map<String, dynamic>)['data']
               as List<dynamic>;
-      if (serial != _serial) return;
+      if (_disposed ||
+          serial != _serial ||
+          authorizationHeader() != capturedToken) {
+        return;
+      }
       items = [
         for (final row in rows) SavedItem.fromJson(row as Map<String, dynamic>),
       ];
     } catch (_) {
-      if (serial != _serial) return;
+      if (_disposed ||
+          serial != _serial ||
+          authorizationHeader() != capturedToken) {
+        return;
+      }
       failed = true;
     } finally {
-      if (serial == _serial) {
+      if (!_disposed &&
+          serial == _serial &&
+          authorizationHeader() == capturedToken) {
         loading = false;
         notifyListeners();
       }
     }
   }
 
-  Future<void> toggle(String kind, String targetId) async {
+  Future<void> toggle(
+    String kind,
+    String targetId, {
+    String entrySource = 'direct',
+    EntityActionDescriptor? approved,
+  }) async {
+    if (_disposed) return;
     if (!configured || authorizationHeader() == null) {
       throw StateError('Sign in to save Birdtie items');
     }
     final key = _key(kind, targetId);
+    final currentToken = authorizationHeader();
+    final generation = _generation;
+    if (approved != null) {
+      final expectedType = kind == 'group' ? 'community' : kind;
+      if (approved.target != EntityActionRef(expectedType, targetId) ||
+          approved.operation !=
+              (contains(kind, targetId) ? 'UNSAVE' : 'SAVE')) {
+        throw StateError('收藏状态已变化，请重新检查。');
+      }
+    }
     if (busy.contains(key)) return;
     busy.add(key);
     notifyListeners();
@@ -126,7 +164,11 @@ class SavedController extends ChangeNotifier {
         final response = await _client
             .post(
               _endpoint('/v1/me/saved'),
-              headers: _headers(json: true),
+              headers: {
+                ..._headers(json: true),
+                'X-Birdtie-Entry-Source': entrySource,
+                if (approved != null) ...approved.conditionHeaders,
+              },
               body: jsonEncode({'kind': kind, 'targetId': targetId}),
             )
             .timeout(const Duration(seconds: 12));
@@ -137,24 +179,37 @@ class SavedController extends ChangeNotifier {
               _endpoint(
                 '/v1/me/saved/${Uri.encodeComponent(existing.first.id)}',
               ),
-              headers: _headers(),
+              headers: {
+                ..._headers(),
+                if (approved != null) ...approved.conditionHeaders,
+              },
             )
             .timeout(const Duration(seconds: 12));
         if (response.statusCode != 204) {
           throw StateError('Could not remove saved item');
         }
       }
+      if (_disposed ||
+          generation != _generation ||
+          authorizationHeader() != currentToken) {
+        return;
+      }
       await load();
     } finally {
-      busy.remove(key);
-      notifyListeners();
+      if (!_disposed && generation == _generation) {
+        busy.remove(key);
+        notifyListeners();
+      }
     }
   }
 
   @override
   void dispose() {
+    if (_disposed) return;
+    _disposed = true;
+    ++_generation;
     ++_serial;
-    _client.close();
+    if (_ownsClient) _client.close();
     super.dispose();
   }
 }
@@ -179,9 +234,9 @@ class _SavedPageState extends State<SavedPage> {
       await widget.saved.toggle(item.kind, item.targetId);
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not remove this saved item.')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('取消收藏失败，请重试。')));
       }
     }
   }
@@ -192,10 +247,10 @@ class _SavedPageState extends State<SavedPage> {
     builder: (context, _) {
       final saved = widget.saved;
       if (!saved.configured) {
-        return const Center(child: Text('Saved requires the Birdtie API.'));
+        return const Center(child: Text('请连接 Birdtie API 后查看收藏。'));
       }
       if (saved.authorizationHeader() == null) {
-        return const Center(child: Text('Sign in to see your saved items.'));
+        return const Center(child: Text('登录后即可查看收藏内容。'));
       }
       if (saved.loading && saved.items.isEmpty) {
         return const Center(child: CircularProgressIndicator());
@@ -204,7 +259,7 @@ class _SavedPageState extends State<SavedPage> {
         return Center(
           child: TextButton(
             onPressed: saved.load,
-            child: const Text('Saved unavailable. Tap to retry.'),
+            child: const Text('收藏内容暂不可用，点击重试。'),
           ),
         );
       }
@@ -212,10 +267,7 @@ class _SavedPageState extends State<SavedPage> {
         return const Center(
           child: Padding(
             padding: EdgeInsets.all(28),
-            child: Text(
-              'Places, activities and groups you save will appear here.',
-              textAlign: TextAlign.center,
-            ),
+            child: Text('你收藏的地点、活动和社群会显示在这里。', textAlign: TextAlign.center),
           ),
         );
       }
@@ -231,16 +283,16 @@ class _SavedPageState extends State<SavedPage> {
                   'activity' => Icons.event_outlined,
                   _ => Icons.group_outlined,
                 }),
-                title: Text(item.available ? item.title : 'Unavailable item'),
+                title: Text(item.available ? item.title : '内容暂不可用'),
                 subtitle: Text(
                   item.available
-                      ? '${item.cityId} · ${item.summary.isEmpty ? item.kind : item.summary}'
-                      : 'No longer visible. You can remove this bookmark.',
+                      ? '${item.cityId} · ${item.summary.isEmpty ? _savedKind(item.kind) : item.summary}'
+                      : '该内容已不可见，你可以取消收藏。',
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
                 trailing: IconButton(
-                  tooltip: 'Remove saved item',
+                  tooltip: '取消收藏',
                   onPressed: saved.isBusy(item.kind, item.targetId)
                       ? null
                       : () => _remove(item),
@@ -253,3 +305,10 @@ class _SavedPageState extends State<SavedPage> {
     },
   );
 }
+
+String _savedKind(String kind) => switch (kind) {
+  'place' => '地点',
+  'activity' => '活动',
+  'group' => '社群',
+  _ => kind,
+};

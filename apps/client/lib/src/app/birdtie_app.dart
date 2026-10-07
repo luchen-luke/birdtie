@@ -1,11 +1,13 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 import '../auth/birdtie_auth_controller.dart';
 import '../city/public_city_controller.dart';
 import '../content/private_moment_controller.dart';
 import '../workspace/map_workspace.dart';
+import 'birdtie_surfaces.dart';
 
 class BirdtieApp extends StatelessWidget {
   const BirdtieApp({super.key});
@@ -14,12 +16,15 @@ class BirdtieApp extends StatelessWidget {
   Widget build(BuildContext context) => MaterialApp(
     title: 'Birdtie',
     debugShowCheckedModeBanner: false,
-    theme: ThemeData(
-      useMaterial3: true,
-      colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF193B32)),
-      scaffoldBackgroundColor: const Color(0xFFFCFBF8),
-      fontFamily: 'Aptos',
-    ),
+    locale: const Locale('zh', 'CN'),
+    supportedLocales: const [Locale('zh', 'CN')],
+    localizationsDelegates: const [
+      GlobalMaterialLocalizations.delegate,
+      GlobalWidgetsLocalizations.delegate,
+      GlobalCupertinoLocalizations.delegate,
+    ],
+    theme: birdtieTheme(Brightness.light),
+    darkTheme: birdtieTheme(Brightness.dark),
     home: const BirdtieShell(),
   );
 }
@@ -45,6 +50,8 @@ class _BirdtieShellState extends State<BirdtieShell> {
     );
     _moments = PrivateMomentController(
       authorizationHeader: () => _auth.authorizationHeader,
+      ownerID: () => _auth.accountID,
+      identityChanges: _auth,
     );
     _auth.addListener(_onAuthChange);
     unawaited(_auth.initialize());
@@ -55,7 +62,6 @@ class _BirdtieShellState extends State<BirdtieShell> {
     if (_wasSignedIn == _auth.signedIn) return;
     _wasSignedIn = _auth.signedIn;
     unawaited(_city.loadActivities());
-    unawaited(_moments.refresh());
   }
 
   @override

@@ -3,7 +3,7 @@
 Identity and authority scope is governed by [Agent Identity and Ownership Model](../architecture/AGENT-IDENTITY-AND-OWNERSHIP-MODEL.md). Organization principal, membership and Agent lifecycle are foundational MVP work; earlier references to a parallel City Agent are superseded by platform-managed CityContext retrieval in the shared runtime.
 
 Date: 2026-09-29
-Status: Implementation plan. The Agent-first shell in `FRONTEND-IA-AND-SHELL-BASELINE.md` is the current frontend baseline; older Now/Explore/Network wording below is historical context only.
+Status: historical implementation plan. The Agent-first shell in `FRONTEND-IA-AND-SHELL-BASELINE.md` is the current frontend baseline; older Now/Explore/Network wording below is historical context only. The [Functional MVP PRD](FUNCTIONAL-MVP-PRD.md), [Master Roadmap](BIRDTIE-MASTER-ROADMAP.md), [Gap Analysis](FUNCTIONAL-MVP-GAP-ANALYSIS.md) and task queue now govern planned functional delivery. Earlier statements below that full organization administration belongs to a later slice describe the prior scope; organization publishing is required for the new functional vertical slice.
 
 Update (2026-09-30): The Agent-first shell supersedes the older navigation wording below. Owner Profile editing and public Intent submission now exist. Owner-confirmed Group and public Intent submissions publish directly under ADR 0011; no real content seed is configured. Explicit contact requests and human messages are available under ADR 0014; production identity remains a later slice.
 

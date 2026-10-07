@@ -32,7 +32,7 @@ type Record struct {
 	SourceLabel string     `json:"sourceLabel"`
 	SourceURL   string     `json:"sourceUrl"`
 	RightsNote  string     `json:"rightsNote"`
-	ExpiresAt   time.Time  `json:"expiresAt"`
+	ExpiresAt   *time.Time `json:"expiresAt,omitempty"`
 	Status      string     `json:"status"`
 	ReviewedBy  string     `json:"reviewedBy,omitempty"`
 	ReviewedAt  *time.Time `json:"reviewedAt,omitempty"`

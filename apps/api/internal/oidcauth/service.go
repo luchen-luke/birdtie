@@ -71,7 +71,7 @@ func New(ctx context.Context, cfg Config, store Store) (*Service, error) {
 		return nil, errors.New("invalid OIDC callback URL")
 	}
 	client, err := url.Parse(cfg.ClientRedirect)
-	if err != nil || !validApplicationURL(client) ||
+	if err != nil || !validClientRedirect(client) ||
 		client.RawQuery != "" || client.Fragment != "" {
 		return nil, errors.New("invalid OIDC client redirect URL")
 	}
@@ -135,6 +135,14 @@ func validApplicationURL(u *url.URL) bool {
 	}
 	ip := net.ParseIP(host)
 	return ip != nil && ip.IsLoopback()
+}
+
+func validClientRedirect(u *url.URL) bool {
+	if u != nil && u.Scheme == "birdtie-auth" {
+		return u.Host == "callback" && u.Path == "" && u.User == nil &&
+			u.Opaque == "" && u.RawQuery == "" && u.Fragment == ""
+	}
+	return validApplicationURL(u)
 }
 
 func ValidChallenge(challenge string) bool {

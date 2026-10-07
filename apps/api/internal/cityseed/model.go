@@ -20,6 +20,7 @@ type Candidate struct {
 	Name              string     `json:"name"`
 	CategoryCode      string     `json:"categoryCode"`
 	Summary           string     `json:"summary"`
+	AddressLabel      string     `json:"addressLabel,omitempty"`
 	Latitude          *float64   `json:"latitude,omitempty"`
 	Longitude         *float64   `json:"longitude,omitempty"`
 	LocationPrecision string     `json:"locationPrecision"`
@@ -42,6 +43,7 @@ type SubmitInput struct {
 	Name              string    `json:"name"`
 	CategoryCode      string    `json:"categoryCode"`
 	Summary           string    `json:"summary"`
+	AddressLabel      string    `json:"addressLabel"`
 	Latitude          *float64  `json:"latitude"`
 	Longitude         *float64  `json:"longitude"`
 	LocationPrecision string    `json:"locationPrecision"`

@@ -63,25 +63,80 @@ type Place struct {
 	Name         string   `json:"name"`
 	CategoryCode string   `json:"categoryCode"`
 	Summary      string   `json:"summary"`
+	AddressLabel string   `json:"addressLabel,omitempty"`
 	Location     Location `json:"location"`
 	Source       Source   `json:"source"`
 }
 
+// PlaceActivityCatalog resolves activities from the same canonical Place ID.
+// Public read policy remains the Activity policy, including private organizers.
+type PlaceActivityCatalog interface {
+	ListPlaceActivities(context.Context, string, string) ([]Activity, error)
+}
+
 type Activity struct {
-	ID        string    `json:"id"`
-	CityID    string    `json:"cityId"`
-	PlaceID   string    `json:"placeId,omitempty"`
-	PlaceName string    `json:"placeName,omitempty"`
-	HostLabel string    `json:"hostLabel"`
-	Title     string    `json:"title"`
-	Summary   string    `json:"summary"`
-	StartsAt  time.Time `json:"startsAt"`
-	EndsAt    time.Time `json:"endsAt"`
-	TimeZone  string    `json:"timeZone"`
-	Schedule  string    `json:"schedule"`
-	Status    string    `json:"status"`
-	Location  *Location `json:"location,omitempty"`
-	Source    Source    `json:"source"`
+	ID                  string            `json:"id"`
+	Organizer           ActivityOrganizer `json:"organizer"`
+	Visibility          string            `json:"visibility"`
+	OrganizationID      *string           `json:"organizationId,omitempty"`
+	CityID              string            `json:"cityId"`
+	PlaceID             string            `json:"placeId,omitempty"`
+	PlaceName           string            `json:"placeName,omitempty"`
+	Modality            string            `json:"modality"`
+	PhysicalPlaceStatus string            `json:"physicalPlaceStatus"`
+	VenuePlaceID        *string           `json:"venuePlaceId,omitempty"`
+	HostLabel           string            `json:"hostLabel"`
+	Title               string            `json:"title"`
+	Summary             string            `json:"summary"`
+	Description         string            `json:"description"`
+	CategoryCode        string            `json:"categoryCode,omitempty"`
+	Capacity            *int              `json:"capacity,omitempty"`
+	ParticipantCount    *int              `json:"participantCount,omitempty"`
+	PriceMinor          int               `json:"priceMinor"`
+	Currency            string            `json:"currency,omitempty"`
+	Eligibility         string            `json:"eligibility,omitempty"`
+	LanguageCode        string            `json:"languageCode,omitempty"`
+	OfficialURL         string            `json:"officialUrl,omitempty"`
+	StartsAt            time.Time         `json:"startsAt"`
+	EndsAt              time.Time         `json:"endsAt"`
+	TimeZone            string            `json:"timeZone"`
+	Schedule            string            `json:"schedule"`
+	EndSchedule         string            `json:"endSchedule"`
+	Status              string            `json:"status"`
+	Location            *Location         `json:"location,omitempty"`
+	Source              Source            `json:"source"`
+}
+
+type ActivityOrganizer struct {
+	Type      string  `json:"type"`
+	ID        string  `json:"id"`
+	Name      string  `json:"name"`
+	AvatarURL *string `json:"avatarUrl,omitempty"`
+}
+
+// ActivitySearchFilter selects public, current activities for a map viewport.
+// From and To form a half-open interval that overlaps the activity schedule.
+type ActivitySearchFilter struct {
+	West, South, East, North *float64
+	From, To                 *time.Time
+	Category                 string
+}
+
+type PulseCategory struct {
+	Code  string `json:"code"`
+	Count int64  `json:"count"`
+}
+
+type AreaPulse struct {
+	CityID     string          `json:"cityId"`
+	Bounds     [4]float64      `json:"bounds"`
+	From       *time.Time      `json:"from,omitempty"`
+	To         *time.Time      `json:"to,omitempty"`
+	Status     string          `json:"status"`
+	Total      int64           `json:"total"`
+	Categories []PulseCategory `json:"categories"`
+	Activities []Activity      `json:"activities"`
+	Truncated  bool            `json:"truncated"`
 }
 
 // PublicCatalog is limited to published cities and places. Authenticated
@@ -92,5 +147,7 @@ type PublicCatalog interface {
 	ListPlaces(context.Context, string, string) ([]Place, error)
 	GetPlace(context.Context, string) (Place, error)
 	ListActivities(context.Context, string, string) ([]Activity, error)
+	FindActivities(context.Context, string, string, ActivitySearchFilter) ([]Activity, error)
+	AreaPulse(context.Context, string, string, ActivitySearchFilter) (AreaPulse, error)
 	GetActivity(context.Context, string, string) (Activity, error)
 }

@@ -1,0 +1,5 @@
+{
+  "BIRDTIE_ENVIRONMENT": "staging",
+  "BIRDTIE_API_BASE_URL": "http://api.birdtie.invalid",
+  "BIRDTIE_MAPBOX_MOBILE_PUBLIC_TOKEN": "pk.synthetic-test-token-never-deploy"
+}

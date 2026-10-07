@@ -2,13 +2,20 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 
 import '../auth/birdtie_auth_controller.dart';
 import '../auth/dev_phone_login_sheet.dart';
 import '../city/public_city_controller.dart';
 import '../city/public_city_map.dart';
 import '../content/private_moment_controller.dart';
+import '../content/private_moment_media_controller.dart';
+import '../content/private_moment_media_sheet.dart';
+import '../content/moment_time_choice.dart';
+import '../content/moment_context_choice.dart';
 import '../content/public_intent_section.dart';
+import '../config/birdtie_environment.dart';
+import '../workspace/community_api.dart';
 
 // Existing City and private Moment surfaces remain available from the V2 sidebar.
 class LegacyProfilePage extends StatelessWidget {
@@ -17,15 +24,30 @@ class LegacyProfilePage extends StatelessWidget {
     required this.auth,
     required this.moments,
     required this.city,
+    this.client,
+    this.apiBaseUrl,
+    this.workspaceChanges,
+    this.organizationWorkspaceID,
   });
 
   final BirdtieAuthController auth;
   final PrivateMomentController moments;
   final PublicCityController city;
+  final http.Client? client;
+  final String? apiBaseUrl;
+  final Listenable? workspaceChanges;
+  final String? Function()? organizationWorkspaceID;
 
   @override
-  Widget build(BuildContext context) =>
-      _MyBirdtiePage(auth: auth, moments: moments, city: city);
+  Widget build(BuildContext context) => _MyBirdtiePage(
+    auth: auth,
+    moments: moments,
+    city: city,
+    client: client,
+    apiBaseUrl: apiBaseUrl,
+    workspaceChanges: workspaceChanges,
+    organizationWorkspaceID: organizationWorkspaceID,
+  );
 }
 
 class LegacyActivityPage extends StatelessWidget {
@@ -56,18 +78,18 @@ class _NowPage extends StatelessWidget {
         eyebrow: selected == null
             ? 'NOW'
             : 'NOW · ${selected.name.toUpperCase()}',
-        title: 'Today in the city',
-        subtitle: '近期活动、城市故事与正在寻找同行者的 Intent。',
+        title: '今日城市动态',
+        subtitle: '近期活动、城市故事与正在寻找同行者的意图。',
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _CityState(city: city),
             const SizedBox(height: 34),
-            const _SectionLabel('CITY PULSE'),
+            const _SectionLabel('城市速览'),
             const SizedBox(height: 12),
             _ActivitySection(city: city),
             const SizedBox(height: 30),
-            const _SectionLabel('EXPLORE THE CITY'),
+            const _SectionLabel('探索城市'),
             const SizedBox(height: 10),
             Text(
               selected == null
@@ -120,7 +142,7 @@ class _ActivitySection extends StatelessWidget {
       return const _EmptySection(
         icon: Icons.event_outlined,
         title: '目前没有已发布活动',
-        detail: 'City Seed 活动完成来源审核后才会显示。公开 Moment 尚未接入；Intent 可在 Profile 中管理。',
+        detail: '城市种子活动通过来源审核后才会显示。公开动态尚未接入；个人意图可在个人资料中管理。',
       );
     }
     return Column(
@@ -196,7 +218,7 @@ class _CityState extends StatelessWidget {
             icon: Icons.location_city_outlined,
             title: city.citiesLoading ? '正在读取城市' : '城市暂不可用',
             detail: !city.configured
-                ? '尚未配置 City API 地址。'
+                ? '尚未配置城市 API 地址。'
                 : city.cityError ?? '当前没有已发布的城市。',
             accent: _copper,
           ),
@@ -308,8 +330,8 @@ class _ExplorePageState extends State<_ExplorePage> {
   Widget build(BuildContext context) => AnimatedBuilder(
     animation: widget.city,
     builder: (context, _) => _PageFrame(
-      eyebrow: 'EXPLORE ANYWHERE',
-      title: 'Explore ${widget.city.selectedCity?.name ?? 'a city'}',
+      eyebrow: '探索城市各处',
+      title: '探索${widget.city.selectedCity?.name ?? '城市'}',
       subtitle: '无需分享设备定位。已发布地点来自当前选定城市。',
       trailing: SegmentedButton<bool>(
         showSelectedIcon: false,
@@ -317,12 +339,12 @@ class _ExplorePageState extends State<_ExplorePage> {
           ButtonSegment(
             value: true,
             icon: Icon(Icons.map_outlined),
-            label: Text('Map'),
+            label: Text('地图'),
           ),
           ButtonSegment(
             value: false,
             icon: Icon(Icons.view_list_outlined),
-            label: Text('List'),
+            label: Text('列表'),
           ),
         ],
         selected: {_mapView},
@@ -334,7 +356,7 @@ class _ExplorePageState extends State<_ExplorePage> {
         children: [
           _CityState(city: widget.city),
           const SizedBox(height: 26),
-          const _SectionLabel('CITY CONTENT'),
+          const _SectionLabel('城市内容'),
           const SizedBox(height: 14),
           TextField(
             controller: _search,
@@ -368,7 +390,7 @@ class _ExplorePageState extends State<_ExplorePage> {
           ),
           const SizedBox(height: 16),
           const Text(
-            '公开 Moment 与 Journey 尚未接入；Map 与 List 共用当前城市和搜索条件。',
+            '公开动态与行程功能尚未接入；地图与列表共用当前城市和搜索条件。',
             style: TextStyle(color: _muted, fontSize: 12),
           ),
         ],
@@ -492,13 +514,28 @@ class _MomentDraftSheet extends StatefulWidget {
     required this.cityID,
     required this.cityName,
     required this.moments,
+    required this.places,
+    required this.activities,
+    required this.auth,
     this.existing,
+    this.client,
+    this.apiBaseUrl,
+    this.workspaceChanges,
+    this.organizationWorkspaceID,
   });
 
   final String cityID;
   final String cityName;
   final PrivateMomentController moments;
+  final List<PublicPlace> places;
+  final List<PublicActivity> activities;
   final PrivateMoment? existing;
+  final BirdtieAuthController auth;
+
+  final http.Client? client;
+  final String? apiBaseUrl;
+  final Listenable? workspaceChanges;
+  final String? Function()? organizationWorkspaceID;
 
   @override
   State<_MomentDraftSheet> createState() => _MomentDraftSheetState();
@@ -508,39 +545,166 @@ class _MomentDraftSheetState extends State<_MomentDraftSheet> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _title;
   late final TextEditingController _body;
+  late final CommunityApi _communityApi;
+  final http.Client _lookupClient = http.Client();
+  List<CommunityItem> _communities = const [];
+  List<(String, String)> _organizations = const [];
+  bool _loadingContexts = false;
+  String? _contextError;
+  late String _placeID;
+  late String _activityID;
+  late String _communityID;
+  late String _organizationID;
+  late final String? _draftToken;
+  late final String? _draftOwner;
+  late final BirdtieAuthController _draftAuth;
+  late final PrivateMomentController _draftMoments;
+  bool _retired = false;
+  late MomentTimeValue? _time;
+  String? _draftError;
 
   @override
   void initState() {
     super.initState();
     _title = TextEditingController(text: widget.existing?.title);
     _body = TextEditingController(text: widget.existing?.body);
+    _placeID = widget.existing?.placeID ?? '';
+    _activityID = widget.existing?.activityIDs.firstOrNull ?? '';
+    _communityID = widget.existing?.communityID ?? '';
+    _organizationID = widget.existing?.organizationID ?? '';
+    _draftToken = widget.moments.authorizationHeader();
+    _draftOwner = widget.auth.accountID;
+    _draftAuth = widget.auth;
+    _draftMoments = widget.moments;
+    _draftAuth.addListener(_onActorChanged);
+    _time = widget.existing?.time ?? MomentTimeValue.unknown;
+    _communityApi = CommunityApi(
+      authorizationHeader: widget.moments.authorizationHeader,
+    );
+  }
+
+  bool get _matchesBinding =>
+      identical(widget.auth, _draftAuth) &&
+      identical(widget.moments, _draftMoments) &&
+      widget.auth.signedIn &&
+      widget.auth.accountID == _draftOwner &&
+      widget.auth.authorizationHeader == _draftToken &&
+      widget.moments.authorizationHeader() == _draftToken;
+
+  bool get _current => mounted && !_retired && _matchesBinding;
+
+  void _onActorChanged() {
+    if (_retired || _matchesBinding) return;
+    // Observe each identity event, including A -> B -> A before the next frame.
+    setState(() => _retired = true);
+  }
+
+  Future<void> _loadContexts() async {
+    final token = widget.moments.authorizationHeader();
+    if (!_current || token == null || BirdtieEnvironment.apiBaseUrl.isEmpty) {
+      return;
+    }
+    setState(() {
+      _loadingContexts = true;
+      _contextError = null;
+    });
+    try {
+      final communities = await _communityApi.mine();
+      if (!_current) return;
+      final response = await _lookupClient
+          .get(
+            Uri.parse(
+              '${BirdtieEnvironment.apiBaseUrl.replaceFirst(RegExp(r'/$'), '')}/v1/me/organizations',
+            ),
+            headers: {'Authorization': token},
+          )
+          .timeout(const Duration(seconds: 12));
+      if (response.statusCode != 200) {
+        throw StateError('organizations unavailable');
+      }
+      final rows =
+          (jsonDecode(response.body) as Map<String, dynamic>)['data']
+              as List<dynamic>;
+      if (!_current) return;
+      setState(() {
+        _communities = communities
+            .where(
+              (item) =>
+                  item.joined &&
+                  (item.cityId == null || item.cityId == widget.cityID),
+            )
+            .toList();
+        _organizations = rows.map((raw) {
+          final row = raw as Map<String, dynamic>;
+          return (row['id'] as String, row['name'] as String);
+        }).toList();
+      });
+    } catch (_) {
+      if (_current) {
+        setState(() => _contextError = '社群或组织列表暂不可用，可只保存未关联的草稿。');
+      }
+    } finally {
+      if (_current) {
+        setState(() => _loadingContexts = false);
+      }
+    }
   }
 
   @override
   void dispose() {
+    _draftAuth.removeListener(_onActorChanged);
     _title.dispose();
     _body.dispose();
+    _communityApi.dispose();
+    _lookupClient.close();
     super.dispose();
   }
 
   Future<void> _save() async {
+    if (!_current) {
+      setState(() => _draftError = '账号已切换，请关闭草稿后重新打开。');
+      return;
+    }
     if (!_formKey.currentState!.validate()) return;
+    if (_time == null) return;
     final existing = widget.existing;
+    if (existing != null &&
+        !widget.moments.moments.any((item) => identical(item, existing))) {
+      setState(() => _draftError = '草稿版本已变化，请刷新列表后重新打开。');
+      return;
+    }
     final saved = existing == null
         ? await widget.moments.create(
             cityID: widget.cityID,
             title: _title.text.trim(),
             body: _body.text.trim(),
+            placeID: _placeID,
+            activityID: _activityID,
+            communityID: _communityID,
+            organizationID: _organizationID,
+            time: _time!,
           )
         : await widget.moments.update(
             moment: existing,
             title: _title.text.trim(),
             body: _body.text.trim(),
+            placeID: _placeID,
+            time: _time!,
+            activityID: _activityID == existing.activityIDs.firstOrNull
+                ? null
+                : _activityID,
+            communityID: _communityID == existing.communityID
+                ? null
+                : _communityID,
+            organizationID: _organizationID == existing.organizationID
+                ? null
+                : _organizationID,
           );
-    if (mounted && saved) Navigator.pop(context, true);
+    if (mounted && _current && saved) Navigator.pop(context, true);
   }
 
   Future<void> _withdraw() async {
+    if (!_current) return;
     final existing = widget.existing;
     if (existing == null) return;
     final confirmed = await showDialog<bool>(
@@ -560,13 +724,56 @@ class _MomentDraftSheetState extends State<_MomentDraftSheet> {
         ],
       ),
     );
-    if (confirmed != true) return;
+    if (confirmed != true || !_current) {
+      return;
+    }
     final withdrawn = await widget.moments.withdraw(existing);
-    if (mounted && withdrawn) Navigator.pop(context, true);
+    if (mounted && _current && withdrawn) Navigator.pop(context, true);
+  }
+
+  bool get _imageSourceCurrent {
+    final m=widget.existing;
+    if(!_current||m==null||m.authorAccountID!=_draftOwner||m.visibility!='private'||m.status!='draft')return false;
+    return widget.moments.moments.any((row)=>row.id==m.id&&row.authorAccountID==_draftOwner&&
+      row.revision==m.revision&&row.visibility=='private'&&row.status=='draft');
+  }
+  Future<void> _managePrivateImage() async {
+    if(!_imageSourceCurrent)return;
+    final m=widget.existing!;
+    final c=PrivateMomentMediaController(momentID:m.id,momentRevision:m.revision,
+      authorizationHeader:()=>widget.auth.authorizationHeader,ownerID:()=>widget.auth.accountID,
+      identityChanges:Listenable.merge([widget.auth,widget.moments]),
+      workspaceChanges:widget.workspaceChanges,organizationWorkspaceID:widget.organizationWorkspaceID,
+      sourceCurrent:()=>_imageSourceCurrent,client:widget.client,
+      apiBaseUrl:widget.apiBaseUrl??BirdtieEnvironment.apiBaseUrl);
+    try {await Navigator.push(context,MaterialPageRoute<void>(builder:(_)=>
+      PrivateMomentMediaSheet(controller:c,momentTitle:m.title)));}finally{c.dispose();}
   }
 
   @override
-  Widget build(BuildContext context) => SafeArea(
+  Widget build(BuildContext context) => AnimatedBuilder(
+    animation: Listenable.merge([widget.moments, widget.auth]),
+    builder: (context, _) => !_current
+        ? SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('账号已切换，请重新打开私人草稿。'),
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('关闭'),
+                  ),
+                ],
+              ),
+            ),
+          )
+        : _buildForm(context),
+  );
+
+  Widget _buildForm(BuildContext context) => SafeArea(
     child: Padding(
       padding: EdgeInsets.fromLTRB(
         24,
@@ -582,17 +789,24 @@ class _MomentDraftSheetState extends State<_MomentDraftSheet> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                widget.existing == null ? 'New Moment' : 'Edit Moment',
+                widget.existing == null ? '新建动态' : '编辑动态',
                 style: Theme.of(context).textTheme.headlineSmall,
               ),
               const SizedBox(height: 6),
               Text(
-                '${widget.cityName} · 仅自己可见 · 不会发布',
+                '${widget.cityName} · ${widget.existing?.visibilityLabel ?? '仅自己可见'} · 本页不会发布',
                 style: const TextStyle(color: _muted),
               ),
               const SizedBox(height: 20),
+              if(_imageSourceCurrent) ...[
+                OutlinedButton.icon(onPressed:widget.moments.saving?null:_managePrivateImage,
+                  icon:const Icon(Icons.photo_outlined),label:const Text('管理私人图片')),
+                const Text('图片只用于这条已保存的私人记录；公开或撤回记录会移除图片。'),
+                const SizedBox(height:12),
+              ],
               TextFormField(
                 controller: _title,
+                enabled: !widget.moments.saving,
                 autofocus: true,
                 maxLength: 160,
                 decoration: const InputDecoration(labelText: '标题'),
@@ -606,6 +820,7 @@ class _MomentDraftSheetState extends State<_MomentDraftSheet> {
               const SizedBox(height: 10),
               TextFormField(
                 controller: _body,
+                enabled: !widget.moments.saving,
                 maxLines: 5,
                 maxLength: 5000,
                 decoration: const InputDecoration(labelText: '记录'),
@@ -615,11 +830,79 @@ class _MomentDraftSheetState extends State<_MomentDraftSheet> {
                     : null,
               ),
               const SizedBox(height: 8),
+              MomentTimeChoice(
+                initialValue: widget.existing?.time ?? MomentTimeValue.unknown,
+                enabled: !widget.moments.saving,
+                onChanged: (value) => _time = value,
+              ),
+              if (widget.existing?.createdAt != null) ...[
+                const SizedBox(height: 8),
+                Text(
+                  '创建于 ${widget.existing!.createdAt!.toIso8601String().replaceFirst('T', ' ')}（UTC），与发生时间分别保存。',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ],
+              const SizedBox(height: 20),
+              const Text(
+                '关联情境（可选）',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 6),
+              const Text(
+                '只关联你选择的真实地点、活动和已加入的社群或组织；草稿仍只对自己可见。',
+                style: TextStyle(color: _muted),
+              ),
+              const SizedBox(height: 12),
+              MomentContextChoice(
+                label: '地点',
+                value: _placeID,
+                available: {
+                  for (final place in widget.places) place.id: place.name,
+                },
+                onChanged: (value) => setState(() => _placeID = value),
+              ),
+              MomentContextChoice(
+                label: '活动',
+                value: _activityID,
+                available: {
+                  for (final activity in widget.activities)
+                    activity.id: activity.title,
+                },
+                onChanged: (value) => setState(() => _activityID = value),
+              ),
+              TextButton(
+                onPressed: _loadingContexts ? null : _loadContexts,
+                child: Text(_loadingContexts ? '正在读取我的社群与组织…' : '选择我加入的社群或组织'),
+              ),
+              if (_contextError != null)
+                Text(_contextError!, style: const TextStyle(color: _copper)),
+              MomentContextChoice(
+                label: '社群',
+                value: _communityID,
+                available: {
+                  for (final item in _communities) item.id: item.name,
+                },
+                onChanged: (value) => setState(() => _communityID = value),
+              ),
+              MomentContextChoice(
+                label: '组织',
+                value: _organizationID,
+                available: {
+                  for (final item in _organizations) item.$1: item.$2,
+                },
+                onChanged: (value) => setState(() => _organizationID = value),
+              ),
+              const SizedBox(height: 8),
               AnimatedBuilder(
                 animation: widget.moments,
                 builder: (context, _) => Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    if (_draftError != null)
+                      Text(
+                        _draftError!,
+                        style: const TextStyle(color: _copper),
+                      ),
                     if (widget.moments.error != null) ...[
                       Text(
                         widget.moments.error!,
@@ -627,10 +910,17 @@ class _MomentDraftSheetState extends State<_MomentDraftSheet> {
                       ),
                       const SizedBox(height: 8),
                     ],
-                    FilledButton(
-                      onPressed: widget.moments.saving ? null : _save,
-                      child: Text(widget.moments.saving ? '正在保存…' : '保存私人草稿'),
-                    ),
+                    if (widget.existing == null &&
+                        widget.moments.creationUncertain)
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, false),
+                        child: const Text('返回列表检查保存结果'),
+                      )
+                    else
+                      FilledButton(
+                        onPressed: widget.moments.saving ? null : _save,
+                        child: Text(widget.moments.saving ? '正在保存…' : '保存私人草稿'),
+                      ),
                     if (widget.existing != null)
                       TextButton(
                         onPressed: widget.moments.saving ? null : _withdraw,
@@ -652,11 +942,19 @@ class _MyBirdtiePage extends StatelessWidget {
     required this.auth,
     required this.moments,
     required this.city,
+    this.client,
+    this.apiBaseUrl,
+    this.workspaceChanges,
+    this.organizationWorkspaceID,
   });
 
   final BirdtieAuthController auth;
   final PrivateMomentController moments;
   final PublicCityController city;
+  final http.Client? client;
+  final String? apiBaseUrl;
+  final Listenable? workspaceChanges;
+  final String? Function()? organizationWorkspaceID;
 
   Future<void> _openDevPhoneLogin(BuildContext context) async {
     await showModalBottomSheet<void>(
@@ -670,18 +968,66 @@ class _MyBirdtiePage extends StatelessWidget {
 
   Future<void> _createMoment(BuildContext context) async {
     final selected = city.selectedCity;
+    final draftToken = auth.authorizationHeader;
+    final draftOwner = auth.accountID;
     if (!auth.signedIn || selected == null) return;
-    await showModalBottomSheet<bool>(
-      context: context,
-      isScrollControlled: true,
-      showDragHandle: true,
-      backgroundColor: _surface,
-      builder: (context) => _MomentDraftSheet(
-        cityID: selected.id,
-        cityName: selected.name,
-        moments: moments,
-      ),
-    );
+    var retired = false;
+    bool current() =>
+        !retired &&
+        context.mounted &&
+        auth.signedIn &&
+        auth.accountID == draftOwner &&
+        auth.authorizationHeader == draftToken;
+    void observeActor() {
+      if (!current()) retired = true;
+    }
+    auth.addListener(observeActor);
+    try {
+      if (moments.creationUncertain) {
+        await moments.refresh();
+        if (!context.mounted || !current()) return;
+        final checked = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('先检查上次保存结果'),
+            content: const Text('上次保存的结果尚未确认。请检查私人草稿列表；再次保存同一内容可能产生重复草稿。'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('返回检查'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('已检查，仍要新建'),
+              ),
+            ],
+          ),
+        );
+        if (checked != true || !current()) {
+          return;
+        }
+        moments.confirmCreationChecked();
+      }
+      if (!context.mounted || !current()) return;
+      await showModalBottomSheet<bool>(
+        context: context,
+        isScrollControlled: true,
+        showDragHandle: true,
+        backgroundColor: _surface,
+        builder: (context) => _MomentDraftSheet(
+          cityID: selected.id,
+          cityName: selected.name,
+          moments: moments,
+          places: city.places,
+          activities: city.activities,
+          auth: auth,
+          client:client,apiBaseUrl:apiBaseUrl,
+          workspaceChanges:workspaceChanges,organizationWorkspaceID:organizationWorkspaceID,
+        ),
+      );
+    } finally {
+      auth.removeListener(observeActor);
+    }
   }
 
   Future<void> _editMoment(BuildContext context, PrivateMoment moment) async {
@@ -697,15 +1043,20 @@ class _MyBirdtiePage extends StatelessWidget {
         cityID: moment.cityID,
         cityName: cityNames.isEmpty ? moment.cityID : cityNames.first,
         moments: moments,
+        places: city.places,
+        activities: city.activities,
+        auth: auth,
         existing: moment,
+        client:client,apiBaseUrl:apiBaseUrl,
+        workspaceChanges:workspaceChanges,organizationWorkspaceID:organizationWorkspaceID,
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) => _PageFrame(
-    eyebrow: 'MY BIRDTIE',
-    title: 'Your city life, on your terms',
+    eyebrow: '我的 Birdtie',
+    title: '按自己的方式体验城市生活',
     subtitle: '个人资料、公开经历、收藏和私人素材会在同一处管理。',
     child: AnimatedBuilder(
       animation: Listenable.merge([auth, moments]),
@@ -716,9 +1067,7 @@ class _MyBirdtiePage extends StatelessWidget {
             icon: auth.signedIn
                 ? Icons.verified_user_outlined
                 : Icons.person_outline,
-            title: auth.signedIn
-                ? (auth.displayName ?? 'Birdtie account')
-                : 'Account not connected',
+            title: auth.signedIn ? (auth.displayName ?? 'Birdtie 账号') : '账号未连接',
             detail: auth.signedIn
                 ? auth.loginMethod == 'dev_phone'
                       ? '本地测试会话；手机号所有权尚未验证。'
@@ -734,12 +1083,12 @@ class _MyBirdtiePage extends StatelessWidget {
           if (auth.signedIn)
             OutlinedButton(
               onPressed: auth.busy ? null : auth.signOut,
-              child: const Text('Sign out'),
+              child: const Text('退出登录'),
             ),
           if (!auth.signedIn && auth.available)
             FilledButton(
               onPressed: auth.busy ? null : auth.signIn,
-              child: Text(auth.busy ? 'Connecting…' : 'Sign in'),
+              child: Text(auth.busy ? '正在连接…' : '登录'),
             ),
           if (!auth.signedIn && auth.devPhoneAvailable)
             FilledButton(
@@ -755,11 +1104,18 @@ class _MyBirdtiePage extends StatelessWidget {
             ),
           const SizedBox(height: 28),
           if (auth.signedIn) ...[
-            PublicIntentSection(auth: auth, city: city),
+            PublicIntentSection(
+              auth: auth,
+              city: city,
+              client: client,
+              apiBaseUrl: apiBaseUrl,
+              workspaceChanges: workspaceChanges,
+              organizationWorkspaceID: organizationWorkspaceID,
+            ),
             const SizedBox(height: 28),
             Row(
               children: [
-                const Expanded(child: _SectionLabel('PRIVATE MOMENT DRAFTS')),
+                const Expanded(child: _SectionLabel('我的动态与草稿')),
                 TextButton(
                   onPressed: city.selectedCity == null
                       ? null
@@ -774,11 +1130,11 @@ class _MyBirdtiePage extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             if (moments.loading && moments.moments.isEmpty)
-              const Text('正在读取私人草稿…', style: TextStyle(color: _muted))
+              const Text('正在读取我的动态与草稿…', style: TextStyle(color: _muted))
             else if (moments.error != null)
               Text(moments.error!, style: const TextStyle(color: _copper))
             else if (moments.moments.isEmpty)
-              const Text('还没有私人 Moment 草稿。', style: TextStyle(color: _muted))
+              const Text('还没有动态或草稿。', style: TextStyle(color: _muted))
             else
               for (final moment in moments.moments) ...[
                 const Divider(height: 22),
@@ -799,10 +1155,23 @@ class _MyBirdtiePage extends StatelessWidget {
                 ],
                 const SizedBox(height: 4),
                 Text(
-                  '仅自己可见 · ${moment.status}',
+                  '${moment.visibilityLabel} · ${moment.statusLabel} · ${moment.time.label}',
                   style: const TextStyle(color: _muted, fontSize: 12),
                 ),
-                if (moment.isTextOnlyDraft)
+                if (moment.createdAt != null)
+                  Text(
+                    '创建于 ${moment.createdAt!.toIso8601String().replaceFirst('T', ' ')}（UTC）',
+                    style: const TextStyle(color: _muted, fontSize: 12),
+                  ),
+                if (moment.placeID.isNotEmpty ||
+                    moment.activityIDs.isNotEmpty ||
+                    moment.communityID.isNotEmpty ||
+                    moment.organizationID.isNotEmpty)
+                  Text(
+                    '已关联${[if (moment.placeID.isNotEmpty) '地点', if (moment.activityIDs.isNotEmpty) '活动', if (moment.communityID.isNotEmpty) '社群', if (moment.organizationID.isNotEmpty) '组织'].join('、')}',
+                    style: const TextStyle(color: _muted, fontSize: 12),
+                  ),
+                if (moment.isEditableDraft)
                   TextButton(
                     onPressed: moments.saving
                         ? null
@@ -812,18 +1181,11 @@ class _MyBirdtiePage extends StatelessWidget {
               ],
             const SizedBox(height: 28),
           ],
-          const _SectionLabel('PRIVATE WORKSPACE'),
+          const _SectionLabel('资料与身份'),
           const SizedBox(height: 8),
-          const _WorkspaceRow(
-            icon: Icons.auto_awesome_outlined,
-            title: 'Personal Agent',
-            detail: '私人资料整理、授权和可审阅草稿',
-          ),
-          const Divider(height: 1),
-          const _WorkspaceRow(
-            icon: Icons.apartment_outlined,
-            title: 'Organization / City workspace',
-            detail: '仅对有维护权限的组织成员开放',
+          const Text(
+            '个人资料由本人管理。组织工作区请从侧栏切换到已授权的组织；城市只用于公开内容浏览。',
+            style: TextStyle(color: _muted, height: 1.45),
           ),
         ],
       ),
@@ -1014,26 +1376,5 @@ class _EmptySection extends StatelessWidget {
         ),
       ],
     ),
-  );
-}
-
-class _WorkspaceRow extends StatelessWidget {
-  const _WorkspaceRow({
-    required this.icon,
-    required this.title,
-    required this.detail,
-  });
-
-  final IconData icon;
-  final String title;
-  final String detail;
-
-  @override
-  Widget build(BuildContext context) => ListTile(
-    contentPadding: EdgeInsets.zero,
-    leading: Icon(icon, color: _forest),
-    title: Text(title, style: const TextStyle(color: _forest)),
-    subtitle: Text(detail, style: const TextStyle(color: _muted)),
-    trailing: const Text('规划中', style: TextStyle(color: _muted, fontSize: 12)),
   );
 }

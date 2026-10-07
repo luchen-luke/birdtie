@@ -92,7 +92,7 @@ func (s *Store) VerifyDevPhoneChallenge(ctx context.Context, phoneDigest [32]byt
 		}
 		if _, err := tx.Exec(ctx, `INSERT INTO user_profiles
             (account_id, display_name, visibility)
-            VALUES ($1, 'Birdtie tester', 'private')`, accountID); err != nil {
+            VALUES ($1, 'Birdtie 测试用户', 'private')`, accountID); err != nil {
 			return err
 		}
 		if _, err := tx.Exec(ctx, `INSERT INTO account_auth_identities

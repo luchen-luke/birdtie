@@ -73,7 +73,7 @@ func (s *Store) SubmitIntent(ctx context.Context, ownerID, cityID string, input 
 	if err != nil {
 		return intent.Record{}, err
 	}
-	_, err = tx.Exec(ctx, `INSERT INTO audit_events
+	_, err = auditExec(ctx, tx, `INSERT INTO audit_events
         (actor_account_id, action, resource_type, resource_id, decision, purpose)
 		VALUES ($1, 'publish', 'intent', $2, 'allowed', 'owner_confirmed')`, ownerID, record.ID)
 	if err != nil {
@@ -119,7 +119,7 @@ func (s *Store) WithdrawIntent(ctx context.Context, ownerID, id string) error {
 	if err != nil {
 		return err
 	}
-	_, err = tx.Exec(ctx, `INSERT INTO audit_events
+	_, err = auditExec(ctx, tx, `INSERT INTO audit_events
         (actor_account_id, action, resource_type, resource_id, decision, purpose)
         VALUES ($1, 'withdraw', 'intent', $2, 'allowed', 'owner_request')`, ownerID, withdrawnID)
 	if err != nil {

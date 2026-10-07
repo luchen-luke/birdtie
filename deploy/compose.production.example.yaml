@@ -1,0 +1,31 @@
+# Deployment skeleton only. Use a managed PostgreSQL service or provision the
+# database separately. This file intentionally has no database password/image
+# tag; pin the reviewed API image by immutable digest before production use.
+services:
+  api:
+    image: ${BIRDTIE_API_IMAGE:?Set reviewed immutable API image digest}
+    restart: unless-stopped
+    env_file:
+      - ${BIRDTIE_ENV_FILE:?Set path to protected environment file}
+    environment:
+      BIRDTIE_API_ADDR: 0.0.0.0:8080
+      BIRDTIE_DEV_PHONE_AUTH: "false"
+    expose:
+      - "8080"
+    healthcheck:
+      # Requires curl in the reviewed application image. If the minimal image
+      # omits curl, use the orchestrator's HTTP probe instead of this command.
+      test: ["CMD-SHELL", "curl --fail --silent http://127.0.0.1:8080/readyz || exit 1"]
+      interval: 15s
+      timeout: 3s
+      retries: 4
+      start_period: 20s
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "5"
+
+# TLS terminates at the separately managed Nginx/reverse proxy. Ensure curl is
+# present in the reviewed image or replace this with a platform-native probe.
+# PostgreSQL and media object storage are deliberately separate services.

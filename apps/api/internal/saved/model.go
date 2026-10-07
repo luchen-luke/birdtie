@@ -3,6 +3,7 @@ package saved
 import (
 	"context"
 	"errors"
+	ea "github.com/birdtie/birdtie/apps/api/internal/entityaction"
 	"time"
 )
 
@@ -17,6 +18,11 @@ type Item struct {
 	CityID    string    `json:"cityId"`
 	Available bool      `json:"available"`
 	SavedAt   time.Time `json:"savedAt"`
+}
+
+type BoundStore interface {
+	SaveBound(context.Context, ea.Access, string, string, ea.BoundCondition) (string, error)
+	RemoveSavedBound(context.Context, ea.Access, string, ea.BoundCondition) error
 }
 
 type Store interface {

@@ -168,6 +168,16 @@ class RemoteAgentTaskSource extends AgentTaskSource {
               latitude: location.latitude!,
               longitude: location.longitude!,
             ),
+      for (final place in places)
+        if (place.location.hasPublicPoint)
+          MapEntity(
+            id: 'place:${place.id}',
+            kind: MapEntityKind.place,
+            title: place.name,
+            subtitle: '${place.categoryCode} · ${place.source.label}',
+            latitude: place.location.latitude!,
+            longitude: place.location.longitude!,
+          ),
       for (final raw in data['groups'] as List<dynamic>)
         if ((raw as Map<String, dynamic>)['location']
             case final Map<String, dynamic> location)

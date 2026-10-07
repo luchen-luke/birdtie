@@ -10,6 +10,8 @@ Birdtie 当前身份和 Agent 权限边界以 [Accepted Agent Identity and Owner
 
 2026-09-30 边界修正：根据产品方决定，Group 和公开 Intent 的独立人工审核已由 ADR 0011 取代为本人确认后直接发布。此修正只修改 Birdtie 自有代码、迁移和文档，没有新增 Civu 复用；Place/Activity 的 City Seed 来源审核保持原边界。
 
+2026-10-07 Agent priority correction: Base Agent retrieval/card/map/multi-turn is the next product slice and must reconcile with shared AIR/AGE and the existing Birdtie task queue before adding providers. Preserve current principal ownership, task IDs, filters, conversation and stored state. A targeted code reuse still is not approved by this priority change. Place catalog/data remain non-portable; only provider/resolver boundaries are candidates for Birdtie adapters after rights, attribution, freshness and privacy review. Moment/Post remains a Birdtie-native rewrite; EXIF parsing may be selectively extracted only after file/license review, and upload/storage stays behind Birdtie's quarantine/private/public contract. Existing Birdtie Owner-only Saved is already a first-party capability and should be reused directly; Civu bookmark schema or user data is not a source of authority. Civu Moment/Post, media geolocation and Saved implementation files have not been inspected for this narrow task, so no file-level reuse or license conclusion is made.
+
 审计日期：2026-09-29  
 状态：完成路径、依赖、Git 状态及关键代码的只读盘点；未执行构建/测试、未连接生产环境、未复制或修改 Civu 文件。  
 参考仓：`D:\Program\Civu`；Birdtie 正式仓：`D:\Project\birdtie`。

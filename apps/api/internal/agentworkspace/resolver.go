@@ -17,11 +17,22 @@ type IntentContext struct {
 // It is deterministic so a future runtime can replace it without changing clients.
 func ResolveIntent(query string, current *Task) IntentContext {
 	text := strings.ToLower(strings.TrimSpace(query))
-	if current != nil && current.Intent == FindActivity && strings.Contains(text, "closer") {
+	if current != nil && current.Intent == FindActivity {
 		filters := current.Filters
-		return IntentContext{
-			Intent: FindActivity, Category: filters["category"],
-			TimePreference: filters["timePreference"], DistancePreference: "closer", Supported: true,
+		preference := filters["distancePreference"]
+		if strings.Contains(text, "closer") || strings.Contains(text, "nearer") {
+			preference = "closer"
+		}
+		if strings.Contains(text, "farther") || strings.Contains(text, "further") {
+			preference = ""
+		}
+		if filters["category"] != "" {
+			// A short follow-up inherits the active search filters instead of
+			// being reinterpreted as a brand-new unsupported request.
+			return IntentContext{
+				Intent: FindActivity, Category: filters["category"],
+				TimePreference: filters["timePreference"], DistancePreference: preference, Supported: true,
+			}
 		}
 	}
 	if !strings.Contains(text, "badminton") {

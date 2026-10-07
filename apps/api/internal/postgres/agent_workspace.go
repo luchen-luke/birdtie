@@ -11,6 +11,32 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
+func (s *Store) SearchPlaces(ctx context.Context, cityID string, terms []string) ([]foundation.Place, error) {
+	result := make([]foundation.Place, 0)
+	if len(terms) == 0 {
+		return result, nil
+	}
+	rows, err := s.pool.Query(ctx, `SELECT `+placeColumns+`
+        FROM places p JOIN cities c ON c.id = p.city_id AND c.publication_status = 'published'
+        WHERE p.city_id = $1 AND p.publication_status = 'published'
+          AND (p.expires_at IS NULL OR p.expires_at > now())
+          AND EXISTS (SELECT 1 FROM unnest($2::text[]) term
+              WHERE strpos(lower(p.name || ' ' || p.summary || ' ' || p.category_code), term) > 0)
+        ORDER BY p.name, p.id LIMIT 30`, cityID, terms)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		place, err := scanPlace(rows)
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, place)
+	}
+	return result, rows.Err()
+}
+
 func (s *Store) Search(ctx context.Context, cityID, viewerID string, terms []string) (agentworkspace.Results, error) {
 	result := agentworkspace.Results{
 		CityID: cityID, Mode: "rules",

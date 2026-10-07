@@ -19,6 +19,16 @@ func TestResolveIntentCarriesContextForCloserFollowUp(t *testing.T) {
 	}
 }
 
+func TestResolveIntentCarriesContextForUnqualifiedFollowUp(t *testing.T) {
+	current := &Task{Intent: FindActivity, Filters: map[string]string{
+		"category": "badminton", "timePreference": "weekend", "distancePreference": "closer",
+	}}
+	got := ResolveIntent("Show me those", current)
+	if !got.Supported || got.Category != "badminton" || got.TimePreference != "weekend" || got.DistancePreference != "closer" {
+		t.Fatalf("follow-up did not preserve task filters: %#v", got)
+	}
+}
+
 func TestResolveIntentDoesNotInventUnsupportedCapabilities(t *testing.T) {
 	got := ResolveIntent("Find a restaurant", nil)
 	if got.Supported || got.Intent != UnsupportedIntent {

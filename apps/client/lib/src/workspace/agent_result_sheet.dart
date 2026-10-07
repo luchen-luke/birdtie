@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 
+import '../city/map_link.dart';
 import 'agent_conversation.dart';
 import 'agent_workspace_controller.dart';
 import 'activity_plans.dart';
+import 'map_entities.dart';
 import 'saved_items.dart';
 
 class AgentResultSheet extends StatelessWidget {
@@ -278,7 +280,15 @@ class _ResultList extends StatelessWidget {
             _Row(
               icon: Icons.place_outlined,
               title: place.name,
-              subtitle: 'Published City API · ${place.source.label}',
+              subtitle: [
+                if (place.summary.isNotEmpty) place.summary,
+                place.source.label,
+                if (place.source.maintainer.isNotEmpty) place.source.maintainer,
+                'freshness: ${place.source.freshness}',
+              ].join(' · '),
+              onSource: place.source.reference.isEmpty
+                  ? null
+                  : () => openExternalSource(place.source.reference),
               onTap: place.location.hasPublicPoint
                   ? () => workspace.selectEntity('place:${place.id}')
                   : null,
@@ -301,6 +311,22 @@ class _ResultList extends StatelessWidget {
               style: const TextStyle(color: Color(0xFF747B73)),
             ),
           ),
+        if (result.entities.isNotEmpty) ...[
+          const _Heading('Map results'),
+          for (final entity in result.entities)
+            _Row(
+              icon: switch (entity.kind) {
+                MapEntityKind.person => Icons.person_outline,
+                MapEntityKind.activity => Icons.event_outlined,
+                MapEntityKind.group => Icons.group_outlined,
+                MapEntityKind.place => Icons.place_outlined,
+                MapEntityKind.peopleCluster => Icons.groups_outlined,
+              },
+              title: entity.title,
+              subtitle: '${entity.subtitle} · map result',
+              onTap: () => workspace.selectEntity(entity.id),
+            ),
+        ],
       ],
     );
   }
@@ -332,6 +358,7 @@ class _Row extends StatelessWidget {
     this.onSave,
     this.onPlan,
     this.onContact,
+    this.onSource,
     this.saved = false,
     this.saving = false,
     this.planned = false,
@@ -344,6 +371,7 @@ class _Row extends StatelessWidget {
   final VoidCallback? onSave;
   final VoidCallback? onPlan;
   final VoidCallback? onContact;
+  final VoidCallback? onSource;
   final bool saved;
   final bool saving;
   final bool planned;
@@ -358,11 +386,21 @@ class _Row extends StatelessWidget {
       leading: Icon(icon, color: const Color(0xFF193B32)),
       title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
       subtitle: Text(subtitle, maxLines: 2, overflow: TextOverflow.ellipsis),
-      trailing: onSave == null && onPlan == null && onContact == null
+      trailing:
+          onSave == null &&
+              onPlan == null &&
+              onContact == null &&
+              onSource == null
           ? (onTap == null ? null : const Icon(Icons.arrow_outward, size: 16))
           : Row(
               mainAxisSize: MainAxisSize.min,
               children: [
+                if (onSource != null)
+                  IconButton(
+                    tooltip: 'Open source',
+                    onPressed: onSource,
+                    icon: const Icon(Icons.open_in_new, size: 18),
+                  ),
                 if (onContact != null)
                   IconButton(
                     tooltip: 'Request contact',

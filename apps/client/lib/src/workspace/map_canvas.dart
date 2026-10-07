@@ -33,27 +33,22 @@ class MapCanvas extends StatelessWidget {
       );
     }
     final entities = workspace.task == null
-              ? [
-                  for (final activity in city.activities.take(8))
-                    if (activity.status == 'upcoming' ||
-                        activity.status == 'ongoing')
-                      if (activity.location case final location?)
-                        if (location.hasPublicPoint)
-                          MapEntity(
-                            id: 'activity:${activity.id}',
-                            kind: MapEntityKind.activity,
-                            title: activity.title,
-                            subtitle: activity.status,
-                            latitude: location.latitude!,
-                            longitude: location.longitude!,
-                          ),
-                ]
-              : workspace.result?.entities ?? const <MapEntity>[];
-    final places =
-        workspace.result?.places
-            .where((place) => place.location.hasPublicPoint)
-            .toList() ??
-        const <PublicPlace>[];
+        ? [
+            for (final activity in city.activities.take(8))
+              if (activity.status == 'upcoming' || activity.status == 'ongoing')
+                if (activity.location case final location?)
+                  if (location.hasPublicPoint)
+                    MapEntity(
+                      id: 'activity:${activity.id}',
+                      kind: MapEntityKind.activity,
+                      title: activity.title,
+                      subtitle: activity.status,
+                      latitude: location.latitude!,
+                      longitude: location.longitude!,
+                    ),
+          ]
+        : workspace.result?.entities ?? const <MapEntity>[];
+    const places = <PublicPlace>[];
     return Stack(
       children: [
         Positioned.fill(
@@ -62,7 +57,7 @@ class MapCanvas extends StatelessWidget {
             places: places,
             entities: entities,
             selectedEntityId: workspace.selectedEntityId,
-            contextKey: workspace.task?.id ?? 'idle',
+            contextKey: workspace.task == null ? 'idle' : 'task',
             onEntitySelected: (entity) {
               if (workspace.task == null) {
                 unawaited(

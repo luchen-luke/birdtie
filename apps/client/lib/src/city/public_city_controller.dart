@@ -7,18 +7,21 @@ import 'package:http/http.dart' as http;
 class PublicSource {
   const PublicSource({
     required this.label,
+    this.reference = '',
     required this.maintainer,
     required this.freshness,
     required this.updatedAt,
   });
 
   final String label;
+  final String reference;
   final String maintainer;
   final String freshness;
   final DateTime? updatedAt;
 
   factory PublicSource.fromJson(Map<String, dynamic> json) => PublicSource(
     label: json['label'] as String? ?? '',
+    reference: json['reference'] as String? ?? '',
     maintainer: json['maintainer'] as String? ?? '',
     freshness: json['freshness'] as String? ?? 'unverified',
     updatedAt: DateTime.tryParse(json['updatedAt'] as String? ?? ''),

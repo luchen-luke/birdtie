@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../city/map_link.dart';
 import 'agent_workspace_controller.dart';
 
 class AgentConversation extends StatelessWidget {
@@ -25,8 +26,10 @@ class AgentConversation extends StatelessWidget {
         ),
         const SizedBox(height: 18),
       ],
-      const Text(
-        'Birdtie preview',
+      Text(
+        workspace.result?.taskID == null
+            ? 'Birdtie local context'
+            : 'Birdtie search',
         style: TextStyle(fontWeight: FontWeight.w700, color: Color(0xFF193B32)),
       ),
       const SizedBox(height: 8),
@@ -34,6 +37,37 @@ class AgentConversation extends StatelessWidget {
         workspace.result?.note ?? 'Looking for local context…',
         style: const TextStyle(height: 1.5),
       ),
+      for (final activity in workspace.result?.activities ?? const []) ...[
+        const SizedBox(height: 12),
+        Text(
+          activity.title,
+          style: const TextStyle(fontWeight: FontWeight.w600),
+        ),
+        Text(
+          '${activity.schedule} · ${activity.placeName} · ${activity.source.label}',
+          style: const TextStyle(fontSize: 12, color: Color(0xFF747B73)),
+        ),
+        if (activity.source.reference.startsWith('http'))
+          TextButton.icon(
+            onPressed: () => openExternalSource(activity.source.reference),
+            icon: const Icon(Icons.open_in_new, size: 16),
+            label: Text('Open source · ${activity.source.label}'),
+          ),
+      ],
+      for (final place in workspace.result?.places ?? const []) ...[
+        const SizedBox(height: 12),
+        Text(place.name, style: const TextStyle(fontWeight: FontWeight.w600)),
+        Text(
+          '${place.summary} · ${place.source.label} · ${place.source.freshness}',
+          style: const TextStyle(fontSize: 12, color: Color(0xFF747B73)),
+        ),
+        if (place.source.reference.startsWith('http'))
+          TextButton.icon(
+            onPressed: () => openExternalSource(place.source.reference),
+            icon: const Icon(Icons.open_in_new, size: 16),
+            label: Text('Open source · ${place.source.label}'),
+          ),
+      ],
       const SizedBox(height: 14),
       Text(
         workspace.task?.intent == 'FIND_ACTIVITY'

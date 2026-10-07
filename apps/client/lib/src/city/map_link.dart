@@ -3,3 +3,5 @@ import 'map_link_stub.dart'
     as platform;
 
 void openMapAttribution(String address) => platform.openMapAttribution(address);
+
+void openExternalSource(String address) => platform.openExternalSource(address);

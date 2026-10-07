@@ -51,11 +51,96 @@ class PublicCityMapView extends StatefulWidget {
 
 class _PublicCityMapViewState extends State<PublicCityMapView> {
   bool _tilesFailed = false;
+  final MapController _mapController = MapController();
+  String _focusedContext = '';
+  String _focusedResultSignature = '';
 
   @override
   void didUpdateWidget(covariant PublicCityMapView oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.city.id != widget.city.id) _tilesFailed = false;
+    final resultChanged =
+        oldWidget.contextKey != widget.contextKey ||
+        oldWidget.entities.map((entity) => entity.id).join(',') !=
+            widget.entities.map((entity) => entity.id).join(',') ||
+        oldWidget.places.map((place) => place.id).join(',') !=
+            widget.places.map((place) => place.id).join(',');
+    if (oldWidget.selectedEntityId != widget.selectedEntityId) {
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => _focusContext(selectedOnly: true),
+      );
+    } else if (resultChanged) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _focusContext());
+    }
+  }
+
+  void _focusContext({bool selectedOnly = false}) {
+    if (!mounted) return;
+    final viewport = widget.city.map;
+    if (viewport == null) return;
+    final context = widget.contextKey;
+    final selected = widget.entities.where(
+      (entity) => entity.id == widget.selectedEntityId,
+    );
+    final selectedPlace = widget.places.where(
+      (place) =>
+          'place:${place.id}' == widget.selectedEntityId &&
+          place.location.hasPublicPoint,
+    );
+    if (selected.isNotEmpty) {
+      _mapController.move(
+        LatLng(selected.first.latitude, selected.first.longitude),
+        14,
+      );
+      return;
+    }
+    if (selectedPlace.isNotEmpty) {
+      _mapController.move(
+        LatLng(
+          selectedPlace.first.location.latitude!,
+          selectedPlace.first.location.longitude!,
+        ),
+        14,
+      );
+      return;
+    }
+    if (selectedOnly) return;
+    final signature = [
+      ...widget.entities.map((entity) => entity.id),
+      ...widget.places.map((place) => 'place:${place.id}'),
+    ]..sort();
+    final resultSignature = signature.join(',');
+    if (context == _focusedContext &&
+        resultSignature == _focusedResultSignature) {
+      return;
+    }
+    _focusedContext = context;
+    _focusedResultSignature = resultSignature;
+    if (context == 'idle') {
+      _mapController.move(
+        LatLng(viewport.latitude, viewport.longitude),
+        viewport.defaultZoom,
+      );
+      return;
+    }
+    final points = <LatLng>{
+      for (final entity in widget.entities)
+        LatLng(entity.latitude, entity.longitude),
+      for (final place in widget.places)
+        if (place.location.hasPublicPoint)
+          LatLng(place.location.latitude!, place.location.longitude!),
+    }.toList();
+    if (points.length == 1) {
+      _mapController.move(points.single, 12.8);
+    } else if (points.length > 1) {
+      _mapController.fitCamera(
+        CameraFit.bounds(
+          bounds: LatLngBounds.fromPoints(points),
+          padding: const EdgeInsets.fromLTRB(48, 150, 48, 180),
+          maxZoom: 14,
+        ),
+      );
+    }
   }
 
   @override
@@ -66,9 +151,7 @@ class _PublicCityMapViewState extends State<PublicCityMapView> {
     }
     if (viewport.provider == 'amap') {
       return AMapCityMapView(
-        key: ValueKey(
-          '${widget.city.id}-${widget.contextKey}-${widget.selectedEntityId}-${widget.entities.map((e) => e.id).join(',')}-${widget.places.map((p) => p.id).join(',')}',
-        ),
+        key: ValueKey(widget.city.id),
         city: widget.city,
         places: widget.places,
         entities: widget.entities,
@@ -113,14 +196,6 @@ class _PublicCityMapViewState extends State<PublicCityMapView> {
         if (place.location.hasPublicPoint)
           LatLng(place.location.latitude!, place.location.longitude!),
     ];
-    final mapCenter = taskPoints.isEmpty
-        ? LatLng(viewport.latitude, viewport.longitude)
-        : LatLng(
-            taskPoints.map((point) => point.latitude).reduce((a, b) => a + b) /
-                taskPoints.length,
-            taskPoints.map((point) => point.longitude).reduce((a, b) => a + b) /
-                taskPoints.length,
-          );
     final distinctTaskPoints = taskPoints.toSet();
     final points = widget.places.where(
       (place) => place.location.hasPublicPoint,
@@ -132,13 +207,13 @@ class _PublicCityMapViewState extends State<PublicCityMapView> {
         child: Stack(
           children: [
             FlutterMap(
-              key: ValueKey(
-                '${widget.city.id}-${widget.contextKey}-${widget.entities.map((e) => e.id).join(',')}-${widget.places.map((p) => p.id).join(',')}',
-              ),
+              key: ValueKey(widget.city.id),
+              mapController: _mapController,
               options: MapOptions(
-                initialCenter: mapCenter,
-                initialZoom: taskPoints.isEmpty ? viewport.defaultZoom : 12.8,
-                initialCameraFit: distinctTaskPoints.length > 1
+                initialCenter: LatLng(viewport.latitude, viewport.longitude),
+                initialZoom: viewport.defaultZoom,
+                initialCameraFit:
+                    widget.contextKey != 'idle' && distinctTaskPoints.length > 1
                     ? CameraFit.bounds(
                         bounds: LatLngBounds.fromPoints(taskPoints),
                         padding: const EdgeInsets.fromLTRB(48, 150, 48, 180),

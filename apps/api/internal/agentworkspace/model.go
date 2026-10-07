@@ -76,6 +76,7 @@ type Message struct {
 
 type Store interface {
 	Search(context.Context, string, string, []string) (Results, error)
+	SearchPlaces(context.Context, string, []string) ([]foundation.Place, error)
 	SaveTask(context.Context, Task) (Task, error)
 	UpdateTask(context.Context, Task) (Task, error)
 	ListTasks(context.Context, string) ([]Task, error)

@@ -42,6 +42,8 @@ class _NativeCityMapViewState extends State<NativeCityMapView> {
   CircleAnnotationManager? _markers;
   bool _styleReady = false;
   late final CameraViewportState _initialViewport;
+  String _focusedContextKey = '';
+  String _focusedResultSignature = '';
 
   @override
   void initState() {
@@ -67,17 +69,35 @@ class _NativeCityMapViewState extends State<NativeCityMapView> {
         oldWidget.selectedEntityId != widget.selectedEntityId) {
       unawaited(_refreshMarkers());
     }
-    if (oldWidget.contextKey != widget.contextKey ||
-        oldWidget.places != widget.places ||
-        oldWidget.entities != widget.entities ||
-        oldWidget.selectedEntityId != widget.selectedEntityId) {
+    final resultChanged =
+        oldWidget.contextKey != widget.contextKey ||
+        oldWidget.places.map((place) => place.id).join(',') !=
+            widget.places.map((place) => place.id).join(',') ||
+        oldWidget.entities.map((entity) => entity.id).join(',') !=
+            widget.entities.map((entity) => entity.id).join(',');
+    if (oldWidget.selectedEntityId != widget.selectedEntityId) {
+      unawaited(_focusContext(selectedOnly: true));
+    } else if (resultChanged) {
       unawaited(_focusContext());
     }
   }
 
-  Future<void> _focusContext() async {
+  Future<void> _focusContext({bool selectedOnly = false}) async {
     final map = _map;
     if (map == null) return;
+    if (!selectedOnly) {
+      final signature = [
+        ...widget.entities.map((entity) => entity.id),
+        ...widget.places.map((place) => 'place:${place.id}'),
+      ]..sort();
+      final resultSignature = signature.join(',');
+      if (_focusedContextKey == widget.contextKey &&
+          _focusedResultSignature == resultSignature) {
+        return;
+      }
+      _focusedContextKey = widget.contextKey;
+      _focusedResultSignature = resultSignature;
+    }
     if (widget.contextKey == 'idle') {
       final viewport = widget.city.map!;
       await map.flyTo(
@@ -106,6 +126,7 @@ class _NativeCityMapViewState extends State<NativeCityMapView> {
           'place:${place.id}' == widget.selectedEntityId &&
           place.location.hasPublicPoint,
     );
+    if (selectedOnly && selected.isEmpty && selectedPlace.isEmpty) return;
     final latitude = selected.isNotEmpty
         ? selected.first.latitude
         : selectedPlace.isNotEmpty

@@ -75,6 +75,10 @@ func (s *server) createAgentTask(w http.ResponseWriter, r *http.Request) {
 			respondError(w, http.StatusConflict, "task_city_mismatch")
 			return
 		}
+		if task.PrincipalType != principalType || task.PrincipalID != principalID {
+			respondError(w, http.StatusNotFound, "not_found")
+			return
+		}
 		task.Conversation = append(task.Conversation, agentworkspace.Message{Role: "user", Text: query})
 		task.Status = agentworkspace.TaskActive
 	} else {
@@ -134,7 +138,7 @@ func (s *server) createAgentTask(w http.ResponseWriter, r *http.Request) {
 	}
 	if intent.DistancePreference != "" {
 		task.Filters["distancePreference"] = intent.DistancePreference
-	} else if input.TaskID != "" {
+	} else {
 		delete(task.Filters, "distancePreference")
 	}
 	if actor.ID != "" {
@@ -164,6 +168,12 @@ func (s *server) createAgentTask(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	result := activityResults(cityID, query, intent, activities)
+	places, searchErr := s.agent.SearchPlaces(r.Context(), cityID, []string{intent.Category})
+	if searchErr != nil {
+		serverError(w, searchErr)
+		return
+	}
+	result.Places = places
 	result = workspaceEnvelope(result, task, actor.ID != "", principalType, workspace, role, permissions)
 	if intent.DistancePreference == "closer" {
 		result.Note = "Showing matching badminton activities ordered by distance from the city centre; device location is not used."
@@ -224,6 +234,16 @@ func (s *server) getAgentTask(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	result := activityResults(task.CityID, task.Query, intent, activities)
+	if intent.Supported {
+		full, searchErr := s.agent.Search(r.Context(), task.CityID, actor.ID, []string{intent.Category})
+		if searchErr != nil {
+			serverError(w, searchErr)
+			return
+		}
+		result.People = full.People
+		result.Groups = full.Groups
+		result.Places = full.Places
+	}
 	if !intent.Supported {
 		result.Note = "I can currently help you find nearby activities. Try: Find badminton this weekend."
 	}

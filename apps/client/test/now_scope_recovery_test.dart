@@ -199,6 +199,14 @@ Future<void> nowBack(WidgetTester t) async {
   await t.pumpAndSettle();
 }
 
+// BT-UXR-007/010: tools are reached from the fixed account menu, not a
+// fourth top action. This helper follows the same visible navigation as a user.
+Future<void> nowOpenAccountTools(WidgetTester t) async {
+  await nowTap(t, find.byTooltip('打开侧边栏'));
+  await nowTap(t, find.byKey(const Key('sidebar-account')));
+  await nowTap(t, find.text('更多工具'));
+}
+
 void main() {
   testWidgets('实际选城模态高度在外层受限且句柄避开系统状态栏', (t) async {
     t.view.physicalSize = const Size(390, 844);
@@ -210,15 +218,16 @@ void main() {
     await f.mount(t, safeBottom: 20);
     await nowTap(t, find.text('当前：未选城市'));
     final rect = t.getRect(find.byType(BottomSheet));
-    debugPrintSynchronously((
-      jsonEncode({
+    debugPrintSynchronously(
+      (jsonEncode({
         'actualSheet': [rect.left, rect.top, rect.right, rect.bottom],
         'viewport': [390, 844],
         'safeTop': 24,
-      })).toString());
+      })).toString(),
+    );
     expect(rect.top, greaterThanOrEqualTo(24));
     expect(rect.height, lessThanOrEqualTo(844 * .7 + 48));
-    expect(find.byTooltip('取消选择城市').hitTestable(), findsOneWidget);
+    expect(find.byTooltip('取消选择城市与范围').hitTestable(), findsOneWidget);
     expect(f.source.queries, isEmpty);
     await nowBack(t);
     expect(f.city.selectedCity, isNull);
@@ -233,7 +242,7 @@ void main() {
     await nowSend(t, '找周末的地点');
     final task = f.workspace(t).task;
     await nowTap(t, find.text('选择城市继续'));
-    await nowTap(t, find.byTooltip('取消选择城市'));
+    await nowTap(t, find.byTooltip('取消选择城市与范围'));
     expect(find.byType(BottomSheet), findsNothing);
     expect(identical(f.workspace(t).task, task), true);
     expect(f.workspace(t).pendingScopeQuery, '找周末的地点');
@@ -258,7 +267,12 @@ void main() {
     final map = find.byType(PublicCityMapView);
     final element = map.evaluate().single;
     final state = t.state(map);
-    expect(find.text('选择城市'), findsOneWidget);
+    // BT-UXR-010/011: the selected-city slot is the only idle city entry.
+    expect(find.text('选择城市'), findsNothing);
+    expect(
+      find.byKey(const Key('now-city-picker')).hitTestable(),
+      findsOneWidget,
+    );
     expect(find.text('当前：未选城市'), findsOneWidget);
     await nowSend(t, 'weekend');
     final task = f.workspace(t).task;
@@ -278,9 +292,9 @@ void main() {
     expect(identical(element, map.evaluate().single), true);
     expect(identical(state, t.state(map)), true);
     await nowTap(t, find.text('选择城市继续'));
-    expect(find.text('选择城市'), findsOneWidget); // Actual picker only.
+    expect(find.text('选择城市与范围'), findsOneWidget); // Actual picker only.
     await nowBack(t);
-    expect(find.text('选择城市'), findsNothing);
+    expect(find.text('选择城市与范围'), findsNothing);
     expect(find.text('选择城市继续'), findsOneWidget);
     expect(identical(f.workspace(t).task, task), true);
     expect(f.source.queries, isEmpty);
@@ -313,7 +327,7 @@ void main() {
     expect(
       find.descendant(
         of: find.byType(BottomSheet),
-        matching: find.text('选择城市'),
+        matching: find.text('选择城市与范围'),
       ),
       findsOneWidget,
     );
@@ -399,7 +413,7 @@ void main() {
       }
       expect(f.source.queries, isEmpty);
       expect(f.workspace(t).pendingScopeQuery, isNull);
-      expect(find.text('工作身份或来源已变化，请返回当前入口重新核实。'), findsOneWidget);
+      expect(find.text('账号或工作身份已变化，请关闭后重新选择。'), findsOneWidget);
       await nowBack(t);
       await nowTap(t, find.text('当前：未选城市'));
       await nowTap(t, find.text('甲验收城市'));

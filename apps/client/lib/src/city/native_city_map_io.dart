@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 
 import 'mapbox_style.dart';
+import 'map_camera_focus.dart';
 import 'native_map_failure.dart';
 import 'public_city_controller.dart';
 import '../workspace/map_entities.dart';
@@ -70,6 +71,9 @@ class _NativeCityMapViewState extends State<NativeCityMapView> {
   String? _retrySelectionID;
   int _ornamentSerial = 0;
   int _scopeGeneration = 0;
+  int _focusSerial = 0;
+  MapCameraFocusInput? _retryFocusInput;
+  int? _retryMotionGeneration;
   late final CameraViewportState _initialViewport;
 
   @override
@@ -88,15 +92,29 @@ class _NativeCityMapViewState extends State<NativeCityMapView> {
     );
   }
 
+  MapCameraFocusInput _focusInput(NativeCityMapView view) =>
+      MapCameraFocusInput(
+        city: view.city,
+        contextKey: view.contextKey,
+        places: view.places,
+        entities: view.entities,
+        selectedEntityId: view.selectedEntityId,
+      );
+
   @override
   void didUpdateWidget(covariant NativeCityMapView oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.city?.id != widget.city?.id) {
+    final previous = _focusInput(oldWidget);
+    final current = _focusInput(widget);
+    if (!current.hasSameViewInputs(previous)) {
       _scopeGeneration++;
-      if (_styleReady) {
-        unawaited(_focusContext());
-        unawaited(_publishInitialViewport());
-      }
+      _focusSerial++;
+    }
+    if (_styleReady && current.shouldFocusAfter(previous)) {
+      unawaited(_focusContext());
+    }
+    if (_styleReady && current.cityKey != previous.cityKey) {
+      unawaited(_publishInitialViewport());
     }
     if (_styleReady && oldWidget.ornamentTop != widget.ornamentTop) {
       unawaited(_updateOrnaments());
@@ -111,97 +129,75 @@ class _NativeCityMapViewState extends State<NativeCityMapView> {
         oldWidget.selectedEntityId != widget.selectedEntityId) {
       unawaited(_refreshMarkers());
     }
-    if (oldWidget.contextKey != widget.contextKey ||
-        (widget.contextKey != 'idle' &&
-            (_placeFingerprint(oldWidget.places) !=
-                    _placeFingerprint(widget.places) ||
-                _entityFingerprint(oldWidget.entities) !=
-                    _entityFingerprint(widget.entities)))) {
-      unawaited(_focusContext());
-    }
+  }
+
+  void _invalidatePendingFocus() {
+    // Observe pointer input without competing with SDK gestures or clearing
+    // the shared entity selection, task result or user camera.
+    _focusSerial++;
+    _cameraMotionGeneration++;
   }
 
   Future<void> _focusContext() async {
     final map = _map;
-    if (map == null) return;
-    if (widget.contextKey == 'idle') {
-      final viewport = widget.city?.map;
-      if (viewport == null) return;
-      await _animateCamera(
-        map,
-        CameraOptions(
+    if (!mounted || !_styleReady || map == null) return;
+    final input = _focusInput(widget);
+    final center = input.center;
+    if (center == null) return;
+    final serial = ++_focusSerial;
+    final scope = _scopeGeneration;
+    final motion = _cameraMotionGeneration;
+    bool current() =>
+        mounted &&
+        map == _map &&
+        _styleReady &&
+        serial == _focusSerial &&
+        scope == _scopeGeneration &&
+        motion == _cameraMotionGeneration &&
+        input.hasSameViewInputs(_focusInput(widget));
+    try {
+      CameraOptions camera;
+      if (input.fitsBounds) {
+        final latitudes = input.points.map((point) => point.latitude).toList();
+        final longitudes = input.points
+            .map((point) => point.longitude)
+            .toList();
+        camera = await map.cameraForCoordinateBounds(
+          CoordinateBounds(
+            southwest: Point(
+              coordinates: Position(
+                longitudes.reduce((a, b) => a < b ? a : b),
+                latitudes.reduce((a, b) => a < b ? a : b),
+              ),
+            ),
+            northeast: Point(
+              coordinates: Position(
+                longitudes.reduce((a, b) => a > b ? a : b),
+                latitudes.reduce((a, b) => a > b ? a : b),
+              ),
+            ),
+            infiniteBounds: false,
+          ),
+          MbxEdgeInsets(top: 150, left: 48, bottom: 180, right: 48),
+          0,
+          0,
+          14,
+          null,
+        );
+      } else {
+        camera = CameraOptions(
           center: Point(
-            coordinates: Position(viewport.longitude, viewport.latitude),
+            coordinates: Position(center.longitude, center.latitude),
           ),
-          zoom: viewport.defaultZoom,
-        ),
-      );
-      return;
-    }
-    final points = <(double, double)>[
-      for (final entity in widget.entities) (entity.latitude, entity.longitude),
-      for (final place in widget.places)
-        if (place.location.hasPublicPoint)
-          (place.location.latitude!, place.location.longitude!),
-    ];
-    if (points.isEmpty) return;
-    final selected = widget.entities.where(
-      (entity) => entity.id == widget.selectedEntityId,
-    );
-    final selectedPlace = widget.places.where(
-      (place) =>
-          'place:${place.id}' == widget.selectedEntityId &&
-          place.location.hasPublicPoint,
-    );
-    final latitude = selected.isNotEmpty
-        ? selected.first.latitude
-        : selectedPlace.isNotEmpty
-        ? selectedPlace.first.location.latitude!
-        : points.map((point) => point.$1).reduce((a, b) => a + b) /
-              points.length;
-    final longitude = selected.isNotEmpty
-        ? selected.first.longitude
-        : selectedPlace.isNotEmpty
-        ? selectedPlace.first.location.longitude!
-        : points.map((point) => point.$2).reduce((a, b) => a + b) /
-              points.length;
-    if (selected.isEmpty &&
-        selectedPlace.isEmpty &&
-        points.toSet().length > 1) {
-      final latitudes = points.map((point) => point.$1).toList();
-      final longitudes = points.map((point) => point.$2).toList();
-      final camera = await map.cameraForCoordinateBounds(
-        CoordinateBounds(
-          southwest: Point(
-            coordinates: Position(
-              longitudes.reduce((a, b) => a < b ? a : b),
-              latitudes.reduce((a, b) => a < b ? a : b),
-            ),
-          ),
-          northeast: Point(
-            coordinates: Position(
-              longitudes.reduce((a, b) => a > b ? a : b),
-              latitudes.reduce((a, b) => a > b ? a : b),
-            ),
-          ),
-          infiniteBounds: false,
-        ),
-        MbxEdgeInsets(top: 150, left: 48, bottom: 180, right: 48),
-        0,
-        0,
-        14,
-        null,
-      );
+          zoom: input.zoom,
+        );
+      }
+      if (!current()) return;
       await _animateCamera(map, camera);
-      return;
+    } catch (_) {
+      // Keep the existing map/error/retry state on a transient camera API error.
+      debugPrint('Birdtie map camera focus unavailable.');
     }
-    await _animateCamera(
-      map,
-      CameraOptions(
-        center: Point(coordinates: Position(longitude, latitude)),
-        zoom: selected.isNotEmpty || selectedPlace.isNotEmpty ? 14 : 12.8,
-      ),
-    );
   }
 
   Future<void> _animateCamera(MapboxMap map, CameraOptions camera) async {
@@ -443,12 +439,21 @@ class _NativeCityMapViewState extends State<NativeCityMapView> {
     await _refreshMarkers();
     final retryCamera = _retryCamera;
     _retryCamera = null;
+    final retryInput = _retryFocusInput;
+    final sameRetryInput =
+        retryInput != null && retryInput.hasSameViewInputs(_focusInput(widget));
+    if (!mounted || map != _map) return;
     if (retryCamera != null &&
+        sameRetryInput &&
         _retryScopeGeneration == _scopeGeneration &&
         _retryContextKey == widget.contextKey &&
-        _retrySelectionID == widget.selectedEntityId) {
+        _retrySelectionID == widget.selectedEntityId &&
+        _retryMotionGeneration == _cameraMotionGeneration) {
       await map.setCamera(retryCamera);
-    } else if (firstStyle || retryCamera != null) {
+    } else if (firstStyle ||
+        (retryCamera != null &&
+            retryInput != null &&
+            _focusInput(widget).shouldFocusAfter(retryInput))) {
       await _focusContext();
     }
     unawaited(_publishInitialViewport());
@@ -488,9 +493,19 @@ class _NativeCityMapViewState extends State<NativeCityMapView> {
         setState(() {});
       }
     });
+    final retryInput = _focusInput(widget);
+    final retryScope = _scopeGeneration;
+    final retryMotion = _cameraMotionGeneration;
     try {
       final camera = await map.getCameraState();
       if (!mounted || map != _map) return;
+      if (retryScope != _scopeGeneration ||
+          retryMotion != _cameraMotionGeneration ||
+          !retryInput.hasSameViewInputs(_focusInput(widget))) {
+        _mapRetryTimer?.cancel();
+        if (_mapFailure.retryFinishedWithoutRecovery()) setState(() {});
+        return;
+      }
       _retryCamera = CameraOptions(
         center: camera.center,
         padding: camera.padding,
@@ -498,7 +513,9 @@ class _NativeCityMapViewState extends State<NativeCityMapView> {
         bearing: camera.bearing,
         pitch: camera.pitch,
       );
-      _retryScopeGeneration = _scopeGeneration;
+      _retryScopeGeneration = retryScope;
+      _retryFocusInput = retryInput;
+      _retryMotionGeneration = retryMotion;
       _retryContextKey = widget.contextKey;
       _retrySelectionID = widget.selectedEntityId;
       // Reload only provider resources on the existing native map instance.
@@ -660,16 +677,19 @@ class _NativeCityMapViewState extends State<NativeCityMapView> {
         height: widget.fullBleed ? double.infinity : 430,
         child: Stack(
           children: [
-            MapWidget(
-              key: const ValueKey('now-mapbox-sdk'),
-              styleUri: mapboxStyleUri,
-              viewport: _initialViewport,
-              onMapCreated: (map) => _map = map,
-              onStyleLoadedListener: (_) => unawaited(_onStyleLoaded()),
-              onMapLoadErrorListener: _onMapLoadError,
-              onMapLoadedListener: (_) => _onMapLoaded(),
-              onCameraChangeListener: _onCameraChanged,
-              onMapIdleListener: _onMapIdle,
+            Listener(
+              onPointerDown: (_) => _invalidatePendingFocus(),
+              child: MapWidget(
+                key: const ValueKey('now-mapbox-sdk'),
+                styleUri: mapboxStyleUri,
+                viewport: _initialViewport,
+                onMapCreated: (map) => _map = map,
+                onStyleLoadedListener: (_) => unawaited(_onStyleLoaded()),
+                onMapLoadErrorListener: _onMapLoadError,
+                onMapLoadedListener: (_) => _onMapLoaded(),
+                onCameraChangeListener: _onCameraChanged,
+                onMapIdleListener: _onMapIdle,
+              ),
             ),
             if (_mapFailure.failure case final failure?)
               Positioned(

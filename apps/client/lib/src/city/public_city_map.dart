@@ -11,6 +11,7 @@ import 'map_link.dart';
 import 'amap_city_map_stub.dart'
     if (dart.library.html) 'amap_city_map_web.dart';
 import 'mapbox_style.dart';
+import 'map_camera_focus.dart';
 import 'native_city_map_stub.dart'
     if (dart.library.io) 'native_city_map_io.dart';
 import 'public_city_controller.dart';
@@ -63,11 +64,82 @@ class PublicCityMapView extends StatefulWidget {
 class _PublicCityMapViewState extends State<PublicCityMapView> {
   bool _tilesFailed = false;
   final MapController _webMapController = MapController();
+  bool _webMapReady = false;
+  int _webFocusSerial = 0;
+  int _webMotionGeneration = 0;
+
+  MapCameraFocusInput _focusInput(PublicCityMapView view) =>
+      MapCameraFocusInput(
+        city: view.city,
+        contextKey: view.contextKey,
+        places: view.places,
+        entities: view.entities,
+        selectedEntityId: view.selectedEntityId,
+      );
+
+  bool get _usesWebMapbox =>
+      kIsWeb &&
+      widget.city?.map?.provider == 'mapbox' &&
+      _mapboxPublicToken.startsWith('pk.');
 
   @override
   void didUpdateWidget(covariant PublicCityMapView oldWidget) {
     super.didUpdateWidget(oldWidget);
+    final previous = _focusInput(oldWidget), current = _focusInput(widget);
+    if (!current.hasSameViewInputs(previous)) _webFocusSerial++;
     if (oldWidget.city?.id != widget.city?.id) _tilesFailed = false;
+    if (!_usesWebMapbox) {
+      _webMapReady = false;
+    } else if (current.shouldFocusAfter(previous)) {
+      _scheduleWebFocus();
+    }
+  }
+
+  void _invalidatePendingWebFocus() {
+    _webFocusSerial++;
+    _webMotionGeneration++;
+  }
+
+  void _scheduleWebFocus() {
+    final serial = ++_webFocusSerial;
+    final motion = _webMotionGeneration;
+    final input = _focusInput(widget);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted ||
+          !_usesWebMapbox ||
+          !_webMapReady ||
+          serial != _webFocusSerial ||
+          motion != _webMotionGeneration ||
+          !input.hasSameViewInputs(_focusInput(widget))) {
+        return;
+      }
+      final center = input.center;
+      if (center == null) return;
+      if (input.fitsBounds) {
+        _webMapController.fitCamera(
+          CameraFit.bounds(
+            bounds: LatLngBounds.fromPoints([
+              for (final point in input.points)
+                LatLng(point.latitude, point.longitude),
+            ]),
+            padding: const EdgeInsets.fromLTRB(48, 150, 48, 180),
+            maxZoom: 14,
+          ),
+        );
+      } else {
+        _webMapController.move(
+          LatLng(center.latitude, center.longitude),
+          input.zoom,
+        );
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _webFocusSerial++;
+    _webMapController.dispose();
+    super.dispose();
   }
 
   @override
@@ -137,22 +209,14 @@ class _PublicCityMapViewState extends State<PublicCityMapView> {
     if (!_mapboxPublicToken.startsWith('pk.')) {
       return const _MapUnavailable('地图暂不可用，请使用地点列表。');
     }
-    final taskPoints = <LatLng>[
-      for (final entity in widget.entities)
-        LatLng(entity.latitude, entity.longitude),
-      for (final place in widget.places)
-        if (place.location.hasPublicPoint)
-          LatLng(place.location.latitude!, place.location.longitude!),
+    final focusInput = _focusInput(widget);
+    final center =
+        focusInput.center ??
+        MapCameraPoint('', viewport.latitude, viewport.longitude);
+    final taskPoints = [
+      for (final point in focusInput.points)
+        LatLng(point.latitude, point.longitude),
     ];
-    final mapCenter = taskPoints.isEmpty
-        ? LatLng(viewport.latitude, viewport.longitude)
-        : LatLng(
-            taskPoints.map((point) => point.latitude).reduce((a, b) => a + b) /
-                taskPoints.length,
-            taskPoints.map((point) => point.longitude).reduce((a, b) => a + b) /
-                taskPoints.length,
-          );
-    final distinctTaskPoints = taskPoints.toSet();
     final points = widget.places.where(
       (place) => place.location.hasPublicPoint,
     );
@@ -162,80 +226,100 @@ class _PublicCityMapViewState extends State<PublicCityMapView> {
         height: widget.fullBleed ? double.infinity : 430,
         child: Stack(
           children: [
-            FlutterMap(
-              key: ValueKey('${city.id}-mapbox-web'),
-              mapController: _webMapController,
-              options: MapOptions(
-                initialCenter: mapCenter,
-                initialZoom: taskPoints.isEmpty ? viewport.defaultZoom : 12.8,
-                initialCameraFit: distinctTaskPoints.length > 1
-                    ? CameraFit.bounds(
-                        bounds: LatLngBounds.fromPoints(taskPoints),
-                        padding: const EdgeInsets.fromLTRB(48, 150, 48, 180),
-                        maxZoom: 14,
-                      )
-                    : null,
-                minZoom: 3,
-                maxZoom: 18,
-                backgroundColor: const Color(0xFFE9ECE4),
-                onMapEvent: (event) {
-                  if (event is! MapEventMoveEnd &&
-                      event is! MapEventFlingAnimationEnd) {
-                    return;
-                  }
-                  final visibleBounds = event.camera.visibleBounds;
-                  final settled = MapBounds(
-                    west: visibleBounds.west,
-                    south: visibleBounds.south,
-                    east: visibleBounds.east,
-                    north: visibleBounds.north,
-                  );
-                  if (settled.isValid) {
-                    scheduleMicrotask(() {
-                      if (mounted) widget.onViewportSettled?.call(settled);
-                    });
-                  }
-                },
-              ),
-              children: [
-                TileLayer(
-                  urlTemplate:
-                      'https://api.mapbox.com/styles/v1/$mapboxStylePath/tiles/512/{z}/{x}/{y}?access_token=$_mapboxPublicToken',
-                  tileSize: 512,
-                  zoomOffset: -1,
-                  userAgentPackageName: 'com.birdtie.client',
-                  errorTileCallback: (tile, error, stackTrace) {
-                    if (mounted && !_tilesFailed) {
-                      setState(() => _tilesFailed = true);
+            Listener(
+              onPointerDown: (_) => _invalidatePendingWebFocus(),
+              child: FlutterMap(
+                key: const ValueKey('now-mapbox-web'),
+                mapController: _webMapController,
+                options: MapOptions(
+                  initialCenter: LatLng(center.latitude, center.longitude),
+                  initialZoom: focusInput.zoom,
+                  onMapReady: () {
+                    if (!mounted ||
+                        !_usesWebMapbox ||
+                        !focusInput.hasSameViewInputs(_focusInput(widget))) {
+                      return;
+                    }
+                    _webMapReady = true;
+                    _scheduleWebFocus();
+                  },
+                  initialCameraFit: focusInput.fitsBounds
+                      ? CameraFit.bounds(
+                          bounds: LatLngBounds.fromPoints(taskPoints),
+                          padding: const EdgeInsets.fromLTRB(48, 150, 48, 180),
+                          maxZoom: 14,
+                        )
+                      : null,
+                  minZoom: 3,
+                  maxZoom: 18,
+                  backgroundColor: const Color(0xFFE9ECE4),
+                  onMapEvent: (event) {
+                    if (event is! MapEventMoveEnd &&
+                        event is! MapEventFlingAnimationEnd) {
+                      return;
+                    }
+                    if (event.source == MapEventSource.mapController) return;
+                    final eventInput = _focusInput(widget);
+                    final motion = _webMotionGeneration;
+                    final visibleBounds = event.camera.visibleBounds;
+                    final settled = MapBounds(
+                      west: visibleBounds.west,
+                      south: visibleBounds.south,
+                      east: visibleBounds.east,
+                      north: visibleBounds.north,
+                    );
+                    if (settled.isValid) {
+                      scheduleMicrotask(() {
+                        if (mounted &&
+                            _usesWebMapbox &&
+                            motion == _webMotionGeneration &&
+                            eventInput.hasSameViewInputs(_focusInput(widget))) {
+                          widget.onViewportSettled?.call(settled);
+                        }
+                      });
                     }
                   },
                 ),
-                MarkerLayer(
-                  markers: [
-                    for (final place in points)
-                      Marker(
-                        point: LatLng(
-                          place.location.latitude!,
-                          place.location.longitude!,
-                        ),
-                        width: 44,
-                        height: 44,
-                        child: IconButton.filled(
-                          tooltip: place.name,
-                          onPressed: () => widget.onPlaceSelected(place),
-                          icon: const Icon(Icons.place, size: 20),
-                        ),
-                      ),
-                  ],
-                ),
-                if (widget.entities.isNotEmpty &&
-                    widget.onEntitySelected != null)
-                  MapEntityLayer(
-                    entities: widget.entities,
-                    selectedId: widget.selectedEntityId,
-                    onSelected: widget.onEntitySelected!,
+                children: [
+                  TileLayer(
+                    urlTemplate:
+                        'https://api.mapbox.com/styles/v1/$mapboxStylePath/tiles/512/{z}/{x}/{y}?access_token=$_mapboxPublicToken',
+                    tileSize: 512,
+                    zoomOffset: -1,
+                    userAgentPackageName: 'com.birdtie.client',
+                    errorTileCallback: (tile, error, stackTrace) {
+                      if (mounted && !_tilesFailed) {
+                        setState(() => _tilesFailed = true);
+                      }
+                    },
                   ),
-              ],
+                  MarkerLayer(
+                    markers: [
+                      for (final place in points)
+                        Marker(
+                          point: LatLng(
+                            place.location.latitude!,
+                            place.location.longitude!,
+                          ),
+                          width: 44,
+                          height: 44,
+                          child: IconButton.filled(
+                            tooltip: place.name,
+                            onPressed: () => widget.onPlaceSelected(place),
+                            icon: const Icon(Icons.place, size: 20),
+                          ),
+                        ),
+                    ],
+                  ),
+                  if (widget.entities.isNotEmpty &&
+                      widget.onEntitySelected != null)
+                    MapEntityLayer(
+                      entities: widget.entities,
+                      selectedId: widget.selectedEntityId,
+                      onSelected: widget.onEntitySelected!,
+                    ),
+                ],
+              ),
             ),
             if (_tilesFailed ||
                 (!widget.fullBleed && points.isEmpty) ||

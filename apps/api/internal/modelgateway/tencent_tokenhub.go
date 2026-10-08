@@ -118,7 +118,7 @@ func (a *TencentTokenHubAdapter) Complete(ctx context.Context, r ProviderRequest
 	r.Messages = append([]Message(nil), r.Messages...)
 	body, err := formatTencentTextWire(r, a.now(), a.config.maxOutputTokens)
 	if err != nil {
-		return nil, err
+		return nil, modelFailure("TENCENT_REQUEST", "REQUEST", 0, err)
 	}
 	callctx, cancel := context.WithDeadline(ctx, r.DeadlineAt)
 	defer cancel()
@@ -137,26 +137,39 @@ func (a *TencentTokenHubAdapter) Complete(ctx context.Context, r ProviderRequest
 	}
 	resp, err := a.client.Do(req)
 	if err != nil {
-		return nil, tencentTransportError(callctx, err)
+		if current := callctx.Err(); current != nil {
+			return nil, current
+		}
+		// Keep a trusted local wire/current guard classification through the
+		// http.Client URL wrapper without retaining or formatting that URL.
+		if diagnostic := nativeModelTransportDiagnostic(err); diagnostic != nil {
+			return nil, diagnostic
+		}
+		return nil, modelFailure("TENCENT_TRANSPORT", "TRANSPORT", 0, tencentTransportError(callctx, err))
 	}
 	if resp == nil || resp.Body == nil {
-		return nil, ErrAdapter
+		return nil, modelFailure("TENCENT_RESPONSE", "RESPONSE_SHAPE", 0, ErrAdapter)
 	}
 	defer resp.Body.Close()
 	if err := callctx.Err(); err != nil {
 		return nil, err
 	}
 	if resp.StatusCode != http.StatusOK {
-		return nil, tencentHTTPError(resp, a.now())
+		cause := tencentHTTPError(resp, a.now())
+		metadata := readTencentHTTPMetadata(resp.Body)
+		if err := callctx.Err(); err != nil {
+			return nil, err
+		}
+		return nil, tencentHTTPFailure(resp.StatusCode, cause, metadata)
 	}
 	mediaType, _, err := mime.ParseMediaType(resp.Header.Get("Content-Type"))
 	if err != nil || mediaType != "application/json" {
-		return nil, ErrAdapter
+		return nil, modelFailure("TENCENT_RESPONSE", "CONTENT_TYPE", resp.StatusCode, ErrAdapter)
 	}
 	raw, err := io.ReadAll(io.LimitReader(resp.Body, MaxResultBytes+1))
 	defer clear(raw)
 	if err != nil {
-		return nil, tencentTransportError(callctx, err)
+		return nil, modelFailure("TENCENT_RESPONSE", "TRANSPORT", resp.StatusCode, tencentTransportError(callctx, err))
 	}
 	if err := callctx.Err(); err != nil {
 		return nil, err
@@ -241,48 +254,63 @@ func validateTencentNoSearchInfo(raw json.RawMessage) error {
 	return nil
 }
 
-func normalizeTencentText(raw []byte, maxOutput int) ([]byte, error) {
+func normalizeTencentText(raw []byte, maxOutput int) (normalized []byte, err error) {
+	stage := "TENCENT_ENVELOPE"
+	defer func() {
+		if err != nil {
+			err = modelFailure(stage, "RESPONSE_SHAPE", http.StatusOK, err)
+		}
+	}()
 	obj, err := strictObject(raw, []string{"id", "model", "choices"}, []string{"object", "created", "usage", "search_info", "system_fingerprint", "service_tier"})
 	if err != nil {
 		return nil, ErrAdapter
 	}
+	stage = "TENCENT_SEARCH_METADATA"
 	if validateTencentNoSearchInfo(obj["search_info"]) != nil {
 		return nil, ErrAdapter
 	}
+	stage = "TENCENT_ID_MODEL"
 	id, e1 := stringValue(obj["id"], 80)
 	model, e2 := stringValue(obj["model"], 80)
 	if e1 != nil || e2 != nil || !safeRequestID.MatchString(id) || model != TencentTokenHubModel {
 		return nil, ErrAdapter
 	}
+	stage = "TENCENT_OBJECT"
 	if v := obj["object"]; v != nil {
 		var object string
 		if json.Unmarshal(v, &object) != nil || object != "chat.completion" {
 			return nil, ErrAdapter
 		}
 	}
+	stage = "TENCENT_CHOICES"
 	var choices []json.RawMessage
 	if json.Unmarshal(obj["choices"], &choices) != nil || len(choices) != 1 {
 		return nil, ErrAdapter
 	}
+	stage = "TENCENT_CHOICE"
 	choice, err := strictObject(choices[0], []string{"index", "message", "finish_reason"}, []string{"logprobs"})
 	var index int
 	if err != nil || decodeTencentInt(choice["index"], &index) != nil || index != 0 {
 		return nil, ErrAdapter
 	}
+	stage = "TENCENT_MESSAGE"
 	message, err := strictObject(choice["message"], []string{"role"}, []string{"content", "refusal", "reasoning_content", "reasoning_details", "tool_calls", "function_call", "search_results", "annotations"})
 	var role string
 	if err != nil || json.Unmarshal(message["role"], &role) != nil || role != "assistant" {
 		return nil, ErrAdapter
 	}
+	stage = "TENCENT_TOOLS"
 	for _, field := range []string{"tool_calls", "function_call", "search_results", "annotations"} {
 		if v := message[field]; v != nil && !tencentNullOrEmptyArray(v) {
 			return nil, ErrAdapter
 		}
 	}
+	stage = "TENCENT_FINISH"
 	finish, err := stringValue(choice["finish_reason"], 40)
 	if err != nil {
 		return nil, ErrAdapter
 	}
+	stage = "TENCENT_REFUSAL"
 	refusal := false
 	if v := message["refusal"]; v != nil && !bytes.Equal(v, []byte("null")) {
 		var text string
@@ -291,12 +319,14 @@ func normalizeTencentText(raw []byte, maxOutput int) ([]byte, error) {
 		}
 		refusal = strings.TrimSpace(text) != ""
 	}
+	stage = "TENCENT_FINISH"
 	status, normalizedFinish, text := Completed, "stop", ""
 	switch finish {
 	case "stop":
 		if refusal {
 			status, normalizedFinish = Refused, "refusal"
 		} else {
+			stage = "TENCENT_CONTENT"
 			text, err = stringValue(message["content"], 8192)
 		}
 	case "content_filter", "refusal":
@@ -309,6 +339,7 @@ func normalizeTencentText(raw []byte, maxOutput int) ([]byte, error) {
 	if err != nil {
 		return nil, ErrAdapter
 	}
+	stage = "TENCENT_USAGE"
 	usage, err := normalizeTencentUsage(obj["usage"], maxOutput)
 	if err != nil {
 		return nil, ErrAdapter
@@ -322,6 +353,7 @@ func normalizeTencentText(raw []byte, maxOutput int) ([]byte, error) {
 		Text         string          `json:"text,omitempty"`
 		Usage        json.RawMessage `json:"usage"`
 	}{status, id, normalizedFinish, text, usage}
+	stage = "TENCENT_ENCODE"
 	encoded, err := json.Marshal(result)
 	if err != nil || len(encoded) > MaxResultBytes {
 		return nil, ErrAdapter

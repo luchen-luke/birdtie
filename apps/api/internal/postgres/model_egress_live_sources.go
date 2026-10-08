@@ -156,15 +156,7 @@ func sourceBatchFromOutput(a agentevent.Access, output OwnLiveSearchOutput, now 
 	for i, source := range output.result.Sources {
 		sources[i] = modelegressbudget.LivePublicSource{Title: source.Title, URL: source.URL, Passage: source.Passage}
 	}
-	selected, e := modelegressbudget.SelectLivePublicSources(sources)
-	if e != nil {
-		return empty, e
-	}
-	if p.resolved.valid {
-		_, e = modelegressbudget.LiveResolvedPublicSearchPayload(p.query, p.resolved.context, selected)
-	} else {
-		_, e = modelegressbudget.LivePublicSearchPayload(output.query, selected)
-	}
+	selected, e := selectLiveModelMessageSources(p, sources)
 	if e != nil {
 		return empty, e
 	}
@@ -180,6 +172,48 @@ func sourceBatchFromOutput(a agentevent.Access, output OwnLiveSearchOutput, now 
 	// Original preview ID must be resolved from the actual reservation in the
 	// transaction; no provider field or JSON caller can claim that association.
 	return OwnLiveSourceBatch{data: liveSourceBatchData{Evidence: evidence, Sources: selected}, access: a, owner: p.owner, session: p.session, root: p.input.RootTraceID, task: p.input.TaskID, binding: p.binding, source: p.source, authority: p.authority}, nil
+}
+
+// The original AIR message contract permits at most 4096 bytes per message.
+// The source data formatter's larger total bound does not enlarge that contract.
+// Select an ordered prefix before authenticating its exact selection digest;
+// the separate artifact digest still describes every original provider source.
+const liveSourceModelMessageMaxBytes = 4096
+
+func liveSourceModelPayload(p PreparedLiveEgress, sources []modelegressbudget.LivePublicSource) (string, error) {
+	if p.resolved.valid {
+		if len(p.request.Messages) != 2 || p.request.Messages[0].Role != "system" || p.request.Messages[1].Role != "user" {
+			return "", modelegressbudget.ErrDenied
+		}
+		// Use the exact original scalar, including whitespace. The compiled
+		// search query is separate and is never substituted for this question.
+		return modelegressbudget.LiveResolvedPublicSearchPayload(p.request.Messages[1].Content, p.resolved.context, sources)
+	}
+	return modelegressbudget.LivePublicSearchPayload(p.query, sources)
+}
+
+func selectLiveModelMessageSources(p PreparedLiveEgress, sources []modelegressbudget.LivePublicSource) ([]modelegressbudget.LivePublicSource, error) {
+	canonical, e := modelegressbudget.SelectLivePublicSources(sources)
+	if e != nil {
+		return nil, nativeLiveStage("source-payload-selection", e)
+	}
+	count := 0
+	for n := 1; n <= len(canonical); n++ {
+		payload, e := liveSourceModelPayload(p, canonical[:n])
+		if e != nil {
+			return nil, nativeLiveStage("source-payload-encoding", e)
+		}
+		if len(payload) > liveSourceModelMessageMaxBytes {
+			break
+		}
+		count = n
+	}
+	if count == 0 {
+		// No empty or invented source context can stand in for an oversized
+		// first result. Titles and URLs are not truncated or silently replaced.
+		return nil, nativeLiveStage("source-payload-message-bound", modelegressbudget.ErrDenied)
+	}
+	return append([]modelegressbudget.LivePublicSource(nil), canonical[:count]...), nil
 }
 
 func (s *Store) authenticateLiveSearchSourcesTx(ctx context.Context, tx pgx.Tx, a agentevent.Access, output OwnLiveSearchOutput, association *nativeLiveSourceRunAssociation) (OwnLiveSourceBatch, error) {
@@ -244,7 +278,10 @@ func prepareLiveSourceWire(query string, sources []modelegressbudget.LivePublicS
 	if e != nil {
 		return empty, "", "", modelegressbudget.LiveAmount{}, e
 	}
-	if modelegressbudget.ValidateLivePrice(price, now) != nil || price.Kind != modelegressbudget.LiveToken || price.Base.InputTokenCeiling != modelgateway.TencentLiveMaxInputTokens || r.OutputMode != modelgateway.Text || len(r.ToolAllowlist) != 0 || len(r.Messages) != 2 || r.Messages[0].Role != "system" || r.Messages[1].Role != "user" || r.Messages[1].Content != payload || !liveProjectorPresent(projector) || modelgateway.ValidateRequest(r, now) != nil {
+	if modelgateway.ValidateRequest(r, now) != nil {
+		return empty, "", "", modelegressbudget.LiveAmount{}, nativeLiveStage("source-wire-request-validation", modelegressbudget.ErrDenied)
+	}
+	if modelegressbudget.ValidateLivePrice(price, now) != nil || price.Kind != modelegressbudget.LiveToken || price.Base.InputTokenCeiling != modelgateway.TencentLiveMaxInputTokens || r.OutputMode != modelgateway.Text || len(r.ToolAllowlist) != 0 || len(r.Messages) != 2 || r.Messages[0].Role != "system" || r.Messages[1].Role != "user" || r.Messages[1].Content != payload || !liveProjectorPresent(projector) {
 		return empty, "", "", modelegressbudget.LiveAmount{}, modelegressbudget.ErrDenied
 	}
 	provider := liveProviderRequest(r)
@@ -262,31 +299,31 @@ func prepareLiveSourceWire(query string, sources []modelegressbudget.LivePublicS
 func (s *Store) prepareLiveSourceEgressTx(ctx context.Context, tx pgx.Tx, a agentevent.Access, in modelegressbudget.PreviewInput, b OwnLiveSourceBatch, projector LiveWireProjector) (PreparedLiveEgress, error) {
 	source, e := s.revalidateLiveSourceBatchTx(ctx, tx, a, b, b.association)
 	if e != nil {
-		return PreparedLiveEgress{}, e
+		return PreparedLiveEgress{}, nativeLiveStage("source-batch-current", e)
 	}
 	// Native query-only preparation supplies the original 058 prompt and all
 	// current bindings. Only its already-approved current user query is replaced
 	// by this separately scoped, canonical public evidence envelope.
 	p, e := s.prepareLiveEgressTx(ctx, tx, a, in, projector)
 	if e != nil {
-		return PreparedLiveEgress{}, e
+		return PreparedLiveEgress{}, nativeLiveStage("source-native-query-preparation", e)
 	}
 	if p.price.Kind != modelegressbudget.LiveToken || p.owner != b.owner || p.session != b.session || p.input.RootTraceID != b.root || p.input.TaskID != b.task || p.binding != b.binding || p.source != b.source || p.authority != b.authority || p.query != source.query || p.queryDigest != b.data.Evidence.QueryEvidenceDigest || p.input.DeadlineAt.After(b.data.Evidence.DeadlineAt) {
-		return PreparedLiveEgress{}, modelegressbudget.ErrDenied
+		return PreparedLiveEgress{}, nativeLiveStage("source-model-identity", modelegressbudget.ErrDenied)
 	}
 	var payload string
 	exactCurrentQuery := p.request.Messages[1].Content
 	if source.resolved.valid {
 		p.resolved, e = s.nativeResolvedPublicSearchTx(ctx, tx, p)
 		if e != nil || p.resolved != source.resolved {
-			return PreparedLiveEgress{}, modelegressbudget.ErrDenied
+			return PreparedLiveEgress{}, nativeLiveStage("source-city-current", modelegressbudget.ErrDenied)
 		}
 		payload, e = modelegressbudget.LiveResolvedPublicSearchPayload(exactCurrentQuery, p.resolved.context, b.data.Sources)
 	} else {
 		payload, e = modelegressbudget.LivePublicSearchPayload(p.query, b.data.Sources)
 	}
 	if e != nil {
-		return PreparedLiveEgress{}, e
+		return PreparedLiveEgress{}, nativeLiveStage("source-payload-encoding", e)
 	}
 	p.request.Messages = append([]modelgateway.Message(nil), p.request.Messages...)
 	p.request.Messages[1].Content = payload

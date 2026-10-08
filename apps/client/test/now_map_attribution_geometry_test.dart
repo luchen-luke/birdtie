@@ -7,6 +7,7 @@ import 'package:birdtie_client/src/workspace/map_entities.dart';
 import 'package:birdtie_client/src/workspace/now_discovery_controller.dart';
 import 'package:birdtie_client/src/workspace/active_social_intent_card.dart';
 import 'package:birdtie_client/src/workspace/agent_composer.dart';
+import 'package:birdtie_client/src/workspace/agent_conversation.dart';
 import 'package:birdtie_client/src/workspace/agent_result_sheet.dart';
 import 'package:birdtie_client/src/workspace/agent_workspace_controller.dart';
 import 'package:birdtie_client/src/workspace/top_controls.dart';
@@ -70,7 +71,18 @@ void main() {
         lessThanOrEqualTo(t.getRect(find.byType(AgentComposer)).top - 11.5),
       );
       expect(identical(element, map.evaluate().single), true);
-      expect(f.workspace(t).contentMode, AgentContentMode.results);
+      // Typing expands the unified message stream. The current fixture has
+      // no entity/source cards; assert its real synthetic reply is in that
+      // stream rather than reintroducing the retired results-only mode.
+      expect(f.workspace(t).contentMode, AgentContentMode.conversation);
+      expect(find.byType(AgentConversation), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byType(AgentConversation),
+          matching: find.text('合成权威响应：找地点'),
+        ),
+        findsOneWidget,
+      );
       expect(
         find.byKey(const Key('now-city-picker')).hitTestable(),
         findsOneWidget,
@@ -79,7 +91,7 @@ void main() {
       expect(
         find.descendant(
           of: find.byType(BottomSheet),
-          matching: find.text('选择城市'),
+          matching: find.text('选择城市与范围'),
         ),
         findsOneWidget,
       );
@@ -87,7 +99,7 @@ void main() {
       await nowTap(t, find.byTooltip('打开侧边栏'));
       expect(find.byType(Drawer), findsOneWidget);
       await nowBack(t);
-      expect(f.workspace(t).contentMode, AgentContentMode.results);
+      expect(f.workspace(t).contentMode, AgentContentMode.conversation);
       expect(f.source.queries, ['找地点']);
       expect(identical(element, map.evaluate().single), true);
       expect(

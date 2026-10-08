@@ -229,7 +229,10 @@ func prepareResolvedLiveSourceWire(query string, resolved nativeResolvedPublicSe
 	if e != nil {
 		return empty, "", "", modelegressbudget.LiveAmount{}, e
 	}
-	if modelegressbudget.ValidateLivePrice(price, now) != nil || price.Kind != modelegressbudget.LiveToken || price.Base.InputTokenCeiling != modelgateway.TencentLiveMaxInputTokens || r.OutputMode != modelgateway.Text || len(r.ToolAllowlist) != 0 || len(r.Messages) != 2 || r.Messages[0].Role != "system" || r.Messages[1].Role != "user" || r.Messages[1].Content != payload || !liveProjectorPresent(projector) || modelgateway.ValidateRequest(r, now) != nil {
+	if modelgateway.ValidateRequest(r, now) != nil {
+		return empty, "", "", modelegressbudget.LiveAmount{}, nativeLiveStage("source-wire-request-validation", modelegressbudget.ErrDenied)
+	}
+	if modelegressbudget.ValidateLivePrice(price, now) != nil || price.Kind != modelegressbudget.LiveToken || price.Base.InputTokenCeiling != modelgateway.TencentLiveMaxInputTokens || r.OutputMode != modelgateway.Text || len(r.ToolAllowlist) != 0 || len(r.Messages) != 2 || r.Messages[0].Role != "system" || r.Messages[1].Role != "user" || r.Messages[1].Content != payload || !liveProjectorPresent(projector) {
 		return empty, "", "", modelegressbudget.LiveAmount{}, modelegressbudget.ErrDenied
 	}
 	provider := liveProviderRequest(r)

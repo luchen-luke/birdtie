@@ -29,7 +29,7 @@ void main() {
     (const Size(2656, 1220), 400.0, '横屏空间足够'),
     (const Size(1220, 2656), 1000.0, '纵屏空间足够'),
   ]) {
-    testWidgets('无任务字号2.0与IME${sample.$3}保持四导航而不假设紧凑', (t) async {
+    testWidgets('无任务字号2.0与IME${sample.$3}保持三顶栏入口和账户工具而不假设紧凑', (t) async {
       t.view.physicalSize = sample.$1;
       t.view.devicePixelRatio = 3.25;
       t.view.padding = const FakeViewPadding(top: 78);
@@ -47,24 +47,24 @@ void main() {
       await t.pumpAndSettle();
       final header = t.getRect(find.byType(TopControls)),
           composer = t.getRect(find.byType(AgentComposer));
-      debugPrintSynchronously((
-        jsonEncode({
+      debugPrintSynchronously(
+        (jsonEncode({
           'tasklessShortEditorControl': sample.$3,
           'header': [header.top, header.bottom],
           'composer': [composer.top, composer.bottom],
           'overlap': header.overlaps(composer),
-        })).toString());
+        })).toString(),
+      );
       expect(header.overlaps(composer), false);
       expect(find.byKey(const Key('now-sheet-keyboard-restore')), findsNothing);
       for (final entry in [
         find.byTooltip('打开侧边栏'),
         find.byKey(const Key('now-city-picker')),
-        find.byTooltip('打开更多工具'),
         find.byTooltip('打开收件箱'),
       ]) {
         expect(entry.hitTestable(), findsOneWidget);
       }
-      await nowTap(t, find.byTooltip('打开更多工具'));
+      await nowOpenAccountTools(t);
       expect(find.byKey(const Key('now-tools-menu')), findsOneWidget);
       await nowTap(t, find.byTooltip('关闭更多工具'));
       expect(t.widget<TextField>(nowField()).controller!.text, '空间足够的未发送草稿');
@@ -118,7 +118,6 @@ void main() {
       for (final entry in [
         find.byTooltip('打开侧边栏'),
         find.byKey(const Key('now-city-picker')),
-        find.byTooltip('打开更多工具'),
         find.byTooltip('打开收件箱'),
       ]) {
         expect(entry.hitTestable(), findsOneWidget);
@@ -133,8 +132,8 @@ void main() {
       final composerRect = t.getRect(find.byType(AgentComposer));
       final currentHeader = find.byType(TopControls);
       final restore = find.byKey(const Key('now-sheet-keyboard-restore'));
-      debugPrintSynchronously((
-        jsonEncode({
+      debugPrintSynchronously(
+        (jsonEncode({
           'tasklessShortEditor': 'real-mounted-MapWorkspace',
           'lines': lines,
           'physical': [2656, 1220],
@@ -149,7 +148,8 @@ void main() {
               t.getRect(currentHeader).overlaps(composerRect),
           'restoreMounted': restore.evaluate().isNotEmpty,
           'queries': f.source.queries.length,
-        })).toString());
+        })).toString(),
+      );
       expect(
         currentHeader.evaluate().isNotEmpty &&
             t.getRect(currentHeader).overlaps(composerRect),
@@ -160,16 +160,16 @@ void main() {
       expect(restore.hitTestable(), findsOneWidget);
       expect(find.byTooltip('收起键盘返回地图'), findsOneWidget);
       final restoreRect = t.getRect(restore),
-          sendRect = t.getRect(find.byTooltip('发送需求')),
-          plusRect = t.getRect(find.byTooltip('打开快捷操作'));
+          sendRect = t.getRect(find.byTooltip('发送需求'));
       expect(restoreRect.width, greaterThanOrEqualTo(48));
       expect(restoreRect.height, greaterThanOrEqualTo(48));
       expect(restoreRect.overlaps(sendRect), false);
-      expect(restoreRect.overlaps(plusRect), false);
+      // BT-UXR-024/025: no current-session attachments are wired yet.
+      expect(find.byTooltip('打开快捷操作'), findsNothing);
       expect(composerRect.top, greaterThanOrEqualTo(78 / 3.25));
       expect(composerRect.bottom, closeTo((1220 - 844) / 3.25 - 16, .5));
       expect(find.byTooltip('发送需求').hitTestable(), findsOneWidget);
-      expect(find.byTooltip('打开快捷操作').hitTestable(), findsOneWidget);
+      expect(find.byTooltip('打开快捷操作'), findsNothing);
       expect(t.widget<TextField>(nowField()).focusNode!.hasFocus, true);
       expect(t.testTextInput.isVisible, true);
       await nowTap(t, restore);
@@ -182,19 +182,18 @@ void main() {
       for (final entry in [
         find.byTooltip('打开侧边栏'),
         find.byKey(const Key('now-city-picker')),
-        find.byTooltip('打开更多工具'),
         find.byTooltip('打开收件箱'),
       ]) {
         expect(entry.hitTestable(), findsOneWidget);
         expect(t.getSize(entry).width, greaterThanOrEqualTo(48));
         expect(t.getSize(entry).height, greaterThanOrEqualTo(48));
       }
-      await nowTap(t, find.byTooltip('打开更多工具'));
+      await nowOpenAccountTools(t);
       expect(find.byKey(const Key('now-tools-menu')), findsOneWidget);
       await nowTap(t, find.byTooltip('关闭更多工具'));
       await nowTap(t, find.byKey(const Key('now-city-picker')));
-      expect(find.byTooltip('取消选择城市').hitTestable(), findsOneWidget);
-      await nowTap(t, find.byTooltip('取消选择城市'));
+      expect(find.byTooltip('取消选择城市与范围').hitTestable(), findsOneWidget);
+      await nowTap(t, find.byTooltip('取消选择城市与范围'));
       await nowTap(t, find.byTooltip('打开收件箱'));
       expect(find.byType(BottomSheet), findsOneWidget);
       await nowBack(t);
@@ -247,8 +246,8 @@ void main() {
       final rect = t.getRect(search),
           header = t.getRect(find.byType(TopControls));
       final ornamentTop = t.widget<PublicCityMapView>(publicMap).ornamentTop!;
-      debugPrintSynchronously((
-        jsonEncode({
+      debugPrintSynchronously(
+        (jsonEncode({
           'idleSearchGeometry': 'actual-registered-camera-callback',
           'scale': scale,
           'searchRect': [rect.left, rect.top, rect.right, rect.bottom],
@@ -257,7 +256,8 @@ void main() {
           'ornamentReservedHeight': 48,
           'mapElementRetained': identical(element, publicMap.evaluate().single),
           'queries': f.source.queries.length,
-        })).toString());
+        })).toString(),
+      );
       expect(rect.top, greaterThanOrEqualTo(ornamentTop + 48 + 8 - .5));
       expect(rect.overlaps(header), false);
       expect(
@@ -315,8 +315,8 @@ void main() {
         final finder = find.byTooltip(label);
         if (finder.evaluate().isNotEmpty) secondary[label] = t.getRect(finder);
       }
-      debugPrintSynchronously((
-        jsonEncode({
+      debugPrintSynchronously(
+        (jsonEncode({
           'topToolsGeometry': 'idle',
           'width': sample.$1,
           'scale': sample.$2,
@@ -329,7 +329,8 @@ void main() {
             (r) => r.overlaps(header),
           ),
           'ornamentTop': t.widget<PublicCityMapView>(publicMap).ornamentTop,
-        })).toString());
+        })).toString(),
+      );
       for (final entry in secondary.entries) {
         expect(
           entry.value.overlaps(header),
@@ -338,12 +339,10 @@ void main() {
         );
       }
       expect(secondary, isEmpty, reason: '地图工具按原提案收敛到可达的更多工具，不常驻第二排');
-      final more = find.byTooltip('打开更多工具');
-      expect(more.hitTestable(), findsOneWidget);
+      expect(find.byTooltip('打开更多工具'), findsNothing);
       final primaries = [
         find.byTooltip('打开侧边栏'),
         find.byKey(const Key('now-city-picker')),
-        more,
         find.byTooltip('打开收件箱'),
       ];
       for (var i = 0; i < primaries.length; i++) {
@@ -383,7 +382,7 @@ void main() {
           for (final entry in primaries) {
             expect(sheet.overlaps(t.getRect(entry)), false);
           }
-          await nowTap(t, more);
+          await nowOpenAccountTools(t);
           final modal = find.byKey(const Key('now-tools-menu'));
           expect(modal, findsOneWidget);
           final modalRect = t.getRect(find.byType(BottomSheet));
@@ -391,7 +390,7 @@ void main() {
           final close = find.byTooltip('关闭更多工具');
           expect(close.hitTestable(), findsOneWidget);
           expect(t.getSize(close).height, greaterThanOrEqualTo(48));
-          for (final label in ['地图图层', '选择查询情境', '我的社交意图', '打开意图草稿']) {
+          for (final label in ['地图图层', '我的社交意图', '打开意图草稿']) {
             final action = find.byTooltip(label);
             await t.ensureVisible(action);
             await t.pumpAndSettle();
@@ -403,8 +402,13 @@ void main() {
           expect(find.byKey(const Key('now-tools-menu')), findsNothing);
           expect(t.widget<TextField>(nowField()).focusNode!.hasFocus, false);
           expect(t.widget<TextField>(nowField()).controller!.text, '尚未发送的安全草稿');
-          expect(ws.sheetExtent, extent);
-          expect(ws.contentMode, AgentContentMode.results);
+          // BT-UXR-015/020: focusing a task opens its unified conversation.
+          expect(ws.sheetExtent, AgentSheetExtent.expanded);
+          expect(ws.contentMode, AgentContentMode.conversation);
+          await nowTap(t, find.byKey(const Key('now-city-picker')));
+          expect(find.text('选择城市与范围'), findsOneWidget);
+          await nowTap(t, find.byTooltip('取消选择城市与范围'));
+          expect(t.widget<TextField>(nowField()).controller!.text, '尚未发送的安全草稿');
           expect(ws.selectedEntityId, 'place:retained-tool-selection');
           expect(identical(ws.task, task), true);
           expect(identical(ws.result, result), true);
@@ -420,34 +424,41 @@ void main() {
       await f.unmount(t);
     });
   }
-  testWidgets('更多工具复用四个真实旧入口且关闭后保留草稿与地图', (t) async {
+  testWidgets('账户复用三个真实工具与唯一顶栏范围且关闭后保留草稿与地图', (t) async {
     final f = NowFixture();
     addTearDown(f.dispose);
     await _mountInputHitFixture(t, f);
     final map = find.byType(MapCanvas).evaluate().single;
     await t.enterText(nowField(), '不替我提交的草稿');
     await t.pumpAndSettle();
-    for (final label in ['地图图层', '选择查询情境', '我的社交意图', '打开意图草稿']) {
-      await nowTap(t, find.byTooltip('打开更多工具'));
+    for (final label in ['地图图层', '我的社交意图', '打开意图草稿']) {
+      await nowOpenAccountTools(t);
       await nowTap(t, find.byTooltip(label));
       expect(find.byKey(const Key('now-tools-menu')), findsNothing);
       switch (label) {
         case '地图图层':
           expect(find.byType(MapLayerControls), findsOneWidget);
-        case '选择查询情境':
-          expect(find.text('请先登录本人账号，再选择线上情境。'), findsOneWidget);
         case '我的社交意图':
           expect(find.byType(ActiveSocialIntentCard), findsOneWidget);
         case '打开意图草稿':
           expect(find.byType(SocialIntentDraftPage), findsOneWidget);
       }
       await nowBack(t);
-      expect(find.byTooltip('打开更多工具').hitTestable(), findsOneWidget);
+      expect(find.byTooltip('打开更多工具'), findsNothing);
+      expect(find.byTooltip('打开侧边栏').hitTestable(), findsOneWidget);
       expect(identical(map, find.byType(MapCanvas).evaluate().single), true);
       expect(t.widget<TextField>(nowField()).controller!.text, '不替我提交的草稿');
       expect(t.widget<TextField>(nowField()).focusNode!.hasFocus, false);
       expect(f.source.queries, isEmpty);
     }
+    // BT-UXR-011: the former range tool remains reachable in the one city slot.
+    await nowTap(t, find.byKey(const Key('now-city-picker')));
+    expect(find.text('选择城市与范围'), findsOneWidget);
+    expect(find.text('登录后可选择本人声明的线上范围。'), findsOneWidget);
+    await nowBack(t);
+    expect(t.widget<TextField>(nowField()).controller!.text, '不替我提交的草稿');
+    expect(identical(map, find.byType(MapCanvas).evaluate().single), true);
+    expect(f.source.queries, isEmpty);
     expect(t.takeException(), isNull);
     await f.unmount(t);
   });
@@ -457,7 +468,7 @@ void main() {
       addTearDown(f.dispose);
       await _mountInputHitFixture(t, f);
       final map = find.byType(MapCanvas).evaluate().single;
-      await nowTap(t, find.byTooltip('打开更多工具'));
+      await nowOpenAccountTools(t);
       final action = find.byTooltip('打开意图草稿');
       await t.ensureVisible(action);
       await t.pumpAndSettle();
@@ -488,8 +499,9 @@ void main() {
       expect(find.byType(SocialIntentDraftPage), findsNothing);
       expect(f.source.queries, isEmpty);
       await nowBack(t);
-      expect(find.byTooltip('打开更多工具').hitTestable(), findsOneWidget);
-      await nowTap(t, find.byTooltip('打开更多工具'));
+      expect(find.byTooltip('打开更多工具'), findsNothing);
+      expect(find.byTooltip('打开侧边栏').hitTestable(), findsOneWidget);
+      await nowOpenAccountTools(t);
       await nowTap(t, find.byTooltip('打开意图草稿'));
       expect(find.byType(SocialIntentDraftPage), findsOneWidget);
       await nowBack(t);
@@ -500,7 +512,7 @@ void main() {
     });
   }
   for (final feedback in [false, true]) {
-    testWidgets('横屏字号2.0与IME长稿受限且素材提示$feedback不挤没输入', (t) async {
+    testWidgets('横屏字号2.0与IME长稿及保留legacy素材提示$feedback不挤没输入', (t) async {
       t.view.physicalSize = const Size(2656, 1220);
       t.view.devicePixelRatio = 3.25;
       t.view.padding = const FakeViewPadding(top: 78);
@@ -508,11 +520,12 @@ void main() {
       addTearDown(t.view.resetDevicePixelRatio);
       addTearDown(t.view.resetPadding);
       addTearDown(t.view.resetViewInsets);
+      var clipboardReads = 0;
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-          .setMockMethodCallHandler(
-            SystemChannels.platform,
-            (call) async => null,
-          );
+          .setMockMethodCallHandler(SystemChannels.platform, (call) async {
+            if (call.method == 'Clipboard.getData') clipboardReads++;
+            return null;
+          });
       addTearDown(() {
         TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
             .setMockMethodCallHandler(SystemChannels.platform, null);
@@ -528,7 +541,10 @@ void main() {
       final task = ws.task, result = ws.result;
       final map = t.widget<MapCanvas>(find.byType(MapCanvas));
       if (feedback) {
-        await nowTap(t, find.byTooltip('打开快捷操作'));
+        // Retained helper only, not an available Now attachment entry.
+        final state = t.state<AgentComposerState>(find.byType(AgentComposer));
+        unawaited(state.showMaterialTools(state.context));
+        await t.pumpAndSettle();
         await nowTap(t, find.text('粘贴文字/链接'));
         expect(find.text('剪贴板没有可粘贴的文字或链接。'), findsOneWidget);
       }
@@ -545,23 +561,25 @@ void main() {
       final send = find.byTooltip('发送需求');
       final safeTop = 78 / 3.25;
       final visibleBottom = (1220 - 844) / 3.25;
-      debugPrintSynchronously((
-        jsonEncode({
+      debugPrintSynchronously(
+        (jsonEncode({
           'composerHeight': 'actual-landscape-font2-component',
           'feedback': feedback,
           'composer': [composerRect.top, composerRect.bottom],
           'field': [fieldRect.top, fieldRect.bottom],
           'safeTop': safeTop,
           'visibleBottom': visibleBottom,
-        })).toString());
+        })).toString(),
+      );
       expect(composerRect.top, greaterThanOrEqualTo(safeTop));
       expect(composerRect.bottom, closeTo(visibleBottom - 16, .5));
       expect(fieldRect.top, greaterThanOrEqualTo(safeTop));
       expect(fieldRect.bottom, lessThanOrEqualTo(visibleBottom));
       expect(fieldRect.height, greaterThanOrEqualTo(48));
-      expect(plus.hitTestable(), findsOneWidget);
+      expect(plus, findsNothing);
+      expect(clipboardReads, feedback ? 1 : 0);
       expect(send.hitTestable(), findsOneWidget);
-      expect(t.getSize(plus).height, greaterThanOrEqualTo(48));
+
       expect(t.getSize(send).height, greaterThanOrEqualTo(48));
       expect(field.maxLines, 4);
       expect(MediaQuery.textScalerOf(t.element(nowField())).scale(16), 32);
@@ -578,14 +596,16 @@ void main() {
       await t.pumpAndSettle();
       expect(position.pixels, lessThan(atCaret));
       expect(field.controller!.text, draft);
-      expect(ws.sheetExtent, AgentSheetExtent.peek);
+      expect(ws.sheetExtent, AgentSheetExtent.expanded);
       expect(ws.contentMode, AgentContentMode.conversation);
       expect(identical(ws.task, task), true);
       expect(identical(ws.result, result), true);
       expect(identical(t.widget<MapCanvas>(find.byType(MapCanvas)), map), true);
       expect(f.source.queries, ['找地点']);
       if (feedback) {
-        await nowTap(t, plus);
+        final state = t.state<AgentComposerState>(find.byType(AgentComposer));
+        unawaited(state.showMaterialTools(state.context));
+        await t.pumpAndSettle();
         expect(find.text('剪贴板没有可粘贴的文字或链接。').hitTestable(), findsOneWidget);
         expect(field.controller!.text, draft);
         await nowBack(t);
@@ -595,7 +615,7 @@ void main() {
       expect(field.focusNode!.hasFocus, false);
       expect(t.testTextInput.isVisible, false);
       expect(field.controller!.text, draft);
-      expect(ws.sheetExtent, AgentSheetExtent.peek);
+      expect(ws.sheetExtent, AgentSheetExtent.expanded);
       expect(ws.contentMode, AgentContentMode.conversation);
       t.view.viewInsets = const FakeViewPadding();
       await t.pumpAndSettle();
@@ -687,8 +707,8 @@ void main() {
         final editingValue = field.controller!.value;
         expect(field.focusNode!.hasFocus, true);
         expect(t.testTextInput.isVisible, true);
-        expect(ws.sheetExtent, extent);
-        expect(ws.contentMode, mode);
+        expect(ws.sheetExtent, AgentSheetExtent.expanded);
+        expect(ws.contentMode, AgentContentMode.conversation);
         final recover = find.byKey(const Key('now-sheet-keyboard-restore'));
         expect(recover, findsOneWidget);
         expect(recover.hitTestable(), findsOneWidget);
@@ -702,8 +722,8 @@ void main() {
           findsNothing,
         );
         await nowTap(t, recover);
-        debugPrintSynchronously((
-          jsonEncode({
+        debugPrintSynchronously(
+          (jsonEncode({
             'keyboardFallback': 'actual-mounted-hit',
             'expectedMode': mode.name,
             'actualMode': ws.contentMode.name,
@@ -717,12 +737,13 @@ void main() {
               recoverRect.right,
               recoverRect.bottom,
             ],
-          })).toString());
+          })).toString(),
+        );
         expect(field.focusNode!.hasFocus, false);
         expect(t.testTextInput.isVisible, false);
         expect(field.controller!.value, editingValue);
-        expect(ws.sheetExtent, extent);
-        expect(ws.contentMode, mode);
+        expect(ws.sheetExtent, AgentSheetExtent.expanded);
+        expect(ws.contentMode, AgentContentMode.conversation);
         expect(ws.selectedEntityId, entity.id);
         expect(identical(ws.task, task), true);
         expect(identical(ws.result, result), true);
@@ -731,12 +752,9 @@ void main() {
         t.view.padding = const FakeViewPadding(top: 24, bottom: 24);
         await t.pumpAndSettle();
         expect(find.byType(AgentResultsSheet), findsOneWidget);
-        expect(
-          find.byType(EntityPeekCard),
-          extent == AgentSheetExtent.expanded ? findsNothing : findsOneWidget,
-        );
-        expect(ws.sheetExtent, extent);
-        expect(ws.contentMode, mode);
+        expect(find.byType(EntityPeekCard), findsNothing);
+        expect(ws.sheetExtent, AgentSheetExtent.expanded);
+        expect(ws.contentMode, AgentContentMode.conversation);
         expect(ws.selectedEntityId, entity.id);
         expect(identical(ws.task, task), true);
         expect(identical(ws.result, result), true);
@@ -746,6 +764,16 @@ void main() {
           true,
         );
         expect(find.byTooltip('打开侧边栏').hitTestable(), findsOneWidget);
+        // BT-UXR-018/019/028: hiding the peek while editing keeps selection;
+        // an explicit return to the map restores that exact entity.
+        await nowTap(t, find.byKey(const Key('agent-sheet-map-toggle')));
+        expect(ws.sheetExtent, AgentSheetExtent.peek);
+        expect(find.byType(EntityPeekCard), findsOneWidget);
+        expect(ws.selectedEntityId, entity.id);
+        expect(ws.result!.entities.single.id, entity.id);
+        expect(identical(ws.task, task), true);
+        expect(field.controller!.value, editingValue);
+        expect(f.source.queries, ['查找公开地点']);
         expect(t.takeException(), isNull);
         await f.unmount(t);
       });
@@ -974,61 +1002,96 @@ void main() {
         final search = find.widgetWithText(FilledButton, '搜索此区域');
         final sheet = find.byType(AgentResultsSheet);
         final composerRect = t.getRect(find.byType(AgentComposer));
-        final peekRect = t.getRect(peek), searchRect = t.getRect(search);
+        final searchRect = t.getRect(search);
         final sheetRect = t.getRect(sheet);
         final lane = find.byKey(const Key('now-selected-context-scroll'));
         final laneRect = lane.evaluate().isEmpty ? null : t.getRect(lane);
-        final paintedPeek = laneRect == null
-            ? peekRect
-            : peekRect.intersect(laneRect);
         final paintedSearch = laneRect == null
             ? searchRect
             : searchRect.intersect(laneRect);
-        debugPrintSynchronously((
-          jsonEncode({
+        debugPrintSynchronously(
+          (jsonEncode({
             'geometryCase': 'selected-area-multiline',
             'scale': scale,
             'lines': count,
-            'peek': [peekRect.top, peekRect.bottom],
+            'peekVisible': peek.evaluate().length,
             'search': [searchRect.top, searchRect.bottom],
             'laneViewport': laneRect == null
                 ? null
                 : [laneRect.top, laneRect.bottom],
-            'paintedPeek': [paintedPeek.top, paintedPeek.bottom],
             'sheet': [sheetRect.top, sheetRect.bottom],
             'composer': [composerRect.top, composerRect.bottom],
-          })).toString());
-        expect(peek, findsOneWidget);
+          })).toString(),
+        );
+        // BT-UXR-018/020: the input opens one expanded conversation and hides
+        // the independent map peek without dropping its selected entity.
+        expect(peek, findsNothing);
         expect(search, findsOneWidget);
-        expect(sheetRect.top, greaterThanOrEqualTo(paintedPeek.bottom + 7.5));
         expect(sheetRect.top, greaterThanOrEqualTo(paintedSearch.bottom + 7.5));
-        expect(peekRect.top, greaterThanOrEqualTo(searchRect.bottom + 7.5));
         expect(sheetRect.bottom, lessThanOrEqualTo(composerRect.top - 11.5));
         expect(composerRect.bottom, closeTo((2656 - 1058) / 3.25 - 16, .5));
         if (laneRect != null) {
           expect(sheetRect.top, greaterThanOrEqualTo(laneRect.bottom + 11.5));
         }
-        final view = find.descendant(of: peek, matching: find.text('查看'));
-        await t.ensureVisible(view);
-        await t.pumpAndSettle();
-        expect(view.hitTestable(), findsOneWidget);
+        expect(ws.result!.entities.single.id, entity.id);
         expect(
-          t.getRect(view).intersect(t.getRect(lane)).bottom,
-          lessThan(sheetRect.top),
+          t
+              .widget<PublicCityMapView>(find.byType(PublicCityMapView))
+              .entities
+              .single
+              .id,
+          entity.id,
         );
         await t.ensureVisible(search);
         await t.pumpAndSettle();
         expect(search.hitTestable(), findsOneWidget);
         expect(
-          find.descendant(of: sheet, matching: find.text('继续对话')).hitTestable(),
+          find
+              .descendant(
+                of: sheet,
+                matching: find.byKey(const Key('agent-sheet-map-toggle')),
+              )
+              .hitTestable(),
           findsOneWidget,
         );
         expect(t.widget<TextField>(nowField()).controller!.text, draft);
         expect(ws.selectedEntityId, entity.id);
         expect(identical(ws.task, task), true);
         expect(identical(ws.result, result), true);
-        expect(ws.contentMode, AgentContentMode.results);
-        expect(ws.sheetExtent, AgentSheetExtent.medium);
+        expect(ws.contentMode, AgentContentMode.conversation);
+        expect(ws.sheetExtent, AgentSheetExtent.expanded);
+        expect(find.byType(AgentConversation), findsOneWidget);
+        expect(
+          ws.conversation.where((m) => m.role == 'assistant').last.text,
+          '合成结果正文：保留当前地点与未发送草稿。',
+        );
+        // The unified flow follows the later result card. Scroll its actual
+        // inner list back to the preceding assistant instead of requiring a
+        // lazily unmounted offscreen message to remain an element.
+        final innerScroll = find.descendant(
+          of: find.byType(AgentConversation),
+          matching: find.byType(Scrollable),
+        );
+        final innerPosition = t.state<ScrollableState>(innerScroll).position;
+        debugPrintSynchronously(
+          jsonEncode({
+            'unifiedMessageScroll': 'before-explicit-scroll',
+            'scale': scale,
+            'lines': count,
+            'pixels': innerPosition.pixels,
+            'min': innerPosition.minScrollExtent,
+            'max': innerPosition.maxScrollExtent,
+            'viewport': innerPosition.viewportDimension,
+            'messageBuilt': find.text('合成结果正文：保留当前地点与未发送草稿。').evaluate().length,
+          }),
+        );
+        await t.scrollUntilVisible(
+          find.text('合成结果正文：保留当前地点与未发送草稿。'),
+          innerPosition.pixels > innerPosition.minScrollExtent ? -60 : 60,
+          scrollable: innerScroll,
+        );
+        await t.pumpAndSettle();
+        expect(find.text('合成结果正文：保留当前地点与未发送草稿。'), findsOneWidget);
         expect(f.source.queries, ['查找公开地点']);
         expect(
           identical(t.widget<MapCanvas>(find.byType(MapCanvas)), map),
@@ -1038,15 +1101,15 @@ void main() {
         expect(t.takeException(), isNull);
       }
       final recover = find.byKey(const Key('now-context-keyboard-restore'));
-      if (scale == 1.7) {
-        ws.setSheetExtent(AgentSheetExtent.peek);
+      {
+        // Both font scales keep the close-IME and explicit map-return path.
         await t.pumpAndSettle();
         await t.ensureVisible(recover);
         await t.pumpAndSettle();
         expect(recover.hitTestable(), findsOneWidget);
         final mode = find.descendant(
           of: find.byType(AgentResultsSheet),
-          matching: find.text('继续对话'),
+          matching: find.byKey(const Key('agent-sheet-map-toggle')),
         );
         expect(t.getRect(recover).overlaps(t.getRect(mode)), false);
         expect(t.getSize(recover).height, greaterThanOrEqualTo(48));
@@ -1056,10 +1119,29 @@ void main() {
         t.view.viewInsets = const FakeViewPadding();
         t.view.padding = const FakeViewPadding(top: 150, bottom: 52);
         await t.pumpAndSettle();
-        expect(find.byType(EntityPeekCard), findsOneWidget);
+        expect(find.byType(EntityPeekCard), findsNothing);
         expect(ws.selectedEntityId, entity.id);
-        expect(ws.contentMode, AgentContentMode.results);
+        expect(ws.contentMode, AgentContentMode.conversation);
+        expect(ws.sheetExtent, AgentSheetExtent.expanded);
+        await nowTap(t, find.byKey(const Key('agent-sheet-map-toggle')));
         expect(ws.sheetExtent, AgentSheetExtent.peek);
+        expect(find.byType(EntityPeekCard), findsOneWidget);
+        final view = find.descendant(
+          of: find.byType(EntityPeekCard),
+          matching: find.text('查看'),
+        );
+        await t.ensureVisible(view);
+        await t.pumpAndSettle();
+        expect(view.hitTestable(), findsOneWidget);
+        expect(
+          t
+              .getSize(
+                find.ancestor(of: view, matching: find.byType(TextButton)),
+              )
+              .height,
+          greaterThanOrEqualTo(48),
+        );
+        expect(ws.result!.entities.single.id, entity.id);
         expect(identical(ws.task, task), true);
         expect(
           t.widget<TextField>(nowField()).controller!.text,
@@ -1069,6 +1151,15 @@ void main() {
         expect(t.takeException(), isNull);
         await nowTap(t, find.byKey(const Key('agent-sheet-expand-summary')));
         expect(ws.sheetExtent, AgentSheetExtent.medium);
+        await t.scrollUntilVisible(
+          find.text('合成结果正文：保留当前地点与未发送草稿。'),
+          -60,
+          scrollable: find.descendant(
+            of: find.byType(AgentConversation),
+            matching: find.byType(Scrollable),
+          ),
+        );
+        await t.pumpAndSettle();
         expect(find.text('合成结果正文：保留当前地点与未发送草稿。').hitTestable(), findsOneWidget);
       }
       t.view.viewInsets = const FakeViewPadding();
@@ -1081,7 +1172,10 @@ void main() {
           AgentSheetExtent.medium,
           AgentSheetExtent.expanded,
         ]) {
+          ws.showContent(mode);
           ws.setSheetExtent(extent);
+          expect(ws.contentMode, mode);
+          expect(ws.sheetExtent, extent);
           t.view.viewInsets = const FakeViewPadding(bottom: 1058);
           t.view.padding = const FakeViewPadding(top: 150);
           await t.enterText(
@@ -1095,16 +1189,14 @@ void main() {
           expect(t.getSize(recover).height, greaterThanOrEqualTo(48));
           final modeControl = find.descendant(
             of: find.byType(AgentResultsSheet),
-            matching: find.text(
-              mode == AgentContentMode.results ? '继续对话' : '查看结果',
-            ),
+            matching: find.byKey(const Key('agent-sheet-map-toggle')),
           );
           expect(t.getRect(recover).overlaps(t.getRect(modeControl)), false);
           await nowTap(t, recover);
           expect(t.testTextInput.isVisible, false);
           expect(t.widget<TextField>(nowField()).focusNode!.hasFocus, false);
-          expect(ws.contentMode, mode);
-          expect(ws.sheetExtent, extent);
+          expect(ws.contentMode, AgentContentMode.conversation);
+          expect(ws.sheetExtent, AgentSheetExtent.expanded);
           expect(ws.selectedEntityId, entity.id);
           expect(identical(ws.task, task), true);
           expect(identical(ws.result, result), true);
@@ -1120,17 +1212,14 @@ void main() {
           );
           final sheetRect = t.getRect(find.byType(AgentResultsSheet));
           expect(sheetRect.top, greaterThanOrEqualTo(laneRect.bottom + 11.5));
-          expect(
-            find.byType(EntityPeekCard),
-            extent == AgentSheetExtent.expanded ? findsNothing : findsOneWidget,
-          );
+          expect(find.byType(EntityPeekCard), findsNothing);
           expect(find.byTooltip('打开侧边栏').hitTestable(), findsOneWidget);
           expect(
             find.byKey(const Key('now-city-picker')).hitTestable(),
             findsOneWidget,
           );
-          expect(ws.contentMode, mode);
-          expect(ws.sheetExtent, extent);
+          expect(ws.contentMode, AgentContentMode.conversation);
+          expect(ws.sheetExtent, AgentSheetExtent.expanded);
           expect(ws.selectedEntityId, entity.id);
           expect(identical(ws.task, task), true);
           expect(identical(ws.result, result), true);
@@ -1138,6 +1227,14 @@ void main() {
             identical(t.widget<MapCanvas>(find.byType(MapCanvas)), map),
             true,
           );
+          expect(f.source.queries, ['查找公开地点']);
+          await nowTap(t, find.byKey(const Key('agent-sheet-map-toggle')));
+          expect(ws.sheetExtent, AgentSheetExtent.peek);
+          expect(find.byType(EntityPeekCard), findsOneWidget);
+          expect(ws.selectedEntityId, entity.id);
+          expect(ws.result!.entities.single.id, entity.id);
+          expect(map.mapState.searchAreaBounds, movedBounds);
+          expect(identical(ws.task, task), true);
           expect(f.source.queries, ['查找公开地点']);
           expect(t.takeException(), isNull);
         }
@@ -1412,8 +1509,8 @@ void main() {
       ];
       final hit = HitTestResult();
       t.binding.hitTestInView(hit, point, t.view.viewId);
-      debugPrintSynchronously((
-        jsonEncode({
+      debugPrintSynchronously(
+        (jsonEncode({
           'sample': sample,
           'logicalTap': [point.dx, point.dy],
           'physicalTap': [point.dx * density, point.dy * density],
@@ -1429,18 +1526,20 @@ void main() {
               .map((e) => e.target.runtimeType.toString())
               .toList(),
           'initialFocus': t.widget<TextField>(field).focusNode!.hasFocus,
-        })).toString());
+        })).toString(),
+      );
       expect(t.getRect(surface).contains(point), true);
       expect(t.getRect(editable).center.dy, closeTo(rect.center.dy, .5));
       expect(t.widget<TextField>(field).focusNode!.hasFocus, false);
       await t.tapAt(point);
       await t.pumpAndSettle();
-      debugPrintSynchronously((
-        jsonEncode({
+      debugPrintSynchronously(
+        (jsonEncode({
           'sample': sample,
           'focusAfter': t.widget<TextField>(field).focusNode!.hasFocus,
           'imeAfter': t.testTextInput.isVisible,
-        })).toString());
+        })).toString(),
+      );
       expect(t.widget<TextField>(field).focusNode!.hasFocus, true);
       expect(t.testTextInput.isVisible, true);
       expect(f.source.queries, isEmpty);
@@ -1497,14 +1596,15 @@ void main() {
               .skip(start)
               .map((call) => call.method)
               .toList();
-          debugPrintSynchronously((
-            jsonEncode({
+          debugPrintSynchronously(
+            (jsonEncode({
               'hiddenIME': sample,
               'attempt': attempt,
               'focus': field.focusNode!.hasFocus,
               'ime': t.testTextInput.isVisible,
               'calls': calls,
-            })).toString());
+            })).toString(),
+          );
           expect(field.focusNode!.hasFocus, true);
           expect(t.testTextInput.isVisible, true);
           expect(calls, contains('TextInput.show'));
@@ -1583,7 +1683,7 @@ void main() {
       });
     }
   }
-  testWidgets('输入留白编辑与独立加号发送保留选区 composing 与导航暂停', (t) async {
+  testWidgets('输入留白编辑与账户导航暂停保留选区 composing 且隐藏未接通附件', (t) async {
     final f = NowFixture();
     addTearDown(f.dispose);
     await _mountInputHitFixture(t, f);
@@ -1594,9 +1694,12 @@ void main() {
     controller.selection = const TextSelection(baseOffset: 0, extentOffset: 2);
     state.pauseEditing();
     await t.pumpAndSettle();
-    final plus = find.byTooltip('打开快捷操作');
-    await nowTap(t, plus);
-    expect(find.text('添加素材'), findsOneWidget);
+    expect(find.byTooltip('打开快捷操作'), findsNothing);
+    expect(find.text('添加素材'), findsNothing);
+    final pausedValue = controller.value;
+    await nowOpenAccountTools(t);
+    expect(find.byKey(const Key('now-tools-menu')), findsOneWidget);
+    expect(controller.value, pausedValue);
     expect(controller.text, '本人检查的未发送草稿');
     expect(t.testTextInput.isVisible, false);
     expect(f.source.queries, isEmpty);
@@ -1636,8 +1739,9 @@ void main() {
     await f.unmount(t);
   });
 
+  // BT-UXR-015/019/034: one conversation, with spatial map controls.
   for (final scale in [1.0, 1.7, 3.0]) {
-    testWidgets('原peek $scale 可见模式与展开主动作，点击动作不改变原选择和task', (t) async {
+    testWidgets('原peek $scale 可见展开对话与地图动作保留原选择和task', (t) async {
       t.view.physicalSize = const Size(320, 720);
       t.view.devicePixelRatio = 1;
       addTearDown(t.view.resetPhysicalSize);
@@ -1650,27 +1754,34 @@ void main() {
       ws.setSheetExtent(AgentSheetExtent.peek);
       ws.selectEntity('place:synthetic-keep-id');
       await t.pumpAndSettle();
-      final task = ws.task;
-      final sheet = find.byType(AgentResultsSheet);
-      final mode = find.descendant(of: sheet, matching: find.text('继续对话'));
-      final expand = find.descendant(of: sheet, matching: find.text('展开结果'));
-      await nowTap(t, expand);
-      expect(ws.contentMode, AgentContentMode.results);
-      expect(ws.sheetExtent, AgentSheetExtent.medium);
-      expect(identical(ws.task, task), true);
-      expect(ws.selectedEntityId, 'place:synthetic-keep-id');
-      await nowTap(t, mode);
-      expect(ws.contentMode, AgentContentMode.conversation);
-      final backMode = find.descendant(of: sheet, matching: find.text('查看结果'));
-      final action = find.ancestor(
-        of: backMode,
-        matching: find.byType(TextButton),
+      final task = ws.task, result = ws.result;
+      final map = t.widget<MapCanvas>(find.byType(MapCanvas));
+      final expand = find.byKey(const Key('agent-sheet-expand-summary'));
+      expect(
+        find.descendant(of: expand, matching: find.text('展开对话')),
+        findsOneWidget,
       );
-      expect(t.getSize(action).height, greaterThanOrEqualTo(48));
-      await nowTap(t, backMode);
-      expect(ws.contentMode, AgentContentMode.results);
+      expect(t.getSize(expand).height, greaterThanOrEqualTo(48));
+      await nowTap(t, expand);
+      expect(ws.contentMode, AgentContentMode.conversation);
+      expect(ws.sheetExtent, AgentSheetExtent.medium);
+      expect(find.byType(AgentConversation), findsOneWidget);
+      expect(find.text('合成权威响应：找地点'), findsOneWidget);
+      final mapAction = find.byKey(const Key('agent-sheet-map-toggle'));
+      expect(t.getSize(mapAction).height, greaterThanOrEqualTo(48));
+      await nowTap(t, mapAction);
+      expect(ws.sheetExtent, AgentSheetExtent.peek);
+      expect(find.byTooltip('展开对话').hitTestable(), findsOneWidget);
+      await nowTap(t, mapAction);
+      expect(ws.sheetExtent, AgentSheetExtent.expanded);
+      expect(ws.contentMode, AgentContentMode.conversation);
+      expect(find.byType(AgentConversation), findsOneWidget);
+      expect(find.text('合成权威响应：找地点'), findsOneWidget);
       expect(identical(ws.task, task), true);
+      expect(identical(ws.result, result), true);
+      expect(identical(t.widget<MapCanvas>(find.byType(MapCanvas)), map), true);
       expect(ws.selectedEntityId, 'place:synthetic-keep-id');
+      expect(f.source.queries, ['找地点']);
       expect(t.takeException(), isNull);
       await f.unmount(t);
     });
@@ -1695,7 +1806,14 @@ void main() {
     addTearDown(f.dispose);
     await f.mount(t);
     await nowSend(t, '找地点');
-    await nowTap(t, find.byTooltip('打开对话'));
+    final ws = f.workspace(t),
+        task = f.workspace(t).task,
+        result = f.workspace(t).result;
+    final map = t.widget<MapCanvas>(find.byType(MapCanvas));
+    await nowTap(t, find.byKey(const Key('agent-sheet-map-toggle')));
+    expect(ws.sheetExtent, AgentSheetExtent.peek);
+    await nowTap(t, find.byKey(const Key('agent-sheet-map-toggle')));
+    expect(ws.sheetExtent, AgentSheetExtent.expanded);
     expect(find.byType(AgentConversation), findsOneWidget);
     await t.drag(
       find.byKey(const Key('agent-sheet-handle')),
@@ -1703,6 +1821,13 @@ void main() {
     );
     await t.pumpAndSettle();
     expect(find.byType(AgentConversation), findsOneWidget);
+    expect(find.text('合成权威响应：找地点'), findsOneWidget);
+    expect(ws.contentMode, AgentContentMode.conversation);
+    expect(ws.sheetExtent, AgentSheetExtent.medium);
+    expect(identical(ws.task, task), true);
+    expect(identical(ws.result, result), true);
+    expect(identical(t.widget<MapCanvas>(find.byType(MapCanvas)), map), true);
+    expect(f.source.queries, ['找地点']);
     await f.unmount(t);
   });
   testWidgets('实际统一输入框支持四行草稿', (t) async {

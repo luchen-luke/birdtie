@@ -290,20 +290,19 @@ class _MapCanvasState extends State<MapCanvas> {
                             widget.city.cityError ??
                                 (widget.city.citiesLoading
                                     ? '正在读取公开城市…'
-                                    : '选择城市，查看公开活动和地点。'),
+                                    : '从顶部城市与范围入口选择城市，查看公开内容。'),
                             textAlign: TextAlign.center,
                           ),
-                          const SizedBox(height: 12),
-                          FilledButton.icon(
-                            onPressed: widget.city.citiesLoading
-                                ? null
-                                : widget.onChooseCity ??
-                                      () => widget.city.loadCities(),
-                            icon: const Icon(Icons.location_city_outlined),
-                            label: Text(
-                              widget.onChooseCity == null ? '重新读取城市' : '选择城市',
+                          if (widget.city.cityError != null) ...[
+                            const SizedBox(height: 12),
+                            FilledButton.icon(
+                              onPressed: widget.city.citiesLoading
+                                  ? null
+                                  : () => widget.city.loadCities(),
+                              icon: const Icon(Icons.refresh),
+                              label: const Text('重新读取城市'),
                             ),
-                          ),
+                          ],
                         ],
                       ),
                     ),

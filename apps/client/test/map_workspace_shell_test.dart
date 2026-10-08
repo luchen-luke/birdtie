@@ -402,7 +402,11 @@ void main() {
         isNull,
       );
       expect(find.byType(AreaPulseStack), findsNothing);
-      expect(find.text('选择城市'), findsOneWidget);
+      expect(find.text('选择城市'), findsNothing);
+      expect(
+        find.byKey(const Key('now-city-picker')).hitTestable(),
+        findsOneWidget,
+      );
 
       await tester.enterText(
         find.byType(TextField).first,
@@ -489,7 +493,11 @@ void main() {
         isNull,
       );
       expect(find.byType(AreaPulseStack), findsNothing);
-      expect(find.text('选择城市'), findsOneWidget);
+      expect(find.text('选择城市'), findsNothing);
+      expect(
+        find.byKey(const Key('now-city-picker')).hitTestable(),
+        findsOneWidget,
+      );
 
       await tester.tap(find.byTooltip('打开收件箱'));
       await tester.pumpAndSettle();

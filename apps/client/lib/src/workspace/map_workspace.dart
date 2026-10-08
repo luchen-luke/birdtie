@@ -2228,16 +2228,14 @@ class _MapWorkspaceState extends State<MapWorkspace> {
               _workspace.inputFocused ||
               (_workspace.task != null &&
                   _workspace.sheetExtent == AgentSheetExtent.expanded);
-          final sheetBottom =
-              composerBottom +
-              _composerHeight +
-              (continuousConversation ? 0 : 12);
+          final sheetBottom = composerBottom + _composerHeight + 12;
           final topControlsHeight =
               _topControlsHeight ?? MediaQuery.paddingOf(context).top + 58;
           final ornamentBottom = topControlsHeight + 8 + _ornamentHeight;
-          final chromeBottom = continuousConversation
-              ? topControlsHeight
-              : ornamentBottom + 8;
+          // The continuous conversation surface still starts below the map's
+          // attribution lane. Its composer padding belongs to that same
+          // surface, so focusing input never covers the persistent map chrome.
+          final chromeBottom = ornamentBottom + 8;
           final sheetHeight =
               (constraints.maxHeight - sheetBottom - chromeBottom).clamp(
                 0.0,

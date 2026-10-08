@@ -52,7 +52,11 @@ void main() {
     final mapWidget = t.widget<PublicCityMapView>(map);
     final idleBuildCount = mapBuildCount;
     expect(idleBuildCount, greaterThan(0));
-    expect(find.text('选择城市').hitTestable(), findsOneWidget);
+    expect(find.text('选择城市'), findsNothing);
+    expect(
+      find.byKey(const Key('now-city-picker')).hitTestable(),
+      findsOneWidget,
+    );
     expect(find.text('当前：未选城市').hitTestable(), findsOneWidget);
     expect(f.workspace(t).task, isNull);
     await nowTap(t, nowField());
@@ -63,16 +67,25 @@ void main() {
     final oldCTA = find.text('选择城市');
     final composerRect = t.getRect(find.byType(AgentComposer));
     final ctaRect = oldCTA.evaluate().isEmpty ? null : t.getRect(oldCTA);
-    debugPrintSynchronously((jsonEncode({
-      'cityRecoveryStep': 'actual-field-and-ime',
-      'centralCTA': oldCTA.evaluate().length,
-      'composerRect': [composerRect.left, composerRect.top, composerRect.right, composerRect.bottom],
-      'ctaRect': ctaRect == null ? null : [ctaRect.left, ctaRect.top, ctaRect.right, ctaRect.bottom],
-      'ctaOverlapsComposer': ctaRect?.overlaps(composerRect),
-      'mapBuildCount': mapBuildCount,
-      'idleBuildCount': idleBuildCount,
-      'ime': t.testTextInput.isVisible,
-    })).toString());
+    debugPrintSynchronously(
+      (jsonEncode({
+        'cityRecoveryStep': 'actual-field-and-ime',
+        'centralCTA': oldCTA.evaluate().length,
+        'composerRect': [
+          composerRect.left,
+          composerRect.top,
+          composerRect.right,
+          composerRect.bottom,
+        ],
+        'ctaRect': ctaRect == null
+            ? null
+            : [ctaRect.left, ctaRect.top, ctaRect.right, ctaRect.bottom],
+        'ctaOverlapsComposer': ctaRect?.overlaps(composerRect),
+        'mapBuildCount': mapBuildCount,
+        'idleBuildCount': idleBuildCount,
+        'ime': t.testTextInput.isVisible,
+      })).toString(),
+    );
     expect(find.text('选择城市'), findsNothing);
     expect(find.text('选择城市，查看公开活动和地点。'), findsNothing);
     for (final inset in [980.0, 1012.0, 1056.0]) {
@@ -95,12 +108,16 @@ void main() {
     t.view.viewInsets = const FakeViewPadding();
     await t.pumpAndSettle();
     expect(find.byType(BottomSheet), findsOneWidget);
-    expect(find.byTooltip('取消选择城市').hitTestable(), findsOneWidget);
+    expect(find.byTooltip('取消选择城市与范围').hitTestable(), findsOneWidget);
     expect(f.source.queries, isEmpty);
-    await nowTap(t, find.byTooltip('取消选择城市'));
+    await nowTap(t, find.byTooltip('取消选择城市与范围'));
     expect(find.byType(BottomSheet), findsNothing);
-    expect(find.text('选择城市').hitTestable(), findsOneWidget);
-    expect(find.text('选择城市，查看公开活动和地点。'), findsOneWidget);
+    expect(find.text('选择城市'), findsNothing);
+    expect(
+      find.byKey(const Key('now-city-picker')).hitTestable(),
+      findsOneWidget,
+    );
+    expect(find.text('选择城市，查看公开活动和地点。'), findsNothing);
     expect(f.city.selectedCity, isNull);
     expect(f.workspace(t).task, isNull);
     expect(t.widget<TextField>(nowField()).controller!.value, draft);
@@ -110,7 +127,15 @@ void main() {
     expect(identical(mapWidget, t.widget<PublicCityMapView>(map)), true);
     expect(f.source.queries, isEmpty);
     expect(t.takeException(), isNull);
-    debugPrintSynchronously((jsonEncode({'cityRecoveryStep': 'actual-top-city-and-cancel-restores', 'mapBuildCount': mapBuildCount, 'idleBuildCount': idleBuildCount, 'ime': t.testTextInput.isVisible, 'queries': f.source.queries.length})).toString());
+    debugPrintSynchronously(
+      (jsonEncode({
+        'cityRecoveryStep': 'actual-top-city-and-cancel-restores',
+        'mapBuildCount': mapBuildCount,
+        'idleBuildCount': idleBuildCount,
+        'ime': t.testTextInput.isVisible,
+        'queries': f.source.queries.length,
+      })).toString(),
+    );
     await f.unmount(t);
   });
   testWidgets('真实未选城市原Now不常驻附近活动loading且选城恢复仍可达', (t) async {
@@ -121,8 +146,12 @@ void main() {
     expect(f.city.selectedCity, isNull);
     expect(find.byType(AreaPulseStack), findsNothing);
     expect(find.text('正在查看附近活动…'), findsNothing);
-    expect(find.text('选择城市').hitTestable(), findsOneWidget);
-    await nowTap(t, find.text('选择城市'));
+    expect(find.text('选择城市'), findsNothing);
+    expect(
+      find.byKey(const Key('now-city-picker')).hitTestable(),
+      findsOneWidget,
+    );
+    await nowTap(t, find.byKey(const Key('now-city-picker')));
     await nowTap(t, find.text('甲验收城市'));
     expect(f.city.selectedCity?.id, 'alpha');
     expect(
@@ -215,11 +244,79 @@ void main() {
       ),
     );
     await t.pumpAndSettle();
-    expect(find.text('选择城市'), findsOneWidget);
-    await nowTap(t, find.text('选择城市'));
+    expect(find.text('选择城市'), findsNothing);
+    expect(
+      find.byKey(const Key('now-city-picker')).hitTestable(),
+      findsOneWidget,
+    );
+    await nowTap(t, find.byKey(const Key('now-city-picker')));
     await nowTap(t, find.text('合成目录alpha'));
     expect(city.selectedCity?.id, 'alpha');
     expect(reads, 2);
+    await f.unmount(t);
+  });
+  testWidgets('目录失败只重读目录不选城不提交，仍通过唯一顶栏明确选城', (t) async {
+    var reads = 0;
+    final client = MockClient((r) async {
+      if (r.url.path != '/v1/cities') return cityReply([]);
+      reads++;
+      return reads == 1
+          ? cityReply({}, status: 503)
+          : cityReply([catalogCity('alpha')]);
+    });
+    final city = PublicCityController(
+      client: client,
+      apiBaseUrl: 'http://catalog-retry-fixture.test',
+    );
+    addTearDown(city.dispose);
+    addTearDown(client.close);
+    await city.loadCities();
+    final f = NowFixture();
+    addTearDown(f.dispose);
+    await t.pumpWidget(
+      MaterialApp(
+        home: MapWorkspace(
+          city: city,
+          auth: f.auth,
+          moments: f.moments,
+          seedClient: f.client,
+          seedApiBaseUrl: 'http://fixture.test',
+          agentTaskSource: f.source,
+        ),
+      ),
+    );
+    await t.pumpAndSettle();
+    final canvas = find.byType(MapCanvas), map = find.byType(PublicCityMapView);
+    final canvasElement = canvas.evaluate().single,
+        canvasWidget = t.widget<MapCanvas>(canvas),
+        mapElement = map.evaluate().single,
+        mapState = t.state(map);
+    expect(city.cityError, isNotNull);
+    expect(find.text('选择城市'), findsNothing);
+    final retry = find.widgetWithText(FilledButton, '重新读取城市');
+    expect(retry.hitTestable(), findsOneWidget);
+    expect(t.getSize(retry).height, greaterThanOrEqualTo(48));
+    await nowTap(t, retry);
+    expect(reads, 2);
+    expect(city.cityError, isNull);
+    expect(city.selectedCity, isNull);
+    expect(f.workspace(t).task, isNull);
+    expect(f.source.queries, isEmpty);
+    expect(find.text('重新读取城市'), findsNothing);
+    expect(find.text('选择城市'), findsNothing);
+    expect(identical(canvasElement, canvas.evaluate().single), true);
+    expect(identical(canvasWidget, t.widget<MapCanvas>(canvas)), true);
+    expect(identical(mapElement, map.evaluate().single), true);
+    expect(identical(mapState, t.state(map)), true);
+    await nowTap(t, find.byKey(const Key('now-city-picker')));
+    expect(find.text('选择城市与范围'), findsOneWidget);
+    await nowTap(t, find.text('合成目录alpha'));
+    expect(city.selectedCity?.id, 'alpha');
+    expect(f.source.queries, isEmpty);
+    expect(identical(canvasElement, canvas.evaluate().single), true);
+    expect(identical(mapElement, map.evaluate().single), true);
+    expect(identical(mapState, t.state(map)), true);
+    expect(t.takeException(), isNull);
     await f.unmount(t);
   });
   test('真实原生目录首次读取不擅自选择第一城市', () async {

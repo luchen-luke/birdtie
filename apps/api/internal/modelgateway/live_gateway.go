@@ -104,15 +104,15 @@ type nativeLiveRequestBody struct {
 
 func (b *nativeLiveRequestBody) Read(p []byte) (int, error) {
 	if b == nil {
-		return 0, ErrUnavailable
+		return 0, modelFailure("MODEL_CURRENT", "NATIVE_CURRENT", 0, ErrUnavailable)
 	}
 	b.mu.Lock()
 	defer b.mu.Unlock()
 	if b.closed.Load() || b.ctx == nil || b.ctx.Err() != nil || b.before == nil || b.reader == nil {
-		return 0, ErrUnavailable
+		return 0, modelFailure("MODEL_CURRENT", "NATIVE_CURRENT", 0, ErrUnavailable)
 	}
 	if e := b.before(); e != nil || b.closed.Load() || b.ctx.Err() != nil {
-		return 0, ErrUnavailable
+		return 0, modelFailure("MODEL_CURRENT", "NATIVE_CURRENT", 0, ErrUnavailable)
 	}
 	return b.reader.Read(p)
 }
@@ -125,13 +125,13 @@ func (b *nativeLiveRequestBody) Close() error {
 
 func (t liveWireTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	if req == nil || req.Body == nil || req.URL == nil || req.URL.String() != tencentChatEndpoint || req.Method != http.MethodPost || req.GetBody != nil || !req.Close || t.next == nil || t.attempts == nil || t.wires == nil || t.before == nil || !t.attempts.CompareAndSwap(0, 1) {
-		return nil, ErrLivePreparation
+		return nil, modelFailure("MODEL_WIRE", "NATIVE_WIRE", 0, ErrLivePreparation)
 	}
 	raw, err := io.ReadAll(io.LimitReader(req.Body, MaxRequestBytes+1))
 	_ = req.Body.Close()
 	if err != nil || !bytes.Equal(raw, []byte(t.prepared.wire)) || tencentWireDigest(raw) != t.prepared.digest {
 		clear(raw)
-		return nil, ErrLivePreparation
+		return nil, modelFailure("MODEL_WIRE", "NATIVE_WIRE", 0, ErrLivePreparation)
 	}
 	// The body is the exact copy whose digest the native port approved. No
 	// automatic GetBody or retry is installed when restoring the read body.
@@ -141,7 +141,7 @@ func (t liveWireTransport) RoundTrip(req *http.Request) (*http.Response, error) 
 	req.Body = &nativeLiveRequestBody{reader: strings.NewReader(t.prepared.wire), ctx: req.Context(), before: t.before}
 	clear(raw)
 	if err := t.before(); err != nil || req.Context().Err() != nil {
-		return nil, ErrUnavailable
+		return nil, modelFailure("MODEL_CURRENT", "NATIVE_CURRENT", 0, ErrUnavailable)
 	}
 	t.wires.Add(1)
 	return t.next.RoundTrip(req)
@@ -149,7 +149,9 @@ func (t liveWireTransport) RoundTrip(req *http.Request) (*http.Response, error) 
 
 func (g *Gateway) completeNativeLive(ctx context.Context, original Request) (Result, error) {
 	r := cloneLiveRequest(original)
-	fail := func(reason string, err error) (Result, error) { return emptyResult(r, Live, Unavailable, reason), err }
+	fail := func(reason string, err error) (Result, error) {
+		return emptyResult(r, Live, Unavailable, reason), WithLiveFailureReason(err, reason)
+	}
 	p, err := g.live.adapter.Prepare(providerRequest(r))
 	if err != nil {
 		return fail("live_preparation_unavailable", ErrUnavailable)
@@ -227,14 +229,16 @@ func (g *Gateway) completeNativeLive(ctx context.Context, original Request) (Res
 	}
 	if providerErr != nil {
 		classified := normalizedProviderError(providerErr)
-		return fail("provider_"+classified.Code, normalizedProviderFailure(providerErr, classified))
+		// Preserve the safe adapter diagnostic and original errors.Is/As cause.
+		// Normalized ProviderError and RetryAfter retain their original contracts.
+		return fail("provider_"+classified.Code, errors.Join(normalizedProviderFailure(providerErr, classified), providerErr))
 	}
 	if wires.Load() != 1 {
 		return fail("live_wire_unavailable", ErrUnavailable)
 	}
 	result, err := normalizeLiveTencentText(r, raw, p)
 	if err != nil {
-		return emptyResult(r, Live, Invalid, "invalid_live_text_response"), err
+		return emptyResult(r, Live, Invalid, "invalid_live_text_response"), WithLiveFailureReason(err, "invalid_live_text_response")
 	}
 	if g.currentLive(callctx, r, p) != nil {
 		return fail("live_current_authority_unavailable", ErrUnavailable)

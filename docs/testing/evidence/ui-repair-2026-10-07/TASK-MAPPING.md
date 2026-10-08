@@ -26,7 +26,7 @@
 | BT-UXR-012 | 城市选择器自适应内容 | BT-V4-CTX-002；BT-V4-NOW-006 | [工作区][ws]、[城市目录][city] | PARTIAL：目录用受限最大高度 + shrinkWrap，只有一个城市不铺整页；loading/error/retry 使用实际目录。没有假当前定位。搜索/最近城市/定位如需展示仍须真实能力，当前未实现这些扩展。 |
 | BT-UXR-013 | 分开任务目的地和地图视口 | BT-MAP-003；BT-V4-CTX-002；BT-V4-NOW-006 | [地图状态][mapstate]、[工作区][ws]、[城市目录][city] | CODE+UNIT/PARTIAL：已复核的异地任务提交同步原 City 控制器，未知城市保留原任务/地图/草稿且不提交；选择目的地不立即删除任务，ONLINE 不改地图，视口移动不改目的地。跨城市正负/迟到/ABA 用例 PASS；冷启动持久化及本人范围真机 NOT_RUN。 |
 | BT-UXR-014 | 替换顶部标签与更多工具白页 | BT-NOW-001；BT-V4-NOW-001；BT-V4-MAP-001；BT-POL-001 | [工作区][ws]、[顶栏][top]、[图层][layers] | PARTIAL：tools 移至账户、地图图层原能力保留，去掉其查询情境入口和 composer 空闲预设建议。AreaPulseStack 及其信息区仍存在，未完成“一个轻量图层按钮”所有视觉收敛；定位/attribution 碰撞真机 NOT_RUN。 |
-| BT-UXR-015 | 移除结果/对话模式分叉 | BT-AGT-002；BT-AGT-004；BT-V4-NOW-004 | [消息流][conversation]、[面板][sheet]、[控制器][ctrl] | CODE+UNIT：每条 assistant 回复绑定自身结果快照、解释/卡片/来源同流；results mode 兼容 API 仍渲染同一消息流。远端完整消息恢复保留先前真实解释，不用新结果替换所有旧轮。相关滚动/历史用例通过。 |
+| BT-UXR-015 | 移除结果/对话模式分叉 | BT-AGT-002；BT-AGT-004；BT-V4-NOW-004 | [消息流][conversation]、[面板][sheet]、[控制器][ctrl] | CODE+UNIT/PARTIAL：控制器内每条 assistant 绑定自身结果快照、解释/卡片/来源同流；results mode 兼容 API 渲染同一消息流。远端恢复能保留先前真实文字/来源；跨重启旧轮实体集合尚未持久化，只有最后一轮读取当前结果，不用最新卡片嫁接旧轮。完整旧轮实体恢复尚未完成。 |
 | BT-UXR-016 | 把状态句替换成真实回答链 | BT-AGT-001；BT-AGT-002；BT-V5-AIR-007；BT-V5-AIR-009；BT-V5-AIR-025；BT-V5-AIR-026；BT-V5-AIR-039 | [远端源][remote]、[Agent HTTP][agenthttp]、[网关][gateway]、[结果投影][projection] | PARTIAL/UNCONNECTED：原结构化站内读取与来源保留；真实模型/联网完整链尚未验收。原 AIR-009 已在 UI 安全检查点后串行接续，真实 Tencent transport、WSA 适配与原预算接线按缺口推进；009-LIVE BLOCKED，025/026 TODO 保留。数量句、dev-seed 与 provider key 不算真实回答。 |
 | BT-UXR-017 | 统一地点/活动/故事卡 | BT-V4-NOW-004；BT-V4-PLC-005；BT-V4-MOM-001；BT-DET-001 | [实体卡][card]、[结果投影][projection]、[活动详情][detail] | PARTIAL：多实体使用同一 typed ref/来源/详情入口，空 summary/source 不伪造。活动日期/地点/作者/故事时序尚未在统一卡规范完整表达；Moment/story 不是现行投影类型，不能称三类统一已完成。 |
 | BT-UXR-018 | 复用一套实体详情与选择预览 | BT-MAP-002；BT-NOW-003；BT-V4-ACTN-001；BT-V4-NOW-004 | [工作区][ws]、[控制器][ctrl]、[实体卡][card]、[地图][map] | CODE+UNIT/DEVICE：APK05 卡片→地图选中同体育馆→真实领域详情同名称/来源→返回保留；未伪造详情摘要成功。历史 result/迟到选择单元覆盖。完整 cluster、多种实体与身份真机矩阵 NOT_RUN。 |
@@ -40,7 +40,7 @@
 | BT-UXR-026 | 粘贴后按内容给轻量后续动作 | BT-AGT-003；BT-V4-ACTN-001 | [输入][composer] | PARTIAL：原生粘贴与原素材 helper 的显式 clipboard read/草稿 guard 保留，无轮询/自动发送。当前正常会话输入的链接/列表粘贴后轻量预览与后续动作未接入，隐藏 helper 不作为完成依据。 |
 | BT-UXR-027 | 统一叠层和返回优先级 | BT-MAP-001；BT-NOW-003；BT-PER-001 | [工作区][ws]、[输入][composer]、[通知边界][boundary] | PARTIAL：菜单/详情前 pauseEditing，关闭 drawer 回调防重复 pop，各路由有身份/epoch boundary；有明确键盘收起按钮。未找到完整统一 system back 叠层状态机，该轮系统返回、附件预览/菜单/详情顺序真机 NOT_RUN。 |
 | BT-UXR-028 | 共享结果、相机和双向选择 | BT-MAP-001；BT-MAP-002；BT-V4-MAP-002；BT-V4-NOW-004 | [控制器][ctrl]、[工作区][ws]、[地图][map]、[状态测试][statetest] | CODE+UNIT/DEVICE：同 APK05/API05 20对会话/地图切换，20张地图视野/实体/计数区域像素完全一致，首末图和末会话人工核验3地点及选择保留；详情返回与追问3→3。完整任意pin/cluster双向选择、profile帧数据 NOT_RUN。 |
-| BT-UXR-029 | 会话历史恢复与新建语义 | BT-AGT-004；BT-V4-CHT-001；BT-V4-PRV-001 | [控制器][ctrl]、[远端源][remote]、[侧栏][sidebar]、[输入][composer] | PARTIAL/CODE+UNIT：补真实 POST 失败后一次只读 Recent GET，保留原错误、会话、地图与已有历史；范围与轮次变化丢弃迟到结果，不自动 POST/恢复/完成。APK07 189 定向用例包含新增 25 例并已安装，真机失败后恢复仍待验。逐会话持久草稿与跨重启每轮结果快照尚未完整验收；游客临时历史不冒充账号持久历史。 |
+| BT-UXR-029 | 会话历史恢复与新建语义 | BT-AGT-004；BT-V4-CHT-001；BT-V4-PRV-001 | [控制器][ctrl]、[远端源][remote]、[侧栏][sidebar]、[输入][composer] | PARTIAL/CODE+UNIT+DEVICE：补真实 POST 失败后一次只读 Recent GET，保留原错误、会话、地图与已有历史；范围与轮次变化丢弃迟到结果，不自动 POST/恢复/完成。APK07 189 定向用例包含新增 25 例；真机实际失败后 Recent 显示原两个任务，选择最新任务经原 GET 恢复 1 个真实 Art Gallery 卡片、官方来源与同一地点地图。恢复规则回答不冒充模型回答。逐会话持久草稿与跨重启每轮结果快照尚未完整验收；游客临时历史不冒充账号持久历史。 |
 | BT-UXR-030 | 检索/来源/错误统一呈现 | BT-AGT-002；BT-V4-NOW-004；BT-V5-AIR-024；BT-V5-AIR-039 | [消息流][conversation]、[面板][sheet]、[实体卡][card]、[远端源][remote] | CODE+UNIT/PARTIAL：真实 source label 与可点 HTTP(S) 引用同流；401/403/5xx/配置缺失、空结果与重试分开，不把读取失败当空回答。完整 tool-progress/partial success/model/web 错误事件链仍未接通/验收；AIR-024 原 PARTIAL。 |
 | BT-UXR-031 | 替换 Inbox/我的活动大空白 | BT-INB-001；BT-PLN-001；BT-AUT-002 | [Inbox][inbox]、[我的活动][plans]、[旧认证资料页][profile] | PARTIAL：原 Inbox/Plans 的实际领域数据、刷新与错误重试保留。游客仍主要文本提示，未变为紧凑登录/取消后返回的具体行动；已登录空态的有效下一步尚未完整重排。 |
 | BT-UXR-032 | 重排活动详情决策信息 | BT-DET-001；BT-RSV-001；BT-NTF-002；BT-V4-BIZ-004 | [活动详情][detail] | REUSED/PARTIAL：原日期/地点/费用未知/来源/RSVP/Save/Reminder 实际逻辑继续；每次真实活动 ID 重读不伪造状态。分享/发好友等仍多个按钮，完整决策层级与分享收拢不是本轮已完成项；外部报名不会写成原生报名成功。 |
@@ -62,8 +62,25 @@
 - Xiaomi Android16/c641566b，同APK05/API05实际首问3、续问3、卡片→地图→同地点详情→返回；20对视图切换地图核心像素一致。[真机凭证](D:/Project/birdtie/work/ui-repair-2026-10-07/device/BUILD05-EVIDENCE.json)、[切换核验](D:/Project/birdtie/work/ui-repair-2026-10-07/device/switch-cycles-05/visual-check.json)。数据明确为dev-seed开发示例。
 - WSA/模型/移动地图 key 继续只在 Git 忽略的本地配置。API06 首次真机 Now 请求 FAILED；原 Task ACTIVE、Run STOPPED，CALL UNKNOWN ¥0.08 上界保留，模型未调用。不得把已接入或原测试数量当成真实回答。新 110 复用原 CITY Task 的公开条件，真实 SQL db-08 189 PASS；111 修复正常登录续期误使地图快照失效，实际地图 SQL db-09 34 PASS，均无供应商调用。APK07 已安装且 base.apk hash 核验，完整真实来源回答、卡片、地图、多轮仍待后续验收；原任务状态不因这两组测试而改为 DONE。
 
-- 全量 `go test ./...` build07-backend-01 已真实运行并 FAILED：9074 PASS、143 FAIL、2805 SKIP。140 个失败事件来自原 native 测试要求显式隔离库但本次未提供，启动连接前拒绝；3 个事件是原只读工具描述遗漏实际 sources 字段的真实缺口，正在修复。该失败日志保留，后续定向通过不冒充全套通过。
+- 全量 `go test ./...` build07-backend-01 已真实运行并 FAILED：9074 PASS、143 FAIL、2805 SKIP。140 个失败事件来自原 native 测试要求显式隔离库但本次未提供，启动连接前拒绝；3 个事件是原只读工具描述遗漏实际 sources 字段的真实缺口，已修复并取得 agenttool 399 PASS。build07-backend-02 定向 493 PASS、0 FAIL、173 SKIP，API 与维护 CLI 构建成功；跳过项在该命令中为 NOT_RUN。原失败日志保留，后续定向通过不冒充全套通过。
+- API07/APK07 新真实请求在 source-preview-payload 阶段 FAILED；原 Task ACTIVE、Run STOPPED，模型未获原生发送许可。新增 UNKNOWN CALL 上界 ¥0.08，与旧占用合计 ¥0.16，不是确认账单；无重发旧 operation、退款或重置。真机已验证失败后历史恢复、1 个官方 Place 卡片、来源在 Chrome 打开及同地点地图选择；完整真实模型与联网来源、多轮仍未完成。
 - 以下“子任务对账阶段”日志为历史阶段，不覆盖本节新增根代理证据；未运行的原能力/真实身份/生产/性能回归不继承历史PASS。
+
+## 2026-10-08 API10 / APK09 最新实际对账
+
+本节补充表中历史版本证据，不改变原队列状态或把部分候选标为整体 DONE。
+
+| 候选 | 本次实际改动、验证及边界 |
+|---|---|
+| 001、038、040 | APK09 15 个去重测试文件 315 PASS/0 FAIL/0 SKIP，analyze 无问题，APK build 成功，258 个生产输入/268 个测试输入前后一致；手机 base.apk hash 与安装包相同。API10 710 PASS/0 FAIL/173 SKIP，两个构建成功；SQL 跳过项是该命令 NOT_RUN。前述 Go 全套实际 FAILED 继续保留。08 视频包含失败，09 视频止于提交前，10 新视频实际包含失败；不能混作成功闭环。 |
+| 007、010、011、012、027 | 四个新断言先复现 MapCanvas 无城市时重复入口，实际移除中央 CTA；只保留顶栏城市与范围入口。目录重读复用原 loadCities、零 Now；底部固定新建/账户、原 Tools/个人资产路径保留。112 项 UI 合约回归通过，原 36 FAIL 及中间失败日志保留。APK09 真机实际观察唯一入口、同一选择器及底部同 Row。完整系统返回与真实 IdP 撤权仍 NOT_RUN。 |
+| 018、028、042 | 原生/Web 共用纯相机决策，仅坐标/范围/选中实体改变才聚焦；标题、排序、取消选择不重设用户视角。异步读写守卫检查当前输入、用户手势、生命周期，24 单元通过。APK09/API10 Recent GET 恢复真实 Art Gallery 卡，卡片→选中地图→同 Place 详情→官网来源打开→返回后卡片、pin 与预览仍同一地点。只证明这一实际流程，完整 cluster/离屏点选/跨重启/性能矩阵仍 NOT_RUN。 |
+| 019、020、021、022、030、034 | 修复 IME 会话布局未避让真实地图署名的间距，6 几何回归通过；旧 layout 测试改到真实 conversation 状态，保留边界和地图身份断言。消息懒渲染用真实内层滚动显示同一 assistant 文本，不替换文本或弱化断言。多平台 IME 动画/惯性/读屏仍 NOT_RUN。 |
+| 016、030、035、039；AIR-009/LIVE、025、026 | 真正接通原 Task/Run/062 的 WSA SearchPro，每次实际持久化 3 来源；原 4KB 消息上限改为确定性完整来源前缀，898 单元/子测试和 213 原生 SQL PASS。模型生成真实尝试失败：API08 原 NATIVE_ERROR 原因未明，API09 腾讯 HTTP400但无业务码，API10 捕获业务401006。官方含义为服务不存在/模型与服务不匹配；实际模型目录 GET200且 hy3 online，只证明目录认证，不证明服务绑定或生成可用。模型 sourced answer / 同结果卡图 / 多轮完整验收 **FAILED/NOT_COMPLETED**，原 gate 状态保留。 |
+| 029 | 实际失败后 Recent 5 个原任务可见，选择最新 Task 经原 GET 恢复 1 个真实官网 Place 与地图；站内规则恢复不冒充模型回答。控制器内多轮集合已保留，但远端 Message 尚未持久化每轮实体 refs，跨重启旧轮卡片是实际剩余缺口；不把最新结果 graft 到旧轮。 |
+| 024、025、026、031、033、041 | Now 加号仅真实接通附件方可展示，当前附件协议仍 UNCONNECTED；原组织、聊天、活动、提醒、私有 Moment、Saved 路由与队列未替换。紧凑登录/待办恢复、历史搜索、完整 Business 导航/全域 tokens、LIFE/导入等原缺口保留；未运行验收明确 NOT_RUN。三处官方 Place 仅经用户人审批准进入新隔离库，未复制 Civu 代码或数据。 |
+
+凭据：`work/ui-repair-2026-10-07/build09-client-01/freeze.json`、`build10-backend-01.receipt.json`、`source-message-bound-01/result.json`、`live-source-native-db-10.result.json`、`ui-contract-regression-01/freeze.json`、`device/BUILD08-EVIDENCE-PARTIAL.json`、`BUILD09-EVIDENCE-PARTIAL.json`、`live10-native-fee-delta01.json`。API10/同 APK09 当前 UNKNOWN 最坏费用占用 ¥0.999040；各供应商请求上限 ≤¥0.20，原账户累计上限 ¥10；镜像 scope 不双加、旧 UNKNOWN 不释放，非账单或免费证明。原四个 queue/state 文件 working bytes 仍与初始 checkpoint05 一致。代码与原来源继续在正式仓库，没有另起项目。
 
 ## 子任务对账阶段验证（历史证据）
 

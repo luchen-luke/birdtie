@@ -41,18 +41,24 @@ type nativeLiveSourceRunAssociation struct {
 // source or credential data into errors. The original error identity remains.
 type nativeLiveRunStageError struct {
 	stage string
-	err   error
+	cause func() error
 }
 
 func (e *nativeLiveRunStageError) Error() string {
-	return "native live Run " + e.stage + ": " + nativeLiveFailureSummary(e.err)
+	return "native live Run " + e.stage + ": " + nativeLiveFailureSummary(e.Unwrap())
 }
-func (e *nativeLiveRunStageError) Unwrap() error { return e.err }
+func (e *nativeLiveRunStageError) Format(s fmt.State, _ rune) { _, _ = io.WriteString(s, e.Error()) }
+func (e *nativeLiveRunStageError) Unwrap() error {
+	if e == nil || e.cause == nil {
+		return nil
+	}
+	return e.cause()
+}
 func nativeLiveStage(stage string, e error) error {
 	if e == nil {
 		return nil
 	}
-	return &nativeLiveRunStageError{stage: stage, err: e}
+	return &nativeLiveRunStageError{stage: stage, cause: func() error { return e }}
 }
 
 // Fixed classifications are safe for server logs. Unwrap retains the original
@@ -77,6 +83,9 @@ func nativeLiveFailureSummary(err error) string {
 		default:
 			return "WSA_PROVIDER_UNKNOWN"
 		}
+	}
+	if summary, ok := modelgateway.SafeModelFailureSummary(err); ok {
+		return summary
 	}
 	for _, classified := range []struct {
 		cause error
@@ -589,7 +598,7 @@ func (h *nativeLiveSourceAnswerRun) ExecuteSourceSearch(ctx context.Context, ada
 				err = nativeLiveStage("search-wire-exact", modelegressbudget.ErrDenied)
 			}
 			if err != nil {
-				guardFailure.Store(&nativeLiveRunStageError{stage: "search-wire-current", err: err})
+				guardFailure.Store(&nativeLiveRunStageError{stage: "search-wire-current", cause: func() error { return err }})
 				return err
 			}
 			return nil
@@ -814,6 +823,7 @@ func (h *nativeLiveSourceAnswerRun) CompleteSourceModel(ctx context.Context, ada
 	stage = "model-gateway-complete"
 	result, e := gateway.Complete(ctx, p.Request())
 	if e != nil {
+		e = modelgateway.WithLiveFailureReason(e, result.ReasonCode)
 		if failed := h.lastNativeFailure.Load(); failed != nil {
 			return empty, errors.Join(e, failed)
 		}

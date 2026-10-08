@@ -82,6 +82,10 @@
 
 凭据：`work/ui-repair-2026-10-07/build09-client-01/freeze.json`、`build10-backend-01.receipt.json`、`source-message-bound-01/result.json`、`live-source-native-db-10.result.json`、`ui-contract-regression-01/freeze.json`、`device/BUILD08-EVIDENCE-PARTIAL.json`、`BUILD09-EVIDENCE-PARTIAL.json`、`live10-native-fee-delta01.json`。API10/同 APK09 当前 UNKNOWN 最坏费用占用 ¥0.999040；各供应商请求上限 ≤¥0.20，原账户累计上限 ¥10；镜像 scope 不双加、旧 UNKNOWN 不释放，非账单或免费证明。原四个 queue/state 文件 working bytes 仍与初始 checkpoint05 一致。代码与原来源继续在正式仓库，没有另起项目。
 
+后续真实全 Go 连接独立新测试库运行，10892 PASS/10 FAIL/23 SKIP，exit1；Postgres 包累计耗尽默认十分钟，680 顶层测试 NOT_RUN、两个 NOT_FINISHED_TIMEOUT，不能称全套通过。旧 062 shared fixture 与原最新问题契约冲突已只改测试，保留历史 canary 和所有安全断言：新独占 SQL 整组 33 PASS，CurrentQuery 17 PASS。个人 Memory 更新 503 在原 guard 31 次及仅隔离库诊断 guard 300 次未再现；根因 NOT_REPRODUCED/修复 NOT_IMPLEMENTED，原失败保留。详见 REPORT 的后续独立回归记录与 `fullgo-disposable-01`、`legacy062-current-query-fixture-01`、`memory-update-diag-01` 凭据。
+
+源码与两份报告已正常推送 [GitHub main](https://github.com/luchen-luke/birdtie)，实际核验 commit `91962eb88aa74ca34b2df295e51f668c80c41b1a`，源树与四个原队列字节保留、凭据扫描零命中。其后 fixture 两份测试及本段证据将增量接续，不重写已有任务或把候选批量标成 DONE。同构建实际设备索引 `device/BUILD10-EVIDENCE-PARTIAL.json` 包含规则恢复的官网 Place 联动，**不等于模型/联网多轮完整发现验收**。
+
 ## 子任务对账阶段验证（历史证据）
 
 - `flutter test --no-pub --concurrency=1 --reporter expanded`，11 个直接相关文件：`ui_repair_shell_test`、`ui_repair_state_test`、`ui_repair_conversation_test`、`agent_workspace_controller_test`、`map_canvas_test`、`agent_conversation_latest_visibility_test`、`agent_result_sheet_test`、`agent_result_sheet_layout_test`、`agent_composer_test`、`now_composer_material_test`、`map_workspace_shell_test`。目录 `D:/Project/birdtie/apps/client`，**211 PASS，exit 0**；生产输入在这次测试期间 hash 未变。见 [整合结果][finalresult] / [整合日志][finallog]。这是后续底栏 Row 修复前的检查点，不能自动覆盖其变更后构建。

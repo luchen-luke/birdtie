@@ -153,7 +153,8 @@ func modelEgressHTTPNative(t *testing.T) *modelEgressHTTPNativeFixture {
 	if _, e = f.store.EnsureAgentProfile(f.ctx, f.agentIDs[0], actorref.PrincipalRef{Type: actorref.Person, ID: f.accountIDs[0]}); e != nil {
 		t.Fatal("native current Agent metadata", e)
 	}
-	f.task, e = f.store.SaveTask(f.ctx, agentworkspace.Task{PrincipalType: "person", PrincipalID: f.accountIDs[0], ActingUserID: f.accountIDs[0], CityID: f.city, Query: "帮我查询周末羽毛球", Intent: "FIND_ACTIVITY", Status: agentworkspace.TaskActive, Filters: map[string]string{}, Conversation: []agentworkspace.Message{{Role: "user", Text: "PRIVATE_CONVERSATION_NOT_EGRESS"}}})
+	const taskQuery = "帮我查询周末羽毛球"
+	f.task, e = f.store.SaveTask(f.ctx, agentworkspace.Task{PrincipalType: "person", PrincipalID: f.accountIDs[0], ActingUserID: f.accountIDs[0], CityID: f.city, Query: taskQuery, Intent: "FIND_ACTIVITY", Status: agentworkspace.TaskActive, Filters: map[string]string{}, Conversation: []agentworkspace.Message{{Role: "user", Text: "PRIVATE_CONVERSATION_NOT_EGRESS"}, {Role: "user", Text: taskQuery}}})
 	if e != nil {
 		t.Fatal("native actual Task", e)
 	}

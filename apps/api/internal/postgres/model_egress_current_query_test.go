@@ -21,6 +21,7 @@ func TestCurrentEgressQueryOnlyExportsCurrentNativeUserTurn(t *testing.T) {
 		{"preserves current whitespace", "找活动", `{"currentQuery":" 只看周六的 "}`, `[{"role":"user","text":"只看周六的"}]`, " 只看周六的 ", false},
 		{"stale original", "找活动", `{"currentQuery":"找活动"}`, `[{"role":"user","text":"找活动"},{"role":"user","text":"只看周六的"}]`, "", true},
 		{"followup filter absent", "找活动", `{}`, `[{"role":"user","text":"找活动"},{"role":"user","text":"只看周六的"}]`, "", true},
+		{"last user private canary mismatch", "帮我查询周末羽毛球", `{}`, `[{"role":"user","text":"PRIVATE_CONVERSATION_NOT_EGRESS"}]`, "", true},
 		{"current lacks user source", "找活动", `{"currentQuery":"只看周六的"}`, `[{"role":"assistant","text":"只看周六的"}]`, "", true},
 		{"empty current", "找活动", `{"currentQuery":""}`, `[]`, "", true},
 		{"non-string filter", "找活动", `{"currentQuery":true}`, `[]`, "", true},

@@ -54,7 +54,7 @@ AIR-009 已在 UI 自然检查点后串行接续。`tencent_tokenhub.go`/测试�
 - 开发地点 UI/地图连续流程和特定缺陷前后录屏：已取得历史证据；真实官网 Place 已通过原流程发布到批准的隔离库。后续 APK07 已实际打开官网来源，见检查点；真实检索回答完整闭环仍未完成。dev-seed 链接不能证明真实 HTTP(S) 来源打开。
 - 本增量全部 Flutter 套件、真实 IdP/组织深链撤权、无障碍完整矩阵、性能 profile、iOS：**NOT_RUN**。Go 全套实际运行有失败，详见后续检查点，不记为 NOT_RUN 或通过。
 - Now 附件、就地登录待办恢复、历史搜索、完整 Business 导航以及 LIFE/导入候选的缺口按映射表保留。
-- 未部署生产、未推送 GitHub；没有用测试活动、固定长文或 API key 可用代替基础 Agent 验收。
+- 未部署生产；源码已在后续检查点正常推送 GitHub，见交付记录。没有用测试活动、固定长文或 API key 可用代替基础 Agent 验收。
 
 ## 2026-10-08 真实链接续检查点
 
@@ -113,3 +113,15 @@ API10 SHA256 `810283a6471be26e8fc5494bf1fa62f2fc909c204ef5acc6958fc2b5257bf075`�
 跨重启恢复每轮结果集合还有真实缺口：当前控制器内保存每轮集合；原远端会话仅持久化文字与来源，恢复时只有最后一轮拿到当前结果。旧轮实体不能用最新结果嫁接补齐。这个缺口及 Now 附件协议均未写成完成；原任务队列状态保持不变。
 
 API10/同 APK09 又经 Recent 原 GET 恢复最新 ACTIVE Task，实际显示 1 个 Art Gallery 卡片与官方链接；地图查看选中同一 Place/pin/预览，原详情 GET 显示 Schoolhill 地址和官网来源。点击详情资料来源在真机 Chrome 完成官网页加载，返回后卡片与地图仍同一地点。录屏 `device/live10-restored01.mp4` 180.266133 秒，frame172 已人工观察为加载完成的官网页；返回、重新展开及卡片滚动位于录屏结束之后，只以 `live10-conversation-card-return01.png` 等实际截图作证。恢复回答是原站内规则，不是成功模型或联网来源回答；新 GET 流程没有发送供应商生成请求，没有把失败 Task 改成 COMPLETED。完整 20 对切换/多轮/Save/撤权矩阵未在 API10 运行，仍 NOT_RUN。
+
+### 后续独立回归与 GitHub 交付
+
+当前代码与两份报告已正常、非强制推送至 [Birdtie main](https://github.com/luchen-luke/birdtie)，远端实际核验为 `91962eb88aa74ca34b2df295e51f668c80c41b1a`，tree `8f7fcba7c73a3b5b40565cc0c568bdb9cc606912`。这次增量为 20 个 Go/Dart 源码或测试文件及两份报告；全部正式源树 2271 个路径保留，四个原 queue/state 文件 working bytes 与原 checkpoint 完全相同。2240 个暂存文本与新增可达历史凭据扫描零命中，原 31 个应用二进制资产未变；密钥配置、APK/exe、原始录屏、work 与未选灰区材料留在本地。推送不等于完成 42 条或基础 Agent 验收。收据：`work/git-publication-continuation-10-commit-receipt.json`、`work/git-publication-continuation-10-push-result.json`。
+
+首次真实全套 Go 隔离回归采用独占新库 `birdtie_ui_fullgo_20261008_8d0db3f335c9`，原 001–111 迁移与三条 synthetic fixture 实际执行成功；没有连接或写入真机验证库。`go test ./... -p=1 -count=1 -json` 实际 exit 1，Test terminal events **10892 PASS / 10 FAIL / 23 SKIP**，不去重。Postgres 包在默认 600 秒期限耗尽；当时新子例只运行 1.303 秒，不足以认定该例死锁。680 个顶层测试未启动为 **NOT_RUN**，两个已启动却无终止事件为 **NOT_FINISHED_TIMEOUT**。它们不隐藏在上述 10 个 Test 失败中，也不能称全套已执行完。1279 个输入和原 fixtures 前后未变；供应商调用、真机动作、旧库和原队列写入均为 0。收据：`fullgo-disposable-01/result.json`、`failure-summary.json`，完整失败和超时日志保留。
+
+HTTP 旧 062 用例的共同原因已确定：fixture 的最后 user 是私有历史 canary，与当前 Task.query 不一致，被原 `currentEgressQuery` 拒绝；WaitedLock 因拒绝发生在 owner lock 前而未进入锁，Human options 因原拒绝返回空候选。只更新 `model_egress_budget_integration_test.go` 的历史/当前消息 fixture，并在 `model_egress_current_query_test.go` 增加精确 mismatch 拒绝用例。所有旧泄漏、身份、ABA、到期和零发送断言保留，生产权限与迁移没有修改。新独占父库与八个原 owned child DB 经完整迁移后，整组旧 062/Human **33 PASS / 0 FAIL / 0 SKIP**，CurrentQuery **17 PASS / 0 FAIL / 0 SKIP**；专用测试库已清理。冻结凭据 `legacy062-current-query-fixture-01/freeze.json`。这两份测试变化发生在 API10 编译之后，不改变其生产代码，也不把定向通过改称全套通过。
+
+另一个原全套失败是个人 Memory 本人更新 HTTP 503。新独占诊断库中原 guard 31 次通过，保留全部原拒绝条件的诊断 guard 再运行 300 次通过，未观察到拒绝。诊断 guard 只存在该专用库，去除仅有的固定布尔日志/时钟观测后函数字节与原函数完全一致；仓库生产代码、迁移和权限未改。原失败根因 **NOT_REPRODUCED**，修复 **NOT_IMPLEMENTED**，不以这些定向通过消去原 503。凭据 `memory-update-diag-01/freeze.json`。该库与原全部证据保留以便后续定位。
+
+同 API10/APK09 设备证据总索引为 `device/BUILD10-EVIDENCE-PARTIAL.json`，包含实际卡片、同 ID 详情/anchor/pin、官网加载、两段录屏哈希和模型失败。新录屏并未补成成功模型、多轮、20 对切换或性能验收；完整发现闭环仍待腾讯 Hy3 服务绑定核验以及实际成功后的同构建验证。

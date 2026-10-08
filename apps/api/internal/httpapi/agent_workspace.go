@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	arp "github.com/birdtie/birdtie/apps/api/internal/agentresultprojection"
 	"io"
 	"mime"
 	"net/http"
@@ -640,7 +641,18 @@ func (s *server) respondCurrentAgentTask(w http.ResponseWriter, r *http.Request,
 		copyAgentResponseBuffer(w, buffer)
 		return
 	}
-	result, native, access, query, receipt, err := s.prepareNativeAgentResults(r, result, digest, actor)
+	result, history, historyPrimary, err := s.prepareAgentMessageResults(r, result, digest, actor)
+	if err != nil {
+		resultProjectionFailure(w, err)
+		return
+	}
+	var native arp.NativeStore
+	var access arp.Access
+	var query arp.Query
+	var receipt arp.Receipt
+	if !historyPrimary {
+		result, native, access, query, receipt, err = s.prepareNativeAgentResults(r, result, digest, actor)
+	}
 	if err != nil {
 		resultProjectionFailure(w, err)
 		return
@@ -682,6 +694,12 @@ func (s *server) respondCurrentAgentTask(w http.ResponseWriter, r *http.Request,
 			resultProjectionFailure(w, err)
 			return
 		}
+		if history != nil && buffer.status == http.StatusOK {
+			if err = history.Revalidate(r.Context()); err != nil {
+				resultProjectionFailure(w, currentToolReadError(err))
+				return
+			}
+		}
 		copyAgentResponseBuffer(w, buffer)
 		return
 	}
@@ -718,6 +736,14 @@ func (s *server) respondCurrentAgentTask(w http.ResponseWriter, r *http.Request,
 			if !s.requireActiveWorkspaceAgent(w, r, "person", actor.ID) {
 				return
 			}
+		}
+	}
+	// The history source/absolute lifetime check is the final guarded read,
+	// after any original current-task/native/commercial encoding or lock waits.
+	if history != nil && buffer.status == http.StatusOK {
+		if err = history.Revalidate(r.Context()); err != nil {
+			resultProjectionFailure(w, currentToolReadError(err))
+			return
 		}
 	}
 	if r.Context().Err() != nil {

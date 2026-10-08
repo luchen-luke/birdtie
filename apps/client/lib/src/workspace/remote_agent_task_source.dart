@@ -9,6 +9,7 @@ import '../city/public_city_controller.dart';
 import 'agent_workspace_controller.dart';
 import 'agent_answer_sources.dart';
 import 'agent_result_projection.dart';
+import 'agent_reply_membership.dart';
 import 'public_query_field_evidence.dart';
 import 'agent_request_failure.dart';
 import 'agent_debug_diagnostics.dart';
@@ -616,6 +617,33 @@ class RemoteAgentTaskSource extends AgentTaskSource {
     );
   }
 
+  @override
+  bool canRereadReplyProjections(AgentTask task) =>
+      !_publicEvidenceDisposed &&
+      _apiBaseUrl.isNotEmpty &&
+      RegExp(
+        r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',
+      ).hasMatch(task.id) &&
+      task.contextType == 'CITY' &&
+      task.cityID == cityID() &&
+      task.status == 'COMPLETED' &&
+      task.principalType.toUpperCase() == 'PERSON' &&
+      task.principalID.isNotEmpty &&
+      task.actingUserID == task.principalID &&
+      publicEvidenceOwnerID?.call() == task.principalID &&
+      authorizationHeader() != null &&
+      organizationWorkspaceID?.call() == null;
+
+  @override
+  Future<AgentResult?> rereadReplyProjections(AgentTask task) async {
+    if (!canRereadReplyProjections(task)) return null;
+    final current = _captureSourceLifecycle();
+    _requireTaskReadCurrent(current);
+    final fresh = await readByID(task.id, ownerID: task.principalID);
+    _requireTaskReadCurrent(current);
+    return fresh;
+  }
+
   /// Read an existing task by its native ID. Opening a notification never
   /// submits a new intent or fabricates a placeholder task.
   Future<AgentResult> readByID(String id, {required String ownerID}) async {
@@ -635,6 +663,8 @@ class RemoteAgentTaskSource extends AgentTaskSource {
     if (_apiBaseUrl.isEmpty) {
       throw const AgentRequestFailure('尚未连接 Birdtie 服务，暂时无法读取对话。');
     }
+    final sourceCurrent = _captureSourceLifecycle();
+    _requireTaskReadCurrent(sourceCurrent);
     final readPublicEvidence = _capturePublicEvidence(ownerOverride: ownerID);
     final readAnswerSources = _captureAnswerSources();
     final messageSourcesCurrent = _captureMessageSourcesCurrent();
@@ -643,6 +673,7 @@ class RemoteAgentTaskSource extends AgentTaskSource {
         _endpoint('/v1/me/agent-tasks/$id'),
         headers: {'Authorization': token},
       ),
+      sourceCurrent: sourceCurrent,
     );
     if (token != authorizationHeader() ||
         organizationWorkspaceID?.call() != null) {
@@ -793,6 +824,9 @@ class RemoteAgentTaskSource extends AgentTaskSource {
     bool Function()? anonymousCurrent,
     AgentAnswerSources? Function(Map<String, dynamic>)? readAnswerSources,
     bool Function()? messageSourcesCurrent,
+    bool readMessageResults = true,
+    AgentReplyProjectionLifetime? replyProjection,
+    AgentMessageSources? persistedMessageSources,
   }) {
     if (data['schema'] == 'now-public-online-query-v1') {
       return NowOnlineResponse.decode(data).result();
@@ -959,6 +993,38 @@ class RemoteAgentTaskSource extends AgentTaskSource {
         for (final p in places) 'PLACE:${p.id}': p.name,
       },
     );
+    final history = readMessageResults
+        ? _parseMessageResults(data, task, messageSourcesCurrent)
+        : null;
+    var currentReplyLifetime = replyProjection;
+    if (history != null &&
+        task != null &&
+        task.messages.isNotEmpty &&
+        task.messages.last.role == 'assistant' &&
+        task.messages.last.resultMembership != null) {
+      final latest = history[task.messages.length - 1];
+      if (latest == null) {
+        // An authoritative empty history never grafts current search results
+        // onto a persisted reply whose membership was not freshly read.
+        currentReplyLifetime = AgentReplyProjectionLifetime(
+          validUntil: (publicEvidenceNow ?? () => DateTime.now().toUtc())(),
+          current: () => false,
+        );
+      } else {
+        if (resultSet?.id != latest.resultSet?.id ||
+            !_equalWire(
+              rawSet?['items'],
+              _historySet(data, task.messages.length - 1)?['items'],
+            ) ||
+            !_equalWire(
+              rawMapEffects,
+              _historyEntry(data, task.messages.length - 1)?['mapEffects'],
+            )) {
+          throw const FormatException('最新回答与历史结果集合不一致');
+        }
+        currentReplyLifetime = latest.replyProjection;
+      }
+    }
     return AgentResult(
       entities: entities,
       sponsoredOpportunities: disclosure.items,
@@ -970,12 +1036,15 @@ class RemoteAgentTaskSource extends AgentTaskSource {
       places: places,
       taskID: data['taskId'] as String?,
       task: task,
+      messageResults: history,
+      replyProjection: currentReplyLifetime,
       messageSources:
-          task != null &&
-              task.messages.isNotEmpty &&
-              task.messages.last.role == 'assistant'
-          ? task.messages.last.sourceReferences
-          : null,
+          persistedMessageSources ??
+          (task != null &&
+                  task.messages.isNotEmpty &&
+                  task.messages.last.role == 'assistant'
+              ? task.messages.last.sourceReferences
+              : null),
       requestID: data['requestId'] as String?,
       conversationID: data['conversationId'] as String?,
       resultSet: resultSet,
@@ -1008,6 +1077,184 @@ class RemoteAgentTaskSource extends AgentTaskSource {
           item as String,
       ],
     );
+  }
+
+  Map<String, dynamic>? _historyEntry(Map<String, dynamic> data, int index) {
+    for (final raw in data['messageResults'] as List<dynamic>? ?? const []) {
+      if (raw is Map<String, dynamic> && raw['messageIndex'] == index) {
+        return raw;
+      }
+    }
+    return null;
+  }
+
+  Map<String, dynamic>? _historySet(Map<String, dynamic> data, int index) =>
+      _historyEntry(data, index)?['resultSet'] as Map<String, dynamic>?;
+
+  bool _equalWire(Object? left, Object? right) {
+    if (left is Map && right is Map) {
+      return left.length == right.length &&
+          left.keys.every(
+            (key) =>
+                right.containsKey(key) && _equalWire(left[key], right[key]),
+          );
+    }
+    if (left is List && right is List) {
+      return left.length == right.length &&
+          List.generate(
+            left.length,
+            (i) => i,
+          ).every((i) => _equalWire(left[i], right[i]));
+    }
+    return left == right;
+  }
+
+  Map<int, AgentResult>? _parseMessageResults(
+    Map<String, dynamic> data,
+    AgentTask? task,
+    bool Function()? current,
+  ) {
+    if (!data.containsKey('messageResults')) return null;
+    void require(bool condition) {
+      if (!condition) throw const FormatException('历史回答的实体结果无法读取');
+    }
+
+    require(
+      data['messageResults'] is List &&
+          (data['messageResults'] as List).length <= 30 &&
+          task != null &&
+          task.contextType == 'CITY' &&
+          task.principalType.toUpperCase() == 'PERSON' &&
+          data['taskId'] == task.id &&
+          data['conversationId'] == task.id &&
+          current?.call() == true,
+    );
+    final original = task!;
+    final owner = publicEvidenceOwnerID?.call();
+    require(
+      original.principalID.isNotEmpty &&
+          original.actingUserID == original.principalID &&
+          (owner == null || owner == original.principalID),
+    );
+    final now = publicEvidenceNow ?? () => DateTime.now().toUtc();
+    final results = <int, AgentResult>{};
+    for (final value in data['messageResults'] as List) {
+      require(value is Map<String, dynamic>);
+      final raw = value as Map<String, dynamic>;
+      require(
+        raw.keys.every(
+              (key) => const {
+                'messageIndex',
+                'turnDigest',
+                'validUntil',
+                'resultSet',
+                'activities',
+                'places',
+                'organizations',
+                'mapEffects',
+              }.contains(key),
+            ) &&
+            raw['messageIndex'] is int &&
+            raw['turnDigest'] is String &&
+            raw['resultSet'] is Map<String, dynamic>,
+      );
+      final index = raw['messageIndex'] as int;
+      require(
+        index >= 0 &&
+            index < original.messages.length &&
+            !results.containsKey(index),
+      );
+      final message = original.messages[index];
+      final membership = message.resultMembership;
+      require(message.role == 'assistant' && membership != null);
+      final member = membership!;
+      final set = raw['resultSet'] as Map<String, dynamic>;
+      final generated = DateTime.tryParse(set['generatedAt'] as String? ?? '');
+      final until = DateTime.tryParse(raw['validUntil'] as String? ?? '');
+      require(
+        member.taskID == original.id &&
+            member.cityID == original.cityID &&
+            raw['turnDigest'] == member.turnDigest &&
+            member.turnDigest ==
+                agentReplyTurnDigest(
+                  original.messages
+                      .take(index + 1)
+                      .map((m) => (role: m.role, text: m.text)),
+                ) &&
+            set['id'] == member.resultSetID &&
+            set['taskId'] == original.id &&
+            set['cityId'] == original.cityID &&
+            set['schema'] == typedAgentResultSchema &&
+            const {'ready', 'empty'}.contains(set['status']) &&
+            generated != null &&
+            until != null &&
+            !generated.isAfter(now().toUtc().add(const Duration(seconds: 2))) &&
+            until.isAfter(generated) &&
+            until.isAfter(now().toUtc()) &&
+            (set['sources'] is List && (set['sources'] as List).isEmpty) &&
+            !set.containsKey('answerBinding') &&
+            !set.containsKey('publicFieldEvidence') &&
+            !raw.containsKey('messageResults'),
+      );
+      require(
+        original.messages
+            .take(index + 1)
+            .every((m) => const {'user', 'assistant'}.contains(m.role)),
+      );
+      final lifetime = AgentReplyProjectionLifetime(
+        validUntil: until!,
+        current: current!,
+        now: now,
+      );
+      final reply = _parseResult(
+        {
+          ...raw,
+          'taskId': original.id,
+          'conversationId': original.id,
+          'message': message.text,
+          'people': <dynamic>[],
+          'groups': <dynamic>[],
+          'organizations': raw['organizations'] ?? <dynamic>[],
+        },
+        readMessageResults: false,
+        replyProjection: lifetime,
+        persistedMessageSources: message.sourceReferences,
+      );
+      final items = reply.projectionItems;
+      require(
+        items != null &&
+            items.length <= 30 &&
+            (items.isEmpty
+                ? set['status'] == 'empty'
+                : set['status'] == 'ready'),
+      );
+      var previous = -1;
+      for (final item in items!) {
+        final position = member.refs.indexOf(item.entity);
+        require(
+          item.scope == 'AUTHORIZED_VIEW' &&
+              position > previous &&
+              item.entity.type == member.kind,
+        );
+        previous = position;
+      }
+      require(
+        reply.activities.every(
+              (a) => items.any(
+                (item) =>
+                    item.entity == AgentResultRef(type: 'activity', id: a.id),
+              ),
+            ) &&
+            reply.places.every(
+              (p) => items.any(
+                (item) =>
+                    item.entity == AgentResultRef(type: 'place', id: p.id),
+              ),
+            ),
+      );
+      results[index] = reply;
+    }
+    return Map.unmodifiable(results);
   }
 
   @override

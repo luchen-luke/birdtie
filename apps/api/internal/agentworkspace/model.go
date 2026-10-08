@@ -120,6 +120,9 @@ type Results struct {
 	Actions                []Action                     `json:"actions"`
 	MapEffects             MapEffects                   `json:"mapEffects"`
 	RelationshipContext    *relationshipcontext.Context `json:"relationshipContext,omitempty"`
+	// Nil is the legacy/live response; an empty non-nil slice is an authenticated
+	// historical read with no eligible persisted native result memberships.
+	MessageResults []MessageResult `json:"messageResults"`
 }
 
 type MapBounds struct {
@@ -189,11 +192,47 @@ func (t Task) ContextRef() (contextgraph.Ref, error) {
 }
 
 type Message struct {
-	Role                 string         `json:"role"`
-	Text                 string         `json:"text"`
-	Sources              []AnswerSource `json:"sources,omitempty"`
-	SourceRunID          string         `json:"sourceRunId,omitempty"`
-	SourceEvidenceDigest string         `json:"sourceEvidenceDigest,omitempty"`
+	Role                 string           `json:"role"`
+	Text                 string           `json:"text"`
+	Sources              []AnswerSource   `json:"sources,omitempty"`
+	SourceRunID          string           `json:"sourceRunId,omitempty"`
+	SourceEvidenceDigest string           `json:"sourceEvidenceDigest,omitempty"`
+	ResultMembership     *ReplyMembership `json:"resultMembership,omitempty"`
+}
+
+// Persisted membership is bounded correlation data, never a read or egress
+// permission. Full cards, coordinates and actions are reconstructed by the
+// original native reader under current authorization.
+type ReplyMembership struct {
+	Schema      string    `json:"schema"`
+	TaskID      string    `json:"taskId"`
+	CityID      string    `json:"cityId"`
+	Kind        string    `json:"kind"`
+	TurnDigest  string    `json:"turnDigest"`
+	ResultSetID string    `json:"resultSetId"`
+	Refs        []arp.Ref `json:"refs"`
+}
+
+type MessageResult struct {
+	MessageIndex  int                   `json:"messageIndex"`
+	TurnDigest    string                `json:"turnDigest"`
+	ValidUntil    time.Time             `json:"validUntil"`
+	ResultSet     ResultSet             `json:"resultSet"`
+	Activities    []foundation.Activity `json:"activities"`
+	Places        []foundation.Place    `json:"places"`
+	Organizations []Organization        `json:"organizations"`
+	MapEffects    MapEffects            `json:"mapEffects"`
+}
+
+// Implemented only by the native owner reader. Its returned handle is
+// process-local; serialized membership cannot reconstruct its authority.
+type MessageResultsRead interface {
+	Results() []MessageResult
+	Revalidate(context.Context) error
+}
+type HumanReplyResultsPort interface {
+	CaptureOwnHumanReply(context.Context, arp.Access) (Task, error)
+	ReadOwnMessageResults(context.Context, arp.Access) (MessageResultsRead, error)
 }
 
 type Store interface {

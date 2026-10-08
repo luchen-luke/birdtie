@@ -40,6 +40,69 @@ func newTypedOperation(operation string) bool {
 	return false
 }
 
+// Historical memberships select the original refs under a fresh owned native
+// read. Serialized refs neither grant access nor revive old model authority.
+func (s *server) prepareAgentMessageResults(r *http.Request, result agentworkspace.Results, digest [32]byte, actor identity.Actor) (agentworkspace.Results, agentworkspace.MessageResultsRead, bool, error) {
+	_, humanPost := r.Context().Value(nowHumanReplyKey{}).(bool)
+	if (r.Method != http.MethodGet && !humanPost) || result.Task == nil || actor.AccountType != "person" || result.Task.PrincipalType != "person" || result.Task.PrincipalID != actor.ID || result.Task.ContextType != "CITY" || r.Header.Get("X-Birdtie-Organization-Workspace") != "" {
+		return result, nil, false, nil
+	}
+	port, ok := s.agent.(agentworkspace.HumanReplyResultsPort)
+	if !ok {
+		return result, nil, false, nil
+	}
+	task := *result.Task
+	raw, e := json.Marshal(agentworkspace.SanitizeTaskForResponse(task))
+	if e != nil {
+		return result, nil, false, arp.ErrUnavailable
+	}
+	read, e := port.ReadOwnMessageResults(r.Context(), arp.Access{Actor: actor, SessionDigest: digest, TaskID: task.ID, ExpectedTask: raw})
+	if e != nil {
+		return result, nil, false, currentToolReadError(e)
+	}
+	if read == nil {
+		return result, nil, false, arp.ErrUnavailable
+	}
+	result.MessageResults = read.Results()
+	if result.MessageResults == nil {
+		result.MessageResults = []agentworkspace.MessageResult{}
+	}
+	last := len(task.Conversation) - 1
+	if task.Status != agentworkspace.TaskCompleted || agentworkspace.ValidateReplyMembership(task, last) != nil || task.Conversation[last].ResultMembership.Kind != nativeResultKind(task.Intent) {
+		return result, read, false, nil
+	}
+	currentQuery := task.Filters["currentQuery"]
+	if currentQuery == "" {
+		currentQuery = task.Query
+	}
+	if last < 1 || task.Conversation[last-1].Role != "user" || task.Conversation[last-1].Text != currentQuery {
+		return result, read, false, nil
+	}
+	for _, entry := range result.MessageResults {
+		if entry.MessageIndex != last {
+			continue
+		}
+		// The latest map, card and message use this SAME restricted native set;
+		// newly published matches cannot silently join the saved last reply.
+		result.NativeProjection = true
+		result.ProjectionItems = entry.ResultSet.Items
+		result.PublicFieldEvidence = nil
+		result.PublicCommercialRefs = []arp.Ref{}
+		result.Activities = entry.Activities
+		result.Places = entry.Places
+		result.Organizations = entry.Organizations
+		result.People = []agentworkspace.Person{}
+		result.Groups = []agentworkspace.Group{}
+		result.ResultSet = entry.ResultSet
+		result.MapEffects = entry.MapEffects
+		result.Message = task.Conversation[last].Text
+		result.Mode = "rules"
+		result.Note = "按站内规则整理；历史结果已重新检查当前权限与有效期。"
+		return result, read, true, nil
+	}
+	return result, read, false, nil
+}
+
 func resultProjectionFailure(w http.ResponseWriter, e error) {
 	switch {
 	case errors.Is(e, identity.ErrUnauthorized):

@@ -153,7 +153,7 @@ void main() {
     await t.pumpAndSettle();
   });
 
-  testWidgets('背景城市恢复只服务空闲CITY，任务和ONLINE不重复，投影不随输入重建', (t) async {
+  testWidgets('背景城市指引复用唯一顶部入口，任务ONLINE不重复并保持投影与旧callback', (t) async {
     final city = NowFixtureCity(selected: false);
     final source = NowFixtureSource(city);
     final ws = AgentWorkspaceController(source: source);
@@ -190,17 +190,20 @@ void main() {
       expect(viewport.viewportBounds, isNull);
     }
 
-    expect(find.text('选择城市'), findsOneWidget);
+    expect(find.text('选择城市'), findsNothing);
+    expect(find.text('从顶部城市与范围入口选择城市，查看公开内容。'), findsOneWidget);
     unscopedStable();
     final idleView = t.widget<PublicCityMapView>(map);
     ws.beginTyping();
     ws.stopTyping();
     await t.pump();
     expect(identical(idleView, t.widget<PublicCityMapView>(map)), true);
-    expect(find.text('选择城市'), findsOneWidget);
+    expect(find.text('选择城市'), findsNothing);
+    expect(find.text('从顶部城市与范围入口选择城市，查看公开内容。'), findsOneWidget);
     ws.requireCity('weekend');
     await t.pump();
     expect(find.text('选择城市'), findsNothing);
+    expect(find.text('从顶部城市与范围入口选择城市，查看公开内容。'), findsNothing);
     expect(ws.queryState, AgentQueryState.needsScope);
     unscopedStable();
     final taskView = t.widget<PublicCityMapView>(map);
@@ -210,21 +213,29 @@ void main() {
     await t.pump();
     expect(identical(taskView, t.widget<PublicCityMapView>(map)), true);
     expect(find.text('选择城市'), findsNothing);
+    expect(find.text('从顶部城市与范围入口选择城市，查看公开内容。'), findsNothing);
     ws.newTask();
     await t.pump();
-    expect(find.text('选择城市'), findsOneWidget);
+    expect(find.text('选择城市'), findsNothing);
+    expect(find.text('从顶部城市与范围入口选择城市，查看公开内容。'), findsOneWidget);
     unscopedStable();
     ws.queryContextType = 'ONLINE';
     ws.beginTyping();
     await t.pump();
     expect(find.text('选择城市'), findsNothing);
+    expect(find.text('从顶部城市与范围入口选择城市，查看公开内容。'), findsNothing);
     unscopedStable();
     ws.queryContextType = 'CITY';
     ws.stopTyping();
     await t.pump();
-    expect(find.text('选择城市'), findsOneWidget);
-    await t.tap(find.text('选择城市'));
+    expect(find.text('选择城市'), findsNothing);
+    expect(find.text('从顶部城市与范围入口选择城市，查看公开内容。'), findsOneWidget);
+    // The guidance cannot launch a second city selector.
+    await t.tapAt(t.getCenter(find.text('从顶部城市与范围入口选择城市，查看公开内容。')));
     await t.pump();
+    expect(chooses, 0);
+    // Retain the existing callback property independently of visible entry.
+    t.widget<MapCanvas>(find.byType(MapCanvas)).onChooseCity!();
     expect(chooses, 1);
     unscopedStable();
     expect(t.takeException(), isNull);

@@ -305,6 +305,12 @@ func (s *Store) captureAgentResultProjectionTx(ctx context.Context, tx pgx.Tx, a
 // The ordinary human tool adds a restriction to the SAME final payload. The
 // original ModelRun fence/signature and all seven-source readers remain intact.
 func (s *Store) captureAgentResultProjectionCurrentTx(ctx context.Context, tx pgx.Tx, a arp.Access, q arp.Query, fence *modelOutputFence, policy *nativeToolPolicy) (arp.Receipt, error) {
+	return s.captureAgentResultProjectionSelectedTx(ctx, tx, a, q, fence, policy, nil)
+}
+
+// history is minted only from this owned Task's persisted message by the
+// private history reader. The original current-query guard stays unchanged.
+func (s *Store) captureAgentResultProjectionSelectedTx(ctx context.Context, tx pgx.Tx, a arp.Access, q arp.Query, fence *modelOutputFence, policy *nativeToolPolicy, history *nativeReplySelector) (arp.Receipt, error) {
 	var r arp.Receipt
 	if ctx == nil || ctx.Err() != nil || tx == nil || !a.Valid() || !q.Valid() {
 		return r, arp.ErrDenied
@@ -338,44 +344,61 @@ func (s *Store) captureAgentResultProjectionCurrentTx(ctx context.Context, tx pg
 	// A caller cannot turn a public activity Task into an owner-private
 	// opportunity read by changing an internal Query. The original task's closed
 	// operation, explicit slots and viewport remain the authoritative request.
-	allowedKind := map[string]string{agentworkspace.FindActivity: "activity", agentworkspace.AreaDiscovery: "activity", agentworkspace.RefineResults: "activity", agentworkspace.CompareResults: "activity", agentworkspace.FindPlace: "place", agentworkspace.FindPerson: "person", agentworkspace.FindCommunity: "community", agentworkspace.FindOrganization: "organization", agentworkspace.FindBusiness: "business", agentworkspace.FindOpportunity: "opportunity"}[current.Intent]
-	if q.Comparison != (current.Intent == agentworkspace.CompareResults) {
-		return r, arp.ErrDenied
-	}
-	if q.Comparison {
-		for _, id := range q.CompareIDs {
-			found := false
-			for _, old := range strings.Split(current.Filters["resultIDs"], ",") {
-				if id == old {
-					found = true
-					break
+	if history != nil {
+		if !history.valid(current, q) || fence != nil || policy == nil {
+			return r, arp.ErrDenied
+		}
+	} else {
+		allowedKind := map[string]string{agentworkspace.FindActivity: "activity", agentworkspace.AreaDiscovery: "activity", agentworkspace.RefineResults: "activity", agentworkspace.CompareResults: "activity", agentworkspace.FindPlace: "place", agentworkspace.FindPerson: "person", agentworkspace.FindCommunity: "community", agentworkspace.FindOrganization: "organization", agentworkspace.FindBusiness: "business", agentworkspace.FindOpportunity: "opportunity"}[current.Intent]
+		if q.Comparison != (current.Intent == agentworkspace.CompareResults) {
+			return r, arp.ErrDenied
+		}
+		if q.Comparison {
+			for _, id := range q.CompareIDs {
+				found := false
+				for _, old := range strings.Split(current.Filters["resultIDs"], ",") {
+					if id == old {
+						found = true
+						break
+					}
+				}
+				if !found {
+					return r, arp.ErrDenied
 				}
 			}
-			if !found {
-				return r, arp.ErrDenied
-			}
 		}
-	}
-	if q.Kind != allowedKind || q.SearchTerm != current.Filters["searchTerm"] || q.Category != current.Filters["category"] || q.TimePreference != current.Filters["timePreference"] || q.Closer != (current.Filters["distancePreference"] == "closer") {
-		return r, arp.ErrDenied
-	}
-	bounds, boundsErr := agentworkspace.BoundsFromFilters(current.Filters)
-	if boundsErr != nil {
-		return r, arp.ErrDenied
-	}
-	if (bounds == nil) != (q.Bounds == nil) || (bounds != nil && *q.Bounds != (arp.Bounds{West: bounds.West, South: bounds.South, East: bounds.East, North: bounds.North})) {
-		return r, arp.ErrDenied
+		if q.Kind != allowedKind || q.SearchTerm != current.Filters["searchTerm"] || q.Category != current.Filters["category"] || q.TimePreference != current.Filters["timePreference"] || q.Closer != (current.Filters["distancePreference"] == "closer") {
+			return r, arp.ErrDenied
+		}
+		bounds, boundsErr := agentworkspace.BoundsFromFilters(current.Filters)
+		if boundsErr != nil {
+			return r, arp.ErrDenied
+		}
+		if (bounds == nil) != (q.Bounds == nil) || (bounds != nil && *q.Bounds != (arp.Bounds{West: bounds.West, South: bounds.South, East: bounds.East, North: bounds.North})) {
+			return r, arp.ErrDenied
+		}
 	}
 	if e = s.lockHumanMomentSession(ctx, tx, a.SessionDigest, a.Actor.ID); e != nil {
 		return r, e
 	}
 	query, e := json.Marshal(q)
+	if history != nil {
+		query, e = json.Marshal(struct {
+			arp.Query
+			HistoryRefs []arp.Ref
+		}{q, history.membership.Refs})
+	}
 	if e != nil {
 		return r, arp.ErrInvalid
 	}
 	var items, commercialRefs, ownRaw, activityRows, placeRows, actionRaw []byte
 	var authority, currentSession bool
 	sql, args := modelOutputProjectionStatement(fence, q.CityID, a.Actor.ID, a.SessionDigest[:], s.devPhoneEnabled, query, a.TaskID)
+	if history != nil {
+		// Constrain original membership BEFORE the original LIMIT 30. Filtering
+		// a latest-search receipt afterward would lose rows and its proof.
+		sql = historicalReplyProjectionSQL(sql)
+	}
 	if policy != nil {
 		sql, args = currentToolProjectionStatement(sql, args, policy)
 	}

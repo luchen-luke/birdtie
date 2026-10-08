@@ -12,6 +12,7 @@ class MapCameraFocusInput {
     required List<PublicPlace> places,
     required List<MapEntity> entities,
     required this.selectedEntityId,
+    this.preserveViewport = false,
   }) : cityKey = jsonEncode([
          city?.id,
          city?.map?.provider,
@@ -49,6 +50,7 @@ class MapCameraFocusInput {
   final String cityKey;
   final String contextKey;
   final String? selectedEntityId;
+  final bool preserveViewport;
   final MapCameraPoint? cityCenter;
   final double? cityZoom;
   late final List<MapCameraPoint> points;
@@ -60,12 +62,16 @@ class MapCameraFocusInput {
       contextKey == other.contextKey &&
       coordinatesKey == other.coordinatesKey &&
       selectedEntityId == other.selectedEntityId &&
+      preserveViewport == other.preserveViewport &&
       selected == other.selected;
 
   bool shouldFocusAfter(MapCameraFocusInput previous) {
     if (cityKey != previous.cityKey || contextKey != previous.contextKey) {
       return true;
     }
+    // Authorized quiet re-reads still invalidate pending motion and update
+    // pins, but never undo a viewport the user moved while reading.
+    if (preserveViewport) return false;
     if (selectedEntityId != previous.selectedEntityId && selected != null) {
       return true;
     }

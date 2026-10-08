@@ -2,10 +2,13 @@ package httpapi
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"time"
 
+	arp "github.com/birdtie/birdtie/apps/api/internal/agentresultprojection"
 	"github.com/birdtie/birdtie/apps/api/internal/agentworkspace"
+	"github.com/birdtie/birdtie/apps/api/internal/identity"
 )
 
 // This original server option is a trusted dependency, never request input.
@@ -15,6 +18,7 @@ func WithNowLiveAnswers(answers agentworkspace.LiveAnswers) Option {
 }
 
 type nowLiveReplyKey struct{}
+type nowHumanReplyKey struct{}
 
 func (s *server) finishCurrentNowQuery(r *http.Request, digest [32]byte, task agentworkspace.Task, message string) (agentworkspace.Task, *http.Request, error) {
 	if task.Status != agentworkspace.TaskFailed {
@@ -35,6 +39,26 @@ func (s *server) finishCurrentNowQuery(r *http.Request, digest [32]byte, task ag
 			return current, r, agentworkspace.ErrSourcedAnswer
 		}
 		return reply.Task(), r.WithContext(context.WithValue(r.Context(), nowLiveReplyKey{}, reply)), nil
+	}
+	if port, ok := s.agent.(agentworkspace.HumanReplyResultsPort); ok && r.Method == http.MethodPost && digest != ([32]byte{}) && task.Status != agentworkspace.TaskFailed && task.PrincipalType == "person" && task.ActingUserID == task.PrincipalID && task.ContextType == "CITY" && r.Header.Get("X-Birdtie-Organization-Workspace") == "" {
+		kind := nativeResultKind(task.Intent)
+		if kind == "activity" || kind == "place" || kind == "organization" {
+			// Persist the final filters (including comparison resultIDs) before
+			// capturing the exact ACTIVE Task; no ExpectedTask guard is bypassed.
+			current, e := s.agent.UpdateTask(r.Context(), task)
+			if e != nil {
+				return task, r, e
+			}
+			raw, e := json.Marshal(agentworkspace.SanitizeTaskForResponse(current))
+			if e != nil {
+				return current, r, e
+			}
+			current, e = port.CaptureOwnHumanReply(r.Context(), arp.Access{Actor: identity.Actor{ID: current.PrincipalID, AccountType: "person"}, SessionDigest: digest, TaskID: current.ID, ExpectedTask: raw})
+			if e != nil {
+				return task, r, e
+			}
+			return current, r.WithContext(context.WithValue(r.Context(), nowHumanReplyKey{}, true)), nil
+		}
 	}
 	if task.Status != agentworkspace.TaskFailed {
 		task.Status = agentworkspace.TaskCompleted

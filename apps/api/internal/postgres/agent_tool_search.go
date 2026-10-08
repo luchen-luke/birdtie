@@ -11,6 +11,7 @@ import (
 	"github.com/birdtie/birdtie/apps/api/internal/actorref"
 	arp "github.com/birdtie/birdtie/apps/api/internal/agentresultprojection"
 	"github.com/birdtie/birdtie/apps/api/internal/agenttool"
+	"github.com/jackc/pgx/v5"
 )
 
 var _ agenttool.CurrentSearchPort = (*Store)(nil)
@@ -57,6 +58,24 @@ func (s *Store) ReadOwnCurrentSearch(ctx context.Context, q agenttool.CurrentSea
 		return out, e
 	}
 	defer tx.Rollback(context.Background())
+	out, e = s.readOwnCurrentSearchTx(ctx, tx, q, p)
+	if e != nil {
+		return out, e
+	}
+	// No identity/policy/clock SQL occurs after the original final payload.
+	if e = tx.Commit(ctx); e != nil || ctx.Err() != nil {
+		return agenttool.CurrentSearchReceipt{}, agenttool.ErrUnavailable
+	}
+	return out, nil
+}
+
+// The rules reply writer captures original native membership in its same Task
+// transaction; no second reader, policy or entity resolver is introduced.
+func (s *Store) readOwnCurrentSearchTx(ctx context.Context, tx pgx.Tx, q agenttool.CurrentSearch, p *nativeToolPolicy) (agenttool.CurrentSearchReceipt, error) {
+	var out agenttool.CurrentSearchReceipt
+	if tx == nil || p == nil || !q.Valid() {
+		return out, agenttool.ErrDenied
+	}
 	tool := agenttool.CurrentSearchTool(q.Query.Kind)
 	if agenttool.Restrict(tool, actorref.Person, p.level).Denied {
 		return out, agenttool.ErrDenied
@@ -77,10 +96,6 @@ func (s *Store) ReadOwnCurrentSearch(ctx context.Context, q agenttool.CurrentSea
 	out.Seal, e = currentReadSeal("birdtie.human-task-read.v1", digest, out.Decision, source.Seal)
 	if e != nil || !out.Valid(q) {
 		return agenttool.CurrentSearchReceipt{}, agenttool.ErrChanged
-	}
-	// No identity/policy/clock SQL occurs after the original final payload.
-	if e = tx.Commit(ctx); e != nil || ctx.Err() != nil {
-		return agenttool.CurrentSearchReceipt{}, agenttool.ErrUnavailable
 	}
 	return out, nil
 }

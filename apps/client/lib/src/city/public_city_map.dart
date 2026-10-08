@@ -37,6 +37,7 @@ class PublicCityMapView extends StatefulWidget {
     this.onMapUnavailable,
     this.fullBleed = false,
     this.contextKey = '',
+    this.preserveViewport = false,
     this.ornamentTop,
     this.onOrnamentHeightChanged,
   });
@@ -54,6 +55,7 @@ class PublicCityMapView extends StatefulWidget {
   final ValueChanged<String>? onMapUnavailable;
   final bool fullBleed;
   final String contextKey;
+  final bool preserveViewport;
   final double? ornamentTop;
   final ValueChanged<double>? onOrnamentHeightChanged;
 
@@ -75,6 +77,7 @@ class _PublicCityMapViewState extends State<PublicCityMapView> {
         places: view.places,
         entities: view.entities,
         selectedEntityId: view.selectedEntityId,
+        preserveViewport: view.preserveViewport,
       );
 
   bool get _usesWebMapbox =>
@@ -171,6 +174,7 @@ class _PublicCityMapViewState extends State<PublicCityMapView> {
         onMapUnavailable: widget.onMapUnavailable,
         fullBleed: widget.fullBleed,
         contextKey: city == null ? 'idle' : widget.contextKey,
+        preserveViewport: widget.preserveViewport,
         ornamentTop: widget.ornamentTop,
       );
     }

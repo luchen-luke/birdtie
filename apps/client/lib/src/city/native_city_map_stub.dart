@@ -20,6 +20,7 @@ class NativeCityMapView extends StatelessWidget {
     this.onMapUnavailable,
     this.fullBleed = false,
     this.contextKey = '',
+    this.preserveViewport = false,
     this.ornamentTop,
   });
 
@@ -37,6 +38,7 @@ class NativeCityMapView extends StatelessWidget {
   final ValueChanged<String>? onMapUnavailable;
   final bool fullBleed;
   final String contextKey;
+  final bool preserveViewport;
   final double? ornamentTop;
 
   @override

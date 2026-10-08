@@ -110,7 +110,7 @@ API10 SHA256 `810283a6471be26e8fc5494bf1fa62f2fc909c204ef5acc6958fc2b5257bf075`�
 
 视频范围已实际核验：`device/build08-live01.mp4` 185.796500 秒，frame175 显示真实失败；`device/build09-live01.mp4` 180.245022 秒，frame172/179 仍在提交前输入界面，**不能证明响应**，09 失败只有截图、日志和原账本；`device/live10-now01.mp4` 117.104311 秒，frame110 显示已提交后的失败与原生地图。08/09 归档为 `device/BUILD08-EVIDENCE-PARTIAL.json` 与 `BUILD09-EVIDENCE-PARTIAL.json`。同 APK09/API10 的真实模型回答、由其驱动的卡片/地图、多轮闭环仍 **FAILED / NOT_COMPLETED**。
 
-跨重启恢复每轮结果集合还有真实缺口：当前控制器内保存每轮集合；原远端会话仅持久化文字与来源，恢复时只有最后一轮拿到当前结果。旧轮实体不能用最新结果嫁接补齐。这个缺口及 Now 附件协议均未写成完成；原任务队列状态保持不变。
+API10 阶段跨重启恢复每轮结果集合仍有真实缺口：当时控制器内保存每轮集合；原远端会话仅持久化文字与来源，恢复时只有最后一轮拿到当前结果。旧轮实体不能用最新结果嫁接补齐。API11/APK12 对原个人 CITY 规则路径的实际修复见下节；模型路径与 Now 附件协议仍未写成完成，原任务队列状态保持不变。
 
 API10/同 APK09 又经 Recent 原 GET 恢复最新 ACTIVE Task，实际显示 1 个 Art Gallery 卡片与官方链接；地图查看选中同一 Place/pin/预览，原详情 GET 显示 Schoolhill 地址和官网来源。点击详情资料来源在真机 Chrome 完成官网页加载，返回后卡片与地图仍同一地点。录屏 `device/live10-restored01.mp4` 180.266133 秒，frame172 已人工观察为加载完成的官网页；返回、重新展开及卡片滚动位于录屏结束之后，只以 `live10-conversation-card-return01.png` 等实际截图作证。恢复回答是原站内规则，不是成功模型或联网来源回答；新 GET 流程没有发送供应商生成请求，没有把失败 Task 改成 COMPLETED。完整 20 对切换/多轮/Save/撤权矩阵未在 API10 运行，仍 NOT_RUN。
 
@@ -125,3 +125,55 @@ HTTP 旧 062 用例的共同原因已确定：fixture 的最后 user 是私有�
 另一个原全套失败是个人 Memory 本人更新 HTTP 503。新独占诊断库中原 guard 31 次通过，保留全部原拒绝条件的诊断 guard 再运行 300 次通过，未观察到拒绝。诊断 guard 只存在该专用库，去除仅有的固定布尔日志/时钟观测后函数字节与原函数完全一致；仓库生产代码、迁移和权限未改。原失败根因 **NOT_REPRODUCED**，修复 **NOT_IMPLEMENTED**，不以这些定向通过消去原 503。凭据 `memory-update-diag-01/freeze.json`。该库与原全部证据保留以便后续定位。
 
 同 API10/APK09 设备证据总索引为 `device/BUILD10-EVIDENCE-PARTIAL.json`，包含实际卡片、同 ID 详情/anchor/pin、官网加载、两段录屏哈希和模型失败。新录屏并未补成成功模型、多轮、20 对切换或性能验收；完整发现闭环仍待腾讯 Hy3 服务绑定核验以及实际成功后的同构建验证。
+
+## 2026-10-08 API11 / APK12：每轮结果恢复与静默读取修复
+
+本次接续原 `BT-FIX-NOW-UI-001` 的真实历史和地图缺口，仍为 **PARTIAL**。前一组 fixture 修复和两份报告已非强制推送为 `60176c3b878b1dfaee06c0dc60df0109b5612d25`；收据 `work/git-publication-continuation-11/publication-result.json`。此次在该检查点上修改 **24 个源码/测试文件与本报告、任务映射**，没有新增队列、数据表或迁移，没有覆盖 74 个待审材料或改写四个原 queue/state 文件。
+
+### 实际改动文件与行为
+
+| 文件（相对于正式仓库） | 实际变化 |
+|---|---|
+| `apps/api/internal/agentworkspace/model.go`、新增 `reply_membership.go` | 在原消息中记录 `agent-reply-membership-v1`、当前 Task/City、类型化 refs、消息前缀摘要和稳定结果集 ID。仅记录实际原查询取得的活动、地点或组织，最多 30 个同类型唯一 refs。 |
+| `apps/api/internal/httpapi/agent_workspace.go`、`agent_result_projection.go`、`now_live_answers.go` | 原个人 CITY 规则结果在原任务事务内写入对应 assistant；原 GET 返回最新至多 30 条 `messageResults`。不创建新任务系统，不把失败的真实模型请求改用规则回答冒充成功。 |
+| `apps/api/internal/postgres/agent_tool_search.go`、`agent_result_projection.go`、新增 `agent_reply_results.go` | 先限制当轮保存的 refs，再按原访问规则和来源版本重新读取；新出现的地点不会进入旧回答。原 Task、账号、授权、City、来源及读取期限在同一数据库快照复核，并在 SQL/提交后复核实际经过时间。读取句柄不序列化、不暴露原始权限证明。 |
+| 新增 `apps/api/internal/agentworkspace/reply_membership_test.go`、`httpapi/agent_reply_results_integration_test.go`、`postgres/agent_reply_results_integration_test.go` | 真实 SQL/HTTP 的历史 A/B、不嫁接新 C、撤权、邀请、过期、迟到 mutation、空历史、截止时间及不透明读取边界。中文、HTML 转义、U+2028/U+2029 等摘要跨语言黄金值。 |
+| 新增 `apps/client/lib/src/workspace/agent_reply_membership.dart`；`remote_agent_task_source.dart`、`agent_workspace_controller.dart`、`agent_result_sheet.dart` | 严格核验会员归属、消息摘要、顺序和同一 Task；分别恢复旧轮卡片。最新一轮继续使用含原 actions/followUps 的主结果，避免误当历史结果而隐藏原动作；没有新造动作授权。 |
+| `agent_workspace_controller.dart`、`remote_agent_task_source.dart`、`map_workspace.dart`、`map_canvas.dart` | 对本人已完成个人 CITY Task，仅当前路由前台时通过原 `/v1/me/agent-tasks/{id}` GET 静默读取新授权结果；单次在途，失败停止自动重试。比对原任务字段、会话、筛选和 refs，只替换新实体投影，不重写会话/查询/草稿，不自动 POST、恢复或完成任务。 |
+| `apps/client/lib/src/city/map_camera_focus.dart`、`public_city_map.dart`、`native_city_map_io.dart`、`native_city_map_stub.dart` | 静默刷新与旧投影过期时保留视野；显式用户选点、新查询和重开才恢复原相机聚焦决策。旧 A 被过滤或过期后地图保持关闭的空结果，不以最新 B 或城市目录补齐；当前合法 GET 才能恢复同一旧消息的 A。 |
+| 新增 `apps/client/test/reply_history_restore_test.dart`、`reply_projection_refresh_test.dart`；`map_canvas_test.dart` | 43 个历史恢复例、40 个静默读取例及相关地图回归。补齐迟到请求、生命周期、旧 A 暂缺、当前 POST 等待期间旧结果过期和合法新结果重新聚焦。旧重复城市按钮断言改成现行唯一顶栏入口，保留原回调、身份和地图状态断言。 |
+
+原读取期限没有延长；旧对象到期仍不可用，GET 返回单独的新授权投影。原无 membership 的消息继续展示其文字和来源，**不回填或嫁接当前结果**。本阶段覆盖原 personal/CITY activity/place/organization 规则路径；**成功模型 finalize 的每轮归属为 NOT_IMPLEMENTED**，不能称所有会话历史已完成。Now 附件仍 **UNCONNECTED**。
+
+### 冻结构建与测试事实
+
+| 实际命令范围 | 结果与证据 |
+|---|---|
+| 最终独占 PostgreSQL 原历史/投影回归 | **61 PASS / 0 FAIL / 0 SKIP**；原 HTTP 历史/编码后迟到 mutation 回归 **18 PASS / 0 FAIL / 0 SKIP**。新库 `birdtie_reply_history_20261008_8a743a680398` 使用原 001–111，无 seed，完成后核验 DROP。纯边界与摘要 **50 PASS**；三个命令期间 1277 个源码输入不变。`native-reply-history-06/freeze.json`。 |
+| API11 相关 Go 范围及 API/维护 CLI 构建 | **757 PASS / 0 FAIL / 196 SKIP**；两个构建 exit 0，1284 个输入与文件清单前后不变。196 项在该命令为 **NOT_RUN**，不与独立 SQL 相加成全套通过。`build11-backend-01.receipt.json`。 |
+| 最终 APK12，18 个去重相关 Flutter 文件 | **413 PASS / 0 FAIL / 0 SKIP**；全量 `flutter analyze --no-pub` 为 No issues found；debug APK exit 0。259 个生产输入、270 个测试输入和忽略的地图配置前后未变。`build12-client-01/receipt.json`。新历史 43 例、静默读取 40 例已包含其中，不再次累加。 |
+| 静默读取定向检查点 | 200 个相关用例通过，包含新 40 例；analysis 无问题；489 个 Dart 文件冻结。`reply-projection-refresh-01/freeze.json`。这组与 APK12 重叠，不相加。 |
+
+早期 SQL 超时、非法 profile fixture、Dart 语法/异步用例失败、旧城市叶子断言失败、历史恢复及 POST 等待期间过期的真实失败日志均保留。APK10 未安装；APK11 真机曾发现卡片在原读取期限后消失，截图 `history-after-first-result01.png` 保留。其 `history-after01-expiry-failure.mp4` 名称不能替代内容核验：frame170 仍在提交前输入，**该视频不能证明响应或过期失败**。APK12 是修复静默读取后的最终版本。前述全 Go FAILED、Memory 503 的 **NOT_REPRODUCED / FIX_NOT_IMPLEMENTED** 继续有效；此检查点没有重跑全 Go 或全 Flutter，记 **NOT_RUN**。
+
+当前实际安装 APK12 SHA256 `0dc8230d92ba11cabf316011175b93d73b286993f978b4313b4099bf1610353c`；API11 SHA256 `9610b485acfea9b3fca2d4a31426db1408a4687837f3be80a49e148db88e06b0`。手机 Xiaomi 25098PN5AC / Android16 / c641566b，`install -r` 后核验实际 base.apk 相同，没有 clear。仅在原自有 API10 的准确进程、文件、端口及空闲检查点后换为 API11（127.0.0.1:18091）；原路由 revision 601、账户预算和旧 UNKNOWN 占用保留。凭据 `device/build12-install.receipt.json`、`live11-api-01.receipt.json`、`live10-owned-api-stop-01.json`。
+
+### 同一 API11 / APK12 的真实手机结果
+
+这些结果使用用户已批准的隔离库与官网 Place，并由原 contributor 测试账号查询。该账号不属于真实模型调用 allowlist；**回答是原站内规则数量句，不是模型回答或成功联网搜索回答**。
+
+- 基线 APK09/API10 的 Task `6d150325-db37-459e-9848-c769d561548a` 先查 Gallery、后查 Museum，原返回没有每轮会员归属；重启 Recent 后只剩最后一轮 Museum 卡，旧 Gallery 用户消息和数量句没有 Gallery 卡。`device/history-before02.mp4`，99.970189 秒，frame40 已人工核验。前后修复使用不同 APK/API，明确绑定，不宣称同一二进制修改前后。
+- 同 APK12/API11，先恢复已用真实 HTTP 建立的两轮 Task `339c4a6d-a21f-4c48-ac13-f4a1b8a23f98`；Museum 与旧 Gallery 各有自己的卡片和官网来源。点旧 Gallery 地图查看显示 Schoolhill 美术馆 pin/预览，原详情 GET 为同 Gallery 和 Schoolhill 地址；来源实际在 Chrome 打开市政府 Art Gallery 页面。`history-build12-after02.mp4` 174.996567 秒，frame40/80/170 分别为 Museum、旧 Gallery、Gallery 详情；加载完成的官网页面只由 `history-build12-old-source01.png` 作证，视频末段没有补成完整官网加载。
+- 拖动 Gallery 地图后，`history-build12-pan-before01.png` 与 `pan-after01.png` 相隔超过 30 秒且约 75 秒；原图裁剪 `(0,1000,1220,1800)` 的像素完全一致，保留同 pin、街道和视野。API 日志有约 27 秒周期的 GET 200，与读取实现和操作窗口一致；日志没有 path/TaskID，不能仅据日志证明每个 GET 的具体路由。`history-build12-after03.mp4` 的 frame35/150 已检查；后来的返回地图只有截图，不虚构为都在视频内。
+- 12:05:29、12:05:34 在同一手机依次提交 `find place Aberdeen Art Gallery`、`find place Aberdeen Maritime Museum`，两次原 POST 200。新 Task `3ef524d0-e4a7-42c1-9532-60b6cfedbeeb` 为原 person/CITY COMPLETED，四条消息的两个 assistant 分别持久化 refs `e7b7544c-0b39-4de6-a7fa-2cc00aacdc8a` 与 `bea8ee0c-9c09-4951-8f0c-8c5819e91c2d`，独立摘要和稳定结果集 ID。`history-build12-ui-first01.png`、`ui-second01.png` 及 `history-build12-after04.mp4`；frame94/110 显示 Museum，首次 Gallery 响应另有实际截图。容器时长 186.127456 秒，frame182 提取没有图，不能据时长认定视频包含后续重启。
+- 12:07、12:10 实际 `am force-stop` / `am start`，不清除应用数据；Recent 原 GET 恢复两轮。较早 Gallery 卡、官网来源、Gallery 的 Schoolhill 地图仍可点击，最后查询保留 Museum。录像 `history-build12-after05.mp4` 177.696133 秒；frame17/24/168 分别核验 Museum 卡、Gallery 地图、仍为 Gallery 地图。连续应用内分享节选 `history-build12-after05-app-only.mp4` 从原视频第 14 秒开始、158 秒，去掉短暂 launcher 画面，原视频完整保留。12:15 的会话/地图切换在视频结束之后，单独截图作证：`ui-map-held03.png` 与 `ui-map-return03.png` 字节完全相同，`ui-conversation-return03.png` 中最新 Museum 仍在。
+
+同实体原引用、卡片、详情、anchor/pin 在原 native HTTP 与 Task 只读快照共同核验。Task 读取只取上述批准测试账号和时间窗的元数据/会员 refs，REPEATABLE READ READ ONLY / ROLLBACK，没有读取私有画像、消息正文或别的账号。证据 `history-api11-http-01/receipt.json`、`history-build12-ui-task-01.json`、`history-build12-ui-evidence-01.json`；后者记录该窗口两次 POST200、51 GET200、1 GET409。早先详情窗口的 1 GET404 同样保留，不能写成所有请求通过，日志无路由所以不猜错误所属能力。
+
+设备总索引 [BUILD12-EVIDENCE-PARTIAL.json](D:/Project/birdtie/work/ui-repair-2026-10-07/device/BUILD12-EVIDENCE-PARTIAL.json)，SHA256 `015570cdc10b81c8e2d3de0d33421a4e86d0a5e8326e25e7036e5f03380fcf32`；绑定上述两个构建、24 个源码字节、真实 Task、前后视频/截图、人工帧检查及局限。原模型账号四个表（Task、Run、reservation、budget account）在本次前后完全相同，UNKNOWN 最坏上界仍 **¥0.999040**；本轮供应商调用 0。`history-before-01.json`、`history-after-02.json`。它们不是确认账单或免费额度证明。
+
+### 仍未完成的依赖
+
+真实模型仍为前述 **401006 / NOT_COMPLETED**，须核验同一腾讯账号广州服务与模型绑定。目录 online 和免费资源截图不能代替生成许可。已只读复核 DeepSeek Flash 官方协议：[模型指南](https://cloud.tencent.com/document/product/1823/132248)、[参数文档](https://cloud.tencent.com/document/product/1823/135872)、[计费](https://cloud.tencent.com/document/product/1823/130055)。官方 wire ID `deepseek/deepseek-flash`、输出上限参数并不提供输入 token 上限；按峰时输入 ¥2/输出 ¥8 每百万 token 和保守上下文上界，其最坏费用超过单次 ¥0.20。当前字节上限不能直接冒充经过供应商认可的 token 计数；没有跳过原 062 价格版本/CAS/绑定、切换模型试费或释放旧 UNKNOWN。Flash 固定内部别名、可信输入 token 上界和对应原生价格注册 **NOT_IMPLEMENTED**。
+
+完整真实 NL→站内+联网→模型有来源回答→可点卡/同结果地图→多轮与 Save，成功模型历史归属、Now 附件、完整组织/聊天/活动/提醒/个人资产真机回归、跨身份/撤权/cluster/性能/读屏/iOS/Web paint 矩阵仍未验收或 **NOT_RUN**。三处 Place 仅供批准隔离验证；整个城市仍 building/unverified；本次没有新增规划文档、复制 Civu 数据或批量改原任务为 DONE。

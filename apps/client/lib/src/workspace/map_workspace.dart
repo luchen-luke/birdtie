@@ -92,7 +92,8 @@ class MapWorkspace extends StatefulWidget {
   State<MapWorkspace> createState() => _MapWorkspaceState();
 }
 
-class _MapWorkspaceState extends State<MapWorkspace> {
+class _MapWorkspaceState extends State<MapWorkspace>
+    with WidgetsBindingObserver {
   final _scaffold = GlobalKey<ScaffoldState>();
   final _composerKey = GlobalKey<AgentComposerState>();
   final MapViewportState _mapState = MapViewportState();
@@ -122,6 +123,7 @@ class _MapWorkspaceState extends State<MapWorkspace> {
   String? _lastAuthorization;
   int _authSerial = 0;
   int _workspaceSerial = 0;
+  int _replyContextEpoch = 0;
   (String?, String?) _workspaceIdentity = (null, null);
   String? _seedCheckedAuthorization;
   final _seedEntryChanges = ValueNotifier<int>(0);
@@ -151,6 +153,7 @@ class _MapWorkspaceState extends State<MapWorkspace> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _online = NowContextQueryController(
       api: NowContextQueryApi(
         authorizationHeader: () => widget.auth.authorizationHeader,
@@ -161,6 +164,10 @@ class _MapWorkspaceState extends State<MapWorkspace> {
       ),
     );
     _workspace = AgentWorkspaceController(
+      replyRefreshAllowed: () =>
+          mounted &&
+          ModalRoute.of(context)?.isCurrent == true &&
+          WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed,
       source:
           widget.agentTaskSource ??
           RemoteAgentTaskSource(
@@ -170,7 +177,8 @@ class _MapWorkspaceState extends State<MapWorkspace> {
             authorizationHeader: () => widget.auth.authorizationHeader,
             organizationWorkspaceID: () => _organizations.active?.id,
             publicEvidenceOwnerID: () => widget.auth.accountID,
-            publicEvidenceEpoch: () => (_seedEntryEpoch, _workspaceSerial),
+            publicEvidenceEpoch: () =>
+                (_seedEntryEpoch, _workspaceSerial, _replyContextEpoch),
           ),
     );
     _saved = SavedController(
@@ -255,6 +263,7 @@ class _MapWorkspaceState extends State<MapWorkspace> {
   );
 
   void _retireSeedEntry() {
+    _workspace.retireReplyRefresh();
     ++_seedEntryEpoch;
     _pendingCityCurrent = null;
     _seedIdentity = _currentSeedIdentity;
@@ -515,6 +524,7 @@ class _MapWorkspaceState extends State<MapWorkspace> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _ornamentTop.dispose();
     ++_authSerial;
     ++_seedEntryEpoch;
@@ -574,6 +584,8 @@ class _MapWorkspaceState extends State<MapWorkspace> {
   void _onCityChange() {
     final cityID = widget.city.selectedCity?.id;
     if (cityID == _lastCityID) return;
+    ++_replyContextEpoch;
+    _workspace.retireReplyRefresh();
     if (!_selectingCity && !_loadingCityCatalog) {
       ++_viewSerial;
       _pendingCityCurrent = null;
@@ -1264,6 +1276,7 @@ class _MapWorkspaceState extends State<MapWorkspace> {
           mounted &&
           identity == _currentSeedIdentity &&
           epoch == _seedEntryEpoch &&
+          (result?.replyProjectionCurrent ?? false) &&
           (reply != null
               ? _workspace.retainsReply(reply)
               : identical(
@@ -2164,7 +2177,18 @@ class _MapWorkspaceState extends State<MapWorkspace> {
   }
 
   @override
-  Widget build(BuildContext context) => AnimatedBuilder(
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    _workspace.updateReplyRefreshVisibility();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Subscribe to the existing route; returning never reopens or submits.
+    _workspace.updateReplyRefreshVisibility();
+    return _buildWorkspace(context);
+  }
+
+  Widget _buildWorkspace(BuildContext context) => AnimatedBuilder(
     animation: Listenable.merge([
       widget.city,
       _workspace,

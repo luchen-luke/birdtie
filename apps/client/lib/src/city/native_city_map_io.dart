@@ -28,6 +28,7 @@ class NativeCityMapView extends StatefulWidget {
     this.onMapUnavailable,
     this.fullBleed = false,
     this.contextKey = '',
+    this.preserveViewport = false,
     this.ornamentTop,
   });
 
@@ -45,6 +46,7 @@ class NativeCityMapView extends StatefulWidget {
   final ValueChanged<String>? onMapUnavailable;
   final bool fullBleed;
   final String contextKey;
+  final bool preserveViewport;
   final double? ornamentTop;
 
   @override
@@ -99,6 +101,7 @@ class _NativeCityMapViewState extends State<NativeCityMapView> {
         places: view.places,
         entities: view.entities,
         selectedEntityId: view.selectedEntityId,
+        preserveViewport: view.preserveViewport,
       );
 
   @override

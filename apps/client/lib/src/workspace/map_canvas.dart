@@ -162,7 +162,9 @@ class _MapCanvasState extends State<MapCanvas> {
         ];
 
   List<PublicPlace> _places() =>
-      widget.city.selectedCity == null || widget.layers != null
+      widget.city.selectedCity == null ||
+          widget.layers != null ||
+          _mapResult?.replyProjectionCurrent == false
       ? const []
       : _mapResult?.places
                 .where((place) => place.location.hasPublicPoint)
@@ -182,6 +184,7 @@ class _MapCanvasState extends State<MapCanvas> {
       '${map?.latitude}:${map?.longitude}:${map?.defaultZoom}',
       widget.workspace.selectedEntityId ?? '',
       _mapContextKey,
+      'quiet:${widget.workspace.preserveReplyCamera}',
       for (final entity in _entities())
         '${entity.id}:${entity.kind}:${entity.title}:${entity.subtitle}:${entity.latitude}:${entity.longitude}',
       for (final place in _places())
@@ -251,6 +254,7 @@ class _MapCanvasState extends State<MapCanvas> {
                 ? null
                 : widget.workspace.selectedEntityId,
             contextKey: selectedCity == null ? 'idle' : _mapContextKey,
+            preserveViewport: widget.workspace.preserveReplyCamera,
             onEntitySelected: (entity) => selectMapEntity(entity.id),
             onPlaceSelected: (place) =>
                 selectMapEntity('place:${place.id}', place: true),

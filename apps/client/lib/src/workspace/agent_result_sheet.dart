@@ -23,6 +23,7 @@ String _activityStatusLabel(String status) => switch (status) {
 };
 
 String _typedResultCount(AgentResult result) {
+  if (!result.replyProjectionCurrent) return '结果需要重新读取';
   const labels = {
     'person': '位伙伴',
     'activity': '个活动',
@@ -887,12 +888,17 @@ class _ResultList extends StatelessWidget {
             ],
           ),
         ],
+        if (!result.replyProjectionCurrent)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 12),
+            child: Text('这条回答的结果已失效，请从最近对话重新打开。'),
+          ),
         if (result.projectionItems != null)
           for (final item in result.projectionItems!)
             AgentEntityResultCard(
               item: item,
               source: _sourceFor(result, item),
-              sourceCurrent: () => workspace.retainsReply(result),
+              sourceCurrent: () => workspace.canUseReplyProjection(result),
               onMap: () {
                 FocusManager.instance.primaryFocus?.unfocus();
                 workspace.showReplyOnMap(result, item.entity.mapID);

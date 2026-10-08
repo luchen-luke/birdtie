@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
@@ -6,6 +7,7 @@ import '../city/public_city_controller.dart';
 import 'agent_request_failure.dart';
 import 'agent_answer_sources.dart';
 import 'agent_result_projection.dart';
+import 'agent_reply_membership.dart';
 import 'public_query_field_evidence.dart';
 import 'map_entities.dart';
 import 'now_context_query_api.dart';
@@ -101,21 +103,35 @@ class AgentMessage {
     required this.role,
     required this.text,
     this.sourceReferences,
+    this.resultMembership,
   });
   final String role;
   final String text;
   final AgentMessageSources? sourceReferences;
+  final AgentReplyMembership? resultMembership;
   List<AgentAnswerSource> get sources => sourceReferences?.sources ?? const [];
-  AgentMessage withText(String text) =>
-      AgentMessage(role: role, text: text, sourceReferences: sourceReferences);
+  AgentMessage withText(String text) => AgentMessage(
+    role: role,
+    text: text,
+    sourceReferences: sourceReferences,
+    resultMembership: resultMembership,
+  );
   factory AgentMessage.fromJson(
     Map<String, dynamic> json, {
     bool Function()? sourceCurrent,
-  }) => AgentMessage(
-    role: json['role'] as String,
-    text: json['text'] as String,
-    sourceReferences: AgentMessageSources.read(json, current: sourceCurrent),
-  );
+  }) {
+    final role = json['role'] as String;
+    final membership = AgentReplyMembership.read(json['resultMembership']);
+    if (role != 'assistant' && membership != null) {
+      throw const FormatException('用户消息不能携带回答结果');
+    }
+    return AgentMessage(
+      role: role,
+      text: json['text'] as String,
+      sourceReferences: AgentMessageSources.read(json, current: sourceCurrent),
+      resultMembership: membership,
+    );
+  }
 }
 
 class AgentResult {
@@ -141,11 +157,17 @@ class AgentResult {
     this.onlineContext,
     this.onlineIntents = const [],
     this.messageSources,
+    this.messageResults,
+    this.replyProjection,
   }) : _legacyEntities = entities;
   final List<MapEntity> _legacyEntities;
-  List<AgentResultItem>? get projectionItems => resultSet?.items;
+  List<AgentResultItem>? get projectionItems =>
+      replyProjectionCurrent ? resultSet?.items : const <AgentResultItem>[];
+  bool get replyProjectionCurrent => replyProjection?.current ?? true;
   bool get isUnsupported => resultSet?.status == 'unsupported';
-  List<MapEntity> get entities => projectionItems == null
+  List<MapEntity> get entities => !replyProjectionCurrent
+      ? const <MapEntity>[]
+      : projectionItems == null
       ? _legacyEntities
       : [for (final item in projectionItems!) ?item.mapEntity];
   final List<PublicActivity> activities;
@@ -169,6 +191,10 @@ class AgentResult {
   final NowOnlineContext? onlineContext;
   final List<NowOnlineIntent> onlineIntents;
   final AgentMessageSources? messageSources;
+  // Null preserves legacy replies. An authenticated empty map is authoritative
+  // and must not revive cached or latest-turn entities for an older message.
+  final Map<int, AgentResult>? messageResults;
+  final AgentReplyProjectionLifetime? replyProjection;
   bool get hasOnlyMessageSources =>
       messageSources != null &&
       resultSet == null &&
@@ -416,6 +442,10 @@ abstract class AgentTaskSource {
     List<PublicActivity> activities,
     List<PublicPlace> places,
   ) => resolve(task.query, activities, places);
+  // A separate read-only port: the default must never fall back to resolve,
+  // followUp or restore, since those may submit a new native turn.
+  bool canRereadReplyProjections(AgentTask task) => false;
+  Future<AgentResult?> rereadReplyProjections(AgentTask task) async => null;
   void dispose() {}
 }
 
@@ -466,15 +496,33 @@ class LocalAgentTaskSource extends AgentTaskSource {
 }
 
 class AgentWorkspaceController extends ChangeNotifier {
-  AgentWorkspaceController({AgentTaskSource? source})
-    : _source = source ?? const LocalAgentTaskSource();
+  AgentWorkspaceController({
+    AgentTaskSource? source,
+    bool Function()? replyRefreshAllowed,
+  }) : _source = source ?? const LocalAgentTaskSource(),
+       _replyRefreshAllowed = replyRefreshAllowed ?? (() => true);
+  final bool Function() _replyRefreshAllowed;
   final AgentTaskSource _source;
   AgentViewState state = AgentViewState.idle;
   AgentSheetExtent sheetExtent = AgentSheetExtent.peek;
   AgentTask? task;
   AgentResult? result;
   AgentResult? _mapReply;
+  int? _mapReplyMessageIndex;
+  // An expired historical map stays empty until its own authorized re-read;
+  // never substitute the latest turn's entities for the selected older reply.
   AgentResult? get presentedResult => _mapReply ?? result;
+  bool preserveReplyCamera = false;
+  Timer? _replyExpiryTimer;
+  Timer? _replyRefreshTimer;
+  int _replyRefreshSerial = 0;
+  bool _replyRefreshRetired = false;
+  bool _replyRefreshFailed = false;
+  bool _replyRefreshVisible = true;
+  bool _replyRefreshInFlight = false;
+  bool _replyResumePending = false;
+  bool _disposed = false;
+  Future<bool>? _replyRefreshFuture;
   final Map<String, List<AgentReply>> _repliesByTask = {};
   List<AgentReply> get replies =>
       (_repliesByTask[task?.id] ?? const <AgentReply>[])
@@ -651,6 +699,7 @@ class AgentWorkspaceController extends ChangeNotifier {
     _repliesByTask.clear();
     _savedConversation.clear();
     _mapReply = null;
+    _mapReplyMessageIndex = null;
     queryContextType = 'CITY';
     mapBackgroundResult = null;
     mapBackgroundCityID = null;
@@ -703,6 +752,7 @@ class AgentWorkspaceController extends ChangeNotifier {
   /// An explicit view choice retires late queries without destroying the
   /// current task, result, conversation, selected Pin or camera.
   void retirePendingQueryForViewChange() {
+    retireReplyRefresh();
     ++_serial;
     if (state == AgentViewState.searching ||
         queryState == AgentQueryState.needsScope) {
@@ -822,6 +872,7 @@ class AgentWorkspaceController extends ChangeNotifier {
           _lastPlaces,
         );
         if (serial != _serial || task?.id != previous.id) return;
+        preserveReplyCamera = false;
         result = restored;
         task = _withSuccessfulPublicQuery(restored.task ?? previous, restored);
         _refreshRestoredLocalRecent(previous);
@@ -879,6 +930,8 @@ class AgentWorkspaceController extends ChangeNotifier {
     String? cityID,
     MapBounds? bounds,
   }) async {
+    retireReplyRefresh();
+    preserveReplyCamera = false;
     final continuing = activeTask != null;
     final previousResult = result;
     AgentResult resolved;
@@ -924,8 +977,10 @@ class AgentWorkspaceController extends ChangeNotifier {
         messages: List.of(conversation),
       );
     }
+    preserveReplyCamera = false;
     result = resolved;
     _mapReply = null;
+    _mapReplyMessageIndex = null;
     requestError = null;
     requestFailure = null;
     if (resolved.task == null || resolved.task!.messages.isEmpty) {
@@ -1094,6 +1149,7 @@ class AgentWorkspaceController extends ChangeNotifier {
         )) {
       return false;
     }
+    preserveReplyCamera = false;
     selectedEntityId = id;
     sheetExtent = AgentSheetExtent.peek;
     notifyListeners();
@@ -1101,6 +1157,7 @@ class AgentWorkspaceController extends ChangeNotifier {
   }
 
   void selectEntity(String id) {
+    preserveReplyCamera = false;
     selectedEntityId = id;
     notifyListeners();
   }
@@ -1125,7 +1182,10 @@ class AgentWorkspaceController extends ChangeNotifier {
   }
 
   void newTask({bool preserveMapSelection = false}) {
+    retireReplyRefresh();
+    preserveReplyCamera = false;
     _mapReply = null;
+    _mapReplyMessageIndex = null;
     if (preserveMapSelection &&
         result != null &&
         result!.onlineContext == null) {
@@ -1192,6 +1252,7 @@ class AgentWorkspaceController extends ChangeNotifier {
     requestError = null;
     requestFailure = null;
     _lastRestoreTask = null;
+    preserveReplyCamera = false;
     result = restored;
     task = _withSuccessfulPublicQuery(restored.task ?? previous, restored);
     _refreshRestoredLocalRecent(previous);
@@ -1226,7 +1287,8 @@ class AgentWorkspaceController extends ChangeNotifier {
       if (!listEquals(users, reply.userMessages)) continue;
       // Authenticated persisted messages retain their own text and citations;
       // an older in-memory result cannot replace them with another turn.
-      if (conversation[index].sourceReferences == null) {
+      if (conversation[index].sourceReferences == null &&
+          conversation[index].resultMembership == null) {
         conversation[index] = conversation[index].withText(
           reply.result.responseMessage,
         );
@@ -1235,7 +1297,8 @@ class AgentWorkspaceController extends ChangeNotifier {
     if (current.projectionItems == null) return;
     if (conversation.isNotEmpty &&
         conversation.last.role == 'assistant' &&
-        conversation.last.sourceReferences != null) {
+        (conversation.last.sourceReferences != null ||
+            conversation.last.resultMembership != null)) {
       return;
     }
     final message = current.responseMessage.trim();
@@ -1261,18 +1324,55 @@ class AgentWorkspaceController extends ChangeNotifier {
     final index = conversation.lastIndexWhere((m) => m.role == 'assistant');
     if (id == null || index < 0) return;
     final stored = _repliesByTask.putIfAbsent(id, () => []);
-    stored.removeWhere((reply) => reply.messageIndex == index);
-    stored.add(
-      AgentReply(
-        messageIndex: index,
-        result: source,
-        userMessages: conversation
-            .take(index)
-            .where((m) => m.role == 'user')
-            .map((m) => m.text)
-            .toList(growable: false),
-      ),
-    );
+    final history = source.messageResults;
+    if (history != null) {
+      stored.removeWhere(
+        (reply) =>
+            reply.messageIndex < conversation.length &&
+            conversation[reply.messageIndex].resultMembership != null,
+      );
+      for (final entry in history.entries) {
+        final messageIndex = entry.key;
+        if (messageIndex < 0 || messageIndex >= conversation.length) continue;
+        final membership = conversation[messageIndex].resultMembership;
+        if (conversation[messageIndex].role != 'assistant' ||
+            membership == null ||
+            membership.taskID != id ||
+            entry.value.taskID != id ||
+            entry.value.resultSet?.id != membership.resultSetID) {
+          continue;
+        }
+        stored.removeWhere((reply) => reply.messageIndex == messageIndex);
+        stored.add(
+          AgentReply(
+            messageIndex: messageIndex,
+            // The decoder has verified that the latest membership has exactly
+            // the current result's entities and map effects. Keep the current
+            // object so its original actions and follow-ups remain available.
+            result: messageIndex == index ? source : entry.value,
+            userMessages: conversation
+                .take(messageIndex)
+                .where((m) => m.role == 'user')
+                .map((m) => m.text)
+                .toList(growable: false),
+          ),
+        );
+      }
+    }
+    if (history == null || conversation[index].resultMembership == null) {
+      stored.removeWhere((reply) => reply.messageIndex == index);
+      stored.add(
+        AgentReply(
+          messageIndex: index,
+          result: source,
+          userMessages: conversation
+              .take(index)
+              .where((m) => m.role == 'user')
+              .map((m) => m.text)
+              .toList(growable: false),
+        ),
+      );
+    }
     stored.sort((a, b) => a.messageIndex.compareTo(b.messageIndex));
     // Reuse the existing per-message resultBuilder for citations recovered
     // from earlier turns. These replies have no entity/map result projection.
@@ -1304,7 +1404,219 @@ class AgentWorkspaceController extends ChangeNotifier {
       );
     }
     stored.sort((a, b) => a.messageIndex.compareTo(b.messageIndex));
+    _replyRefreshRetired = false;
+    _replyRefreshFailed = false;
+    _scheduleReplyExpiry();
   }
+
+  /// Retire a pending GET synchronously on an observed identity/scope change.
+  /// A -> B -> A does not revive its response. No task or query is mutated.
+  void retireReplyRefresh() {
+    ++_replyRefreshSerial;
+    _replyRefreshRetired = true;
+    _replyResumePending = false;
+    _replyRefreshTimer?.cancel();
+  }
+
+  /// Called by the original route/app lifecycle. Visibility is not authority.
+  void updateReplyRefreshVisibility() {
+    final visible = !_disposed && _replyRefreshAllowed();
+    if (visible == _replyRefreshVisible) return;
+    _replyRefreshVisible = visible;
+    ++_replyRefreshSerial;
+    _replyRefreshTimer?.cancel();
+    if (visible && !_replyRefreshFailed && !_replyRefreshRetired) {
+      if (_replyRefreshInFlight) {
+        _replyResumePending = true;
+      } else {
+        unawaited(refreshReplyProjections());
+      }
+    }
+  }
+
+  bool get _canRefreshReplies =>
+      !_disposed &&
+      !_replyRefreshRetired &&
+      _replyRefreshVisible &&
+      _replyRefreshAllowed() &&
+      task != null &&
+      result != null &&
+      queryContextType == 'CITY' &&
+      state != AgentViewState.searching &&
+      requestError == null &&
+      _source.canRereadReplyProjections(task!) &&
+      conversation.isNotEmpty &&
+      conversation.last.role == 'assistant' &&
+      conversation.last.resultMembership != null;
+
+  bool _sameReplyTask(AgentTask a, AgentTask b) =>
+      a.id == b.id &&
+      a.query == b.query &&
+      a.status == b.status &&
+      a.intent == b.intent &&
+      a.cityID == b.cityID &&
+      a.contextType == b.contextType &&
+      a.contextID == b.contextID &&
+      a.principalType == b.principalType &&
+      a.principalID == b.principalID &&
+      a.actingUserID == b.actingUserID &&
+      mapEquals(a.filters, b.filters) &&
+      a.createdAt == b.createdAt &&
+      a.updatedAt == b.updatedAt &&
+      _sameReplyMessages(a.messages, b.messages);
+
+  bool _sameReplyMessages(List<AgentMessage> a, List<AgentMessage> b) {
+    if (a.length != b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      if (a[i].role != b[i].role || a[i].text != b[i].text) return false;
+      final x = a[i].resultMembership, y = b[i].resultMembership;
+      if (x == null || y == null) {
+        if (x != y) return false;
+      } else if (x.taskID != y.taskID ||
+          x.cityID != y.cityID ||
+          x.kind != y.kind ||
+          x.turnDigest != y.turnDigest ||
+          x.resultSetID != y.resultSetID ||
+          !listEquals(x.refs, y.refs)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  /// Refresh only the authorized entity projections of the exact open reply.
+  /// No POST, restore, newTask, conversation append or model request is used.
+  Future<bool> refreshReplyProjections() {
+    if (_replyRefreshInFlight) return _replyRefreshFuture!;
+    if (!_canRefreshReplies) return Future.value(false);
+    _replyRefreshInFlight = true;
+    final original = task!,
+        serial = _serial,
+        refreshSerial = _replyRefreshSerial;
+    final messages = List<AgentMessage>.of(conversation);
+    final filters = Map<String, String>.of(original.filters);
+    _replyRefreshTimer?.cancel();
+    bool current() =>
+        _canRefreshReplies &&
+        serial == _serial &&
+        refreshSerial == _replyRefreshSerial &&
+        identical(task, original) &&
+        mapEquals(filters, original.filters) &&
+        _sameReplyMessages(messages, conversation);
+    Future<bool> read() async {
+      try {
+        final fresh = await _source.rereadReplyProjections(original);
+        if (!current() || fresh == null) return false;
+        if (fresh.taskID != original.id ||
+            fresh.task == null ||
+            fresh.messageResults == null ||
+            !_sameReplyTask(original, fresh.task!) ||
+            !_sameReplyMessages(messages, fresh.task!.messages)) {
+          _replyRefreshFailed = true;
+          return false;
+        }
+        final oldMap = _mapReply;
+        final mapIndex = oldMap == null
+            ? null
+            : _mapReplyMessageIndex ??
+                  replies
+                      .where((reply) => identical(reply.result, oldMap))
+                      .map((reply) => reply.messageIndex)
+                      .firstOrNull;
+        result = fresh;
+        preserveReplyCamera = true;
+        _rememberReply(fresh);
+        if (oldMap != null) {
+          _mapReply =
+              (mapIndex == null
+                  ? null
+                  : replies
+                        .where((reply) => reply.messageIndex == mapIndex)
+                        .map((reply) => reply.result)
+                        .firstOrNull) ??
+              _retiredReplyMap(original.id);
+        }
+        final visible = presentedResult;
+        if (selectedEntityId != null &&
+            (visible == null || !_containsEntity(visible, selectedEntityId!))) {
+          selectedEntityId = null;
+        }
+        notifyListeners();
+        return true;
+      } catch (_) {
+        // The original query error/state remain untouched. Do not turn a
+        // failed read into a paid retry or a repeated automatic GET loop.
+        if (current()) _replyRefreshFailed = true;
+        return false;
+      } finally {
+        _replyRefreshInFlight = false;
+        _replyRefreshFuture = null;
+        if (!_disposed && !_replyRefreshFailed) _scheduleReplyExpiry();
+        if (_replyResumePending && !_disposed) {
+          _replyResumePending = false;
+          if (!_replyRefreshFailed) unawaited(refreshReplyProjections());
+        }
+      }
+    }
+
+    return _replyRefreshFuture = read();
+  }
+
+  // Empty presentation only: no old coordinates, cards, source links, answer
+  // text or grants survive a missing historical projection. Keeping the
+  // closed lifetime also prevents the map from using city catalog fallbacks.
+  AgentResult _retiredReplyMap(String id) => AgentResult(
+    entities: const [],
+    activities: const [],
+    places: const [],
+    note: '',
+    taskID: id,
+    replyProjection: AgentReplyProjectionLifetime(
+      validUntil: DateTime.utc(1970),
+      current: () => false,
+    ),
+  );
+
+  void _scheduleReplyExpiry() {
+    _replyExpiryTimer?.cancel();
+    _replyRefreshTimer?.cancel();
+    Duration? next;
+    for (final source in [result, ...replies.map((reply) => reply.result)]) {
+      final remaining = source?.replyProjection?.remaining;
+      if (remaining != null &&
+          remaining > Duration.zero &&
+          (next == null || remaining < next)) {
+        next = remaining;
+      }
+    }
+    if (next != null) {
+      _replyExpiryTimer = Timer(next, () {
+        // The temporary empty set must not move the camera while a new query
+        // waits. Accepted explicit query/restore results reset this policy.
+        preserveReplyCamera = true;
+        _scheduleReplyExpiry();
+        notifyListeners();
+      });
+      if (!_disposed &&
+          !_replyRefreshRetired &&
+          _replyRefreshVisible &&
+          _replyRefreshAllowed() &&
+          task != null &&
+          _source.canRereadReplyProjections(task!) &&
+          !_replyRefreshFailed &&
+          !_replyRefreshInFlight) {
+        const lead = Duration(seconds: 5);
+        // A near-expired response must not cause a zero-delay GET loop.
+        final delay = next > lead ? next - lead : lead;
+        _replyRefreshTimer = Timer(delay, () {
+          if (!_replyRefreshFailed) unawaited(refreshReplyProjections());
+        });
+      }
+    }
+  }
+
+  bool canUseReplyProjection(AgentResult source) =>
+      retainsReply(source) && source.replyProjectionCurrent;
 
   bool retainsReply(AgentResult source) =>
       identical(result, source) ||
@@ -1332,11 +1644,16 @@ class AgentWorkspaceController extends ChangeNotifier {
   void showReplyOnMap(AgentResult source, String id) {
     if (queryContextType != 'CITY' ||
         source.onlineContext != null ||
-        !retainsReply(source) ||
+        !canUseReplyProjection(source) ||
         !source.entities.any((entity) => entity.id == id)) {
       return;
     }
+    preserveReplyCamera = false;
     _mapReply = source;
+    _mapReplyMessageIndex = replies
+        .where((reply) => identical(reply.result, source))
+        .map((reply) => reply.messageIndex)
+        .firstOrNull;
     selectedEntityId = id;
     sheetExtent = AgentSheetExtent.peek;
     notifyListeners();
@@ -1344,6 +1661,9 @@ class AgentWorkspaceController extends ChangeNotifier {
 
   @override
   void dispose() {
+    _disposed = true;
+    retireReplyRefresh();
+    _replyExpiryTimer?.cancel();
     ++_serial;
     ++_historySerial;
     _source.dispose();

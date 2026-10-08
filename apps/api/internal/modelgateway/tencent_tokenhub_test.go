@@ -42,6 +42,99 @@ func tencentAdapter(t *testing.T, rt http.RoundTripper) *TencentTokenHubAdapter 
 	return a
 }
 
+func TestTencentSelectedDeepSeekTransportExactWireAndResponseBinding(t *testing.T) {
+	for _, responseModel := range []string{TencentTokenHubDeepSeekModel, TencentTokenHubModel, "deepseek-v4-pro", "DeepSeek-v4-pro-0813"} {
+		t.Run(responseModel, func(t *testing.T) {
+			c := tencentTestConfig(t)
+			c.model, c.apiKey = TencentTokenHubDeepSeekModel, func() string { return "opaque+/_=.:!~" }
+			wires := 0
+			a, err := NewTencentTokenHubAdapter(c, tencentRoundTripper(func(req *http.Request) (*http.Response, error) {
+				wires++
+				if req.URL.String() != "https://tokenhub.tencentmaas.com/v1/chat/completions" || strings.Count(req.URL.Path, "/v1") != 1 || req.Header.Get("Authorization") != "Bearer opaque+/_=.:!~" || req.GetBody != nil || !req.Close || req.Method != http.MethodPost {
+					t.Fatal("selected model endpoint, opaque key, or once-only controls changed")
+				}
+				raw, e := io.ReadAll(req.Body)
+				if e != nil {
+					t.Fatal("synthetic request body unavailable")
+				}
+				var fields map[string]json.RawMessage
+				if json.Unmarshal(raw, &fields) != nil || len(fields) != 7 {
+					t.Fatal("unapproved field entered selected model wire")
+				}
+				for key, value := range map[string]string{"model": `"deepseek-v4-pro-0813"`, "n": "1", "stream": "false", "max_completion_tokens": "128", "thinking": `{"type":"disabled"}`, "tool_choice": `"none"`} {
+					if string(fields[key]) != value {
+						t.Fatal("selected model control mismatch", key)
+					}
+				}
+				if fields["service_id"] != nil || fields["tools"] != nil || fields["web_search_options"] != nil {
+					t.Fatal("service or additional capability entered selected wire")
+				}
+				return tencentResponse(strings.Replace(tencentSuccess(), `"model":"hy3"`, `"model":"`+responseModel+`"`, 1), 200), nil
+			}))
+			if err != nil || a.Descriptor() != (ProviderDescriptor{ProviderID: "tencent_tokenhub", ModelID: TencentTokenHubDeepSeekModel, ModelVersion: TencentTokenHubDeepSeekModel, Mode: Live}) {
+				t.Fatal("selected model descriptor unavailable")
+			}
+			raw, err := a.Complete(context.Background(), tencentRequest())
+			if wires != 1 {
+				t.Fatal("selected model transport replayed or fell back")
+			}
+			if responseModel == TencentTokenHubDeepSeekModel {
+				if err != nil || !strings.Contains(string(raw), `"status":"COMPLETED"`) || strings.Contains(string(raw), "reasoning-secret-sentinel") || strings.Contains(string(raw), c.credential()) {
+					t.Fatal("selected-model response failed or exposed private transport data")
+				}
+			} else if !errors.Is(err, ErrAdapter) || len(raw) != 0 || !strings.Contains(fmt.Sprint(err), "TENCENT_ID_MODEL") {
+				t.Fatal("foreign model or response alias was accepted")
+			}
+			if _, err := NewOfflineHarness(a); !errors.Is(err, ErrUnavailable) {
+				t.Fatal("selected live model entered offline harness")
+			}
+		})
+	}
+}
+
+func TestTencentSelectedModelHTTPFailureRetainsSafeDiagnosticsWithoutRetry(t *testing.T) {
+	c := tencentTestConfig(t)
+	c.model = TencentTokenHubDeepSeekModel
+	wires := 0
+	a, err := NewTencentTokenHubAdapter(c, tencentRoundTripper(func(*http.Request) (*http.Response, error) {
+		wires++
+		return tencentResponse(`{"error":{"code":"401006","type":"gateway_error","source":"gateway","param":"model","message":"private-provider-body-sentinel","request_id":"private-request-sentinel"}}`, 401), nil
+	}))
+	if err != nil {
+		t.Fatal("synthetic selected-model transport rejected")
+	}
+	raw, err := a.Complete(context.Background(), tencentRequest())
+	var provider ProviderError
+	if len(raw) != 0 || wires != 1 || !errors.As(err, &provider) || provider.Code != "AUTHENTICATION" || provider.Retryable {
+		t.Fatal("selected-model provider failure lost identity or retried")
+	}
+	for _, verb := range []string{"%v", "%+v", "%#v", "%s", "%q", "%w"} {
+		shown := fmt.Sprintf(verb, err)
+		if (verb != "%w" && !strings.Contains(shown, "401006")) || strings.Contains(shown, "private-provider-body-sentinel") || strings.Contains(shown, "private-request-sentinel") || strings.Contains(shown, tencentTestKey) {
+			t.Fatal("safe provider metadata missing or arbitrary body data leaked")
+		}
+	}
+}
+
+func TestTencentSelectedNormalizerRejectsCrossModelAndUnknownSelectors(t *testing.T) {
+	for _, expected := range []string{TencentTokenHubModel, TencentTokenHubDeepSeekModel, "other"} {
+		for _, returned := range []string{TencentTokenHubModel, TencentTokenHubDeepSeekModel} {
+			raw := []byte(strings.Replace(tencentSuccess(), `"model":"hy3"`, `"model":"`+returned+`"`, 1))
+			output, err := normalizeTencentTextForModel(raw, 128, expected)
+			if expected == returned {
+				if err != nil || len(output) == 0 {
+					t.Fatal("exact selected model response rejected")
+				}
+			} else if !errors.Is(err, ErrAdapter) || len(output) != 0 {
+				t.Fatal("cross-model or unknown route accepted")
+			}
+		}
+	}
+	if raw, err := formatTencentTextWireForModel(tencentRequest(), time.Now(), 768, "other"); !errors.Is(err, ErrInvalid) || len(raw) != 0 {
+		t.Fatal("unknown route formatted provider bytes")
+	}
+}
+
 func TestTencentTransportSuccessHasExactNoSearchPayloadAndUsageFacts(t *testing.T) {
 	calls := 0
 	native := testRequest(Text)

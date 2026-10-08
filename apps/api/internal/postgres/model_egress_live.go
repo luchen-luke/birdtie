@@ -159,14 +159,14 @@ func prepareLiveWire(query string, r modelgateway.Request, price modelegressbudg
 		upper, e := modelegressbudget.BoundLive(price, 0, now)
 		return modelgateway.PreparedTencentWire{}, queryDigest, liveWireHash(body), upper, e
 	}
-	if price.Kind != modelegressbudget.LiveToken || price.Base.InputTokenCeiling != modelgateway.TencentLiveMaxInputTokens || r.OutputMode != modelgateway.Text || len(r.Messages) != 2 || r.Messages[0].Role != "system" || r.Messages[1].Role != "user" || r.Messages[1].Content != query || !liveProjectorPresent(projector) || modelgateway.ValidateRequest(r, now) != nil {
+	if !modelegressbudget.HasNativeLiveInputBound(price) || r.OutputMode != modelgateway.Text || len(r.Messages) != 2 || r.Messages[0].Role != "system" || r.Messages[1].Role != "user" || r.Messages[1].Content != query || !liveProjectorPresent(projector) || modelgateway.ValidateRequest(r, now) != nil {
 		return modelgateway.PreparedTencentWire{}, "", "", modelegressbudget.LiveAmount{}, modelegressbudget.ErrDenied
 	}
 	provider := liveProviderRequest(r)
 	// A projector cannot mutate the independent native comparison snapshot by
 	// editing slices in its provider-only argument.
 	wire, e := projector.Prepare(liveProviderRequest(r))
-	if e != nil || !wire.Matches(provider, now) || wire.InputTokenBound() != modelgateway.TencentLiveMaxInputTokens || wire.InputBoundEvidence() != modelgateway.TencentLiveInputBoundEvidence || wire.InputBoundSource() != modelgateway.TencentLiveInputBoundSource {
+	if e != nil || !liveTokenWireMatches(price, provider, wire, now) {
 		return modelgateway.PreparedTencentWire{}, "", "", modelegressbudget.LiveAmount{}, modelegressbudget.ErrDenied
 	}
 	upper, e := modelegressbudget.BoundLive(price, r.Budget.MaxOutputTokens, now)
@@ -174,6 +174,26 @@ func prepareLiveWire(query string, r modelgateway.Request, price modelegressbudg
 		return modelgateway.PreparedTencentWire{}, "", "", modelegressbudget.LiveAmount{}, modelegressbudget.ErrBudget
 	}
 	return wire, queryDigest, wire.WireDigest(), upper, nil
+}
+
+func liveTokenWireMatches(price modelegressbudget.LivePrice, provider modelgateway.ProviderRequest, wire modelgateway.PreparedTencentWire, now time.Time) bool {
+	if modelegressbudget.ValidateLivePrice(price, now) != nil || !modelegressbudget.HasNativeLiveInputBound(price) || !wire.Matches(provider, now) {
+		return false
+	}
+	d := wire.Descriptor()
+	b := price.Base
+	if d.ProviderID != b.Destination.Provider || d.ModelID != b.Destination.Model || d.ModelVersion != b.Destination.Version ||
+		d.Mode != modelgateway.Live || wire.WireContract() != b.Destination.WireContract || wire.InputTokenBound() != b.InputTokenCeiling {
+		return false
+	}
+	switch b.Destination {
+	case modelegressbudget.LiveHY3Destination():
+		return wire.InputBoundEvidence() == modelgateway.TencentLiveInputBoundEvidence && wire.InputBoundSource() == modelgateway.TencentLiveInputBoundSource
+	case modelegressbudget.LiveDeepSeek0813Destination():
+		return wire.InputBoundEvidence() == modelgateway.TencentDeepSeekInputBoundEvidence && wire.InputBoundSource() == modelgateway.TencentDeepSeekInputBoundSource
+	default:
+		return false
+	}
 }
 
 func readLivePrice(ctx context.Context, tx pgx.Tx, version string) (p modelegressbudget.LivePrice, err error) {
@@ -196,7 +216,7 @@ func (s *Store) RegisterLivePrice(ctx context.Context, p modelegressbudget.LiveP
 	if e = modelegressbudget.ValidateLivePrice(p, now); e != nil {
 		return e
 	}
-	if p.Kind == modelegressbudget.LiveToken && p.Base.InputTokenCeiling != modelgateway.TencentLiveMaxInputTokens {
+	if p.Kind == modelegressbudget.LiveToken && !modelegressbudget.HasNativeLiveInputBound(p) {
 		return modelegressbudget.ErrInvalid
 	}
 	_, e = tx.Exec(ctx, `INSERT INTO model_local_price_versions(version,provider_id,model_id,model_version,wire_contract,region,retention,currency,input_rate,output_rate,input_ceiling,output_ceiling,evidence,expires_at,billing_kind,request_ceiling,call_micros,snapshot_source_url,snapshot_sha256,snapshot_document_updated_at,snapshot_observed_at,snapshot_expires_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22) ON CONFLICT DO NOTHING`, p.Base.Version, p.Base.Destination.Provider, p.Base.Destination.Model, p.Base.Destination.Version, p.Base.Destination.WireContract, p.Base.Region, p.Base.Retention, p.Base.Currency, p.Base.InputMicrosPerToken, p.Base.OutputMicrosPerToken, p.Base.InputTokenCeiling, p.Base.OutputTokenCeiling, p.Base.Evidence, p.Base.ExpiresAt, p.Kind, p.RequestCeiling, p.CallMicros, p.Snapshot.SourceURL, p.Snapshot.ArtifactSHA256, p.Snapshot.DocumentUpdatedAt, p.Snapshot.ObservedAt, p.Snapshot.ExpiresAt)
@@ -481,6 +501,20 @@ func fitsLiveBudget(r egressBudgetRow, a modelegressbudget.LiveAmount) bool {
 	}
 	return r.used.CostMicros <= cap-a.Amount.CostMicros
 }
+
+func fitsLivePriceBudget(r egressBudgetRow, p modelegressbudget.LivePrice, a modelegressbudget.LiveAmount) bool {
+	if r.currency != "CNY" || a.Amount.CostMicros > liveRequestCashLimit || !modelegressbudget.FitsLivePrice(r.limit, r.used, p, a) {
+		return false
+	}
+	cap := liveOwnerCashLimit
+	if r.scope == "ROOT" || r.scope == "TASK" {
+		cap = liveRootCashLimit
+		if r.used.Requests >= 2 {
+			return false
+		}
+	}
+	return r.used.CostMicros <= cap-a.Amount.CostMicros
+}
 func readLiveReservation(ctx context.Context, tx pgx.Tx, id, owner string) (r modelegressbudget.Reservation, kind modelegressbudget.LiveChargeKind, err error) {
 	r, err = readEgressReservation(ctx, tx, id, owner)
 	if err != nil {
@@ -561,7 +595,7 @@ func (s *Store) reserveLiveAttemptTx(ctx context.Context, tx pgx.Tx, a agenteven
 		return modelegressbudget.Reservation{}, e
 	}
 	for _, r := range rows {
-		if !fitsLiveBudget(r, p.upper) {
+		if !fitsLivePriceBudget(r, p.price, p.upper) {
 			return modelegressbudget.Reservation{}, modelegressbudget.ErrBudget
 		}
 	}

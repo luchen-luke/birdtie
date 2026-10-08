@@ -41,6 +41,92 @@ func liveDigestFixture(kind LiveChargeKind) LiveDigestInput {
 	return in
 }
 
+func deepSeekPriceFixture() LivePrice {
+	p := livePriceFixture(LiveToken)
+	p.Base.Version = "deepseek.0813.peak.v1"
+	p.Base.Destination = LiveDeepSeek0813Destination()
+	p.Base.InputMicrosPerToken, p.Base.OutputMicrosPerToken = 9, 27
+	p.Base.InputTokenCeiling = modelgateway.TencentDeepSeekMaxInputTokens
+	return p
+}
+
+func TestLiveDeepSeek0813ClosedPeakTariffAndOriginalLimits(t *testing.T) {
+	p, now := deepSeekPriceFixture(), livePriceTestNow()
+	if err := ValidateLivePrice(p, now); err != nil || !HasNativeLiveInputBound(p) {
+		t.Fatal("closed 0813 tariff rejected", err)
+	}
+	for _, row := range []struct {
+		output int
+		cost   int64
+	}{{32, 148320}, {768, 168192}} {
+		a, err := BoundLive(p, row.output, now)
+		if err != nil || a.Amount != (Amount{InputTokens: 16384, OutputTokens: int64(row.output), CostMicros: row.cost}) {
+			t.Fatal("peak bound differs", a, err)
+		}
+		limit := Limits{Requests: 2, InputTokens: 196608, OutputTokens: 768, CostMicros: 279680}
+		if !FitsLivePrice(limit, Limits{Requests: 1, CostMicros: 80000}, p, a) || FitsLive(limit, Limits{}, a) {
+			t.Fatal("new price lost binding or changed legacy FitsLive")
+		}
+		if FitsLivePrice(limit, Limits{CostMicros: limit.CostMicros - row.cost + 1}, p, a) {
+			t.Fatal("existing hold was released or ignored")
+		}
+	}
+	for name, edit := range map[string]func(*LivePrice){
+		"old_hy3_rates": func(p *LivePrice) { p.Base.InputMicrosPerToken, p.Base.OutputMicrosPerToken = 1, 4 },
+		"offpeak":       func(p *LivePrice) { p.Base.InputMicrosPerToken = 4 },
+		"direct_alias":  func(p *LivePrice) { p.Base.Destination.Model = "deepseek/deepseek-v4-pro-0813" },
+		"other_version": func(p *LivePrice) { p.Base.Destination.Version = "hy3" },
+		"lower_bound":   func(p *LivePrice) { p.Base.InputTokenCeiling-- },
+		"higher_bound":  func(p *LivePrice) { p.Base.InputTokenCeiling++ },
+		"provider_max":  func(p *LivePrice) { p.Base.InputTokenCeiling = 1000000 },
+		"other_source":  func(p *LivePrice) { p.Snapshot.SourceURL = "https://example.org/prices" },
+	} {
+		t.Run(name, func(t *testing.T) {
+			copy := p
+			edit(&copy)
+			if ValidateLivePrice(copy, now) == nil || HasNativeLiveInputBound(copy) {
+				t.Fatal("unreviewed route/rate/bound accepted")
+			}
+		})
+	}
+	hy3 := livePriceFixture(LiveToken)
+	if ValidateLivePrice(hy3, now) != nil || HasNativeLiveInputBound(hy3) {
+		t.Fatal("legacy helper range or native HY3 bound changed")
+	}
+}
+
+func TestLiveDeepSeekPriceAmountCannotBorrowOtherDestination(t *testing.T) {
+	p := deepSeekPriceFixture()
+	a, _ := BoundLive(p, 768, livePriceTestNow())
+	limit := Limits{Requests: 2, InputTokens: 196608, OutputTokens: 768, CostMicros: 279680}
+	for _, copy := range []LivePrice{livePriceFixture(LiveToken), livePriceFixture(LiveCall)} {
+		if FitsLivePrice(limit, Limits{}, copy, a) {
+			t.Fatal("amount borrowed another exact price")
+		}
+	}
+	for name, edit := range map[string]func(*LiveAmount){
+		"kind":     func(a *LiveAmount) { a.Kind = LiveCall },
+		"requests": func(a *LiveAmount) { a.Requests = 2 },
+		"input":    func(a *LiveAmount) { a.Amount.InputTokens-- },
+		"output":   func(a *LiveAmount) { a.Amount.OutputTokens-- },
+		"cost":     func(a *LiveAmount) { a.Amount.CostMicros-- },
+	} {
+		t.Run(name, func(t *testing.T) {
+			copy := a
+			edit(&copy)
+			if FitsLivePrice(limit, Limits{}, p, copy) {
+				t.Fatal("amount differs from price")
+			}
+		})
+	}
+	in := liveDigestFixture(LiveToken)
+	one, err := DigestLive(in, p, livePriceTestNow())
+	two, oldErr := DigestLive(in, livePriceFixture(LiveToken), livePriceTestNow())
+	if err != nil || oldErr != nil || one == two {
+		t.Fatal("route and price missing from original digest", err, oldErr)
+	}
+}
+
 func TestLivePriceClosedTariffs(t *testing.T) {
 	now := livePriceTestNow()
 	for _, kind := range []LiveChargeKind{LiveToken, LiveCall} {

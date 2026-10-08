@@ -48,7 +48,9 @@ func resolvedLiveNativeFixture(t *testing.T) (*liveNativeFixture, string) {
 		}
 	})
 	query := "帮我找周末的羽毛球活动"
-	task, e := b.store.SaveTask(b.ctx, agentworkspace.Task{PrincipalType: "person", PrincipalID: b.person.ID, ActingUserID: b.person.ID, CityID: city, Query: query, Intent: agentworkspace.FindActivity, Status: agentworkspace.TaskActive, Filters: map[string]string{"currentQuery": query, "targetIntent": agentworkspace.FindActivity, "category": "badminton", "timePreference": "weekend", "resultIDs": "PRIVATE_RESULT_CANARY", "privateProfile": "PRIVATE_PROFILE_CANARY", "mapWest": "-2.204871233"}, Conversation: []agentworkspace.Message{{Role: "user", Text: "PRIVATE_HISTORY_CANARY"}, {Role: "assistant", Text: "PRIVATE_ASSISTANT_CANARY"}, {Role: "user", Text: query}}})
+	// Keep the exact private coordinate canary while supplying a complete legal
+	// human viewport. The public egress proof still excludes EVERY coordinate.
+	task, e := b.store.SaveTask(b.ctx, agentworkspace.Task{PrincipalType: "person", PrincipalID: b.person.ID, ActingUserID: b.person.ID, CityID: city, Query: query, Intent: agentworkspace.FindActivity, Status: agentworkspace.TaskActive, Filters: map[string]string{"currentQuery": query, "targetIntent": agentworkspace.FindActivity, "category": "badminton", "timePreference": "weekend", "resultIDs": "PRIVATE_RESULT_CANARY", "privateProfile": "PRIVATE_PROFILE_CANARY", "mapWest": "-2.204871233", "mapEast": "-2.0", "mapSouth": "57.1", "mapNorth": "57.2"}, Conversation: []agentworkspace.Message{{Role: "user", Text: "PRIVATE_HISTORY_CANARY"}, {Role: "assistant", Text: "PRIVATE_ASSISTANT_CANARY"}, {Role: "user", Text: query}}})
 	if e != nil {
 		t.Fatal("native current Task in own public City", e)
 	}

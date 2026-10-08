@@ -223,8 +223,17 @@ func (s *server) createAgentTask(w http.ResponseWriter, r *http.Request) {
 			respondError(w, http.StatusConflict, "task_city_mismatch")
 			return
 		}
-		task.Conversation = append(task.Conversation, agentworkspace.Message{Role: "user", Text: query})
-		task.Status = agentworkspace.TaskActive
+		if _, followup := agentworkspace.ParsePlaceFollowup(query, &task); followup {
+			var continued bool
+			task, r, continued = s.continuePublicPlaceFollowup(w, r, digest, actor, task, query)
+			if !continued {
+				return
+			}
+		} else {
+			agentworkspace.ClearPlaceFollowupContext(&task)
+			task.Conversation = append(task.Conversation, agentworkspace.Message{Role: "user", Text: query})
+			task.Status = agentworkspace.TaskActive
+		}
 	} else {
 		task = agentworkspace.Task{
 			PrincipalType: principalType, PrincipalID: principalID, ActingUserID: actor.ID,
@@ -249,6 +258,11 @@ func (s *server) createAgentTask(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	mvp := agentworkspace.ParseMVPIntent(query, taskContext(task, input.TaskID != ""))
+	if currentPublicPlaceFollowup(r) {
+		// Native storage has resolved the public name. Preserve that exact
+		// catalog search value rather than reusing the raw replacement alias.
+		mvp.SearchTerm = task.Filters["searchTerm"]
+	}
 	if !mvp.Supported && input.MapBounds != nil && mvp.Operation == agentworkspace.UnsupportedIntent {
 		mvp = agentworkspace.MVPIntent{Operation: agentworkspace.AreaDiscovery, Target: agentworkspace.FindActivity,
 			TimePreference: "anytime", LocationPreference: "viewport", Supported: true}

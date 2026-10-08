@@ -42,6 +42,9 @@ func ParseMVPIntent(query string, current *Task) MVPIntent {
 	if quoted, ok := quotedPlaceIntent(text); ok {
 		return quoted
 	}
+	if followup, ok := ParsePlaceFollowup(query, current); ok {
+		return placeFollowupIntent(followup, current)
+	}
 	if containsAny(text, "找新朋友", "认识新朋友", "找伙伴", "找个伙伴", "找搭子", "meet new people", "find a companion") {
 		return MVPIntent{Operation: FindNewPeople, Target: FindNewPeople, Supported: true}
 	}

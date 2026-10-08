@@ -2,6 +2,8 @@
 
 更新时间：2026-10-08。正式仓库：`D:/Project/birdtie`。状态：**PARTIAL，未完成整体验收**。
 
+最新检查点：广州 TokenHub `deepseek-v4-pro-0813` 已取得真实生成成功。API14/原 APK12 在同一手机完成 Gallery 首问、周末开放时间代词追问、换 Museum 的三轮真实 WSA+模型回答；原任务保存三组来源和实体，卡片、详情、地图及 Recent/冷启动后的恢复已核验。42 条整体仍 **PARTIAL**；附件、通用多轮、Save/原能力完整回归、来源权威性判断及其他验收缺口没有标为完成。详见文末 API13–14 检查点。下列旧构建的 401006、NOT_IMPLEMENTED 和费用数值保留为历史，不能当作当前结论。
+
 来源为用户指定的 `D:/Project/birdtie/BirdTie-UI-Repair-Package-2026-10-07.zip` 中 01–05 文件及 42 条候选。修复复用原 `BT-FIX-NOW-UI-001`、AIR、AGE 与领域任务，未创建平行队列。原任务历史、未提交工作及旧 worktree 均保留。本报告是实际改动与证据记录。
 
 ## 实际代码
@@ -176,4 +178,70 @@ HTTP 旧 062 用例的共同原因已确定：fixture 的最后 user 是私有�
 
 真实模型仍为前述 **401006 / NOT_COMPLETED**，须核验同一腾讯账号广州服务与模型绑定。目录 online 和免费资源截图不能代替生成许可。已只读复核 DeepSeek Flash 官方协议：[模型指南](https://cloud.tencent.com/document/product/1823/132248)、[参数文档](https://cloud.tencent.com/document/product/1823/135872)、[计费](https://cloud.tencent.com/document/product/1823/130055)。官方 wire ID `deepseek/deepseek-flash`、输出上限参数并不提供输入 token 上限；按峰时输入 ¥2/输出 ¥8 每百万 token 和保守上下文上界，其最坏费用超过单次 ¥0.20。当前字节上限不能直接冒充经过供应商认可的 token 计数；没有跳过原 062 价格版本/CAS/绑定、切换模型试费或释放旧 UNKNOWN。Flash 固定内部别名、可信输入 token 上界和对应原生价格注册 **NOT_IMPLEMENTED**。
 
-完整真实 NL→站内+联网→模型有来源回答→可点卡/同结果地图→多轮与 Save，成功模型历史归属、Now 附件、完整组织/聊天/活动/提醒/个人资产真机回归、跨身份/撤权/cluster/性能/读屏/iOS/Web paint 矩阵仍未验收或 **NOT_RUN**。三处 Place 仅供批准隔离验证；整个城市仍 building/unverified；本次没有新增规划文档、复制 Civu 数据或批量改原任务为 DONE。
+本节 API11 阶段，完整真实 NL→站内+联网→模型有来源回答→可点卡/同结果地图→多轮与 Save，成功模型历史归属、Now 附件、完整组织/聊天/活动/提醒/个人资产真机回归、跨身份/撤权/cluster/性能/读屏/iOS/Web paint 矩阵仍未验收或 **NOT_RUN**。三处 Place 仅供批准隔离验证；整个城市仍 building/unverified；该阶段没有新增规划文档、复制 Civu 数据或批量改原任务为 DONE。
+
+## 2026-10-08 API13–14 / 原 APK12：真实模型与地点追问
+
+本轮接续原 UI/AIR/AGE 实现，没有新增任务系统。四个原 queue/state 文件字节仍与 checkpoint05 相同，原 `BT-FIX-NOW-UI-001` 保持 PARTIAL。旧五个 Task、五个 Run、八个 reservation 的整行哈希全部保留；没有释放旧 UNKNOWN、重置预算或覆盖未提交材料。根代理在原 API13 没有活动写入的自然检查点核验 PID/exe/监听和数据库状态后，仅替换本次自有 API。
+
+### 实际配置及改动
+
+- 按用户控制台值选择 `deepseek-v4-pro-0813`，地址为 `https://tokenhub.tencentmaas.com/v1/chat/completions`，没有额外 `service_id` 或重复 `/v1`，没有回退旧 Hy3。启动和原账本 probe 在同一 PowerShell 进程读取 Windows **User** 级 `BIRDTIE_TENCENT_TOKENHUB_API_KEY` 后传入子进程；仅记录变量存在和调用结果，不输出或提交密钥。空/缺失环境变量拒绝启动该真实 provider，不用本地文件旧密钥回退；没有声称已独立证明密钥轮换。
+- `modelgateway/tencent_config.go`、`tencent_wire.go`、`tencent_tokenhub.go`、`live_gateway.go` 与各测试：精确模型及响应绑定、私有密钥闭包和脱敏；DeepSeek 固定两条 TEXT 消息、关闭 thinking、限制输出及一次发送。保留旧模型契约和原单消息 4096 字节限制。
+- `modelegressbudget/live_price.go`、`live_source_export.go`、`live_resolved_public_search.go`、Postgres `model_egress_live*.go` 与各测试，以及 `112_model_egress_deepseek_0813.sql/.down.sql`：在原 062 不可变价格/预算/授权/派发路径登记该模型。112 只应用于批准的隔离库，没有改旧记录。输入上界 16384、输出最多 768、按峰时输入9/输出27元每百万 token预留；官方 tokenizer 与托管版本一致性仍是**工程推断**，不是供应商版本实测。
+- `now_live_startup.go`/测试、`cmd/now-live-prepare/main.go`、新增 `cmd/now-live-verify/main.go`/测试：真实环境变量接线及原账本 register/probe。CLI 要求准确隔离库、loopback、原 owner/价格/配置版本，并以独占收据和 claim 防重复；未执行旧 prepare CLI。
+- `postgres/model_request_live_reply.go`、`agent_reply_results.go`、`httpapi/agent_result_projection.go` 及五个测试：成功模型 finalize 在原事务保存文字、来源和该轮 native refs；原 GET 重读自己的实体。旧完整来源但无 membership 的模型消息保留文字/引用，明确提示重新检索，不将当前结果嫁接回旧回答。
+- `agentworkspace/intent_parser.go`、新增 `place_followup.go`；HTTP 原 `agent_workspace.go`、`agent_intent_router.go` 和新增 `agent_place_followup.go`；Postgres `model_egress_live_resolved_query.go` 和新增 `agent_place_followup.go`，以及四个新测试：真实地点开放时间代词追问及显式换地点，通过上一成功 membership 与当前公开地点重新解析；只导出当前公开名称、城市及已允许的时间槽，不导出完整历史、私有选择或地图坐标。歧义、未知、已变更和配置不可用分别拒绝，不能用固定数量句冒充回答。
+
+### 实际验证，不累加重叠计数
+
+所有相关命令目录为 `D:/Project/birdtie/apps/api`；各原始收据保存准确 argv、exitCode、源码哈希与范围。
+
+| 相关范围 | 实际结果 | 凭据（位于 `work/ui-repair-2026-10-07`） |
+|---|---|---|
+| `go test -count=1 -json ./internal/modelgateway` | 599 PASS / 0 FAIL / 0 SKIP | `tokenhub-model-byte-bound-02/freeze.json` |
+| `modelegressbudget`、Postgres `^TestLive` 纯单元 | 399 PASS / 0 FAIL / 0 SKIP | `tokenhub-model-fix/native-budget-01/freeze.json`、`units-03.receipt.json` |
+| 模型历史 Stage2 的指定单元与 HTTP doubles | 104 PASS / 0 FAIL / 0 SKIP | `live-reply-history-stage2-01/freeze.json` |
+| 地点解析/HTTP/native 纯单元三个指定命令 | 111 PASS / 0 FAIL / 0 SKIP | `live-place-followup-01/freeze.json`、`units-02.result.json` |
+| 启动/核验 CLI/prepare 的指定单元 | 37 PASS / 0 FAIL / 0 SKIP；1300 个 API14 输入前后相同 | `tokenhub-model-fix/startup-verify-units-03.receipt.json` |
+| API14 `go build -o …14-01.exe .` | exit0，1300 个输入前后相同 | `tokenhub-model-fix/build14-freeze-01.json` |
+| 新 DeepSeek/历史/地点 SQL 集成用例 | **NOT_RUN**；编译不算执行 | 各 freeze 的 SQL 状态 |
+| 本轮全 Go、全 Flutter、全量 analyze、新 Flutter build | **NOT_RUN**；原 APK12 没有改动或重装 | 不以旧全套结果或当前单元替代 |
+
+以前的全 Go FAILED、超时未完成项和 Memory503 `NOT_REPRODUCED / FIX_NOT_IMPLEMENTED` 保留。本轮先前编译、密钥脱敏单元失败和只读核验脚本字段错误的记录未删除；最终通过不把它们改写成未发生。
+
+### 低成本 probe 与实际 Now 调用分开记录
+
+原账本 probe `probe13-01.json`：**HTTP200，businessCode=NONE，上游 request_id `ab07f502-c278-47fc-b8c0-4bb7740aa99c`**；真实调用一次，输入138/输出3，最坏预留 ¥0.148320。该 Task 没有伪装成产品模型消息；现金仍 UNKNOWN。
+
+API13 实际原 Now POST：中文 `找地点 "Aberdeen Art Gallery" 全城`，HTTP200、mode=live、COMPLETED、3个 WSA来源、1个 canonical Place。Birdtie HTTP request ID `56a1164cf92431229affeadcb4020d17`。GET 当时仍有来源/地点但 membership=nil、messageResults=[]；它不能证明后来的 API14 历史修复。收据 `tokenhub-model-fix/now13-http-01/receipt.json`。
+
+**同 API14 / 原 APK12** 的真实手机任务 `4f34622c-66c7-4575-9f3a-384a66c3844f`：
+
+| 手机输入 | 原 Now POST 结果 | 对应该轮地点 |
+|---|---|---|
+| `find place Aberdeen Art Gallery` | HTTP200，Birdtie ID `b33e00b5fe9244d9dfbd05edad4877e1` | Gallery `e7b7544c-0b39-4de6-a7fa-2cc00aacdc8a` |
+| `When is it open on weekend?` | HTTP200，Birdtie ID `d5b744986973b2df2c22e1cb7c2e0322` | 同 Gallery |
+| `What about Maritime Museum?` | HTTP200，Birdtie ID `374fb1c4953c134489a546cc00df1fd5` | Museum `bea8ee0c-9c09-4951-8f0c-8c5819e91c2d` |
+
+原六条消息含3条user和3条assistant；每条assistant均保存该轮实际 WSA 来源、模型文字、来源摘要及 sourceRunId，三个 native Run FINISHED、各有 CALL+TOKEN 两个 operation；模型 usage 分别807/143、915/75、942/106。后续原 GET HTTP200/mode=live，三个 messageResults 索引1/3/5的 turnDigest、resultSet ID、refs/detailRef/anchor/pin 分别精确为 Gallery/Gallery/Museum，主结果与最后 Museum 一致。不是合成固定长文或开发活动。`tokenhub-model-fix/now14-restored-http-01/receipt.json`、`native-fee14-after-01.json` 联合核验，核验 helper 自身供应商调用0。
+
+上表为 **Birdtie HTTP ID**；WSA 的三个上游 ID 保存在账本证据中。实际 Now 模型上游 request ID 未在原 Run 中持久化，记 **NOT_AVAILABLE_IN_PERSISTED_ORIGINAL_RUN**，不能拿 WSA、GET、probe 或 Birdtie ID冒充它。窗口另有登录失效401、GET404/409，未声称全部请求200或猜测无路由日志的错误归属。
+
+### 同一构建的手机证据与范围
+
+API14 SHA256 `135e3260e0bbad6f2c796879a63d746364671762fccd683dedadb0ed2edac32a`；原 APK12/手机实际 base.apk SHA256 `0dc8230d92ba11cabf316011175b93d73b286993f978b4313b4099bf1610353c`。Xiaomi 25098PN5AC / Android16 / c641566b，全程未清除数据或替换这对构建。总索引 `device/BUILD14-EVIDENCE-PARTIAL-01.json`。
+
+- `api14-live-first-02.mp4` **179.397922秒**：实际首问输入、发送与来源/Gallery卡；frame15 已人工核验。两个后续问题发送发生在该录屏结束之后，**只有实际截图、原 GET、Run/账本和日志作证**，没有补成完整三轮连续提交录屏。第一次失效登录视频/401截图保留，没有称为成功生成。
+- `api14-map-link-01.mp4` **65.664056秒**、Museum map/detail/after-toggle截图：Museum卡→地图同 Museum pin/预览→地图进入同 Shiprow详情→切回对话仍 Museum；frame5为真实底图及Museum选择。
+- `api14-recent-restore-01.mp4` **25.202611秒**：新建后 Recent 原 GET恢复模型三轮，Museum卡/地图仍在。来源点击打开 Chrome 官方域名；`api14-official-source-click-01.png` 正文尚为空，**不算本轮官网加载完成**。
+- `api14-cold-restore-01.mp4` **92.310022秒**：原应用 force-stop/start、不 clear；首次3秒后 Recent 尚未加载导致脚本断言失败，保留。随后账户恢复后 Recent 可见；`api14-cold-recent-loaded-01.mp4` **13.694944秒**及 body截图证明恢复Museum模型正文及较早Gallery周末回答，frame11已核验。没有称自动恢复城市/任务或完整“恢复中”UX已实现。
+- `api14-old-model-card-01.mp4` **19.094689秒**：点击恢复后的旧Gallery卡，地图Schoolhill pin/预览、同 Gallery详情及返回；frame7已核验。最新Task仍是Museum，没有因查看旧卡改写新轮查询。原始视频均完整保留；各动作/视频哈希、容器时长和提取帧在 `tokenhub-model-fix/final-artifact-audit-01.json`。旧 UI 缺陷前后视频仍明确绑定不同二进制，不能称修复前后共用同一构建。
+
+### 费用与真实剩余缺口
+
+API14 三轮各 CALL ¥0.08、TOKEN ¥0.168192，新增最坏占用 **¥0.744576**；含旧占用及API13 probe/Now，当前原镜像账户各 **¥2.140128 / ¥10**，不双加。每次预留均≤¥0.20，现金仍 UNKNOWN；不推定免费资源抵扣、实际扣费或网络请求总数。原五Task/五Run/八reservation字节哈希保留；只读原账本收据 `native-fee14-after-01.json`。
+
+此次证明限定于批准隔离库、本人CITY、已发布唯一地点的开放时间和显式换地点。未知/歧义地点、通用多轮、地图发起地点续问/任意pin/cluster、Save及原组织/聊天/活动/提醒/资产完整回归仍未验收。地图“搜索此区域”仍为 Activity AreaDiscovery，不称已继承地点开放时间语境。
+
+真实回答质量仍有缺口：Gallery第二轮把 Aberdeen Inspired 的[source-1]称为“官方来源”，它不是卡片的 Council 官网；Museum来源的周日开放时间互相冲突。初问文字称资料未给地址，但站内卡片有已审核Schoolhill地址；模型当前只收到允许的联网片段。**来源权威性归类与全部事实一致性未修复/未验收**，不能写开放时间已由市政府官网核验。Now附件仍UNCONNECTED；紧凑登录待办恢复、历史搜索、逐会话持久草稿、完整Business导航、Moment/story卡、全产品tokens、读屏/其他平台及原LIVE/生产门槛保持原状态。42候选未批量改DONE。

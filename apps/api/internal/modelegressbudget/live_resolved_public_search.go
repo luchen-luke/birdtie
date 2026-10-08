@@ -9,8 +9,6 @@ import (
 	"strings"
 	"time"
 	"unicode"
-
-	"github.com/birdtie/birdtie/apps/api/internal/modelgateway"
 )
 
 // These scopes are separate from the original literal-query and v1 source
@@ -215,7 +213,7 @@ func DigestLiveResolvedSearch(v LiveResolvedDigestInput, p LivePrice, now time.T
 }
 
 func DigestLiveResolvedSourceExport(v LiveResolvedSourceExportDigestInput, p LivePrice, now time.Time) (string, error) {
-	if v.Input.Input.Scope != LiveResolvedSourceScope || p.Kind != LiveToken || p.Base.InputTokenCeiling != modelgateway.TencentLiveMaxInputTokens || !liveHash(v.ResolvedContextEvidenceDigest) {
+	if v.Input.Input.Scope != LiveResolvedSourceScope || !HasNativeLiveInputBound(p) || !liveHash(v.ResolvedContextEvidenceDigest) {
 		return "", ErrInvalid
 	}
 	base := v.Input

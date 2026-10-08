@@ -74,6 +74,9 @@ func (s *server) executeSpecialAgentIntent(w http.ResponseWriter, r *http.Reques
 	task.Filters["locationPreference"] = intent.LocationPreference
 	task.Filters["currentQuery"] = query
 	task.Filters["reason"] = intent.Reason
+	if currentPublicPlaceFollowup(r) {
+		task.Filters["timePreference"] = intent.TimePreference
+	}
 	if bounds != nil {
 		for key, value := range bounds.Filters() {
 			task.Filters[key] = value

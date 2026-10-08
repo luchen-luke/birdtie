@@ -281,12 +281,12 @@ func prepareLiveSourceWire(query string, sources []modelegressbudget.LivePublicS
 	if modelgateway.ValidateRequest(r, now) != nil {
 		return empty, "", "", modelegressbudget.LiveAmount{}, nativeLiveStage("source-wire-request-validation", modelegressbudget.ErrDenied)
 	}
-	if modelegressbudget.ValidateLivePrice(price, now) != nil || price.Kind != modelegressbudget.LiveToken || price.Base.InputTokenCeiling != modelgateway.TencentLiveMaxInputTokens || r.OutputMode != modelgateway.Text || len(r.ToolAllowlist) != 0 || len(r.Messages) != 2 || r.Messages[0].Role != "system" || r.Messages[1].Role != "user" || r.Messages[1].Content != payload || !liveProjectorPresent(projector) {
+	if modelegressbudget.ValidateLivePrice(price, now) != nil || !modelegressbudget.HasNativeLiveInputBound(price) || r.OutputMode != modelgateway.Text || len(r.ToolAllowlist) != 0 || len(r.Messages) != 2 || r.Messages[0].Role != "system" || r.Messages[1].Role != "user" || r.Messages[1].Content != payload || !liveProjectorPresent(projector) {
 		return empty, "", "", modelegressbudget.LiveAmount{}, modelegressbudget.ErrDenied
 	}
 	provider := liveProviderRequest(r)
 	wire, e := projector.Prepare(liveProviderRequest(r))
-	if e != nil || !wire.Matches(provider, now) || wire.InputTokenBound() != modelgateway.TencentLiveMaxInputTokens || wire.InputBoundEvidence() != modelgateway.TencentLiveInputBoundEvidence || wire.InputBoundSource() != modelgateway.TencentLiveInputBoundSource {
+	if e != nil || !liveTokenWireMatches(price, provider, wire, now) {
 		return empty, "", "", modelegressbudget.LiveAmount{}, modelegressbudget.ErrDenied
 	}
 	upper, e := modelegressbudget.BoundLive(price, r.Budget.MaxOutputTokens, now)

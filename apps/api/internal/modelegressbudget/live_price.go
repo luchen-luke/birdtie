@@ -34,6 +34,9 @@ const (
 func LiveHY3Destination() modelcapability.Key {
 	return modelcapability.Key{Provider: "tencent_tokenhub", Model: "hy3", Version: "hy3", WireContract: "tokenhub.chat-completions.v1"}
 }
+func LiveDeepSeek0813Destination() modelcapability.Key {
+	return modelcapability.Key{Provider: "tencent_tokenhub", Model: modelgateway.TencentTokenHubDeepSeekModel, Version: modelgateway.TencentTokenHubDeepSeekModel, WireContract: modelgateway.TencentLiveWireContract}
+}
 func LiveWSADestination() modelcapability.Key {
 	return modelcapability.Key{Provider: "tencent_wsa", Model: "searchpro", Version: "searchpro", WireContract: "wsa.search-pro.v1"}
 }
@@ -99,8 +102,7 @@ func ValidateLivePrice(p LivePrice, now time.Time) error {
 	}
 	switch p.Kind {
 	case LiveToken:
-		if b.Destination != LiveHY3Destination() || s.SourceURL != LiveModelPriceURL || p.CallMicros != 0 ||
-			b.InputMicrosPerToken != 1 || b.OutputMicrosPerToken != 4 || b.InputTokenCeiling < 1 || b.InputTokenCeiling > LiveMaxInputTokens || b.OutputTokenCeiling < 1 || b.OutputTokenCeiling > LiveMaxOutputTokens {
+		if !liveTokenTariffShape(p) {
 			return ErrInvalid
 		}
 	case LiveCall:
@@ -112,6 +114,35 @@ func ValidateLivePrice(p LivePrice, now time.Time) error {
 		return ErrInvalid
 	}
 	return nil
+}
+
+// The HY3 arithmetic helper keeps its original range. Native preparation still
+// requires its universal provider bound. The new 0813 route uses one closed
+// local tokenizer/template engineering bound, not a provider maximum or an
+// authenticated claim about the hosted tokenizer/weight revision.
+func liveTokenTariffShape(p LivePrice) bool {
+	b := p.Base
+	if p.Kind != LiveToken || p.RequestCeiling != 1 || p.CallMicros != 0 || p.Snapshot.SourceURL != LiveModelPriceURL ||
+		b.OutputTokenCeiling < 1 || b.OutputTokenCeiling > LiveMaxOutputTokens {
+		return false
+	}
+	switch b.Destination {
+	case LiveHY3Destination():
+		return b.InputMicrosPerToken == 1 && b.OutputMicrosPerToken == 4 && b.InputTokenCeiling >= 1 && b.InputTokenCeiling <= LiveMaxInputTokens
+	case LiveDeepSeek0813Destination():
+		return b.InputMicrosPerToken == 9 && b.OutputMicrosPerToken == 27 && b.InputTokenCeiling == modelgateway.TencentDeepSeekMaxInputTokens
+	default:
+		return false
+	}
+}
+
+// HasNativeLiveInputBound checks closed route metadata only; the original
+// native preparation must additionally match the private exact-wire proof.
+func HasNativeLiveInputBound(p LivePrice) bool {
+	if !liveTokenTariffShape(p) {
+		return false
+	}
+	return p.Base.Destination == LiveDeepSeek0813Destination() || p.Base.InputTokenCeiling == modelgateway.TencentLiveMaxInputTokens
 }
 
 type LiveAmount struct {
@@ -163,6 +194,25 @@ func FitsLive(limit, used Limits, a LiveAmount) bool {
 	default:
 		return false
 	}
+}
+
+// FitsLivePrice binds the amount to one exact closed tariff. It adds no expiry,
+// source or egress authority: native callers retain their SQL-clock checks.
+// FitsLive remains the original HY3/CALL arithmetic compatibility contract.
+func FitsLivePrice(limit, used Limits, p LivePrice, a LiveAmount) bool {
+	if a.Requests != 1 || a.Kind != p.Kind || p.Base.Currency != "CNY" {
+		return false
+	}
+	if p.Kind == LiveCall {
+		return p.Base.Destination == LiveWSADestination() && p.Snapshot.SourceURL == LiveSearchPriceURL && p.RequestCeiling == 1 &&
+			p.CallMicros == LiveSearchCallMicros && p.Base.InputMicrosPerToken == 0 && p.Base.OutputMicrosPerToken == 0 &&
+			p.Base.InputTokenCeiling == 0 && p.Base.OutputTokenCeiling == 0 && FitsLive(limit, used, a)
+	}
+	if !liveTokenTariffShape(p) || a.Amount.OutputTokens < 1 || a.Amount.OutputTokens > p.Base.OutputTokenCeiling {
+		return false
+	}
+	expected, err := Bound(p.Base, int(a.Amount.OutputTokens))
+	return err == nil && a.Amount == expected && Fits(limit, used, expected)
 }
 
 // LiveDigestInput is an explicit data-only description of the current query

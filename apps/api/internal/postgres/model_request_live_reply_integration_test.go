@@ -93,6 +93,9 @@ func TestModelLiveSourceReplyPersistRestoreExactTextIntegration(t *testing.T) {
 	if message.Role != "assistant" || message.Text != liveSourceReplyFixtureText || message.SourceRunID != h.id || message.SourceEvidenceDigest != h.batch.EvidenceDigest() || len(message.Sources) != len(h.batch.Sources()) {
 		t.Fatal("source provenance and actual model text did not share one message")
 	}
+	if before.Intent == "PENDING" && message.ResultMembership != nil {
+		t.Fatal("legacy literal-query completion invented human entity membership")
+	}
 	for i, source := range h.batch.Sources() {
 		if message.Sources[i] != (agentworkspace.AnswerSource{ID: fmt.Sprintf("source-%d", i+1), Title: source.Title, URL: source.URL}) {
 			t.Fatal("message source differs from original retrieved batch")

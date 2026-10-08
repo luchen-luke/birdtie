@@ -38,7 +38,11 @@ type nativeLiveBoundary struct {
 // NewGateway remains unavailable, and OfflineHarness still rejects LIVE.
 func NewNativeLiveGateway(gate LiveGate, adapter *TencentTokenHubAdapter, port NativeLiveDispatchPort) (*Gateway, error) {
 	g := NewGateway(gate)
-	if g.gate == nil || adapter == nil || adapter.client == nil || adapter.now == nil || !adapter.config.valid() || !nativeLivePortPresent(port) || adapter.Descriptor() != tencentLiveDescriptor() {
+	if g.gate == nil || adapter == nil || adapter.client == nil || adapter.now == nil || !adapter.config.valid() || !nativeLivePortPresent(port) {
+		return nil, ErrUnavailable
+	}
+	profile, ok := tencentProfileForModel(adapter.config.model)
+	if !ok || !profile.nativeReady() || adapter.Descriptor() != profile.descriptor() {
 		return nil, ErrUnavailable
 	}
 	g.live = &nativeLiveBoundary{port: port, adapter: adapter}
@@ -57,7 +61,8 @@ func nativeLivePortPresent(p NativeLiveDispatchPort) bool {
 	return true
 }
 func tencentLiveDescriptor() ProviderDescriptor {
-	return ProviderDescriptor{ProviderID: "tencent_tokenhub", ModelID: TencentTokenHubModel, ModelVersion: TencentTokenHubModel, Mode: Live}
+	profile, _ := tencentProfileForModel(TencentTokenHubModel)
+	return profile.descriptor()
 }
 func cloneLiveRequest(r Request) Request {
 	r.Messages = append([]Message(nil), r.Messages...)
@@ -67,7 +72,7 @@ func cloneLiveRequest(r Request) Request {
 }
 
 func (g *Gateway) currentLive(ctx context.Context, r Request, p PreparedTencentWire) error {
-	if ctx == nil || ctx.Err() != nil || !r.DeadlineAt.After(g.now()) || !p.valid(g.now()) || g.live.adapter.Descriptor() != tencentLiveDescriptor() {
+	if ctx == nil || ctx.Err() != nil || !r.DeadlineAt.After(g.now()) || !p.valid(g.now()) || g.live.adapter.Descriptor() != p.Descriptor() {
 		return ErrUnavailable
 	}
 	if !g.gate.InferenceEnabled(ctx) || ctx.Err() != nil || !r.DeadlineAt.After(g.now()) {
@@ -236,7 +241,7 @@ func (g *Gateway) completeNativeLive(ctx context.Context, original Request) (Res
 	if wires.Load() != 1 {
 		return fail("live_wire_unavailable", ErrUnavailable)
 	}
-	result, err := normalizeLiveTencentText(r, raw, p)
+	result, err := normalizeLiveTencentTextAt(r, raw, p, g.now())
 	if err != nil {
 		return emptyResult(r, Live, Invalid, "invalid_live_text_response"), WithLiveFailureReason(err, "invalid_live_text_response")
 	}
@@ -250,8 +255,12 @@ func (g *Gateway) completeNativeLive(ctx context.Context, original Request) (Res
 // only the selected text envelope; no tools, entities, Memory or structured
 // answers, and no partial output from a refused/truncated response.
 func normalizeLiveTencentText(r Request, raw []byte, p PreparedTencentWire) (Result, error) {
+	return normalizeLiveTencentTextAt(r, raw, p, time.Now())
+}
+
+func normalizeLiveTencentTextAt(r Request, raw []byte, p PreparedTencentWire, now time.Time) (Result, error) {
 	invalid := emptyResult(r, Live, Invalid, "invalid_live_text_response")
-	if len(raw) == 0 || len(raw) > MaxResultBytes || r.OutputMode != Text || r.TaskKind != ActivityQuery || len(r.ToolAllowlist) != 0 || r.Budget.MaxOutputTokens != p.MaxOutputTokens() {
+	if !p.Matches(providerRequest(r), now) || len(raw) == 0 || len(raw) > MaxResultBytes || r.OutputMode != Text || r.TaskKind != ActivityQuery || len(r.ToolAllowlist) != 0 || r.Budget.MaxOutputTokens != p.MaxOutputTokens() {
 		return invalid, ErrAdapter
 	}
 	obj, err := strictObject(raw, []string{"status", "request_id", "finish_reason"}, []string{"text", "usage"})
@@ -293,7 +302,8 @@ func normalizeLiveTencentText(r Request, raw []byte, p PreparedTencentWire) (Res
 	default:
 		return invalid, ErrAdapter
 	}
-	result.Usage, result.ProviderID, result.ProviderModelVersion = usage, "tencent_tokenhub", TencentTokenHubModel+"@"+TencentTokenHubModel
+	descriptor := p.Descriptor()
+	result.Usage, result.ProviderID, result.ProviderModelVersion = usage, descriptor.ProviderID, descriptor.ModelID+"@"+descriptor.ModelVersion
 	result.ProviderRequestID, result.FinishReason = requestID, finish
 	return result, nil
 }

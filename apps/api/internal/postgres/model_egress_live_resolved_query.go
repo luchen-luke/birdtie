@@ -18,6 +18,7 @@ type nativeResolvedPublicSearch struct {
 	context       modelegressbudget.LiveResolvedPublicSearchContext
 	compiledQuery string
 	evidence      string
+	place         nativeResolvedPublicPlace
 	valid         bool
 }
 
@@ -94,6 +95,13 @@ func (s *Store) revalidateResolvedPublicCityTx(ctx context.Context, tx pgx.Tx, p
 		return modelegressbudget.ErrDenied
 	}
 	evidence, e := resolvedPublicContextEvidence(p.resolved.context, nativeCity)
+	if p.resolved.place.valid {
+		current, placeErr := nativePublicFollowupPlaceTx(ctx, tx, p.resolved.place.id, selected.ID, p.input.DeadlineAt)
+		if placeErr != nil || current != p.resolved.place {
+			return modelegressbudget.ErrDenied
+		}
+		evidence, e = resolvedPublicPlaceContextEvidence(p.resolved.context, nativeCity, current)
+	}
 	if e != nil || evidence != p.resolved.evidence {
 		return modelegressbudget.ErrDenied
 	}
@@ -126,15 +134,25 @@ func (s *Store) nativeResolvedPublicSearchTx(ctx context.Context, tx pgx.Tx, p P
 		return empty, modelegressbudget.ErrDenied
 	}
 	public := modelegressbudget.LiveResolvedPublicSearchContext{SelectedCity: selected, ResolvedSlots: slots}
+	place, term, e := nativeResolvedPlaceFromTaskTx(ctx, tx, task, p.input.DeadlineAt)
+	if e != nil {
+		return empty, e
+	}
+	if place.valid {
+		public.ResolvedSlots.SearchTerm = term
+	}
 	compiled, e := modelegressbudget.CompileLiveResolvedPublicSearchQuery(p.query, public)
 	if e != nil {
 		return empty, e
 	}
 	evidence, e := resolvedPublicContextEvidence(public, nativeCity)
+	if place.valid {
+		evidence, e = resolvedPublicPlaceContextEvidence(public, nativeCity, place)
+	}
 	if e != nil {
 		return empty, modelegressbudget.ErrDenied
 	}
-	return nativeResolvedPublicSearch{context: public, compiledQuery: compiled, evidence: evidence, valid: true}, nil
+	return nativeResolvedPublicSearch{context: public, compiledQuery: compiled, evidence: evidence, place: place, valid: true}, nil
 }
 
 func liveResolvedDigestInput(p PreparedLiveEgress, scope, purpose string) modelegressbudget.LiveDigestInput {
@@ -232,12 +250,12 @@ func prepareResolvedLiveSourceWire(query string, resolved nativeResolvedPublicSe
 	if modelgateway.ValidateRequest(r, now) != nil {
 		return empty, "", "", modelegressbudget.LiveAmount{}, nativeLiveStage("source-wire-request-validation", modelegressbudget.ErrDenied)
 	}
-	if modelegressbudget.ValidateLivePrice(price, now) != nil || price.Kind != modelegressbudget.LiveToken || price.Base.InputTokenCeiling != modelgateway.TencentLiveMaxInputTokens || r.OutputMode != modelgateway.Text || len(r.ToolAllowlist) != 0 || len(r.Messages) != 2 || r.Messages[0].Role != "system" || r.Messages[1].Role != "user" || r.Messages[1].Content != payload || !liveProjectorPresent(projector) {
+	if modelegressbudget.ValidateLivePrice(price, now) != nil || !modelegressbudget.HasNativeLiveInputBound(price) || r.OutputMode != modelgateway.Text || len(r.ToolAllowlist) != 0 || len(r.Messages) != 2 || r.Messages[0].Role != "system" || r.Messages[1].Role != "user" || r.Messages[1].Content != payload || !liveProjectorPresent(projector) {
 		return empty, "", "", modelegressbudget.LiveAmount{}, modelegressbudget.ErrDenied
 	}
 	provider := liveProviderRequest(r)
 	wire, e := projector.Prepare(liveProviderRequest(r))
-	if e != nil || !wire.Matches(provider, now) || wire.InputTokenBound() != modelgateway.TencentLiveMaxInputTokens || wire.InputBoundEvidence() != modelgateway.TencentLiveInputBoundEvidence || wire.InputBoundSource() != modelgateway.TencentLiveInputBoundSource {
+	if e != nil || !liveTokenWireMatches(price, provider, wire, now) {
 		return empty, "", "", modelegressbudget.LiveAmount{}, modelegressbudget.ErrDenied
 	}
 	upper, e := modelegressbudget.BoundLive(price, r.Budget.MaxOutputTokens, now)

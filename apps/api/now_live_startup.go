@@ -66,19 +66,7 @@ func loadNowLiveStartup(path, address string, devPhone bool, store *postgres.Sto
 	if d.Decode(&extra) != io.EOF || strings.TrimSpace(config.OwnerID) != config.OwnerID {
 		return nil, modelgateway.ErrUnavailable
 	}
-	modelConfig, e := modelgateway.LoadTencentTokenHubConfig(filepath.Join(filepath.Dir(path), ".env.tencent.local.json"))
-	if e != nil {
-		return nil, modelgateway.ErrUnavailable
-	}
-	searchConfig, e := agenttool.LoadTencentWSAConfig(filepath.Join(filepath.Dir(path), ".env.wsa.local.json"))
-	if e != nil {
-		return nil, modelgateway.ErrUnavailable
-	}
-	model, e := modelgateway.NewTencentTokenHubAdapter(modelConfig, nil)
-	if e != nil {
-		return nil, modelgateway.ErrUnavailable
-	}
-	search, e := agenttool.NewTencentWSAAdapter(searchConfig, nil)
+	model, search, e := loadNowLiveProviders(filepath.Dir(path), os.LookupEnv)
 	if e != nil {
 		return nil, modelgateway.ErrUnavailable
 	}
@@ -87,4 +75,26 @@ func loadNowLiveStartup(path, address string, devPhone bool, store *postgres.Sto
 		return nil, e
 	}
 	return &nowLiveOwnerBoundAnswers{LiveAnswers: native, ownerID: config.OwnerID}, nil
+}
+
+// Explicit runtime environment credentials supersede the old ignored file.
+// This only constructs adapters; it performs no request or native approval.
+func loadNowLiveProviders(dir string, lookup func(string) (string, bool)) (*modelgateway.TencentTokenHubAdapter, *agenttool.TencentWSAAdapter, error) {
+	modelConfig, e := modelgateway.LoadTencentTokenHubConfigFromEnvironment(filepath.Join(dir, ".env.tencent.local.json"), lookup)
+	if e != nil {
+		return nil, nil, modelgateway.ErrUnavailable
+	}
+	searchConfig, e := agenttool.LoadTencentWSAConfig(filepath.Join(dir, ".env.wsa.local.json"))
+	if e != nil {
+		return nil, nil, modelgateway.ErrUnavailable
+	}
+	model, e := modelgateway.NewTencentTokenHubAdapter(modelConfig, nil)
+	if e != nil {
+		return nil, nil, modelgateway.ErrUnavailable
+	}
+	search, e := agenttool.NewTencentWSAAdapter(searchConfig, nil)
+	if e != nil {
+		return nil, nil, modelgateway.ErrUnavailable
+	}
+	return model, search, nil
 }

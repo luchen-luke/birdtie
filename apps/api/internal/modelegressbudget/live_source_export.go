@@ -10,8 +10,6 @@ import (
 	"time"
 	"unicode"
 	"unicode/utf8"
-
-	"github.com/birdtie/birdtie/apps/api/internal/modelgateway"
 )
 
 const LivePublicSearchScope = "SELF_TASK_QUERY_PUBLIC_SEARCH"
@@ -195,7 +193,7 @@ type LiveSourceExportDigestInput struct {
 // The original v2 scope and byte shape remain unchanged. This new domain
 // binds the exact public-source scope, original CALL proof and model payload.
 func DigestLiveSourceExport(v LiveSourceExportDigestInput, p LivePrice, now time.Time) (string, error) {
-	if v.Input.Scope != LivePublicSearchScope || v.Input.Purpose != Purpose || p.Kind != LiveToken || p.Base.InputTokenCeiling != modelgateway.TencentLiveMaxInputTokens || v.Input.CurrentQueryEvidenceDigest != v.Evidence.QueryEvidenceDigest || v.Input.DeadlineAt.After(v.Evidence.DeadlineAt) {
+	if v.Input.Scope != LivePublicSearchScope || v.Input.Purpose != Purpose || !HasNativeLiveInputBound(p) || v.Input.CurrentQueryEvidenceDigest != v.Evidence.QueryEvidenceDigest || v.Input.DeadlineAt.After(v.Evidence.DeadlineAt) {
 		return "", ErrInvalid
 	}
 	evidence, err := LiveSourceEvidenceDigest(v.Evidence, now)

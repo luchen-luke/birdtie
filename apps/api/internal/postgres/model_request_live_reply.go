@@ -7,7 +7,9 @@ import (
 	"io"
 	"time"
 
+	arp "github.com/birdtie/birdtie/apps/api/internal/agentresultprojection"
 	"github.com/birdtie/birdtie/apps/api/internal/agentworkspace"
+	"github.com/birdtie/birdtie/apps/api/internal/identity"
 	"github.com/birdtie/birdtie/apps/api/internal/modelegressbudget"
 	"github.com/birdtie/birdtie/apps/api/internal/modelrequestrun"
 	"github.com/jackc/pgx/v5"
@@ -110,15 +112,70 @@ func (h *nativeLiveSourceAnswerRun) replyFactsTx(ctx context.Context, tx pgx.Tx,
 	return egressFinish(ctx, tx, h.session, nil, h.deadline, r.control.LeaseUntil)
 }
 
+// A reply write adds only human-readable native membership. Acquire the
+// original human policy/relation locks before the budget owner and Run locks;
+// taking them after a Task lock would invert the existing human writer order.
+func (h *nativeLiveSourceAnswerRun) beginReplyCurrent(ctx context.Context) (pgx.Tx, storedModelRun, *nativeToolPolicy, error) {
+	var empty storedModelRun
+	if !h.brake(ctx) || !h.checkpoint.ValidAt(time.Now()) {
+		return nil, empty, nil, modelegressbudget.ErrDenied
+	}
+	actor := identity.Actor{ID: h.owner, AccountType: "person"}
+	tx, binding, policy, e := h.store.beginCurrentToolRead(ctx, actor, h.access.SessionDigest, resultProjectionRelations)
+	if e != nil {
+		return nil, empty, nil, e
+	}
+	fail := func(e error) (pgx.Tx, storedModelRun, *nativeToolPolicy, error) {
+		tx.Rollback(context.Background())
+		return nil, empty, nil, e
+	}
+	if binding.accountID != h.owner || binding.sessionID != h.session || binding.agentID != h.original.request.Agent.AgentID {
+		return fail(modelegressbudget.ErrDenied)
+	}
+	if _, e = tx.Exec(ctx, `SET LOCAL jit=off`); e != nil {
+		return fail(modelegressbudget.ErrUnavailable)
+	}
+	if e = egressOwnerLock(ctx, tx, h.owner); e != nil {
+		return fail(e)
+	}
+	r, e := readModelRun(ctx, tx, h.id, h.owner)
+	if e != nil {
+		return fail(e)
+	}
+	if e = h.currentRunTx(ctx, tx, r, true); e != nil {
+		return fail(e)
+	}
+	return tx, r, policy, nil
+}
+
 // FinalizeSourceReply appends the actual validated model text to the original
-// conversation exactly once. It preserves every filter and entity reference.
+// conversation exactly once and, for supported human queries, captures native
+// entity refs in the SAME Task transaction. No entity is exported to the model.
 func (h *nativeLiveSourceAnswerRun) FinalizeSourceReply(ctx context.Context) (agentworkspace.LiveReply, error) {
 	if h == nil {
 		return nil, modelegressbudget.ErrDenied
 	}
 	h.mu.Lock()
 	defer h.mu.Unlock()
-	tx, r, e := h.beginCurrent(ctx, true)
+	if !h.brake(ctx) || !h.checkpoint.ValidAt(time.Now()) {
+		return nil, modelegressbudget.ErrDenied
+	}
+	// This preliminary read chooses a lock-compatible branch only. Both paths
+	// recheck the original Task generation and snapshot under their native locks
+	// before any write; it supplies no entity or dispatch authority.
+	observed, e := h.store.GetTask(ctx, h.owner, h.search.TaskID)
+	if e != nil {
+		return nil, e
+	}
+	supported := replyMembershipSupported(observed)
+	var tx pgx.Tx
+	var r storedModelRun
+	var policy *nativeToolPolicy
+	if supported {
+		tx, r, policy, e = h.beginReplyCurrent(ctx)
+	} else {
+		tx, r, e = h.beginCurrent(ctx, true)
+	}
 	if e != nil {
 		return nil, e
 	}
@@ -130,16 +187,31 @@ func (h *nativeLiveSourceAnswerRun) FinalizeSourceReply(ctx context.Context) (ag
 	if e != nil {
 		return nil, egressError(e)
 	}
-	if task.Status != agentworkspace.TaskActive {
+	if task.Status != agentworkspace.TaskActive || replyMembershipSupported(task) != supported {
 		return nil, modelegressbudget.ErrDenied
 	}
 	sources := make([]agentworkspace.AnswerSource, 0, len(h.batch.data.Sources))
 	for i, s := range h.batch.data.Sources {
 		sources = append(sources, agentworkspace.AnswerSource{ID: fmt.Sprintf("source-%d", i+1), Title: s.Title, URL: s.URL})
 	}
-	task.Conversation = append(task.Conversation, agentworkspace.Message{Role: "assistant", Text: h.completedResult.Text, Sources: sources, SourceRunID: h.id, SourceEvidenceDigest: h.batch.evidenceDigest})
-	task.Status = agentworkspace.TaskCompleted
-	task, e = h.store.updateTaskInTx(ctx, tx, task)
+	message := agentworkspace.Message{Role: "assistant", Text: h.completedResult.Text, Sources: sources, SourceRunID: h.id, SourceEvidenceDigest: h.batch.evidenceDigest}
+	var history *nativeMessageResultsRead
+	if supported {
+		raw, marshalErr := json.Marshal(agentworkspace.SanitizeTaskForResponse(task))
+		if marshalErr != nil {
+			return nil, marshalErr
+		}
+		access := arp.Access{Actor: identity.Actor{ID: h.owner, AccountType: "person"}, SessionDigest: h.access.SessionDigest, TaskID: task.ID, ExpectedTask: raw}
+		query, source, captureErr := h.store.captureReplyCurrentSourceTx(ctx, tx, access, task, policy)
+		if captureErr != nil {
+			return nil, captureErr
+		}
+		task, history, e = h.store.persistReplyMembershipTx(ctx, tx, access, task, policy, query.Kind, source, message)
+	} else {
+		task.Conversation = append(task.Conversation, message)
+		task.Status = agentworkspace.TaskCompleted
+		task, e = h.store.updateTaskInTx(ctx, tx, task)
+	}
 	if e != nil {
 		return nil, e
 	}
@@ -155,8 +227,18 @@ func (h *nativeLiveSourceAnswerRun) FinalizeSourceReply(ctx context.Context) (ag
 	if e = h.replyFactsTx(ctx, tx, r); e != nil || !h.brake(ctx) {
 		return nil, modelegressbudget.ErrDenied
 	}
+	// This final native batch runs after all original Run/preview/authority
+	// waits. Earlier source reads cannot release a withdrawn historical card.
+	if history != nil {
+		if e = h.store.finalReplySourceProofsTx(ctx, tx, history.state().access, task, policy, history.state()); e != nil {
+			return nil, e
+		}
+	}
 	if e = tx.Commit(ctx); e != nil {
 		return nil, egressError(e)
+	}
+	if history != nil && !nativeReplyReadUnexpired(history.state(), history.state().until, time.Now()) {
+		return nil, arp.ErrChanged
 	}
 	if e = p.Revalidate(ctx); e != nil {
 		return nil, e

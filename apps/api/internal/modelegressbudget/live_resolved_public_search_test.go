@@ -17,6 +17,28 @@ func resolvedPublicFixture() LiveResolvedPublicSearchContext {
 	return LiveResolvedPublicSearchContext{SelectedCity: LiveSelectedCity{ID: "aberdeen-gb", Name: "Aberdeen", CountryCode: "GB"}, ResolvedSlots: LiveResolvedSlots{Operation: "REFINE_RESULTS", Target: "FIND_ACTIVITY", Category: "badminton", TimePreference: "weekend", DistancePreference: "closer"}}
 }
 
+func TestLiveResolvedSourceDeepSeekPreservesEvidenceAndRouteBinding(t *testing.T) {
+	in, old := sourceExportFixture()
+	v := LiveResolvedSourceExportDigestInput{Input: in, ResolvedContextEvidenceDigest: livePriceTestHash("native public-context generations")}
+	v.Input.Input.Scope = LiveResolvedSourceScope
+	p := deepSeekPriceFixture()
+	got, err := DigestLiveResolvedSourceExport(v, p, livePriceTestNow())
+	legacy, oldErr := DigestLiveResolvedSourceExport(v, old, livePriceTestNow())
+	if err != nil || oldErr != nil || got == legacy {
+		t.Fatal("resolved source lost destination binding", err, oldErr)
+	}
+	copy := v
+	copy.ResolvedContextEvidenceDigest = livePriceTestHash("new city generation")
+	changed, err := DigestLiveResolvedSourceExport(copy, p, livePriceTestNow())
+	if err != nil || changed == got {
+		t.Fatal("city generation proof omitted", err)
+	}
+	p.Base.InputTokenCeiling--
+	if _, err := DigestLiveResolvedSourceExport(v, p, livePriceTestNow()); err == nil {
+		t.Fatal("lower DS ceiling accepted")
+	}
+}
+
 func TestLiveResolvedPublicSearchCompilerRetainsCurrentSlots(t *testing.T) {
 	c := resolvedPublicFixture()
 	query, err := CompileLiveResolvedPublicSearchQuery("更近一点", c)

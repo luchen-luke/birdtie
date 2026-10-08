@@ -71,6 +71,144 @@ func assertNoLiveText(t *testing.T, result Result, err error) {
 	}
 }
 
+func TestNativeLiveGatewayCannotBorrowHY3ProofForSelectedDeepSeek(t *testing.T) {
+	c := tencentTestConfig(t)
+	c.model = TencentTokenHubDeepSeekModel
+	wires := 0
+	a, err := NewTencentTokenHubAdapter(c, tencentRoundTripper(func(*http.Request) (*http.Response, error) {
+		wires++
+		return nil, ErrAdapter
+	}))
+	if err != nil {
+		t.Fatal("selected transport unavailable")
+	}
+	p := &liveTestPort{}
+	if g, err := NewNativeLiveGateway(&fakeGate{true}, a, p); err != nil || g == nil || wires != 0 || p.checks.Load() != 0 || p.releases.Load() != 0 || p.settles.Load() != 0 {
+		t.Fatal("selected model construction consumed a dispatch or lost its private proof")
+	}
+	// Changing an adapter after preparation cannot send the older model's
+	// approved wire under a different selected-model descriptor.
+	g, hy3 := liveTestGateway(t, p, tencentRoundTripper(func(*http.Request) (*http.Response, error) {
+		wires++
+		return nil, ErrAdapter
+	}))
+	r := liveTestRequest()
+	prepared, err := hy3.Prepare(providerRequest(r))
+	if err != nil {
+		t.Fatal("legacy preparation rejected")
+	}
+	g.live.adapter = a
+	if err := g.currentLive(context.Background(), r, prepared); !errors.Is(err, ErrUnavailable) || wires != 0 || p.checks.Load() != 0 {
+		t.Fatal("current native guard accepted mismatched prepared and adapter models")
+	}
+	p.onCheck = func(_ context.Context, _ Request, got PreparedTencentWire) error {
+		if got.Descriptor() != prepared.Descriptor() || got.WireDigest() != prepared.WireDigest() {
+			return ErrUnavailable // The old native approval remains tied to HY3.
+		}
+		return nil
+	}
+	if result, err := g.Complete(context.Background(), r); err == nil || result.Text != "" || wires != 0 || p.releases.Load() != 0 || p.settles.Load() != 0 {
+		t.Fatal("changed model released native text or invoked provider")
+	}
+}
+
+func TestNativeLiveNormalizedResultRequiresOriginalNativeModelProfile(t *testing.T) {
+	a := tencentAdapter(t, nil)
+	r := liveTestRequest()
+	p, err := a.Prepare(providerRequest(r))
+	if err != nil {
+		t.Fatal("legacy preparation rejected")
+	}
+	normalized, err := normalizeTencentText([]byte(tencentSuccess()), r.Budget.MaxOutputTokens)
+	if err != nil {
+		t.Fatal("synthetic normalization failed")
+	}
+	result, err := normalizeLiveTencentText(r, normalized, p)
+	if err != nil || result.ProviderID != p.Descriptor().ProviderID || result.ProviderModelVersion != p.Descriptor().ModelID+"@"+p.Descriptor().ModelVersion {
+		t.Fatal("live result model was not bound to its private preparation")
+	}
+	p.profile, _ = tencentProfileForModel(TencentTokenHubDeepSeekModel)
+	if result, err := normalizeLiveTencentText(r, normalized, p); !errors.Is(err, ErrAdapter) || result.Text != "" {
+		t.Fatal("changed model profile normalized the other route's wire")
+	}
+}
+
+func TestNativeLiveGatewayDeepSeekUsesPrivateByteProofAndOriginalReleaseBoundary(t *testing.T) {
+	c := tencentTestConfig(t)
+	c.model = TencentTokenHubDeepSeekModel
+	p := &liveTestPort{}
+	wires := 0
+	var expected PreparedTencentWire
+	a, err := NewTencentTokenHubAdapter(c, tencentRoundTripper(func(req *http.Request) (*http.Response, error) {
+		wires++
+		if p.releases.Load() != 1 || p.checks.Load() < 3 || p.settles.Load() != 0 {
+			t.Fatal("selected model wire preceded native release")
+		}
+		raw, err := io.ReadAll(req.Body)
+		if err != nil || !bytes.Equal(raw, expected.ExactWire()) || tencentWireDigest(raw) != expected.WireDigest() {
+			t.Fatal("selected model wire changed after native approval")
+		}
+		return tencentResponse(strings.Replace(tencentSuccess(), `"model":"hy3"`, `"model":"deepseek-v4-pro-0813"`, 1), 200), nil
+	}))
+	if err != nil {
+		t.Fatal("selected adapter rejected")
+	}
+	r := liveTestRequest()
+	expected, err = a.Prepare(providerRequest(r))
+	if err != nil {
+		t.Fatal("private byte preparation rejected")
+	}
+	p.onCheck = func(ctx context.Context, got Request, w PreparedTencentWire) error {
+		if ctx.Err() != nil || got.RunID != r.RunID || got.Agent != r.Agent || w.Descriptor() != a.Descriptor() || w.InputTokenBound() != 16384 || w.InputBoundEvidence() != "TOKENIZER_BYTE_BPE_UPPER_BOUND" || w.InputBoundSource() != TencentDeepSeekInputBoundSource || w.WireDigest() != expected.WireDigest() || !w.Matches(providerRequest(r), time.Now()) {
+			t.Fatal("selected native price/wire projection lost exact model proof")
+		}
+		return nil
+	}
+	g, err := NewNativeLiveGateway(&fakeGate{true}, a, p)
+	if err != nil {
+		t.Fatal("selected private native route rejected")
+	}
+	result, err := g.Complete(context.Background(), r)
+	if err != nil || result.Text == "" || result.ProviderID != "tencent_tokenhub" || result.ProviderModelVersion != "deepseek-v4-pro-0813@deepseek-v4-pro-0813" || result.Usage.CostStatus != "UNKNOWN" || wires != 1 || p.releases.Load() != 1 || p.settles.Load() != 1 {
+		t.Fatal("selected native text changed model binding, once-only dispatch, or unknown accounting")
+	}
+	if _, err := NewOfflineHarness(a); !errors.Is(err, ErrUnavailable) {
+		t.Fatal("selected live route entered offline harness")
+	}
+	if result, err := NewGateway(&fakeGate{true}).Complete(context.Background(), r); !errors.Is(err, ErrUnavailable) || result.Mode != Disabled {
+		t.Fatal("default Gateway activated selected provider")
+	}
+}
+
+func TestNativeLiveGatewayDeepSeekBodyReadRechecksRevocationAndSettlesUnknown(t *testing.T) {
+	c := tencentTestConfig(t)
+	c.model = TencentTokenHubDeepSeekModel
+	p := &liveTestPort{}
+	wires, bytesReleased := 0, 0
+	a, err := NewTencentTokenHubAdapter(c, tencentRoundTripper(func(req *http.Request) (*http.Response, error) {
+		wires++
+		p.denied.Store(true) // Revocation after handoff, before actual body write.
+		raw, e := io.ReadAll(req.Body)
+		bytesReleased += len(raw)
+		if e == nil || len(raw) != 0 {
+			t.Fatal("revoked selected-model body released bytes")
+		}
+		return nil, e
+	}))
+	if err != nil {
+		t.Fatal("selected adapter rejected")
+	}
+	g, err := NewNativeLiveGateway(&fakeGate{true}, a, p)
+	if err != nil {
+		t.Fatal("selected private native route rejected")
+	}
+	result, err := g.Complete(context.Background(), liveTestRequest())
+	assertNoLiveText(t, result, err)
+	if wires != 1 || bytesReleased != 0 || p.releases.Load() != 1 || p.settles.Load() != 1 || result.Usage.CostStatus != "UNKNOWN" {
+		t.Fatal("selected-model revocation retried, skipped UNKNOWN settlement, or released bytes")
+	}
+}
+
 func TestNativeLiveGatewayUsesOriginalGatewayTypeWithTrustedPortOnly(t *testing.T) {
 	p := &liveTestPort{}
 	var expected PreparedTencentWire

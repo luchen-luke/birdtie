@@ -63,10 +63,12 @@ func NewTencentTokenHubAdapter(c TencentTokenHubConfig, transport http.RoundTrip
 	}}, nil
 }
 
-func (*TencentTokenHubAdapter) Descriptor() ProviderDescriptor {
-	// hy3 is the selected provider route alias, not a verified immutable weight
-	// revision. Runtime approval must not infer a stronger version guarantee.
-	return ProviderDescriptor{ProviderID: "tencent_tokenhub", ModelID: TencentTokenHubModel, ModelVersion: TencentTokenHubModel, Mode: Live}
+func (a *TencentTokenHubAdapter) Descriptor() ProviderDescriptor {
+	if a == nil || !a.config.valid() {
+		return ProviderDescriptor{}
+	}
+	profile, _ := tencentProfileForModel(a.config.model)
+	return profile.descriptor()
 }
 
 type tencentTextRequest struct {
@@ -116,7 +118,7 @@ func (a *TencentTokenHubAdapter) Complete(ctx context.Context, r ProviderRequest
 		return nil, err
 	}
 	r.Messages = append([]Message(nil), r.Messages...)
-	body, err := formatTencentTextWire(r, a.now(), a.config.maxOutputTokens)
+	body, err := formatTencentTextWireForModel(r, a.now(), a.config.maxOutputTokens, a.config.model)
 	if err != nil {
 		return nil, modelFailure("TENCENT_REQUEST", "REQUEST", 0, err)
 	}
@@ -129,7 +131,7 @@ func (a *TencentTokenHubAdapter) Complete(ctx context.Context, r ProviderRequest
 	// bytes.Reader otherwise installs GetBody, enabling hidden transport replay.
 	req.GetBody = nil
 	req.Close = true
-	req.Header.Set("Authorization", "Bearer "+a.config.apiKey)
+	req.Header.Set("Authorization", "Bearer "+a.config.credential())
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept", "application/json")
 	if err := callctx.Err(); err != nil {
@@ -177,7 +179,7 @@ func (a *TencentTokenHubAdapter) Complete(ctx context.Context, r ProviderRequest
 	if !r.DeadlineAt.After(a.now()) {
 		return nil, ErrDeadline
 	}
-	normalized, err := normalizeTencentText(raw, r.MaxOutputTokens)
+	normalized, err := normalizeTencentTextForModel(raw, r.MaxOutputTokens, a.config.model)
 	if current := callctx.Err(); current != nil {
 		return nil, current
 	}
@@ -255,12 +257,19 @@ func validateTencentNoSearchInfo(raw json.RawMessage) error {
 }
 
 func normalizeTencentText(raw []byte, maxOutput int) (normalized []byte, err error) {
+	return normalizeTencentTextForModel(raw, maxOutput, TencentTokenHubModel)
+}
+
+func normalizeTencentTextForModel(raw []byte, maxOutput int, expectedModel string) (normalized []byte, err error) {
 	stage := "TENCENT_ENVELOPE"
 	defer func() {
 		if err != nil {
 			err = modelFailure(stage, "RESPONSE_SHAPE", http.StatusOK, err)
 		}
 	}()
+	if _, ok := tencentProfileForModel(expectedModel); !ok {
+		return nil, ErrAdapter
+	}
 	obj, err := strictObject(raw, []string{"id", "model", "choices"}, []string{"object", "created", "usage", "search_info", "system_fingerprint", "service_tier"})
 	if err != nil {
 		return nil, ErrAdapter
@@ -272,7 +281,7 @@ func normalizeTencentText(raw []byte, maxOutput int) (normalized []byte, err err
 	stage = "TENCENT_ID_MODEL"
 	id, e1 := stringValue(obj["id"], 80)
 	model, e2 := stringValue(obj["model"], 80)
-	if e1 != nil || e2 != nil || !safeRequestID.MatchString(id) || model != TencentTokenHubModel {
+	if e1 != nil || e2 != nil || !safeRequestID.MatchString(id) || model != expectedModel {
 		return nil, ErrAdapter
 	}
 	stage = "TENCENT_OBJECT"

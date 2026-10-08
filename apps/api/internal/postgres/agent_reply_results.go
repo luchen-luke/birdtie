@@ -108,67 +108,13 @@ func (s *Store) CaptureOwnHumanReply(ctx context.Context, a arp.Access) (agentwo
 		}
 		return t, ctx.Err()
 	}
-	if t.Status != agentworkspace.TaskActive || len(t.Conversation) == 0 || t.Conversation[len(t.Conversation)-1].Role != "user" {
-		return agentworkspace.Task{}, arp.ErrDenied
-	}
-	query := t.Filters["currentQuery"]
-	if query == "" {
-		query = t.Query
-	}
-	if t.Conversation[len(t.Conversation)-1].Text != query {
-		return agentworkspace.Task{}, arp.ErrDenied
-	}
-	q, e := replyCurrentQuery(t)
+	q, source, e := s.captureReplyCurrentSourceTx(ctx, tx, a, t, p)
 	if e != nil {
 		return agentworkspace.Task{}, e
 	}
-	var source arp.Receipt
-	if agenttool.CurrentSearchTool(q.Kind) != "" {
-		r, readErr := s.readOwnCurrentSearchTx(ctx, tx, agenttool.CurrentSearch{Access: a, Query: q}, p)
-		if readErr != nil {
-			return agentworkspace.Task{}, currentReadError(readErr)
-		}
-		source = r.Source
-	} else {
-		// Activity/Organization retain their original explicit human NativeStore
-		// read. They do not enlarge the Place/Person CurrentSearch tool schema or
-		// acquire its public Activity model-egress purpose.
-		source, e = s.captureAgentResultProjectionCurrentTx(ctx, tx, a, q, nil, p)
-		if e != nil {
-			return agentworkspace.Task{}, e
-		}
-	}
-	refs := []arp.Ref{}
-	for _, item := range source.Items {
-		refs = append(refs, item.Entity)
-	}
-	t.Conversation = append(t.Conversation, agentworkspace.Message{Role: "assistant", Text: agentworkspace.NativeRuleReply(q.Kind, len(refs))})
-	i := len(t.Conversation) - 1
-	t.Conversation[i].ResultMembership, e = agentworkspace.NewReplyMembership(t, i, q.Kind, refs)
+	t, latest, e := s.persistReplyMembershipTx(ctx, tx, a, t, p, q.Kind, source, agentworkspace.Message{Role: "assistant", Text: agentworkspace.NativeRuleReply(q.Kind, len(source.Items))})
 	if e != nil {
 		return agentworkspace.Task{}, e
-	}
-	t.Status = agentworkspace.TaskCompleted
-	t, e = s.updateTaskInTx(ctx, tx, t)
-	if e != nil {
-		return agentworkspace.Task{}, e
-	}
-	// Reacquire fresh restricted receipts bound to the newly written Task row.
-	// The pre-write ExpectedTask/receipt cannot authorize this response.
-	raw, e := json.Marshal(agentworkspace.SanitizeTaskForResponse(t))
-	if e != nil {
-		return agentworkspace.Task{}, arp.ErrUnavailable
-	}
-	a.ExpectedTask = raw
-	latest, e := s.readMessageResultsTx(ctx, tx, a, t, p)
-	if e != nil {
-		return agentworkspace.Task{}, e
-	}
-	entries := latest.Results()
-	if len(entries) == 0 || entries[len(entries)-1].MessageIndex != i || len(entries[len(entries)-1].ResultSet.Items) != len(refs) {
-		// A source withdrawal between capture and the original Task write rolls
-		// back the completion rather than storing an explanation for another set.
-		return agentworkspace.Task{}, arp.ErrChanged
 	}
 	if e = tx.Commit(ctx); e != nil || ctx.Err() != nil {
 		return agentworkspace.Task{}, arp.ErrUnavailable
@@ -177,6 +123,100 @@ func (s *Store) CaptureOwnHumanReply(ctx context.Context, a arp.Access) (agentwo
 		return agentworkspace.Task{}, arp.ErrChanged
 	}
 	return t, nil
+}
+
+// A completed model reply and an ordinary rules reply select the SAME native
+// human-visible entities. This helper remains inside the caller's Task
+// transaction; its receipt is never exported to a model or used as a grant.
+func replyCaptureQuery(t agentworkspace.Task) (arp.Query, error) {
+	if t.Status != agentworkspace.TaskActive || len(t.Conversation) == 0 || t.Conversation[len(t.Conversation)-1].Role != "user" {
+		return arp.Query{}, arp.ErrDenied
+	}
+	query := t.Filters["currentQuery"]
+	if query == "" {
+		query = t.Query
+	}
+	if t.Conversation[len(t.Conversation)-1].Text != query {
+		return arp.Query{}, arp.ErrDenied
+	}
+	return replyCurrentQuery(t)
+}
+
+// The old literal-query model lifecycle also handles PENDING Tasks without
+// native human results. It remains text/citations only; a malformed supported
+// query must still reach replyCaptureQuery and fail, rather than losing refs.
+func replyMembershipSupported(t agentworkspace.Task) bool {
+	switch t.Intent {
+	case agentworkspace.FindActivity, agentworkspace.FindPlace, agentworkspace.FindOrganization, agentworkspace.AreaDiscovery, agentworkspace.RefineResults, agentworkspace.CompareResults:
+		return true
+	}
+	return false
+}
+
+func (s *Store) captureReplyCurrentSourceTx(ctx context.Context, tx pgx.Tx, a arp.Access, t agentworkspace.Task, p *nativeToolPolicy) (arp.Query, arp.Receipt, error) {
+	q, e := replyCaptureQuery(t)
+	if e != nil {
+		return q, arp.Receipt{}, e
+	}
+	var source arp.Receipt
+	if agenttool.CurrentSearchTool(q.Kind) != "" {
+		r, readErr := s.readOwnCurrentSearchTx(ctx, tx, agenttool.CurrentSearch{Access: a, Query: q}, p)
+		if readErr != nil {
+			return q, source, currentReadError(readErr)
+		}
+		source = r.Source
+	} else {
+		// Activity/Organization retain their original explicit human NativeStore
+		// read. They do not enlarge the Place/Person CurrentSearch tool schema or
+		// acquire its public Activity model-egress purpose.
+		source, e = s.captureAgentResultProjectionCurrentTx(ctx, tx, a, q, nil, p)
+		if e != nil {
+			return q, source, e
+		}
+	}
+	return q, source, nil
+}
+
+// Only the caller's just-captured native receipt supplies membership. The
+// persisted record contains bounded refs, never coordinates or old actions.
+func (s *Store) persistReplyMembershipTx(ctx context.Context, tx pgx.Tx, a arp.Access, t agentworkspace.Task, p *nativeToolPolicy, kind string, source arp.Receipt, message agentworkspace.Message) (agentworkspace.Task, *nativeMessageResultsRead, error) {
+	if tx == nil || p == nil || message.Role != "assistant" || message.Text == "" || message.ResultMembership != nil {
+		return agentworkspace.Task{}, nil, arp.ErrDenied
+	}
+	refs := []arp.Ref{}
+	for _, item := range source.Items {
+		refs = append(refs, item.Entity)
+	}
+	t.Conversation = append(t.Conversation, message)
+	i := len(t.Conversation) - 1
+	var e error
+	t.Conversation[i].ResultMembership, e = agentworkspace.NewReplyMembership(t, i, kind, refs)
+	if e != nil {
+		return agentworkspace.Task{}, nil, e
+	}
+	t.Status = agentworkspace.TaskCompleted
+	t, e = s.updateTaskInTx(ctx, tx, t)
+	if e != nil {
+		return agentworkspace.Task{}, nil, e
+	}
+	// Reacquire fresh restricted receipts bound to the newly written Task row.
+	// The pre-write ExpectedTask/receipt cannot authorize this response.
+	raw, e := json.Marshal(agentworkspace.SanitizeTaskForResponse(t))
+	if e != nil {
+		return agentworkspace.Task{}, nil, arp.ErrUnavailable
+	}
+	a.ExpectedTask = raw
+	latest, e := s.readMessageResultsTx(ctx, tx, a, t, p)
+	if e != nil {
+		return agentworkspace.Task{}, nil, e
+	}
+	entries := latest.Results()
+	if len(entries) == 0 || entries[len(entries)-1].MessageIndex != i || !reflect.DeepEqual(arp.Refs(entries[len(entries)-1].ResultSet.Items), refs) {
+		// A source withdrawal between capture and the original Task write rolls
+		// back the completion rather than storing an explanation for another set.
+		return agentworkspace.Task{}, nil, arp.ErrChanged
+	}
+	return t, latest, nil
 }
 
 type nativeMessageResultsState struct {

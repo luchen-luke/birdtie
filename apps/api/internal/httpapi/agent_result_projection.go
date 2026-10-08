@@ -9,6 +9,7 @@ import (
 	arp "github.com/birdtie/birdtie/apps/api/internal/agentresultprojection"
 	"github.com/birdtie/birdtie/apps/api/internal/agenttool"
 	"github.com/birdtie/birdtie/apps/api/internal/agentworkspace"
+	"github.com/birdtie/birdtie/apps/api/internal/foundation"
 	"github.com/birdtie/birdtie/apps/api/internal/identity"
 )
 
@@ -44,7 +45,9 @@ func newTypedOperation(operation string) bool {
 // read. Serialized refs neither grant access nor revive old model authority.
 func (s *server) prepareAgentMessageResults(r *http.Request, result agentworkspace.Results, digest [32]byte, actor identity.Actor) (agentworkspace.Results, agentworkspace.MessageResultsRead, bool, error) {
 	_, humanPost := r.Context().Value(nowHumanReplyKey{}).(bool)
-	if (r.Method != http.MethodGet && !humanPost) || result.Task == nil || actor.AccountType != "person" || result.Task.PrincipalType != "person" || result.Task.PrincipalID != actor.ID || result.Task.ContextType != "CITY" || r.Header.Get("X-Birdtie-Organization-Workspace") != "" {
+	liveReply, livePost := r.Context().Value(nowLiveReplyKey{}).(agentworkspace.LiveReply)
+	livePost = livePost && liveReply != nil && r.Method == http.MethodPost
+	if (r.Method != http.MethodGet && !humanPost && !livePost) || result.Task == nil || actor.AccountType != "person" || result.Task.PrincipalType != "person" || result.Task.PrincipalID != actor.ID || result.Task.ContextType != "CITY" || r.Header.Get("X-Birdtie-Organization-Workspace") != "" {
 		return result, nil, false, nil
 	}
 	port, ok := s.agent.(agentworkspace.HumanReplyResultsPort)
@@ -68,6 +71,31 @@ func (s *server) prepareAgentMessageResults(r *http.Request, result agentworkspa
 		result.MessageResults = []agentworkspace.MessageResult{}
 	}
 	last := len(task.Conversation) - 1
+	if r.Method == http.MethodGet && task.Status == agentworkspace.TaskCompleted && last >= 0 {
+		message := task.Conversation[last]
+		if message.Role == "assistant" && message.ResultMembership == nil && message.SourceRunID != "" && message.SourceEvidenceDigest != "" && len(message.Sources) > 0 {
+			// The original model round has no saved native membership. A fresh
+			// search must not retrospectively attach new cards/pins to its text.
+			result.NativeProjection = true
+			result.ProjectionItems = []arp.Item{}
+			result.PublicFieldEvidence = nil
+			result.PublicCommercialRefs = []arp.Ref{}
+			result.Activities = []foundation.Activity{}
+			result.Places = []foundation.Place{}
+			result.Organizations = []agentworkspace.Organization{}
+			result.People = []agentworkspace.Person{}
+			result.Groups = []agentworkspace.Group{}
+			result = agentworkspace.WithContract(result, task, result.RequestID)
+			result.Message = message.Text
+			result.ResultSet.Sources = append([]agentworkspace.AnswerSource(nil), message.Sources...)
+			result.Mode = "live"
+			result.Note = "历史回答的结果未保存，请重新检索。"
+			if nativeResultKind(task.Intent) == "place" {
+				result.Note = "历史回答的地点结果未保存，请重新检索。"
+			}
+			return result, read, true, nil
+		}
+	}
 	if task.Status != agentworkspace.TaskCompleted || agentworkspace.ValidateReplyMembership(task, last) != nil || task.Conversation[last].ResultMembership.Kind != nativeResultKind(task.Intent) {
 		return result, read, false, nil
 	}
@@ -94,10 +122,23 @@ func (s *server) prepareAgentMessageResults(r *http.Request, result agentworkspa
 		result.People = []agentworkspace.Person{}
 		result.Groups = []agentworkspace.Group{}
 		result.ResultSet = entry.ResultSet
+		if livePost {
+			// The current sealed answer binds the Task's sole final write time.
+			// Historical entry observation/expiry stays untouched and governs its
+			// fresh human authorization; this changes only the main presentation.
+			result.ResultSet.GeneratedAt = task.UpdatedAt
+		}
 		result.MapEffects = entry.MapEffects
 		result.Message = task.Conversation[last].Text
-		result.Mode = "rules"
-		result.Note = "按站内规则整理；历史结果已重新检查当前权限与有效期。"
+		message := task.Conversation[last]
+		if message.SourceRunID != "" && message.SourceEvidenceDigest != "" && len(message.Sources) > 0 {
+			result.ResultSet.Sources = append([]agentworkspace.AnswerSource(nil), message.Sources...)
+			result.Mode = "live"
+			result.Note = "历史模型回答；站内结果已重新检查当前权限与有效期。"
+		} else {
+			result.Mode = "rules"
+			result.Note = "按站内规则整理；历史结果已重新检查当前权限与有效期。"
+		}
 		return result, read, true, nil
 	}
 	return result, read, false, nil

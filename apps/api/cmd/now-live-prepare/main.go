@@ -68,11 +68,12 @@ func main() {
 			fail()
 		}
 	}
-	modelConfig, e := modelgateway.LoadTencentTokenHubConfig(filepath.Join(*configDir, ".env.tencent.local.json"))
+	modelConfig, e := modelgateway.LoadTencentTokenHubConfigFromEnvironment(filepath.Join(*configDir, ".env.tencent.local.json"), os.LookupEnv)
 	if e != nil {
 		fail()
 	}
-	if _, e = modelgateway.NewTencentTokenHubAdapter(modelConfig, nil); e != nil {
+	model, e := modelgateway.NewTencentTokenHubAdapter(modelConfig, nil)
+	if e != nil {
 		fail()
 	}
 	searchConfig, e := agenttool.LoadTencentWSAConfig(filepath.Join(*configDir, ".env.wsa.local.json"))
@@ -157,6 +158,12 @@ func main() {
 		observed = observed.UTC().Truncate(time.Microsecond)
 		expiry := observed.Add(23 * time.Hour)
 		p := modelegressbudget.LivePrice{Kind: modelegressbudget.LiveToken, RequestCeiling: 1, Base: modelegressbudget.Price{Version: "tariff_hy3_20261008_7b018d27", Destination: modelegressbudget.LiveHY3Destination(), Region: modelcapability.APAC, Retention: modelegressbudget.LiveRetentionUnknown, Currency: "CNY", InputMicrosPerToken: 1, OutputMicrosPerToken: 4, InputTokenCeiling: modelgateway.TencentLiveMaxInputTokens, OutputTokenCeiling: 768, Evidence: modelegressbudget.LiveTariffEvidence, ExpiresAt: expiry}, Snapshot: modelegressbudget.LiveSnapshot{SourceURL: artifact.SourceURL, ArtifactSHA256: artifact.SHA256, ObservedAt: observed, ExpiresAt: expiry}}
+		if model.Descriptor().ModelID == modelgateway.TencentTokenHubDeepSeekModel {
+			p.Base.Version = "tariff_deepseek0813_20261008_7b018d27"
+			p.Base.Destination = modelegressbudget.LiveDeepSeek0813Destination()
+			p.Base.InputMicrosPerToken, p.Base.OutputMicrosPerToken = 9, 27
+			p.Base.InputTokenCeiling = modelgateway.TencentDeepSeekMaxInputTokens
+		}
 		if artifact.Name == "models" {
 			if artifact.SHA256 != "7b018d27ae8dbfa4dceb7282a95e55173a74dee2767ade557e4de3fd1165b5fd" {
 				fail()

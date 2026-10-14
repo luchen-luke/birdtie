@@ -3,8 +3,10 @@ package httpapi
 import (
 	"bytes"
 	"encoding/json"
+	ec "github.com/birdtie/birdtie/apps/api/internal/entitycover"
 	"net/http"
 	"reflect"
+	"time"
 
 	"github.com/birdtie/birdtie/apps/api/internal/businessconsole"
 	"github.com/birdtie/birdtie/apps/api/internal/supplierprofile"
@@ -20,8 +22,11 @@ func (s *server) getPublicBusiness(w http.ResponseWriter, r *http.Request) {
 	if !businessConsoleNoBody(w, r) {
 		return
 	}
-	actor, _, e := s.actor(r, false)
+	actor, digest, e := s.actor(r, false)
 	if authFailed(w, e) {
+		return
+	}
+	if !s.captureEntityCoverHTTP(w, r, actor, digest) {
 		return
 	}
 	store, ok := s.catalog.(supplierprofile.Store)
@@ -54,10 +59,45 @@ func (s *server) getPublicBusiness(w http.ResponseWriter, r *http.Request) {
 		businessConsoleFailure(w, e)
 		return
 	}
+	if len(result.UpcomingActivities) != len(current.UpcomingActivities) {
+		entityCoverFailure(w, ec.ErrChanged)
+		return
+	}
+	current.UpcomingActivities = append(current.UpcomingActivities[:0:0], current.UpcomingActivities...)
+	for i := range result.UpcomingActivities {
+		old := result.UpcomingActivities[i]
+		fresh := &current.UpcomingActivities[i]
+		if fresh.Cover != nil {
+			copy := *fresh.Cover
+			fresh.Cover = &copy
+		}
+		if old.ID != fresh.ID || old.CoverSourceProof != fresh.CoverSourceProof || !ec.PreserveLease(old.Cover, fresh.Cover, time.Now().UTC()) {
+			entityCoverFailure(w, ec.ErrChanged)
+			return
+		}
+	}
 	latest, e := json.Marshal(map[string]any{"data": current})
 	if e != nil || !reflect.DeepEqual(current, result) || !bytes.Equal(encoded, latest) {
 		businessConsoleFailure(w, businessconsole.ErrUnavailable)
 		return
+	}
+	access := ec.Access{AccountID: actor.ID, AccountType: actor.AccountType, SessionDigest: digest}
+	if e = s.validateEntityCoverHTTP(r, access); e != nil {
+		entityCoverFailure(w, e)
+		return
+	}
+	port, ok := s.access.(ec.Store)
+	for _, act := range result.UpcomingActivities {
+		if act.Cover != nil || act.CoverSourceProof != "" {
+			if !ok {
+				entityCoverFailure(w, ec.ErrUnavailable)
+				return
+			}
+			if e = port.ValidateEntityCoverProjection(r.Context(), access, ec.Ref{Type: "activity", ID: act.ID}, act.Cover, act.CoverSourceProof); e != nil {
+				entityCoverFailure(w, e)
+				return
+			}
+		}
 	}
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)

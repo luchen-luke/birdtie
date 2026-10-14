@@ -1,9 +1,313 @@
+import 'dart:typed_data';
+import 'dart:convert';
+import 'dart:ui' as ui;
+import 'package:flutter/painting.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:birdtie_client/src/workspace/map_entities.dart';
 import 'package:birdtie_client/src/workspace/map_marker_bitmap.dart';
+import 'map_media_rendering_test.dart' show mapFixtureImage;
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  test(
+    'public Moment actual JPEG uses square crop without record overlay and dense fallback remains16',
+    () async {
+      final image = await mapFixtureImage();
+      try {
+        final square = await _pixels(
+          await MapMarkerBitmap.render(
+            kind: MapEntityKind.moment,
+            selected: false,
+            photo: image,
+          ),
+        );
+        final circle = await _pixels(
+          await MapMarkerBitmap.render(
+            kind: MapEntityKind.place,
+            selected: false,
+            photo: image,
+          ),
+        );
+        final record = await _pixels(
+          await MapMarkerBitmap.render(
+            kind: MapEntityKind.moment,
+            selected: false,
+          ),
+        );
+        final dense = await _pixels(
+          await MapMarkerBitmap.render(
+            kind: MapEntityKind.moment,
+            selected: false,
+            dense: true,
+            photo: image,
+          ),
+        );
+        expect(square.alphaAt(36, 36), greaterThan(220));
+        expect(circle.alphaAt(36, 36), lessThan(30));
+        final center = (48 * square.width + 48) * 4;
+        expect(
+          square.bytes.sublist(center, center + 4),
+          isNot(record.bytes.sublist(center, center + 4)),
+        );
+        expect(square.bounds(220).width, closeTo(28, 2.1));
+        expect(dense.bounds(220).width, closeTo(16, 2.1));
+        expect(dense.colorCount([135, 104, 60]), greaterThan(0));
+      } finally {
+        image.dispose();
+      }
+    },
+  );
+  test(
+    'retired numeric offsets share the centered bitmap without displacement',
+    () async {
+      // Previously distinct ring positions are now deliberately ignored in
+      // debug/profile/release. They cannot resurrect an off-anchor bitmap.
+      const firstOffset = Offset(2.01, 0);
+      const secondOffset = Offset(2.049, 0);
+      final first = await MapMarkerBitmap.render(
+        kind: MapEntityKind.moment,
+        selected: false,
+        dense: true,
+        devicePixelRatio: 8,
+        visualOffset: firstOffset,
+      );
+      final second = await MapMarkerBitmap.render(
+        kind: MapEntityKind.moment,
+        selected: false,
+        dense: true,
+        devicePixelRatio: 8,
+        visualOffset: secondOffset,
+      );
+      expect(identical(first, second), isTrue);
+      expect(first, orderedEquals(second));
+      expect(
+        identical(
+          first,
+          await MapMarkerBitmap.render(
+            kind: MapEntityKind.moment,
+            selected: false,
+            dense: true,
+            devicePixelRatio: 8,
+            visualOffset: firstOffset,
+          ),
+        ),
+        isTrue,
+      );
+    },
+  );
+
+  test(
+    'all eight retired slots paint the same opaque square at the true anchor',
+    () async {
+      const offsets = [
+        Offset(0, -28),
+        Offset(19.79899, -19.79899),
+        Offset(28, 0),
+        Offset(19.79899, 19.79899),
+        Offset(0, 28),
+        Offset(-19.79899, 19.79899),
+        Offset(-28, 0),
+        Offset(-19.79899, -19.79899),
+      ];
+      final unique = <String>{};
+      final images = <Uint8List>[];
+      for (final offset in offsets) {
+        final bytes = await MapMarkerBitmap.render(
+          kind: MapEntityKind.moment,
+          selected: false,
+          dense: true,
+          devicePixelRatio: 3.25,
+          visualOffset: offset,
+        );
+        unique.add(base64Encode(bytes));
+        images.add(bytes);
+        final pixels = await _pixels(bytes);
+        // Brown opaque interior beside the white category glyph, at this actual
+        // display slot. A transparent image or the first cached slot cannot pass.
+        final x = ((48 + 5) * 3.25).floor();
+        final y = ((48 + 1) * 3.25).floor();
+        final index = (y * pixels.width + x) * 4;
+        expect(pixels.bytes.sublist(index, index + 4), [0x87, 0x68, 0x3c, 255]);
+      }
+      expect(unique, hasLength(1));
+      for (var i = 0; i < offsets.length; i++) {
+        expect(
+          identical(
+            images[i],
+            await MapMarkerBitmap.render(
+              kind: MapEntityKind.moment,
+              selected: false,
+              dense: true,
+              devicePixelRatio: 3.25,
+              visualOffset: offsets[i],
+            ),
+          ),
+          isTrue,
+        );
+      }
+    },
+  );
+  for (final ratio in [1.0, 2.0, 3.25]) {
+    for (final kind in [MapEntityKind.place, MapEntityKind.moment]) {
+      test(
+        '${kind.name} actual opaque glyph has readable density at DPR $ratio',
+        () async {
+          for (final state in [
+            (false, true, 16.0),
+            (false, false, 28.0),
+            (true, true, 36.0),
+          ]) {
+            final bytes = await MapMarkerBitmap.render(
+              kind: kind,
+              selected: state.$1,
+              dense: state.$2,
+              devicePixelRatio: ratio,
+            );
+            final pixels = await _pixels(bytes);
+            expect(pixels.width, (96 * ratio).ceil());
+            expect(pixels.height, (96 * ratio).ceil());
+            final opaque = pixels.bounds(220);
+            // Actual painted alpha bounds, not merely a nonempty transparent PNG.
+            expect(opaque.width, closeTo(state.$3 * ratio, 2.1));
+            expect(opaque.height, closeTo(state.$3 * ratio, 2.1));
+            final color = kind == MapEntityKind.place
+                ? [0x19, 0x3b, 0x32]
+                : [0x87, 0x68, 0x3c];
+            expect(pixels.colorCount(color), greaterThan(35 * ratio * ratio));
+            expect(
+              pixels.colorCount([255, 255, 255]),
+              greaterThan(15 * ratio * ratio),
+            );
+          }
+        },
+      );
+    }
+  }
+  test(
+    'true-anchor glyph has no connector and preserves bounded DPR cache',
+    () async {
+      final centered = await MapMarkerBitmap.render(
+        kind: MapEntityKind.moment,
+        selected: false,
+        dense: true,
+      );
+      final moved = await MapMarkerBitmap.render(
+        kind: MapEntityKind.moment,
+        selected: false,
+        dense: true,
+        visualOffset: const Offset(28, 0),
+      );
+      final hd = await MapMarkerBitmap.render(
+        kind: MapEntityKind.moment,
+        selected: false,
+        dense: true,
+        devicePixelRatio: 3.25,
+        visualOffset: const Offset(28, 0),
+      );
+      expect(moved, orderedEquals(centered));
+      expect(hd, isNot(orderedEquals(moved)));
+      final pixels = await _pixels(moved);
+      expect(pixels.bounds(220).right, lessThanOrEqualTo(58));
+      expect(pixels.alphaAt(48, 48), greaterThan(220));
+      expect(pixels.alphaAt(66, 48), 0);
+      expect(
+        identical(
+          moved,
+          await MapMarkerBitmap.render(
+            kind: MapEntityKind.moment,
+            selected: false,
+            dense: true,
+            visualOffset: const Offset(28, 0),
+          ),
+        ),
+        isTrue,
+      );
+      for (var i = 1; i <= MapMarkerBitmap.cacheLimit; i++) {
+        await MapMarkerBitmap.render(
+          kind: MapEntityKind.place,
+          selected: false,
+          count: i,
+        );
+      }
+      expect(
+        identical(
+          moved,
+          await MapMarkerBitmap.render(
+            kind: MapEntityKind.moment,
+            selected: false,
+            dense: true,
+            visualOffset: const Offset(28, 0),
+          ),
+        ),
+        isFalse,
+      );
+    },
+  );
+
+  for (final ratio in [1.0, 3.25]) {
+    test(
+      'coincident opaque shapes stay within the real anchor at DPR $ratio',
+      () async {
+        const offsets = [
+          Offset(0, -28),
+          Offset(19.79899, -19.79899),
+          Offset(28, 0),
+          Offset(19.79899, 19.79899),
+          Offset(0, 28),
+          Offset(-19.79899, 19.79899),
+          Offset(-28, 0),
+          Offset(-19.79899, -19.79899),
+        ];
+        final fan = <Uint8List>[];
+        for (final offset in offsets) {
+          fan.add(
+            await MapMarkerBitmap.render(
+              kind: MapEntityKind.moment,
+              selected: false,
+              dense: true,
+              devicePixelRatio: ratio,
+              visualOffset: offset,
+            ),
+          );
+        }
+        for (final state in [(false, true), (false, false), (true, true)]) {
+          final anchor = await MapMarkerBitmap.render(
+            kind: MapEntityKind.place,
+            selected: state.$1,
+            dense: state.$2,
+            devicePixelRatio: ratio,
+          );
+          final before = await _pixels(anchor);
+          final after = await _composite([anchor, ...fan]);
+          final diameter = state.$1
+              ? 36.0
+              : state.$2
+              ? 16.0
+              : 28.0;
+          expect(before.bounds(220).width, closeTo(diameter * ratio, 2.1));
+          expect(after.bounds(220).width, closeTo(diameter * ratio, 2.1));
+          expect(after.bounds(220).height, closeTo(diameter * ratio, 2.1));
+          expect(
+            before.colorCount([0x19, 0x3b, 0x32]),
+            greaterThan(35 * ratio * ratio),
+          );
+          expect(
+            after.colorCount([0x87, 0x68, 0x3c]),
+            greaterThan(35 * ratio * ratio),
+          );
+        }
+        // Former cardinal slots have no connector and the glyph occupies its
+        // real anchor. Overlap is resolved by the complete current-ID chooser.
+        final east = await _pixels(fan[2]);
+        expect(east.alphaAt((66 * ratio).floor(), (48 * ratio).floor()), 0);
+        expect(
+          east.alphaAt((48 * ratio).floor(), (48 * ratio).floor()),
+          greaterThan(220),
+        );
+      },
+    );
+  }
+
   test(
     'all six native glyphs distinct cached and selection distinct',
     () async {
@@ -39,4 +343,85 @@ void main() {
       expect(signatures.length, 6);
     },
   );
+}
+
+Future<_Pixels> _composite(List<Uint8List> layers) async {
+  final recorder = ui.PictureRecorder();
+  final canvas = ui.Canvas(recorder);
+  final images = <ui.Image>[];
+  for (final layer in layers) {
+    final codec = await ui.instantiateImageCodec(layer);
+    final image = (await codec.getNextFrame()).image;
+    codec.dispose();
+    images.add(image);
+    canvas.drawImage(image, Offset.zero, ui.Paint());
+  }
+  final picture = recorder.endRecording();
+  final image = await picture.toImage(images.first.width, images.first.height);
+  picture.dispose();
+  for (final layer in images) {
+    layer.dispose();
+  }
+  final data = (await image.toByteData(format: ui.ImageByteFormat.rawRgba))!;
+  final result = _Pixels(
+    image.width,
+    image.height,
+    data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes),
+  );
+  image.dispose();
+  return result;
+}
+
+Future<_Pixels> _pixels(Uint8List png) async {
+  final codec = await ui.instantiateImageCodec(png);
+  final frame = await codec.getNextFrame();
+  final image = frame.image;
+  final data = (await image.toByteData(format: ui.ImageByteFormat.rawRgba))!;
+  final result = _Pixels(
+    image.width,
+    image.height,
+    data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes),
+  );
+  image.dispose();
+  codec.dispose();
+  return result;
+}
+
+class _Pixels {
+  _Pixels(this.width, this.height, this.bytes);
+  final int width, height;
+  final Uint8List bytes;
+  int alphaAt(int x, int y) => bytes[(y * width + x) * 4 + 3];
+  int colorCount(List<int> color) {
+    var count = 0;
+    for (var i = 0; i < bytes.length; i += 4) {
+      if (bytes[i + 3] == 255 &&
+          bytes[i] == color[0] &&
+          bytes[i + 1] == color[1] &&
+          bytes[i + 2] == color[2])
+        count++;
+    }
+    return count;
+  }
+
+  Rect bounds(int minimumAlpha) {
+    var minX = width, minY = height, maxX = -1, maxY = -1;
+    for (var y = 0; y < height; y++) {
+      for (var x = 0; x < width; x++) {
+        if (alphaAt(x, y) < minimumAlpha) continue;
+        if (x < minX) minX = x;
+        if (y < minY) minY = y;
+        if (x > maxX) maxX = x;
+        if (y > maxY) maxY = y;
+      }
+    }
+    return maxX < 0
+        ? Rect.zero
+        : Rect.fromLTRB(
+            minX.toDouble(),
+            minY.toDouble(),
+            maxX + 1.0,
+            maxY + 1.0,
+          );
+  }
 }

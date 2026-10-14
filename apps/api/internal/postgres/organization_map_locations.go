@@ -20,6 +20,8 @@ func scanMapLocation(row pgx.Row) (organization.MapLocation, error) {
 func (s *Store) ListPublicMapPins(ctx context.Context, cityID string) ([]organization.PublicMapPin, error) {
 	rows, err := s.pool.Query(ctx, `SELECT o.id,o.name,l.latitude,l.longitude,l.coordinate_system,l.precision
 		FROM organization_map_locations l JOIN organizations o ON o.id=l.organization_id
+		JOIN accounts a ON a.id=o.account_id AND a.status='active' AND a.account_type='organization'
+		JOIN cities c ON c.id=l.city_id AND c.publication_status='published' AND(c.expires_at IS NULL OR c.expires_at>clock_timestamp())
 		WHERE l.city_id=$1 AND l.visibility='public' AND l.review_status='approved'
 		  AND o.status='active' AND o.visibility='public' AND o.verification_status='verified'
 		ORDER BY lower(o.name),o.id`, cityID)

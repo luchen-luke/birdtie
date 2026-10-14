@@ -170,7 +170,8 @@ func (call *nativeToolCall) Read(ctx context.Context, a agentevent.Access, c *ag
 	}
 	for _, activity := range current.Activities {
 		if allowed[activity.ID] && (call.proposal.Tool == agentplanner.ActivitySearch || activity.ID == call.proposal.Arguments.ActivityID) {
-			activities = append(activities, activity)
+			// This human cover purpose is not a model/tool image grant.
+			activities = append(activities, coverFreeToolActivity(activity))
 		}
 	}
 	if call.proposal.Tool == agentplanner.ActivityDetail && len(activities) != 1 {

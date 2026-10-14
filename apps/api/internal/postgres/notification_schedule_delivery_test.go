@@ -13,7 +13,7 @@ import (
 )
 
 func TestNotificationScheduleUnitTypedInboxReuse(t *testing.T) {
-	for _, kind := range []agentnotification.Kind{agentnotification.KindOpportunityAvailable, agentnotification.KindActivityReminder, agentnotification.KindActivityChange, agentnotification.KindActivityCancelled, agentnotification.KindActivityReview, agentnotification.KindPlaceReview, agentnotification.KindDirectMessage, agentnotification.KindConnectionRequest, agentnotification.KindConnectionDecision, agentnotification.KindCommunityMessage, agentnotification.KindActivityMessage, agentnotification.KindOrganizationInvitation, agentnotification.KindOrganizationMembershipChange, agentnotification.KindAgentTaskCompleted, agentnotification.KindAgentTaskFailed, agentnotification.KindBusinessClaimReview} {
+	for _, kind := range []agentnotification.Kind{agentnotification.KindOpportunityAvailable, agentnotification.KindActivityReminder, agentnotification.KindActivityChange, agentnotification.KindActivityCancelled, agentnotification.KindActivityReview, agentnotification.KindPlaceReview, agentnotification.KindDirectMessage, agentnotification.KindConnectionRequest, agentnotification.KindConnectionDecision, agentnotification.KindCommunityMessage, agentnotification.KindActivityMessage, agentnotification.KindOrganizationInvitation, agentnotification.KindOrganizationMembershipChange, agentnotification.KindAgentTaskCompleted, agentnotification.KindAgentTaskFailed, agentnotification.KindBusinessClaimReview, agentnotification.KindBusinessUpdate} {
 		for _, mode := range []string{"old_normal", "scheduled_digest"} {
 			t.Run(string(kind)+"/"+mode, func(t *testing.T) {
 				tx := &messagePolicyUnitTx{}
@@ -28,7 +28,14 @@ func TestNotificationScheduleUnitTypedInboxReuse(t *testing.T) {
 				if mode == "scheduled_digest" {
 					slot = "actual-slot"
 				}
-				yes, e := deliverNativeNotificationDecision(context.Background(), tx, "decision", kind, "source", slot, false)
+				decisionID, sourceID := "decision", "source"
+				if kind == agentnotification.KindBusinessUpdate {
+					// Distinct valid IDs model the native decision and publication
+					// audit. Neither becomes the public business destination ID.
+					decisionID = "11111111-1111-4111-8111-111111111111"
+					sourceID = "22222222-2222-4222-8222-222222222222"
+				}
+				yes, e := deliverNativeNotificationDecision(context.Background(), tx, decisionID, kind, sourceID, slot, false)
 				if e != nil || !yes || len(tx.execs) != 1 {
 					t.Fatal(yes, e)
 				}
@@ -50,6 +57,18 @@ func TestNotificationScheduleUnitTypedInboxReuse(t *testing.T) {
 				}
 				if kind == agentnotification.KindConnectionRequest && tx.args[0][4] != "connection_request" {
 					t.Fatal("original social target")
+				}
+				if kind == agentnotification.KindBusinessUpdate {
+					a := tx.args[0]
+					if a[0] != decisionID || a[1] != "updates" || a[4] != "business_update" || a[5] != decisionID || a[5] == sourceID {
+						t.Fatal("public update Inbox resource must bind the routing decision, not its audit or business", a)
+					}
+					if a[2] != "关注的商家公开资料已更新" || a[3] != "请查看当前公开资料。资料更新不代表可预订或已开启智能体。" {
+						t.Fatal("public update must retain fixed disclosure-safe copy", a)
+					}
+					if a[6].(*string) != nil || a[7].(*string) != nil {
+						t.Fatal("business update must not fabricate activity or conversation targets", a)
+					}
 				}
 			})
 		}

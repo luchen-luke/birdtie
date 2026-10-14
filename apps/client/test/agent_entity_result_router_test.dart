@@ -12,6 +12,7 @@ void main() {
       'community',
       'organization',
       'business',
+      'moment',
     ]) {
       expect(
         AgentEntityResultRouter.routable(AgentResultRef(type: k, id: id)),

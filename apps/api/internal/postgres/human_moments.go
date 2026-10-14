@@ -31,29 +31,7 @@ func (s *Store) beginHumanMomentTx(ctx context.Context, digest [32]byte, actor i
 	if _, err = tx.Exec(ctx, `SET LOCAL TIME ZONE 'UTC'`); err != nil {
 		return fail(content.ErrUnavailable)
 	}
-	var id string
-	err = tx.QueryRow(ctx, `SELECT id FROM accounts WHERE id=$1 AND account_type='person' AND status='active' FOR SHARE`, actor.ID).Scan(&id)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return fail(identity.ErrUnauthorized)
-	}
-	if err != nil {
-		return fail(content.ErrUnavailable)
-	}
-	// A current optional enrichment identity shares its metadata lock before
-	// waiting on Moment. Candidate/Evidence already use metadata -> source;
-	// capturing the old outbox later must not invert that order. Missing Agent
-	// or metadata is a normal human-only path, not a permission failure.
-	var optionalAgent string
-	err = tx.QueryRow(ctx, `SELECT ag.id FROM agents ag JOIN agent_profiles ap
-	 ON ap.agent_id=ag.id AND ap.owner_id=$1 AND ap.owner_type='PERSON'
-	 WHERE ag.principal_account_id=$1 AND ag.agent_type='personal' AND ag.status='active'
-	 FOR SHARE OF ag,ap`, actor.ID).Scan(&optionalAgent)
-	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
-		return fail(content.ErrUnavailable)
-	}
-	// No session row lock before a Moment wait. This is only an early negative
-	// check; authorization still requires the locked final current-clock gate.
-	if err = checkHumanMomentSession(ctx, tx, digest, actor.ID, s.devPhoneEnabled); err != nil {
+	if err = s.humanMomentResources(ctx, tx, digest, actor); err != nil {
 		return fail(err)
 	}
 	return tx, nil
@@ -189,6 +167,10 @@ func (s *Store) GetHumanMoment(ctx context.Context, digest [32]byte, actor ident
 	if !validHumanMomentID(id) {
 		return content.Moment{}, content.ErrInvalid
 	}
+	ctx, first, frameErr := s.humanWriteBound(ctx, digest, actor)
+	if frameErr != nil {
+		return content.Moment{}, frameErr
+	}
 	tx, err := s.beginHumanMomentTx(ctx, digest, actor)
 	if err != nil {
 		return content.Moment{}, err
@@ -197,6 +179,9 @@ func (s *Store) GetHumanMoment(ctx context.Context, digest [32]byte, actor ident
 	var locked string
 	err = tx.QueryRow(ctx, `SELECT id FROM moments WHERE id=$1 AND author_account_id=$2 FOR SHARE`, id, actor.ID).Scan(&locked)
 	if errors.Is(err, pgx.ErrNoRows) {
+		if e := s.humanWriteFinish(ctx, humanWriteFrame{tx: tx, d: digest, a: actor, session: first}); e != nil {
+			return content.Moment{}, e
+		}
 		return content.Moment{}, content.ErrNotFound
 	}
 	if err != nil {
@@ -214,12 +199,16 @@ func (s *Store) GetHumanMoment(ctx context.Context, digest [32]byte, actor ident
 		}
 		return content.Moment{}, humanMomentFailure(err)
 	}
-	if err = s.finishHumanMomentTx(ctx, tx, digest, actor.ID); err != nil {
+	if err = s.humanWriteFinish(ctx, humanWriteFrame{tx: tx, d: digest, a: actor, session: first}); err != nil {
 		return content.Moment{}, err
 	}
 	return m, nil
 }
 func (s *Store) ListHumanMoments(ctx context.Context, digest [32]byte, actor identity.Actor) ([]content.Moment, error) {
+	ctx, first, frameErr := s.humanWriteBound(ctx, digest, actor)
+	if frameErr != nil {
+		return nil, frameErr
+	}
 	tx, err := s.beginHumanMomentTx(ctx, digest, actor)
 	if err != nil {
 		return nil, err
@@ -266,8 +255,37 @@ func (s *Store) ListHumanMoments(ctx context.Context, digest [32]byte, actor ide
 	if err != nil {
 		return nil, content.ErrUnavailable
 	}
-	if err = s.finishHumanMomentTx(ctx, tx, digest, actor.ID); err != nil {
+	if err = s.humanWriteFinish(ctx, humanWriteFrame{tx: tx, d: digest, a: actor, session: first}); err != nil {
 		return nil, err
 	}
 	return result, nil
+}
+
+func (s *Store) humanMomentResources(ctx context.Context, tx pgx.Tx, digest [32]byte, actor identity.Actor) error {
+	var id string
+	err := tx.QueryRow(ctx, `SELECT id FROM accounts WHERE id=$1 AND account_type='person' AND status='active' FOR SHARE`, actor.ID).Scan(&id)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return identity.ErrUnauthorized
+	}
+	if err != nil {
+		return content.ErrUnavailable
+	}
+	// A current optional enrichment identity shares its metadata lock before
+	// waiting on Moment. Candidate/Evidence already use metadata -> source;
+	// capturing the old outbox later must not invert that order. Missing Agent
+	// or metadata is a normal human-only path, not a permission failure.
+	var optionalAgent string
+	err = tx.QueryRow(ctx, `SELECT ag.id FROM agents ag JOIN agent_profiles ap
+	 ON ap.agent_id=ag.id AND ap.owner_id=$1 AND ap.owner_type='PERSON'
+	 WHERE ag.principal_account_id=$1 AND ag.agent_type='personal' AND ag.status='active'
+	 FOR SHARE OF ag,ap`, actor.ID).Scan(&optionalAgent)
+	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+		return content.ErrUnavailable
+	}
+	// No session row lock before a Moment wait. This is only an early negative
+	// check; authorization still requires the locked final current-clock gate.
+	if err = checkHumanMomentSession(ctx, tx, digest, actor.ID, s.devPhoneEnabled); err != nil {
+		return err
+	}
+	return nil
 }

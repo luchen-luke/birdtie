@@ -9,6 +9,8 @@ import '../auth/dev_phone_login_sheet.dart';
 import '../city/public_city_controller.dart';
 import '../city/public_city_map.dart';
 import '../content/private_moment_controller.dart';
+import '../content/moment_control.dart';
+import 'package:flutter/scheduler.dart';
 import '../content/private_moment_media_controller.dart';
 import '../content/private_moment_media_sheet.dart';
 import '../content/moment_time_choice.dart';
@@ -16,6 +18,314 @@ import '../content/moment_context_choice.dart';
 import '../content/public_intent_section.dart';
 import '../config/birdtie_environment.dart';
 import '../workspace/community_api.dart';
+import '../workspace/human_causal_operation_controller.dart';
+import '../workspace/public_moment_photo.dart';
+import '../workspace/public_moment_photo_controller.dart';
+import '../workspace/public_moment_photo_editor.dart';
+import '../workspace/public_moment_photo_pending_store.dart';
+import '../workspace/public_moment_page.dart';
+import '../workspace/public_moment_control_page.dart';
+
+Future<void> _showPublicMomentPhotoEditor(
+  BuildContext context, {
+  required BirdtieAuthController auth,
+  required PrivateMomentController moments,
+  required String momentID,
+  String title = '',
+  int? titleRevision,
+  Listenable? workspaceChanges,
+  String? Function()? workspaceID,
+}) async {
+  if (!context.mounted || !auth.signedIn || workspaceID?.call() != null) return;
+  final source = HumanCausalSourceSerial();
+  final owner = auth.accountID,
+      client = moments.borrowedClient,
+      base = moments.apiBaseUrl;
+  void observe() {
+    source.observe((
+      auth.accountID,
+      workspaceID?.call(),
+      moments.borrowedClient,
+      moments.apiBaseUrl,
+    ));
+    source.notifyReadBindingChanged();
+  }
+
+  observe();
+  final generation = source.generation;
+  final changes = Listenable.merge([auth, moments, workspaceChanges]);
+  changes.addListener(observe);
+  final controller = PublicMomentPhotoController(
+    momentID: momentID,
+    api: PublicMomentPhotoAPI(
+      client: client,
+      baseUrl: base,
+      authorizationHeader: () => auth.authorizationHeader,
+    ),
+    ownerID: () => auth.accountID,
+    workspaceID: workspaceID,
+    identityChanges: source,
+    sourceKey: () => source.generation,
+    sourceCurrent: () =>
+        context.mounted &&
+        auth.signedIn &&
+        auth.accountID == owner &&
+        source.generation == generation &&
+        workspaceID?.call() == null,
+  );
+  var released = false;
+  void release() {
+    if (released) return;
+    released = true;
+    changes.removeListener(observe);
+    controller.dispose();
+    source.dispose();
+  }
+
+  final route = MaterialPageRoute<void>(
+    builder: (_) => PublicMomentPhotoEditor(
+      controller: controller,
+      momentTitle: title,
+      momentTitleRevision: titleRevision,
+    ),
+  );
+  unawaited(route.completed.whenComplete(release));
+  try {
+    await Navigator.of(context, rootNavigator: true).push(route);
+  } finally {
+    release();
+  }
+}
+
+/// The original person profile is also a recovery entry when the current list
+/// or public source is unavailable. Only this owner's bodyless selectors render.
+class _PublicMomentPhotoRecovery extends StatefulWidget {
+  const _PublicMomentPhotoRecovery({
+    required this.auth,
+    required this.moments,
+    this.workspaceChanges,
+    this.workspaceID,
+  });
+  final BirdtieAuthController auth;
+  final PrivateMomentController moments;
+  final Listenable? workspaceChanges;
+  final String? Function()? workspaceID;
+  @override
+  State<_PublicMomentPhotoRecovery> createState() =>
+      _PublicMomentPhotoRecoveryState();
+}
+
+class _PublicMomentPhotoRecoveryState
+    extends State<_PublicMomentPhotoRecovery> {
+  late Listenable _changes;
+  int _epoch = 0;
+  List<PublicMomentPhotoPending> _pending = [];
+  bool _failed = false;
+  Object? _binding;
+  Object get _currentBinding => (
+    widget.auth.accountID,
+    widget.workspaceID?.call(),
+    widget.moments.borrowedClient,
+    widget.moments.apiBaseUrl,
+  );
+  @override
+  void initState() {
+    super.initState();
+    _subscribe();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _observe();
+    });
+  }
+
+  void _subscribe() {
+    _changes = Listenable.merge([
+      widget.auth,
+      widget.moments,
+      widget.workspaceChanges,
+    ]);
+    _changes.addListener(_observe);
+  }
+
+  void _observe() {
+    final key = _currentBinding;
+    if (_binding != key) {
+      _binding = key;
+      ++_epoch;
+      _pending = [];
+      _failed = false;
+    }
+    final epoch = ++_epoch;
+    final owner = widget.auth.accountID,
+        base = widget.moments.apiBaseUrl.replaceFirst(RegExp(r'/$'), '');
+    if (!widget.auth.signedIn ||
+        owner == null ||
+        widget.workspaceID?.call() != null) {
+      _pending = [];
+      _changed();
+      return;
+    }
+    unawaited(() async {
+      try {
+        final rows = await const SecurePublicMomentPhotoPendingStore().read(
+          base,
+          owner,
+        );
+        if (mounted && epoch == _epoch && key == _currentBinding) {
+          _pending = rows;
+          _failed = false;
+          _changed();
+        }
+      } catch (_) {
+        if (mounted && epoch == _epoch) {
+          _failed = true;
+          _pending = [];
+          _changed();
+        }
+      }
+    }());
+  }
+
+  void _changed() {
+    if (!mounted) return;
+    if (SchedulerBinding.instance.schedulerPhase ==
+        SchedulerPhase.persistentCallbacks) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) setState(() {});
+      });
+    } else {
+      setState(() {});
+    }
+  }
+
+  @override
+  void didUpdateWidget(_PublicMomentPhotoRecovery old) {
+    super.didUpdateWidget(old);
+    if (old.auth != widget.auth ||
+        old.moments != widget.moments ||
+        old.workspaceChanges != widget.workspaceChanges ||
+        old.workspaceID != widget.workspaceID) {
+      _changes.removeListener(_observe);
+      _subscribe();
+      _observe();
+    }
+  }
+
+  @override
+  void dispose() {
+    ++_epoch;
+    _changes.removeListener(_observe);
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.workspaceID?.call() != null || !widget.auth.signedIn)
+      return const SizedBox.shrink();
+    if (_failed)
+      return TextButton(onPressed: _observe, child: const Text('检查本机公开图片操作记录'));
+    if (_pending.isEmpty) return const SizedBox.shrink();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('待核实的公开图片操作'),
+        for (final entry in _pending.indexed)
+          TextButton(
+            onPressed: () async {
+              if (_binding != _currentBinding) return;
+              await _showPublicMomentPhotoEditor(
+                context,
+                auth: widget.auth,
+                moments: widget.moments,
+                momentID: entry.$2.momentID,
+                workspaceChanges: widget.workspaceChanges,
+                workspaceID: widget.workspaceID,
+              );
+              if (mounted) _observe();
+            },
+            child: Text('核实原图片操作 ${entry.$1 + 1}'),
+          ),
+      ],
+    );
+  }
+}
+
+/// Opens the existing private Moment editor without publishing or creating an
+/// Agent task. The caller may bind a Now source in addition to this identity.
+Future<bool?> showPrivateMomentDraft(
+  BuildContext context, {
+  required BirdtieAuthController auth,
+  required PublicCityController city,
+  required PrivateMomentController moments,
+  http.Client? client,
+  String? apiBaseUrl,
+  Listenable? workspaceChanges,
+  String? Function()? organizationWorkspaceID,
+  bool Function()? current,
+}) async {
+  final selected = city.selectedCity;
+  final draftOwner = auth.accountID;
+  final draftWorkspace = organizationWorkspaceID?.call();
+  if (!context.mounted || !auth.signedIn || selected == null) return null;
+  var retired = false;
+  final ownedRoutes = <Route<bool>>[];
+  bool live() =>
+      !retired &&
+      context.mounted &&
+      auth.signedIn &&
+      auth.accountID == draftOwner &&
+      city.selectedCity?.id == selected.id &&
+      organizationWorkspaceID?.call() == draftWorkspace &&
+      (current?.call() ?? true);
+  void observeBinding() {
+    if (retired || live()) return;
+    // Retire at the identity/source event, including ABA before a widget frame.
+    retired = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      for (final route in ownedRoutes.toList()) {
+        if (route.isActive) route.navigator?.removeRoute(route);
+      }
+    });
+    WidgetsBinding.instance.ensureVisualUpdate();
+  }
+
+  final changes = Listenable.merge([auth, city, workspaceChanges]);
+  changes.addListener(observeBinding);
+  try {
+    if (!live()) return null;
+    await moments.loadOperations();
+    if (!live()) return null;
+    if (!live()) return null;
+    final navigator = Navigator.of(context);
+    final draftRoute = ModalBottomSheetRoute<bool>(
+      isScrollControlled: true,
+      showDragHandle: true,
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
+      capturedThemes: InheritedTheme.capture(
+        from: context,
+        to: navigator.context,
+      ),
+      builder: (_) => _MomentDraftSheet(
+        cityID: selected.id,
+        cityName: selected.name,
+        moments: moments,
+        places: city.places,
+        activities: city.activities,
+        auth: auth,
+        client: client,
+        apiBaseUrl: apiBaseUrl,
+        workspaceChanges: workspaceChanges,
+        organizationWorkspaceID: organizationWorkspaceID,
+        current: live,
+      ),
+    );
+    ownedRoutes.add(draftRoute);
+    final saved = await navigator.push(draftRoute);
+    return live() ? saved : null;
+  } finally {
+    changes.removeListener(observeBinding);
+  }
+}
 
 // Existing City and private Moment surfaces remain available from the V2 sidebar.
 class LegacyProfilePage extends StatelessWidget {
@@ -28,6 +338,8 @@ class LegacyProfilePage extends StatelessWidget {
     this.apiBaseUrl,
     this.workspaceChanges,
     this.organizationWorkspaceID,
+    this.current,
+    this.onOpenSocialNow,
   });
 
   final BirdtieAuthController auth;
@@ -37,6 +349,8 @@ class LegacyProfilePage extends StatelessWidget {
   final String? apiBaseUrl;
   final Listenable? workspaceChanges;
   final String? Function()? organizationWorkspaceID;
+  final bool Function()? current;
+  final VoidCallback? onOpenSocialNow;
 
   @override
   Widget build(BuildContext context) => _MyBirdtiePage(
@@ -47,6 +361,8 @@ class LegacyProfilePage extends StatelessWidget {
     apiBaseUrl: apiBaseUrl,
     workspaceChanges: workspaceChanges,
     organizationWorkspaceID: organizationWorkspaceID,
+    current: current,
+    onOpenSocialNow: onOpenSocialNow,
   );
 }
 
@@ -522,6 +838,7 @@ class _MomentDraftSheet extends StatefulWidget {
     this.apiBaseUrl,
     this.workspaceChanges,
     this.organizationWorkspaceID,
+    this.current,
   });
 
   final String cityID;
@@ -536,6 +853,7 @@ class _MomentDraftSheet extends StatefulWidget {
   final String? apiBaseUrl;
   final Listenable? workspaceChanges;
   final String? Function()? organizationWorkspaceID;
+  final bool Function()? current;
 
   @override
   State<_MomentDraftSheet> createState() => _MomentDraftSheetState();
@@ -546,7 +864,9 @@ class _MomentDraftSheetState extends State<_MomentDraftSheet> {
   late final TextEditingController _title;
   late final TextEditingController _body;
   late final CommunityApi _communityApi;
-  final http.Client _lookupClient = http.Client();
+  late final http.Client _lookupClient;
+  late final bool _ownsLookupClient;
+  late final String _lookupBase;
   List<CommunityItem> _communities = const [];
   List<(String, String)> _organizations = const [];
   bool _loadingContexts = false;
@@ -555,11 +875,18 @@ class _MomentDraftSheetState extends State<_MomentDraftSheet> {
   late String _activityID;
   late String _communityID;
   late String _organizationID;
-  late final String? _draftToken;
   late final String? _draftOwner;
   late final BirdtieAuthController _draftAuth;
   late final PrivateMomentController _draftMoments;
+  late final Listenable _draftBindingChanges;
   bool _retired = false;
+  late final String? _draftWorkspace;
+  int _contextCredentialEpoch = 0;
+  final _editChanges = ValueNotifier<int>(0);
+  int _editGeneration = 0;
+  final _confirmationRoutes = <DialogRoute<bool>>[];
+  final _confirmationTimers = <Timer>{};
+  bool _editNotifierDisposed = false;
   late MomentTimeValue? _time;
   String? _draftError;
 
@@ -572,14 +899,30 @@ class _MomentDraftSheetState extends State<_MomentDraftSheet> {
     _activityID = widget.existing?.activityIDs.firstOrNull ?? '';
     _communityID = widget.existing?.communityID ?? '';
     _organizationID = widget.existing?.organizationID ?? '';
-    _draftToken = widget.moments.authorizationHeader();
     _draftOwner = widget.auth.accountID;
+    _draftWorkspace = widget.organizationWorkspaceID?.call();
     _draftAuth = widget.auth;
     _draftMoments = widget.moments;
-    _draftAuth.addListener(_onActorChanged);
+    _contextCredentialEpoch = widget.moments.identityEpoch;
+    _draftBindingChanges = Listenable.merge([
+      _draftAuth,
+      widget.workspaceChanges,
+    ]);
+    _draftBindingChanges.addListener(_onActorChanged);
+    _title.addListener(_edited);
+    _body.addListener(_edited);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) unawaited(widget.moments.loadOperations());
+    });
     _time = widget.existing?.time ?? MomentTimeValue.unknown;
+    _lookupClient = widget.client ?? http.Client();
+    _ownsLookupClient = widget.client == null;
+    _lookupBase = widget.apiBaseUrl ?? BirdtieEnvironment.apiBaseUrl;
     _communityApi = CommunityApi(
-      authorizationHeader: widget.moments.authorizationHeader,
+      authorizationHeader: () =>
+          _current ? widget.auth.authorizationHeader : null,
+      client: _lookupClient,
+      apiBaseUrl: _lookupBase,
     );
   }
 
@@ -588,20 +931,75 @@ class _MomentDraftSheetState extends State<_MomentDraftSheet> {
       identical(widget.moments, _draftMoments) &&
       widget.auth.signedIn &&
       widget.auth.accountID == _draftOwner &&
-      widget.auth.authorizationHeader == _draftToken &&
-      widget.moments.authorizationHeader() == _draftToken;
+      widget.organizationWorkspaceID?.call() == _draftWorkspace &&
+      _draftWorkspace == null &&
+      (widget.current?.call() ?? true);
 
   bool get _current => mounted && !_retired && _matchesBinding;
 
+  @override
+  void didUpdateWidget(_MomentDraftSheet old) {
+    super.didUpdateWidget(old);
+    if (old.cityID != widget.cityID ||
+        old.existing?.id != widget.existing?.id ||
+        old.existing?.revision != widget.existing?.revision ||
+        old.client != widget.client ||
+        old.apiBaseUrl != widget.apiBaseUrl ||
+        old.auth != widget.auth ||
+        old.moments != widget.moments) {
+      _retired = true;
+      _edited();
+    }
+  }
+
   void _onActorChanged() {
-    if (_retired || _matchesBinding) return;
+    if (_retired) return;
+    if (_matchesBinding) {
+      final next = widget.moments.identityEpoch;
+      if (next != _contextCredentialEpoch) {
+        _contextCredentialEpoch = next;
+        _communities = const [];
+        _organizations = const [];
+        _edited();
+        unawaited(widget.moments.loadOperations());
+      }
+      return;
+    }
     // Observe each identity event, including A -> B -> A before the next frame.
-    setState(() => _retired = true);
+    _retired = true;
+    _edited();
+    if (SchedulerBinding.instance.schedulerPhase ==
+        SchedulerPhase.persistentCallbacks) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) setState(() {});
+      });
+    } else {
+      setState(() {});
+    }
+  }
+
+  void _edited() {
+    ++_editGeneration;
+    widget.moments.retirePreview();
+    if (_editNotifierDisposed) return;
+    if (SchedulerBinding.instance.schedulerPhase ==
+        SchedulerPhase.persistentCallbacks) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!_editNotifierDisposed) _editChanges.value = _editGeneration;
+      });
+    } else {
+      _editChanges.value = _editGeneration;
+    }
   }
 
   Future<void> _loadContexts() async {
     final token = widget.moments.authorizationHeader();
-    if (!_current || token == null || BirdtieEnvironment.apiBaseUrl.isEmpty) {
+    final credentialEpoch = widget.moments.identityEpoch;
+    bool current() =>
+        _current &&
+        credentialEpoch == widget.moments.identityEpoch &&
+        token == widget.auth.authorizationHeader;
+    if (!_current || token == null || _lookupBase.isEmpty) {
       return;
     }
     setState(() {
@@ -610,11 +1008,11 @@ class _MomentDraftSheetState extends State<_MomentDraftSheet> {
     });
     try {
       final communities = await _communityApi.mine();
-      if (!_current) return;
+      if (!current()) return;
       final response = await _lookupClient
           .get(
             Uri.parse(
-              '${BirdtieEnvironment.apiBaseUrl.replaceFirst(RegExp(r'/$'), '')}/v1/me/organizations',
+              '${_lookupBase.replaceFirst(RegExp(r'/$'), '')}/v1/me/organizations',
             ),
             headers: {'Authorization': token},
           )
@@ -623,9 +1021,10 @@ class _MomentDraftSheetState extends State<_MomentDraftSheet> {
         throw StateError('organizations unavailable');
       }
       final rows =
-          (jsonDecode(response.body) as Map<String, dynamic>)['data']
+          (jsonDecode(utf8.decode(response.bodyBytes))
+                  as Map<String, dynamic>)['data']
               as List<dynamic>;
-      if (!_current) return;
+      if (!current()) return;
       setState(() {
         _communities = communities
             .where(
@@ -640,11 +1039,11 @@ class _MomentDraftSheetState extends State<_MomentDraftSheet> {
         }).toList();
       });
     } catch (_) {
-      if (_current) {
+      if (current()) {
         setState(() => _contextError = '社群或组织列表暂不可用，可只保存未关联的草稿。');
       }
     } finally {
-      if (_current) {
+      if (current()) {
         setState(() => _loadingContexts = false);
       }
     }
@@ -652,42 +1051,59 @@ class _MomentDraftSheetState extends State<_MomentDraftSheet> {
 
   @override
   void dispose() {
-    _draftAuth.removeListener(_onActorChanged);
+    _draftBindingChanges.removeListener(_onActorChanged);
     _title.dispose();
     _body.dispose();
     _communityApi.dispose();
-    _lookupClient.close();
+    if (_ownsLookupClient) _lookupClient.close();
+    _retired = true;
+    for (final timer in _confirmationTimers) {
+      timer.cancel();
+    }
+    if (!_editNotifierDisposed) {
+      if (SchedulerBinding.instance.schedulerPhase ==
+          SchedulerPhase.persistentCallbacks) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!_editNotifierDisposed) _editChanges.value++;
+        });
+      } else {
+        _editChanges.value++;
+      }
+    }
+    if (_confirmationRoutes.isEmpty && !_editNotifierDisposed) {
+      _editNotifierDisposed = true;
+      _editChanges.dispose();
+    }
     super.dispose();
   }
 
   Future<void> _save() async {
+    if (!mounted) return;
+    if (!widget.moments.canStartOperation) return;
     if (!_current) {
-      setState(() => _draftError = '账号已切换，请关闭草稿后重新打开。');
+      setState(() => _draftError = '账号或来源已变化，请重新打开私人草稿。');
       return;
     }
-    if (!_formKey.currentState!.validate()) return;
-    if (_time == null) return;
+    if (!_formKey.currentState!.validate() || _time == null) return;
+    final generation = _editGeneration;
+    bool source() => _current && generation == _editGeneration;
     final existing = widget.existing;
-    if (existing != null &&
-        !widget.moments.moments.any((item) => identical(item, existing))) {
-      setState(() => _draftError = '草稿版本已变化，请刷新列表后重新打开。');
-      return;
-    }
-    final saved = existing == null
-        ? await widget.moments.create(
+    final p = existing == null
+        ? await widget.moments.previewCreate(
             cityID: widget.cityID,
-            title: _title.text.trim(),
-            body: _body.text.trim(),
+            title: _title.text,
+            body: _body.text,
             placeID: _placeID,
             activityID: _activityID,
             communityID: _communityID,
             organizationID: _organizationID,
             time: _time!,
+            current: source,
           )
-        : await widget.moments.update(
+        : await widget.moments.previewUpdate(
             moment: existing,
-            title: _title.text.trim(),
-            body: _body.text.trim(),
+            title: _title.text,
+            body: _body.text,
             placeID: _placeID,
             time: _time!,
             activityID: _activityID == existing.activityIDs.firstOrNull
@@ -699,55 +1115,190 @@ class _MomentDraftSheetState extends State<_MomentDraftSheet> {
             organizationID: _organizationID == existing.organizationID
                 ? null
                 : _organizationID,
+            locationPrecision:
+                _placeID.isNotEmpty &&
+                    _placeID == existing.placeID &&
+                    !widget.places.any((p) => p.id == _placeID)
+                ? 'city'
+                : null,
+            current: source,
           );
-    if (mounted && _current && saved) Navigator.pop(context, true);
+    if (!mounted || p == null || !source()) return;
+    if (await _confirm(p, generation) && source()) {
+      final saved = await widget.moments.commit(p, current: source);
+      if (mounted && source() && saved) Navigator.pop(context, true);
+    } else {
+      widget.moments.retirePreview();
+    }
   }
 
   Future<void> _withdraw() async {
-    if (!_current) return;
+    if (!mounted) return;
+    if (!widget.moments.canStartOperation) return;
     final existing = widget.existing;
-    if (existing == null) return;
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('撤回私人草稿？'),
-        content: const Text('撤回后，这份草稿会从个人草稿列表移除。'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('保留'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('撤回'),
-          ),
-        ],
-      ),
-    );
-    if (confirmed != true || !_current) {
-      return;
+    if (!_current || existing == null) return;
+    final generation = _editGeneration;
+    bool source() => _current && generation == _editGeneration;
+    final p = await widget.moments.previewWithdraw(existing, current: source);
+    if (!mounted || p == null || !source()) return;
+    if (await _confirm(p, generation) && source()) {
+      final saved = await widget.moments.commit(p, current: source);
+      if (mounted && source() && saved) Navigator.pop(context, true);
+    } else {
+      widget.moments.retirePreview();
     }
-    final withdrawn = await widget.moments.withdraw(existing);
-    if (mounted && _current && withdrawn) Navigator.pop(context, true);
   }
 
-  bool get _imageSourceCurrent {
-    final m=widget.existing;
-    if(!_current||m==null||m.authorAccountID!=_draftOwner||m.visibility!='private'||m.status!='draft')return false;
-    return widget.moments.moments.any((row)=>row.id==m.id&&row.authorAccountID==_draftOwner&&
-      row.revision==m.revision&&row.visibility=='private'&&row.status=='draft');
+  Future<bool> _confirm(MomentControlPreview p, int generation) async {
+    var open = true;
+    bool current() =>
+        open &&
+        _current &&
+        generation == _editGeneration &&
+        widget.moments.previewCurrent(p);
+    final timer = Timer.periodic(const Duration(milliseconds: 100), (_) {
+      if (!current() && !_editNotifierDisposed) _editChanges.value++;
+    });
+    _confirmationTimers.add(timer);
+    final route = DialogRoute<bool>(
+      context: context,
+      builder: (c) => ListenableBuilder(
+        listenable: Listenable.merge([widget.moments, _editChanges]),
+        builder: (c, _) {
+          final live = current();
+          return AlertDialog(
+            title: Text(p.input.action == 'WITHDRAW' ? '检查撤回' : '检查私人草稿'),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (live) ...[
+                    if (p.input.input != null) ...[
+                      Text(
+                        p.input.input!['title'] as String,
+                        style: Theme.of(c).textTheme.titleMedium,
+                      ),
+                      if ((p.input.input!['body'] as String).isNotEmpty)
+                        Text(p.input.input!['body'] as String),
+                      Text('发生时间：${_time?.label ?? '未知'}'),
+                      const Text('保存为本人私人草稿，不会公开发布，也不会上传私人图片。'),
+                      if (p.preservedPlaceUnavailable)
+                        const Text('此前地点已不可读取。本次仅保留原关联并隐藏精确位置，不会恢复旧地点名称或坐标。'),
+                      for (final key in [
+                        'activityId',
+                        'communityId',
+                        'organizationId',
+                      ])
+                        Text(
+                          !p.input.input!.containsKey(key)
+                              ? '保留此前${_contextLabel(key)}关联'
+                              : p.input.input![key] == ''
+                              ? '移除${_contextLabel(key)}关联'
+                              : '使用本次选中的${_contextLabel(key)}关联',
+                        ),
+                    ] else
+                      const Text('撤回后这份动态会从本人当前列表移除。公开可见内容也会退休；原操作结果仍可核实。'),
+                    Text('当前版本：${p.input.expectedRevision}，确认仅用于这一次具体操作。'),
+                  ] else
+                    const Text('这次确认已失效，原资料与批准已隐藏。请关闭后重新检查，不会执行旧批准。'),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  open = false;
+                  Navigator.pop(c, false);
+                },
+                child: const Text('取消'),
+              ),
+              FilledButton(
+                onPressed: live
+                    ? () {
+                        if (!current()) return;
+                        open = false;
+                        Navigator.pop(c, true);
+                      }
+                    : null,
+                child: Text(p.input.action == 'WITHDRAW' ? '确认撤回' : '确认保存'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+    _confirmationRoutes.add(route);
+    route.completed.whenComplete(() {
+      timer.cancel();
+      _confirmationTimers.remove(timer);
+      _confirmationRoutes.remove(route);
+      if (!mounted && _confirmationRoutes.isEmpty && !_editNotifierDisposed) {
+        _editNotifierDisposed = true;
+        _editChanges.dispose();
+      }
+    });
+    final approved = await Navigator.of(
+      context,
+      rootNavigator: true,
+    ).push(route);
+    open = false;
+    return approved == true &&
+        _current &&
+        generation == _editGeneration &&
+        widget.moments.previewCurrent(p);
   }
+
+  String _contextLabel(String key) => switch (key) {
+    'activityId' => '活动',
+    'communityId' => '社群',
+    _ => '组织',
+  };
+
+  bool get _imageSourceCurrent {
+    final m = widget.existing;
+    if (!_current ||
+        m == null ||
+        m.authorAccountID != _draftOwner ||
+        m.visibility != 'private' ||
+        m.status != 'draft')
+      return false;
+    return widget.moments.moments.any(
+      (row) =>
+          row.id == m.id &&
+          row.authorAccountID == _draftOwner &&
+          row.revision == m.revision &&
+          row.visibility == 'private' &&
+          row.status == 'draft',
+    );
+  }
+
   Future<void> _managePrivateImage() async {
-    if(!_imageSourceCurrent)return;
-    final m=widget.existing!;
-    final c=PrivateMomentMediaController(momentID:m.id,momentRevision:m.revision,
-      authorizationHeader:()=>widget.auth.authorizationHeader,ownerID:()=>widget.auth.accountID,
-      identityChanges:Listenable.merge([widget.auth,widget.moments]),
-      workspaceChanges:widget.workspaceChanges,organizationWorkspaceID:widget.organizationWorkspaceID,
-      sourceCurrent:()=>_imageSourceCurrent,client:widget.client,
-      apiBaseUrl:widget.apiBaseUrl??BirdtieEnvironment.apiBaseUrl);
-    try {await Navigator.push(context,MaterialPageRoute<void>(builder:(_)=>
-      PrivateMomentMediaSheet(controller:c,momentTitle:m.title)));}finally{c.dispose();}
+    if (!_imageSourceCurrent) return;
+    final m = widget.existing!;
+    final c = PrivateMomentMediaController(
+      momentID: m.id,
+      momentRevision: m.revision,
+      authorizationHeader: () => widget.auth.authorizationHeader,
+      ownerID: () => widget.auth.accountID,
+      identityChanges: Listenable.merge([widget.auth, widget.moments]),
+      workspaceChanges: widget.workspaceChanges,
+      organizationWorkspaceID: widget.organizationWorkspaceID,
+      sourceCurrent: () => _imageSourceCurrent,
+      client: widget.client,
+      apiBaseUrl: widget.apiBaseUrl ?? BirdtieEnvironment.apiBaseUrl,
+    );
+    try {
+      await Navigator.push(
+        context,
+        MaterialPageRoute<void>(
+          builder: (_) =>
+              PrivateMomentMediaSheet(controller: c, momentTitle: m.title),
+        ),
+      );
+    } finally {
+      c.dispose();
+    }
   }
 
   @override
@@ -776,10 +1327,10 @@ class _MomentDraftSheetState extends State<_MomentDraftSheet> {
   Widget _buildForm(BuildContext context) => SafeArea(
     child: Padding(
       padding: EdgeInsets.fromLTRB(
-        24,
+        16,
         4,
-        24,
-        24 + MediaQuery.viewInsetsOf(context).bottom,
+        16,
+        16 + MediaQuery.viewInsetsOf(context).bottom,
       ),
       child: SingleChildScrollView(
         child: Form(
@@ -790,19 +1341,22 @@ class _MomentDraftSheetState extends State<_MomentDraftSheet> {
             children: [
               Text(
                 widget.existing == null ? '新建动态' : '编辑动态',
-                style: Theme.of(context).textTheme.headlineSmall,
+                style: Theme.of(context).textTheme.titleLarge,
               ),
               const SizedBox(height: 6),
               Text(
                 '${widget.cityName} · ${widget.existing?.visibilityLabel ?? '仅自己可见'} · 本页不会发布',
-                style: const TextStyle(color: _muted),
+                style: Theme.of(context).textTheme.bodySmall,
               ),
               const SizedBox(height: 20),
-              if(_imageSourceCurrent) ...[
-                OutlinedButton.icon(onPressed:widget.moments.saving?null:_managePrivateImage,
-                  icon:const Icon(Icons.photo_outlined),label:const Text('管理私人图片')),
+              if (_imageSourceCurrent) ...[
+                OutlinedButton.icon(
+                  onPressed: widget.moments.saving ? null : _managePrivateImage,
+                  icon: const Icon(Icons.photo_outlined),
+                  label: const Text('管理私人图片'),
+                ),
                 const Text('图片只用于这条已保存的私人记录；公开或撤回记录会移除图片。'),
-                const SizedBox(height:12),
+                const SizedBox(height: 12),
               ],
               TextFormField(
                 controller: _title,
@@ -833,7 +1387,10 @@ class _MomentDraftSheetState extends State<_MomentDraftSheet> {
               MomentTimeChoice(
                 initialValue: widget.existing?.time ?? MomentTimeValue.unknown,
                 enabled: !widget.moments.saving,
-                onChanged: (value) => _time = value,
+                onChanged: (value) {
+                  _time = value;
+                  _edited();
+                },
               ),
               if (widget.existing?.createdAt != null) ...[
                 const SizedBox(height: 8),
@@ -843,14 +1400,11 @@ class _MomentDraftSheetState extends State<_MomentDraftSheet> {
                 ),
               ],
               const SizedBox(height: 20),
-              const Text(
-                '关联情境（可选）',
-                style: TextStyle(fontWeight: FontWeight.w600),
-              ),
+              Text('关联情境（可选）', style: Theme.of(context).textTheme.titleMedium),
               const SizedBox(height: 6),
-              const Text(
+              Text(
                 '只关联你选择的真实地点、活动和已加入的社群或组织；草稿仍只对自己可见。',
-                style: TextStyle(color: _muted),
+                style: Theme.of(context).textTheme.bodySmall,
               ),
               const SizedBox(height: 12),
               MomentContextChoice(
@@ -859,7 +1413,10 @@ class _MomentDraftSheetState extends State<_MomentDraftSheet> {
                 available: {
                   for (final place in widget.places) place.id: place.name,
                 },
-                onChanged: (value) => setState(() => _placeID = value),
+                onChanged: (value) => setState(() {
+                  _placeID = value;
+                  _edited();
+                }),
               ),
               MomentContextChoice(
                 label: '活动',
@@ -868,21 +1425,32 @@ class _MomentDraftSheetState extends State<_MomentDraftSheet> {
                   for (final activity in widget.activities)
                     activity.id: activity.title,
                 },
-                onChanged: (value) => setState(() => _activityID = value),
+                onChanged: (value) => setState(() {
+                  _activityID = value;
+                  _edited();
+                }),
               ),
               TextButton(
                 onPressed: _loadingContexts ? null : _loadContexts,
                 child: Text(_loadingContexts ? '正在读取我的社群与组织…' : '选择我加入的社群或组织'),
               ),
               if (_contextError != null)
-                Text(_contextError!, style: const TextStyle(color: _copper)),
+                Text(
+                  _contextError!,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.error,
+                  ),
+                ),
               MomentContextChoice(
                 label: '社群',
                 value: _communityID,
                 available: {
                   for (final item in _communities) item.id: item.name,
                 },
-                onChanged: (value) => setState(() => _communityID = value),
+                onChanged: (value) => setState(() {
+                  _communityID = value;
+                  _edited();
+                }),
               ),
               MomentContextChoice(
                 label: '组织',
@@ -890,7 +1458,10 @@ class _MomentDraftSheetState extends State<_MomentDraftSheet> {
                 available: {
                   for (final item in _organizations) item.$1: item.$2,
                 },
-                onChanged: (value) => setState(() => _organizationID = value),
+                onChanged: (value) => setState(() {
+                  _organizationID = value;
+                  _edited();
+                }),
               ),
               const SizedBox(height: 8),
               AnimatedBuilder(
@@ -898,32 +1469,43 @@ class _MomentDraftSheetState extends State<_MomentDraftSheet> {
                 builder: (context, _) => Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    _MomentOperationRecovery(moments: widget.moments),
                     if (_draftError != null)
                       Text(
                         _draftError!,
-                        style: const TextStyle(color: _copper),
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Theme.of(context).colorScheme.error,
+                        ),
                       ),
                     if (widget.moments.error != null) ...[
                       Text(
                         widget.moments.error!,
-                        style: const TextStyle(color: _copper),
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Theme.of(context).colorScheme.error,
+                        ),
                       ),
                       const SizedBox(height: 8),
                     ],
-                    if (widget.existing == null &&
-                        widget.moments.creationUncertain)
-                      TextButton(
-                        onPressed: () => Navigator.pop(context, false),
-                        child: const Text('返回列表检查保存结果'),
-                      )
-                    else
-                      FilledButton(
-                        onPressed: widget.moments.saving ? null : _save,
-                        child: Text(widget.moments.saving ? '正在保存…' : '保存私人草稿'),
-                      ),
+                    FilledButton(
+                      onPressed:
+                          widget.moments.canStartOperation &&
+                              (widget.existing == null ||
+                                  widget.moments.currentOwnedVersion(
+                                    widget.existing!,
+                                  ))
+                          ? _save
+                          : null,
+                      child: Text(widget.moments.saving ? '正在保存…' : '保存私人草稿'),
+                    ),
                     if (widget.existing != null)
                       TextButton(
-                        onPressed: widget.moments.saving ? null : _withdraw,
+                        onPressed:
+                            widget.moments.canStartOperation &&
+                                widget.moments.currentOwnedVersion(
+                                  widget.existing!,
+                                )
+                            ? _withdraw
+                            : null,
                         child: const Text('撤回草稿'),
                       ),
                   ],
@@ -946,6 +1528,8 @@ class _MyBirdtiePage extends StatelessWidget {
     this.apiBaseUrl,
     this.workspaceChanges,
     this.organizationWorkspaceID,
+    this.current,
+    this.onOpenSocialNow,
   });
 
   final BirdtieAuthController auth;
@@ -955,79 +1539,30 @@ class _MyBirdtiePage extends StatelessWidget {
   final String? apiBaseUrl;
   final Listenable? workspaceChanges;
   final String? Function()? organizationWorkspaceID;
+  final bool Function()? current;
+  final VoidCallback? onOpenSocialNow;
 
   Future<void> _openDevPhoneLogin(BuildContext context) async {
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
-      backgroundColor: _surface,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       builder: (context) => DevPhoneLoginSheet(auth: auth),
     );
   }
 
   Future<void> _createMoment(BuildContext context) async {
-    final selected = city.selectedCity;
-    final draftToken = auth.authorizationHeader;
-    final draftOwner = auth.accountID;
-    if (!auth.signedIn || selected == null) return;
-    var retired = false;
-    bool current() =>
-        !retired &&
-        context.mounted &&
-        auth.signedIn &&
-        auth.accountID == draftOwner &&
-        auth.authorizationHeader == draftToken;
-    void observeActor() {
-      if (!current()) retired = true;
-    }
-    auth.addListener(observeActor);
-    try {
-      if (moments.creationUncertain) {
-        await moments.refresh();
-        if (!context.mounted || !current()) return;
-        final checked = await showDialog<bool>(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('先检查上次保存结果'),
-            content: const Text('上次保存的结果尚未确认。请检查私人草稿列表；再次保存同一内容可能产生重复草稿。'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: const Text('返回检查'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(context, true),
-                child: const Text('已检查，仍要新建'),
-              ),
-            ],
-          ),
-        );
-        if (checked != true || !current()) {
-          return;
-        }
-        moments.confirmCreationChecked();
-      }
-      if (!context.mounted || !current()) return;
-      await showModalBottomSheet<bool>(
-        context: context,
-        isScrollControlled: true,
-        showDragHandle: true,
-        backgroundColor: _surface,
-        builder: (context) => _MomentDraftSheet(
-          cityID: selected.id,
-          cityName: selected.name,
-          moments: moments,
-          places: city.places,
-          activities: city.activities,
-          auth: auth,
-          client:client,apiBaseUrl:apiBaseUrl,
-          workspaceChanges:workspaceChanges,organizationWorkspaceID:organizationWorkspaceID,
-        ),
-      );
-    } finally {
-      auth.removeListener(observeActor);
-    }
+    await showPrivateMomentDraft(
+      context,
+      auth: auth,
+      city: city,
+      moments: moments,
+      client: client,
+      apiBaseUrl: apiBaseUrl,
+      workspaceChanges: workspaceChanges,
+      organizationWorkspaceID: organizationWorkspaceID,
+    );
   }
 
   Future<void> _editMoment(BuildContext context, PrivateMoment moment) async {
@@ -1038,23 +1573,71 @@ class _MyBirdtiePage extends StatelessWidget {
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
-      backgroundColor: _surface,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       builder: (context) => _MomentDraftSheet(
         cityID: moment.cityID,
-        cityName: cityNames.isEmpty ? moment.cityID : cityNames.first,
+        cityName: cityNames.isEmpty ? '城市名称暂不可用' : cityNames.first,
         moments: moments,
         places: city.places,
         activities: city.activities,
         auth: auth,
         existing: moment,
-        client:client,apiBaseUrl:apiBaseUrl,
-        workspaceChanges:workspaceChanges,organizationWorkspaceID:organizationWorkspaceID,
+        client: client,
+        apiBaseUrl: apiBaseUrl,
+        workspaceChanges: workspaceChanges,
+        organizationWorkspaceID: organizationWorkspaceID,
+        current: current,
       ),
     );
   }
 
+  Future<void> _managePublicMoment(
+    BuildContext context,
+    PrivateMoment moment,
+  ) async {
+    final owner = auth.accountID;
+    bool valid() =>
+        current?.call() != false &&
+        auth.accountID == owner &&
+        auth.signedIn &&
+        organizationWorkspaceID?.call() == null;
+    if (!valid() || moment.authorAccountID != owner) return;
+    final result = await Navigator.of(context).push<String>(
+      MaterialPageRoute(
+        builder: (_) => PublicMomentControlPage(
+          moments: moments,
+          momentID: moment.id,
+          current: valid,
+          identityChanges: Listenable.merge([auth, workspaceChanges]),
+        ),
+      ),
+    );
+    if (valid() && result != null) await moments.refresh(current: valid);
+  }
+
+  Future<void> _viewPublicMoment(
+    BuildContext context,
+    PrivateMoment moment,
+  ) async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        builder: (_) => PublicMomentPage(
+          momentID: moment.id,
+          authorizationHeader: () => auth.authorizationHeader,
+          ownerID: () => auth.accountID,
+          workspaceID: organizationWorkspaceID,
+          identityChanges: Listenable.merge([auth, workspaceChanges]),
+          client: client,
+          apiBaseUrl: apiBaseUrl,
+        ),
+      ),
+    );
+    if (current?.call() != false) await moments.refresh(current: current);
+  }
+
   @override
   Widget build(BuildContext context) => _PageFrame(
+    showHeader: false,
     eyebrow: '我的 Birdtie',
     title: '按自己的方式体验城市生活',
     subtitle: '个人资料、公开经历、收藏和私人素材会在同一处管理。',
@@ -1067,17 +1650,28 @@ class _MyBirdtiePage extends StatelessWidget {
             icon: auth.signedIn
                 ? Icons.verified_user_outlined
                 : Icons.person_outline,
-            title: auth.signedIn ? (auth.displayName ?? 'Birdtie 账号') : '账号未连接',
-            detail: auth.signedIn
+            title: auth.sessionRestoring
+                ? '正在恢复账户'
+                : auth.signedIn
+                ? (auth.displayName ?? 'Birdtie 账号')
+                : '账号未连接',
+            detail: auth.sessionRestoring
+                ? '正在核验本机保存的会话，公开城市内容仍可浏览。'
+                : auth.signedIn
                 ? auth.loginMethod == 'dev_phone'
                       ? '本地测试会话；手机号所有权尚未验证。'
-                      : '已通过 OIDC 登录。个人内容和编辑工作区会按权限逐步开放。'
+                      : '已登录 Birdtie。'
                 : '可使用下方可用的登录方式；浏览城市不需要登录。',
-            accent: _forest,
+            accent: Theme.of(context).colorScheme.primary,
           ),
           if (auth.error != null) ...[
             const SizedBox(height: 12),
-            Text(auth.error!, style: const TextStyle(color: _copper)),
+            Text(
+              auth.error!,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.error,
+              ),
+            ),
           ],
           const SizedBox(height: 16),
           if (auth.signedIn)
@@ -1085,25 +1679,38 @@ class _MyBirdtiePage extends StatelessWidget {
               onPressed: auth.busy ? null : auth.signOut,
               child: const Text('退出登录'),
             ),
-          if (!auth.signedIn && auth.available)
+          if (!auth.signedIn && !auth.sessionRestoring && auth.available)
             FilledButton(
               onPressed: auth.busy ? null : auth.signIn,
               child: Text(auth.busy ? '正在连接…' : '登录'),
             ),
-          if (!auth.signedIn && auth.devPhoneAvailable)
+          if (!auth.signedIn &&
+              !auth.sessionRestoring &&
+              auth.devPhoneAvailable)
             FilledButton(
               onPressed: auth.busy ? null : () => _openDevPhoneLogin(context),
               child: const Text('手机号测试登录'),
             ),
-          if (!auth.signedIn && !auth.available && !auth.devPhoneAvailable)
+          if (!auth.signedIn &&
+              !auth.sessionRestoring &&
+              !auth.available &&
+              !auth.devPhoneAvailable)
             Text(
               auth.configurationChecked
                   ? '登录服务尚未配置或暂不可用。当前仍可浏览公开城市内容。'
                   : '正在检查登录服务…',
-              style: const TextStyle(color: _muted),
+              style: Theme.of(context).textTheme.bodySmall,
             ),
           const SizedBox(height: 28),
           if (auth.signedIn) ...[
+            if (onOpenSocialNow != null &&
+                organizationWorkspaceID?.call() == null)
+              ListTile(
+                leading: const Icon(Icons.people_outline),
+                title: const Text('我的社交近况'),
+                subtitle: const Text('查看本人可访问的分享与活动'),
+                onTap: onOpenSocialNow,
+              ),
             PublicIntentSection(
               auth: auth,
               city: city,
@@ -1129,21 +1736,30 @@ class _MyBirdtiePage extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 8),
+            _MomentOperationRecovery(moments: moments),
+            _PublicMomentPhotoRecovery(
+              auth: auth,
+              moments: moments,
+              workspaceChanges: workspaceChanges,
+              workspaceID: organizationWorkspaceID,
+            ),
             if (moments.loading && moments.moments.isEmpty)
-              const Text('正在读取我的动态与草稿…', style: TextStyle(color: _muted))
+              Text('正在读取我的动态与草稿…', style: Theme.of(context).textTheme.bodySmall)
             else if (moments.error != null)
-              Text(moments.error!, style: const TextStyle(color: _copper))
+              Text(
+                moments.error!,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.error,
+                ),
+              )
             else if (moments.moments.isEmpty)
-              const Text('还没有动态或草稿。', style: TextStyle(color: _muted))
+              Text('还没有动态或草稿。', style: Theme.of(context).textTheme.bodySmall)
             else
               for (final moment in moments.moments) ...[
                 const Divider(height: 22),
                 Text(
                   moment.title,
-                  style: const TextStyle(
-                    color: _forest,
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style: Theme.of(context).textTheme.titleMedium,
                 ),
                 if (moment.body.isNotEmpty) ...[
                   const SizedBox(height: 4),
@@ -1156,12 +1772,12 @@ class _MyBirdtiePage extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   '${moment.visibilityLabel} · ${moment.statusLabel} · ${moment.time.label}',
-                  style: const TextStyle(color: _muted, fontSize: 12),
+                  style: Theme.of(context).textTheme.bodySmall,
                 ),
                 if (moment.createdAt != null)
                   Text(
                     '创建于 ${moment.createdAt!.toIso8601String().replaceFirst('T', ' ')}（UTC）',
-                    style: const TextStyle(color: _muted, fontSize: 12),
+                    style: Theme.of(context).textTheme.bodySmall,
                   ),
                 if (moment.placeID.isNotEmpty ||
                     moment.activityIDs.isNotEmpty ||
@@ -1169,7 +1785,7 @@ class _MyBirdtiePage extends StatelessWidget {
                     moment.organizationID.isNotEmpty)
                   Text(
                     '已关联${[if (moment.placeID.isNotEmpty) '地点', if (moment.activityIDs.isNotEmpty) '活动', if (moment.communityID.isNotEmpty) '社群', if (moment.organizationID.isNotEmpty) '组织'].join('、')}',
-                    style: const TextStyle(color: _muted, fontSize: 12),
+                    style: Theme.of(context).textTheme.bodySmall,
                   ),
                 if (moment.isEditableDraft)
                   TextButton(
@@ -1178,14 +1794,46 @@ class _MyBirdtiePage extends StatelessWidget {
                         : () => _editMoment(context, moment),
                     child: const Text('编辑或撤回'),
                   ),
+                if (moment.status == 'published' &&
+                    moment.visibility == 'public' &&
+                    moment.authorAccountID == auth.accountID &&
+                    organizationWorkspaceID?.call() == null)
+                  Wrap(
+                    spacing: 12,
+                    children: [
+                      TextButton(
+                        onPressed: () => _viewPublicMoment(context, moment),
+                        child: const Text('查看动态'),
+                      ),
+                      TextButton(
+                        onPressed: moments.saving
+                            ? null
+                            : () => _managePublicMoment(context, moment),
+                        child: const Text('修改或删除'),
+                      ),
+                      TextButton(
+                        onPressed: () => _showPublicMomentPhotoEditor(
+                          context,
+                          auth: auth,
+                          moments: moments,
+                          momentID: moment.id,
+                          title: moment.title,
+                          titleRevision: moment.revision,
+                          workspaceChanges: workspaceChanges,
+                          workspaceID: organizationWorkspaceID,
+                        ),
+                        child: const Text('管理本人公开图片'),
+                      ),
+                    ],
+                  ),
               ],
             const SizedBox(height: 28),
           ],
           const _SectionLabel('资料与身份'),
           const SizedBox(height: 8),
-          const Text(
+          Text(
             '个人资料由本人管理。组织工作区请从侧栏切换到已授权的组织；城市只用于公开内容浏览。',
-            style: TextStyle(color: _muted, height: 1.45),
+            style: Theme.of(context).textTheme.bodySmall,
           ),
         ],
       ),
@@ -1200,6 +1848,7 @@ class _PageFrame extends StatelessWidget {
     required this.subtitle,
     required this.child,
     this.trailing,
+    this.showHeader = true,
   });
 
   final String eyebrow;
@@ -1207,12 +1856,13 @@ class _PageFrame extends StatelessWidget {
   final String subtitle;
   final Widget child;
   final Widget? trailing;
+  final bool showHeader;
 
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final horizontal = constraints.maxWidth < 600 ? 22.0 : 48.0;
+        final horizontal = constraints.maxWidth < 600 ? 16.0 : 32.0;
         final compact = constraints.maxWidth < 680;
         return SingleChildScrollView(
           padding: EdgeInsets.fromLTRB(horizontal, 22, horizontal, 38),
@@ -1222,46 +1872,35 @@ class _PageFrame extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    eyebrow,
-                    style: const TextStyle(
-                      color: _copper,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 1.6,
-                    ),
-                  ),
-                  const SizedBox(height: 9),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          title,
-                          style: Theme.of(context).textTheme.headlineMedium
-                              ?.copyWith(
-                                color: _forest,
-                                fontWeight: FontWeight.w600,
-                                letterSpacing: -0.8,
-                              ),
+                  if (showHeader) ...[
+                    Text(eyebrow, style: Theme.of(context).textTheme.bodySmall),
+                    const SizedBox(height: 9),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            title,
+                            style: Theme.of(context).textTheme.headlineSmall,
+                          ),
                         ),
-                      ),
-                      if (trailing != null && !compact) ...[
-                        const SizedBox(width: 12),
-                        trailing!,
+                        if (trailing != null && !compact) ...[
+                          const SizedBox(width: 12),
+                          trailing!,
+                        ],
                       ],
+                    ),
+                    const SizedBox(height: 7),
+                    Text(
+                      subtitle,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                    if (trailing != null && compact) ...[
+                      const SizedBox(height: 14),
+                      Align(alignment: Alignment.centerLeft, child: trailing!),
                     ],
-                  ),
-                  const SizedBox(height: 7),
-                  Text(
-                    subtitle,
-                    style: const TextStyle(color: _muted, height: 1.5),
-                  ),
-                  if (trailing != null && compact) ...[
-                    const SizedBox(height: 14),
-                    Align(alignment: Alignment.centerLeft, child: trailing!),
+                    const SizedBox(height: 28),
                   ],
-                  const SizedBox(height: 28),
                   child,
                 ],
               ),
@@ -1278,15 +1917,8 @@ class _SectionLabel extends StatelessWidget {
   final String label;
 
   @override
-  Widget build(BuildContext context) => Text(
-    label,
-    style: const TextStyle(
-      color: _muted,
-      fontSize: 10,
-      fontWeight: FontWeight.w700,
-      letterSpacing: 1.3,
-    ),
-  );
+  Widget build(BuildContext context) =>
+      Text(label, style: Theme.of(context).textTheme.bodySmall);
 }
 
 class _StatusLine extends StatelessWidget {
@@ -1318,15 +1950,9 @@ class _StatusLine extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                title,
-                style: const TextStyle(
-                  color: _forest,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
+              Text(title, style: Theme.of(context).textTheme.titleMedium),
               const SizedBox(height: 4),
-              Text(detail, style: const TextStyle(color: _muted, height: 1.45)),
+              Text(detail, style: Theme.of(context).textTheme.bodySmall),
             ],
           ),
         ),
@@ -1356,24 +1982,98 @@ class _EmptySection extends StatelessWidget {
     child: Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, color: _forest, size: 22),
+        Icon(icon, color: Theme.of(context).colorScheme.primary, size: 22),
         const SizedBox(width: 13),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                title,
-                style: const TextStyle(
-                  color: _forest,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
+              Text(title, style: Theme.of(context).textTheme.titleMedium),
               const SizedBox(height: 5),
-              Text(detail, style: const TextStyle(color: _muted, height: 1.45)),
+              Text(detail, style: Theme.of(context).textTheme.bodySmall),
             ],
           ),
         ),
+      ],
+    ),
+  );
+}
+
+class _MomentOperationRecovery extends StatelessWidget {
+  const _MomentOperationRecovery({required this.moments});
+  final PrivateMomentController moments;
+  @override
+  Widget build(BuildContext context) => AnimatedBuilder(
+    animation: moments,
+    builder: (c, _) => Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (moments.recoveryOperations.isNotEmpty) ...[
+          const Text('待核实的原动态操作'),
+          for (final p in moments.recoveryOperations)
+            Wrap(
+              spacing: 8,
+              children: [
+                TextButton(
+                  onPressed: moments.operationBusy
+                      ? null
+                      : () => moments.recoverOperation(p),
+                  child: Text(
+                    moments.locallyPrepared(p) ? '检查本机准备记录' : '核实原结果',
+                  ),
+                ),
+                if (!moments.locallyPrepared(p))
+                  TextButton(
+                    onPressed: moments.operationBusy
+                        ? null
+                        : () async {
+                            final owner = moments.ownerID?.call(),
+                                epoch = moments.logicalIdentityEpoch;
+                            final ok = await showDialog<bool>(
+                              context: c,
+                              builder: (d) => AlertDialog(
+                                title: const Text('停止原动态操作'),
+                                content: const Text(
+                                  '停止后这个原操作不会执行迟到提交。若已经完成，将保留原成功事实，不会撤销保存。',
+                                ),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(d, false),
+                                    child: const Text('取消'),
+                                  ),
+                                  FilledButton(
+                                    onPressed: () {
+                                      if (epoch ==
+                                              moments.logicalIdentityEpoch &&
+                                          owner == moments.ownerID?.call())
+                                        Navigator.pop(d, true);
+                                    },
+                                    child: const Text('停止原操作'),
+                                  ),
+                                ],
+                              ),
+                            );
+                            if (ok == true &&
+                                epoch == moments.logicalIdentityEpoch &&
+                                owner == moments.ownerID?.call())
+                              await moments.recoverOperation(p, stop: true);
+                          },
+                    child: const Text('停止原操作'),
+                  ),
+              ],
+            ),
+        ],
+        if (moments.operationNotice != null) Text(moments.operationNotice!),
+        if (moments.operationError != null) Text(moments.operationError!),
+        if (!moments.canStartOperation &&
+            !moments.operationBusy &&
+            moments.recoveryOperations.isEmpty &&
+            moments.operationError != null)
+          TextButton(
+            onPressed: moments.loadOperations,
+            child: const Text('重新读取本机记录'),
+          ),
       ],
     ),
   );

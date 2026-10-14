@@ -118,7 +118,9 @@ Future<PublicCityController> _givenWorkspacePlaceCity() async {
     apiBaseUrl: 'http://catalog-fixture.test',
   );
   await city.loadCities();
-  expect(city.selectedCity, isNull);
+  // The current catalog restores its sole available exploration scope.
+  // Explicit selection below still supplies the detail's existing city context.
+  expect(city.selectedCity?.id, 'synthetic-place-city');
   city.selectCity('synthetic-place-city');
   expect(city.selectedCity?.id, 'synthetic-place-city');
   return city;
@@ -450,9 +452,9 @@ void main() {
     orgs.organizations = [organization];
     orgs.select(null);
     await t.pumpAndSettle();
-    await t.tap(find.text('个人工作区'));
+    await t.tap(find.byKey(const Key('sidebar-account')));
     await t.pumpAndSettle();
-    await t.tap(find.text('合成组织 · 管理员'));
+    await t.tap(find.text('以 合成组织 身份使用 · 管理员'));
     await t.pumpAndSettle();
     expect(orgs.active?.id, organization.id);
     await t.binding.handlePopRoute();
@@ -905,6 +907,9 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.text('地点类别：体育场馆'), findsOneWidget);
+    await tester.ensureVisible(find.text('场地资料'));
+    await tester.tap(find.text('场地资料'));
+    await tester.pumpAndSettle();
     expect(find.text('资料所列容量：24 人'), findsOneWidget);
     expect(find.text('适合：羽毛球'), findsOneWidget);
     expect(find.text('已核验经营关系：已核验商家'), findsOneWidget);
@@ -1156,6 +1161,9 @@ void main() {
           ),
         ),
       );
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text('场地资料'));
+      await tester.tap(find.text('场地资料'));
       await tester.pumpAndSettle();
       expect(
         find.text('商家资料'),

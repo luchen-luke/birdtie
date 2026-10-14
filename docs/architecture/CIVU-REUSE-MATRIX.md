@@ -1,6 +1,10 @@
 # Civu 只读现状审计与 Birdtie 复用清单
 
+2026-10-14 集合映射增量：当前 Birdtie `124_personal_collections.sql` 已有私人 ThemeMap 表与原个人集合 writer，旧材料中的“ThemeMap 没有目标表”不再是当前事实。批 F 增加 Birdtie 自有的 `scripts/prepare_civu_collections.py`，只接收明确选择、规范化的导出与映射，生成本地待确认 Journey/ThemeMap 候选；没有复制 Civu 业务代码、依赖、数据、Session 或媒体。仅只读核对了旧 `006_journeys_workspace.sql`、`032_creator_theme_maps.sql` 的字段与当前原输入闭集，未把旧公开、复制、成员、备注、媒体或地点权利直接映射为新许可。真实保全、隔离恢复、身份/Place 当前读取及导入仍未运行。见 [准备合同](../migration/CIVU-SELECTED-COLLECTION-PREPARATION.md)。
+
 Birdtie 当前身份和 Agent 权限边界以 [Accepted Agent Identity and Ownership Model](AGENT-IDENTITY-AND-OWNERSHIP-MODEL.md) 为准；早期复用表中平行 City Agent 的表述已被 shared Agent Runtime + CityContext 设计替代。
+
+2026-10-12 Now 地图设计研究补充：用户要求地点与动态逐点展示、密集时保留淡色单点，取消数字聚合和“放大后才散开”。只读复核 Civu `docs/requirements/REQ-283-compact-category-map-markers.md` 的 2026-09-05 用户修订，以及 `Civu-client/lib/src/services/explore_map_marker_density.dart:80–114` 的逐点布局/空聚合集合、REQ-437 的圆地点/方拍摄点后，形成 Birdtie 自有可点击设计稿与 [第四轮说明](../ux/designs/2026-10-12-now-composer/REVISION-04.md)。仅借鉴视觉和交互概念，没有复制 Civu 业务代码、社交内容或用户数据，没有改生产地图策略/原队列；后续 LOD 和预算的隐藏规则不被当成本轮全显要求。预览纯底图沿用本仓已获准的 Mapbox 样式与现有公开配置，静态图片内不含凭据，动态为独立演示数据。实际原生实现、权限和性能仍待单独验证，既有发布门槛不变。
 
 2026-09-30 Birdtie V2 补充：Agent-first 首页复用的是本仓已有的 `PublicCityMapView`、原生 Mapbox adapter、`PublicCityController` 和 City API。新增 Entity Layer、Agent Workspace 状态、规则查询及任务历史均为 Birdtie 自有实现；没有从 Civu 仓库复制代码或引入新的 Civu 运行时依赖。已审核 Activity 仅通过关联的公开点精度 Place 提供地图坐标；客户端不推测私有位置。未配置 API 时的演示 People、Group、Activity 地图实体与真实 API 模型隔离。
 
@@ -136,3 +140,50 @@ Civu 根仓是编排仓，不直接承载正式业务应用代码；由以下独
 本轮先前的网页公开地图令牌在真机及有限 HTTP 诊断中出现“样式 200、瓦片 403”。用户提供的设置截图确认它仅允许 `http://localhost:7357`，而 Mapbox 的 URL restriction 不支持原生移动 SDK。此结论只针对该令牌与构建，不覆盖或撤销此前版本的地图证据。
 
 2026-10-08 用户另提供移动端公开令牌后，实际瓦片预检 HTTP 200，Android build04 在 Xiaomi 25098PN5AC / Android 16 已显示 Mapbox 底图，完成开发地点卡片→地图→原生领域详情→返回流程。凭据仅存被 Git 忽略的本地配置，未从 Civu 复制。对应 APK、源码及视频 hash 见 `work/ui-repair-2026-10-07/device/BUILD04-EVIDENCE.json`。这些地点仍是 dev-seed 开发示例；底图可用不等于真实城市供给、联网发现或基础 Agent 已完成。
+
+## 9. 2026-10-10 Now UI V2 地图展示复核
+
+用户指定 V2 规范，本轮只读 Civu-client，本地 HEAD `1bbf0613b513001447f326225c944c1a1fbd8e8f`。前三个指定来源的实际 blob 已匹配：`assets/config/poi-display-config.json` 为 `3a0bd10a1d035b637d6ea65263a5655b6df46c29`、`lib/src/services/poi_display_policy.dart` 为 `47412559743b3862e738741fdbe9de5bcf18d11f`、`lib/src/widgets/civu_explore_map.dart` 为 `994d1819f699ae376a2302da2130904c21eb5244`。
+
+配置状态仍是 **proposed**（2.0.0，2026-09-01）。实际 loader 读取 type/context/minZoom/eligibility/预算，ExploreMap 转交 renderer；本地 Mapbox renderer 的 density 值仍硬编码为104/86/68/54/44，兼容cluster返回空groups，地图坐标投影仍用256-world推算。因此不能把配置中的全部值或文件名视为已部署/已验收行为。
+
+BirdTie 只借鉴缩放分级、局部密度、场地唯一锚点、选择/任务保护和不裁列表的原则；使用自身现有实体/ACL、Mapbox Flutter锁定2.26.0的SDK屏幕投影及原annotation差分。未复制整页、权限、数据、未发布taxonomy或Civu算法。实际源、SDK单位、测试/真机边界详见 `docs/testing/evidence/now-ui-v2-2026-10-10/MAP-V2-ROOT-CAUSE.md`。这些参考核验不替代 BirdTie 本轮真机验收、供应商归属和发布门槛。
+
+## 10. 2026-10-14 地图内容呈现增量
+
+用户明确选定地图执行方案，原件 `C:\Users\chens\Documents\Codex\2026-10-13\d-project-birdtie-docs-testing-evidence\outputs\BIRDTIE-MAP-CONTENT-EXECUTION-SPEC-2026-10-14.md` 已逐字节复制到 `D:\Project\birdtie\docs\product\BIRDTIE-MAP-CONTENT-EXECUTION-SPEC-2026-10-14.md`，SHA256 `f6e75377a5135c90a179522ff27c815641bc0d14cf05052bf0571175048870c3`。接续正式仓当前未提交树和原BT-FIX-NOW-UI-001；先完成正在进行的B5/C1/143客户端合包自然检查点，再优先地点照片/近30天当前可见动态计数，随后公开Moment获准派生图。旧队列状态、依赖、lease和历史证据保留，不重开历史DONE、不另建任务队列。
+
+只读参考Civu-client HEAD `1bbf0613b513001447f326225c944c1a1fbd8e8f` 的 `explore_map_marker_icon.dart`、`persistent_map_host.dart`、`explore_map_marker_layout.dart`、`persistent_map_scene.dart`。借鉴圆地点、方动态、轻标签和稳定详情概念；实际28dp/36dp/16dp及同ID全显沿Birdtie明确方案实现，不复制Civu预算、红点已读、去重、数据或业务代码。许可边界仍按原矩阵，不新增依赖或搬凭据、旧Session、媒体、分类素材。原视觉图只为视觉参考，不授截图内容迁移。
+
+Birdtie原138/140地点媒体、PlaceHistory近30天授权集合、typed map current source/read lease与原详情继续复用。地图照片退回同点符号与实体失权退休分开；地图媒体仅有界临时内存，实体/media/version/SHA/权限/DPR/形状参与key、迟到结果复核。Moment点位仍关联Place，不能称拍摄点。未读合同缺失不画红点；私人图/EXIF不会随文字公开自动公开。
+
+本节为来源和实施边界记录，尚不证明地图图片、公开动态媒体、provider/真机/真实权限验收已通过；对应检查/产物按后续实际批次封存，ClosedPilot/ConsumerBeta继续NO。
+
+2026-10-14 Map1已实际接通Birdtie原138/140照片→typed-map-v3→原MapCanvas及当前三renderer代码，圆28/36/16与方记录符号沿上述用户方案；真实完整近期计数沿原PlaceHistory权限集合，未借Civu未读/去重/坐标算法。原生PG/API、实际JPEG像素与版本/ABA、正常组件图、API/APK/Webbc7构建和隔离Android安装已封存于 `docs/testing/evidence/remaining-execution-20261014/batch-c/checkpoint-map1-moment144/receipt.json`。真机现用缺图符号、没有获准真实Place图片；公开Moment图片Map2尚待本轮下一步编码，AMap/Mapbox Web真实媒体与iOS未运行，发布门槛仍NO。旧边界与证据不撤销。
+
+2026-10-14 Map2已沿Birdtie原Moment、138/140 Place媒体及native控制帧实现独立145明确公开派生图→public detail-v3/map-v4→方形照片与原选点，Civu仅为已授权交互概念参照，不复制业务/media/Session。API/APK/Webbc8、原生隔离PG与实际JPEG/widget像素证据封存在 `docs/testing/evidence/remaining-execution-20261014/batch-c/checkpoint-map2-public-moment145/receipt.json`。真机当前仍无获准实图，旧新手机镜头不匹配；真实照片权利、Web媒体、iOS/全站体验NOT_RUN，发布NO。上文Map2未实施为历史时间点，由本段接续，不删除原证据。
+
+2026-10-14 杭州真实数据接续：已核对原聊天两个直接用户消息的远端连接/适配导入和唯一Birdtie入口授权；明确选择的交接原件复制到 docs/migration/HANGZHOU-BIRDTIE-EXECUTION-2026-10-14.md（原件和目标SHA256 e114dd0769f7ec6a85a577b43a9d93ecbbbdf666ea8a92d92a1d040a78d89c45）。加密DB/媒体备份及DPAPI密钥仍在原受限Documents目录，未复制私人数据到仓库。Docker隔离源birdtie-civu-restore-20261014已复核network none/无端口/tmpfs；原库不成为Birdtie运行库。先完成当前本机合包，再实施Birdtie自有extractor/稳定映射/独立库/身份续接和受控Linux部署；只迁获准数据语义，不复制旧业务schema或Session。实际迁移/远端切流尚未完成，费用和不可恢复资源删除未授权，原发布门槛保留。
+
+
+2026-10-15 原生146旧内容档案：Birdtie独立实现29表/396列closed extractor、schema/snapshot/文件摘要对账、20 owner永久映射与103旧Note最小私人档案。原Civu/DPAPI密钥/真实JSON仍受限仓外，未复制业务代码或旧schema；实际编译CLI对真实源prepare得到20owner/83现存/20墓碑，未native apply/激活。导入模型不搬credential/Auth/Session/公开授权，默认Account及Agent暂停/private/UNCLAIMED。146仅在owned QA及独立synthetic子库验证，旧DDL/QA原表计数未动；媒体仍UNAVAILABLE，Place/收藏/集合/CRS/rights有依赖继续deferred。实际本地API/APK/Web/Linux cross-build与新本人档案界面证据见batch-c/checkpoint-legacy-owner-archive146；不是旧用户登录、公网切流或全站验收。
+
+## 11. 2026-10-15 动态通知和好友闭环复核
+
+用户要求先跑通页面上的动态发布、修改、查看、删除、通知和好友，并整理可由 Codex 接续的完整清单。原 `BT-FIX-NOW-UI-001` 增量规范位于 [动态通知和好友闭环执行清单](../product/BIRDTIE-SOCIAL-CORE-EXECUTION-SPEC-2026-10-15.md)，接入原 live 队列与执行主提示；SOC 编号仅是父项检查点，不新建功能队列或改历史 DONE。
+
+本次只读 Civu-client HEAD `1bbf0613b513001447f326225c944c1a1fbd8e8f`、Civu-server HEAD `0489536a0eb0792deff7793c8b143ad3e741d5ce`。根及主要子仓仍未找到明确业务 LICENSE/COPYING/NOTICE；客户端 AMap package 的许可不覆盖社交业务代码。Civu 页面深度依赖 Dio/Riverpod/GoRouter、旧 auth、follows/friendships、Postgres、媒体和原生推送，不能作为 Birdtie 直接复制模块。只借鉴用户结果、稳定实体、版本、状态和失效处理，继续 Birdtie 自有领域实现；没有复制代码、旧 schema、内容、媒体、凭据或 Session，没有改 Civu 文件或执行 Civu 测试/构建。
+
+| 能力 | 具体只读来源，Client 相对 `D:\Program\Civu\Civu-client\lib\src`，Server 相对 `D:\Program\Civu\Civu-server\api\internal` | 本轮 Birdtie 决定 |
+|---|---|---|
+| 发布、编辑、查看和删除 | Client `app_router.dart:183/220/225`、`screens/content_detail_screen.dart:898`；Server `httpapi/notes_handlers.go:184/310/402`、`store/notes_postgres.go:291/612/713` | 借鉴同 ID 详情与本人操作；先补 Birdtie 公开编辑和管理入口，撤回后端已有。Civu 软删不代表即时物理擦除媒体。 |
+| 版本与重试 | Server `notes_handlers.go:328/407`；Client `api/api_client.dart:428/433/446/452` | Civu If-Match 可选且客户端编辑/删除不传；串文每调用生成新时间戳幂等 key。不能直接当 Birdtie 严格并发或未知结果保障；使用本仓具体批准、revision、稳定 operation 和原操作回执。 |
+| 串文 | Server `store/note_types.go:187`、`notes_thread_postgres.go:11/66/168`；Client `screens/publish_moment_screen.dart:3544` | 原子创建、共享受众及每条独立媒体/地点可参考。Civu 串文编辑是循环逐条操作，不称原子编辑；Birdtie 不用循环发普通动态替代串文。 |
+| 通知 | Server `store/notification_queries.go:138/396/411/431/446/455`、`notification_cleanup_postgres.go:55/64`；Client `screens/notifications_screen.dart:591/673/947` | 已见与已读分开、批量动作有本人/分类/快照边界、失效目标去敏感摘要。复用 Birdtie 原 Inbox，补权威剩余计数和候选结果入口，不另建收件箱。 |
+| 好友与关注 | Server `store/friends_postgres.go:97/119/185/228`、`messaging_workspace.go:324/336`；Client `screens/add_friends_screen.dart:174`、`follow_and_friend_requests_screen.dart:36` | Civu 有独立 friendship，但申请额外要求互关；Birdtie 继续当前 Connection 双向同意与独立 Follow，不搬互关前置。 |
+| 好友受众冲突 | Server `store/notes_postgres.go:722/724`；Client `screens/publish_moment_screen.dart:3533` | Civu friends 可见实际判断双向 follows，未使用独立 accepted friendship。Birdtie 不复制这套 ACL；未来受限 Moment 受众须有自身统一合同。 |
+| 私信和推送 | Server `store/messaging_postgres.go:42/62/97`、`mutual_follow_messaging.go:65/98/104`；Client `messaging/push_service.dart:10/73/214` | 借鉴当前参与者/Block/隐私复验和账号绑定推送。互关自动建会话、接受请求及自动问候不迁移；站内通知与系统后台送达分开验收。 |
+
+Birdtie 当前工作树核对：144 UPDATE 只允许私人草稿，公开撤回及地点详情入口已有；公开 publication 当前 revision/snapshot 校验不等于持久原操作回执，补未知结果事实时不能仅按 Moment 当前 published 状态推定原提交。145 已实现独立公开单图，但 Now 图片/视频 selection 尚未形成完整公开图文流程。本人记录最多100条，作者阅读是当前地图范围摘要。通知点击已读、主要深链及申请处理已接；候选审核结果缺直达目标，已读后全局计数未知被首页当作0。Now 旧好友管理回调没有调用点，原移除/屏蔽/举报组件需补可达入口。当前没有完整城市/关注动态列表、动态点赞评论或原子串文，不以旧 DONE 推断它们存在。
+
+本次仅规划与执行接入：功能改码、受影响运行、视觉和新包交付均未在本聊天执行。后续以原队列、当前源码及实际证据更新，优先合批编码和编译，正常字号、不录屏，原身份、媒体、迁移和发布门槛保持。

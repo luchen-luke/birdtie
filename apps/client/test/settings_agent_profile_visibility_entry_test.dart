@@ -92,8 +92,8 @@ Future<void> _tap(WidgetTester t, Finder f) async {
 }
 
 Future<void> _entry(WidgetTester t) async {
-  await _visible(t, find.widgetWithText(ListTile, '各项资料的可见范围'));
-  await _tap(t, find.widgetWithText(ListTile, '各项资料的可见范围'));
+  await _visible(t, find.widgetWithText(ListTile, '资料可见范围'));
+  await _tap(t, find.widgetWithText(ListTile, '资料可见范围'));
 }
 
 Future<void> _choose(WidgetTester t, String field, String audience) async {
@@ -148,19 +148,19 @@ void main() {
       ),
     );
     await t.pumpAndSettle();
-    for (var i = 0; i < 12 && find.text('各项资料的可见范围').evaluate().isEmpty; i++) {
+    for (var i = 0; i < 12 && find.text('资料可见范围').evaluate().isEmpty; i++) {
       await t.drag(find.byType(ListView).first, const Offset(0, -320));
       await t.pumpAndSettle();
     }
     expect(
-      find.text('各项资料的可见范围'),
+      find.text('资料可见范围'),
       findsOneWidget,
       reason: '实际Settings没有十一字段受众管理的消费入口',
     );
-    await t.ensureVisible(find.text('各项资料的可见范围'));
+    await t.ensureVisible(find.text('资料可见范围'));
     await t.pumpAndSettle();
-    expect(find.text('各项资料的可见范围').hitTestable(), findsOneWidget);
-    await t.tap(find.text('各项资料的可见范围'));
+    expect(find.text('资料可见范围').hitTestable(), findsOneWidget);
+    await t.tap(find.text('资料可见范围'));
     await t.pumpAndSettle();
     expect(
       wire.sent

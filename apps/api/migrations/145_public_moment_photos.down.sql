@@ -1,0 +1,11 @@
+DO $$ BEGIN IF EXISTS(SELECT 1 FROM public_moment_photo_operations) OR EXISTS(SELECT 1 FROM public_moment_photos) THEN RAISE EXCEPTION 'public Moment photo history prevents downgrade';END IF;END $$;
+DROP TRIGGER public_moment_photos_retire ON moments;
+DROP FUNCTION birdtie_retire_public_moment_photos();
+DROP TABLE public_moment_photo_operations;
+DROP FUNCTION birdtie_guard_public_moment_photo_operation();
+DROP FUNCTION birdtie_purge_public_moment_photo_derivatives(integer);
+DROP FUNCTION birdtie_public_moment_photo_metadata(uuid,uuid,timestamptz);
+DROP FUNCTION birdtie_public_moment_photo_current(uuid,uuid,timestamptz);
+DROP FUNCTION birdtie_public_moment_photo_proof(uuid,uuid);
+DROP FUNCTION birdtie_public_moment_photo_source(uuid,timestamptz);
+DROP TABLE public_moment_photos;

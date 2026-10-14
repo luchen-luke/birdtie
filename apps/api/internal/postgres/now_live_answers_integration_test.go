@@ -98,7 +98,7 @@ func nowLiveDriverFixtureFromNative(t *testing.T, native *liveNativeFixture) *no
 	if d.task.ContextType != "CITY" || d.task.ContextID == "" || d.task.CityID != city {
 		t.Fatal("original SaveTask did not resolve the owned public CITY")
 	}
-	d.options = NowLiveAnswerOptions{OwnerID: b.person.ID, ConfigurationVersion: d.base.configuration.route.Version, RouteRevision: d.base.configuration.route.Revision, SearchPriceVersion: d.base.call.Base.Version, ModelPriceVersion: d.base.token.Base.Version}
+	d.options = NowLiveAnswerOptions{OwnerID: b.person.ID, ConfigurationVersion: d.base.configuration.route.Version, RouteRevision: d.base.configuration.route.Revision, SearchPriceVersion: d.base.call.Base.Version, ModelPriceVersion: d.base.token.Base.Version, SearchRetentionConfirmed: true} // Synthetic fixture; no supplier results.
 	taskID := d.task.ID
 	t.Cleanup(func() {
 		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)

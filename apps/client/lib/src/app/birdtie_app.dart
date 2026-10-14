@@ -3,8 +3,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
+import '../auth/authenticated_client.dart';
 import '../auth/birdtie_auth_controller.dart';
+import '../city/city_catalog_recovery.dart';
 import '../city/public_city_controller.dart';
+import '../city/exploration_city_store.dart';
 import '../content/private_moment_controller.dart';
 import '../workspace/map_workspace.dart';
 import 'birdtie_surfaces.dart';
@@ -36,9 +39,12 @@ class BirdtieShell extends StatefulWidget {
   State<BirdtieShell> createState() => _BirdtieShellState();
 }
 
-class _BirdtieShellState extends State<BirdtieShell> {
+class _BirdtieShellState extends State<BirdtieShell>
+    with WidgetsBindingObserver {
   final _auth = BirdtieAuthController();
   late final PublicCityController _city;
+  late final CityCatalogRecovery _cityRecovery;
+  late final AuthenticatedClient _privateClient;
   late final PrivateMomentController _moments;
   bool _wasSignedIn = false;
 
@@ -47,15 +53,34 @@ class _BirdtieShellState extends State<BirdtieShell> {
     super.initState();
     _city = PublicCityController(
       authorizationHeader: () => _auth.authorizationHeader,
+      explorationStore: const SecureExplorationCityStore(),
+    );
+    _privateClient = AuthenticatedClient(
+      auth: _auth,
+      onUnauthorized: (token) async {
+        await _auth.invalidateRejectedSession(token);
+      },
     );
     _moments = PrivateMomentController(
       authorizationHeader: () => _auth.authorizationHeader,
       ownerID: () => _auth.accountID,
       identityChanges: _auth,
+      client: _privateClient,
     );
     _auth.addListener(_onAuthChange);
+    WidgetsBinding.instance.addObserver(this);
+    _cityRecovery = CityCatalogRecovery(_city);
     unawaited(_auth.initialize());
-    unawaited(_city.loadCities());
+    _cityRecovery.start(
+      foreground:
+          WidgetsBinding.instance.lifecycleState == null ||
+          WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed,
+    );
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    _cityRecovery.setForeground(state == AppLifecycleState.resumed);
   }
 
   void _onAuthChange() {
@@ -66,10 +91,13 @@ class _BirdtieShellState extends State<BirdtieShell> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _cityRecovery.dispose();
     _auth.removeListener(_onAuthChange);
-    _auth.dispose();
     _city.dispose();
     _moments.dispose();
+    _privateClient.close();
+    _auth.dispose();
     super.dispose();
   }
 

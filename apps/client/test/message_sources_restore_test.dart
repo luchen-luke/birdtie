@@ -325,10 +325,19 @@ void main() {
         findsOneWidget,
       );
     }
-    expect(find.text('第 1 轮持久回答。[1]'), findsOneWidget);
-    expect(find.text('第 2 轮持久回答。[1]'), findsOneWidget);
-    expect(find.text('[1] Aberdeen Maritime Museum 官网 · 来源原名'), findsOneWidget);
-    expect(find.text("[1] St. Mary's 开放时间 · 来源原名"), findsOneWidget);
+    expect(find.textContaining('第 1 轮持久回答。'), findsOneWidget);
+    expect(find.textContaining('第 2 轮持久回答。'), findsOneWidget);
+    expect(find.text('全部来源 1'), findsNWidgets(2));
+    expect(find.text('Aberdeen Maritime Museum 官网'), findsNothing);
+    expect(find.text("St. Mary's 开放时间"), findsNothing);
+    final toggles = find.byKey(const Key('agent-answer-sources-toggle'));
+    for (var index = 0; index < 2; index++) {
+      await t.ensureVisible(toggles.at(index));
+      await t.tap(toggles.at(index));
+      await t.pump();
+    }
+    expect(find.text('Aberdeen Maritime Museum 官网'), findsOneWidget);
+    expect(find.text("St. Mary's 开放时间"), findsOneWidget);
     expect(
       find.byKey(const Key('agent-entity-place:original-place')),
       findsOneWidget,
@@ -395,10 +404,23 @@ void main() {
       ),
     );
     await t.pumpAndSettle();
-    expect(find.text('这条回答的来源'), findsNWidgets(2));
+    expect(find.text('全部来源 1'), findsNWidgets(2));
     expect(find.text('来源已失效，请重新查询。'), findsNothing);
+    final originalToggle = find
+        .byKey(const Key('agent-answer-sources-toggle'))
+        .first;
+    await t.ensureVisible(originalToggle);
+    await t.tap(originalToggle);
+    await t.pump();
     final earlier = find.byKey(const ValueKey('agent-answer-source-web-1'));
     expect(t.widget<TextButton>(earlier).onPressed, isNotNull);
+    // Expanding one complete source moves later children beyond ListView's
+    // render cache. Collapse it before checking the two visible cards; the
+    // retained replies themselves must remain unchanged throughout.
+    expect(workspace.replies, hasLength(2));
+    expect(workspace.replies.first.result, same(firstReply));
+    await t.tap(originalToggle);
+    await t.pump();
     expect(
       find.byKey(const Key('agent-entity-place:original-place')),
       findsNWidgets(2),
@@ -427,6 +449,8 @@ void main() {
       ),
     );
     await t.pumpWidget(page());
+    await t.tap(find.text('全部来源 1'));
+    await t.pump();
     final button = find.byKey(const ValueKey('agent-answer-source-web-1'));
     expect(t.getSize(button).height, greaterThanOrEqualTo(48));
     await t.tap(button);

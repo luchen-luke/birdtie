@@ -13,6 +13,8 @@ import 'package:birdtie_client/src/workspace/entity_peek_card.dart';
 import 'package:birdtie_client/src/workspace/map_entities.dart';
 import 'package:birdtie_client/src/workspace/now_discovery_controller.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show RenderParagraph;
+import 'package:birdtie_client/src/workspace/now_ui_tokens.dart';
 import 'now_context_query_api_test.dart' show onlineWire, onlineIntentID;
 import 'package:birdtie_client/src/workspace/now_context_query_api.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -181,7 +183,10 @@ void main() {
         theme.colorScheme.surface,
       );
       final answer = tester.widget<Text>(find.text(wire.answer));
-      expect(answer.style?.color, theme.colorScheme.onSurface);
+      expect(
+        answer.style?.color,
+        NowUiTokens.reviewedTypography(theme).body.color,
+      );
       expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox());
       ws.dispose();
@@ -671,39 +676,45 @@ void main() {
     workspace.dispose();
   });
 
-  testWidgets('entity peek wraps long titles to two lines and stays separate', (
-    tester,
-  ) async {
-    const title = '一段很长的活动标题，用于确认地图预览仍然易读并且不会挤压查看操作';
-    var opened = false;
-    const entity = MapEntity(
-      id: 'activity:test',
-      kind: MapEntityKind.activity,
-      title: title,
-      subtitle: '即将开始',
-      latitude: 57.14,
-      longitude: -2.1,
-    );
-    await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
-          body: Center(
-            child: SizedBox(
-              width: 360,
-              child: EntityPeekCard(
-                entity: entity,
-                onOpen: () => opened = true,
+  testWidgets(
+    'entity peek preserves the full long title and keeps the open action reachable',
+    (tester) async {
+      const title = '一段很长的活动标题，用于确认地图预览仍然易读并且不会挤压查看操作';
+      var opened = false;
+      const entity = MapEntity(
+        id: 'activity:test',
+        kind: MapEntityKind.activity,
+        title: title,
+        subtitle: '即将开始',
+        latitude: 57.14,
+        longitude: -2.1,
+      );
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Center(
+              child: SizedBox(
+                width: 360,
+                child: EntityPeekCard(
+                  entity: entity,
+                  onOpen: () => opened = true,
+                ),
               ),
             ),
           ),
         ),
-      ),
-    );
-    final titleWidget = tester.widget<Text>(find.text(title));
-    expect(titleWidget.maxLines, 2);
-    await tester.tap(find.text('查看'));
-    expect(opened, isTrue);
-  });
+      );
+      final paragraph = tester.renderObject<RenderParagraph>(find.text(title));
+      expect(paragraph.didExceedMaxLines, isFalse);
+      final titleRect = tester.getRect(find.text(title));
+      final openRect = tester.getRect(find.text('查看'));
+      expect(titleRect.height, greaterThan(24));
+      expect(titleRect.right, lessThanOrEqualTo(openRect.left));
+      expect(tester.takeException(), isNull);
+      await tester.tap(find.text('查看'));
+      expect(opened, isTrue);
+    },
+  );
 
   testWidgets('area pulse reflects in-bounds activities and requires a tap', (
     tester,

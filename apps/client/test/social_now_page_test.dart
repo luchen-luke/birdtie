@@ -100,7 +100,7 @@ void main() {
     });
     await tester.pumpWidget(nowHarness(auth, client));
     await tester.pumpAndSettle();
-    expect(find.text('好友明确分享的意图'), findsOneWidget);
+    expect(find.text('好友的想法'), findsOneWidget);
     expect(find.textContaining('private'), findsNothing);
     await tester.tap(find.text('好友想一起散步 30'));
     await tester.pumpAndSettle();
@@ -171,9 +171,9 @@ void main() {
     await tester.sendKeyEvent(LogicalKeyboardKey.tab);
     await tester.pump();
     expect(tester.takeException(), isNull);
-    await tester.scrollUntilVisible(find.text('管理我的活动意图'), 300);
+    await tester.scrollUntilVisible(find.text('调整找活动需求'), 300);
     await tester.pumpAndSettle();
-    expect(find.text('管理我的活动意图').hitTestable(), findsOneWidget);
+    expect(find.text('调整找活动需求').hitTestable(), findsOneWidget);
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox());
     semantics.dispose();

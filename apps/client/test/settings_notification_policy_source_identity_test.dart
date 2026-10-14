@@ -74,7 +74,7 @@ Future<void> _show(WidgetTester t, Finder target) async {
 Future<void> _open(WidgetTester t, _Scenario s) async {
   await t.pumpWidget(_home(s));
   await t.pumpAndSettle();
-  final entry = find.widgetWithText(ListTile, '通知设置');
+  final entry = find.widgetWithText(ListTile, '通知偏好');
   await _show(t, entry);
   await t.tap(entry);
   await t.pumpAndSettle();

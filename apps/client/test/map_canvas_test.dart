@@ -1,8 +1,11 @@
 import 'dart:async';
 import 'package:birdtie_client/src/workspace/remote_agent_task_source.dart';
+import 'package:birdtie_client/src/workspace/external_place_history_store.dart';
 import 'package:birdtie_client/src/city/public_city_controller.dart';
 import 'package:birdtie_client/src/city/public_city_map.dart';
 import 'package:birdtie_client/src/workspace/agent_workspace_controller.dart';
+import 'package:birdtie_client/src/workspace/agent_result_projection.dart';
+import 'package:birdtie_client/src/workspace/agent_reply_membership.dart';
 import 'package:birdtie_client/src/workspace/map_canvas.dart';
 import 'package:birdtie_client/src/workspace/map_entities.dart';
 import 'package:birdtie_client/src/workspace/now_discovery_controller.dart';
@@ -14,6 +17,9 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:birdtie_client/src/workspace/map_layers_api.dart';
 import 'package:birdtie_client/src/workspace/map_layers_controller.dart';
+import 'package:birdtie_client/src/workspace/map_media_controller.dart';
+import 'map_media_contract_test.dart' show mediaView;
+import 'map_media_controller_test.dart' show mediaWait;
 import 'map_layers_api_test.dart' as typed;
 import 'now_scope_recovery_test.dart' show NowFixtureCity, NowFixtureSource;
 import 'now_scope_recovery_test.dart' show NowFixture, nowField;
@@ -38,7 +44,98 @@ class _MapCity extends PublicCityController {
 }
 
 void main() {
-  for (final mode in [AgentContentMode.results, AgentContentMode.conversation]) {
+  testWidgets(
+    'Map1 failed photo stays same typed point and independent count expiry preserves task selection map',
+    (t) async {
+      final city = _MapCity(),
+          ws = AgentWorkspaceController(),
+          map = MapViewportState(),
+          discovery = NowDiscoveryController(authorizationHeader: () => null);
+      final layers = MapLayersController(
+        api: MapLayersApi(apiBaseUrl: 'http://owned.test'),
+        authorizationHeader: () => null,
+        organizationWorkspaceID: () => null,
+      );
+      var now = DateTime.now().toUtc(), photoGets = 0;
+      final dto = mediaView(now)..['cityId'] = 'test-city';
+      layers
+        ..cityID = 'test-city'
+        ..publicView = TypedMapView.decode(
+          dto,
+          'test-city',
+          typed.mapTestBounds,
+          false,
+          now: now,
+        );
+      final media = MapMediaController(
+        client: MockClient((_) async {
+          ++photoGets;
+          return http.Response('', 404);
+        }),
+        apiBaseUrl: 'http://owned.test',
+        now: () => now,
+      );
+      final id = layers.items.single.mapID;
+      ws.task = const AgentTask(
+        id: 'preserved-map1-task',
+        query: '本人未发送查询',
+        status: 'COMPLETED',
+      );
+      ws.selectEntity(id);
+      await t.pumpWidget(
+        MaterialApp(
+          home: MapCanvas(
+            city: city,
+            workspace: ws,
+            mapState: map,
+            discovery: discovery,
+            layers: layers,
+            media: media,
+            mediaOwnerID: () => null,
+            mediaAuthorizationHeader: () => null,
+            onInitialViewport: (_) {},
+            onMapUnavailable: (_) {},
+          ),
+        ),
+      );
+      await mediaWait(t, () => photoGets == 1 && media.inFlight == 0);
+      final element = find.byType(PublicCityMapView).evaluate().single;
+      final initial = t
+          .widget<PublicCityMapView>(find.byType(PublicCityMapView))
+          .entities
+          .single;
+      expect(initial.mediaPixels, isNull);
+      expect(initial.recentMoments!.count, 241);
+      now = now.add(const Duration(seconds: 50));
+      await t.pump(const Duration(seconds: 50));
+      await t.pump();
+      final current = t
+          .widget<PublicCityMapView>(find.byType(PublicCityMapView))
+          .entities
+          .single;
+      expect(current.recentMoments, isNull);
+      expect(
+        (current.id, current.latitude, current.longitude),
+        (initial.id, initial.latitude, initial.longitude),
+      );
+      expect(layers.publicView, isNotNull);
+      expect(ws.selectedEntityId, id);
+      expect(ws.task!.id, 'preserved-map1-task');
+      expect(photoGets, 1);
+      expect(find.byType(PublicCityMapView).evaluate().single, same(element));
+      await t.pumpWidget(const SizedBox());
+      media.dispose();
+      layers.dispose();
+      discovery.dispose();
+      map.dispose();
+      ws.dispose();
+      city.dispose();
+    },
+  );
+  for (final mode in [
+    AgentContentMode.results,
+    AgentContentMode.conversation,
+  ]) {
     testWidgets('地图来源选择从expanded$mode显露真实轻卡并保留任务与安全草稿', (t) async {
       t.view.physicalSize = const Size(1220, 2656);
       t.view.devicePixelRatio = 3.25;
@@ -67,17 +164,23 @@ void main() {
       view.onEntitySelected!(pin);
       await t.pumpAndSettle();
       expect(ws.sheetExtent, AgentSheetExtent.peek);
-      // Opening the editor expands the shared message flow in either view.
-      expect(ws.contentMode, AgentContentMode.conversation);
+      // Closing editing restores the previously chosen presentation mode.
+      expect(ws.contentMode, mode);
       expect(ws.selectedEntityId, pin.id);
       expect(find.byType(EntityPeekCard).hitTestable(), findsOneWidget);
-      expect(t.widget<EntityPeekCard>(find.byType(EntityPeekCard)).entity.id, pin.id);
+      expect(
+        t.widget<EntityPeekCard>(find.byType(EntityPeekCard)).entity.id,
+        pin.id,
+      );
       expect(ws.task, same(task));
       expect(ws.result, same(result));
       expect(ws.taskEpoch, epoch);
       expect(ws.conversation, history);
       expect(t.widget<TextField>(nowField()).controller!.text, '尚未发送的安全地图草稿');
-      expect(identical(map, find.byType(PublicCityMapView).evaluate().single), isTrue);
+      expect(
+        identical(map, find.byType(PublicCityMapView).evaluate().single),
+        isTrue,
+      );
       expect(f.requests, hasLength(1));
       ws.setSheetExtent(AgentSheetExtent.expanded);
       await t.pumpAndSettle();
@@ -104,8 +207,14 @@ void main() {
     await t.pumpAndSettle();
     final view = t.widget<PublicCityMapView>(find.byType(PublicCityMapView));
     final pin = view.entities.first;
-    const unknown = MapEntity(id: 'activity:unknown-stale', kind: MapEntityKind.activity,
-        title: '旧未知引用', subtitle: '', latitude: 57, longitude: -2);
+    const unknown = MapEntity(
+      id: 'activity:unknown-stale',
+      kind: MapEntityKind.activity,
+      title: '旧未知引用',
+      subtitle: '',
+      latitude: 57,
+      longitude: -2,
+    );
     final task = ws.task, result = ws.result, epoch = ws.taskEpoch;
     view.onEntitySelected!(unknown);
     expect(ws.selectedEntityId, isNull);
@@ -131,7 +240,12 @@ void main() {
     await t.pumpAndSettle();
     final oldView = t.widget<PublicCityMapView>(find.byType(PublicCityMapView));
     final pin = oldView.entities.first;
-    await ws.submit('badminton weekend', [], [], cityID: f.city.selectedCity!.id);
+    await ws.submit(
+      'badminton weekend',
+      [],
+      [],
+      cityID: f.city.selectedCity!.id,
+    );
     ws.showContent(AgentContentMode.conversation);
     await t.pumpAndSettle();
     final task = ws.task, result = ws.result, epoch = ws.taskEpoch;
@@ -141,7 +255,9 @@ void main() {
     expect(ws.task, same(task));
     expect(ws.result, same(result));
     expect(ws.taskEpoch, epoch);
-    final currentView = t.widget<PublicCityMapView>(find.byType(PublicCityMapView));
+    final currentView = t.widget<PublicCityMapView>(
+      find.byType(PublicCityMapView),
+    );
     expect(currentView.entities.first.id, pin.id);
     currentView.onEntitySelected!(currentView.entities.first);
     await t.pumpAndSettle();
@@ -152,6 +268,143 @@ void main() {
     await t.pumpWidget(const SizedBox());
     await t.pumpAndSettle();
   });
+
+  for (final mutation in [
+    'none',
+    'version',
+    'title',
+    'summary',
+    'coordinates',
+    'anchor-place',
+    'scope',
+    'membership',
+    'withdraw',
+    'expired',
+    'task',
+  ]) {
+    testWidgets('同任务只读刷新 $mutation 后地图选择复核当前实体', (t) async {
+      final f = _NativePinFixture();
+      addTearDown(f.dispose);
+      await f.mount(t);
+      final ws = f.workspace(t);
+      await ws.submit('badminton', [], [], cityID: f.city.selectedCity!.id);
+      await t.pumpAndSettle();
+      final oldView = t.widget<PublicCityMapView>(
+        find.byType(PublicCityMapView),
+      );
+      final shown = oldView.entities.first;
+      final original = ws.result!, set = original.resultSet!;
+      final task = ws.task, epoch = ws.taskEpoch;
+      final history = List<AgentMessage>.of(ws.conversation);
+      final previous = set.items!.first;
+      final anchor = previous.anchor!;
+      final updated = AgentResultItem(
+        entity: previous.entity,
+        title: mutation == 'title' ? '${previous.title} 已变化' : previous.title,
+        summary: mutation == 'summary'
+            ? '${previous.summary} 已变化'
+            : previous.summary,
+        scope: mutation == 'scope' ? 'SELF_PRIVATE' : previous.scope,
+        sourceVersion: mutation == 'version'
+            ? 'changed-current-source'
+            : previous.sourceVersion,
+        detail: previous.detail,
+        share: previous.share,
+        anchor: AgentResultAnchor(
+          precision: anchor.precision,
+          latitude: mutation == 'coordinates'
+              ? anchor.latitude + .01
+              : anchor.latitude,
+          longitude: anchor.longitude,
+          placeID: mutation == 'anchor-place'
+              ? 'different-anchor-place'
+              : anchor.placeID,
+        ),
+      );
+      final items = mutation == 'withdraw'
+          ? <AgentResultItem>[]
+          : [updated, ...set.items!.skip(1)];
+      // A GET replaces the read projection, retaining the exact native task
+      // and membership. This controlled unit makes no network or model call.
+      final fresh = AgentResult(
+        entities: const [],
+        activities: original.activities,
+        places: original.places,
+        note: original.note,
+        taskID: original.taskID,
+        task: original.task,
+        resultSet: AgentResultSet(
+          id: mutation == 'membership'
+              ? 'different-current-membership'
+              : set.id,
+          schema: set.schema,
+          status: set.status,
+          entities: [for (final i in items) i.entity],
+          items: items,
+          generatedAt: set.generatedAt,
+          publicQueryContext: set.publicQueryContext,
+        ),
+        replyProjection: mutation == 'expired'
+            ? AgentReplyProjectionLifetime(
+                validUntil: DateTime.utc(1970),
+                current: () => false,
+              )
+            : null,
+      );
+      ws.result = fresh;
+      if (mutation == 'task') {
+        ws.task = AgentTask(
+          id: task!.id,
+          query: task.query,
+          status: task.status,
+          cityID: task.cityID,
+          intent: task.intent,
+          filters: task.filters,
+        );
+      }
+      final currentTask = ws.task;
+      ws.setSheetExtent(AgentSheetExtent.expanded);
+      await t.pumpAndSettle();
+      oldView.onEntitySelected!(shown);
+      await t.pumpAndSettle();
+      if (mutation == 'none') {
+        expect(ws.selectedEntityId, shown.id);
+        expect(ws.sheetExtent, AgentSheetExtent.peek);
+        expect(find.byType(EntityPeekCard).hitTestable(), findsOneWidget);
+      } else {
+        expect(ws.selectedEntityId, isNull);
+        expect(ws.sheetExtent, AgentSheetExtent.expanded);
+        expect(find.byType(EntityPeekCard), findsNothing);
+      }
+      if ([
+        'title',
+        'summary',
+        'coordinates',
+        'scope',
+        'withdraw',
+        'expired',
+      ].contains(mutation)) {
+        // A native cluster returns its original row to the latest callback.
+        // It may not select changed or retired content by ID alone either.
+        final latestView = t.widget<PublicCityMapView>(
+          find.byType(PublicCityMapView),
+        );
+        latestView.onEntitySelected!(shown);
+        await t.pumpAndSettle();
+        expect(ws.selectedEntityId, isNull);
+        expect(ws.sheetExtent, AgentSheetExtent.expanded);
+        expect(find.byType(EntityPeekCard), findsNothing);
+      }
+      expect(ws.task, same(currentTask));
+      expect(ws.result, same(fresh));
+      expect(ws.taskEpoch, epoch);
+      expect(ws.conversation, history);
+      expect(f.requests, hasLength(1));
+      expect(t.takeException(), isNull);
+      await t.pumpWidget(const SizedBox());
+      await t.pumpAndSettle();
+    });
+  }
 
   testWidgets('背景城市指引复用唯一顶部入口，任务ONLINE不重复并保持投影与旧callback', (t) async {
     final city = NowFixtureCity(selected: false);
@@ -281,6 +534,7 @@ void main() {
           authorizationHeader: () => null,
           client: client,
           apiBaseUrl: 'http://replayed-local-wire.test',
+          externalPlaceHistoryStore: MemoryExternalPlaceHistoryStore(),
         );
         final ws = AgentWorkspaceController(source: source),
             map = MapViewportState(),
@@ -497,6 +751,7 @@ void main() {
             'query': '权威原任务',
             'status': 'COMPLETED',
             'cityId': 'remote-authoritative-city',
+            'conversation': [],
           };
         } else {
           data['taskId'] = id;
@@ -513,6 +768,7 @@ void main() {
           authorizationHeader: () => null,
           client: client,
           apiBaseUrl: 'http://replayed-local-wire.test',
+          externalPlaceHistoryStore: MemoryExternalPlaceHistoryStore(),
         );
         final ws = AgentWorkspaceController(source: source)
           ..requireCity('badminton');
@@ -813,21 +1069,36 @@ class _NativePinFixture {
   final requests = <http.Request>[];
   late final client = MockClient((request) async {
     requests.add(request);
-    return http.Response(_capturedAnonymousPublicWire, 200,
-        headers: {'content-type': 'application/json; charset=utf-8'});
+    return http.Response(
+      _capturedAnonymousPublicWire,
+      200,
+      headers: {'content-type': 'application/json; charset=utf-8'},
+    );
   });
-  late final source = RemoteAgentTaskSource(cityID: () => city.selectedCity?.id,
-      authorizationHeader: () => null, client: client,
-      apiBaseUrl: 'http://replayed-native-pin-unit.test');
+  late final source = RemoteAgentTaskSource(
+    cityID: () => city.selectedCity?.id,
+    authorizationHeader: () => null,
+    client: client,
+    apiBaseUrl: 'http://replayed-native-pin-unit.test',
+  );
   Future<void> mount(WidgetTester t) async {
-    await t.pumpWidget(MaterialApp(home: MapWorkspace(
-      city: city, auth: shared.auth, moments: shared.moments,
-      agentTaskSource: source, seedClient: shared.client,
-      seedApiBaseUrl: shared.base,
-    )));
+    await t.pumpWidget(
+      MaterialApp(
+        home: MapWorkspace(
+          city: city,
+          auth: shared.auth,
+          moments: shared.moments,
+          agentTaskSource: source,
+          seedClient: shared.client,
+          seedApiBaseUrl: shared.base,
+        ),
+      ),
+    );
     await t.pumpAndSettle();
   }
-  AgentWorkspaceController workspace(WidgetTester t) => t.widget<MapCanvas>(find.byType(MapCanvas)).workspace;
+
+  AgentWorkspaceController workspace(WidgetTester t) =>
+      t.widget<MapCanvas>(find.byType(MapCanvas)).workspace;
   void dispose() {
     client.close();
     city.dispose();

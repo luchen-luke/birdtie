@@ -294,10 +294,15 @@ void main() {
       ),
     );
     await t.pump();
+    expect(find.textContaining("St. Mary's"), findsNothing);
+    await t.tap(find.text('全部来源 1'));
+    await t.pump();
     final button = find.byKey(const ValueKey('agent-answer-source-web-1'));
     expect(t.getSize(button).height, greaterThanOrEqualTo(48));
     expect(find.textContaining("St. Mary's"), findsOneWidget);
     expect(t.takeException(), isNull);
+    await t.ensureVisible(button);
+    await t.pumpAndSettle();
     await t.tap(button);
     await t.pump();
     expect(opened.single.toString(), 'https://official.example/opening');
@@ -399,7 +404,8 @@ void main() {
       ),
     );
     await t.pumpAndSettle();
-    expect(find.text('本轮实际来源说明。[1]'), findsOneWidget);
+    expect(find.textContaining('本轮实际来源说明。'), findsOneWidget);
+    expect(find.text('来源 1'), findsOneWidget);
     expect(
       find.byKey(const Key('agent-entity-place:original-place')),
       findsOneWidget,

@@ -1,0 +1,359 @@
+<div id="birdtie-now-preview" aria-label="BirdTie Now 交互设计稿">
+  <div class="bt-preview-head"><strong>BirdTie Now</strong><span>交互原型 · 演示数据</span></div>
+  <div class="bt-scenarios" aria-label="预览不同页面状态">
+    <button type="button" data-scene="map" aria-pressed="true">地图</button>
+    <button type="button" data-scene="input" aria-pressed="false">输入</button>
+    <button type="button" data-scene="answer" aria-pressed="false">回答</button>
+    <button type="button" data-scene="reading" aria-pressed="false">阅读</button>
+    <select aria-label="更多预览状态" id="bt-more-scenes"><option value="">更多状态</option><option value="attachments">＋材料与行动</option><option value="mention">@ 上下文引用</option><option value="draft">可编辑动态草稿</option><option value="voice">语音转写</option><option value="loading">正在整理</option><option value="empty">无结果</option><option value="error">服务异常</option></select>
+  </div>
+  <div class="bt-stage viz-dotted-background">
+    <div class="bt-phone" aria-label="手机 Now 页面">
+      <div class="bt-map" aria-label="阿伯丁演示地图">
+        <svg class="bt-map-drawing" viewBox="0 0 390 844" preserveAspectRatio="xMidYMid slice" role="img" aria-label="用于设计演示的地图几何，不代表实际道路或坐标">
+          <rect width="390" height="844" fill="#F0F0E9"/>
+          <path d="M362 0H390V844H279L323 685 304 511 371 329 337 177Z" fill="#CDDDE1"/>
+          <g fill="#DAE2CD"><path d="M0 150 102 119 123 230 16 257Z"/><path d="M225 112 319 98 331 181 242 209Z"/><path d="M42 431 124 399 143 471 62 504Z"/><path d="M6 591 81 570 105 648 25 683Z"/></g>
+          <g fill="#E4E3D9" stroke="#D9DACF"><path d="M149 167 211 153 232 226 163 246Z"/><path d="M241 240 312 220 329 290 260 310Z"/><path d="M126 299 195 278 219 354 151 374Z"/><path d="M212 401 286 382 307 467 231 483Z"/><path d="M151 517 217 495 239 577 173 600Z"/><path d="M76 695 140 674 165 760 95 783Z"/></g>
+          <g fill="none" stroke="#FFFFFF" stroke-width="14"><path d="M85-40 265 887"/><path d="M267-40 455 635"/><path d="M-80 287 390 158"/><path d="M-50 451 405 326"/><path d="M-70 597 349 483"/><path d="M-50 746 350 632"/></g>
+          <g fill="none" stroke="#D2CAB0" stroke-width="3"><path d="M31-20 227 860"/><path d="M-20 393 360 285"/></g>
+          <path d="M-12 794Q125 728 401 786" fill="none" stroke="#C0D2D3" stroke-width="22"/>
+          <g fill="#717A6E" font-family="sans-serif" font-size="11"><text x="27" y="201">ROSEMOUNT</text><text x="104" y="374">Union Street</text><text x="140" y="443">CITY CENTRE</text><text x="289" y="553">HARBOUR</text><text x="80" y="672" font-size="23">Aberdeen</text></g>
+        </svg>
+        <button type="button" class="bt-map-pin pin-museum" data-action="place"><span class="bt-pin-dot"></span>海事博物馆 <span class="bt-pin-count">3</span></button>
+        <button type="button" class="bt-map-pin pin-garden" data-action="walk"><i data-lucide="route" aria-hidden="true"></i>周末漫步</button>
+        <button type="button" class="bt-map-pin pin-moment" data-action="moment"><span class="bt-pin-dot"></span>小林 · 动态</button>
+        <div class="bt-map-credit">演示地图 · 非真实坐标</div>
+      </div>
+      <div class="bt-status"><span>9:41</span><div><i data-lucide="signal" aria-hidden="true"></i><i data-lucide="wifi" aria-hidden="true"></i><i data-lucide="battery-full" aria-hidden="true"></i></div></div>
+      <div class="bt-chrome"><button type="button" class="bt-round" data-action="sidebar" aria-label="打开会话与导航"><i data-lucide="menu" aria-hidden="true"></i></button><button type="button" class="bt-city" data-action="city">Aberdeen<i data-lucide="chevron-down" aria-hidden="true"></i></button><button type="button" class="bt-round" data-action="new" aria-label="新对话"><i data-lucide="square-pen" aria-hidden="true"></i></button></div>
+      <div class="bt-contact-rail" aria-label="联系人与消息"><button type="button" data-action="contacts" aria-label="查看联系人"><i data-lucide="users-round" aria-hidden="true"></i></button><button type="button" class="bt-avatar" data-action="contact" aria-label="小林">林</button><button type="button" class="bt-avatar bt-avatar-second" data-action="contact" aria-label="阿澈">澈</button><button type="button" data-action="inbox" aria-label="查看通知"><i data-lucide="inbox" aria-hidden="true"></i><span class="bt-notification-dot"></span></button></div>
+      <button type="button" class="bt-locate bt-round" data-action="locate" aria-label="查看定位授权"><i data-lucide="locate-fixed" aria-hidden="true"></i></button>
+      <section class="bt-sheet" aria-label="Now 对话与任务面板">
+        <div class="bt-sheet-head" hidden><button type="button" class="bt-handle" data-action="expand" aria-label="展开阅读"><span></span></button><div class="bt-sheet-title"><span id="bt-task-title">当前回答</span><div><button type="button" class="bt-icon-button" data-action="expand" aria-label="展开阅读"><i data-lucide="maximize-2" aria-hidden="true"></i></button><button type="button" class="bt-icon-button" data-action="close-result" aria-label="收起面板回到地图"><i data-lucide="chevron-down" aria-hidden="true"></i></button></div></div></div>
+        <div class="bt-result-content" aria-live="polite" hidden></div>
+        <div class="bt-jump" hidden><button type="button" class="bt-round" data-action="jump" aria-label="回到最新内容"><i data-lucide="arrow-down" aria-hidden="true"></i></button></div>
+        <div class="bt-composer-wrap">
+          <div class="bt-composer" aria-label="唯一 Now 输入框">
+            <div class="bt-materials" hidden></div>
+            <button type="button" class="bt-plus bt-icon-button" data-action="plus" aria-label="添加材料或创建内容" aria-expanded="false"><i data-lucide="plus" aria-hidden="true"></i></button>
+            <textarea rows="1" id="bt-input" placeholder="想探索什么…" aria-label="输入你的想法"></textarea>
+            <div class="bt-tools"><button type="button" class="bt-context-mode" data-action="context" hidden><i data-lucide="map-pin" aria-hidden="true"></i><span>Aberdeen</span></button><button type="button" class="bt-icon-button bt-mic" data-action="voice" aria-label="语音转文字"><i data-lucide="mic" aria-hidden="true"></i></button><button type="button" class="bt-send" data-action="send" aria-label="发送输入" hidden><i data-lucide="arrow-up" aria-hidden="true"></i></button></div>
+          </div>
+        </div>
+      </section>
+      <div class="bt-popover" role="dialog" aria-label="材料与行动" hidden></div>
+      <div class="bt-modal-scrim" hidden></div><section class="bt-modal" role="dialog" aria-modal="true" aria-label="详情" hidden></section>
+      <div class="bt-keyboard" aria-label="键盘布局示意" hidden><div class="bt-keyboard-bar"><span>输入法键盘示意</span><button type="button" data-action="hide-keyboard" aria-label="收起键盘"><i data-lucide="chevron-down" aria-hidden="true"></i></button></div><div class="bt-keyboard-keys"><button type="button" data-key="探索">分词</button><button type="button" data-key="ABC">ABC</button><button type="button" data-key="DEF">DEF</button><button type="button" data-key="GHI">GHI</button><button type="button" data-key="JKL">JKL</button><button type="button" data-key="MNO">MNO</button><button type="button" data-key="@">@</button><button type="button" data-key="TUV">TUV</button><button type="button" data-key="WXYZ">WXYZ</button></div><div class="bt-keyboard-foot"><button type="button" data-key="。">符号</button><button type="button" data-key=" ">空格</button><button type="button" data-action="hide-keyboard">完成</button></div></div>
+      <div class="bt-home-indicator" aria-hidden="true"></div>
+      <div class="bt-toast" role="status" hidden></div>
+    </div>
+  </div>
+</div>
+<style>
+#birdtie-now-preview {--bt-paper:light-dark(#fff,#222725);--bt-ink:light-dark(#242A26,#EDF0ED);--bt-body:light-dark(#374139,#D9DFD9);--bt-muted:light-dark(#697369,#AFBAB0);--bt-soft:light-dark(#F2F4F0,#303834);--bt-line:light-dark(#E2E6DF,#414C43);--bt-green:light-dark(#385A47,#A4C7A8);--bt-on-green:light-dark(#FFFFFF,#203126);--bt-chip:light-dark(#EAF0E7,#384D3C);--bt-alert:light-dark(#A84235,#ECA99D);--bt-keyground:light-dark(#E8EBE8,#222925);color:var(--bt-ink);font-family:"Segoe UI","Microsoft YaHei",system-ui,sans-serif;width:100%;max-width:670px;margin:0 auto;color-scheme:light dark;}
+#birdtie-now-preview * {box-sizing:border-box;}
+#birdtie-now-preview button,#birdtie-now-preview select,#birdtie-now-preview textarea {font:inherit;color:inherit;}
+#birdtie-now-preview button {border:0;display:inline-flex;align-items:center;justify-content:center;gap:8px;background:none;}
+#birdtie-now-preview button:focus-visible,#birdtie-now-preview select:focus-visible,#birdtie-now-preview textarea:focus-visible {outline:2px solid var(--bt-green);outline-offset:3px;}
+#birdtie-now-preview button:hover {background:var(--bt-soft);}
+#birdtie-now-preview button:disabled {opacity:.45;cursor:not-allowed;}
+#birdtie-now-preview [hidden] {display:none !important;}
+#birdtie-now-preview svg.lucide {width:22px;height:22px;stroke-width:1.8;flex-shrink:0;}
+#birdtie-now-preview .bt-preview-head {display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding:12px 4px 10px;}
+#birdtie-now-preview .bt-preview-head strong {font-size:18px;font-weight:600;}
+#birdtie-now-preview .bt-preview-head>span {font-size:12px;color:var(--bt-muted);}
+#birdtie-now-preview .bt-scenarios {display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin:0 0 16px;}
+#birdtie-now-preview .bt-scenarios>button {padding:9px 13px;min-height:40px;border-radius:18px;font-size:13px;}
+#birdtie-now-preview .bt-scenarios>button[aria-pressed=true] {background:var(--bt-ink);color:var(--bt-paper);}
+#birdtie-now-preview .bt-scenarios>select {font-size:13px;border:0;background:transparent;min-height:40px;padding:4px 8px;min-width:116px;max-width:160px;}
+#birdtie-now-preview .bt-scenarios>select option {background:var(--bt-paper);color:var(--bt-ink);}
+#birdtie-now-preview .bt-stage {padding:24px 12px 28px;display:flex;justify-content:center;}
+#birdtie-now-preview .bt-phone {position:relative;width:390px;max-width:100%;height:844px;overflow:hidden;isolation:isolate;border-radius:32px;box-shadow:0 16px 46px #17261A20,0 0 0 1px #17261A13;background:var(--bt-paper);--bt-kb:0px;}
+#birdtie-now-preview .bt-map {position:absolute;inset:0;color:#324039;}
+#birdtie-now-preview .bt-map-drawing {position:absolute;inset:0;width:100%;height:100%;}
+#birdtie-now-preview .bt-status {position:absolute;inset:15px 24px auto;display:flex;justify-content:space-between;align-items:center;font-size:13px;font-weight:600;color:#242A26;z-index:2;}
+#birdtie-now-preview .bt-status>div {display:flex;align-items:center;gap:4px;}
+#birdtie-now-preview .bt-status svg.lucide {width:16px;height:16px;}
+#birdtie-now-preview .bt-chrome {position:absolute;inset:49px 16px auto;display:flex;justify-content:space-between;align-items:center;gap:16px;z-index:3;}
+#birdtie-now-preview .bt-round {width:48px;height:48px;border-radius:50%;background:var(--bt-paper);box-shadow:0 3px 12px #293A2810;flex-shrink:0;}
+#birdtie-now-preview .bt-city {min-height:48px;max-width:205px;flex:1;border-radius:28px;background:var(--bt-paper);font-size:15px;box-shadow:0 3px 12px #293A280A;}
+#birdtie-now-preview .bt-city svg {width:16px;}
+#birdtie-now-preview .bt-map-pin {position:absolute;padding:12px 14px;min-height:48px;max-width:245px;border-radius:17px;background:var(--bt-paper);box-shadow:0 3px 10px #2731250A;font-size:13px;color:var(--bt-ink);border:1px solid var(--bt-line);}
+#birdtie-now-preview .bt-map-pin.is-active {background:var(--bt-green);color:var(--bt-on-green);}
+#birdtie-now-preview .pin-museum {top:44%;left:35%;}
+#birdtie-now-preview .pin-garden {top:63%;left:12%;}
+#birdtie-now-preview .pin-moment {top:28%;left:8%;}
+#birdtie-now-preview .bt-pin-dot {width:9px;height:9px;border-radius:50%;background:var(--bt-green);}
+#birdtie-now-preview .is-active .bt-pin-dot {background:var(--bt-on-green);}
+#birdtie-now-preview .bt-pin-count {border-left:1px solid currentColor;padding-left:8px;opacity:.8;}
+#birdtie-now-preview .bt-map-pin svg.lucide {width:16px;height:16px;}
+#birdtie-now-preview .bt-contact-rail {position:absolute;right:10px;top:115px;display:flex;flex-direction:column;align-items:center;gap:6px;padding:4px 2px;z-index:3;}
+#birdtie-now-preview .bt-contact-rail:before {content:"";position:absolute;z-index:-1;inset:-16px -16px -18px -22px;background:linear-gradient(90deg,transparent,#FAFBF8B3);pointer-events:none;}
+#birdtie-now-preview .bt-contact-rail>button {width:48px;height:48px;position:relative;color:#3B5141;border-radius:50%;}
+#birdtie-now-preview .bt-contact-rail .bt-avatar {width:36px;height:36px;margin:6px;border:2px solid #FFFFFF;background:#D7E3CB;font-size:13px;box-shadow:0 2px 7px #30462F14;}
+#birdtie-now-preview .bt-contact-rail .bt-avatar-second {background:#E2D8C8;color:#6C5847;}
+#birdtie-now-preview .bt-notification-dot {width:5px;height:5px;position:absolute;top:12px;right:10px;border-radius:50%;background:#385A47;}
+#birdtie-now-preview .bt-locate {position:absolute;right:16px;bottom:128px;color:#37483B;z-index:2;}
+#birdtie-now-preview .bt-map-credit {position:absolute;bottom:104px;left:12px;color:#68716C;font-size:11px;}
+#birdtie-now-preview .bt-sheet {position:absolute;left:0;right:0;bottom:var(--bt-kb);z-index:4;border-radius:24px 24px 0 0;background:var(--bt-paper);padding:12px 0 29px;display:flex;flex-direction:column;max-height:calc(100% - 105px - var(--bt-kb));box-shadow:0 -5px 25px #27382509;}
+#birdtie-now-preview .bt-sheet.has-result {height:auto;padding-top:0;max-height:min(50%,calc(100% - 105px - var(--bt-kb)));}
+#birdtie-now-preview .bt-sheet.has-result.expanded {max-height:calc(100% - 105px - var(--bt-kb));}
+#birdtie-now-preview .bt-sheet.expanded {height:716px;}
+#birdtie-now-preview .bt-phone.is-editing .bt-sheet {padding-bottom:12px;}
+#birdtie-now-preview .bt-phone.is-editing .bt-sheet.has-result {height:440px;max-height:calc(100% - 105px - var(--bt-kb));}
+#birdtie-now-preview .bt-sheet-head {flex-shrink:0;}
+#birdtie-now-preview .bt-handle {display:flex;width:100%;height:22px;}
+#birdtie-now-preview .bt-handle>span {width:32px;height:4px;border-radius:3px;background:var(--bt-line);}
+#birdtie-now-preview .bt-sheet-title {min-height:36px;display:flex;align-items:center;justify-content:space-between;padding-left:16px;padding-right:8px;font-size:13px;color:var(--bt-muted);}
+#birdtie-now-preview .bt-sheet-title>div {display:flex;}
+#birdtie-now-preview .bt-icon-button {width:48px;height:48px;border-radius:24px;flex-shrink:0;}
+#birdtie-now-preview .bt-sheet-title .bt-icon-button {width:48px;height:48px;}
+#birdtie-now-preview .bt-sheet-title svg.lucide {width:18px;height:18px;}
+#birdtie-now-preview .bt-result-content {padding:0 16px 8px;flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:var(--bt-line) transparent;font-size:15px;line-height:1.5;color:var(--bt-body);}
+#birdtie-now-preview .bt-result-content p {margin:16px 0;}
+#birdtie-now-preview .bt-result-content h3 {font-size:18px;font-weight:600;line-height:1.5;color:var(--bt-ink);margin:24px 0 8px;}
+#birdtie-now-preview .bt-result-content .bt-user-message {display:table;max-width:88%;margin:6px 0 20px auto;padding:11px 15px;border-radius:21px;background:var(--bt-soft);font-size:15px;line-height:1.5;color:var(--bt-ink);}
+#birdtie-now-preview .bt-source {display:inline-flex;align-items:center;gap:5px;padding:3px 8px;border-radius:14px;background:var(--bt-soft);color:var(--bt-muted);font-size:13px;min-height:40px;vertical-align:middle;margin-left:4px;}
+#birdtie-now-preview .bt-source svg.lucide {width:13px;height:13px;}
+#birdtie-now-preview .bt-result-actions {display:flex;align-items:center;gap:2px;margin:14px -10px 0;}
+#birdtie-now-preview .bt-result-actions .bt-icon-button {color:var(--bt-muted);}
+#birdtie-now-preview .bt-result-actions .bt-source {margin-left:auto;font-size:12px;min-height:40px;}
+#birdtie-now-preview .bt-place-card {padding:15px 16px;border:1px solid var(--bt-line);border-radius:18px;position:relative;}
+#birdtie-now-preview .bt-place-title {display:flex;align-items:start;justify-content:space-between;gap:8px;}
+#birdtie-now-preview .bt-place-title>div {min-width:0;}
+#birdtie-now-preview .bt-place-title strong {font-size:16px;font-weight:600;color:var(--bt-ink);}
+#birdtie-now-preview .bt-place-title small {display:block;font-size:13px;color:var(--bt-muted);margin-top:2px;}
+#birdtie-now-preview .bt-place-title button {width:40px;height:40px;margin:-6px -10px -4px 0;}
+#birdtie-now-preview .bt-place-card p {font-size:13px;margin:12px 0;color:var(--bt-body);}
+#birdtie-now-preview .bt-place-footer {display:flex;align-items:center;justify-content:space-between;gap:8px;}
+#birdtie-now-preview .bt-main-action {background:var(--bt-ink);color:var(--bt-paper);border-radius:22px;padding:10px 16px;min-height:44px;font-size:14px;font-weight:500;}
+#birdtie-now-preview .bt-main-action:hover {background:var(--bt-green);color:var(--bt-on-green);}
+#birdtie-now-preview .bt-main-action svg.lucide {width:16px;height:16px;}
+#birdtie-now-preview .bt-link-action {font-size:13px;color:var(--bt-green);min-height:44px;padding:6px;}
+#birdtie-now-preview .bt-composer-wrap {padding:8px 16px 0;flex-shrink:0;}
+#birdtie-now-preview .bt-composer {display:flex;align-items:center;min-height:56px;padding:4px;border-radius:28px;background:var(--bt-soft);position:relative;flex-wrap:wrap;}
+#birdtie-now-preview .bt-composer textarea {flex:1;min-width:50px;resize:none;border:0;background:transparent;outline:0;box-shadow:none;font-size:16px;line-height:24px;max-height:104px;padding:10px 2px;color:var(--bt-body);caret-color:var(--bt-green);}
+#birdtie-now-preview .bt-composer textarea::placeholder {color:var(--bt-muted);opacity:1;font-weight:400;}
+#birdtie-now-preview .bt-composer textarea:focus-visible {outline-offset:0;outline:0;}
+#birdtie-now-preview .bt-composer:focus-within {box-shadow:0 0 0 2px var(--bt-green);}
+#birdtie-now-preview .bt-tools {display:flex;align-items:center;gap:0;}
+#birdtie-now-preview .bt-send {margin:0;width:48px;height:48px;border-radius:50%;background:var(--bt-ink);color:var(--bt-paper);}
+#birdtie-now-preview .bt-send:hover {background:var(--bt-green);color:var(--bt-on-green);}
+#birdtie-now-preview .bt-send svg.lucide {width:23px;height:23px;}
+#birdtie-now-preview .bt-context-mode {font-size:12px;padding:6px;min-height:44px;color:var(--bt-muted);margin-right:auto;}
+#birdtie-now-preview .bt-context-mode svg.lucide {width:13px;height:13px;}
+#birdtie-now-preview .bt-composer.is-multiline {padding:10px 8px 5px;border-radius:26px;display:grid;grid-template-columns:48px minmax(0,1fr);}
+#birdtie-now-preview .bt-composer.is-multiline textarea {grid-column:1/3;grid-row:2;padding:4px 12px 12px;width:100%;min-height:58px;}
+#birdtie-now-preview .bt-composer.is-multiline .bt-plus {grid-row:3;grid-column:1;}
+#birdtie-now-preview .bt-composer.is-multiline .bt-tools {grid-row:3;grid-column:2;justify-content:flex-end;}
+#birdtie-now-preview .bt-materials {width:100%;padding:3px 10px 7px;display:flex;gap:5px;flex-wrap:wrap;}
+#birdtie-now-preview .is-multiline .bt-materials {grid-column:1/3;grid-row:1;}
+#birdtie-now-preview .bt-material-token {min-height:32px;padding:5px 8px;border-radius:12px;background:var(--bt-paper);color:var(--bt-body);font-size:12px;display:inline-flex;align-items:center;gap:5px;}
+#birdtie-now-preview .bt-material-token svg.lucide {width:14px;height:14px;}
+#birdtie-now-preview .bt-material-token button {width:22px;height:22px;border-radius:50%;}
+#birdtie-now-preview .bt-popover {position:absolute;left:20px;bottom:calc(var(--bt-kb) + 100px);width:260px;max-width:calc(100% - 40px);max-height:calc(100% - var(--bt-kb) - 145px);overflow:auto;background:var(--bt-paper);border-radius:26px;padding:12px;box-shadow:0 12px 38px #15261925;z-index:8;animation:bt-pop .18s cubic-bezier(.2,.8,.2,1);}
+#birdtie-now-preview .bt-phone.is-editing .bt-popover {bottom:calc(var(--bt-kb) + 155px);max-height:calc(100% - var(--bt-kb) - 190px);}
+#birdtie-now-preview .bt-popover .bt-menu-heading {font-size:12px;color:var(--bt-muted);padding:5px 12px 7px;}
+#birdtie-now-preview .bt-menu-row {display:flex;justify-content:flex-start;width:100%;gap:12px;padding:6px 8px;min-height:54px;border-radius:15px;text-align:left;font-size:15px;}
+#birdtie-now-preview .bt-menu-row .bt-menu-icon {width:36px;height:36px;border-radius:50%;background:var(--bt-soft);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+#birdtie-now-preview .bt-menu-row svg.lucide {width:19px;height:19px;}
+#birdtie-now-preview .bt-menu-row small {display:block;font-size:11px;color:var(--bt-muted);}
+#birdtie-now-preview .bt-menu-divider {height:1px;background:var(--bt-line);margin:8px 9px;}
+#birdtie-now-preview .bt-keyboard {position:absolute;bottom:0;left:0;right:0;height:252px;background:var(--bt-keyground);padding:0 8px 26px;z-index:5;border-top:1px solid var(--bt-line);}
+#birdtie-now-preview .bt-keyboard-bar {height:36px;display:flex;align-items:center;justify-content:space-between;padding-left:8px;color:var(--bt-muted);font-size:11px;}
+#birdtie-now-preview .bt-keyboard-bar button {width:48px;height:32px;}
+#birdtie-now-preview .bt-keyboard-keys {display:grid;grid-template-columns:repeat(3,1fr);gap:6px;}
+#birdtie-now-preview .bt-keyboard-keys button {height:45px;background:var(--bt-paper);border-radius:9px;font-size:18px;box-shadow:0 1px 1px #12201712;}
+#birdtie-now-preview .bt-keyboard-foot {display:flex;gap:7px;margin-top:7px;}
+#birdtie-now-preview .bt-keyboard-foot button {height:36px;flex:1;border-radius:8px;background:var(--bt-paper);font-size:13px;}
+#birdtie-now-preview .bt-keyboard-foot button:nth-child(2) {flex:2;}
+#birdtie-now-preview .bt-home-indicator {position:absolute;bottom:8px;left:calc(50% - 50px);height:4px;width:100px;border-radius:4px;background:var(--bt-ink);z-index:10;}
+#birdtie-now-preview .bt-modal-scrim {position:absolute;inset:0;background:#15241B2B;z-index:11;}
+#birdtie-now-preview .bt-modal {position:absolute;inset:auto 0 0;background:var(--bt-paper);padding:22px 22px 35px;border-radius:26px 26px 0 0;z-index:12;max-height:75%;overflow:auto;animation:bt-pop .18s cubic-bezier(.2,.8,.2,1);font-size:14px;line-height:1.6;}
+#birdtie-now-preview .bt-modal-header {display:flex;justify-content:space-between;align-items:center;margin:0 0 14px;gap:10px;}
+#birdtie-now-preview .bt-modal-header h3 {font-size:18px;font-weight:600;margin:0;}
+#birdtie-now-preview .bt-modal-header button {width:40px;height:40px;border-radius:50%;}
+#birdtie-now-preview .bt-modal p {margin:10px 0 16px;color:var(--bt-body);}
+#birdtie-now-preview .bt-modal .bt-menu-row {padding:8px 10px;}
+#birdtie-now-preview .bt-modal label {display:block;color:var(--bt-muted);font-size:12px;margin-bottom:5px;}
+#birdtie-now-preview .bt-modal textarea,#birdtie-now-preview .bt-draft textarea {width:100%;background:var(--bt-soft);border:0;border-radius:12px;resize:vertical;padding:12px;font:inherit;font-size:15px;line-height:1.6;color:var(--bt-body);}
+#birdtie-now-preview .bt-draft-label {font-size:12px;color:var(--bt-muted);margin-bottom:6px;}
+#birdtie-now-preview .bt-draft {padding:4px 0;}
+#birdtie-now-preview .bt-draft h3 {margin:8px 0 16px;}
+#birdtie-now-preview .bt-draft-row {display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:48px;border-bottom:1px solid var(--bt-line);font-size:14px;}
+#birdtie-now-preview .bt-draft-row>span {color:var(--bt-muted);}
+#birdtie-now-preview .bt-draft-row button {padding:10px 0;min-height:48px;}
+#birdtie-now-preview .bt-draft-row svg.lucide {width:15px;height:15px;}
+#birdtie-now-preview .bt-draft-actions {display:flex;align-items:center;justify-content:space-between;margin-top:18px;gap:8px;}
+#birdtie-now-preview .bt-quiet-note {color:var(--bt-muted);font-size:12px;margin:12px 0;}
+#birdtie-now-preview .bt-loading {display:flex;gap:7px;align-items:center;margin:16px 0;color:var(--bt-muted);font-size:13px;}
+#birdtie-now-preview .bt-loading>span {width:7px;height:7px;border-radius:50%;background:var(--bt-green);animation:bt-pulse 1.2s infinite;}
+#birdtie-now-preview .bt-feedback-title {font-size:16px;color:var(--bt-ink);font-weight:500;margin:14px 0 6px;}
+#birdtie-now-preview .bt-feedback-actions {display:flex;align-items:center;gap:10px;margin:12px 0;}
+#birdtie-now-preview .bt-toast {position:absolute;top:111px;left:20px;right:20px;z-index:14;max-width:350px;margin:auto;background:var(--bt-ink);color:var(--bt-paper);padding:12px 16px;border-radius:17px;font-size:13px;line-height:1.5;box-shadow:0 5px 15px #17261A18;}
+#birdtie-now-preview .bt-jump {height:0;position:relative;z-index:6;}
+#birdtie-now-preview .bt-jump .bt-round {position:absolute;left:calc(50% - 24px);bottom:8px;border:1px solid var(--bt-line);}
+#birdtie-now-preview .bt-voice-wave {display:flex;gap:6px;justify-content:center;align-items:center;height:90px;color:var(--bt-green);}
+#birdtie-now-preview .bt-voice-wave span {width:5px;background:currentColor;border-radius:4px;}
+#birdtie-now-preview .bt-voice-wave span:nth-child(1),#birdtie-now-preview .bt-voice-wave span:nth-child(7) {height:14px;}
+#birdtie-now-preview .bt-voice-wave span:nth-child(2),#birdtie-now-preview .bt-voice-wave span:nth-child(6) {height:28px;}
+#birdtie-now-preview .bt-voice-wave span:nth-child(3),#birdtie-now-preview .bt-voice-wave span:nth-child(5) {height:42px;}
+#birdtie-now-preview .bt-voice-wave span:nth-child(4) {height:55px;}
+#birdtie-now-preview ::selection {background:var(--bt-chip);color:var(--bt-ink);}
+@keyframes bt-pop {from {transform:translateY(8px);}to {transform:translateY(0);}}
+@keyframes bt-pulse {50% {opacity:.35;}}
+@media(max-width:440px) {#birdtie-now-preview .bt-stage {padding:12px 0 20px;}#birdtie-now-preview .bt-phone {height:800px;border-radius:24px;}#birdtie-now-preview .bt-preview-head {padding-inline:4px;}#birdtie-now-preview .bt-scenarios {gap:0;}#birdtie-now-preview .bt-scenarios>button {padding-inline:11px;}#birdtie-now-preview .bt-result-content {padding-inline:16px;}#birdtie-now-preview .bt-contact-rail {right:5px;}}
+@media(prefers-reduced-motion:reduce) {#birdtie-now-preview *,#birdtie-now-preview *:before {animation:none!important;transition:none!important;}}
+</style>
+<script>
+(() => {
+  const root=document.getElementById('birdtie-now-preview');
+  const phone=root.querySelector('.bt-phone'), sheet=root.querySelector('.bt-sheet'), content=root.querySelector('.bt-result-content'), input=root.querySelector('#bt-input'), head=root.querySelector('.bt-sheet-head'), tools=root.querySelector('.bt-tools'), composer=root.querySelector('.bt-composer'), popover=root.querySelector('.bt-popover'), modal=root.querySelector('.bt-modal'), scrim=root.querySelector('.bt-modal-scrim'), kb=root.querySelector('.bt-keyboard'), materials=root.querySelector('.bt-materials'), title=root.querySelector('#bt-task-title');
+  const state={scene:'map',keyboard:false,expanded:false,query:'',reply:'answer',attachment:false,reference:'',audience:'仅自己',draftPlace:'',draftText:'下午沿着海边走了一会儿，想把这段安静的时光记录下来。',selected:false,scroll:0};
+  const textMeasure=document.createElement('canvas').getContext('2d');
+  let timer,toastTimer,requestId=0,returnFocus=null;
+  const icons=()=>globalThis.lucide?.createIcons({attrs:{width:22,height:22}});
+  const icon=name=>'<i data-lucide="'+name+'" aria-hidden="true"></i>';
+  const escape=text=>String(text).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const source=(label='地点资料')=>'<button type="button" class="bt-source" data-action="sources">'+icon('globe')+label+'</button>';
+  const row=(action,label,symbol,small='')=>'<button type="button" class="bt-menu-row" data-action="'+action+'"><span class="bt-menu-icon">'+icon(symbol)+'</span><span>'+label+(small?'<small>'+small+'</small>':'')+'</span></button>';
+  function remember(){window.openai?.setWidgetState?.({modelContent:{design:'BirdTie Now 2026-10-12',scene:state.scene,expanded:state.expanded,audience:state.audience},privateContent:{scene:state.scene,expanded:state.expanded,scroll:state.scroll,keyboard:state.keyboard,audience:state.audience}})?.catch(()=>{});}
+  function notify(text){const el=root.querySelector('.bt-toast');el.textContent=text;el.hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.hidden=true,2600);}
+  function closePopover(){popover.hidden=true;popover.innerHTML='';root.querySelector('[data-action=plus]').setAttribute('aria-expanded','false');}
+  function openModal(name,body){closePopover();returnFocus=document.activeElement;kb.hidden=true;phone.style.setProperty('--bt-kb','0px');modal.setAttribute('aria-label',name);modal.innerHTML='<div class="bt-modal-header"><h3>'+name+'</h3><button type="button" data-action="dismiss" aria-label="关闭">'+icon('x')+'</button></div>'+body;modal.hidden=false;scrim.hidden=false;sheet.inert=true;root.querySelector('.bt-map').inert=true;root.querySelector('.bt-chrome').inert=true;root.querySelector('.bt-contact-rail').inert=true;root.querySelector('.bt-locate').inert=true;icons();modal.querySelector('button').focus();}
+  function closeModal(){modal.hidden=true;scrim.hidden=true;sheet.inert=false;root.querySelector('.bt-map').inert=false;root.querySelector('.bt-chrome').inert=false;root.querySelector('.bt-contact-rail').inert=false;root.querySelector('.bt-locate').inert=false;updateComposer();if(returnFocus?.isConnected)returnFocus.focus();}
+  function updateComposer(){
+    const text=input.value.trim(),style=getComputedStyle(input);
+    textMeasure.font=style.fontWeight+' '+style.fontSize+' '+style.fontFamily;
+    const compactWidth=Math.max(40,phone.clientWidth-146),displayText=text||input.placeholder;
+    const wraps=textMeasure.measureText(displayText).width>compactWidth;
+    const multi=state.keyboard||input.value.includes('\n')||wraps||state.attachment||!!state.reference;
+    composer.classList.toggle('is-multiline',multi);phone.classList.toggle('is-editing',state.keyboard);phone.style.setProperty('--bt-kb',state.keyboard?'252px':'0px');kb.hidden=!state.keyboard;
+    root.querySelector('.bt-send').hidden=!text&&!state.attachment;
+    root.querySelector('.bt-context-mode').hidden=!multi;
+    root.querySelector('.bt-mic').hidden=(!multi&&!!text)||state.attachment;
+    const currentStyle=getComputedStyle(input),lineHeight=parseFloat(currentStyle.lineHeight),padding=parseFloat(currentStyle.paddingTop)+parseFloat(currentStyle.paddingBottom);
+    input.style.maxHeight=(4*lineHeight+padding)+'px';input.style.height='0px';input.style.height=Math.min(4*lineHeight+padding,Math.max(multi?lineHeight+20:lineHeight+padding,input.scrollHeight))+'px';
+    materials.hidden=!state.attachment&&!state.reference;
+    materials.innerHTML=(state.attachment?'<span class="bt-material-token">'+icon('image')+'演示照片 · 助手暂不读图<button type="button" data-action="remove-image" aria-label="移除照片">'+icon('x')+'</button></span>':'')+(state.reference?'<span class="bt-material-token">'+icon('at-sign')+escape(state.reference)+'<button type="button" data-action="remove-reference" aria-label="移除引用">'+icon('x')+'</button></span>':'');
+    icons();
+  }
+  function mapSelection(on){state.selected=on;root.querySelector('.pin-museum').classList.toggle('is-active',on);}
+  function positionPopover(){const bottom=phone.getBoundingClientRect().bottom-composer.getBoundingClientRect().top+8;popover.style.bottom=bottom+'px';popover.style.maxHeight=Math.max(120,phone.clientHeight-bottom-105)+'px';}
+  function placeCard(){return '<article class="bt-place-card"><div class="bt-place-title"><div><strong>阿伯丁海事博物馆</strong><small>Aberdeen Maritime Museum</small></div><button type="button" data-action="place-more" aria-label="地点更多操作">'+icon('ellipsis')+'</button></div><p>Shiprow, Aberdeen <span class="bt-quiet-note">· 演示资料</span></p><div class="bt-place-footer"><button type="button" class="bt-main-action" data-action="navigate">'+icon('navigation')+'导航</button>'+source()+'</div></article>';}
+  function actions(){return '<div class="bt-result-actions"><button type="button" class="bt-icon-button" data-action="copy" aria-label="复制回答">'+icon('copy')+'</button><button type="button" class="bt-icon-button" data-action="helpful" aria-label="回答有帮助">'+icon('thumbs-up')+'</button><button type="button" class="bt-icon-button" data-action="response-more" aria-label="回答更多操作">'+icon('ellipsis')+'</button>'+source('来源 2')+'</div>';}
+  function reading(){return '<div class="bt-user-message">下午想在 Aberdeen 慢慢走走，帮我安排一下</div><p>可以把下午留给<strong>城市中心和海边</strong>，先选两个想停留的地方，再安排顺路的走法。</p><h3>先在城市中心停一停</h3><p>从你方便抵达的位置开始。在地图上看看海事博物馆，也可以把附近想去的地方加入这次计划。这里的地点用于设计演示，营业和开放信息需要在真实查询中核验。'+source()+'</p>'+placeCard()+'<h3>留一些没有安排的时间</h3><p>不必把每一段时间排满。找到喜欢的咖啡馆、停下来拍照，或者临时换一个方向，都可以在同一张地图上继续调整。</p><p>你可以告诉我“少走一点”或“把海边放在最后”，我会把这些条件带入当前计划。改变路线不会丢掉已经选中的地点。</p><h3>路线开始前，确认起点</h3><p>探索城市并不代表你现在就在这里。你想从哪个地方出发？确定起点后，才能估计步行距离和时间。</p><button type="button" class="bt-link-action" data-action="start-point">选择出发地点 '+icon('arrow-right')+'</button><p class="bt-quiet-note">本段为原型演示内容，不是实时行程建议。</p>'+actions();}
+  function draft(){return '<div class="bt-draft"><div class="bt-draft-label">动态草稿 · 尚未发布</div><h3>记录此刻</h3><label class="bt-draft-label" for="bt-draft-body">正文</label><textarea id="bt-draft-body" rows="4">'+escape(state.draftText)+'</textarea><div class="bt-draft-row"><span>地点</span><button type="button" data-action="draft-place">'+escape(state.draftPlace||'暂不添加')+' '+icon('chevron-right')+'</button></div><div class="bt-draft-row"><span>谁可以看</span><button type="button" data-action="audience">'+escape(state.audience)+' '+icon('chevron-right')+'</button></div><p class="bt-quiet-note">选择受众后，再检查完整预览。</p><div class="bt-draft-actions"><button type="button" class="bt-link-action" data-action="save-draft">保存草稿</button><button type="button" class="bt-main-action" data-action="preview-draft">预览动态 '+icon('arrow-right')+'</button></div></div>';}
+  function renderResult(){
+    let html='',label='当前回答';
+    const user='<div class="bt-user-message">'+escape(state.query||'海事博物馆在哪里？')+'</div>';
+    if(state.scene==='answer')html=user+placeCard();
+    if(state.scene==='reading'){html=reading();label='下午的散步计划';}
+    if(state.scene==='draft'){html=draft();label='动态草稿';}
+    if(state.scene==='loading'){html=user+'<div class="bt-loading"><span></span>正在整理地点资料…</div><button type="button" class="bt-link-action" data-action="cancel-query">停止</button>';label='正在查询';}
+    if(state.scene==='empty'){html=user+'<div class="bt-feedback-title">暂时没找到符合条件的地点</div><p>可以换一个关键词，或调整这次查询范围。</p><div class="bt-feedback-actions"><button type="button" class="bt-main-action" data-action="modify-query">修改条件</button><button type="button" class="bt-link-action" data-action="close-result">继续看地图</button></div>';label='查询结果';}
+    if(state.scene==='error'){html=user+'<div class="bt-feedback-title">这次查询没有完成</div><p>服务暂时没有响应。你的输入和地图位置已保留。</p><div class="bt-feedback-actions"><button type="button" class="bt-main-action" data-action="retry">重试</button><button type="button" class="bt-link-action" data-action="modify-query">修改输入</button></div>';label='服务暂时不可用';}
+    content.innerHTML=html;title.textContent=label;head.hidden=!html;content.hidden=!html;sheet.classList.toggle('has-result',!!html);sheet.classList.toggle('expanded',state.expanded&&!!html);
+    root.querySelectorAll('[data-action=expand]').forEach(el=>el.setAttribute('aria-label',state.expanded?'收起阅读':'展开阅读'));
+    if(state.expanded)content.scrollTop=state.scroll;else content.scrollTop=0;
+    root.querySelector('.bt-locate').hidden=!!html;icons();
+  }
+  function selectScene(name,save=true){
+    clearTimeout(timer);clearTimeout(toastTimer);root.querySelector('.bt-toast').hidden=true;requestId++;closePopover();if(!modal.hidden)closeModal();
+    state.scene=name;state.keyboard=['input','mention'].includes(name);state.expanded=['reading','draft'].includes(name);state.scroll=0;
+    if(name==='input')input.value='帮我找一个适合下午散步的地方';
+    if(name==='mention')input.value='@';
+    if(['map','answer','reading','draft','loading','empty','error'].includes(name))input.value='';
+    mapSelection(name==='answer'||name==='reading');renderResult();updateComposer();
+    root.querySelectorAll('[data-scene]').forEach(el=>el.setAttribute('aria-pressed',String(el.dataset.scene===name)));
+    root.querySelector('#bt-more-scenes').value=['attachments','mention','draft','voice','loading','empty','error'].includes(name)?name:'';
+    if(name==='attachments')showMaterials();if(name==='mention')showMentions();if(name==='voice')showVoice();
+    if(save)remember();
+  }
+  function showMaterials(){popover.setAttribute('aria-label','材料与行动');popover.innerHTML='<div class="bt-menu-heading">添加材料</div>'+row('camera','拍照','camera')+row('photo','照片','image')+row('file','文件','paperclip')+'<div class="bt-menu-divider"></div><div class="bt-menu-heading">创建内容</div>'+row('create-moment','动态','square-pen')+row('create-activity','活动','calendar-plus')+row('create-journey','旅程或主题地图','map');popover.hidden=false;root.querySelector('[data-action=plus]').setAttribute('aria-expanded','true');icons();positionPopover();}
+  function showMentions(){popover.setAttribute('aria-label','引用上下文');popover.innerHTML='<div class="bt-menu-heading">引用到当前任务</div>'+row('mention-place','海事博物馆','map-pin','地点')+row('mention-person','小林','user-round','好友 · 引用不会发送消息')+row('mention-saved','周末散步清单','bookmark','已保存');popover.hidden=false;icons();positionPopover();}
+  function showVoice(){openModal('语音转文字','<p class="bt-quiet-note">原型模拟转写，不使用麦克风。</p><div class="bt-voice-wave" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><p style="text-align:center">说出你的想法，转写后可以修改。</p><div class="bt-draft-actions"><button type="button" class="bt-link-action" data-action="dismiss">取消</button><button type="button" class="bt-main-action" data-action="finish-voice">停止并查看文字</button></div>');}
+  function submit(){
+    if(!input.value.trim()&&!state.attachment)return;
+    if(state.attachment){state.draftText=input.value.trim()||state.draftText;state.attachment=false;state.reference='';state.audience='仅自己';selectScene('draft');return;}
+    state.query=input.value.trim();state.reference='';const planned=/散步|路线|计划|下午/.test(state.query);selectScene('loading');const id=requestId;timer=setTimeout(()=>{if(requestId!==id)return;selectScene(planned?'reading':'answer');},950);
+  }
+  root.addEventListener('click',event=>{
+    const button=event.target.closest('button');if(!button)return;
+    if(button.dataset.scene){selectScene(button.dataset.scene);return;}
+    if(button.dataset.key!==undefined){input.value+=button.dataset.key;state.keyboard=true;updateComposer();if(button.dataset.key==='@')showMentions();return;}
+    const action=button.dataset.action;
+    if(action==='plus'){if(popover.hidden)showMaterials();else closePopover();}
+    else if(action==='send')submit();
+    else if(action==='voice')showVoice();
+    else if(action==='hide-keyboard'){state.keyboard=false;input.blur();closePopover();updateComposer();remember();}
+    else if(action==='close-result'){content.querySelector('#bt-draft-body')&&(state.draftText=content.querySelector('#bt-draft-body').value);state.reply=state.scene;state.scroll=content.scrollTop;state.scene='map';state.expanded=false;state.keyboard=false;renderResult();updateComposer();remember();}
+    else if(action==='expand'){if(state.scene==='map'){state.scene=state.reply||'answer';}state.scroll=content.scrollTop;state.expanded=!state.expanded;renderResult();remember();}
+    else if(action==='place'){state.query='海事博物馆在哪里？';selectScene('answer');}
+    else if(action==='walk'){state.query='下午在 Aberdeen 散步';selectScene('reading');}
+    else if(action==='moment'){openModal('小林的动态','<p>海边的风刚刚好。</p><p class="bt-quiet-note">公开动态 · 演示内容</p><button type="button" class="bt-link-action" data-action="create-moment">我也记录此刻 '+icon('arrow-right')+'</button>');}
+    else if(action==='camera'||action==='photo'){closePopover();state.attachment=true;state.keyboard=false;updateComposer();notify('已加入一张演示照片，可补充文字再继续');}
+    else if(action==='file'){openModal('添加文件','<p>在这里先检查文件名称和用途，再加入当前任务。</p>'+row('select-demo-file','散步计划.pdf','file-text','演示文件 · 不会读取本机文件'));}
+    else if(action==='select-demo-file'){closeModal();state.reference='散步计划.pdf';state.keyboard=false;updateComposer();notify('演示文件已加入当前上下文');}
+    else if(action==='remove-image'){state.attachment=false;updateComposer();}
+    else if(action==='remove-reference'){state.reference='';updateComposer();}
+    else if(action?.startsWith('mention-')){state.reference=action==='mention-person'?'小林':action==='mention-place'?'海事博物馆':'周末散步清单';input.value=input.value.replace(/@[^\s]*$/,'');closePopover();updateComposer();notify('仅引用到当前任务，不会发送或通知');remember();}
+    else if(action==='create-moment'){state.attachment=false;selectScene('draft');}
+    else if(action==='create-activity'){openModal('活动草稿','<p>先整理活动目标，再补必要信息。</p><label for="bt-activity">你想组织什么？</label><textarea id="bt-activity" rows="3" placeholder="例如：周六下午一起逛博物馆"></textarea><button type="button" class="bt-main-action" data-action="activity-continue">整理草稿</button>');}
+    else if(action==='activity-continue'){const value=modal.querySelector('textarea').value.trim();if(!value){modal.querySelector('textarea').focus();return;}closeModal();input.value=value;state.keyboard=true;updateComposer();notify('活动目标已填入输入框，发送后继续完善草稿');}
+    else if(action==='create-journey'){openModal('旅程或主题地图',row('journey-draft','规划一段旅程','route')+row('theme-draft','整理主题地图','map-pinned'));}
+    else if(action==='journey-draft'||action==='theme-draft'){closeModal();input.value=action==='journey-draft'?'帮我规划一段旅程':'把选中的地点整理成主题地图';state.keyboard=true;updateComposer();}
+    else if(action==='sources'){openModal('资料来源','<p>来源只对应当前回答中的相关事实。</p>'+row('source-detail','地点资料示例','globe','原型演示 · 无实时查询')+row('source-detail','你提供的条件','message-square','本次任务输入'));}
+    else if(action==='source-detail'){notify('原型使用演示资料；正式页面打开对应出处与核验状态');}
+    else if(action==='navigate'||action==='start-point'){openModal('选择出发地点','<p>探索 Aberdeen 不代表你的实际位置。先确定这次路线的起点。</p>'+row('pick-start','从地图选择地点','map-pin')+row('location-permission','使用当前位置','locate-fixed','需本人授权'));}
+    else if(action==='pick-start'){closeModal();state.query='从地图上选择的地点开始，帮我规划散步路线';selectScene('reading');notify('演示起点已选；真实路线需核验坐标与交通方式');}
+    else if(action==='location-permission'||action==='locate'){openModal('定位授权','<p>定位只用于你明确选择的当前任务。切换探索城市不会公开你的位置。</p><button type="button" class="bt-main-action" data-action="dismiss">继续使用探索城市</button>');}
+    else if(action==='place-more'){openModal('地点操作',row('save-place','收藏地点','bookmark')+row('share-place','分享地点','share-2')+row('sources','查看来源','globe'));}
+    else if(action==='save-place'){closeModal();notify('原型演示：已收藏这个地点');}
+    else if(action==='share-place'){openModal('分享地点','<p>只分享所选地点，不附带 Now 私人对话。</p>'+row('share-preview','选择好友','users-round'));
+    }
+    else if(action==='share-preview'){openModal('发送预览','<p>收件人：小林（演示）</p><p>内容：阿伯丁海事博物馆地点卡</p><p class="bt-quiet-note">这是发送前的预览，尚未发送。</p><button type="button" class="bt-main-action" data-action="mock-send">向小林发送地点</button>');}
+    else if(action==='mock-send'){closeModal();notify('原型演示完成；未发送真实消息');}
+    else if(action==='audience'){openModal('谁可以看',row('audience-self','仅自己','lock')+row('audience-friends','好友','users-round')+row('audience-public','公开','globe'));}
+    else if(action?.startsWith('audience-')){state.audience=action==='audience-self'?'仅自己':action==='audience-friends'?'好友':'公开';closeModal();state.draftText=content.querySelector('#bt-draft-body')?.value||state.draftText;renderResult();remember();}
+    else if(action==='preview-draft'){state.draftText=content.querySelector('#bt-draft-body').value;openModal('动态预览','<p>'+escape(state.draftText)+'</p><p>受众：<strong>'+escape(state.audience)+'</strong></p><p>地点：'+escape(state.draftPlace||'未添加')+'</p><p class="bt-quiet-note">尚未发布。确认后才产生你选择的可见效果。</p><div class="bt-draft-actions"><button type="button" class="bt-link-action" data-action="dismiss">返回修改</button><button type="button" class="bt-main-action" data-action="mock-publish">'+(state.audience==='仅自己'?'保存为仅自己可见':'向'+state.audience+'发布')+'</button></div>');}
+    else if(action==='mock-publish'){closeModal();notify('已演示确认流程；没有保存或发布到真实账号');}
+    else if(action==='save-draft'){state.draftText=content.querySelector('#bt-draft-body').value;remember();notify('演示草稿已保留，可继续编辑');}
+    else if(action==='draft-place'){openModal('选择动态地点','<p>照片中的地点需要本人核实。当前草稿没有添加位置。</p>'+row('draft-place-demo','海事博物馆','map-pin','演示地点')+row('dismiss','暂不添加地点','x'));}
+    else if(action==='draft-place-demo'){state.draftPlace='海事博物馆 · 演示';state.draftText=content.querySelector('#bt-draft-body')?.value||state.draftText;closeModal();renderResult();notify('已添加演示地点，可在预览中检查');}
+    else if(action==='finish-voice'){closeModal();input.value='帮我找一个下午可以安静散步的地方';state.keyboard=true;updateComposer();notify('模拟文字已填入，可修改后手动发送');}
+    else if(action==='copy'){notify('已演示复制反馈');}
+    else if(action==='helpful'){button.setAttribute('aria-pressed','true');notify('已记录本次演示反馈');}
+    else if(action==='response-more'){openModal('回答操作',row('modify-query','继续修改条件','square-pen')+row('close-result-modal','回到地图','map'));}
+    else if(action==='close-result-modal'){closeModal();selectScene('map');}
+    else if(action==='modify-query'){if(!modal.hidden)closeModal();input.value=state.query||'海事博物馆在哪里？';state.keyboard=true;updateComposer();input.focus();}
+    else if(action==='retry'){selectScene('loading');const id=requestId;timer=setTimeout(()=>{if(id===requestId)selectScene('answer');},950);}
+    else if(action==='cancel-query'){clearTimeout(timer);requestId++;selectScene('map');input.value=state.query;updateComposer();notify('查询已停止，输入已保留');}
+    else if(action==='sidebar'){openModal('会话与导航',row('resume-task','下午的散步计划','message-square','继续上次阅读')+row('new','新对话','square-pen')+'<div class="bt-menu-divider"></div>'+row('inbox','消息','inbox')+row('plans','我的计划','calendar-days')+row('settings','我的与设置','user-round'));}
+    else if(action==='resume-task'){closeModal();state.scene='reading';state.expanded=true;renderResult();updateComposer();}
+    else if(action==='new'){selectScene('map');state.query='';state.attachment=false;state.reference='';updateComposer();notify('已打开一段新的演示对话');}
+    else if(action==='city'){openModal('选择城市',row('select-city','Aberdeen','map-pin','英国 · 当前探索城市')+'<p class="bt-quiet-note">仅切换探索城市，不改变你的定位。</p>');}
+    else if(action==='select-city'){closeModal();notify('当前探索城市为 Aberdeen');}
+    else if(action==='contacts'||action==='contact'){openModal('联系人',row('contact-context','小林','user-round','查看好友或引用到当前任务')+row('contact-context','阿澈','user-round','演示联系人'));}
+    else if(action==='contact-context'){closeModal();state.reference='小林';state.keyboard=false;updateComposer();}
+    else if(action==='inbox'){openModal('消息与通知','<p>人与人消息与 Agent 任务分别呈现。</p>'+row('dismiss','小林的消息','message-circle','演示会话')+row('dismiss','活动事项','calendar','演示通知'));}
+    else if(action==='plans'){openModal('我的计划','<p>任务完成后，可以从这里找回同一份计划。</p>'+row('resume-task','下午的散步计划','route','原型演示'));}
+    else if(action==='settings'){openModal('我的与设置',row('dismiss','个人资料','user-round')+row('dismiss','隐私与 AI 授权','shield-check'));}
+    else if(action==='context'){notify('本次探索上下文：Aberdeen；不是设备实时位置');}
+    else if(action==='jump'){content.scrollTo({top:content.scrollHeight,behavior:'smooth'});}
+    else if(action==='dismiss')closeModal();
+  });
+  root.querySelector('#bt-more-scenes').addEventListener('change',event=>{if(event.target.value)selectScene(event.target.value);});
+  input.addEventListener('focus',()=>{if(modal.hidden&&!state.keyboard){state.keyboard=true;updateComposer();}});
+  input.addEventListener('input',()=>{updateComposer();if(/@[^\s]*$/.test(input.value))showMentions();else if(popover.getAttribute('aria-label')==='引用上下文')closePopover();});
+  input.addEventListener('keydown',event=>{if((event.ctrlKey||event.metaKey)&&event.key==='Enter'&&!event.isComposing){event.preventDefault();submit();}});
+  content.addEventListener('scroll',()=>{state.scroll=content.scrollTop;root.querySelector('.bt-jump').hidden=!(state.expanded&&content.scrollHeight-content.clientHeight-content.scrollTop>180);});
+  root.addEventListener('keydown',event=>{if(event.key==='Escape'){if(!modal.hidden)closeModal();else if(!popover.hidden)closePopover();else if(state.keyboard){state.keyboard=false;input.blur();updateComposer();}else if(state.expanded){state.expanded=false;renderResult();}}if(event.key==='Tab'&&!modal.hidden){const list=[...modal.querySelectorAll('button,input,textarea,select,a[href]')].filter(el=>!el.disabled&&!el.hidden);if(!list.length)return;if(event.shiftKey&&document.activeElement===list[0]){event.preventDefault();list.at(-1).focus();}else if(!event.shiftKey&&document.activeElement===list.at(-1)){event.preventDefault();list[0].focus();}}});
+  scrim.addEventListener('click',closeModal);
+  function restore(saved){if(!saved?.privateContent)return;const incoming=saved.privateContent;if(!['map','input','answer','reading','draft','loading','empty','error','mention','attachments','voice'].includes(incoming.scene))return;Object.assign(state,{scene:incoming.scene,expanded:!!incoming.expanded,scroll:incoming.scroll||0,keyboard:!!incoming.keyboard,audience:incoming.audience||'仅自己'});renderResult();updateComposer();}
+  renderResult();updateComposer();restore(window.openai?.widgetState);
+  window.addEventListener('openai:set_globals',event=>restore(event.detail?.globals?.widgetState));
+  if(globalThis.Tweak){const design={radius:26,text:15};const tweak=new Tweak({container:composer,onChange:()=>{composer.style.borderRadius=design.radius+'px';content.style.fontSize=design.text+'px';}});tweak.addSlider(design,'radius',{label:'输入框圆角',min:18,max:30,unit:'px'});tweak.addSlider(design,'text',{label:'回答字号',min:15,max:18,unit:'px'});}
+})();
+</script>

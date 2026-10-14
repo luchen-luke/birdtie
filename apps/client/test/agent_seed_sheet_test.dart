@@ -280,12 +280,12 @@ void main() {
     await tester.tap(find.text('打开初始设置'));
     await tester.pumpAndSettle();
     expect(find.byType(TextFormField), findsNothing);
-    expect(find.text('交流语言（不会改变界面语言）'), findsOneWidget);
+    expect(find.text('交流语言'), findsOneWidget);
     await tester.tap(find.text('简体中文'));
     workspace.value = 'organization-resource-id';
     await tester.pump();
     expect(find.text('请切回个人身份后再完善初始设置。'), findsOneWidget);
-    expect(find.text('交流语言（不会改变界面语言）'), findsNothing);
+    expect(find.text('交流语言'), findsNothing);
     workspace.value = null;
     await tester.pumpAndSettle();
     expect(reads, 2);
@@ -319,8 +319,8 @@ void main() {
     await tester.pumpWidget(seedHarness(auth, client));
     await tester.tap(find.text('打开初始设置'));
     await tester.pumpAndSettle();
-    expect(find.text('交流语言（不会改变界面语言）'), findsNothing);
-    expect(find.text('本人声明的当前城市'), findsOneWidget);
+    expect(find.text('交流语言'), findsNothing);
+    expect(find.text('所在城市'), findsOneWidget);
     expect(find.text('阿伯丁'), findsNothing);
     await tester.tap(find.text('下一步'));
     await tester.pumpAndSettle();
@@ -408,7 +408,7 @@ void main() {
     await tester.ensureVisible(find.text('下一步'));
     await tester.tap(find.text('下一步'));
     await tester.pump();
-    expect(find.text('交流语言（不会改变界面语言）'), findsNothing);
+    expect(find.text('交流语言'), findsNothing);
     expect(find.text('zhongwen'), findsOneWidget);
     expect(tester.takeException(), isNull);
     expect(find.bySemanticsLabel(RegExp('昵称')), findsWidgets);

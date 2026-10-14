@@ -185,3 +185,74 @@ func TestProviderPayloadDropsNativeAuthoritySelectors(t *testing.T) {
 		t.Fatal("adapter aliases original request slices")
 	}
 }
+
+func TestCandidateExtractionSchemaVersionsRemainExplicit(t *testing.T) {
+	for _, schema := range []string{CandidateProposalVersion, CandidateProposalV2Version} {
+		t.Run(schema, func(t *testing.T) {
+			r := testRequest(Structured)
+			r.TaskKind = MemoryCandidateExtraction
+			r.OutputSchemaVersion = schema
+			r.ToolAllowlist = []string{}
+			wire, err := json.Marshal(r)
+			if err != nil {
+				t.Fatal(err)
+			}
+			decoded, err := DecodeRequest(wire, testNow())
+			if err != nil || decoded.OutputSchemaVersion != schema || decoded.TaskKind != MemoryCandidateExtraction {
+				t.Fatal("candidate schema was rejected or changed", err)
+			}
+			for name, mutate := range map[string]func(*Request){
+				"activity_task": func(v *Request) { v.TaskKind = ActivityQuery },
+				"text_mode": func(v *Request) {
+					v.OutputMode = Text
+					v.CapabilitiesRequired = []string{"text"}
+				},
+				"tools":          func(v *Request) { v.ToolAllowlist = []string{"activity.search"} },
+				"unknown_schema": func(v *Request) { v.OutputSchemaVersion = "air.candidate_proposal.v3" },
+			} {
+				t.Run(name, func(t *testing.T) {
+					bad := r
+					mutate(&bad)
+					if !errors.Is(ValidateRequest(bad, testNow()), ErrInvalid) {
+						t.Fatal("candidate schema acquired another task/mode/tool")
+					}
+				})
+			}
+		})
+	}
+}
+
+func TestCandidateProposalVersionedJSONPreservesV1Shape(t *testing.T) {
+	c := CandidateProposal{Status: "CANDIDATE", Predicate: "ACTIVITY_CATEGORY", Value: "sports", SourceRefIDs: []string{fixtureContext}, SubjectAttribution: "UNVERIFIED"}
+	for _, tc := range []struct {
+		name  string
+		value CandidateProposal
+		want  string
+	}{
+		{"candidate", c, `{"status":"CANDIDATE","predicate":"ACTIVITY_CATEGORY","value":"sports","source_ref_ids":["` + fixtureContext + `"],"subject_attribution":"UNVERIFIED"}`},
+		{"legacy_empty_shape", CandidateProposal{Status: "CANDIDATE"}, `{"status":"CANDIDATE","predicate":"","value":"","source_ref_ids":null,"subject_attribution":""}`},
+		{"no_candidate", CandidateProposal{Status: NoCandidateStatus}, `{"status":"NO_CANDIDATE"}`},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			wire, err := json.Marshal(tc.value)
+			if err != nil || string(wire) != tc.want {
+				t.Fatalf("candidate JSON changed: %s, %v", wire, err)
+			}
+		})
+	}
+	for name, mutate := range map[string]func(*CandidateProposal){
+		"predicate":     func(c *CandidateProposal) { c.Predicate = "ACTIVITY_CATEGORY" },
+		"value":         func(c *CandidateProposal) { c.Value = "sports" },
+		"empty_sources": func(c *CandidateProposal) { c.SourceRefIDs = []string{} },
+		"sources":       func(c *CandidateProposal) { c.SourceRefIDs = []string{fixtureContext} },
+		"attribution":   func(c *CandidateProposal) { c.SubjectAttribution = "UNVERIFIED" },
+	} {
+		t.Run("mixed_"+name, func(t *testing.T) {
+			bad := CandidateProposal{Status: NoCandidateStatus}
+			mutate(&bad)
+			if wire, err := json.Marshal(bad); !errors.Is(err, ErrAdapter) || wire != nil {
+				t.Fatal("mixed no-candidate value serialized", err)
+			}
+		})
+	}
+}

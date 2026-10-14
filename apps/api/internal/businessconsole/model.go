@@ -14,6 +14,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/birdtie/birdtie/apps/api/internal/agentmemory"
+	"github.com/birdtie/birdtie/apps/api/internal/identity"
 )
 
 var (
@@ -262,10 +263,24 @@ type Venue struct {
 	OperationStatus string     `json:"operationStatus"`
 }
 type Member struct {
-	PersonID string `json:"personId"`
-	Role     string `json:"role"`
-	Status   string `json:"status"`
+	PersonID    string `json:"personId"`
+	Role        string `json:"role"`
+	Status      string `json:"status"`
+	DisplayName string `json:"displayName,omitempty"`
 }
+
+// NormalizeMemberDisplayName accepts only an already-authorized ordinary
+// Profile label. It grants no Profile access and never supplies an inferred
+// name, handle or ID fallback. An unusable legacy label stays absent while
+// the original membership and its management permissions remain available.
+func NormalizeMemberDisplayName(value string) string {
+	p, e := identity.NormalizeHumanProfileInput(identity.ProfileInput{DisplayName: value, Visibility: "public"})
+	if e != nil {
+		return ""
+	}
+	return p.DisplayName
+}
+
 type Console struct {
 	Business          Business `json:"business"`
 	Claim             *Claim   `json:"claim"`

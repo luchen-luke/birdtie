@@ -256,11 +256,11 @@ func (s *Store) SaveHumanPrivateImage(ctx context.Context, d [32]byte, a identit
 		v.receipt.Status = "ready_private"
 		v.receipt.Revision++
 		v.receipt.SHA256 = hash
-		_, e = tx.Exec(ctx, `INSERT INTO media_assets(id,owner_account_id,storage_key,mime_type,byte_size,sha256_hex,state) VALUES($1,$2,'private-moment/'||$1::text,$3,$4,$5,'ready_private')`, id, a.ID, mime, len(derivative), hash)
+		_, e = tx.Exec(ctx, `INSERT INTO media_assets(id,owner_account_id,storage_key,mime_type,byte_size,sha256_hex,state) VALUES($1::uuid,$2,'private-moment/'||($1::uuid)::text,$3,$4,$5,'ready_private')`, id, a.ID, mime, len(derivative), hash)
 		if e != nil {
 			return media.PrivateImageReceipt{}, content.ErrUnavailable
 		}
-		_, e = tx.Exec(ctx, `INSERT INTO audit_events(actor_account_id,action,resource_type,resource_id) VALUES($1,'private_image_saved','media',$2)`, a.ID, id)
+		_, e = tx.Exec(ctx, `INSERT INTO audit_events(actor_account_id,action,resource_type,resource_id,decision,purpose) VALUES($1,'private_image_saved','media',$2,'allowed',$3)`, a.ID, id, media.PrivateImagePurpose)
 		if e != nil {
 			return media.PrivateImageReceipt{}, content.ErrUnavailable
 		}
@@ -423,7 +423,7 @@ func (s *Store) DeleteHumanPrivateImage(ctx context.Context, d [32]byte, a ident
 		if e != nil {
 			return content.ErrUnavailable
 		}
-		_, e = tx.Exec(ctx, `INSERT INTO audit_events(actor_account_id,action,resource_type,resource_id) VALUES($1,'private_image_deleted','media',$2)`, a.ID, id)
+		_, e = tx.Exec(ctx, `INSERT INTO audit_events(actor_account_id,action,resource_type,resource_id,decision,purpose) VALUES($1,'private_image_deleted','media',$2,'allowed',$3)`, a.ID, id, media.PrivateImagePurpose)
 		if e != nil {
 			return content.ErrUnavailable
 		}

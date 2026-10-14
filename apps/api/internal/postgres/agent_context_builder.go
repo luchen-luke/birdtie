@@ -26,6 +26,7 @@ var _ acb.Store = (*Store)(nil)
 
 type contextBuilderBinding struct {
 	session, owner, agent, authority string
+	sessionGeneration                int64
 	limit                            time.Time
 }
 
@@ -60,9 +61,9 @@ func (s *Store) beginContextBuilder(ctx context.Context, a agentprofile.PrivateA
 		return fail(contextBuilderError(e))
 	}
 	var sessionLimit time.Time
-	if e = tx.QueryRow(ctx, `SELECT id,LEAST(expires_at,idle_expires_at) FROM sessions WHERE account_id=$1 AND token_sha256=$2
+	if e = tx.QueryRow(ctx, `SELECT id,authorization_generation,LEAST(expires_at,idle_expires_at) FROM sessions WHERE account_id=$1 AND token_sha256=$2
  AND revoked_at IS NULL AND expires_at>clock_timestamp() AND idle_expires_at>clock_timestamp()
- AND ($3::boolean OR authentication_method<>'dev_phone') FOR SHARE`, b.owner, a.SessionDigest[:], s.devPhoneEnabled).Scan(&b.session, &sessionLimit); e != nil {
+ AND ($3::boolean OR authentication_method<>'dev_phone') FOR SHARE`, b.owner, a.SessionDigest[:], s.devPhoneEnabled).Scan(&b.session, &b.sessionGeneration, &sessionLimit); e != nil {
 		return fail(contextBuilderError(e))
 	}
 	var agentGeneration, metadataGeneration string
@@ -75,7 +76,9 @@ func (s *Store) beginContextBuilder(ctx context.Context, a agentprofile.PrivateA
  FOR SHARE OF ag,ap`, b.owner).Scan(&b.agent, &agentGeneration, &metadataGeneration, &metadataVersion); e != nil {
 		return fail(contextBuilderError(e))
 	}
-	raw, _ := json.Marshal([]any{b.session, b.owner, generation, b.agent, agentGeneration, metadataGeneration, metadataVersion})
+	// Native Session generation retires revoke/restore and security-window ABA.
+	// Session xmin would also reject an ordinary still-live idle renewal.
+	raw, _ := json.Marshal([]any{b.session, b.sessionGeneration, b.owner, generation, b.agent, agentGeneration, metadataGeneration, metadataVersion})
 	h := sha256.Sum256(raw)
 	b.authority = hex.EncodeToString(h[:])
 	b.limit = sessionLimit.UTC()
@@ -89,8 +92,8 @@ func (s *Store) finishContextBuilder(ctx context.Context, tx pgx.Tx, b contextBu
  JOIN agents ag ON ag.principal_account_id=actor.id JOIN agent_profiles ap ON ap.agent_id=ag.id
  WHERE se.id=$1 AND actor.id=$2 AND ag.id=$3 AND actor.account_type='person' AND actor.status='active'
  AND ag.agent_type='personal' AND ag.status='active' AND ap.owner_id=actor.id AND ap.owner_type='PERSON' AND ap.profile_version>0
- AND se.revoked_at IS NULL AND se.expires_at>clock.at AND se.idle_expires_at>clock.at
- AND ($4::boolean OR se.authentication_method<>'dev_phone')) FROM clock`, b.session, b.owner, b.agent, s.devPhoneEnabled).Scan(&at, &alive)
+ AND se.authorization_generation=$5 AND se.revoked_at IS NULL AND se.expires_at>clock.at AND se.idle_expires_at>clock.at
+ AND ($4::boolean OR se.authentication_method<>'dev_phone')) FROM clock`, b.session, b.owner, b.agent, s.devPhoneEnabled, b.sessionGeneration).Scan(&at, &alive)
 	if e != nil || ctx.Err() != nil {
 		return time.Time{}, acb.ErrUnavailable
 	}
@@ -400,7 +403,7 @@ func (s *Store) contextBuilderPublic(ctx context.Context, tx pgx.Tx, b contextBu
 			if e != nil {
 				return contextBuilderError(e)
 			}
-			out.Places = append(out.Places, place)
+			out.Places = append(out.Places, photoFreeMachinePlace(place))
 			out.Bundle.Places = append(out.Bundle.Places, acb.PublicPlace{ID: place.ID, Name: place.Name, Category: place.CategoryCode})
 			if place.Source.ExpiresAt != nil {
 				contextBuilderLimit(&out.Bundle, *place.Source.ExpiresAt)
@@ -418,7 +421,7 @@ func contextBuilderFinalPublic(ctx context.Context, tx pgx.Tx, b contextBuilderB
  SELECT clock.at,clock.at<$7::timestamptz AND EXISTS(SELECT 1 FROM sessions se JOIN accounts actor ON actor.id=se.account_id
  JOIN agents ag ON ag.principal_account_id=actor.id JOIN agent_profiles ap ON ap.agent_id=ag.id AND ap.owner_id=actor.id AND ap.owner_type='PERSON'
  WHERE se.id=$8 AND actor.id=$2 AND actor.account_type='person' AND actor.status='active' AND ag.id=$9 AND ag.status='active' AND ag.agent_type='personal'
- AND se.revoked_at IS NULL AND se.expires_at>clock.at AND se.idle_expires_at>clock.at)
+ AND se.authorization_generation=$10 AND se.revoked_at IS NULL AND se.expires_at>clock.at AND se.idle_expires_at>clock.at)
  AND EXISTS(SELECT 1 FROM agent_tasks t JOIN cities c ON c.id=t.city_context_id JOIN city_contexts cc ON cc.city_id=c.id
  WHERE t.id=$1 AND t.owner_account_id=$2 AND t.status='ACTIVE' AND t.updated_at=$3 AND t.city_context_id=$4
  AND c.publication_status='published' AND cc.status='active' AND (c.expires_at IS NULL OR c.expires_at>clock.at))
@@ -426,7 +429,7 @@ func contextBuilderFinalPublic(ctx context.Context, tx pgx.Tx, b contextBuilderB
  WHERE a.city_id=$4 AND a.visibility='public' AND a.publication_status='published' AND birdtie_activity_visible_to(a.id,$2::uuid)
  AND a.cancelled_at IS NULL AND a.ends_at>clock.at AND (a.expires_at IS NULL OR a.expires_at>clock.at)
  AND NOT EXISTS(SELECT 1 FROM account_blocks blocked WHERE (blocked.blocker_account_id=$2 AND blocked.blocked_account_id=a.host_account_id) OR (blocked.blocked_account_id=$2 AND blocked.blocker_account_id=a.host_account_id)))
- AND NOT EXISTS(SELECT unnest($6::uuid[]) EXCEPT SELECT p.id FROM places p WHERE p.city_id=$4 AND p.publication_status='published' AND (p.expires_at IS NULL OR p.expires_at>clock.at)) FROM clock`, r.TaskID, b.owner, r.TaskUpdatedAt, r.CityID, r.ActivityIDs, r.PlaceIDs, leaseEnd, b.session, b.agent).Scan(&at, &valid)
+ AND NOT EXISTS(SELECT unnest($6::uuid[]) EXCEPT SELECT p.id FROM places p WHERE p.city_id=$4 AND p.publication_status='published' AND (p.expires_at IS NULL OR p.expires_at>clock.at)) FROM clock`, r.TaskID, b.owner, r.TaskUpdatedAt, r.CityID, r.ActivityIDs, r.PlaceIDs, leaseEnd, b.session, b.agent, b.sessionGeneration).Scan(&at, &valid)
 	if e != nil || ctx.Err() != nil {
 		return time.Time{}, acb.ErrUnavailable
 	}

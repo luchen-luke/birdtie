@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'business_api.dart';
 import 'business_agent_identity_controller.dart';
+import '../app/birdtie_app_bar.dart';
 
 class BusinessAgentIdentityPage extends StatefulWidget {
   const BusinessAgentIdentityPage({
@@ -111,7 +112,7 @@ class _BusinessAgentIdentityPageState extends State<BusinessAgentIdentityPage> {
   Widget build(BuildContext context) => AnimatedBuilder(
     animation: c,
     builder: (context, _) => Scaffold(
-      appBar: AppBar(title: const Text('商家智能体身份')),
+      appBar: birdtieAppBar(context, title: const Text('商家智能体身份')),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(20),

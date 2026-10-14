@@ -86,6 +86,7 @@ type MapEffects struct {
 }
 
 type Results struct {
+	OnlinePlaceSearch *OnlinePlaceSearch `json:"onlinePlaceSearch,omitempty"`
 	// Trusted native projection adapter output; never accepted from request JSON.
 	PublicCommercialRefs   []arp.Ref                    `json:"-"`
 	NativeProjection       bool                         `json:"-"`
@@ -192,12 +193,15 @@ func (t Task) ContextRef() (contextgraph.Ref, error) {
 }
 
 type Message struct {
-	Role                 string           `json:"role"`
-	Text                 string           `json:"text"`
-	Sources              []AnswerSource   `json:"sources,omitempty"`
-	SourceRunID          string           `json:"sourceRunId,omitempty"`
-	SourceEvidenceDigest string           `json:"sourceEvidenceDigest,omitempty"`
-	ResultMembership     *ReplyMembership `json:"resultMembership,omitempty"`
+	ExternalPlaceReply         *OnlinePlaceSearch          `json:"externalPlaceReply,omitempty"`
+	Role                       string                      `json:"role"`
+	Text                       string                      `json:"text"`
+	Sources                    []AnswerSource              `json:"sources,omitempty"`
+	SourceRunID                string                      `json:"sourceRunId,omitempty"`
+	SourceEvidenceDigest       string                      `json:"sourceEvidenceDigest,omitempty"`
+	ResultMembership           *ReplyMembership            `json:"resultMembership,omitempty"`
+	LocalReplyEvidence         *LocalPlaceReplyEvidence    `json:"localReplyEvidence,omitempty"`
+	LicensedPlaceModelEvidence *LicensedPlaceModelEvidence `json:"licensedPlaceModelEvidence,omitempty"`
 }
 
 // Persisted membership is bounded correlation data, never a read or egress

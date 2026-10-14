@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import '../app/birdtie_app_bar.dart';
 import '../config/birdtie_environment.dart';
 
 class OrganizationAnalyticsPage extends StatefulWidget {
@@ -88,22 +89,22 @@ class _OrganizationAnalyticsPageState extends State<OrganizationAnalyticsPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('活动数据')),
+    appBar: birdtieAppBar(context, title: const Text('活动数据')),
     body: RefreshIndicator(
       onRefresh: _load,
       child: ListView(
         padding: const EdgeInsets.all(20),
         children: [
-          const Text(
+          Text(
             '试点活动漏斗',
-            style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
+            style: Theme.of(context).textTheme.headlineSmall,
           ),
           const SizedBox(height: 6),
           const Text('展示次数 → 详情打开 → 报名；收藏单独计数。次数不代表独立人数。'),
           const SizedBox(height: 18),
           if (_loading) const Center(child: CircularProgressIndicator()),
           if (_error != null) ...[
-            Text(_error!, style: const TextStyle(color: Colors.red)),
+            Text(_error!, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.error)),
             TextButton(onPressed: _load, child: const Text('重试')),
           ],
           if (!_loading && _error == null && _items.isEmpty)

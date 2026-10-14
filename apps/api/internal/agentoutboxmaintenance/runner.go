@@ -16,26 +16,36 @@ const MaxBatch = 1000
 const MaxTimeout = time.Minute
 const MinTimeout = time.Millisecond
 
+// Only the native mixed entrance emits this after a successful retirement
+// COMMIT. It is neither a consumer receipt nor a business effect result.
+var ErrNativeControlRetired = errors.New("原生维护控制已提交退休")
+
 type Store interface {
 	ClaimAgentOutboxControlForSubject(context.Context, actorref.PrincipalRef, string, agentoutbox.HandlerVersion) (agentoutbox.Record, agentoutbox.Claim, error)
 	ConsumeAgentOutboxControl(context.Context, agentoutbox.Claim) (agentoutbox.ConsumerRecord, error)
 }
 
+type MixedStore interface {
+	ClaimMixedAgentOutboxControlForSubject(context.Context, actorref.PrincipalRef, string) (agentoutbox.Record, agentoutbox.Claim, error)
+}
+
 type Options struct {
-	Subject  actorref.PrincipalRef
-	WorkerID string
-	Handler  agentoutbox.HandlerVersion
-	Batch    int
-	Timeout  time.Duration
+	Subject       actorref.PrincipalRef
+	WorkerID      string
+	Handler       agentoutbox.HandlerVersion
+	Batch         int
+	Timeout       time.Duration
+	MixedHandlers bool
 }
 
 func ValidateOptions(o Options) bool {
 	subject, e := actorref.ParsePrincipal("PERSON", o.Subject.ID)
 	_, workerError := agentoutbox.NormalizeWorkerID(o.WorkerID)
-	return e == nil && subject == o.Subject && o.Subject.ID != "00000000-0000-0000-0000-000000000000" && workerError == nil && agentoutbox.ValidateHandlerVersion(o.Handler) == nil && o.Batch >= 1 && o.Batch <= MaxBatch && o.Timeout >= MinTimeout && o.Timeout <= MaxTimeout
+	return e == nil && subject == o.Subject && o.Subject.ID != "00000000-0000-0000-0000-000000000000" && workerError == nil && agentoutbox.ValidateHandlerVersion(o.Handler) == nil && (!o.MixedHandlers || o.Handler == agentoutbox.HandlerV1) && o.Batch >= 1 && o.Batch <= MaxBatch && o.Timeout >= MinTimeout && o.Timeout <= MaxTimeout
 }
 
 type Counts struct {
+	RetiredControls     int `json:"retired_controls,omitempty"`
 	MaintenanceComplete int `json:"maintenance_complete,omitempty"`
 	MaintenanceProgress int `json:"maintenance_progress,omitempty"`
 	Unavailable         int `json:"unavailable"`
@@ -86,10 +96,31 @@ func contextReason(ctx context.Context) string {
 func validClaim(r agentoutbox.Record, c agentoutbox.Claim, o Options) bool {
 	// These are closed structural comparisons, never a replacement for native
 	// current source/subject/fence/time checks in the original Store.
+	var expectedHandler agentoutbox.HandlerVersion
+	switch r.Event.SchemaVersion {
+	case agentoutbox.SchemaVersion:
+		expectedHandler = agentoutbox.HandlerV1
+		if !o.MixedHandlers && o.Handler == agentoutbox.HandlerV2 {
+			expectedHandler = agentoutbox.HandlerV2
+		}
+	case agentoutbox.MemorySchema:
+		expectedHandler = agentoutbox.MemoryHandler
+	case agentoutbox.PreferenceSchema:
+		expectedHandler = agentoutbox.PreferenceHandler
+	case agentoutbox.TaskRequestSchema:
+		expectedHandler = agentoutbox.TaskRequestHandler
+	case agentoutbox.ParticipationSchema:
+		expectedHandler = agentoutbox.ParticipationHandler
+	default:
+		return false
+	}
+	if !o.MixedHandlers && expectedHandler != o.Handler {
+		return false
+	}
 	if agentoutbox.ValidateRecord(r) != nil || agentoutbox.ValidateClaim(c) != nil ||
 		r.State != agentoutbox.Leased || r.LeaseUntil == nil || r.Event.Subject != o.Subject ||
 		c.Subject != o.Subject || c.EventID != r.Event.EventID || c.AgentID != r.Event.AgentID ||
-		c.WorkerID != o.WorkerID || c.HandlerVersion != o.Handler || r.LeaseOwner != c.WorkerID ||
+		c.WorkerID != o.WorkerID || c.HandlerVersion != expectedHandler || r.LeaseOwner != c.WorkerID ||
 		r.Fence != c.Fence || !r.LeaseUntil.Equal(c.LeaseUntil) {
 		return false
 	}
@@ -105,7 +136,8 @@ func validReceipt(r agentoutbox.Record, c agentoutbox.Claim, p agentoutbox.Consu
 	}
 	switch p.State {
 	case agentoutbox.Pending, agentoutbox.MemoryComplete:
-		return c.HandlerVersion == agentoutbox.MemoryHandler || c.HandlerVersion == agentoutbox.PreferenceHandler
+		return c.HandlerVersion == agentoutbox.MemoryHandler || c.HandlerVersion == agentoutbox.PreferenceHandler ||
+			c.HandlerVersion == agentoutbox.TaskRequestHandler || c.HandlerVersion == agentoutbox.ParticipationHandler
 	case agentoutbox.Unavailable, agentoutbox.Invalidated, agentoutbox.Expired, agentoutbox.DeadLetter:
 		return true
 	}
@@ -120,13 +152,35 @@ func Run(parent context.Context, s Store, o Options) Report {
 	if parent == nil || missing(s) || !ValidateOptions(o) {
 		return out
 	}
+	var mixed MixedStore
+	if o.MixedHandlers {
+		var available bool
+		mixed, available = s.(MixedStore)
+		if !available || mixed == nil {
+			return stop(out, "CONFIGURATION", "MIXED_MAINTENANCE_UNAVAILABLE")
+		}
+	}
 	ctx, cancel := context.WithTimeout(parent, o.Timeout)
 	defer cancel()
 	for i := 0; i < o.Batch; i++ {
 		if ctx.Err() != nil {
 			return stop(out, "BEFORE_CLAIM", contextReason(ctx))
 		}
-		record, claim, e := s.ClaimAgentOutboxControlForSubject(ctx, o.Subject, o.WorkerID, o.Handler)
+		var record agentoutbox.Record
+		var claim agentoutbox.Claim
+		var e error
+		if o.MixedHandlers {
+			record, claim, e = mixed.ClaimMixedAgentOutboxControlForSubject(ctx, o.Subject, o.WorkerID)
+		} else {
+			record, claim, e = s.ClaimAgentOutboxControlForSubject(ctx, o.Subject, o.WorkerID, o.Handler)
+		}
+		if o.MixedHandlers && e == ErrNativeControlRetired && reflect.DeepEqual(record, agentoutbox.Record{}) && claim == (agentoutbox.Claim{}) {
+			if ctx.Err() != nil {
+				return stop(out, "CLAIM", contextReason(ctx))
+			}
+			out.Counts.RetiredControls++
+			continue
+		}
 		// Empty ErrUnavailable can accompany an original native terminal update;
 		// it is not a confirmed receipt and cannot be counted or silently retried.
 		if e == agentoutbox.ErrNotFound && reflect.DeepEqual(record, agentoutbox.Record{}) && claim == (agentoutbox.Claim{}) {
@@ -156,7 +210,8 @@ func Run(parent context.Context, s Store, o Options) Report {
 		// The original native method commits a valid terminal control and returns
 		// this exact sentinel. Wrapped/joined/empty/unknown results are not success.
 		confirmed := e == agentoutbox.ErrUnavailable
-		if o.Handler == agentoutbox.MemoryHandler || o.Handler == agentoutbox.PreferenceHandler {
+		if claim.HandlerVersion == agentoutbox.MemoryHandler || claim.HandlerVersion == agentoutbox.PreferenceHandler ||
+			claim.HandlerVersion == agentoutbox.TaskRequestHandler || claim.HandlerVersion == agentoutbox.ParticipationHandler {
 			confirmed = e == nil
 		}
 		if !confirmed || !validReceipt(record, claim, receipt) {

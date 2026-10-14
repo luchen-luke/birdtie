@@ -35,9 +35,9 @@ class AgentDebugPanel extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   '调试诊断',
-                  style: TextStyle(fontWeight: FontWeight.w700),
+                  style: Theme.of(context).textTheme.titleLarge,
                 ),
                 Text('环境：$environment · API：$endpoint'),
                 Text('当前登录：${signedIn ? '是' : '否'}'),

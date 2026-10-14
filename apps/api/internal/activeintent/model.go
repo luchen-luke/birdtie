@@ -132,7 +132,7 @@ func NormalizeDraft(in socialintent.DraftInput) (socialintent.DraftInput, error)
 		return in, ErrInvalid
 	}
 	switch in.Audience {
-	case "PRIVATE", "FRIENDS", "PUBLIC":
+	case "PRIVATE", "FRIENDS", "PUBLIC", "FOLLOWERS", "CONNECTIONS", "CLOSE":
 		if in.CityID != "" || in.CommunityID != "" || len(in.InviteeIDs) != 0 {
 			return in, ErrInvalid
 		}

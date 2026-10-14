@@ -1,0 +1,77 @@
+{
+  "at": "2026-10-15T04:13:27.006182+08:00",
+  "scope": "Analysis and executable requirement intake, not functional delivery",
+  "parent_task_id": "BT-FIX-NOW-UI-001",
+  "spec_path": "docs/product/BIRDTIE-SOCIAL-CORE-EXECUTION-SPEC-2026-10-15.md",
+  "document_sha256": {
+    "docs/product/BIRDTIE-SOCIAL-CORE-EXECUTION-SPEC-2026-10-15.md": "a0e101743fce1cf8a94b5eec7627e0abf19dca5895bab71e4eb49bb3956ae691",
+    "automation/CODEX_MASTER_EXECUTION_PROMPT.md": "3514fc69edf40a65eeb395459a5f5ae6a3d5c97ba7f1f7ab102ff200216e1780",
+    "docs/architecture/CIVU-REUSE-MATRIX.md": "e023f2088b9597bdf8d928e52b8eb4600590595a72bec95ff38c7e125fef5bde"
+  },
+  "queue_before_intake_sha256": "4ce08a1b1bc9cdb5e1d83c43fa322d6e9e8d19ea45de2d1fc68b23b9e62e2638",
+  "queue_after_intake_sha256": "324e8c18180d79b63326f21dc560cb4be62f0dea6bf7be4b1ae3ee44832853c1",
+  "checkpoint_count": 20,
+  "queue_task_count": 256,
+  "queue_statuses": {
+    "DONE": 183,
+    "BLOCKED": 13,
+    "TODO": 47,
+    "PARTIAL": 12,
+    "IN_PROGRESS": 1
+  },
+  "other_255_tasks_unchanged": true,
+  "existing_parent_fields_preserved": true,
+  "status_dependency_priority_gates_unchanged": true,
+  "leases_preserved_in_intake": true,
+  "taskctl_load_validate": "PASS",
+  "taskctl_next_contains_executable_spec": "PASS",
+  "new_live_tasks": 0,
+  "source_reference_heads": {
+    "Civu-client": "1bbf0613b513001447f326225c944c1a1fbd8e8f",
+    "Civu-server": "0489536a0eb0792deff7793c8b143ad3e741d5ce"
+  },
+  "civu_files_modified": false,
+  "civu_code_data_credentials_sessions_media_copied": false,
+  "first_failed_tooling_attempt": {
+    "command": "PowerShell literal Python stdin via WindowsApps python alias",
+    "exit_code": 1,
+    "output": "EMPTY",
+    "queue_changed": false,
+    "resolution": "Used the workspace bundled Python runtime"
+  },
+  "verification": {
+    "document_checkpoint_order": "PASS_20_UNIQUE_ORDERED",
+    "corrected_code_paths_and_markdown_links": "PASS",
+    "git_diff_check_docs": "PASS_EXIT_0",
+    "product_tests": "NOT_RUN",
+    "product_builds": "NOT_RUN",
+    "real_flow": "NOT_RUN",
+    "visual_acceptance": "NOT_RUN",
+    "new_package_delivery": "NOT_RUN"
+  },
+  "normal_font_only": true,
+  "screen_recording": false,
+  "mixed_speech": "DEFERRED",
+  "references_use_literal_heading_lookup": true,
+  "final_checks": [
+    {
+      "command": "& 'C:/Users/chens/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/python.exe' automation/taskctl.py validate",
+      "cwd": "D:\\Project\\birdtie",
+      "exit_code": 0,
+      "coverage": "Queue structure, statuses, dependencies, leases; 256 tasks valid"
+    },
+    {
+      "command": "Bundled Python literal stdin final plan integrity check",
+      "cwd": "D:\\Project\\birdtie",
+      "exit_code": 0,
+      "coverage": "Final queue/spec hashes, 20 unique headings and topological checkpoint order; taskctl next exposes spec"
+    },
+    {
+      "command": "git diff --check -- automation/codex_task_queue.json automation/CODEX_MASTER_EXECUTION_PROMPT.md docs/architecture/CIVU-REUSE-MATRIX.md",
+      "cwd": "D:\\Project\\birdtie",
+      "exit_code": 0,
+      "coverage": "Changed tracked planning files only; LF-to-CRLF notices retained"
+    }
+  ],
+  "preview_open": "QUEUED_NOT_CONFIRMED_OPEN"
+}

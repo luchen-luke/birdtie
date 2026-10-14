@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'human_causal_control_test.dart' show humanSettle;
 
 http.Response envelope(Object data, [int code = 200]) =>
     http.Response.bytes(utf8.encode(jsonEncode({'data': data})), code);
@@ -170,7 +171,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('移除消息'), findsNothing);
     await tester.tap(find.text('举报消息'));
-    await tester.pumpAndSettle();
+    await humanSettle(tester);
     final page = tester.widget<SupportPage>(find.byType(SupportPage));
     expect(page.targetType, 'activity_message');
     expect(page.targetID, 'message');

@@ -25,6 +25,12 @@ func TestSocialIntentAudienceInputContract(t *testing.T) {
 	}{
 		{"private", "PRIVATE", "", "", nil, true},
 		{"friends", "FRIENDS", "", "", nil, true},
+		{"followers", "FOLLOWERS", "", "", nil, true},
+		{"connections", "CONNECTIONS", "", "", nil, true},
+		{"close", "CLOSE", "", "", nil, true},
+		{"followers with city", "FOLLOWERS", "aberdeen-gb", "", nil, false},
+		{"connections with community", "CONNECTIONS", "", communityID, nil, false},
+		{"close with invitee", "CLOSE", "", "", []string{accountID}, false},
 		{"public", "PUBLIC", "", "", nil, true},
 		{"local target", "LOCAL", "aberdeen-gb", "", nil, true},
 		{"local no city", "LOCAL", "", "", nil, false},

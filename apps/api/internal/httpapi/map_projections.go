@@ -9,13 +9,36 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"time"
 )
 
 func mapProjectionQuery(r *http.Request, private bool) (mp.Query, error) {
 	q := mp.Query{CityID: r.PathValue("cityID"), Private: private}
 	v, e := url.ParseQuery(r.URL.RawQuery)
-	if e != nil || len(v) != 4 || r.URL.ForceQuery {
+	if e != nil || (len(v) != 4 && len(v) != 6) || r.URL.ForceQuery {
 		return q, mp.ErrInvalid
+	}
+	if len(v) == 6 {
+		if private || len(v["scope"]) != 1 || v["scope"][0] != "public-author" || len(v["authorId"]) != 1 || v["authorId"][0] == "" {
+			return q, mp.ErrInvalid
+		}
+		q.AuthorID = v["authorId"][0]
+	}
+	if fields := r.Header.Values("X-Birdtie-Map-Media"); len(fields) != 0 {
+		if len(fields) != 1 || private {
+			return q, mp.ErrInvalid
+		}
+		switch fields[0] {
+		case "place-photo-v1":
+			if q.AuthorID != "" {
+				return q, mp.ErrInvalid
+			}
+			q.Media = true
+		case "public-moment-photo-v1":
+			q.MomentMedia = true
+		default:
+			return q, mp.ErrInvalid
+		}
 	}
 	targets := map[string]*float64{"west": &q.West, "south": &q.South, "east": &q.East, "north": &q.North}
 	for k, target := range targets {
@@ -50,6 +73,14 @@ func mapProjectionFailure(w http.ResponseWriter, e error) {
 	}
 	respond(w, status, map[string]any{"error": map[string]string{"code": code, "message": message}})
 }
+func mapProjectionQueryFailure(w http.ResponseWriter, e error, q mp.Query) {
+	if q.AuthorID != "" && errors.Is(e, mp.ErrNotFound) {
+		// Hidden, blocked, inactive and absent authors have one opaque response.
+		respond(w, 404, map[string]any{"error": map[string]string{"code": "map_context_unavailable", "message": "该范围的公开地图来源当前不可用。"}})
+		return
+	}
+	mapProjectionFailure(w, e)
+}
 func (s *server) getPublicMapLayers(w http.ResponseWriter, r *http.Request) {
 	s.getMapLayers(w, r, false)
 }
@@ -58,6 +89,7 @@ func (s *server) getOwnMapOpportunityLayer(w http.ResponseWriter, r *http.Reques
 }
 func (s *server) getMapLayers(w http.ResponseWriter, r *http.Request, private bool) {
 	w.Header().Set("Cache-Control", "no-store")
+	w.Header().Set("Vary", "X-Birdtie-Map-Media")
 	if len(r.Header.Values("X-Birdtie-Organization-Workspace")) != 0 {
 		mapProjectionFailure(w, mp.ErrInvalid)
 		return
@@ -87,10 +119,10 @@ func (s *server) getMapLayers(w http.ResponseWriter, r *http.Request, private bo
 	}
 	receipt, e := store.ReadMapLayers(r.Context(), access, q)
 	if e != nil {
-		mapProjectionFailure(w, e)
+		mapProjectionQueryFailure(w, e, q)
 		return
 	}
-	if receipt.Query != q || mp.ValidateView(receipt.View) != nil || receipt.View.CityID != q.CityID || (private && receipt.View.Scope != mp.SelfPrivate) || (!private && receipt.View.Scope != mp.Public) {
+	if receipt.Query != q || mp.ValidateViewForQuery(receipt.View, q) != nil {
 		mapProjectionFailure(w, mp.ErrUnavailable)
 		return
 	}
@@ -101,9 +133,34 @@ func (s *server) getMapLayers(w http.ResponseWriter, r *http.Request, private bo
 	}
 	// This final native read follows encoding/pool/table waits. No trailing actor
 	// resolver/idle refresh can wait and invalidate the approved current payload.
-	if e = store.RevalidateMapLayers(r.Context(), access, receipt); e != nil {
-		mapProjectionFailure(w, e)
-		return
+	if q.Media || q.MomentMedia {
+		media, ok := store.(mp.StoreWithMedia)
+		if !ok {
+			mapProjectionFailure(w, mp.ErrUnavailable)
+			return
+		}
+		view, err := media.FinalizeMapLayers(r.Context(), access, receipt)
+		if err != nil {
+			mapProjectionQueryFailure(w, err, q)
+			return
+		}
+		if mp.ValidateViewForQuery(view, q) != nil || !view.ValidUntil.After(time.Now().UTC()) {
+			mapProjectionFailure(w, mp.ErrChanged)
+			return
+		}
+		// All native waits precede this bounded encoding. Expiry can retire an
+		// optional image/count, without removing a still-authorized base point.
+		view = mp.RetireExpiredMedia(view, time.Now().UTC())
+		encoded, e = json.Marshal(map[string]any{"data": view})
+		if e != nil {
+			mapProjectionFailure(w, mp.ErrUnavailable)
+			return
+		}
+	} else {
+		if e = store.RevalidateMapLayers(r.Context(), access, receipt); e != nil {
+			mapProjectionQueryFailure(w, e, q)
+			return
+		}
 	}
 	if r.Context().Err() != nil {
 		mapProjectionFailure(w, mp.ErrUnavailable)

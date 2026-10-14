@@ -34,30 +34,93 @@ Map<String, dynamic> mapTestItem(String kind) {
 Map<String, dynamic> mapTestView({
   bool private = false,
   int milliseconds = 120000,
-}) => {
-  'schemaVersion': 'typed-map-layers-v1',
-  'cityId': 'owned-city',
-  'scope': private ? 'SELF_PRIVATE' : 'PUBLIC',
-  'observedAt': '2026-10-04T12:00:00+08:00',
-  'validUntil': DateTime.utc(
-    2026,
-    10,
-    4,
-    4,
-  ).add(Duration(milliseconds: milliseconds)).toIso8601String(),
-  'truncated': false,
-  'items': [
-    for (final k
-        in (private
-            ? ['OPPORTUNITY']
-            : mapLayerKinds.where((e) => e != 'OPPORTUNITY')))
-      mapTestItem(k),
-  ],
-};
+  String? observedAt,
+}) {
+  final observed = observedAt ?? DateTime.now().toUtc().toIso8601String();
+  return {
+    'schemaVersion': 'typed-map-layers-v1',
+    'cityId': 'owned-city',
+    'scope': private ? 'SELF_PRIVATE' : 'PUBLIC',
+    'observedAt': observed,
+    'validUntil': DateTime.parse(
+      observed,
+    ).toUtc().add(Duration(milliseconds: milliseconds)).toIso8601String(),
+    'truncated': false,
+    'items': [
+      for (final k
+          in (private
+              ? ['OPPORTUNITY']
+              : mapLayerKinds.where((e) => e != 'OPPORTUNITY')))
+        mapTestItem(k),
+    ],
+  };
+}
+
 void main() {
+  test(
+    'public header opts in without query changes, legacy response remains honest',
+    () async {
+      final requests = <http.Request>[];
+      final api = MapLayersApi(
+        apiBaseUrl: 'https://owned.test',
+        client: MockClient((r) async {
+          requests.add(r);
+          final private = r.url.path.endsWith('map-opportunities');
+          final author = r.url.queryParameters['authorId'];
+          final dto = mapTestView(private: private);
+          if (author != null) {
+            dto.addAll({
+              'schemaVersion': 'typed-map-layers-v2',
+              'scope': 'PUBLIC_AUTHOR',
+              'authorId': author,
+              'items': [mapTestItem('MOMENT')],
+            });
+          }
+          return http.Response(
+            jsonEncode({'data': dto}),
+            200,
+            headers: {'content-type': 'application/json; charset=utf-8'},
+          );
+        }),
+      );
+      final public = await api.read('owned-city', mapTestBounds);
+      await api.read(
+        'owned-city',
+        mapTestBounds,
+        private: true,
+        authorization: 'Bearer fixture',
+      );
+      await api.read('owned-city', mapTestBounds, authorID: mapTestID);
+      expect(
+        requests[0].headers['X-Birdtie-Map-Media'],
+        'public-moment-photo-v1',
+      );
+      expect(requests[0].url.queryParameters.keys.toSet(), {
+        'west',
+        'south',
+        'east',
+        'north',
+      });
+      expect(
+        requests[1].headers.keys.map((s) => s.toLowerCase()),
+        isNot(contains('x-birdtie-map-media')),
+      );
+      expect(
+        requests[2].headers['X-Birdtie-Map-Media'],
+        'public-moment-photo-v1',
+      );
+      expect(
+        public.items.every(
+          (e) => e.placePhoto == null && e.recentMoments == null,
+        ),
+        isTrue,
+      );
+      api.dispose();
+    },
+  );
   test('six closed types real anchor original detail IDs and UTC offset', () {
     final v = TypedMapView.decode(
-      mapTestView(),
+      mapTestView(observedAt: '2026-10-04T12:00:00+08:00'),
       'owned-city',
       mapTestBounds,
       false,

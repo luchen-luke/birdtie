@@ -17,6 +17,9 @@ import (
 
 const RequestVersion = "air.model_request.v1"
 const ResultVersion = "air.model_result.v1"
+const CandidateProposalVersion = "air.candidate_proposal.v1"
+const CandidateProposalV2Version = "air.candidate_proposal.v2"
+const NoCandidateStatus = "NO_CANDIDATE"
 const MaxRequestBytes = 32 * 1024
 const MaxResultBytes = 32 * 1024
 const MaxDeadline = 2 * time.Minute
@@ -102,6 +105,22 @@ type CandidateProposal struct {
 	SourceRefIDs       []string `json:"source_ref_ids"`
 	SubjectAttribution string   `json:"subject_attribution"`
 }
+
+// NO_CANDIDATE is the v2 extraction outcome, not a refusal or permission.
+// Preserve the complete v1 JSON shape for every other status.
+func (c CandidateProposal) MarshalJSON() ([]byte, error) {
+	if c.Status == NoCandidateStatus {
+		if c.Predicate != "" || c.Value != "" || c.SourceRefIDs != nil || c.SubjectAttribution != "" {
+			return nil, ErrAdapter
+		}
+		return json.Marshal(struct {
+			Status string `json:"status"`
+		}{c.Status})
+	}
+	type wireCandidate CandidateProposal
+	return json.Marshal(wireCandidate(c))
+}
+
 type ToolProposal struct {
 	Tool          string            `json:"tool"`
 	Arguments     map[string]string `json:"arguments"`
@@ -201,7 +220,7 @@ func ValidateRequest(r Request, now time.Time) error {
 			return ErrInvalid
 		}
 	case MemoryCandidateExtraction:
-		if r.OutputMode != Structured || r.OutputSchemaVersion != "air.candidate_proposal.v1" || len(r.ToolAllowlist) != 0 {
+		if r.OutputMode != Structured || (r.OutputSchemaVersion != CandidateProposalVersion && r.OutputSchemaVersion != CandidateProposalV2Version) || len(r.ToolAllowlist) != 0 {
 			return ErrInvalid
 		}
 	default:

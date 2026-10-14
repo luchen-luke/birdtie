@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
+import '../app/birdtie_app_bar.dart';
 import '../auth/birdtie_auth_controller.dart';
 import 'connections.dart';
 import 'connection_request_review_controller.dart';
@@ -123,8 +124,8 @@ class _ReviewState extends State<ConnectionRequestReviewPage> {
   String _consequence(ContactRequest r, String action) => switch (action) {
     'accept' =>
       r.scope == 'friend'
-          ? '接受此好友申请后，原服务将建立好友关系。不会自动打开聊天或发送消息。'
-          : '接受此联系申请后，原服务将建立此申请对应的对话。不会自动打开对话或发送消息。',
+          ? '接受此好友申请后，接受后将建立好友关系。不会自动打开聊天或发送消息。'
+          : '接受此联系申请后，接受后将建立此申请对应的对话。不会自动打开对话或发送消息。',
     'decline' => '拒绝此申请，不建立好友关系或对话。',
     _ => '撤回自己发送的这条申请，对方不能再接受此申请。',
   };
@@ -148,7 +149,7 @@ class _ReviewState extends State<ConnectionRequestReviewPage> {
               Text('有效期至 ${supplierDate(r.expiresAt!)}'),
               const SizedBox(height: 16),
               Text(_consequence(r, action)),
-              if (r.pendingReview) const Text('待人工审阅；尚未进行 Agent 筛查。'),
+              if (r.pendingReview) const Text('等待审核'),
               const SizedBox(height: 8),
               const Text('确认只针对当前这条申请及所选操作。'),
             ],
@@ -192,16 +193,16 @@ class _ReviewState extends State<ConnectionRequestReviewPage> {
   Widget build(BuildContext context) {
     final r = _data.request;
     return Scaffold(
-      appBar: AppBar(title: const Text('审阅申请')),
+      appBar: birdtieAppBar(context, title: const Text('查看申请')),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(20),
           children: [
             if (_data.retired || _retired) ...[
-              const Text('身份或来源已变化，请返回当前收件箱重新打开。'),
+              const Text('身份或连接已变化，请返回申请列表重新打开。'),
               TextButton(
                 onPressed: () => Navigator.of(context).maybePop(),
-                child: const Text('返回收件箱'),
+                child: const Text('返回申请列表'),
               ),
             ] else ...[
               if (_data.busy) const LinearProgressIndicator(),
@@ -219,7 +220,7 @@ class _ReviewState extends State<ConnectionRequestReviewPage> {
                 if (r.pendingReview)
                   const Padding(
                     padding: EdgeInsets.only(top: 8),
-                    child: Text('待人工审阅；尚未进行 Agent 筛查。'),
+                    child: Text('等待审核'),
                   ),
                 if (r.note.isNotEmpty)
                   Padding(
@@ -233,24 +234,24 @@ class _ReviewState extends State<ConnectionRequestReviewPage> {
                     onPressed: _data.canAct('accept')
                         ? () => _review('accept')
                         : null,
-                    child: const Text('审阅接受'),
+                    child: const Text('接受'),
                   ),
                   OutlinedButton(
                     onPressed: _data.canAct('decline')
                         ? () => _review('decline')
                         : null,
-                    child: const Text('审阅拒绝'),
+                    child: const Text('拒绝'),
                   ),
                 ] else
                   OutlinedButton(
                     onPressed: _data.canAct('withdraw')
                         ? () => _review('withdraw')
                         : null,
-                    child: const Text('审阅撤回'),
+                    child: const Text('撤回申请'),
                   ),
               ],
               if (_data.receipt case final receipt?)
-                Text('本次操作回执：${_state(receipt.state)}'),
+                Text('操作结果：${_state(receipt.state)}'),
               if (_data.message case final message?)
                 Padding(
                   padding: const EdgeInsets.symmetric(vertical: 12),
@@ -258,18 +259,18 @@ class _ReviewState extends State<ConnectionRequestReviewPage> {
                 ),
               if (_data.pendingReference case final reference?)
                 Text(
-                  '本机待核实操作：${switch (reference.action) {
+                  '操作结果待核实：${switch (reference.action) {
                     'accept' => '接受申请',
                     'decline' => '拒绝申请',
                     _ => '撤回申请',
-                  }}。关闭重开也不会重复提交；${reference.hasServiceOperation ? '会查询原服务操作回执，当前申请状态不能代替该回执。' : '这里只保存本机旧引用，没有原服务操作回执，不能升级为服务操作编号。'}',
+                  }}。不会自动再次提交。${reference.hasServiceOperation ? '请核实这次操作的结果。' : '此条记录来自旧版本，暂时无法确认操作结果。'}',
                 ),
               TextButton.icon(
                 onPressed: _data.busy ? null : _data.load,
                 icon: const Icon(Icons.refresh),
                 label: const Text('核实当前申请'),
               ),
-              const Text('列表仅显示最近 100 条申请。未找到、读取失败或当前状态相同，都不能代替本次操作回执。'),
+              const Text('仅展示最近 100 条申请。'),
             ],
           ],
         ),

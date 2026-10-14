@@ -72,23 +72,46 @@ func (s *Store) GetParticipation(ctx context.Context, personID, activityID strin
 }
 
 func (s *Store) JoinActivity(ctx context.Context, personID, activityID string) (activityparticipation.Participation, bool, error) {
-	return s.joinActivity(ctx, personID, activityID, nil, nil)
+	return s.joinActivity(ctx, personID, activityID, nil, nil, nil)
 }
 func (s *Store) JoinActivityBound(ctx context.Context, a ea.Access, id string, b ea.BoundCondition) (activityparticipation.Participation, bool, error) {
 	if b.Kind != ea.Join || b.Operation != "JOIN" {
 		return activityparticipation.Participation{}, false, ea.ErrInvalid
 	}
-	return s.joinActivity(ctx, a.Actor.ID, id, &a, &b)
+	return s.joinActivity(ctx, a.Actor.ID, id, &a, &b, nil)
 }
-func (s *Store) joinActivity(ctx context.Context, personID, activityID string, access *ea.Access, bound *ea.BoundCondition) (activityparticipation.Participation, bool, error) {
+func (s *Store) joinActivity(ctx context.Context, personID, activityID string, access *ea.Access, bound *ea.BoundCondition, operation *humanParticipationWrite) (activityparticipation.Participation, bool, error) {
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {
 		return activityparticipation.Participation{}, false, err
 	}
 	defer tx.Rollback(ctx)
+	joined, fresh, err := s.joinActivityTx(ctx, tx, personID, activityID, access, bound, operation, nil)
+	if err != nil {
+		return activityparticipation.Participation{}, false, err
+	}
+	return joined, fresh, tx.Commit(ctx)
+}
+
+// The original transaction and rules are shared; only the sealed native JOIN
+// adapter can provide its private causal hook. Human callers pass nil.
+func (s *Store) joinActivityTx(ctx context.Context, tx pgx.Tx, personID, activityID string, access *ea.Access, bound *ea.BoundCondition, operation *humanParticipationWrite, agentEffect *agentActivityJoinWrite) (activityparticipation.Participation, bool, error) {
+	var err error
+	if agentEffect != nil && (access == nil || bound == nil || operation != nil || agentEffect.claim == nil) {
+		return activityparticipation.Participation{}, false, ea.ErrInvalid
+	}
 	if access != nil {
 		if e := s.lockEntityActionWriter(ctx, tx, *access); e != nil {
 			return activityparticipation.Participation{}, false, e
+		}
+	}
+	if operation != nil {
+		replay, e := s.beginParticipationOperation(ctx, tx, *access, activityID, operation)
+		if e != nil {
+			return activityparticipation.Participation{}, false, e
+		}
+		if replay {
+			return activityparticipation.Participation{}, false, nil
 		}
 	}
 	var capacity *int
@@ -134,12 +157,15 @@ func (s *Store) joinActivity(ctx context.Context, personID, activityID string, a
 		return activityparticipation.Participation{}, false, err
 	}
 	if err == nil && (existing.Status == "going" || existing.Status == "pending") {
+		if operation != nil || agentEffect != nil {
+			return activityparticipation.Participation{}, false, ea.ErrChanged
+		}
 		if bound != nil {
 			if e := s.finishEntityActionWrite(ctx, tx, fence); e != nil {
 				return activityparticipation.Participation{}, false, e
 			}
 		}
-		return existing, false, tx.Commit(ctx)
+		return existing, false, nil
 	}
 	if capacity != nil {
 		var occupied int
@@ -159,8 +185,22 @@ func (s *Store) joinActivity(ctx context.Context, personID, activityID string, a
 	if err != nil {
 		return activityparticipation.Participation{}, false, err
 	}
-	if err = insertDomainAudit(ctx, tx, personID, "join", "activity_participation", joined.ID, "human_rsvp", &activityID); err != nil {
+	purpose := "human_rsvp"
+	if agentEffect != nil {
+		purpose = "agent_activity_join"
+	}
+	if err = insertDomainAudit(ctx, tx, personID, "join", "activity_participation", joined.ID, purpose, &activityID); err != nil {
 		return activityparticipation.Participation{}, false, err
+	}
+	if operation != nil {
+		if e := recordParticipationOperation(ctx, tx, *access, activityID, operation, joined); e != nil {
+			return activityparticipation.Participation{}, false, e
+		}
+	}
+	if agentEffect != nil {
+		if err = agentEffect.record(ctx, tx, joined); err != nil {
+			return activityparticipation.Participation{}, false, err
+		}
 	}
 	if bound != nil {
 		var exact bool
@@ -171,10 +211,13 @@ func (s *Store) joinActivity(ctx context.Context, personID, activityID string, a
 			return activityparticipation.Participation{}, false, e
 		}
 	}
-	return joined, true, tx.Commit(ctx)
+	return joined, true, nil
 }
 
 func (s *Store) CancelParticipationBound(ctx context.Context, a ea.Access, id string, b ea.BoundCondition) (activityparticipation.Participation, error) {
+	return s.cancelParticipationBound(ctx, a, id, b, nil)
+}
+func (s *Store) cancelParticipationBound(ctx context.Context, a ea.Access, id string, b ea.BoundCondition, operation *humanParticipationWrite) (activityparticipation.Participation, error) {
 	if b.Kind != ea.Join || b.Operation != "CANCEL_RSVP" {
 		return activityparticipation.Participation{}, ea.ErrInvalid
 	}
@@ -185,6 +228,15 @@ func (s *Store) CancelParticipationBound(ctx context.Context, a ea.Access, id st
 	defer tx.Rollback(ctx)
 	if e = s.lockEntityActionWriter(ctx, tx, a); e != nil {
 		return activityparticipation.Participation{}, e
+	}
+	if operation != nil {
+		replay, err := s.beginParticipationOperation(ctx, tx, a, id, operation)
+		if err != nil {
+			return activityparticipation.Participation{}, err
+		}
+		if replay {
+			return activityparticipation.Participation{}, tx.Commit(ctx)
+		}
 	}
 	var locked string
 	if e = tx.QueryRow(ctx, `SELECT id FROM activities WHERE id=$1 FOR UPDATE`, id).Scan(&locked); e != nil {
@@ -198,6 +250,9 @@ func (s *Store) CancelParticipationBound(ctx context.Context, a ea.Access, id st
 	if e != nil {
 		return activityparticipation.Participation{}, e
 	}
+	if operation != nil && previous.Status == "cancelled" {
+		return activityparticipation.Participation{}, ea.ErrChanged
+	}
 	out, e := scanParticipation(tx.QueryRow(ctx, `UPDATE activity_participations SET status='cancelled',cancelled_at=coalesce(cancelled_at,now()),updated_at=CASE WHEN status='cancelled' THEN updated_at ELSE now() END WHERE id=$1 AND participant_account_id=$2 AND activity_id=$3 RETURNING `+participationColumns, previous.ID, a.Actor.ID, id))
 	if e != nil {
 		return activityparticipation.Participation{}, e
@@ -208,6 +263,11 @@ func (s *Store) CancelParticipationBound(ctx context.Context, a ea.Access, id st
 	if previous.Status != "cancelled" {
 		if e = insertDomainAudit(ctx, tx, a.Actor.ID, "cancel", "activity_participation", out.ID, "human_rsvp", &id); e != nil {
 			return activityparticipation.Participation{}, e
+		}
+	}
+	if operation != nil {
+		if err := recordParticipationOperation(ctx, tx, a, id, operation, out); err != nil {
+			return activityparticipation.Participation{}, err
 		}
 	}
 	if e = s.finishEntityActionWrite(ctx, tx, fence); e != nil {

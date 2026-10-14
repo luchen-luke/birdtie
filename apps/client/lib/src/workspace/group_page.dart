@@ -192,14 +192,14 @@ class _GroupPageState extends State<GroupPage> {
     return ListView(
       padding: const EdgeInsets.all(20),
       children: [
-        const Text(
+        Text(
           '我的社群',
-          style: TextStyle(fontSize: 21, fontWeight: FontWeight.w700),
+          style: Theme.of(context).textTheme.headlineSmall,
         ),
         const SizedBox(height: 8),
-        const Text(
+        Text(
           '你发布的社群会在 Birdtie 展示，直到内容过期或你主动撤回。',
-          style: TextStyle(color: Color(0xFF747B73)),
+          style: Theme.of(context).textTheme.bodySmall,
         ),
         if (_busy) const LinearProgressIndicator(),
         if (_failed)
@@ -228,14 +228,14 @@ class _GroupPageState extends State<GroupPage> {
                   ),
           ),
         const Divider(height: 36),
-        const Text(
+        Text(
           '发布社群',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+          style: Theme.of(context).textTheme.titleLarge,
         ),
         const SizedBox(height: 8),
-        const Text(
+        Text(
           '仅发布你拥有或获授权代表的社群。外部来源为可选项；如填写，请提供公开 HTTPS 链接。',
-          style: TextStyle(color: Color(0xFF747B73)),
+          style: Theme.of(context).textTheme.bodySmall,
         ),
         _field(_name, '社群名称', 160),
         _field(_summary, '社群介绍', 3000, lines: 3),
@@ -247,7 +247,7 @@ class _GroupPageState extends State<GroupPage> {
             padding: const EdgeInsets.symmetric(vertical: 8),
             child: Text(
               _message!,
-              style: const TextStyle(color: Color(0xFF193B32)),
+              style: Theme.of(context).textTheme.bodySmall,
             ),
           ),
         const SizedBox(height: 12),

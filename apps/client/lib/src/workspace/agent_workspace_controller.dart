@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 
@@ -10,6 +11,8 @@ import 'agent_result_projection.dart';
 import 'agent_reply_membership.dart';
 import 'public_query_field_evidence.dart';
 import 'map_entities.dart';
+import 'external_place_candidates.dart';
+import 'map_layers_api.dart';
 import 'now_context_query_api.dart';
 import 'sponsored_opportunities.dart';
 
@@ -28,6 +31,77 @@ enum AgentQueryState {
 }
 
 enum AgentContentMode { results, conversation }
+
+enum AgentAreaStatus { loading, success, empty, partial, error }
+
+/// A read of the existing native map layers, separate from an Agent turn.
+/// Coverage is explicit: a failed source is never represented by an empty list.
+class AgentAreaRead {
+  AgentAreaRead({
+    this.publicView,
+    this.privateView,
+    this.unavailableKinds = const {},
+    bool Function()? current,
+    Duration Function()? remaining,
+  }) : _current = current ?? (() => true),
+       _remaining = remaining == null ? null : (() => remaining());
+
+  final TypedMapView? publicView, privateView;
+  final Set<String> unavailableKinds;
+  final bool Function() _current;
+  final Duration Function()? _remaining;
+  bool get current =>
+      _current() && (remaining == null || remaining! > Duration.zero);
+  Duration? get remaining => _remaining?.call();
+  bool get truncated =>
+      publicView?.truncated == true || privateView?.truncated == true;
+  List<TypedMapItem> get items => [
+    ...?publicView?.items,
+    ...?privateView?.items,
+  ];
+}
+
+class AgentAreaOperation {
+  const AgentAreaOperation({
+    required this.id,
+    required this.fingerprint,
+    required this.cityID,
+    required this.bounds,
+    required this.kinds,
+    required this.status,
+    this.authorID,
+    this.read,
+    this.failure,
+  });
+  final String id, fingerprint, cityID;
+  final String? authorID;
+  final MapBounds bounds;
+  final Set<String> kinds;
+  final AgentAreaStatus status;
+  final AgentAreaRead? read;
+  final AgentRequestFailure? failure;
+  String get origin => 'map_action';
+  bool get current => read?.current ?? status == AgentAreaStatus.loading;
+  List<TypedMapItem> get items => read?.current == true
+      ? read!.items.where((item) => kinds.contains(item.kind)).toList()
+      : const [];
+  Set<String> get unavailableKinds => read?.unavailableKinds ?? const {};
+  Set<String> get searchedKinds => kinds.difference(unavailableKinds);
+  String get coverage =>
+      '本次范围：${searchedKinds.map(mapLayerLabel).join('、')}'
+      '${unavailableKinds.isEmpty ? '' : '；暂不可用：${unavailableKinds.map(mapLayerLabel).join('、')}'}';
+  String get summary => switch (status) {
+    AgentAreaStatus.loading => '正在搜索这片地图区域…',
+    AgentAreaStatus.error => failure?.userMessage ?? '暂时没能完成搜索，请重试。',
+    _ when !current => '本次地图来源已失效，请重新搜索。',
+    AgentAreaStatus.partial =>
+      read?.truncated == true
+          ? '已显示本次可读取的结果；当前来源只返回了部分内容。'
+          : '部分内容暂时无法获取，已显示本次查到的结果。',
+    AgentAreaStatus.empty => '本次未找到符合条件的结果。',
+    AgentAreaStatus.success => '找到 ${items.length} 条符合条件的地图内容。',
+  };
+}
 
 class AgentTask {
   const AgentTask({
@@ -72,6 +146,9 @@ class AgentTask {
   factory AgentTask.fromJson(
     Map<String, dynamic> json, {
     bool Function()? sourceCurrent,
+    bool Function(int messageIndex)? localRoundCurrent,
+    Duration Function(int messageIndex)? localRoundRemaining,
+    ExternalPlaceSearch? Function(int, Map<String, dynamic>)? readExternalReply,
   }) => AgentTask(
     id: json['id'] as String,
     query: json['query'] as String,
@@ -87,10 +164,20 @@ class AgentTask {
       (key, value) => MapEntry(key, value as String),
     ),
     messages: [
-      for (final item in json['conversation'] as List<dynamic>? ?? const [])
+      for (final (index, item)
+          in (json['conversation'] as List<dynamic>? ?? const []).indexed)
         AgentMessage.fromJson(
           item as Map<String, dynamic>,
           sourceCurrent: sourceCurrent,
+          expectedTaskID: json['id'] as String,
+          expectedMessageIndex: index,
+          externalPlaceReply: readExternalReply?.call(index, item),
+          localRoundCurrent: localRoundCurrent == null
+              ? null
+              : () => localRoundCurrent(index),
+          localRoundRemaining: localRoundRemaining == null
+              ? null
+              : () => localRoundRemaining(index),
         ),
     ],
     createdAt: DateTime.tryParse(json['createdAt'] as String? ?? ''),
@@ -104,32 +191,56 @@ class AgentMessage {
     required this.text,
     this.sourceReferences,
     this.resultMembership,
+    this.externalPlaceReply,
   });
   final String role;
   final String text;
   final AgentMessageSources? sourceReferences;
   final AgentReplyMembership? resultMembership;
+  final ExternalPlaceSearch? externalPlaceReply;
   List<AgentAnswerSource> get sources => sourceReferences?.sources ?? const [];
   AgentMessage withText(String text) => AgentMessage(
     role: role,
     text: text,
     sourceReferences: sourceReferences,
     resultMembership: resultMembership,
+    externalPlaceReply: externalPlaceReply,
   );
   factory AgentMessage.fromJson(
     Map<String, dynamic> json, {
     bool Function()? sourceCurrent,
+    String? expectedTaskID,
+    int? expectedMessageIndex,
+    bool Function()? localRoundCurrent,
+    Duration Function()? localRoundRemaining,
+    ExternalPlaceSearch? externalPlaceReply,
   }) {
     final role = json['role'] as String;
     final membership = AgentReplyMembership.read(json['resultMembership']);
     if (role != 'assistant' && membership != null) {
       throw const FormatException('用户消息不能携带回答结果');
     }
+    if ((json['localReplyEvidence'] != null ||
+            json['licensedPlaceModelEvidence'] != null) &&
+        (role != 'assistant' ||
+            membership == null ||
+            membership.kind != 'place' ||
+            (expectedTaskID != null && membership.taskID != expectedTaskID))) {
+      throw const FormatException('本地回答的地点轮次无法核验');
+    }
     return AgentMessage(
       role: role,
       text: json['text'] as String,
-      sourceReferences: AgentMessageSources.read(json, current: sourceCurrent),
+      sourceReferences: AgentMessageSources.read(
+        json,
+        current: sourceCurrent,
+        expectedTaskID: expectedTaskID,
+        expectedMessageIndex: expectedMessageIndex,
+        localRoundCurrent: localRoundCurrent,
+        localRoundRemaining: localRoundRemaining,
+      ),
       resultMembership: membership,
+      externalPlaceReply: externalPlaceReply,
     );
   }
 }
@@ -159,17 +270,22 @@ class AgentResult {
     this.messageSources,
     this.messageResults,
     this.replyProjection,
+    this.onlinePlaceSearch,
   }) : _legacyEntities = entities;
   final List<MapEntity> _legacyEntities;
   List<AgentResultItem>? get projectionItems =>
       replyProjectionCurrent ? resultSet?.items : const <AgentResultItem>[];
   bool get replyProjectionCurrent => replyProjection?.current ?? true;
   bool get isUnsupported => resultSet?.status == 'unsupported';
-  List<MapEntity> get entities => !replyProjectionCurrent
-      ? const <MapEntity>[]
-      : projectionItems == null
-      ? _legacyEntities
-      : [for (final item in projectionItems!) ?item.mapEntity];
+  List<MapEntity> get entities => [
+    if (replyProjectionCurrent)
+      if (projectionItems == null)
+        ..._legacyEntities
+      else
+        for (final item in projectionItems!) ?item.mapEntity,
+    for (final place in onlinePlaceSearch?.places ?? <ExternalPlaceCandidate>[])
+      place.mapEntity,
+  ];
   final List<PublicActivity> activities;
   final List<PublicPlace> places;
   final String note;
@@ -195,6 +311,13 @@ class AgentResult {
   // and must not revive cached or latest-turn entities for an older message.
   final Map<int, AgentResult>? messageResults;
   final AgentReplyProjectionLifetime? replyProjection;
+  // A same-request external observation has its own lifetime and is never
+  // rebuilt by native Task history or passed to native Place writers.
+  final ExternalPlaceSearch? onlinePlaceSearch;
+  bool get hasSourcedAnswer =>
+      responseMessage.trim().isNotEmpty &&
+      (messageSources?.current == true ||
+          resultSet?.answerSources?.current == true);
   bool get hasOnlyMessageSources =>
       messageSources != null &&
       resultSet == null &&
@@ -232,6 +355,18 @@ class AgentResultSet {
   final AgentAnswerSources? answerSources;
   List<AgentAnswerSource> get sources => answerSources?.sources ?? const [];
 }
+
+// MapCanvas accepts an explicit task projection before background map layers.
+// This empty shell carries no native entity refs, memberships or actions; only
+// ExternalPlaceSearch supplies the separately validated OSM map entities.
+AgentResultSet externalPlaceMapShell(ExternalPlaceSearch search) =>
+    AgentResultSet(
+      id: 'external-snapshot:${search.snapshotID}',
+      status: 'empty',
+      entities: const [],
+      generatedAt: search.observedAt,
+      items: const [],
+    );
 
 /// A reply keeps the entity set returned for that turn. It never grants an
 /// action or changes the current query's authority.
@@ -416,12 +551,21 @@ class AgentOrganization {
 /// A replaceable task source. The remote implementation uses the Birdtie API.
 abstract class AgentTaskSource {
   const AgentTaskSource();
+  Future<AgentAreaRead> readMapArea(
+    String cityID,
+    MapBounds bounds,
+    Set<String> kinds, {
+    String? authorID,
+  }) => Future.error(const AgentRequestFailure('当前地图内容暂不可用，请重新搜索。'));
   Future<AgentResult> resolve(
     String query,
     List<PublicActivity> activities,
     List<PublicPlace> places,
   );
   Future<List<AgentTask>> loadRecent() async => [];
+  // Only the remote source's anonymous public-history implementation writes
+  // this device-local snapshot. Native memberships/permissions are not saved.
+  Future<void> persistPublicHistory(AgentTask task) async {}
   Future<AgentResult> followUp(
     AgentTask task,
     String query,
@@ -514,6 +658,7 @@ class AgentWorkspaceController extends ChangeNotifier {
   AgentResult? get presentedResult => _mapReply ?? result;
   bool preserveReplyCamera = false;
   Timer? _replyExpiryTimer;
+  Timer? _externalPlaceExpiryTimer;
   Timer? _replyRefreshTimer;
   int _replyRefreshSerial = 0;
   bool _replyRefreshRetired = false;
@@ -522,6 +667,10 @@ class AgentWorkspaceController extends ChangeNotifier {
   bool _replyRefreshInFlight = false;
   bool _replyResumePending = false;
   bool _disposed = false;
+  final String _localSessionID = List<int>.generate(
+    16,
+    (_) => Random.secure().nextInt(256),
+  ).map((byte) => byte.toRadixString(16).padLeft(2, '0')).join();
   Future<bool>? _replyRefreshFuture;
   final Map<String, List<AgentReply>> _repliesByTask = {};
   List<AgentReply> get replies =>
@@ -544,7 +693,173 @@ class AgentWorkspaceController extends ChangeNotifier {
   String? mapBackgroundCityID;
   String? selectedEntityId;
   String? requestError;
+  String? publicHistoryNotice;
   AgentRequestFailure? requestFailure;
+  AgentAreaOperation? areaOperation;
+  int _areaRequest = 0;
+  Future<void>? _areaFuture;
+  Future<AgentAreaRead> Function()? _areaReader;
+  Timer? _areaExpiry;
+
+  /// Map commands own one mutable result block. They never append pseudo
+  /// messages, POST an Agent task or mutate the selected conversation.
+  Future<void> executeMapArea({
+    required String cityID,
+    required MapBounds bounds,
+    String? authorID,
+    Set<String> kinds = const {
+      'PLACE',
+      'ACTIVITY',
+      'MOMENT',
+      'ORGANIZATION',
+      'BUSINESS',
+    },
+    Future<AgentAreaRead> Function()? reader,
+  }) {
+    if (_disposed || !bounds.isValid || cityID.isEmpty) {
+      return Future.value();
+    }
+    final selectedKinds = kinds.where(mapLayerKinds.contains).toList()..sort();
+    if (selectedKinds.isEmpty) return Future.value();
+    if (authorID != null &&
+        (!validOnlineID(authorID) ||
+            selectedKinds.length != 1 ||
+            selectedKinds.single != 'MOMENT')) {
+      return Future.value();
+    }
+    final fingerprint = jsonEncode([
+      cityID,
+      bounds.toJson(),
+      selectedKinds,
+      queryContextType,
+      authorID,
+    ]);
+    if (areaOperation?.fingerprint == fingerprint &&
+        areaOperation?.status == AgentAreaStatus.loading &&
+        _areaFuture != null) {
+      return _areaFuture!;
+    }
+    _areaExpiry?.cancel();
+    _areaReader = reader;
+    final revision = ++_areaRequest;
+    final operationID = 'map-area-$revision';
+    final snapshotKinds = Set<String>.unmodifiable(selectedKinds);
+    void present(
+      AgentAreaStatus status, {
+      AgentAreaRead? read,
+      AgentRequestFailure? failure,
+    }) {
+      areaOperation = AgentAreaOperation(
+        id: operationID,
+        fingerprint: fingerprint,
+        cityID: cityID,
+        bounds: bounds,
+        kinds: snapshotKinds,
+        status: status,
+        authorID: authorID,
+        read: read,
+        failure: failure,
+      );
+    }
+
+    present(AgentAreaStatus.loading);
+    Future<void> request() async {
+      try {
+        final read =
+            await (reader?.call() ??
+                _source.readMapArea(
+                  cityID,
+                  bounds,
+                  snapshotKinds,
+                  authorID: authorID,
+                ));
+        if (_disposed || revision != _areaRequest) return;
+        if (!read.current ||
+            (read.publicView == null && read.privateView == null) ||
+            (read.publicView != null &&
+                (read.publicView!.cityID != cityID ||
+                    read.publicView!.scope !=
+                        (authorID == null ? 'PUBLIC' : 'PUBLIC_AUTHOR') ||
+                    read.publicView!.authorID != authorID)) ||
+            (read.privateView != null &&
+                (authorID != null ||
+                    read.privateView!.cityID != cityID ||
+                    read.privateView!.scope != 'SELF_PRIVATE')) ||
+            read.items.any(
+              (item) =>
+                  item.latitude < bounds.south ||
+                  item.latitude > bounds.north ||
+                  item.longitude < bounds.west ||
+                  item.longitude > bounds.east ||
+                  (authorID != null && item.kind != 'MOMENT'),
+            )) {
+          throw const AgentRequestFailure('本次地图来源已变化，请重新搜索。');
+        }
+        final partial = read.unavailableKinds.isNotEmpty || read.truncated;
+        final empty = !read.items.any((i) => snapshotKinds.contains(i.kind));
+        present(
+          partial
+              ? AgentAreaStatus.partial
+              : empty
+              ? AgentAreaStatus.empty
+              : AgentAreaStatus.success,
+          read: read,
+        );
+        final remaining = read.remaining;
+        if (remaining != null && remaining > Duration.zero) {
+          _areaExpiry = Timer(remaining, () {
+            if (!_disposed && revision == _areaRequest) notifyListeners();
+          });
+        }
+      } catch (error) {
+        if (_disposed || revision != _areaRequest) return;
+        present(
+          AgentAreaStatus.error,
+          failure: error is AgentRequestFailure
+              ? error
+              : const AgentRequestFailure('暂时没能完成搜索，请重试。'),
+        );
+      } finally {
+        if (!_disposed && revision == _areaRequest) {
+          _areaFuture = null;
+          notifyListeners();
+        }
+      }
+    }
+
+    _areaFuture = request();
+    notifyListeners();
+    return _areaFuture!;
+  }
+
+  Future<void> retryMapArea() {
+    final operation = areaOperation;
+    if (operation == null ||
+        operation.status == AgentAreaStatus.loading ||
+        operation.failure?.permitsUnchangedRetry == false) {
+      return Future.value();
+    }
+    return executeMapArea(
+      cityID: operation.cityID,
+      bounds: operation.bounds,
+      kinds: operation.kinds,
+      authorID: operation.authorID,
+      reader: _areaReader,
+    );
+  }
+
+  void retireMapArea({bool notify = true}) {
+    ++_areaRequest;
+    _areaExpiry?.cancel();
+    _areaFuture = null;
+    _areaReader = null;
+    areaOperation = null;
+    if (notify && !_disposed) notifyListeners();
+  }
+
+  bool retainsMapAreaItem(TypedMapItem item) =>
+      areaOperation?.current == true &&
+      areaOperation!.items.any((current) => identical(current, item));
   AgentContentMode contentMode = AgentContentMode.results;
   bool get permitsUnchangedRetry =>
       requestFailure?.permitsUnchangedRetry != false &&
@@ -558,6 +873,10 @@ class AgentWorkspaceController extends ChangeNotifier {
     final answer = result;
     if (answer == null) return AgentQueryState.idle;
     if (answer.isUnsupported) return AgentQueryState.unsupported;
+    if (answer.onlinePlaceSearch?.places.isNotEmpty == true ||
+        answer.hasSourcedAnswer) {
+      return AgentQueryState.success;
+    }
     if (task?.intent == 'PERSONAL_RELATIONSHIP_CONTEXT' ||
         answer.actions.isNotEmpty) {
       return AgentQueryState.success;
@@ -583,7 +902,11 @@ class AgentWorkspaceController extends ChangeNotifier {
     final query = raw.trim();
     if (query.isEmpty) return;
     final serial = ++_serial;
-    task = AgentTask(id: 'local-$serial', query: query, status: 'NEEDS_SCOPE');
+    task = AgentTask(
+      id: 'local-$_localSessionID-$serial',
+      query: query,
+      status: 'NEEDS_SCOPE',
+    );
     result = null;
     conversation
       ..clear()
@@ -629,6 +952,8 @@ class AgentWorkspaceController extends ChangeNotifier {
   }
 
   bool inputFocused = false;
+  (int, int, AgentSheetExtent, AgentContentMode)? _editingPresentation;
+  int _presentationRevision = 0;
   final List<AgentTask> recent = [];
   bool recentLoading = false;
   String? recentError;
@@ -644,11 +969,16 @@ class AgentWorkspaceController extends ChangeNotifier {
   List<PublicPlace> _lastPlaces = const [];
   String? _lastCityID;
   int _serial = 0;
+  int _taskIdentityEpoch = 0;
   int _historySerial = 0;
 
   /// Existing request generation, also used to bind local editable material.
   /// Layout, focus and result arrival do not manufacture a new task epoch.
   int get taskEpoch => _serial;
+
+  /// Editable material belongs to a conversation/account boundary, not the
+  /// request serial retired when the user browses another geographic city.
+  int get taskIdentityEpoch => _taskIdentityEpoch;
 
   Future<void> loadRecent() => _loadRecent();
 
@@ -668,7 +998,11 @@ class AgentWorkspaceController extends ChangeNotifier {
         return;
       }
       final local = recent
-          .where((item) => item.id.startsWith('local-'))
+          .where(
+            (item) =>
+                item.id.startsWith('local-') &&
+                !stored.any((record) => record.id == item.id),
+          )
           .toList();
       recent
         ..clear()
@@ -696,6 +1030,10 @@ class AgentWorkspaceController extends ChangeNotifier {
   }
 
   void retireAccountContext() {
+    _retireExternalPlaces(all: true);
+    ++_taskIdentityEpoch;
+    retireMapArea(notify: false);
+    _editingPresentation = null;
     _repliesByTask.clear();
     _savedConversation.clear();
     _mapReply = null;
@@ -740,6 +1078,14 @@ class AgentWorkspaceController extends ChangeNotifier {
   }
 
   void beginTyping() {
+    if (!inputFocused) {
+      _editingPresentation = (
+        _serial,
+        _presentationRevision,
+        sheetExtent,
+        contentMode,
+      );
+    }
     inputFocused = true;
     if (task != null) {
       sheetExtent = AgentSheetExtent.expanded;
@@ -752,6 +1098,8 @@ class AgentWorkspaceController extends ChangeNotifier {
   /// An explicit view choice retires late queries without destroying the
   /// current task, result, conversation, selected Pin or camera.
   void retirePendingQueryForViewChange() {
+    _retireExternalPlaces(all: true);
+    retireMapArea(notify: false);
     retireReplyRefresh();
     ++_serial;
     if (state == AgentViewState.searching ||
@@ -765,6 +1113,14 @@ class AgentWorkspaceController extends ChangeNotifier {
 
   void stopTyping() {
     inputFocused = false;
+    final previous = _editingPresentation;
+    _editingPresentation = null;
+    if (previous != null &&
+        previous.$1 == _serial &&
+        previous.$2 == _presentationRevision) {
+      sheetExtent = previous.$3;
+      contentMode = previous.$4;
+    }
     if (state == AgentViewState.typing) state = AgentViewState.idle;
     notifyListeners();
   }
@@ -777,12 +1133,13 @@ class AgentWorkspaceController extends ChangeNotifier {
     String query = '搜索此区域',
   }) async {
     if (!bounds.isValid) return;
+    _retireExternalPlaces();
     final activeTask = task;
     final effectiveQuery = query;
     final serial = ++_serial;
     if (activeTask == null) {
       task = AgentTask(
-        id: 'local-$serial',
+        id: 'local-$_localSessionID-$serial',
         query: effectiveQuery,
         status: 'ACTIVE',
         cityID: cityID,
@@ -818,12 +1175,23 @@ class AgentWorkspaceController extends ChangeNotifier {
   }) async {
     final query = raw.trim();
     if (query.isEmpty) return;
-    final serial = ++_serial;
+    _retireExternalPlaces();
+    retireMapArea(notify: false);
     final continuing = task != null && result != null;
     final previousTask = task;
+    final editing = _editingPresentation;
+    // Typing temporarily opens the same panel. Carry the resting extent into
+    // a continuation only while its task and explicit view choice are current.
+    final continuationExtent =
+        editing != null &&
+            editing.$1 == _serial &&
+            editing.$2 == _presentationRevision
+        ? editing.$3
+        : sheetExtent;
+    final serial = ++_serial;
     if (!continuing) {
       task = AgentTask(
-        id: 'local-$serial',
+        id: 'local-$_localSessionID-$serial',
         query: query,
         status: 'ACTIVE',
         cityID: cityID,
@@ -833,7 +1201,7 @@ class AgentWorkspaceController extends ChangeNotifier {
     requestError = null;
     requestFailure = null;
     contentMode = AgentContentMode.conversation;
-    sheetExtent = AgentSheetExtent.expanded;
+    sheetExtent = continuing ? continuationExtent : AgentSheetExtent.peek;
     state = AgentViewState.searching;
     conversation.add(AgentMessage(role: 'user', text: query));
     _lastQuery = query;
@@ -953,7 +1321,6 @@ class AgentWorkspaceController extends ChangeNotifier {
       requestFailure = error is AgentRequestFailure ? error : null;
       result = previousResult;
       state = AgentViewState.results;
-      sheetExtent = AgentSheetExtent.medium;
       notifyListeners();
       // A failed POST may already have retained a native Task. Read the
       // existing history once; this does not retry, restore or select it.
@@ -979,21 +1346,37 @@ class AgentWorkspaceController extends ChangeNotifier {
     }
     preserveReplyCamera = false;
     result = resolved;
+    publicHistoryNotice = null;
+    _scheduleExternalPlaceExpiry();
     _mapReply = null;
     _mapReplyMessageIndex = null;
     requestError = null;
     requestFailure = null;
     if (resolved.task == null || resolved.task!.messages.isEmpty) {
-      final message = resolved.responseMessage.trim();
+      final message =
+          (resolved.onlinePlaceSearch == null ||
+                      resolved.onlinePlaceSearch!.durable
+                  ? resolved.responseMessage
+                  : externalPlaceHistoryNotice)
+              .trim();
       if (message.isNotEmpty) {
-        conversation.add(AgentMessage(role: 'assistant', text: message));
+        conversation.add(
+          AgentMessage(
+            role: 'assistant',
+            text: message,
+            externalPlaceReply: resolved.onlinePlaceSearch?.durable == true
+                ? resolved.onlinePlaceSearch
+                : null,
+          ),
+        );
       }
     }
     _presentCurrentTypedAnswer(resolved);
     _rememberReply(resolved);
     if (resolved.onlineContext == null &&
         selectedEntityId != null &&
-        !_containsEntity(resolved, selectedEntityId!)) {
+        (!_containsEntity(resolved, selectedEntityId!) ||
+            _placeSearchSlotsChanged(activeTask, resolved.task))) {
       selectedEntityId = null;
     }
     if (task != null && resolved.task == null) {
@@ -1043,8 +1426,55 @@ class AgentWorkspaceController extends ChangeNotifier {
       recent.removeRange(50, recent.length);
     }
     state = AgentViewState.results;
-    sheetExtent = AgentSheetExtent.expanded;
+    // A terminal reply does not select a view. New turns start in ResultPeek;
+    // explicit extent changes and typing restoration still own presentation.
     notifyListeners();
+    if (task != null) {
+      // Save only after the accepted request generation and task binding.
+      // Failure is observable, while the successful live answer remains usable.
+      try {
+        await _source.persistPublicHistory(task!);
+      } catch (_) {
+        if (serial == _serial && !_disposed) {
+          publicHistoryNotice = '本机对话暂时未能保存，关闭应用后可能无法恢复。';
+          notifyListeners();
+        }
+      }
+    }
+  }
+
+  // An accepted new public search retires its prior selection even when a
+  // canonical place remains in the new subset. Fact followups retain it.
+  // The response already passed the current turn guard; raw query text is
+  // never interpreted here as an entity or a location permission.
+  bool _placeSearchSlotsChanged(AgentTask? previous, AgentTask? next) {
+    if (previous == null ||
+        next == null ||
+        previous.id != next.id ||
+        previous.intent != 'FIND_PLACE' ||
+        next.intent != 'FIND_PLACE' ||
+        previous.contextType != 'CITY' ||
+        next.contextType != 'CITY' ||
+        previous.cityID != next.cityID ||
+        previous.contextID != next.contextID ||
+        previous.principalType != next.principalType ||
+        previous.principalID != next.principalID ||
+        previous.actingUserID != next.actingUserID ||
+        next.status != 'COMPLETED') {
+      return false;
+    }
+    final searchNameRemoved =
+        previous.filters['searchTerm']?.isNotEmpty == true &&
+        next.filters['searchTerm'] == '';
+    return searchNameRemoved ||
+        const [
+          'category',
+          'locationPreference',
+          'mapWest',
+          'mapSouth',
+          'mapEast',
+          'mapNorth',
+        ].any((key) => previous.filters[key] != next.filters[key]);
   }
 
   bool _containsEntity(AgentResult result, String id) =>
@@ -1102,6 +1532,18 @@ class AgentWorkspaceController extends ChangeNotifier {
   bool selectMapEntity(String id) {
     final currentTask = task;
     final currentResult = presentedResult;
+    if (currentResult != null &&
+        canUseExternalPlaces(currentResult) &&
+        state != AgentViewState.searching &&
+        requestError == null) {
+      final candidates = currentResult.onlinePlaceSearch!.places.where(
+        (place) => place.mapID == id,
+      );
+      if (candidates.length == 1) {
+        showExternalPlaceOnMap(currentResult, candidates.single);
+        return true;
+      }
+    }
     if (queryContextType != 'CITY' ||
         currentTask?.contextType != 'CITY' ||
         currentTask!.cityID?.isNotEmpty != true ||
@@ -1156,8 +1598,8 @@ class AgentWorkspaceController extends ChangeNotifier {
     return true;
   }
 
-  void selectEntity(String id) {
-    preserveReplyCamera = false;
+  void selectEntity(String? id, {bool preserveViewport = false}) {
+    preserveReplyCamera = preserveViewport;
     selectedEntityId = id;
     notifyListeners();
   }
@@ -1166,11 +1608,13 @@ class AgentWorkspaceController extends ChangeNotifier {
       error is AgentRequestFailure ? error.userMessage : '暂时无法获取结果，请重试。';
 
   void setSheetExtent(AgentSheetExtent extent) {
+    ++_presentationRevision;
     sheetExtent = extent;
     notifyListeners();
   }
 
   void showContent(AgentContentMode mode) {
+    ++_presentationRevision;
     contentMode = mode;
     if (mode == AgentContentMode.conversation) {
       sheetExtent = AgentSheetExtent.expanded;
@@ -1182,6 +1626,10 @@ class AgentWorkspaceController extends ChangeNotifier {
   }
 
   void newTask({bool preserveMapSelection = false}) {
+    _retireExternalPlaces();
+    ++_taskIdentityEpoch;
+    retireMapArea(notify: false);
+    _editingPresentation = null;
     retireReplyRefresh();
     preserveReplyCamera = false;
     _mapReply = null;
@@ -1202,6 +1650,7 @@ class AgentWorkspaceController extends ChangeNotifier {
     if (!preserveMapSelection) selectedEntityId = null;
     conversation.clear();
     requestError = null;
+    publicHistoryNotice = null;
     requestFailure = null;
     contentMode = AgentContentMode.results;
     _lastQuery = null;
@@ -1224,6 +1673,24 @@ class AgentWorkspaceController extends ChangeNotifier {
     _lastActivities = activities;
     _lastPlaces = places;
     final serial = _serial;
+    final presentationRevision = _presentationRevision;
+    final restingContentMode = contentMode;
+    void presentRestored(AgentSheetExtent extent, AgentContentMode mode) {
+      if (presentationRevision != _presentationRevision) return;
+      final editing = _editingPresentation;
+      if (inputFocused &&
+          editing != null &&
+          editing.$1 == serial &&
+          editing.$2 == presentationRevision) {
+        // Keep the temporary input view; unfocus restores this accepted read's
+        // default, rather than the pending read's earlier peek snapshot.
+        _editingPresentation = (serial, presentationRevision, extent, mode);
+      } else {
+        sheetExtent = extent;
+        contentMode = mode;
+      }
+    }
+
     task = previous;
     conversation.addAll(
       previous.messages.isNotEmpty
@@ -1244,7 +1711,7 @@ class AgentWorkspaceController extends ChangeNotifier {
       // task/history available without inventing a ResultSet or replaying it.
       result = null;
       state = AgentViewState.results;
-      sheetExtent = AgentSheetExtent.medium;
+      presentRestored(AgentSheetExtent.medium, restingContentMode);
       notifyListeners();
       return;
     }
@@ -1264,8 +1731,7 @@ class AgentWorkspaceController extends ChangeNotifier {
     _presentCurrentTypedAnswer(restored);
     _rememberReply(restored);
     state = AgentViewState.results;
-    contentMode = AgentContentMode.conversation;
-    sheetExtent = AgentSheetExtent.expanded;
+    presentRestored(AgentSheetExtent.expanded, AgentContentMode.conversation);
     notifyListeners();
   }
 
@@ -1273,6 +1739,7 @@ class AgentWorkspaceController extends ChangeNotifier {
   // answer. This projection neither rewrites stored Task history nor approves
   // an action. Earlier turns keep their original text.
   void _presentCurrentTypedAnswer(AgentResult current) {
+    if (current.onlinePlaceSearch != null) return;
     for (final reply in List<AgentReply>.of(replies)) {
       final index = reply.messageIndex;
       if (index >= conversation.length ||
@@ -1287,7 +1754,8 @@ class AgentWorkspaceController extends ChangeNotifier {
       if (!listEquals(users, reply.userMessages)) continue;
       // Authenticated persisted messages retain their own text and citations;
       // an older in-memory result cannot replace them with another turn.
-      if (conversation[index].sourceReferences == null &&
+      if (reply.result.onlinePlaceSearch == null &&
+          conversation[index].sourceReferences == null &&
           conversation[index].resultMembership == null) {
         conversation[index] = conversation[index].withText(
           reply.result.responseMessage,
@@ -1329,7 +1797,8 @@ class AgentWorkspaceController extends ChangeNotifier {
       stored.removeWhere(
         (reply) =>
             reply.messageIndex < conversation.length &&
-            conversation[reply.messageIndex].resultMembership != null,
+            conversation[reply.messageIndex].resultMembership != null &&
+            reply.result.onlinePlaceSearch?.durable != true,
       );
       for (final entry in history.entries) {
         final messageIndex = entry.key;
@@ -1359,7 +1828,9 @@ class AgentWorkspaceController extends ChangeNotifier {
         );
       }
     }
-    if (history == null || conversation[index].resultMembership == null) {
+    if (history == null ||
+        conversation[index].resultMembership == null ||
+        source.onlinePlaceSearch != null) {
       stored.removeWhere((reply) => reply.messageIndex == index);
       stored.add(
         AgentReply(
@@ -1374,6 +1845,50 @@ class AgentWorkspaceController extends ChangeNotifier {
       );
     }
     stored.sort((a, b) => a.messageIndex.compareTo(b.messageIndex));
+    // Durable external observations belong to their original assistant turn.
+    // Their display lifetime is independent of native reply membership leases.
+    for (final (messageIndex, message) in conversation.indexed) {
+      final search = message.externalPlaceReply;
+      if (message.role != 'assistant' || search == null || !search.durable) {
+        continue;
+      }
+      if (stored.any(
+        (reply) =>
+            reply.messageIndex == messageIndex &&
+            (identical(reply.result.onlinePlaceSearch, search) ||
+                (messageIndex == index &&
+                    identical(reply.result, source) &&
+                    reply.result.onlinePlaceSearch?.snapshotID ==
+                        search.snapshotID)),
+      )) {
+        continue;
+      }
+      stored.removeWhere((reply) => reply.messageIndex == messageIndex);
+      stored.add(
+        AgentReply(
+          messageIndex: messageIndex,
+          result:
+              messageIndex == index &&
+                  source.onlinePlaceSearch?.snapshotID == search.snapshotID
+              ? source
+              : AgentResult(
+                  entities: const [],
+                  activities: const [],
+                  places: const [],
+                  note: '',
+                  message: message.text,
+                  taskID: id,
+                  onlinePlaceSearch: search,
+                  resultSet: externalPlaceMapShell(search),
+                ),
+          userMessages: conversation
+              .take(messageIndex)
+              .where((m) => m.role == 'user')
+              .map((m) => m.text)
+              .toList(growable: false),
+        ),
+      );
+    }
     // Reuse the existing per-message resultBuilder for citations recovered
     // from earlier turns. These replies have no entity/map result projection.
     for (final (messageIndex, message) in conversation.indexed) {
@@ -1441,6 +1956,7 @@ class AgentWorkspaceController extends ChangeNotifier {
       _replyRefreshAllowed() &&
       task != null &&
       result != null &&
+      result!.onlinePlaceSearch?.current != true &&
       queryContextType == 'CITY' &&
       state != AgentViewState.searching &&
       requestError == null &&
@@ -1525,6 +2041,21 @@ class AgentWorkspaceController extends ChangeNotifier {
                       .firstOrNull;
         result = fresh;
         preserveReplyCamera = true;
+        // Each citation belongs to this exact message's independently read
+        // projection. Swap its read closure, never extend the old source or
+        // replace the original Task, text, membership or attachment indices.
+        for (var i = 0; i < conversation.length; i++) {
+          final message = conversation[i];
+          final sources = fresh.task!.messages[i].sourceReferences;
+          if (!identical(message.sourceReferences, sources)) {
+            conversation[i] = AgentMessage(
+              role: message.role,
+              text: message.text,
+              sourceReferences: sources,
+              resultMembership: message.resultMembership,
+            );
+          }
+        }
         _rememberReply(fresh);
         if (oldMap != null) {
           _mapReply =
@@ -1618,6 +2149,71 @@ class AgentWorkspaceController extends ChangeNotifier {
   bool canUseReplyProjection(AgentResult source) =>
       retainsReply(source) && source.replyProjectionCurrent;
 
+  bool canUseExternalPlaces(AgentResult source) =>
+      !_disposed &&
+      queryContextType == 'CITY' &&
+      task?.contextType == 'CITY' &&
+      task?.cityID == source.onlinePlaceSearch?.cityID &&
+      (source.onlinePlaceSearch?.durable == true
+          ? retainsReply(source)
+          : identical(result, source)) &&
+      source.onlinePlaceSearch?.current == true;
+
+  void showExternalPlaceOnMap(
+    AgentResult source,
+    ExternalPlaceCandidate place,
+  ) {
+    if (queryContextType != 'CITY' ||
+        source.onlineContext != null ||
+        !canUseExternalPlaces(source) ||
+        !source.onlinePlaceSearch!.places.contains(place)) {
+      return;
+    }
+    preserveReplyCamera = false;
+    _mapReply = source;
+    _mapReplyMessageIndex = replies
+        .where((reply) => identical(reply.result, source))
+        .map((reply) => reply.messageIndex)
+        .firstOrNull;
+    selectedEntityId = place.mapID;
+    sheetExtent = AgentSheetExtent.peek;
+    notifyListeners();
+  }
+
+  void _retireExternalPlaces({bool all = false}) {
+    _externalPlaceExpiryTimer?.cancel();
+    final searches = <ExternalPlaceSearch>{
+      ?result?.onlinePlaceSearch,
+      if (all)
+        for (final list in _repliesByTask.values)
+          for (final reply in list) ?reply.result.onlinePlaceSearch,
+    };
+    for (final search in searches) {
+      if (all || !search.durable) search.retire();
+    }
+  }
+
+  void _scheduleExternalPlaceExpiry() {
+    _externalPlaceExpiryTimer?.cancel();
+    final current = result;
+    final remaining = current?.onlinePlaceSearch?.remaining;
+    if (remaining != null && remaining > Duration.zero) {
+      _externalPlaceExpiryTimer = Timer(remaining, () {
+        if (_disposed || !identical(current, result)) return;
+        if (current!.onlinePlaceSearch!.durable) {
+          notifyListeners();
+          return;
+        }
+        current.onlinePlaceSearch!.retire();
+        if (selectedEntityId?.startsWith('external-place:') == true) {
+          selectedEntityId = null;
+        }
+        preserveReplyCamera = true;
+        notifyListeners();
+      });
+    }
+  }
+
   bool retainsReply(AgentResult source) =>
       identical(result, source) ||
       replies.any((reply) => identical(reply.result, source));
@@ -1662,8 +2258,11 @@ class AgentWorkspaceController extends ChangeNotifier {
   @override
   void dispose() {
     _disposed = true;
+    retireMapArea(notify: false);
     retireReplyRefresh();
     _replyExpiryTimer?.cancel();
+    _externalPlaceExpiryTimer?.cancel();
+    result?.onlinePlaceSearch?.retire();
     ++_serial;
     ++_historySerial;
     _source.dispose();

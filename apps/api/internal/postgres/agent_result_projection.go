@@ -8,9 +8,11 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"github.com/birdtie/birdtie/apps/api/internal/entitycover"
 	"reflect"
 	"strings"
 	"sync"
+	"time"
 
 	arp "github.com/birdtie/birdtie/apps/api/internal/agentresultprojection"
 	"github.com/birdtie/birdtie/apps/api/internal/agentworkspace"
@@ -54,7 +56,7 @@ func resultProjectionSeal(a arp.Access, q arp.Query, r arp.Receipt) (string, err
 // All relation acquisition and Account/Task/Session row waits precede the ONE
 // payload statement. No later ValidateTask or other pool read follows it.
 const resultProjectionRelations = humanSocialRelations + `;LOCK TABLE agent_tasks,organization_map_locations,
- business_claim_controls,business_console_profiles,business_console_venue_facts,business_review_grants,business_public_profile_permissions,consent_grants,sponsored_opportunity_declarations,sponsored_opportunity_review_grants,city_editor_memberships,activity_sources,activity_participations,saved_items IN ACCESS SHARE MODE`
+ business_claim_controls,business_console_profiles,business_console_venue_facts,business_review_grants,business_public_profile_permissions,consent_grants,sponsored_opportunity_declarations,sponsored_opportunity_review_grants,city_editor_memberships,activity_sources,activity_participations,saved_items,person_avatars,community_avatars IN ACCESS SHARE MODE;` + entityCoverRelations + `;` + placePhotoRelations
 
 func resultProjectionSQL() string {
 	// Reuse the original human opportunity resolver, never the older multi-pool
@@ -84,7 +86,7 @@ func resultProjectionSQL() string {
  JOIN agent_profiles ap ON ap.agent_id=ag.id AND ap.owner_type='PERSON' AND ap.owner_id=a.id CROSS JOIN result_clock
  WHERE a.id=$2 AND a.account_type='person' AND a.status='active' AND se.token_sha256=$3 AND se.revoked_at IS NULL
  AND se.expires_at>n AND se.idle_expires_at>n AND ($4::boolean OR se.authentication_method<>'dev_phone')),
- public_places AS MATERIALIZED(SELECT p.*,p.xmin::text token FROM places p JOIN city c ON c.id=p.city_id,result_clock WHERE p.publication_status='published' AND (p.expires_at IS NULL OR p.expires_at>n)),
+ public_places AS MATERIALIZED(SELECT p.*,p.xmin::text token,` + currentRetainedPlaceDeadlineSQL("p", "n") + ` retained_until FROM places p JOIN city c ON c.id=p.city_id,result_clock WHERE p.publication_status='published' AND (p.expires_at IS NULL OR p.expires_at>n) AND ` + currentRetainedPlaceVisibilitySQL("p", "n") + `),
  public_activities AS MATERIALIZED(SELECT a.*,a.xmin::text token,ao.xmin::text organizer_token,ao.person_account_id,ao.organization_id organizer_org,ao.community_id organizer_community,ao.business_id organizer_business
  FROM activities a JOIN city c ON c.id=a.city_id JOIN activity_organizers ao ON ao.activity_id=a.id CROSS JOIN result_clock
  WHERE a.publication_status='published' AND birdtie_activity_visible_to(a.id,$2::uuid) AND a.cancelled_at IS NULL AND a.ends_at>n AND (a.expires_at IS NULL OR a.expires_at>n)
@@ -111,10 +113,10 @@ func resultProjectionSQL() string {
  sources AS MATERIALIZED(
  SELECT 'place'::text kind,p.id::text id,p.name title,p.summary,p.updated_at::text version,
  CASE WHEN p.coordinate_system='wgs84' AND p.location_precision='point' AND p.latitude IS NOT NULL AND p.longitude IS NOT NULL THEN jsonb_build_object('coordinateSystem','wgs84','precision','point','latitude',p.latitude,'longitude',p.longitude,'placeId',p.id) END anchor,
- p.expires_at deadline,p.token token FROM public_places p
+ p.retained_until deadline,p.token token FROM public_places p
  UNION ALL SELECT 'activity',a.id::text,a.title,a.summary,a.updated_at::text,
  CASE WHEN a.modality<>'online' AND p.coordinate_system='wgs84' AND p.location_precision='point' AND p.latitude IS NOT NULL AND p.longitude IS NOT NULL THEN jsonb_build_object('coordinateSystem','wgs84','precision','point','latitude',p.latitude,'longitude',p.longitude,'placeId',p.id) END,
- least(a.ends_at,a.expires_at,p.expires_at,(SELECT v.expires_at FROM venues v WHERE v.place_id=p.id AND a.organizer_business IS NOT NULL)),concat_ws(':',a.token,a.organizer_token,p.token)
+ least(a.ends_at,a.expires_at,p.retained_until,(SELECT v.expires_at FROM venues v WHERE v.place_id=p.id AND a.organizer_business IS NOT NULL)),concat_ws(':',a.token,a.organizer_token,p.token)
  FROM public_activities a LEFT JOIN public_places p ON p.id=a.place_id CROSS JOIN query CROSS JOIN result_clock CROSS JOIN city c
  WHERE (coalesce(q->>'Category','')='' OR a.category_code=q->>'Category' OR strpos(lower(a.title||' '||a.summary),lower(q->>'Category'))>0)
  AND (coalesce(q->>'TimePreference','') NOT IN ('weekend','today','tomorrow','tonight')
@@ -133,7 +135,7 @@ func resultProjectionSQL() string {
  AND NOT EXISTS(SELECT 1 FROM account_blocks bl WHERE (bl.blocker_account_id=$2 AND bl.blocked_account_id=owner.id) OR (bl.blocked_account_id=$2 AND bl.blocker_account_id=owner.id))
  UNION ALL SELECT 'community',co.id::text,co.name,co.summary,co.updated_at::text,
  CASE WHEN p.coordinate_system='wgs84' AND p.location_precision='point' AND p.latitude IS NOT NULL AND p.longitude IS NOT NULL THEN jsonb_build_object('coordinateSystem','wgs84','precision','point','latitude',p.latitude,'longitude',p.longitude,'placeId',p.id) END,
- least(co.expires_at,p.expires_at),concat_ws(':',co.xmin::text,creator.xmin::text,p.token)
+ least(co.expires_at,p.retained_until),concat_ws(':',co.xmin::text,creator.xmin::text,p.token)
  FROM communities co JOIN city c ON c.id=co.city_id JOIN accounts creator ON creator.id=co.owner_account_id AND creator.account_type='person' AND creator.status='active'
  LEFT JOIN public_places p ON p.id=co.place_id CROSS JOIN result_clock
  WHERE co.publication_status='published' AND co.visibility='public' AND co.lifecycle_status='active' AND co.owner_confirmed_at IS NOT NULL AND (co.expires_at IS NULL OR co.expires_at>n)
@@ -158,6 +160,7 @@ func resultProjectionSQL() string {
  WHERE b.status='active' AND b.claim_status='verified' AND EXISTS(SELECT 1 FROM public_activities a WHERE a.organizer_business=b.id AND a.visibility='public')
  AND NOT EXISTS(SELECT 1 FROM account_blocks bl WHERE (bl.blocker_account_id=$2 AND bl.blocked_account_id=principal.id) OR (bl.blocked_account_id=$2 AND bl.blocker_account_id=principal.id))
  ), selected AS MATERIALIZED(SELECT s.*,CASE WHEN coalesce((q->>'Closer')::boolean,false) AND s.kind='activity' THEN coalesce(power((s.anchor->>'latitude')::float8-(SELECT map_center_latitude FROM city),2)+power(((s.anchor->>'longitude')::float8-(SELECT map_center_longitude FROM city))*cos(radians((SELECT map_center_latitude FROM city))),2),1e9) ELSE 0 END ordering FROM sources s,query WHERE s.kind=q->>'Kind' AND (coalesce(q->>'SearchTerm','')='' OR strpos(lower(s.title||' '||s.summary),lower(q->>'SearchTerm'))>0)
+ AND (s.kind<>'place' OR coalesce(q->>'Category','')='' OR EXISTS(SELECT 1 FROM public_places category_place WHERE category_place.id::text=s.id AND category_place.category_code=q->>'Category'))
  AND (q->'Bounds' IS NULL OR q->'Bounds'='null'::jsonb OR (s.anchor->>'longitude')::float8 BETWEEN (q->'Bounds'->>'West')::float8 AND (q->'Bounds'->>'East')::float8 AND (s.anchor->>'latitude')::float8 BETWEEN (q->'Bounds'->>'South')::float8 AND (q->'Bounds'->>'North')::float8)
  ORDER BY CASE WHEN coalesce((q->>'Closer')::boolean,false) AND s.kind='activity' THEN coalesce(power((s.anchor->>'latitude')::float8-(SELECT map_center_latitude FROM city),2)+power(((s.anchor->>'longitude')::float8-(SELECT map_center_longitude FROM city))*cos(radians((SELECT map_center_latitude FROM city))),2),1e9) ELSE 0 END,
  s.title,s.id LIMIT 30),
@@ -176,13 +179,21 @@ func resultProjectionSQL() string {
  action_refs AS MATERIALIZED(SELECT s.kind,s.id FROM selected s UNION SELECT 'activity',a.id::text FROM opportunity_activities a),
  action_facts AS MATERIALIZED(SELECT coalesce(jsonb_object_agg(action_ref.kind||':'||action_ref.id,` + actionFacts + `),'{}'::jsonb) raw FROM action_refs action_ref),
  legacy_sources AS MATERIALIZED(SELECT ` + resultProjectionLegacySQL() + `),
+ media_sources AS MATERIALIZED(SELECT s.*,CASE WHEN s.kind='person' THEN birdtie_person_avatar_metadata(s.id::uuid,$2::uuid) END avatar,
+ CASE WHEN s.kind='community' THEN birdtie_community_avatar_metadata(s.id::uuid,$2::uuid) END community_avatar,
+ CASE WHEN s.kind IN('activity','organization') THEN birdtie_entity_cover_metadata(s.kind,s.id::uuid,$2::uuid,(SELECT n FROM result_clock)) END cover,
+ CASE WHEN s.kind IN('activity','organization') THEN birdtie_entity_cover_authority(s.kind,s.id::uuid,$2::uuid)||':'||COALESCE((SELECT cover.xmin::text FROM entity_covers cover WHERE cover.entity_type=s.kind AND cover.entity_id=s.id::uuid),'none') END cover_source,
+ CASE WHEN s.kind='place' THEN birdtie_place_photo_metadata(s.id::uuid,(SELECT n FROM result_clock)) END place_photo,
+ CASE WHEN s.kind='place' THEN birdtie_place_photo_proof(s.id::uuid) END photo_source FROM selected s),
  payload AS MATERIALIZED(SELECT coalesce(jsonb_agg(jsonb_strip_nulls(jsonb_build_object('entityRef',jsonb_build_object('type',kind,'id',id),'title',btrim(title),'summary',btrim(left(summary,1000)),'scope','AUTHORIZED_VIEW',
- 'detailRef',jsonb_build_object('type',kind,'id',id),'shareRef',jsonb_build_object('type',kind,'id',id),'sourceVersion',version,'anchor',anchor)) ORDER BY ordering,title,id),'[]'::jsonb) items,
- coalesce(jsonb_agg(jsonb_build_array(kind,id,token) ORDER BY kind,id),'[]'::jsonb) tokens,min(deadline) deadline FROM selected)
+ 'detailRef',jsonb_build_object('type',kind,'id',id),'shareRef',jsonb_build_object('type',kind,'id',id),'sourceVersion',version,'anchor',anchor,'avatar',avatar,'communityAvatar',community_avatar,'cover',cover,'placePhoto',place_photo)) ORDER BY ordering,title,id),'[]'::jsonb) items,
+ coalesce(jsonb_agg(jsonb_build_array(kind,id,token,avatar,community_avatar,cover-'expiresAt',cover_source,place_photo-'expiresAt',photo_source) ORDER BY kind,id),'[]'::jsonb) tokens,min(deadline) deadline FROM media_sources)
  SELECT result_clock.n,least(result_clock.n+interval '30 seconds',city.expires_at,payload.deadline,(SELECT min(deadline) FROM native_authority),(SELECT deadline FROM opportunity_deadline),(SELECT deadline FROM commercial_deadline)),payload.items,
  (SELECT coalesce(jsonb_agg(jsonb_build_object('type',s.kind,'id',s.id) ORDER BY s.kind,s.id),'[]'::jsonb) FROM selected s WHERE s.kind='place' OR (s.kind='activity' AND EXISTS(SELECT 1 FROM activities public_target WHERE public_target.id::text=s.id AND public_target.visibility='public'))),
- (SELECT raw FROM own_opportunity),
- encode(sha256(convert_to(jsonb_build_array(city.token,payload.tokens,(SELECT jsonb_agg(token) FROM native_authority),(SELECT raw->'inputs' FROM own_opportunity),legacy_sources.activities,legacy_sources.places,(SELECT raw FROM action_facts),` + resultProjectionClosureSQL() + `)::text,'UTF8')),'hex'),
+ (SELECT raw||jsonb_build_object('entityCovers',(SELECT coalesce(jsonb_object_agg(a.id::text,birdtie_entity_cover_metadata('activity',a.id,$2::uuid,(SELECT n FROM result_clock))),'{}'::jsonb) FROM opportunity_activities a)) FROM own_opportunity),
+ encode(sha256(convert_to(jsonb_build_array(city.token,payload.tokens,(SELECT jsonb_agg(token) FROM native_authority),(SELECT raw->'inputs' FROM own_opportunity),
+ (SELECT coalesce(jsonb_agg(jsonb_build_array(a.id,birdtie_entity_cover_authority('activity',a.id,$2::uuid),cover.xmin::text)ORDER BY a.id),'[]'::jsonb) FROM opportunity_activities a LEFT JOIN entity_covers cover ON cover.entity_type='activity' AND cover.entity_id=a.id),
+ legacy_sources.activities_hash,legacy_sources.places_hash,(SELECT raw FROM action_facts),` + resultProjectionClosureSQL() + `)::text,'UTF8')),'hex'),
  EXISTS(SELECT 1 FROM native_authority),legacy_sources.activities,legacy_sources.places,
  EXISTS(SELECT 1 FROM accounts viewer JOIN sessions current_session ON current_session.account_id=viewer.id CROSS JOIN result_clock
  WHERE viewer.id=$2 AND viewer.account_type='person' AND viewer.status='active' AND current_session.token_sha256=$3
@@ -198,7 +209,9 @@ func resultProjectionLegacySQL() string {
  AND a.id::text IN(SELECT id FROM selected WHERE kind='activity')`
 	places := `SELECT jsonb_build_array(` + placeColumns + `) row,p.id FROM places p WHERE p.id::text IN(SELECT id FROM selected WHERE kind='place')`
 	legacy := `(SELECT coalesce(jsonb_agg(row ORDER BY id),'[]'::jsonb) FROM (` + activities + `) legacy_activity_rows) activities,
- (SELECT coalesce(jsonb_agg(row ORDER BY id),'[]'::jsonb) FROM (` + places + `) legacy_place_rows) places`
+ (SELECT coalesce(jsonb_agg(row-37 ORDER BY id),'[]'::jsonb) FROM (` + activities + `) legacy_activity_rows) activities_hash,
+ (SELECT coalesce(jsonb_agg(row ORDER BY id),'[]'::jsonb) FROM (` + places + `) legacy_place_rows) places,
+ (SELECT coalesce(jsonb_agg(row-16 ORDER BY id),'[]'::jsonb) FROM (` + places + `) legacy_place_rows) places_hash`
 	return strings.NewReplacer("clock_timestamp()", "(SELECT n FROM result_clock)", "statement_timestamp()", "(SELECT n FROM result_clock)", "now()", "(SELECT n FROM result_clock)").Replace(legacy)
 }
 
@@ -446,7 +459,13 @@ func (s *Store) captureAgentResultProjectionSelectedTx(ctx context.Context, tx p
 	}
 	if q.Kind == "opportunity" {
 		var p humanSocialPayload
+		var media struct {
+			EntityCovers map[string]*entitycover.Metadata `json:"entityCovers"`
+		}
 		if len(ownRaw) == 0 || json.Unmarshal(ownRaw, &p) != nil {
+			return r, arp.ErrUnavailable
+		}
+		if json.Unmarshal(ownRaw, &media) != nil {
 			return r, arp.ErrUnavailable
 		}
 		p.Inputs.PersonID = a.Actor.ID
@@ -458,7 +477,7 @@ func (s *Store) captureAgentResultProjectionSelectedTx(ctx context.Context, tx p
 				continue
 			}
 			ref := arp.Ref{Type: "activity", ID: c.Entity.ID}
-			r.Items = append(r.Items, arp.Item{Entity: arp.Ref{Type: "opportunity", ID: c.ID}, Title: c.Title, Summary: c.Reason, Scope: arp.SelfPrivate, Detail: &ref, Share: &ref, SourceVersion: c.RuleVersion})
+			r.Items = append(r.Items, arp.Item{Entity: arp.Ref{Type: "opportunity", ID: c.ID}, Title: c.Title, Summary: c.Reason, Scope: arp.SelfPrivate, Detail: &ref, Share: &ref, SourceVersion: c.RuleVersion, Cover: media.EntityCovers[c.Entity.ID]})
 		}
 	}
 	// The existing action descriptors share the SAME restricted source lifetime;
@@ -516,6 +535,11 @@ func (s *Store) RevalidateAgentResultProjection(ctx context.Context, a arp.Acces
 	if e != nil {
 		return e
 	}
+	var samePhoto bool
+	next, samePhoto = preservePlacePhotoProjectionLeases(r, next)
+	if !samePhoto {
+		return arp.ErrChanged
+	}
 	// Action proposal deadlines are newly observed, bounded clocks. They cannot
 	// extend the original sealed receipt's validity; compare the source and
 	// descriptor values separately instead of treating a fresh clock as ABA.
@@ -526,6 +550,19 @@ func (s *Store) RevalidateAgentResultProjection(ctx context.Context, a arp.Acces
 	}
 	for i := range afterItems {
 		afterItems[i].ActionsValidUntil = nil
+	}
+	if len(beforeItems) != len(afterItems) || len(r.Activities) != len(next.Activities) {
+		return arp.ErrChanged
+	}
+	for i := range beforeItems {
+		if !entitycover.PreserveLease(beforeItems[i].Cover, afterItems[i].Cover, time.Now().UTC()) {
+			return arp.ErrChanged
+		}
+	}
+	for i := range r.Activities {
+		if !entitycover.PreserveLease(r.Activities[i].Cover, next.Activities[i].Cover, time.Now().UTC()) {
+			return arp.ErrChanged
+		}
 	}
 	if !r.ValidUntil.After(next.ObservedAt) || r.Proof != next.Proof || !reflect.DeepEqual(beforeItems, afterItems) || !reflect.DeepEqual(r.PublicCommercialRefs, next.PublicCommercialRefs) || !reflect.DeepEqual(r.Activities, next.Activities) || !reflect.DeepEqual(r.Places, next.Places) {
 		return arp.ErrChanged

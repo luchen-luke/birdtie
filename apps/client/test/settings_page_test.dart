@@ -1,3 +1,5 @@
+import 'human_causal_control_test.dart';
+import 'package:birdtie_client/src/workspace/human_causal_pending_store.dart';
 import 'package:birdtie_client/src/auth/birdtie_auth_controller.dart';
 import 'package:birdtie_client/src/auth/session_vault.dart';
 import 'package:birdtie_client/src/city/public_city_controller.dart';
@@ -12,7 +14,28 @@ import 'agent_memory_correction_page_test.dart' show correctionSettle;
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'agent_introduction_controller_test.dart' show introReads;
-import 'model_egress_page_test.dart' show egressAuth;
+import 'model_egress_api_test.dart' show egressResponse, egressOwner;
+
+Future<BirdtieAuthController> settingsEgressAuth() async {
+  final auth = BirdtieAuthController(
+    apiBaseUrl: 'http://fixture',
+    client: MockClient(
+      (r) async => egressResponse(switch (r.url.path) {
+        '/v1/me' => {'id': egressOwner},
+        '/v1/auth/dev-phone/status' => {'enabled': true},
+        _ => {'displayName': '本人合成验收'},
+      }),
+    ),
+    sessionVault: MemorySessionVault()
+      ..session = const StoredSession(
+        token: 'synthetic',
+        method: 'dev_phone',
+        origin: 'http://fixture',
+      ),
+  );
+  await auth.initialize();
+  return auth;
+}
 
 void main() {
   testWidgets('Settings本人直入口管理记忆 原GET真空body无自动写', (t) async {
@@ -23,13 +46,13 @@ void main() {
       calls.add(r);
       expect(r.method, 'GET');
       expect(r.bodyBytes, isEmpty);
-      if (r.url.path.endsWith('agent-memories')) {
-        return correctionResponse({
+      if (r.url.path == '/v1/me/agent-memories/page') {
+        return correctionReadResponse(r, {
           'data': [correctionMemoryRaw(at: DateTime.now().toUtc())],
         });
       }
-      if (r.url.path.endsWith('agent-memory-candidates')) {
-        return correctionResponse({'data': []});
+      if (r.url.path == '/v1/me/agent-memory-candidates/page') {
+        return correctionReadResponse(r, {'data': []});
       }
       return correctionResponse({'data': []});
     });
@@ -55,7 +78,7 @@ void main() {
     await t.tap(find.text('管理我的记忆'));
     await correctionSettle(t);
     expect(find.text('修改这条记忆'), findsOneWidget);
-    expect(calls.any((r) => r.url.path == '/v1/me/agent-memories'), true);
+    expect(calls.any((r) => r.url.path == '/v1/me/agent-memories/page'), true);
     expect(calls.every((r) => r.method == 'GET'), true);
     await t.pumpWidget(const SizedBox());
     auth.dispose();
@@ -64,7 +87,7 @@ void main() {
     client.close();
   });
   testWidgets('设置页API重绑关闭已打开的旧偏好批准，切回也不复活', (tester) async {
-    final auth = await egressAuth();
+    final auth = await settingsEgressAuth();
     final requests = <http.Request>[];
     final client = MockClient((r) async {
       requests.add(r);
@@ -97,9 +120,9 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    await tester.scrollUntilVisible(find.text('引荐与社交许可'), 150);
+    await tester.scrollUntilVisible(find.text('引荐与社交授权'), 150);
     await tester.pumpAndSettle();
-    await tester.tap(find.text('引荐与社交许可'));
+    await tester.tap(find.text('引荐与社交授权'));
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(find.text('检查本人社交偏好'), 150);
     await tester.pumpAndSettle();
@@ -110,7 +133,9 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(AlertDialog), findsNothing);
     expect(find.text('工作身份或来源已变化，请返回当前入口重新核实。'), findsOneWidget);
-    expect(requests.any((r) => r.url.host == 'fixture2'), true);
+    // Rebinding the service retires this open source; it does not authorize
+    // a GET against another origin with the first origin's credential.
+    expect(requests.any((r) => r.url.host == 'fixture2'), false);
     base.value = 'http://fixture';
     await tester.pumpAndSettle();
     expect(find.text('工作身份或来源已变化，请返回当前入口重新核实。'), findsOneWidget);
@@ -125,7 +150,7 @@ void main() {
   });
 
   testWidgets('Settings引荐入口复用本人接口和原管理页，不自动授权或发送', (tester) async {
-    final auth = await egressAuth();
+    final auth = await settingsEgressAuth();
     final calls = <http.Request>[];
     final client = MockClient((request) async {
       calls.add(request);
@@ -158,9 +183,9 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    await tester.scrollUntilVisible(find.text('引荐与社交许可'), 150);
+    await tester.scrollUntilVisible(find.text('引荐与社交授权'), 150);
     await tester.pumpAndSettle();
-    await tester.tap(find.text('引荐与社交许可'));
+    await tester.tap(find.text('引荐与社交授权'));
     await tester.pumpAndSettle();
     expect(find.text('看看共同意图'), findsOneWidget);
     expect(calls.any((r) => r.url.path == '/v1/me/agent-policies'), true);
@@ -254,11 +279,11 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    await tester.scrollUntilVisible(find.text('模型请求与预算'), 100);
+    await tester.scrollUntilVisible(find.text('AI 使用与预算'), 100);
     await tester.pumpAndSettle();
-    await tester.tap(find.text('模型请求与预算'));
+    await tester.tap(find.text('AI 使用与预算'));
     await tester.pumpAndSettle();
-    expect(find.text('本人任务的人审记录'), findsOneWidget);
+    expect(find.text('已有的人审记录'), findsOneWidget);
     expect(requests, contains('/v1/me/model-egress/options'));
     expect(requests, contains('/v1/me/model-egress/previews'));
     final count = requests.length;
@@ -275,64 +300,15 @@ void main() {
   });
 
   testWidgets('Settings manages blocks and profile grants', (tester) async {
-    final authClient = MockClient((request) async {
-      switch ('${request.method} ${request.url.path}') {
-        case 'GET /v1/auth/dev-phone/status':
-          return http.Response('{"data":{"enabled":true}}', 200);
-        case 'POST /v1/auth/dev-phone/code':
-          return http.Response('{"data":{"expiresInSeconds":300}}', 200);
-        case 'POST /v1/auth/dev-phone/verify':
-          return http.Response('{"data":{"accessToken":"test-session"}}', 200);
-        case 'GET /v1/me':
-          return http.Response('{"data":{"id":"account-1"}}', 200);
-        case 'GET /v1/accounts/account-1/profile':
-          return http.Response(
-            '{"data":{"displayName":"Birdtie tester"}}',
-            200,
-          );
-        default:
-          return http.Response('', 404);
-      }
-    });
-    final auth = BirdtieAuthController(
-      client: authClient,
-      apiBaseUrl: 'http://localhost:8080',
-      sessionVault: MemorySessionVault(),
-    );
-    await auth.initialize();
-    await auth.requestDevPhoneCode('13800138000');
-    await auth.verifyDevPhoneCode('13800138000', '123456');
-    var blocked = true;
-    var granted = true;
-    final settingsClient = MockClient((request) async {
-      expect(request.headers['Authorization'], 'Bearer test-session');
-      switch ('${request.method} ${request.url.path}') {
-        case 'GET /v1/me/blocks':
-          return http.Response(
-            blocked ? '{"data":[{"accountId":"blocked-1"}]}' : '{"data":[]}',
-            200,
-          );
-        case 'GET /v1/me/consents':
-          return http.Response(
-            granted
-                ? '{"data":[{"id":"grant-1","recipientAccountId":"recipient-1","expiresAt":"2099-01-01T00:00:00Z"}]}'
-                : '{"data":[]}',
-            200,
-          );
-        case 'DELETE /v1/me/blocks/blocked-1':
-          blocked = false;
-          return http.Response('', 204);
-        case 'DELETE /v1/me/consents/grant-1':
-          granted = false;
-          return http.Response('', 204);
-        default:
-          return http.Response('', 404);
-      }
-    });
-    final city = PublicCityController();
-    final moments = PrivateMomentController(
-      authorizationHeader: () => auth.authorizationHeader,
-    );
+    FlutterSecureStorage.setMockInitialValues({});
+    final auth = SeedTestAuth()..owner = humanOwner;
+    final fixture = HumanControlFixture()
+      ..blocked = true
+      ..version = 2;
+    final city = PublicCityController(),
+        moments = PrivateMomentController(
+          authorizationHeader: () => auth.authorizationHeader,
+        );
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
@@ -340,29 +316,58 @@ void main() {
             auth: auth,
             city: city,
             moments: moments,
-            client: settingsClient,
-            apiBaseUrl: 'http://localhost:8080',
+            client: fixture.client,
+            apiBaseUrl: humanBase,
+            humanPendingStore: MemoryHumanCausalPendingStore(),
           ),
         ),
       ),
     );
-    await tester.pumpAndSettle();
-    await tester.scrollUntilVisible(find.text('blocked-1'), 100);
-    expect(find.text('blocked-1'), findsOneWidget);
-    await tester.scrollUntilVisible(find.text('recipient-1'), 100);
-    expect(find.text('recipient-1'), findsOneWidget);
+    await humanSettle(tester);
+    final privacyGroup = find.text('屏蔽与资料访问授权');
+    await tester.scrollUntilVisible(privacyGroup, 100);
+    await humanTap(tester, privacyGroup);
+    await tester.scrollUntilVisible(find.text('合成屏蔽账号'), 100);
+    expect(find.text('合成屏蔽账号'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('合成授权账号'), 100);
+    expect(find.text('合成授权账号'), findsOneWidget);
+    // Even an expired grant can still be revoked under its original revision.
+    expect(fixture.calls.where((r) => r.method != 'GET'), isEmpty);
     await tester.scrollUntilVisible(find.text('取消屏蔽'), -100);
-    await tester.tap(find.text('取消屏蔽'));
-    await tester.pumpAndSettle();
-    expect(find.text('没有已屏蔽的账号。'), findsOneWidget);
+    await humanTap(tester, find.text('取消屏蔽'));
+    expect(find.text('屏蔽设置'), findsOneWidget);
+    expect(fixture.writes, isEmpty);
+    await humanTap(tester, find.byKey(const Key('human-privacy-apply')));
+    await humanTap(tester, find.byKey(const Key('human-control-confirm')));
+    expect(fixture.blocked, false);
+    expect(fixture.writes.single.body, contains('"expectedVersion":2'));
+    await humanTap(tester, find.byKey(const Key('human-privacy-return')));
+    await humanSettle(tester);
+    expect(find.text('合成屏蔽账号'), findsNothing);
     await tester.scrollUntilVisible(find.text('撤销授权'), 100);
-    await tester.tap(find.text('撤销授权'));
-    await tester.pumpAndSettle();
-    expect(find.text('当前没有有效的个人资料访问授权。'), findsOneWidget);
-    await tester.pumpWidget(const SizedBox.shrink());
+    await humanTap(tester, find.text('撤销授权'));
+    await humanTap(tester, find.byKey(const Key('human-privacy-apply')));
+    expect(find.textContaining('不会被删除'), findsOneWidget);
+    await humanTap(tester, find.byKey(const Key('human-control-confirm')));
+    expect(fixture.revoked, true);
+    await humanTap(tester, find.byKey(const Key('human-privacy-return')));
+    await humanSettle(tester);
+    expect(fixture.writes.length, 2);
+    expect(
+      fixture.calls.where(
+        (r) =>
+            r.method == 'DELETE' ||
+            r.url.path == '/v1/me/blocks' && r.method == 'POST',
+      ),
+      isEmpty,
+    );
+    expect(find.text('合成授权账号'), findsNothing);
+    await tester.scrollUntilVisible(find.text('暂无屏蔽账号或访问授权'), -100);
+    expect(find.text('暂无屏蔽账号或访问授权'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox());
     auth.dispose();
     city.dispose();
     moments.dispose();
-    settingsClient.close();
+    fixture.client.close();
   });
 }

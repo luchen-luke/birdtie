@@ -68,6 +68,8 @@ const humanNewPeopleVersionSQL = `encode(sha256(convert_to(jsonb_build_array(
  (SELECT jsonb_agg(jsonb_build_array(x.blocker_account_id,x.blocked_account_id,x.xmin::text) ORDER BY x.blocker_account_id,x.blocked_account_id) FROM account_blocks x WHERE (x.blocker_account_id=$1 AND x.blocked_account_id=i.creator_account_id) OR (x.blocked_account_id=$1 AND x.blocker_account_id=i.creator_account_id)),
  (SELECT jsonb_agg(jsonb_build_array(x.id,x.xmin::text) ORDER BY x.id) FROM person_ties x WHERE x.person_a_account_id=LEAST($1::uuid,i.creator_account_id) AND x.person_b_account_id=GREATEST($1::uuid,i.creator_account_id)),
  (SELECT jsonb_agg(jsonb_build_array(x.id,x.xmin::text) ORDER BY x.id) FROM connection_requests x WHERE (x.sender_account_id=$1 AND x.recipient_account_id=i.creator_account_id) OR (x.recipient_account_id=$1 AND x.sender_account_id=i.creator_account_id)),
+ (SELECT jsonb_agg(jsonb_build_array(x.id,x.xmin::text) ORDER BY x.id) FROM follows x WHERE (x.follower_account_id=$1 AND x.person_account_id=i.creator_account_id) OR(x.follower_account_id=i.creator_account_id AND x.person_account_id=$1)),
+ (SELECT jsonb_agg(jsonb_build_array(x.owner_account_id,x.person_account_id,x.xmin::text,x.native_revision,x.is_active,x.tie_id,x.request_id) ORDER BY x.owner_account_id,x.person_account_id) FROM person_close_connections x WHERE(x.owner_account_id=$1 AND x.person_account_id=i.creator_account_id) OR(x.owner_account_id=i.creator_account_id AND x.person_account_id=$1)),
  (SELECT jsonb_agg(jsonb_build_array(x.intent_id,x.invitee_account_id,x.xmin::text) ORDER BY x.intent_id,x.invitee_account_id) FROM social_intent_invitations x WHERE x.intent_id IN(i.id,$2::uuid)),
  (SELECT jsonb_agg(jsonb_build_array(x.community_id,x.user_account_id,x.xmin::text) ORDER BY x.community_id,x.user_account_id) FROM community_memberships x WHERE x.user_account_id IN($1,i.creator_account_id)),
  (SELECT jsonb_agg(jsonb_build_array(x.id,x.xmin::text,(x.expires_at IS NULL OR x.expires_at>statement_timestamp())) ORDER BY x.id) FROM communities x WHERE x.id IN(SELECT community_id FROM community_memberships WHERE user_account_id IN($1,i.creator_account_id))),
@@ -77,7 +79,7 @@ const humanNewPeopleVersionSQL = `encode(sha256(convert_to(jsonb_build_array(
 const humanNewPeopleRelations = `LOCK TABLE accounts,sessions,user_profiles,person_new_people_consent,
  social_intents,social_intent_audience_targets,social_intent_invitations,contexts,cities,places,
  agents,agent_profiles,agent_profile_field_visibility,account_blocks,person_ties,
- connection_requests,community_memberships,communities,audit_events IN ACCESS SHARE MODE`
+ connection_requests,community_memberships,communities,audit_events,follows,person_close_connections IN ACCESS SHARE MODE`
 
 func (s *Store) humanNewPeopleRead(ctx context.Context, actor identity.Actor, digest [32]byte, source string) (newpeople.HumanReceipt, error) {
 	var out newpeople.HumanReceipt

@@ -1,11 +1,13 @@
 import 'dart:async';
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-
+import 'package:uuid/uuid.dart';
+import '../app/birdtie_app_bar.dart';
 import '../auth/birdtie_auth_controller.dart';
 import '../config/birdtie_environment.dart';
+import 'human_causal_control.dart';
+import 'human_causal_pending_store.dart';
+import 'human_causal_operation_controller.dart';
 
 class PersonContextsPage extends StatefulWidget {
   const PersonContextsPage({
@@ -14,292 +16,331 @@ class PersonContextsPage extends StatefulWidget {
     this.apiBaseUrl,
     this.client,
     this.current,
+    this.identityChanges,
+    this.pendingStore,
   });
-
   final BirdtieAuthController auth;
   final String? apiBaseUrl;
   final http.Client? client;
-  // Optional lifetime of a caller-owned entry; legacy direct callers are unchanged.
   final bool Function()? current;
-
+  final Listenable? identityChanges;
+  final HumanCausalPendingStore? pendingStore;
   @override
   State<PersonContextsPage> createState() => _PersonContextsPageState();
 }
 
 class _PersonContextsPageState extends State<PersonContextsPage> {
-  late final http.Client _client = widget.client ?? http.Client();
+  late http.Client _client;
+  late bool _ownsClient;
+  late HumanCausalOperationController _data;
   final _source = TextEditingController();
-  List<Map<String, dynamic>> _declarations = const [];
   List<Map<String, dynamic>> _cities = const [];
   String _mode = 'current_city';
-  String? _cityID;
-  String? _error;
-  bool _loading = true;
-  bool _saving = false;
-  int _serial = 0;
-  String? _identityToken;
+  String? _cityID, _formError, _citiesError;
+  int _read = 0;
+  void _bind() {
+    _client = widget.client ?? http.Client();
+    _ownsClient = widget.client == null;
+    _data = HumanCausalOperationController(
+      api: HumanCausalApi(
+        client: _client,
+        baseUrl: widget.apiBaseUrl ?? BirdtieEnvironment.apiBaseUrl,
+        authorizationHeader: () => widget.auth.authorizationHeader,
+      ),
+      family: HumanCausalFamily.context,
+      ownerID: () => widget.auth.accountID,
+      identityChanges: Listenable.merge([widget.auth, widget.identityChanges]),
+      sourceCurrent: () => mounted && (widget.current?.call() ?? true),
+      targetKey: () => (widget.auth, widget.client, widget.apiBaseUrl),
+      pendingStore: widget.pendingStore,
+    );
+    _data.addListener(_changed);
+    final c = _data;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && identical(c, _data)) unawaited(_load());
+    });
+  }
 
-  bool get _current => mounted && (widget.current?.call() ?? true);
-
-  String get _base => widget.apiBaseUrl ?? BirdtieEnvironment.apiBaseUrl;
-  Uri _uri(String path) =>
-      Uri.parse('${_base.replaceFirst(RegExp(r'/$'), '')}$path');
+  void _changed() {
+    if (!mounted) return;
+    if (!_data.current) {
+      _source.clear();
+      _cities = const [];
+      _cityID = null;
+      ++_read;
+    }
+    setState(() {});
+  }
 
   @override
   void initState() {
     super.initState();
-    _identityToken = widget.auth.authorizationHeader;
-    widget.auth.addListener(_authChanged);
-    unawaited(_load());
+    _bind();
   }
 
-  void _authChanged() {
-    if (!_current) return;
-    final token = widget.auth.authorizationHeader;
-    if (token == _identityToken) return;
-    _identityToken = token;
-    ++_serial;
-    setState(() {
-      _declarations = const [];
-      _loading = token != null;
-    });
-    if (token != null) unawaited(_load());
+  @override
+  void didUpdateWidget(PersonContextsPage old) {
+    super.didUpdateWidget(old);
+    if (old.auth != widget.auth ||
+        old.client != widget.client ||
+        old.apiBaseUrl != widget.apiBaseUrl ||
+        old.identityChanges != widget.identityChanges ||
+        old.pendingStore != widget.pendingStore) {
+      _data.removeListener(_changed);
+      _data.dispose();
+      if (_ownsClient) _client.close();
+      _source.clear();
+      _cities = const [];
+      _cityID = null;
+      ++_read;
+      _bind();
+    }
   }
 
   @override
   void dispose() {
-    ++_serial;
-    widget.auth.removeListener(_authChanged);
+    ++_read;
+    _data.removeListener(_changed);
+    _data.dispose();
     _source.dispose();
-    if (widget.client == null) _client.close();
+    if (_ownsClient) _client.close();
     super.dispose();
   }
 
   Future<void> _load() async {
-    if (!_current) return;
-    final token = widget.auth.authorizationHeader;
-    if (token == null || _base.isEmpty) {
-      if (_current) setState(() => _loading = false);
+    final c = _data;
+    await c.initialize();
+    if (!mounted ||
+        !identical(c, _data) ||
+        !c.current ||
+        !humanControlID(c.owner))
       return;
-    }
-    final serial = ++_serial;
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
+    final guard = c.capture(), serial = ++_read;
     try {
-      if (!_current) return;
-      final responses = await Future.wait([
-        _client.get(_uri('/v1/me/contexts'), headers: {'Authorization': token}),
-        _client.get(_uri('/v1/cities')),
-      ]).timeout(const Duration(seconds: 12));
-      if (!_current) return;
-      if (responses.any((r) => r.statusCode != 200)) {
-        throw StateError('load failed');
-      }
-      if (!_current ||
-          serial != _serial ||
-          widget.auth.authorizationHeader != token) {
+      final raw = await c.api.json('GET', '/v1/cities', current: guard);
+      if (!mounted || !identical(c, _data) || !guard() || serial != _read)
         return;
+      if (raw is! List) throw const FormatException();
+      final cities = <Map<String, dynamic>>[];
+      for (final row in raw) {
+        if (row is! Map<String, dynamic> ||
+            !humanControlText(row['id'], 1, 160) ||
+            row['name'] is! String)
+          throw const FormatException();
+        cities.add(Map.unmodifiable(row));
       }
-      final declarations =
-          (jsonDecode(utf8.decode(responses[0].bodyBytes))
-                  as Map<String, dynamic>)['data']
-              as List<dynamic>;
-      final cities =
-          (jsonDecode(utf8.decode(responses[1].bodyBytes))
-                  as Map<String, dynamic>)['data']
-              as List<dynamic>;
+      if (cities.map((r) => r['id']).toSet().length != cities.length)
+        throw const FormatException();
       setState(() {
-        _declarations = declarations.cast<Map<String, dynamic>>();
-        _cities = cities.cast<Map<String, dynamic>>();
-        if (_cityID == null || !_cities.any((city) => city['id'] == _cityID)) {
-          _cityID = _cities.isEmpty ? null : _cities.first['id'] as String?;
-        }
+        _cities = List.unmodifiable(cities);
+        _citiesError = null;
+        if (!_cities.any((r) => r['id'] == _cityID))
+          _cityID = _cities.isEmpty ? null : _cities.first['id'] as String;
       });
     } catch (_) {
-      if (_current && serial == _serial) {
-        setState(() => _error = '生活情境暂不可用，请稍后重试。');
-      }
-    } finally {
-      if (_current && serial == _serial) setState(() => _loading = false);
+      if (mounted && identical(c, _data) && guard() && serial == _read)
+        setState(() {
+          _cities = const [];
+          _cityID = null;
+          _citiesError = '城市列表暂不可读，请重新读取后选择。';
+        });
     }
   }
 
   Future<void> _save() async {
-    final token = widget.auth.authorizationHeader;
-    if (!_current || _saving || token == null) return;
-    final mode = _mode;
-    final city = mode.endsWith('_city');
-    final source = city ? _cityID : _source.text.trim();
+    final c = _data, s = c.snapshot;
+    if (!c.canStart || s is! HumanContextSnapshot) return;
+    final city = _mode.endsWith('_city'),
+        source = city ? _cityID : _source.text.trim();
     if (source == null || source.isEmpty) {
-      setState(() => _error = city ? '请先选择城市。' : '请填写情境名称。');
+      setState(() => _formError = city ? '请先选择城市。' : '请填写名称。');
       return;
     }
-    final (type, relation) = switch (mode) {
+    final (type, relation) = switch (_mode) {
       'current_city' => ('CITY', 'current'),
       'past_city' => ('CITY', 'past'),
       'destination_city' => ('CITY', 'destination'),
       'past_institution' => ('INSTITUTION', 'past'),
       _ => ('ONLINE', 'interest'),
     };
-    setState(() {
-      _saving = true;
-      _error = null;
-    });
-    try {
-      if (!_current) return;
-      final response = await _client
-          .post(
-            _uri('/v1/me/contexts'),
-            headers: {
-              'Authorization': token,
-              'Content-Type': 'application/json',
-            },
-            body: jsonEncode({
-              'contextType': type,
-              'sourceKey': source,
-              'relation': relation,
-            }),
-          )
-          .timeout(const Duration(seconds: 12));
-      if (!_current) return;
-      if (response.statusCode != 201) throw StateError('save failed');
-      if (_current && widget.auth.authorizationHeader == token) {
+    final label = city
+        ? (_cities.where((r) => r['id'] == source).firstOrNull?['name']
+              as String?)
+        : source;
+    final input = HumanContextInput(
+      operationID: const Uuid().v4(),
+      action: 'DECLARE',
+      expectedVersion: s.version,
+      relation: relation,
+      contextType: type,
+      sourceKey: source,
+      localLabel: label,
+    );
+    if (!input.valid) {
+      setState(() => _formError = '名称需1–160字，不能包含换行。');
+      return;
+    }
+    final r = await c.checkAndConfirm(context, input);
+    if (mounted && identical(c, _data) && c.current && r?.status == 'SUCCEEDED')
+      setState(() {
         _source.clear();
-        await _load();
-      }
-    } catch (_) {
-      if (_current) setState(() => _error = '保存失败，请检查内容后重试。');
-    } finally {
-      if (_current) setState(() => _saving = false);
-    }
+        _formError = null;
+      });
   }
 
-  Future<void> _remove(Map<String, dynamic> item) async {
-    final token = widget.auth.authorizationHeader;
-    if (!_current || _saving || token == null) return;
-    setState(() => _saving = true);
-    try {
-      if (!_current) return;
-      final response = await _client
-          .delete(
-            _uri('/v1/me/contexts/${item['contextId']}/${item['relation']}'),
-            headers: {'Authorization': token},
-          )
-          .timeout(const Duration(seconds: 12));
-      if (!_current) return;
-      if (response.statusCode != 204) throw StateError('remove failed');
-      if (_current && widget.auth.authorizationHeader == token) await _load();
-    } catch (_) {
-      if (_current) setState(() => _error = '移除失败，请重试。');
-    } finally {
-      if (_current) setState(() => _saving = false);
-    }
-  }
-
-  String _relationLabel(String? relation) => switch (relation) {
-    'current' => '当前城市',
-    'past' => '过去的城市或学校',
-    'destination' => '计划前往',
+  String _relation(String? relation) => switch (relation) {
+    'current' => '所在城市',
+    'past' => '曾生活或就读',
+    'destination' => '想去的地方',
     'home' => '家乡',
     'affiliation' => '学校关联',
-    'interest' => '线上兴趣',
-    _ => '生活情境',
+    'interest' => '兴趣',
+    _ => '已保存',
   };
-
   @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('我的生活情境')),
-    body: !widget.auth.signedIn
-        ? const Center(child: Text('登录后管理自己的生活情境。'))
-        : RefreshIndicator(
-            onRefresh: _load,
-            child: ListView(
-              padding: const EdgeInsets.all(20),
-              children: [
-                const Text('这些信息仅自己可见，不代表学校或社群已认证你的身份。'),
-                const SizedBox(height: 20),
-                Text('已保存的情境', style: Theme.of(context).textTheme.titleMedium),
-                if (_loading) const LinearProgressIndicator(),
-                if (!_loading && _declarations.isEmpty)
-                  const Text('还没有保存生活情境。'),
-                for (final item in _declarations)
-                  ListTile(
-                    title: Text(item['label'] as String? ?? '情境'),
-                    subtitle: Text(_relationLabel(item['relation'] as String?)),
-                    trailing: IconButton(
-                      tooltip: '移除此情境',
-                      onPressed: _saving ? null : () => _remove(item),
-                      icon: const Icon(Icons.close),
-                    ),
+  Widget build(BuildContext context) {
+    final c = _data, s = c.snapshot, e = c.epoch;
+    final current = c.current && humanControlID(c.owner);
+    bool frame() =>
+        mounted &&
+        identical(c, _data) &&
+        c.current &&
+        e == c.epoch &&
+        identical(c.snapshot, s) &&
+        s?.current == true;
+    final rows = current && s is HumanContextSnapshot
+        ? s.items
+        : const <Map<String, dynamic>>[];
+    return Scaffold(
+      appBar: birdtieAppBar(context, title: const Text('我的城市与兴趣')),
+      body: ListView(
+        padding: const EdgeInsets.all(20),
+        children: [
+          if (!c.current)
+            Text(c.error ?? '当前个人身份或来源已变化。')
+          else ...[
+            HumanCausalOperationPanel(controller: c),
+            if (current && s is HumanContextSnapshot) ...[
+              const Text('仅自己可见'),
+              const SizedBox(height: 20),
+              if (rows.isEmpty)
+                const Text('暂无已保存的城市或兴趣。')
+              else
+                Text('已保存', style: Theme.of(context).textTheme.titleMedium),
+              for (final row in rows)
+                ListTile(
+                  title: Text(row['label'] as String),
+                  subtitle: Text(_relation(row['relation'] as String)),
+                  trailing: IconButton(
+                    tooltip: '移除记录',
+                    onPressed: c.canStart
+                        ? () {
+                            if (frame())
+                              unawaited(
+                                c.checkAndConfirm(
+                                  context,
+                                  HumanContextInput(
+                                    operationID: const Uuid().v4(),
+                                    action: 'REMOVE',
+                                    expectedVersion: s.version,
+                                    relation: row['relation'] as String,
+                                    contextID: row['contextId'] as String,
+                                    localLabel: row['label'] as String,
+                                  ),
+                                ),
+                              );
+                          }
+                        : null,
+                    icon: const Icon(Icons.close),
                   ),
-                const Divider(height: 32),
-                Text('添加情境', style: Theme.of(context).textTheme.titleMedium),
+                ),
+              const Divider(height: 32),
+              Text('添加城市或兴趣', style: Theme.of(context).textTheme.titleMedium),
+              DropdownButtonFormField<String>(
+                key: const Key('context-type'),
+                initialValue: _mode,
+                decoration: const InputDecoration(labelText: '类型'),
+                items: const [
+                  DropdownMenuItem(value: 'current_city', child: Text('所在城市')),
+                  DropdownMenuItem(value: 'past_city', child: Text('过去生活的城市')),
+                  DropdownMenuItem(
+                    value: 'destination_city',
+                    child: Text('想去的城市'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'past_institution',
+                    child: Text('过去就读的学校'),
+                  ),
+                  DropdownMenuItem(value: 'online', child: Text('线上兴趣')),
+                ],
+                onChanged: !c.busy && c.pending == null
+                    ? (v) {
+                        if (frame() && v != null) {
+                          c.invalidatePreview();
+                          setState(() => _mode = v);
+                        }
+                      }
+                    : null,
+              ),
+              const SizedBox(height: 10),
+              if (_mode.endsWith('_city'))
                 DropdownButtonFormField<String>(
-                  initialValue: _mode,
-                  decoration: const InputDecoration(labelText: '情境类型'),
-                  items: const [
-                    DropdownMenuItem(
-                      value: 'current_city',
-                      child: Text('当前城市'),
-                    ),
-                    DropdownMenuItem(
-                      value: 'past_city',
-                      child: Text('过去生活的城市'),
-                    ),
-                    DropdownMenuItem(
-                      value: 'destination_city',
-                      child: Text('计划前往的城市'),
-                    ),
-                    DropdownMenuItem(
-                      value: 'past_institution',
-                      child: Text('过去就读的学校'),
-                    ),
-                    DropdownMenuItem(value: 'online', child: Text('线上兴趣或社群')),
-                  ],
-                  onChanged: _saving
-                      ? null
-                      : (value) => setState(() => _mode = value ?? _mode),
-                ),
-                const SizedBox(height: 10),
-                if (_mode.endsWith('_city'))
-                  DropdownButtonFormField<String>(
-                    key: ValueKey('context-city-$_cityID'),
-                    initialValue: _cityID,
-                    decoration: const InputDecoration(labelText: '城市'),
-                    items: [
-                      for (final city in _cities)
-                        DropdownMenuItem(
-                          value: city['id'] as String,
-                          child: Text(
-                            city['name'] as String? ?? city['id'] as String,
-                          ),
+                  key: ValueKey('context-city-$_cityID'),
+                  initialValue: _cityID,
+                  decoration: const InputDecoration(labelText: '城市'),
+                  items: [
+                    for (final city in _cities)
+                      DropdownMenuItem(
+                        value: city['id'] as String,
+                        child: Text(
+                          (city['name'] as String).isEmpty
+                              ? '城市名称暂不可用'
+                              : city['name'] as String,
                         ),
-                    ],
-                    onChanged: _saving
-                        ? null
-                        : (value) => setState(() => _cityID = value),
-                  )
-                else
-                  TextField(
-                    controller: _source,
-                    maxLength: 160,
-                    decoration: InputDecoration(
-                      labelText: _mode == 'past_institution'
-                          ? '学校名称'
-                          : '线上情境名称',
-                    ),
+                      ),
+                  ],
+                  onChanged: !c.busy && c.pending == null
+                      ? (v) {
+                          if (frame()) {
+                            c.invalidatePreview();
+                            setState(() => _cityID = v);
+                          }
+                        }
+                      : null,
+                )
+              else
+                TextField(
+                  key: const Key('context-source'),
+                  controller: _source,
+                  enabled: !c.busy && c.pending == null,
+                  maxLength: 160,
+                  decoration: InputDecoration(
+                    labelText: _mode == 'past_institution' ? '学校名称' : '兴趣名称',
                   ),
-                if (_error != null)
-                  Text(_error!, style: const TextStyle(color: Colors.red)),
-                const SizedBox(height: 12),
-                FilledButton(
-                  onPressed: _saving || _loading ? null : _save,
-                  child: const Text('保存情境'),
+                  onChanged: (_) => c.invalidatePreview(),
                 ),
-              ],
-            ),
-          ),
-  );
+              if (_citiesError != null) Text(_citiesError!),
+              if (_formError != null) Text(_formError!),
+              const SizedBox(height: 12),
+              FilledButton(
+                key: const Key('context-check'),
+                onPressed: c.canStart
+                    ? () {
+                        if (frame()) unawaited(_save());
+                      }
+                    : null,
+                child: const Text('检查保存'),
+              ),
+              if (_citiesError != null)
+                TextButton(
+                  onPressed: !c.busy ? () => unawaited(_load()) : null,
+                  child: const Text('重新读取城市'),
+                ),
+            ] else if (!c.busy)
+              const Text('当前本人生活资料暂不可读，不能开始新的修改。'),
+          ],
+        ],
+      ),
+    );
+  }
 }

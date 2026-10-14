@@ -3,17 +3,21 @@ import 'dart:convert';
 import 'dart:math';
 
 import 'package:flutter/foundation.dart';
+import 'package:crypto/crypto.dart';
 import 'package:http/http.dart' as http;
 
 import '../city/public_city_controller.dart';
 import 'agent_workspace_controller.dart';
 import 'agent_answer_sources.dart';
 import 'agent_result_projection.dart';
+import 'external_place_candidates.dart';
+import 'external_place_history_store.dart';
 import 'agent_reply_membership.dart';
 import 'public_query_field_evidence.dart';
 import 'agent_request_failure.dart';
 import 'agent_debug_diagnostics.dart';
 import 'map_entities.dart';
+import 'map_layers_api.dart';
 import 'now_context_query_api.dart';
 import 'sponsored_opportunities.dart';
 import '../config/birdtie_environment.dart';
@@ -42,12 +46,15 @@ class RemoteAgentTaskSource extends AgentTaskSource {
     this.publicEvidenceOwnerID,
     this.publicEvidenceEpoch,
     this.publicEvidenceNow,
+    ExternalPlaceHistoryStore? externalPlaceHistoryStore,
     AgentDebugDiagnostics? diagnostics,
     http.Client? client,
     String? apiBaseUrl,
   }) : _client = client ?? http.Client(),
        _ownsClient = client == null,
        _apiBaseUrl = apiBaseUrl ?? apiBase,
+       _externalPlaceHistoryStore =
+           externalPlaceHistoryStore ?? SecureExternalPlaceHistoryStore(),
        _diagnostics = diagnostics ?? AgentDebugDiagnostics.instance;
 
   static const apiBase = BirdtieEnvironment.apiBaseUrl;
@@ -65,10 +72,12 @@ class RemoteAgentTaskSource extends AgentTaskSource {
   final Object? Function()? publicEvidenceEpoch;
   final DateTime Function()? publicEvidenceNow;
   bool _publicEvidenceDisposed = false;
+  int _externalPlaceTurn = 0;
   final bool _ownsClient;
   final http.Client _client;
   final String _apiBaseUrl;
   final AgentDebugDiagnostics _diagnostics;
+  final ExternalPlaceHistoryStore _externalPlaceHistoryStore;
 
   String _newRequestID() {
     final random = Random.secure();
@@ -94,6 +103,92 @@ class RemoteAgentTaskSource extends AgentTaskSource {
   }
 
   @override
+  Future<AgentAreaRead> readMapArea(
+    String cityID,
+    MapBounds bounds,
+    Set<String> kinds, {
+    String? authorID,
+  }) async {
+    final selected = cityID;
+    final token = authorizationHeader();
+    final organization = organizationWorkspaceID?.call();
+    final epoch = publicEvidenceEpoch?.call();
+    bool current() =>
+        !_publicEvidenceDisposed &&
+        this.cityID() == selected &&
+        authorizationHeader() == token &&
+        organizationWorkspaceID?.call() == organization &&
+        publicEvidenceEpoch?.call() == epoch &&
+        onlineContextID?.call() == null;
+    if (!bounds.isValid ||
+        selected.isEmpty ||
+        !current() ||
+        (authorID != null &&
+            (!validOnlineID(authorID) ||
+                kinds.length != 1 ||
+                !kinds.contains('MOMENT')))) {
+      throw const AgentRequestFailure('地图范围已变化，请重新搜索。');
+    }
+    final wantsPublic = kinds.any((kind) => kind != 'OPPORTUNITY');
+    final wantsPrivate = kinds.contains('OPPORTUNITY');
+    if (wantsPrivate && (token == null || organization != null)) {
+      throw const AgentRequestFailure(
+        '请在个人身份下登录后查看本人的活动机会。',
+        code: 'PUBLIC_CONTEXT_EXPIRED',
+      );
+    }
+    final api = MapLayersApi(client: _client, apiBaseUrl: _apiBaseUrl);
+    final clock = Stopwatch()..start();
+    final unavailable = <String>{};
+    Future<TypedMapView?> read(bool private) async {
+      try {
+        return await api.read(
+          selected,
+          bounds,
+          authorization: organization == null ? token : null,
+          private: private,
+          authorID: authorID,
+        );
+      } catch (_) {
+        unavailable.addAll(
+          private
+              ? {'OPPORTUNITY'}
+              : kinds.where((kind) => kind != 'OPPORTUNITY'),
+        );
+        return null;
+      }
+    }
+
+    // Existing independently authorized public/private reads can fail
+    // independently; a private failure cannot erase a successful public read.
+    final views = await Future.wait([
+      wantsPublic ? read(false) : Future<TypedMapView?>.value(),
+      wantsPrivate ? read(true) : Future<TypedMapView?>.value(),
+    ]);
+    if (!current()) {
+      throw const AgentRequestFailure(
+        '本次地图来源已变化，请重新搜索。',
+        code: 'PUBLIC_CONTEXT_EXPIRED',
+      );
+    }
+    final successful = views.whereType<TypedMapView>().toList();
+    if (successful.isEmpty) {
+      throw const AgentRequestFailure('暂时没能完成搜索，请重试。');
+    }
+    final lease = successful
+        .map((view) => view.validUntil.difference(view.observedAt))
+        .reduce((a, b) => a < b ? a : b);
+    Duration remaining() => lease - clock.elapsed;
+    return AgentAreaRead(
+      publicView: views[0],
+      privateView: views[1],
+      unavailableKinds: Set.unmodifiable(unavailable),
+      current: () => current() && remaining() > Duration.zero,
+      remaining: remaining,
+    );
+  }
+
+  @override
   Future<AgentResult> resolve(
     String query,
     List<PublicActivity> activities,
@@ -112,7 +207,11 @@ class RemoteAgentTaskSource extends AgentTaskSource {
       ? _localPublicTurn(task, query)
       : task.contextType == 'ONLINE'
       ? _online(task.contextID!, query, task: task)
-      : _submit(query, task.id);
+      : _submit(
+          query,
+          task.id,
+          onlinePlaceContext: _onlinePlaceContext(task, query),
+        );
 
   @override
   Future<AgentResult> searchArea(
@@ -137,6 +236,23 @@ class RemoteAgentTaskSource extends AgentTaskSource {
         '本轮查询来源已变化，请重新发起查询。',
         code: 'PUBLIC_CONTEXT_EXPIRED',
       );
+    }
+    if (!restoring && bounds == null) {
+      final reference = _onlinePlaceContext(task, query);
+      if (reference != null) {
+        // Only public cache identifiers leave the device. The server resolves
+        // facts from its own cache and rechecks city, ordering and version.
+        return _submit(query, null, onlinePlaceContext: reference);
+      }
+    }
+    if (!restoring &&
+        task.messages.any(
+          (message) => message.externalPlaceReply?.durable == true,
+        ) &&
+        (_explicitPublicTarget(query) == 'FIND_PLACE' || query == '更新餐厅信息')) {
+      // Restaurant discovery carries its own city context. Sending the human
+      // query unchanged keeps the saved snapshot bound to this visible turn.
+      return _submit(query, null, bounds: bounds);
     }
     final context = task.lastSuccessfulPublicQuery;
     if (context == null) {
@@ -332,10 +448,47 @@ class RemoteAgentTaskSource extends AgentTaskSource {
         : null;
   }
 
+  Map<String, Object>? _onlinePlaceContext(AgentTask task, String query) {
+    if (_publicEvidenceDisposed ||
+        task.contextType != 'CITY' ||
+        task.cityID != cityID() ||
+        onlineContextID?.call() != null ||
+        organizationWorkspaceID?.call() != null ||
+        query == '更新餐厅信息' ||
+        query == task.query ||
+        const {
+          'FIND_ACTIVITY',
+          'FIND_ORGANIZATION',
+        }.contains(_explicitPublicTarget(query))) {
+      return null;
+    }
+    // A previous restaurant turn cannot become context for a later unrelated
+    // task. Bind only the latest assistant reply, never any earlier snapshot.
+    final message = task.messages
+        .where((m) => m.role == 'assistant')
+        .lastOrNull;
+    final search = message?.externalPlaceReply;
+    if (search == null ||
+        !search.durable ||
+        !search.current ||
+        search.status != 'SUCCESS' ||
+        search.cityID != cityID() ||
+        search.cacheVersion < 1 ||
+        search.places.isEmpty) {
+      return null;
+    }
+    return {
+      'cacheVersion': search.cacheVersion,
+      'scope': search.scope,
+      'placeIds': [for (final place in search.places) place.id],
+    };
+  }
+
   Future<AgentResult> _submit(
     String query,
     String? taskID, {
     MapBounds? bounds,
+    Map<String, Object>? onlinePlaceContext,
   }) async {
     final online = onlineContextID?.call();
     if (online != null) {
@@ -372,6 +525,10 @@ class RemoteAgentTaskSource extends AgentTaskSource {
         publicEvidenceEpoch?.call() == anonymousEpoch;
     final requestID = _newRequestID();
     final readPublicEvidence = _capturePublicEvidence();
+    final externalPlaceTurn = ++_externalPlaceTurn;
+    final externalPlaceLifecycle = _captureSourceLifecycle();
+    bool externalPlacesCurrent() =>
+        externalPlaceTurn == _externalPlaceTurn && externalPlaceLifecycle();
     final readAnswerSources = _captureAnswerSources(
       expectedRequestID: requestID,
     );
@@ -393,6 +550,7 @@ class RemoteAgentTaskSource extends AgentTaskSource {
               'query': query,
               'taskId': ?taskID,
               if (bounds != null) 'mapBounds': bounds.toJson(),
+              'onlinePlaceContext': ?onlinePlaceContext,
             }),
           )
           .timeout(currentQueryTimeout);
@@ -427,7 +585,7 @@ class RemoteAgentTaskSource extends AgentTaskSource {
         'Birdtie Agent API returned HTTP ${response.statusCode} (${code ?? 'unknown'}).',
       );
       throw AgentRequestFailure(
-        _httpFailureMessage(response.statusCode),
+        _httpFailureMessage(response.statusCode, code: code),
         statusCode: response.statusCode,
         code: code,
       );
@@ -438,6 +596,27 @@ class RemoteAgentTaskSource extends AgentTaskSource {
       final data = decoded['data'] as Map<String, dynamic>;
       final result = _parseResult(
         data,
+        readExternalPlaces: (raw) => ExternalPlaceSearch.read(
+          raw,
+          requestID: requestID,
+          cityID: selected,
+          query: query,
+          current:
+              raw is Map<String, dynamic> &&
+                  raw['schema'] == durableOnlinePlaceSearchSchema
+              ? externalPlaceLifecycle
+              : externalPlacesCurrent,
+          now: publicEvidenceNow ?? () => DateTime.now().toUtc(),
+          bounds: bounds,
+          expectedTaskID:
+              (data['task'] as Map<String, dynamic>?)?['id'] as String? ?? '',
+          expectedMessageIndex: data['task'] is Map<String, dynamic>
+              ? ((data['task'] as Map<String, dynamic>)['conversation'] as List)
+                        .length -
+                    1
+              : 1,
+        ),
+        externalReplyCurrent: externalPlaceLifecycle,
         readPublicEvidence: readPublicEvidence,
         anonymousCity: anonymousCurrent() ? anonymousCity : null,
         anonymousCurrent: anonymousCurrent,
@@ -489,14 +668,25 @@ class RemoteAgentTaskSource extends AgentTaskSource {
     }
   }
 
-  String _httpFailureMessage(int statusCode) => switch (statusCode) {
-    401 => '登录状态已失效，请重新登录后重试。',
-    403 => '当前账号没有执行此操作的权限。',
-    404 => '没有找到这个城市或对话，请返回后重试。',
-    429 => '请求过于频繁，请稍后重试。',
-    >= 500 => 'Birdtie 服务暂时不可用，请稍后重试。',
-    _ => '请求未完成（HTTP $statusCode），请检查内容后重试。',
-  };
+  String _httpFailureMessage(int statusCode, {String? code}) =>
+      switch (statusCode) {
+        409 when code == 'online_place_context_changed' =>
+          '保存的餐厅资料已有新版本，请更新餐厅信息后继续；原回答和卡片仍保留。',
+        422 when code == 'place_hours_unavailable' =>
+          '这个地点尚缺许可有效、未过期的营业时间资料，暂时不能判断营业时间或是否开门。',
+        503 when code == 'search_retention_permission_pending' =>
+          '联网搜索的结果保存许可尚未确认，本次未发出联网或模型请求。',
+        503 when code == 'place_answer_unavailable' =>
+          '当前可核验的地点资料不足，请更新资料后重试；原对话仍保留。',
+        503 when code == 'ai_service_unavailable' =>
+          'AI 服务目前不可用，本轮没有生成新回答。原对话仍保留。',
+        401 => '登录状态已失效，请重新登录后重试。',
+        403 => '当前账号没有执行此操作的权限。',
+        404 => '没有找到这个城市或对话，请返回后重试。',
+        429 => '请求过于频繁，请稍后重试。',
+        >= 500 => 'Birdtie 服务暂时不可用，请稍后重试。',
+        _ => '请求未完成（HTTP $statusCode），请检查内容后重试。',
+      };
 
   Future<http.Response> _readTaskResponse(
     Future<http.Response> request, {
@@ -528,6 +718,211 @@ class RemoteAgentTaskSource extends AgentTaskSource {
     }
   }
 
+  ExternalPlaceSearch? Function(int, Map<String, dynamic>) _externalReplyReader(
+    Map<String, dynamic> rawTask,
+    bool Function() current, {
+    bool guest = false,
+  }) {
+    return (index, message) {
+      final raw = message['externalPlaceReply'];
+      if (raw == null) return null;
+      if (raw is Map<String, dynamic> &&
+          raw['schema'] == onlinePlaceSearchSchema) {
+        // Legacy observations were never licensed/bound as durable messages.
+        // Keep the original conversation text without rebuilding their facts.
+        return null;
+      }
+      void require(bool valid) {
+        if (!valid) throw const FormatException('餐厅资料的原消息无法核验');
+      }
+
+      require(
+        raw is Map<String, dynamic> &&
+            message['role'] == 'assistant' &&
+            rawTask['contextType'] == 'CITY' &&
+            const {'PERSON', 'person'}.contains(rawTask['principalType']) &&
+            organizationWorkspaceID?.call() == null &&
+            onlineContextID?.call() == null,
+      );
+      final snapshot = raw as Map<String, dynamic>;
+      final messages = rawTask['conversation'] as List;
+      final preceding =
+          messages
+                  .take(index)
+                  .where(
+                    (item) =>
+                        item is Map<String, dynamic> && item['role'] == 'user',
+                  )
+                  .lastOrNull
+              as Map<String, dynamic>?;
+      require(
+        preceding != null &&
+            preceding['text'] is String &&
+            snapshot['query'] is String &&
+            snapshot['requestId'] is String &&
+            snapshot['cityId'] == (rawTask['cityContext'] ?? rawTask['cityId']),
+      );
+      if (guest) {
+        final binding = message['externalPlaceLocalBinding'];
+        require(
+          authorizationHeader() == null &&
+              rawTask['principalId'] == '' &&
+              rawTask['actingUserId'] == '' &&
+              binding is Map<String, dynamic> &&
+              binding.length == 3 &&
+              binding['messageIndex'] == index &&
+              binding['snapshotId'] == snapshot['snapshotId'] &&
+              binding['userTextDigest'] ==
+                  sha256
+                      .convert(utf8.encode(preceding!['text'] as String))
+                      .toString(),
+        );
+      } else {
+        final owner = publicEvidenceOwnerID?.call();
+        require(
+          authorizationHeader() != null &&
+              rawTask['principalId'] is String &&
+              (rawTask['principalId'] as String).isNotEmpty &&
+              rawTask['actingUserId'] == rawTask['principalId'] &&
+              (owner == null || rawTask['principalId'] == owner) &&
+              snapshot['query'] == preceding!['text'],
+        );
+      }
+      return ExternalPlaceSearch.read(
+        snapshot,
+        requestID: snapshot['requestId'] as String,
+        cityID: snapshot['cityId'] as String,
+        query: snapshot['query'] as String,
+        expectedTaskID: guest ? '' : rawTask['id'] as String,
+        expectedMessageIndex: guest ? 1 : index,
+        current: () => current() && snapshot['cityId'] == cityID(),
+        now: publicEvidenceNow ?? () => DateTime.now().toUtc(),
+        history: true,
+      );
+    };
+  }
+
+  AgentTask _readGuestHistoryTask(
+    Map<String, dynamic> row,
+    bool Function() current,
+  ) {
+    if (row.keys.toSet().difference(const {
+          'id',
+          'query',
+          'status',
+          'intent',
+          'cityContext',
+          'contextType',
+          'principalType',
+          'principalId',
+          'actingUserId',
+          'conversation',
+          'createdAt',
+          'updatedAt',
+        }).isNotEmpty ||
+        row['id'] is! String ||
+        !(row['id'] as String).startsWith('local-') ||
+        (row['id'] as String).length > 200 ||
+        row['query'] is! String ||
+        utf8.encode(row['query'] as String).length > 240 ||
+        row['contextType'] != 'CITY' ||
+        row['principalType'] != 'PERSON' ||
+        row['principalId'] != '' ||
+        row['actingUserId'] != '' ||
+        row['cityContext'] is! String ||
+        (row['cityContext'] as String).isEmpty ||
+        row['conversation'] is! List ||
+        (row['conversation'] as List).length > 1000) {
+      throw const FormatException('本机公开对话归属无法核验');
+    }
+    for (final item in row['conversation'] as List) {
+      if (item is! Map<String, dynamic> ||
+          item.keys.toSet().difference(const {
+            'role',
+            'text',
+            'externalPlaceReply',
+            'externalPlaceLocalBinding',
+          }).isNotEmpty ||
+          !const {'user', 'assistant'}.contains(item['role']) ||
+          item['text'] is! String ||
+          utf8.encode(item['text'] as String).length > 20000 ||
+          (item['role'] != 'assistant' && item['externalPlaceReply'] != null)) {
+        throw const FormatException('本机公开对话消息无法读取');
+      }
+    }
+    final task = AgentTask.fromJson(
+      row,
+      readExternalReply: _externalReplyReader(row, current, guest: true),
+    );
+    if (!task.messages.any(
+      (message) => message.externalPlaceReply?.durable == true,
+    )) {
+      throw const FormatException('本机餐厅资料快照缺失');
+    }
+    return task;
+  }
+
+  @override
+  Future<void> persistPublicHistory(AgentTask task) async {
+    if (_publicEvidenceDisposed ||
+        authorizationHeader() != null ||
+        organizationWorkspaceID?.call() != null ||
+        onlineContextID?.call() != null ||
+        task.contextType != 'CITY' ||
+        task.cityID != cityID() ||
+        !task.id.startsWith('local-') ||
+        task.principalID.isNotEmpty ||
+        task.actingUserID.isNotEmpty ||
+        !task.messages.any(
+          (message) => message.externalPlaceReply?.durable == true,
+        )) {
+      return;
+    }
+    final current = _captureSourceLifecycle();
+    final row = <String, dynamic>{
+      'id': task.id,
+      'query': task.query,
+      'status': task.status,
+      'intent': task.intent,
+      'cityContext': task.cityID,
+      'contextType': 'CITY',
+      'principalType': 'PERSON',
+      'principalId': '',
+      'actingUserId': '',
+      'createdAt': task.createdAt?.toUtc().toIso8601String(),
+      'updatedAt': (publicEvidenceNow ?? () => DateTime.now().toUtc())()
+          .toUtc()
+          .toIso8601String(),
+      'conversation': [
+        for (final (index, message) in task.messages.indexed)
+          {
+            'role': message.role,
+            'text': message.text,
+            if (message.externalPlaceReply?.durable == true) ...{
+              'externalPlaceReply': message.externalPlaceReply!.toJson(),
+              'externalPlaceLocalBinding': {
+                'messageIndex': index,
+                'snapshotId': message.externalPlaceReply!.snapshotID,
+                'userTextDigest': sha256
+                    .convert(
+                      utf8.encode(
+                        task.messages
+                            .take(index)
+                            .where((item) => item.role == 'user')
+                            .last
+                            .text,
+                      ),
+                    )
+                    .toString(),
+              },
+            },
+          },
+      ],
+    };
+    _readGuestHistoryTask(row, current);
+    await _externalPlaceHistoryStore.write(_apiBaseUrl, row, current: current);
+  }
+
   AgentRequestFailure _taskReadFailure(http.Response response) =>
       AgentRequestFailure(
         _httpFailureMessage(response.statusCode),
@@ -537,9 +932,21 @@ class RemoteAgentTaskSource extends AgentTaskSource {
 
   @override
   Future<List<AgentTask>> loadRecent() async {
-    final sourceCurrent = _captureSourceLifecycle();
+    // History lists span cities and may load while the startup catalog selects
+    // its city. Per-reply facts and restore reads still use the city fence.
+    final sourceCurrent = _captureSourceLifecycle(includeCity: false);
     _requireTaskReadCurrent(sourceCurrent);
-    if (authorizationHeader() == null) return [];
+    if (authorizationHeader() == null) {
+      if (organizationWorkspaceID?.call() != null ||
+          onlineContextID?.call() != null) {
+        return [];
+      }
+      final rows = await _externalPlaceHistoryStore.read(_apiBaseUrl);
+      _requireTaskReadCurrent(sourceCurrent);
+      return [
+        for (final row in rows) _readGuestHistoryTask(row, sourceCurrent),
+      ];
+    }
     if (_apiBaseUrl.isEmpty) {
       throw const AgentRequestFailure('尚未连接 Birdtie 服务，暂时无法读取对话记录。');
     }
@@ -561,6 +968,7 @@ class RemoteAgentTaskSource extends AgentTaskSource {
         AgentTask.fromJson(
           raw as Map<String, dynamic>,
           sourceCurrent: messageSourcesCurrent,
+          readExternalReply: _externalReplyReader(raw, sourceCurrent),
         ),
     ];
   }
@@ -582,6 +990,40 @@ class RemoteAgentTaskSource extends AgentTaskSource {
       throw const AgentRequestFailure('尚未连接 Birdtie 服务，暂时无法恢复对话。');
     }
     if (task.id.startsWith('local-')) {
+      if (task.messages.any(
+        (message) => message.externalPlaceReply?.durable == true,
+      )) {
+        if (authorizationHeader() != null ||
+            organizationWorkspaceID?.call() != null ||
+            onlineContextID?.call() != null ||
+            task.contextType != 'CITY') {
+          throw const AgentRequestFailure('本机公开对话属于游客模式，请切换到原范围再打开。');
+        }
+        final current = _captureSourceLifecycle();
+        final rows = await _externalPlaceHistoryStore.read(_apiBaseUrl);
+        _requireTaskReadCurrent(current);
+        final raw = rows.where((row) => row['id'] == task.id).firstOrNull;
+        if (raw == null || raw['cityContext'] != cityID()) {
+          throw const AgentRequestFailure('本机对话的城市已变化，请在原城市重新打开。');
+        }
+        final restored = _readGuestHistoryTask(raw, current);
+        final last = restored.messages.lastOrNull;
+        return AgentResult(
+          entities: const [],
+          activities: const [],
+          places: const [],
+          note: '',
+          message: last?.text,
+          taskID: restored.id,
+          task: restored,
+          onlinePlaceSearch: last?.role == 'assistant'
+              ? last?.externalPlaceReply
+              : null,
+          resultSet: last?.externalPlaceReply == null
+              ? null
+              : externalPlaceMapShell(last!.externalPlaceReply!),
+        );
+      }
       if (task.contextType == 'CITY') {
         return _localPublicTurn(task, '', restoring: true);
       }
@@ -614,6 +1056,7 @@ class RemoteAgentTaskSource extends AgentTaskSource {
       readPublicEvidence: readPublicEvidence,
       readAnswerSources: readAnswerSources,
       messageSourcesCurrent: messageSourcesCurrent,
+      externalReplyCurrent: sourceCurrent,
     );
   }
 
@@ -689,6 +1132,7 @@ class RemoteAgentTaskSource extends AgentTaskSource {
       readPublicEvidence: readPublicEvidence,
       readAnswerSources: readAnswerSources,
       messageSourcesCurrent: messageSourcesCurrent,
+      externalReplyCurrent: sourceCurrent,
     );
     final task = result.task;
     if (result.taskID != id ||
@@ -773,7 +1217,7 @@ class RemoteAgentTaskSource extends AgentTaskSource {
     };
   }
 
-  bool Function() _captureSourceLifecycle() {
+  bool Function() _captureSourceLifecycle({bool includeCity = true}) {
     final token = authorizationHeader();
     final org = organizationWorkspaceID?.call();
     final city = cityID();
@@ -785,7 +1229,7 @@ class RemoteAgentTaskSource extends AgentTaskSource {
       if (_publicEvidenceDisposed ||
           token != authorizationHeader() ||
           org != organizationWorkspaceID?.call() ||
-          city != cityID() ||
+          (includeCity && city != cityID()) ||
           online != onlineContextID?.call() ||
           owner != publicEvidenceOwnerID?.call() ||
           epoch != publicEvidenceEpoch?.call()) {
@@ -827,6 +1271,8 @@ class RemoteAgentTaskSource extends AgentTaskSource {
     bool readMessageResults = true,
     AgentReplyProjectionLifetime? replyProjection,
     AgentMessageSources? persistedMessageSources,
+    ExternalPlaceSearch? Function(Object?)? readExternalPlaces,
+    bool Function()? externalReplyCurrent,
   }) {
     if (data['schema'] == 'now-public-online-query-v1') {
       return NowOnlineResponse.decode(data).result();
@@ -928,10 +1374,26 @@ class RemoteAgentTaskSource extends AgentTaskSource {
         groups.length +
         organizations.length +
         places.length;
+    // The saved local evidence is correlation only. Close its source controls
+    // over this response's fully validated same-round read, never a recent
+    // list entry, saved deadline, another round or a new search result.
+    Map<int, AgentResult>? validatedHistory;
     final task = data['task'] is Map<String, dynamic>
         ? AgentTask.fromJson(
             data['task'] as Map<String, dynamic>,
             sourceCurrent: messageSourcesCurrent,
+            readExternalReply: readMessageResults
+                ? _externalReplyReader(
+                    data['task'] as Map<String, dynamic>,
+                    externalReplyCurrent ?? _captureSourceLifecycle(),
+                  )
+                : null,
+            localRoundCurrent: (index) =>
+                readMessageResults &&
+                validatedHistory?[index]?.replyProjection?.current == true,
+            localRoundRemaining: (index) =>
+                validatedHistory?[index]?.replyProjection?.remaining ??
+                Duration.zero,
           )
         : null;
     final assistantMessages =
@@ -994,8 +1456,57 @@ class RemoteAgentTaskSource extends AgentTaskSource {
       },
     );
     final history = readMessageResults
-        ? _parseMessageResults(data, task, messageSourcesCurrent)
+        ? _parseMessageResults(
+            data,
+            task,
+            messageSourcesCurrent,
+            anonymousCity: anonymousCity,
+            anonymousCurrent: anonymousCurrent,
+          )
         : null;
+    validatedHistory = history;
+    var externalSearch =
+        readExternalPlaces?.call(data['onlinePlaceSearch']) ??
+        (task?.messages.lastOrNull?.role == 'assistant'
+            ? task?.messages.lastOrNull?.externalPlaceReply
+            : null);
+    if (task != null &&
+        data['onlinePlaceSearch'] is Map<String, dynamic> &&
+        (data['onlinePlaceSearch'] as Map<String, dynamic>)['schema'] ==
+            durableOnlinePlaceSearchSchema &&
+        task.messages.lastOrNull?.externalPlaceReply == null) {
+      throw const FormatException('顶层餐厅资料缺少原始消息');
+    }
+    if (externalSearch?.durable == true && task != null) {
+      final last = task.messages.lastOrNull?.externalPlaceReply;
+      final rawTask = data['task'] as Map<String, dynamic>;
+      final rawMessage =
+          (rawTask['conversation'] as List).last as Map<String, dynamic>;
+      final rawTop = data['onlinePlaceSearch'];
+      if (readExternalPlaces == null && rawTop != null) {
+        externalSearch = ExternalPlaceSearch.read(
+          rawTop,
+          requestID: last!.requestID,
+          cityID: last.cityID,
+          query: last.query,
+          expectedTaskID: task.id,
+          expectedMessageIndex: task.messages.length - 1,
+          current: externalReplyCurrent ?? _captureSourceLifecycle(),
+          now: publicEvidenceNow ?? () => DateTime.now().toUtc(),
+          history: true,
+        );
+      }
+      if (last?.snapshotID != externalSearch!.snapshotID ||
+          (rawTop != null &&
+              !_matchingExternalSnapshot(
+                rawMessage['externalPlaceReply'],
+                rawTop,
+                history: readExternalPlaces == null,
+              ))) {
+        throw const FormatException('最新餐厅资料与原消息不一致');
+      }
+      if (readExternalPlaces != null) externalSearch = last;
+    }
     var currentReplyLifetime = replyProjection;
     if (history != null &&
         task != null &&
@@ -1027,6 +1538,7 @@ class RemoteAgentTaskSource extends AgentTaskSource {
     }
     return AgentResult(
       entities: entities,
+      onlinePlaceSearch: externalSearch,
       sponsoredOpportunities: disclosure.items,
       sponsoredUnavailable: disclosure.unavailable,
       activities: activities,
@@ -1079,6 +1591,29 @@ class RemoteAgentTaskSource extends AgentTaskSource {
     );
   }
 
+  bool _matchingExternalSnapshot(
+    Object? original,
+    Object? presented, {
+    required bool history,
+  }) {
+    if (!history) return _equalWire(original, presented);
+    if (original is! Map<String, dynamic> ||
+        presented is! Map<String, dynamic> ||
+        presented['origin'] != 'HISTORY' ||
+        !(presented['freshness'] == original['freshness'] ||
+            (original['freshness'] == 'FRESH' &&
+                presented['freshness'] == 'STALE'))) {
+      return false;
+    }
+    final left = Map<String, dynamic>.of(original)
+      ..remove('origin')
+      ..remove('freshness');
+    final right = Map<String, dynamic>.of(presented)
+      ..remove('origin')
+      ..remove('freshness');
+    return _equalWire(left, right);
+  }
+
   Map<String, dynamic>? _historyEntry(Map<String, dynamic> data, int index) {
     for (final raw in data['messageResults'] as List<dynamic>? ?? const []) {
       if (raw is Map<String, dynamic> && raw['messageIndex'] == index) {
@@ -1112,9 +1647,27 @@ class RemoteAgentTaskSource extends AgentTaskSource {
   Map<int, AgentResult>? _parseMessageResults(
     Map<String, dynamic> data,
     AgentTask? task,
-    bool Function()? current,
-  ) {
+    bool Function()? current, {
+    String? anonymousCity,
+    bool Function()? anonymousCurrent,
+  }) {
     if (!data.containsKey('messageResults')) return null;
+    // The native guest envelope serializes its absent personal history as
+    // null. This public response has no persisted Task or owner; it cannot
+    // acquire the authenticated history capability or an empty owned history.
+    if (data['messageResults'] == null &&
+        anonymousCity != null &&
+        anonymousCurrent?.call() == true &&
+        data['cityId'] == anonymousCity &&
+        const {'PERSON', 'person'}.contains(data['principalType']) &&
+        data['principalId'] == '' &&
+        data['workspace'] == 'PERSONAL' &&
+        data['task'] == null &&
+        task == null &&
+        data['taskId'] == null &&
+        data['conversationId'] == null) {
+      return null;
+    }
     void require(bool condition) {
       if (!condition) throw const FormatException('历史回答的实体结果无法读取');
     }

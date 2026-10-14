@@ -2,32 +2,44 @@ package postgres
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"github.com/birdtie/birdtie/apps/api/internal/identity"
 	ph "github.com/birdtie/birdtie/apps/api/internal/placehistory"
 	pp "github.com/birdtie/birdtie/apps/api/internal/placeprofile"
 	"github.com/jackc/pgx/v5"
+	"strings"
 	"time"
 )
 
 var _ ph.Store = (*Store)(nil)
+var _ ph.StoreWithAuthor = (*Store)(nil)
+
+// Shared by the original history reader and map summaries. Keep the literal
+// time-window markers used by historyPageSQLFromBase; neither caller counts a
+// bounded preview page, public author profile, or private attachment.
+func recentPublicMomentPredicate(at, viewer string) string {
+	return `m.status='published' AND m.visibility='public' AND m.location_precision='place'
+   AND m.author_confirmed_at IS NOT NULL AND m.author_confirmed_at<=m.published_at
+   AND m.published_at>=` + at + `-interval '30 days' AND m.published_at<=` + at + `
+   AND a.account_type='person' AND a.status='active'
+   AND NOT EXISTS(SELECT 1 FROM account_blocks b WHERE ` + viewer + `::uuid IS NOT NULL
+    AND ((b.blocker_account_id=` + viewer + ` AND b.blocked_account_id=a.id) OR (b.blocker_account_id=a.id AND b.blocked_account_id=` + viewer + `)))`
+}
 
 // One final READ COMMITTED statement supplies all public payloads and their
 // PG CheckedAt. A supplied session is never silently treated as anonymous.
 // No Profile/Memory/Participation/private links enter this projection.
-const placeHistoryPayloadSQL = `WITH clock AS MATERIALIZED (SELECT clock_timestamp() at),
+var placeHistoryPayloadSQL = `WITH clock AS MATERIALIZED (SELECT clock_timestamp() at),
  target AS MATERIALIZED (SELECT p.id,p.city_id FROM places p JOIN cities c ON c.id=p.city_id CROSS JOIN clock
    WHERE p.id=$1 AND p.publication_status='published' AND c.publication_status='published'
-   AND (p.expires_at IS NULL OR p.expires_at>clock.at) AND (c.expires_at IS NULL OR c.expires_at>clock.at)),
+   AND (p.expires_at IS NULL OR p.expires_at>clock.at) AND (c.expires_at IS NULL OR c.expires_at>clock.at)
+   AND ` + currentRetainedPlaceVisibilitySQL("p", "clock.at") + `),
  recent AS MATERIALIZED (SELECT m.id,m.title,left(m.body,280) excerpt,m.revision,m.published_at FROM moments m
    JOIN target t ON t.id=m.place_id AND t.city_id=m.city_id JOIN accounts a ON a.id=m.author_account_id CROSS JOIN clock
-   WHERE m.status='published' AND m.visibility='public' AND m.location_precision='place'
-   AND m.author_confirmed_at IS NOT NULL AND m.author_confirmed_at<=m.published_at
-   AND m.published_at>=clock.at-interval '30 days' AND m.published_at<=clock.at
-   AND a.account_type='person' AND a.status='active'
-   AND NOT EXISTS(SELECT 1 FROM account_blocks b WHERE $2::uuid IS NOT NULL
-    AND ((b.blocker_account_id=$2 AND b.blocked_account_id=a.id) OR (b.blocker_account_id=a.id AND b.blocked_account_id=$2)))),
+   WHERE ` + recentPublicMomentPredicate("clock.at", "$2") + `),
  arrangements AS MATERIALIZED (SELECT COALESCE(a.category_code,'') category,
    CASE WHEN extract(isodow FROM a.starts_at AT TIME ZONE a.time_zone) IN (6,7) THEN 'WEEKEND' ELSE 'WEEKDAY' END day_kind
    FROM activities a JOIN target t ON t.id=a.place_id AND t.city_id=a.city_id
@@ -66,7 +78,58 @@ const placeHistoryPayloadSQL = `WITH clock AS MATERIALIZED (SELECT clock_timesta
     WHERE ss.token_sha256=$3 AND act.id=$2 AND act.account_type=$4 AND act.status='active' AND ss.revoked_at IS NULL
     AND ss.expires_at>clock.at AND ss.idle_expires_at>clock.at AND ($5::boolean OR ss.authentication_method<>'dev_phone'))`
 
+func placeHistoryWithAuthorPayloadSQL() string {
+	query := strings.Replace(placeHistoryPayloadSQL, "m.published_at FROM moments m", "m.published_at,"+publicMomentAuthorProfileSQL("a")+" author_public_profile,concat_ws(':',m.xmin::text,a.xmin::text,"+publicMomentAuthorBindingSQL("a")+") author_binding FROM moments m", 1)
+	query = strings.Replace(query, "'publishedAt',r.published_at)", "'publishedAt',r.published_at,'authorId',r.author_public_profile->'accountId','authorPublicProfile',r.author_public_profile)", 1)
+	proof := `,(SELECT jsonb_build_array(p.xmin::text,c.xmin::text,` + retainedPlaceReadBindingSQL("p") + `,
+ (SELECT coalesce(jsonb_agg(jsonb_build_array(r.id,r.author_binding) ORDER BY r.id),'[]'::jsonb) FROM recent r),
+ (SELECT jsonb_build_array(pr.xmin::text,candidate.xmin::text,editor.xmin::text,membership.xmin::text)
+ FROM place_semantic_profiles pr JOIN place_semantic_candidates candidate ON candidate.id=pr.source_candidate_id
+ JOIN accounts editor ON editor.id=candidate.submitted_by
+ JOIN city_editor_memberships membership ON membership.city_id=candidate.city_id AND membership.account_id=editor.id WHERE pr.place_id=p.id))::text
+ FROM places p JOIN cities c ON c.id=p.city_id WHERE p.id=t.id)
+ FROM target t CROSS JOIN clock`
+	return strings.Replace(query, "FROM target t CROSS JOIN clock", proof, 1)
+}
+
+var placeHistoryFinalCurrentSQL = `WITH cl AS MATERIALIZED(SELECT clock_timestamp() at) SELECT cl.at,
+ EXISTS(SELECT 1 FROM places p JOIN cities c ON c.id=p.city_id WHERE p.id=$1 AND p.publication_status='published' AND c.publication_status='published' AND (p.expires_at IS NULL OR p.expires_at>cl.at) AND (c.expires_at IS NULL OR c.expires_at>cl.at)
+ AND ` + currentRetainedPlaceVisibilitySQL("p", "cl.at") + `)
+ AND ($2::uuid IS NULL OR EXISTS(SELECT 1 FROM sessions ss JOIN accounts a ON a.id=ss.account_id WHERE a.id=$2 AND a.account_type=$4 AND a.status='active' AND ss.token_sha256=$3 AND ss.revoked_at IS NULL AND ss.expires_at>cl.at AND ss.idle_expires_at>cl.at AND ($5::boolean OR ss.authentication_method<>'dev_phone'))) FROM cl`
+
+func placeHistoryAuthorBinding(out ph.SummaryWithAuthor, native string) (string, error) {
+	// Clock movement does not change a source generation. Every actual public
+	// payload and server-side source epoch still participates in the fence.
+	out.CheckedAt, out.WindowStart = time.Time{}, time.Time{}
+	if out.Suitability != nil {
+		profile := *out.Suitability
+		profile.CheckedAt = time.Time{}
+		out.Suitability = &profile
+	}
+	raw, err := json.Marshal(out)
+	if err != nil || native == "" {
+		return "", ph.ErrUnavailable
+	}
+	hash := sha256.Sum256(append([]byte(native), raw...))
+	return hex.EncodeToString(hash[:]), nil
+}
+
 func (s *Store) GetPublicPlaceSocialHistory(ctx context.Context, access ph.Access, id string) (ph.Summary, error) {
+	return s.getPublicPlaceSocialHistory(ctx, access, id, nil)
+}
+
+func (s *Store) GetPublicPlaceSocialHistoryWithAuthor(ctx context.Context, access ph.Access, id string) (ph.SummaryWithAuthor, error) {
+	var out ph.SummaryWithAuthor
+	legacy, err := s.getPublicPlaceSocialHistory(ctx, access, id, &out)
+	if err != nil {
+		return ph.SummaryWithAuthor{}, err
+	}
+	out.Summary = legacy
+	out.SchemaVersion = ph.AuthorSchemaVersion
+	return out, nil
+}
+
+func (s *Store) getPublicPlaceSocialHistory(ctx context.Context, access ph.Access, id string, authored *ph.SummaryWithAuthor) (ph.Summary, error) {
 	var out ph.Summary
 	if ctx == nil || ctx.Err() != nil || s == nil || s.pool == nil {
 		return out, ph.ErrUnavailable
@@ -115,7 +178,14 @@ func (s *Store) GetPublicPlaceSocialHistory(ctx context.Context, access ph.Acces
 		}
 	}
 	var moments, patterns, profile []byte
-	e = tx.QueryRow(ctx, placeHistoryPayloadSQL, id, viewer, access.SessionDigest[:], access.Actor.AccountType, s.devPhoneEnabled).Scan(&out.CheckedAt, &out.CityID, &out.RecentMomentCount, &moments, &patterns, &profile)
+	query := placeHistoryPayloadSQL
+	var nativeProof string
+	targets := []any{&out.CheckedAt, &out.CityID, &out.RecentMomentCount, &moments, &patterns, &profile}
+	if authored != nil {
+		query = placeHistoryWithAuthorPayloadSQL()
+		targets = append(targets, &nativeProof)
+	}
+	e = tx.QueryRow(ctx, query, id, viewer, access.SessionDigest[:], access.Actor.AccountType, s.devPhoneEnabled).Scan(targets...)
 	if errors.Is(e, pgx.ErrNoRows) {
 		if viewer != nil {
 			var current bool
@@ -146,14 +216,23 @@ func (s *Store) GetPublicPlaceSocialHistory(ctx context.Context, access ph.Acces
 			return ph.Summary{}, ph.ErrUnavailable
 		}
 	}
+	if authored != nil {
+		if json.Unmarshal(moments, &authored.RecentMoments) != nil {
+			return ph.Summary{}, ph.ErrUnavailable
+		}
+		authored.Summary = out
+		authored.SchemaVersion = ph.AuthorSchemaVersion
+		authored.SourceBinding, e = placeHistoryAuthorBinding(*authored, nativeProof)
+		if e != nil || ph.ValidateSummaryWithAuthor(*authored) != nil {
+			return ph.Summary{}, ph.ErrUnavailable
+		}
+	}
 	if ph.ValidateSummary(out) != nil || ctx.Err() != nil {
 		return ph.Summary{}, ph.ErrUnavailable
 	}
 	var final time.Time
 	var current bool
-	e = tx.QueryRow(ctx, `WITH cl AS MATERIALIZED(SELECT clock_timestamp() at) SELECT cl.at,
- EXISTS(SELECT 1 FROM places p JOIN cities c ON c.id=p.city_id WHERE p.id=$1 AND p.publication_status='published' AND c.publication_status='published' AND (p.expires_at IS NULL OR p.expires_at>cl.at) AND (c.expires_at IS NULL OR c.expires_at>cl.at))
- AND ($2::uuid IS NULL OR EXISTS(SELECT 1 FROM sessions ss JOIN accounts a ON a.id=ss.account_id WHERE a.id=$2 AND a.account_type=$4 AND a.status='active' AND ss.token_sha256=$3 AND ss.revoked_at IS NULL AND ss.expires_at>cl.at AND ss.idle_expires_at>cl.at AND ($5::boolean OR ss.authentication_method<>'dev_phone'))) FROM cl`, id, viewer, access.SessionDigest[:], access.Actor.AccountType, s.devPhoneEnabled).Scan(&final, &current)
+	e = tx.QueryRow(ctx, placeHistoryFinalCurrentSQL, id, viewer, access.SessionDigest[:], access.Actor.AccountType, s.devPhoneEnabled).Scan(&final, &current)
 	if e != nil || ctx.Err() != nil {
 		return ph.Summary{}, ph.ErrUnavailable
 	}
@@ -172,6 +251,35 @@ func (s *Store) GetPublicPlaceSocialHistory(ctx context.Context, access ph.Acces
 	}
 	if out.Suitability != nil && pp.ValidatePublic(*out.Suitability, final) != nil {
 		return ph.Summary{}, ph.ErrUnavailable
+	}
+	if authored != nil {
+		// Re-evaluate the same closed projection after all original target/session
+		// waits. Do not emit an author/count from a source that changed meanwhile.
+		var fresh ph.SummaryWithAuthor
+		fresh.Summary = out
+		fresh.SchemaVersion = ph.AuthorSchemaVersion
+		var freshProof string
+		e = tx.QueryRow(ctx, query, id, viewer, access.SessionDigest[:], access.Actor.AccountType, s.devPhoneEnabled).Scan(&fresh.CheckedAt, &fresh.CityID, &fresh.RecentMomentCount, &moments, &patterns, &profile, &freshProof)
+		if e != nil || ctx.Err() != nil || json.Unmarshal(moments, &fresh.RecentMoments) != nil || json.Unmarshal(patterns, &fresh.ActivityPatterns) != nil {
+			return ph.Summary{}, ph.ErrUnavailable
+		}
+		fresh.CheckedAt = fresh.CheckedAt.UTC()
+		fresh.WindowStart = fresh.CheckedAt.Add(-ph.WindowDays * 24 * time.Hour)
+		fresh.Suitability = nil
+		if len(profile) > 0 {
+			fresh.Suitability = &pp.Public{}
+			if json.Unmarshal(profile, fresh.Suitability) != nil {
+				return ph.Summary{}, ph.ErrUnavailable
+			}
+		}
+		fresh.Summary.RecentMoments = make([]ph.Moment, len(fresh.RecentMoments))
+		for i, m := range fresh.RecentMoments {
+			fresh.Summary.RecentMoments[i] = m.Moment
+		}
+		fresh.SourceBinding, e = placeHistoryAuthorBinding(fresh, freshProof)
+		if e != nil || ph.ValidateSummaryWithAuthor(fresh) != nil || fresh.SourceBinding != authored.SourceBinding {
+			return ph.Summary{}, ph.ErrUnavailable
+		}
 	}
 	if e = tx.Commit(ctx); e != nil {
 		return ph.Summary{}, ph.ErrUnavailable

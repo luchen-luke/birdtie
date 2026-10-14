@@ -83,11 +83,12 @@ class NowDiscoveryController extends ChangeNotifier {
     http.Client? client,
     String? apiBaseUrl,
   }) : _client = client ?? http.Client(),
-       _apiBaseUrl =
-           apiBaseUrl ?? BirdtieEnvironment.apiBaseUrl;
+       _ownsClient = client == null,
+       _apiBaseUrl = apiBaseUrl ?? BirdtieEnvironment.apiBaseUrl;
 
   final String? Function() authorizationHeader;
   final http.Client _client;
+  final bool _ownsClient;
   final String _apiBaseUrl;
   int _serial = 0;
   int _citySerial = 0;
@@ -233,7 +234,7 @@ class NowDiscoveryController extends ChangeNotifier {
     _closed = true;
     _serial++;
     _citySerial++;
-    _client.close();
+    if (_ownsClient) _client.close();
     super.dispose();
   }
 }

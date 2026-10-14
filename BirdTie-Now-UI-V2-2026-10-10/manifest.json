@@ -1,0 +1,47 @@
+[
+  {
+    "path": "BirdTie-Now-UI-V2-Spec.md",
+    "bytes": 28780,
+    "sha256": "1153ebd27e27bc42c78e756c41975e647a4c7ac2e30bef717cf6e585dc00a32c"
+  },
+  {
+    "path": "DESIGN-TOKENS.reference.json",
+    "bytes": 2191,
+    "sha256": "e3162c07e426c53e6638460bf21ef112ab495b8e3458421663ee87fd27d7e297"
+  },
+  {
+    "path": "README.md",
+    "bytes": 575,
+    "sha256": "09b13f727d237989d0bc11edc5a0dbcb1eb5f72e98717e6c1a3b9b11dc2dd110"
+  },
+  {
+    "path": "START-CODEX.txt",
+    "bytes": 2253,
+    "sha256": "860ebd46836e19c2e7c577d4aa683c9c3b8a215a976d65c90e1e71e94af5a16d"
+  },
+  {
+    "path": "TASKS.md",
+    "bytes": 5124,
+    "sha256": "2cbf599ad70e904cf0791c1343ce1cb45a6a64731a1b85ac75f27205a90cce83"
+  },
+  {
+    "path": "evidence/README.md",
+    "bytes": 366,
+    "sha256": "98d17b118a4a7b2bc17fc4b7602782913b0654fb46c079b0cc72ece658fded39"
+  },
+  {
+    "path": "evidence/S1-city-picker.jpg",
+    "bytes": 189244,
+    "sha256": "26124c7ec1769d9bad83897d0bdfd91c1f2e75afc6b11c962d5e07f167acf145"
+  },
+  {
+    "path": "evidence/S2-map-compact.jpg",
+    "bytes": 282835,
+    "sha256": "706f2e3b920b6cd5476b3ab2976f5fc02a446903afeb70367a58a09e96cf626e"
+  },
+  {
+    "path": "evidence/S3-place-answer.jpg",
+    "bytes": 169120,
+    "sha256": "8ccd7b3579326d69c9407cb81921c8782b0c1df76495edeb8b0cfdc38783d195"
+  }
+]

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:birdtie_client/src/workspace/connections.dart';
 import 'package:birdtie_client/src/workspace/entity_action_api.dart';
 import 'package:birdtie_client/src/workspace/entity_action_contract.dart';
 import 'package:birdtie_client/src/workspace/entity_action_controller.dart';
@@ -11,6 +12,199 @@ import 'package:http/testing.dart';
 import 'entity_action_contract_test.dart' show actionWire, actionRef;
 
 void main() {
+  const person = EntityActionRef(
+    'person',
+    '11111111-1111-4111-8111-111111111111',
+  );
+  Map<String, dynamic> friendWire(DateTime observed) {
+    final wire = actionWire(ref: person, now: observed);
+    wire['title'] = '本地测试联系人';
+    for (final dynamic action in wire['actions'] as List) {
+      action['state'] = action['kind'] == 'CONNECT'
+          ? 'AVAILABLE'
+          : 'UNAVAILABLE';
+    }
+    wire['actions'][0]['label'] = '添加好友';
+    return wire;
+  }
+
+  testWidgets('服务端确认期限已到且手机时钟未到，真人确认后仍零POST', (tester) async {
+    var reads = 0, posts = 0;
+    final observed = DateTime.now().toUtc();
+    final originalUntil = observed.add(const Duration(seconds: 25));
+    bool? result;
+    final client = MockClient((request) async {
+      if (request.method == 'POST') {
+        posts++;
+        return http.Response('{}', 201);
+      }
+      reads++;
+      return http.Response.bytes(
+        utf8.encode(
+          jsonEncode({
+            'data': friendWire(reads == 1 ? observed : originalUntil),
+          }),
+        ),
+        200,
+      );
+    });
+    final source = ConnectionSource(
+      authorizationHeader: () => 'Bearer fixed-fixture',
+      apiBaseUrl: 'https://original.fixture',
+      client: client,
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Builder(
+            builder: (context) => TextButton(
+              onPressed: () async {
+                result = await runEntityAction(
+                  context,
+                  ref: person,
+                  kind: EntityActionKind.connect,
+                  authorizationHeader: () => 'Bearer fixed-fixture',
+                  apiBaseUrl: 'https://original.fixture',
+                  client: client,
+                  handler: (action) => source.requestFriend(
+                    person.id,
+                    '希望成为好友',
+                    approved: action,
+                  ),
+                );
+              },
+              child: const Text('打开好友申请'),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('打开好友申请'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('发送好友申请'));
+    await tester.pumpAndSettle();
+    expect(result, false);
+    expect(find.text('确认已过期，请重新检查后确认。'), findsOneWidget);
+    expect(originalUntil.isAfter(DateTime.now()), isTrue);
+    expect(reads, 2);
+    expect(posts, 0);
+    await tester.pump(const Duration(seconds: 1));
+    expect(reads, 2);
+    expect(posts, 0);
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox());
+    source.dispose();
+    client.close();
+  });
+
+  for (final (status, body, message) in [
+    (
+      409,
+      '{"error":{"code":"entity_action_source_changed"}}',
+      '确认已过期或对方状态已变化，请重新查看后确认。',
+    ),
+    (409, '{"error":{"code":"connection_conflict"}}', '当前已有申请或好友关系，请先查看联系人。'),
+    (
+      409,
+      '{"error":{"code":"connection_conflict","extra":true}}',
+      '结果尚未确认，请核实原操作，不要重复提交。',
+    ),
+    (401, '{"error":{"code":"unauthorized"}}', '结果尚未确认，请核实原操作，不要重复提交。'),
+    (
+      503,
+      '{"error":{"code":"message_policy_unavailable","detail":"不可用"}}',
+      '结果尚未确认，请核实原操作，不要重复提交。',
+    ),
+    (0, 'timeout', '结果尚未确认，请核实原操作，不要重复提交。'),
+  ]) {
+    testWidgets('好友申请原POST $status/$body，准确反馈且不自动重发', (tester) async {
+      var reads = 0, posts = 0;
+      bool? result;
+      final observed = DateTime.now().toUtc();
+      final originalUntil = observed.add(const Duration(seconds: 25));
+      final client = MockClient((request) async {
+        if (request.method == 'GET') {
+          reads++;
+          return http.Response.bytes(
+            utf8.encode(
+              jsonEncode({
+                'data': friendWire(
+                  reads == 1
+                      ? observed
+                      : observed.add(const Duration(seconds: 10)),
+                ),
+              }),
+            ),
+            200,
+          );
+        }
+        posts++;
+        expect(request.url.path, '/v1/me/connection-requests');
+        expect(
+          request.headers['X-Birdtie-Action-Until'],
+          originalUntil.toIso8601String(),
+        );
+        expect(request.headers['X-Birdtie-Action-Version'], 'a' * 64);
+        expect(request.headers['X-Birdtie-Action-Operation'], 'REQUEST_FRIEND');
+        expect(jsonDecode(request.body), {
+          'recipientAccountId': person.id,
+          'scope': 'friend',
+          'note': '希望成为好友',
+        });
+        if (status == 0) throw TimeoutException('local synthetic timeout');
+        return http.Response.bytes(utf8.encode(body), status);
+      });
+      final source = ConnectionSource(
+        authorizationHeader: () => 'Bearer fixed-fixture',
+        apiBaseUrl: 'https://original.fixture',
+        client: client,
+      );
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Builder(
+              builder: (context) => TextButton(
+                onPressed: () async {
+                  result = await runEntityAction(
+                    context,
+                    ref: person,
+                    kind: EntityActionKind.connect,
+                    authorizationHeader: () => 'Bearer fixed-fixture',
+                    apiBaseUrl: 'https://original.fixture',
+                    client: client,
+                    handler: (action) => source.requestFriend(
+                      person.id,
+                      '希望成为好友',
+                      approved: action,
+                    ),
+                  );
+                },
+                child: const Text('打开好友申请'),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('打开好友申请'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('本地测试联系人'), findsOneWidget);
+      expect(find.textContaining('对方接受后才会成为好友'), findsOneWidget);
+      expect(posts, 0);
+      await tester.tap(find.text('发送好友申请'));
+      await tester.pumpAndSettle();
+      expect(result, false);
+      expect(find.text(message), findsOneWidget);
+      expect(reads, 2);
+      expect(posts, 1);
+      await tester.pump(const Duration(seconds: 1));
+      expect(reads, 2);
+      expect(posts, 1);
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox());
+      source.dispose();
+      client.close();
+    });
+  }
   for (final outcome in [
     'button',
     'back',

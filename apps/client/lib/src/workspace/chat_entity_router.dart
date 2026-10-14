@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:http/http.dart' as http;
+import '../app/birdtie_app_bar.dart';
 import '../auth/birdtie_auth_controller.dart';
 import '../city/public_city_controller.dart';
 import '../config/birdtie_environment.dart';
@@ -15,6 +16,7 @@ import 'place_detail_sheet.dart';
 import 'public_business_page.dart';
 import 'public_moment_page.dart';
 import 'public_organization_page.dart';
+import 'organization_map_location_page.dart';
 import 'public_person_page.dart';
 
 class _BorrowedChatClient extends http.BaseClient {
@@ -102,6 +104,11 @@ class _ChatEntityDetailState extends State<ChatEntityDetail> {
   );
   bool get _valid => mounted && !_expired && _identity == _current;
   String? _token() => _valid ? _identity.$1 : null;
+  late final String? Function() _activityAuthorizationHeader = _token;
+  String? _currentAccountID() => widget.auth.accountID;
+  late final String? Function() _activityAccountID = _currentAccountID;
+  late final String? Function() _photoOwnerID = () =>
+      _valid ? _identity.$2 : null;
   String get _base => _apiBaseUrl;
   @override
   void initState() {
@@ -212,12 +219,45 @@ class _ChatEntityDetailState extends State<ChatEntityDetail> {
     );
   }
 
+  void _openOrganizationMap(String id) {
+    if (!_valid ||
+        widget.type != 'organization' ||
+        id != widget.id ||
+        _identity.$2 == null ||
+        _identity.$3 != null)
+      return;
+    final serial = _serial, identity = _identity;
+    bool current() =>
+        _valid &&
+        serial == _serial &&
+        identity == _identity &&
+        widget.type == 'organization' &&
+        widget.id == id;
+    _navigator.currentState?.push<void>(
+      MaterialPageRoute(
+        builder: (_) => OrganizationMapLocationPage(
+          organizationID: id,
+          // A reviewer may inspect an existing proposal without guessing a city.
+          cityID: '',
+          authorizationHeader: () =>
+              current() ? widget.auth.authorizationHeader : null,
+          ownerID: () => current() ? identity.$2 : null,
+          sourceCurrent: current,
+          identityChanges: _changes,
+          client: _BorrowedChatClient(_client),
+          apiBaseUrl: _base,
+        ),
+      ),
+    );
+  }
+
   Widget _detail() => switch (widget.type) {
     'activity' => Scaffold(
-      appBar: AppBar(title: const Text('活动详情')),
+      appBar: birdtieAppBar(context, title: const Text('活动详情')),
       body: ActivityDetailSheet(
+        accountID: _activityAccountID,
         activity: _activity!,
-        authorizationHeader: _token,
+        authorizationHeader: _activityAuthorizationHeader,
         apiBaseUrl: _base,
         client: _client,
         identityChanges: _changes,
@@ -233,10 +273,11 @@ class _ChatEntityDetailState extends State<ChatEntityDetail> {
       ),
     ),
     'place' => Scaffold(
-      appBar: AppBar(title: const Text('地点详情')),
+      appBar: birdtieAppBar(context, title: const Text('地点详情')),
       body: PlaceDetailSheet(
         placeID: widget.id,
         authorizationHeader: _token,
+        ownerID: _photoOwnerID,
         apiBaseUrl: _base,
         client: _client,
         workspaceChanges: _changes,
@@ -269,6 +310,8 @@ class _ChatEntityDetailState extends State<ChatEntityDetail> {
       apiBaseUrl: _base,
       client: _client,
       onOpenActivity: (a) => _open('activity', a.id),
+      ownerID: _photoOwnerID,
+      onOpenMapLocation: _openOrganizationMap,
     ),
     'business' => PublicBusinessPage(
       businessID: widget.id,
@@ -301,7 +344,7 @@ class _ChatEntityDetailState extends State<ChatEntityDetail> {
   Widget build(BuildContext context) {
     if (_expired) {
       return Scaffold(
-        appBar: AppBar(title: const Text('请重新打开内容')),
+        appBar: birdtieAppBar(context, title: const Text('请重新打开内容')),
         body: ListView(
           padding: const EdgeInsets.all(24),
           children: [
@@ -318,7 +361,7 @@ class _ChatEntityDetailState extends State<ChatEntityDetail> {
     }
     if (_error != null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('内容暂不可查看')),
+        appBar: birdtieAppBar(context, title: const Text('内容暂不可查看')),
         body: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,

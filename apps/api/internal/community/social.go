@@ -3,6 +3,7 @@ package community
 import (
 	"context"
 	"errors"
+	"github.com/birdtie/birdtie/apps/api/internal/communityavatar"
 	"time"
 )
 
@@ -18,20 +19,21 @@ type SocialInput struct {
 }
 
 type SocialRecord struct {
-	ID          string    `json:"id"`
-	Name        string    `json:"name"`
-	Description string    `json:"description"`
-	AvatarURL   *string   `json:"avatarUrl,omitempty"`
-	CityID      *string   `json:"cityId,omitempty"`
-	Visibility  string    `json:"visibility"`
-	JoinPolicy  string    `json:"joinPolicy"`
-	Status      string    `json:"status"`
-	CreatedBy   string    `json:"createdByUserId"`
-	MemberCount int       `json:"memberCount"`
-	MyRole      *string   `json:"myRole,omitempty"`
-	MyStatus    *string   `json:"myStatus,omitempty"`
-	CreatedAt   time.Time `json:"createdAt"`
-	UpdatedAt   time.Time `json:"updatedAt"`
+	ID          string                    `json:"id"`
+	Name        string                    `json:"name"`
+	Description string                    `json:"description"`
+	AvatarURL   *string                   `json:"avatarUrl,omitempty"`
+	Avatar      *communityavatar.Metadata `json:"avatar,omitempty"`
+	CityID      *string                   `json:"cityId,omitempty"`
+	Visibility  string                    `json:"visibility"`
+	JoinPolicy  string                    `json:"joinPolicy"`
+	Status      string                    `json:"status"`
+	CreatedBy   string                    `json:"createdByUserId"`
+	MemberCount int                       `json:"memberCount"`
+	MyRole      *string                   `json:"myRole,omitempty"`
+	MyStatus    *string                   `json:"myStatus,omitempty"`
+	CreatedAt   time.Time                 `json:"createdAt"`
+	UpdatedAt   time.Time                 `json:"updatedAt"`
 }
 
 type Membership struct {

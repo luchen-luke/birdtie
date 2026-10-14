@@ -36,15 +36,17 @@ func mapProjectionSeal(a mp.Access, r mp.Receipt) (string, error) {
 		Actor   identity.Actor
 		Digest  string
 		Receipt struct {
-			View  mp.View
-			Query mp.Query
-			Proof string
+			View       mp.View
+			Query      mp.Query
+			Proof      string
+			MediaProof string
 		}
 	}{Actor: a.Actor, Digest: hex.EncodeToString(a.Digest[:]), Receipt: struct {
-		View  mp.View
-		Query mp.Query
-		Proof string
-	}{r.View, r.Query, r.Proof}})
+		View       mp.View
+		Query      mp.Query
+		Proof      string
+		MediaProof string
+	}{r.View, r.Query, r.Proof, r.MediaProof}})
 	if e != nil {
 		return "", mp.ErrUnavailable
 	}
@@ -60,15 +62,16 @@ func mapProjectionSeal(a mp.Access, r mp.Receipt) (string, error) {
 // renewal. The generation never crosses the map wire and cannot grant access.
 const mapProjectionSessionAuthoritySQL = `jsonb_build_array(a.id,a.xmin::text,se.id,se.authorization_generation,se.created_at,se.expires_at,se.authentication_method,encode(se.token_sha256,'hex'))`
 
-const mapProjectionRowsSQL = `WITH stamp AS MATERIALIZED(SELECT clock_timestamp() at),
+var mapProjectionRowsSQL = `WITH stamp AS MATERIALIZED(SELECT clock_timestamp() at),
  city AS MATERIALIZED(SELECT c.* FROM cities c,stamp WHERE c.id=$1 AND c.publication_status='published' AND (c.expires_at IS NULL OR c.expires_at>stamp.at)),
- point AS MATERIALIZED(SELECT p.*,p.xmin::text row_token FROM places p JOIN city c ON c.id=p.city_id CROSS JOIN stamp
+ point AS MATERIALIZED(SELECT p.*,concat_ws(':',p.xmin::text,` + retainedPlaceReadBindingSQL("p") + `) row_token,` + currentRetainedPlaceDeadlineSQL("p", "stamp.at") + ` retained_until FROM places p JOIN city c ON c.id=p.city_id CROSS JOIN stamp
  WHERE p.publication_status='published' AND (p.expires_at IS NULL OR p.expires_at>stamp.at)
+ AND ` + currentRetainedPlaceVisibilitySQL("p", "stamp.at") + `
  AND p.coordinate_system='wgs84' AND p.location_precision='point' AND p.latitude IS NOT NULL AND p.longitude IS NOT NULL
  AND p.longitude BETWEEN $2 AND $4 AND p.latitude BETWEEN $3 AND $5),
  raw_sources AS MATERIALIZED(
- SELECT 'PLACE'::text kind,p.id::text id,p.name title,p.id::text place_id,p.name label,p.latitude,p.longitude,p.updated_at::text version,p.expires_at deadline,p.row_token token FROM point p
- UNION ALL SELECT 'ACTIVITY',a.id::text,a.title,p.id::text,p.name,p.latitude,p.longitude,a.updated_at::text,least(a.expires_at,a.ends_at,p.expires_at),
+ SELECT 'PLACE'::text kind,p.id::text id,p.name title,p.id::text place_id,p.name label,p.latitude,p.longitude,p.updated_at::text version,p.retained_until deadline,p.row_token token FROM point p
+ UNION ALL SELECT 'ACTIVITY',a.id::text,a.title,p.id::text,p.name,p.latitude,p.longitude,a.updated_at::text,least(a.expires_at,a.ends_at,p.retained_until),
  concat_ws(':',a.xmin::text,ao.xmin::text,p.row_token,host.xmin::text,
  (SELECT o.xmin::text||':'||principal.xmin::text FROM organizations o JOIN accounts principal ON principal.id=o.account_id WHERE o.id=ao.organization_id),
  (SELECT c.xmin::text FROM communities c WHERE c.id=ao.community_id),
@@ -82,7 +85,7 @@ const mapProjectionRowsSQL = `WITH stamp AS MATERIALIZED(SELECT clock_timestamp(
  AND (ao.business_id IS NULL OR EXISTS(SELECT 1 FROM business_venue_relations relation JOIN venues venue ON venue.place_id=relation.place_id JOIN venue_candidates candidate ON candidate.id=venue.source_candidate_id AND candidate.status='approved' AND candidate.place_id=venue.place_id AND candidate.city_id=venue.city_id AND candidate.reviewed_by=venue.reviewed_by WHERE relation.business_id=ao.business_id AND relation.place_id=p.id AND relation.status='verified' AND venue.expires_at>stamp.at))
  AND birdtie_activity_visible_to(a.id,$6::uuid)
  AND NOT EXISTS(SELECT 1 FROM account_blocks bl WHERE $6::uuid IS NOT NULL AND ((bl.blocker_account_id=$6 AND bl.blocked_account_id=a.host_account_id) OR (bl.blocker_account_id=a.host_account_id AND bl.blocked_account_id=$6)))
- UNION ALL SELECT 'MOMENT',m.id::text,m.title,p.id::text,p.name,p.latitude,p.longitude,m.revision::text,p.expires_at,concat_ws(':',m.xmin::text,author.xmin::text,p.row_token)
+ UNION ALL SELECT 'MOMENT',m.id::text,m.title,p.id::text,p.name,p.latitude,p.longitude,m.revision::text,p.retained_until,concat_ws(':',m.xmin::text,author.xmin::text,p.row_token)
  FROM moments m JOIN point p ON p.id=m.place_id AND p.city_id=m.city_id JOIN accounts author ON author.id=m.author_account_id,stamp
  WHERE m.status='published' AND m.visibility='public' AND m.location_precision='place' AND m.author_confirmed_at IS NOT NULL
  AND m.author_confirmed_at<=m.published_at AND m.published_at<=stamp.at AND author.account_type='person' AND author.status='active'
@@ -93,7 +96,7 @@ const mapProjectionRowsSQL = `WITH stamp AS MATERIALIZED(SELECT clock_timestamp(
  AND l.longitude BETWEEN $2 AND $4 AND l.latitude BETWEEN $3 AND $5 AND o.status='active' AND o.visibility='public' AND o.verification_status='verified'
  AND principal.status='active' AND principal.account_type='organization'
  AND NOT EXISTS(SELECT 1 FROM account_blocks bl WHERE $6::uuid IS NOT NULL AND ((bl.blocker_account_id=$6 AND bl.blocked_account_id=principal.id) OR (bl.blocker_account_id=principal.id AND bl.blocked_account_id=$6)))
- UNION ALL SELECT 'BUSINESS',biz.id::text,biz.name,p.id::text,p.name,p.latitude,p.longitude,biz.updated_at::text,least(v.expires_at,p.expires_at),
+ UNION ALL SELECT 'BUSINESS',biz.id::text,biz.name,p.id::text,p.name,p.latitude,p.longitude,biz.updated_at::text,least(v.expires_at,p.retained_until),
  concat_ws(':',biz.xmin::text,principal.xmin::text,r.xmin::text,v.xmin::text,vc.xmin::text,p.row_token,operator.xmin::text)
  FROM businesses biz JOIN accounts principal ON principal.id=biz.account_id
  JOIN business_venue_relations r ON r.business_id=biz.id JOIN venues v ON v.place_id=r.place_id
@@ -174,8 +177,49 @@ func (s *Store) captureMapLayers(ctx context.Context, a mp.Access, q mp.Query) (
 	}
 	var raw, human []byte
 	var current bool
-	e = tx.QueryRow(ctx, mapProjectionSQL(q.Private), q.CityID, q.West, q.South, q.East, q.North, viewer, a.Digest[:], s.devPhoneEnabled).
-		Scan(&r.View.ObservedAt, &r.View.ValidUntil, &raw, &r.View.Truncated, &r.Proof, &current, &human)
+	baseQuery := mapProjectionSQL(q.Private)
+	withMedia := q.Media || q.MomentMedia
+	args := []any{q.CityID, q.West, q.South, q.East, q.North, viewer, a.Digest[:], s.devPhoneEnabled}
+	if q.AuthorID != "" {
+		baseQuery = mapPublicAuthorProjectionSQL
+		args = append(args, q.AuthorID)
+	}
+	query := baseQuery
+	if q.Media {
+		query = mapMediaProjectionSQL()
+	}
+	if q.MomentMedia {
+		query = mapMomentMediaProjectionSQL(q.AuthorID != "")
+	}
+	if query == "" {
+		return r, mp.ErrUnavailable
+	}
+	if withMedia {
+		// An optional source read failure must not fabricate a zero count or
+		// revoke an independently valid point. Roll back only that statement,
+		// then capture the original base ACL/Session in a fresh final statement.
+		if _, e = tx.Exec(ctx, `SAVEPOINT map_optional_media`); e != nil {
+			return r, mp.ErrUnavailable
+		}
+		e = tx.QueryRow(ctx, query, args...).Scan(&r.View.ObservedAt, &r.View.ValidUntil, &raw, &r.View.Truncated, &r.Proof, &current, &human, &r.MediaProof)
+		if e != nil && !errors.Is(e, pgx.ErrNoRows) {
+			if ctx.Err() != nil {
+				return r, mp.ErrUnavailable
+			}
+			if _, rollback := tx.Exec(ctx, `ROLLBACK TO SAVEPOINT map_optional_media`); rollback != nil {
+				return r, mp.ErrUnavailable
+			}
+			r.MediaProof = "{}"
+			e = tx.QueryRow(ctx, baseQuery, args...).Scan(&r.View.ObservedAt, &r.View.ValidUntil, &raw, &r.View.Truncated, &r.Proof, &current, &human)
+		}
+		if e == nil {
+			if _, e = tx.Exec(ctx, `RELEASE SAVEPOINT map_optional_media`); e != nil {
+				return r, mp.ErrUnavailable
+			}
+		}
+	} else {
+		e = tx.QueryRow(ctx, query, args...).Scan(&r.View.ObservedAt, &r.View.ValidUntil, &raw, &r.View.Truncated, &r.Proof, &current, &human)
+	}
 	if errors.Is(e, pgx.ErrNoRows) {
 		return r, mp.ErrNotFound
 	}
@@ -187,8 +231,19 @@ func (s *Store) captureMapLayers(ctx context.Context, a mp.Access, q mp.Query) (
 	}
 	r.Query = q
 	r.View.SchemaVersion = mp.SchemaVersion
+	if q.Media {
+		r.View.SchemaVersion = mp.MediaSchemaVersion
+	}
 	r.View.CityID = q.CityID
 	r.View.Scope = mp.Public
+	if q.AuthorID != "" {
+		r.View.SchemaVersion = mp.PublicAuthorSchemaVersion
+		r.View.Scope = mp.PublicAuthor
+		r.View.AuthorID = q.AuthorID
+	}
+	if q.MomentMedia {
+		r.View.SchemaVersion = mp.MomentMediaSchemaVersion
+	}
 	r.View.ObservedAt = r.View.ObservedAt.UTC()
 	r.View.ValidUntil = r.View.ValidUntil.UTC()
 	if e = json.Unmarshal(raw, &r.View.Items); e != nil {
@@ -234,7 +289,7 @@ func (s *Store) captureMapLayers(ctx context.Context, a mp.Access, q mp.Query) (
 		hash := sha256.Sum256(append([]byte(r.Proof), privateRaw...))
 		r.Proof = hex.EncodeToString(hash[:])
 	}
-	if mp.ValidateView(r.View) != nil {
+	if mp.ValidateViewForQuery(r.View, q) != nil {
 		return mp.Receipt{}, mp.ErrUnavailable
 	}
 	if e = tx.Commit(ctx); e != nil || ctx.Err() != nil {
@@ -251,7 +306,7 @@ func (s *Store) ReadMapLayers(ctx context.Context, a mp.Access, q mp.Query) (mp.
 	return r, e
 }
 func (s *Store) RevalidateMapLayers(ctx context.Context, a mp.Access, r mp.Receipt) error {
-	if mp.ValidateView(r.View) != nil || mp.ValidateQuery(r.Query) != nil || !a.Valid() {
+	if mp.ValidateViewForQuery(r.View, r.Query) != nil || !a.Valid() {
 		return mp.ErrInvalid
 	}
 	seal, e := mapProjectionSeal(a, r)

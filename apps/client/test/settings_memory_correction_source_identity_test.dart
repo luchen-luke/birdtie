@@ -12,6 +12,7 @@ import 'package:http/http.dart' as http;
 import 'agent_seed_sheet_test.dart' show SeedTestAuth;
 import 'agent_memory_correction_api_test.dart';
 import 'agent_memory_correction_page_test.dart' show correctionSettle;
+import 'agent_memory_review_page_fixture.dart';
 
 class _MemoryWire extends http.BaseClient {
   _MemoryWire(this.at);
@@ -24,7 +25,8 @@ class _MemoryWire extends http.BaseClient {
 
   http.StreamedResponse response(Object data, [int status = 200]) =>
       http.StreamedResponse(
-        Stream.value(utf8.encode(jsonEncode(data))), status,
+        Stream.value(utf8.encode(jsonEncode(data))),
+        status,
         headers: {'content-type': 'application/json; charset=utf-8'},
       );
 
@@ -32,15 +34,36 @@ class _MemoryWire extends http.BaseClient {
   Future<http.StreamedResponse> send(http.BaseRequest r) {
     // Synchronous real dispatch boundary; not an async MockClient callback.
     final body = r is http.Request ? r.body : '';
-    sent.add((method: r.method, host: r.url.host, path: r.url.path, body: body));
+    sent.add((
+      method: r.method,
+      host: r.url.host,
+      path: r.url.path,
+      body: body,
+    ));
     if (r.method == 'POST' && r.url.path == delayedPath) return delayed!.future;
-    if (r.url.path == '/v1/me/agent-memories') {
-      return Future.value(response({'data': [correctionMemoryRaw(at: at)]}));
+    if (r.url.path == '/v1/me/agent-memories/page' ||
+        r.url.path == '/v1/me/agent-memory-candidates/page') {
+      return Future.value(
+        response({
+          'data': memoryReviewReadFixture(
+            r,
+            r.url.path == '/v1/me/agent-memories/page'
+                ? [correctionMemoryRaw(at: at)]
+                : <Object>[],
+            owner: correctionOwner,
+            agent: correctionAgent,
+          ),
+        }),
+      );
     }
     if (r.url.path == '/v1/me/agent-context/self-review') {
       // This slice tests dispatch admission. It does not re-date the earlier
       // immutable SelfReview wire or pretend to test native successful reads.
-      return Future.value(response({'error': {'code': 'unavailable'}}, 503));
+      return Future.value(
+        response({
+          'error': {'code': 'unavailable'},
+        }, 503),
+      );
     }
     if (r.url.path == '/v1/me/agent-memory-corrections/previews') {
       input = Map<String, dynamic>.from(jsonDecode(body));
@@ -53,7 +76,10 @@ class _MemoryWire extends http.BaseClient {
   }
 
   @override
-  void close() { closed = true; super.close(); }
+  void close() {
+    closed = true;
+    super.close();
+  }
 }
 
 class _Scenario {
@@ -62,35 +88,54 @@ class _Scenario {
   final auth = SeedTestAuth()..owner = correctionOwner;
   final city = PublicCityController();
   late final wire = _MemoryWire(at), otherWire = _MemoryWire(at);
-  late final source = ValueNotifier<(http.Client, String)>((wire, 'http://memory-a.test'));
+  late final source = ValueNotifier<(http.Client, String)>((
+    wire,
+    'http://memory-a.test',
+  ));
   late final moments = PrivateMomentController(
     authorizationHeader: () => auth.authorizationHeader,
-    client: wire, apiBaseUrl: 'http://memory-a.test',
+    client: wire,
+    apiBaseUrl: 'http://memory-a.test',
   );
-  Iterable<({String method, String host, String path, String body})> get posts =>
+  Iterable<({String method, String host, String path, String body})>
+  get posts =>
       [...wire.sent, ...otherWire.sent].where((r) => r.method == 'POST');
   void dispose() {
-    moments.dispose(); city.dispose(); auth.dispose(); source.dispose();
-    wire.close(); otherWire.close();
+    moments.dispose();
+    city.dispose();
+    auth.dispose();
+    source.dispose();
+    wire.close();
+    otherWire.close();
   }
 }
 
 Widget _home(_Scenario s) => MaterialApp(
   home: ValueListenableBuilder<(http.Client, String)>(
     valueListenable: s.source,
-    builder: (_, source, _) => Scaffold(body: SettingsPage(
-      key: const ValueKey('same-memory-settings'), auth: s.auth, city: s.city,
-      moments: s.moments, client: source.$1, apiBaseUrl: source.$2,
-    )),
+    builder: (_, source, _) => Scaffold(
+      body: SettingsPage(
+        key: const ValueKey('same-memory-settings'),
+        auth: s.auth,
+        city: s.city,
+        moments: s.moments,
+        client: source.$1,
+        apiBaseUrl: source.$2,
+      ),
+    ),
   ),
 );
 
 Future<void> _show(WidgetTester t, Finder target) async {
   if (target.evaluate().isEmpty) {
-    await t.scrollUntilVisible(target, 160, maxScrolls: 50,
-      scrollable: find.byType(Scrollable).first);
+    await t.scrollUntilVisible(
+      target,
+      160,
+      maxScrolls: 50,
+      scrollable: find.byType(Scrollable).first,
+    );
   }
-  await t.ensureVisible(target);
+  await Scrollable.ensureVisible(t.element(target), alignment: .3);
   await correctionSettle(t);
   expect(target.hitTestable(), findsOneWidget);
 }
@@ -112,15 +157,16 @@ Future<void> _switchOneFrame(WidgetTester t, _Scenario s, String change) async {
       ? (s.otherWire, 'http://memory-a.test')
       : (s.wire, 'http://memory-b.test');
   await t.pump(); // Exactly one parent update. No settle/extra pump before tap.
-  final settings = t.widget<SettingsPage>(find.byType(SettingsPage, skipOffstage: false));
+  final settings = t.widget<SettingsPage>(
+    find.byType(SettingsPage, skipOffstage: false),
+  );
   expect(settings.client, same(s.source.value.$1));
   expect(settings.apiBaseUrl, s.source.value.$2);
 }
 
 Finder _target(String stage) => stage == 'read'
-    ? find.widgetWithText(TextButton, '核对活动偏好与这条记忆')
-    : find.widgetWithText(FilledButton, stage == 'preview'
-        ? '检查具体纠正版本' : '确认此版本的纠正');
+    ? find.widgetWithText(TextButton, '核对活动偏好')
+    : find.widgetWithText(FilledButton, stage == 'preview' ? '检查修改' : '确认修改');
 
 Future<void> _prepare(WidgetTester t, String stage) async {
   if (stage != 'read') {
@@ -133,7 +179,9 @@ Future<void> _prepare(WidgetTester t, String stage) async {
       await _show(t, _target('preview'));
       await t.tap(_target('preview'));
       await correctionSettle(t);
-      expect(find.text('这是具体版本的纠正草稿；尚未执行。请检查全部影响后确认。'), findsOneWidget);
+      expect(find.text('检查修改'), findsOneWidget);
+      expect(find.text('修改后'), findsOneWidget);
+      expect(find.text('本人当前修订'), findsOneWidget);
     }
   }
   await _show(t, _target(stage));
@@ -144,21 +192,34 @@ void main() {
   void scenario(String name, Future<void> Function(WidgetTester) run) {
     scenarios.add(MapEntry(name, run));
   }
+
   scenario('设置记忆来源边界：client单帧退休后实际同体按钮不向旧来源POST', (t) async {
     final s = _Scenario();
     await _open(t, s);
-    final button = find.widgetWithText(TextButton, '核对活动偏好与这条记忆');
+    final button = find.widgetWithText(TextButton, '核对活动偏好');
     await _show(t, button);
     expect(s.posts, isEmpty);
     await _switchOneFrame(t, s, 'client');
     expect(find.byType(AgentMemoryCorrectionPage), findsOneWidget);
     expect(button.hitTestable(), findsOneWidget);
-    await t.tap(button); // Standard visible gesture; no callback/controller hook.
+    await t.tap(
+      button,
+    ); // Standard visible gesture; no callback/controller hook.
     await t.idle(); // Allow async completion, without another rendering frame.
     final dispatched = s.posts.toList();
-    debugPrintSynchronously(({'synchronousDispatchAfterParentRetirement': [
-      for (final r in dispatched) {'method': r.method, 'host': r.host, 'path': r.path, 'body': r.body},
-    ]}).toString());
+    debugPrintSynchronously(
+      ({
+        'synchronousDispatchAfterParentRetirement': [
+          for (final r in dispatched)
+            {
+              'method': r.method,
+              'host': r.host,
+              'path': r.path,
+              'body': r.body,
+            },
+        ],
+      }).toString(),
+    );
     await t.pumpWidget(const SizedBox());
     s.dispose();
     expect(dispatched, isEmpty);
@@ -179,7 +240,8 @@ void main() {
         expect(find.byType(AgentMemoryCorrectionPage), findsOneWidget);
         expect(button.hitTestable(), findsOneWidget);
         await t.tap(button);
-        await t.idle(); // No additional frame before the actual dispatch oracle.
+        await t
+            .idle(); // No additional frame before the actual dispatch oracle.
         final after = s.posts.length;
         expect(await const FlutterSecureStorage().readAll(), references);
         await t.pumpAndSettle();
@@ -203,7 +265,8 @@ void main() {
     expect(s.posts.single.host, 'memory-a.test');
     expect(jsonDecode(s.posts.single.body), {
       'profileFields': ['preferredActivityTypes'],
-      'memoryIds': [correctionMemory], 'policyFamilies': [],
+      'memoryIds': [correctionMemory],
+      'policyFamilies': [],
     });
     expect(find.text('暂时无法核对这些来源；当前记忆和更正批准未改变。'), findsOneWidget);
     expect(find.text('我偏好徒步活动'), findsOneWidget);
@@ -224,7 +287,10 @@ void main() {
     await correctionSettle(t);
     expect(s.posts.length, 2);
     expect(s.posts.first.path, '/v1/me/agent-memory-corrections/previews');
-    expect(s.posts.last.path, '/v1/me/agent-memory-corrections/${s.wire.input!['id']}/confirm');
+    expect(
+      s.posts.last.path,
+      '/v1/me/agent-memory-corrections/${s.wire.input!['id']}/confirm',
+    );
     expect(jsonDecode(s.posts.last.body), {'planDigest': correctionPlan});
     expect(find.text('原纠正已完成，当前对应记忆仍与该回执一致。请重新读取当前记忆。'), findsOneWidget);
     expect(await const FlutterSecureStorage().readAll(), isEmpty);
@@ -237,17 +303,23 @@ void main() {
     final s = _Scenario();
     await _open(t, s);
     await _prepare(t, 'confirm');
-    s.wire.delayedPath = '/v1/me/agent-memory-corrections/${s.wire.input!['id']}/confirm';
+    s.wire.delayedPath =
+        '/v1/me/agent-memory-corrections/${s.wire.input!['id']}/confirm';
     s.wire.delayed = Completer<http.StreamedResponse>();
     await t.tap(_target('confirm'));
     await t.idle();
-    expect(s.posts.length, 2); // Already dispatched before retirement, not cancelled.
+    expect(
+      s.posts.length,
+      2,
+    ); // Already dispatched before retirement, not cancelled.
     final reference = await const FlutterSecureStorage().readAll();
     expect(reference.length, 1);
     expect(jsonDecode(reference.values.single)['phase'], 'CONFIRM');
     await _switchOneFrame(t, s, 'client');
     await t.pumpAndSettle();
-    s.wire.delayed!.complete(s.wire.response(correctionReceiptRaw(input: s.wire.input, at: s.at)));
+    s.wire.delayed!.complete(
+      s.wire.response(correctionReceiptRaw(input: s.wire.input, at: s.at)),
+    );
     await t.idle();
     await t.pumpAndSettle();
     s.source.value = (s.wire, 'http://memory-a.test');

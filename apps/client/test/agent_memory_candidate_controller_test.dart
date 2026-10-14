@@ -103,14 +103,16 @@ void main() {
       var accepts = 0;
       final c = MockClient((r) async {
         if (r.method == 'GET') {
-          return candidateResponse(
-            r.url.path == AgentMemoryCandidateAPI.path
+          return candidateReadResponse(
+            r,
+            r.url.path == '${AgentMemoryCandidateAPI.path}/page'
                 ? [candidateWire()]
                 : candidateWire(),
           );
         }
         if (r.url.path.endsWith('/preview')) {
-          return candidateResponse(
+          return candidateReadResponse(
+            r,
             previewWire(
               (jsonDecode(r.body) as Map)['previewId'],
               candidateWire(),
@@ -153,10 +155,11 @@ void main() {
       var accepts = 0;
       final c = MockClient((r) async {
         if (r.method == 'GET') {
-          return candidateResponse([candidateWire()]);
+          return candidateReadResponse(r, [candidateWire()]);
         }
         if (r.url.path.endsWith('/preview')) {
-          return candidateResponse(
+          return candidateReadResponse(
+            r,
             previewWire(
               (jsonDecode(r.body) as Map)['previewId'],
               candidateWire(),
@@ -164,7 +167,7 @@ void main() {
           );
         }
         accepts++;
-        return candidateResponse(candidateWire(status: 'ACTIVE'));
+        return candidateReadResponse(r, candidateWire(status: 'ACTIVE'));
       });
       final d = recoveryController(c, store);
       await d.load();
@@ -188,8 +191,9 @@ void main() {
       await store.write('http://fixture', candidateOwner, a);
       String? auth = 'Bearer t';
       final c = MockClient(
-        (r) async => candidateResponse(
-          r.url.path == AgentMemoryCandidateAPI.path
+        (r) async => candidateReadResponse(
+          r,
+          r.url.path == '${AgentMemoryCandidateAPI.path}/page'
               ? [candidateWire(status: 'ACTIVE')]
               : candidateWire(status: 'ACTIVE'),
         ),
@@ -226,14 +230,15 @@ void main() {
             posts++;
           }
           if (r.url.path.endsWith('/preview')) {
-            return candidateResponse(
+            return candidateReadResponse(
+              r,
               previewWire(
                 (jsonDecode(r.body) as Map)['previewId'],
                 candidateWire(),
               ),
             );
           }
-          return candidateResponse([candidateWire()]);
+          return candidateReadResponse(r, [candidateWire()]);
         });
         final d = recoveryController(c, store);
         if (failure == 'read') {
@@ -277,7 +282,7 @@ void main() {
       var posts = 0, previews = 0;
       final c = MockClient((r) async {
         if (r.method == 'GET') {
-          return candidateResponse([candidateWire()]);
+          return candidateReadResponse(r, [candidateWire()]);
         }
         if (r.url.path.endsWith('/preview')) {
           previews++;
@@ -288,7 +293,7 @@ void main() {
           if (previews == 2) {
             (wire['review'] as Map)['targetMemoryId'] = candidateSaved;
           }
-          return candidateResponse(wire);
+          return candidateReadResponse(r, wire);
         }
         posts++;
         throw StateError('unknown commit');
@@ -337,8 +342,11 @@ void main() {
             case 'agent':
               wire['agentId'] = candidateSaved;
           }
-          return candidateResponse(
-            r.url.path == AgentMemoryCandidateAPI.path ? [wire] : wire,
+          return candidateReadResponse(
+            r,
+            r.url.path == '${AgentMemoryCandidateAPI.path}/page'
+                ? [wire]
+                : wire,
           );
         });
         final d = recoveryController(c, store);
@@ -362,8 +370,9 @@ void main() {
         if (r.method != 'GET') {
           posts++;
         }
-        return candidateResponse(
-          r.url.path == AgentMemoryCandidateAPI.path
+        return candidateReadResponse(
+          r,
+          r.url.path == '${AgentMemoryCandidateAPI.path}/page'
               ? [candidateWire(status: 'ACTIVE')]
               : candidateWire(status: 'ACTIVE'),
         );
@@ -387,8 +396,9 @@ void main() {
         if (r.method != 'GET') {
           posts++;
         }
-        return candidateResponse(
-          r.url.path == AgentMemoryCandidateAPI.path
+        return candidateReadResponse(
+          r,
+          r.url.path == '${AgentMemoryCandidateAPI.path}/page'
               ? [candidateWire()]
               : candidateWire(),
         );
@@ -421,15 +431,17 @@ void main() {
           posts++;
         }
         if (r.url.path.endsWith('/preview')) {
-          return candidateResponse(
+          return candidateReadResponse(
+            r,
             previewWire(
               (jsonDecode(r.body) as Map)['previewId'],
               candidateWire(),
             ),
           );
         }
-        return candidateResponse(
-          r.url.path == AgentMemoryCandidateAPI.path
+        return candidateReadResponse(
+          r,
+          r.url.path == '${AgentMemoryCandidateAPI.path}/page'
               ? [candidateWire()]
               : candidateWire(),
         );
@@ -456,13 +468,15 @@ void main() {
         );
         final c = MockClient(
           (r) async =>
-              status == '404' && r.url.path != AgentMemoryCandidateAPI.path
+              status == '404' &&
+                  r.url.path != '${AgentMemoryCandidateAPI.path}/page'
               ? http.Response(
                   '{"error":{"code":"not_found","message":"当前不可用"}}',
                   404,
                 )
-              : candidateResponse(
-                  r.url.path == AgentMemoryCandidateAPI.path
+              : candidateReadResponse(
+                  r,
+                  r.url.path == '${AgentMemoryCandidateAPI.path}/page'
                       ? []
                       : candidateWire(status: 'EXPIRED'),
                 ),
@@ -487,10 +501,11 @@ void main() {
       var posts = 0;
       final c = MockClient((r) async {
         if (r.method == 'GET') {
-          return candidateResponse([candidateWire()]);
+          return candidateReadResponse(r, [candidateWire()]);
         }
         if (r.url.path.endsWith('/preview')) {
-          return candidateResponse(
+          return candidateReadResponse(
+            r,
             previewWire(
               (jsonDecode(r.body) as Map)['previewId'],
               candidateWire(),
@@ -498,7 +513,7 @@ void main() {
           );
         }
         posts++;
-        return candidateResponse(candidateWire(status: 'ACTIVE'));
+        return candidateReadResponse(r, candidateWire(status: 'ACTIVE'));
       });
       final d = recoveryController(c, store, auth: () => token);
       await d.load();
@@ -539,15 +554,17 @@ void main() {
       var previews = 0, accepts = 0, otherPosts = 0;
       final c = MockClient((r) async {
         if (r.method == 'GET') {
-          return candidateResponse(
-            r.url.path == AgentMemoryCandidateAPI.path
+          return candidateReadResponse(
+            r,
+            r.url.path == '${AgentMemoryCandidateAPI.path}/page'
                 ? [candidateWire()]
                 : candidateWire(),
           );
         }
         if (r.url.path.endsWith('/preview')) {
           previews++;
-          return candidateResponse(
+          return candidateReadResponse(
+            r,
             previewWire(
               (jsonDecode(r.body) as Map)['previewId'],
               candidateWire(),
@@ -559,7 +576,7 @@ void main() {
           throw StateError('unknown');
         }
         otherPosts++;
-        return candidateResponse(candidateWire());
+        return candidateReadResponse(r, candidateWire());
       });
       final d = recoveryController(c, store);
       await d.load();
@@ -592,14 +609,16 @@ void main() {
     final store = MemoryAgentCandidatePendingStore();
     final client = MockClient((r) async {
       if (r.method == 'GET') {
-        return candidateResponse(
-          r.url.path == AgentMemoryCandidateAPI.path
+        return candidateReadResponse(
+          r,
+          r.url.path == '${AgentMemoryCandidateAPI.path}/page'
               ? [candidateWire()]
               : candidateWire(),
         );
       }
       if (r.url.path.endsWith('/preview')) {
-        return candidateResponse(
+        return candidateReadResponse(
+          r,
           previewWire(
             (jsonDecode(r.body) as Map)['previewId'],
             candidateWire(),
@@ -653,10 +672,11 @@ void main() {
         var posts = 0, getters = 0, notifications = 0;
         final c = CandidateBorrowedHttpClient((r) async {
           if (r.method == 'GET') {
-            return candidateResponse([candidateWire()]);
+            return candidateReadResponse(r, [candidateWire()]);
           }
           if (r.url.path.endsWith('/preview')) {
-            return candidateResponse(
+            return candidateReadResponse(
+              r,
               previewWire(
                 (jsonDecode(r.body) as Map)['previewId'] as String,
                 candidateWire(),
@@ -723,7 +743,7 @@ void main() {
         if (r.url.path.endsWith('/preview')) {
           previews++;
           key = (jsonDecode(r.body) as Map)['previewId'] as String;
-          return candidateResponse(previewWire(key!, candidateWire()));
+          return candidateReadResponse(r, previewWire(key!, candidateWire()));
         }
         if (r.method == 'POST') {
           posts++;
@@ -731,9 +751,10 @@ void main() {
           if (posts == 1) {
             throw Exception('unknown before commit');
           }
-          return candidateResponse(candidateWire(status: 'ACTIVE'));
+          return candidateReadResponse(r, candidateWire(status: 'ACTIVE'));
         }
-        return candidateResponse(
+        return candidateReadResponse(
+          r,
           r.url.path.endsWith(candidateTarget)
               ? candidateWire()
               : [candidateWire()],
@@ -774,12 +795,12 @@ void main() {
             .toUtc()
             .add(const Duration(milliseconds: 100))
             .toIso8601String();
-        return candidateResponse(p);
+        return candidateReadResponse(r, p);
       }
       if (r.method == 'POST') {
         approvals++;
       }
-      return candidateResponse([candidateWire()]);
+      return candidateReadResponse(r, [candidateWire()]);
     });
     final d = AgentMemoryCandidateController(
       pendingStore: MemoryAgentCandidatePendingStore(),
@@ -806,7 +827,7 @@ void main() {
       String? key;
       final client = MockClient((r) async {
         if (r.method == 'GET') {
-          return candidateResponse([candidateWire()]);
+          return candidateReadResponse(r, [candidateWire()]);
         }
         final body = jsonDecode(r.body) as Map;
         if (r.url.path.endsWith('/preview')) {
@@ -816,11 +837,11 @@ void main() {
             'expectedVersion',
             'memoryValidUntil',
           });
-          return candidateResponse(previewWire(key!, candidateWire()));
+          return candidateReadResponse(r, previewWire(key!, candidateWire()));
         }
         accepts++;
         expect(body, {'previewId': key});
-        return candidateResponse(candidateWire(status: 'ACTIVE'));
+        return candidateReadResponse(r, candidateWire(status: 'ACTIVE'));
       });
       final d = AgentMemoryCandidateController(
         pendingStore: MemoryAgentCandidatePendingStore(),
@@ -873,7 +894,7 @@ void main() {
       if (identity != 'dispose') {
         d.synchronizeIdentity();
       }
-      pending.complete(candidateResponse([candidateWire()]));
+      pending.complete(candidatePageResponse([candidateWire()]));
       await load;
       expect(d.records, isEmpty);
       expect(d.preview, isNull);
@@ -890,7 +911,8 @@ void main() {
       final c = MockClient((r) async {
         if (r.url.path.endsWith('/preview')) {
           final b = jsonDecode(r.body) as Map;
-          return candidateResponse(
+          return candidateReadResponse(
+            r,
             previewWire(b['previewId'] as String, candidateWire()),
           );
         }
@@ -900,9 +922,9 @@ void main() {
         }
         if (r.url.path.endsWith(candidateTarget)) {
           reads++;
-          return candidateResponse(candidateWire(status: 'ACTIVE'));
+          return candidateReadResponse(r, candidateWire(status: 'ACTIVE'));
         }
-        return candidateResponse([candidateWire()]);
+        return candidateReadResponse(r, [candidateWire()]);
       });
       final d = AgentMemoryCandidateController(
         pendingStore: MemoryAgentCandidatePendingStore(),
@@ -930,7 +952,7 @@ void main() {
     var calls = 0;
     final c = MockClient((r) async {
       calls++;
-      return candidateResponse([]);
+      return candidateReadResponse(r, []);
     });
     final d = AgentMemoryCandidateController(
       pendingStore: MemoryAgentCandidatePendingStore(),

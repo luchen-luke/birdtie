@@ -3,8 +3,10 @@ package placehistory
 import (
 	"context"
 	"errors"
+	"github.com/birdtie/birdtie/apps/api/internal/content"
 	"github.com/birdtie/birdtie/apps/api/internal/identity"
 	pp "github.com/birdtie/birdtie/apps/api/internal/placeprofile"
+	"reflect"
 	"time"
 	"unicode/utf8"
 )
@@ -95,6 +97,41 @@ func ValidateSummary(s Summary) error {
 	}
 	if s.Suitability != nil && (s.Suitability.PlaceID != s.PlaceID || s.Suitability.CityID != s.CityID || !s.Suitability.CheckedAt.Equal(s.CheckedAt) || pp.ValidatePublic(*s.Suitability, s.CheckedAt) != nil) {
 		return ErrInvalid
+	}
+	return nil
+}
+
+const AuthorSchemaVersion = "place-social-history-v2"
+
+type MomentWithAuthor struct {
+	Moment
+	AuthorID            *string                     `json:"authorId"`
+	AuthorPublicProfile *content.PublicMomentAuthor `json:"authorPublicProfile"`
+}
+
+type SummaryWithAuthor struct {
+	Summary
+	RecentMoments []MomentWithAuthor `json:"recentMoments"`
+	SourceBinding string             `json:"-"`
+}
+
+type StoreWithAuthor interface {
+	GetPublicPlaceSocialHistoryWithAuthor(context.Context, Access, string) (SummaryWithAuthor, error)
+}
+
+func ValidateSummaryWithAuthor(s SummaryWithAuthor) error {
+	if s.SchemaVersion != AuthorSchemaVersion || s.SourceBinding == "" || s.RecentMoments == nil || len(s.RecentMoments) != len(s.Summary.RecentMoments) {
+		return ErrInvalid
+	}
+	legacy := s.Summary
+	legacy.SchemaVersion = SchemaVersion
+	if ValidateSummary(legacy) != nil {
+		return ErrInvalid
+	}
+	for i, m := range s.RecentMoments {
+		if !reflect.DeepEqual(m.Moment, legacy.RecentMoments[i]) || content.ValidatePublicMomentAuthor(m.AuthorID, m.AuthorPublicProfile) != nil {
+			return ErrInvalid
+		}
 	}
 	return nil
 }

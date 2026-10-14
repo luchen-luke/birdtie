@@ -22,10 +22,11 @@ import (
 )
 
 type settings struct {
-	subject actorref.PrincipalRef
-	handler agentoutbox.HandlerVersion
-	batch   int
-	timeout time.Duration
+	subject       actorref.PrincipalRef
+	handler       agentoutbox.HandlerVersion
+	batch         int
+	timeout       time.Duration
+	mixedHandlers bool
 }
 
 func parseSettings(args []string) (settings, bool) {
@@ -35,9 +36,19 @@ func parseSettings(args []string) (settings, bool) {
 	local := fs.Bool("local-development-only", false, "")
 	subject := fs.String("subject", "", "")
 	handler := fs.String("handler", string(agentoutbox.HandlerV1), "")
+	mixed := fs.Bool("mixed-handlers", false, "")
 	batch := fs.Int("batch", 25, "")
 	timeout := fs.Duration("timeout", 15*time.Second, "")
 	if fs.Parse(args) != nil || fs.NArg() != 0 || !*local {
+		return settings{}, false
+	}
+	explicitHandler := false
+	fs.Visit(func(f *flag.Flag) {
+		if f.Name == "handler" {
+			explicitHandler = true
+		}
+	})
+	if *mixed && explicitHandler {
 		return settings{}, false
 	}
 	ref, e := actorref.ParsePrincipal("PERSON", *subject)
@@ -46,7 +57,7 @@ func parseSettings(args []string) (settings, bool) {
 		*batch < 1 || *batch > agentoutboxmaintenance.MaxBatch || *timeout < agentoutboxmaintenance.MinTimeout || *timeout > agentoutboxmaintenance.MaxTimeout {
 		return settings{}, false
 	}
-	return settings{ref, agentoutbox.HandlerVersion(*handler), *batch, *timeout}, true
+	return settings{subject: ref, handler: agentoutbox.HandlerVersion(*handler), batch: *batch, timeout: *timeout, mixedHandlers: *mixed}, true
 }
 
 func localHost(host string) bool {
@@ -153,7 +164,7 @@ func runCommand(parent context.Context, args []string, getenv func(string) strin
 		output = agentoutboxmaintenance.NewReport("STOPPED", "DATABASE", "DATABASE_UNAVAILABLE")
 		return emit(1)
 	}
-	output = agentoutboxmaintenance.Run(ctx, s, agentoutboxmaintenance.Options{Subject: opts.subject, WorkerID: worker, Handler: opts.handler, Batch: opts.batch, Timeout: opts.timeout})
+	output = agentoutboxmaintenance.Run(ctx, s, agentoutboxmaintenance.Options{Subject: opts.subject, WorkerID: worker, Handler: opts.handler, Batch: opts.batch, Timeout: opts.timeout, MixedHandlers: opts.mixedHandlers})
 	if output.Status != "FINISHED" {
 		return emit(1)
 	}

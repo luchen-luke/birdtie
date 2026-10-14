@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:http/http.dart' as http;
+import '../app/birdtie_app_bar.dart';
 import '../auth/birdtie_auth_controller.dart';
 import 'agent_profile_visibility_api.dart';
 import 'agent_profile_visibility_controller.dart';
@@ -271,7 +272,7 @@ class _AgentProfileVisibilityPageState
   Widget build(BuildContext context) {
     final review = _data.review;
     return Scaffold(
-      appBar: AppBar(title: const Text('各项资料的可见范围')),
+      appBar: birdtieAppBar(context, title: const Text('各项资料的可见范围')),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(20),

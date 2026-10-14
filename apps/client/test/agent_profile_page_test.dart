@@ -1,17 +1,21 @@
+import 'agent_memory_review_page_fixture.dart';
 import 'dart:async';
 import 'dart:io';
 import 'dart:ui' as ui;
 import 'package:birdtie_client/src/workspace/agent_profile_page.dart';
+import 'package:birdtie_client/src/workspace/agent_activity_join_page.dart';
 import 'package:birdtie_client/src/workspace/agent_memory_correction_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'agent_seed_sheet_test.dart' show SeedTestAuth;
 import 'agent_profile_api_test.dart';
 import 'agent_memory_correction_api_test.dart' show correctionMemoryRaw;
+import 'agent_run_api_test.dart' show runPage, runResponse;
 
 Widget profileHarness(
   SeedTestAuth auth,
@@ -97,18 +101,80 @@ Future<void> profileTap(WidgetTester t, String text) async {
   await t.pumpAndSettle();
 }
 
+Finder currentProfileDetailText(String text) => find.descendant(
+  of: find.ancestor(
+    of: find.text('当前记忆详情'),
+    matching: find.byType(SliverPadding),
+  ),
+  matching: find.text(text),
+);
+
 void main() {
-  testWidgets('1000条原Memory只挂载视口行，末行仍可滚动读取', (t) async {
+  testWidgets('资料页进入原智能体报名核实，没有原记录不创建提案或自动报名', (t) async {
+    FlutterSecureStorage.setMockInitialValues({});
+    final auth = SeedTestAuth()..owner = profileOwner;
+    addTearDown(auth.dispose);
+    var joinRequests = 0;
+    final client = MockClient((r) async {
+      if (r.url.path.contains('agent-activity-join')) joinRequests++;
+      return profileResponse(profileData(r.url.path));
+    });
+    addTearDown(client.close);
+    await t.pumpWidget(profileHarness(auth, client));
+    await t.pumpAndSettle();
+    await profileTap(t, '核实智能体报名');
+    expect(find.byType(AgentActivityJoinPage), findsOneWidget);
+    expect(joinRequests, 0);
+    expect(t.takeException(), isNull);
+  });
+  testWidgets('资料入口打开本人Run页，普通主题重建保持原来源边界', (t) async {
+    FlutterSecureStorage.setMockInitialValues({});
+    final auth = SeedTestAuth()..owner = profileOwner;
+    addTearDown(auth.dispose);
+    var pages = 0;
+    final client = MockClient((r) async {
+      if (r.url.path.endsWith('/agent-runs/page')) {
+        pages++;
+        final page = runPage(items: []);
+        page['owner'] = {'type': 'PERSON', 'id': profileOwner};
+        page['agentId'] = profileAgent;
+        return runResponse(page);
+      }
+      return profileResponse(profileData(r.url.path));
+    });
+    addTearDown(client.close);
+    await t.pumpWidget(profileHarness(auth, client));
+    await t.pumpAndSettle();
+    await profileTap(t, '智能体处理状态');
+    expect(pages, 1);
+    expect(find.text('当前没有可显示的处理记录。'), findsOneWidget);
+    await t.pumpWidget(profileHarness(auth, client, dark: true));
+    await t.pumpAndSettle();
+    expect(find.text('当前没有可显示的处理记录。'), findsOneWidget);
+    expect(find.textContaining('来源已变化'), findsNothing);
+    expect(pages, 1);
+    expect(t.takeException(), isNull);
+    await t.pumpWidget(const SizedBox());
+  });
+  testWidgets('本人Memory摘要首批20条只挂载视口行并明确仍有后页', (t) async {
     final auth = SeedTestAuth()..owner = profileOwner;
     addTearDown(auth.dispose);
     String id(int n) =>
         '82000000-0000-4000-8000-${n.toString().padLeft(12, '0')}';
     final client = MockClient((r) async {
-      if (r.url.path.endsWith('agent-memories')) {
-        return profileResponse([
-          for (var i = 1; i <= 1000; ++i)
-            correctionMemoryRaw(at: DateTime.now().toUtc())..['id'] = id(i),
-        ]);
+      if (r.url.path.endsWith('agent-memories/page')) {
+        return profileResponse(
+          memoryReviewPageFixture(
+            owner: profileOwner,
+            agent: profileAgent,
+            collection: 'MEMORIES',
+            nextCursor: 'next_page',
+            items: [
+              for (var i = 1; i <= 20; ++i)
+                correctionMemoryRaw(at: DateTime.now().toUtc())..['id'] = id(i),
+            ],
+          ),
+        );
       }
       return profileResponse(profileData(r.url.path));
     });
@@ -123,13 +189,33 @@ void main() {
     );
     expect(find.byType(ListTile).evaluate().length, lessThan(30));
     await t.scrollUntilVisible(
-      find.byKey(ValueKey('profile-memory-${id(1000)}')),
+      find.byKey(ValueKey('profile-memory-${id(20)}')),
       500,
       maxScrolls: 400,
       scrollable: find.byType(Scrollable).first,
     );
-    expect(find.byKey(ValueKey('profile-memory-${id(1000)}')), findsOneWidget);
+    expect(find.byKey(ValueKey('profile-memory-${id(20)}')), findsOneWidget);
     expect(find.byType(ListTile).evaluate().length, lessThan(30));
+    final preferenceHeading = find.text('偏好');
+    await t.scrollUntilVisible(
+      preferenceHeading,
+      -200,
+      maxScrolls: 100,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(preferenceHeading, findsOneWidget);
+    final preferenceSection = find.ancestor(
+      of: preferenceHeading,
+      matching: find.byType(SliverPadding),
+    );
+    expect(
+      find.descendant(
+        of: preferenceSection,
+        matching: find.text('仅显示当前页记录，可在管理记忆中继续查看。'),
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('仅显示当前页记录，可在管理记忆中继续查看。'), findsWidgets);
     expect(t.takeException(), isNull);
   });
   testWidgets('键盘激活原报名管理入口且借用transport零关闭', (t) async {
@@ -175,12 +261,12 @@ void main() {
       await t.pumpWidget(profileHarness(auth, client));
       await t.pumpAndSettle();
       await t.scrollUntilVisible(
-        find.text('本人明确声明'),
+        find.text('已确认'),
         180,
         maxScrolls: 100,
         scrollable: find.byType(Scrollable).first,
       );
-      await t.tap(find.text('本人明确声明'));
+      await t.tap(find.text('已确认'));
       await t.pump();
       await t.runAsync(() async {
         await entered.future;
@@ -196,10 +282,10 @@ void main() {
       await t.pump();
       await t.pump();
       if (!delayed) {
-        expect(find.text('我偏好徒步活动'), findsOneWidget);
+        expect(currentProfileDetailText('我偏好徒步活动'), findsOneWidget);
         await t.pump(const Duration(milliseconds: 150));
       }
-      expect(find.text('我偏好徒步活动'), findsNothing);
+      expect(currentProfileDetailText('我偏好徒步活动'), findsNothing);
       expect(find.textContaining('读取已到期'), findsOneWidget);
     });
   }
@@ -221,7 +307,7 @@ void main() {
     await t.pumpAndSettle();
     expect(find.text('我的智能体'), findsOneWidget);
     expect(find.text('本人填写的补充说明：本人填写的合成补充'), findsOneWidget);
-    expect(find.text('我偏好徒步活动'), findsNothing);
+    expect(find.text('我偏好徒步活动'), findsOneWidget);
     await profileCapture(t, 'profile-first');
     for (final title in ['智能体知道哪些本人资料', '偏好', '地点', '活动', '社群', '智能体设置']) {
       await t.scrollUntilVisible(
@@ -232,11 +318,11 @@ void main() {
       );
       expect(find.text(title), findsOneWidget);
     }
-    expect(find.textContaining('可在设置中分别管理'), findsOneWidget);
+    expect(find.textContaining('可在设置中分别管理'), findsNothing);
     await t.drag(find.byType(Scrollable).first, const Offset(0, 10000));
     await t.pumpAndSettle();
-    await profileTap(t, '本人明确声明');
-    expect(find.text('我偏好徒步活动'), findsOneWidget);
+    await profileTap(t, '已确认');
+    expect(currentProfileDetailText('我偏好徒步活动'), findsOneWidget);
     await profileCapture(t, 'profile-current-detail');
     expect(req.every((r) => r.method == 'GET'), true);
     expect(find.textContaining('82%'), findsNothing);

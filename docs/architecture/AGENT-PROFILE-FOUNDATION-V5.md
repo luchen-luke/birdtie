@@ -322,3 +322,8 @@ AGE046完成后同轮领取P0 AGE049(privacy049_audit)，先只读真实五类�
 证据：`docs/testing/evidence/agent-profile-visibility-consumer-2026-10-07/MANIFEST.json`。初始实际Settings缺入口1widget失败保留；首次GREEN尝试因新测试夹具null类型/缺getter编译失败，0行为执行，不作为产品/原生失败。修正夹具及原100项列表未核实ID处理后，直接相关3新测试文件一次执行16行为PASS、3加载、exit0、0错误/skip，28个相关输入前后稳定；它不是完整依赖图或全面回归。3个执行阶段的命令、CWD、原始日志、退出码及执行时源码均保留，旧16输入字节保持，green03 Settings在24行新增之外有11条旧行CRLF变LF；最终只恢复这些旧EOL，归一化内容不变且移除插入后原字节exact，未另行重测换行版。初用净CRLF差6误报行数已更正；本文原前缀保持。适用UX-CHECK-01/03/06/08/09/10/12/14/16仅为对应本地消费子场景，不代表整条验收通过。
 
 未运行：旧tests、全量Flutter/Go、analyze、build、迁移、数据库、真实身份、真实成员撤权、OS/手机、TalkBack及性能。AGE049完整五族控制与Personalization总门禁仍PARTIAL；Closed Pilot与Consumer Beta NO，不沿用旧构建或实际运营证据。
+
+
+## 2026-10-10 普通真人整体资料五档
+
+普通真人user_profiles.visibility现在允许public/followers/connections/close/private；组织/商家保持public/private。原本人及精确profile_view grant保留；现有Agent字段规则与整体ACL同时满足，不改字段策略枚举或Agent权限。GET原生投影只取允许的字段，编码后再次核验原来源、会话generation和期限；不把私密字段载入后再由客户端隐藏。原Profile编辑页复用五档选择及中文后果说明，Close从原Profile/联系人入口明确管理，未知写结果只GET核对。详见[五档合同](RELATIONSHIP-VISIBILITY-MATRIX-V4.md)和visibility/ui/acceptance-02.json；局部组件与隔离PG通过不代表全应用视觉、真机或发布通过。

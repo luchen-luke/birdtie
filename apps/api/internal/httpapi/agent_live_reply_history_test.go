@@ -168,8 +168,8 @@ func TestAgentLiveReplyHistoryRulesAndMissingMembershipRemainCompatible(t *testi
 					t.Fatal("incomplete provenance was classified as an old model reply", e)
 				}
 			case "unsealedPOST":
-				if e != nil || primary || read != nil || port.reads != 0 {
-					t.Fatal("ordinary unsealed POST acquired history branch", e)
+				if e != nil || primary || read == nil || port.reads != 1 || len(got.MessageResults) != 2 || !reflect.DeepEqual(got.ResultSet, initial.ResultSet) || got.Mode == "live" || got.ResultSet.AnswerBinding != nil {
+					t.Fatal("ordinary owned POST lost its separately authorized history or acquired the current sealed model reply", e)
 				}
 			case "readError":
 				if !errors.Is(e, arp.ErrChanged) || primary || read != nil {

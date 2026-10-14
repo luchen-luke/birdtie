@@ -190,9 +190,9 @@ func (h *nativeLiveSourceAnswerRun) FinalizeSourceReply(ctx context.Context) (ag
 	if task.Status != agentworkspace.TaskActive || replyMembershipSupported(task) != supported {
 		return nil, modelegressbudget.ErrDenied
 	}
-	sources := make([]agentworkspace.AnswerSource, 0, len(h.batch.data.Sources))
-	for i, s := range h.batch.data.Sources {
-		sources = append(sources, agentworkspace.AnswerSource{ID: fmt.Sprintf("source-%d", i+1), Title: s.Title, URL: s.URL})
+	sources, e := liveReplyAnswerSources(h.original.request.PromptVersion, h.completedResult.Text, h.batch.data.Sources)
+	if e != nil {
+		return nil, e
 	}
 	message := agentworkspace.Message{Role: "assistant", Text: h.completedResult.Text, Sources: sources, SourceRunID: h.id, SourceEvidenceDigest: h.batch.evidenceDigest}
 	var history *nativeMessageResultsRead
@@ -244,6 +244,21 @@ func (h *nativeLiveSourceAnswerRun) FinalizeSourceReply(ctx context.Context) (ag
 		return nil, e
 	}
 	return p, nil
+}
+
+func liveReplyAnswerSources(promptVersion, answer string, selected []modelegressbudget.LivePublicSource) ([]agentworkspace.AnswerSource, error) {
+	if err := validateLiveSourceAnswerForPrompt(promptVersion, answer, selected); err != nil {
+		return nil, err
+	}
+	sources := make([]agentworkspace.AnswerSource, 0, len(selected))
+	for i, source := range selected {
+		site, err := modelegressbudget.LivePublicSourceSite(source)
+		if err != nil {
+			return nil, err
+		}
+		sources = append(sources, agentworkspace.AnswerSource{ID: fmt.Sprintf("source-%d", i+1), Title: source.Title, URL: source.URL, Site: site})
+	}
+	return sources, nil
 }
 
 func (p *nativeLiveSourceReply) Revalidate(ctx context.Context) error {

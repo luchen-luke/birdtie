@@ -1,0 +1,39 @@
+{
+  "StartedUtc": "2026-10-14T10:29:15.2989095Z",
+  "CompletedUtc": "2026-10-14T10:29:56.0009084Z",
+  "RemovedTargets": 33,
+  "FailedOrPartialTargets": 0,
+  "RemovedBytesForFullyRemovedTargets": 10494551163.0,
+  "RemovedGiB": 9.774,
+  "ProjectGitStateUnchangedExcludingCleanupReports": true,
+  "ProjectGitStateBefore": [
+    {
+      "Root": "D:\\Project\\birdtie",
+      "Entries": 23010,
+      "Sha256": "de6d18575c3093c62d601d303e6419cb7dddea38725499aec6a1df52fa5906d2"
+    },
+    {
+      "Root": "D:\\Program\\Civu",
+      "Entries": 15646,
+      "Sha256": "ef8b3ba427dade20bd7ad9e9b7af8b9a3e971e1340e6e64b2bc5e3ebee2ce6cc"
+    }
+  ],
+  "ProjectGitStateAfter": [
+    {
+      "Root": "D:\\Project\\birdtie",
+      "Entries": 23010,
+      "Sha256": "de6d18575c3093c62d601d303e6419cb7dddea38725499aec6a1df52fa5906d2"
+    },
+    {
+      "Root": "D:\\Program\\Civu",
+      "Entries": 15646,
+      "Sha256": "ef8b3ba427dade20bd7ad9e9b7af8b9a3e971e1340e6e64b2bc5e3ebee2ce6cc"
+    }
+  ],
+  "RetainedDependencyDistributionAndLogSizesUnchanged": true,
+  "RetainedProjectCacheLinksResolve": true,
+  "SigningAndProjectArtifactsPresent": true,
+  "DriveCFreeBefore": 135405862912,
+  "DriveCFreeAfter": 145974022144,
+  "Scope": "Only reviewed C-drive Gradle compiler caches; dependencies, Gradle distributions, project source, signing, configuration, logs and current delivery artifacts preserved."
+}

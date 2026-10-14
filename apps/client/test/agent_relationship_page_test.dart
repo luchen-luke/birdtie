@@ -92,7 +92,11 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(reads, 0);
-    expect(find.text('尚未开启，不向 Agent 提供关系信号。'), findsOneWidget);
+    expect(find.text('互动记录使用范围'), findsOneWidget);
+    expect(find.textContaining('最近 30 天发送消息的数量和活跃日数'), findsOneWidget);
+    expect(find.textContaining('不读取私聊正文、私密记忆或位置'), findsOneWidget);
+    expect(find.textContaining('不代表真实到场'), findsOneWidget);
+    expect(find.text('尚未开启，不向智能体提供互动记录。'), findsOneWidget);
     await tester.tap(find.byType(SwitchListTile));
     await tester.pumpAndSettle();
     expect(find.text('合成好友'), findsOneWidget);
@@ -104,7 +108,7 @@ void main() {
     expect(find.text('合成好友'), findsNothing);
     revoke.complete(data({'enabled': false}));
     await tester.pumpAndSettle();
-    expect(find.text('尚未开启，不向 Agent 提供关系信号。'), findsOneWidget);
+    expect(find.text('尚未开启，不向智能体提供互动记录。'), findsOneWidget);
     expect(reads, 1);
     await tester.pumpWidget(const SizedBox());
     client.close();
@@ -136,7 +140,7 @@ void main() {
     await auth.signOut();
     await tester.pump();
     expect(find.text('合成好友'), findsNothing);
-    expect(find.text('登录后管理本人的 Agent 关系信号。'), findsOneWidget);
+    expect(find.text('登录后管理互动记录授权。'), findsOneWidget);
     late.complete(data(signals()));
     await tester.pumpAndSettle();
     expect(find.text('合成好友'), findsNothing);
@@ -166,12 +170,12 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    expect(find.textContaining('关系信号暂不可用'), findsOneWidget);
+    expect(find.textContaining('互动记录暂不可用'), findsOneWidget);
     expect(find.text('合成好友'), findsNothing);
     await tester.tap(find.byType(SwitchListTile));
     await tester.pumpAndSettle();
     expect(enabled, false);
-    expect(find.text('尚未开启，不向 Agent 提供关系信号。'), findsOneWidget);
+    expect(find.text('尚未开启，不向智能体提供互动记录。'), findsOneWidget);
     await tester.pumpWidget(const SizedBox());
     client.close();
     auth.dispose();

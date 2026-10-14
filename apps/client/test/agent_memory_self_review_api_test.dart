@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:birdtie_client/src/workspace/agent_memory_correction_api.dart';
 import 'package:birdtie_client/src/workspace/agent_memory_self_review.dart';
+import 'agent_memory_review_page_fixture.dart';
 
 // Original registered Go HTTP output, never re-date or silently repair its DTO.
 const reviewWirePath =
@@ -95,6 +96,15 @@ http.Response reviewResponse(dynamic data, {int status = 200}) => http.Response(
   status,
   headers: {'content-type': 'application/json; charset=utf-8'},
 );
+http.Response reviewReadResponse(http.BaseRequest request, dynamic data) =>
+    reviewResponse(
+      memoryReviewReadFixture(
+        request,
+        data,
+        owner: reviewOwner,
+        agent: reviewData()['agentId'],
+      ),
+    );
 http.Response reviewWireResponse({int status = 200}) => http.Response(
   reviewOriginalWire(),
   status,

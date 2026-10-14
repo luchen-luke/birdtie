@@ -13,7 +13,9 @@ var _ connection.HumanMessageOperationStore = (*Store)(nil)
 func readHumanMessageOperation(ctx context.Context, tx pgx.Tx, owner, op string) (connection.Message, error) {
 	var m connection.Message
 	e := tx.QueryRow(ctx, `SELECT id,conversation_id,sender_account_id,speaker_kind,body,created_at FROM conversation_messages
- WHERE sender_account_id=$1 AND client_operation_id=$2 AND entity_type IS NULL AND entity_id IS NULL`, owner, op).Scan(&m.ID, &m.ConversationID, &m.SenderID, &m.SpeakerKind, &m.Body, &m.CreatedAt)
+ WHERE sender_account_id=$1 AND client_operation_id=$2 AND entity_type IS NULL AND entity_id IS NULL
+ AND NOT EXISTS(SELECT 1 FROM human_conversation_audio a WHERE a.message_id=conversation_messages.id)
+ AND NOT EXISTS(SELECT 1 FROM human_conversation_images i WHERE i.message_id=conversation_messages.id)`, owner, op).Scan(&m.ID, &m.ConversationID, &m.SenderID, &m.SpeakerKind, &m.Body, &m.CreatedAt)
 	return m, e
 }
 func (s *Store) SendHumanMessageOperation(ctx context.Context, a ea.Access, id string, in connection.MessageOperationInput) (connection.MessageOperationReceipt, error) {

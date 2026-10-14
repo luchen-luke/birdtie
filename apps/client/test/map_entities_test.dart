@@ -54,7 +54,7 @@ void main() {
     },
   );
   test(
-    'cluster membership stable typed originals without exposing a Person point',
+    'legacy display helper retains stable typed originals without grouping',
     () {
       final a = MapEntity(
         id: 'moment:original',
@@ -74,8 +74,9 @@ void main() {
       );
       final x = clusterMapEntities([a, b], zoom: 10),
           y = clusterMapEntities([b, a], zoom: 10);
-      expect(x.single.id, y.single.id);
-      expect(x.single.memberIDs, ['business:original', 'moment:original']);
+      expect(x.map((e) => e.id), y.map((e) => e.id));
+      expect(x.map((e) => e.id), ['business:original', 'moment:original']);
+      expect(x.every((e) => e.memberIDs.isEmpty && !e.isCluster), isTrue);
       expect(
         clusterMapEntities([a, b], zoom: 10, selectedId: a.id).map((i) => i.id),
         contains(a.id),

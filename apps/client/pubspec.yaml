@@ -9,6 +9,12 @@ environment:
 dependencies:
   crypto: 3.0.7
   image_picker: 1.2.4
+  file_selector: 1.1.0
+  video_player: 2.14.1
+  firebase_core: 4.14.0
+  firebase_messaging: 16.7.0
+  mobile_scanner: 7.4.2
+  qr_flutter: 4.1.0
   flutter_localizations:
     sdk: flutter
   flutter:

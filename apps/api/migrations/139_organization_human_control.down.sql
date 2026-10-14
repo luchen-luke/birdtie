@@ -1,0 +1,14 @@
+BEGIN;
+DO $$ BEGIN IF EXISTS(SELECT 1 FROM organization_human_operations) OR EXISTS(SELECT 1 FROM organization_map_proposals) OR EXISTS(SELECT 1 FROM organization_memberships WHERE control_version>1) THEN RAISE EXCEPTION 'organization human history prevents downgrade'; END IF; END $$;
+DROP FUNCTION birdtie_organization_human_source(uuid);
+DROP TABLE organization_human_operations;
+DROP FUNCTION birdtie_organization_operation_immutable();
+DROP TABLE organization_map_proposals;
+DROP FUNCTION birdtie_organization_proposal_immutable();
+DROP TRIGGER organization_member_authority_version ON organization_memberships;
+DROP TRIGGER organization_member_control_version ON organization_memberships;
+DROP FUNCTION birdtie_organization_authority_version();
+DROP FUNCTION birdtie_organization_member_version();
+DROP TABLE organization_human_authority;
+ALTER TABLE organization_memberships DROP COLUMN control_version;
+COMMIT;

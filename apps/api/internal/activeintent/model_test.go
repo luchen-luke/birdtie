@@ -27,3 +27,30 @@ func TestActiveIntentClosedDraftAndApprovalInput(t *testing.T) {
 		}
 	}
 }
+
+func TestActiveIntentRelationshipAudienceDrafts(t *testing.T) {
+	d := socialintent.DraftInput{Type: "FIND_COMPANION", Title: "本人明确的受众", Constraints: json.RawMessage(`{}`), Audience: "PRIVATE", Modality: "ONLINE", ExpiresAt: time.Now().Add(time.Hour)}
+	for _, audience := range []string{"PUBLIC", "FOLLOWERS", "CONNECTIONS", "CLOSE", "PRIVATE", "FRIENDS"} {
+		t.Run(audience, func(t *testing.T) {
+			v := d
+			v.Audience = audience
+			if _, e := NormalizeDraft(v); e != nil {
+				t.Fatalf("current audience rejected: %v", e)
+			}
+			for _, field := range []string{"city", "community", "invitee"} {
+				bad := v
+				switch field {
+				case "city":
+					bad.CityID = "aberdeen-gb"
+				case "community":
+					bad.CommunityID = "33333333-3333-4333-8333-333333333333"
+				case "invitee":
+					bad.InviteeIDs = []string{"22222222-2222-4222-8222-222222222222"}
+				}
+				if _, e := NormalizeDraft(bad); e == nil {
+					t.Fatal("relationship audience accepted unrelated target", field)
+				}
+			}
+		})
+	}
+}

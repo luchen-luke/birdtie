@@ -1,0 +1,8 @@
+work\remaining-execution-20261014\apk-build-copy-bc4\birdtie-batch-c.apk
+work\remaining-execution-20261014\api-build-entity-share-c02\artifact
+work\remaining-execution-20261014\web-build-copy-bc4\artifact
+apps\client\build\web
+apps\client\build\reports
+apps\client\build\birdtie-debug-screen.png
+apps\client\build\birdtie-explore.png
+apps\client\build\birdtie-map.png

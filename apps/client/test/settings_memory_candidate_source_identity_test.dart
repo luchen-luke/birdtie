@@ -12,7 +12,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'agent_memory_candidate_api_test.dart'
-    show candidateOwner, candidateWire, previewWire;
+    show candidateOwner, candidateAgent, candidateWire, previewWire;
+import 'agent_memory_review_page_fixture.dart';
 
 const _secureChannel = MethodChannel(
   'plugins.it_nomads.com/flutter_secure_storage',
@@ -84,12 +85,23 @@ class _Wire extends http.BaseClient {
           )
         : request.method == 'POST' && path.endsWith('/accept')
         ? candidateWire(status: 'ACTIVE')
-        : path == '/v1/me/agent-memory-candidates'
+        : path == '/v1/me/agent-memory-candidates/page'
         ? [candidate]
         : <Object>[];
     return Future.value(
       http.StreamedResponse(
-        Stream.value(utf8.encode(jsonEncode({'data': value}))),
+        Stream.value(
+          utf8.encode(
+            jsonEncode({
+              'data': memoryReviewReadFixture(
+                request,
+                value,
+                owner: candidateOwner,
+                agent: candidateAgent,
+              ),
+            }),
+          ),
+        ),
         200,
         headers: {'content-type': 'application/json; charset=utf-8'},
       ),
@@ -153,7 +165,7 @@ Future<void> _tap(WidgetTester t, Finder target) async {
     maxScrolls: 50,
     scrollable: find.byType(Scrollable).last,
   );
-  await t.ensureVisible(target);
+  await Scrollable.ensureVisible(t.element(target), alignment: .3);
   await t.pumpAndSettle();
   expect(target.hitTestable(), findsOneWidget);
   await t.tap(target);
@@ -164,7 +176,7 @@ Future<void> _preview(WidgetTester t) async {
   await _tap(t, find.widgetWithText(ListTile, '待确认的记忆'));
   expect(find.byType(AgentMemoryCandidatePage), findsOneWidget);
   await _tap(t, find.widgetWithText(OutlinedButton, '检查这项候选'));
-  final review = find.text('具体版本预览');
+  final review = find.text('保存前确认');
   await t.scrollUntilVisible(
     review,
     -180,
@@ -215,8 +227,8 @@ void main() {
         s.storage.writeGate!.complete();
         await t
             .idle(); // Flush journal completion; never draw the next retirement frame.
-        debugPrintSynchronously((
-          jsonEncode({
+        debugPrintSynchronously(
+          (jsonEncode({
             'scenario': replaced ? 'retired-parent' : 'normal-current',
             'pageStillMounted': t.element(page).mounted,
             'parentCurrent': boundary.current(),
@@ -231,7 +243,8 @@ void main() {
                 )
                 .toList(),
             'pendingReferences': s.storage.values.length,
-          })).toString());
+          })).toString(),
+        );
         expect(s.wire.accepts.length, replaced ? 0 : 1);
         expect(s.otherWire.accepts, isEmpty);
         if (!replaced) {

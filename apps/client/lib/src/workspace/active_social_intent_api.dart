@@ -13,7 +13,10 @@ const intentTypes = {
 const intentModes = {'IN_PERSON': '线下', 'ONLINE': '线上', 'HYBRID': '线上与线下'};
 const intentAudiences = {
   'PRIVATE': '仅自己',
-  'FRIENDS': '好友',
+  'FRIENDS': '好友（原设置）',
+  'FOLLOWERS': '关注我的人',
+  'CONNECTIONS': '好友',
+  'CLOSE': '亲密好友',
   'PUBLIC': '公开',
   'LOCAL': '本地用户',
   'COMMUNITY': '指定社群',

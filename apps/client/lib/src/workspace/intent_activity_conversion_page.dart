@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:http/http.dart' as http;
+import '../app/birdtie_app_bar.dart';
 import '../auth/birdtie_auth_controller.dart';
 import 'active_social_intent_api.dart';
 import 'active_social_intent_controller.dart' show ActiveIntentIdentity;
@@ -298,7 +299,7 @@ class _ConversionPageState extends State<IntentActivityConversionPage> {
   Widget build(BuildContext context) {
     final o = _data.options, r = _data.receipt;
     return Scaffold(
-      appBar: AppBar(title: const Text('关联已报名活动')),
+      appBar: birdtieAppBar(context, title: const Text('关联已报名活动')),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(16),

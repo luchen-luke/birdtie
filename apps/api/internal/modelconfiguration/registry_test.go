@@ -263,3 +263,73 @@ func TestConfigurationClosedVersionCapabilityAndPromptMatrix(t *testing.T) {
 		}
 	}
 }
+
+func TestCandidateSchemaVersionsHaveIndependentConfigurationBindings(t *testing.T) {
+	v1, prompt, policy := fixtureConfig("candidate_fixture_config.v1")
+	v1.TaskKind = modelgateway.MemoryCandidateExtraction
+	v1.OutputSchemaVersion = modelgateway.CandidateProposalVersion
+	v2 := cloneConfiguration(v1)
+	v2.Version = "candidate_fixture_config.v2"
+	v2.OutputSchemaVersion = modelgateway.CandidateProposalV2Version
+	registry, err := NewRegistry([]PromptDefinition{prompt}, []PolicyVersionReference{policy}, []Configuration{v1, v2})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var fingerprints []string
+	for _, c := range []Configuration{v1, v2} {
+		t.Run(c.OutputSchemaVersion, func(t *testing.T) {
+			resolved, err := registry.Resolve(c.Version)
+			if err != nil {
+				t.Fatal(err)
+			}
+			r, ref, err := PrepareRequest(resolved, fixtureRequest(), time.Now())
+			if err != nil || r.OutputSchemaVersion != c.OutputSchemaVersion || ref.OutputSchemaVersion != c.OutputSchemaVersion || ref.TaskKind != modelgateway.MemoryCandidateExtraction {
+				t.Fatal("candidate schema did not reach the existing request binding", err)
+			}
+			if _, err := registry.ResolveReference(ref); err != nil {
+				t.Fatal("candidate reference could not resolve", err)
+			}
+			wire, err := json.Marshal(c)
+			if err != nil {
+				t.Fatal(err)
+			}
+			decoded, err := DecodeConfiguration(wire)
+			if err != nil || decoded.OutputSchemaVersion != c.OutputSchemaVersion {
+				t.Fatal("candidate configuration wire changed", err)
+			}
+			fingerprints = append(fingerprints, resolved.Fingerprint)
+			otherSchema := modelgateway.CandidateProposalV2Version
+			if c.OutputSchemaVersion == otherSchema {
+				otherSchema = modelgateway.CandidateProposalVersion
+			}
+			r.OutputSchemaVersion = otherSchema
+			if _, err := BindRequest(resolved, r, time.Now()); !errors.Is(err, ErrDenied) {
+				t.Fatal("schema change reused the old configuration", err)
+			}
+			ref.OutputSchemaVersion = otherSchema
+			if _, err := registry.ResolveReference(ref); !errors.Is(err, ErrDenied) {
+				t.Fatal("historical reference silently changed schema", err)
+			}
+		})
+	}
+	if len(fingerprints) != 2 || fingerprints[0] == fingerprints[1] {
+		t.Fatal("candidate schema versions share a configuration fingerprint")
+	}
+	for name, mutate := range map[string]func(*Configuration){
+		"activity_task": func(c *Configuration) { c.TaskKind = modelgateway.ActivityQuery },
+		"text_mode": func(c *Configuration) {
+			c.OutputMode = modelgateway.Text
+			c.CapabilitiesRequired = []string{"text"}
+		},
+		"tools":          func(c *Configuration) { c.ToolAllowlist = []string{"activity.search"} },
+		"unknown_schema": func(c *Configuration) { c.OutputSchemaVersion = "air.candidate_proposal.v3" },
+	} {
+		t.Run(name, func(t *testing.T) {
+			bad := cloneConfiguration(v2)
+			mutate(&bad)
+			if _, err := NormalizeConfiguration(bad); !errors.Is(err, ErrInvalid) {
+				t.Fatal("candidate configuration acquired another task/mode/tool", err)
+			}
+		})
+	}
+}

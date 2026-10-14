@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
+import '../app/birdtie_app_bar.dart';
 import '../auth/birdtie_auth_controller.dart';
 import 'agent_seed_controller.dart';
 import 'agent_profile_completion_sheet.dart';
@@ -300,7 +301,10 @@ class _AgentSeedSheetState extends State<AgentSeedSheet> {
   Widget build(BuildContext context) {
     if (_retired) {
       return Scaffold(
-        appBar: AppBar(title: Text(widget.progressive ? '完善我的选择' : '初始设置')),
+        appBar: birdtieAppBar(
+          context,
+          title: Text(widget.progressive ? '完善我的选择' : '初始设置'),
+        ),
         body: SafeArea(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(20),
@@ -309,7 +313,7 @@ class _AgentSeedSheetState extends State<AgentSeedSheet> {
               children: [
                 const Text('设置入口已变化，请返回后重新打开。'),
                 const SizedBox(height: 16),
-                const Text('原草稿和确认已失效。若保存请求已发出，返回后请读取当前设置核实；此处不会再次提交。'),
+                if (_controller.resultUnknown) const Text('上次保存结果待核实，请返回设置查看。'),
                 const SizedBox(height: 16),
                 FilledButton(
                   onPressed: () => Navigator.of(context).maybePop(),
@@ -329,7 +333,10 @@ class _AgentSeedSheetState extends State<AgentSeedSheet> {
         !_controller.denied &&
         !_controller.conflict;
     return Scaffold(
-      appBar: AppBar(title: Text(widget.progressive ? '完善我的选择' : '初始设置')),
+      appBar: birdtieAppBar(
+        context,
+        title: Text(widget.progressive ? '完善我的选择' : '初始设置'),
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
@@ -343,7 +350,7 @@ class _AgentSeedSheetState extends State<AgentSeedSheet> {
                   style: Theme.of(context).textTheme.headlineSmall,
                 ),
                 const SizedBox(height: 8),
-                const Text('当前以本人身份设置。城市是你的声明；语言、兴趣和这次意图保存在私密设置中，不会自动发布或交给模型。'),
+                const Text('城市、交流语言和兴趣仅自己可见。'),
                 const SizedBox(height: 24),
                 if (!_personal)
                   const Text('请切回个人身份后再完善初始设置。')
@@ -355,11 +362,10 @@ class _AgentSeedSheetState extends State<AgentSeedSheet> {
                   if (widget.progressive && _step == -1) ...[
                     const Text('这次想完善哪一项？'),
                     const SizedBox(height: 8),
-                    const Text('一次选择一组。切换项目会放弃上一组未保存的修改；取消不会写入。'),
+                    const Text('切换项目会放弃尚未保存的修改。'),
                     ListTile(
                       contentPadding: EdgeInsets.zero,
                       title: const Text('用已确认记忆补齐活动偏好'),
-                      subtitle: const Text('仅补空项，先检查来源与独立保存后果'),
                       trailing: const Icon(Icons.chevron_right),
                       onTap: editable && !_dirty
                           ? () async {
@@ -410,7 +416,7 @@ class _AgentSeedSheetState extends State<AgentSeedSheet> {
                     if (widget.progressive &&
                         _completionSteps.length > 1 &&
                         _step != 3)
-                      const Text('其它必要设置仍有缺项。每次只补一组，检查全部选择后才会一起保存。'),
+                      const Text('完成这一项后，继续补充剩余设置。'),
                     Text(
                       const [
                         '怎么称呼你，当前在哪座城市？',
@@ -428,7 +434,7 @@ class _AgentSeedSheetState extends State<AgentSeedSheet> {
                         decoration: InputDecoration(
                           labelText: '昵称',
                           helperText:
-                              '原个人资料范围：${base.visibility == 'public' ? '公开' : '私密'}。保存沿用现有隐私设置。',
+                              '${base.visibility == 'public' ? '昵称公开可见' : '昵称仅自己可见'}',
                           helperMaxLines: 3,
                         ),
                         textInputAction: TextInputAction.next,
@@ -448,9 +454,7 @@ class _AgentSeedSheetState extends State<AgentSeedSheet> {
                             ? _city
                             : null,
                         isExpanded: true,
-                        decoration: const InputDecoration(
-                          labelText: '本人声明的当前城市',
-                        ),
+                        decoration: const InputDecoration(labelText: '所在城市'),
                         items: [
                           for (final c in base.cities)
                             DropdownMenuItem(
@@ -471,7 +475,7 @@ class _AgentSeedSheetState extends State<AgentSeedSheet> {
                       if (base.cities.isEmpty) const Text('暂无可选择的城市，可以稍后再完善。'),
                     ],
                     if (_step == 1) ...[
-                      const Text('交流语言（不会改变界面语言）'),
+                      const Text('交流语言'),
                       Wrap(
                         spacing: 8,
                         runSpacing: 8,
@@ -523,7 +527,6 @@ class _AgentSeedSheetState extends State<AgentSeedSheet> {
                       SwitchListTile(
                         contentPadding: EdgeInsets.zero,
                         title: const Text('跳过初始兴趣'),
-                        subtitle: const Text('跳过会保留已有兴趣，不会猜测或清空。'),
                         value: _skipInterests,
                         onChanged: editable
                             ? (v) => setState(() {
@@ -559,15 +562,12 @@ class _AgentSeedSheetState extends State<AgentSeedSheet> {
                     if (_step == 3) ...[
                       Text('昵称：${_name.text.trim()}'),
                       Text(
-                        '原个人资料范围：${base.visibility == 'public' ? '公开' : '私密'}，沿用现有设置；字段仍受隐私设置控制。',
+                        '昵称可见范围：${base.visibility == 'public' ? '公开' : '仅自己'}',
                       ),
                       Text(
-                        '保存为私人城市声明：${base.cities.where((c) => c.id == _city).first.name}',
+                        '所在城市：${base.cities.where((c) => c.id == _city).first.name} · 仅自己可见',
                       ),
-                      if (widget.progressive)
-                        const Text(
-                          '复用已有城市也会将这条当前城市声明设为私密。保存沿用原设置的完整原子提交，未改的选择采用当前读取值。',
-                        ),
+                      if (widget.progressive) const Text('保存后，当前城市会设为仅自己可见。'),
                       Text(
                         '交流语言：${_languages.map((v) => v == 'zh-CN'
                             ? '简体中文'
@@ -575,14 +575,12 @@ class _AgentSeedSheetState extends State<AgentSeedSheet> {
                             ? '英语'
                             : v).join('、')}',
                       ),
-                      Text('私密意图：${seedIntentLabels[_intent]}'),
+                      Text('这次想做：${seedIntentLabels[_intent]}'),
                       Text(
                         _skipInterests
                             ? '兴趣：跳过，保留已有内容'
-                            : '私密兴趣：${_interests.isEmpty ? '未选择' : _interests.join('、')}',
+                            : '兴趣：${_interests.isEmpty ? '未选择' : _interests.join('、')}',
                       ),
-                      const SizedBox(height: 12),
-                      const Text('保存的是你的明确选择，不代表身份、到访证明或允许模型分析。'),
                     ],
                     if (_validation != null)
                       Padding(

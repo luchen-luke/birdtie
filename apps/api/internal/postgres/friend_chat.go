@@ -90,28 +90,12 @@ func (s *Store) startFriendConversation(ctx context.Context, actorID, tieID stri
 		}
 	}
 	item := connection.Conversation{OtherAccountID: otherID, OtherName: otherName}
-	err = tx.QueryRow(ctx, `SELECT cv.id,cv.created_at FROM conversations cv
-		JOIN connection_requests r ON r.id=cv.request_id AND r.state='accepted'
-		WHERE (cv.member_a_account_id=$1 AND cv.member_b_account_id=$2) OR
-		      (cv.member_a_account_id=$2 AND cv.member_b_account_id=$1)
-		ORDER BY cv.created_at,cv.id LIMIT 1`, actorID, otherID).Scan(&item.ID, &item.CreatedAt)
-	created := false
-	if errors.Is(err, pgx.ErrNoRows) {
-		err = tx.QueryRow(ctx, `INSERT INTO conversations(request_id,member_a_account_id,member_b_account_id)
-			VALUES($1,LEAST($2::uuid,$3::uuid),GREATEST($2::uuid,$3::uuid))
-			RETURNING id,created_at`, requestID, actorID, otherID).Scan(&item.ID, &item.CreatedAt)
-		created = true
-	}
+	native, created, err := friendConversationEffectTx(ctx, tx, actorID, otherID, requestID)
 	if err != nil {
 		return connection.Conversation{}, err
 	}
-	if created {
-		_, err = auditExec(ctx, tx, `INSERT INTO audit_events(actor_account_id,action,resource_type,resource_id,decision,purpose)
-			VALUES($1,'start','conversation',$2,'allowed','human_friend_chat')`, actorID, item.ID)
-		if err != nil {
-			return connection.Conversation{}, err
-		}
-	}
+	item.ID = native.ID
+	item.CreatedAt = native.CreatedAt
 	var lastReadAt *time.Time
 	err = tx.QueryRow(ctx, `SELECT cms.last_read_at,
 		(SELECT count(*) FROM conversation_messages m WHERE m.conversation_id=$1
@@ -144,4 +128,34 @@ func (s *Store) startFriendConversation(ctx context.Context, actorID, tieID stri
 		return connection.Conversation{}, err
 	}
 	return item, nil
+}
+
+// Original friend-chat creation/reuse and its single creation audit. The
+// controlled share writer invokes this only after current Tie/route approval,
+// inside its existing transaction; preview never calls it.
+func friendConversationEffectTx(ctx context.Context, tx pgx.Tx, actorID, otherID, requestID string) (connection.Conversation, bool, error) {
+	item := connection.Conversation{OtherAccountID: otherID}
+	err := tx.QueryRow(ctx, `SELECT cv.id,cv.created_at FROM conversations cv
+		JOIN connection_requests r ON r.id=cv.request_id AND r.state='accepted'
+		WHERE (cv.member_a_account_id=$1 AND cv.member_b_account_id=$2) OR
+		      (cv.member_a_account_id=$2 AND cv.member_b_account_id=$1)
+		ORDER BY cv.created_at,cv.id LIMIT 1`, actorID, otherID).Scan(&item.ID, &item.CreatedAt)
+	created := false
+	if errors.Is(err, pgx.ErrNoRows) {
+		err = tx.QueryRow(ctx, `INSERT INTO conversations(request_id,member_a_account_id,member_b_account_id)
+			VALUES($1,LEAST($2::uuid,$3::uuid),GREATEST($2::uuid,$3::uuid))
+			RETURNING id,created_at`, requestID, actorID, otherID).Scan(&item.ID, &item.CreatedAt)
+		created = true
+	}
+	if err != nil {
+		return connection.Conversation{}, false, err
+	}
+	if created {
+		_, err = auditExec(ctx, tx, `INSERT INTO audit_events(actor_account_id,action,resource_type,resource_id,decision,purpose)
+			VALUES($1,'start','conversation',$2,'allowed','human_friend_chat')`, actorID, item.ID)
+		if err != nil {
+			return connection.Conversation{}, false, err
+		}
+	}
+	return item, created, nil
 }

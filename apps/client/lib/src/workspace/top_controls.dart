@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'now_ui_tokens.dart';
+import 'now_glass_surface.dart';
 
 class TopControls extends StatelessWidget {
   const TopControls({
@@ -10,51 +12,84 @@ class TopControls extends StatelessWidget {
     required this.contextLabel,
     this.onContext,
     this.onHeightChanged,
+    this.socialExpanded = false,
+    this.onNotifications,
+    this.notificationsExpanded = false,
+    this.hasUnreadMessages = false,
+    this.hasUnreadNotifications = false,
   });
-  final VoidCallback onSidebar;
-  final VoidCallback onInbox;
-  final VoidCallback onTools;
+  final VoidCallback onSidebar, onInbox, onTools;
   final String contextLabel;
   final VoidCallback? onContext;
   final ValueChanged<double>? onHeightChanged;
+  final bool socialExpanded;
+  final VoidCallback? onNotifications;
+  final bool notificationsExpanded, hasUnreadMessages, hasUnreadNotifications;
+  // Keep the existing geometry gap below the controls; no map-wide fade.
+  static const mapFadeTail = 20.0;
 
   @override
   Widget build(BuildContext context) => _TopControlsMeasure(
-    onHeight: (height) => onHeightChanged?.call(height),
+    onHeight: (height) => onHeightChanged?.call(height - mapFadeTail),
     child: SafeArea(
       bottom: false,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+        padding: const EdgeInsets.fromLTRB(8, 0, 8, mapFadeTail),
         child: Row(
           children: [
-            _button(Icons.menu_rounded, '打开侧边栏', onSidebar),
+            _tool(
+              context,
+              Icons.menu_rounded,
+              '打开侧边栏',
+              onSidebar,
+              'now-sidebar',
+            ),
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                child: Material(
-                  color: const Color(0xFFFCFBF8),
-                  borderRadius: BorderRadius.circular(24),
-                  child: InkWell(
-                    key: const Key('now-city-picker'),
-                    onTap: onContext,
-                    borderRadius: BorderRadius.circular(24),
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(minHeight: 48),
-                      child: Center(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 8,
-                          ),
-                          child: Text(
-                            '当前：$contextLabel',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              color: Color(0xFF193B32),
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  heightFactor: 1,
+                  child: Tooltip(
+                    message: '选择城市：$contextLabel',
+                    child: NowGlassSurface(
+                      radius: 16,
+                      backdropBlur: false,
+                      child: Material(
+                        type: MaterialType.transparency,
+                        child: InkWell(
+                          key: const Key('now-city-picker'),
+                          onTap: onContext,
+                          borderRadius: BorderRadius.circular(12),
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(minHeight: 48),
+                            child: Center(
+                              widthFactor: 1,
+                              heightFactor: 1,
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 4,
+                                  vertical: 8,
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Flexible(
+                                      child: Text(
+                                        contextLabel,
+                                        style: NowUiTokens.reviewedOf(
+                                          context,
+                                        ).chrome,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 3),
+                                    const Icon(
+                                      Icons.arrow_drop_down_rounded,
+                                      size: 20,
+                                    ),
+                                  ],
+                                ),
+                              ),
                             ),
                           ),
                         ),
@@ -64,26 +99,72 @@ class TopControls extends StatelessWidget {
                 ),
               ),
             ),
-            _button(Icons.inbox_outlined, '打开收件箱', onInbox),
+            _tool(
+              context,
+              socialExpanded ? Icons.people : Icons.people_outline,
+              socialExpanded ? '收起联系' : '联系',
+              onInbox,
+              'now-social',
+              unread: hasUnreadMessages,
+            ),
+            if (onNotifications != null) const SizedBox(width: 4),
+            if (onNotifications != null)
+              _tool(
+                context,
+                notificationsExpanded
+                    ? Icons.notifications
+                    : Icons.notifications_outlined,
+                notificationsExpanded ? '收起通知' : '通知',
+                onNotifications!,
+                'now-notifications',
+                unread: hasUnreadNotifications,
+              ),
           ],
         ),
       ),
     ),
   );
 
-  Widget _button(IconData icon, String tooltip, VoidCallback onPressed) =>
-      Material(
-        color: const Color(0xFFFCFBF8),
-        elevation: 4,
-        shadowColor: Colors.black.withValues(alpha: 0.12),
-        shape: const CircleBorder(),
-        child: IconButton(
-          constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-          icon: Icon(icon, color: const Color(0xFF193B32)),
-          tooltip: tooltip,
-          onPressed: onPressed,
+  Widget _tool(
+    BuildContext context,
+    IconData icon,
+    String tooltip,
+    VoidCallback action,
+    String name, {
+    bool unread = false,
+  }) => SizedBox(
+    key: Key('$name-button'),
+    width: 48,
+    height: 48,
+    child: Semantics(
+      container: true,
+      label: unread ? '$tooltip，有未读' : tooltip,
+      button: true,
+      enabled: true,
+      onTap: action,
+      child: ExcludeSemantics(
+        child: NowGlassSurface(
+          radius: 16,
+          backdropBlur: false,
+          child: IconButton(
+            tooltip: tooltip,
+            onPressed: action,
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+            icon: Badge(
+              isLabelVisible: unread,
+              smallSize: 6,
+              child: Icon(
+                icon,
+                size: 20,
+                color: NowUiTokens.of(context).chrome.color,
+              ),
+            ),
+          ),
         ),
-      );
+      ),
+    ),
+  );
 }
 
 class _TopControlsMeasure extends SingleChildRenderObjectWidget {

@@ -446,3 +446,137 @@ func TestTencentHTTPDiagnosticBodyReadKeepsOriginalCancellationPriority(t *testi
 		t.Fatal("bounded HTTP body diagnostic replaced original cancellation or retried")
 	}
 }
+
+// The original 2026-10-09 receipt captured HTTP 402 / 403004 / gateway, but
+// NOT_CAPTURED its response packet. These are minimal synthetic responses
+// based on those fixed fields, not a replay of the original provider body.
+const aiUnavailableSyntheticBody = `{"error":{"code":"403004","source":"gateway","message":"PRIVATE_BODY_SENTINEL https://private.example/?key=PRIVATE_KEY"}}`
+
+func TestTencentServiceAvailabilityExactTypedFailure(t *testing.T) {
+	for _, code := range []string{`"403004"`, `403004`} {
+		t.Run(code, func(t *testing.T) {
+			calls := 0
+			c := tencentTestConfig(t)
+			c.model = TencentTokenHubDeepSeekModel
+			a, e := NewTencentTokenHubAdapter(c, tencentRoundTripper(func(*http.Request) (*http.Response, error) {
+				calls++
+				return tencentResponse(strings.Replace(aiUnavailableSyntheticBody, `"403004"`, code, 1), 402), nil
+			}))
+			if e != nil {
+				t.Fatal(e)
+			}
+			raw, err := a.Complete(context.Background(), tencentRequest())
+			wrapped := WithLiveFailureReason(err, "provider_UNKNOWN")
+			var provider ProviderError
+			if raw != nil || calls != 1 || !errors.As(wrapped, &provider) || provider != (ProviderError{Code: "UNKNOWN"}) {
+				t.Fatal("availability classification changed the provider class or retried")
+			}
+			assertTencentHTTPDiagnosticRedacted(t, wrapped)
+			if !IsAIServiceUnavailable(err) || !IsAIServiceUnavailable(wrapped) || !IsAIServiceUnavailable(fmt.Errorf("fixed native wrapper: %w", wrapped)) {
+				t.Fatal("known typed 402/403004 lost AI unavailable classification")
+			}
+		})
+	}
+}
+
+func TestTencentServiceAvailabilityRejectsUnrelatedAndPriorityFailures(t *testing.T) {
+	known := tencentHTTPFailure(402, ProviderError{Code: "UNKNOWN"}, readTencentHTTPMetadata(strings.NewReader(aiUnavailableSyntheticBody)))
+	for _, tc := range []struct {
+		name string
+		err  error
+	}{
+		{"nil", nil}, {"text_lookalike", errors.New("MODEL stage=TENCENT_HTTP kind=HTTP status=402 reason=provider_UNKNOWN business=403004 source=gateway")},
+		{"provider_only", ProviderError{Code: "UNKNOWN"}},
+		{"cancelled", errors.Join(known, context.Canceled)}, {"deadline", errors.Join(known, context.DeadlineExceeded)},
+		{"gateway_unavailable", errors.Join(known, ErrUnavailable)}, {"adapter_invalid", errors.Join(known, ErrAdapter)},
+		{"prepare_invalid", errors.Join(known, ErrLivePreparation)}, {"request_invalid", errors.Join(known, ErrInvalid)},
+		{"current_priority", WithLiveFailureReason(known, "live_current_authority_unavailable")},
+		{"settlement_priority", WithLiveFailureReason(known, "live_release_or_settlement_unknown")},
+		{"wire_priority", WithLiveFailureReason(known, "live_wire_unavailable")},
+		{"joined_current_priority", errors.Join(known, WithLiveFailureReason(known, "live_current_authority_unavailable"))},
+		{"joined_settlement_priority", errors.Join(known, WithLiveFailureReason(known, "live_release_or_settlement_unknown"))},
+		{"joined_unknown_authority", errors.Join(known, errors.New("PRIVATE_UNKNOWN_AUTHORITY"))},
+		{"joined_authentication", errors.Join(known, ProviderError{Code: "AUTHENTICATION"})},
+		{"joined_unanchored_unknown", errors.Join(known, ProviderError{Code: "UNKNOWN"})},
+		{"wrapped_joined_unanchored_unknown", WithLiveFailureReason(errors.Join(known, ProviderError{Code: "UNKNOWN"}), "provider_UNKNOWN")},
+		{"joined_wrapped_unanchored_unknown", errors.Join(known, WithLiveFailureReason(ProviderError{Code: "UNKNOWN"}, "provider_UNKNOWN"))},
+		{"provider_auth_priority", WithLiveFailureReason(known, "provider_AUTHENTICATION")},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			if IsAIServiceUnavailable(tc.err) {
+				t.Fatal("unrelated or higher-priority failure became AI unavailable")
+			}
+		})
+	}
+	for _, tc := range []struct {
+		name, body string
+		status     int
+	}{
+		{"wrong_http", aiUnavailableSyntheticBody, 403}, {"generic_500", aiUnavailableSyntheticBody, 500},
+		{"missing_body", "", 402}, {"wrong_code", `{"error":{"code":"403005","source":"gateway"}}`, 402},
+		{"wrong_source", `{"error":{"code":"403004","source":"upstream"}}`, 402},
+		{"unknown_source", `{"error":{"code":"403004","source":"PRIVATE"}}`, 402},
+		{"missing_source", `{"error":{"code":"403004"}}`, 402},
+		{"body_message_only", `{"error":{"message":"403004 source=gateway"}}`, 402},
+		{"malformed", aiUnavailableSyntheticBody + " trailing", 402},
+		{"over_limit", aiUnavailableSyntheticBody + strings.Repeat(" ", maxTencentHTTPDiagnosticBytes), 402},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			calls := 0
+			a := tencentAdapter(t, tencentRoundTripper(func(*http.Request) (*http.Response, error) { calls++; return tencentResponse(tc.body, tc.status), nil }))
+			_, err := a.Complete(context.Background(), tencentRequest())
+			if calls != 1 || IsAIServiceUnavailable(err) {
+				t.Fatal("unreviewed HTTP/body combination became availability authority or retried")
+			}
+			assertTencentHTTPDiagnosticRedacted(t, err)
+		})
+	}
+}
+
+func TestTencentServiceAvailabilityNativeGatewayKeepsUnknownAndNoRetry(t *testing.T) {
+	for _, mode := range []string{"provider_only", "current_changed", "settlement_unknown", "cancelled"} {
+		t.Run(mode, func(t *testing.T) {
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+			port := &liveTestPort{}
+			calls := 0
+			c := tencentTestConfig(t)
+			c.model = TencentTokenHubDeepSeekModel
+			a, e := NewTencentTokenHubAdapter(c, tencentRoundTripper(func(*http.Request) (*http.Response, error) {
+				calls++
+				if mode == "current_changed" {
+					port.denied.Store(true)
+				}
+				if mode == "cancelled" {
+					cancel()
+				}
+				return tencentResponse(aiUnavailableSyntheticBody, 402), nil
+			}))
+			if e != nil {
+				t.Fatal(e)
+			}
+			if mode == "settlement_unknown" {
+				port.onSettle = func(context.Context, Request, PreparedTencentWire) error {
+					return errors.New("PRIVATE_SETTLE_SENTINEL")
+				}
+			}
+			g, e := NewNativeLiveGateway(&fakeGate{true}, a, port)
+			if e != nil {
+				t.Fatal(e)
+			}
+			r, err := g.Complete(ctx, liveTestRequest())
+			assertNoLiveText(t, r, err)
+			if calls != 1 || port.releases.Load() != 1 || port.settles.Load() != 1 || r.Usage.CostStatus != "UNKNOWN" || IsAIServiceUnavailable(err) != (mode == "provider_only") {
+				t.Fatal("native service failure retried, settled as known, or replaced a current/settlement/cancel failure", r.ReasonCode)
+			}
+			if mode == "provider_only" {
+				assertModelDiagnostic(t, err, "TENCENT_HTTP", "HTTP", 402, "provider_UNKNOWN")
+				var p ProviderError
+				if r.ReasonCode != "provider_UNKNOWN" || !errors.As(err, &p) || p.Retryable {
+					t.Fatal("provider retry contract changed")
+				}
+			}
+			assertTencentHTTPDiagnosticRedacted(t, err)
+		})
+	}
+}

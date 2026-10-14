@@ -9,6 +9,7 @@ import (
 	"github.com/birdtie/birdtie/apps/api/internal/media"
 	"github.com/jackc/pgx/v5"
 	"os"
+	"regexp"
 	"strings"
 	"testing"
 )
@@ -16,6 +17,58 @@ import (
 type imageGateRow struct {
 	value bool
 	err   error
+}
+
+// Compare the independent schema contract with both actual INSERTs. Native
+// Moment-photo coverage exercises canonical Save, exact replay and retirement;
+// this direct oracle catches a missing NOT NULL audit field before a DB run.
+func TestPrivateMomentImageAuditRequiredSchemaFields(t *testing.T) {
+	ddl, err := os.ReadFile("../../migrations/001_foundation.sql")
+	if err != nil {
+		t.Fatal(err)
+	}
+	text := string(ddl)
+	start := strings.Index(text, "CREATE TABLE IF NOT EXISTS audit_events (")
+	if start < 0 {
+		t.Fatal("canonical audit schema absent")
+	}
+	table := text[start:]
+	end := strings.Index(table, ");")
+	if end < 0 {
+		t.Fatal("canonical audit schema incomplete")
+	}
+	required := map[string]bool{}
+	field := regexp.MustCompile(`(?m)^\s*([a-z_]+)\s+([^\n]*\bNOT NULL\b[^\n]*)$`)
+	serverValue := regexp.MustCompile(`(?i)\b(DEFAULT|GENERATED)\b`)
+	for _, match := range field.FindAllStringSubmatch(table[:end], -1) {
+		if serverValue.MatchString(match[2]) {
+			continue
+		}
+		required[match[1]] = true
+	}
+	if !required["decision"] || !required["purpose"] {
+		t.Fatal("required-field oracle did not capture the canonical audit contract")
+	}
+	raw, err := os.ReadFile("human_moment_media.go")
+	if err != nil {
+		t.Fatal(err)
+	}
+	insert := regexp.MustCompile(`INSERT INTO audit_events\(([^)]+)\) VALUES\([^` + "`" + `]+\)`)
+	statements := insert.FindAllStringSubmatch(string(raw), -1)
+	if len(statements) != 2 {
+		t.Fatal("expected the actual private save and delete audit statements")
+	}
+	for _, statement := range statements {
+		columns := map[string]bool{}
+		for _, name := range strings.Split(statement[1], ",") {
+			columns[strings.TrimSpace(name)] = true
+		}
+		for name := range required {
+			if !columns[name] {
+				t.Error("actual private image audit omits required schema field", name)
+			}
+		}
+	}
 }
 
 func (r imageGateRow) Scan(p ...any) error {

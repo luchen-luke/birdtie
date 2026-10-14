@@ -62,7 +62,7 @@ class NowFixtureCity extends PublicCityController {
   }
 
   @override
-  void selectCity(String id) {
+  void selectCity(String id, {bool rememberExploration = true}) {
     selection = catalog.singleWhere((c) => c.id == id);
     selections++;
     notifyListeners();
@@ -216,7 +216,7 @@ void main() {
     final f = NowFixture(selected: false);
     addTearDown(f.dispose);
     await f.mount(t, safeBottom: 20);
-    await nowTap(t, find.text('当前：未选城市'));
+    await nowTap(t, find.byKey(const Key('now-city-picker')));
     final rect = t.getRect(find.byType(BottomSheet));
     debugPrintSynchronously(
       (jsonEncode({
@@ -227,7 +227,7 @@ void main() {
     );
     expect(rect.top, greaterThanOrEqualTo(24));
     expect(rect.height, lessThanOrEqualTo(844 * .7 + 48));
-    expect(find.byTooltip('取消选择城市与范围').hitTestable(), findsOneWidget);
+    expect(find.byTooltip('关闭城市选择').hitTestable(), findsOneWidget);
     expect(f.source.queries, isEmpty);
     await nowBack(t);
     expect(f.city.selectedCity, isNull);
@@ -242,7 +242,7 @@ void main() {
     await nowSend(t, '找周末的地点');
     final task = f.workspace(t).task;
     await nowTap(t, find.text('选择城市继续'));
-    await nowTap(t, find.byTooltip('取消选择城市与范围'));
+    await nowTap(t, find.byTooltip('关闭城市选择'));
     expect(find.byType(BottomSheet), findsNothing);
     expect(identical(f.workspace(t).task, task), true);
     expect(f.workspace(t).pendingScopeQuery, '找周末的地点');
@@ -250,12 +250,24 @@ void main() {
     expect(find.text('选择城市继续'), findsOneWidget);
     expect(find.textContaining('0 个'), findsNothing);
     await nowTap(t, find.text('选择城市继续'));
-    await nowTap(t, find.text('甲验收城市'));
+    await nowTap(
+      t,
+      find.descendant(
+        of: find.byType(BottomSheet),
+        matching: find.text('甲验收城市'),
+      ),
+    );
     expect(f.source.queries, ['找周末的地点']);
     expect(f.source.scopes, ['alpha']);
     expect(f.workspace(t).pendingScopeQuery, isNull);
-    await nowTap(t, find.text('当前：甲验收城市'));
-    await nowTap(t, find.text('甲验收城市'));
+    await nowTap(t, find.byKey(const Key('now-city-picker')));
+    await nowTap(
+      t,
+      find.descendant(
+        of: find.byType(BottomSheet),
+        matching: find.text('甲验收城市'),
+      ),
+    );
     expect(f.source.queries.length, 1);
     expect(t.takeException(), isNull);
     await f.unmount(t);
@@ -273,14 +285,26 @@ void main() {
       find.byKey(const Key('now-city-picker')).hitTestable(),
       findsOneWidget,
     );
-    expect(find.text('当前：未选城市'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('now-city-picker')),
+        matching: find.text('未选城市'),
+      ),
+      findsOneWidget,
+    );
     await nowSend(t, 'weekend');
     final task = f.workspace(t).task;
     expect(f.workspace(t).queryState, AgentQueryState.needsScope);
     expect(f.workspace(t).pendingScopeQuery, 'weekend');
     expect(find.text('选择城市继续'), findsOneWidget);
     expect(find.text('选择城市'), findsNothing);
-    expect(find.text('当前：未选城市'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('now-city-picker')),
+        matching: find.text('未选城市'),
+      ),
+      findsOneWidget,
+    );
     final unscoped = t.widget<PublicCityMapView>(map);
     expect(unscoped.city, isNull);
     expect(unscoped.entities, isEmpty);
@@ -292,14 +316,20 @@ void main() {
     expect(identical(element, map.evaluate().single), true);
     expect(identical(state, t.state(map)), true);
     await nowTap(t, find.text('选择城市继续'));
-    expect(find.text('选择城市与范围'), findsOneWidget); // Actual picker only.
+    expect(find.text('选择城市'), findsOneWidget); // Actual picker only.
     await nowBack(t);
-    expect(find.text('选择城市与范围'), findsNothing);
+    expect(find.text('选择城市'), findsNothing);
     expect(find.text('选择城市继续'), findsOneWidget);
     expect(identical(f.workspace(t).task, task), true);
     expect(f.source.queries, isEmpty);
     await nowTap(t, find.text('选择城市继续'));
-    await nowTap(t, find.text('甲验收城市'));
+    await nowTap(
+      t,
+      find.descendant(
+        of: find.byType(BottomSheet),
+        matching: find.text('甲验收城市'),
+      ),
+    );
     expect(f.source.queries, ['weekend']);
     expect(f.source.scopes, ['alpha']);
     expect(f.workspace(t).pendingScopeQuery, isNull);
@@ -323,15 +353,21 @@ void main() {
     final f = NowFixture(selected: false);
     addTearDown(f.dispose);
     await f.mount(t);
-    await nowTap(t, find.text('当前：未选城市'));
+    await nowTap(t, find.byKey(const Key('now-city-picker')));
     expect(
       find.descendant(
         of: find.byType(BottomSheet),
-        matching: find.text('选择城市与范围'),
+        matching: find.text('选择城市'),
       ),
       findsOneWidget,
     );
-    await nowTap(t, find.text('甲验收城市'));
+    await nowTap(
+      t,
+      find.descendant(
+        of: find.byType(BottomSheet),
+        matching: find.text('甲验收城市'),
+      ),
+    );
     expect(f.city.selectedCity?.id, 'alpha');
     await f.unmount(t);
   });
@@ -359,8 +395,14 @@ void main() {
     expect(f.source.queries, isEmpty);
     expect(f.workspace(t).task?.id, original);
     expect(f.workspace(t).pendingScopeQuery, '找周末的组织');
-    await nowTap(t, find.text('当前：未选城市'));
-    await nowTap(t, find.text('甲验收城市'));
+    await nowTap(t, find.byKey(const Key('now-city-picker')));
+    await nowTap(
+      t,
+      find.descendant(
+        of: find.byType(BottomSheet),
+        matching: find.text('甲验收城市'),
+      ),
+    );
     expect(f.source.queries, ['找周末的组织']);
     expect(f.source.scopes, ['alpha']);
     expect(
@@ -371,8 +413,14 @@ void main() {
           .map((m) => m.text),
       ['找周末的组织'],
     );
-    await nowTap(t, find.text('当前：甲验收城市'));
-    await nowTap(t, find.text('甲验收城市'));
+    await nowTap(t, find.byKey(const Key('now-city-picker')));
+    await nowTap(
+      t,
+      find.descendant(
+        of: find.byType(BottomSheet),
+        matching: find.text('甲验收城市'),
+      ),
+    );
     expect(f.source.queries.length, 1);
     await f.unmount(t);
   });
@@ -413,10 +461,16 @@ void main() {
       }
       expect(f.source.queries, isEmpty);
       expect(f.workspace(t).pendingScopeQuery, isNull);
-      expect(find.text('账号或工作身份已变化，请关闭后重新选择。'), findsOneWidget);
+      expect(find.text('城市目录已变化，请关闭后重新选择。'), findsOneWidget);
       await nowBack(t);
-      await nowTap(t, find.text('当前：未选城市'));
-      await nowTap(t, find.text('甲验收城市'));
+      await nowTap(t, find.byKey(const Key('now-city-picker')));
+      await nowTap(
+        t,
+        find.descendant(
+          of: find.byType(BottomSheet),
+          matching: find.text('甲验收城市'),
+        ),
+      );
       expect(f.source.queries, isEmpty);
       await nowSend(t, '找当前地点');
       expect(f.source.queries, ['找当前地点']);

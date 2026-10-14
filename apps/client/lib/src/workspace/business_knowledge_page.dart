@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'business_api.dart';
 import 'business_knowledge_api.dart';
 import 'business_knowledge_controller.dart';
+import '../app/birdtie_app_bar.dart';
 
 class BusinessKnowledgePage extends StatefulWidget {
   const BusinessKnowledgePage({
@@ -92,14 +93,14 @@ class _BusinessKnowledgePageState extends State<BusinessKnowledgePage>
   Widget build(BuildContext context) => AnimatedBuilder(
     animation: c,
     builder: (context, _) => Scaffold(
-      appBar: AppBar(title: const Text('商家资料回答')),
+      appBar: birdtieAppBar(context, title: const Text('商家资料回答')),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(20),
           children: [
-            const Text(
+            Text(
               '以本人管理身份查看已核验资料',
-              style: TextStyle(fontWeight: FontWeight.bold),
+              style: Theme.of(context).textTheme.titleMedium,
             ),
             if (c.businessName.isNotEmpty) Text('当前商家：${c.businessName}'),
             const SizedBox(height: 12),

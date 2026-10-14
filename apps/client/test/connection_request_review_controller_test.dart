@@ -47,15 +47,25 @@ class ReviewHarness {
         if (beforeResponse != null) await beforeResponse!();
         final result = decisionWire(row, action!);
         responseChange?.call(result);
-        final failure = postBody ?? (postStatus == 409 ? {'error': {'code': 'connection_conflict'}} : null);
-        return failure == null ? reviewJSON(result, postStatus) : http.Response.bytes(
-          utf8.encode(jsonEncode(failure)), postStatus,
-          headers: {'Content-Type': 'application/json; charset=utf-8'},
-        );
+        final failure =
+            postBody ??
+            (postStatus == 409
+                ? {
+                    'error': {'code': 'connection_conflict'},
+                  }
+                : null);
+        return failure == null
+            ? reviewJSON(result, postStatus)
+            : http.Response.bytes(
+                utf8.encode(jsonEncode(failure)),
+                postStatus,
+                headers: {'Content-Type': 'application/json; charset=utf-8'},
+              );
       }
       gets++;
       if (listErrorAfterPost && posts > 0) return reviewJSON({}, 503);
-      return reviewJSON(missing ? [] : [row]);
+      expect(r.url.path, '/v1/me/connection-requests/$reviewID');
+      return reviewJSON(missing ? null : row, missing ? 404 : 200);
     }, httpTrace);
     source = ConnectionSource(
       authorizationHeader: () {
@@ -127,31 +137,45 @@ class ReviewFaultStore implements ConnectionReviewPendingStore {
   bool failRead = false, failWrite = false, failDelete = false;
   Future<void> Function()? beforeRead, afterWrite, beforeDelete;
   @override
-  Future<PendingConnectionReview?> read(String environment, String owner, String request) async {
+  Future<PendingConnectionReview?> read(
+    String environment,
+    String owner,
+    String request,
+  ) async {
     await beforeRead?.call();
     if (failRead) throw StateError('synthetic private storage failure');
     return inner.read(environment, owner, request);
   }
+
   @override
   Future<void> write(String environment, PendingConnectionReview value) async {
     if (failWrite) throw StateError('synthetic private storage failure');
     await inner.write(environment, value);
     await afterWrite?.call();
   }
+
   @override
-  Future<bool> compareDelete(String environment, PendingConnectionReview value) async {
+  Future<bool> compareDelete(
+    String environment,
+    PendingConnectionReview value,
+  ) async {
     await beforeDelete?.call();
     if (failDelete) throw StateError('synthetic private storage failure');
     return inner.compareDelete(environment, value);
   }
 }
 
-ConnectionRequestReviewController reopenReview(ReviewHarness h) => ConnectionRequestReviewController(
-  requestID: reviewID, source: h.source, accountID: () => h.owner,
-  authorizationHeader: () => h.token, organizationWorkspaceID: () => h.workspace,
-  current: () => h.valid, now: () => DateTime.utc(2026, 10, 6, 9),
-  pendingStore: h.pendingStore,
-);
+ConnectionRequestReviewController reopenReview(ReviewHarness h) =>
+    ConnectionRequestReviewController(
+      requestID: reviewID,
+      source: h.source,
+      accountID: () => h.owner,
+      authorizationHeader: () => h.token,
+      organizationWorkspaceID: () => h.workspace,
+      current: () => h.valid,
+      now: () => DateTime.utc(2026, 10, 6, 9),
+      pendingStore: h.pendingStore,
+    );
 
 void main() {
   test('申请决定恢复：关闭重开同pending只能GET且不能复活旧批准', () async {
@@ -181,18 +205,30 @@ void main() {
     expect(reopened.preview('accept'), null);
     expect(reopened.preview('decline'), null);
     expect(reopened.receipt, null);
-    expect(reopened.message, contains('不是本次操作回执'));
+    expect(
+      reopened.message,
+      allOf(contains('结果仍未确认'), contains('不是本次操作结果'), contains('不会重复提交')),
+    );
     expect(h.posts, 1);
   });
   for (final status in [400, 401, 403, 404, 409, 422, 500, 503]) {
     test('申请决定恢复：HTTP$status无原拒绝code重开仍未知而非未生效', () async {
-      final h = ReviewHarness(postStatus: status, postBody: {'error': {'code': 'message_policy_changed'}});
+      final h = ReviewHarness(
+        postStatus: status,
+        postBody: {
+          'error': {'code': 'message_policy_changed'},
+        },
+      );
       await h.data.load();
       await h.data.submit(h.data.preview('accept')!);
       expect(h.data.uncertain, true);
       h.data.dispose();
       final reopened = reopenReview(h);
-      addTearDown(() {reopened.dispose();h.source.dispose();h.client.close();});
+      addTearDown(() {
+        reopened.dispose();
+        h.source.dispose();
+        h.client.close();
+      });
       await reopened.load();
       expect(reopened.uncertain, true);
       expect(reopened.canAct('accept'), false);
@@ -200,7 +236,14 @@ void main() {
       expect(h.posts, 1);
     });
   }
-  for (final state in ['pending', 'accepted', 'declined', 'withdrawn', 'expired', 'missing']) {
+  for (final state in [
+    'pending',
+    'accepted',
+    'declined',
+    'withdrawn',
+    'expired',
+    'missing',
+  ]) {
     test('申请决定恢复：当前$state不构成原操作回执或清除引用', () async {
       final h = ReviewHarness(postStatus: 503);
       await h.data.load();
@@ -209,14 +252,21 @@ void main() {
       h.row = reviewRequest(state: state == 'missing' ? 'pending' : state);
       h.missing = state == 'missing';
       final reopened = reopenReview(h);
-      addTearDown(() {reopened.dispose();h.source.dispose();h.client.close();});
+      addTearDown(() {
+        reopened.dispose();
+        h.source.dispose();
+        h.client.close();
+      });
       await reopened.load();
       await reopened.load();
       expect(reopened.uncertain, true);
       expect(reopened.pendingReference, isNotNull);
       expect(reopened.receipt, null);
       expect(reopened.preview('accept'), null);
-      expect(reopened.message, contains('不是本次操作回执'));
+      expect(
+        reopened.message,
+        allOf(contains('结果仍未确认'), contains('不是本次操作结果'), contains('不会重复提交')),
+      );
       expect(h.posts, 1);
     });
   }
@@ -242,12 +292,14 @@ void main() {
     });
   }
   test('申请决定恢复：损坏本机引用failclosed而非空记录', () async {
-    final store = MemoryConnectionReviewPendingStore(), h = ReviewHarness(pendingStore: store);
+    final store = MemoryConnectionReviewPendingStore(),
+        h = ReviewHarness(pendingStore: store);
     addTearDown(h.dispose);
     await h.data.load();
     await h.data.submit(h.data.preview('accept')!);
     // A valid successful receipt cleared the first reference; generate UNKNOWN.
-    final store2 = ReviewFaultStore(), second = ReviewHarness(postStatus: 503, pendingStore: store2);
+    final store2 = ReviewFaultStore(),
+        second = ReviewHarness(postStatus: 503, pendingStore: store2);
     addTearDown(second.dispose);
     await second.data.load();
     await second.data.submit(second.data.preview('accept')!);
@@ -257,22 +309,36 @@ void main() {
     expect(second.data.canAct('accept'), false);
     expect(second.posts, 1);
   });
-  for (final boundary in ['token', 'owner', 'organization', 'source', 'boundary']) {
+  for (final boundary in [
+    'token',
+    'owner',
+    'organization',
+    'source',
+    'boundary',
+  ]) {
     test('申请决定恢复：落盘等待期间$boundary通知ABA永退且零POST', () async {
       final store = ReviewFaultStore(), h = ReviewHarness(pendingStore: store);
       addTearDown(h.dispose);
       await h.data.load();
       store.afterWrite = () async {
         switch (boundary) {
-          case 'token': h.token = 'Bearer other';
-          case 'owner': h.owner = reviewPeer;
-          case 'organization': h.workspace = reviewPeer;
-          case 'source': h.sourceToken = 'Bearer other';
-          case 'boundary': h.valid = false;
+          case 'token':
+            h.token = 'Bearer other';
+          case 'owner':
+            h.owner = reviewPeer;
+          case 'organization':
+            h.workspace = reviewPeer;
+          case 'source':
+            h.sourceToken = 'Bearer other';
+          case 'boundary':
+            h.valid = false;
         }
         h.data.synchronizeIdentity();
-        h.token = 'Bearer synthetic-review-session'; h.owner = reviewOwner;
-        h.workspace = null; h.sourceToken = null; h.valid = true;
+        h.token = 'Bearer synthetic-review-session';
+        h.owner = reviewOwner;
+        h.workspace = null;
+        h.sourceToken = null;
+        h.valid = true;
       };
       await h.data.submit(h.data.preview('accept')!);
       expect(h.data.retired, true);
@@ -285,7 +351,9 @@ void main() {
     final store = ReviewFaultStore(), h = ReviewHarness(pendingStore: store);
     addTearDown(h.dispose);
     await h.data.load();
-    store.afterWrite = () async {h.row['note'] = '服务中的说明已更新';};
+    store.afterWrite = () async {
+      h.row['note'] = '服务中的说明已更新';
+    };
     await h.data.submit(h.data.preview('accept')!);
     expect(h.posts, 0);
     expect(h.data.receipt, null);
@@ -298,8 +366,13 @@ void main() {
     addTearDown(h.dispose);
     await h.data.load();
     store.beforeDelete = () async {
-      store.inner.values.updateAll((key, raw) => jsonEncode((jsonDecode(raw) as Map<String,dynamic>)
-        ..['referenceId'] = reviewPeer..['action'] = 'decline'));
+      store.inner.values.updateAll(
+        (key, raw) => jsonEncode(
+          (jsonDecode(raw) as Map<String, dynamic>)
+            ..['referenceId'] = reviewPeer
+            ..['action'] = 'decline',
+        ),
+      );
     };
     await h.data.submit(h.data.preview('accept')!);
     expect(h.data.receipt!.state, 'accepted');
@@ -337,7 +410,9 @@ void main() {
       };
     };
     await h.data.load();
-    debugPrintSynchronously(('Unit synchronous client send ordering: ${h.httpTrace}').toString());
+    debugPrintSynchronously(
+      ('Unit synchronous client send ordering: ${h.httpTrace}').toString(),
+    );
     expect(h.data.retired, true);
     expect(h.httpTrace, ['send:GET', 'retirement_notification']);
     expect(h.gets, 1);
@@ -353,7 +428,11 @@ void main() {
     h.data.dispose();
     h.token = 'Bearer new-valid-fixture-session';
     final reopened = reopenReview(h);
-    addTearDown(() {reopened.dispose();h.source.dispose();h.client.close();});
+    addTearDown(() {
+      reopened.dispose();
+      h.source.dispose();
+      h.client.close();
+    });
     await reopened.load();
     expect(reopened.retired, false);
     expect(reopened.uncertain, true);
@@ -363,10 +442,14 @@ void main() {
     expect(h.posts, 1);
   });
   test('申请决定恢复：原invalid_decision400拒绝code才能清引用，状态400本身不够', () async {
-    final store = MemoryConnectionReviewPendingStore(), h = ReviewHarness(
-      pendingStore: store, postStatus: 400,
-      postBody: {'error': {'code': 'invalid_decision'}},
-    );
+    final store = MemoryConnectionReviewPendingStore(),
+        h = ReviewHarness(
+          pendingStore: store,
+          postStatus: 400,
+          postBody: {
+            'error': {'code': 'invalid_decision'},
+          },
+        );
     addTearDown(h.dispose);
     await h.data.load();
     await h.data.submit(h.data.preview('accept')!);
@@ -429,7 +512,10 @@ void main() {
       await h.data.load();
       expect(h.data.request!.state, 'accepted');
       expect(h.data.receipt, null);
-      expect(h.data.message, contains('不是本次操作回执'));
+      expect(
+        h.data.message,
+        allOf(contains('结果仍未确认'), contains('不是本次操作结果'), contains('不会重复提交')),
+      );
       expect(h.data.preview('accept'), null);
       expect(h.posts, 1);
     });

@@ -4,10 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
 
+import '../app/birdtie_app_bar.dart';
 import '../city/public_city_controller.dart';
 import 'business_api.dart';
 import 'supplier_profile_api.dart';
 import 'connections.dart';
+import 'human_causal_operation_controller.dart';
 import 'entity_action_contract.dart';
 import 'entity_action_dispatcher.dart';
 
@@ -20,6 +22,7 @@ class PublicBusinessPage extends StatefulWidget {
     required this.onOpenActivity,
     this.workspaceID,
     this.identityChanges,
+    this.ownerID,
     this.apiBaseUrl,
     this.client,
     this.openExternal,
@@ -28,6 +31,7 @@ class PublicBusinessPage extends StatefulWidget {
   final String? Function() authorizationHeader;
   final String? Function()? workspaceID;
   final Listenable? identityChanges;
+  final String? Function()? ownerID;
   final ValueChanged<PublicActivity> onOpenActivity;
   final String? apiBaseUrl;
   final http.Client? client;
@@ -58,16 +62,31 @@ class _PublicBusinessPageState extends State<PublicBusinessPage> {
         if (!current()) return;
         await shareEntityToChat(
           context,
-          authorizationHeader: () => current() ? identity.$1 : null,
-          identityChanges: widget.identityChanges,
-          workspaceID: widget.workspaceID,
-          client: widget.client,
+          authorizationHeader: () => widget.authorizationHeader(),
+          identityChanges: _shareSource,
+          ownerID: widget.ownerID == null ? null : () => widget.ownerID?.call(),
+          workspaceID: () => widget.workspaceID?.call(),
+          sourceKey: () => _shareSource.generation,
+          sourceCurrent: () => mounted,
           type: 'business',
           id: id,
           apiBaseUrl: widget.apiBaseUrl,
+          client: widget.client,
         );
       },
     );
+  }
+
+  final _shareSource = HumanCausalSourceSerial();
+  void _observeShareSource() {
+    _shareSource.observe((
+      widget.businessID,
+      widget.client,
+      widget.apiBaseUrl,
+      widget.ownerID?.call(),
+      widget.workspaceID?.call(),
+    ));
+    _shareSource.notifyReadBindingChanged();
   }
 
   late SupplierProfileApi _api;
@@ -81,6 +100,7 @@ class _PublicBusinessPageState extends State<PublicBusinessPage> {
   @override
   void initState() {
     super.initState();
+    _observeShareSource();
     _identity = _current;
     _api = SupplierProfileApi(
       authorizationHeader: () => widget.authorizationHeader(),
@@ -93,6 +113,7 @@ class _PublicBusinessPageState extends State<PublicBusinessPage> {
   }
 
   void _changed() {
+    _observeShareSource();
     if (_identity == _current) return;
     _identity = _current;
     _epoch++;
@@ -104,6 +125,7 @@ class _PublicBusinessPageState extends State<PublicBusinessPage> {
   @override
   void didUpdateWidget(PublicBusinessPage old) {
     super.didUpdateWidget(old);
+    _observeShareSource();
     final transportChanged =
         !identical(old.client, widget.client) ||
         old.apiBaseUrl != widget.apiBaseUrl;
@@ -135,6 +157,7 @@ class _PublicBusinessPageState extends State<PublicBusinessPage> {
 
   @override
   void dispose() {
+    _shareSource.dispose();
     _epoch++;
     widget.identityChanges?.removeListener(_changed);
     _api.dispose();
@@ -212,7 +235,7 @@ class _PublicBusinessPageState extends State<PublicBusinessPage> {
   Widget build(BuildContext context) {
     final p = _profile;
     return Scaffold(
-      appBar: AppBar(title: const Text('商家资料')),
+      appBar: birdtieAppBar(context, title: const Text('商家资料')),
       body: SafeArea(
         child: _loading
             ? const Center(child: CircularProgressIndicator())

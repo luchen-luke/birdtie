@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../app/birdtie_app_bar.dart';
 import '../auth/birdtie_auth_controller.dart';
 import '../city/public_city_controller.dart';
 import 'business_api.dart';
@@ -26,6 +27,15 @@ String businessRoleLabel(dynamic role) => switch (role) {
   'reviewer' => '独立审核员',
   _ => '无管理权限',
 };
+String _memberLabel(BusinessConsoleSnapshot snapshot, BusinessMember member) {
+  final name = member.displayName;
+  final needsPosition =
+      name == null ||
+      snapshot.existingMembers.where((m) => m.displayName == name).length > 1;
+  final position = snapshot.existingMembers.indexOf(member) + 1;
+  return '${name ?? '账号资料暂不可用'}${needsPosition ? ' · 名单第$position位' : ''}';
+}
+
 const _labels = {
   'expectedVersion': '当前资料版本',
   'name': '商家名称',
@@ -176,170 +186,254 @@ class _BusinessConsolePageState extends State<BusinessConsolePage> {
   }) async {
     final frameController = c, frameApi = _api;
     final bindingEpoch = _bindingEpoch;
-    bool frameCurrent() =>
-        mounted &&
-        !_disposed &&
-        bindingEpoch == _bindingEpoch &&
-        identical(c, frameController) &&
-        identical(_api, frameApi);
+    final memberSnapshot = kind == 'member' ? c.snapshot : null;
+    final memberBusinessID = c.selectedID;
+    var memberRetired = false;
+    bool frameCurrent() {
+      final current =
+          mounted &&
+          !_disposed &&
+          bindingEpoch == _bindingEpoch &&
+          identical(c, frameController) &&
+          identical(_api, frameApi);
+      if (kind == 'member' &&
+          (!current ||
+              c.loading ||
+              c.selectedID != memberBusinessID ||
+              !identical(c.snapshot, memberSnapshot) ||
+              memberSnapshot?.canManageMembers != true)) {
+        memberRetired = true;
+      }
+      return current && !memberRetired;
+    }
+
     if (initialDraft != null &&
         (draftGeneration != c.generation || !c.personal)) {
       return;
     }
     final editorGeneration = c.generation;
-    final draft = await Navigator.of(context).push<BusinessDraft>(
-      MaterialPageRoute(
-        builder: (_) => _BusinessEditor(
-          controller: c,
-          kind: kind,
-          resource: resource,
-          existing: facts,
-          initialDraft: initialDraft,
-          expectedGeneration: editorGeneration,
-          places: widget.city.places,
-          frameCurrent: frameCurrent,
-          bindingChanges: _bindingChanges,
+    void sourceChanged() {
+      frameCurrent();
+    }
+
+    if (kind == 'member') frameController.addListener(sourceChanged);
+    try {
+      final draft = await Navigator.of(context).push<BusinessDraft>(
+        MaterialPageRoute(
+          builder: (_) => _BusinessEditor(
+            controller: c,
+            kind: kind,
+            resource: resource,
+            existing: facts,
+            initialDraft: initialDraft,
+            expectedGeneration: editorGeneration,
+            places: widget.city.places,
+            frameCurrent: frameCurrent,
+            bindingChanges: _bindingChanges,
+          ),
         ),
-      ),
-    );
-    if (!mounted || !frameCurrent() || draft == null) return;
-    c.edit(draft);
-    final approval = c.preview();
-    if (approval == null) return;
-    bool checked = false;
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, set) => AnimatedBuilder(
-          animation: Listenable.merge([frameController, _bindingChanges]),
-          builder: (context, _) {
-            if (!frameCurrent() || !c.isApprovalCurrent(approval)) {
+      );
+      if (!mounted || !frameCurrent() || draft == null) return;
+      c.edit(draft);
+      final approval = c.preview();
+      if (approval == null) return;
+      bool checked = false;
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (context) => StatefulBuilder(
+          builder: (context, set) => AnimatedBuilder(
+            animation: Listenable.merge([frameController, _bindingChanges]),
+            builder: (context, _) {
+              if (!frameCurrent() || !c.isApprovalCurrent(approval)) {
+                return AlertDialog(
+                  title: Text(
+                    approval.generation != c.generation || !c.personal
+                        ? '工作身份已变化'
+                        : '资料或权限已变化',
+                  ),
+                  content: const Text('旧预览已失效，请返回并重新读取资料。'),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, false),
+                      child: const Text('返回'),
+                    ),
+                  ],
+                );
+              }
               return AlertDialog(
-                title: Text(
-                  approval.generation != c.generation || !c.personal
-                      ? '工作身份已变化'
-                      : '资料或权限已变化',
+                title: const Text('核对后再提交'),
+                content: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '本人账号：${widget.auth.displayName ?? '当前登录账号'}\n商家：${c.snapshot?.business.name ?? draft.body['name'] ?? '新商家'}',
+                      ),
+                      const SizedBox(height: 16),
+                      if (draft.kind == 'member') ...[
+                        Text(
+                          '对方：${memberSnapshot!.existingMembers.where((m) => m.personID == draft.body['targetPersonId']).map((m) => '${_memberLabel(memberSnapshot, m)} · ${businessRoleLabel(m.role)}').firstOrNull ?? '待添加账号（姓名尚未核验）'}',
+                        ),
+                        // Local, explicit identification remains available where
+                        // duplicate/missing names cannot identify this target.
+                        if (memberSnapshot.existingMembers
+                                .where(
+                                  (m) =>
+                                      m.personID ==
+                                      draft.body['targetPersonId'],
+                                )
+                                .firstOrNull
+                            case final target?)
+                          if (target.displayName == null ||
+                              memberSnapshot.existingMembers
+                                      .where(
+                                        (m) =>
+                                            m.displayName == target.displayName,
+                                      )
+                                      .length >
+                                  1)
+                            SelectableText('账号标识：${target.personID}'),
+                        if (!memberSnapshot.existingMembers.any(
+                          (m) => m.personID == draft.body['targetPersonId'],
+                        ))
+                          SelectableText(
+                            '账号标识：${draft.body['targetPersonId']}',
+                          ),
+                        Text(
+                          _humanValue({
+                            for (final e in approval.draft.body.entries)
+                              if (e.key != 'targetPersonId') e.key: e.value,
+                          }),
+                        ),
+                      ] else
+                        Text(_humanValue(approval.draft.body)),
+                      if (draft.kind == 'review' && facts != null) ...[
+                        const SizedBox(height: 12),
+                        const Text('本次核验的具体材料'),
+                        Text(
+                          _humanValue({
+                            for (final key in [
+                              'name',
+                              'description',
+                              'facts',
+                              'sourceUrl',
+                              'rightsNote',
+                              'validUntil',
+                            ])
+                              if (facts.containsKey(key)) key: facts[key],
+                          }),
+                        ),
+                      ],
+                      if (draft.placeID != null)
+                        Text(
+                          '场地：${widget.city.places.where((p) => p.id == draft.placeID).firstOrNull?.name ?? draft.placeID}',
+                        ),
+                      const SizedBox(height: 12),
+                      Text(
+                        draft.kind == 'member'
+                            ? '提交后直接更改成员权限；转交后你将不再是所有者。'
+                            : draft.kind == 'review'
+                            ? '仅核验这个具体版本，不会批准后续编辑。'
+                            : '提交后进入待审核；填写资料不等于已核验经营权。',
+                      ),
+                      CheckboxListTile(
+                        contentPadding: EdgeInsets.zero,
+                        value: checked,
+                        onChanged: (v) => set(() => checked = v == true),
+                        title: const Text('我已核对当前主体、资料和后果'),
+                      ),
+                    ],
+                  ),
                 ),
-                content: const Text('旧预览已失效，请返回并重新读取资料。'),
                 actions: [
                   TextButton(
                     onPressed: () => Navigator.pop(context, false),
-                    child: const Text('返回'),
+                    child: const Text('返回修改'),
+                  ),
+                  FilledButton(
+                    onPressed: checked
+                        ? () => Navigator.pop(context, true)
+                        : null,
+                    child: const Text('确认提交'),
                   ),
                 ],
               );
-            }
-            return AlertDialog(
-              title: const Text('核对后再提交'),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '本人账号：${widget.auth.displayName ?? '当前登录账号'}\n商家：${c.snapshot?.business.name ?? draft.body['name'] ?? '新商家'}',
-                    ),
-                    const SizedBox(height: 16),
-                    Text(_humanValue(approval.draft.body)),
-                    if (draft.kind == 'review' && facts != null) ...[
-                      const SizedBox(height: 12),
-                      const Text('本次核验的具体材料'),
-                      Text(
-                        _humanValue({
-                          for (final key in [
-                            'name',
-                            'description',
-                            'facts',
-                            'sourceUrl',
-                            'rightsNote',
-                            'validUntil',
-                          ])
-                            if (facts.containsKey(key)) key: facts[key],
-                        }),
-                      ),
-                    ],
-                    if (draft.placeID != null)
-                      Text(
-                        '场地：${widget.city.places.where((p) => p.id == draft.placeID).firstOrNull?.name ?? draft.placeID}',
-                      ),
-                    const SizedBox(height: 12),
-                    Text(
-                      draft.kind == 'member'
-                          ? '提交后直接更改成员权限；转交后你将不再是所有者。'
-                          : draft.kind == 'review'
-                          ? '仅核验这个具体版本，不会批准后续编辑。'
-                          : '提交后进入待审核；填写资料不等于已核验经营权。',
-                    ),
-                    CheckboxListTile(
-                      contentPadding: EdgeInsets.zero,
-                      value: checked,
-                      onChanged: (v) => set(() => checked = v == true),
-                      title: const Text('我已核对当前主体、资料和后果'),
-                    ),
-                  ],
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context, false),
-                  child: const Text('返回修改'),
-                ),
-                FilledButton(
-                  onPressed: checked
-                      ? () => Navigator.pop(context, true)
-                      : null,
-                  child: const Text('确认提交'),
-                ),
-              ],
-            );
-          },
+            },
+          ),
         ),
-      ),
-    );
-    if (!frameCurrent()) return;
-    if (confirmed == true) {
-      await c.submit(approval);
-    } else {
-      final returnToEditor =
-          confirmed == false && c.isApprovalCurrent(approval);
-      c.cancelPreview();
-      if (returnToEditor) {
-        await _edit(
-          kind,
-          resource: resource,
-          facts: facts,
-          initialDraft: draft,
-          draftGeneration: approval.generation,
-        );
+      );
+      if (!frameCurrent()) return;
+      if (confirmed == true) {
+        await c.submit(approval);
+      } else {
+        final returnToEditor =
+            confirmed == false && c.isApprovalCurrent(approval);
+        c.cancelPreview();
+        if (returnToEditor) {
+          await _edit(
+            kind,
+            resource: resource,
+            facts: facts,
+            initialDraft: draft,
+            draftGeneration: approval.generation,
+          );
+        }
       }
+    } finally {
+      if (kind == 'member') frameController.removeListener(sourceChanged);
     }
   }
 
   void _agentIdentity(BusinessConsoleSnapshot snapshot) {
-    final api = _api, controller = c, auth = widget.auth, org = widget.organizations;
+    final api = _api,
+        controller = c,
+        auth = widget.auth,
+        org = widget.organizations;
     final bindingEpoch = _bindingEpoch;
     final identity = (auth.accountID, auth.authorizationHeader, org.active?.id);
     var retired = false;
     bool current() {
-      if (retired || !mounted || _disposed || bindingEpoch != _bindingEpoch ||
-          !identical(_api, api) || !identical(c, controller) ||
-          !identical(widget.auth, auth) || !identical(widget.organizations, org) ||
-          identity != (auth.accountID, auth.authorizationHeader, org.active?.id) ||
+      if (retired ||
+          !mounted ||
+          _disposed ||
+          bindingEpoch != _bindingEpoch ||
+          !identical(_api, api) ||
+          !identical(c, controller) ||
+          !identical(widget.auth, auth) ||
+          !identical(widget.organizations, org) ||
+          identity !=
+              (auth.accountID, auth.authorizationHeader, org.active?.id) ||
           controller.selectedID != snapshot.business.id ||
-          !identical(controller.snapshot, snapshot) || !snapshot.canManage ||
+          !identical(controller.snapshot, snapshot) ||
+          !snapshot.canManage ||
           !const {'owner', 'admin'}.contains(snapshot.business.role)) {
         retired = true;
         return false;
       }
       return true;
     }
-    Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => BusinessAgentIdentityPage(
-      api: api, businessID: snapshot.business.id,
-      accountID: () => auth.accountID, authorizationHeader: () => auth.authorizationHeader,
-      workspaceID: () => org.active?.id, currentBusinessID: () => controller.selectedID,
-      bindingCurrent: current, sourceFrame: () => controller.snapshot,
-      identityChanges: Listenable.merge([auth, org, controller, _bindingChanges]),
-    )));
+
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => BusinessAgentIdentityPage(
+          api: api,
+          businessID: snapshot.business.id,
+          accountID: () => auth.accountID,
+          authorizationHeader: () => auth.authorizationHeader,
+          workspaceID: () => org.active?.id,
+          currentBusinessID: () => controller.selectedID,
+          bindingCurrent: current,
+          sourceFrame: () => controller.snapshot,
+          identityChanges: Listenable.merge([
+            auth,
+            org,
+            controller,
+            _bindingChanges,
+          ]),
+        ),
+      ),
+    );
   }
 
   void _knowledge(BusinessConsoleSnapshot snapshot) {
@@ -566,7 +660,9 @@ class _BusinessConsolePageState extends State<BusinessConsolePage> {
               ),
             if (s.canManage) ...[
               OutlinedButton(
-                style: OutlinedButton.styleFrom(minimumSize: const Size(48, 48)),
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size(48, 48),
+                ),
                 onPressed: blocked ? null : () => _agentIdentity(s),
                 child: const Text('商家智能体身份'),
               ),
@@ -610,12 +706,12 @@ class _BusinessConsolePageState extends State<BusinessConsolePage> {
               const Divider(height: 32),
               Text('成员与所有权', style: Theme.of(context).textTheme.titleMedium),
               const Text('只有当前所有者能修改成员权限。'),
-              for (final m in s.members)
+              for (final m in s.existingMembers)
                 ListTile(
                   contentPadding: EdgeInsets.zero,
-                  title: SelectableText(m['personId'].toString()),
+                  title: Text(_memberLabel(s, m)),
                   subtitle: Text(
-                    '${businessRoleLabel(m['role'])} · ${businessStateLabel(m['status'])}',
+                    '${businessRoleLabel(m.role)} · ${businessStateLabel(m.status)}',
                   ),
                 ),
               OutlinedButton(
@@ -661,12 +757,18 @@ class _BusinessEditorState extends State<_BusinessEditor> {
   late final int generation;
   String? place;
   String action = 'grant', role = 'admin', decision = 'reject';
+  String? selectedMemberID;
+  bool manualMemberID = false;
+  late final BusinessConsoleSnapshot? memberSnapshot;
   DateTime? expires;
   final hours = <int, Map<String, dynamic>>{};
   @override
   void initState() {
     super.initState();
     generation = widget.expectedGeneration;
+    memberSnapshot = widget.kind == 'member'
+        ? widget.controller.snapshot
+        : null;
     final old = widget.initialDraft == null
         ? widget.existing ?? {}
         : <String, dynamic>{
@@ -683,7 +785,7 @@ class _BusinessEditorState extends State<_BusinessEditor> {
     if (widget.initialDraft != null) {
       action = old['action'] as String? ?? action;
       final draftRole = old['role'] as String?;
-      if (draftRole != null && draftRole.isNotEmpty) role = draftRole;
+      if (const {'admin', 'member'}.contains(draftRole)) role = draftRole!;
       decision = old['decision'] as String? ?? decision;
     }
     final facts = old['facts'] as Map? ?? {};
@@ -712,7 +814,26 @@ class _BusinessEditorState extends State<_BusinessEditor> {
     if (widget.kind == 'profile' && values['name']!.text.isEmpty) {
       values['name']!.text = widget.controller.snapshot?.business.name ?? '';
     }
+    if (widget.kind == 'member') {
+      final target = values['targetPersonId']!.text;
+      selectedMemberID = memberSnapshot?.existingMembers
+          .where((m) => m.personID == target && _memberAllowed(m))
+          .firstOrNull
+          ?.personID;
+      manualMemberID =
+          (target.isNotEmpty && selectedMemberID == null) ||
+          _selectableMembers.isEmpty;
+    }
   }
+
+  bool _memberAllowed(BusinessMember m) =>
+      m.personID != widget.controller.accountID() &&
+      m.role != 'owner' &&
+      (action == 'grant' || m.status == 'active') &&
+      (action != 'transfer_owner' || m.displayName != null);
+  List<BusinessMember> get _selectableMembers =>
+      memberSnapshot?.existingMembers.where(_memberAllowed).toList() ??
+      const [];
 
   @override
   void dispose() {
@@ -845,14 +966,30 @@ class _BusinessEditorState extends State<_BusinessEditor> {
       body.addAll({'decision': decision, 'note': text('note')});
     }
     if (kind == 'member') {
-      if (!BusinessApi.validID(text('targetPersonId'))) {
+      final targetID = manualMemberID
+          ? text('targetPersonId')
+          : selectedMemberID;
+      if (targetID == null || !BusinessApi.validID(targetID)) {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(const SnackBar(content: Text('请填写对方有效的账号标识。')));
         return;
       }
+      final target = memberSnapshot!.existingMembers
+          .where((m) => m.personID == targetID)
+          .firstOrNull;
+      if (targetID == c.accountID() ||
+          target?.role == 'owner' ||
+          (action != 'grant' &&
+              (target == null || target.status != 'active')) ||
+          (!manualMemberID && (target == null || !_memberAllowed(target)))) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('请选择当前可操作的成员；转交只允许有效的管理员或成员。')),
+        );
+        return;
+      }
       body.addAll({
-        'targetPersonId': text('targetPersonId'),
+        'targetPersonId': targetID,
         'action': action,
         'role': action == 'remove'
             ? ''
@@ -874,7 +1011,8 @@ class _BusinessEditorState extends State<_BusinessEditor> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(
+    appBar: birdtieAppBar(
+      context,
       title: Text(switch (widget.kind) {
         'claim' => '申领商家',
         'profile' => '编辑商家资料',
@@ -889,10 +1027,16 @@ class _BusinessEditorState extends State<_BusinessEditor> {
         if (!widget.frameCurrent() ||
             generation != widget.controller.generation ||
             !widget.controller.personal) {
-          return const Center(
+          return Center(
             child: Padding(
-              padding: EdgeInsets.all(24),
-              child: Text('工作身份已变化，请返回后重新读取资料。'),
+              padding: const EdgeInsets.all(24),
+              child: Text(
+                widget.kind == 'member' &&
+                        generation == widget.controller.generation &&
+                        widget.controller.personal
+                    ? '当前成员资料或权限已变化，请返回后重新读取。'
+                    : '工作身份已变化，请返回后重新读取资料。',
+              ),
             ),
           );
         }
@@ -1047,7 +1191,6 @@ class _BusinessEditorState extends State<_BusinessEditor> {
                 field('note', required: true, multi: true),
               ],
               if (widget.kind == 'member') ...[
-                field('targetPersonId', required: true),
                 DropdownButtonFormField<String>(
                   initialValue: action,
                   decoration: const InputDecoration(labelText: '成员操作'),
@@ -1059,7 +1202,51 @@ class _BusinessEditorState extends State<_BusinessEditor> {
                       child: Text('转交所有权'),
                     ),
                   ],
-                  onChanged: (v) => setState(() => action = v!),
+                  onChanged: (v) => setState(() {
+                    action = v!;
+                    if (!_selectableMembers.any(
+                      (m) => m.personID == selectedMemberID,
+                    )) {
+                      selectedMemberID = null;
+                    }
+                  }),
+                ),
+                const SizedBox(height: 16),
+                if (!manualMemberID)
+                  DropdownButtonFormField<String>(
+                    key: ValueKey('member-target-$action'),
+                    initialValue: selectedMemberID,
+                    isExpanded: true,
+                    decoration: const InputDecoration(labelText: '已存在成员'),
+                    items: [
+                      for (final m in _selectableMembers)
+                        DropdownMenuItem(
+                          value: m.personID,
+                          child: Text(
+                            '${_memberLabel(memberSnapshot!, m)} · ${businessRoleLabel(m.role)}',
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                    ],
+                    onChanged: (v) => setState(() => selectedMemberID = v),
+                    validator: (v) => v == null ? '请选择当前成员' : null,
+                  )
+                else ...[
+                  field('targetPersonId', required: true),
+                  const Text('暂无获准的账号姓名目录。请填写你已确认的账号标识；输入姓名不能添加成员。'),
+                ],
+                if (action == 'transfer_owner' &&
+                    memberSnapshot!.existingMembers.any(
+                      (m) =>
+                          m.role != 'owner' &&
+                          m.status == 'active' &&
+                          m.displayName == null,
+                    ))
+                  const Text('部分成员姓名不可用，不能仅凭名单转交。确认对方账号标识后可使用标识输入。'),
+                TextButton(
+                  onPressed: () =>
+                      setState(() => manualMemberID = !manualMemberID),
+                  child: Text(manualMemberID ? '从已存在成员选择' : '输入已确认的账号标识'),
                 ),
                 if (action == 'grant')
                   DropdownButtonFormField<String>(

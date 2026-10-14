@@ -24,6 +24,56 @@ func (s *emptyStore) ClaimAgentOutboxControlForSubject(_ context.Context, p acto
 	s.calls++
 	return agentoutbox.Record{}, agentoutbox.Claim{}, agentoutbox.ErrNotFound
 }
+
+type mixedCommandStore struct {
+	emptyStore
+	mixedCalls int
+}
+
+func (s *mixedCommandStore) ClaimMixedAgentOutboxControlForSubject(context.Context, actorref.PrincipalRef, string) (agentoutbox.Record, agentoutbox.Claim, error) {
+	s.mixedCalls++
+	return agentoutbox.Record{}, agentoutbox.Claim{}, agentoutbox.ErrNotFound
+}
+func TestMixedMaintenanceUnitCommandExplicitModeAndClosedOptions(t *testing.T) {
+	args := append(commandArgs(), "--mixed-handlers")
+	settings, ok := parseSettings(args)
+	if !ok || !settings.mixedHandlers || settings.handler != agentoutbox.HandlerV1 || settings.subject.ID != testPerson {
+		t.Fatal("explicit mixed mode not captured")
+	}
+	if defaults, ok := parseSettings(commandArgs()); !ok || defaults.mixedHandlers {
+		t.Fatal("mixed default activated")
+	}
+	for _, handler := range []agentoutbox.HandlerVersion{agentoutbox.TaskRequestHandler, agentoutbox.ParticipationHandler} {
+		fixed := append(commandArgs(), "--handler="+string(handler))
+		if parsed, ok := parseSettings(fixed); !ok || parsed.handler != handler || parsed.mixedHandlers {
+			t.Fatal("registered native maintenance handler unavailable", handler)
+		}
+		if _, ok := parseSettings(append(fixed, "--mixed-handlers")); ok {
+			t.Fatal("mixed mode accepted explicit native handler", handler)
+		}
+	}
+	for _, bad := range [][]string{append(args, "--handler=mom-control-v1"), append(args, "--handler=memory-invalidation-v1"), append(args, "--handler=real-candidate"), {"--mixed-handlers", "--subject", testPerson}, {"--local-development-only", "--mixed-handlers"}, append(commandArgs(), "--mixed-handlers=unknown")} {
+		if _, ok := parseSettings(bad); ok {
+			t.Fatal("ambiguous or unbound mixed CLI accepted")
+		}
+	}
+	for _, mixed := range []bool{false, true} {
+		var out bytes.Buffer
+		s := &mixedCommandStore{}
+		factory := func(context.Context, *pgxpool.Config) (agentoutboxmaintenance.Store, func(), error) {
+			return s, func() {}, nil
+		}
+		actualArgs := commandArgs()
+		if mixed {
+			actualArgs = append(actualArgs, "--mixed-handlers")
+		}
+		code := runCommand(context.Background(), actualArgs, func(string) string { return "postgres://user:SECRET@127.0.0.1/db?sslmode=disable" }, &out, factory)
+		var report agentoutboxmaintenance.Report
+		if code != 0 || json.Unmarshal(out.Bytes(), &report) != nil || report.BusinessExecution != "UNAVAILABLE" || strings.Contains(out.String(), "SECRET") || strings.Contains(out.String(), testPerson) || report.ConfirmedReceipts != 0 || (mixed && (s.mixedCalls != 1 || s.calls != 0)) || (!mixed && (s.mixedCalls != 0 || s.calls != 1)) {
+			t.Fatal("CLI did not use explicit native mode", code, report, s.calls, s.mixedCalls)
+		}
+	}
+}
 func (s *emptyStore) ConsumeAgentOutboxControl(context.Context, agentoutbox.Claim) (agentoutbox.ConsumerRecord, error) {
 	panic("no claim can consume")
 }

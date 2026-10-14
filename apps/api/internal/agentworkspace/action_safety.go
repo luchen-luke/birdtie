@@ -124,7 +124,8 @@ func explicitResponseFilters(filters map[string]string) map[string]string {
 		allowed := false
 		switch key {
 		case "category":
-			allowed = oneOf(value, "", "badminton", "basketball", "football", "sports", "culture")
+			allowed = oneOf(value, "", "badminton", "basketball", "football", "sports", "culture",
+				"restaurant", "cafe", "museum", "gallery", "library", "park")
 		case "timePreference":
 			allowed = oneOf(value, "", "anytime", "today", "tonight", "tomorrow", "weekend")
 		case "distancePreference":

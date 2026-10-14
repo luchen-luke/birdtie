@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	ea "github.com/birdtie/birdtie/apps/api/internal/entityaction"
+	"github.com/birdtie/birdtie/apps/api/internal/profileavatar"
 	"time"
 )
 
@@ -15,28 +16,32 @@ var (
 )
 
 type Request struct {
-	ID                string    `json:"id"`
-	Direction         string    `json:"direction"`
-	OtherAccountID    string    `json:"otherAccountId"`
-	OtherName         string    `json:"otherName"`
-	CityID            string    `json:"cityId"`
-	Note              string    `json:"note"`
-	Scope             string    `json:"scope"`
-	State             string    `json:"state"`
-	ConversationID    string    `json:"conversationId,omitempty"`
-	PolicyDisposition string    `json:"policyDisposition,omitempty"`
-	ScreeningStatus   string    `json:"screeningStatus,omitempty"`
-	ExpiresAt         time.Time `json:"expiresAt"`
-	CreatedAt         time.Time `json:"createdAt"`
+	ID                string                  `json:"id"`
+	Direction         string                  `json:"direction"`
+	OtherAccountID    string                  `json:"otherAccountId"`
+	OtherName         string                  `json:"otherName"`
+	Avatar            *profileavatar.Metadata `json:"avatar,omitempty"`
+	CityID            string                  `json:"cityId"`
+	Note              string                  `json:"note"`
+	Scope             string                  `json:"scope"`
+	State             string                  `json:"state"`
+	ConversationID    string                  `json:"conversationId,omitempty"`
+	PolicyDisposition string                  `json:"policyDisposition,omitempty"`
+	ScreeningStatus   string                  `json:"screeningStatus,omitempty"`
+	ExpiresAt         time.Time               `json:"expiresAt"`
+	CreatedAt         time.Time               `json:"createdAt"`
 }
 
 type Conversation struct {
-	ID             string     `json:"id"`
-	OtherAccountID string     `json:"otherAccountId"`
-	OtherName      string     `json:"otherName"`
-	CreatedAt      time.Time  `json:"createdAt"`
-	UnreadCount    int        `json:"unreadCount"`
-	LastReadAt     *time.Time `json:"lastReadAt,omitempty"`
+	ID                 string                  `json:"id"`
+	OtherAccountID     string                  `json:"otherAccountId"`
+	OtherName          string                  `json:"otherName"`
+	Avatar             *profileavatar.Metadata `json:"avatar,omitempty"`
+	CreatedAt          time.Time               `json:"createdAt"`
+	UnreadCount        int                     `json:"unreadCount"`
+	LastMessagePreview string                  `json:"lastMessagePreview,omitempty"`
+	LastMessageAt      *time.Time              `json:"lastMessageAt,omitempty"`
+	LastReadAt         *time.Time              `json:"lastReadAt,omitempty"`
 }
 
 type ReadState struct {
@@ -46,20 +51,23 @@ type ReadState struct {
 }
 
 type Tie struct {
-	ID             string    `json:"id"`
-	OtherAccountID string    `json:"otherAccountId"`
-	OtherName      string    `json:"otherName"`
-	CreatedAt      time.Time `json:"createdAt"`
+	ID             string                  `json:"id"`
+	OtherAccountID string                  `json:"otherAccountId"`
+	OtherName      string                  `json:"otherName"`
+	Avatar         *profileavatar.Metadata `json:"avatar,omitempty"`
+	CreatedAt      time.Time               `json:"createdAt"`
 }
 
 type Message struct {
-	ID             string      `json:"id"`
-	ConversationID string      `json:"conversationId"`
-	SenderID       string      `json:"senderAccountId"`
-	SpeakerKind    string      `json:"speakerKind"`
-	Body           string      `json:"body"`
-	Entity         *EntityCard `json:"entity,omitempty"`
-	CreatedAt      time.Time   `json:"createdAt"`
+	ID             string         `json:"id"`
+	ConversationID string         `json:"conversationId"`
+	SenderID       string         `json:"senderAccountId"`
+	SpeakerKind    string         `json:"speakerKind"`
+	Body           string         `json:"body"`
+	Entity         *EntityCard    `json:"entity,omitempty"`
+	Audio          *AudioMetadata `json:"audio,omitempty"`
+	Image          *ImageMetadata `json:"image,omitempty"`
+	CreatedAt      time.Time      `json:"createdAt"`
 }
 
 // EntityCard carries a stable reference. Title is resolved against the current

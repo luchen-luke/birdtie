@@ -2,10 +2,12 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import '../app/birdtie_app_bar.dart';
 import '../config/birdtie_environment.dart';
 import 'social_intent_draft_model.dart';
 import 'social_intent_creation_pending_store.dart';
 import 'social_intent_creation_api.dart';
+import 'now_ui_tokens.dart';
 
 class SocialIntentDraftPage extends StatefulWidget {
   const SocialIntentDraftPage({
@@ -558,7 +560,11 @@ class _SocialIntentDraftPageState extends State<SocialIntentDraftPage> {
         builder: (dialogContext) {
           _dialogContext = dialogContext;
           return AlertDialog(
-            title: const Text('取消这条意图？'),
+            scrollable: true,
+            title: Text(
+              '取消这条意图？',
+              style: NowUiTokens.of(dialogContext).sheetTitle,
+            ),
             content: const Text('取消后不会再出现在发现结果中。'),
             actions: [
               TextButton(
@@ -661,6 +667,9 @@ class _SocialIntentDraftPageState extends State<SocialIntentDraftPage> {
   String _audienceLabel(Object? audience) => switch (audience) {
     'PUBLIC' => '公开',
     'FRIENDS' => '好友',
+    'FOLLOWERS' => '关注我的人',
+    'CONNECTIONS' => '好友',
+    'CLOSE' => '亲密好友',
     'COMMUNITY' => '社群成员',
     'LOCAL' => '当前城市用户',
     'INVITE_ONLY' => '受邀者',
@@ -684,6 +693,7 @@ class _SocialIntentDraftPageState extends State<SocialIntentDraftPage> {
     key: Key(key),
     controller: controller,
     maxLength: max,
+    style: NowUiTokens.of(context).composer,
     minLines: 1,
     maxLines: key == 'intent-draft-title'
         ? 4
@@ -702,7 +712,7 @@ class _SocialIntentDraftPageState extends State<SocialIntentDraftPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('先记下想做的事', style: Theme.of(context).textTheme.titleLarge),
+        Text('先记下想做的事', style: NowUiTokens.of(context).sheetTitle),
         const SizedBox(height: 8),
         const Text('草稿仅自己可见。现在保存不会公开，也不会自动邀请其他人。'),
         const Text('保存时会在本机安全保留原操作和内容，用于断线核实；结果明确后清除，不会自动重试。'),
@@ -734,6 +744,9 @@ class _SocialIntentDraftPageState extends State<SocialIntentDraftPage> {
             Text('原句提到“${_draft.timeNote}”；具体活动时间未确定，没有自动换算。'),
         ],
         DropdownButtonFormField<String>(
+          isExpanded: true,
+          itemHeight: null,
+          style: NowUiTokens.of(context).composer,
           key: ValueKey('intent-mode-$_serial-${_draft.modality}'),
           initialValue: _draft.modality,
           decoration: const InputDecoration(
@@ -782,7 +795,10 @@ class _SocialIntentDraftPageState extends State<SocialIntentDraftPage> {
               : () => setState(() => _expanded = !_expanded),
           child: Text(_expanded ? '返回草稿摘要' : '完整编辑'),
         ),
-        Text('寻找有效期：${_stamp(_draft.expiresAt)}'),
+        Text(
+          '寻找有效期：${_stamp(_draft.expiresAt)}',
+          style: NowUiTokens.of(context).metadata,
+        ),
         const Text('默认寻找有效期为七天，可修改；这不是活动开始或结束时间。'),
         TextButton(
           onPressed: _saving || _sourceInvalidated || _draftLocked
@@ -908,8 +924,8 @@ class _SocialIntentDraftPageState extends State<SocialIntentDraftPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(
-      title: const Text('我的社交意图'),
+    appBar: birdtieAppBar(context,
+      title: Text('我的社交意图', style: NowUiTokens.of(context).pageTitle),
       leading: widget.onClose == null
           ? null
           : IconButton(
@@ -935,7 +951,7 @@ class _SocialIntentDraftPageState extends State<SocialIntentDraftPage> {
                       _receipt!.intent!['status'] == 'DRAFT'
                   ? '私人草稿已保存'
                   : '原保存已核实',
-              style: Theme.of(context).textTheme.titleLarge,
+              style: NowUiTokens.of(context).sheetTitle,
             ),
             Text('想做的事：${_receipt!.intent!['title']}'),
             Text(
@@ -971,7 +987,9 @@ class _SocialIntentDraftPageState extends State<SocialIntentDraftPage> {
               padding: const EdgeInsets.symmetric(vertical: 8),
               child: Text(
                 _error!,
-                style: TextStyle(color: Theme.of(context).colorScheme.error),
+                style: NowUiTokens.of(
+                  context,
+                ).body.copyWith(color: Theme.of(context).colorScheme.error),
               ),
             ),
           if (_verifiedPrevious != null) ...[
@@ -993,7 +1011,7 @@ class _SocialIntentDraftPageState extends State<SocialIntentDraftPage> {
               ),
           ],
           const SizedBox(height: 24),
-          Text('我的意图记录', style: Theme.of(context).textTheme.titleMedium),
+          Text('我的意图记录', style: NowUiTokens.of(context).sheetTitle),
           if (_loading) const LinearProgressIndicator(),
           if (_listError != null) Text(_listError!),
           TextButton(
@@ -1004,9 +1022,14 @@ class _SocialIntentDraftPageState extends State<SocialIntentDraftPage> {
             const Text('还没有草稿。'),
           for (final row in _drafts)
             ListTile(
-              title: Text(row['title'] as String? ?? '未命名意图'),
+              minTileHeight: 48,
+              title: Text(
+                row['title'] as String? ?? '未命名意图',
+                style: NowUiTokens.of(context).placeTitle,
+              ),
               subtitle: Text(
                 '${_modeLabel(row['modality'] as String?)} · ${_statusLabel(row)}',
+                style: NowUiTokens.of(context).metadata,
               ),
               onTap:
                   widget.onManageIntent == null ||

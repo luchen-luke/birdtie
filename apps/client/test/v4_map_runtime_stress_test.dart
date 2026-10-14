@@ -55,7 +55,7 @@ class _City extends PublicCityController {
   @override
   List<PublicCity> get cities => [selectedCity!];
   @override
-  void selectCity(String id) {
+  void selectCity(String id, {bool rememberExploration = true}) {
     current = id;
     notifyListeners();
   }

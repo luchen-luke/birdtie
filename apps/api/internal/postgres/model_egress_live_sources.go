@@ -359,6 +359,12 @@ func (s *Store) prepareStoredLiveEgressTx(ctx context.Context, tx pgx.Tx, a agen
 }
 
 func (s *Store) prepareStoredLiveEgressWithSourceRunTx(ctx context.Context, tx pgx.Tx, a agentevent.Access, v storedLiveEgressPreview, projector LiveWireProjector, association *nativeLiveSourceRunAssociation) (PreparedLiveEgress, error) {
+	if v.scope == modelegressbudget.LiveLicensedPlaceScope {
+		if association != nil {
+			return PreparedLiveEgress{}, modelegressbudget.ErrDenied
+		}
+		return s.replayLicensedPlaceEgressTx(ctx, tx, a, v, projector)
+	}
 	if liveStandaloneCallScope(v.scope) {
 		return s.prepareStandaloneLivePreviewTx(ctx, tx, a, v, projector)
 	}

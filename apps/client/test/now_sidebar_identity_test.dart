@@ -9,7 +9,8 @@ import 'now_context_query_api_test.dart' show onlineIntentID;
 import 'package:birdtie_client/src/workspace/now_context_query_api.dart';
 import 'package:birdtie_client/src/workspace/sidebar.dart';
 import 'package:birdtie_client/src/workspace/organization_workspaces.dart';
-import 'now_context_query_api_test.dart' show onlineWire, onlineOwnerID, onlineTaskID;
+import 'now_context_query_api_test.dart'
+    show onlineWire, onlineOwnerID, onlineTaskID;
 import 'dart:async';
 import 'dart:convert';
 import 'package:birdtie_client/src/workspace/map_workspace.dart';
@@ -20,7 +21,23 @@ import 'package:birdtie_client/src/workspace/agent_workspace_controller.dart';
 import 'package:birdtie_client/src/workspace/agent_debug_panel.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:birdtie_client/src/workspace/external_place_history_store.dart';
 import 'now_scope_recovery_test.dart';
+
+Future<void> _openSidebarAccountDestination(
+  WidgetTester t,
+  String route,
+) async {
+  await nowTap(t, find.byKey(const Key('sidebar-account')));
+  final value = route == '个人资料' ? 'profile' : 'settings';
+  await nowTap(
+    t,
+    find.byWidgetPredicate(
+      (widget) => widget is PopupMenuItem<String> && widget.value == value,
+    ),
+  );
+}
 
 void main() {
   testWidgets('资料路由绑定原本人正常打开返回保留Now安全草稿和任务', (t) async {
@@ -272,6 +289,9 @@ void main() {
     });
   }
   testWidgets('私人身份绑定真实主App接线使用本人账号和身份通知', (t) async {
+    // The real shell restores local city/auth state; this widget test supplies
+    // the platform store instead of leaving a method-channel future pending.
+    FlutterSecureStorage.setMockInitialValues({});
     await t.pumpWidget(const BirdtieApp());
     await t.pumpAndSettle();
     final page = t.widget<MapWorkspace>(find.byType(MapWorkspace));
@@ -306,7 +326,7 @@ void main() {
     expect(x.moments.moments, isEmpty);
     expect(find.text('A本人原记录'), findsNothing);
     expect(find.text('编辑或撤回'), findsNothing);
-    expect(find.text('无法读取私人草稿，请稍后重试。'), findsOneWidget);
+    expect(find.text('私人草稿数据暂不可用，请重新读取。'), findsOneWidget);
     expect(find.text('还没有私人动态草稿。'), findsNothing);
     expect(find.text('还没有动态或草稿。'), findsNothing);
     expect(x.writes, isEmpty);
@@ -552,6 +572,9 @@ void main() {
       final x = _PrivateDraftFixture();
       await x.mount(t);
       await x.open(t);
+      final retiredSave = t
+          .widget<FilledButton>(find.widgetWithText(FilledButton, '保存私人草稿'))
+          .onPressed!;
       x.auth.changeIdentity(
         change == 'owner-same-token' ? 'Bearer owner' : 'Bearer peer',
         nextOwner: 'peer',
@@ -561,10 +584,13 @@ void main() {
         x.auth.changeIdentity('Bearer owner', nextOwner: 'owner');
       }
       await t.pumpAndSettle();
-      if (find.text('保存私人草稿').evaluate().isNotEmpty) await x.save(t);
+      retiredSave();
+      await t.pumpAndSettle();
       expect(x.writes, isEmpty, reason: '旧标题不得在变化后的账号/会话上写入');
-      expect(find.text('账号已切换，请重新打开私人草稿。'), findsOneWidget);
+      expect(find.text('新建动态'), findsNothing);
+      expect(find.text('原本人安全草稿'), findsNothing);
       expect(find.widgetWithText(TextFormField, '标题'), findsNothing);
+      expect(find.text('新建草稿'), findsOneWidget);
       expect(t.takeException(), isNull);
       await x.close(t);
     });
@@ -576,7 +602,8 @@ void main() {
     x.auth.changeIdentity('Bearer peer', nextOwner: 'peer');
     x.auth.changeIdentity('Bearer owner', nextOwner: 'owner');
     await t.pumpAndSettle();
-    await nowTap(t, find.text('关闭'));
+    expect(find.text('新建动态'), findsNothing);
+    expect(find.widgetWithText(TextFormField, '标题'), findsNothing);
     await x.open(t);
     await x.save(t);
     expect(x.writes, hasLength(1));
@@ -622,7 +649,7 @@ void main() {
     expect(t.takeException(), isNull);
     await x.close(t);
   });
-  testWidgets('私人草稿迟到成功不能关闭已退休原编辑器', (t) async {
+  testWidgets('私人草稿迟到成功不能复活已移除的原编辑器', (t) async {
     final x = _PrivateDraftFixture()..writeGate = Completer<void>();
     await x.mount(t);
     await x.open(t);
@@ -630,10 +657,12 @@ void main() {
     expect(x.writes, hasLength(1));
     x.auth.changeIdentity('Bearer owner', nextOwner: 'peer');
     await t.pumpAndSettle();
+    expect(find.text('新建动态'), findsNothing);
     x.writeGate!.complete();
     await t.pumpAndSettle();
-    expect(find.text('账号已切换，请重新打开私人草稿。'), findsOneWidget);
+    expect(find.widgetWithText(TextFormField, '标题'), findsNothing);
     expect(find.text('新建动态'), findsNothing);
+    expect(find.text('新建草稿'), findsOneWidget);
     expect(x.writes, hasLength(1));
     expect(t.takeException(), isNull);
     await x.close(t);
@@ -790,7 +819,7 @@ void main() {
         final task = w.task, result = w.result;
         await nowTap(t, find.byKey(Key('online-intent-$onlineIntentID')));
         final expected = status == '401'
-            ? '请先通过个人资料重新登录，再发起查询。'
+            ? '重新登录后可继续；原内容不会自动发送。'
             : '请先确认当前身份和访问权限；恢复权限后再发起查询。';
         expect(find.textContaining(expected), findsOneWidget);
         expect(w.task, same(task));
@@ -1067,7 +1096,7 @@ void main() {
         await x.mount(t);
         await x.reopen(t);
         final expected = status == '401'
-            ? '请先通过个人资料重新登录，再发起查询。'
+            ? '重新登录后可继续；原内容不会自动发送。'
             : '请先确认当前身份和访问权限；恢复权限后再发起查询。';
         expect(find.textContaining(expected), findsOneWidget);
         x.outcome = 'success';
@@ -1174,7 +1203,7 @@ void main() {
             requests.add(r);
             expect(r.method, 'GET');
             expect(r.url.path, '/v1/me/agent-tasks');
-            if (requests.length <= 2) {
+            if (requests.length == 1) {
               if (failure == 'network') {
                 throw http.ClientException('synthetic network');
               }
@@ -1200,7 +1229,7 @@ void main() {
           ),
         );
         await t.pumpAndSettle();
-        expect(requests, hasLength(2));
+        expect(requests, hasLength(1));
         final w = f.workspace(t);
         const current = AgentTask(
           id: 'local-safe-current',
@@ -1237,7 +1266,7 @@ void main() {
         expect(button.hitTestable(), findsOneWidget);
         expect(t.getSize(button).height, greaterThanOrEqualTo(48));
         await nowTap(t, button);
-        expect(requests, hasLength(3));
+        expect(requests, hasLength(2));
         expect(w.recent.single.id, 'fixture-original-history');
         expect(w.recentError, isNull);
         expect(w.recentFailure, isNull);
@@ -1323,6 +1352,7 @@ void main() {
       final source = RemoteAgentTaskSource(
         cityID: () => null,
         authorizationHeader: () => null,
+        externalPlaceHistoryStore: MemoryExternalPlaceHistoryStore(),
         apiBaseUrl: 'https://recent-list-fixture.test',
         client: MockClient((r) async {
           gets++;
@@ -1425,22 +1455,19 @@ void main() {
               matching: find.byType(Scrollable),
             )
             .first;
-        await t.scrollUntilVisible(
-          find.text('最近的智能体对话'),
-          100,
-          scrollable: scroll,
-        );
+        await t.scrollUntilVisible(find.text('最近对话'), 100, scrollable: scroll);
         await t.drag(scroll, const Offset(0, -160));
         await t.pumpAndSettle();
         final empty = find.text('你开始的对话会显示在这里。');
-        debugPrintSynchronously((
-          jsonEncode({
+        debugPrintSynchronously(
+          (jsonEncode({
             'recentList': 'actual-mounted-Now-Sidebar',
             'mode': mode,
             'requests': requests.length,
             'emptyMounted': empty.evaluate().isNotEmpty,
-          })).toString());
-        expect(requests, hasLength(2));
+          })).toString(),
+        );
+        expect(requests, hasLength(1));
         expect(empty, mode == 'empty' ? findsOneWidget : findsNothing);
         if (mode != 'empty') {
           final error = find.text('最近对话读取失败');
@@ -1451,7 +1478,7 @@ void main() {
             expect(find.text('重新读取最近对话'), findsNothing);
             final recovery = find.text(
               mode == '401'
-                  ? '请先通过个人资料重新登录，再读取最近对话。'
+                  ? '请先通过账户重新登录，再读取最近对话。'
                   : '请先确认当前身份和访问权限；恢复权限后再读取最近对话。',
             );
             await t.ensureVisible(recovery);
@@ -1470,7 +1497,7 @@ void main() {
     );
   }
 
-  testWidgets('真实未选城市侧栏有就地选城路径', (t) async {
+  testWidgets('真实未选城市从侧栏返回后可用唯一顶栏选城', (t) async {
     final f = NowFixture(selected: false);
     addTearDown(f.dispose);
     await f.mount(t);
@@ -1479,8 +1506,9 @@ void main() {
       of: find.byType(Drawer),
       matching: find.text('选择城市'),
     );
-    expect(chooser, findsOneWidget);
-    await nowTap(t, chooser);
+    expect(chooser, findsNothing);
+    await nowTap(t, find.byKey(const Key('sidebar-close')));
+    await nowTap(t, find.byKey(const Key('now-city-picker')));
     await nowTap(t, find.text('甲验收城市'));
     expect(f.city.selectedCity?.id, 'alpha');
     await f.unmount(t);
@@ -1490,7 +1518,10 @@ void main() {
     addTearDown(f.dispose);
     await f.mount(t);
     await nowTap(t, find.byTooltip('打开侧边栏'));
-    expect(find.text('未登录 · 公开浏览'), findsOneWidget);
+    expect(find.byTooltip('登录 / 账户 · 未登录'), findsOneWidget);
+    await nowTap(t, find.byKey(const Key('sidebar-account')));
+    expect(find.text('登录 / 账户'), findsOneWidget);
+    expect(find.text('以个人身份使用'), findsNothing);
     expect(find.text('个人智能体'), findsNothing);
     await f.unmount(t);
   });
@@ -1514,8 +1545,13 @@ void main() {
     f.workspace(t).notifyListeners();
     await t.pumpAndSettle();
     await nowTap(t, find.byTooltip('打开侧边栏'));
+    expect(
+      find.byKey(const Key('sidebar-account')).hitTestable(),
+      findsOneWidget,
+    );
+    await nowTap(t, find.byKey(const Key('sidebar-account')));
     expect(find.text('设置').hitTestable(), findsOneWidget);
-    expect(find.text('个人资料').hitTestable(), findsOneWidget);
+    expect(find.text('登录 / 账户').hitTestable(), findsOneWidget);
     expect(find.text('第24个合成历史对话'), findsNothing);
     await f.unmount(t);
   });
@@ -1524,7 +1560,7 @@ void main() {
     addTearDown(f.dispose);
     await f.mount(t);
     await nowTap(t, find.byTooltip('打开侧边栏'));
-    await nowTap(t, find.text('个人资料'));
+    await _openSidebarAccountDestination(t, '个人资料');
     expect(find.text('组织 / 城市工作区'), findsNothing);
     expect(find.text('规划中'), findsNothing);
     await f.unmount(t);
@@ -1534,7 +1570,7 @@ void main() {
     addTearDown(f.dispose);
     await f.mount(t);
     await nowTap(t, find.byTooltip('打开侧边栏'));
-    await nowTap(t, find.text('设置'));
+    await _openSidebarAccountDestination(t, '设置');
     expect(find.text('运行诊断（开发版）'), findsOneWidget);
     expect(find.byType(AgentDebugPanel), findsNothing);
     await nowTap(t, find.text('运行诊断（开发版）'));
@@ -1543,6 +1579,7 @@ void main() {
     await f.unmount(t);
   });
 }
+
 http.Response _onlineHistoryReply(Object data) => http.Response(
   jsonEncode({'data': data}),
   200,
@@ -1965,7 +2002,7 @@ class _PersonalRouteFixture {
 
   Future<void> open(WidgetTester t, String route) async {
     await nowTap(t, find.byTooltip('打开侧边栏'));
-    await nowTap(t, find.text(route));
+    await _openSidebarAccountDestination(t, route);
   }
 
   Future<void> replace(WidgetTester t, String value) async {

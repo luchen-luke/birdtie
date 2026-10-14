@@ -4,6 +4,9 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../config/birdtie_environment.dart';
+import 'exploration_city_store.dart';
+import '../workspace/entity_cover.dart';
+import '../workspace/place_photo.dart';
 
 class PublicSource {
   const PublicSource({
@@ -94,6 +97,7 @@ class PublicPlace {
     this.addressLabel = '',
     required this.source,
     required this.location,
+    this.placePhoto,
   });
 
   final String id;
@@ -103,6 +107,7 @@ class PublicPlace {
   final String addressLabel;
   final PublicSource source;
   final PublicPlaceLocation location;
+  final EntityCoverMetadata? placePhoto;
 
   factory PublicPlace.fromJson(Map<String, dynamic> json) => PublicPlace(
     id: json['id'] as String,
@@ -113,6 +118,10 @@ class PublicPlace {
     source: PublicSource.fromJson(json['source'] as Map<String, dynamic>),
     location: PublicPlaceLocation.fromJson(
       json['location'] as Map<String, dynamic>,
+    ),
+    placePhoto: EntityCoverMetadata.optional(
+      json['placePhoto'],
+      PlacePhotoRef(json['id'] as String),
     ),
   );
 }
@@ -150,6 +159,7 @@ class PublicActivity {
     required this.id,
     this.organizer,
     this.organizationID,
+    this.cover,
     required this.hostLabel,
     required this.placeName,
     this.modality = 'unspecified',
@@ -178,6 +188,7 @@ class PublicActivity {
   final String id;
   final PublicActivityOrganizer? organizer;
   final String? organizationID;
+  final EntityCoverMetadata? cover;
   final String hostLabel;
   final String placeName;
   final String modality;
@@ -210,6 +221,10 @@ class PublicActivity {
           )
         : null,
     organizationID: json['organizationId'] as String?,
+    cover: EntityCoverMetadata.optional(
+      json['cover'],
+      EntityCoverRef('activity', json['id'] as String),
+    ),
     hostLabel: json['hostLabel'] as String? ?? '',
     placeName: json['placeName'] as String? ?? '',
     modality: json['modality'] as String? ?? 'unspecified',
@@ -286,13 +301,21 @@ class PublicCityController extends ChangeNotifier {
     this.authorizationHeader,
     http.Client? client,
     String? apiBaseUrl,
+    ExplorationCityStore? explorationStore,
+    this.defaultExplorationCityID = const String.fromEnvironment(
+      'BIRDTIE_DEFAULT_EXPLORATION_CITY_ID',
+      defaultValue: 'aberdeen-gb',
+    ),
   }) : _client = client ?? http.Client(),
        _ownsClient = client == null,
+       _explorationStore = explorationStore,
        _apiBase = (apiBaseUrl ?? BirdtieEnvironment.apiBaseUrl).trim();
 
   final String _apiBase;
   final http.Client _client;
   final bool _ownsClient;
+  final ExplorationCityStore? _explorationStore;
+  final String defaultExplorationCityID;
   final String? Function()? authorizationHeader;
   List<PublicCity> _cities = const [];
   List<PublicPlace> _places = const [];
@@ -310,6 +333,12 @@ class PublicCityController extends ChangeNotifier {
   int _placeRequest = 0;
   int _activityRequest = 0;
   int _organizationPinRequest = 0;
+  int _explorationChoiceRevision = 0;
+  String? _storedExplorationCityID;
+  String? _explorationNotice;
+  bool _explorationFallback = false;
+  Future<void>? _explorationRestore;
+  Future<void> _explorationWriteTail = Future.value();
 
   bool get configured => _apiBase.isNotEmpty;
   List<PublicCity> get cities => _cities;
@@ -330,6 +359,13 @@ class PublicCityController extends ChangeNotifier {
   bool get citiesLoading => _citiesLoading;
   bool get placesLoading => _placesLoading;
   bool get activitiesLoading => _activitiesLoading;
+  String? get explorationNotice => _explorationNotice;
+
+  @visibleForTesting
+  Future<void> get explorationRestoreSettled =>
+      _explorationRestore ?? Future.value();
+  @visibleForTesting
+  Future<void> get explorationWritesSettled => _explorationWriteTail;
 
   Uri _endpoint(String path) =>
       Uri.parse('${_apiBase.replaceFirst(RegExp(r'/$'), '')}$path');
@@ -338,8 +374,115 @@ class PublicCityController extends ChangeNotifier {
     if (!_closed) notifyListeners();
   }
 
+  bool _hasUsableMap(PublicCity city) {
+    final map = city.map;
+    if (map == null ||
+        !map.latitude.isFinite ||
+        !map.longitude.isFinite ||
+        map.latitude.abs() > 90 ||
+        map.longitude.abs() > 180 ||
+        !map.defaultZoom.isFinite ||
+        map.defaultZoom < 1 ||
+        map.defaultZoom > 18) {
+      return false;
+    }
+    // A configured city camera is usable even if its tile service temporarily
+    // fails. The existing map presents that error and retry. AMap currently has
+    // a web implementation only, so native startup must not default to it.
+    return map.provider == 'mapbox' ||
+        (map.provider == 'amap' &&
+            kIsWeb &&
+            BirdtieEnvironment.amapWebPublicKey.isNotEmpty &&
+            BirdtieEnvironment.amapServiceHost.isNotEmpty);
+  }
+
+  PublicCity? _defaultExplorationCity() {
+    for (final city in _cities) {
+      if (city.id == defaultExplorationCityID && _hasUsableMap(city)) {
+        return city;
+      }
+    }
+    for (final city in _cities) {
+      if (_hasUsableMap(city)) return city;
+    }
+    for (final city in _cities) {
+      if (city.id == defaultExplorationCityID) return city;
+    }
+    return _cities.isEmpty ? null : _cities.first;
+  }
+
+  void _restoreExplorationChoice() {
+    final store = _explorationStore;
+    if (_explorationRestore != null || store == null) return;
+    final revision = _explorationChoiceRevision;
+    _explorationRestore = () async {
+      try {
+        final saved = await store.readCityID().timeout(
+          const Duration(seconds: 2),
+        );
+        if (_closed || revision != _explorationChoiceRevision) return;
+        _storedExplorationCityID = saved;
+        if (_cities.isNotEmpty && saved != null) {
+          _selectRestoredOrDefault();
+          _notify();
+          unawaited(_loadSelectedCityContent());
+        }
+      } catch (_) {
+        if (_closed || revision != _explorationChoiceRevision) return;
+        _explorationNotice = '未能恢复本机探索城市，仍可选择城市继续浏览。';
+        _notify();
+      }
+    }();
+  }
+
+  void _selectRestoredOrDefault({String? removedCityName}) {
+    PublicCity? saved;
+    for (final city in _cities) {
+      if (city.id == _storedExplorationCityID && _hasUsableMap(city)) {
+        saved = city;
+        break;
+      }
+    }
+    final chosen = saved ?? _defaultExplorationCity();
+    _setSelectedCity(chosen?.id);
+    _explorationFallback = _storedExplorationCityID != null && saved == null;
+    if (removedCityName != null) {
+      _explorationNotice = chosen == null
+          ? '原探索城市已从目录移除，请重新读取或选择城市。'
+          : '原探索城市已从目录移除，已暂时切换到${chosen.name}；这不代表你的实际位置。';
+    } else if (_storedExplorationCityID != null && saved == null) {
+      _explorationNotice = chosen == null
+          ? '上次探索城市暂不可用，请重新读取或选择城市。'
+          : '上次探索城市暂不可用，已暂时切换到${chosen.name}；可手动选择其他城市。';
+    } else if (saved != null) {
+      _explorationNotice = null;
+    }
+  }
+
+  void _setSelectedCity(String? cityID) {
+    if (_selectedCityID == cityID) return;
+    _selectedCityID = cityID;
+    _placeRequest++;
+    _places = const [];
+    _placesLoading = false;
+    _placeError = null;
+    _activityRequest++;
+    _activities = const [];
+    _activitiesLoading = false;
+    _activityError = null;
+    _organizationPinRequest++;
+    _organizationPins = const [];
+  }
+
+  Future<void> _loadSelectedCityContent() async {
+    await Future.wait([loadPlaces(), loadActivities(), loadOrganizationPins()]);
+  }
+
   Future<void> loadCities() async {
     if (_closed || _citiesLoading) return;
+    // Read in parallel. A stalled/failed local store cannot block the catalog
+    // default. A later read may restore a destination only before a new choice.
+    _restoreExplorationChoice();
     if (!configured) {
       _cityError = '尚未配置城市服务，请检查运行设置后重试。';
       _notify();
@@ -360,29 +503,21 @@ class PublicCityController extends ChangeNotifier {
       final next = records
           .map((item) => PublicCity.fromJson(item as Map<String, dynamic>))
           .toList(growable: false);
+      if (_closed) return;
+      final previous = selectedCity;
       _cities = List.unmodifiable(next);
       if (!next.any((city) => city.id == _selectedCityID)) {
-        // A catalog option is not a location observation. First load or removal
-        // of an explicit choice requires the person to choose again.
-        _selectedCityID = null;
-        _placeRequest++;
-        _places = const [];
-        _placesLoading = false;
-        _placeError = null;
-        _activityRequest++;
-        _activities = const [];
-        _activitiesLoading = false;
-        _activityError = null;
-        _organizationPinRequest++;
-        _organizationPins = const [];
+        _selectRestoredOrDefault(removedCityName: previous?.name);
+      } else if (_explorationFallback &&
+          next.any(
+            (city) =>
+                city.id == _storedExplorationCityID && _hasUsableMap(city),
+          )) {
+        _selectRestoredOrDefault();
       }
       _notify();
       if (_selectedCityID != null) {
-        await Future.wait([
-          loadPlaces(),
-          loadActivities(),
-          loadOrganizationPins(),
-        ]);
+        await _loadSelectedCityContent();
       }
     } catch (_) {
       _cityError = '无法读取城市，请稍后重试。';
@@ -392,22 +527,37 @@ class PublicCityController extends ChangeNotifier {
     }
   }
 
-  void selectCity(String cityID) {
-    if (_closed ||
-        cityID == _selectedCityID ||
-        !cities.any((city) => city.id == cityID)) {
+  void selectCity(String cityID, {bool rememberExploration = true}) {
+    if (_closed || !cities.any((city) => city.id == cityID)) {
       return;
     }
-    _selectedCityID = cityID;
-    _placeRequest++;
-    _places = const [];
-    _placeError = null;
-    _activityRequest++;
-    _activities = const [];
-    _activitiesLoading = false;
-    _activityError = null;
-    _organizationPinRequest++;
-    _organizationPins = const [];
+    // Even a temporary Task view must fence an older startup restore. Only an
+    // explicit manual exploration choice is persisted across launches.
+    _explorationChoiceRevision++;
+    _explorationFallback = false;
+    if (rememberExploration) {
+      _storedExplorationCityID = cityID;
+      _explorationNotice = null;
+      final store = _explorationStore;
+      if (store != null) {
+        _explorationWriteTail = _explorationWriteTail.then((_) async {
+          if (_closed || _storedExplorationCityID != cityID) return;
+          try {
+            await store.writeCityID(cityID);
+          } catch (_) {
+            if (!_closed && _storedExplorationCityID == cityID) {
+              _explorationNotice = '本次选城已生效，但未能保存到本机；重启后可重新选择。';
+              _notify();
+            }
+          }
+        });
+      }
+    }
+    if (cityID == _selectedCityID) {
+      _notify();
+      return;
+    }
+    _setSelectedCity(cityID);
     _notify();
     unawaited(loadPlaces());
     unawaited(loadActivities());

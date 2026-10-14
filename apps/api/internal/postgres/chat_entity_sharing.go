@@ -13,7 +13,7 @@ import (
 
 var _ connection.HumanEntityShareStore = (*Store)(nil)
 
-func (s *Store) beginEntityShare(ctx context.Context, a connection.EntityShareAccess, conversation string) (pgx.Tx, string, error) {
+func (s *Store) beginEntityShare(ctx context.Context, a connection.EntityShareAccess, conversation, operation string) (pgx.Tx, string, error) {
 	if a.Actor.AccountType != "person" || !validHumanMomentID(a.Actor.ID) || a.SessionDigest == ([32]byte{}) || !validHumanMomentID(conversation) {
 		return nil, "", identity.ErrUnauthorized
 	}
@@ -22,6 +22,12 @@ func (s *Store) beginEntityShare(ctx context.Context, a connection.EntityShareAc
 		return nil, "", err
 	}
 	fail := func(e error) (pgx.Tx, string, error) { _ = tx.Rollback(context.Background()); return nil, "", e }
+	if !validHumanMomentID(operation) {
+		return fail(connection.ErrConflict)
+	}
+	if _, err = tx.Exec(ctx, `SELECT pg_advisory_xact_lock(hashtextextended($1,143))`, a.Actor.ID+":ENTITY_SHARE:"+operation); err != nil {
+		return fail(err)
+	}
 	// Same serialization as the original per-person hourly limit. Session is
 	// checked after these waits; an earlier Authenticate is not sufficient.
 	var sender string
@@ -121,7 +127,7 @@ func (s *Store) ShareHumanEntity(ctx context.Context, a connection.EntityShareAc
 	if !connection.ValidEntityShare(in) {
 		return connection.EntityShareReceipt{}, connection.ErrConflict
 	}
-	tx, other, err := s.beginEntityShare(ctx, a, conversation)
+	tx, other, err := s.beginEntityShare(ctx, a, conversation, in.OperationID)
 	if err != nil {
 		return connection.EntityShareReceipt{}, err
 	}
@@ -155,13 +161,8 @@ func (s *Store) ShareHumanEntity(ctx context.Context, a connection.EntityShareAc
 	if recent >= 60 {
 		return connection.EntityShareReceipt{}, connection.ErrRateLimit
 	}
-	r.OperationID = in.OperationID
-	err = tx.QueryRow(ctx, `INSERT INTO conversation_messages(conversation_id,sender_account_id,body,entity_type,entity_id,client_operation_id)
-VALUES($1,$2,'分享了一张卡片',$3,$4,$5) RETURNING id,conversation_id,sender_account_id,speaker_kind,body,created_at`, conversation, a.Actor.ID, in.Entity.Type, in.Entity.ID, in.OperationID).Scan(&r.Message.ID, &r.Message.ConversationID, &r.Message.SenderID, &r.Message.SpeakerKind, &r.Message.Body, &r.Message.CreatedAt)
+	r, err = entityShareMessageEffectTx(ctx, tx, a.Actor.ID, conversation, other, in)
 	if err != nil {
-		return connection.EntityShareReceipt{}, err
-	}
-	if _, err = routeNativeNotification(ctx, tx, agentnotification.KindDirectMessage, r.Message.ID, other); err != nil {
 		return connection.EntityShareReceipt{}, err
 	}
 	if err = s.finishEntityShare(ctx, tx, a, conversation, other, in.Entity.Type, in.Entity.ID, &r, true); err != nil {
@@ -181,7 +182,7 @@ func (s *Store) GetHumanEntityShare(ctx context.Context, a connection.EntityShar
 	if !connection.ValidEntityShare(validation) {
 		return connection.EntityShareReceipt{}, connection.ErrConflict
 	}
-	tx, other, err := s.beginEntityShare(ctx, a, conversation)
+	tx, other, err := s.beginEntityShare(ctx, a, conversation, operation)
 	if err != nil {
 		return connection.EntityShareReceipt{}, err
 	}
@@ -194,6 +195,21 @@ func (s *Store) GetHumanEntityShare(ctx context.Context, a connection.EntityShar
 		return connection.EntityShareReceipt{}, err
 	}
 	if err = s.finishEntityShare(ctx, tx, a, conversation, other, kind, id, &r, false); err != nil {
+		return connection.EntityShareReceipt{}, err
+	}
+	return r, nil
+}
+
+// The original durable Message and notification decision remain the effect.
+// Both compatibility and controlled writers use this same transaction helper.
+func entityShareMessageEffectTx(ctx context.Context, tx pgx.Tx, owner, conversation, other string, in connection.EntityShareInput) (connection.EntityShareReceipt, error) {
+	r := connection.EntityShareReceipt{OperationID: in.OperationID}
+	err := tx.QueryRow(ctx, `INSERT INTO conversation_messages(conversation_id,sender_account_id,body,entity_type,entity_id,client_operation_id)
+VALUES($1,$2,'分享了一张卡片',$3,$4,$5) RETURNING id,conversation_id,sender_account_id,speaker_kind,body,created_at`, conversation, owner, in.Entity.Type, in.Entity.ID, in.OperationID).Scan(&r.Message.ID, &r.Message.ConversationID, &r.Message.SenderID, &r.Message.SpeakerKind, &r.Message.Body, &r.Message.CreatedAt)
+	if err != nil {
+		return connection.EntityShareReceipt{}, err
+	}
+	if _, err = routeNativeNotification(ctx, tx, agentnotification.KindDirectMessage, r.Message.ID, other); err != nil {
 		return connection.EntityShareReceipt{}, err
 	}
 	return r, nil

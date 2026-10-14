@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:birdtie_client/src/content/private_moment_controller.dart';
 import 'package:birdtie_client/src/content/private_moment_media_sheet.dart';
+import 'package:birdtie_client/src/workspace/agent_composer.dart';
 import 'package:birdtie_client/src/workspace/map_canvas.dart';
 import 'package:birdtie_client/src/workspace/map_workspace.dart';
 import 'package:birdtie_client/src/workspace/now_private_moment_image_page.dart';
@@ -118,17 +119,54 @@ class EntryFixture {
 
   List<http.Request> get momentRequests =>
       requests.where((r) => r.url.path.startsWith('/v1/me/moments')).toList();
-  Future<void> open(WidgetTester t, {bool settle = true}) async {
-    await nowTap(t, find.byTooltip('打开快捷操作'));
-    await t.ensureVisible(find.text('为私人记录添加图片'));
-    expect(find.text('为私人记录添加图片').hitTestable(), findsOneWidget);
-    await t.tap(find.text('为私人记录添加图片'));
+  // This directly mounts the retained production chooser. It is a component
+  // harness, not a claim that the removed Now material-menu entry is reachable.
+  Future<void> openRetainedChooser(WidgetTester t, {bool settle = true}) async {
+    final organizations = await entryOrganizations(t);
+    final boundMoments = moments, boundClient = client, boundBase = base;
+    t.state<AgentComposerState>(find.byType(AgentComposer)).pauseEditing();
+    unawaited(
+      Navigator.of(t.element(find.byType(MapCanvas))).push<void>(
+        MaterialPageRoute(
+          builder: (_) => NowPrivateMomentImagePage(
+            auth: auth,
+            moments: boundMoments,
+            identityChanges: Listenable.merge([
+              auth,
+              boundMoments,
+              organizations,
+            ]),
+            current: () =>
+                identical(moments, boundMoments) &&
+                identical(client, boundClient) &&
+                base == boundBase &&
+                boundMoments.apiBaseUrl == boundBase,
+            organizationWorkspaceID: () => organizations.active?.id,
+          ),
+        ),
+      ),
+    );
     if (settle) {
       await t.pumpAndSettle();
     } else {
       await t.pump();
       await t.pump(const Duration(milliseconds: 400));
     }
+  }
+
+  // The actual retained application route, with no State helper or fake entry.
+  Future<void> openProfile(WidgetTester t) async {
+    await nowTap(t, find.byTooltip('打开侧边栏'));
+    await nowTap(t, find.byKey(const Key('sidebar-account')));
+    await nowTap(t, find.text('个人资料与账户'));
+  }
+
+  Future<void> openProfileEditor(WidgetTester t) async {
+    await openProfile(t);
+    await nowTap(t, find.text('刷新'));
+    await nowTap(t, find.text('编辑或撤回'));
+    expect(find.text('编辑动态'), findsOneWidget);
+    expect(find.text('管理私人图片'), findsOneWidget);
   }
 
   Future<void> unmount(WidgetTester t) async {
@@ -162,20 +200,26 @@ const entryOrg = OrganizationWorkspace(
 void main() {
   setUp(() => FlutterSecureStorage.setMockInitialValues({}));
 
-  testWidgets('原Now加号添加素材提供明确私人记录图片入口且保留未发送草稿', (t) async {
+  testWidgets('当前Now材料创建菜单删除旧私人记录入口且保留未发送草稿', (t) async {
     final f = NowFixture();
     addTearDown(f.dispose);
     await f.mount(t);
     await t.enterText(nowField(), '已有未发送草稿');
-    await nowTap(t, find.byTooltip('打开快捷操作'));
-    expect(find.text('添加素材'), findsOneWidget);
-    expect(find.text('为私人记录添加图片'), findsOneWidget);
+    await nowTap(t, find.byTooltip('添加材料'));
+    expect(find.text('添加材料'), findsOneWidget);
+    expect(find.text('为私人记录添加图片'), findsNothing);
+    expect(find.text('粘贴文字/链接'), findsNothing);
+    // Same authorized creation actions now share the original material sheet.
+    expect(find.text('选择材料'), findsOneWidget);
+    expect(find.text('创建草稿'), findsOneWidget);
+    expect(find.text('动态'), findsOneWidget);
+    expect(find.text('活动'), findsOneWidget);
     expect(f.source.queries, isEmpty);
     await nowBack(t);
     expect(t.widget<TextField>(nowField()).controller!.text, '已有未发送草稿');
     await f.unmount(t);
   });
-  testWidgets('Now图片入口选择原本人private draft同transport且取消返回保留Now草稿和地图', (t) async {
+  testWidgets('保留选择页组件筛选本人private draft同transport取消保留Now草稿地图', (t) async {
     final f = EntryFixture();
     addTearDown(f.dispose);
     addTearDown(t.view.resetPhysicalSize);
@@ -194,7 +238,7 @@ void main() {
     await t.enterText(nowField(), '已有未发送草稿');
     final map = t.element(find.byType(MapCanvas));
     final ws = t.widget<MapCanvas>(find.byType(MapCanvas)).workspace;
-    await f.open(t);
+    await f.openRetainedChooser(t);
     expect(find.text('选择私人记录'), findsOneWidget);
     expect(
       find.byKey(const ValueKey('private-image-moment-$entryMoment')),
@@ -233,8 +277,53 @@ void main() {
     expect(f.source.queries, isEmpty);
     await f.unmount(t);
   });
+  testWidgets('真实资料页原私人草稿编辑图片同transport且取消不发布不改变Now草稿地图', (t) async {
+    final f = EntryFixture();
+    addTearDown(f.dispose);
+    addTearDown(t.view.resetPhysicalSize);
+    addTearDown(t.view.resetDevicePixelRatio);
+    await f.mount(t);
+    await t.enterText(nowField(), 'Now独立未发送草稿');
+    final map = t.element(find.byType(MapCanvas));
+    final workspace = t.widget<MapCanvas>(find.byType(MapCanvas)).workspace;
+    await f.openProfileEditor(t);
+    await nowTap(t, find.text('管理私人图片'));
+    final images = t.widget<PrivateMomentMediaSheet>(
+      find.byType(PrivateMomentMediaSheet),
+    );
+    expect(images.controller.momentID, entryMoment);
+    expect(images.controller.momentRevision, 1);
+    expect(find.text('选择一张图片'), findsOneWidget);
+    expect(f.momentRequests.length, 2);
+    expect(f.momentRequests.last.url.origin, 'https://now-entry.test');
+    expect(
+      f.momentRequests.last.headers['Authorization'],
+      'Bearer synthetic-entry',
+    );
+    expect(
+      f.momentRequests.every((request) => request.method == 'GET'),
+      isTrue,
+    );
+    await nowTap(t, find.byTooltip('关闭私人图片'));
+    expect(f.client.closes, 0);
+    await nowBack(t); // Existing draft editor, without save or withdraw.
+    await nowBack(t); // Profile route.
+    expect(t.widget<TextField>(nowField()).controller!.text, 'Now独立未发送草稿');
+    expect(t.element(find.byType(MapCanvas)), same(map));
+    expect(
+      t.widget<MapCanvas>(find.byType(MapCanvas)).workspace,
+      same(workspace),
+    );
+    expect(t.testTextInput.isVisible, isFalse);
+    expect(f.source.queries, isEmpty);
+    expect(
+      f.momentRequests.every((request) => request.method == 'GET'),
+      isTrue,
+    );
+    await f.unmount(t);
+  });
   for (final reason in ['guest', 'org', 'environment', 'owner', 'token']) {
-    testWidgets('Now私人图片入口拒绝$reason来源且零私人HTTP不假创建', (t) async {
+    testWidgets('保留选择页组件拒绝$reason身份来源且零私人HTTP不假创建', (t) async {
       final f = EntryFixture(signedIn: reason != 'guest');
       addTearDown(f.dispose);
       addTearDown(t.view.resetPhysicalSize);
@@ -266,18 +355,16 @@ void main() {
       }
       f.requests.clear();
       await t.enterText(nowField(), '当前草稿');
-      await f.open(t);
+      await f.openRetainedChooser(t);
       expect(f.momentRequests, isEmpty);
       expect(find.byType(PrivateMomentMediaSheet), findsNothing);
-      expect(find.text('选择私人记录'), findsNothing);
+      expect(find.text('选择私人记录'), findsOneWidget);
+      expect(find.textContaining('身份或记录来源已变化'), findsOneWidget);
       expect(
-        find.textContaining(switch (reason) {
-          'guest' => '请先登录',
-          'org' => '切回个人身份',
-          _ => '来源不一致',
-        }),
-        findsOneWidget,
+        find.byKey(const ValueKey('private-image-moment-$entryMoment')),
+        findsNothing,
       );
+      await nowTap(t, find.byTooltip('关闭选择私人记录'));
       expect(t.widget<TextField>(nowField()).controller!.text, '当前草稿');
       expect(t.testTextInput.isVisible, isFalse);
       expect(f.source.queries, isEmpty);
@@ -296,7 +383,7 @@ void main() {
         f.rows = [entryRow(owner: '44444444-4444-4444-8444-444444444444')];
       }
       await f.mount(t);
-      await f.open(t);
+      await f.openRetainedChooser(t);
       expect(find.byType(PrivateMomentMediaSheet), findsNothing);
       expect(
         find.byKey(const ValueKey('private-image-moment-$entryMoment')),
@@ -334,7 +421,7 @@ void main() {
       }
     });
     f.requests.clear();
-    await f.open(t);
+    await f.openRetainedChooser(t);
     expect(switched, isTrue);
     expect(
       f.momentRequests,
@@ -355,7 +442,7 @@ void main() {
     addTearDown(t.view.resetPhysicalSize);
     addTearDown(t.view.resetDevicePixelRatio);
     await f.mount(t);
-    await f.open(t);
+    await f.openRetainedChooser(t);
     await nowTap(
       t,
       find.byKey(const ValueKey('private-image-moment-$entryMoment')),
@@ -382,7 +469,7 @@ void main() {
     addTearDown(t.view.resetDevicePixelRatio);
     f.pending = Completer<http.Response>();
     await f.mount(t);
-    await f.open(t, settle: false);
+    await f.openRetainedChooser(t, settle: false);
     expect(find.byType(CircularProgressIndicator), findsWidgets);
     f.auth.changeIdentity(
       'Bearer synthetic-b',
@@ -396,14 +483,14 @@ void main() {
     expect(f.momentRequests.every((r) => r.method == 'GET'), isTrue);
     await f.unmount(t);
   });
-  testWidgets('图片入口320大字原选择和关闭可达且没有提前gallery或写', (t) async {
+  testWidgets('保留选择页组件320大字选择关闭可达且没有提前gallery或写', (t) async {
     final f = EntryFixture();
     addTearDown(f.dispose);
     addTearDown(t.view.resetPhysicalSize);
     addTearDown(t.view.resetDevicePixelRatio);
     f.rows = [entryRow()..['title'] = '本人已保存的非常长的私人记录标题用于检查大字换行与选择入口'];
     await f.mount(t, width: 320, scale: 2);
-    await f.open(t);
+    await f.openRetainedChooser(t);
     await nowTap(
       t,
       find.byKey(const ValueKey('private-image-moment-$entryMoment')),
@@ -422,7 +509,7 @@ void main() {
       addTearDown(t.view.resetPhysicalSize);
       addTearDown(t.view.resetDevicePixelRatio);
       await f.mount(t);
-      await f.open(t);
+      await f.openRetainedChooser(t);
       expect(
         find.textContaining(code == 401 ? '登录已失效' : '没有读取权限'),
         findsOneWidget,
@@ -568,20 +655,20 @@ void main() {
     'moments',
     'transport',
     'environment',
-    'scope',
-    'task',
+    'organization',
+    'identity-ABA',
   ]) {
-    testWidgets('完整Now图片读取迟到且$change替换永久退休旧页不复用新source', (t) async {
+    testWidgets('真实资料编辑图片读取迟到且$change替换退休旧页不复用新source', (t) async {
       final f = EntryFixture();
       addTearDown(f.dispose);
       addTearDown(t.view.resetPhysicalSize);
       addTearDown(t.view.resetDevicePixelRatio);
       await f.mount(t);
-      await f.open(t);
+      final organizations = await entryOrganizations(t);
+      await f.openProfileEditor(t);
       f.imagePending = Completer<http.Response>();
-      final choice = find.byKey(
-        const ValueKey('private-image-moment-$entryMoment'),
-      );
+      final choice = find.text('管理私人图片');
+      await t.ensureVisible(choice);
       await t.tap(choice);
       await t.pump();
       await t.pump(const Duration(milliseconds: 400));
@@ -611,15 +698,16 @@ void main() {
         f.base = 'https://new-environment.test';
         await f.mount(t);
       }
-      if (change == 'scope') {
-        f.city.selectCity('beta');
+      if (change == 'organization') {
+        organizations.select(entryOrg);
         await t.pump();
       }
-      if (change == 'task') {
-        t
-            .widget<MapCanvas>(find.byType(MapCanvas, skipOffstage: false))
-            .workspace
-            .newTask();
+      if (change == 'identity-ABA') {
+        f.auth.changeIdentity(
+          'Bearer synthetic-b',
+          nextOwner: '44444444-4444-4444-8444-444444444444',
+        );
+        f.auth.changeIdentity('Bearer synthetic-entry', nextOwner: entryOwner);
         await t.pump();
       }
       f.imagePending!.complete(f.jsonResponse([]));
@@ -627,19 +715,28 @@ void main() {
       expect(c.retired, isTrue);
       expect(c.images, isEmpty);
       expect(c.localBytes, isNull);
-      expect(find.byType(PrivateMomentMediaSheet), findsNothing);
+      // Org retirement may keep the safe error page reachable for closing.
+      expect(find.text('选择一张图片'), findsNothing);
+      if (find.byType(PrivateMomentMediaSheet).evaluate().isNotEmpty) {
+        expect(
+          find.byKey(const ValueKey('private-image-retired')),
+          findsOneWidget,
+        );
+      }
       expect(f.momentRequests.every((r) => r.method == 'GET'), isTrue);
       await f.unmount(t);
     });
   }
-  testWidgets('旧加号菜单Moment source更换不打开新私人目标也不清Now现稿', (t) async {
+  testWidgets('真实资料入口Moment source更换退休旧列表不打开新私人目标或清Now稿', (t) async {
     final f = EntryFixture();
     addTearDown(f.dispose);
     addTearDown(t.view.resetPhysicalSize);
     addTearDown(t.view.resetDevicePixelRatio);
     await f.mount(t);
     await t.enterText(nowField(), '独立Now安全草稿');
-    await nowTap(t, find.byTooltip('打开快捷操作'));
+    await f.openProfile(t);
+    await nowTap(t, find.text('刷新'));
+    expect(find.text('本人已保存的私人记录'), findsOneWidget);
     final old = f.moments;
     f.moments = PrivateMomentController(
       authorizationHeader: () => f.auth.authorizationHeader,
@@ -651,22 +748,25 @@ void main() {
     addTearDown(old.dispose);
     await f.mount(t);
     f.requests.clear();
-    await nowTap(t, find.text('为私人记录添加图片'));
-    expect(find.textContaining('私人记录来源已变化'), findsOneWidget);
+    expect(find.textContaining('工作身份或来源已变化'), findsOneWidget);
+    expect(find.text('本人已保存的私人记录'), findsNothing);
     expect(find.text('选择私人记录'), findsNothing);
     expect(f.momentRequests, isEmpty);
+    await nowBack(t);
     expect(t.widget<TextField>(nowField()).controller!.text, '独立Now安全草稿');
     expect(t.testTextInput.isVisible, isFalse);
     await f.unmount(t);
   });
-  testWidgets('旧加号菜单真实Moment来源A到B再A不能复活原图片入口', (t) async {
+  testWidgets('真实资料入口Moment来源A到B再A不能复活原私人列表', (t) async {
     final f = EntryFixture();
     addTearDown(f.dispose);
     addTearDown(t.view.resetPhysicalSize);
     addTearDown(t.view.resetDevicePixelRatio);
     await f.mount(t);
     await t.enterText(nowField(), 'Now独立草稿不随个人来源替换清除');
-    await nowTap(t, find.byTooltip('打开快捷操作'));
+    await f.openProfile(t);
+    await nowTap(t, find.text('刷新'));
+    expect(find.text('本人已保存的私人记录'), findsOneWidget);
     final original = f.moments;
     final other = PrivateMomentController(
       authorizationHeader: () => f.auth.authorizationHeader,
@@ -681,10 +781,11 @@ void main() {
     f.moments = original;
     await f.mount(t);
     f.requests.clear();
-    await nowTap(t, find.text('为私人记录添加图片'));
-    expect(find.textContaining('私人记录来源已变化'), findsOneWidget);
+    expect(find.textContaining('工作身份或来源已变化'), findsOneWidget);
+    expect(find.text('本人已保存的私人记录'), findsNothing);
     expect(find.text('选择私人记录'), findsNothing);
     expect(f.momentRequests, isEmpty);
+    await nowBack(t);
     expect(
       t.widget<TextField>(nowField()).controller!.text,
       'Now独立草稿不随个人来源替换清除',
@@ -700,7 +801,8 @@ void main() {
     await f.mount(t);
     await t.enterText(nowField(), '个人页面以外的安全Now草稿');
     await nowTap(t, find.byTooltip('打开侧边栏'));
-    await nowTap(t, find.text('个人资料'));
+    await nowTap(t, find.byKey(const Key('sidebar-account')));
+    await nowTap(t, find.text('个人资料与账户'));
     final original = f.moments;
     f.moments = PrivateMomentController(
       authorizationHeader: () => f.auth.authorizationHeader,
@@ -718,7 +820,7 @@ void main() {
     expect(t.testTextInput.isVisible, isFalse);
     await f.unmount(t);
   });
-  testWidgets('已粘贴文字材料Moment-only替换不清独立Now稿且新图片入口仍可用', (t) async {
+  testWidgets('显式原生粘贴Moment-only替换不清Now稿且保留选择页组件仍可用', (t) async {
     final f = EntryFixture();
     addTearDown(f.dispose);
     addTearDown(t.view.resetPhysicalSize);
@@ -738,8 +840,10 @@ void main() {
     });
     await f.mount(t);
     await t.enterText(nowField(), '原Now草稿');
-    await nowTap(t, find.byTooltip('打开快捷操作'));
-    await nowTap(t, find.text('粘贴文字/链接'));
+    final composer = t.state<AgentComposerState>(find.byType(AgentComposer));
+    composer.pauseEditing();
+    await composer.pasteTextFromClipboard();
+    await t.pumpAndSettle();
     expect(clipboardReads, 1);
     expect(
       t.widget<TextField>(nowField()).controller!.text,
@@ -761,7 +865,7 @@ void main() {
     );
     expect(clipboardReads, 1);
     expect(f.source.queries, isEmpty);
-    await f.open(t);
+    await f.openRetainedChooser(t);
     expect(
       find.byKey(const ValueKey('private-image-moment-$entryMoment')),
       findsOneWidget,

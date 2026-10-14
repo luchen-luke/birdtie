@@ -10,7 +10,11 @@ import (
 	"unicode"
 	"unicode/utf8"
 
+	"github.com/birdtie/birdtie/apps/api/internal/communityavatar"
 	ea "github.com/birdtie/birdtie/apps/api/internal/entityaction"
+	"github.com/birdtie/birdtie/apps/api/internal/entitycover"
+	"github.com/birdtie/birdtie/apps/api/internal/placephoto"
+	"github.com/birdtie/birdtie/apps/api/internal/profileavatar"
 )
 
 const Schema = "typed-agent-results-v1"
@@ -48,17 +52,21 @@ type Anchor struct {
 }
 
 type Item struct {
-	Entity               Ref             `json:"entityRef"`
-	Title                string          `json:"title"`
-	Summary              string          `json:"summary"`
-	Scope                string          `json:"scope"`
-	Detail               *Ref            `json:"detailRef,omitempty"`
-	Share                *Ref            `json:"shareRef,omitempty"`
-	Anchor               *Anchor         `json:"anchor,omitempty"`
-	SourceVersion        string          `json:"sourceVersion,omitempty"`
-	Actions              []ea.Descriptor `json:"actions,omitempty"`
-	ActionsSourceVersion string          `json:"actionsSourceVersion,omitempty"`
-	ActionsValidUntil    *time.Time      `json:"actionsValidUntil,omitempty"`
+	PlacePhoto           *placephoto.Metadata      `json:"placePhoto,omitempty"`
+	Cover                *entitycover.Metadata     `json:"cover,omitempty"`
+	Entity               Ref                       `json:"entityRef"`
+	Title                string                    `json:"title"`
+	Summary              string                    `json:"summary"`
+	Scope                string                    `json:"scope"`
+	Detail               *Ref                      `json:"detailRef,omitempty"`
+	Share                *Ref                      `json:"shareRef,omitempty"`
+	Anchor               *Anchor                   `json:"anchor,omitempty"`
+	SourceVersion        string                    `json:"sourceVersion,omitempty"`
+	Actions              []ea.Descriptor           `json:"actions,omitempty"`
+	ActionsSourceVersion string                    `json:"actionsSourceVersion,omitempty"`
+	ActionsValidUntil    *time.Time                `json:"actionsValidUntil,omitempty"`
+	Avatar               *profileavatar.Metadata   `json:"avatar,omitempty"`
+	CommunityAvatar      *communityavatar.Metadata `json:"communityAvatar,omitempty"`
 }
 
 func bounded(s string, min, max int) bool {
@@ -110,7 +118,25 @@ func ValidAnchor(kind string, a *Anchor) bool {
 }
 
 func ValidateItem(i Item) error {
+	if i.PlacePhoto != nil && (i.Entity.Type != "place" || i.PlacePhoto.EntityID != i.Entity.ID || !i.PlacePhoto.Valid(time.Now().UTC())) {
+		return ErrInvalid
+	}
+	if i.Cover != nil {
+		ref := i.Entity
+		if ref.Type == "opportunity" && i.Detail != nil {
+			ref = *i.Detail
+		}
+		if i.Cover.Ref != (entitycover.Ref{Type: ref.Type, ID: ref.ID}) || !i.Cover.Valid(time.Now().UTC()) {
+			return ErrInvalid
+		}
+	}
 	if !ValidRef(i.Entity) || !bounded(i.Title, 1, 300) || !validSummary(i.Summary) || (i.Scope != AuthorizedView && i.Scope != SelfPrivate) || !bounded(i.SourceVersion, 0, 180) || !ValidAnchor(i.Entity.Type, i.Anchor) {
+		return ErrInvalid
+	}
+	if i.Avatar != nil && (i.Entity.Type != "person" || !i.Avatar.Valid() || i.Avatar.AccountID != i.Entity.ID) {
+		return ErrInvalid
+	}
+	if i.CommunityAvatar != nil && (i.Entity.Type != "community" || !i.CommunityAvatar.Valid() || i.CommunityAvatar.CommunityID != i.Entity.ID) {
 		return ErrInvalid
 	}
 	if i.Actions != nil {

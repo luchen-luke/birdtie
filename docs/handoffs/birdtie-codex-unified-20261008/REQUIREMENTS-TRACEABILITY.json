@@ -1,0 +1,2048 @@
+{
+  "schema_version": "1.0",
+  "package_date": "2026-10-08",
+  "purpose": "既有需求的整合追踪视图，不是新建或重置任务队列",
+  "status_policy": "空implementation_status不是TODO；须保留当前任务历史并现场核对。56条为原需求数量，不是剩余任务数。",
+  "sources": [
+    {
+      "file": "sources/BirdTie-Now-Consolidated-Requirements-and-Changes-2026-10-08.md",
+      "library_file_id": "libfile_36a69eaddf0c81919df641556d61f0d9",
+      "read_complete": true
+    },
+    {
+      "file": "sources/BT-PG-20261008-SPEC.md",
+      "library_file_id": "libfile_5e581043dd908191977129c9bf3a7afb",
+      "read_complete": true
+    },
+    {
+      "file": "sources/BirdTie-Now-Prototype-Handoff.md",
+      "library_file_id": "libfile_54a3c19b3bd481918da923449645b44b",
+      "read_complete": true
+    }
+  ],
+  "requirements": [
+    {
+      "requirement_id": "BT-NOW-20261008-001",
+      "title": "核对当前实现并合并既有任务",
+      "source_file": "sources/BirdTie-Now-Consolidated-Requirements-and-Changes-2026-10-08.md",
+      "source_priority": "P0",
+      "source_dependencies": [],
+      "source_full_requirement": "- 优先级：P0；阶段：A；责任角色：协调与全栈\n- 初始状态：RECONCILE_REQUIRED；测试：NOT_RUN\n- 依赖：无\n- 来源：U1, U2, U3, U4, U5\n\n修改要求：在当前开发的自然检查点读取工作区、AGENTS、队列、AGE/AIR、Discovery 22 项与 UI Repair 42 项及最新证据。逐项映射复用、修改、新增、已覆盖、冲突和阻塞。保留原 ID、DONE 历史及正在执行的任务；本包 ID 只是稳定需求追踪 ID。\n\n验收：形成双向映射与单一执行队列；每个需求有现有任务 ID 或新增理由。记录实际分支、提交、工作树、所有者和验证基线，不用历史报告替代当前检查。\n\n证据：代码路径与提交、自动化结果、适用真机截图或录屏；未执行项明确 NOT_RUN",
+      "existing_task_id": null,
+      "mapping_state": "RECONCILE_REQUIRED",
+      "implementation_status": null,
+      "preserve_existing_status": true,
+      "test_status": "NOT_RUN_IN_THIS_HANDOFF",
+      "proposed_delivery_slice": "S0",
+      "figma_frames": [],
+      "extension_clauses": [
+        "BASELINE-RECONCILE"
+      ],
+      "user_report_2026_10_08_1847": null,
+      "independently_verified_current_head": false,
+      "evidence_paths": [],
+      "remaining_scope": null,
+      "acceptance_scenarios": [
+        "T31"
+      ]
+    },
+    {
+      "requirement_id": "BT-NOW-20261008-002",
+      "title": "访客首页默认阿伯丁并支持城市恢复",
+      "source_file": "sources/BirdTie-Now-Consolidated-Requirements-and-Changes-2026-10-08.md",
+      "source_priority": "P0",
+      "source_dependencies": [
+        "BT-NOW-20261008-001"
+      ],
+      "source_full_requirement": "- 优先级：P0；阶段：A；责任角色：客户端\n- 初始状态：RECONCILE_REQUIRED；测试：NOT_RUN\n- 依赖：BT-NOW-20261008-001\n- 来源：U1\n\n修改要求：本轮测试配置默认 Aberdeen 城市级视角，首次未登录也直接显示可用城市地图，不先显示地球仪。已明确选择的探索城市优先恢复；未配置高德时不得自动把当前上海变成不可用的默认地图。\n\n验收：全新访客、重启、拒绝定位、定位失败均能看到阿伯丁地图或可恢复的地图服务错误；不会假称用户位于阿伯丁。手动选择后重启保持选择；退出账号不泄漏上个账号私人图层。\n\n证据：代码路径与提交、自动化结果、适用真机截图或录屏；未执行项明确 NOT_RUN",
+      "existing_task_id": null,
+      "mapping_state": "RECONCILE_REQUIRED",
+      "implementation_status": null,
+      "preserve_existing_status": true,
+      "test_status": "NOT_RUN_IN_THIS_HANDOFF",
+      "proposed_delivery_slice": "S1",
+      "figma_frames": [
+        "01"
+      ],
+      "extension_clauses": [
+        "LOW-SUPPLY"
+      ],
+      "user_report_2026_10_08_1847": "报告称默认Aberdeen已落地",
+      "independently_verified_current_head": false,
+      "evidence_paths": [],
+      "remaining_scope": null,
+      "acceptance_scenarios": [
+        "T01"
+      ]
+    },
+    {
+      "requirement_id": "BT-NOW-20261008-003",
+      "title": "隔离实际位置探索城市查询范围与公开范围",
+      "source_file": "sources/BirdTie-Now-Consolidated-Requirements-and-Changes-2026-10-08.md",
+      "source_priority": "P0",
+      "source_dependencies": [
+        "BT-NOW-20261008-001",
+        "BT-NOW-20261008-002"
+      ],
+      "source_full_requirement": "- 优先级：P0；阶段：A；责任角色：客户端与服务端\n- 初始状态：RECONCILE_REQUIRED；测试：NOT_RUN\n- 依赖：BT-NOW-20261008-001, BT-NOW-20261008-002\n- 来源：U1, U4\n\n修改要求：分别保存实际设备位置及授权状态、探索城市与相机、当前查询范围、用户公开位置或可发现范围。未来支持已授权定位且底图可用时作为初始城市；手动探索不得被定位刷新覆盖。\n\n验收：移动或查询其他城市不自动改变公开位置；选择阿伯丁不改 GPS；不弹隐式定位授权。不可用国内底图保留手动回退并解释，不出现空地球状态。\n\n证据：代码路径与提交、自动化结果、适用真机截图或录屏；未执行项明确 NOT_RUN",
+      "existing_task_id": null,
+      "mapping_state": "RECONCILE_REQUIRED",
+      "implementation_status": null,
+      "preserve_existing_status": true,
+      "test_status": "NOT_RUN_IN_THIS_HANDOFF",
+      "proposed_delivery_slice": "S1",
+      "figma_frames": [],
+      "extension_clauses": [],
+      "user_report_2026_10_08_1847": "报告称独立探索城市存储已落地，其他范围隔离仍需核对",
+      "independently_verified_current_head": false,
+      "evidence_paths": [],
+      "remaining_scope": null,
+      "acceptance_scenarios": [
+        "T01",
+        "T32"
+      ]
+    },
+    {
+      "requirement_id": "BT-NOW-20261008-004",
+      "title": "重做城市选择器并核查 Civu 目的地复用",
+      "source_file": "sources/BirdTie-Now-Consolidated-Requirements-and-Changes-2026-10-08.md",
+      "source_priority": "P1",
+      "source_dependencies": [
+        "BT-NOW-20261008-001",
+        "BT-NOW-20261008-003"
+      ],
+      "source_full_requirement": "- 优先级：P1；阶段：A；责任角色：客户端与复用审查\n- 初始状态：RECONCILE_REQUIRED；测试：NOT_RUN\n- 依赖：BT-NOW-20261008-001, BT-NOW-20261008-003\n- 来源：U1\n\n修改要求：选择器只承载城市或目的地：图片或统一占位图、名称、国家地区、搜索、最近选择。复用经检查可用的 Civu 目的地数据契约及设计，不直接搬运旧页面。移出线上查找和范围声明工具。\n\n验收：中文搜索阿伯丁与 Aberdeen 归并同一城市；选中后在 Now 原地图聚焦，关闭选择器恢复对话；图片加载失败仍可操作，城市无数据不等于地图不可用。\n\n证据：代码路径与提交、自动化结果、适用真机截图或录屏；未执行项明确 NOT_RUN",
+      "existing_task_id": null,
+      "mapping_state": "RECONCILE_REQUIRED",
+      "implementation_status": null,
+      "preserve_existing_status": true,
+      "test_status": "NOT_RUN_IN_THIS_HANDOFF",
+      "proposed_delivery_slice": "S4",
+      "figma_frames": [],
+      "extension_clauses": [],
+      "user_report_2026_10_08_1847": null,
+      "independently_verified_current_head": false,
+      "evidence_paths": [],
+      "remaining_scope": null,
+      "acceptance_scenarios": [
+        "T32"
+      ]
+    },
+    {
+      "requirement_id": "BT-NOW-20261008-005",
+      "title": "精简首页并迁移社交与内部范围入口",
+      "source_file": "sources/BirdTie-Now-Consolidated-Requirements-and-Changes-2026-10-08.md",
+      "source_priority": "P0",
+      "source_dependencies": [
+        "BT-NOW-20261008-001",
+        "BT-NOW-20261008-003"
+      ],
+      "source_full_requirement": "- 优先级：P0；阶段：A；责任角色：产品与客户端\n- 初始状态：RECONCILE_REQUIRED；测试：NOT_RUN\n- 依赖：BT-NOW-20261008-001, BT-NOW-20261008-003\n- 来源：U1\n\n修改要求：删除首页常驻的未开启意图、我的社交近况、完善我的选择等堆叠卡片。社交近况放个人资料；兴趣偏好放 Agent 偏好；公开范围声明放隐私与可发现性；内部刷新本人范围改后台状态刷新，失败时就地重试。线上活动与伙伴作为明确查询任务。\n\n验收：未设置社交意图不占首页、不阻止查询；关键隐私控制仍可找到；用户已有主动意图可用可关闭的小状态条呈现并提供编辑。内部术语不再出现在城市选择器。\n\n证据：代码路径与提交、自动化结果、适用真机截图或录屏；未执行项明确 NOT_RUN",
+      "existing_task_id": null,
+      "mapping_state": "RECONCILE_REQUIRED",
+      "implementation_status": null,
+      "preserve_existing_status": true,
+      "test_status": "NOT_RUN_IN_THIS_HANDOFF",
+      "proposed_delivery_slice": "S1",
+      "figma_frames": [
+        "01"
+      ],
+      "extension_clauses": [
+        "PUBLIC-SELF-PROFILE"
+      ],
+      "user_report_2026_10_08_1847": "报告称首页精简已落地",
+      "independently_verified_current_head": false,
+      "evidence_paths": [],
+      "remaining_scope": null,
+      "acceptance_scenarios": [
+        "T01",
+        "T07"
+      ]
+    },
+    {
+      "requirement_id": "BT-NOW-20261008-006",
+      "title": "明确区域探索和地图数量语义",
+      "source_file": "sources/BirdTie-Now-Consolidated-Requirements-and-Changes-2026-10-08.md",
+      "source_priority": "P1",
+      "source_dependencies": [
+        "BT-NOW-20261008-001",
+        "BT-NOW-20261008-005"
+      ],
+      "source_full_requirement": "- 优先级：P1；阶段：A；责任角色：客户端与搜索服务\n- 初始状态：RECONCILE_REQUIRED；测试：NOT_RUN\n- 依赖：BT-NOW-20261008-001, BT-NOW-20261008-005\n- 来源：U1\n\n修改要求：这片区域有什么收敛为轻量建议或用户移动地图后的搜此区域操作，涵盖地点等可用内容而非固定账户公开活动。聚合数字、空状态按实际对象类型、过滤条件和范围生成。\n\n验收：暂无公开活动与地点聚合数字可共存但明确类型；不能用地点数量冒充活动数量；相同范围重复提示不堆叠，搜索失败与真实无结果分开。\n\n证据：代码路径与提交、自动化结果、适用真机截图或录屏；未执行项明确 NOT_RUN",
+      "existing_task_id": null,
+      "mapping_state": "RECONCILE_REQUIRED",
+      "implementation_status": null,
+      "preserve_existing_status": true,
+      "test_status": "NOT_RUN_IN_THIS_HANDOFF",
+      "proposed_delivery_slice": "S1",
+      "figma_frames": [
+        "01"
+      ],
+      "extension_clauses": [
+        "SOCIAL-MAP",
+        "COUNTS-ACL",
+        "LOW-SUPPLY"
+      ],
+      "user_report_2026_10_08_1847": null,
+      "independently_verified_current_head": false,
+      "evidence_paths": [],
+      "remaining_scope": null,
+      "acceptance_scenarios": [
+        "T04",
+        "T08",
+        "T09"
+      ]
+    },
+    {
+      "requirement_id": "BT-NOW-20261008-007",
+      "title": "统一 Now 地图工作区和状态恢复",
+      "source_file": "sources/BirdTie-Now-Consolidated-Requirements-and-Changes-2026-10-08.md",
+      "source_priority": "P0",
+      "source_dependencies": [
+        "BT-NOW-20261008-001",
+        "BT-NOW-20261008-003"
+      ],
+      "source_full_requirement": "- 优先级：P0；阶段：B；责任角色：客户端架构\n- 初始状态：RECONCILE_REQUIRED；测试：NOT_RUN\n- 依赖：BT-NOW-20261008-001, BT-NOW-20261008-003\n- 来源：U1, U4\n\n修改要求：地图作为 Now 持续存在的工作区。地点、收藏、主题地图、旅程、动态关联地点、他人分享通过同一地图的选择与图层状态呈现。保存相机、选中对象、当前图层、会话、草稿、面板状态；按账号和会话隔离。\n\n验收：打开详情、来源、收藏、路线再返回不创建第二个全屏业务地图、不丢对话和草稿；临时查看他人旅程退出后恢复原视角。只展示当前任务相关图层，不把所有内容同时铺满。\n\n证据：代码路径与提交、自动化结果、适用真机截图或录屏；未执行项明确 NOT_RUN",
+      "existing_task_id": null,
+      "mapping_state": "RECONCILE_REQUIRED",
+      "implementation_status": null,
+      "preserve_existing_status": true,
+      "test_status": "NOT_RUN_IN_THIS_HANDOFF",
+      "proposed_delivery_slice": "S1",
+      "figma_frames": [
+        "01",
+        "02",
+        "03",
+        "04"
+      ],
+      "extension_clauses": [
+        "SOCIAL-MAP",
+        "PLACE-MOMENT-PROFILE",
+        "RELATION-FILTERS",
+        "PUBLIC-SELF-PROFILE",
+        "SAME-MAP-READ",
+        "DESIGN-TO-CODE",
+        "OFFLINE-RECONNECT",
+        "LOW-SUPPLY"
+      ],
+      "user_report_2026_10_08_1847": "报告称详情返回保留选择，完整工作区范围仍需核对",
+      "independently_verified_current_head": false,
+      "evidence_paths": [],
+      "remaining_scope": null,
+      "acceptance_scenarios": [
+        "T02",
+        "T03",
+        "T06",
+        "T08",
+        "T10",
+        "T12",
+        "T22",
+        "T23"
+      ]
+    },
+    {
+      "requirement_id": "BT-NOW-20261008-008",
+      "title": "建立唯一输入框和材料与操作加号菜单",
+      "source_file": "sources/BirdTie-Now-Consolidated-Requirements-and-Changes-2026-10-08.md",
+      "source_priority": "P0",
+      "source_dependencies": [
+        "BT-NOW-20261008-001",
+        "BT-NOW-20261008-005"
+      ],
+      "source_full_requirement": "- 优先级：P0；阶段：B；责任角色：客户端\n- 初始状态：RECONCILE_REQUIRED；测试：NOT_RUN\n- 依赖：BT-NOW-20261008-001, BT-NOW-20261008-005\n- 来源：U2\n\n修改要求：移动端一个底部输入框，具备文本、加号、语音、上下文相关提交按钮。加号包含材料入口与创建或处理操作两个分组。材料为图片、视频、文件、链接、地点；操作为收藏地点、发布动态、主题地图、旅程、创建活动。查询或加入活动按语境出现。\n\n验收：加号真实可用，选材料后返回同一草稿；选操作只切换草稿类型而不跳多张表单。未知或未接通能力说明状态且保留追踪，不能隐藏入口后宣称实现。菜单可滚动但不遮挡关键按钮。\n\n证据：代码路径与提交、自动化结果、适用真机截图或录屏；未执行项明确 NOT_RUN",
+      "existing_task_id": null,
+      "mapping_state": "RECONCILE_REQUIRED",
+      "implementation_status": null,
+      "preserve_existing_status": true,
+      "test_status": "NOT_RUN_IN_THIS_HANDOFF",
+      "proposed_delivery_slice": "S4",
+      "figma_frames": [
+        "06"
+      ],
+      "extension_clauses": [
+        "INPUT-CONTEXT"
+      ],
+      "user_report_2026_10_08_1847": null,
+      "independently_verified_current_head": false,
+      "evidence_paths": [],
+      "remaining_scope": null,
+      "acceptance_scenarios": [
+        "T13"
+      ]
+    },
+    {
+      "requirement_id": "BT-NOW-20261008-009",
+      "title": "支持中英文语音转文字和安全取消",
+      "source_file": "sources/BirdTie-Now-Consolidated-Requirements-and-Changes-2026-10-08.md",
+      "source_priority": "P0",
+      "source_dependencies": [
+        "BT-NOW-20261008-008"
+      ],
+      "source_full_requirement": "- 优先级：P0；阶段：B；责任角色：客户端与语音适配\n- 初始状态：RECONCILE_REQUIRED；测试：NOT_RUN\n- 依赖：BT-NOW-20261008-008\n- 来源：U2, U4\n\n修改要求：按需申请麦克风权限；录音、停止、取消、转写、失败重试状态明确。保留说话原语言，中文转中文、英文转英文，默认不翻译。转写进入可编辑草稿，复用文本任务路径。\n\n验收：中文、英语和混合地名真机测试；转写后可编辑再发送，不自动执行或发布。拒权、来电中断、网络失败、取消均保留原草稿；录音前明确本地或云端转写、接收方及用途，不静默上传；定义原始音频临时保留、取消清理、成功后删除和失败重试期限，用户可查看删除策略，不暗中长期留存。\n\n证据：代码路径与提交、自动化结果、适用真机截图或录屏；未执行项明确 NOT_RUN",
+      "existing_task_id": null,
+      "mapping_state": "RECONCILE_REQUIRED",
+      "implementation_status": null,
+      "preserve_existing_status": true,
+      "test_status": "NOT_RUN_IN_THIS_HANDOFF",
+      "proposed_delivery_slice": "S4",
+      "figma_frames": [],
+      "extension_clauses": [],
+      "user_report_2026_10_08_1847": null,
+      "independently_verified_current_head": false,
+      "evidence_paths": [],
+      "remaining_scope": null,
+      "acceptance_scenarios": [
+        "T14"
+      ]
+    },
+    {
+      "requirement_id": "BT-NOW-20261008-010",
+      "title": "复用 Runtime 建立类型化可编辑草稿",
+      "source_file": "sources/BirdTie-Now-Consolidated-Requirements-and-Changes-2026-10-08.md",
+      "source_priority": "P0",
+      "source_dependencies": [
+        "BT-NOW-20261008-001",
+        "BT-NOW-20261008-008"
+      ],
+      "source_full_requirement": "- 优先级：P0；阶段：B；责任角色：客户端与 AIR 服务\n- 初始状态：RECONCILE_REQUIRED；测试：NOT_RUN\n- 依赖：BT-NOW-20261008-001, BT-NOW-20261008-008\n- 来源：U2, U4\n\n修改要求：文本、语音、菜单动作统一产出同一意图与类型化草稿。状态包含编辑、待补充、待确认、提交中、成功、失败、结果未知。只问真正缺失的信息，一轮优先一两项；可直接展开编辑所有关键字段。\n\n验收：同一创建任务的三种入口使用相同校验和执行链；切换任务提示如何处理已有草稿。没有长表单强制首次展示，也没有无限追问；确认后改字段使旧确认失效。\n\n证据：代码路径与提交、自动化结果、适用真机截图或录屏；未执行项明确 NOT_RUN",
+      "existing_task_id": null,
+      "mapping_state": "RECONCILE_REQUIRED",
+      "implementation_status": null,
+      "preserve_existing_status": true,
+      "test_status": "NOT_RUN_IN_THIS_HANDOFF",
+      "proposed_delivery_slice": "S4",
+      "figma_frames": [
+        "06",
+        "07"
+      ],
+      "extension_clauses": [
+        "INPUT-CONTEXT"
+      ],
+      "user_report_2026_10_08_1847": null,
+      "independently_verified_current_head": false,
+      "evidence_paths": [],
+      "remaining_scope": null,
+      "acceptance_scenarios": [
+        "T13"
+      ]
+    },
+    {
+      "requirement_id": "BT-NOW-20261008-011",
+      "title": "接通附件生命周期和上传恢复",
+      "source_file": "sources/BirdTie-Now-Consolidated-Requirements-and-Changes-2026-10-08.md",
+      "source_priority": "P0",
+      "source_dependencies": [
+        "BT-NOW-20261008-008",
+        "BT-NOW-20261008-010",
+        "BT-NOW-20261008-028"
+      ],
+      "source_full_requirement": "- 优先级：P0；阶段：B；责任角色：媒体后端与客户端\n- 初始状态：RECONCILE_REQUIRED；测试：NOT_RUN\n- 依赖：BT-NOW-20261008-008, BT-NOW-20261008-010, BT-NOW-20261008-028\n- 来源：U2\n\n修改要求：实现选择、预览、删除、上传进度、取消、失败重试和对象引用；在获准媒体存储上复用 Civu 可用机制。大视频上传不依赖聊天正文请求，保留断点续传可行性和跨地区性能验证。\n\n验收：照片和至少一种实际支持的视频或文件完成上传并可被对应草稿使用；失败不丢文本，取消不继续发布。类型、大小限制明确；附件未连接不能作为完成。跨账号不能访问私人上传。\n\n证据：代码路径与提交、自动化结果、适用真机截图或录屏；未执行项明确 NOT_RUN",
+      "existing_task_id": null,
+      "mapping_state": "RECONCILE_REQUIRED",
+      "implementation_status": null,
+      "preserve_existing_status": true,
+      "test_status": "NOT_RUN_IN_THIS_HANDOFF",
+      "proposed_delivery_slice": "S4",
+      "figma_frames": [
+        "06"
+      ],
+      "extension_clauses": [
+        "OFFLINE-RECONNECT"
+      ],
+      "user_report_2026_10_08_1847": null,
+      "independently_verified_current_head": false,
+      "evidence_paths": [],
+      "remaining_scope": null,
+      "acceptance_scenarios": [
+        "T15",
+        "T23"
+      ]
+    },
+    {
+      "requirement_id": "BT-NOW-20261008-012",
+      "title": "照片地点建议与发布隐私",
+      "source_file": "sources/BirdTie-Now-Consolidated-Requirements-and-Changes-2026-10-08.md",
+      "source_priority": "P0",
+      "source_dependencies": [
+        "BT-NOW-20261008-010",
+        "BT-NOW-20261008-011",
+        "BT-NOW-20261008-003",
+        "BT-NOW-20261008-028"
+      ],
+      "source_full_requirement": "- 优先级：P0；阶段：B；责任角色：媒体与隐私后端\n- 初始状态：RECONCILE_REQUIRED；测试：NOT_RUN\n- 依赖：BT-NOW-20261008-010, BT-NOW-20261008-011, BT-NOW-20261008-003, BT-NOW-20261008-028\n- 来源：U2\n\n修改要求：EXIF 地理信息仅作照片拍摄地点候选，支持无坐标、多地点、过期或冲突元数据，用户可改选。自动生成文案须可编辑。发布前明确可见性、地点精度和所选材料，处理公开版本的敏感 EXIF。\n\n验收：上传上海旧照片不会改变用户当前城市或自动公开精确坐标；不同地点照片可拆分或用户选主地点。取消发布不留下公开对象；照片人物和敏感属性不自动写入公开画像。\n\n证据：代码路径与提交、自动化结果、适用真机截图或录屏；未执行项明确 NOT_RUN",
+      "existing_task_id": null,
+      "mapping_state": "RECONCILE_REQUIRED",
+      "implementation_status": null,
+      "preserve_existing_status": true,
+      "test_status": "NOT_RUN_IN_THIS_HANDOFF",
+      "proposed_delivery_slice": "S4",
+      "figma_frames": [
+        "07"
+      ],
+      "extension_clauses": [],
+      "user_report_2026_10_08_1847": null,
+      "independently_verified_current_head": false,
+      "evidence_paths": [],
+      "remaining_scope": null,
+      "acceptance_scenarios": [
+        "T15"
+      ]
+    },
+    {
+      "requirement_id": "BT-NOW-20261008-013",
+      "title": "区分提及好友与发送给好友",
+      "source_file": "sources/BirdTie-Now-Consolidated-Requirements-and-Changes-2026-10-08.md",
+      "source_priority": "P0",
+      "source_dependencies": [
+        "BT-NOW-20261008-010",
+        "BT-NOW-20261008-028"
+      ],
+      "source_full_requirement": "- 优先级：P0；阶段：B；责任角色：身份权限与客户端\n- 初始状态：RECONCILE_REQUIRED；测试：NOT_RUN\n- 依赖：BT-NOW-20261008-010, BT-NOW-20261008-028\n- 来源：U2, U4\n\n修改要求：@ 默认选择引用对象，不等于收件人或发送许可。用户明确选择发给好友后显示发送模式、收件人、正文及附件预览；提交按钮改为发送给所选对象。名单仅来自当前账号有权访问的好友关系。\n\n验收：输入 @好友不会自动发送或读取好友私聊；取消后返回原草稿。收件人变化重新确认；拉黑、权限撤销和关系变化在执行前复查，错误不显示成功。\n\n证据：代码路径与提交、自动化结果、适用真机截图或录屏；未执行项明确 NOT_RUN",
+      "existing_task_id": null,
+      "mapping_state": "RECONCILE_REQUIRED",
+      "implementation_status": null,
+      "preserve_existing_status": true,
+      "test_status": "NOT_RUN_IN_THIS_HANDOFF",
+      "proposed_delivery_slice": "S4",
+      "figma_frames": [
+        "10"
+      ],
+      "extension_clauses": [
+        "INPUT-CONTEXT"
+      ],
+      "user_report_2026_10_08_1847": null,
+      "independently_verified_current_head": false,
+      "evidence_paths": [],
+      "remaining_scope": null,
+      "acceptance_scenarios": [
+        "T17"
+      ]
+    },
+    {
+      "requirement_id": "BT-NOW-20261008-014",
+      "title": "来源改为逐段紧凑引用标签",
+      "source_file": "sources/BirdTie-Now-Consolidated-Requirements-and-Changes-2026-10-08.md",
+      "source_priority": "P0",
+      "source_dependencies": [
+        "BT-NOW-20261008-001"
+      ],
+      "source_full_requirement": "- 优先级：P0；阶段：A；责任角色：客户端与回答契约\n- 初始状态：RECONCILE_REQUIRED；测试：NOT_RUN\n- 依赖：BT-NOW-20261008-001\n- 来源：U3\n\n修改要求：正文相关断言旁显示短来源标签，来源集合默认折叠。地点字段可展示小来源标识，点开查看标题、域名、时间及完整链接，再可访问原网页；提供可直接访问原文的明确操作。\n\n验收：长网址不撑满正文和卡片；标签有可读名称与足够点击区域。相同来源去重但每轮引用稳定，历史回合不被新回合来源覆盖；无来源时不生成虚假标签。\n\n证据：代码路径与提交、自动化结果、适用真机截图或录屏；未执行项明确 NOT_RUN",
+      "existing_task_id": null,
+      "mapping_state": "RECONCILE_REQUIRED",
+      "implementation_status": null,
+      "preserve_existing_status": true,
+      "test_status": "NOT_RUN_IN_THIS_HANDOFF",
+      "proposed_delivery_slice": "S1",
+      "figma_frames": [
+        "08"
+      ],
+      "extension_clauses": [],
+      "user_report_2026_10_08_1847": "报告称紧凑来源已落地",
+      "independently_verified_current_head": false,
+      "evidence_paths": [],
+      "remaining_scope": null,
+      "acceptance_scenarios": [
+        "T21",
+        "T33"
+      ]
+    },
+    {
+      "requirement_id": "BT-NOW-20261008-015",
+      "title": "保持来源事实一致与冲突可见",
+      "source_file": "sources/BirdTie-Now-Consolidated-Requirements-and-Changes-2026-10-08.md",
+      "source_priority": "P0",
+      "source_dependencies": [
+        "BT-NOW-20261008-014"
+      ],
+      "source_full_requirement": "- 优先级：P0；阶段：A；责任角色：搜索与回答后端\n- 初始状态：RECONCILE_REQUIRED；测试：NOT_RUN\n- 依赖：BT-NOW-20261008-014\n- 来源：U3, U4\n\n修改要求：展示压缩不删除溯源。以 sourceId 和字段引用关联来源；官方标记需验证站点身份。营业时间或地址冲突显示待核实及对应来源，不让模型和卡片各说一套。\n\n验收：覆盖已报告的 Aberdeen Inspired 官方误标、Museum 营业时间冲突和地址不一致；修复须有回归用例。原始 source-1 等解析标记不泄漏，来源中的指令不能触发工具执行。\n\n证据：代码路径与提交、自动化结果、适用真机截图或录屏；未执行项明确 NOT_RUN",
+      "existing_task_id": null,
+      "mapping_state": "RECONCILE_REQUIRED",
+      "implementation_status": null,
+      "preserve_existing_status": true,
+      "test_status": "NOT_RUN_IN_THIS_HANDOFF",
+      "proposed_delivery_slice": "S1",
+      "figma_frames": [
+        "08"
+      ],
+      "extension_clauses": [
+        "ROUTE-TRUTH"
+      ],
+      "user_report_2026_10_08_1847": "报告称卡片地图同实体，事实冲突验收仍需核对",
+      "independently_verified_current_head": false,
+      "evidence_paths": [],
+      "remaining_scope": null,
+      "acceptance_scenarios": [
+        "T11",
+        "T21",
+        "T33"
+      ]
+    },
+    {
+      "requirement_id": "BT-NOW-20261008-016",
+      "title": "消除地点卡重复动作并明确导航语义",
+      "source_file": "sources/BirdTie-Now-Consolidated-Requirements-and-Changes-2026-10-08.md",
+      "source_priority": "P0",
+      "source_dependencies": [
+        "BT-NOW-20261008-007",
+        "BT-NOW-20261008-014"
+      ],
+      "source_full_requirement": "- 优先级：P0；阶段：A；责任角色：客户端\n- 初始状态：RECONCILE_REQUIRED；测试：NOT_RUN\n- 依赖：BT-NOW-20261008-007, BT-NOW-20261008-014\n- 来源：U3, U4\n\n修改要求：卡片本体打开同一 Now 详情面板；地图查看聚焦原地图；路线进入路线预览；收藏为独立状态；分享打开就地分享草稿。取消与点击卡片重复的详情按钮；不能把同样打开详情的箭头标为导航。\n\n验收：每个保留按钮有独立可测行为与无障碍名称；信息查询优先地图或路线操作，其他操作适度收纳。不得凭图标推定已具备路线或导航功能。\n\n证据：代码路径与提交、自动化结果、适用真机截图或录屏；未执行项明确 NOT_RUN",
+      "existing_task_id": null,
+      "mapping_state": "RECONCILE_REQUIRED",
+      "implementation_status": null,
+      "preserve_existing_status": true,
+      "test_status": "NOT_RUN_IN_THIS_HANDOFF",
+      "proposed_delivery_slice": "S1",
+      "figma_frames": [
+        "02",
+        "08"
+      ],
+      "extension_clauses": [],
+      "user_report_2026_10_08_1847": null,
+      "independently_verified_current_head": false,
+      "evidence_paths": [],
+      "remaining_scope": null,
+      "acceptance_scenarios": [
+        "T33"
+      ]
+    },
+    {
+      "requirement_id": "BT-NOW-20261008-017",
+      "title": "收藏持久化和可感知反馈",
+      "source_file": "sources/BirdTie-Now-Consolidated-Requirements-and-Changes-2026-10-08.md",
+      "source_priority": "P0",
+      "source_dependencies": [
+        "BT-NOW-20261008-001",
+        "BT-NOW-20261008-007",
+        "BT-NOW-20261008-010",
+        "BT-NOW-20261008-028"
+      ],
+      "source_full_requirement": "- 优先级：P0；阶段：C；责任角色：收藏后端与客户端\n- 初始状态：RECONCILE_REQUIRED；测试：NOT_RUN\n- 依赖：BT-NOW-20261008-001, BT-NOW-20261008-007, BT-NOW-20261008-010, BT-NOW-20261008-028\n- 来源：U4\n\n修改要求：收藏是用户可主动访问的私人地点库，保存稳定实体引用、名称和必要来源，默认不公开。提供已收藏状态、撤销、列表入口和自然语言再次找回。访客需登录时保留草稿并登录后恢复。\n\n验收：重复点击或网络重试只产生一条收藏；重启和换会话可找回；删除后不残留在集合或地图。失败和结果未知不伪造成功，账号切换不串收藏。\n\n证据：代码路径与提交、自动化结果、适用真机截图或录屏；未执行项明确 NOT_RUN",
+      "existing_task_id": null,
+      "mapping_state": "RECONCILE_REQUIRED",
+      "implementation_status": null,
+      "preserve_existing_status": true,
+      "test_status": "NOT_RUN_IN_THIS_HANDOFF",
+      "proposed_delivery_slice": "S4",
+      "figma_frames": [],
+      "extension_clauses": [
+        "LOW-SUPPLY"
+      ],
+      "user_report_2026_10_08_1847": null,
+      "independently_verified_current_head": false,
+      "evidence_paths": [],
+      "remaining_scope": null,
+      "acceptance_scenarios": [
+        "T16"
+      ]
+    },
+    {
+      "requirement_id": "BT-NOW-20261008-018",
+      "title": "收藏整理复用与 Now 地图展示",
+      "source_file": "sources/BirdTie-Now-Consolidated-Requirements-and-Changes-2026-10-08.md",
+      "source_priority": "P1",
+      "source_dependencies": [
+        "BT-NOW-20261008-017",
+        "BT-NOW-20261008-007"
+      ],
+      "source_full_requirement": "- 优先级：P1；阶段：C；责任角色：收藏服务与客户端\n- 初始状态：RECONCILE_REQUIRED；测试：NOT_RUN\n- 依赖：BT-NOW-20261008-017, BT-NOW-20261008-007\n- 来源：U4\n\n修改要求：收藏支持搜索、类型或城市筛选、私人备注、列表整理、显示在地图、选取地点比较并加入旅程或主题地图。收藏可辅助规划但不等于稳定兴趣或承诺行程。\n\n验收：输入显示我的阿伯丁酒吧收藏能在原地图展示；选三处生成草稿路线，取消不会改收藏；列表私密备注不随分享泄漏。无收藏给直接查询或添加入口而非空面板。\n\n证据：代码路径与提交、自动化结果、适用真机截图或录屏；未执行项明确 NOT_RUN",
+      "existing_task_id": null,
+      "mapping_state": "RECONCILE_REQUIRED",
+      "implementation_status": null,
+      "preserve_existing_status": true,
+      "test_status": "NOT_RUN_IN_THIS_HANDOFF",
+      "proposed_delivery_slice": "S4",
+      "figma_frames": [],
+      "extension_clauses": [],
+      "user_report_2026_10_08_1847": null,
+      "independently_verified_current_head": false,
+      "evidence_paths": [],
+      "remaining_scope": null,
+      "acceptance_scenarios": [
+        "T16"
+      ]
+    },
+    {
+      "requirement_id": "BT-NOW-20261008-019",
+      "title": "同页分享预览和明确发送结果",
+      "source_file": "sources/BirdTie-Now-Consolidated-Requirements-and-Changes-2026-10-08.md",
+      "source_priority": "P0",
+      "source_dependencies": [
+        "BT-NOW-20261008-007",
+        "BT-NOW-20261008-010",
+        "BT-NOW-20261008-013",
+        "BT-NOW-20261008-028"
+      ],
+      "source_full_requirement": "- 优先级：P0；阶段：C；责任角色：分享消息后端与客户端\n- 初始状态：RECONCILE_REQUIRED；测试：NOT_RUN\n- 依赖：BT-NOW-20261008-007, BT-NOW-20261008-010, BT-NOW-20261008-013, BT-NOW-20261008-028\n- 来源：U2, U4\n\n修改要求：在同一 Now 面板选择分享对象和收件人、预览文本或地点或路线或旅程；发送前展示可见范围，完成后保留当前地图会话。外部系统分享作为明确可选操作。\n\n验收：未收藏的公开地点也可直接进入分享草稿，不要求先收藏；分享给好友真实产生授权消息并可再次查到结果；关闭选择器不发送。弱网超时先查结果再重试，无重复发送；系统分享面板弹出不能记为对方已收到。\n\n证据：代码路径与提交、自动化结果、适用真机截图或录屏；未执行项明确 NOT_RUN",
+      "existing_task_id": null,
+      "mapping_state": "RECONCILE_REQUIRED",
+      "implementation_status": null,
+      "preserve_existing_status": true,
+      "test_status": "NOT_RUN_IN_THIS_HANDOFF",
+      "proposed_delivery_slice": "S4",
+      "figma_frames": [
+        "10"
+      ],
+      "extension_clauses": [
+        "INPUT-CONTEXT"
+      ],
+      "user_report_2026_10_08_1847": null,
+      "independently_verified_current_head": false,
+      "evidence_paths": [],
+      "remaining_scope": null,
+      "acceptance_scenarios": [
+        "T17"
+      ]
+    },
+    {
+      "requirement_id": "BT-NOW-20261008-020",
+      "title": "分享链接权限和生命周期",
+      "source_file": "sources/BirdTie-Now-Consolidated-Requirements-and-Changes-2026-10-08.md",
+      "source_priority": "P0",
+      "source_dependencies": [
+        "BT-NOW-20261008-019",
+        "BT-NOW-20261008-028"
+      ],
+      "source_full_requirement": "- 优先级：P0；阶段：C；责任角色：权限与分享后端\n- 初始状态：RECONCILE_REQUIRED；测试：NOT_RUN\n- 依赖：BT-NOW-20261008-019, BT-NOW-20261008-028\n- 来源：U4\n\n修改要求：明确分享的是快照还是实时对象，允许查看的受众、到期或撤销规则，以及删除原对象后的行为。任何人链接必须由用户主动选择，链接本身不得意外暴露私人材料。\n\n验收：私密对象被未授权账号访问返回拒绝；撤销与删除行为有测试；快照不暗中同步后续私人编辑。创建外链与内部发好友分别记录结果，不自动转公开。\n\n证据：代码路径与提交、自动化结果、适用真机截图或录屏；未执行项明确 NOT_RUN",
+      "existing_task_id": null,
+      "mapping_state": "RECONCILE_REQUIRED",
+      "implementation_status": null,
+      "preserve_existing_status": true,
+      "test_status": "NOT_RUN_IN_THIS_HANDOFF",
+      "proposed_delivery_slice": "S4",
+      "figma_frames": [
+        "10"
+      ],
+      "extension_clauses": [],
+      "user_report_2026_10_08_1847": null,
+      "independently_verified_current_head": false,
+      "evidence_paths": [],
+      "remaining_scope": null,
+      "acceptance_scenarios": [
+        "T12",
+        "T18"
+      ]
+    },
+    {
+      "requirement_id": "BT-NOW-20261008-021",
+      "title": "路线计划在原地图预览与编辑",
+      "source_file": "sources/BirdTie-Now-Consolidated-Requirements-and-Changes-2026-10-08.md",
+      "source_priority": "P0",
+      "source_dependencies": [
+        "BT-NOW-20261008-007",
+        "BT-NOW-20261008-010",
+        "BT-NOW-20261008-028"
+      ],
+      "source_full_requirement": "- 优先级：P0；阶段：C；责任角色：路线服务与客户端\n- 初始状态：RECONCILE_REQUIRED；测试：NOT_RUN\n- 依赖：BT-NOW-20261008-007, BT-NOW-20261008-010, BT-NOW-20261008-028\n- 来源：U4\n\n修改要求：支持地点至地点、多站顺序和出行方式的路线预览；起点来自用户明确选择或授权设备位置，不用当前探索城市冒充起点。路线证据不足只显示地点及待确认信息。\n\n验收：How do I get there 与我怎么去那里能关联当前选中地点并在缺起点时提问；路线、交通方式、估算时间及来源清楚。选中未收藏地点也可直接规划路线，不以收藏为前置；从收藏选多站属于与第 018 项联合验收的扩展。改顺序同步原地图；外部逐向导航仅明确选择后打开。\n\n证据：代码路径与提交、自动化结果、适用真机截图或录屏；未执行项明确 NOT_RUN",
+      "existing_task_id": null,
+      "mapping_state": "RECONCILE_REQUIRED",
+      "implementation_status": null,
+      "preserve_existing_status": true,
+      "test_status": "NOT_RUN_IN_THIS_HANDOFF",
+      "proposed_delivery_slice": "S3",
+      "figma_frames": [
+        "05"
+      ],
+      "extension_clauses": [
+        "SAME-MAP-READ",
+        "ROUTE-TRUTH"
+      ],
+      "user_report_2026_10_08_1847": null,
+      "independently_verified_current_head": false,
+      "evidence_paths": [],
+      "remaining_scope": null,
+      "acceptance_scenarios": [
+        "T10",
+        "T11",
+        "T21"
+      ]
+    },
+    {
+      "requirement_id": "BT-NOW-20261008-022",
+      "title": "迁移动态创建的最小完整链路",
+      "source_file": "sources/BirdTie-Now-Consolidated-Requirements-and-Changes-2026-10-08.md",
+      "source_priority": "P1",
+      "source_dependencies": [
+        "BT-NOW-20261008-010",
+        "BT-NOW-20261008-011",
+        "BT-NOW-20261008-012",
+        "BT-NOW-20261008-007",
+        "BT-NOW-20261008-028",
+        "BT-NOW-20261008-027"
+      ],
+      "source_full_requirement": "- 优先级：P1；阶段：D；责任角色：内容后端与客户端\n- 初始状态：RECONCILE_REQUIRED；测试：NOT_RUN\n- 依赖：BT-NOW-20261008-010, BT-NOW-20261008-011, BT-NOW-20261008-012, BT-NOW-20261008-007, BT-NOW-20261008-028, BT-NOW-20261008-027\n- 来源：U2\n\n修改要求：复用 Civu 已核验的数据能力，让 Now 文字加附件生成动态草稿，确认文案、地点和可见性后发布；结果在原地图和相应内容详情中可见。\n\n验收：发布、编辑和撤回权限正确；照片地点与动态关联可纠正；不得只生成一张看似发布成功的卡片。新接口不可绕过现有审核和隐私规则。\n\n证据：代码路径与提交、自动化结果、适用真机截图或录屏；未执行项明确 NOT_RUN",
+      "existing_task_id": null,
+      "mapping_state": "RECONCILE_REQUIRED",
+      "implementation_status": null,
+      "preserve_existing_status": true,
+      "test_status": "NOT_RUN_IN_THIS_HANDOFF",
+      "proposed_delivery_slice": "S1",
+      "figma_frames": [
+        "02",
+        "03",
+        "04",
+        "07"
+      ],
+      "extension_clauses": [
+        "SOCIAL-MAP",
+        "PLACE-MOMENT-PROFILE",
+        "COUNTS-ACL",
+        "RELATION-FILTERS",
+        "PUBLIC-SELF-PROFILE",
+        "INPUT-CONTEXT",
+        "NATIVE-SOURCE-SPLIT",
+        "CONTENT-SAFETY",
+        "LOW-SUPPLY"
+      ],
+      "user_report_2026_10_08_1847": null,
+      "independently_verified_current_head": false,
+      "evidence_paths": [],
+      "remaining_scope": null,
+      "acceptance_scenarios": [
+        "T02",
+        "T03",
+        "T06",
+        "T07",
+        "T09",
+        "T13",
+        "T15"
+      ]
+    },
+    {
+      "requirement_id": "BT-NOW-20261008-023",
+      "title": "迁移主题地图创建收藏和复用",
+      "source_file": "sources/BirdTie-Now-Consolidated-Requirements-and-Changes-2026-10-08.md",
+      "source_priority": "P1",
+      "source_dependencies": [
+        "BT-NOW-20261008-007",
+        "BT-NOW-20261008-010",
+        "BT-NOW-20261008-018",
+        "BT-NOW-20261008-028",
+        "BT-NOW-20261008-027"
+      ],
+      "source_full_requirement": "- 优先级：P1；阶段：D；责任角色：地图内容后端与客户端\n- 初始状态：RECONCILE_REQUIRED；测试：NOT_RUN\n- 依赖：BT-NOW-20261008-007, BT-NOW-20261008-010, BT-NOW-20261008-018, BT-NOW-20261008-028, BT-NOW-20261008-027\n- 来源：U2, U4\n\n修改要求：由保存地点或输入清单生成主题地图草稿，支持标题、地点取舍及可见性。查看自己或他人的主题地图在同一 Now 地图展开，允许保存引用或经允许复制并区分。\n\n验收：创建酒吧主题地图后可恢复；复制不改原作者对象；他人撤销权限后的引用访问正确，私人备注不复制到公共内容。无权复制时仅提供允许的操作。\n\n证据：代码路径与提交、自动化结果、适用真机截图或录屏；未执行项明确 NOT_RUN",
+      "existing_task_id": null,
+      "mapping_state": "RECONCILE_REQUIRED",
+      "implementation_status": null,
+      "preserve_existing_status": true,
+      "test_status": "NOT_RUN_IN_THIS_HANDOFF",
+      "proposed_delivery_slice": "S3",
+      "figma_frames": [
+        "09"
+      ],
+      "extension_clauses": [
+        "SAME-MAP-READ"
+      ],
+      "user_report_2026_10_08_1847": null,
+      "independently_verified_current_head": false,
+      "evidence_paths": [],
+      "remaining_scope": null,
+      "acceptance_scenarios": [
+        "T12"
+      ]
+    },
+    {
+      "requirement_id": "BT-NOW-20261008-024",
+      "title": "迁移旅程与外部计划导入",
+      "source_file": "sources/BirdTie-Now-Consolidated-Requirements-and-Changes-2026-10-08.md",
+      "source_priority": "P1",
+      "source_dependencies": [
+        "BT-NOW-20261008-007",
+        "BT-NOW-20261008-010",
+        "BT-NOW-20261008-018",
+        "BT-NOW-20261008-021",
+        "BT-NOW-20261008-028",
+        "BT-NOW-20261008-027"
+      ],
+      "source_full_requirement": "- 优先级：P1；阶段：D；责任角色：旅程与解析后端\n- 初始状态：RECONCILE_REQUIRED；测试：NOT_RUN\n- 依赖：BT-NOW-20261008-007, BT-NOW-20261008-010, BT-NOW-20261008-018, BT-NOW-20261008-021, BT-NOW-20261008-028, BT-NOW-20261008-027\n- 来源：U2, U4\n\n修改要求：将自然语言或用户提供的外部 AI 计划、地点清单整理为可编辑日期、地点及路线。保留来源和不确定地点供确认；输入可明确调用已收藏地点。支持自己及获准他人旅程按天查看。\n\n验收：导入不执行文本内指令、不自动订票或发送；跨天路线、地点和日期同步 Now；地点歧义先确认，用户修改后保存和重新打开一致。原地图之外不再新增独立旅程地图页。\n\n证据：代码路径与提交、自动化结果、适用真机截图或录屏；未执行项明确 NOT_RUN",
+      "existing_task_id": null,
+      "mapping_state": "RECONCILE_REQUIRED",
+      "implementation_status": null,
+      "preserve_existing_status": true,
+      "test_status": "NOT_RUN_IN_THIS_HANDOFF",
+      "proposed_delivery_slice": "S3",
+      "figma_frames": [
+        "05"
+      ],
+      "extension_clauses": [
+        "SAME-MAP-READ",
+        "ROUTE-TRUTH"
+      ],
+      "user_report_2026_10_08_1847": null,
+      "independently_verified_current_head": false,
+      "evidence_paths": [],
+      "remaining_scope": null,
+      "acceptance_scenarios": [
+        "T10",
+        "T11",
+        "T19"
+      ]
+    },
+    {
+      "requirement_id": "BT-NOW-20261008-025",
+      "title": "统一活动询问创建与加入",
+      "source_file": "sources/BirdTie-Now-Consolidated-Requirements-and-Changes-2026-10-08.md",
+      "source_priority": "P1",
+      "source_dependencies": [
+        "BT-NOW-20261008-010",
+        "BT-NOW-20261008-007",
+        "BT-NOW-20261008-013",
+        "BT-NOW-20261008-028",
+        "BT-NOW-20261008-027"
+      ],
+      "source_full_requirement": "- 优先级：P1；阶段：D；责任角色：活动服务与客户端\n- 初始状态：RECONCILE_REQUIRED；测试：NOT_RUN\n- 依赖：BT-NOW-20261008-010, BT-NOW-20261008-007, BT-NOW-20261008-013, BT-NOW-20261008-028, BT-NOW-20261008-027\n- 来源：U2\n\n修改要求：询问活动走读取；创建走可编辑草稿；加入走详情和报名确认。都复用 Now 输入与现有活动权限、容量、费用和取消规则；组织发布明确当前身份。\n\n验收：三个意图不混淆；查询不会报名，提及好友不会邀请；容量变化或重复加入有正确结果。未支持收费或所需权限时明确阻塞，不伪造完成。\n\n证据：代码路径与提交、自动化结果、适用真机截图或录屏；未执行项明确 NOT_RUN",
+      "existing_task_id": null,
+      "mapping_state": "RECONCILE_REQUIRED",
+      "implementation_status": null,
+      "preserve_existing_status": true,
+      "test_status": "NOT_RUN_IN_THIS_HANDOFF",
+      "proposed_delivery_slice": "S4",
+      "figma_frames": [],
+      "extension_clauses": [],
+      "user_report_2026_10_08_1847": null,
+      "independently_verified_current_head": false,
+      "evidence_paths": [],
+      "remaining_scope": null,
+      "acceptance_scenarios": [
+        "T20"
+      ]
+    },
+    {
+      "requirement_id": "BT-NOW-20261008-026",
+      "title": "中文优先的完整业务验收",
+      "source_file": "sources/BirdTie-Now-Consolidated-Requirements-and-Changes-2026-10-08.md",
+      "source_priority": "P0",
+      "source_dependencies": [
+        "BT-NOW-20261008-001",
+        "BT-NOW-20261008-014",
+        "BT-NOW-20261008-015"
+      ],
+      "source_full_requirement": "- 优先级：P0；阶段：B；责任角色：测试与搜索后端\n- 初始状态：RECONCILE_REQUIRED；测试：NOT_RUN\n- 依赖：BT-NOW-20261008-001, BT-NOW-20261008-014, BT-NOW-20261008-015\n- 来源：U4\n\n修改要求：英文调试不作为中文可用证明。分批覆盖中文、英文、中英混合地名、别名、代词追问、语音及输入法组合输入；基础读取先验收，语音及写入按对应功能依赖补齐，全部适用覆盖完成前本项保持 PARTIAL；用户语言与检索关键词语言分离，可检索英文事实再用中文回答。\n\n验收：先验收中文找地点→询问营业时间及英文对照，不等待语音完成；路线、收藏与语音分别在对应功能完成后验收，后续 C/D 阶段追加显示收藏→选三处排周六路线→编辑→发给好友的测试。候选词确认不误发送，来源和地名保持准确，不承诺两种语言天然等效。\n\n证据：代码路径与提交、自动化结果、适用真机截图或录屏；未执行项明确 NOT_RUN",
+      "existing_task_id": null,
+      "mapping_state": "RECONCILE_REQUIRED",
+      "implementation_status": null,
+      "preserve_existing_status": true,
+      "test_status": "NOT_RUN_IN_THIS_HANDOFF",
+      "proposed_delivery_slice": "S1-S6",
+      "figma_frames": [],
+      "extension_clauses": [],
+      "user_report_2026_10_08_1847": null,
+      "independently_verified_current_head": false,
+      "evidence_paths": [],
+      "remaining_scope": null,
+      "acceptance_scenarios": [
+        "T14",
+        "T21"
+      ]
+    },
+    {
+      "requirement_id": "BT-NOW-20261008-027",
+      "title": "复用 Civu 能力前完成契约与数据保护审查",
+      "source_file": "sources/BirdTie-Now-Consolidated-Requirements-and-Changes-2026-10-08.md",
+      "source_priority": "P0",
+      "source_dependencies": [
+        "BT-NOW-20261008-001"
+      ],
+      "source_full_requirement": "- 优先级：P0；阶段：B；责任角色：迁移与全栈\n- 初始状态：RECONCILE_REQUIRED；测试：NOT_RUN\n- 依赖：BT-NOW-20261008-001\n- 来源：U2, U4\n\n修改要求：逐模块标注可复用数据、业务规则、API 或需重写 UI。BirdTie Flutter/Go/PostgreSQL 与旧 Civu 技术实现差异必须核查。任何实际迁移前列清数据库、媒体引用、身份、坐标、时区和隐私映射，备份并验证恢复。\n\n验收：输出逐能力复用矩阵和最小适配层方案；测试数据演练满足计数与引用校验。没有批准不执行生产数据迁移、删除或旧服务器退役；备份文件存在不等于恢复已验证。\n\n证据：代码路径与提交、自动化结果、适用真机截图或录屏；未执行项明确 NOT_RUN",
+      "existing_task_id": null,
+      "mapping_state": "RECONCILE_REQUIRED",
+      "implementation_status": null,
+      "preserve_existing_status": true,
+      "test_status": "NOT_RUN_IN_THIS_HANDOFF",
+      "proposed_delivery_slice": "S0",
+      "figma_frames": [],
+      "extension_clauses": [
+        "DESIGN-TO-CODE",
+        "CONTENT-SAFETY"
+      ],
+      "user_report_2026_10_08_1847": null,
+      "independently_verified_current_head": false,
+      "evidence_paths": [],
+      "remaining_scope": null,
+      "acceptance_scenarios": [
+        "T29"
+      ]
+    },
+    {
+      "requirement_id": "BT-NOW-20261008-028",
+      "title": "统一权限确认幂等与未知结果恢复",
+      "source_file": "sources/BirdTie-Now-Consolidated-Requirements-and-Changes-2026-10-08.md",
+      "source_priority": "P0",
+      "source_dependencies": [
+        "BT-NOW-20261008-001",
+        "BT-NOW-20261008-010"
+      ],
+      "source_full_requirement": "- 优先级：P0；阶段：B；责任角色：AIR 与业务后端\n- 初始状态：RECONCILE_REQUIRED；测试：NOT_RUN\n- 依赖：BT-NOW-20261008-001, BT-NOW-20261008-010\n- 来源：U2, U4\n\n修改要求：复用现有策略、工具和执行器；收藏、分享、发布、加入均绑定明确动作、对象、草稿版本和身份。重试复用操作 ID，新一次明确操作使用新 ID。超时保持 UNKNOWN 并查结果，不直接重新写入。\n\n验收：权限撤销、过期确认、草稿被修改、重复点击、超时后恢复全部有负向测试；客户端隐藏入口不替代服务端授权。不得因新增统一输入框另造不受控 AI 写库通路。\n\n证据：代码路径与提交、自动化结果、适用真机截图或录屏；未执行项明确 NOT_RUN",
+      "existing_task_id": null,
+      "mapping_state": "RECONCILE_REQUIRED",
+      "implementation_status": null,
+      "preserve_existing_status": true,
+      "test_status": "NOT_RUN_IN_THIS_HANDOFF",
+      "proposed_delivery_slice": "S4",
+      "figma_frames": [
+        "07",
+        "10"
+      ],
+      "extension_clauses": [
+        "OFFLINE-RECONNECT"
+      ],
+      "user_report_2026_10_08_1847": null,
+      "independently_verified_current_head": false,
+      "evidence_paths": [],
+      "remaining_scope": null,
+      "acceptance_scenarios": [
+        "T17",
+        "T19",
+        "T20",
+        "T23"
+      ]
+    },
+    {
+      "requirement_id": "BT-NOW-20261008-029",
+      "title": "面板键盘可访问性和性能回归",
+      "source_file": "sources/BirdTie-Now-Consolidated-Requirements-and-Changes-2026-10-08.md",
+      "source_priority": "P0",
+      "source_dependencies": [
+        "BT-NOW-20261008-005",
+        "BT-NOW-20261008-007",
+        "BT-NOW-20261008-008",
+        "BT-NOW-20261008-014",
+        "BT-NOW-20261008-016"
+      ],
+      "source_full_requirement": "- 优先级：P0；阶段：E；责任角色：客户端与测试\n- 初始状态：RECONCILE_REQUIRED；测试：NOT_RUN\n- 依赖：BT-NOW-20261008-005, BT-NOW-20261008-007, BT-NOW-20261008-008, BT-NOW-20261008-014, BT-NOW-20261008-016\n- 来源：U1, U2, U3, U4\n\n修改要求：沿用统一组件和视觉 token。校验键盘、安全区、滚动与拖拽面板、焦点返回、长标题及横竖屏。轻量半透明仅在对比和性能允许时使用，支持不透明回退，不用大面积模糊遮掩布局问题。\n\n验收：真机中文键盘不产生大空隙或遮发送按钮；来源及卡片可读可点、屏幕阅读器顺序合理；地图拖动和键盘弹出不重建地图丢 pin。记录设备、构建模式、帧耗时与基线，不以 debug 帧率冒充生产指标。\n\n证据：代码路径与提交、自动化结果、适用真机截图或录屏；未执行项明确 NOT_RUN",
+      "existing_task_id": null,
+      "mapping_state": "RECONCILE_REQUIRED",
+      "implementation_status": null,
+      "preserve_existing_status": true,
+      "test_status": "NOT_RUN_IN_THIS_HANDOFF",
+      "proposed_delivery_slice": "S1",
+      "figma_frames": [],
+      "extension_clauses": [
+        "DESIGN-TO-CODE",
+        "OFFLINE-RECONNECT"
+      ],
+      "user_report_2026_10_08_1847": null,
+      "independently_verified_current_head": false,
+      "evidence_paths": [],
+      "remaining_scope": null,
+      "acceptance_scenarios": [
+        "T03",
+        "T08",
+        "T22",
+        "T30"
+      ]
+    },
+    {
+      "requirement_id": "BT-NOW-20261008-030",
+      "title": "分批验收和真实证据交付",
+      "source_file": "sources/BirdTie-Now-Consolidated-Requirements-and-Changes-2026-10-08.md",
+      "source_priority": "P0",
+      "source_dependencies": [
+        "BT-NOW-20261008-001",
+        "BT-NOW-20261008-002",
+        "BT-NOW-20261008-003",
+        "BT-NOW-20261008-004",
+        "BT-NOW-20261008-005",
+        "BT-NOW-20261008-006",
+        "BT-NOW-20261008-007",
+        "BT-NOW-20261008-008",
+        "BT-NOW-20261008-009",
+        "BT-NOW-20261008-010",
+        "BT-NOW-20261008-011",
+        "BT-NOW-20261008-012",
+        "BT-NOW-20261008-013",
+        "BT-NOW-20261008-014",
+        "BT-NOW-20261008-015",
+        "BT-NOW-20261008-016",
+        "BT-NOW-20261008-017",
+        "BT-NOW-20261008-018",
+        "BT-NOW-20261008-019",
+        "BT-NOW-20261008-020",
+        "BT-NOW-20261008-021",
+        "BT-NOW-20261008-022",
+        "BT-NOW-20261008-023",
+        "BT-NOW-20261008-024",
+        "BT-NOW-20261008-025",
+        "BT-NOW-20261008-026",
+        "BT-NOW-20261008-027",
+        "BT-NOW-20261008-028",
+        "BT-NOW-20261008-029"
+      ],
+      "source_full_requirement": "- 优先级：P0；阶段：E；责任角色：测试与协调\n- 初始状态：RECONCILE_REQUIRED；测试：NOT_RUN\n- 依赖：BT-NOW-20261008-001, BT-NOW-20261008-002, BT-NOW-20261008-003, BT-NOW-20261008-004, BT-NOW-20261008-005, BT-NOW-20261008-006, BT-NOW-20261008-007, BT-NOW-20261008-008, BT-NOW-20261008-009, BT-NOW-20261008-010, BT-NOW-20261008-011, BT-NOW-20261008-012, BT-NOW-20261008-013, BT-NOW-20261008-014, BT-NOW-20261008-015, BT-NOW-20261008-016, BT-NOW-20261008-017, BT-NOW-20261008-018, BT-NOW-20261008-019, BT-NOW-20261008-020, BT-NOW-20261008-021, BT-NOW-20261008-022, BT-NOW-20261008-023, BT-NOW-20261008-024, BT-NOW-20261008-025, BT-NOW-20261008-026, BT-NOW-20261008-027, BT-NOW-20261008-028, BT-NOW-20261008-029\n- 来源：U5\n\n修改要求：每个切片更新映射、代码、测试和录屏；分别报告已实现、部分、阻塞、未运行。保留原试点上线门槛和未完成项。全套范围未完成时可交付已验收切片，但不能称整包完成。\n\n验收：至少提交一次中文真实端到端演示及失败恢复演示；付费供应商实测只在已有有效授权范围内，缺授权用测试适配器并标明未实测。全部任务有证据或明确差距，附件、收藏、分享不能靠静态界面验收。\n\n证据：代码路径与提交、自动化结果、适用真机截图或录屏；未执行项明确 NOT_RUN",
+      "existing_task_id": null,
+      "mapping_state": "RECONCILE_REQUIRED",
+      "implementation_status": null,
+      "preserve_existing_status": true,
+      "test_status": "NOT_RUN_IN_THIS_HANDOFF",
+      "proposed_delivery_slice": "S1-S6",
+      "figma_frames": [],
+      "extension_clauses": [
+        "DESIGN-TO-CODE",
+        "BASELINE-RECONCILE"
+      ],
+      "user_report_2026_10_08_1847": null,
+      "independently_verified_current_head": false,
+      "evidence_paths": [],
+      "remaining_scope": null,
+      "acceptance_scenarios": [
+        "T30"
+      ]
+    },
+    {
+      "requirement_id": "BT-PG-20261008-01",
+      "title": "证据审计与旧队列对账",
+      "source_file": "sources/BT-PG-20261008-SPEC.md",
+      "source_priority": "P0",
+      "source_dependencies": [],
+      "source_full_requirement": "优先级：P0；初始状态：RECONCILE_REQUIRED；测试：NOT_RUN\n\n要求：核验当前 HEAD、AGE/AIR/Discovery/30NOW 与本包的重叠；记录数据模型、代码入口、真实接线、测试、部署五个层次，不以文件存在判定完成。\n\n验收：每项已有任务映射或新增理由可追踪；保留原 ID、DONE 证据及阻塞，不重复计数；输出当前 HEAD 与本包基准差异。\n\n依赖：现有队列审计",
+      "existing_task_id": null,
+      "mapping_state": "RECONCILE_REQUIRED",
+      "implementation_status": null,
+      "preserve_existing_status": true,
+      "test_status": "NOT_RUN_IN_THIS_HANDOFF",
+      "proposed_delivery_slice": "S0",
+      "figma_frames": [],
+      "extension_clauses": [
+        "BASELINE-RECONCILE"
+      ],
+      "user_report_2026_10_08_1847": null,
+      "independently_verified_current_head": false,
+      "evidence_paths": [],
+      "remaining_scope": null,
+      "acceptance_scenarios": [
+        "T31"
+      ]
+    },
+    {
+      "requirement_id": "BT-PG-20261008-02",
+      "title": "来源使用权限与留存审查",
+      "source_file": "sources/BT-PG-20261008-SPEC.md",
+      "source_priority": "P0",
+      "source_dependencies": [
+        "BT-PG-20261008-01"
+      ],
+      "source_full_requirement": "优先级：P0；初始状态：RECONCILE_REQUIRED；测试：NOT_RUN\n\n要求：按供应商、接口、账户合同版本记录保存字段、期限、展示、模型加工、跨用户复用及署名条件；审查既有 source_batch、回答、来源历史。\n\n验收：允许、禁止、待确认三态均有测试；待确认不能进入共享缓存/公共库；已有数据处置单独评审，不自动清库。\n\n依赖：BT-PG-20261008-01",
+      "existing_task_id": null,
+      "mapping_state": "RECONCILE_REQUIRED",
+      "implementation_status": null,
+      "preserve_existing_status": true,
+      "test_status": "NOT_RUN_IN_THIS_HANDOFF",
+      "proposed_delivery_slice": "S0",
+      "figma_frames": [],
+      "extension_clauses": [
+        "NATIVE-SOURCE-SPLIT"
+      ],
+      "user_report_2026_10_08_1847": null,
+      "independently_verified_current_head": false,
+      "evidence_paths": [],
+      "remaining_scope": null,
+      "acceptance_scenarios": [
+        "T24"
+      ]
+    },
+    {
+      "requirement_id": "BT-PG-20261008-03",
+      "title": "查询与学习链路可观测性",
+      "source_file": "sources/BT-PG-20261008-SPEC.md",
+      "source_priority": "P0",
+      "source_dependencies": [
+        "BT-PG-20261008-01"
+      ],
+      "source_full_requirement": "优先级：P0；初始状态：RECONCILE_REQUIRED；测试：NOT_RUN\n\n要求：记录本地检索、联网、模型、候选、记忆写入和上下文召回的结构化结果及原因码；不记录完整私聊或模型隐含推理。\n\n验收：可分辨未触发、权限拒绝、无证据、待审核、已持久化、已用于本轮；调用次数、预留成本与实际账单分列。\n\n依赖：BT-PG-20261008-01",
+      "existing_task_id": null,
+      "mapping_state": "RECONCILE_REQUIRED",
+      "implementation_status": null,
+      "preserve_existing_status": true,
+      "test_status": "NOT_RUN_IN_THIS_HANDOFF",
+      "proposed_delivery_slice": "S1-S6",
+      "figma_frames": [],
+      "extension_clauses": [],
+      "user_report_2026_10_08_1847": null,
+      "independently_verified_current_head": false,
+      "evidence_paths": [],
+      "remaining_scope": null,
+      "acceptance_scenarios": [
+        "T30"
+      ]
+    },
+    {
+      "requirement_id": "BT-PG-20261008-04",
+      "title": "规范地点实体与合并规则",
+      "source_file": "sources/BT-PG-20261008-SPEC.md",
+      "source_priority": "P0",
+      "source_dependencies": [
+        "BT-PG-20261008-01",
+        "BT-PG-20261008-02"
+      ],
+      "source_full_requirement": "优先级：P0；初始状态：RECONCILE_REQUIRED；测试：NOT_RUN\n\n要求：复用 canonical Place、place_candidates、place_sources、aliases、external_refs；补足字段级来源、有效期、坐标 CRS 与实体版本。\n\n验收：同店中英文别名合并；同名异店不合并；合并可审计和纠错；来源外部 ID 不充当平台唯一 ID。\n\n依赖：BT-PG-20261008-01, BT-PG-20261008-02",
+      "existing_task_id": null,
+      "mapping_state": "RECONCILE_REQUIRED",
+      "implementation_status": null,
+      "preserve_existing_status": true,
+      "test_status": "NOT_RUN_IN_THIS_HANDOFF",
+      "proposed_delivery_slice": "S1",
+      "figma_frames": [],
+      "extension_clauses": [
+        "NATIVE-SOURCE-SPLIT"
+      ],
+      "user_report_2026_10_08_1847": null,
+      "independently_verified_current_head": false,
+      "evidence_paths": [],
+      "remaining_scope": null,
+      "acceptance_scenarios": [
+        "T24",
+        "T25"
+      ]
+    },
+    {
+      "requirement_id": "BT-PG-20261008-05",
+      "title": "合规地点候选入库",
+      "source_file": "sources/BT-PG-20261008-SPEC.md",
+      "source_priority": "P0",
+      "source_dependencies": [
+        "BT-PG-20261008-02",
+        "BT-PG-20261008-04"
+      ],
+      "source_full_requirement": "优先级：P0；初始状态：RECONCILE_REQUIRED；测试：NOT_RUN\n\n要求：商家提交、用户明确提交并独立核实、许可数据、可合法采集的官方事实进入候选；联网结果按来源权限决定是否能形成任何持久化材料。\n\n验收：允许来源的名称/地址/坐标可发布；缺留存权时不持久化受限字段，仅可记录不含受限内容的诊断状态；有许可但定位冲突保持候选；自动审核仅限明确许可与规则，复用现有人工审核边界。\n\n依赖：BT-PG-20261008-02, BT-PG-20261008-04",
+      "existing_task_id": null,
+      "mapping_state": "RECONCILE_REQUIRED",
+      "implementation_status": null,
+      "preserve_existing_status": true,
+      "test_status": "NOT_RUN_IN_THIS_HANDOFF",
+      "proposed_delivery_slice": "S5",
+      "figma_frames": [],
+      "extension_clauses": [
+        "NATIVE-SOURCE-SPLIT"
+      ],
+      "user_report_2026_10_08_1847": null,
+      "independently_verified_current_head": false,
+      "evidence_paths": [],
+      "remaining_scope": null,
+      "acceptance_scenarios": [
+        "T24"
+      ]
+    },
+    {
+      "requirement_id": "BT-PG-20261008-06",
+      "title": "营业信息字段级新鲜度",
+      "source_file": "sources/BT-PG-20261008-SPEC.md",
+      "source_priority": "P0",
+      "source_dependencies": [
+        "BT-PG-20261008-04",
+        "BT-PG-20261008-05"
+      ],
+      "source_full_requirement": "优先级：P0；初始状态：RECONCILE_REQUIRED；测试：NOT_RUN\n\n要求：分别维护名称、地址、常规营业时间、节假日例外、临时关闭、价格等 observed_at/verified_at/valid_from/valid_to/refresh_due_at。\n\n验收：“现在开门吗”遇过期或冲突信息需补证或明确未知；名称仍有效不能证明今日营业；不靠整条 Place 的 verified_at 推导全部字段新鲜。\n\n依赖：BT-PG-20261008-04, BT-PG-20261008-05",
+      "existing_task_id": null,
+      "mapping_state": "RECONCILE_REQUIRED",
+      "implementation_status": null,
+      "preserve_existing_status": true,
+      "test_status": "NOT_RUN_IN_THIS_HANDOFF",
+      "proposed_delivery_slice": "S5",
+      "figma_frames": [],
+      "extension_clauses": [],
+      "user_report_2026_10_08_1847": null,
+      "independently_verified_current_head": false,
+      "evidence_paths": [],
+      "remaining_scope": null,
+      "acceptance_scenarios": [
+        "T25"
+      ]
+    },
+    {
+      "requirement_id": "BT-PG-20261008-07",
+      "title": "活动独立时效实体",
+      "source_file": "sources/BT-PG-20261008-SPEC.md",
+      "source_priority": "P1",
+      "source_dependencies": [
+        "BT-PG-20261008-04",
+        "BT-PG-20261008-05",
+        "BT-PG-20261008-06"
+      ],
+      "source_full_requirement": "优先级：P1；初始状态：RECONCILE_REQUIRED；测试：NOT_RUN\n\n要求：活动以独立 Event/Activity 关联 Place；含发生地时区、起止、取消/改期、来源、有效性，不把本周活动永久写进地点标签。\n\n验收：活动过期或取消不再推荐；跨时区正确；官网外部活动与 BirdTie 可报名活动动作不同。\n\n依赖：BT-PG-20261008-04, BT-PG-20261008-05, BT-PG-20261008-06",
+      "existing_task_id": null,
+      "mapping_state": "RECONCILE_REQUIRED",
+      "implementation_status": null,
+      "preserve_existing_status": true,
+      "test_status": "NOT_RUN_IN_THIS_HANDOFF",
+      "proposed_delivery_slice": "S5",
+      "figma_frames": [],
+      "extension_clauses": [],
+      "user_report_2026_10_08_1847": null,
+      "independently_verified_current_head": false,
+      "evidence_paths": [],
+      "remaining_scope": null,
+      "acceptance_scenarios": [
+        "T25"
+      ]
+    },
+    {
+      "requirement_id": "BT-PG-20261008-08",
+      "title": "本地充分性判定与受控补搜",
+      "source_file": "sources/BT-PG-20261008-SPEC.md",
+      "source_priority": "P0",
+      "source_dependencies": [
+        "BT-PG-20261008-02",
+        "BT-PG-20261008-03",
+        "BT-PG-20261008-04",
+        "BT-PG-20261008-06"
+      ],
+      "source_full_requirement": "优先级：P0；初始状态：RECONCILE_REQUIRED；测试：NOT_RUN\n\n要求：先检索已授权本地事实，评估匹配度、覆盖度、字段新鲜度及查询实时性；足够则不调用 WSA，缺什么补什么；显式探索新地点可外搜。\n\n验收：已知地点有效地址查询为零 WSA；过期营业时间只触发必要补证；用户要求新鲜探索仍可发现库外地点；不用旧试点白名单冒充通用实现。\n\n依赖：BT-PG-20261008-02, BT-PG-20261008-03, BT-PG-20261008-04, BT-PG-20261008-06",
+      "existing_task_id": null,
+      "mapping_state": "RECONCILE_REQUIRED",
+      "implementation_status": null,
+      "preserve_existing_status": true,
+      "test_status": "NOT_RUN_IN_THIS_HANDOFF",
+      "proposed_delivery_slice": "S5",
+      "figma_frames": [],
+      "extension_clauses": [],
+      "user_report_2026_10_08_1847": null,
+      "independently_verified_current_head": false,
+      "evidence_paths": [],
+      "remaining_scope": null,
+      "acceptance_scenarios": [
+        "T24"
+      ]
+    },
+    {
+      "requirement_id": "BT-PG-20261008-09",
+      "title": "授权缓存与并发去重",
+      "source_file": "sources/BT-PG-20261008-SPEC.md",
+      "source_priority": "P1",
+      "source_dependencies": [
+        "BT-PG-20261008-02",
+        "BT-PG-20261008-08"
+      ],
+      "source_full_requirement": "优先级：P1；初始状态：RECONCILE_REQUIRED；测试：NOT_RUN\n\n要求：只缓存许可来源及许可字段；区分公共事实、用户私有查询与回答；限制 TTL、容量、失效及并发 single-flight，不复用过期授权票据。\n\n验收：300 个相同公共查询的并发模拟减少上游次数；跨账号无私人偏好泄露；供应商禁止缓存时不启用；授权撤回立即失效。\n\n依赖：BT-PG-20261008-02, BT-PG-20261008-08",
+      "existing_task_id": null,
+      "mapping_state": "RECONCILE_REQUIRED",
+      "implementation_status": null,
+      "preserve_existing_status": true,
+      "test_status": "NOT_RUN_IN_THIS_HANDOFF",
+      "proposed_delivery_slice": "S5",
+      "figma_frames": [],
+      "extension_clauses": [],
+      "user_report_2026_10_08_1847": null,
+      "independently_verified_current_head": false,
+      "evidence_paths": [],
+      "remaining_scope": null,
+      "acceptance_scenarios": [
+        "T24"
+      ]
+    },
+    {
+      "requirement_id": "BT-PG-20261008-10",
+      "title": "库外地点收藏与身份解析",
+      "source_file": "sources/BT-PG-20261008-SPEC.md",
+      "source_priority": "P0",
+      "source_dependencies": [
+        "BT-PG-20261008-04",
+        "BT-PG-20261008-05"
+      ],
+      "source_full_requirement": "优先级：P0；初始状态：RECONCILE_REQUIRED；测试：NOT_RUN\n\n要求：收藏先建立真实可持久化的用户 SavedItem；依据权限保存 canonical_id 或 pending place reference；后续核实并链接实体，无须重存。\n\n验收：未授权保存的数据不可冒充已收藏；待核实可见并可删除；解析后收藏 ID、用户备注和可见性不丢；私人收藏不自动公开为推荐理由。\n\n依赖：BT-PG-20261008-04, BT-PG-20261008-05",
+      "existing_task_id": null,
+      "mapping_state": "RECONCILE_REQUIRED",
+      "implementation_status": null,
+      "preserve_existing_status": true,
+      "test_status": "NOT_RUN_IN_THIS_HANDOFF",
+      "proposed_delivery_slice": "S5",
+      "figma_frames": [],
+      "extension_clauses": [],
+      "user_report_2026_10_08_1847": null,
+      "independently_verified_current_head": false,
+      "evidence_paths": [],
+      "remaining_scope": null,
+      "acceptance_scenarios": [
+        "T16"
+      ]
+    },
+    {
+      "requirement_id": "BT-PG-20261008-11",
+      "title": "地点与站内内容权限关联",
+      "source_file": "sources/BT-PG-20261008-SPEC.md",
+      "source_priority": "P0",
+      "source_dependencies": [
+        "BT-PG-20261008-04",
+        "BT-PG-20261008-05"
+      ],
+      "source_full_requirement": "优先级：P0；初始状态：RECONCILE_REQUIRED；测试：NOT_RUN\n\n要求：地点页按查看者权限联接 BirdTie Moment/Post/活动；公开地点事实不意味着关联内容公开；保留创作者授权、署名、删除及屏蔽。\n\n验收：私密 Moment 不出现在他人地点页或 CityContext；公开转私密/删除/拉黑立即影响检索；不导入外站评论或照片。\n\n依赖：BT-PG-20261008-04, BT-PG-20261008-05",
+      "existing_task_id": null,
+      "mapping_state": "RECONCILE_REQUIRED",
+      "implementation_status": null,
+      "preserve_existing_status": true,
+      "test_status": "NOT_RUN_IN_THIS_HANDOFF",
+      "proposed_delivery_slice": "S1",
+      "figma_frames": [
+        "01",
+        "02",
+        "03",
+        "04"
+      ],
+      "extension_clauses": [
+        "SOCIAL-MAP",
+        "PLACE-MOMENT-PROFILE",
+        "COUNTS-ACL",
+        "RELATION-FILTERS",
+        "OFFLINE-RECONNECT",
+        "NATIVE-SOURCE-SPLIT",
+        "CONTENT-SAFETY"
+      ],
+      "user_report_2026_10_08_1847": null,
+      "independently_verified_current_head": false,
+      "evidence_paths": [],
+      "remaining_scope": null,
+      "acceptance_scenarios": [
+        "T02",
+        "T04",
+        "T05",
+        "T06",
+        "T18",
+        "T23"
+      ]
+    },
+    {
+      "requirement_id": "BT-PG-20261008-12",
+      "title": "个人数据与城市公共资料分层",
+      "source_file": "sources/BT-PG-20261008-SPEC.md",
+      "source_priority": "P0",
+      "source_dependencies": [
+        "BT-PG-20261008-02",
+        "BT-PG-20261008-04",
+        "BT-PG-20261008-11"
+      ],
+      "source_full_requirement": "优先级：P0；初始状态：RECONCILE_REQUIRED；测试：NOT_RUN\n\n要求：公共 Place 与每用户 Profile/Memory/Evidence/Intent 独立存储与授权；CityContext 无人格账号，不积累可识别私聊或私密收藏。\n\n验收：地点公共字段可复用而私人查询不可跨用户召回；外部搜索默认不携带姓名/完整画像/私聊；目的限定最小化导出。\n\n依赖：BT-PG-20261008-02, BT-PG-20261008-04, BT-PG-20261008-11",
+      "existing_task_id": null,
+      "mapping_state": "RECONCILE_REQUIRED",
+      "implementation_status": null,
+      "preserve_existing_status": true,
+      "test_status": "NOT_RUN_IN_THIS_HANDOFF",
+      "proposed_delivery_slice": "S1",
+      "figma_frames": [
+        "04"
+      ],
+      "extension_clauses": [
+        "COUNTS-ACL",
+        "PUBLIC-SELF-PROFILE"
+      ],
+      "user_report_2026_10_08_1847": null,
+      "independently_verified_current_head": false,
+      "evidence_paths": [],
+      "remaining_scope": null,
+      "acceptance_scenarios": [
+        "T04",
+        "T07"
+      ]
+    },
+    {
+      "requirement_id": "BT-PG-20261008-13",
+      "title": "日常事件与学习资格接线",
+      "source_file": "sources/BT-PG-20261008-SPEC.md",
+      "source_priority": "P0",
+      "source_dependencies": [
+        "BT-PG-20261008-01",
+        "BT-PG-20261008-03",
+        "BT-PG-20261008-12"
+      ],
+      "source_full_requirement": "优先级：P0；初始状态：RECONCILE_REQUIRED；测试：NOT_RUN\n\n要求：核对并复用现有事件机制；接入聊天明确偏好、收藏、计划、参加、Moment、反馈；每事件含 actor、目的、同意版本、来源、时间及幂等键。\n\n验收：普通聊天触发明确资格检查；重放事件不重复学习；游客不生成跨账号个人记忆；撤销同意后新事件不再进入学习。\n\n依赖：BT-PG-20261008-01, BT-PG-20261008-03, BT-PG-20261008-12",
+      "existing_task_id": null,
+      "mapping_state": "RECONCILE_REQUIRED",
+      "implementation_status": null,
+      "preserve_existing_status": true,
+      "test_status": "NOT_RUN_IN_THIS_HANDOFF",
+      "proposed_delivery_slice": "S5",
+      "figma_frames": [],
+      "extension_clauses": [],
+      "user_report_2026_10_08_1847": null,
+      "independently_verified_current_head": false,
+      "evidence_paths": [],
+      "remaining_scope": null,
+      "acceptance_scenarios": [
+        "T27"
+      ]
+    },
+    {
+      "requirement_id": "BT-PG-20261008-14",
+      "title": "明确偏好写入闭环",
+      "source_file": "sources/BT-PG-20261008-SPEC.md",
+      "source_priority": "P0",
+      "source_dependencies": [
+        "BT-PG-20261008-13"
+      ],
+      "source_full_requirement": "优先级：P0；初始状态：RECONCILE_REQUIRED；测试：NOT_RUN\n\n要求：用户明确说“记住我喜欢海鲜，不吃辣”形成结构化偏好，经验证写入既有 Memory；普通临时要求只影响当前任务，必要时轻量确认长期性。\n\n验收：明确偏好可见可修改；“替朋友找披萨”不写本人喜欢披萨；不把正常使用变成每一步强制确认或长表单。\n\n依赖：BT-PG-20261008-13",
+      "existing_task_id": null,
+      "mapping_state": "RECONCILE_REQUIRED",
+      "implementation_status": null,
+      "preserve_existing_status": true,
+      "test_status": "NOT_RUN_IN_THIS_HANDOFF",
+      "proposed_delivery_slice": "S5",
+      "figma_frames": [],
+      "extension_clauses": [
+        "BASELINE-RECONCILE"
+      ],
+      "user_report_2026_10_08_1847": "报告称有界偏好确认保存HTTP验证通过",
+      "independently_verified_current_head": false,
+      "evidence_paths": [],
+      "remaining_scope": null,
+      "acceptance_scenarios": [
+        "T26"
+      ]
+    },
+    {
+      "requirement_id": "BT-PG-20261008-15",
+      "title": "行为证据与候选偏好",
+      "source_file": "sources/BT-PG-20261008-SPEC.md",
+      "source_priority": "P1",
+      "source_dependencies": [
+        "BT-PG-20261008-13",
+        "BT-PG-20261008-14"
+      ],
+      "source_full_requirement": "优先级：P1；初始状态：RECONCILE_REQUIRED；测试：NOT_RUN\n\n要求：收藏、点击、搜索、规划、出席分别建证据，不将一次行为等同稳定偏好；候选附来源、范围、时间、置信度解释与待验证状态。\n\n验收：收藏不等于喜欢或到访；行程不等于参加；照片 GPS 不证明用户到访；重复同源事件不会机械加分。\n\n依赖：BT-PG-20261008-13, BT-PG-20261008-14",
+      "existing_task_id": null,
+      "mapping_state": "RECONCILE_REQUIRED",
+      "implementation_status": null,
+      "preserve_existing_status": true,
+      "test_status": "NOT_RUN_IN_THIS_HANDOFF",
+      "proposed_delivery_slice": "S5",
+      "figma_frames": [],
+      "extension_clauses": [],
+      "user_report_2026_10_08_1847": null,
+      "independently_verified_current_head": false,
+      "evidence_paths": [],
+      "remaining_scope": null,
+      "acceptance_scenarios": [
+        "T27"
+      ]
+    },
+    {
+      "requirement_id": "BT-PG-20261008-16",
+      "title": "矛盾修正与时效处理",
+      "source_file": "sources/BT-PG-20261008-SPEC.md",
+      "source_priority": "P0",
+      "source_dependencies": [
+        "BT-PG-20261008-14"
+      ],
+      "source_full_requirement": "优先级：P0；初始状态：RECONCILE_REQUIRED；测试：NOT_RUN\n\n要求：显式更正优先处理旧推断；区分临时意图、地点事实、长期偏好与时间段；带版本更新并保留必要审计。\n\n验收：“最近不想社交”不抹去历史兴趣；“我不再喜欢羽毛球”下一轮生效；“我朋友不吃辣”不覆盖本人偏好。\n\n依赖：BT-PG-20261008-14",
+      "existing_task_id": null,
+      "mapping_state": "RECONCILE_REQUIRED",
+      "implementation_status": null,
+      "preserve_existing_status": true,
+      "test_status": "NOT_RUN_IN_THIS_HANDOFF",
+      "proposed_delivery_slice": "S5",
+      "figma_frames": [],
+      "extension_clauses": [],
+      "user_report_2026_10_08_1847": null,
+      "independently_verified_current_head": false,
+      "evidence_paths": [],
+      "remaining_scope": null,
+      "acceptance_scenarios": [
+        "T26"
+      ]
+    },
+    {
+      "requirement_id": "BT-PG-20261008-17",
+      "title": "记忆实际进入检索与排序",
+      "source_file": "sources/BT-PG-20261008-SPEC.md",
+      "source_priority": "P0",
+      "source_dependencies": [
+        "BT-PG-20261008-08",
+        "BT-PG-20261008-12",
+        "BT-PG-20261008-14",
+        "BT-PG-20261008-16"
+      ],
+      "source_full_requirement": "优先级：P0；初始状态：RECONCILE_REQUIRED；测试：NOT_RUN\n\n要求：在现有 Context Builder 和实时 Now 请求路径召回相关且仍授权的 Memory；用于查询约束、候选排序与简短解释，不另建平行 AI Service。\n\n验收：相同地点库中，已确认海鲜偏好影响下一次建议；证据 trace 能指出实际使用的 memory_id/version；无相关记忆仍能给出普通答案。\n\n依赖：BT-PG-20261008-08, BT-PG-20261008-12, BT-PG-20261008-14, BT-PG-20261008-16",
+      "existing_task_id": null,
+      "mapping_state": "RECONCILE_REQUIRED",
+      "implementation_status": null,
+      "preserve_existing_status": true,
+      "test_status": "NOT_RUN_IN_THIS_HANDOFF",
+      "proposed_delivery_slice": "S5",
+      "figma_frames": [],
+      "extension_clauses": [
+        "BASELINE-RECONCILE"
+      ],
+      "user_report_2026_10_08_1847": "报告称有界偏好下一轮实际使用HTTP验证通过",
+      "independently_verified_current_head": false,
+      "evidence_paths": [],
+      "remaining_scope": null,
+      "acceptance_scenarios": [
+        "T26"
+      ]
+    },
+    {
+      "requirement_id": "BT-PG-20261008-18",
+      "title": "用户记忆控制与反馈入口",
+      "source_file": "sources/BT-PG-20261008-SPEC.md",
+      "source_priority": "P0",
+      "source_dependencies": [
+        "BT-PG-20261008-14",
+        "BT-PG-20261008-16",
+        "BT-PG-20261008-17"
+      ],
+      "source_full_requirement": "优先级：P0；初始状态：RECONCILE_REQUIRED；测试：NOT_RUN\n\n要求：在个人 Agent 设置或 Now 对话内查看记住了什么、证据与原因；支持纠正、忘记、暂停学习、导出，避免首页常驻社交状态表单。\n\n验收：自然语言忘记与设置入口结果一致；拒绝推断后不会马上再推荐同一推断；推荐解释不暴露他人的私人数据。\n\n依赖：BT-PG-20261008-14, BT-PG-20261008-16, BT-PG-20261008-17",
+      "existing_task_id": null,
+      "mapping_state": "RECONCILE_REQUIRED",
+      "implementation_status": null,
+      "preserve_existing_status": true,
+      "test_status": "NOT_RUN_IN_THIS_HANDOFF",
+      "proposed_delivery_slice": "S5",
+      "figma_frames": [],
+      "extension_clauses": [],
+      "user_report_2026_10_08_1847": null,
+      "independently_verified_current_head": false,
+      "evidence_paths": [],
+      "remaining_scope": null,
+      "acceptance_scenarios": [
+        "T26"
+      ]
+    },
+    {
+      "requirement_id": "BT-PG-20261008-19",
+      "title": "撤回删除与衍生数据清理",
+      "source_file": "sources/BT-PG-20261008-SPEC.md",
+      "source_priority": "P0",
+      "source_dependencies": [
+        "BT-PG-20261008-12",
+        "BT-PG-20261008-14",
+        "BT-PG-20261008-16"
+      ],
+      "source_full_requirement": "优先级：P0；初始状态：RECONCILE_REQUIRED；测试：NOT_RUN\n\n要求：建立来源到记忆、索引、缓存、推荐快照的依赖；撤回/删除后阻止召回并清理或重建派生项；处理备份恢复的删除账本。 基本删除能力不等待可选缓存或完整管理界面；后续缓存接入时必须补齐对应清理链。\n\n验收：删记忆后下一查询不使用旧索引或旧缓存；恢复备份不复活已删除记忆；合法必须保留的审计最小化且不作个性化。\n\n依赖：BT-PG-20261008-12, BT-PG-20261008-14, BT-PG-20261008-16",
+      "existing_task_id": null,
+      "mapping_state": "RECONCILE_REQUIRED",
+      "implementation_status": null,
+      "preserve_existing_status": true,
+      "test_status": "NOT_RUN_IN_THIS_HANDOFF",
+      "proposed_delivery_slice": "S5",
+      "figma_frames": [],
+      "extension_clauses": [
+        "BASELINE-RECONCILE"
+      ],
+      "user_report_2026_10_08_1847": "报告称有界偏好纠正删除生效，全部衍生传播仍需核对",
+      "independently_verified_current_head": false,
+      "evidence_paths": [],
+      "remaining_scope": null,
+      "acceptance_scenarios": [
+        "T05",
+        "T26"
+      ]
+    },
+    {
+      "requirement_id": "BT-PG-20261008-20",
+      "title": "主动接收筛选与通知",
+      "source_file": "sources/BT-PG-20261008-SPEC.md",
+      "source_priority": "P1",
+      "source_dependencies": [
+        "BT-PG-20261008-07",
+        "BT-PG-20261008-17",
+        "BT-PG-20261008-18",
+        "BT-PG-20261008-19",
+        "BT-PG-20261008-22"
+      ],
+      "source_full_requirement": "优先级：P1；初始状态：RECONCILE_REQUIRED；测试：NOT_RUN\n\n要求：按用户兴趣、当前意图、授权地域、阻止名单、频率与安静时段筛选地点/活动/邀请；先推荐和通知，用户可解释、关闭。\n\n验收：未开主动通知不推送；未知身份/屏蔽者邀请过滤；相关内容也不越过可见性；不以“成长”开启默认社交。\n\n依赖：BT-PG-20261008-07, BT-PG-20261008-17, BT-PG-20261008-18, BT-PG-20261008-19, BT-PG-20261008-22",
+      "existing_task_id": null,
+      "mapping_state": "RECONCILE_REQUIRED",
+      "implementation_status": null,
+      "preserve_existing_status": true,
+      "test_status": "NOT_RUN_IN_THIS_HANDOFF",
+      "proposed_delivery_slice": "S5",
+      "figma_frames": [],
+      "extension_clauses": [],
+      "user_report_2026_10_08_1847": null,
+      "independently_verified_current_head": false,
+      "evidence_paths": [],
+      "remaining_scope": null,
+      "acceptance_scenarios": [
+        "T28"
+      ]
+    },
+    {
+      "requirement_id": "BT-PG-20261008-21",
+      "title": "对外行动与邀请接受边界",
+      "source_file": "sources/BT-PG-20261008-SPEC.md",
+      "source_priority": "P0",
+      "source_dependencies": [
+        "BT-PG-20261008-01",
+        "BT-PG-20261008-13"
+      ],
+      "source_full_requirement": "优先级：P0；初始状态：RECONCILE_REQUIRED；测试：NOT_RUN\n\n要求：阅读/筛选/排序不等同代用户接受邀请、加入活动或发消息；Runtime 检查权限、收件人、内容、费用与确认版本，执行有幂等和结果核对。\n\n验收：Agent 兴趣吻合不会自动 RSVP 或发消息；批准只覆盖所见行动；确认后内容变化必须重审；结果未知不盲目重发。\n\n依赖：BT-PG-20261008-01, BT-PG-20261008-13",
+      "existing_task_id": null,
+      "mapping_state": "RECONCILE_REQUIRED",
+      "implementation_status": null,
+      "preserve_existing_status": true,
+      "test_status": "NOT_RUN_IN_THIS_HANDOFF",
+      "proposed_delivery_slice": "S5",
+      "figma_frames": [],
+      "extension_clauses": [],
+      "user_report_2026_10_08_1847": null,
+      "independently_verified_current_head": false,
+      "evidence_paths": [],
+      "remaining_scope": null,
+      "acceptance_scenarios": [
+        "T20",
+        "T28"
+      ]
+    },
+    {
+      "requirement_id": "BT-PG-20261008-22",
+      "title": "安全与敏感推断防线",
+      "source_file": "sources/BT-PG-20261008-SPEC.md",
+      "source_priority": "P0",
+      "source_dependencies": [
+        "BT-PG-20261008-01",
+        "BT-PG-20261008-02",
+        "BT-PG-20261008-12",
+        "BT-PG-20261008-13"
+      ],
+      "source_full_requirement": "优先级：P0；初始状态：RECONCILE_REQUIRED；测试：NOT_RUN\n\n要求：外部页面、Moment、邀请作为不可信数据；屏蔽提示注入越权、敏感属性自动推断与儿童数据过度收集；执行按账户和角色重检。 该防线与个人/公共数据隔离必须先于相应真实写入和模型导出启用；后续各链完成后继续集成回归。\n\n验收：恶意网页不能写 Memory 或调用工具；跨账号及组织切换不能读取个人记忆；不从地点/照片推断宗教、健康、性取向等敏感属性。\n\n依赖：BT-PG-20261008-01, BT-PG-20261008-02, BT-PG-20261008-12, BT-PG-20261008-13",
+      "existing_task_id": null,
+      "mapping_state": "RECONCILE_REQUIRED",
+      "implementation_status": null,
+      "preserve_existing_status": true,
+      "test_status": "NOT_RUN_IN_THIS_HANDOFF",
+      "proposed_delivery_slice": "S1",
+      "figma_frames": [],
+      "extension_clauses": [
+        "COUNTS-ACL",
+        "CONTENT-SAFETY"
+      ],
+      "user_report_2026_10_08_1847": null,
+      "independently_verified_current_head": false,
+      "evidence_paths": [],
+      "remaining_scope": null,
+      "acceptance_scenarios": [
+        "T05",
+        "T19",
+        "T27",
+        "T28"
+      ]
+    },
+    {
+      "requirement_id": "BT-PG-20261008-23",
+      "title": "中文纵向验收与回归",
+      "source_file": "sources/BT-PG-20261008-SPEC.md",
+      "source_priority": "P0",
+      "source_dependencies": [
+        "BT-PG-20261008-06",
+        "BT-PG-20261008-08",
+        "BT-PG-20261008-10",
+        "BT-PG-20261008-11",
+        "BT-PG-20261008-17",
+        "BT-PG-20261008-18",
+        "BT-PG-20261008-19",
+        "BT-PG-20261008-21",
+        "BT-PG-20261008-22"
+      ],
+      "source_full_requirement": "优先级：P0；初始状态：RECONCILE_REQUIRED；测试：NOT_RUN\n\n要求：用中文、英文、中英混合和真实手机输入运行完整场景；统一 Now 地图与紧凑来源展示遵守当天 UI 包。\n\n验收：明确偏好→下次推荐→纠正→忘记全链有证据；海鲜中文/English 表达语义一致；已知地点零补搜、动态问题补证；既有搜索/历史恢复不回归。\n\n依赖：BT-PG-20261008-06, BT-PG-20261008-08, BT-PG-20261008-10, BT-PG-20261008-11, BT-PG-20261008-17, BT-PG-20261008-18, BT-PG-20261008-19, BT-PG-20261008-21, BT-PG-20261008-22",
+      "existing_task_id": null,
+      "mapping_state": "RECONCILE_REQUIRED",
+      "implementation_status": null,
+      "preserve_existing_status": true,
+      "test_status": "NOT_RUN_IN_THIS_HANDOFF",
+      "proposed_delivery_slice": "S1-S6",
+      "figma_frames": [],
+      "extension_clauses": [],
+      "user_report_2026_10_08_1847": null,
+      "independently_verified_current_head": false,
+      "evidence_paths": [],
+      "remaining_scope": null,
+      "acceptance_scenarios": [
+        "T30"
+      ]
+    },
+    {
+      "requirement_id": "BT-PG-20261008-24",
+      "title": "匹配质量与节约评估",
+      "source_file": "sources/BT-PG-20261008-SPEC.md",
+      "source_priority": "P1",
+      "source_dependencies": [
+        "BT-PG-20261008-03",
+        "BT-PG-20261008-08",
+        "BT-PG-20261008-09",
+        "BT-PG-20261008-15",
+        "BT-PG-20261008-17",
+        "BT-PG-20261008-23"
+      ],
+      "source_full_requirement": "优先级：P1；初始状态：RECONCILE_REQUIRED；测试：NOT_RUN\n\n要求：建立脱敏/授权评估集；比较无记忆与有记忆、本地优先前后，统计正确性、过期率、调用数、延迟、误记忆及删除传播。\n\n验收：报告有样本数、分母、条件和负例；不以缓存命中率代替事实正确；预留额度不报告为实际节省账单；置信度需校准。\n\n依赖：BT-PG-20261008-03, BT-PG-20261008-08, BT-PG-20261008-09, BT-PG-20261008-15, BT-PG-20261008-17, BT-PG-20261008-23",
+      "existing_task_id": null,
+      "mapping_state": "RECONCILE_REQUIRED",
+      "implementation_status": null,
+      "preserve_existing_status": true,
+      "test_status": "NOT_RUN_IN_THIS_HANDOFF",
+      "proposed_delivery_slice": "S5",
+      "figma_frames": [],
+      "extension_clauses": [],
+      "user_report_2026_10_08_1847": null,
+      "independently_verified_current_head": false,
+      "evidence_paths": [],
+      "remaining_scope": null,
+      "acceptance_scenarios": [
+        "T30"
+      ]
+    },
+    {
+      "requirement_id": "BT-PG-20261008-25",
+      "title": "迁移发布回滚与独立门禁",
+      "source_file": "sources/BT-PG-20261008-SPEC.md",
+      "source_priority": "P0",
+      "source_dependencies": [
+        "BT-PG-20261008-01",
+        "BT-PG-20261008-02",
+        "BT-PG-20261008-23",
+        "BT-PG-20261008-24"
+      ],
+      "source_full_requirement": "优先级：P0；初始状态：RECONCILE_REQUIRED；测试：NOT_RUN\n\n要求：安全检查迁移、索引及回填；版本化特性开关按用户群灰度；客户端和服务端兼容；回滚停用新链不丢原收藏和记忆。\n\n验收：独立数据库演练通过；有前后对比证据与回滚步骤；无生产授权不部署；此链完成不自动宣称 Closed Pilot Ready。\n\n依赖：BT-PG-20261008-01, BT-PG-20261008-02, BT-PG-20261008-23, BT-PG-20261008-24",
+      "existing_task_id": null,
+      "mapping_state": "RECONCILE_REQUIRED",
+      "implementation_status": null,
+      "preserve_existing_status": true,
+      "test_status": "NOT_RUN_IN_THIS_HANDOFF",
+      "proposed_delivery_slice": "S1-S6",
+      "figma_frames": [],
+      "extension_clauses": [],
+      "user_report_2026_10_08_1847": null,
+      "independently_verified_current_head": false,
+      "evidence_paths": [],
+      "remaining_scope": null,
+      "acceptance_scenarios": [
+        "T29"
+      ]
+    },
+    {
+      "requirement_id": "BT-PG-20261008-26",
+      "title": "增量交付与状态回写",
+      "source_file": "sources/BT-PG-20261008-SPEC.md",
+      "source_priority": "P0",
+      "source_dependencies": [
+        "BT-PG-20261008-01"
+      ],
+      "source_full_requirement": "优先级：P0；初始状态：RECONCILE_REQUIRED；测试：NOT_RUN\n\n要求：从首次对账开始，在每阶段持续回写既有队列、任务映射、实际完成、未连通与阻塞；交付当前 commit、可复现步骤、测试与运行证据。最后核对本包全部任务，而不是仅以任务25完成作为整包完成。\n\n验收：每阶段有增量报告；每项 DONE 有实现、接线、测试证据；任务20等未完成范围必须明确保持开放或由用户批准调整范围，不能宣称整包完成；保留当天 Now 包与 AGE/AIR 原历史。\n\n依赖：BT-PG-20261008-01",
+      "existing_task_id": null,
+      "mapping_state": "RECONCILE_REQUIRED",
+      "implementation_status": null,
+      "preserve_existing_status": true,
+      "test_status": "NOT_RUN_IN_THIS_HANDOFF",
+      "proposed_delivery_slice": "S1-S6",
+      "figma_frames": [],
+      "extension_clauses": [
+        "BASELINE-RECONCILE"
+      ],
+      "user_report_2026_10_08_1847": null,
+      "independently_verified_current_head": false,
+      "evidence_paths": [],
+      "remaining_scope": null,
+      "acceptance_scenarios": [
+        "T30"
+      ]
+    }
+  ],
+  "extension_clauses": [
+    {
+      "clause": "SOCIAL-MAP",
+      "mapped_requirement_ids": [
+        "BT-NOW-20261008-006",
+        "BT-NOW-20261008-007",
+        "BT-NOW-20261008-022",
+        "BT-PG-20261008-11"
+      ],
+      "slice": "S1",
+      "requirement": "无需先问Agent的授权地图内容；按地点聚合，作者数和动态数明确，绝不表达实时位置",
+      "is_new_execution_task": false
+    },
+    {
+      "clause": "PLACE-MOMENT-PROFILE",
+      "mapped_requirement_ids": [
+        "BT-NOW-20261008-007",
+        "BT-NOW-20261008-022",
+        "BT-PG-20261008-11"
+      ],
+      "slice": "S1",
+      "requirement": "地点→动态→作者→返回的同一面板历史，保留选择和滚动",
+      "is_new_execution_task": false
+    },
+    {
+      "clause": "COUNTS-ACL",
+      "mapped_requirement_ids": [
+        "BT-NOW-20261008-006",
+        "BT-NOW-20261008-022",
+        "BT-PG-20261008-11",
+        "BT-PG-20261008-12",
+        "BT-PG-20261008-22"
+      ],
+      "slice": "S1",
+      "requirement": "权限过滤后再计算聚合、作者数、分页与索引；撤回和拉黑即时阻断",
+      "is_new_execution_task": false
+    },
+    {
+      "clause": "RELATION-FILTERS",
+      "mapped_requirement_ids": [
+        "BT-NOW-20261008-007",
+        "BT-NOW-20261008-022",
+        "BT-PG-20261008-11"
+      ],
+      "slice": "S2",
+      "requirement": "发现、关注、好友、我的范围；关注不等于好友许可",
+      "is_new_execution_task": false
+    },
+    {
+      "clause": "PUBLIC-SELF-PROFILE",
+      "mapped_requirement_ids": [
+        "BT-NOW-20261008-005",
+        "BT-NOW-20261008-007",
+        "BT-NOW-20261008-022",
+        "BT-PG-20261008-12"
+      ],
+      "slice": "S2",
+      "requirement": "公开作者页和自己资料入口，私人Memory/收藏/设备位置不可泄露",
+      "is_new_execution_task": false
+    },
+    {
+      "clause": "SAME-MAP-READ",
+      "mapped_requirement_ids": [
+        "BT-NOW-20261008-007",
+        "BT-NOW-20261008-021",
+        "BT-NOW-20261008-023",
+        "BT-NOW-20261008-024"
+      ],
+      "slice": "S3",
+      "requirement": "先读取自己/他人授权旅程与主题地图，按天和临时覆盖层恢复；不等待完整创建",
+      "is_new_execution_task": false
+    },
+    {
+      "clause": "ROUTE-TRUTH",
+      "mapped_requirement_ids": [
+        "BT-NOW-20261008-021",
+        "BT-NOW-20261008-024",
+        "BT-NOW-20261008-015"
+      ],
+      "slice": "S3",
+      "requirement": "示意连接不冒充真实路径，计划不冒充轨迹，不伪造耗时",
+      "is_new_execution_task": false
+    },
+    {
+      "clause": "INPUT-CONTEXT",
+      "mapped_requirement_ids": [
+        "BT-NOW-20261008-008",
+        "BT-NOW-20261008-010",
+        "BT-NOW-20261008-013",
+        "BT-NOW-20261008-019",
+        "BT-NOW-20261008-022"
+      ],
+      "slice": "S4",
+      "requirement": "Agent/草稿/收件人/评论目标可辨，私聊不误公开",
+      "is_new_execution_task": false
+    },
+    {
+      "clause": "DESIGN-TO-CODE",
+      "mapped_requirement_ids": [
+        "BT-NOW-20261008-007",
+        "BT-NOW-20261008-027",
+        "BT-NOW-20261008-029",
+        "BT-NOW-20261008-030"
+      ],
+      "slice": "S1",
+      "requirement": "原型十屏是状态参考非十个地图页，首真实链路截图核对；原型未覆盖状态补齐",
+      "is_new_execution_task": false
+    },
+    {
+      "clause": "OFFLINE-RECONNECT",
+      "mapped_requirement_ids": [
+        "BT-NOW-20261008-007",
+        "BT-NOW-20261008-011",
+        "BT-NOW-20261008-028",
+        "BT-NOW-20261008-029",
+        "BT-PG-20261008-11"
+      ],
+      "slice": "S1-S4",
+      "requirement": "离线缓存权限策略、恢复再鉴权、未知执行结果查询、不虚报发布",
+      "is_new_execution_task": false
+    },
+    {
+      "clause": "NATIVE-SOURCE-SPLIT",
+      "mapped_requirement_ids": [
+        "BT-NOW-20261008-022",
+        "BT-PG-20261008-02",
+        "BT-PG-20261008-04",
+        "BT-PG-20261008-05",
+        "BT-PG-20261008-11"
+      ],
+      "slice": "S1",
+      "requirement": "自有合法地点和站内UGC不等待未决SearchPro许可；新来源维持独立门禁",
+      "is_new_execution_task": false
+    },
+    {
+      "clause": "BASELINE-RECONCILE",
+      "mapped_requirement_ids": [
+        "BT-NOW-20261008-001",
+        "BT-NOW-20261008-030",
+        "BT-PG-20261008-01",
+        "BT-PG-20261008-14",
+        "BT-PG-20261008-17",
+        "BT-PG-20261008-19",
+        "BT-PG-20261008-26"
+      ],
+      "slice": "S0",
+      "requirement": "尊重18:47用户报告的有界偏好新进展，保留旧DONE，不把历史缺口当当前结论",
+      "is_new_execution_task": false
+    },
+    {
+      "clause": "CONTENT-SAFETY",
+      "mapped_requirement_ids": [
+        "BT-NOW-20261008-022",
+        "BT-NOW-20261008-027",
+        "BT-PG-20261008-11",
+        "BT-PG-20261008-22"
+      ],
+      "slice": "S1",
+      "requirement": "作者撤回、举报、屏蔽、审核与媒体ACL；原生UGC写入需复用现有保护",
+      "is_new_execution_task": false
+    },
+    {
+      "clause": "LOW-SUPPLY",
+      "mapped_requirement_ids": [
+        "BT-NOW-20261008-002",
+        "BT-NOW-20261008-006",
+        "BT-NOW-20261008-007",
+        "BT-NOW-20261008-017",
+        "BT-NOW-20261008-022"
+      ],
+      "slice": "S1",
+      "requirement": "低供给/访客/无动态保持独立探索价值，绝不伪造用户和活跃量",
+      "is_new_execution_task": false
+    }
+  ],
+  "figma_frames": [
+    {
+      "frame": "01",
+      "node_id": "4:2",
+      "image": "design/screen-01.png",
+      "requirement_ids": [
+        "BT-NOW-20261008-002",
+        "BT-NOW-20261008-005",
+        "BT-NOW-20261008-006",
+        "BT-NOW-20261008-007",
+        "BT-PG-20261008-11"
+      ],
+      "production_verified": false
+    },
+    {
+      "frame": "02",
+      "node_id": "4:63",
+      "image": "design/screen-02.png",
+      "requirement_ids": [
+        "BT-NOW-20261008-007",
+        "BT-NOW-20261008-016",
+        "BT-NOW-20261008-022",
+        "BT-PG-20261008-11"
+      ],
+      "production_verified": false
+    },
+    {
+      "frame": "03",
+      "node_id": "4:134",
+      "image": "design/screen-03.png",
+      "requirement_ids": [
+        "BT-NOW-20261008-007",
+        "BT-NOW-20261008-022",
+        "BT-PG-20261008-11"
+      ],
+      "production_verified": false
+    },
+    {
+      "frame": "04",
+      "node_id": "4:205",
+      "image": "design/screen-04.png",
+      "requirement_ids": [
+        "BT-NOW-20261008-007",
+        "BT-NOW-20261008-022",
+        "BT-PG-20261008-11",
+        "BT-PG-20261008-12"
+      ],
+      "production_verified": false
+    },
+    {
+      "frame": "05",
+      "node_id": "5:24",
+      "image": "design/screen-05.png",
+      "requirement_ids": [
+        "BT-NOW-20261008-021",
+        "BT-NOW-20261008-024"
+      ],
+      "production_verified": false
+    },
+    {
+      "frame": "06",
+      "node_id": "5:106",
+      "image": "design/screen-06.png",
+      "requirement_ids": [
+        "BT-NOW-20261008-008",
+        "BT-NOW-20261008-010",
+        "BT-NOW-20261008-011"
+      ],
+      "production_verified": false
+    },
+    {
+      "frame": "07",
+      "node_id": "5:182",
+      "image": "design/screen-07.png",
+      "requirement_ids": [
+        "BT-NOW-20261008-010",
+        "BT-NOW-20261008-012",
+        "BT-NOW-20261008-022",
+        "BT-NOW-20261008-028"
+      ],
+      "production_verified": false
+    },
+    {
+      "frame": "08",
+      "node_id": "5:256",
+      "image": "design/screen-08.png",
+      "requirement_ids": [
+        "BT-NOW-20261008-014",
+        "BT-NOW-20261008-015",
+        "BT-NOW-20261008-016"
+      ],
+      "production_verified": false
+    },
+    {
+      "frame": "09",
+      "node_id": "7:52",
+      "image": "design/screen-09.png",
+      "requirement_ids": [
+        "BT-NOW-20261008-023"
+      ],
+      "production_verified": false
+    },
+    {
+      "frame": "10",
+      "node_id": "7:120",
+      "image": "design/screen-10.png",
+      "requirement_ids": [
+        "BT-NOW-20261008-013",
+        "BT-NOW-20261008-019",
+        "BT-NOW-20261008-020",
+        "BT-NOW-20261008-028"
+      ],
+      "production_verified": false
+    }
+  ],
+  "dependency_overrides": [
+    {
+      "scope": "NOW022 读取与最小发布切片",
+      "reason": "最新用户优先级将其提前S1；完整语音/附件/通用草稿不是已有内容读取前置",
+      "retain_full_scope_open": true
+    },
+    {
+      "scope": "PG11 现有合法地点与站内UGC",
+      "reason": "独立于新外部来源PG05及特定供应商PG02许可；仍需ACL和实体基础",
+      "retain_new_source_gate": true
+    },
+    {
+      "scope": "NOW023/024 读取子范围",
+      "reason": "提前S3，不以完整收藏整理或通用草稿为前置",
+      "retain_creation_import_open": true
+    },
+    {
+      "scope": "NOW017 直接收藏",
+      "reason": "可以复用已有明确动作服务，不等通用草稿全量完成",
+      "retain_permission_idempotency_gate": true
+    }
+  ]
+}

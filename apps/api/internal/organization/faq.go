@@ -2,10 +2,13 @@ package organization
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"github.com/birdtie/birdtie/apps/api/internal/identity"
 	"strings"
 	"time"
 	"unicode"
+	"unicode/utf8"
 )
 
 var ErrFAQNotFound = errors.New("organization FAQ not found")
@@ -19,6 +22,94 @@ type FAQ struct {
 	Published      bool      `json:"published"`
 	CreatedAt      time.Time `json:"createdAt"`
 	UpdatedAt      time.Time `json:"updatedAt"`
+	Revision       int64     `json:"revision"`
+}
+
+type FAQControlInput struct {
+	OperationID     string `json:"operationId"`
+	Action          string `json:"action"`
+	FAQID           string `json:"faqId"`
+	ExpectedVersion int64  `json:"expectedVersion"`
+	Question        string `json:"question,omitempty"`
+	Answer          string `json:"answer,omitempty"`
+	Published       *bool  `json:"published,omitempty"`
+	Approval        string `json:"approval,omitempty"`
+}
+type FAQControlState struct {
+	OrganizationID string                     `json:"organizationId"`
+	Role           string                     `json:"role"`
+	Items          []FAQ                      `json:"items"`
+	ObservedAt     time.Time                  `json:"observedAt"`
+	ExpiresAt      time.Time                  `json:"expiresAt"`
+	ResponseProof  identity.HumanControlProof `json:"-"`
+}
+type FAQControlPreview struct {
+	identity.HumanControlPreview
+	OrganizationID  string `json:"organizationId"`
+	FAQID           string `json:"faqId"`
+	ExpectedVersion int64  `json:"expectedVersion"`
+	Question        string `json:"question,omitempty"`
+	Answer          string `json:"answer,omitempty"`
+	Published       *bool  `json:"published,omitempty"`
+}
+type FAQControlStore interface {
+	ReadFAQControl(context.Context, [32]byte, identity.Actor, string) (FAQControlState, error)
+	PreviewFAQControl(context.Context, [32]byte, identity.Actor, string, FAQControlInput) (FAQControlPreview, error)
+	CommitFAQControl(context.Context, [32]byte, identity.Actor, string, FAQControlInput) (identity.HumanControlReceipt, error)
+	ReadFAQControlOperation(context.Context, [32]byte, identity.Actor, string, string) (identity.HumanControlReceipt, error)
+	StopFAQControlOperation(context.Context, [32]byte, identity.Actor, string, string) (identity.HumanControlReceipt, error)
+}
+
+func NormalizeFAQControl(orgID string, in FAQControlInput, commit bool) (FAQControlInput, error) {
+	in.Question = strings.TrimSpace(in.Question)
+	in.Answer = strings.TrimSpace(in.Answer)
+	if !identity.HumanControlUUID(orgID) || !identity.HumanControlUUID(in.OperationID) || !identity.HumanControlApprovalValid(in.Approval, commit) {
+		return in, identity.ErrControlInvalid
+	}
+	switch in.Action {
+	case "CREATE":
+		if in.FAQID != "" || in.ExpectedVersion != 0 {
+			return in, identity.ErrControlInvalid
+		}
+	case "UPDATE", "DELETE":
+		if !identity.HumanControlUUID(in.FAQID) || in.ExpectedVersion < 1 || in.ExpectedVersion > identity.HumanControlMaxVersion || (in.Action == "UPDATE" && in.ExpectedVersion == identity.HumanControlMaxVersion) {
+			return in, identity.ErrControlInvalid
+		}
+	default:
+		return in, identity.ErrControlInvalid
+	}
+	if in.Action == "DELETE" {
+		if in.Question != "" || in.Answer != "" || in.Published != nil {
+			return in, identity.ErrControlInvalid
+		}
+	} else if in.Published == nil || !utf8.ValidString(in.Question) || !utf8.ValidString(in.Answer) || strings.ContainsRune(in.Question, 0) || strings.ContainsRune(in.Answer, 0) || len([]rune(in.Question)) < 2 || len([]rune(in.Question)) > 300 || len([]rune(in.Answer)) < 1 || len([]rune(in.Answer)) > 3000 {
+		return in, identity.ErrControlInvalid
+	}
+	return in, nil
+}
+func FAQControlDigest(orgID string, in FAQControlInput) string {
+	published := false
+	if in.Published != nil {
+		published = *in.Published
+	}
+	return identity.HumanControlTupleHash([]any{"human-faq-v1", orgID, in.OperationID, in.Action, in.ExpectedVersion, in.FAQID, identity.HumanControlTextHash(in.Question), identity.HumanControlTextHash(in.Answer), published})
+}
+func DecodeFAQControl(raw []byte, orgID string, commit bool) (FAQControlInput, error) {
+	var in FAQControlInput
+	if json.Unmarshal(raw, &in) != nil {
+		return in, identity.ErrControlInvalid
+	}
+	keys := []string{"operationId", "action", "faqId", "expectedVersion"}
+	if in.Action != "DELETE" {
+		keys = append(keys, "question", "answer", "published")
+	}
+	if commit {
+		keys = append(keys, "approval")
+	}
+	if identity.HumanControlClosedJSON(raw, keys, nil) != nil {
+		return in, identity.ErrControlInvalid
+	}
+	return NormalizeFAQControl(orgID, in, commit)
 }
 
 type FAQInput struct {

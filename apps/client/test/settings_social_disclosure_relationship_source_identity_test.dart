@@ -150,7 +150,7 @@ Future<void> _tap(WidgetTester t, Finder f) async {
 Future<void> _open(WidgetTester t, bool relationship) async {
   final entry = find.widgetWithText(
     ListTile,
-    relationship ? 'Agent 关系信号' : '共同信息展示',
+    relationship ? '互动记录使用范围' : '共同信息展示',
   );
   await t.scrollUntilVisible(
     entry,

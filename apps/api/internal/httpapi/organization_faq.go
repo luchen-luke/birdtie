@@ -51,16 +51,21 @@ func (s *server) faqAdmin(w http.ResponseWriter, r *http.Request) (string, strin
 }
 
 func (s *server) listOrganizationFAQs(w http.ResponseWriter, r *http.Request) {
-	actorID, organizationID, ok := s.faqAdmin(w, r)
+	r, a, d, ok := s.humanControlActor(w, r)
+	if !ok || !humanControlPath(w, r, "organizationID") || !humanControlNoBody(w, r) {
+		return
+	}
+	port, ok := s.faqs.(organization.FAQControlStore)
 	if !ok {
+		respondError(w, 503, "human_control_unavailable")
 		return
 	}
-	items, err := s.faqs.ListFAQs(r.Context(), actorID, organizationID)
-	if err != nil {
-		faqError(w, err)
+	v, e := port.ReadFAQControl(r.Context(), d, a, r.PathValue("organizationID"))
+	if e != nil {
+		humanControlFailure(w, e)
 		return
 	}
-	respond(w, http.StatusOK, map[string]any{"data": items})
+	s.respondHumanControl(w, r, d, a, map[string]any{"data": v.Items}, v.ResponseProof, true)
 }
 
 func (s *server) decodeFAQ(w http.ResponseWriter, r *http.Request) (organization.FAQInput, bool) {
@@ -76,59 +81,15 @@ func (s *server) decodeFAQ(w http.ResponseWriter, r *http.Request) (organization
 }
 
 func (s *server) createOrganizationFAQ(w http.ResponseWriter, r *http.Request) {
-	actorID, organizationID, ok := s.faqAdmin(w, r)
-	if !ok {
-		return
-	}
-	input, ok := s.decodeFAQ(w, r)
-	if !ok {
-		return
-	}
-	item, err := s.faqs.CreateFAQ(r.Context(), actorID, organizationID, input)
-	if err != nil {
-		faqError(w, err)
-		return
-	}
-	respond(w, http.StatusCreated, map[string]any{"data": item})
+	s.legacyHumanControlWrite(w, r)
 }
 
 func (s *server) updateOrganizationFAQ(w http.ResponseWriter, r *http.Request) {
-	actorID, organizationID, ok := s.faqAdmin(w, r)
-	if !ok {
-		return
-	}
-	faqID := r.PathValue("faqID")
-	if !uuidPath.MatchString(faqID) {
-		respondError(w, http.StatusBadRequest, "invalid_faq_id")
-		return
-	}
-	input, ok := s.decodeFAQ(w, r)
-	if !ok {
-		return
-	}
-	item, err := s.faqs.UpdateFAQ(r.Context(), actorID, organizationID, faqID, input)
-	if err != nil {
-		faqError(w, err)
-		return
-	}
-	respond(w, http.StatusOK, map[string]any{"data": item})
+	s.legacyHumanControlWrite(w, r)
 }
 
 func (s *server) deleteOrganizationFAQ(w http.ResponseWriter, r *http.Request) {
-	actorID, organizationID, ok := s.faqAdmin(w, r)
-	if !ok {
-		return
-	}
-	faqID := r.PathValue("faqID")
-	if !uuidPath.MatchString(faqID) {
-		respondError(w, http.StatusBadRequest, "invalid_faq_id")
-		return
-	}
-	if err := s.faqs.DeleteFAQ(r.Context(), actorID, organizationID, faqID); err != nil {
-		faqError(w, err)
-		return
-	}
-	w.WriteHeader(http.StatusNoContent)
+	s.legacyHumanControlWrite(w, r)
 }
 
 var errOrganizationSessionUnavailable = errors.New("organization session capability unavailable")
@@ -222,4 +183,126 @@ func (s *server) askOrganizationAgent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	respond(w, http.StatusOK, map[string]any{"data": answer})
+}
+
+func (s *server) readFAQControl(w http.ResponseWriter, r *http.Request) {
+	r, a, d, ok := s.humanControlActor(w, r)
+	if !ok || !humanControlPath(w, r, "organizationID") || !humanControlNoBody(w, r) {
+		return
+	}
+	port, ok := s.faqs.(organization.FAQControlStore)
+	if !ok || port == nil {
+		respondError(w, 503, "human_control_unavailable")
+		return
+	}
+	v, e := port.ReadFAQControl(r.Context(), d, a, r.PathValue("organizationID"))
+	if e != nil {
+		humanControlFailure(w, e)
+		return
+	}
+	s.respondHumanControl(w, r, d, a, map[string]any{"data": v}, v.ResponseProof, true)
+}
+func (s *server) previewFAQControl(w http.ResponseWriter, r *http.Request) {
+	r, a, d, ok := s.humanControlActor(w, r)
+	if !ok || !humanControlPath(w, r, "organizationID") {
+		return
+	}
+	port, ok := s.faqs.(organization.FAQControlStore)
+	if !ok || port == nil {
+		respondError(w, 503, "human_control_unavailable")
+		return
+	}
+	raw, ok := humanControlBody(w, r)
+	if !ok {
+		return
+	}
+	in, e := organization.DecodeFAQControl(raw, r.PathValue("organizationID"), false)
+	if e != nil {
+		humanControlFailure(w, e)
+		return
+	}
+	v, e := port.PreviewFAQControl(r.Context(), d, a, r.PathValue("organizationID"), in)
+	if e != nil {
+		humanControlFailure(w, e)
+		return
+	}
+	if !humanControlPreviewMatches(v.HumanControlPreview, in.OperationID, in.Action, organization.FAQControlDigest(r.PathValue("organizationID"), in)) {
+		respondError(w, 503, "human_control_unavailable")
+		return
+	}
+	s.respondHumanControl(w, r, d, a, map[string]any{"data": v}, v.ResponseProof, true)
+}
+func (s *server) commitFAQControl(w http.ResponseWriter, r *http.Request) {
+	r, a, d, ok := s.humanControlActor(w, r)
+	if !ok || !humanControlPath(w, r, "operationID", "organizationID") {
+		return
+	}
+	port, ok := s.faqs.(organization.FAQControlStore)
+	if !ok || port == nil {
+		respondError(w, 503, "human_control_unavailable")
+		return
+	}
+	raw, ok := humanControlBody(w, r)
+	if !ok {
+		return
+	}
+	in, e := organization.DecodeFAQControl(raw, r.PathValue("organizationID"), true)
+	if e != nil {
+		humanControlFailure(w, e)
+		return
+	}
+	if in.OperationID != r.PathValue("operationID") {
+		respondError(w, 400, "invalid_human_control")
+		return
+	}
+	v, e := port.CommitFAQControl(r.Context(), d, a, r.PathValue("organizationID"), in)
+	if e != nil {
+		humanControlFailure(w, e)
+		return
+	}
+	if !humanControlReceiptMatches(v, "FAQ", r.PathValue("operationID")) {
+		respondError(w, 503, "human_control_unavailable")
+		return
+	}
+	s.respondHumanControl(w, r, d, a, map[string]any{"data": v}, nil, false)
+}
+func (s *server) readFAQControlOperation(w http.ResponseWriter, r *http.Request) {
+	s.historyFAQControl(w, r, false)
+}
+func (s *server) stopFAQControlOperation(w http.ResponseWriter, r *http.Request) {
+	s.historyFAQControl(w, r, true)
+}
+func (s *server) historyFAQControl(w http.ResponseWriter, r *http.Request, stop bool) {
+	r, a, d, ok := s.humanControlActor(w, r)
+	if !ok || !humanControlPath(w, r, "operationID", "organizationID") || !humanControlNoBody(w, r) {
+		return
+	}
+	port, ok := s.faqs.(organization.FAQControlStore)
+	if !ok || port == nil {
+		respondError(w, 503, "human_control_unavailable")
+		return
+	}
+	var v identity.HumanControlReceipt
+	var e error
+	if stop {
+		v, e = port.StopFAQControlOperation(r.Context(), d, a, r.PathValue("organizationID"), r.PathValue("operationID"))
+	} else {
+		v, e = port.ReadFAQControlOperation(r.Context(), d, a, r.PathValue("organizationID"), r.PathValue("operationID"))
+	}
+	if e != nil {
+		humanControlFailure(w, e)
+		return
+	}
+	if !humanControlReceiptMatches(v, "FAQ", r.PathValue("operationID")) {
+		respondError(w, 503, "human_control_unavailable")
+		return
+	}
+	s.respondHumanControl(w, r, d, a, map[string]any{"data": v}, nil, false)
+}
+func (s *server) registerFAQControlRoutes(mux *http.ServeMux) {
+	mux.HandleFunc("GET /v1/me/organizations/{organizationID}/faq-control", s.readFAQControl)
+	mux.HandleFunc("POST /v1/me/organizations/{organizationID}/faq-control/previews", s.previewFAQControl)
+	mux.HandleFunc("PUT /v1/me/organizations/{organizationID}/faq-control/operations/{operationID}", s.commitFAQControl)
+	mux.HandleFunc("GET /v1/me/organizations/{organizationID}/faq-control/operations/{operationID}", s.readFAQControlOperation)
+	mux.HandleFunc("POST /v1/me/organizations/{organizationID}/faq-control/operations/{operationID}/stop", s.stopFAQControlOperation)
 }

@@ -19,6 +19,17 @@ class AgentMemoryCandidateController extends ChangeNotifier {
       accountID,
       organizationWorkspaceID;
   List<HumanMemoryCandidate> records = [];
+  String? nextCursor, pageAgentID;
+  DateTime? pageExpiresAt;
+  bool _pageDenied = false;
+  bool get hasMore => nextCursor != null;
+  bool get canLoadMore =>
+      personal &&
+      !busy &&
+      !unknownAccept &&
+      !hasPendingAcceptance &&
+      preview == null &&
+      hasMore;
   List<CandidateSourceChoice> choices = [];
   final Set<String> selected = {};
   String category = 'badminton';
@@ -30,6 +41,7 @@ class AgentMemoryCandidateController extends ChangeNotifier {
   (String?, String?, String?)? _identity;
   bool get hasPendingAcceptance => _pending != null || _storageBlocked;
   bool get personal =>
+      !_pageDenied &&
       authorizationHeader() != null &&
       candidateIDValid(accountID()) &&
       organizationWorkspaceID() == null;
@@ -45,6 +57,9 @@ class AgentMemoryCandidateController extends ChangeNotifier {
     generation++;
     _serial++;
     records = [];
+    nextCursor = pageAgentID = null;
+    pageExpiresAt = null;
+    _pageDenied = false;
     choices = [];
     selected.clear();
     category = 'badminton';
@@ -91,6 +106,7 @@ class AgentMemoryCandidateController extends ChangeNotifier {
     error = null;
     notifyListeners();
     try {
+      if (!_current(g, s)) return;
       if (!_pendingChecked || (_storageBlocked && recoverStorage)) {
         await _restore(auth, owner, g, s);
         if (!_current(g, s) || _storageBlocked) {
@@ -101,6 +117,7 @@ class AgentMemoryCandidateController extends ChangeNotifier {
         error = '本机核实记录无法安全处理，已阻止提交。请重试读取。';
         return;
       }
+      if (!_current(g, s)) return;
       await action(auth, owner, g, s);
     } catch (e) {
       if (_current(g, s)) {
@@ -163,11 +180,80 @@ class AgentMemoryCandidateController extends ChangeNotifier {
         return;
       }
     }
-    final r = await api.list(a, o);
-    if (_current(g, s)) {
-      records = r;
-    }
+    await _loadFirstPage(a, o, g, s);
   }, recoverStorage: true);
+  Future<void> _loadFirstPage(
+    String a,
+    String o,
+    int g,
+    int s, {
+    bool preserveOnFailure = false,
+  }) async {
+    try {
+      if (!_current(g, s)) return;
+      final page = await api.page(a, o);
+      if (!_current(g, s)) return;
+      records = page.items.toList();
+      nextCursor = page.nextCursor;
+      pageAgentID = page.agentID;
+      pageExpiresAt = page.expiresAt;
+    } catch (e) {
+      if (!_current(g, s)) return;
+      _pageFailure(e);
+      if (!preserveOnFailure) rethrow;
+      if (!_pageDenied) error = '操作结果已确认；当前候选列表暂不可读取，请刷新。';
+    }
+  }
+
+  void _pageFailure(Object e) {
+    if (e is CandidateAPIError && {401, 403}.contains(e.status)) {
+      _pageDenied = true;
+      busy = false;
+      error = '当前会话或权限已变化，请重新登录后打开。';
+      records = [];
+      choices = [];
+      selected.clear();
+      preview = null;
+      current = null;
+      nextCursor = null;
+      pageAgentID = null;
+      pageExpiresAt = null;
+      notifyListeners();
+    } else if (e is FormatException ||
+        e is CandidateAPIError && e.status == 409) {
+      nextCursor = null;
+      pageExpiresAt = null;
+    }
+  }
+
+  Future<void> loadMore() => _run((a, o, g, s) async {
+    final cursor = nextCursor;
+    if (cursor == null ||
+        preview != null ||
+        unknownAccept ||
+        hasPendingAcceptance)
+      return;
+    if (pageExpiresAt?.isAfter(DateTime.now().toUtc()) != true) {
+      nextCursor = null;
+      error = '这页已到期，请重新读取候选。';
+      return;
+    }
+    try {
+      final page = await api.page(a, o, cursor: cursor);
+      if (!_current(g, s)) return;
+      if (page.agentID != pageAgentID ||
+          nextCursor != cursor ||
+          page.nextCursor == cursor)
+        throw const FormatException('分页来源不符');
+      final ids = records.map((r) => r.id).toSet();
+      records = [...records, ...page.items.where((r) => ids.add(r.id))];
+      nextCursor = page.nextCursor;
+      pageExpiresAt = page.expiresAt;
+    } catch (e) {
+      if (_current(g, s)) _pageFailure(e);
+      rethrow;
+    }
+  });
   Future<void> loadSources() => _run((a, o, g, s) async {
     if (unknownAccept || hasPendingAcceptance) {
       return;
@@ -237,6 +323,9 @@ class AgentMemoryCandidateController extends ChangeNotifier {
           ? '候选已保存，尚未写入记忆。'
           : '同一候选已有处理结果：${candidateStatusLabels[r.status]}。不会重复写入或恢复旧建议。';
       records = [r, ...records.where((e) => e.id != r.id)];
+      nextCursor = null;
+      pageExpiresAt = null;
+      await _loadFirstPage(a, o, g, s, preserveOnFailure: true);
     }
   });
   Future<void> prepare(HumanMemoryCandidate c) => _run((a, o, g, s) async {
@@ -341,6 +430,9 @@ class AgentMemoryCandidateController extends ChangeNotifier {
       preview = null;
       notice = '已保存为本人明确声明的私密记忆。';
       records = [r, ...records.where((e) => e.id != r.id)];
+      nextCursor = null;
+      pageExpiresAt = null;
+      await _loadFirstPage(a, o, g, s, preserveOnFailure: true);
     } catch (_) {
       if (_current(g, s)) {
         unknownAccept = true;
@@ -369,6 +461,8 @@ class AgentMemoryCandidateController extends ChangeNotifier {
     }
     current = r;
     records = [r, ...records.where((e) => e.id != r.id)];
+    nextCursor = null;
+    pageExpiresAt = null;
     if (entry.matches(r)) {
       await _forget(entry, o, g, s);
       if (!_current(g, s)) {
@@ -433,6 +527,9 @@ class AgentMemoryCandidateController extends ChangeNotifier {
       preview = null;
       current = r;
       records = [r, ...records.where((e) => e.id != r.id)];
+      nextCursor = null;
+      pageExpiresAt = null;
+      await _loadFirstPage(a, o, g, s, preserveOnFailure: true);
       notice = '已拒绝，不会自动恢复同一候选。';
     }
   });
@@ -445,6 +542,8 @@ class AgentMemoryCandidateController extends ChangeNotifier {
     generation++;
     _serial++;
     records = [];
+    nextCursor = pageAgentID = null;
+    pageExpiresAt = null;
     choices = [];
     selected.clear();
     preview = null;

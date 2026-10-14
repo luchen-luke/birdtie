@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:birdtie_client/src/city/public_city_controller.dart';
 import 'package:birdtie_client/src/workspace/activity_detail_sheet.dart';
 import 'package:birdtie_client/src/workspace/entity_action_contract.dart';
+import 'package:birdtie_client/src/workspace/activity_participation_operation.dart';
+import 'package:birdtie_client/src/workspace/activity_participation_pending_store.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -419,7 +421,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('活动状态加载失败，请重试。'), findsOneWidget);
       failed = false;
-      await tester.tap(find.text('重试'));
+      await tester.tap(find.text('重新读取详情'));
       await tester.pumpAndSettle();
       expect(find.text('活动已取消'), findsOneWidget);
       expect(find.text('报名参加'), findsNothing);
@@ -568,6 +570,8 @@ void main() {
   testWidgets(
     'activity detail reads server RSVP and supports cancel and rejoin',
     (tester) async {
+      const owner = 'b1700000-0000-4000-8000-000000000101';
+      final operationIDs = <String>{};
       var status = 'going';
       final start = DateTime.utc(2026, 10, 3, 10);
       final activity = PublicActivity(
@@ -616,7 +620,7 @@ void main() {
           );
         }
         if (request.url.path.endsWith('/participations/me')) {
-          if (request.method == 'DELETE') status = 'cancelled';
+          expect(request.method, 'GET');
           return http.Response(
             jsonEncode({
               'data': {'status': status},
@@ -625,11 +629,52 @@ void main() {
             headers: {'content-type': 'application/json; charset=utf-8'},
           );
         }
-        if (request.url.path.endsWith('/participations')) {
-          status = 'going';
+        if (request.url.path.endsWith('/participation-operations')) {
+          expect(request.method, 'POST');
+          final body = jsonDecode(request.body) as Map<String, dynamic>;
+          final op = body['operationId'] as String;
+          expect(
+            operationIDs.add(op),
+            isTrue,
+            reason: 'new reviewed action receives a new key',
+          );
+          final operation = body['operation'] as String;
+          final approved = EntityActionDescriptor(
+            kind: EntityActionKind.join,
+            target: EntityActionRef('activity', activity.id),
+            available: true,
+            label: '报名操作',
+            reason: '',
+            requiresConfirmation: true,
+            operation: operation,
+            reviewedVersion: request.headers['X-Birdtie-Action-Version'],
+            reviewedUntil: DateTime.parse(
+              request.headers['X-Birdtie-Action-Until']!,
+            ),
+          );
+          status = operation == 'JOIN' ? 'going' : 'cancelled';
           return http.Response(
             jsonEncode({
-              'data': {'status': status},
+              'data': {
+                'schemaVersion': participationOperationSchema,
+                'ownerId': owner,
+                'activityId': activity.id,
+                'operationId': op,
+                'operation': operation,
+                'toolVersion': participationToolVersion,
+                'effectKey': participationEffectKey(owner, op),
+                'requestDigest': participationRequestDigest(
+                  owner,
+                  activity.id,
+                  op,
+                  approved,
+                ),
+                'status': 'COMMITTED',
+                'effectId': 'b1700000-0000-4000-8000-000000000102',
+                'state': status,
+                'effectAt': '2026-10-10T08:00:00Z',
+                'recordedAt': '2026-10-10T08:00:00.123Z',
+              },
             }),
             201,
             headers: {'content-type': 'application/json; charset=utf-8'},
@@ -661,6 +706,8 @@ void main() {
             body: ActivityDetailSheet(
               activity: activity,
               authorizationHeader: () => 'Bearer test',
+              accountID: () => owner,
+              participationPendingStore: MemoryParticipationPendingStore(),
               apiBaseUrl: 'http://api.test',
               client: client,
             ),
@@ -679,6 +726,7 @@ void main() {
       await tester.tap(find.text('确认报名'));
       await tester.pumpAndSettle();
       expect(find.text('你已报名'), findsOneWidget);
+      expect(operationIDs, hasLength(2));
     },
   );
 }

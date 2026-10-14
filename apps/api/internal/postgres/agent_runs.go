@@ -252,6 +252,14 @@ func (s *AgentRuns) CancelOwn(ctx context.Context, a agentprofile.PrivateAccess,
 	if e != nil {
 		return ar.Record{}, runError(e)
 	}
+	// The AFTER checkpoint trigger can wait on Step/Audit rows. Recheck the
+	// original Session generation and fresh clock after those waits, before
+	// committing cancellation; an expired Session cannot commit a late control.
+	at, e := s.store.finishContextBuilder(ctx, tx, b, nil)
+	if e != nil {
+		return ar.Record{}, runError(retentionError(enrichmentError(e)))
+	}
+	r.record.ObservedAt = at.UTC()
 	if e = tx.Commit(ctx); e != nil {
 		return ar.Record{}, runError(e)
 	}

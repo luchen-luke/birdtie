@@ -46,6 +46,7 @@ type PreparedLiveEgress struct {
 	upper                                              modelegressbudget.LiveAmount
 	sourceBatch                                        OwnLiveSourceBatch
 	resolved                                           nativeResolvedPublicSearch
+	licensed                                           nativeLicensedPlaceBatch
 }
 
 func (PreparedLiveEgress) Format(s fmt.State, _ rune) {
@@ -371,6 +372,9 @@ func livePreview(p PreparedLiveEgress, id, status string) LiveEgressPreview {
 			scope = modelegressbudget.LiveResolvedSourceScope
 		}
 	}
+	if p.licensed.valid {
+		scope = modelegressbudget.LiveLicensedPlaceScope
+	}
 	purpose := modelegressbudget.Purpose
 	if p.price.Kind == modelegressbudget.LiveCall {
 		purpose = modelegressbudget.LiveSearchPurpose
@@ -428,7 +432,11 @@ func readLiveEgressPreview(ctx context.Context, tx pgx.Tx, id string) (v storedL
 }
 func matchLivePreview(v storedLiveEgressPreview, p PreparedLiveEgress) bool {
 	expected := livePreview(p, "", "")
-	return v.owner == p.owner && v.session == p.session && v.agent == p.request.Agent.AgentID && v.binding == p.binding && v.source == p.source && v.authority == p.authority && v.digest == p.digest && v.kind == p.price.Kind && v.queryDigest == p.queryDigest && v.payloadDigest == p.payloadDigest && v.purpose == expected.Purpose && v.scope == expected.Scope && v.sourceEvidenceDigest == p.sourceBatch.evidenceDigest
+	sourceDigest := p.sourceBatch.evidenceDigest
+	if p.licensed.valid {
+		sourceDigest = p.licensed.digest
+	}
+	return v.owner == p.owner && v.session == p.session && v.agent == p.request.Agent.AgentID && v.binding == p.binding && v.source == p.source && v.authority == p.authority && v.digest == p.digest && v.kind == p.price.Kind && v.queryDigest == p.queryDigest && v.payloadDigest == p.payloadDigest && v.purpose == expected.Purpose && v.scope == expected.Scope && v.sourceEvidenceDigest == sourceDigest
 }
 func (s *Store) ApproveOwnLiveEgress(ctx context.Context, a agentevent.Access, id, digest string, projector LiveWireProjector) error {
 	if !egressUUID(id) || !modelconfiguration.ValidDigest(digest) {

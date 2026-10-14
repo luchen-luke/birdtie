@@ -31,6 +31,9 @@
 **/.DS_Store
 **/ios/Flutter/Generated.xcconfig
 **/ios/Flutter/ephemeral/
+**/linux/flutter/ephemeral/
+**/macos/Flutter/ephemeral/
+**/windows/flutter/ephemeral/
 **/ios/Flutter/flutter_export_environment.sh
 
 # Local validation captures, copied evidence inventories and provided archives

@@ -187,7 +187,7 @@ class _EntityActionControlsState extends State<EntityActionControls> {
               content: SingleChildScrollView(
                 child: Text(
                   control.current && view.live(DateTime.now())
-                      ? '目标：${view.title}\n${_consequence(action.kind)}\n${action.reason}'
+                      ? '目标：${view.title}\n${_operationConsequence(action)}\n${action.reason}'
                       : '身份或来源已变化，请取消后重新打开。',
                 ),
               ),
@@ -219,10 +219,16 @@ class _EntityActionControlsState extends State<EntityActionControls> {
     setState(() => _operating = true);
     try {
       await dispatcher.propose(kind, (v, a) => _review(control, v, a));
-    } catch (_) {
+    } catch (error) {
       if (mounted && identical(control, _controller) && control.current) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('操作结果未获确认，请先核实原操作，不要重复提交。')),
+          SnackBar(
+            content: Text(
+              error is EntityActionRequestFailure
+                  ? error.userMessage
+                  : '操作结果未获确认，请先核实原操作，不要重复提交。',
+            ),
+          ),
         );
       }
     } finally {
@@ -281,7 +287,7 @@ class _EntityActionControlsState extends State<EntityActionControls> {
 }
 
 String _consequence(EntityActionKind kind) => switch (kind) {
-  EntityActionKind.connect => '下一步检查具体好友申请；不会自动发送消息。',
+  EntityActionKind.connect => '将发送好友申请，对方接受后才会成为好友。',
   EntityActionKind.message => '打开已有好友会话，不自动发送消息。',
   EntityActionKind.share => '下一步选择具体好友并确认原卡片；私密匹配理由不会分享。',
   EntityActionKind.join => '将使用原参加或加入流程，请检查名额、受众和当前身份。',
@@ -426,11 +432,17 @@ Future<bool> runEntityAction(
       );
     }
     return done;
-  } catch (_) {
+  } catch (error) {
     if (context.mounted && control.current) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('结果尚未确认，请核实原操作，不要重复提交。')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            error is EntityActionRequestFailure
+                ? error.userMessage
+                : '结果尚未确认，请核实原操作，不要重复提交。',
+          ),
+        ),
+      );
     }
     return false;
   } finally {

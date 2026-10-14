@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
+import '../app/birdtie_app_bar.dart';
 import '../auth/birdtie_auth_controller.dart';
 import '../content/private_moment_controller.dart';
 import '../content/private_moment_media_controller.dart';
 import '../content/private_moment_media_sheet.dart';
 import 'notification_destination_router.dart';
+import 'now_ui_tokens.dart';
 
 /// Human-only chooser for an existing owned private draft. Never creates a
 /// Moment, treats a SocialIntent as a Moment, or copies a Now draft into it.
@@ -157,8 +159,8 @@ class _ImageEntryState extends State<NowPrivateMomentImagePage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(
-      title: const Text('选择私人记录'),
+    appBar: birdtieAppBar(context,
+      title: Text('选择私人记录', style: NowUiTokens.of(context).pageTitle),
       leading: IconButton(
         tooltip: '关闭选择私人记录',
         icon: const Icon(Icons.close),
@@ -168,6 +170,7 @@ class _ImageEntryState extends State<NowPrivateMomentImagePage> {
     body: AnimatedBuilder(
       animation: _changes,
       builder: (context, _) {
+        final text = NowUiTokens.of(context);
         if (!_current) {
           _retired = true;
           return const Padding(
@@ -182,7 +185,7 @@ class _ImageEntryState extends State<NowPrivateMomentImagePage> {
           );
         }
         if (m.error != null) {
-          return Padding(
+          return SingleChildScrollView(
             padding: const EdgeInsets.all(24),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -195,7 +198,14 @@ class _ImageEntryState extends State<NowPrivateMomentImagePage> {
                 }),
                 const SizedBox(height: 16),
                 if (![401, 403].contains(m.readStatus))
-                  FilledButton(onPressed: _load, child: const Text('重新读取私人记录')),
+                  FilledButton(
+                    style: FilledButton.styleFrom(
+                      minimumSize: const Size(48, 48),
+                      textStyle: text.action,
+                    ),
+                    onPressed: _load,
+                    child: const Text('重新读取私人记录'),
+                  ),
               ],
             ),
           );
@@ -217,8 +227,9 @@ class _ImageEntryState extends State<NowPrivateMomentImagePage> {
             for (final choice in choices)
               ListTile(
                 key: ValueKey('private-image-moment-${choice.id}'),
-                title: Text(choice.title),
-                subtitle: const Text('仅自己可见 · 草稿'),
+                minTileHeight: 48,
+                title: Text(choice.title, style: text.placeTitle),
+                subtitle: Text('仅自己可见 · 草稿', style: text.metadata),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () => _open(choice),
               ),

@@ -105,8 +105,8 @@ void main() {
                 ),
               );
             }
-            return correctionResponse({
-              'data': r.url.path.endsWith('agent-memories')
+            return correctionReadResponse(r, {
+              'data': r.url.path.endsWith('agent-memories/page')
                   ? [correctionMemoryRaw()]
                   : [],
             });
@@ -166,8 +166,8 @@ void main() {
                   .toIso8601String(),
             });
           }
-          return correctionResponse({
-            'data': r.url.path.endsWith('agent-memories')
+          return correctionReadResponse(r, {
+            'data': r.url.path.endsWith('agent-memories/page')
                 ? [correctionMemoryRaw()]
                 : [],
           });
@@ -203,8 +203,8 @@ void main() {
                   .toIso8601String(),
             });
           }
-          return correctionResponse({
-            'data': r.url.path.endsWith('agent-memories')
+          return correctionReadResponse(r, {
+            'data': r.url.path.endsWith('agent-memories/page')
                 ? [correctionMemoryRaw()]
                 : [],
           });
@@ -241,8 +241,8 @@ void main() {
             gets++;
             return correctionResponse({}, status: 404);
           }
-          return correctionResponse({
-            'data': r.url.path.endsWith('agent-memories')
+          return correctionReadResponse(r, {
+            'data': r.url.path.endsWith('agent-memories/page')
                 ? [correctionMemoryRaw()]
                 : [],
           });
@@ -286,8 +286,8 @@ void main() {
               correctionReceiptRaw(input: input, current: false),
             );
           }
-          return correctionResponse({
-            'data': r.url.path.endsWith('agent-memories')
+          return correctionReadResponse(r, {
+            'data': r.url.path.endsWith('agent-memories/page')
                 ? [correctionMemoryRaw()]
                 : [],
           });
@@ -400,8 +400,8 @@ void main() {
                 ),
               );
             }
-            return correctionResponse({
-              'data': r.url.path.endsWith('agent-memories')
+            return correctionReadResponse(r, {
+              'data': r.url.path.endsWith('agent-memories/page')
                   ? [correctionMemoryRaw()]
                   : [],
             });
@@ -449,8 +449,8 @@ void main() {
               ),
             );
           }
-          return correctionResponse({
-            'data': r.url.path.endsWith('agent-memories')
+          return correctionReadResponse(r, {
+            'data': r.url.path.endsWith('agent-memories/page')
                 ? [correctionMemoryRaw()]
                 : [],
           });
@@ -487,8 +487,8 @@ void main() {
               ),
             );
           }
-          return correctionResponse({
-            'data': r.url.path.endsWith('agent-memories')
+          return correctionReadResponse(r, {
+            'data': r.url.path.endsWith('agent-memories/page')
                 ? [correctionMemoryRaw()]
                 : [],
           });
@@ -549,8 +549,8 @@ void main() {
           apiBaseUrl: 'http://local',
           client: MockClient((r) async {
             if (r.method == 'GET') {
-              return correctionResponse({
-                'data': r.url.path.endsWith('agent-memories')
+              return correctionReadResponse(r, {
+                'data': r.url.path.endsWith('agent-memories/page')
                     ? [correctionMemoryRaw()]
                     : [],
               });
@@ -598,8 +598,8 @@ void main() {
         apiBaseUrl: 'http://local',
         client: MockClient((r) async {
           if (r.method == 'POST') posts++;
-          return correctionResponse({
-            'data': r.url.path.endsWith('agent-memories')
+          return correctionReadResponse(r, {
+            'data': r.url.path.endsWith('agent-memories/page')
                 ? [correctionMemoryRaw()]
                 : [],
           });
@@ -637,8 +637,8 @@ void main() {
               ),
             );
           }
-          return correctionResponse({
-            'data': r.url.path.endsWith('agent-memories')
+          return correctionReadResponse(r, {
+            'data': r.url.path.endsWith('agent-memories/page')
                 ? [correctionMemoryRaw()]
                 : [],
           });
@@ -732,8 +732,8 @@ void main() {
         apiBaseUrl: 'http://local',
         client: MockClient((r) async {
           if (r.method == 'POST') posts++;
-          return correctionResponse({
-            'data': r.url.path.endsWith('agent-memories')
+          return correctionReadResponse(r, {
+            'data': r.url.path.endsWith('agent-memories/page')
                 ? [correctionMemoryRaw()]
                 : [],
           });
@@ -763,8 +763,8 @@ void main() {
           apiBaseUrl: 'http://local',
           client: MockClient((r) async {
             if (r.method == 'POST') posts++;
-            return correctionResponse({
-              'data': r.url.path.endsWith('agent-memories')
+            return correctionReadResponse(r, {
+              'data': r.url.path.endsWith('agent-memories/page')
                   ? [correctionMemoryRaw()]
                   : [],
             });
@@ -806,8 +806,8 @@ void main() {
             posts++;
             throw StateError('lost');
           }
-          return correctionResponse({
-            'data': r.url.path.endsWith('agent-memories')
+          return correctionReadResponse(r, {
+            'data': r.url.path.endsWith('agent-memories/page')
                 ? [correctionMemoryRaw()]
                 : [],
           });

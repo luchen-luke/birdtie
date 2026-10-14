@@ -44,8 +44,8 @@ void main() {
       );
       await t.tap(find.text('我的社交意图'));
       await t.pumpAndSettle();
-      expect(find.text('登录后可查看和管理自己的社交意图。'), findsOneWidget);
-      expect(find.text('请先在个人资料中登录，再重新打开此入口。'), findsOneWidget);
+      expect(find.text('登录后可查看自己的安排。'), findsOneWidget);
+      expect(find.text('请先在个人资料中登录，再重新打开此入口。'), findsNothing);
       expect(find.text('请返回设置登录后，重新打开此入口。'), findsNothing);
       expect(requests, 0);
       expect(
@@ -81,7 +81,7 @@ void main() {
       ),
     );
     await t.pumpAndSettle();
-    expect(find.text('请切回个人身份查看社交意图。'), findsOneWidget);
+    expect(find.text('请切换到个人身份查看。'), findsOneWidget);
     expect(find.byTooltip('管理我的意图'), findsNothing);
     expect(requests, 0);
     await t.pumpWidget(const SizedBox());
@@ -106,7 +106,7 @@ void main() {
         ),
       );
       await t.pumpAndSettle();
-      expect(find.text('当前社交意图'), findsOneWidget);
+      expect(find.text('我的安排'), findsOneWidget);
       await t.tap(find.byTooltip('管理我的意图'));
       await t.pumpAndSettle();
       expect(find.text('我的社交意图'), findsOneWidget);
@@ -147,9 +147,9 @@ void main() {
     workspace.value = null;
     await t.pumpAndSettle();
     expect(find.byType(ActiveSocialIntentPage), findsNothing);
-    expect(find.text('我的社交意图'), findsOneWidget);
-    expect(find.text('当前社交意图'), findsNothing);
-    expect(find.text('账号或工作区已变化，请关闭后重新打开意图入口。'), findsOneWidget);
+    expect(find.text('我的安排'), findsOneWidget);
+    expect(find.byTooltip('管理我的意图'), findsNothing);
+    expect(find.text('当前身份已变化，请重新打开。'), findsOneWidget);
     expect(requests, before);
     expect(t.takeException(), isNull);
     await t.pumpWidget(const SizedBox());

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import '../app/birdtie_app_bar.dart';
 import '../auth/birdtie_auth_controller.dart';
 import 'notification_policy_controller.dart';
 
@@ -195,7 +196,7 @@ class _NotificationPolicyPageState extends State<NotificationPolicyPage> {
   @override
   Widget build(BuildContext context) => !_currentSource()
       ? Scaffold(
-          appBar: AppBar(title: const Text('通知设置')),
+          appBar: birdtieAppBar(context, title: const Text('通知设置')),
           body: const SafeArea(
             child: Padding(
               padding: EdgeInsets.all(20),
@@ -204,14 +205,14 @@ class _NotificationPolicyPageState extends State<NotificationPolicyPage> {
           ),
         )
       : Scaffold(
-    appBar: AppBar(title: const Text('通知设置')),
+    appBar: birdtieAppBar(context, title: const Text('通知设置')),
     body: SafeArea(
       child: ListView(
         padding: const EdgeInsets.all(20),
         children: [
-          const Text(
+          Text(
             '只提醒值得关注的事',
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700),
+            style: Theme.of(context).textTheme.headlineSmall,
           ),
           const SizedBox(height: 8),
           const Text('活动变更、邀请、联系申请，以及与你明确意图强规则匹配的活动机会。匹配不是概率预测，也不会自动报名。'),

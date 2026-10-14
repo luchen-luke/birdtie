@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:http/http.dart' as http;
+import '../app/birdtie_app_bar.dart';
 import '../auth/birdtie_auth_controller.dart';
 import 'agent_profile_api.dart' show profileFieldLabels;
 import 'task_context_privacy_api.dart';
@@ -121,11 +122,29 @@ class _TaskContextPrivacyPageState extends State<TaskContextPrivacyPage> {
           style: OutlinedButton.styleFrom(minimumSize: const Size(48, 48)),
           child: Text(text),
         );
+
+  Widget _grantScope(TaskContextPrivacyGrant g) => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      if (g.profileFields.isNotEmpty)
+        Text(
+          '资料范围：${g.profileFields.map((f) => profileFieldLabels[f]).join('、')}',
+        ),
+      Text(
+        '明确记忆 ${g.memoryIDs.length}条 · 地点 ${g.placeIDs.length}项 · 活动 ${g.activityIDs.length}项 · 关系 ${g.tieIDs.length}项',
+      ),
+      if (g.policyFamilies.isNotEmpty)
+        Text(
+          '设置范围：${g.policyFamilies.map((f) => const {'ATTENTION': '注意力', 'SOCIAL': '社交建议', 'AUTONOMY': '自主操作'}[f]).join('、')}',
+        ),
+      Text('允许时间：${_time(g.createdAt)}\n许可到期：${_time(g.expiresAt)}'),
+    ],
+  );
   @override
   Widget build(BuildContext context) {
     final v = _data.inventory, a = _data.review;
     return Scaffold(
-      appBar: AppBar(title: const Text('本次会话的任务资料许可')),
+      appBar: birdtieAppBar(context, title: const Text('任务资料授权')),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(16),
@@ -182,7 +201,7 @@ class _TaskContextPrivacyPageState extends State<TaskContextPrivacyPage> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       Text(
-                        '许可版本 ${g.revision}',
+                        '任务资料授权',
                         style: Theme.of(context).textTheme.titleMedium,
                       ),
                       if (g.profileFields.isNotEmpty)
@@ -203,24 +222,8 @@ class _TaskContextPrivacyPageState extends State<TaskContextPrivacyPage> {
                         g.revoked
                             ? '已撤回'
                             : !g.expiresAt.isAfter(v.observedAt)
-                            ? '读取时已到期'
-                            : '读取时尚未撤回且未到期',
-                      ),
-                      ExpansionTile(
-                        title: const Text('查看具体记录范围'),
-                        children: [
-                          SelectableText(
-                            '原任务 ${g.taskID}\n城市 ${g.cityID}\n任务版本时间 ${_time(g.taskUpdatedAt)}',
-                          ),
-                          for (final e in [
-                            ('记忆', g.memoryIDs),
-                            ('地点', g.placeIDs),
-                            ('活动', g.activityIDs),
-                            ('关系', g.tieIDs),
-                          ])
-                            if (e.$2.isNotEmpty)
-                              SelectableText('${e.$1}：${e.$2.join('、')}'),
-                        ],
+                            ? '已到期'
+                            : '尚未撤回',
                       ),
                       if (!g.revoked)
                         _action(
@@ -235,10 +238,8 @@ class _TaskContextPrivacyPageState extends State<TaskContextPrivacyPage> {
                 ),
             ],
             if (a != null) ...[
-              Text(
-                '确认撤回许可版本 ${a.grant.revision}',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
+              Text('撤回这项资料授权', style: Theme.of(context).textTheme.titleMedium),
+              _grantScope(a.grant),
               const Text('只撤回上述具体范围的读取许可，不会删除原资料、任务或记忆。'),
               _action('取消本次检查', _data.busy ? null : _data.cancel),
               _action(
@@ -249,8 +250,6 @@ class _TaskContextPrivacyPageState extends State<TaskContextPrivacyPage> {
                 primary: true,
               ),
             ],
-            const SizedBox(height: 16),
-            const Text('本页不创建或恢复读取批准。再次允许需要当前来源的新预览与明确批准；此页面未提供新的批准入口。'),
           ],
         ),
       ),

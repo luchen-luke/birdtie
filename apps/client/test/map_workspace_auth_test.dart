@@ -13,12 +13,18 @@ import 'package:birdtie_client/src/workspace/connections.dart';
 import 'package:birdtie_client/src/workspace/map_canvas.dart';
 import 'package:birdtie_client/src/workspace/map_entities.dart';
 import 'package:birdtie_client/src/workspace/map_workspace.dart';
-import 'package:birdtie_client/src/workspace/entity_peek_card.dart';
+import 'package:birdtie_client/src/workspace/now_place_preview.dart';
+import 'package:birdtie_client/src/workspace/public_moment_page.dart';
+import 'package:birdtie_client/src/workspace/now_public_place_panel.dart';
+import 'package:birdtie_client/src/workspace/remote_agent_task_source.dart';
+import 'package:birdtie_client/src/workspace/external_place_history_store.dart';
+import 'package:birdtie_client/src/auth/birdtie_login_sheet.dart';
 import 'map_layers_api_test.dart' as typed;
 import 'active_social_intent_api_test.dart'
     show nowOwner, nowList, nowOptions, nowResponse;
 import 'now_context_selection_api_test.dart'
     show selectionOptions, selectionReceipt;
+import 'now_scope_recovery_test.dart' show nowOpenAccountTools;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -26,18 +32,29 @@ import 'package:http/testing.dart';
 
 class _FixtureAuth extends BirdtieAuthController {
   String? person = 'A';
+  String? rejectedOwner;
+  String sessionSuffix = '';
   @override
   bool get signedIn => person != null;
   @override
   String? get authorizationHeader =>
-      person == null ? null : 'Bearer fixture-$person';
+      person == null ? null : 'Bearer fixture-$person$sessionSuffix';
   @override
   String? get accountID => person;
   @override
   String? get displayName => person;
+  @override
+  String? get rejectedSessionOwnerID => rejectedOwner;
 
   void use(String? next) {
     person = next;
+    rejectedOwner = null;
+    notifyListeners();
+  }
+
+  void reject() {
+    rejectedOwner = person;
+    person = null;
     notifyListeners();
   }
 }
@@ -119,6 +136,8 @@ Future<(MapCanvas, PrivateMomentController)> _show(
   _FixtureCity city, {
   AgentTaskSource? agent,
   ConnectionSource? connections,
+  http.Client? seedClient,
+  String? apiBase,
 }) async {
   tester.view.physicalSize = const Size(430, 932);
   tester.view.devicePixelRatio = 1;
@@ -135,6 +154,8 @@ Future<(MapCanvas, PrivateMomentController)> _show(
         moments: moments,
         agentTaskSource: agent,
         connectionSource: connections,
+        seedClient: seedClient,
+        seedApiBaseUrl: apiBase,
       ),
     ),
   );
@@ -166,6 +187,26 @@ Future<void> _close(
   moments.dispose();
 }
 
+Future<void> _openViewChoice(WidgetTester tester) async {
+  await nowOpenAccountTools(tester);
+  final entry = find.byTooltip('选择查看范围');
+  await tester.scrollUntilVisible(
+    entry,
+    120,
+    scrollable: find
+        .descendant(
+          of: find.byKey(const Key('now-tools-menu')),
+          matching: find.byType(Scrollable),
+        )
+        .first,
+  );
+  await tester.ensureVisible(entry);
+  await tester.pumpAndSettle();
+  expect(entry.hitTestable(), findsOneWidget);
+  await tester.tap(entry);
+  await tester.pumpAndSettle();
+}
+
 Map<String, dynamic> _nativeOnlineSelection(String label) {
   final raw = selectionOptions();
   raw['owner'] = {'type': 'PERSON', 'id': onlineOwnerID};
@@ -176,7 +217,361 @@ Map<String, dynamic> _nativeOnlineSelection(String label) {
   return raw;
 }
 
+Map<String, dynamic> _publicMomentWire(DateTime now) => {
+  'schemaVersion': 'public-moment-v2',
+  'id': typed.mapTestID,
+  'title': '原始公开动态',
+  'body': '仍公开的完整正文',
+  'placeId': typed.mapTestPlace,
+  'placeName': '公开场地',
+  'cityId': 'fixture-city',
+  'revision': 2,
+  'publishedAt': now.subtract(const Duration(days: 1)).toIso8601String(),
+  'authorId': null,
+  'authorPublicProfile': null,
+};
+
+Map<String, dynamic> _publicHistoryWire(DateTime now) => {
+  'schemaVersion': 'place-social-history-page-v1',
+  'placeId': typed.mapTestPlace,
+  'cityId': 'fixture-city',
+  'authorMode': 'PUBLIC_PROFILE',
+  'windowDays': 30,
+  'windowStart': now.subtract(const Duration(days: 30)).toIso8601String(),
+  'windowEnd': now.toIso8601String(),
+  'observedAt': now.toIso8601String(),
+  'validUntil': now.add(const Duration(minutes: 2)).toIso8601String(),
+  'sourceVersion': List.filled(64, 'a').join(),
+  'count': 1,
+  'items': [
+    {
+      'id': typed.mapTestID,
+      'title': '原始公开动态',
+      'excerpt': '仍公开的合成节选',
+      'revision': 2,
+      'publishedAt': now.subtract(const Duration(days: 1)).toIso8601String(),
+      'authorId': null,
+      'authorPublicProfile': null,
+    },
+  ],
+  'nextCursor': null,
+};
+
+const _recoveryTaskID = '33333333-3333-4333-8333-333333333333';
+const _recoveryOwner = '22222222-2222-4222-8222-222222222222';
+const _privateQueryBeforeRejection = '原账号未核验的私密需求';
+const _privateAnswerBeforeRejection = '原账号未核验的私密历史';
+const _canonicalRecoveryQuery = '服务端重新读取的合成需求';
+const _canonicalRecoveryAnswer = '服务端重新核验的合成历史';
+
+void _showPrivateNativeTask(MapCanvas map, {String id = _recoveryTaskID}) {
+  final task = AgentTask(
+    id: id,
+    query: _privateQueryBeforeRejection,
+    status: 'COMPLETED',
+    cityID: 'fixture-city',
+    contextType: 'CITY',
+    contextID: '44444444-4444-4444-8444-444444444444',
+    principalID: _recoveryOwner,
+    actingUserID: _recoveryOwner,
+    intent: 'PRIVATE_TEST_INTENT',
+    filters: const {'privateSyntheticFilter': 'must-not-survive'},
+    messages: const [
+      AgentMessage(role: 'user', text: _privateQueryBeforeRejection),
+      AgentMessage(role: 'assistant', text: _privateAnswerBeforeRejection),
+    ],
+  );
+  map.workspace.task = task;
+  map.workspace.recent.add(task);
+  map.workspace.conversation.addAll(task.messages);
+  map.workspace.result = const AgentResult(
+    entities: [],
+    activities: [],
+    places: [],
+    note: _privateAnswerBeforeRejection,
+  );
+  map.workspace.state = AgentViewState.results;
+  map.workspace.showContent(AgentContentMode.conversation);
+  map.workspace.setSheetExtent(AgentSheetExtent.expanded);
+}
+
+http.Response _canonicalRecoveryResponse() => http.Response.bytes(
+  utf8.encode(
+    jsonEncode({
+      'data': {
+        'activities': [],
+        'people': [],
+        'groups': [],
+        'places': [],
+        'taskId': _recoveryTaskID,
+        'message': _canonicalRecoveryAnswer,
+        'task': {
+          'id': _recoveryTaskID,
+          'query': _canonicalRecoveryQuery,
+          'status': 'COMPLETED',
+          'principalType': 'PERSON',
+          'principalId': _recoveryOwner,
+          'actingUserId': _recoveryOwner,
+          'cityId': 'fixture-city',
+          'contextType': 'CITY',
+          'contextId': '44444444-4444-4444-8444-444444444444',
+          'conversation': [
+            {'role': 'user', 'text': _canonicalRecoveryQuery},
+            {'role': 'assistant', 'text': _canonicalRecoveryAnswer},
+          ],
+        },
+      },
+    }),
+  ),
+  200,
+  headers: {'content-type': 'application/json; charset=utf-8'},
+);
+
+MockClient _nativeRecoveryClient(
+  List<http.Request> requests, {
+  Future<http.Response> Function()? readTask,
+}) => MockClient((request) async {
+  requests.add(request);
+  if (request.method == 'GET' &&
+      request.url.path == '/v1/me/agent-tasks/$_recoveryTaskID') {
+    return readTask == null ? _canonicalRecoveryResponse() : readTask();
+  }
+  if (request.method == 'GET' && request.url.path == '/v1/me/agent-tasks') {
+    return http.Response(
+      '{"data":[]}',
+      200,
+      headers: {'content-type': 'application/json'},
+    );
+  }
+  return http.Response(
+    '{}',
+    404,
+    headers: {'content-type': 'application/json'},
+  );
+});
+
+class _ResolveCountingSource extends AgentTaskSource {
+  int resolveCalls = 0;
+  @override
+  Future<AgentResult> resolve(
+    String query,
+    List<PublicActivity> activities,
+    List<PublicPlace> places,
+  ) async {
+    resolveCalls++;
+    return const AgentResult(
+      entities: [],
+      activities: [],
+      places: [],
+      note: '不应自动执行',
+    );
+  }
+}
+
+Future<void> _closeRecoveryLoginSheet(WidgetTester tester) async {
+  final sheet = find.byType(BirdtieLoginSheet);
+  if (sheet.evaluate().isNotEmpty) {
+    await tester.tap(
+      find.descendant(
+        of: sheet,
+        matching: find.widgetWithText(TextButton, '返回'),
+      ),
+    );
+    await tester.pumpAndSettle();
+  }
+}
+
 void main() {
+  testWidgets(
+    'shared401 clears private history then same-owner login restores canonical native task by GET only',
+    (tester) async {
+      final auth = _FixtureAuth()..person = _recoveryOwner;
+      final city = _FixtureCity(), requests = <http.Request>[];
+      final pendingRead = Completer<http.Response>();
+      final client = _nativeRecoveryClient(
+        requests,
+        readTask: () => pendingRead.future,
+      );
+      final source = RemoteAgentTaskSource(
+        cityID: () => city.selectedCity!.id,
+        authorizationHeader: () => auth.authorizationHeader,
+        apiBaseUrl: 'https://native-recovery.test',
+        client: client,
+        externalPlaceHistoryStore: MemoryExternalPlaceHistoryStore(),
+      );
+      final (map, moments) = await _show(
+        tester,
+        auth,
+        city,
+        agent: source,
+        seedClient: client,
+        apiBase: 'https://native-recovery.test',
+      );
+      final element = find.byType(MapCanvas).evaluate().single;
+      _showPrivateNativeTask(map);
+      await tester.pumpAndSettle();
+      expect(find.textContaining(_privateAnswerBeforeRejection), findsWidgets);
+      auth.reject();
+      expect(map.workspace.task, isNull);
+      expect(map.workspace.result, isNull);
+      expect(map.workspace.conversation, isEmpty);
+      expect(map.workspace.recent, isEmpty);
+      await tester.pumpAndSettle();
+      expect(find.textContaining(_privateAnswerBeforeRejection), findsNothing);
+      expect(
+        requests.where(
+          (r) => r.url.path == '/v1/me/agent-tasks/$_recoveryTaskID',
+        ),
+        isEmpty,
+      );
+      auth.sessionSuffix = '-fresh';
+      auth.use(_recoveryOwner);
+      for (var n = 0; n < 4; n++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+      final reads = requests
+          .where((r) => r.url.path == '/v1/me/agent-tasks/$_recoveryTaskID')
+          .toList();
+      expect(reads, hasLength(1));
+      expect(reads.single.method, 'GET');
+      expect(
+        reads.single.headers['Authorization'],
+        'Bearer fixture-$_recoveryOwner-fresh',
+      );
+      expect(reads.single.body, isEmpty);
+      expect(map.workspace.task!.query, isEmpty);
+      expect(map.workspace.task!.messages, isEmpty);
+      expect(map.workspace.task!.filters, isEmpty);
+      expect(map.workspace.task!.intent, isNull);
+      expect(map.workspace.result, isNull);
+      expect(map.workspace.conversation.every((m) => m.text.isEmpty), isTrue);
+      expect(find.textContaining(_privateAnswerBeforeRejection), findsNothing);
+      pendingRead.complete(_canonicalRecoveryResponse());
+      await tester.pumpAndSettle();
+      await _closeRecoveryLoginSheet(tester);
+      expect(map.workspace.task!.id, _recoveryTaskID);
+      expect(map.workspace.task!.query, _canonicalRecoveryQuery);
+      expect(map.workspace.conversation.map((m) => m.text), [
+        _canonicalRecoveryQuery,
+        _canonicalRecoveryAnswer,
+      ]);
+      expect(map.workspace.result!.responseMessage, _canonicalRecoveryAnswer);
+      expect(find.textContaining(_privateAnswerBeforeRejection), findsNothing);
+      expect(find.textContaining(_canonicalRecoveryAnswer), findsWidgets);
+      expect(
+        identical(element, find.byType(MapCanvas).evaluate().single),
+        isTrue,
+      );
+      expect(requests.where((r) => r.method != 'GET'), isEmpty);
+      expect(tester.takeException(), isNull);
+      await _close(tester, auth, city, moments);
+      client.close();
+    },
+  );
+  for (final transition in [
+    'ordinaryLogout',
+    'logoutAfterRejection',
+    'differentOwnerAfterRejection',
+    'nonNativeTask',
+  ]) {
+    testWidgets('native recovery selector does not restore after $transition', (
+      tester,
+    ) async {
+      final auth = _FixtureAuth()..person = _recoveryOwner;
+      final city = _FixtureCity(), requests = <http.Request>[];
+      final client = _nativeRecoveryClient(requests);
+      final source = RemoteAgentTaskSource(
+        cityID: () => city.selectedCity!.id,
+        authorizationHeader: () => auth.authorizationHeader,
+        apiBaseUrl: 'https://native-recovery.test',
+        client: client,
+        externalPlaceHistoryStore: MemoryExternalPlaceHistoryStore(),
+      );
+      final (map, moments) = await _show(
+        tester,
+        auth,
+        city,
+        agent: source,
+        seedClient: client,
+        apiBase: 'https://native-recovery.test',
+      );
+      _showPrivateNativeTask(
+        map,
+        id: transition == 'nonNativeTask'
+            ? 'local-public-task'
+            : _recoveryTaskID,
+      );
+      await tester.pumpAndSettle();
+      if (transition == 'ordinaryLogout') {
+        auth.use(null);
+      } else {
+        auth.reject();
+        await tester.pumpAndSettle();
+        if (transition == 'logoutAfterRejection') {
+          auth.use(null);
+        }
+        if (transition == 'differentOwnerAfterRejection') {
+          auth.use('55555555-5555-4555-8555-555555555555');
+        }
+      }
+      await tester.pumpAndSettle();
+      expect(map.workspace.task, isNull);
+      expect(map.workspace.conversation, isEmpty);
+      expect(find.textContaining(_privateAnswerBeforeRejection), findsNothing);
+      auth.sessionSuffix = '-fresh';
+      auth.use(_recoveryOwner);
+      await tester.pumpAndSettle();
+      await _closeRecoveryLoginSheet(tester);
+      expect(map.workspace.task, isNull);
+      expect(map.workspace.result, isNull);
+      expect(map.workspace.conversation, isEmpty);
+      expect(
+        requests.where(
+          (r) => r.url.path == '/v1/me/agent-tasks/$_recoveryTaskID',
+        ),
+        isEmpty,
+      );
+      expect(requests.where((r) => r.method != 'GET'), isEmpty);
+      expect(tester.takeException(), isNull);
+      await _close(tester, auth, city, moments);
+      client.close();
+    });
+  }
+  testWidgets(
+    'same-owner login never calls generic AgentTaskSource restore which falls back to resolve',
+    (tester) async {
+      final auth = _FixtureAuth()..person = _recoveryOwner;
+      final city = _FixtureCity(), requests = <http.Request>[];
+      final client = _nativeRecoveryClient(requests);
+      final source = _ResolveCountingSource();
+      final (map, moments) = await _show(
+        tester,
+        auth,
+        city,
+        agent: source,
+        seedClient: client,
+        apiBase: 'https://native-recovery.test',
+      );
+      _showPrivateNativeTask(map);
+      await tester.pumpAndSettle();
+      auth.reject();
+      expect(map.workspace.task, isNull);
+      expect(map.workspace.conversation, isEmpty);
+      await tester.pumpAndSettle();
+      auth.use(_recoveryOwner);
+      await tester.pumpAndSettle();
+      await _closeRecoveryLoginSheet(tester);
+      expect(source.resolveCalls, 0);
+      expect(map.workspace.task, isNull);
+      expect(map.workspace.result, isNull);
+      expect(map.workspace.conversation, isEmpty);
+      expect(find.textContaining(_privateAnswerBeforeRejection), findsNothing);
+      expect(requests.where((r) => r.method != 'GET'), isEmpty);
+      expect(tester.takeException(), isNull);
+      await _close(tester, auth, city, moments);
+      client.close();
+    },
+  );
   testWidgets('查看目的地保持原Task结果选择地图身份，选择不提交查询或声明', (tester) async {
     final auth = _FixtureAuth()..person = onlineOwnerID;
     final city = _FixtureCity();
@@ -224,13 +619,7 @@ void main() {
     final task = map.workspace.task, result = map.workspace.result;
     map.workspace.selectEntity('place:public-fixture-place');
     await tester.pumpAndSettle();
-    await tester.tap(find.byTooltip('打开更多工具'));
-    await tester.pumpAndSettle();
-    await tester.ensureVisible(find.byTooltip('选择查询情境'));
-    await tester.pumpAndSettle();
-    expect(find.byTooltip('选择查询情境').hitTestable(), findsOneWidget);
-    await tester.tap(find.byTooltip('选择查询情境'));
-    await tester.pumpAndSettle();
+    await _openViewChoice(tester);
     await tester.tap(find.text('合成目的地'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('核验并切换查看范围'));
@@ -315,13 +704,17 @@ void main() {
     await refresh;
     await tester.pumpAndSettle();
     expect(layers.privateView, isNull);
-    expect(layers.publicView, isNull);
+    expect(layers.publicView?.scope, 'PUBLIC');
+    expect(
+      layers.publicView?.items.any((item) => item.kind == 'OPPORTUNITY'),
+      false,
+    );
     expect(layers.visible, isNot(contains('OPPORTUNITY')));
     expect(
       ownReads,
       2,
     ); // No automatic replay or restoration of the own overlay.
-    expect(map.workspace.selectedEntityId, selected);
+    expect(map.workspace.selectedEntityId, isNull);
     expect(identical(canvas, find.byType(MapCanvas).evaluate().single), true);
     expect(requests.where((r) => r.method != 'GET'), isEmpty);
     expect(tester.takeException(), isNull);
@@ -331,7 +724,7 @@ void main() {
     city.dispose();
     client.close();
   });
-  testWidgets('首屏原生意图卡窄屏大字可达，旧入口重绑不复活或写入', (tester) async {
+  testWidgets('工具中的原生意图卡窄屏大字可达，旧入口重绑不复活或写入', (tester) async {
     tester.view.physicalSize = const Size(320, 640);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -375,13 +768,9 @@ void main() {
 
     await show('https://old.test');
     final canvas = find.byType(MapCanvas).evaluate().single;
-    expect(find.text('当前社交意图'), findsOneWidget);
-    final scroll = find.byKey(const Key('now-native-context-scroll'));
-    await tester.drag(scroll, const Offset(0, -160));
-    await tester.pumpAndSettle();
+    expect(find.text('当前社交意图'), findsNothing);
     expect(tester.takeException(), isNull);
-    await tester.tap(find.byTooltip('打开更多工具'));
-    await tester.pumpAndSettle();
+    await nowOpenAccountTools(tester);
     final entry = find.byTooltip('我的社交意图');
     await tester.scrollUntilVisible(
       entry,
@@ -398,11 +787,11 @@ void main() {
     expect(tester.getSize(entry).height, greaterThanOrEqualTo(48));
     await tester.tap(entry);
     await tester.pumpAndSettle();
-    expect(find.text('当前社交意图'), findsNWidgets(2));
+    expect(find.text('当前社交意图'), findsOneWidget);
     await show('https://new.test');
     await show('https://old.test');
     expect(find.text('请重新打开内容'), findsOneWidget);
-    expect(find.text('当前社交意图'), findsOneWidget);
+    expect(find.text('当前社交意图'), findsNothing);
     expect(methods.where((m) => m != 'GET'), isEmpty);
     await tester.pageBack();
     await tester.pumpAndSettle();
@@ -423,6 +812,8 @@ void main() {
       );
       final requests = <http.Request>[];
       final late = Completer<http.Response>();
+      final observed = DateTime.now().toUtc();
+      var momentReads = 0;
       final client = MockClient((r) async {
         requests.add(r);
         if (r.url.path.endsWith('/map-layers')) {
@@ -433,7 +824,14 @@ void main() {
             headers: {'content-type': 'application/json; charset=utf-8'},
           );
         }
-        if (r.url.path == '/v1/moments/${typed.mapTestID}') return late.future;
+        if (r.url.path ==
+            '/v1/places/${typed.mapTestPlace}/social-history/moments') {
+          return nowResponse(_publicHistoryWire(observed));
+        }
+        if (r.url.path == '/v1/moments/${typed.mapTestID}') {
+          if (++momentReads > 1) return late.future;
+          return nowResponse(_publicMomentWire(observed));
+        }
         return http.Response('{}', 404);
       });
       Future<void> show(String base) async {
@@ -460,19 +858,31 @@ void main() {
       expect(map.layers?.items.length, 5);
       map.workspace.selectEntity('moment:${typed.mapTestID}');
       await tester.pumpAndSettle();
-      expect(find.byType(EntityPeekCard), findsOneWidget);
-      await tester.tap(
-        find.descendant(
-          of: find.byType(EntityPeekCard),
-          matching: find.text('查看'),
-        ),
+      expect(find.byType(NowPlacePreview), findsNothing);
+      expect(find.byType(NowPublicPlacePanel), findsOneWidget);
+      expect(
+        tester.widget<PublicMomentPage>(find.byType(PublicMomentPage)).momentID,
+        typed.mapTestID,
       );
-      await tester.pumpAndSettle();
+      expect(find.text('原始公开动态'), findsOneWidget);
+      expect(
+        requests.where((r) => r.url.path.startsWith('/v1/places/')),
+        isEmpty,
+      );
+      final refresh = tester
+          .widget<RefreshIndicator>(
+            find.descendant(
+              of: find.byType(PublicMomentPage),
+              matching: find.byType(RefreshIndicator),
+            ),
+          )
+          .onRefresh();
+      await tester.pump();
       expect(
         requests
             .where((r) => r.url.path == '/v1/moments/${typed.mapTestID}')
             .length,
-        1,
+        2,
       );
       await show('https://new.test');
       late.complete(
@@ -484,13 +894,17 @@ void main() {
           headers: {'content-type': 'application/json; charset=utf-8'},
         ),
       );
+      await refresh;
       await tester.pumpAndSettle();
       expect(find.textContaining('旧endpoint迟到私人正文'), findsNothing);
+      expect(find.byType(NowPublicPlacePanel), findsOneWidget);
       expect(find.text('请重新打开内容'), findsOneWidget);
+      expect(find.byType(NowPlacePreview), findsNothing);
       await show('https://old.test');
       expect(find.text('请重新打开内容'), findsOneWidget);
-      await tester.pageBack();
+      await tester.tap(find.byTooltip('关闭内容返回地图'));
       await tester.pumpAndSettle();
+      expect(find.byType(NowPublicPlacePanel), findsNothing);
       expect(map.layers?.items, isEmpty);
       expect(
         identical(element, find.byType(MapCanvas).evaluate().single),
@@ -553,13 +967,7 @@ void main() {
     );
     await tester.pumpAndSettle();
     final element = find.byType(MapCanvas).evaluate().single;
-    await tester.tap(find.byTooltip('打开更多工具'));
-    await tester.pumpAndSettle();
-    await tester.ensureVisible(find.byTooltip('选择查询情境'));
-    await tester.pumpAndSettle();
-    expect(find.byTooltip('选择查询情境').hitTestable(), findsOneWidget);
-    await tester.tap(find.byTooltip('选择查询情境'));
-    await tester.pumpAndSettle();
+    await _openViewChoice(tester);
     expect(find.text('阅读伙伴'), findsOneWidget);
     await tester.tap(find.text('阅读伙伴'));
     await tester.pumpAndSettle();
@@ -574,7 +982,11 @@ void main() {
     await tester.testTextInput.receiveAction(TextInputAction.send);
     await tester.pumpAndSettle();
     expect(find.text('一起线上阅读'), findsOneWidget);
-    expect(find.textContaining('无地图点位'), findsOneWidget);
+    final onlineMap = tester.widget<MapCanvas>(find.byType(MapCanvas));
+    expect(onlineMap.workspace.task?.contextType, 'ONLINE');
+    expect(onlineMap.workspace.task?.contextID, onlineContextID);
+    expect(onlineMap.workspace.result?.onlineIntents.single.id, onlineIntentID);
+    expect(onlineMap.workspace.result?.entities, isEmpty);
     await tester.tap(find.byKey(const Key('online-intent-$onlineIntentID')));
     await tester.pumpAndSettle();
     expect(find.text('公开线上意图'), findsOneWidget);
@@ -650,13 +1062,7 @@ void main() {
     );
     await tester.pumpWidget(app(oldClient, 'http://old.invalid'));
     await tester.pumpAndSettle();
-    await tester.tap(find.byTooltip('打开更多工具'));
-    await tester.pumpAndSettle();
-    await tester.ensureVisible(find.byTooltip('选择查询情境'));
-    await tester.pumpAndSettle();
-    expect(find.byTooltip('选择查询情境').hitTestable(), findsOneWidget);
-    await tester.tap(find.byTooltip('选择查询情境'));
-    await tester.pumpAndSettle();
+    await _openViewChoice(tester);
     await tester.scrollUntilVisible(
       find.text('旧情境'),
       160,

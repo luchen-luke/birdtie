@@ -51,6 +51,80 @@ BusinessApi api(
 
 void main() {
   test(
+    'businessMembers optional authorized name keeps original immutable target',
+    () {
+      final raw = console()
+        ..['members'] = [
+          {
+            'personId': personID,
+            'role': 'admin',
+            'status': 'active',
+            'displayName': '样例店长',
+          },
+          {'personId': placeID, 'role': 'member', 'status': 'removed'},
+        ];
+      final snapshot = BusinessConsoleSnapshot.fromJson(raw);
+      expect(snapshot.existingMembers.first.personID, personID);
+      expect(snapshot.existingMembers.first.displayName, '样例店长');
+      expect(snapshot.existingMembers.last.displayName, isNull);
+      expect(snapshot.members.length, 2);
+      expect(snapshot.membershipVersion, 0);
+      expect(() => snapshot.existingMembers.clear(), throwsUnsupportedError);
+      (raw['members'] as List).first['displayName'] = '被修改的源';
+      expect(snapshot.existingMembers.first.displayName, '样例店长');
+      expect(snapshot.members.first['displayName'], '样例店长');
+    },
+  );
+  test(
+    'businessMembers malformed name identity role or duplicate rejects entire roster',
+    () {
+      for (final override in [
+        {'displayName': 8},
+        {'displayName': ''},
+        {'displayName': ' A '},
+        {'displayName': 'A'},
+        {'displayName': List.filled(27, '甲').join()},
+        {'displayName': '测试\n用户'},
+        {'displayName': '测试\u0085用户'},
+        {'displayName': '\uD800'},
+        {'personId': '昵称不能充当ID'},
+        {'role': 'reviewer'},
+        {'status': 'invited'},
+      ]) {
+        final raw = console()
+          ..['members'] = [
+            {
+              'personId': personID,
+              'role': 'admin',
+              'status': 'active',
+              ...override,
+            },
+          ];
+        expect(
+          () => BusinessConsoleSnapshot.fromJson(raw),
+          throwsA(
+            isA<BusinessApiException>().having((e) => e.status, 'status', 503),
+          ),
+        );
+      }
+      final valid = {
+        'personId': personID,
+        'role': 'member',
+        'status': 'active',
+      };
+      expect(
+        () => BusinessConsoleSnapshot.fromJson(
+          console()..['members'] = [valid, valid],
+        ),
+        throwsA(isA<BusinessApiException>()),
+      );
+      expect(
+        BusinessConsoleSnapshot.fromJson(console()).existingMembers,
+        isEmpty,
+      );
+    },
+  );
+  test(
     'Business read uses only current native bearer and ordinary route',
     () async {
       final service = api((request) {

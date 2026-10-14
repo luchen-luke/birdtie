@@ -14,13 +14,16 @@ const socialColumns = `c.id,c.name,c.summary,c.avatar_url,c.city_id,c.visibility
     (SELECT count(*) FROM community_memberships cm WHERE cm.community_id=c.id AND cm.status='active'),
     (SELECT role FROM community_memberships cm WHERE cm.community_id=c.id AND cm.user_account_id=$1 AND cm.status='active'),
     (SELECT status FROM community_memberships cm WHERE cm.community_id=c.id AND cm.user_account_id=$1),
-    c.created_at,c.updated_at`
+    c.created_at,c.updated_at,birdtie_community_avatar_metadata(c.id,$1::uuid)`
 
 func scanSocial(row scanner) (community.SocialRecord, error) {
 	var out community.SocialRecord
 	err := row.Scan(&out.ID, &out.Name, &out.Description, &out.AvatarURL, &out.CityID,
 		&out.Visibility, &out.JoinPolicy, &out.Status, &out.CreatedBy, &out.MemberCount,
-		&out.MyRole, &out.MyStatus, &out.CreatedAt, &out.UpdatedAt)
+		&out.MyRole, &out.MyStatus, &out.CreatedAt, &out.UpdatedAt, &out.Avatar)
+	if err == nil && out.Avatar != nil && (!out.Avatar.Valid() || out.Avatar.CommunityID != out.ID) {
+		return community.SocialRecord{}, community.ErrUnavailable
+	}
 	return out, err
 }
 

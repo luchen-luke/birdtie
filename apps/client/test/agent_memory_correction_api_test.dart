@@ -3,6 +3,7 @@ import 'package:birdtie_client/src/workspace/agent_memory_correction_api.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'agent_memory_review_page_fixture.dart';
 
 const correctionOwner = '82000000-0000-4000-8000-000000000001';
 const correctionAgent = '82000000-0000-4000-8000-000000000002';
@@ -117,6 +118,24 @@ http.Response correctionResponse(dynamic value, {int status = 200}) =>
       status,
       headers: {'content-type': 'application/json; charset=utf-8'},
     );
+http.Response correctionReadResponse(
+  http.BaseRequest request,
+  dynamic value, {
+  int status = 200,
+}) {
+  if (status == 200 && value is Map && value['data'] is List) {
+    value = {
+      'data': memoryReviewReadFixture(
+        request,
+        value['data'],
+        owner: correctionOwner,
+        agent: correctionAgent,
+      ),
+    };
+  }
+  return correctionResponse(value, status: status);
+}
+
 void main() {
   test('真实注册HTTP原Memory data与bare preview完整闭集', () {
     final list = jsonDecode(correctionNativeMemoryWire)['data'] as List;

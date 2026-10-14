@@ -1,0 +1,972 @@
+{
+  "data": {
+    "onlinePlaceSearch": {
+      "schema": "birdtie-online-places-v2",
+      "requestId": "07f5131648518b6952548df6fe2c2b22",
+      "cityId": "aberdeen-gb",
+      "query": "有没有好的餐厅",
+      "status": "SUCCESS",
+      "provider": "openstreetmap",
+      "attribution": "© OpenStreetMap contributors (ODbL 1.0)",
+      "scope": "city",
+      "observedAt": "2026-10-09T22:23:28.734135Z",
+      "expiresAt": "2026-10-10T22:23:28.733062Z",
+      "places": [
+        {
+          "id": "osm:node:595491192",
+          "cityId": "aberdeen-gb",
+          "name": "Frankie & Benny's",
+          "categoryCode": "restaurant",
+          "addressLabel": "Guild Street AB11 5RG Aberdeen",
+          "location": {
+            "coordinateSystem": "wgs84",
+            "precision": "point",
+            "latitude": 57.1438671,
+            "longitude": -2.0969393
+          },
+          "sourceUrl": "https://www.openstreetmap.org/node/595491192",
+          "attribution": "© OpenStreetMap contributors (ODbL 1.0)",
+          "reviewStatus": "UNREVIEWED",
+          "observedAt": "2026-10-09T22:23:28.734135Z",
+          "expiresAt": "2026-10-10T22:23:28.733062Z"
+        },
+        {
+          "id": "osm:node:595491193",
+          "cityId": "aberdeen-gb",
+          "name": "Nando's",
+          "categoryCode": "restaurant",
+          "addressLabel": "Union Square AB11 5RG Aberdeen",
+          "location": {
+            "coordinateSystem": "wgs84",
+            "precision": "point",
+            "latitude": 57.1434033,
+            "longitude": -2.0973128
+          },
+          "sourceUrl": "https://www.openstreetmap.org/node/595491193",
+          "attribution": "© OpenStreetMap contributors (ODbL 1.0)",
+          "reviewStatus": "UNREVIEWED",
+          "observedAt": "2026-10-09T22:23:28.734135Z",
+          "expiresAt": "2026-10-10T22:23:28.733062Z"
+        },
+        {
+          "id": "osm:node:290633294",
+          "cityId": "aberdeen-gb",
+          "name": "Glenhouse",
+          "categoryCode": "restaurant",
+          "addressLabel": "201 Union Street AB11 6BB Aberdeen",
+          "location": {
+            "coordinateSystem": "wgs84",
+            "precision": "point",
+            "latitude": 57.1450032,
+            "longitude": -2.1036916
+          },
+          "sourceUrl": "https://www.openstreetmap.org/node/290633294",
+          "attribution": "© OpenStreetMap contributors (ODbL 1.0)",
+          "reviewStatus": "UNREVIEWED",
+          "observedAt": "2026-10-09T22:23:28.734135Z",
+          "expiresAt": "2026-10-10T22:23:28.733062Z"
+        },
+        {
+          "id": "osm:node:819225318",
+          "cityId": "aberdeen-gb",
+          "name": "Sofra",
+          "categoryCode": "restaurant",
+          "addressLabel": "77-79 Skene Street AB10 1QD Aberdeen",
+          "location": {
+            "coordinateSystem": "wgs84",
+            "precision": "point",
+            "latitude": 57.1475163,
+            "longitude": -2.1082242
+          },
+          "sourceUrl": "https://www.openstreetmap.org/node/819225318",
+          "attribution": "© OpenStreetMap contributors (ODbL 1.0)",
+          "reviewStatus": "UNREVIEWED",
+          "observedAt": "2026-10-09T22:23:28.734135Z",
+          "expiresAt": "2026-10-10T22:23:28.733062Z"
+        },
+        {
+          "id": "osm:node:290633283",
+          "cityId": "aberdeen-gb",
+          "name": "Six By Nico",
+          "categoryCode": "restaurant",
+          "addressLabel": "367 Union Street AB11 6BT Aberdeen",
+          "location": {
+            "coordinateSystem": "wgs84",
+            "precision": "point",
+            "latitude": 57.1438278,
+            "longitude": -2.1078896
+          },
+          "sourceUrl": "https://www.openstreetmap.org/node/290633283",
+          "attribution": "© OpenStreetMap contributors (ODbL 1.0)",
+          "reviewStatus": "UNREVIEWED",
+          "observedAt": "2026-10-09T22:23:28.734135Z",
+          "expiresAt": "2026-10-10T22:23:28.733062Z"
+        },
+        {
+          "id": "osm:node:1105369534",
+          "cityId": "aberdeen-gb",
+          "name": "PizzaExpress",
+          "categoryCode": "restaurant",
+          "addressLabel": "402-404 Union Street AB10 1TQ Aberdeen",
+          "location": {
+            "coordinateSystem": "wgs84",
+            "precision": "point",
+            "latitude": 57.1438304,
+            "longitude": -2.1090502
+          },
+          "sourceUrl": "https://www.openstreetmap.org/node/1105369534",
+          "attribution": "© OpenStreetMap contributors (ODbL 1.0)",
+          "reviewStatus": "UNREVIEWED",
+          "observedAt": "2026-10-09T22:23:28.734135Z",
+          "expiresAt": "2026-10-10T22:23:28.733062Z"
+        },
+        {
+          "id": "osm:node:1314114275",
+          "cityId": "aberdeen-gb",
+          "name": "Bhan Thai",
+          "categoryCode": "restaurant",
+          "addressLabel": "21 Rose Street AB10 1TX Aberdeen",
+          "location": {
+            "coordinateSystem": "wgs84",
+            "precision": "point",
+            "latitude": 57.1437677,
+            "longitude": -2.1112463
+          },
+          "sourceUrl": "https://www.openstreetmap.org/node/1314114275",
+          "attribution": "© OpenStreetMap contributors (ODbL 1.0)",
+          "reviewStatus": "UNREVIEWED",
+          "observedAt": "2026-10-09T22:23:28.734135Z",
+          "expiresAt": "2026-10-10T22:23:28.733062Z"
+        },
+        {
+          "id": "osm:node:1314114301",
+          "cityId": "aberdeen-gb",
+          "name": "Light of Bengal",
+          "categoryCode": "restaurant",
+          "addressLabel": "13 Rose Street AB10 1TX Aberdeen",
+          "location": {
+            "coordinateSystem": "wgs84",
+            "precision": "point",
+            "latitude": 57.1436261,
+            "longitude": -2.1111339
+          },
+          "sourceUrl": "https://www.openstreetmap.org/node/1314114301",
+          "attribution": "© OpenStreetMap contributors (ODbL 1.0)",
+          "reviewStatus": "UNREVIEWED",
+          "observedAt": "2026-10-09T22:23:28.734135Z",
+          "expiresAt": "2026-10-10T22:23:28.733062Z"
+        },
+        {
+          "id": "osm:node:864934587",
+          "cityId": "aberdeen-gb",
+          "name": "Pasta Plus",
+          "categoryCode": "restaurant",
+          "addressLabel": "119 Rosemount Place AB25 2YH Aberdeen",
+          "location": {
+            "coordinateSystem": "wgs84",
+            "precision": "point",
+            "latitude": 57.1496745,
+            "longitude": -2.1162258
+          },
+          "sourceUrl": "https://www.openstreetmap.org/node/864934587",
+          "attribution": "© OpenStreetMap contributors (ODbL 1.0)",
+          "reviewStatus": "UNREVIEWED",
+          "observedAt": "2026-10-09T22:23:28.734135Z",
+          "expiresAt": "2026-10-10T22:23:28.733062Z"
+        },
+        {
+          "id": "osm:node:864934412",
+          "cityId": "aberdeen-gb",
+          "name": "Tarragon",
+          "categoryCode": "restaurant",
+          "addressLabel": "137 Rosemount Place AB25 2YH Aberdeen",
+          "location": {
+            "coordinateSystem": "wgs84",
+            "precision": "point",
+            "latitude": 57.1496177,
+            "longitude": -2.1167834
+          },
+          "sourceUrl": "https://www.openstreetmap.org/node/864934412",
+          "attribution": "© OpenStreetMap contributors (ODbL 1.0)",
+          "reviewStatus": "UNREVIEWED",
+          "observedAt": "2026-10-09T22:23:28.734135Z",
+          "expiresAt": "2026-10-10T22:23:28.733062Z"
+        },
+        {
+          "id": "osm:node:1025742985",
+          "cityId": "aberdeen-gb",
+          "name": "The Ashvale Fish Restaurant",
+          "categoryCode": "restaurant",
+          "addressLabel": "44-48 Great Western Road AB10 6PY Aberdeen",
+          "location": {
+            "coordinateSystem": "wgs84",
+            "precision": "point",
+            "latitude": 57.1401281,
+            "longitude": -2.1154851
+          },
+          "sourceUrl": "https://www.openstreetmap.org/node/1025742985",
+          "attribution": "© OpenStreetMap contributors (ODbL 1.0)",
+          "reviewStatus": "UNREVIEWED",
+          "observedAt": "2026-10-09T22:23:28.734135Z",
+          "expiresAt": "2026-10-10T22:23:28.733062Z"
+        },
+        {
+          "id": "osm:node:864934712",
+          "cityId": "aberdeen-gb",
+          "name": "Tucan",
+          "categoryCode": "restaurant",
+          "addressLabel": "231 Rosemount Place AB25 2XX Aberdeen",
+          "location": {
+            "coordinateSystem": "wgs84",
+            "precision": "point",
+            "latitude": 57.1494316,
+            "longitude": -2.1200643
+          },
+          "sourceUrl": "https://www.openstreetmap.org/node/864934712",
+          "attribution": "© OpenStreetMap contributors (ODbL 1.0)",
+          "reviewStatus": "UNREVIEWED",
+          "observedAt": "2026-10-09T22:23:28.734135Z",
+          "expiresAt": "2026-10-10T22:23:28.733062Z"
+        },
+        {
+          "id": "osm:node:860555112",
+          "cityId": "aberdeen-gb",
+          "name": "Prego Aberdeen",
+          "categoryCode": "restaurant",
+          "addressLabel": "33 Fountainhall Road AB15 4EW",
+          "location": {
+            "coordinateSystem": "wgs84",
+            "precision": "point",
+            "latitude": 57.1447573,
+            "longitude": -2.1283763
+          },
+          "sourceUrl": "https://www.openstreetmap.org/node/860555112",
+          "attribution": "© OpenStreetMap contributors (ODbL 1.0)",
+          "reviewStatus": "UNREVIEWED",
+          "observedAt": "2026-10-09T22:23:28.734135Z",
+          "expiresAt": "2026-10-10T22:23:28.733062Z"
+        },
+        {
+          "id": "osm:node:927269361",
+          "cityId": "aberdeen-gb",
+          "name": "The Atlantis",
+          "categoryCode": "restaurant",
+          "addressLabel": "Great Western Road Aberdeen",
+          "location": {
+            "coordinateSystem": "wgs84",
+            "precision": "point",
+            "latitude": 57.1346059,
+            "longitude": -2.1272761
+          },
+          "sourceUrl": "https://www.openstreetmap.org/node/927269361",
+          "attribution": "© OpenStreetMap contributors (ODbL 1.0)",
+          "reviewStatus": "UNREVIEWED",
+          "observedAt": "2026-10-09T22:23:28.734135Z",
+          "expiresAt": "2026-10-10T22:23:28.733062Z"
+        },
+        {
+          "id": "osm:node:702238634",
+          "cityId": "aberdeen-gb",
+          "name": "The Works",
+          "categoryCode": "restaurant",
+          "addressLabel": "Don Street AB24 1WU Aberdeen",
+          "location": {
+            "coordinateSystem": "wgs84",
+            "precision": "point",
+            "latitude": 57.1763498,
+            "longitude": -2.1031116
+          },
+          "sourceUrl": "https://www.openstreetmap.org/node/702238634",
+          "attribution": "© OpenStreetMap contributors (ODbL 1.0)",
+          "reviewStatus": "UNREVIEWED",
+          "observedAt": "2026-10-09T22:23:28.734135Z",
+          "expiresAt": "2026-10-10T22:23:28.733062Z"
+        }
+      ],
+      "snapshotId": "c4de8031-6816-401b-b753-46cce8d9b71d",
+      "taskId": "40000000-0000-4000-8000-000000000002",
+      "messageIndex": 3,
+      "turnDigest": "3d86de62757b9f09459f2167221a68858051bdd0e0f89aaaf76f01c2ff8b3019",
+      "cacheVersion": 1,
+      "origin": "HISTORY",
+      "freshness": "FRESH",
+      "licenseUrl": "https://opendatacommons.org/licenses/odbl/1-0/"
+    },
+    "commercialTrustVersion": "sponsored-opportunity-v1",
+    "sponsoredStatus": "available",
+    "sponsoredOpportunities": [],
+    "cityId": "aberdeen-gb",
+    "contextType": "CITY",
+    "contextId": "08755d32-57c3-49c3-b256-807b364d7e21",
+    "query": "有没有好的餐厅",
+    "mode": "online_places",
+    "note": "OpenStreetMap 公开地点资料已保存；评分与营业状态尚未核验。",
+    "message": "可以先看看 Frankie & Benny's、Nando's、Glenhouse。已复用已保存资料，找到 15 家餐厅，并标在地图上。范围是当前城市中心周边 6 公里；按离市中心的距离整理，尚未核验评分和当前营业状态。",
+    "taskId": "40000000-0000-4000-8000-000000000002",
+    "task": {
+      "id": "40000000-0000-4000-8000-000000000002",
+      "principalType": "person",
+      "principalId": "40000000-0000-4000-8000-000000000001",
+      "actingUserId": "40000000-0000-4000-8000-000000000001",
+      "cityContext": "aberdeen-gb",
+      "contextType": "CITY",
+      "contextId": "08755d32-57c3-49c3-b256-807b364d7e21",
+      "query": "阿布丁有没有好的餐厅",
+      "intent": "FIND_PLACE",
+      "status": "COMPLETED",
+      "filters": {
+        "category": "restaurant",
+        "currentQuery": "有没有好的餐厅",
+        "locationPreference": "city",
+        "searchTerm": "",
+        "targetIntent": "FIND_PLACE",
+        "timePreference": ""
+      },
+      "conversation": [
+        {
+          "role": "user",
+          "text": "阿布丁有没有好的餐厅"
+        },
+        {
+          "externalPlaceReply": {
+            "schema": "birdtie-online-places-v2",
+            "requestId": "43e91990d1db33ce9e4a0620778ed2d1",
+            "cityId": "aberdeen-gb",
+            "query": "阿布丁有没有好的餐厅",
+            "status": "SUCCESS",
+            "provider": "openstreetmap",
+            "attribution": "© OpenStreetMap contributors (ODbL 1.0)",
+            "scope": "city",
+            "observedAt": "2026-10-09T22:23:28.734135Z",
+            "expiresAt": "2026-10-10T22:23:28.733062Z",
+            "places": [
+              {
+                "id": "osm:node:595491192",
+                "cityId": "aberdeen-gb",
+                "name": "Frankie & Benny's",
+                "categoryCode": "restaurant",
+                "addressLabel": "Guild Street AB11 5RG Aberdeen",
+                "location": {
+                  "coordinateSystem": "wgs84",
+                  "precision": "point",
+                  "latitude": 57.1438671,
+                  "longitude": -2.0969393
+                },
+                "sourceUrl": "https://www.openstreetmap.org/node/595491192",
+                "attribution": "© OpenStreetMap contributors (ODbL 1.0)",
+                "reviewStatus": "UNREVIEWED",
+                "observedAt": "2026-10-09T22:23:28.734135Z",
+                "expiresAt": "2026-10-10T22:23:28.733062Z"
+              },
+              {
+                "id": "osm:node:595491193",
+                "cityId": "aberdeen-gb",
+                "name": "Nando's",
+                "categoryCode": "restaurant",
+                "addressLabel": "Union Square AB11 5RG Aberdeen",
+                "location": {
+                  "coordinateSystem": "wgs84",
+                  "precision": "point",
+                  "latitude": 57.1434033,
+                  "longitude": -2.0973128
+                },
+                "sourceUrl": "https://www.openstreetmap.org/node/595491193",
+                "attribution": "© OpenStreetMap contributors (ODbL 1.0)",
+                "reviewStatus": "UNREVIEWED",
+                "observedAt": "2026-10-09T22:23:28.734135Z",
+                "expiresAt": "2026-10-10T22:23:28.733062Z"
+              },
+              {
+                "id": "osm:node:290633294",
+                "cityId": "aberdeen-gb",
+                "name": "Glenhouse",
+                "categoryCode": "restaurant",
+                "addressLabel": "201 Union Street AB11 6BB Aberdeen",
+                "location": {
+                  "coordinateSystem": "wgs84",
+                  "precision": "point",
+                  "latitude": 57.1450032,
+                  "longitude": -2.1036916
+                },
+                "sourceUrl": "https://www.openstreetmap.org/node/290633294",
+                "attribution": "© OpenStreetMap contributors (ODbL 1.0)",
+                "reviewStatus": "UNREVIEWED",
+                "observedAt": "2026-10-09T22:23:28.734135Z",
+                "expiresAt": "2026-10-10T22:23:28.733062Z"
+              },
+              {
+                "id": "osm:node:819225318",
+                "cityId": "aberdeen-gb",
+                "name": "Sofra",
+                "categoryCode": "restaurant",
+                "addressLabel": "77-79 Skene Street AB10 1QD Aberdeen",
+                "location": {
+                  "coordinateSystem": "wgs84",
+                  "precision": "point",
+                  "latitude": 57.1475163,
+                  "longitude": -2.1082242
+                },
+                "sourceUrl": "https://www.openstreetmap.org/node/819225318",
+                "attribution": "© OpenStreetMap contributors (ODbL 1.0)",
+                "reviewStatus": "UNREVIEWED",
+                "observedAt": "2026-10-09T22:23:28.734135Z",
+                "expiresAt": "2026-10-10T22:23:28.733062Z"
+              },
+              {
+                "id": "osm:node:290633283",
+                "cityId": "aberdeen-gb",
+                "name": "Six By Nico",
+                "categoryCode": "restaurant",
+                "addressLabel": "367 Union Street AB11 6BT Aberdeen",
+                "location": {
+                  "coordinateSystem": "wgs84",
+                  "precision": "point",
+                  "latitude": 57.1438278,
+                  "longitude": -2.1078896
+                },
+                "sourceUrl": "https://www.openstreetmap.org/node/290633283",
+                "attribution": "© OpenStreetMap contributors (ODbL 1.0)",
+                "reviewStatus": "UNREVIEWED",
+                "observedAt": "2026-10-09T22:23:28.734135Z",
+                "expiresAt": "2026-10-10T22:23:28.733062Z"
+              },
+              {
+                "id": "osm:node:1105369534",
+                "cityId": "aberdeen-gb",
+                "name": "PizzaExpress",
+                "categoryCode": "restaurant",
+                "addressLabel": "402-404 Union Street AB10 1TQ Aberdeen",
+                "location": {
+                  "coordinateSystem": "wgs84",
+                  "precision": "point",
+                  "latitude": 57.1438304,
+                  "longitude": -2.1090502
+                },
+                "sourceUrl": "https://www.openstreetmap.org/node/1105369534",
+                "attribution": "© OpenStreetMap contributors (ODbL 1.0)",
+                "reviewStatus": "UNREVIEWED",
+                "observedAt": "2026-10-09T22:23:28.734135Z",
+                "expiresAt": "2026-10-10T22:23:28.733062Z"
+              },
+              {
+                "id": "osm:node:1314114275",
+                "cityId": "aberdeen-gb",
+                "name": "Bhan Thai",
+                "categoryCode": "restaurant",
+                "addressLabel": "21 Rose Street AB10 1TX Aberdeen",
+                "location": {
+                  "coordinateSystem": "wgs84",
+                  "precision": "point",
+                  "latitude": 57.1437677,
+                  "longitude": -2.1112463
+                },
+                "sourceUrl": "https://www.openstreetmap.org/node/1314114275",
+                "attribution": "© OpenStreetMap contributors (ODbL 1.0)",
+                "reviewStatus": "UNREVIEWED",
+                "observedAt": "2026-10-09T22:23:28.734135Z",
+                "expiresAt": "2026-10-10T22:23:28.733062Z"
+              },
+              {
+                "id": "osm:node:1314114301",
+                "cityId": "aberdeen-gb",
+                "name": "Light of Bengal",
+                "categoryCode": "restaurant",
+                "addressLabel": "13 Rose Street AB10 1TX Aberdeen",
+                "location": {
+                  "coordinateSystem": "wgs84",
+                  "precision": "point",
+                  "latitude": 57.1436261,
+                  "longitude": -2.1111339
+                },
+                "sourceUrl": "https://www.openstreetmap.org/node/1314114301",
+                "attribution": "© OpenStreetMap contributors (ODbL 1.0)",
+                "reviewStatus": "UNREVIEWED",
+                "observedAt": "2026-10-09T22:23:28.734135Z",
+                "expiresAt": "2026-10-10T22:23:28.733062Z"
+              },
+              {
+                "id": "osm:node:864934587",
+                "cityId": "aberdeen-gb",
+                "name": "Pasta Plus",
+                "categoryCode": "restaurant",
+                "addressLabel": "119 Rosemount Place AB25 2YH Aberdeen",
+                "location": {
+                  "coordinateSystem": "wgs84",
+                  "precision": "point",
+                  "latitude": 57.1496745,
+                  "longitude": -2.1162258
+                },
+                "sourceUrl": "https://www.openstreetmap.org/node/864934587",
+                "attribution": "© OpenStreetMap contributors (ODbL 1.0)",
+                "reviewStatus": "UNREVIEWED",
+                "observedAt": "2026-10-09T22:23:28.734135Z",
+                "expiresAt": "2026-10-10T22:23:28.733062Z"
+              },
+              {
+                "id": "osm:node:864934412",
+                "cityId": "aberdeen-gb",
+                "name": "Tarragon",
+                "categoryCode": "restaurant",
+                "addressLabel": "137 Rosemount Place AB25 2YH Aberdeen",
+                "location": {
+                  "coordinateSystem": "wgs84",
+                  "precision": "point",
+                  "latitude": 57.1496177,
+                  "longitude": -2.1167834
+                },
+                "sourceUrl": "https://www.openstreetmap.org/node/864934412",
+                "attribution": "© OpenStreetMap contributors (ODbL 1.0)",
+                "reviewStatus": "UNREVIEWED",
+                "observedAt": "2026-10-09T22:23:28.734135Z",
+                "expiresAt": "2026-10-10T22:23:28.733062Z"
+              },
+              {
+                "id": "osm:node:1025742985",
+                "cityId": "aberdeen-gb",
+                "name": "The Ashvale Fish Restaurant",
+                "categoryCode": "restaurant",
+                "addressLabel": "44-48 Great Western Road AB10 6PY Aberdeen",
+                "location": {
+                  "coordinateSystem": "wgs84",
+                  "precision": "point",
+                  "latitude": 57.1401281,
+                  "longitude": -2.1154851
+                },
+                "sourceUrl": "https://www.openstreetmap.org/node/1025742985",
+                "attribution": "© OpenStreetMap contributors (ODbL 1.0)",
+                "reviewStatus": "UNREVIEWED",
+                "observedAt": "2026-10-09T22:23:28.734135Z",
+                "expiresAt": "2026-10-10T22:23:28.733062Z"
+              },
+              {
+                "id": "osm:node:864934712",
+                "cityId": "aberdeen-gb",
+                "name": "Tucan",
+                "categoryCode": "restaurant",
+                "addressLabel": "231 Rosemount Place AB25 2XX Aberdeen",
+                "location": {
+                  "coordinateSystem": "wgs84",
+                  "precision": "point",
+                  "latitude": 57.1494316,
+                  "longitude": -2.1200643
+                },
+                "sourceUrl": "https://www.openstreetmap.org/node/864934712",
+                "attribution": "© OpenStreetMap contributors (ODbL 1.0)",
+                "reviewStatus": "UNREVIEWED",
+                "observedAt": "2026-10-09T22:23:28.734135Z",
+                "expiresAt": "2026-10-10T22:23:28.733062Z"
+              },
+              {
+                "id": "osm:node:860555112",
+                "cityId": "aberdeen-gb",
+                "name": "Prego Aberdeen",
+                "categoryCode": "restaurant",
+                "addressLabel": "33 Fountainhall Road AB15 4EW",
+                "location": {
+                  "coordinateSystem": "wgs84",
+                  "precision": "point",
+                  "latitude": 57.1447573,
+                  "longitude": -2.1283763
+                },
+                "sourceUrl": "https://www.openstreetmap.org/node/860555112",
+                "attribution": "© OpenStreetMap contributors (ODbL 1.0)",
+                "reviewStatus": "UNREVIEWED",
+                "observedAt": "2026-10-09T22:23:28.734135Z",
+                "expiresAt": "2026-10-10T22:23:28.733062Z"
+              },
+              {
+                "id": "osm:node:927269361",
+                "cityId": "aberdeen-gb",
+                "name": "The Atlantis",
+                "categoryCode": "restaurant",
+                "addressLabel": "Great Western Road Aberdeen",
+                "location": {
+                  "coordinateSystem": "wgs84",
+                  "precision": "point",
+                  "latitude": 57.1346059,
+                  "longitude": -2.1272761
+                },
+                "sourceUrl": "https://www.openstreetmap.org/node/927269361",
+                "attribution": "© OpenStreetMap contributors (ODbL 1.0)",
+                "reviewStatus": "UNREVIEWED",
+                "observedAt": "2026-10-09T22:23:28.734135Z",
+                "expiresAt": "2026-10-10T22:23:28.733062Z"
+              },
+              {
+                "id": "osm:node:702238634",
+                "cityId": "aberdeen-gb",
+                "name": "The Works",
+                "categoryCode": "restaurant",
+                "addressLabel": "Don Street AB24 1WU Aberdeen",
+                "location": {
+                  "coordinateSystem": "wgs84",
+                  "precision": "point",
+                  "latitude": 57.1763498,
+                  "longitude": -2.1031116
+                },
+                "sourceUrl": "https://www.openstreetmap.org/node/702238634",
+                "attribution": "© OpenStreetMap contributors (ODbL 1.0)",
+                "reviewStatus": "UNREVIEWED",
+                "observedAt": "2026-10-09T22:23:28.734135Z",
+                "expiresAt": "2026-10-10T22:23:28.733062Z"
+              }
+            ],
+            "snapshotId": "faf9b2d6-8c99-42e8-b427-7534a38b7356",
+            "taskId": "40000000-0000-4000-8000-000000000002",
+            "messageIndex": 1,
+            "turnDigest": "e6791fb17e477a98c67c99e535430f5c807bf751b77c80382908c05f5b02b79f",
+            "cacheVersion": 1,
+            "origin": "CACHE",
+            "freshness": "FRESH",
+            "licenseUrl": "https://opendatacommons.org/licenses/odbl/1-0/"
+          },
+          "role": "assistant",
+          "text": "可以先看看 Frankie & Benny's、Nando's、Glenhouse。已复用已保存资料，找到 15 家餐厅，并标在地图上。范围是当前城市中心周边 6 公里；按离市中心的距离整理，尚未核验评分和当前营业状态。"
+        },
+        {
+          "role": "user",
+          "text": "有没有好的餐厅"
+        },
+        {
+          "externalPlaceReply": {
+            "schema": "birdtie-online-places-v2",
+            "requestId": "07f5131648518b6952548df6fe2c2b22",
+            "cityId": "aberdeen-gb",
+            "query": "有没有好的餐厅",
+            "status": "SUCCESS",
+            "provider": "openstreetmap",
+            "attribution": "© OpenStreetMap contributors (ODbL 1.0)",
+            "scope": "city",
+            "observedAt": "2026-10-09T22:23:28.734135Z",
+            "expiresAt": "2026-10-10T22:23:28.733062Z",
+            "places": [
+              {
+                "id": "osm:node:595491192",
+                "cityId": "aberdeen-gb",
+                "name": "Frankie & Benny's",
+                "categoryCode": "restaurant",
+                "addressLabel": "Guild Street AB11 5RG Aberdeen",
+                "location": {
+                  "coordinateSystem": "wgs84",
+                  "precision": "point",
+                  "latitude": 57.1438671,
+                  "longitude": -2.0969393
+                },
+                "sourceUrl": "https://www.openstreetmap.org/node/595491192",
+                "attribution": "© OpenStreetMap contributors (ODbL 1.0)",
+                "reviewStatus": "UNREVIEWED",
+                "observedAt": "2026-10-09T22:23:28.734135Z",
+                "expiresAt": "2026-10-10T22:23:28.733062Z"
+              },
+              {
+                "id": "osm:node:595491193",
+                "cityId": "aberdeen-gb",
+                "name": "Nando's",
+                "categoryCode": "restaurant",
+                "addressLabel": "Union Square AB11 5RG Aberdeen",
+                "location": {
+                  "coordinateSystem": "wgs84",
+                  "precision": "point",
+                  "latitude": 57.1434033,
+                  "longitude": -2.0973128
+                },
+                "sourceUrl": "https://www.openstreetmap.org/node/595491193",
+                "attribution": "© OpenStreetMap contributors (ODbL 1.0)",
+                "reviewStatus": "UNREVIEWED",
+                "observedAt": "2026-10-09T22:23:28.734135Z",
+                "expiresAt": "2026-10-10T22:23:28.733062Z"
+              },
+              {
+                "id": "osm:node:290633294",
+                "cityId": "aberdeen-gb",
+                "name": "Glenhouse",
+                "categoryCode": "restaurant",
+                "addressLabel": "201 Union Street AB11 6BB Aberdeen",
+                "location": {
+                  "coordinateSystem": "wgs84",
+                  "precision": "point",
+                  "latitude": 57.1450032,
+                  "longitude": -2.1036916
+                },
+                "sourceUrl": "https://www.openstreetmap.org/node/290633294",
+                "attribution": "© OpenStreetMap contributors (ODbL 1.0)",
+                "reviewStatus": "UNREVIEWED",
+                "observedAt": "2026-10-09T22:23:28.734135Z",
+                "expiresAt": "2026-10-10T22:23:28.733062Z"
+              },
+              {
+                "id": "osm:node:819225318",
+                "cityId": "aberdeen-gb",
+                "name": "Sofra",
+                "categoryCode": "restaurant",
+                "addressLabel": "77-79 Skene Street AB10 1QD Aberdeen",
+                "location": {
+                  "coordinateSystem": "wgs84",
+                  "precision": "point",
+                  "latitude": 57.1475163,
+                  "longitude": -2.1082242
+                },
+                "sourceUrl": "https://www.openstreetmap.org/node/819225318",
+                "attribution": "© OpenStreetMap contributors (ODbL 1.0)",
+                "reviewStatus": "UNREVIEWED",
+                "observedAt": "2026-10-09T22:23:28.734135Z",
+                "expiresAt": "2026-10-10T22:23:28.733062Z"
+              },
+              {
+                "id": "osm:node:290633283",
+                "cityId": "aberdeen-gb",
+                "name": "Six By Nico",
+                "categoryCode": "restaurant",
+                "addressLabel": "367 Union Street AB11 6BT Aberdeen",
+                "location": {
+                  "coordinateSystem": "wgs84",
+                  "precision": "point",
+                  "latitude": 57.1438278,
+                  "longitude": -2.1078896
+                },
+                "sourceUrl": "https://www.openstreetmap.org/node/290633283",
+                "attribution": "© OpenStreetMap contributors (ODbL 1.0)",
+                "reviewStatus": "UNREVIEWED",
+                "observedAt": "2026-10-09T22:23:28.734135Z",
+                "expiresAt": "2026-10-10T22:23:28.733062Z"
+              },
+              {
+                "id": "osm:node:1105369534",
+                "cityId": "aberdeen-gb",
+                "name": "PizzaExpress",
+                "categoryCode": "restaurant",
+                "addressLabel": "402-404 Union Street AB10 1TQ Aberdeen",
+                "location": {
+                  "coordinateSystem": "wgs84",
+                  "precision": "point",
+                  "latitude": 57.1438304,
+                  "longitude": -2.1090502
+                },
+                "sourceUrl": "https://www.openstreetmap.org/node/1105369534",
+                "attribution": "© OpenStreetMap contributors (ODbL 1.0)",
+                "reviewStatus": "UNREVIEWED",
+                "observedAt": "2026-10-09T22:23:28.734135Z",
+                "expiresAt": "2026-10-10T22:23:28.733062Z"
+              },
+              {
+                "id": "osm:node:1314114275",
+                "cityId": "aberdeen-gb",
+                "name": "Bhan Thai",
+                "categoryCode": "restaurant",
+                "addressLabel": "21 Rose Street AB10 1TX Aberdeen",
+                "location": {
+                  "coordinateSystem": "wgs84",
+                  "precision": "point",
+                  "latitude": 57.1437677,
+                  "longitude": -2.1112463
+                },
+                "sourceUrl": "https://www.openstreetmap.org/node/1314114275",
+                "attribution": "© OpenStreetMap contributors (ODbL 1.0)",
+                "reviewStatus": "UNREVIEWED",
+                "observedAt": "2026-10-09T22:23:28.734135Z",
+                "expiresAt": "2026-10-10T22:23:28.733062Z"
+              },
+              {
+                "id": "osm:node:1314114301",
+                "cityId": "aberdeen-gb",
+                "name": "Light of Bengal",
+                "categoryCode": "restaurant",
+                "addressLabel": "13 Rose Street AB10 1TX Aberdeen",
+                "location": {
+                  "coordinateSystem": "wgs84",
+                  "precision": "point",
+                  "latitude": 57.1436261,
+                  "longitude": -2.1111339
+                },
+                "sourceUrl": "https://www.openstreetmap.org/node/1314114301",
+                "attribution": "© OpenStreetMap contributors (ODbL 1.0)",
+                "reviewStatus": "UNREVIEWED",
+                "observedAt": "2026-10-09T22:23:28.734135Z",
+                "expiresAt": "2026-10-10T22:23:28.733062Z"
+              },
+              {
+                "id": "osm:node:864934587",
+                "cityId": "aberdeen-gb",
+                "name": "Pasta Plus",
+                "categoryCode": "restaurant",
+                "addressLabel": "119 Rosemount Place AB25 2YH Aberdeen",
+                "location": {
+                  "coordinateSystem": "wgs84",
+                  "precision": "point",
+                  "latitude": 57.1496745,
+                  "longitude": -2.1162258
+                },
+                "sourceUrl": "https://www.openstreetmap.org/node/864934587",
+                "attribution": "© OpenStreetMap contributors (ODbL 1.0)",
+                "reviewStatus": "UNREVIEWED",
+                "observedAt": "2026-10-09T22:23:28.734135Z",
+                "expiresAt": "2026-10-10T22:23:28.733062Z"
+              },
+              {
+                "id": "osm:node:864934412",
+                "cityId": "aberdeen-gb",
+                "name": "Tarragon",
+                "categoryCode": "restaurant",
+                "addressLabel": "137 Rosemount Place AB25 2YH Aberdeen",
+                "location": {
+                  "coordinateSystem": "wgs84",
+                  "precision": "point",
+                  "latitude": 57.1496177,
+                  "longitude": -2.1167834
+                },
+                "sourceUrl": "https://www.openstreetmap.org/node/864934412",
+                "attribution": "© OpenStreetMap contributors (ODbL 1.0)",
+                "reviewStatus": "UNREVIEWED",
+                "observedAt": "2026-10-09T22:23:28.734135Z",
+                "expiresAt": "2026-10-10T22:23:28.733062Z"
+              },
+              {
+                "id": "osm:node:1025742985",
+                "cityId": "aberdeen-gb",
+                "name": "The Ashvale Fish Restaurant",
+                "categoryCode": "restaurant",
+                "addressLabel": "44-48 Great Western Road AB10 6PY Aberdeen",
+                "location": {
+                  "coordinateSystem": "wgs84",
+                  "precision": "point",
+                  "latitude": 57.1401281,
+                  "longitude": -2.1154851
+                },
+                "sourceUrl": "https://www.openstreetmap.org/node/1025742985",
+                "attribution": "© OpenStreetMap contributors (ODbL 1.0)",
+                "reviewStatus": "UNREVIEWED",
+                "observedAt": "2026-10-09T22:23:28.734135Z",
+                "expiresAt": "2026-10-10T22:23:28.733062Z"
+              },
+              {
+                "id": "osm:node:864934712",
+                "cityId": "aberdeen-gb",
+                "name": "Tucan",
+                "categoryCode": "restaurant",
+                "addressLabel": "231 Rosemount Place AB25 2XX Aberdeen",
+                "location": {
+                  "coordinateSystem": "wgs84",
+                  "precision": "point",
+                  "latitude": 57.1494316,
+                  "longitude": -2.1200643
+                },
+                "sourceUrl": "https://www.openstreetmap.org/node/864934712",
+                "attribution": "© OpenStreetMap contributors (ODbL 1.0)",
+                "reviewStatus": "UNREVIEWED",
+                "observedAt": "2026-10-09T22:23:28.734135Z",
+                "expiresAt": "2026-10-10T22:23:28.733062Z"
+              },
+              {
+                "id": "osm:node:860555112",
+                "cityId": "aberdeen-gb",
+                "name": "Prego Aberdeen",
+                "categoryCode": "restaurant",
+                "addressLabel": "33 Fountainhall Road AB15 4EW",
+                "location": {
+                  "coordinateSystem": "wgs84",
+                  "precision": "point",
+                  "latitude": 57.1447573,
+                  "longitude": -2.1283763
+                },
+                "sourceUrl": "https://www.openstreetmap.org/node/860555112",
+                "attribution": "© OpenStreetMap contributors (ODbL 1.0)",
+                "reviewStatus": "UNREVIEWED",
+                "observedAt": "2026-10-09T22:23:28.734135Z",
+                "expiresAt": "2026-10-10T22:23:28.733062Z"
+              },
+              {
+                "id": "osm:node:927269361",
+                "cityId": "aberdeen-gb",
+                "name": "The Atlantis",
+                "categoryCode": "restaurant",
+                "addressLabel": "Great Western Road Aberdeen",
+                "location": {
+                  "coordinateSystem": "wgs84",
+                  "precision": "point",
+                  "latitude": 57.1346059,
+                  "longitude": -2.1272761
+                },
+                "sourceUrl": "https://www.openstreetmap.org/node/927269361",
+                "attribution": "© OpenStreetMap contributors (ODbL 1.0)",
+                "reviewStatus": "UNREVIEWED",
+                "observedAt": "2026-10-09T22:23:28.734135Z",
+                "expiresAt": "2026-10-10T22:23:28.733062Z"
+              },
+              {
+                "id": "osm:node:702238634",
+                "cityId": "aberdeen-gb",
+                "name": "The Works",
+                "categoryCode": "restaurant",
+                "addressLabel": "Don Street AB24 1WU Aberdeen",
+                "location": {
+                  "coordinateSystem": "wgs84",
+                  "precision": "point",
+                  "latitude": 57.1763498,
+                  "longitude": -2.1031116
+                },
+                "sourceUrl": "https://www.openstreetmap.org/node/702238634",
+                "attribution": "© OpenStreetMap contributors (ODbL 1.0)",
+                "reviewStatus": "UNREVIEWED",
+                "observedAt": "2026-10-09T22:23:28.734135Z",
+                "expiresAt": "2026-10-10T22:23:28.733062Z"
+              }
+            ],
+            "snapshotId": "c4de8031-6816-401b-b753-46cce8d9b71d",
+            "taskId": "40000000-0000-4000-8000-000000000002",
+            "messageIndex": 3,
+            "turnDigest": "3d86de62757b9f09459f2167221a68858051bdd0e0f89aaaf76f01c2ff8b3019",
+            "cacheVersion": 1,
+            "origin": "CACHE",
+            "freshness": "FRESH",
+            "licenseUrl": "https://opendatacommons.org/licenses/odbl/1-0/"
+          },
+          "role": "assistant",
+          "text": "可以先看看 Frankie & Benny's、Nando's、Glenhouse。已复用已保存资料，找到 15 家餐厅，并标在地图上。范围是当前城市中心周边 6 公里；按离市中心的距离整理，尚未核验评分和当前营业状态。"
+        }
+      ],
+      "createdAt": "2026-10-10T06:24:43.698505+08:00",
+      "updatedAt": "2026-10-10T06:24:45.167161+08:00"
+    },
+    "principalType": "PERSON",
+    "principalId": "40000000-0000-4000-8000-000000000001",
+    "workspace": "PERSONAL",
+    "permissions": [
+      "city_context.read",
+      "relationship_context.read"
+    ],
+    "activities": [],
+    "people": [],
+    "groups": [],
+    "organizations": [],
+    "places": [],
+    "followUps": [],
+    "requestId": "1e57e2b385626e56a3c5b9696afa0145",
+    "conversationId": "40000000-0000-4000-8000-000000000002",
+    "resultSet": {
+      "schema": "typed-agent-results-v1",
+      "id": "40000000-0000-4000-8000-000000000002:1791584685167161000",
+      "taskId": "40000000-0000-4000-8000-000000000002",
+      "query": "有没有好的餐厅",
+      "cityId": "aberdeen-gb",
+      "entities": [],
+      "items": [],
+      "filters": {
+        "category": "restaurant",
+        "currentQuery": "有没有好的餐厅",
+        "locationPreference": "city",
+        "searchTerm": "",
+        "targetIntent": "FIND_PLACE",
+        "timePreference": ""
+      },
+      "generatedAt": "2026-10-10T06:24:45.167161+08:00",
+      "status": "empty",
+      "sources": []
+    },
+    "actions": [],
+    "mapEffects": {
+      "camera": "preserve",
+      "pinEntityIds": []
+    },
+    "messageResults": []
+  }
+}

@@ -1,5 +1,9 @@
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart' show ScrollDirection;
+import 'package:flutter/rendering.dart'
+    show RenderAbstractViewport, ScrollDirection;
 
 import '../city/public_city_controller.dart';
 import 'agent_conversation.dart';
@@ -11,8 +15,15 @@ import 'entity_action_contract.dart';
 import 'entity_action_dispatcher.dart';
 import 'sponsored_opportunities.dart';
 import 'agent_result_projection.dart';
+import 'external_place_candidates.dart';
 import 'agent_entity_result_card.dart';
+import 'agent_activity_join_entry.dart';
 import 'agent_answer_sources.dart';
+import 'map_layers_api.dart';
+import 'place_fact_presentation.dart';
+import 'place_answer_card.dart';
+import 'now_ui_tokens.dart';
+import 'natural_content_height.dart';
 
 String _activityStatusLabel(String status) => switch (status) {
   'upcoming' => '即将开始',
@@ -47,7 +58,28 @@ String _typedResultCount(AgentResult result) {
       .join(' · ');
 }
 
+bool _queryUnfinished(AgentWorkspaceController workspace) {
+  final task = workspace.task;
+  final resultTaskID = workspace.result?.taskID;
+  return workspace.queryState == AgentQueryState.empty &&
+      task?.status == 'ACTIVE' &&
+      task!.messages.isNotEmpty &&
+      task.messages.last.role == 'user' &&
+      (resultTaskID == null || resultTaskID == task.id);
+}
+
 String _queryCaption(AgentWorkspaceController workspace) {
+  final search = workspace.result?.onlinePlaceSearch;
+  if (workspace.state != AgentViewState.searching &&
+      workspace.requestError == null &&
+      search != null) {
+    if (!search.current) return '联网结果已失效 · 请重新搜索';
+    if (search.status == 'UNAVAILABLE') return '联网查询暂不可用 · 可重试';
+    if (search.status == 'EMPTY') return '本次联网查询暂无结果';
+    if (search.places.isNotEmpty) {
+      return '${search.places.length} 家联网餐厅 · ${search.stale ? '资料需更新' : '信息待核实'}';
+    }
+  }
   switch (workspace.queryState) {
     case AgentQueryState.loading:
       return '正在查找符合条件的内容…';
@@ -58,13 +90,16 @@ String _queryCaption(AgentWorkspaceController workspace) {
     case AgentQueryState.idle:
       return '尚未搜索';
     case AgentQueryState.empty:
-      return '未找到符合条件的公开内容';
+      return _queryUnfinished(workspace) ? '查询尚未完成 · 暂无结果' : '未找到符合条件的公开内容';
     case AgentQueryState.unsupported:
       return '当前请求暂不可处理';
     case AgentQueryState.success:
       break;
   }
   final result = workspace.result!;
+  if (result.hasSourcedAnswer && result.entities.isEmpty) {
+    return '已找到回答 · 可查看来源';
+  }
   if (workspace.task?.intent == 'PERSONAL_RELATIONSHIP_CONTEXT') {
     return '本人授权 · 最近 30 天的互动记录';
   }
@@ -89,7 +124,12 @@ class AgentResultsSheet extends StatelessWidget {
     this.onOpenPlace,
     this.onOpenOnlineIntent,
     this.onOpenEntity,
+    this.onReviewAgentJoin,
     this.onOpenReplyEntity,
+    this.onFocusReplyPlace,
+    this.onNavigateReplyPlace,
+    this.onShareReplyEntity,
+    this.onSaveReplyEntity,
     this.onShareEntity,
     this.onSaveEntity,
     this.onActivityImpression,
@@ -101,6 +141,11 @@ class AgentResultsSheet extends StatelessWidget {
     this.availableHeight,
     this.publicEvidenceCurrent,
     this.publicEvidenceChanges,
+    this.attachmentBuilder,
+    this.embedded = false,
+    this.onOpenMapAreaItem,
+    this.selectionPreview,
+    this.onContentHeightChanged,
   });
   final AgentWorkspaceController workspace;
   final SavedController? saved;
@@ -110,7 +155,12 @@ class AgentResultsSheet extends StatelessWidget {
   final ValueChanged<String>? onOpenPlace;
   final ValueChanged<String>? onOpenOnlineIntent;
   final ValueChanged<AgentResultItem>? onOpenEntity;
+  final void Function(AgentResult, AgentResultItem)? onReviewAgentJoin;
   final void Function(AgentResult, AgentResultItem)? onOpenReplyEntity;
+  final void Function(AgentResult, AgentResultItem)? onFocusReplyPlace;
+  final void Function(AgentResult, AgentResultItem)? onNavigateReplyPlace;
+  final void Function(AgentResult, AgentResultItem)? onShareReplyEntity;
+  final void Function(AgentResult, AgentResultItem)? onSaveReplyEntity;
   final ValueChanged<AgentResultItem>? onShareEntity;
   final ValueChanged<AgentResultItem>? onSaveEntity;
   final ValueChanged<PublicActivity>? onActivityImpression;
@@ -122,12 +172,27 @@ class AgentResultsSheet extends StatelessWidget {
   final double? availableHeight;
   final bool Function(AgentResultItem)? publicEvidenceCurrent;
   final Listenable? publicEvidenceChanges;
+  final Widget Function(int messageIndex)? attachmentBuilder;
+
+  /// The Now layout owns height and the sole external surface in this mode.
+  final bool embedded;
+  final ValueChanged<TypedMapItem>? onOpenMapAreaItem;
+
+  /// The original selected-map-object card shares this content region.
+  final Widget? selectionPreview;
+
+  /// Actual short embedded content height, including its existing handle and
+  /// header, excluding the outer Composer. Never an estimated scroll extent.
+  final ValueChanged<double>? onContentHeightChanged;
 
   @override
   Widget build(BuildContext context) => AnimatedBuilder(
     animation: Listenable.merge([workspace, ?saved, ?plans]),
     builder: (context, _) {
-      if (workspace.task == null) return const SizedBox.shrink();
+      final tokens = NowUiTokens.reviewedOf(context);
+      if (workspace.task == null && workspace.areaOperation == null) {
+        return const SizedBox.shrink();
+      }
       final extent = workspace.sheetExtent;
       final panelName = workspace.contentMode == AgentContentMode.conversation
           ? '对话面板'
@@ -141,7 +206,9 @@ class AgentResultsSheet extends StatelessWidget {
               .clamp(250.0, 420.0)
               .clamp(0.0, available);
           final expanded = available;
-          final label = ActiveIntentSummary.fromTask(workspace.task!).label;
+          final label = workspace.task == null
+              ? '地图区域搜索'
+              : ActiveIntentSummary.fromTask(workspace.task!).label;
           final caption = _queryCaption(workspace);
           final needsScope = workspace.queryState == AgentQueryState.needsScope;
           final failed = workspace.queryState == AgentQueryState.error;
@@ -172,9 +239,7 @@ class AgentResultsSheet extends StatelessWidget {
           }
 
           const modeLabel = '查看地图';
-          final buttonStyle =
-              Theme.of(context).textTheme.labelLarge ??
-              const TextStyle(fontSize: 14);
+          final buttonStyle = tokens.action;
           const toolbarHeight = 48.0;
           const peekAction = '展开对话';
           final peekActionHeight = (textHeight(peekAction, buttonStyle) + 8)
@@ -184,40 +249,22 @@ class AgentResultsSheet extends StatelessWidget {
           final peekHeight =
               (toolbarHeight +
                       9 +
-                      textHeight(
-                        label,
-                        const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                        ),
-                        maxLines: 2,
-                      ) +
+                      textHeight(label, tokens.sheetTitle) +
                       4 +
-                      textHeight(caption, const TextStyle(fontSize: 12)) +
+                      textHeight(caption, tokens.metadata) +
                       (peekExplanation == null
                           ? 0
-                          : 8 +
-                                textHeight(
-                                  peekExplanation,
-                                  Theme.of(context).textTheme.bodyMedium ??
-                                      const TextStyle(fontSize: 14),
-                                )) +
+                          : 8 + textHeight(peekExplanation, tokens.body)) +
                       (workspace.requestError == null
                           ? 0
                           : 8 +
                                 textHeight(
                                   workspace.requestError!,
-                                  Theme.of(context).textTheme.bodyMedium ??
-                                      const TextStyle(fontSize: 14),
+                                  tokens.body,
                                 )) +
                       (recoveryMessage == null
                           ? 0
-                          : 8 +
-                                textHeight(
-                                  recoveryMessage,
-                                  Theme.of(context).textTheme.bodyMedium ??
-                                      const TextStyle(fontSize: 14),
-                                )) +
+                          : 8 + textHeight(recoveryMessage, tokens.body)) +
                       (needsScope || canRetry ? 48 : 0) +
                       (hasAnswer ? peekActionHeight : 0))
                   .clamp(104.0, double.infinity);
@@ -233,43 +280,36 @@ class AgentResultsSheet extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  label,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: Theme.of(context).colorScheme.onSurface,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  caption,
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    fontSize: 12,
-                  ),
-                ),
-                if (peekExplanation != null) ...[
-                  const SizedBox(height: 8),
-                  Text(peekExplanation),
+                ?selectionPreview,
+                if (!embedded) ...[
+                  Text(label, style: tokens.sheetTitle),
+                  const SizedBox(height: 4),
+                  Text(caption, style: tokens.metadata),
                 ],
-                if (workspace.requestError != null) ...[
+                if (!embedded && peekExplanation != null) ...[
+                  const SizedBox(height: 8),
+                  Text(peekExplanation, style: tokens.body),
+                ],
+                if (workspace.areaOperation == null &&
+                    workspace.requestError != null) ...[
                   const SizedBox(height: 8),
                   Text(
                     workspace.requestError!,
-                    style: TextStyle(
+                    style: tokens.body.copyWith(
                       color: Theme.of(context).colorScheme.error,
                     ),
                   ),
                   if (recoveryMessage != null) ...[
                     const SizedBox(height: 8),
-                    Text(recoveryMessage),
+                    Text(recoveryMessage, style: tokens.body),
                   ],
                   if (needsScope)
                     TextButton.icon(
                       key: const Key('agent-sheet-choose-city'),
+                      style: TextButton.styleFrom(
+                        minimumSize: const Size(48, 48),
+                        textStyle: tokens.action,
+                      ),
                       onPressed: onChooseCity,
                       icon: const Icon(Icons.location_city_outlined),
                       label: const Text('选择城市继续'),
@@ -277,16 +317,21 @@ class AgentResultsSheet extends StatelessWidget {
                   else if (canRetry)
                     TextButton.icon(
                       key: const Key('agent-sheet-retry'),
+                      style: TextButton.styleFrom(
+                        minimumSize: const Size(48, 48),
+                        textStyle: tokens.action,
+                      ),
                       onPressed: onRetry,
                       icon: const Icon(Icons.refresh),
                       label: const Text('重试'),
                     ),
                 ],
-                if (hasAnswer && extent == AgentSheetExtent.peek)
+                if (!embedded && hasAnswer && extent == AgentSheetExtent.peek)
                   TextButton.icon(
                     key: const Key('agent-sheet-expand-summary'),
                     style: TextButton.styleFrom(
                       minimumSize: const Size(0, 48),
+                      textStyle: tokens.action,
                       padding: const EdgeInsets.symmetric(horizontal: 8),
                     ),
                     onPressed: () =>
@@ -297,32 +342,40 @@ class AgentResultsSheet extends StatelessWidget {
               ],
             ),
           );
+          final measurement =
+              embedded &&
+                  workspace.conversation.length <= 4 &&
+                  onContentHeightChanged != null
+              ? _SheetNaturalHeights(onContentHeightChanged!)
+              : null;
           return AnimatedContainer(
             duration: MediaQuery.disableAnimationsOf(context)
                 ? Duration.zero
                 : const Duration(milliseconds: 260),
             curve: Curves.easeOutCubic,
-            height: height,
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surface,
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(26),
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Theme.of(
-                    context,
-                  ).colorScheme.shadow.withValues(alpha: 0.12),
-                  blurRadius: 18,
-                  offset: const Offset(0, -3),
-                ),
-              ],
-            ),
+            height: embedded ? null : height,
+            decoration: embedded
+                ? null
+                : BoxDecoration(
+                    color: Theme.of(context).colorScheme.surface,
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(26),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.shadow.withValues(alpha: 0.12),
+                        blurRadius: 18,
+                        offset: const Offset(0, -3),
+                      ),
+                    ],
+                  ),
             child: LayoutBuilder(
               builder: (context, animatedConstraints) {
                 // No invisible controls while a hidden/zero-space sheet animates.
                 // The composer and keyboard dismiss path remain outside the sheet.
-                if (extent == AgentSheetExtent.hidden ||
+                if ((!embedded && extent == AgentSheetExtent.hidden) ||
                     animatedConstraints.maxHeight < 48) {
                   return const SizedBox.shrink();
                 }
@@ -419,62 +472,180 @@ class AgentResultsSheet extends StatelessWidget {
                       ),
                     ),
                     Expanded(
-                      child: extent == AgentSheetExtent.peek
-                          ? SingleChildScrollView(
-                              key: const Key('agent-sheet-content'),
-                              child: header,
-                            )
-                          : NestedScrollView(
-                              key: const Key('agent-sheet-content'),
-                              headerSliverBuilder:
-                                  (context, innerBoxIsScrolled) => [
-                                    SliverToBoxAdapter(child: header),
-                                  ],
-                              body: _LatestConversation(
-                                workspace: workspace,
-                                onSuggestion: onSuggestion,
-                                onAction: onAction,
-                                onRetry: onRetry,
-                                resultBuilder: (source, current) => _ResultList(
-                                  workspace: workspace,
-                                  resultOverride: source,
-                                  publicEvidenceCurrent: current
-                                      ? publicEvidenceCurrent
-                                      : null,
-                                  publicEvidenceChanges: current
-                                      ? publicEvidenceChanges
-                                      : null,
-                                  saved: current ? saved : null,
-                                  plans: current ? plans : null,
-                                  onContact: current ? onContact : null,
-                                  onOpenActivity: current
-                                      ? onOpenActivity
-                                      : null,
-                                  onOpenPlace: current ? onOpenPlace : null,
-                                  onOpenOnlineIntent: current
-                                      ? onOpenOnlineIntent
-                                      : null,
-                                  onOpenEntity: onOpenReplyEntity != null
-                                      ? (item) =>
-                                            onOpenReplyEntity!(source, item)
-                                      : current
-                                      ? onOpenEntity
-                                      : null,
-                                  onShareEntity: current ? onShareEntity : null,
-                                  onSaveEntity: current ? onSaveEntity : null,
-                                  onActivityImpression: current
-                                      ? onActivityImpression
-                                      : null,
-                                  onAction: current ? onAction : null,
-                                  onSaveSocialIntent: current
-                                      ? onSaveSocialIntent
-                                      : null,
-                                  onSuggestion: onSuggestion,
-                                  onRetry: onRetry,
-                                  historical: !current,
-                                ),
+                      // Retain both coordinated scroll positions while the
+                      // map peeks through; a new task/principal starts fresh.
+                      child: _RetainedConversationViewport(
+                        key: ValueKey((
+                          workspace,
+                          workspace.task?.id,
+                          workspace.task?.principalType,
+                          workspace.task?.principalID,
+                          workspace.task?.actingUserID,
+                        )),
+                        peek: !embedded && extent == AgentSheetExtent.peek,
+                        header: measurement == null
+                            ? header
+                            : NaturalContentHeight(
+                                onHeight: measurement.header,
+                                child: header,
                               ),
-                            ),
+                        conversation: _LatestConversation(
+                          attachmentBuilder: attachmentBuilder,
+                          workspace: workspace,
+                          onSuggestion: onSuggestion,
+                          onAction: onAction,
+                          onRetry: onRetry,
+                          onOpenMapAreaItem: onOpenMapAreaItem,
+                          onContentHeightChanged: measurement?.conversation,
+                          answerBuilder: (source, current) {
+                            // The persisted message remains a general history
+                            // notice. Render the live observation separately.
+                            if (source.onlinePlaceSearch != null &&
+                                (current ||
+                                    source.onlinePlaceSearch!.durable)) {
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  Text(
+                                    source.onlinePlaceSearch!.current
+                                        ? source.responseMessage
+                                        : '这次联网结果已失效，请重新搜索查看最新信息。',
+                                    style: NowUiTokens.reviewedOf(context).body,
+                                  ),
+                                  _ResultList(
+                                    workspace: workspace,
+                                    resultOverride: source,
+                                    saved: saved,
+                                    plans: plans,
+                                    onContact: onContact,
+                                    onOpenActivity: onOpenActivity,
+                                    onOpenPlace: onOpenPlace,
+                                    onOpenOnlineIntent: onOpenOnlineIntent,
+                                    onOpenEntity: onOpenEntity,
+                                    onReviewAgentJoin: current
+                                        ? onReviewAgentJoin
+                                        : null,
+                                    onShareEntity: onShareEntity,
+                                    onSaveEntity: onSaveEntity,
+                                    onActivityImpression: onActivityImpression,
+                                    onAction: onAction,
+                                    onSaveSocialIntent: onSaveSocialIntent,
+                                    onSuggestion: onSuggestion,
+                                    onRetry: onRetry,
+                                    historical: !current,
+                                    publicEvidenceCurrent:
+                                        publicEvidenceCurrent,
+                                    publicEvidenceChanges:
+                                        publicEvidenceChanges,
+                                  ),
+                                ],
+                              );
+                            }
+                            if (PlaceFactPresentation.read(workspace, source) ==
+                                null) {
+                              return null;
+                            }
+                            return _LeaseBoundPlaceAnswer(
+                              key: ValueKey((
+                                'place-fact',
+                                source.resultSet?.id,
+                              )),
+                              workspace: workspace,
+                              result: source,
+                              saved: saved,
+                              onFocus: onFocusReplyPlace,
+                              onNavigate: onNavigateReplyPlace,
+                              onShare:
+                                  onShareReplyEntity ??
+                                  (current && onShareEntity != null
+                                      ? (_, item) => onShareEntity!(item)
+                                      : null),
+                              onSave:
+                                  onSaveReplyEntity ??
+                                  (current && onSaveEntity != null
+                                      ? (_, item) => onSaveEntity!(item)
+                                      : null),
+                              fallback: () => Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  Text(
+                                    source.responseMessage,
+                                    style: NowUiTokens.reviewedOf(context).body,
+                                  ),
+                                  _ResultList(
+                                    workspace: workspace,
+                                    resultOverride: source,
+                                    historical: !current,
+                                    saved: current ? saved : null,
+                                    plans: current ? plans : null,
+                                    onContact: current ? onContact : null,
+                                    onOpenActivity: current
+                                        ? onOpenActivity
+                                        : null,
+                                    onOpenPlace: current ? onOpenPlace : null,
+                                    onOpenOnlineIntent: current
+                                        ? onOpenOnlineIntent
+                                        : null,
+                                    onOpenEntity: null,
+                                    onReviewAgentJoin: current
+                                        ? onReviewAgentJoin
+                                        : null,
+                                    onShareEntity: null,
+                                    onSaveEntity: null,
+                                    onActivityImpression: current
+                                        ? onActivityImpression
+                                        : null,
+                                    onAction: current ? onAction : null,
+                                    onSaveSocialIntent: current
+                                        ? onSaveSocialIntent
+                                        : null,
+                                    onSuggestion: onSuggestion,
+                                    onRetry: onRetry,
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                          resultBuilder: (source, current) => _ResultList(
+                            workspace: workspace,
+                            resultOverride: source,
+                            publicEvidenceCurrent: current
+                                ? publicEvidenceCurrent
+                                : null,
+                            publicEvidenceChanges: current
+                                ? publicEvidenceChanges
+                                : null,
+                            saved: current ? saved : null,
+                            plans: current ? plans : null,
+                            onContact: current ? onContact : null,
+                            onOpenActivity: current ? onOpenActivity : null,
+                            onOpenPlace: current ? onOpenPlace : null,
+                            onOpenOnlineIntent: current
+                                ? onOpenOnlineIntent
+                                : null,
+                            onOpenEntity: onOpenReplyEntity != null
+                                ? (item) => onOpenReplyEntity!(source, item)
+                                : current
+                                ? onOpenEntity
+                                : null,
+                            onReviewAgentJoin: current
+                                ? onReviewAgentJoin
+                                : null,
+                            onShareEntity: current ? onShareEntity : null,
+                            onSaveEntity: current ? onSaveEntity : null,
+                            onActivityImpression: current
+                                ? onActivityImpression
+                                : null,
+                            onAction: current ? onAction : null,
+                            onSaveSocialIntent: current
+                                ? onSaveSocialIntent
+                                : null,
+                            onSuggestion: onSuggestion,
+                            onRetry: onRetry,
+                            historical: !current,
+                          ),
+                        ),
+                      ),
                     ),
                   ],
                 );
@@ -482,6 +653,72 @@ class AgentResultsSheet extends StatelessWidget {
             ),
           );
         },
+      );
+    },
+  );
+}
+
+// A peek is a visibility change, not a new conversation. Keep the hidden
+// viewport's last visible geometry so shrinking the map sheet cannot clamp its
+// coordinated header/list offsets. Offstage removes hit testing and semantics;
+// only the compact header remains interactive while the conversation is hidden.
+class _RetainedConversationViewport extends StatefulWidget {
+  const _RetainedConversationViewport({
+    super.key,
+    required this.peek,
+    required this.header,
+    required this.conversation,
+  });
+
+  final bool peek;
+  final Widget header;
+  final Widget conversation;
+
+  @override
+  State<_RetainedConversationViewport> createState() =>
+      _RetainedConversationViewportState();
+}
+
+class _RetainedConversationViewportState
+    extends State<_RetainedConversationViewport> {
+  Widget? _visibleHeader;
+  double? _visibleHeight;
+
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) {
+      if (!widget.peek || _visibleHeader == null) {
+        _visibleHeader = widget.header;
+        _visibleHeight = constraints.maxHeight;
+      }
+      final height = _visibleHeight!;
+      return Stack(
+        fit: StackFit.expand,
+        children: [
+          Offstage(
+            offstage: widget.peek,
+            child: OverflowBox(
+              alignment: Alignment.topCenter,
+              minHeight: height,
+              maxHeight: height,
+              child: SizedBox(
+                height: height,
+                child: NestedScrollView(
+                  key: const Key('agent-sheet-content'),
+                  headerSliverBuilder: (context, innerBoxIsScrolled) => [
+                    SliverToBoxAdapter(child: _visibleHeader!),
+                  ],
+                  body: widget.conversation,
+                ),
+              ),
+            ),
+          ),
+          if (widget.peek)
+            SingleChildScrollView(
+              key: const Key('agent-sheet-content'),
+              child: widget.header,
+            ),
+        ],
       );
     },
   );
@@ -497,6 +734,10 @@ class _LatestConversation extends StatefulWidget {
     required this.onRetry,
     this.onAction,
     this.resultBuilder,
+    this.answerBuilder,
+    this.onContentHeightChanged,
+    this.attachmentBuilder,
+    this.onOpenMapAreaItem,
   });
 
   final AgentWorkspaceController workspace;
@@ -504,6 +745,10 @@ class _LatestConversation extends StatefulWidget {
   final VoidCallback onRetry;
   final ValueChanged<AgentAction>? onAction;
   final Widget Function(AgentResult, bool)? resultBuilder;
+  final Widget? Function(AgentResult, bool)? answerBuilder;
+  final ValueChanged<double>? onContentHeightChanged;
+  final Widget Function(int messageIndex)? attachmentBuilder;
+  final ValueChanged<TypedMapItem>? onOpenMapAreaItem;
 
   @override
   State<_LatestConversation> createState() => _LatestConversationState();
@@ -515,6 +760,11 @@ class _LatestConversationState extends State<_LatestConversation> {
   late AgentQueryState _queryState;
   bool _followingLatest = true;
   int _scrollGeneration = 0;
+  bool _followingProgrammatically = false;
+  final _currentMessageAnchor = GlobalKey();
+  final _currentResultAnchor = GlobalKey();
+  final _currentAreaAnchor = GlobalKey();
+  String? _areaID;
 
   @override
   void initState() {
@@ -522,16 +772,42 @@ class _LatestConversationState extends State<_LatestConversation> {
     _messages = List.of(widget.workspace.conversation);
     _epoch = widget.workspace.taskEpoch;
     _queryState = widget.workspace.queryState;
+    _areaID = widget.workspace.areaOperation?.id;
+    widget.workspace.addListener(_observeRetirement);
     _followCurrentTurn();
+  }
+
+  // A controller can retire a Task and restore the same ID before the next
+  // paint. Observe that real notification rather than treating an equal final
+  // key as permission to retain the retired reading/following state.
+  void _observeRetirement() {
+    if (widget.workspace.task == null &&
+        widget.workspace.areaOperation == null) {
+      _followingLatest = true;
+      ++_scrollGeneration;
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.workspace.removeListener(_observeRetirement);
+    ++_scrollGeneration;
+    super.dispose();
   }
 
   @override
   void didUpdateWidget(_LatestConversation oldWidget) {
     super.didUpdateWidget(oldWidget);
     final workspace = widget.workspace;
+    if (!identical(oldWidget.workspace, workspace)) {
+      oldWidget.workspace.removeListener(_observeRetirement);
+      workspace.addListener(_observeRetirement);
+      ++_scrollGeneration;
+    }
     final current = workspace.conversation;
     final changed = !_sameMessages(_messages, current);
     final recoveryChanged =
+        workspace.areaOperation == null &&
         _epoch == workspace.taskEpoch &&
         _queryState != workspace.queryState &&
         _prefersRecovery(workspace.queryState);
@@ -541,12 +817,18 @@ class _LatestConversationState extends State<_LatestConversation> {
         changed &&
         current.isNotEmpty &&
         current.last.role == 'user';
-    if (!identical(oldWidget.workspace, workspace) || newSubmission) {
+    final newAreaCommand =
+        workspace.areaOperation?.id != _areaID &&
+        workspace.areaOperation?.status == AgentAreaStatus.loading;
+    if (!identical(oldWidget.workspace, workspace) ||
+        newSubmission ||
+        newAreaCommand) {
       _followingLatest = true;
     }
     _messages = List.of(current);
     _epoch = workspace.taskEpoch;
     _queryState = workspace.queryState;
+    _areaID = workspace.areaOperation?.id;
     if (_followingLatest || recoveryChanged) _followCurrentTurn();
   }
 
@@ -568,7 +850,10 @@ class _LatestConversationState extends State<_LatestConversation> {
     final epoch = workspace.taskEpoch;
     final task = workspace.task;
     final queryState = workspace.queryState;
-    final recovery = _prefersRecovery(queryState);
+    // A map command owns the current area anchor while its retained Task may
+    // still have an error. Only the current Task view restores that header.
+    final recovery =
+        workspace.areaOperation == null && _prefersRecovery(queryState);
     final messages = List<AgentMessage>.of(workspace.conversation);
     final generation = ++_scrollGeneration;
 
@@ -595,50 +880,268 @@ class _LatestConversationState extends State<_LatestConversation> {
           return;
         }
         final position = controller.position;
-        if (!position.hasContentDimensions ||
-            (!recovery &&
-                (position.maxScrollExtent - position.pixels).abs() < 0.5)) {
+        if (!position.hasContentDimensions) {
           return;
         }
         // A failed/unmet current turn must first expose the existing unique
         // recovery header. It must not appear successful via old conversation.
         // Inner offset zero still means a collapsed nested header. Recovery
         // therefore uses the existing outer controller to restore that header.
-        controller.jumpTo(
-          recovery ? position.minScrollExtent : position.maxScrollExtent,
-        );
-        // A lazy list may refine its last extent after the first layout.
-        // Bound correction to the next frame and the same live turn.
+        var target = recovery
+            ? position.minScrollExtent
+            : position.maxScrollExtent;
+        if (!recovery) {
+          final anchor =
+              (workspace.areaOperation == null
+                      ? _currentMessageAnchor
+                      : _currentAreaAnchor)
+                  .currentContext
+                  ?.findRenderObject();
+          // On restoring a lazy list with many cards, the message itself may
+          // not yet be laid out. Its result block provides the nearby position
+          // for the next bounded frame; no text/entity lookup is needed.
+          final resultAnchor = workspace.state == AgentViewState.searching
+              ? null
+              : _currentResultAnchor.currentContext?.findRenderObject();
+          final render = anchor ?? resultAnchor;
+          if (render != null && render.attached) {
+            target = RenderAbstractViewport.of(
+              render,
+            ).getOffsetToReveal(render, 0).offset;
+            if (anchor == null) target -= 24;
+          }
+          target = target
+              .clamp(position.minScrollExtent, position.maxScrollExtent)
+              .toDouble();
+        }
+        if ((target - position.pixels).abs() >= 0.5) {
+          _followingProgrammatically = true;
+          try {
+            controller.jumpTo(target);
+          } finally {
+            _followingProgrammatically = false;
+          }
+        }
+        // Locate the current explanation before its cards. Correction is
+        // bounded and every frame still checks the original live-turn fence.
         if (remaining > 0) scrollAfterLayout(remaining - 1);
       });
     }
 
-    scrollAfterLayout(recovery ? 0 : 1);
+    scrollAfterLayout(recovery ? 0 : 3);
   }
 
   @override
   Widget build(BuildContext context) =>
       NotificationListener<ScrollNotification>(
         onNotification: (notification) {
-          if ((notification is ScrollStartNotification &&
-                  notification.dragDetails != null) ||
-              (notification is UserScrollNotification &&
-                  notification.direction != ScrollDirection.idle)) {
+          // Reading is a user choice, including a vertical material list
+          // nested inside a message. A later idle/end notification or a lazy
+          // extent estimate is not permission to resume automatic following.
+          // Only the existing new-submission/retirement paths resume it.
+          if (!_followingProgrammatically &&
+              notification.metrics.axis == Axis.vertical &&
+              ((notification is ScrollStartNotification &&
+                      notification.dragDetails != null) ||
+                  (notification is UserScrollNotification &&
+                      notification.direction != ScrollDirection.idle) ||
+                  notification is ScrollUpdateNotification)) {
             _followingLatest = false;
             ++_scrollGeneration;
-          } else if (notification is ScrollEndNotification) {
-            _followingLatest = notification.metrics.extentAfter < 1;
           }
           return false;
         },
-        child: AgentConversation(
-          workspace: widget.workspace,
-          onSuggestion: widget.onSuggestion,
-          onAction: widget.onAction,
-          onRetry: widget.onRetry,
-          resultBuilder: widget.resultBuilder,
+        child: NotificationListener<ScrollMetricsNotification>(
+          onNotification: (notification) {
+            if (notification.depth == 0 &&
+                _followingLatest &&
+                !_followingProgrammatically) {
+              _followCurrentTurn();
+            }
+            return false;
+          },
+          child: AgentConversation(
+            workspace: widget.workspace,
+            onSuggestion: widget.onSuggestion,
+            onAction: widget.onAction,
+            onRetry: widget.onRetry,
+            resultBuilder: widget.resultBuilder == null
+                ? null
+                : (result, current) => KeyedSubtree(
+                    key: current ? _currentResultAnchor : null,
+                    child: widget.resultBuilder!(result, current),
+                  ),
+            answerBuilder: widget.answerBuilder,
+            onContentHeightChanged: widget.onContentHeightChanged,
+            currentMessageAnchor: _currentMessageAnchor,
+            currentAreaAnchor: _currentAreaAnchor,
+            onOpenMapAreaItem: widget.onOpenMapAreaItem,
+            attachmentBuilder: widget.attachmentBuilder,
+          ),
         ),
       );
+}
+
+class _SheetNaturalHeights {
+  _SheetNaturalHeights(this.onChanged);
+  final ValueChanged<double> onChanged;
+  double? _header, _conversation;
+  void header(double value) {
+    _header = value;
+    _report();
+  }
+
+  void conversation(double value) {
+    _conversation = value;
+    _report();
+  }
+
+  void _report() {
+    if (_header != null && _conversation != null) {
+      onChanged(48 + _header! + _conversation!);
+    }
+  }
+}
+
+class _LeaseBoundPlaceAnswer extends StatefulWidget {
+  const _LeaseBoundPlaceAnswer({
+    super.key,
+    required this.workspace,
+    required this.result,
+    required this.fallback,
+    this.saved,
+    this.onFocus,
+    this.onNavigate,
+    this.onShare,
+    this.onSave,
+  });
+  final AgentWorkspaceController workspace;
+  final AgentResult result;
+  final SavedController? saved;
+  final Widget Function() fallback;
+  final void Function(AgentResult, AgentResultItem)? onFocus,
+      onNavigate,
+      onShare,
+      onSave;
+
+  @override
+  State<_LeaseBoundPlaceAnswer> createState() => _LeaseBoundPlaceAnswerState();
+}
+
+class _LeaseBoundPlaceAnswerState extends State<_LeaseBoundPlaceAnswer> {
+  Timer? _expiry;
+
+  AgentPlaceSourceBinding? Function() _sourceResolver(
+    PlaceFactPresentation original,
+  ) {
+    final workspace = widget.workspace;
+    final taskID = workspace.task?.id;
+    final epoch = workspace.taskIdentityEpoch;
+    final indices = workspace.replies
+        .where((reply) => identical(reply.result, original.result))
+        .map((reply) => reply.messageIndex)
+        .toList();
+    final index = indices.length == 1 ? indices.single : null;
+    AgentPlaceSourceBinding? resolve() {
+      if (taskID == null ||
+          index == null ||
+          workspace.task?.id != taskID ||
+          workspace.taskIdentityEpoch != epoch)
+        return null;
+      final replies = workspace.replies
+          .where((reply) => reply.messageIndex == index)
+          .toList();
+      if (replies.length != 1) return null;
+      final result = replies.single.result;
+      final fresh = PlaceFactPresentation.read(workspace, result);
+      if (fresh == null || fresh.entityID != original.entityID) return null;
+      final place = fresh.place;
+      return AgentPlaceSourceBinding(
+        taskID: taskID,
+        messageIndex: index,
+        entityID: fresh.entityID,
+        contentIdentity: jsonEncode([
+          place.id,
+          place.name,
+          place.addressLabel,
+          place.location.latitude,
+          place.location.longitude,
+          place.source.label,
+          place.source.reference,
+          place.source.maintainer,
+          place.source.freshness,
+          place.source.updatedAt?.toIso8601String(),
+        ]),
+        sources: fresh.sources,
+        placeSource: place.source,
+        current: () =>
+            workspace.task?.id == taskID &&
+            workspace.taskIdentityEpoch == epoch &&
+            PlaceFactPresentation.read(workspace, result) != null,
+      );
+    }
+
+    return resolve;
+  }
+
+  void _schedule() {
+    _expiry?.cancel();
+    final remaining = widget.workspace
+        .messageSourcesForReply(widget.result)
+        ?.remaining;
+    if (remaining != null && remaining > Duration.zero) {
+      _expiry = Timer(remaining, () {
+        if (mounted) setState(() {});
+      });
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _schedule();
+  }
+
+  @override
+  void didUpdateWidget(_LeaseBoundPlaceAnswer oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.result, widget.result)) _schedule();
+  }
+
+  @override
+  void dispose() {
+    _expiry?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final presentation = PlaceFactPresentation.read(
+      widget.workspace,
+      widget.result,
+    );
+    if (presentation == null) return widget.fallback();
+    bool current() =>
+        PlaceFactPresentation.read(widget.workspace, widget.result) != null;
+    void act(void Function(AgentResult, AgentResultItem)? callback) {
+      if (current()) callback?.call(widget.result, presentation.item);
+    }
+
+    return PlaceAnswerCard(
+      presentation: presentation,
+      current: current,
+      changes: widget.workspace,
+      resolveSources: _sourceResolver(presentation),
+      onFocus: widget.onFocus == null ? null : () => act(widget.onFocus),
+      onNavigate: widget.onNavigate == null
+          ? null
+          : () => act(widget.onNavigate),
+      onShare: widget.onShare == null ? null : () => act(widget.onShare),
+      onSave: widget.onSave == null ? null : () => act(widget.onSave),
+      saved: widget.saved?.contains('place', presentation.place.id) ?? false,
+      saving: widget.saved?.isBusy('place', presentation.place.id) ?? false,
+    );
+  }
 }
 
 class _ResultList extends StatelessWidget {
@@ -655,6 +1158,7 @@ class _ResultList extends StatelessWidget {
     required this.onOpenPlace,
     required this.onOpenOnlineIntent,
     required this.onOpenEntity,
+    this.onReviewAgentJoin,
     required this.onShareEntity,
     required this.onSaveEntity,
     required this.onActivityImpression,
@@ -673,6 +1177,7 @@ class _ResultList extends StatelessWidget {
   final ValueChanged<String>? onOpenPlace;
   final ValueChanged<String>? onOpenOnlineIntent;
   final ValueChanged<AgentResultItem>? onOpenEntity;
+  final void Function(AgentResult, AgentResultItem)? onReviewAgentJoin;
   final ValueChanged<AgentResultItem>? onShareEntity;
   final ValueChanged<AgentResultItem>? onSaveEntity;
   final ValueChanged<PublicActivity>? onActivityImpression;
@@ -694,6 +1199,19 @@ class _ResultList extends StatelessWidget {
       for (final activity in result.activities) {
         if (activity.id == item.entity.id) return activity.source;
       }
+    }
+    return null;
+  }
+
+  PublicActivity? _activityFor(AgentResult result, AgentResultItem item) {
+    final id = item.entity.type == 'opportunity'
+        ? item.detail?.id
+        : item.entity.type == 'activity'
+        ? item.entity.id
+        : null;
+    if (id == null) return null;
+    for (final activity in result.activities) {
+      if (activity.id == id) return activity;
     }
     return null;
   }
@@ -772,6 +1290,7 @@ class _ResultList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = NowUiTokens.reviewedOf(context);
     final result = resultOverride ?? workspace.result;
     if (resultOverride == null && workspace.requestError != null) {
       return const SizedBox.shrink();
@@ -780,15 +1299,7 @@ class _ResultList extends StatelessWidget {
       if (workspace.state == AgentViewState.searching) {
         return const Center(child: CircularProgressIndicator());
       }
-      return SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [const Text('暂无可显示的结果。'), const SizedBox(height: 8)],
-          ),
-        ),
-      );
+      return const SizedBox.shrink();
     }
     if (result.isUnsupported) return const SizedBox.shrink();
     final messageSources = workspace.messageSourcesForReply(result);
@@ -797,6 +1308,7 @@ class _ResultList extends StatelessWidget {
           ? const SizedBox.shrink()
           : AgentAnswerSourcesPanel.persisted(
               sources: messageSources,
+              changes: workspace,
               replyCurrent: () =>
                   workspace.retainsMessageSources(result, messageSources),
             );
@@ -807,12 +1319,14 @@ class _ResultList extends StatelessWidget {
         if (messageSources != null)
           AgentAnswerSourcesPanel.persisted(
             sources: messageSources,
+            changes: workspace,
             replyCurrent: () =>
                 workspace.retainsMessageSources(result, messageSources),
           )
         else if (result.resultSet?.answerSources case final answer?)
           AgentAnswerSourcesPanel(
             answer: answer,
+            changes: workspace,
             replyCurrent: () => workspace.retainsAnswerSources(result),
           ),
         for (final item in result.onlineIntents)
@@ -822,8 +1336,8 @@ class _ResultList extends StatelessWidget {
               key: Key('online-intent-${item.id}'),
               minTileHeight: 48,
               leading: const Icon(Icons.language),
-              title: Text(item.title),
-              subtitle: const Text('公开线上意图 · 查看原始详情'),
+              title: Text(item.title, style: tokens.placeTitle),
+              subtitle: Text('公开线上意图 · 查看原始详情', style: tokens.listSubtitle),
               onTap: onOpenOnlineIntent == null
                   ? null
                   : () => onOpenOnlineIntent!(item.id),
@@ -837,6 +1351,10 @@ class _ResultList extends StatelessWidget {
           Align(
             alignment: Alignment.centerLeft,
             child: TextButton.icon(
+              style: TextButton.styleFrom(
+                minimumSize: const Size(48, 48),
+                textStyle: tokens.action,
+              ),
               onPressed: () => onSaveSocialIntent!(workspace.task!),
               icon: const Icon(Icons.edit_note),
               label: const Text('保存为社交意图草稿'),
@@ -850,6 +1368,7 @@ class _ResultList extends StatelessWidget {
             children: [
               for (final action in result.actions)
                 ActionChip(
+                  labelStyle: tokens.action,
                   label: Text(action.label),
                   onPressed: () => onAction!(action),
                 ),
@@ -864,6 +1383,10 @@ class _ResultList extends StatelessWidget {
           Align(
             alignment: Alignment.centerLeft,
             child: TextButton.icon(
+              style: TextButton.styleFrom(
+                minimumSize: const Size(48, 48),
+                textStyle: tokens.action,
+              ),
               onPressed: () => onAction!(
                 const AgentAction(
                   type: 'OPEN_OPPORTUNITIES',
@@ -882,23 +1405,62 @@ class _ResultList extends StatelessWidget {
             children: [
               for (final followUp in result.followUps)
                 ActionChip(
+                  labelStyle: tokens.action,
                   label: Text(followUp),
                   onPressed: () => onSuggestion(followUp),
                 ),
             ],
           ),
         ],
-        if (!result.replyProjectionCurrent)
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 12),
-            child: Text('这条回答的结果已失效，请从最近对话重新打开。'),
+        if (!result.replyProjectionCurrent &&
+            !workspace.canUseExternalPlaces(result))
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            child: Text('这条回答的结果已失效，请从最近对话重新打开。', style: tokens.body),
+          ),
+        if (result.onlinePlaceSearch case final search?)
+          ExternalPlaceCandidatesPanel(
+            search: search,
+            current: () => workspace.canUseExternalPlaces(result),
+            changes: workspace,
+            onRefresh:
+                !historical && workspace.state != AgentViewState.searching
+                ? () => onSuggestion('更新餐厅信息')
+                : null,
+            onMap: (place) {
+              FocusManager.instance.primaryFocus?.unfocus();
+              workspace.showExternalPlaceOnMap(result, place);
+            },
+          ),
+        if (workspace.publicHistoryNotice case final notice?)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Text(notice, style: tokens.body),
           ),
         if (result.projectionItems != null)
           for (final item in result.projectionItems!)
             AgentEntityResultCard(
+              key: ObjectKey(item),
               item: item,
+              activity: _activityFor(result, item),
+              authorizationHeader: saved?.authorizationHeader,
+              mediaBaseUrl: saved?.followApiBaseUrl ?? '',
+              mediaClient: saved?.followClient,
+              mediaIdentityChanges: Listenable.merge([
+                workspace,
+                if (saved != null) saved!,
+              ]),
+              mediaCurrent: () =>
+                  workspace.canUseReplyProjection(result) &&
+                  saved?.authorizationHeader() != null,
+              onReviewAgentJoin:
+                  onReviewAgentJoin != null &&
+                      canReviewAgentActivityJoin(workspace, result, item)
+                  ? () => onReviewAgentJoin!(result, item)
+                  : null,
               source: _sourceFor(result, item),
               sourceCurrent: () => workspace.canUseReplyProjection(result),
+              sourceChanges: workspace,
               onMap: () {
                 FocusManager.instance.primaryFocus?.unfocus();
                 workspace.showReplyOnMap(result, item.entity.mapID);
@@ -973,12 +1535,8 @@ class _ResultList extends StatelessWidget {
                       onOpenEntity != null
                   ? () => onOpenEntity!(item)
                   : null,
-              onNavigate:
-                  item.actions != null &&
-                      const {'place', 'activity'}.contains(item.entity.type) &&
-                      onOpenEntity != null
-                  ? () => onOpenEntity!(item)
-                  : null,
+              // The current domain callback opens details. It must not be
+              // presented as a separate navigation or route action.
             ),
         if (result.projectionItems == null && result.activities.isNotEmpty) ...[
           const _Heading('活动'),
@@ -1107,24 +1665,6 @@ class _ResultList extends StatelessWidget {
             }
           },
         ),
-        if (workspace.task?.intent != 'PERSONAL_RELATIONSHIP_CONTEXT' &&
-            workspace.task?.intent != 'FIND_NEW_PEOPLE' &&
-            result.onlineIntents.isEmpty &&
-            result.entities.isEmpty &&
-            result.activities.isEmpty &&
-            result.people.isEmpty &&
-            result.groups.isEmpty &&
-            result.organizations.isEmpty &&
-            result.places.isEmpty)
-          Padding(
-            padding: EdgeInsets.only(top: 24),
-            child: Text(
-              '当前没有可展示的结果。',
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ),
       ],
     );
   }
@@ -1136,14 +1676,7 @@ class _Heading extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.fromLTRB(0, 23, 0, 5),
-    child: Text(
-      label,
-      style: TextStyle(
-        fontSize: 14,
-        fontWeight: FontWeight.w700,
-        color: Theme.of(context).colorScheme.onSurface,
-      ),
-    ),
+    child: Text(label, style: NowUiTokens.reviewedOf(context).sheetTitle),
   );
 }
 
@@ -1197,7 +1730,7 @@ class _Row extends StatelessWidget {
                   child: Text(
                     title,
                     softWrap: true,
-                    style: const TextStyle(fontWeight: FontWeight.w600),
+                    style: NowUiTokens.reviewedOf(context).placeTitle,
                   ),
                 ),
                 if (onTap != null)
@@ -1209,7 +1742,11 @@ class _Row extends StatelessWidget {
             ),
             Padding(
               padding: const EdgeInsets.only(left: 34, top: 4),
-              child: Text(subtitle, softWrap: true),
+              child: Text(
+                subtitle,
+                softWrap: true,
+                style: NowUiTokens.reviewedOf(context).listSubtitle,
+              ),
             ),
             if (onSave != null || onPlan != null || onContact != null)
               Padding(

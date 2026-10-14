@@ -100,8 +100,8 @@ void main() {
         ),
       );
       await t.pumpAndSettle();
-      expect(find.text('模型请求与预算'), findsOneWidget);
-      expect(find.textContaining('尚无可用的本人任务配置'), findsOneWidget);
+      expect(find.text('AI 使用与预算'), findsOneWidget);
+      expect(find.text('暂无可检查的 AI 请求'), findsOneWidget);
       expect(find.byType(TextField), findsNothing);
       expect(writes, 0);
       await t.pumpWidget(const SizedBox());

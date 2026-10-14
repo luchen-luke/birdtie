@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 
 import 'business_api.dart';
 import 'supplier_profile_api.dart';
+import '../app/birdtie_app_bar.dart';
 
 class BusinessPublicPermissionPage extends StatefulWidget {
   const BusinessPublicPermissionPage({
@@ -208,7 +209,7 @@ class _BusinessPublicPermissionPageState
   Widget build(BuildContext context) {
     final s = _state, p = s?.preview;
     return Scaffold(
-      appBar: AppBar(title: const Text('公开商家资料')),
+      appBar: birdtieAppBar(context, title: const Text('公开商家资料')),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(24),

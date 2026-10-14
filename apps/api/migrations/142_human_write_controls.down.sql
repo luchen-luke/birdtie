@@ -1,0 +1,14 @@
+BEGIN;
+DO $$ BEGIN IF EXISTS(SELECT 1 FROM human_write_control_operations) OR EXISTS(SELECT 1 FROM person_declaration_control_epochs WHERE version>0) OR EXISTS(SELECT 1 FROM person_block_control_epochs WHERE version>0) OR EXISTS(SELECT 1 FROM organization_faqs WHERE revision>1) THEN RAISE EXCEPTION 'human control history exists; downgrade refused' USING ERRCODE='23514'; END IF; END $$;
+DROP TABLE human_write_control_operations;
+DROP FUNCTION birdtie_human_write_operation_guard();
+DROP TRIGGER person_block_epoch ON account_blocks;
+DROP FUNCTION birdtie_person_block_epoch();
+DROP TABLE person_block_control_epochs;
+DROP TRIGGER person_declaration_epoch ON person_contexts;
+DROP FUNCTION birdtie_person_declaration_epoch();
+DROP TABLE person_declaration_control_epochs;
+DROP TRIGGER faq_revision ON organization_faqs;
+DROP FUNCTION birdtie_faq_revision();
+ALTER TABLE organization_faqs DROP COLUMN revision;
+COMMIT;

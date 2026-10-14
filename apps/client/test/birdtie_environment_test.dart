@@ -65,6 +65,36 @@ void main() {
     expect(check(web: true), isNull);
   });
 
+  test('GL JS preview selects only approved public platform input', () {
+    String select(String environment, String web, String mobile) =>
+        BirdtieEnvironment.selectMapboxGlWebToken(
+          environment: environment,
+          webToken: web,
+          mobileToken: mobile,
+        );
+    expect(select('development', '', 'pk.preview-public'), 'pk.preview-public');
+    expect(
+      select('development', 'pk.web-public', 'pk.preview-public'),
+      'pk.web-public',
+    );
+    expect(
+      select('development', 'sk.invalid', 'pk.preview-public'),
+      'sk.invalid',
+    );
+    expect(select('development', '', 'sk.invalid'), isEmpty);
+    for (final environment in ['staging', 'production', '']) {
+      expect(select(environment, '', 'pk.preview-public'), isEmpty);
+      expect(
+        select(environment, 'pk.web-public', 'pk.preview-public'),
+        'pk.web-public',
+      );
+    }
+    expect(
+      check(web: true, webToken: '', mobileToken: 'pk.preview-public'),
+      isNotNull,
+    );
+  });
+
   test('staging also rejects insecure API and incomplete AMap Web setup', () {
     expect(
       check(environment: 'staging', apiBase: 'http://api.birdtie.example'),

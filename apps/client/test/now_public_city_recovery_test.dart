@@ -255,7 +255,7 @@ void main() {
     expect(reads, 2);
     await f.unmount(t);
   });
-  testWidgets('目录失败只重读目录不选城不提交，仍通过唯一顶栏明确选城', (t) async {
+  testWidgets('目录重读按Now002恢复默认探索城市不提交，仍保留唯一顶栏选城', (t) async {
     var reads = 0;
     final client = MockClient((r) async {
       if (r.url.path != '/v1/cities') return cityReply([]);
@@ -299,7 +299,7 @@ void main() {
     await nowTap(t, retry);
     expect(reads, 2);
     expect(city.cityError, isNull);
-    expect(city.selectedCity, isNull);
+    expect(city.selectedCity?.id, 'alpha', reason: 'Now002授权默认探索，不代表GPS或公开范围');
     expect(f.workspace(t).task, isNull);
     expect(f.source.queries, isEmpty);
     expect(find.text('重新读取城市'), findsNothing);
@@ -319,7 +319,7 @@ void main() {
     expect(t.takeException(), isNull);
     await f.unmount(t);
   });
-  test('真实原生目录首次读取不擅自选择第一城市', () async {
+  test('原生目录首次读取按Now002选择可恢复探索城市，不代表GPS', () async {
     final requests = <http.Request>[];
     final client = MockClient((r) async {
       requests.add(r);
@@ -340,7 +340,11 @@ void main() {
       true,
     );
     expect(city.cities.map((c) => c.id), ['alpha', 'beta']);
-    expect(city.selectedCity, isNull, reason: '公开浏览范围需本人选择，不代表GPS');
+    expect(
+      city.selectedCity?.id,
+      'alpha',
+      reason: 'Now002默认城市缺席时恢复目录选项，不代表GPS',
+    );
     city.dispose();
     client.close();
   });

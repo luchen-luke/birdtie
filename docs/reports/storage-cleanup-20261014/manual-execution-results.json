@@ -1,0 +1,3929 @@
+[
+  {
+    "RelativePath": "apps\\client\\.gradle-user-home\\caches",
+    "ExpectedBytes": 4643576864,
+    "ExpectedFiles": 31130,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "apps\\client\\.gradle-user-home\\.tmp",
+    "ExpectedBytes": 0,
+    "ExpectedFiles": 0,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "apps\\client\\.gradle-user-home\\native",
+    "ExpectedBytes": 631810,
+    "ExpectedFiles": 5,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "apps\\client\\.gradle-user-home\\wrapper",
+    "ExpectedBytes": 721155479,
+    "ExpectedFiles": 22046,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "apps\\client\\.gradle-user-home\\android",
+    "ExpectedBytes": 22,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "apps\\client\\.gradle-user-home\\repair\\caches\\9.1.0",
+    "ExpectedBytes": 3254888069,
+    "ExpectedFiles": 28314,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "apps\\client\\.gradle-user-home\\repair\\caches\\journal-1",
+    "ExpectedBytes": 373548,
+    "ExpectedFiles": 3,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "apps\\client\\.gradle-user-home\\repair\\caches\\CACHEDIR.TAG",
+    "ExpectedBytes": 181,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "apps\\client\\.gradle-user-home\\repair\\.tmp",
+    "ExpectedBytes": 0,
+    "ExpectedFiles": 0,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "apps\\client\\.gradle-user-home\\repair\\native",
+    "ExpectedBytes": 631810,
+    "ExpectedFiles": 5,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "apps\\client\\.gradle-user-home\\repair\\android",
+    "ExpectedBytes": 22,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "apps\\client\\build\\.cxx",
+    "ExpectedBytes": 166954594,
+    "ExpectedFiles": 489,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "apps\\client\\build\\40c97753c419a21ca64da04f3ba68087",
+    "ExpectedBytes": 239,
+    "ExpectedFiles": 3,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "apps\\client\\build\\app",
+    "ExpectedBytes": 4844717658,
+    "ExpectedFiles": 3216,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "apps\\client\\build\\app_links",
+    "ExpectedBytes": 210598,
+    "ExpectedFiles": 70,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "apps\\client\\build\\file_selector_android",
+    "ExpectedBytes": 704238,
+    "ExpectedFiles": 113,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "apps\\client\\build\\firebase_core",
+    "ExpectedBytes": 646184,
+    "ExpectedFiles": 106,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "apps\\client\\build\\firebase_messaging",
+    "ExpectedBytes": 887291,
+    "ExpectedFiles": 154,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "apps\\client\\build\\flutter_assets",
+    "ExpectedBytes": 2979032,
+    "ExpectedFiles": 7,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "apps\\client\\build\\flutter_plugin_android_lifecycle",
+    "ExpectedBytes": 167934,
+    "ExpectedFiles": 72,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "apps\\client\\build\\flutter_secure_storage",
+    "ExpectedBytes": 3807022,
+    "ExpectedFiles": 424,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "apps\\client\\build\\image_picker_android",
+    "ExpectedBytes": 2714739,
+    "ExpectedFiles": 382,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "apps\\client\\build\\integration_test",
+    "ExpectedBytes": 230217,
+    "ExpectedFiles": 49,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "apps\\client\\build\\jni",
+    "ExpectedBytes": 6600746,
+    "ExpectedFiles": 1284,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "apps\\client\\build\\jni_flutter",
+    "ExpectedBytes": 170696,
+    "ExpectedFiles": 66,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "apps\\client\\build\\mapbox_maps_flutter",
+    "ExpectedBytes": 43865215,
+    "ExpectedFiles": 5362,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "apps\\client\\build\\mobile_scanner",
+    "ExpectedBytes": 2700513,
+    "ExpectedFiles": 378,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "apps\\client\\build\\native_assets",
+    "ExpectedBytes": 45,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "apps\\client\\build\\share_plus",
+    "ExpectedBytes": 693197,
+    "ExpectedFiles": 140,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "apps\\client\\build\\test_cache",
+    "ExpectedBytes": 562351000,
+    "ExpectedFiles": 7,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "apps\\client\\build\\unit_test_assets",
+    "ExpectedBytes": 1823344,
+    "ExpectedFiles": 9,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "apps\\client\\build\\url_launcher_android",
+    "ExpectedBytes": 999044,
+    "ExpectedFiles": 190,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "apps\\client\\build\\video_player_android",
+    "ExpectedBytes": 1896783,
+    "ExpectedFiles": 299,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "apps\\client\\build\\1a13d4e19b8f0a590f2b27508804efd0.cache.dill.track.dill",
+    "ExpectedBytes": 59375568,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "apps\\client\\build\\2f40d0ef1cb890a5dc94076085fc7b9b.cache.dill.track.dill",
+    "ExpectedBytes": 53126096,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "apps\\client\\build\\5f4a54bd64d497361c1099410fae6c7c.cache.dill.track.dill",
+    "ExpectedBytes": 85693336,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "apps\\client\\build\\6b5cdd21107b1dd0811d8515c15845b7.cache.dill.track.dill",
+    "ExpectedBytes": 54407904,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "apps\\client\\build\\7fa8fa1fce132e22aec42e5f51c163f2.cache.dill.track.dill",
+    "ExpectedBytes": 85850720,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "apps\\client\\build\\98c6429abdc22f8ac7dcb677c93ebab2.cache.dill.track.dill",
+    "ExpectedBytes": 54407992,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "apps\\client\\build\\a0075c7340b44c723e937f321cba707c.cache.dill.track.dill",
+    "ExpectedBytes": 59356792,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "apps\\client\\build\\d2e20830baa17621c043b596f0b06e69.cache.dill.track.dill",
+    "ExpectedBytes": 59304112,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "apps\\client\\build\\e09161ed6a8240f7110db5db6f6e90b3.cache.dill.track.dill",
+    "ExpectedBytes": 42513224,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "apps\\client\\build\\e6aa4f1546bb893958e8da04e9d302b9.cache.dill.track.dill",
+    "ExpectedBytes": 85697104,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "apps\\client\\build\\ec5ec707fa77b0f9ecfa6bc005c18eb9.cache.dill.track.dill",
+    "ExpectedBytes": 85948560,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "apps\\client\\.dart_tool\\dartpad",
+    "ExpectedBytes": 1424,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "apps\\client\\.dart_tool\\extension_discovery",
+    "ExpectedBytes": 90,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "apps\\client\\.dart_tool\\flutter_build",
+    "ExpectedBytes": 5210546872,
+    "ExpectedFiles": 1363,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "apps\\client\\.dart_tool\\hooks_runner",
+    "ExpectedBytes": 96400981,
+    "ExpectedFiles": 82,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\v5-age038-resume\\business-client-frame1\\client\\.gradle-user-home\\.tmp",
+    "ExpectedBytes": 0,
+    "ExpectedFiles": 0,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\v5-age038-resume\\business-client-frame1\\client\\.gradle-user-home\\android",
+    "ExpectedBytes": 22,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\v5-age038-resume\\business-client-frame1\\client\\.gradle-user-home\\repair\\caches",
+    "ExpectedBytes": 3392923315,
+    "ExpectedFiles": 29815,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\v5-age038-resume\\business-client-frame1\\client\\.gradle-user-home\\repair\\.tmp",
+    "ExpectedBytes": 0,
+    "ExpectedFiles": 0,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\v5-age038-resume\\business-client-frame1\\client\\.gradle-user-home\\repair\\native",
+    "ExpectedBytes": 631810,
+    "ExpectedFiles": 5,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\v5-age038-resume\\business-client-frame1\\client\\.gradle-user-home\\repair\\wrapper",
+    "ExpectedBytes": 1119283027,
+    "ExpectedFiles": 33439,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\v5-age038-resume\\business-client-frame1\\client\\.gradle-user-home\\repair\\android",
+    "ExpectedBytes": 22,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\ui-repair-2026-10-07\\.gradle-user-home\\caches\\9.1.0",
+    "ExpectedBytes": 3350888129,
+    "ExpectedFiles": 30893,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\ui-repair-2026-10-07\\.gradle-user-home\\caches\\jars-9",
+    "ExpectedBytes": 256984,
+    "ExpectedFiles": 83,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\ui-repair-2026-10-07\\.gradle-user-home\\caches\\journal-1",
+    "ExpectedBytes": 384898,
+    "ExpectedFiles": 3,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\ui-repair-2026-10-07\\.gradle-user-home\\caches\\CACHEDIR.TAG",
+    "ExpectedBytes": 181,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\ui-repair-2026-10-07\\.gradle-user-home\\.tmp",
+    "ExpectedBytes": 0,
+    "ExpectedFiles": 0,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\ui-repair-2026-10-07\\.gradle-user-home\\native",
+    "ExpectedBytes": 631810,
+    "ExpectedFiles": 5,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\ui-repair-2026-10-07\\.gradle-user-home\\android",
+    "ExpectedBytes": 22,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\v5-age019-memory-profile-completion\\client-red1\\source\\apps\\client\\.gradle-user-home\\.tmp",
+    "ExpectedBytes": 0,
+    "ExpectedFiles": 0,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\v5-age019-memory-profile-completion\\client-red1\\source\\apps\\client\\.gradle-user-home\\android",
+    "ExpectedBytes": 22,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\v5-age019-memory-profile-completion\\client-red1\\source\\apps\\client\\.gradle-user-home\\repair\\caches",
+    "ExpectedBytes": 2137519819,
+    "ExpectedFiles": 25877,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\v5-age019-memory-profile-completion\\client-red1\\source\\apps\\client\\.gradle-user-home\\repair\\.tmp",
+    "ExpectedBytes": 0,
+    "ExpectedFiles": 0,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\v5-age019-memory-profile-completion\\client-red1\\source\\apps\\client\\.gradle-user-home\\repair\\native",
+    "ExpectedBytes": 631810,
+    "ExpectedFiles": 5,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\v5-age019-memory-profile-completion\\client-red1\\source\\apps\\client\\.gradle-user-home\\repair\\wrapper",
+    "ExpectedBytes": 934928359,
+    "ExpectedFiles": 16143,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\v5-age019-memory-profile-completion\\client-red1\\source\\apps\\client\\.gradle-user-home\\repair\\android",
+    "ExpectedBytes": 22,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\ui-repair-2026-10-07\\gradle-home\\caches",
+    "ExpectedBytes": 1769218238,
+    "ExpectedFiles": 2241,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\ui-repair-2026-10-07\\gradle-home\\wrapper",
+    "ExpectedBytes": 852478776,
+    "ExpectedFiles": 28606,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\unfinished-completion-2026-10-10\\phone-integration\\activity-route-binding-proposal\\client\\build",
+    "ExpectedBytes": 251295425,
+    "ExpectedFiles": 13,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "apps\\client\\android\\.gradle",
+    "ExpectedBytes": 112620275,
+    "ExpectedFiles": 18,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\performance\\offline-asr-feasibility01\\native-build01\\build",
+    "ExpectedBytes": 88918340,
+    "ExpectedFiles": 70,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\unfinished-completion-2026-10-10\\phone-integration\\close-binding-proposal\\client\\build",
+    "ExpectedBytes": 73012009,
+    "ExpectedFiles": 11,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\unfinished-completion-2026-10-10\\phone-integration\\rsvp-binding-proposal\\client\\build",
+    "ExpectedBytes": 72635905,
+    "ExpectedFiles": 11,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\unfinished-completion-2026-10-10\\phone-integration\\activity-route-binding-proposal\\client\\.dart_tool\\flutter_build",
+    "ExpectedBytes": 8659,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\unfinished-completion-2026-10-10\\phone-integration\\activity-route-binding-proposal\\client\\.dart_tool\\hooks_runner",
+    "ExpectedBytes": 10711790,
+    "ExpectedFiles": 10,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\unfinished-completion-2026-10-10\\phone-integration\\close-binding-proposal\\client\\.dart_tool\\flutter_build",
+    "ExpectedBytes": 8659,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\unfinished-completion-2026-10-10\\phone-integration\\close-binding-proposal\\client\\.dart_tool\\hooks_runner",
+    "ExpectedBytes": 10711709,
+    "ExpectedFiles": 10,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\unfinished-completion-2026-10-10\\phone-integration\\rsvp-binding-proposal\\client\\.dart_tool\\flutter_build",
+    "ExpectedBytes": 8659,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\unfinished-completion-2026-10-10\\phone-integration\\rsvp-binding-proposal\\client\\.dart_tool\\hooks_runner",
+    "ExpectedBytes": 10711700,
+    "ExpectedFiles": 10,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\performance\\__pycache__",
+    "ExpectedBytes": 140937,
+    "ExpectedFiles": 10,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "apps\\client\\android\\build",
+    "ExpectedBytes": 129910,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "automation\\__pycache__",
+    "ExpectedBytes": 111185,
+    "ExpectedFiles": 6,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\__pycache__",
+    "ExpectedBytes": 86195,
+    "ExpectedFiles": 11,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "apps\\client\\tool\\__pycache__",
+    "ExpectedBytes": 63809,
+    "ExpectedFiles": 2,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\__pycache__",
+    "ExpectedBytes": 45978,
+    "ExpectedFiles": 8,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\contact\\offline-asr01\\phone-acceptance01\\__pycache__",
+    "ExpectedBytes": 42656,
+    "ExpectedFiles": 2,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\route-audit\\__pycache__",
+    "ExpectedBytes": 42505,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation19\\__pycache__",
+    "ExpectedBytes": 41448,
+    "ExpectedFiles": 2,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\contact\\base13-phone-prep\\__pycache__",
+    "ExpectedBytes": 40063,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\phone-page-fixture-review08\\__pycache__",
+    "ExpectedBytes": 39560,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\v5-age007-hiking\\__pycache__",
+    "ExpectedBytes": 38725,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\unfinished-completion-2026-10-10\\phone-integration\\__pycache__",
+    "ExpectedBytes": 36395,
+    "ExpectedFiles": 4,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\remaining-execution-20261014\\__pycache__",
+    "ExpectedBytes": 35135,
+    "ExpectedFiles": 4,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "scripts\\__pycache__",
+    "ExpectedBytes": 27251,
+    "ExpectedFiles": 2,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\contact\\batch13-delivery-prep\\__pycache__",
+    "ExpectedBytes": 26074,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\deterministic-tool-permission-2026-10-06\\__pycache__",
+    "ExpectedBytes": 24154,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\backend-proposal\\__pycache__",
+    "ExpectedBytes": 23316,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\contact\\voice-activity01\\__pycache__",
+    "ExpectedBytes": 18880,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\v4-biz003\\__pycache__",
+    "ExpectedBytes": 18710,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\v5-air015\\proof\\__pycache__",
+    "ExpectedBytes": 17242,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\unfinished-completion-2026-10-10\\phone-matrix-worker\\__pycache__",
+    "ExpectedBytes": 17194,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\performance\\offline-asr-feasibility01\\__pycache__",
+    "ExpectedBytes": 15862,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-ui-v2-2026-10-10\\__pycache__",
+    "ExpectedBytes": 14472,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\v5-age038-resume\\__pycache__",
+    "ExpectedBytes": 13458,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\notification-schedule-native-2026-10-07\\__pycache__",
+    "ExpectedBytes": 13030,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\performance\\offline-model-candidate13-download01\\__pycache__",
+    "ExpectedBytes": 11905,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\__pycache__",
+    "ExpectedBytes": 9594,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\flutter-analysis-current-quality-2026-10-07\\__pycache__",
+    "ExpectedBytes": 7795,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\performance\\glass-candidate10-01\\__pycache__",
+    "ExpectedBytes": 7557,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\ui-repair-2026-10-07\\tokenhub-model-fix\\__pycache__",
+    "ExpectedBytes": 4996,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-ui-repair-2026-10-06\\__pycache__",
+    "ExpectedBytes": 4908,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-anonymous-followup-repair-2026-10-07\\__pycache__",
+    "ExpectedBytes": 4185,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\audit\\qr-request-native05-01\\__pycache__",
+    "ExpectedBytes": 4105,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\v4-cht003-resume\\__pycache__",
+    "ExpectedBytes": 3802,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\v5-age038-resume\\business-client-frame2\\client\\android\\.kotlin",
+    "ExpectedBytes": 130,
+    "ExpectedFiles": 2,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\v5-age038-resume\\business-client-frame1\\client\\android\\.kotlin",
+    "ExpectedBytes": 130,
+    "ExpectedFiles": 2,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\v5-age019-memory-profile-completion\\client-red1\\source\\apps\\client\\android\\.kotlin",
+    "ExpectedBytes": 130,
+    "ExpectedFiles": 2,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "apps\\client\\android\\.kotlin",
+    "ExpectedBytes": 130,
+    "ExpectedFiles": 2,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\unfinished-completion-2026-10-10\\api-build-01\\birdtie-api-unfinished-completion.exe",
+    "ExpectedBytes": 28910592,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\remaining-execution-20261014\\apk-build-org-bc3\\birdtie-batch-b.apk",
+    "ExpectedBytes": 320093450,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\remaining-execution-20261014\\apk-build-org-bc3\\previous-generated.apk",
+    "ExpectedBytes": 319634698,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\remaining-execution-20261014\\apk-build-copy-bc4\\previous-generated.apk",
+    "ExpectedBytes": 320093450,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\remaining-execution-20261014\\apk-build-bc2\\birdtie-batch-b.apk",
+    "ExpectedBytes": 319634698,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\remaining-execution-20261014\\apk-build-bc2\\previous-generated.apk",
+    "ExpectedBytes": 319159562,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\remaining-execution-20261014\\apk-build-bc01\\birdtie-batch-b.apk",
+    "ExpectedBytes": 319159562,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\remaining-execution-20261014\\apk-build-bc01\\previous-generated.apk",
+    "ExpectedBytes": 318864650,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\remaining-execution-20261014\\apk-build-a01\\birdtie-batch-a.apk",
+    "ExpectedBytes": 318864650,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\remaining-execution-20261014\\apk-build-a01\\previous-generated.apk",
+    "ExpectedBytes": 318700810,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\remaining-execution-20261014\\api-build-place-b02\\artifact\\activity-reminders.exe",
+    "ExpectedBytes": 15009792,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\remaining-execution-20261014\\api-build-place-b02\\artifact\\agent-candidate-cleanup.exe",
+    "ExpectedBytes": 13702656,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\remaining-execution-20261014\\api-build-place-b02\\artifact\\agent-enrichment-worker.exe",
+    "ExpectedBytes": 15424000,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\remaining-execution-20261014\\api-build-place-b02\\artifact\\agent-outbox-control.exe",
+    "ExpectedBytes": 15552512,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\remaining-execution-20261014\\api-build-place-b02\\artifact\\api.exe",
+    "ExpectedBytes": 32014336,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\remaining-execution-20261014\\api-build-place-b02\\artifact\\city-editor-access.exe",
+    "ExpectedBytes": 13756416,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\remaining-execution-20261014\\api-build-place-b02\\artifact\\media-retention.exe",
+    "ExpectedBytes": 15037952,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\remaining-execution-20261014\\api-build-place-b02\\artifact\\notification-schedules.exe",
+    "ExpectedBytes": 15228416,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\remaining-execution-20261014\\api-build-place-b02\\artifact\\now-live-prepare.exe",
+    "ExpectedBytes": 15249920,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\remaining-execution-20261014\\api-build-place-b02\\artifact\\now-live-verify.exe",
+    "ExpectedBytes": 17333248,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\remaining-execution-20261014\\api-build-place-b02\\artifact\\system-push-worker.exe",
+    "ExpectedBytes": 16448000,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\remaining-execution-20261014\\api-build-place-b02\\artifact\\video-media-worker.exe",
+    "ExpectedBytes": 16426496,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\remaining-execution-20261014\\api-build-org-b03\\artifact\\activity-reminders.exe",
+    "ExpectedBytes": 15009792,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\remaining-execution-20261014\\api-build-org-b03\\artifact\\agent-candidate-cleanup.exe",
+    "ExpectedBytes": 13702656,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\remaining-execution-20261014\\api-build-org-b03\\artifact\\agent-enrichment-worker.exe",
+    "ExpectedBytes": 15425024,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\remaining-execution-20261014\\api-build-org-b03\\artifact\\agent-outbox-control.exe",
+    "ExpectedBytes": 15553024,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\remaining-execution-20261014\\api-build-org-b03\\artifact\\api.exe",
+    "ExpectedBytes": 32156160,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\remaining-execution-20261014\\api-build-org-b03\\artifact\\city-editor-access.exe",
+    "ExpectedBytes": 13756416,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\remaining-execution-20261014\\api-build-org-b03\\artifact\\media-retention.exe",
+    "ExpectedBytes": 15037952,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\remaining-execution-20261014\\api-build-org-b03\\artifact\\notification-schedules.exe",
+    "ExpectedBytes": 15228928,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\remaining-execution-20261014\\api-build-org-b03\\artifact\\now-live-prepare.exe",
+    "ExpectedBytes": 15251456,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\remaining-execution-20261014\\api-build-org-b03\\artifact\\now-live-verify.exe",
+    "ExpectedBytes": 17334272,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\remaining-execution-20261014\\api-build-org-b03\\artifact\\system-push-worker.exe",
+    "ExpectedBytes": 16450560,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\remaining-execution-20261014\\api-build-org-b03\\artifact\\video-media-worker.exe",
+    "ExpectedBytes": 16435712,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\remaining-execution-20261014\\api-build-human-controls-b05\\artifact\\activity-reminders.exe",
+    "ExpectedBytes": 15010816,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\remaining-execution-20261014\\api-build-human-controls-b05\\artifact\\agent-candidate-cleanup.exe",
+    "ExpectedBytes": 13702656,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\remaining-execution-20261014\\api-build-human-controls-b05\\artifact\\agent-enrichment-worker.exe",
+    "ExpectedBytes": 15428096,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\remaining-execution-20261014\\api-build-human-controls-b05\\artifact\\agent-outbox-control.exe",
+    "ExpectedBytes": 15556096,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\remaining-execution-20261014\\api-build-human-controls-b05\\artifact\\api.exe",
+    "ExpectedBytes": 32859648,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\remaining-execution-20261014\\api-build-human-controls-b05\\artifact\\city-editor-access.exe",
+    "ExpectedBytes": 13756416,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\remaining-execution-20261014\\api-build-human-controls-b05\\artifact\\media-retention.exe",
+    "ExpectedBytes": 15037440,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\remaining-execution-20261014\\api-build-human-controls-b05\\artifact\\notification-schedules.exe",
+    "ExpectedBytes": 15230464,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\remaining-execution-20261014\\api-build-human-controls-b05\\artifact\\now-live-prepare.exe",
+    "ExpectedBytes": 15251968,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\remaining-execution-20261014\\api-build-human-controls-b05\\artifact\\now-live-verify.exe",
+    "ExpectedBytes": 17336832,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\remaining-execution-20261014\\api-build-human-controls-b05\\artifact\\system-push-worker.exe",
+    "ExpectedBytes": 16453120,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\remaining-execution-20261014\\api-build-human-controls-b05\\artifact\\video-media-worker.exe",
+    "ExpectedBytes": 16438272,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\remaining-execution-20261014\\api-build-cover-frame-b04\\artifact\\activity-reminders.exe",
+    "ExpectedBytes": 15009792,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\remaining-execution-20261014\\api-build-cover-frame-b04\\artifact\\agent-candidate-cleanup.exe",
+    "ExpectedBytes": 13702656,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\remaining-execution-20261014\\api-build-cover-frame-b04\\artifact\\agent-enrichment-worker.exe",
+    "ExpectedBytes": 15425536,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\remaining-execution-20261014\\api-build-cover-frame-b04\\artifact\\agent-outbox-control.exe",
+    "ExpectedBytes": 15553536,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\remaining-execution-20261014\\api-build-cover-frame-b04\\artifact\\api.exe",
+    "ExpectedBytes": 32198656,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\remaining-execution-20261014\\api-build-cover-frame-b04\\artifact\\city-editor-access.exe",
+    "ExpectedBytes": 13756416,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\remaining-execution-20261014\\api-build-cover-frame-b04\\artifact\\media-retention.exe",
+    "ExpectedBytes": 15037952,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\remaining-execution-20261014\\api-build-cover-frame-b04\\artifact\\notification-schedules.exe",
+    "ExpectedBytes": 15228928,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\remaining-execution-20261014\\api-build-cover-frame-b04\\artifact\\now-live-prepare.exe",
+    "ExpectedBytes": 15251456,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\remaining-execution-20261014\\api-build-cover-frame-b04\\artifact\\now-live-verify.exe",
+    "ExpectedBytes": 17334784,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\remaining-execution-20261014\\api-build-cover-frame-b04\\artifact\\system-push-worker.exe",
+    "ExpectedBytes": 16451072,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\remaining-execution-20261014\\api-build-cover-frame-b04\\artifact\\video-media-worker.exe",
+    "ExpectedBytes": 16436224,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\remaining-execution-20261014\\api-build-collection-copy-c01\\artifact\\activity-reminders.exe",
+    "ExpectedBytes": 15009792,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\remaining-execution-20261014\\api-build-collection-copy-c01\\artifact\\agent-candidate-cleanup.exe",
+    "ExpectedBytes": 13702656,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\remaining-execution-20261014\\api-build-collection-copy-c01\\artifact\\agent-enrichment-worker.exe",
+    "ExpectedBytes": 15426560,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\remaining-execution-20261014\\api-build-collection-copy-c01\\artifact\\agent-outbox-control.exe",
+    "ExpectedBytes": 15554048,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\remaining-execution-20261014\\api-build-collection-copy-c01\\artifact\\api.exe",
+    "ExpectedBytes": 32388096,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\remaining-execution-20261014\\api-build-collection-copy-c01\\artifact\\city-editor-access.exe",
+    "ExpectedBytes": 13756416,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\remaining-execution-20261014\\api-build-collection-copy-c01\\artifact\\media-retention.exe",
+    "ExpectedBytes": 15037440,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\remaining-execution-20261014\\api-build-collection-copy-c01\\artifact\\notification-schedules.exe",
+    "ExpectedBytes": 15228928,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\remaining-execution-20261014\\api-build-collection-copy-c01\\artifact\\now-live-prepare.exe",
+    "ExpectedBytes": 15251456,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\remaining-execution-20261014\\api-build-collection-copy-c01\\artifact\\now-live-verify.exe",
+    "ExpectedBytes": 17334784,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\remaining-execution-20261014\\api-build-collection-copy-c01\\artifact\\system-push-worker.exe",
+    "ExpectedBytes": 16452096,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\remaining-execution-20261014\\api-build-collection-copy-c01\\artifact\\video-media-worker.exe",
+    "ExpectedBytes": 16436736,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\remaining-execution-20261014\\api-build-b01\\artifact\\activity-reminders.exe",
+    "ExpectedBytes": 15010304,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\remaining-execution-20261014\\api-build-b01\\artifact\\agent-candidate-cleanup.exe",
+    "ExpectedBytes": 13702656,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\remaining-execution-20261014\\api-build-b01\\artifact\\agent-enrichment-worker.exe",
+    "ExpectedBytes": 15422464,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\remaining-execution-20261014\\api-build-b01\\artifact\\agent-outbox-control.exe",
+    "ExpectedBytes": 15550976,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\remaining-execution-20261014\\api-build-b01\\artifact\\api.exe",
+    "ExpectedBytes": 31787008,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\remaining-execution-20261014\\api-build-b01\\artifact\\city-editor-access.exe",
+    "ExpectedBytes": 13756416,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\remaining-execution-20261014\\api-build-b01\\artifact\\notification-schedules.exe",
+    "ExpectedBytes": 15225856,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\remaining-execution-20261014\\api-build-b01\\artifact\\now-live-prepare.exe",
+    "ExpectedBytes": 15248896,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\remaining-execution-20261014\\api-build-b01\\artifact\\now-live-verify.exe",
+    "ExpectedBytes": 17330176,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\remaining-execution-20261014\\api-build-b01\\artifact\\system-push-worker.exe",
+    "ExpectedBytes": 16449024,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\remaining-execution-20261014\\api-build-b01\\artifact\\video-media-worker.exe",
+    "ExpectedBytes": 16432640,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\remaining-execution-20261014\\api-build-a01\\artifact\\activity-reminders.exe",
+    "ExpectedBytes": 15008768,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\remaining-execution-20261014\\api-build-a01\\artifact\\agent-candidate-cleanup.exe",
+    "ExpectedBytes": 13702656,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\remaining-execution-20261014\\api-build-a01\\artifact\\agent-enrichment-worker.exe",
+    "ExpectedBytes": 15420928,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\remaining-execution-20261014\\api-build-a01\\artifact\\agent-outbox-control.exe",
+    "ExpectedBytes": 15542272,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\remaining-execution-20261014\\api-build-a01\\artifact\\api.exe",
+    "ExpectedBytes": 31570432,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\remaining-execution-20261014\\api-build-a01\\artifact\\city-editor-access.exe",
+    "ExpectedBytes": 13756416,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\remaining-execution-20261014\\api-build-a01\\artifact\\notification-schedules.exe",
+    "ExpectedBytes": 15222784,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\remaining-execution-20261014\\api-build-a01\\artifact\\now-live-prepare.exe",
+    "ExpectedBytes": 15247872,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\remaining-execution-20261014\\api-build-a01\\artifact\\now-live-verify.exe",
+    "ExpectedBytes": 17329152,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\remaining-execution-20261014\\api-build-a01\\artifact\\system-push-worker.exe",
+    "ExpectedBytes": 16447488,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\remaining-execution-20261014\\api-build-a01\\artifact\\video-media-worker.exe",
+    "ExpectedBytes": 16430592,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\profile-saved-build28-01\\birdtie-now28-batch28.apk",
+    "ExpectedBytes": 279465769,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\profile-saved-build28-01\\previous-generated-0.apk",
+    "ExpectedBytes": 279252777,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\profile-saved-build28-01\\previous-generated-1.apk",
+    "ExpectedBytes": 279252777,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\profile-glass-build26-02\\birdtie-now26-batch26.apk",
+    "ExpectedBytes": 279252777,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\profile-glass-build26-02\\previous-generated-0.apk",
+    "ExpectedBytes": 279252777,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\profile-glass-build26-02\\previous-generated-1.apk",
+    "ExpectedBytes": 279252777,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\profile-glass-build26\\birdtie-now26-batch26.apk",
+    "ExpectedBytes": 279252777,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\profile-glass-build26\\previous-generated-0.apk",
+    "ExpectedBytes": 278925097,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\profile-glass-build26\\previous-generated-1.apk",
+    "ExpectedBytes": 278925097,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\profile-glass-build25\\birdtie-now25-batch25.apk",
+    "ExpectedBytes": 278925097,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\profile-glass-build25\\previous-generated-0.apk",
+    "ExpectedBytes": 278859561,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\profile-glass-build25\\previous-generated-1.apk",
+    "ExpectedBytes": 278859561,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\profile-glass-build24\\birdtie-now24-batch24.apk",
+    "ExpectedBytes": 278859561,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\profile-glass-build24\\previous-generated-0.apk",
+    "ExpectedBytes": 278416381,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\profile-glass-build24\\previous-generated-1.apk",
+    "ExpectedBytes": 278416381,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\profile-glass-build23-03\\birdtie-now23-batch23.apk",
+    "ExpectedBytes": 278416381,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\profile-glass-build23-03\\previous-generated-0.apk",
+    "ExpectedBytes": 278416381,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\profile-glass-build23-03\\previous-generated-1.apk",
+    "ExpectedBytes": 278416381,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\profile-glass-build23-02\\birdtie-now23-batch23.apk",
+    "ExpectedBytes": 278416381,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\profile-glass-build23-02\\previous-generated-0.apk",
+    "ExpectedBytes": 278416381,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\profile-glass-build23-02\\previous-generated-1.apk",
+    "ExpectedBytes": 278416381,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\profile-glass-build23\\birdtie-now23-batch23.apk",
+    "ExpectedBytes": 278416381,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\profile-glass-build23\\previous-generated-0.apk",
+    "ExpectedBytes": 278105085,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\profile-glass-build23\\previous-generated-1.apk",
+    "ExpectedBytes": 278105085,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\profile-glass-build22-02\\birdtie-now22-batch22.apk",
+    "ExpectedBytes": 278105085,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\profile-glass-build22-02\\previous-generated-0.apk",
+    "ExpectedBytes": 278105085,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\profile-glass-build22-02\\previous-generated-1.apk",
+    "ExpectedBytes": 278105085,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\profile-glass-build22\\birdtie-now22-batch22.apk",
+    "ExpectedBytes": 278105085,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\profile-glass-build22\\previous-generated-0.apk",
+    "ExpectedBytes": 278105085,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\profile-glass-build22\\previous-generated-1.apk",
+    "ExpectedBytes": 278105085,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\profile-glass-build21\\birdtie-now21-batch21.apk",
+    "ExpectedBytes": 278105085,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\profile-glass-build21\\previous-generated-0.apk",
+    "ExpectedBytes": 273122189,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\profile-glass-build21\\previous-generated-1.apk",
+    "ExpectedBytes": 273122189,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\profile-glass-build20\\birdtie-now20-batch20.apk",
+    "ExpectedBytes": 273122189,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\profile-glass-build20\\previous-generated-0.apk",
+    "ExpectedBytes": 272499597,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\profile-glass-build20\\previous-generated-1.apk",
+    "ExpectedBytes": 272499597,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\profile-glass-build19\\birdtie-now20.apk",
+    "ExpectedBytes": 272499597,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\profile-glass-build19\\previous-generated-0.apk",
+    "ExpectedBytes": 272450445,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\profile-glass-build19\\previous-generated-1.apk",
+    "ExpectedBytes": 272450445,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\profile-glass-build18\\birdtie-now20.apk",
+    "ExpectedBytes": 272450445,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\profile-glass-build17\\birdtie-now20.apk",
+    "ExpectedBytes": 272450445,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\copy30-client-apk-build01\\birdtie-members30.apk",
+    "ExpectedBytes": 318700810,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\copy30-client-apk-build01\\previous-generated.apk",
+    "ExpectedBytes": 318684426,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\copy30-all-api-build01\\artifact\\activity-reminders.exe",
+    "ExpectedBytes": 15004160,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\copy30-all-api-build01\\artifact\\agent-candidate-cleanup.exe",
+    "ExpectedBytes": 13702656,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\copy30-all-api-build01\\artifact\\agent-enrichment-worker.exe",
+    "ExpectedBytes": 15416320,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\copy30-all-api-build01\\artifact\\agent-outbox-control.exe",
+    "ExpectedBytes": 15536640,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\copy30-all-api-build01\\artifact\\api.exe",
+    "ExpectedBytes": 31397888,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\copy30-all-api-build01\\artifact\\city-editor-access.exe",
+    "ExpectedBytes": 13756416,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\copy30-all-api-build01\\artifact\\notification-schedules.exe",
+    "ExpectedBytes": 15218688,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\copy30-all-api-build01\\artifact\\now-live-prepare.exe",
+    "ExpectedBytes": 15242752,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\copy30-all-api-build01\\artifact\\now-live-verify.exe",
+    "ExpectedBytes": 17324544,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\copy30-all-api-build01\\artifact\\system-push-worker.exe",
+    "ExpectedBytes": 16442368,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\copy30-all-api-build01\\artifact\\video-media-worker.exe",
+    "ExpectedBytes": 16424960,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\copy29-client-apk-build01\\birdtie-copy-media29.apk",
+    "ExpectedBytes": 318684426,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\copy29-client-apk-build01\\previous-generated.apk",
+    "ExpectedBytes": 279465769,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\copy29-all-api-build02\\artifact\\activity-reminders.exe",
+    "ExpectedBytes": 15004160,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\copy29-all-api-build02\\artifact\\agent-candidate-cleanup.exe",
+    "ExpectedBytes": 13702656,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\copy29-all-api-build02\\artifact\\agent-enrichment-worker.exe",
+    "ExpectedBytes": 15416320,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\copy29-all-api-build02\\artifact\\agent-outbox-control.exe",
+    "ExpectedBytes": 15536640,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\copy29-all-api-build02\\artifact\\api.exe",
+    "ExpectedBytes": 31393280,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\copy29-all-api-build02\\artifact\\city-editor-access.exe",
+    "ExpectedBytes": 13756416,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\copy29-all-api-build02\\artifact\\notification-schedules.exe",
+    "ExpectedBytes": 15218688,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\copy29-all-api-build02\\artifact\\now-live-prepare.exe",
+    "ExpectedBytes": 15242752,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\copy29-all-api-build02\\artifact\\now-live-verify.exe",
+    "ExpectedBytes": 17324032,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\copy29-all-api-build02\\artifact\\system-push-worker.exe",
+    "ExpectedBytes": 16442368,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\copy29-all-api-build02\\artifact\\video-media-worker.exe",
+    "ExpectedBytes": 16424960,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\copy29-all-api-build01\\artifact\\activity-reminders.exe",
+    "ExpectedBytes": 15003136,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\copy29-all-api-build01\\artifact\\agent-candidate-cleanup.exe",
+    "ExpectedBytes": 13702656,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\copy29-all-api-build01\\artifact\\agent-enrichment-worker.exe",
+    "ExpectedBytes": 15416320,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\copy29-all-api-build01\\artifact\\agent-outbox-control.exe",
+    "ExpectedBytes": 15535616,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\copy29-all-api-build01\\artifact\\api.exe",
+    "ExpectedBytes": 31390208,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\copy29-all-api-build01\\artifact\\city-editor-access.exe",
+    "ExpectedBytes": 13756416,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\copy29-all-api-build01\\artifact\\notification-schedules.exe",
+    "ExpectedBytes": 15218688,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\copy29-all-api-build01\\artifact\\now-live-prepare.exe",
+    "ExpectedBytes": 15242752,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\copy29-all-api-build01\\artifact\\now-live-verify.exe",
+    "ExpectedBytes": 17324032,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\copy29-all-api-build01\\artifact\\system-push-worker.exe",
+    "ExpectedBytes": 16441856,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\copy29-all-api-build01\\artifact\\video-media-worker.exe",
+    "ExpectedBytes": 16426496,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\api-build06\\birdtie-now20.exe",
+    "ExpectedBytes": 29792256,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\api-build05\\birdtie-now20.exe",
+    "ExpectedBytes": 29640192,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\api-build04\\birdtie-now20.exe",
+    "ExpectedBytes": 29505024,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\activeintent.test.exe",
+    "ExpectedBytes": 4948992,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\activityparticipation.test.exe",
+    "ExpectedBytes": 4982272,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\activityparticipationdisclosure.test.exe",
+    "ExpectedBytes": 4961280,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\activityplan.test.exe",
+    "ExpectedBytes": 4703232,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\activitypublish.test.exe",
+    "ExpectedBytes": 4433920,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\actorref.test.exe",
+    "ExpectedBytes": 4918784,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agent-candidate-cleanup.test.exe",
+    "ExpectedBytes": 14611968,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agent-outbox-control.test.exe",
+    "ExpectedBytes": 11380736,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agentaction.test.exe",
+    "ExpectedBytes": 7565312,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agentattention.test.exe",
+    "ExpectedBytes": 7399424,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agentautonomy.test.exe",
+    "ExpectedBytes": 7513600,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agentbusiness.test.exe",
+    "ExpectedBytes": 7261184,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agentcandidatepipeline.test.exe",
+    "ExpectedBytes": 7717376,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agentcandidateretention.test.exe",
+    "ExpectedBytes": 7651840,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agentcitymemory.test.exe",
+    "ExpectedBytes": 7316992,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agentcognitive.test.exe",
+    "ExpectedBytes": 29537792,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agentconfidence.test.exe",
+    "ExpectedBytes": 16337408,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agentcontextadapter.test.exe",
+    "ExpectedBytes": 7970816,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agentcontextbuilder.test.exe",
+    "ExpectedBytes": 8228352,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agentcontextrelevance.test.exe",
+    "ExpectedBytes": 8101888,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agentcurrentcontext.test.exe",
+    "ExpectedBytes": 16412672,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agentdecay.test.exe",
+    "ExpectedBytes": 7167488,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agentenrichmentmetrics.test.exe",
+    "ExpectedBytes": 4467712,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agentenrichmentpurpose.test.exe",
+    "ExpectedBytes": 4988928,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agentenrichmentworker.test.exe",
+    "ExpectedBytes": 6639616,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agentevent.test.exe",
+    "ExpectedBytes": 7370240,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agentfeature.test.exe",
+    "ExpectedBytes": 4990976,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agentintroduction.test.exe",
+    "ExpectedBytes": 4776960,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agentlocalcandidate.test.exe",
+    "ExpectedBytes": 7159296,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agentmembershipsignal.test.exe",
+    "ExpectedBytes": 16318464,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agentmemory.test.exe",
+    "ExpectedBytes": 7602688,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agentmemorycandidate.test.exe",
+    "ExpectedBytes": 7448576,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agentmemorycorrection.test.exe",
+    "ExpectedBytes": 7693312,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agentmessagepolicy.test.exe",
+    "ExpectedBytes": 4950016,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agentmulticandidate.test.exe",
+    "ExpectedBytes": 7708160,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agentnotification.test.exe",
+    "ExpectedBytes": 7316992,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agentnotificationschedule.test.exe",
+    "ExpectedBytes": 7717376,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agentorganization.test.exe",
+    "ExpectedBytes": 5172736,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agentorganizationevidence.test.exe",
+    "ExpectedBytes": 7269888,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agentorganizationmemory.test.exe",
+    "ExpectedBytes": 7185408,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agentoutbox.test.exe",
+    "ExpectedBytes": 7495168,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agentoutboxmaintenance.test.exe",
+    "ExpectedBytes": 7125504,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agentparticipationsignal.test.exe",
+    "ExpectedBytes": 16252928,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agentplacememory.test.exe",
+    "ExpectedBytes": 7304704,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agentplanner.test.exe",
+    "ExpectedBytes": 7194112,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agentpolicysettings.test.exe",
+    "ExpectedBytes": 7278080,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agentprofile.test.exe",
+    "ExpectedBytes": 7425536,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agentprofilecompletion.test.exe",
+    "ExpectedBytes": 7757824,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agentpurpose.test.exe",
+    "ExpectedBytes": 4910080,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agentreinforcement.test.exe",
+    "ExpectedBytes": 7694848,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agentresultprojection.test.exe",
+    "ExpectedBytes": 7846400,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agentrun.test.exe",
+    "ExpectedBytes": 7181312,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agentruntime.test.exe",
+    "ExpectedBytes": 5465600,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agentseed.test.exe",
+    "ExpectedBytes": 4972032,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agentsocialpolicy.test.exe",
+    "ExpectedBytes": 7418880,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agenttool.test.exe",
+    "ExpectedBytes": 11815424,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agentworkspace.test.exe",
+    "ExpectedBytes": 8604160,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\analytics.test.exe",
+    "ExpectedBytes": 4418560,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\api.test.exe",
+    "ExpectedBytes": 12180480,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\audittrace.test.exe",
+    "ExpectedBytes": 4430336,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\bookinganalytics.test.exe",
+    "ExpectedBytes": 4729344,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\businessconsole.test.exe",
+    "ExpectedBytes": 6702080,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\cityseed.test.exe",
+    "ExpectedBytes": 5142016,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\connection.test.exe",
+    "ExpectedBytes": 5091328,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\content.test.exe",
+    "ExpectedBytes": 4929024,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\contextgraph.test.exe",
+    "ExpectedBytes": 4943360,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\devauth.test.exe",
+    "ExpectedBytes": 4423680,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\entityaction.test.exe",
+    "ExpectedBytes": 4472832,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\foundation.test.exe",
+    "ExpectedBytes": 4423680,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\httpapi.test.exe",
+    "ExpectedBytes": 60206592,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\identity.test.exe",
+    "ExpectedBytes": 4434432,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\inbox.test.exe",
+    "ExpectedBytes": 4943872,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\intentconversion.test.exe",
+    "ExpectedBytes": 4724736,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\mapprojection.test.exe",
+    "ExpectedBytes": 7166976,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\media.test.exe",
+    "ExpectedBytes": 7860736,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\modelcapability.test.exe",
+    "ExpectedBytes": 10679808,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\modelconfiguration.test.exe",
+    "ExpectedBytes": 7330816,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\modelegressbudget.test.exe",
+    "ExpectedBytes": 11769344,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\modelgateway.test.exe",
+    "ExpectedBytes": 11333120,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\modelrequestrun.test.exe",
+    "ExpectedBytes": 7250432,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\modelresilience.test.exe",
+    "ExpectedBytes": 10810880,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\newpeople.test.exe",
+    "ExpectedBytes": 5046272,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\notification-schedules.test.exe",
+    "ExpectedBytes": 16059392,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\now-live-prepare.test.exe",
+    "ExpectedBytes": 8272896,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\now-live-verify.test.exe",
+    "ExpectedBytes": 11948544,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\nowcontextquery.test.exe",
+    "ExpectedBytes": 7619584,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\nowcontextselection.test.exe",
+    "ExpectedBytes": 7167488,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\oidcauth.test.exe",
+    "ExpectedBytes": 6632448,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\onlinesocialopportunity.test.exe",
+    "ExpectedBytes": 7142912,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\opportunity.test.exe",
+    "ExpectedBytes": 5070848,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\organization.test.exe",
+    "ExpectedBytes": 4452864,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\organizationannouncement.test.exe",
+    "ExpectedBytes": 7187968,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\placehistory.test.exe",
+    "ExpectedBytes": 5195264,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\placematch.test.exe",
+    "ExpectedBytes": 5201408,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\placeprofile.test.exe",
+    "ExpectedBytes": 5135360,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\postgres.test.exe",
+    "ExpectedBytes": 46653440,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\safety.test.exe",
+    "ExpectedBytes": 4417024,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\socialcontext.test.exe",
+    "ExpectedBytes": 4438528,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\socialintent.test.exe",
+    "ExpectedBytes": 4988928,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\sponsoredopportunity.test.exe",
+    "ExpectedBytes": 7195648,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\supplierprofile.test.exe",
+    "ExpectedBytes": 7156736,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build28-01\\artifact\\activity-reminders.exe",
+    "ExpectedBytes": 15003136,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build28-01\\artifact\\agent-candidate-cleanup.exe",
+    "ExpectedBytes": 13702656,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build28-01\\artifact\\agent-enrichment-worker.exe",
+    "ExpectedBytes": 15414784,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build28-01\\artifact\\agent-outbox-control.exe",
+    "ExpectedBytes": 15543296,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build28-01\\artifact\\api.exe",
+    "ExpectedBytes": 31271936,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build28-01\\artifact\\city-editor-access.exe",
+    "ExpectedBytes": 13756416,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build28-01\\artifact\\notification-schedules.exe",
+    "ExpectedBytes": 15219712,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build28-01\\artifact\\now-live-prepare.exe",
+    "ExpectedBytes": 15241728,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build28-01\\artifact\\now-live-verify.exe",
+    "ExpectedBytes": 17332224,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build28-01\\artifact\\system-push-worker.exe",
+    "ExpectedBytes": 16441856,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build28-01\\artifact\\video-media-worker.exe",
+    "ExpectedBytes": 16426496,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build27-03\\artifact\\activity-reminders.exe",
+    "ExpectedBytes": 15002624,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build27-03\\artifact\\agent-candidate-cleanup.exe",
+    "ExpectedBytes": 13702656,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build27-03\\artifact\\agent-enrichment-worker.exe",
+    "ExpectedBytes": 15415296,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build27-03\\artifact\\agent-outbox-control.exe",
+    "ExpectedBytes": 15542784,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build27-03\\artifact\\api.exe",
+    "ExpectedBytes": 31178752,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build27-03\\artifact\\city-editor-access.exe",
+    "ExpectedBytes": 13756416,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build27-03\\artifact\\notification-schedules.exe",
+    "ExpectedBytes": 15217664,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build27-03\\artifact\\now-live-prepare.exe",
+    "ExpectedBytes": 15241728,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build27-03\\artifact\\now-live-verify.exe",
+    "ExpectedBytes": 17331712,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build27-03\\artifact\\system-push-worker.exe",
+    "ExpectedBytes": 16439808,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build27-03\\artifact\\video-media-worker.exe",
+    "ExpectedBytes": 16424448,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build27-02\\artifact\\activity-reminders.exe",
+    "ExpectedBytes": 15002624,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build27-02\\artifact\\agent-candidate-cleanup.exe",
+    "ExpectedBytes": 13702656,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build27-02\\artifact\\agent-enrichment-worker.exe",
+    "ExpectedBytes": 15415296,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build27-02\\artifact\\agent-outbox-control.exe",
+    "ExpectedBytes": 15542784,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build27-02\\artifact\\api.exe",
+    "ExpectedBytes": 31178752,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build27-02\\artifact\\city-editor-access.exe",
+    "ExpectedBytes": 13756416,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build27-02\\artifact\\notification-schedules.exe",
+    "ExpectedBytes": 15217664,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build27-02\\artifact\\now-live-prepare.exe",
+    "ExpectedBytes": 15241728,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build27-02\\artifact\\now-live-verify.exe",
+    "ExpectedBytes": 17331712,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build27-02\\artifact\\system-push-worker.exe",
+    "ExpectedBytes": 16439808,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build27-02\\artifact\\video-media-worker.exe",
+    "ExpectedBytes": 16424448,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build27\\artifact\\activity-reminders.exe",
+    "ExpectedBytes": 15002624,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build27\\artifact\\agent-candidate-cleanup.exe",
+    "ExpectedBytes": 13702656,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build27\\artifact\\agent-enrichment-worker.exe",
+    "ExpectedBytes": 15415296,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build27\\artifact\\agent-outbox-control.exe",
+    "ExpectedBytes": 15542272,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build27\\artifact\\api.exe",
+    "ExpectedBytes": 31178752,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build27\\artifact\\city-editor-access.exe",
+    "ExpectedBytes": 13756416,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build27\\artifact\\notification-schedules.exe",
+    "ExpectedBytes": 15217664,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build27\\artifact\\now-live-prepare.exe",
+    "ExpectedBytes": 15241728,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build27\\artifact\\now-live-verify.exe",
+    "ExpectedBytes": 17331712,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build27\\artifact\\system-push-worker.exe",
+    "ExpectedBytes": 16439808,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build27\\artifact\\video-media-worker.exe",
+    "ExpectedBytes": 16424448,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build26\\artifact\\activity-reminders.exe",
+    "ExpectedBytes": 15001600,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build26\\artifact\\agent-candidate-cleanup.exe",
+    "ExpectedBytes": 13702656,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build26\\artifact\\agent-enrichment-worker.exe",
+    "ExpectedBytes": 15413760,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build26\\artifact\\agent-outbox-control.exe",
+    "ExpectedBytes": 15395840,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build26\\artifact\\api.exe",
+    "ExpectedBytes": 31166464,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build26\\artifact\\city-editor-access.exe",
+    "ExpectedBytes": 13756416,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build26\\artifact\\notification-schedules.exe",
+    "ExpectedBytes": 15216640,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build26\\artifact\\now-live-prepare.exe",
+    "ExpectedBytes": 15240192,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build26\\artifact\\now-live-verify.exe",
+    "ExpectedBytes": 17330176,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build26\\artifact\\system-push-worker.exe",
+    "ExpectedBytes": 16437760,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build26\\artifact\\video-media-worker.exe",
+    "ExpectedBytes": 16423424,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build25\\artifact\\activity-reminders.exe",
+    "ExpectedBytes": 15001600,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build25\\artifact\\agent-candidate-cleanup.exe",
+    "ExpectedBytes": 13702656,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build25\\artifact\\agent-enrichment-worker.exe",
+    "ExpectedBytes": 15413760,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build25\\artifact\\agent-outbox-control.exe",
+    "ExpectedBytes": 15395328,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build25\\artifact\\api.exe",
+    "ExpectedBytes": 31125504,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build25\\artifact\\city-editor-access.exe",
+    "ExpectedBytes": 13756416,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build25\\artifact\\notification-schedules.exe",
+    "ExpectedBytes": 15216128,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build25\\artifact\\now-live-prepare.exe",
+    "ExpectedBytes": 15240192,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build25\\artifact\\now-live-verify.exe",
+    "ExpectedBytes": 17330176,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build25\\artifact\\system-push-worker.exe",
+    "ExpectedBytes": 16437760,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build25\\artifact\\video-media-worker.exe",
+    "ExpectedBytes": 16423424,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build24\\artifact\\activity-reminders.exe",
+    "ExpectedBytes": 14992896,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build24\\artifact\\agent-candidate-cleanup.exe",
+    "ExpectedBytes": 13702656,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build24\\artifact\\agent-enrichment-worker.exe",
+    "ExpectedBytes": 15409152,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build24\\artifact\\agent-outbox-control.exe",
+    "ExpectedBytes": 15363584,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build24\\artifact\\api.exe",
+    "ExpectedBytes": 30924288,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build24\\artifact\\city-editor-access.exe",
+    "ExpectedBytes": 13756416,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build24\\artifact\\notification-schedules.exe",
+    "ExpectedBytes": 15207936,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build24\\artifact\\now-live-prepare.exe",
+    "ExpectedBytes": 15232512,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build24\\artifact\\now-live-verify.exe",
+    "ExpectedBytes": 17320960,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build24\\artifact\\system-push-worker.exe",
+    "ExpectedBytes": 16430080,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build24\\artifact\\video-media-worker.exe",
+    "ExpectedBytes": 16415744,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build23\\artifact\\activity-reminders.exe",
+    "ExpectedBytes": 14974976,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build23\\artifact\\agent-candidate-cleanup.exe",
+    "ExpectedBytes": 13702656,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build23\\artifact\\agent-enrichment-worker.exe",
+    "ExpectedBytes": 15391744,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build23\\artifact\\agent-outbox-control.exe",
+    "ExpectedBytes": 15346688,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build23\\artifact\\api.exe",
+    "ExpectedBytes": 30844928,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build23\\artifact\\city-editor-access.exe",
+    "ExpectedBytes": 13756416,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build23\\artifact\\notification-schedules.exe",
+    "ExpectedBytes": 15191552,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build23\\artifact\\now-live-prepare.exe",
+    "ExpectedBytes": 15214080,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build23\\artifact\\now-live-verify.exe",
+    "ExpectedBytes": 17302016,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build23\\artifact\\system-push-worker.exe",
+    "ExpectedBytes": 16429056,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build23\\artifact\\video-media-worker.exe",
+    "ExpectedBytes": 16394240,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build21-02\\artifact\\activity-reminders.exe",
+    "ExpectedBytes": 14979072,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build21-02\\artifact\\agent-candidate-cleanup.exe",
+    "ExpectedBytes": 13702656,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build21-02\\artifact\\agent-enrichment-worker.exe",
+    "ExpectedBytes": 15390208,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build21-02\\artifact\\agent-outbox-control.exe",
+    "ExpectedBytes": 15344128,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build21-02\\artifact\\api.exe",
+    "ExpectedBytes": 30670336,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build21-02\\artifact\\city-editor-access.exe",
+    "ExpectedBytes": 13756416,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build21-02\\artifact\\notification-schedules.exe",
+    "ExpectedBytes": 15188992,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build21-02\\artifact\\now-live-prepare.exe",
+    "ExpectedBytes": 15215104,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build21-02\\artifact\\now-live-verify.exe",
+    "ExpectedBytes": 17302016,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build21-02\\artifact\\system-push-worker.exe",
+    "ExpectedBytes": 16428032,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build21-02\\artifact\\video-media-worker.exe",
+    "ExpectedBytes": 16395264,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build21\\artifact\\activity-reminders.exe",
+    "ExpectedBytes": 14979072,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build21\\artifact\\agent-candidate-cleanup.exe",
+    "ExpectedBytes": 13702656,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build21\\artifact\\agent-enrichment-worker.exe",
+    "ExpectedBytes": 15390208,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build21\\artifact\\agent-outbox-control.exe",
+    "ExpectedBytes": 15344128,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build21\\artifact\\api.exe",
+    "ExpectedBytes": 30670336,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build21\\artifact\\city-editor-access.exe",
+    "ExpectedBytes": 13756416,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build21\\artifact\\notification-schedules.exe",
+    "ExpectedBytes": 15188992,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build21\\artifact\\now-live-prepare.exe",
+    "ExpectedBytes": 15215104,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build21\\artifact\\now-live-verify.exe",
+    "ExpectedBytes": 17302016,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build21\\artifact\\system-push-worker.exe",
+    "ExpectedBytes": 16428032,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build21\\artifact\\video-media-worker.exe",
+    "ExpectedBytes": 16395264,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build20\\artifact\\activity-reminders.exe",
+    "ExpectedBytes": 14974976,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build20\\artifact\\agent-candidate-cleanup.exe",
+    "ExpectedBytes": 13702656,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build20\\artifact\\agent-enrichment-worker.exe",
+    "ExpectedBytes": 15384064,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build20\\artifact\\agent-outbox-control.exe",
+    "ExpectedBytes": 15338496,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build20\\artifact\\api.exe",
+    "ExpectedBytes": 30038016,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build20\\artifact\\city-editor-access.exe",
+    "ExpectedBytes": 13756416,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build20\\artifact\\notification-schedules.exe",
+    "ExpectedBytes": 15186432,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build20\\artifact\\now-live-prepare.exe",
+    "ExpectedBytes": 15210496,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build20\\artifact\\now-live-verify.exe",
+    "ExpectedBytes": 17294336,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build03\\bin\\activity-reminders.exe",
+    "ExpectedBytes": 14971392,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build03\\bin\\agent-candidate-cleanup.exe",
+    "ExpectedBytes": 13702656,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build03\\bin\\agent-enrichment-worker.exe",
+    "ExpectedBytes": 15388160,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build03\\bin\\agent-outbox-control.exe",
+    "ExpectedBytes": 15336960,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build03\\bin\\api.exe",
+    "ExpectedBytes": 29792256,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build03\\bin\\city-editor-access.exe",
+    "ExpectedBytes": 13756416,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build03\\bin\\notification-schedules.exe",
+    "ExpectedBytes": 15183872,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build03\\bin\\now-live-prepare.exe",
+    "ExpectedBytes": 15207424,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build03\\bin\\now-live-verify.exe",
+    "ExpectedBytes": 17293824,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build02\\bin\\activity-reminders.exe",
+    "ExpectedBytes": 14971392,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build02\\bin\\agent-candidate-cleanup.exe",
+    "ExpectedBytes": 13702656,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build02\\bin\\agent-enrichment-worker.exe",
+    "ExpectedBytes": 15387648,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build02\\bin\\agent-outbox-control.exe",
+    "ExpectedBytes": 15336960,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build02\\bin\\api.exe",
+    "ExpectedBytes": 29640192,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build02\\bin\\city-editor-access.exe",
+    "ExpectedBytes": 13756416,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build02\\bin\\notification-schedules.exe",
+    "ExpectedBytes": 15184384,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build02\\bin\\now-live-prepare.exe",
+    "ExpectedBytes": 15206912,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build02\\bin\\now-live-verify.exe",
+    "ExpectedBytes": 17292800,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation19\\client-build10\\birdtie-now19.apk",
+    "ExpectedBytes": 283812372,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation19\\client-build09\\birdtie-now19.apk",
+    "ExpectedBytes": 283812139,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\client-web-build11-01\\artifact",
+    "ExpectedBytes": 38497811,
+    "ExpectedFiles": 22,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\client-web-build12-01\\artifact",
+    "ExpectedBytes": 62131445,
+    "ExpectedFiles": 41,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\client-web-build13-01\\artifact",
+    "ExpectedBytes": 62378788,
+    "ExpectedFiles": 41,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\client-web-build14-01\\artifact",
+    "ExpectedBytes": 62380032,
+    "ExpectedFiles": 41,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\client-web-build15-01\\artifact",
+    "ExpectedBytes": 62381241,
+    "ExpectedFiles": 41,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\client-web-build16-01\\artifact",
+    "ExpectedBytes": 62381372,
+    "ExpectedFiles": 41,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\client-web-build17-01\\artifact",
+    "ExpectedBytes": 62381373,
+    "ExpectedFiles": 41,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\client-web-build18-01\\artifact",
+    "ExpectedBytes": 62381373,
+    "ExpectedFiles": 41,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\client-web-build19-01\\artifact",
+    "ExpectedBytes": 62444924,
+    "ExpectedFiles": 41,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\client-web-build20-01\\artifact",
+    "ExpectedBytes": 62726676,
+    "ExpectedFiles": 41,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\client-web-build21\\artifact",
+    "ExpectedBytes": 63256615,
+    "ExpectedFiles": 42,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\client-web-build22-02\\artifact",
+    "ExpectedBytes": 63288887,
+    "ExpectedFiles": 42,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\client-web-build22\\artifact",
+    "ExpectedBytes": 63288887,
+    "ExpectedFiles": 42,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\client-web-build23-02\\artifact",
+    "ExpectedBytes": 63423729,
+    "ExpectedFiles": 42,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\client-web-build23-03\\artifact",
+    "ExpectedBytes": 63424208,
+    "ExpectedFiles": 42,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\client-web-build23\\artifact",
+    "ExpectedBytes": 63423560,
+    "ExpectedFiles": 42,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\client-web-build24\\artifact",
+    "ExpectedBytes": 63595926,
+    "ExpectedFiles": 42,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\client-web-build25\\artifact",
+    "ExpectedBytes": 63598051,
+    "ExpectedFiles": 42,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\client-web-build26-02\\artifact",
+    "ExpectedBytes": 63763433,
+    "ExpectedFiles": 42,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\client-web-build26\\artifact",
+    "ExpectedBytes": 63763385,
+    "ExpectedFiles": 42,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\client-web-build28-01\\artifact",
+    "ExpectedBytes": 63853197,
+    "ExpectedFiles": 42,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\copy29-client-web-build01\\artifact",
+    "ExpectedBytes": 63959541,
+    "ExpectedFiles": 42,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\now-v4-v41-integration-20261010\\continuation20\\copy30-client-web-build01\\artifact",
+    "ExpectedBytes": 63980967,
+    "ExpectedFiles": 42,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\remaining-execution-20261014\\web-build-a01\\artifact",
+    "ExpectedBytes": 64108716,
+    "ExpectedFiles": 42,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\remaining-execution-20261014\\web-build-bc01\\artifact",
+    "ExpectedBytes": 64330908,
+    "ExpectedFiles": 42,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\remaining-execution-20261014\\web-build-bc2\\artifact",
+    "ExpectedBytes": 64601855,
+    "ExpectedFiles": 42,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "RelativePath": "work\\remaining-execution-20261014\\web-build-org-bc3\\artifact",
+    "ExpectedBytes": 64925287,
+    "ExpectedFiles": 42,
+    "Status": "REMOVED",
+    "Error": null
+  }
+]

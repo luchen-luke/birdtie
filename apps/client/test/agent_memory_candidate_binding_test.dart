@@ -32,7 +32,7 @@ class CandidateChanges extends ChangeNotifier {
 
 Future<(BirdtieAuthController, http.Client)> bindingAuth(String token) async {
   final client = MockClient(
-    (r) async => candidateResponse(switch (r.url.path) {
+    (r) async => candidateReadResponse(r, switch (r.url.path) {
       '/v1/me' => {'id': candidateOwner},
       '/v1/auth/dev-phone/status' => {'enabled': true},
       _ => {'displayName': '本人合成测试'},
@@ -87,7 +87,7 @@ void main() {
     (t) async {
       final (auth, authClient) = await bindingAuth('token-a');
       final client = MockClient(
-        (r) async => candidateResponse([candidateWire()]),
+        (r) async => candidateReadResponse(r, [candidateWire()]),
       );
       final a = MemoryAgentMultiCandidatePendingStore(),
           b = MemoryAgentMultiCandidatePendingStore();
@@ -124,10 +124,11 @@ void main() {
       var posts = 0;
       final c = MockClient((r) async {
         if (r.method == 'GET') {
-          return candidateResponse([candidateWire()]);
+          return candidateReadResponse(r, [candidateWire()]);
         }
         if (r.url.path.endsWith('/preview')) {
-          return candidateResponse(
+          return candidateReadResponse(
+            r,
             previewWire(
               (jsonDecode(r.body) as Map)['previewId'],
               candidateWire(),
@@ -135,7 +136,7 @@ void main() {
           );
         }
         posts++;
-        return candidateResponse(candidateWire(status: 'ACTIVE'));
+        return candidateReadResponse(r, candidateWire(status: 'ACTIVE'));
       });
       Widget frame(AgentCandidatePendingStore store) => MaterialApp(
         home: AgentMemoryCandidatePage(
@@ -179,17 +180,19 @@ void main() {
       expect(r.url.host, 'old-fixture');
       if (r.method == 'GET') {
         gets++;
-        return candidateResponse([candidateWire()]);
+        return candidateReadResponse(r, [
+          candidateWire(status: accepts == 0 ? 'CANDIDATE' : 'ACTIVE'),
+        ]);
       }
       final body = jsonDecode(r.body) as Map;
       if (r.url.path.endsWith('/preview')) {
         preview = body['previewId'] as String;
-        return candidateResponse(previewWire(preview!, candidateWire()));
+        return candidateReadResponse(r, previewWire(preview!, candidateWire()));
       }
       expect(r.url.path.endsWith('/$candidateTarget/accept'), isTrue);
       expect(body, {'previewId': preview});
       accepts++;
-      return candidateResponse(candidateWire(status: 'ACTIVE'));
+      return candidateReadResponse(r, candidateWire(status: 'ACTIVE'));
     });
     await t.pumpWidget(candidateFrame(a, c, 'http://old-fixture'));
     await t.pumpAndSettle();
@@ -198,12 +201,13 @@ void main() {
     await t.pumpWidget(candidateFrame(a, c, 'http://old-fixture'));
     await t.pumpAndSettle();
     expect(find.text('具体版本预览'), findsOneWidget);
+    expect(gets, 1);
     await t.scrollUntilVisible(find.text('确认保存这项声明'), 180);
     await t.ensureVisible(find.text('确认保存这项声明'));
     await t.pumpAndSettle();
     await t.tap(find.text('确认保存这项声明'));
     await t.pumpAndSettle();
-    expect(gets, 1);
+    expect(gets, 2);
     expect(accepts, 1);
     expect(t.takeException(), isNull);
     await t.pumpWidget(const SizedBox());
@@ -219,7 +223,7 @@ void main() {
       final requests = <http.Request>[];
       final c = CountingCandidateClient((r) async {
         requests.add(r);
-        return candidateResponse([candidateWire()]);
+        return candidateReadResponse(r, [candidateWire()]);
       });
       await t.pumpWidget(candidateFrame(a, c, 'http://old-fixture'));
       await t.pumpAndSettle();
@@ -259,11 +263,11 @@ void main() {
         var oldCalls = 0, newCalls = 0;
         final old = CountingCandidateClient((r) async {
           oldCalls++;
-          return candidateResponse([candidateWire()]);
+          return candidateReadResponse(r, [candidateWire()]);
         });
         final next = CountingCandidateClient((r) async {
           newCalls++;
-          return candidateResponse([candidateWire()]);
+          return candidateReadResponse(r, [candidateWire()]);
         });
         final changes = CandidateChanges(), nextChanges = CandidateChanges();
         String? getter() => null;
@@ -325,13 +329,16 @@ void main() {
             gets++;
             return phase == 'GET'
                 ? pending.future
-                : candidateResponse([candidateWire()]);
+                : candidateReadResponse(r, [candidateWire()]);
           }
           if (r.url.path.endsWith('/preview')) {
             opaque = (jsonDecode(r.body) as Map)['previewId'] as String;
             return phase == 'preview'
                 ? pending.future
-                : candidateResponse(previewWire(opaque!, candidateWire()));
+                : candidateReadResponse(
+                    r,
+                    previewWire(opaque!, candidateWire()),
+                  );
           }
           accepts++;
           expect(jsonDecode(r.body), {'previewId': opaque});
@@ -361,13 +368,13 @@ void main() {
           pending.completeError(Exception('lost native response'));
         } else {
           pending.complete(
-            candidateResponse(
-              phase == 'GET'
-                  ? [candidateWire()]
-                  : phase == 'preview'
-                  ? previewWire(opaque!, candidateWire())
-                  : candidateWire(status: 'ACTIVE'),
-            ),
+            phase == 'GET'
+                ? candidatePageResponse([candidateWire()])
+                : candidateResponse(
+                    phase == 'preview'
+                        ? previewWire(opaque!, candidateWire())
+                        : candidateWire(status: 'ACTIVE'),
+                  ),
           );
         }
         await t.pumpAndSettle();
@@ -399,7 +406,7 @@ void main() {
         if (r.method != 'GET') {
           posts++;
         }
-        return candidateResponse([candidateWire()]);
+        return candidateReadResponse(r, [candidateWire()]);
       });
       final base = ValueNotifier('http://old-fixture');
       await t.pumpWidget(
@@ -470,11 +477,11 @@ void main() {
       final oldRequests = <http.Request>[], newRequests = <http.Request>[];
       final old = MockClient((r) async {
         oldRequests.add(r);
-        return candidateResponse([candidateWire()]);
+        return candidateReadResponse(r, [candidateWire()]);
       });
       final next = MockClient((r) async {
         newRequests.add(r);
-        return candidateResponse([candidateWire()]);
+        return candidateReadResponse(r, [candidateWire()]);
       });
       await t.pumpWidget(candidateFrame(a, old, 'http://old-fixture'));
       await t.pumpAndSettle();
@@ -506,10 +513,11 @@ void main() {
     var accepts = 0;
     final c = MockClient((r) async {
       if (r.method == 'GET') {
-        return candidateResponse([candidateWire()]);
+        return candidateReadResponse(r, [candidateWire()]);
       }
       if (r.url.path.endsWith('/preview')) {
-        return candidateResponse(
+        return candidateReadResponse(
+          r,
           previewWire(
             (jsonDecode(r.body) as Map)['previewId'] as String,
             candidateWire(),
@@ -517,7 +525,7 @@ void main() {
         );
       }
       accepts++;
-      return candidateResponse(candidateWire(status: 'ACTIVE'));
+      return candidateReadResponse(r, candidateWire(status: 'ACTIVE'));
     });
     await t.pumpWidget(candidateFrame(a, c, 'http://old-fixture'));
     await t.pumpAndSettle();

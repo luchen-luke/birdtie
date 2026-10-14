@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import '../app/birdtie_app_bar.dart';
 import '../auth/birdtie_auth_controller.dart';
 import '../city/public_city_controller.dart';
 import 'activity_detail_sheet.dart';
@@ -147,7 +148,7 @@ class _SocialNowPageState extends State<SocialNowPage> {
     if (!mounted || !_sourceCurrent || current == null) return;
     await _push(
       Scaffold(
-        appBar: AppBar(title: const Text('好友分享的意图')),
+        appBar: birdtieAppBar(context, title: const Text('好友分享的意图')),
         body: ListView(
           padding: const EdgeInsets.all(24),
           children: [
@@ -205,8 +206,16 @@ class _SocialNowPageState extends State<SocialNowPage> {
       if (activity.id != signal.id) throw const FormatException('Wrong entity');
       await _push(
         Scaffold(
-          appBar: AppBar(title: const Text('活动详情')),
+          appBar: birdtieAppBar(context, title: const Text('活动详情')),
           body: ActivityDetailSheet(
+            accountID: () =>
+                _data.current(generation) ? widget.auth.accountID : null,
+            identityChanges: Listenable.merge([
+              widget.auth,
+              widget.workspaceChanges,
+            ]),
+            workspaceID: widget.organizationWorkspaceID,
+            domainCurrent: () => _sourceCurrent && _data.current(generation),
             activity: activity,
             authorizationHeader: () => _data.current(generation) ? token : null,
             apiBaseUrl: _data.base,
@@ -227,45 +236,33 @@ class _SocialNowPageState extends State<SocialNowPage> {
     }
   }
 
-  Widget _heading(String title, String explanation) => Padding(
+  Widget _heading(String title) => Padding(
     padding: const EdgeInsets.only(top: 24, bottom: 8),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(title, style: Theme.of(context).textTheme.titleLarge),
-        const SizedBox(height: 4),
-        Text(explanation),
-      ],
-    ),
+    child: Text(title, style: Theme.of(context).textTheme.titleLarge),
   );
-  List<Widget> _activities(
-    String title,
-    String explanation,
-    List<SocialNowActivity> items,
-  ) => [
-    _heading(title, explanation),
-    if (items.isEmpty)
-      const Padding(
-        padding: EdgeInsets.symmetric(vertical: 12),
-        child: Text('当前没有可显示的活动。'),
-      ),
-    for (final item in items)
-      ListTile(
-        contentPadding: EdgeInsets.zero,
-        title: Text(item.title),
-        subtitle: Padding(
-          padding: const EdgeInsets.only(top: 6),
-          child: Text(
-            '${item.placeName}\n${_date(item.startsAt)}\n${item.reasons.join('；')}',
-          ),
-        ),
-        trailing: const Icon(Icons.chevron_right),
-        onTap: _busy ? null : () => _activity(item),
-      ),
-  ];
+  List<Widget> _activities(String title, List<SocialNowActivity> items) =>
+      items.isEmpty
+      ? []
+      : [
+          _heading(title),
+          for (final item in items)
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              title: Text(item.title),
+              subtitle: Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: Text(
+                  '${item.placeName}\n${_date(item.startsAt)}\n${item.reasons.join('；')}',
+                ),
+              ),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: _busy ? null : () => _activity(item),
+            ),
+        ];
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(
+    appBar: birdtieAppBar(
+      context,
       title: const Text('我的社交近况'),
       actions: [
         IconButton(
@@ -286,12 +283,6 @@ class _SocialNowPageState extends State<SocialNowPage> {
             controller: _scroll,
             padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
             children: [
-              Text(
-                '看看身边正在发生什么',
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
-              const SizedBox(height: 8),
-              const Text('只显示好友明确分享的意图，以及与你启用的活动意图相符的机会。活动推荐不表示好友已报名或参加。'),
               if (_busy)
                 const Padding(
                   padding: EdgeInsets.only(top: 16),
@@ -309,48 +300,31 @@ class _SocialNowPageState extends State<SocialNowPage> {
                   ),
                 ),
               if (_data.loaded) ...[
-                _heading('好友明确分享的意图', '最多 10 条；只包含当前可见、仍有效的想法。'),
-                if (_data.intents.isEmpty)
+                if (_data.intents.isEmpty &&
+                    _data.friendActivities.isEmpty &&
+                    _data.communityActivities.isEmpty &&
+                    _data.otherActivities.isEmpty)
                   const Padding(
                     padding: EdgeInsets.symmetric(vertical: 12),
-                    child: Text('当前没有可显示的好友意图。'),
+                    child: Text('暂无社交近况'),
                   ),
+                if (_data.intents.isNotEmpty) _heading('好友的想法'),
                 for (final item in _data.intents)
                   ListTile(
                     contentPadding: EdgeInsets.zero,
                     leading: const Icon(Icons.chat_bubble_outline),
                     title: Text(item.title),
-                    subtitle: const Text('好友分享 · 打开前重新核对'),
                     trailing: const Icon(Icons.chevron_right),
                     onTap: _busy ? null : () => _intent(item),
                   ),
-                ..._activities(
-                  '好友主办的活动',
-                  '最多 5 条；来自当前好友关系。',
-                  _data.friendActivities,
-                ),
-                ..._activities(
-                  '已加入社群的活动',
-                  '最多 5 条；来自你当前已加入的社群。',
-                  _data.communityActivities,
-                ),
-                ..._activities(
-                  '其他活动机会',
-                  '最多 10 条；依据你的活动意图和当前可见范围。',
-                  _data.otherActivities,
-                ),
-                if (_data.limited)
-                  const Padding(
-                    padding: EdgeInsets.only(top: 16),
-                    child: Text('本次只展示有限的近况，不代表好友或社群的全部动态。'),
-                  ),
+                ..._activities('好友主办的活动', _data.friendActivities),
+                ..._activities('已加入社群的活动', _data.communityActivities),
+                ..._activities('其他活动机会', _data.otherActivities),
               ],
               const SizedBox(height: 24),
-              const Divider(),
               ListTile(
                 contentPadding: EdgeInsets.zero,
-                title: const Text('管理我的活动意图'),
-                subtitle: const Text('检查或调整已保存的找活动意图。'),
+                title: const Text('调整找活动需求'),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: _busy ? null : _manageIntents,
               ),

@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import 'dart:typed_data';
 
+import '../app/birdtie_app_bar.dart';
 import '../auth/birdtie_auth_controller.dart';
 import '../city/public_city_controller.dart';
 import 'community_api.dart';
 import 'organization_activity_api.dart';
 import 'organization_console.dart';
 import 'support_page.dart';
+import 'human_causal_operation_controller.dart';
 import 'organization_workspaces.dart';
 import 'activity_detail_sheet.dart';
 import 'connections.dart';
@@ -15,6 +18,10 @@ import 'follow_button.dart';
 import 'community_conversation_page.dart';
 import 'community_members_controller.dart';
 import 'community_member_management_sheet.dart';
+import 'community_avatar.dart';
+import 'community_avatar_editor.dart';
+import 'person_avatar_editor.dart'
+    show pickPersonAvatarImage, prepareLocalPersonAvatar;
 
 String communityVisibilityLabel(String value) => switch (value) {
   'public' => '公开',
@@ -35,12 +42,16 @@ class CommunityPage extends StatefulWidget {
     required this.city,
     this.organizations,
     this.api,
+    this.avatarPicker,
+    this.avatarPendingStore,
   });
 
   final BirdtieAuthController auth;
   final PublicCityController city;
   final OrganizationWorkspaceController? organizations;
   final CommunityApi? api;
+  final Future<Uint8List?> Function()? avatarPicker;
+  final CommunityAvatarPendingStore? avatarPendingStore;
 
   @override
   State<CommunityPage> createState() => _CommunityPageState();
@@ -57,7 +68,7 @@ class _CommunityPageState extends State<CommunityPage> {
   bool _working = false;
   int _serial = 0;
   int _authorityGeneration = 0;
-  String? _seenToken, _seenCity;
+  String? _seenToken, _seenCity, _seenOrganization;
 
   @override
   void initState() {
@@ -66,6 +77,8 @@ class _CommunityPageState extends State<CommunityPage> {
     _seenCity = widget.city.selectedCity?.id;
     widget.auth.addListener(_authChanged);
     widget.city.addListener(_cityChanged);
+    _seenOrganization = widget.organizations?.active?.id;
+    widget.organizations?.addListener(_organizationChanged);
     if (widget.auth.signedIn) _load();
   }
 
@@ -100,6 +113,14 @@ class _CommunityPageState extends State<CommunityPage> {
     }
   }
 
+  void _organizationChanged() {
+    final id = widget.organizations?.active?.id;
+    if (id == _seenOrganization) return;
+    _seenOrganization = id;
+    ++_authorityGeneration;
+    if (mounted) setState(() => _working = false);
+  }
+
   Future<void> _load() async {
     final serial = ++_serial;
     setState(() {
@@ -124,19 +145,26 @@ class _CommunityPageState extends State<CommunityPage> {
   }
 
   Future<void> _create() async {
+    if (widget.organizations?.active != null) {
+      _message(const CommunityApiException(403));
+      return;
+    }
     final captured = widget.auth.authorizationHeader;
     final authorityGeneration = _authorityGeneration;
     final input = await showDialog<_CommunityForm>(
       useRootNavigator: false,
       context: context,
-      builder: (context) =>
-          _CreateCommunityDialog(cityId: widget.city.selectedCity?.id),
+      builder: (context) => _CreateCommunityDialog(
+        cityId: widget.city.selectedCity?.id,
+        picker: widget.avatarPicker,
+      ),
     );
     if (input == null ||
         !mounted ||
         captured == null ||
         captured != widget.auth.authorizationHeader ||
-        authorityGeneration != _authorityGeneration) {
+        authorityGeneration != _authorityGeneration ||
+        widget.organizations?.active != null) {
       return;
     }
     setState(() => _working = true);
@@ -147,7 +175,6 @@ class _CommunityPageState extends State<CommunityPage> {
         visibility: input.visibility,
         joinPolicy: input.joinPolicy,
         cityId: input.cityId,
-        avatarUrl: input.avatarUrl,
       );
       if (!mounted ||
           captured != widget.auth.authorizationHeader ||
@@ -160,7 +187,40 @@ class _CommunityPageState extends State<CommunityPage> {
           authorityGeneration != _authorityGeneration) {
         return;
       }
-      await _open(created);
+      // Creation is already an authoritative effect. Avatar failure/recovery
+      // belongs to that retained community, never another create request.
+      if (input.avatar != null) {
+        final owner = widget.auth.accountID;
+        if (owner != null) {
+          await showModalBottomSheet<void>(
+            context: context,
+            isScrollControlled: true,
+            useSafeArea: true,
+            showDragHandle: true,
+            builder: (_) => CommunityAvatarEditor(
+              communityID: created.id,
+              communityName: created.name,
+              ownerID: owner,
+              api: _api.avatarAPI,
+              identityChanges: Listenable.merge([
+                widget.auth,
+                widget.organizations,
+              ]),
+              current: () =>
+                  mounted &&
+                  captured == widget.auth.authorizationHeader &&
+                  authorityGeneration == _authorityGeneration &&
+                  widget.organizations?.active == null,
+              initialImage: input.avatar,
+              pendingStore: widget.avatarPendingStore,
+            ),
+          );
+        }
+      }
+      if (mounted &&
+          captured == widget.auth.authorizationHeader &&
+          authorityGeneration == _authorityGeneration)
+        await _open(created);
     } catch (error) {
       if (mounted &&
           captured == widget.auth.authorizationHeader &&
@@ -200,6 +260,7 @@ class _CommunityPageState extends State<CommunityPage> {
 
   @override
   void dispose() {
+    widget.organizations?.removeListener(_organizationChanged);
     ++_serial;
     widget.auth.removeListener(_authChanged);
     widget.city.removeListener(_cityChanged);
@@ -226,10 +287,10 @@ class _CommunityPageState extends State<CommunityPage> {
         children: [
           Row(
             children: [
-              const Expanded(
+              Expanded(
                 child: Text(
                   '我的社群',
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
+                  style: Theme.of(context).textTheme.headlineSmall,
                 ),
               ),
               FilledButton.icon(
@@ -239,8 +300,6 @@ class _CommunityPageState extends State<CommunityPage> {
               ),
             ],
           ),
-          const SizedBox(height: 6),
-          const Text('和同城的人持续相聚，活动结束后关系仍在。'),
           if (_loading)
             const Padding(
               padding: EdgeInsets.only(top: 16),
@@ -255,72 +314,84 @@ class _CommunityPageState extends State<CommunityPage> {
               ),
             ),
           if (!_loading && !_failed) ...[
-            _section('我管理的', managed, empty: '你还没有管理的社群。'),
-            _section('我加入的', joined, empty: '你还没有加入社群。'),
-            _section('待处理', pending, empty: '没有待处理的申请或邀请。'),
-            const Divider(height: 32),
-            _section('发现社群', _discover, empty: '目前还没有可发现的社群。'),
+            _section('我管理的', managed),
+            _section('我加入的', joined),
+            _section('待处理', pending),
+            if (managed.isNotEmpty || joined.isNotEmpty || pending.isNotEmpty)
+              const Divider(height: 32),
+            _section('发现社群', _discover),
           ],
         ],
       ),
     );
   }
 
-  Widget _section(
-    String title,
-    List<CommunityItem> items, {
-    required String empty,
-  }) => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      const SizedBox(height: 24),
-      Text(
-        title,
-        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
-      ),
-      const SizedBox(height: 8),
-      if (items.isEmpty)
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 10),
-          child: Text(empty, style: const TextStyle(color: Colors.grey)),
-        )
-      else
-        for (final item in items)
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: CircleAvatar(child: Text(item.name.characters.first)),
-            title: Text(item.name),
-            subtitle: Text(
-              '${communityVisibilityLabel(item.visibility)} · '
-              '${item.memberCount} 位成员 · ${communityJoinLabel(item.joinPolicy)}',
-            ),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => _open(item),
-          ),
-    ],
-  );
+  Widget _section(String title, List<CommunityItem> items) => items.isEmpty
+      ? (title == '发现社群'
+            ? Padding(
+                padding: const EdgeInsets.symmetric(vertical: 24),
+                child: Text(
+                  '暂无可发现的社群',
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+              )
+            : const SizedBox.shrink())
+      : Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 24),
+            Text(title, style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 8),
+            for (final item in items)
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: CommunityAvatar(
+                  metadata: item.avatar,
+                  fallbackLabel: item.name,
+                  api: _api.avatarAPI,
+                  identityChanges: Listenable.merge([
+                    widget.auth,
+                    widget.organizations,
+                  ]),
+                  current: () =>
+                      mounted &&
+                      widget.auth.signedIn &&
+                      _seenToken == widget.auth.authorizationHeader &&
+                      widget.organizations?.active == null,
+                ),
+                title: Text(item.name),
+                subtitle: Text(
+                  '${communityVisibilityLabel(item.visibility)} · '
+                  '${item.memberCount} 位成员 · ${communityJoinLabel(item.joinPolicy)}',
+                ),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => _open(item),
+              ),
+          ],
+        );
 }
 
 class _CommunityForm {
   const _CommunityForm({
     required this.name,
     required this.description,
-    required this.avatarUrl,
+    this.avatar,
     required this.visibility,
     required this.joinPolicy,
     required this.cityId,
   });
   final String name;
   final String description;
-  final String avatarUrl;
+  final Uint8List? avatar;
   final String visibility;
   final String joinPolicy;
   final String cityId;
 }
 
 class _CreateCommunityDialog extends StatefulWidget {
-  const _CreateCommunityDialog({this.cityId});
+  const _CreateCommunityDialog({this.cityId, this.picker});
   final String? cityId;
+  final Future<Uint8List?> Function()? picker;
   @override
   State<_CreateCommunityDialog> createState() => _CreateCommunityDialogState();
 }
@@ -328,7 +399,9 @@ class _CreateCommunityDialog extends StatefulWidget {
 class _CreateCommunityDialogState extends State<_CreateCommunityDialog> {
   final _name = TextEditingController();
   final _description = TextEditingController();
-  final _avatar = TextEditingController();
+  Uint8List? _avatar;
+  bool _selecting = false;
+  String? _avatarError;
   String _visibility = 'public';
   String _joinPolicy = 'request';
   bool _useCity = true;
@@ -337,7 +410,6 @@ class _CreateCommunityDialogState extends State<_CreateCommunityDialog> {
   void dispose() {
     _name.dispose();
     _description.dispose();
-    _avatar.dispose();
     super.dispose();
   }
 
@@ -361,10 +433,53 @@ class _CreateCommunityDialogState extends State<_CreateCommunityDialog> {
               maxLines: 3,
               decoration: const InputDecoration(labelText: '介绍'),
             ),
-            TextField(
-              controller: _avatar,
-              decoration: const InputDecoration(labelText: '头像 HTTPS 链接（选填）'),
+            Row(
+              children: [
+                CircleAvatar(
+                  radius: 28,
+                  backgroundImage: _avatar == null
+                      ? null
+                      : MemoryImage(_avatar!),
+                  child: _avatar == null
+                      ? const Icon(Icons.groups_outlined)
+                      : null,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    key: const Key('community-create-avatar-select'),
+                    onPressed: _selecting
+                        ? null
+                        : () async {
+                            setState(() => _selecting = true);
+                            try {
+                              final raw =
+                                  await (widget.picker ??
+                                      pickPersonAvatarImage)();
+                              if (raw == null || !mounted) return;
+                              final bytes = await prepareLocalPersonAvatar(raw);
+                              if (mounted)
+                                setState(() {
+                                  _avatar = bytes;
+                                  _avatarError = null;
+                                });
+                            } catch (_) {
+                              if (mounted)
+                                setState(
+                                  () => _avatarError = '头像读取失败，请选择静态JPEG或PNG。',
+                                );
+                            } finally {
+                              if (mounted) setState(() => _selecting = false);
+                            }
+                          },
+                    icon: const Icon(Icons.photo_library_outlined),
+                    label: const Text('选择头像（选填）'),
+                  ),
+                ),
+              ],
             ),
+            if (_avatarError != null) Text(_avatarError!),
+            const SizedBox(height: 16),
             DropdownButtonFormField<String>(
               initialValue: _visibility,
               decoration: const InputDecoration(labelText: '可见范围'),
@@ -402,26 +517,28 @@ class _CreateCommunityDialogState extends State<_CreateCommunityDialog> {
         child: const Text('取消'),
       ),
       FilledButton(
-        onPressed: () {
-          final name = _name.text.trim();
-          if (name.characters.length < 2) {
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(const SnackBar(content: Text('社群名称至少需要 2 个字。')));
-            return;
-          }
-          Navigator.pop(
-            context,
-            _CommunityForm(
-              name: name,
-              description: _description.text.trim(),
-              avatarUrl: _avatar.text.trim(),
-              visibility: _visibility,
-              joinPolicy: _joinPolicy,
-              cityId: _useCity ? widget.cityId ?? '' : '',
-            ),
-          );
-        },
+        onPressed: _selecting
+            ? null
+            : () {
+                final name = _name.text.trim();
+                if (name.characters.length < 2) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('社群名称至少需要 2 个字。')),
+                  );
+                  return;
+                }
+                Navigator.pop(
+                  context,
+                  _CommunityForm(
+                    name: name,
+                    description: _description.text.trim(),
+                    avatar: _avatar,
+                    visibility: _visibility,
+                    joinPolicy: _joinPolicy,
+                    cityId: _useCity ? widget.cityId ?? '' : '',
+                  ),
+                );
+              },
         child: const Text('创建'),
       ),
     ],
@@ -447,6 +564,14 @@ class CommunityDetailPage extends StatefulWidget {
 }
 
 class _CommunityDetailPageState extends State<CommunityDetailPage> {
+  final _reportSource = HumanCausalSourceSerial();
+  void _observeReportSource() => _reportSource.observe((
+    widget.id,
+    widget.api,
+    widget.auth,
+    widget.auth?.accountID,
+    widget.organizations?.active?.id,
+  ));
   CommunityItem? _item;
   List<CommunityMember> _members = const [];
   List<CommunityMember> _requests = const [];
@@ -490,11 +615,13 @@ class _CommunityDetailPageState extends State<CommunityDetailPage> {
   void initState() {
     super.initState();
     _authority = widget.api.authorizationHeader();
+    _observeReportSource();
     widget.auth?.addListener(_authorityChanged);
     _load();
   }
 
   void _authorityChanged() {
+    _observeReportSource();
     final now = widget.api.authorizationHeader();
     if (now == _authority) return;
     _authority = now;
@@ -511,8 +638,26 @@ class _CommunityDetailPageState extends State<CommunityDetailPage> {
   }
 
   @override
+  void didUpdateWidget(CommunityDetailPage old) {
+    super.didUpdateWidget(old);
+    _observeReportSource();
+    if (old.auth != widget.auth) {
+      old.auth?.removeListener(_authorityChanged);
+      widget.auth?.addListener(_authorityChanged);
+    }
+    if (old.id != widget.id || old.api != widget.api) {
+      ++_serial;
+      _item = null;
+      _members = const [];
+      _requests = const [];
+      _load();
+    }
+  }
+
+  @override
   void dispose() {
     widget.auth?.removeListener(_authorityChanged);
+    _reportSource.dispose();
     super.dispose();
   }
 
@@ -636,13 +781,20 @@ class _CommunityDetailPageState extends State<CommunityDetailPage> {
         if (kind == EntityActionKind.share) {
           await shareEntityToChat(
             context,
-            authorizationHeader: () => current() ? token : null,
+            authorizationHeader: api.authorizationHeader,
+            identityChanges: Listenable.merge([
+              widget.auth,
+              widget.organizations,
+              _reportSource,
+            ]),
+            ownerID: widget.auth == null ? null : () => widget.auth?.accountID,
+            workspaceID: () => widget.organizations?.active?.id,
+            sourceKey: () => _reportSource.generation,
+            sourceCurrent: () => mounted,
             type: 'community',
             id: item.id,
-            identityChanges: changes,
-            workspaceID: () => widget.organizations?.active?.id,
-            client: api.followClient,
             apiBaseUrl: api.followApiBaseUrl,
+            client: api.followClient,
           );
           return;
         }
@@ -690,6 +842,40 @@ class _CommunityDetailPageState extends State<CommunityDetailPage> {
     } finally {
       controller.dispose();
     }
+  }
+
+  Future<void> _editAvatar(CommunityItem item) async {
+    final owner = widget.auth?.accountID,
+        token = widget.api.authorizationHeader(),
+        generation = _authorityGeneration;
+    if (owner == null ||
+        token == null ||
+        !item.managed ||
+        widget.organizations?.active != null)
+      return;
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      showDragHandle: true,
+      builder: (_) => CommunityAvatarEditor(
+        communityID: item.id,
+        communityName: item.name,
+        ownerID: owner,
+        api: widget.api.avatarAPI,
+        identityChanges: Listenable.merge([widget.auth, widget.organizations]),
+        current: () =>
+            mounted &&
+            token == widget.api.authorizationHeader() &&
+            generation == _authorityGeneration &&
+            widget.organizations?.active == null &&
+            _item?.managed == true,
+      ),
+    );
+    if (mounted &&
+        token == widget.api.authorizationHeader() &&
+        generation == _authorityGeneration)
+      await _load();
   }
 
   Future<void> _archive(CommunityItem item) async {
@@ -758,7 +944,8 @@ class _CommunityDetailPageState extends State<CommunityDetailPage> {
             .toList() ??
         const <PublicActivity>[];
     return Scaffold(
-      appBar: AppBar(
+      appBar: birdtieAppBar(
+        context,
         title: Text(item?.name ?? '社群详情'),
         actions: [
           if (item != null)
@@ -768,10 +955,23 @@ class _CommunityDetailPageState extends State<CommunityDetailPage> {
               onPressed: () => Navigator.push(
                 context,
                 MaterialPageRoute<void>(
-                  builder: (_) => SupportPage(
+                  builder: (_) => humanSupportDestination(
                     authorizationHeader: () => widget.auth?.authorizationHeader,
                     targetType: 'community',
                     targetID: item.id,
+                    ownerID: widget.auth == null
+                        ? null
+                        : () => widget.auth?.accountID,
+                    identityChanges: Listenable.merge([
+                      widget.auth,
+                      widget.organizations,
+                      _reportSource,
+                    ]),
+                    sourceCurrent: () =>
+                        mounted && widget.organizations?.active == null,
+                    client: widget.api.followClient,
+                    apiBaseUrl: widget.api.followApiBaseUrl,
+                    sourceKey: () => _reportSource.generation,
                   ),
                 ),
               ),
@@ -796,26 +996,43 @@ class _CommunityDetailPageState extends State<CommunityDetailPage> {
                 children: [
                   Row(
                     children: [
-                      CircleAvatar(
+                      CommunityAvatar(
+                        metadata: item.avatar,
+                        fallbackLabel: item.name,
+                        api: widget.api.avatarAPI,
+                        identityChanges: Listenable.merge([
+                          widget.auth,
+                          widget.organizations,
+                        ]),
+                        current: () =>
+                            mounted &&
+                            _item?.id == item.id &&
+                            widget.api.authorizationHeader() != null &&
+                            widget.organizations?.active == null,
                         radius: 30,
-                        child: Text(
-                          item.name.characters.first,
-                          style: const TextStyle(fontSize: 24),
-                        ),
                       ),
                       const SizedBox(width: 16),
                       Expanded(
                         child: Text(
                           item.name,
-                          style: const TextStyle(
-                            fontSize: 23,
-                            fontWeight: FontWeight.w700,
-                          ),
+                          style: Theme.of(context).textTheme.headlineSmall,
                         ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 12),
+                  if (item.managed && widget.auth != null)
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: TextButton.icon(
+                        onPressed:
+                            _working || widget.organizations?.active != null
+                            ? null
+                            : () => _editAvatar(item),
+                        icon: const Icon(Icons.photo_camera_outlined),
+                        label: const Text('编辑社群头像'),
+                      ),
+                    ),
                   Text(
                     '${communityVisibilityLabel(item.visibility)} · '
                     '${communityJoinLabel(item.joinPolicy)} · ${item.memberCount} 位成员',
@@ -827,6 +1044,15 @@ class _CommunityDetailPageState extends State<CommunityDetailPage> {
                           builder: (_) => CommunityConversationPage(
                             communityID: item.id,
                             communityTitle: item.name,
+                            ownerID: widget.auth == null
+                                ? null
+                                : () => widget.auth?.accountID,
+                            identityChanges: Listenable.merge([
+                              widget.auth,
+                              widget.organizations,
+                            ]),
+                            sourceCurrent: () =>
+                                mounted && widget.organizations?.active == null,
                             authorizationHeader: widget.api.authorizationHeader,
                             apiBaseUrl: widget.api.followApiBaseUrl,
                             client: widget.api.followClient,
@@ -840,6 +1066,12 @@ class _CommunityDetailPageState extends State<CommunityDetailPage> {
                     FollowButton(
                       targetType: 'COMMUNITY',
                       targetID: item.id,
+                      accountID: () => widget.auth?.accountID,
+                      identityChanges: Listenable.merge([
+                        widget.auth,
+                        widget.organizations,
+                      ]),
+                      workspaceID: () => widget.organizations?.active?.id,
                       authorizationHeader: () =>
                           widget.auth?.authorizationHeader,
                       apiBaseUrl: widget.api.followApiBaseUrl,
@@ -871,12 +1103,9 @@ class _CommunityDetailPageState extends State<CommunityDetailPage> {
                     ),
                   if (widget.city != null) ...[
                     const SizedBox(height: 22),
-                    const Text(
+                    Text(
                       '近期活动',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                      ),
+                      style: Theme.of(context).textTheme.titleMedium,
                     ),
                     if (widget.city!.activityError != null)
                       TextButton(
@@ -897,6 +1126,15 @@ class _CommunityDetailPageState extends State<CommunityDetailPage> {
                             context: context,
                             isScrollControlled: true,
                             builder: (sheetContext) => ActivityDetailSheet(
+                              accountID: () => widget.auth?.accountID,
+                              apiBaseUrl: widget.api.followApiBaseUrl,
+                              client: widget.api.followClient,
+                              identityChanges: Listenable.merge([
+                                widget.auth,
+                                widget.organizations,
+                              ]),
+                              workspaceID: () =>
+                                  widget.organizations?.active?.id,
                               activity: activity,
                               authorizationHeader: () =>
                                   widget.auth?.authorizationHeader,
@@ -947,13 +1185,7 @@ class _CommunityDetailPageState extends State<CommunityDetailPage> {
                     ),
                   if (item.joined) ...[
                     const SizedBox(height: 24),
-                    const Text(
-                      '成员',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
+                    Text('成员', style: Theme.of(context).textTheme.titleMedium),
                     if (_members.isEmpty)
                       const Text('暂无成员。')
                     else

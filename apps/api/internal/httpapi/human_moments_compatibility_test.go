@@ -51,6 +51,19 @@ func (s *humanMomentAccessSpy) Authenticate(_ context.Context, digest [32]byte) 
 	return s.actor, nil
 }
 
+func (s *humanMomentAccessSpy) AuthenticateHumanSocial(ctx context.Context, d [32]byte) (identity.Actor, error) {
+	return s.Authenticate(ctx, d)
+}
+func (s *humanMomentAccessSpy) ValidateHumanSocialResponse(context.Context, [32]byte, identity.Actor) error {
+	return nil
+}
+func (s *humanMomentAccessSpy) CaptureHumanControlSession(context.Context, [32]byte, identity.Actor) (identity.HumanControlFrame, error) {
+	return identity.HumanControlFrame{ID: s.actor.ID, Generation: 1}, nil
+}
+func (s *humanMomentAccessSpy) ValidateHumanControlSession(context.Context, [32]byte, identity.Actor, identity.HumanControlFrame) error {
+	return nil
+}
+
 type humanMomentNativeSpy struct {
 	humanMomentLegacySpy
 	seen  [32]byte
@@ -110,11 +123,17 @@ func TestHumanMomentHTTPNoLegacyFallback(t *testing.T) {
 				h.ServeHTTP(rw, req)
 				return rw
 			}
-			if rw := call(legacy); rw.Code != http.StatusServiceUnavailable || legacy.calls != 0 {
+			expectedStatus := http.StatusServiceUnavailable
+			expectedNativeCalls := 1
+			if route.method != "GET" {
+				expectedStatus = http.StatusConflict
+				expectedNativeCalls = 0
+			}
+			if rw := call(legacy); rw.Code != expectedStatus || legacy.calls != 0 {
 				t.Fatal("owner-ID Store was an authorization fallback")
 			}
 			native := &humanMomentNativeSpy{}
-			if rw := call(native); rw.Code != http.StatusServiceUnavailable || native.calls != 1 || native.humanMomentLegacySpy.calls != 0 || native.seen != access.seen || native.actor != actor {
+			if rw := call(native); rw.Code != expectedStatus || native.calls != expectedNativeCalls || native.humanMomentLegacySpy.calls != 0 || (expectedNativeCalls > 0 && (native.seen != access.seen || native.actor != actor)) {
 				t.Fatal("registered route did not pass trusted Authenticate digest/Actor to current human gateway")
 			}
 		})

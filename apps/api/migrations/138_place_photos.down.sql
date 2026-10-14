@@ -1,0 +1,16 @@
+BEGIN;
+LOCK TABLE place_photo_candidates,place_photo_publications,place_photo_operations IN ACCESS EXCLUSIVE MODE;
+DO $$ BEGIN IF EXISTS(SELECT 1 FROM place_photo_candidates) OR EXISTS(SELECT 1 FROM place_photo_publications) OR EXISTS(SELECT 1 FROM place_photo_operations) THEN RAISE EXCEPTION '138 has photo/operation history; downgrade refused';END IF;END $$;
+DROP FUNCTION birdtie_purge_human_media_derivatives(integer);
+DROP TABLE place_photo_operations;
+DROP FUNCTION birdtie_place_photo_operation_guard();
+DROP TABLE place_photo_publications;
+DROP FUNCTION birdtie_place_photo_publication_guard();
+DROP FUNCTION birdtie_place_photo_metadata(uuid,timestamptz);
+DROP FUNCTION birdtie_place_photo_proof(uuid);
+DROP FUNCTION birdtie_place_photo_authority(uuid);
+DROP TABLE place_photo_candidates;
+DROP FUNCTION birdtie_place_photo_candidate_guard();
+DROP FUNCTION birdtie_place_photo_visible(uuid,timestamptz);
+DROP FUNCTION birdtie_place_photo_editor(uuid,uuid,boolean);
+COMMIT;

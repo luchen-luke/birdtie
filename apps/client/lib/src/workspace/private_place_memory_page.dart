@@ -5,6 +5,8 @@ import 'package:http/http.dart' as http;
 import 'private_place_memory_api.dart';
 import 'private_place_memory_controller.dart';
 
+import '../app/birdtie_app_bar.dart';
+
 /// One stable Place, current human owner. Public Place History is a separate
 /// route; no location permission, cognitive grant or model is needed here.
 class PrivatePlaceMemoryPage extends StatefulWidget {
@@ -258,7 +260,7 @@ class _PrivatePlaceMemoryPageState extends State<PrivatePlaceMemoryPage> {
   Widget build(BuildContext context) {
     if (_retired) {
       return Scaffold(
-        appBar: AppBar(title: const Text('我的地点记录')),
+        appBar: birdtieAppBar(context, title: const Text('我的地点记录')),
         body: SafeArea(
           child: ListView(
             padding: const EdgeInsets.all(20),
@@ -287,7 +289,7 @@ class _PrivatePlaceMemoryPageState extends State<PrivatePlaceMemoryPage> {
     final view = _data.view;
     final controls = _data.controls;
     return Scaffold(
-      appBar: AppBar(title: const Text('我的地点记录')),
+      appBar: birdtieAppBar(context, title: const Text('我的地点记录')),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(16),

@@ -2,10 +2,12 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:http/http.dart' as http;
+import '../app/birdtie_app_bar.dart';
 import '../auth/birdtie_auth_controller.dart';
 import 'active_social_intent_api.dart';
 import 'active_social_intent_controller.dart';
 import 'intent_activity_conversion_page.dart';
+import 'human_visibility.dart';
 
 String activeIntentTime(DateTime v) {
   final t = v.toLocal();
@@ -202,6 +204,7 @@ class _ActiveIntentPageState extends State<ActiveSocialIntentPage> {
               Text('类型：${intentTypes[p.after.intent['type']]}'),
               Text('方式：${intentModes[p.after.intent['modality']]}'),
               Text('受众：${p.after.audienceLabel}'),
+              Text(intentAudienceDescriptions[p.after.intent['audience']]!),
               Text('地点／线上方式：${p.after.locationLabel}'),
               if (p.after.constraints['onlinePlatform'] != null &&
                   p.after.intent['modality'] == 'HYBRID')
@@ -283,7 +286,7 @@ class _ActiveIntentPageState extends State<ActiveSocialIntentPage> {
   Widget build(BuildContext context) {
     final item = _data.selected;
     return Scaffold(
-      appBar: AppBar(
+      appBar: birdtieAppBar(context,
         title: const Text('我的社交意图'),
         actions: [
           IconButton(
@@ -346,6 +349,7 @@ class _ActiveIntentPageState extends State<ActiveSocialIntentPage> {
                   '当前：${item.expiresAt.isAfter(DateTime.now()) ? intentStates[item.status] : '已到期'} · ${intentModes[item.intent['modality']]}',
                 ),
                 Text('受众：${item.audienceLabel}'),
+                Text(intentAudienceDescriptions[item.intent['audience']]!),
                 Text('地点／线上方式：${item.locationLabel}'),
                 if (!item.sourceAvailable)
                   const Text('当前来源暂不可用；可检查取消，不会展示隐藏地点资料。'),
@@ -668,6 +672,8 @@ class _IntentEditDialogState extends State<_IntentEditDialog> {
               intentAudiences,
               (v) => setState(() => draft['audience'] = v),
             ),
+            const SizedBox(height: 8),
+            Text(intentAudienceDescriptions[draft['audience']]!),
             if (draft['audience'] == 'LOCAL')
               _pick(
                 '当前公开城市',

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import '../app/birdtie_app_bar.dart';
 import '../auth/birdtie_auth_controller.dart';
 import 'agent_profile_completion_api.dart';
 import 'agent_profile_completion_controller.dart';
@@ -111,7 +112,7 @@ class _AgentProfileCompletionSheetState
   Widget build(BuildContext context) {
     final p = c.preview, s = c.suggestions;
     return Scaffold(
-      appBar: AppBar(title: const Text('补齐活动偏好')),
+      appBar: birdtieAppBar(context, title: const Text('补齐活动偏好')),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: EdgeInsets.fromLTRB(

@@ -3,12 +3,14 @@ package postgres
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"reflect"
 	"strings"
 	"time"
 
 	"github.com/birdtie/birdtie/apps/api/internal/actorref"
+	"github.com/birdtie/birdtie/apps/api/internal/agentprofile"
 	arp "github.com/birdtie/birdtie/apps/api/internal/agentresultprojection"
 	"github.com/birdtie/birdtie/apps/api/internal/agenttool"
 	"github.com/birdtie/birdtie/apps/api/internal/agentworkspace"
@@ -82,47 +84,69 @@ func replyCurrentQuery(t agentworkspace.Task) (arp.Query, error) {
 // caller has already persisted final filters while ACTIVE; exact Task CAS,
 // native policy and source read all precede the same original Task writer.
 func (s *Store) CaptureOwnHumanReply(ctx context.Context, a arp.Access) (agentworkspace.Task, error) {
+	t, _, e := s.captureOwnHumanReply(ctx, a, false)
+	return t, e
+}
+
+func (s *Store) captureOwnHumanReply(ctx context.Context, a arp.Access, requireEmpty bool) (agentworkspace.Task, *nativeEmptyPlaceReplyRead, error) {
 	tx, _, p, e := s.beginCurrentToolRead(ctx, a.Actor, a.SessionDigest, resultProjectionRelations)
 	if e != nil {
-		return agentworkspace.Task{}, e
+		return agentworkspace.Task{}, nil, e
 	}
 	defer tx.Rollback(context.Background())
 	if _, e = tx.Exec(ctx, `SET LOCAL jit=off`); e != nil {
-		return agentworkspace.Task{}, arp.ErrUnavailable
+		return agentworkspace.Task{}, nil, arp.ErrUnavailable
 	}
 	t, e := ownReplyTaskTx(ctx, tx, a, true)
 	if e != nil {
-		return agentworkspace.Task{}, e
+		return agentworkspace.Task{}, nil, e
+	}
+	if requireEmpty && !agentworkspace.IsExplicitPlaceRefinementTask(t) {
+		return agentworkspace.Task{}, nil, arp.ErrDenied
 	}
 	// An exact completed retry is a read, not another appended message/notice.
 	if t.Status == agentworkspace.TaskCompleted && len(t.Conversation) > 0 && agentworkspace.ValidateReplyMembership(t, len(t.Conversation)-1) == nil {
 		var existing *nativeMessageResultsRead
 		if existing, e = s.readMessageResultsTx(ctx, tx, a, t, p); e != nil {
-			return agentworkspace.Task{}, e
+			return agentworkspace.Task{}, nil, e
 		}
 		if e = tx.Commit(ctx); e != nil {
-			return agentworkspace.Task{}, e
+			return agentworkspace.Task{}, nil, e
 		}
 		if !nativeReplyReadUnexpired(existing.state(), existing.state().until, time.Now()) {
-			return agentworkspace.Task{}, arp.ErrChanged
+			return agentworkspace.Task{}, nil, arp.ErrChanged
 		}
-		return t, ctx.Err()
+		return t, nil, ctx.Err()
 	}
 	q, source, e := s.captureReplyCurrentSourceTx(ctx, tx, a, t, p)
 	if e != nil {
-		return agentworkspace.Task{}, e
+		return agentworkspace.Task{}, nil, e
 	}
-	t, latest, e := s.persistReplyMembershipTx(ctx, tx, a, t, p, q.Kind, source, agentworkspace.Message{Role: "assistant", Text: agentworkspace.NativeRuleReply(q.Kind, len(source.Items))})
+	message := agentworkspace.NativeRuleReply(q.Kind, len(source.Items))
+	if requireEmpty {
+		if e = requireEmptyPlaceRefinementSource(q, source); e != nil {
+			return agentworkspace.Task{}, nil, e
+		}
+		message = agentworkspace.EmptyPlaceRefinementReply(t)
+	}
+	t, latest, e := s.persistReplyMembershipTx(ctx, tx, a, t, p, q.Kind, source, agentworkspace.Message{Role: "assistant", Text: message})
 	if e != nil {
-		return agentworkspace.Task{}, e
+		return agentworkspace.Task{}, nil, e
+	}
+	var emptyRead *nativeEmptyPlaceReplyRead
+	if requireEmpty {
+		emptyRead, e = s.readEmptyPlaceRefinementTx(ctx, tx, a, t, q, p)
+		if e != nil {
+			return agentworkspace.Task{}, nil, e
+		}
 	}
 	if e = tx.Commit(ctx); e != nil || ctx.Err() != nil {
-		return agentworkspace.Task{}, arp.ErrUnavailable
+		return agentworkspace.Task{}, nil, arp.ErrUnavailable
 	}
 	if !nativeReplyReadUnexpired(latest.state(), latest.state().until, time.Now()) {
-		return agentworkspace.Task{}, arp.ErrChanged
+		return agentworkspace.Task{}, nil, arp.ErrChanged
 	}
-	return t, nil
+	return t, emptyRead, nil
 }
 
 // A completed model reply and an ordinary rules reply select the SAME native
@@ -334,6 +358,34 @@ func (s *Store) readMessageResultsTx(ctx context.Context, tx pgx.Tx, a arp.Acces
 	a.ExpectedTask = append(json.RawMessage(nil), a.ExpectedTask...)
 	h := &nativeMessageResultsState{store: s, access: a, entries: []agentworkspace.MessageResult{}, sources: []arp.Receipt{}, policyToken: p.token, until: p.until}
 	for _, i := range agentworkspace.LatestReplyMemberships(t) {
+		localUntil := p.until
+		// Withdrawn local facts or corrected/deleted Memory never reconstruct
+		// an old personalized map. Preserve the private text/history, while
+		// omitting that obsolete round's cards and source capabilities.
+		if t.Conversation[i].LocalReplyEvidence != nil {
+			binding, err := lockOwnAgentPrivateBinding(ctx, tx, agentprofile.PrivateAccess{SessionDigest: a.SessionDigest, WorkspacePrincipal: actorref.PrincipalRef{Type: actorref.Person, ID: a.Actor.ID}}, s.devPhoneEnabled)
+			if err != nil {
+				return nil, arp.ErrDenied
+			}
+			_, deadline, checkErr := validateLocalReplyEvidenceTx(ctx, tx, binding, t.Conversation[i], time.Now().UTC())
+			if checkErr != nil {
+				if errors.Is(checkErr, arp.ErrChanged) {
+					continue
+				}
+				return nil, checkErr
+			}
+			localUntil = retryMinimum(localUntil, deadline)
+		}
+		if t.Conversation[i].LicensedPlaceModelEvidence != nil {
+			_, deadline, checkErr := ValidateLicensedPlaceModelEvidenceTx(ctx, tx, a.Actor.ID, t.ID, t.Conversation[i], time.Now().UTC())
+			if checkErr != nil {
+				if errors.Is(checkErr, arp.ErrChanged) {
+					continue
+				}
+				return nil, checkErr
+			}
+			localUntil = retryMinimum(localUntil, deadline)
+		}
 		m := *t.Conversation[i].ResultMembership
 		if tool := agenttool.CurrentSearchTool(m.Kind); tool != "" && agenttool.Restrict(tool, actorref.Person, p.level).Denied {
 			return nil, arp.ErrDenied
@@ -344,6 +396,7 @@ func (s *Store) readMessageResultsTx(ctx context.Context, tx pgx.Tx, a arp.Acces
 		if e != nil {
 			return nil, e
 		}
+		r.ValidUntil = retryMinimum(r.ValidUntil, localUntil)
 		// Keep original membership order, independent of changed source labels.
 		items := []arp.Item{}
 		activities := []foundation.Activity{}
@@ -456,6 +509,34 @@ func (s *Store) finalReplySourceProofsTx(ctx context.Context, tx pgx.Tx, a arp.A
 			return arp.ErrChanged
 		}
 		h.until = retryMinimum(h.until, proof.ValidUntil)
+	}
+	// Current local field/permission and Memory proofs are checked after the
+	// final source batch as well. In particular, lock waits cannot outlive a
+	// used private preference and still release its old cards or source links.
+	for _, entry := range h.entries {
+		message := t.Conversation[entry.MessageIndex]
+		if message.LicensedPlaceModelEvidence != nil {
+			_, deadline, checkErr := ValidateLicensedPlaceModelEvidenceTx(ctx, tx, a.Actor.ID, t.ID, message, time.Now().UTC())
+			if checkErr != nil {
+				return checkErr
+			}
+			h.until = retryMinimum(h.until, deadline)
+		}
+		if message.LocalReplyEvidence == nil {
+			continue
+		}
+		binding, bindErr := lockOwnAgentPrivateBinding(ctx, tx, agentprofile.PrivateAccess{SessionDigest: a.SessionDigest, WorkspacePrincipal: actorref.PrincipalRef{Type: actorref.Person, ID: a.Actor.ID}}, s.devPhoneEnabled)
+		if bindErr != nil {
+			return arp.ErrDenied
+		}
+		_, deadline, checkErr := validateLocalReplyEvidenceTx(ctx, tx, binding, message, time.Now().UTC())
+		if checkErr != nil {
+			return checkErr
+		}
+		h.until = retryMinimum(h.until, deadline)
+	}
+	if !h.until.After(time.Now().UTC()) {
+		return arp.ErrChanged
 	}
 	return nil
 }

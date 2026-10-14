@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import '../app/birdtie_app_bar.dart';
 import '../auth/birdtie_auth_controller.dart';
 import 'person_community_interest_api.dart';
 import 'person_community_interest_controller.dart';
@@ -182,14 +183,14 @@ class _InterestPageState extends State<PersonCommunityInterestPage> {
   );
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('我的社群兴趣')),
+    appBar: birdtieAppBar(context, title: const Text('我的社群兴趣')),
     body: SafeArea(
       child: ListView(
         padding: const EdgeInsets.all(20),
         children: [
-          const Text(
+          Text(
             '让共同兴趣被看见',
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700),
+            style: Theme.of(context).textTheme.headlineSmall,
           ),
           const SizedBox(height: 12),
           const Text('选择当前公开社群，再检查是否公开你的兴趣。默认仅自己可见；公开不代表加入社群或取得成员资格。'),
@@ -212,7 +213,7 @@ class _InterestPageState extends State<PersonCommunityInterestPage> {
             const SizedBox(height: 16),
             Text(
               _data.resultOnly ? '本次操作结果（刷新可查看全部声明）' : '已声明的兴趣',
-              style: const TextStyle(fontWeight: FontWeight.w700),
+              style: Theme.of(context).textTheme.titleMedium,
             ),
             if (_data.own!.records.isEmpty)
               const Padding(
@@ -229,7 +230,7 @@ class _InterestPageState extends State<PersonCommunityInterestPage> {
                   children: [
                     Text(
                       r.name,
-                      style: const TextStyle(fontWeight: FontWeight.w600),
+                      style: Theme.of(context).textTheme.titleMedium,
                     ),
                     Text(_state(r.state)),
                     if (!r.sourceAvailable)
@@ -261,7 +262,7 @@ class _InterestPageState extends State<PersonCommunityInterestPage> {
           ],
           if (_data.available != null) ...[
             const SizedBox(height: 16),
-            const Text('当前公开社群', style: TextStyle(fontWeight: FontWeight.w700)),
+            Text('当前公开社群', style: Theme.of(context).textTheme.titleMedium),
             if (_data.available!.options.isEmpty)
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: 12),

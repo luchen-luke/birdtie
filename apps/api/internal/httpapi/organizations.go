@@ -9,7 +9,9 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 
+	"github.com/birdtie/birdtie/apps/api/internal/entitycover"
 	"github.com/birdtie/birdtie/apps/api/internal/identity"
 	"github.com/birdtie/birdtie/apps/api/internal/organization"
 )
@@ -41,8 +43,11 @@ func (s *server) workspacePrincipal(w http.ResponseWriter, r *http.Request, acto
 }
 
 func (s *server) listOrganizations(w http.ResponseWriter, r *http.Request) {
-	actor, _, err := s.actor(r, true)
+	actor, digest, err := s.actor(r, true)
 	if authFailed(w, err) {
+		return
+	}
+	if !s.captureEntityCoverHTTP(w, r, actor, digest) {
 		return
 	}
 	if actor.AccountType != "person" || s.organizations == nil {
@@ -54,12 +59,41 @@ func (s *server) listOrganizations(w http.ResponseWriter, r *http.Request) {
 		serverError(w, err)
 		return
 	}
-	respond(w, http.StatusOK, map[string]any{"data": items})
+	has := false
+	for _, i := range items {
+		if i.Cover != nil || i.CoverSourceProof != "" {
+			has = true
+		}
+	}
+	if has {
+		port, ok := s.access.(entitycover.Store)
+		if !ok {
+			entityCoverFailure(w, entitycover.ErrUnavailable)
+			return
+		}
+		a := entitycover.Access{AccountID: actor.ID, AccountType: actor.AccountType, SessionDigest: digest}
+		w.Header().Set("Cache-Control", "no-store")
+		s.respondEntityCover(w, r, a, items, func() error {
+			for _, i := range items {
+				if i.Cover != nil || i.CoverSourceProof != "" {
+					if e := port.ValidateEntityCoverProjection(r.Context(), a, entitycover.Ref{Type: "organization", ID: i.ID}, i.Cover, i.CoverSourceProof); e != nil {
+						return e
+					}
+				}
+			}
+			return nil
+		})
+		return
+	}
+	s.respondCoverWithoutMedia(w, r, entitycover.Access{AccountID: actor.ID, AccountType: actor.AccountType, SessionDigest: digest}, 200, items)
 }
 
 func (s *server) createOrganization(w http.ResponseWriter, r *http.Request) {
-	actor, _, err := s.actor(r, true)
+	actor, digest, err := s.actor(r, true)
 	if authFailed(w, err) {
+		return
+	}
+	if !s.captureEntityCoverHTTP(w, r, actor, digest) {
 		return
 	}
 	if actor.AccountType != "person" || s.organizations == nil {
@@ -97,7 +131,7 @@ func (s *server) createOrganization(w http.ResponseWriter, r *http.Request) {
 		serverError(w, err)
 		return
 	}
-	respond(w, http.StatusCreated, map[string]any{"data": created})
+	s.respondOrganizationCoverResult(w, r, actor, digest, 201, created)
 }
 
 func validOrganizationProfile(input *organization.ProfileInput) bool {
@@ -131,8 +165,11 @@ func (s *server) getPublicOrganization(w http.ResponseWriter, r *http.Request) {
 	if !businessConsoleNoBody(w, r) {
 		return
 	}
-	actor, _, err := s.actor(r, false)
+	actor, digest, err := s.actor(r, false)
 	if authFailed(w, err) {
+		return
+	}
+	if !s.captureEntityCoverHTTP(w, r, actor, digest) {
 		return
 	}
 	id := r.PathValue("organizationID")
@@ -175,10 +212,59 @@ func (s *server) getPublicOrganization(w http.ResponseWriter, r *http.Request) {
 		serverError(w, err)
 		return
 	}
+	if current.Cover != nil {
+		copy := *current.Cover
+		current.Cover = &copy
+	}
+	current.UpcomingActivities = append(current.UpcomingActivities[:0:0], current.UpcomingActivities...)
+	if profile.CoverSourceProof != current.CoverSourceProof || !entitycover.PreserveLease(profile.Cover, current.Cover, time.Now().UTC()) || len(profile.UpcomingActivities) != len(current.UpcomingActivities) {
+		entityCoverFailure(w, entitycover.ErrChanged)
+		return
+	}
+	for i := range profile.UpcomingActivities {
+		old := profile.UpcomingActivities[i]
+		fresh := &current.UpcomingActivities[i]
+		if fresh.Cover != nil {
+			copy := *fresh.Cover
+			fresh.Cover = &copy
+		}
+		if old.CoverSourceProof != fresh.CoverSourceProof || !entitycover.PreserveLease(old.Cover, fresh.Cover, time.Now().UTC()) {
+			entityCoverFailure(w, entitycover.ErrChanged)
+			return
+		}
+	}
 	latest, err := json.Marshal(map[string]any{"data": current})
 	if err != nil || !bytes.Equal(encoded, latest) {
 		respondError(w, 503, "organization_profile_changed")
 		return
+	}
+	access := entitycover.Access{AccountID: actor.ID, AccountType: actor.AccountType, SessionDigest: digest}
+	if err = s.validateEntityCoverHTTP(r, access); err != nil {
+		entityCoverFailure(w, err)
+		return
+	}
+	port, ok := s.access.(entitycover.Store)
+	if profile.CoverSourceProof != "" || profile.Cover != nil {
+		if !ok {
+			entityCoverFailure(w, entitycover.ErrUnavailable)
+			return
+		}
+		if err = port.ValidateEntityCoverProjection(r.Context(), access, entitycover.Ref{Type: "organization", ID: id}, profile.Cover, profile.CoverSourceProof); err != nil {
+			entityCoverFailure(w, err)
+			return
+		}
+	}
+	for _, act := range profile.UpcomingActivities {
+		if act.CoverSourceProof != "" || act.Cover != nil {
+			if !ok {
+				entityCoverFailure(w, entitycover.ErrUnavailable)
+				return
+			}
+			if err = port.ValidateEntityCoverProjection(r.Context(), access, entitycover.Ref{Type: "activity", ID: act.ID}, act.Cover, act.CoverSourceProof); err != nil {
+				entityCoverFailure(w, err)
+				return
+			}
+		}
 	}
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
@@ -186,8 +272,11 @@ func (s *server) getPublicOrganization(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *server) updateOrganizationProfile(w http.ResponseWriter, r *http.Request) {
-	actor, _, err := s.actor(r, true)
+	actor, digest, err := s.actor(r, true)
 	if authFailed(w, err) {
+		return
+	}
+	if !s.captureEntityCoverHTTP(w, r, actor, digest) {
 		return
 	}
 	if actor.AccountType != "person" || s.organizations == nil {
@@ -216,5 +305,5 @@ func (s *server) updateOrganizationProfile(w http.ResponseWriter, r *http.Reques
 		serverError(w, err)
 		return
 	}
-	respond(w, http.StatusOK, map[string]any{"data": updated})
+	s.respondOrganizationCoverResult(w, r, actor, digest, 200, updated)
 }

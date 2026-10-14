@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import 'business_api.dart';
 import 'business_console_page.dart' show businessStateLabel;
+import '../app/birdtie_app_bar.dart';
 
 /// Resolves the original management resource; notification text is not a
 /// cached business claim, public profile, approval or Business Agent output.
@@ -123,7 +124,7 @@ class _BusinessClaimNotificationPageState
     final current = _valid();
     final value = current ? _snapshot : null;
     return Scaffold(
-      appBar: AppBar(title: const Text('商家经营权审核')),
+      appBar: birdtieAppBar(context, title: const Text('商家经营权审核')),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(24),
@@ -148,7 +149,7 @@ class _BusinessClaimNotificationPageState
                 const SizedBox(height: 16),
                 const Text('这是商家工作台的当前状态，可能与收到通知时不同。经营权核验不代表交易背书。'),
                 const SizedBox(height: 12),
-                const Text('管理资料与成员请从设置中的商家工作台进入。'),
+                const Text('从侧栏的“我的内容 → 我的商家与认领”查看当前状态。'),
               ],
               const SizedBox(height: 16),
               FilledButton.tonalIcon(

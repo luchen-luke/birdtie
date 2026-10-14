@@ -33,7 +33,193 @@ func (s *testStore) ConsumeAgentOutboxControl(c context.Context, a agentoutbox.C
 }
 
 func options() Options {
-	return Options{actorref.PrincipalRef{Type: actorref.Person, ID: owner}, worker, agentoutbox.HandlerV1, 1, time.Second}
+	return Options{Subject: actorref.PrincipalRef{Type: actorref.Person, ID: owner}, WorkerID: worker, Handler: agentoutbox.HandlerV1, Batch: 1, Timeout: time.Second}
+}
+
+type mixedRunnerStore struct {
+	testStore
+	mixed      func(context.Context, actorref.PrincipalRef, string) (agentoutbox.Record, agentoutbox.Claim, error)
+	mixedCalls int
+}
+
+func (s *mixedRunnerStore) ClaimMixedAgentOutboxControlForSubject(c context.Context, p actorref.PrincipalRef, w string) (agentoutbox.Record, agentoutbox.Claim, error) {
+	s.mixedCalls++
+	return s.mixed(c, p, w)
+}
+func mixedRunnerRecords(handler agentoutbox.HandlerVersion) (agentoutbox.Record, agentoutbox.Claim, agentoutbox.ConsumerRecord) {
+	r, c, p := records()
+	switch handler {
+	case agentoutbox.MemoryHandler:
+		r.Event.SchemaVersion = agentoutbox.MemorySchema
+		r.Event.EventType = agentoutbox.MemoryUpdated
+		r.Event.Source.Type = agentoutbox.MemorySource
+		r.Event.Source.Status = agentoutbox.MemoryActive
+		r.Event.Source.Revision = 2
+		r.Event.LogicalOperationID = agentoutbox.MemoryOperationID(r.Event.Source.ID, 2, r.Event.EventType)
+	case agentoutbox.PreferenceHandler:
+		r.Event.SchemaVersion = agentoutbox.PreferenceSchema
+		r.Event.EventType = agentoutbox.PreferenceUpdated
+		r.Event.Source.Type = agentoutbox.PreferenceSource
+		r.Event.Source.ID = r.Event.AgentID
+		r.Event.Source.Status = agentoutbox.PreferenceConfigured
+		r.Event.Source.Revision = 2
+		r.Event.LogicalOperationID = agentoutbox.PreferenceOperationID(r.Event.Source.ID, 2, r.Event.EventType)
+	case agentoutbox.TaskRequestHandler:
+		r.Event.SchemaVersion = agentoutbox.TaskRequestSchema
+		r.Event.EventType = agentoutbox.TaskRequestChanged
+		r.Event.Source.Type = agentoutbox.TaskRequestSource
+		r.Event.Source.Status = agentoutbox.TaskRequestActive
+		r.Event.Source.Revision = 0
+		r.Event.LogicalOperationID = agentoutbox.TaskRequestOperationID(r.Event.Source.ID, r.Event.Source.Fingerprint, r.Event.EventType)
+	case agentoutbox.ParticipationHandler:
+		r.Event.SchemaVersion = agentoutbox.ParticipationSchema
+		r.Event.EventType = agentoutbox.ParticipationUpdated
+		r.Event.Source.Type = agentoutbox.ParticipationSource
+		r.Event.Source.Status = agentoutbox.ParticipationGoing
+		r.Event.Source.Revision = 0
+		r.Event.LogicalOperationID = agentoutbox.ParticipationOperationID(r.Event.Source.ID, r.Event.Source.Fingerprint)
+	}
+	if handler != agentoutbox.HandlerV1 {
+		r.Event.RootTraceID = r.Event.LogicalOperationID
+		r.Event.EventID = agentoutbox.StableEventID(r.Event)
+		c.HandlerVersion = handler
+		c.EventID = r.Event.EventID
+		p.EventID = c.EventID
+		p.HandlerVersion = handler
+		p.State = agentoutbox.MemoryComplete
+		p.Reason = agentoutbox.ReasonCleanupComplete
+	}
+	return r, c, p
+}
+func TestMixedMaintenanceUnitRunnerActualHandlersAndRetirement(t *testing.T) {
+	o := options()
+	o.MixedHandlers = true
+	o.Batch = 10
+	sequence := []agentoutbox.HandlerVersion{agentoutbox.MemoryHandler, agentoutbox.PreferenceHandler, agentoutbox.TaskRequestHandler, agentoutbox.ParticipationHandler, agentoutbox.HandlerV1}
+	fixtures := make([]struct {
+		r agentoutbox.Record
+		c agentoutbox.Claim
+		p agentoutbox.ConsumerRecord
+	}, len(sequence))
+	for i, h := range sequence {
+		fixtures[i].r, fixtures[i].c, fixtures[i].p = mixedRunnerRecords(h)
+	}
+	i := 0
+	s := &mixedRunnerStore{}
+	s.claim = func(context.Context, actorref.PrincipalRef, string, agentoutbox.HandlerVersion) (agentoutbox.Record, agentoutbox.Claim, error) {
+		t.Fatal("mixed dispatched through a fixed public claim")
+		return agentoutbox.Record{}, agentoutbox.Claim{}, nil
+	}
+	s.mixed = func(_ context.Context, p actorref.PrincipalRef, w string) (agentoutbox.Record, agentoutbox.Claim, error) {
+		if p != o.Subject || w != o.WorkerID {
+			t.Fatal("mixed scope changed")
+		}
+		if s.mixedCalls == 1 {
+			return agentoutbox.Record{}, agentoutbox.Claim{}, ErrNativeControlRetired
+		}
+		if i == len(sequence) {
+			return agentoutbox.Record{}, agentoutbox.Claim{}, agentoutbox.ErrNotFound
+		}
+		return fixtures[i].r, fixtures[i].c, nil
+	}
+	s.consume = func(_ context.Context, c agentoutbox.Claim) (agentoutbox.ConsumerRecord, error) {
+		expected, p := fixtures[i].c, fixtures[i].p
+		if c != expected {
+			t.Fatal("actual native handler/claim changed")
+		}
+		i++
+		if c.HandlerVersion == agentoutbox.HandlerV1 {
+			return p, agentoutbox.ErrUnavailable
+		}
+		return p, nil
+	}
+	result := Run(context.Background(), s, o)
+	if result.Status != "FINISHED" || result.Reason != "NO_ELIGIBLE_WORK" || result.ConfirmedReceipts != 5 || result.Counts.RetiredControls != 1 || result.Counts.MaintenanceComplete != 4 || result.Counts.Unavailable != 1 || result.BusinessExecution != "UNAVAILABLE" || s.mixedCalls != 7 || s.claims != 0 || s.consumes != 5 {
+		t.Fatal(result, s.mixedCalls, s.claims, s.consumes)
+	}
+}
+func TestMixedMaintenanceUnitRunnerClosedCapabilitiesAndUnknownResults(t *testing.T) {
+	o := options()
+	o.MixedHandlers = true
+	o.Batch = 10
+	if result := Run(context.Background(), &testStore{}, o); result.Reason != "MIXED_MAINTENANCE_UNAVAILABLE" {
+		t.Fatal("missing capability fell back to fixed handler", result)
+	}
+	for _, handler := range []agentoutbox.HandlerVersion{agentoutbox.HandlerV2, agentoutbox.MemoryHandler, agentoutbox.PreferenceHandler, agentoutbox.TaskRequestHandler, agentoutbox.ParticipationHandler} {
+		copy := o
+		copy.Handler = handler
+		if ValidateOptions(copy) {
+			t.Fatal("mixed overrode explicit handler")
+		}
+	}
+	for _, e := range []error{fmt.Errorf("private: %w", ErrNativeControlRetired), errors.Join(ErrNativeControlRetired, errors.New("unknown commit")), agentoutbox.ErrUnavailable, errors.New("SECRET_UNKNOWN_COMMIT")} {
+		s := &mixedRunnerStore{mixed: func(context.Context, actorref.PrincipalRef, string) (agentoutbox.Record, agentoutbox.Claim, error) {
+			return agentoutbox.Record{}, agentoutbox.Claim{}, e
+		}}
+		result := Run(context.Background(), s, o)
+		if result.Status != "STOPPED" || result.Counts.RetiredControls != 0 || result.ConfirmedReceipts != 0 || s.mixedCalls != 1 || s.consumes != 0 {
+			t.Fatal("unknown result advanced mixed runner", result)
+		}
+	}
+	for _, test := range []string{"nonempty-retirement", "wrong-family", "v2-replay", "foreign-owner", "unknown-consume"} {
+		t.Run(test, func(t *testing.T) {
+			r, c, p := mixedRunnerRecords(agentoutbox.MemoryHandler)
+			e := error(nil)
+			if test == "nonempty-retirement" {
+				e = ErrNativeControlRetired
+			}
+			if test == "wrong-family" {
+				c.HandlerVersion = agentoutbox.PreferenceHandler
+			}
+			if test == "v2-replay" {
+				r, c, p = mixedRunnerRecords(agentoutbox.HandlerV1)
+				c.HandlerVersion = agentoutbox.HandlerV2
+			}
+			if test == "foreign-owner" {
+				c.Subject.ID = other
+			}
+			s := &mixedRunnerStore{mixed: func(context.Context, actorref.PrincipalRef, string) (agentoutbox.Record, agentoutbox.Claim, error) {
+				return r, c, e
+			}}
+			s.consume = func(context.Context, agentoutbox.Claim) (agentoutbox.ConsumerRecord, error) {
+				return p, errors.New("PRIVATE_COMMIT_UNKNOWN")
+			}
+			result := Run(context.Background(), s, o)
+			if result.Status != "STOPPED" || result.ConfirmedReceipts != 0 || result.Counts.RetiredControls != 0 || s.mixedCalls != 1 || (test != "unknown-consume" && s.consumes != 0) {
+				t.Fatal("unbound mixed claim/result accepted", result)
+			}
+		})
+	}
+	retire := &mixedRunnerStore{mixed: func(context.Context, actorref.PrincipalRef, string) (agentoutbox.Record, agentoutbox.Claim, error) {
+		return agentoutbox.Record{}, agentoutbox.Claim{}, ErrNativeControlRetired
+	}}
+	o.Batch = 3
+	if result := Run(context.Background(), retire, o); result.Reason != "BATCH_LIMIT_REACHED" || result.Counts.RetiredControls != 3 || result.ConfirmedReceipts != 0 || retire.mixedCalls != 3 {
+		t.Fatal("retirement escaped bounded batch", result)
+	}
+}
+
+func TestMixedMaintenanceUnitFixedHandlersRejectForeignNativeFamilies(t *testing.T) {
+	families := []agentoutbox.HandlerVersion{agentoutbox.HandlerV1, agentoutbox.MemoryHandler, agentoutbox.PreferenceHandler, agentoutbox.TaskRequestHandler, agentoutbox.ParticipationHandler}
+	for _, requested := range families {
+		for _, source := range families {
+			if requested == source {
+				continue
+			}
+			t.Run(string(requested)+"/"+string(source), func(t *testing.T) {
+				r, c, _ := mixedRunnerRecords(source)
+				c.HandlerVersion = requested
+				o := options()
+				o.Handler = requested
+				s := &testStore{claim: func(context.Context, actorref.PrincipalRef, string, agentoutbox.HandlerVersion) (agentoutbox.Record, agentoutbox.Claim, error) {
+					return r, c, nil
+				}}
+				if out := Run(context.Background(), s, o); out.Reason != "INVALID_CLAIM" || out.ConfirmedReceipts != 0 || s.claims != 1 || s.consumes != 0 {
+					t.Fatal("fixed handler accepted a different native source family", out)
+				}
+			})
+		}
+	}
 }
 func records() (agentoutbox.Record, agentoutbox.Claim, agentoutbox.ConsumerRecord) {
 	now := time.Now().UTC().Add(-time.Millisecond)

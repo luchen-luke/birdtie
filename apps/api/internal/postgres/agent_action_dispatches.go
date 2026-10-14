@@ -29,7 +29,7 @@ func (n *nativeActionCommitment) UnmarshalJSON([]byte) error {
 func actionDispatchTx(ctx context.Context, tx pgx.Tx, id, owner string, lock bool) (aa.Dispatch, error) {
 	var d aa.Dispatch
 	d.Schema = aa.Schema
-	q := `SELECT id,approval_id,owner_id,effect_key,state,committed_at,lease_until,effect_id,applied_at FROM agent_action_dispatches WHERE id=$1 AND owner_id=$2`
+	q := `SELECT id,approval_id,owner_id,effect_key,state,committed_at,lease_until,effect_id,applied_at FROM agent_action_dispatches WHERE id=$1 AND owner_id=$2 AND EXISTS(SELECT 1 FROM agent_action_approvals p WHERE p.id=approval_id AND p.binding_canonical::jsonb->>'schema_version'='air.sandbox_action.v1')`
 	if lock {
 		q += ` FOR UPDATE`
 	}

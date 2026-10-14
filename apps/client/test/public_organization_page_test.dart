@@ -8,6 +8,122 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 
 void main() {
+  for (final mode in ['reviewer', 'denied', 'actorABA', 'expired']) {
+    testWidgets(
+      'organization map control actual personal permission $mode is independent of Agent and membership',
+      (t) async {
+        const org = 'b3000000-0000-4000-8000-000000000001';
+        const actor = 'b3000000-0000-4000-8000-000000000002';
+        var owner = actor, token = 'Bearer original';
+        final changes = ValueNotifier(0);
+        String? opened;
+        var controls = 0;
+        final client = MockClient((r) async {
+          if (r.url.path.endsWith('/map-location/control')) {
+            controls++;
+            expect(r.headers['Authorization'], token);
+            expect(r.headers['X-Organization-Workspace'], isNull);
+            if (mode == 'denied') return http.Response('{}', 403);
+            final readAt = DateTime.now().toUtc();
+            return http.Response.bytes(
+              utf8.encode(
+                jsonEncode({
+                  'data': {
+                    'organizationId': org,
+                    'authorityVersion': 1,
+                    'role': '',
+                    'canonical': null,
+                    'observedAt': readAt.toIso8601String(),
+                    'expiresAt': readAt
+                        .add(const Duration(seconds: 30))
+                        .toIso8601String(),
+                    'proposals': [
+                      {
+                        'organizationId': org,
+                        'status': 'PENDING',
+                        'canApprove': true,
+                        'canReject': true,
+                        'canWithdraw': false,
+                      },
+                    ],
+                  },
+                }),
+              ),
+              200,
+              headers: {'content-type': 'application/json; charset=utf-8'},
+            );
+          }
+          if (r.url.path == '/v1/organizations/$org')
+            return http.Response.bytes(
+              utf8.encode(
+                jsonEncode({
+                  'data': {
+                    'id': org,
+                    'name': '隔离待审核组织',
+                    'verificationStatus': 'verified',
+                    'agentAvailable': false,
+                    'officialLinks': [],
+                    'upcomingActivities': [],
+                  },
+                }),
+              ),
+              200,
+              headers: {'content-type': 'application/json; charset=utf-8'},
+            );
+          return http.Response('{}', 404);
+        });
+        await t.pumpWidget(
+          MaterialApp(
+            home: PublicOrganizationPage(
+              organizationID: org,
+              authorizationHeader: () => token,
+              ownerID: () => owner,
+              identityChanges: changes,
+              client: client,
+              apiBaseUrl: 'https://organization-control.test',
+              onOpenActivity: (_) {},
+              onOpenMapLocation: (id) => opened = id,
+            ),
+          ),
+        );
+        await t.pumpAndSettle();
+        final action = find.widgetWithText(TextButton, '地图位置管理与审核');
+        expect(controls, 1);
+        expect(find.text('组织 Agent 暂不可用。'), findsOneWidget);
+        if (mode == 'denied') {
+          expect(action, findsNothing);
+        } else {
+          expect(action, findsOneWidget);
+          final old = t.widget<TextButton>(action).onPressed!;
+          if (mode == 'reviewer') {
+            await t.tap(find.text('地图位置管理与审核'));
+            expect(opened, org);
+          } else if (mode == 'actorABA') {
+            owner = 'b3000000-0000-4000-8000-000000000003';
+            token = 'Bearer other';
+            changes.value++;
+            owner = actor;
+            token = 'Bearer original';
+            changes.value++;
+            old();
+            expect(opened, isNull);
+            await t.pumpAndSettle();
+          } else {
+            await t.pump(const Duration(seconds: 31));
+            await t.pumpAndSettle();
+            old();
+            expect(opened, isNull);
+            expect(action, findsNothing);
+          }
+        }
+        expect(t.takeException(), isNull);
+        await t.pumpWidget(const SizedBox());
+        await t.pumpAndSettle();
+        client.close();
+        changes.dispose();
+      },
+    );
+  }
   test(
     'public organization rejects private and foreign organizer activities',
     () {

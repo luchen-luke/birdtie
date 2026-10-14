@@ -14,7 +14,7 @@ import 'agent_memory_candidate_api_test.dart';
 
 Future<BirdtieAuthController> candidateAuth() async {
   final c = MockClient(
-    (r) async => candidateResponse(switch (r.url.path) {
+    (r) async => candidateReadResponse(r, switch (r.url.path) {
       '/v1/me' => {'id': candidateOwner},
       '/v1/auth/dev-phone/status' => {'enabled': true},
       _ => {'displayName': '本人测试'},
@@ -56,8 +56,9 @@ void main() {
         }
         final c = MockClient((r) async {
           if (r.method != 'GET') posts++;
-          return candidateResponse(
-            r.url.path == '/v1/me/agent-memory-candidates'
+          return candidateReadResponse(
+            r,
+            r.url.path == '/v1/me/agent-memory-candidates/page'
                 ? [candidateWire()]
                 : candidateWire(),
           );
@@ -81,7 +82,7 @@ void main() {
           ),
         );
         await t.pumpAndSettle();
-        expect(find.text('具体版本预览'), findsNothing);
+        expect(find.text('保存前确认'), findsNothing);
         expect(find.text('确认保存这项声明'), findsNothing);
         final verify = find.text('核实原候选结果');
         await t.scrollUntilVisible(verify, 200);
@@ -110,9 +111,11 @@ void main() {
       final workspace = ValueNotifier<String?>(null);
       var accepts = 0;
       final c = MockClient((r) async {
-        if (r.method == 'GET') return candidateResponse([candidateWire()]);
+        if (r.method == 'GET')
+          return candidateReadResponse(r, [candidateWire()]);
         if (r.url.path.endsWith('/preview')) {
-          return candidateResponse(
+          return candidateReadResponse(
+            r,
             previewWire(
               (jsonDecode(r.body) as Map)['previewId'] as String,
               candidateWire(),
@@ -120,7 +123,7 @@ void main() {
           );
         }
         accepts++;
-        return candidateResponse(candidateWire(status: 'ACTIVE'));
+        return candidateReadResponse(r, candidateWire(status: 'ACTIVE'));
       });
       await t.pumpWidget(
         MaterialApp(
@@ -143,10 +146,10 @@ void main() {
       await t.pumpAndSettle();
       await t.drag(find.byType(ListView), const Offset(0, 500));
       await t.pumpAndSettle();
-      expect(find.text('具体版本预览'), findsOneWidget);
+      expect(find.text('保存前确认'), findsOneWidget);
       workspace.value = 'organization';
       await t.pumpAndSettle();
-      expect(find.text('具体版本预览'), findsNothing);
+      expect(find.text('保存前确认'), findsNothing);
       expect(find.text('确认保存这项声明'), findsNothing);
       expect(find.textContaining('退出组织工作台'), findsOneWidget);
       expect(accepts, 0);
@@ -160,9 +163,10 @@ void main() {
     final a = await candidateAuth();
     var accepts = 0;
     final c = MockClient((r) async {
-      if (r.method == 'GET') return candidateResponse([candidateWire()]);
+      if (r.method == 'GET') return candidateReadResponse(r, [candidateWire()]);
       if (r.url.path.endsWith('/preview')) {
-        return candidateResponse(
+        return candidateReadResponse(
+          r,
           previewWire(
             (jsonDecode(r.body) as Map)['previewId'] as String,
             candidateWire(),
@@ -170,7 +174,7 @@ void main() {
         );
       }
       accepts++;
-      return candidateResponse(candidateWire(status: 'ACTIVE'));
+      return candidateReadResponse(r, candidateWire(status: 'ACTIVE'));
     });
     await t.pumpWidget(
       MaterialApp(
@@ -192,7 +196,7 @@ void main() {
     await t.drag(find.byType(ListView), const Offset(0, 500));
     await t.pumpAndSettle();
     expect(
-      find.text('具体版本预览'),
+      find.text('保存前确认'),
       findsOneWidget,
       reason: t
           .widgetList<Text>(find.byType(Text))
@@ -205,7 +209,7 @@ void main() {
     await t.tap(find.text('取消预览'));
     await t.pumpAndSettle();
     expect(accepts, 0);
-    expect(find.text('具体版本预览'), findsNothing);
+    expect(find.text('保存前确认'), findsNothing);
     expect(t.takeException(), isNull);
     await t.pumpWidget(const SizedBox());
     a.dispose();
@@ -219,7 +223,7 @@ void main() {
     addTearDown(t.view.resetPhysicalSize);
     addTearDown(t.view.resetDevicePixelRatio);
     final a = await candidateAuth();
-    final c = MockClient((_) async => candidateResponse([]));
+    final c = MockClient((r) async => candidateReadResponse(r, []));
     final semantics = t.ensureSemantics();
     await t.pumpWidget(
       MaterialApp(

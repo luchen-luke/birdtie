@@ -2,9 +2,7 @@ package httpapi
 
 import (
 	"errors"
-	"math"
 	"net/http"
-	"strings"
 
 	"github.com/birdtie/birdtie/apps/api/internal/organization"
 )
@@ -54,76 +52,51 @@ func (s *server) mapLocationActor(w http.ResponseWriter, r *http.Request) (strin
 }
 
 func (s *server) getOrganizationMapLocation(w http.ResponseWriter, r *http.Request) {
-	actorID, orgID, ok := s.mapLocationActor(w, r)
-	if !ok {
+	a, p, id, ok := s.orgControlAccess(w, r)
+	if !ok || !orgControlNoBody(w, r) {
 		return
 	}
-	v, err := s.mapLocations.GetMapLocation(r.Context(), actorID, orgID)
-	if mapLocationError(w, err) {
+	out, e := p.ReadMapControl(r.Context(), a, id)
+	if e != nil {
+		orgControlFailure(w, e)
 		return
 	}
-	respond(w, http.StatusOK, map[string]any{"data": v})
+	if out.Canonical == nil {
+		orgControlFailure(w, organization.ErrNotFound)
+		return
+	}
+	orgControlRespond(w, r, p, a, id, out.Proof, out.ExpiresAt, out.Canonical)
 }
 
 func (s *server) submitOrganizationMapLocation(w http.ResponseWriter, r *http.Request) {
-	actorID, orgID, ok := s.mapLocationActor(w, r)
-	if !ok {
+	if _, ok := s.memberActor(w, r); !ok {
 		return
 	}
-	var input struct {
-		CityID    string  `json:"cityId"`
-		Latitude  float64 `json:"latitude"`
-		Longitude float64 `json:"longitude"`
-	}
-	if !decodeStrictJSON(w, r, &input) {
+	if organizationPath(w, r) == "" {
 		return
 	}
-	if input.CityID == "" || math.IsNaN(input.Latitude) || math.IsInf(input.Latitude, 0) ||
-		math.IsNaN(input.Longitude) || math.IsInf(input.Longitude, 0) ||
-		input.Latitude < -90 || input.Latitude > 90 || input.Longitude < -180 || input.Longitude > 180 {
-		respondError(w, http.StatusBadRequest, "invalid_organization_map_point")
-		return
-	}
-	if _, err := s.catalog.GetCity(r.Context(), input.CityID); handleReadError(w, err) {
-		return
-	}
-	v, err := s.mapLocations.SubmitMapLocation(r.Context(), actorID, orgID, input.CityID, input.Latitude, input.Longitude)
-	if mapLocationError(w, err) {
-		return
-	}
-	respond(w, http.StatusOK, map[string]any{"data": v})
+	w.Header().Set("Cache-Control", "no-store")
+	respondError(w, 409, "organization_control_required")
 }
 
 func (s *server) hideOrganizationMapLocation(w http.ResponseWriter, r *http.Request) {
-	actorID, orgID, ok := s.mapLocationActor(w, r)
-	if !ok {
+	if _, ok := s.memberActor(w, r); !ok {
 		return
 	}
-	if mapLocationError(w, s.mapLocations.HideMapLocation(r.Context(), actorID, orgID)) {
+	if organizationPath(w, r) == "" {
 		return
 	}
-	w.WriteHeader(http.StatusNoContent)
+	w.Header().Set("Cache-Control", "no-store")
+	respondError(w, 409, "organization_control_required")
 }
 
 func (s *server) reviewOrganizationMapLocation(w http.ResponseWriter, r *http.Request) {
-	actorID, orgID, ok := s.mapLocationActor(w, r)
-	if !ok {
+	if _, ok := s.memberActor(w, r); !ok {
 		return
 	}
-	var input struct {
-		Decision string `json:"decision"`
-		Note     string `json:"note"`
-	}
-	if !decodeStrictJSON(w, r, &input) {
+	if organizationPath(w, r) == "" {
 		return
 	}
-	input.Note = strings.TrimSpace(input.Note)
-	if (input.Decision != "approve" && input.Decision != "reject") || len([]rune(input.Note)) > 1000 {
-		respondError(w, http.StatusBadRequest, "invalid_organization_map_review")
-		return
-	}
-	if mapLocationError(w, s.mapLocations.ReviewMapLocation(r.Context(), actorID, orgID, input.Decision, input.Note)) {
-		return
-	}
-	w.WriteHeader(http.StatusNoContent)
+	w.Header().Set("Cache-Control", "no-store")
+	respondError(w, 409, "organization_control_required")
 }

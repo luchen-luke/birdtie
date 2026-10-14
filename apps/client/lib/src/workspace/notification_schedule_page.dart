@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:http/http.dart' as http;
+import '../app/birdtie_app_bar.dart';
 import '../auth/birdtie_auth_controller.dart';
 import 'notification_policy_controller.dart'
     show notificationCategories, notificationCategoryLabels;
@@ -251,8 +252,7 @@ class _NotificationSchedulePageState extends State<NotificationSchedulePage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('本人计划 · 当前版本 ${a.version}'),
-              Text(d.enabled ? '启用确定性收件箱汇总' : '关闭未来汇总，不回放旧记录'),
+              Text(d.enabled ? '启用定时汇总' : '关闭未来汇总'),
               Text('明确时区：${d.timeZone}'),
               Text('当地汇总时间：${_minute(d.localMinute)}'),
               const Text('夏令时：不存在的时间当日跳过；重复时间取较早的一次。'),
@@ -264,7 +264,7 @@ class _NotificationSchedulePageState extends State<NotificationSchedulePage> {
               Text(
                 '类别：${d.categories.map((c) => notificationCategoryLabels[c]).join('、')}',
               ),
-              Text('滚动24小时最多 ${d.maxContactsPerDay} 条实际收件箱记录；0条停止本计划投递。'),
+              Text('任意连续24小时最多 ${d.maxContactsPerDay} 条通知；0条表示停止本计划。'),
               Text('绝对有效期限（UTC）：${_absolute(d.expiresAt)}'),
               const SizedBox(height: 12),
               const Text('不生成AI摘要，不保证系统推送。关闭或改计划不清零额度、不回放旧汇总，也不停止原活动提醒。'),
@@ -311,7 +311,7 @@ class _NotificationSchedulePageState extends State<NotificationSchedulePage> {
     final data = _data, d = data.draft;
     final active = data.editable;
     return Scaffold(
-      appBar: AppBar(title: const Text('定时汇总计划')),
+      appBar: birdtieAppBar(context, title: const Text('定时汇总计划')),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(20),

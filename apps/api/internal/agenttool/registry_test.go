@@ -154,7 +154,7 @@ func TestCurrentReadonlyRegistryDescribesOriginalNestedWireWithoutModelSchemaCha
 
 func TestAgentToolClosedRegistryCompleteAndImmutable(t *testing.T) {
 	values := Catalogue()
-	if len(values) != 6 {
+	if len(values) != 7 {
 		t.Fatal("closed catalogue changed")
 	}
 	writes := 0
@@ -164,8 +164,11 @@ func TestAgentToolClosedRegistryCompleteAndImmutable(t *testing.T) {
 		}
 		if d.Kind == "WRITE" {
 			writes++
-			if d.Tool != SandboxWrite {
-				t.Fatal("real write registered")
+			if d.Tool != SandboxWrite && d.Tool != ActivityJoin {
+				t.Fatal("unregistered write descriptor")
+			}
+			if d.Tool == ActivityJoin && (d.Version != "activity.join.v1" || d.Purpose != "OWN_ACTIVITY_JOIN_ACTION" || d.Risk != "CONFIRMATION" || d.Reconciliation != "ORIGINAL_AGENT_ACTIVITY_JOIN_EFFECT_AND_PERMANENT_FENCE") {
+				t.Fatal("Agent JOIN metadata lost its closed native confirmation scope")
 			}
 		}
 		d.InputSchema[0] = 'x'
@@ -175,8 +178,8 @@ func TestAgentToolClosedRegistryCompleteAndImmutable(t *testing.T) {
 			t.Fatal("mutable registry")
 		}
 	}
-	if writes != 1 {
-		t.Fatal("sandbox must be only write descriptor")
+	if writes != 2 {
+		t.Fatal("only sandbox and the exact approved native JOIN descriptor are registered")
 	}
 	for _, tool := range []string{"message.send", "profile.update", "shell.execute", "http.get", "memory_candidate.accept", "activity.rsvp", "Activity.Search", "", "activity.search "} {
 		if _, ok := Lookup(tool); ok {

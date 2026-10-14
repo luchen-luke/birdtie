@@ -91,7 +91,7 @@ func validCandidate(input *cityseed.SubmitInput) bool {
 }
 
 func (s *server) submitPlaceCandidate(w http.ResponseWriter, r *http.Request) {
-	actor, _, err := s.actor(r, true)
+	actor, digest, err := s.actor(r, true)
 	if authFailed(w, err) {
 		return
 	}
@@ -104,15 +104,21 @@ func (s *server) submitPlaceCandidate(w http.ResponseWriter, r *http.Request) {
 	if !decodeStrictJSON(w, r, &input) {
 		return
 	}
+	if _, _, err = cityseed.NormalizeSourcePermission(input, time.Now().UTC()); err != nil {
+		respondError(w, http.StatusUnprocessableEntity, "place_source_permission_unconfirmed")
+		return
+	}
 	if !validCandidate(&input) {
 		respondError(w, http.StatusBadRequest, "invalid_candidate")
 		return
 	}
-	candidate, err := s.seed.Submit(r.Context(), actor.ID, cityID, input)
+	candidate, err := s.seed.Submit(cityseed.WithHumanSession(r.Context(), actor.ID, digest), actor.ID, cityID, input)
 	if errors.Is(err, cityseed.ErrForbidden) {
 		respondError(w, http.StatusForbidden, "city_editor_required")
 	} else if errors.Is(err, cityseed.ErrDuplicate) {
 		respondError(w, http.StatusConflict, "duplicate_provider_candidate")
+	} else if errors.Is(err, cityseed.ErrSourcePermission) {
+		respondError(w, http.StatusUnprocessableEntity, "place_source_permission_unconfirmed")
 	} else if err != nil {
 		serverError(w, err)
 	} else {
@@ -136,7 +142,7 @@ func (s *server) listPlaceCandidates(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *server) reviewPlaceCandidate(w http.ResponseWriter, r *http.Request) {
-	actor, _, err := s.actor(r, true)
+	actor, digest, err := s.actor(r, true)
 	if authFailed(w, err) {
 		return
 	}
@@ -151,13 +157,21 @@ func (s *server) reviewPlaceCandidate(w http.ResponseWriter, r *http.Request) {
 	}
 	input.Note = strings.TrimSpace(input.Note)
 	if len(input.Note) < 10 || len(input.Note) > 1000 ||
-		(input.Decision != "publish" && input.Decision != "link_existing" && input.Decision != "reject") ||
+		(input.Decision != "publish" && input.Decision != "link_existing" && input.Decision != "reject" && input.Decision != "revoke_permission") ||
 		(input.Decision == "link_existing" && !uuidPath.MatchString(input.TargetPlaceID)) ||
 		(input.Decision != "link_existing" && input.TargetPlaceID != "") {
 		respondError(w, http.StatusBadRequest, "invalid_review")
 		return
 	}
-	candidate, err := s.seed.Review(r.Context(), actor.ID, candidateID, input)
+	if (input.Decision == "publish" || input.Decision == "link_existing") && (!input.RightsConfirmed || !input.FieldsConfirmed || input.ExpectedPermissionVersion <= 0) {
+		respondError(w, http.StatusUnprocessableEntity, "place_source_review_confirmation_required")
+		return
+	}
+	if input.Decision == "revoke_permission" && (input.ExpectedPermissionVersion <= 0 || (input.PermissionState != cityseed.PermissionPending && input.PermissionState != cityseed.PermissionProhibited)) {
+		respondError(w, http.StatusBadRequest, "invalid_permission_revocation")
+		return
+	}
+	candidate, err := s.seed.Review(cityseed.WithHumanSession(r.Context(), actor.ID, digest), actor.ID, candidateID, input)
 	switch {
 	case errors.Is(err, cityseed.ErrForbidden):
 		respondError(w, http.StatusForbidden, "reviewer_required")
@@ -165,6 +179,8 @@ func (s *server) reviewPlaceCandidate(w http.ResponseWriter, r *http.Request) {
 		respondError(w, http.StatusConflict, "review_conflict")
 	case errors.Is(err, cityseed.ErrDuplicate):
 		respondError(w, http.StatusConflict, "provider_reference_conflict")
+	case errors.Is(err, cityseed.ErrSourcePermission):
+		respondError(w, http.StatusUnprocessableEntity, "place_source_permission_unconfirmed")
 	case err != nil:
 		serverError(w, err)
 	default:

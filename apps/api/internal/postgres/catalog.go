@@ -63,7 +63,8 @@ const placeColumns = `p.id, p.city_id, p.name, p.category_code, p.summary,
     COALESCE(p.address_label,''),
     p.coordinate_system, p.location_precision, p.latitude, p.longitude,
     p.source_label, p.source_ref, ` + reviewedPlaceMaintainerSQL + `,
-    p.updated_at, p.verified_at, p.expires_at`
+    p.updated_at, p.verified_at, p.expires_at,
+    birdtie_place_photo_metadata(p.id,clock_timestamp()),birdtie_place_photo_proof(p.id)`
 
 func (s *Store) ListPlaces(ctx context.Context, cityID, query string) ([]foundation.Place, error) {
 	rows, err := s.pool.Query(ctx, `SELECT `+placeColumns+`
@@ -71,6 +72,7 @@ func (s *Store) ListPlaces(ctx context.Context, cityID, query string) ([]foundat
 		WHERE p.city_id = $1 AND p.publication_status = 'published'
 		  AND c.publication_status = 'published'
 		  AND (p.expires_at IS NULL OR p.expires_at > now())
+		  AND `+currentRetainedPlaceVisibilitySQL("p", "clock_timestamp()")+`
 		  AND ($2 = '' OR strpos(lower(p.name), lower($2)) > 0
 		    OR strpos(lower(p.summary), lower($2)) > 0
 		    OR strpos(lower(p.category_code), lower($2)) > 0)
@@ -95,7 +97,8 @@ func (s *Store) GetPlace(ctx context.Context, id string) (foundation.Place, erro
         FROM places p JOIN cities c ON c.id = p.city_id
         WHERE p.id = $1 AND p.publication_status = 'published'
           AND c.publication_status = 'published'
-          AND (p.expires_at IS NULL OR p.expires_at > now())`, id)
+          AND (p.expires_at IS NULL OR p.expires_at > now())
+          AND `+currentRetainedPlaceVisibilitySQL("p", "clock_timestamp()"), id)
 	return scanPlace(row)
 }
 
@@ -136,7 +139,7 @@ func scanPlace(row scanner) (foundation.Place, error) {
 		&place.Location.Longitude, &place.Source.Label,
 		&place.Source.Reference, &place.Source.Maintainer,
 		&place.Source.UpdatedAt, &place.Source.VerifiedAt,
-		&place.Source.ExpiresAt,
+		&place.Source.ExpiresAt, &place.PlacePhoto, &place.PhotoSourceProof,
 	)
 	if err != nil {
 		return foundation.Place{}, notFound(err)

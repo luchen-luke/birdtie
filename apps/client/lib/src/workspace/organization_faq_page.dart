@@ -1,8 +1,12 @@
-import 'dart:convert';
-
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:uuid/uuid.dart';
+import '../app/birdtie_app_bar.dart';
 import '../config/birdtie_environment.dart';
+import 'human_causal_control.dart';
+import 'human_causal_pending_store.dart';
+import 'human_causal_operation_controller.dart';
 
 class OrganizationFAQ {
   const OrganizationFAQ({
@@ -10,19 +14,18 @@ class OrganizationFAQ {
     required this.question,
     required this.answer,
     required this.published,
+    this.revision = 0,
   });
-
-  final String id;
-  final String question;
-  final String answer;
+  final String id, question, answer;
   final bool published;
-
+  final int revision;
   factory OrganizationFAQ.fromJson(Map<String, dynamic> data) =>
       OrganizationFAQ(
         id: data['id'] as String,
         question: data['question'] as String,
         answer: data['answer'] as String,
-        published: data['published'] as bool? ?? false,
+        published: data['published'] as bool,
+        revision: data['revision'] as int? ?? 0,
       );
 }
 
@@ -31,294 +34,302 @@ class OrganizationFAQPage extends StatefulWidget {
     super.key,
     required this.organizationID,
     required this.authorizationHeader,
+    this.ownerID,
+    this.sourceCurrent,
+    this.identityChanges,
     this.apiBaseUrl,
     this.client,
+    this.pendingStore,
   });
-
   final String organizationID;
   final String? Function() authorizationHeader;
+  final String? Function()? ownerID;
+  final bool Function()? sourceCurrent;
+  final Listenable? identityChanges;
   final String? apiBaseUrl;
   final http.Client? client;
-
+  final HumanCausalPendingStore? pendingStore;
   @override
   State<OrganizationFAQPage> createState() => _OrganizationFAQPageState();
 }
 
 class _OrganizationFAQPageState extends State<OrganizationFAQPage> {
-  static const _configuredBase = BirdtieEnvironment.apiBaseUrl;
-  late final http.Client _client = widget.client ?? http.Client();
-  List<OrganizationFAQ> _items = const [];
-  bool _loading = true;
-  String? _error;
-
-  Uri _url([String suffix = '']) {
-    final base = widget.apiBaseUrl ?? _configuredBase;
-    return Uri.parse(
-      '${base.replaceFirst(RegExp(r'/$'), '')}/v1/me/organizations/${Uri.encodeComponent(widget.organizationID)}/faqs$suffix',
+  late http.Client _client;
+  late bool _ownsClient;
+  late HumanCausalOperationController _data;
+  final _question = TextEditingController(), _answer = TextEditingController();
+  bool _editing = false, _published = false;
+  String _faqID = '';
+  int _revision = 0;
+  String? _formError;
+  void _bind() {
+    _client = widget.client ?? http.Client();
+    _ownsClient = widget.client == null;
+    _data = HumanCausalOperationController(
+      api: HumanCausalApi(
+        client: _client,
+        baseUrl: widget.apiBaseUrl ?? BirdtieEnvironment.apiBaseUrl,
+        authorizationHeader: () => widget.authorizationHeader(),
+      ),
+      family: HumanCausalFamily.faq,
+      organizationID: widget.organizationID,
+      ownerID: widget.ownerID == null ? null : () => widget.ownerID!(),
+      identityChanges: widget.identityChanges,
+      sourceCurrent: () => mounted && (widget.sourceCurrent?.call() ?? true),
+      targetKey: () =>
+          (widget.organizationID, widget.client, widget.apiBaseUrl),
+      pendingStore: widget.pendingStore,
     );
+    _data.addListener(_changed);
+    final c = _data;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && identical(_data, c)) unawaited(c.initialize());
+    });
   }
 
-  Map<String, String> _headers({bool json = false}) => {
-    'Authorization': ?widget.authorizationHeader(),
-    if (json) 'Content-Type': 'application/json',
-  };
+  void _clear() {
+    _question.clear();
+    _answer.clear();
+    _editing = false;
+    _faqID = '';
+    _revision = 0;
+    _published = false;
+    _formError = null;
+  }
+
+  void _changed() {
+    if (!mounted) return;
+    if (!_data.current) _clear();
+    setState(() {});
+  }
 
   @override
   void initState() {
     super.initState();
-    _load();
+    _bind();
+  }
+
+  @override
+  void didUpdateWidget(OrganizationFAQPage old) {
+    super.didUpdateWidget(old);
+    if (old.organizationID != widget.organizationID ||
+        old.client != widget.client ||
+        old.apiBaseUrl != widget.apiBaseUrl ||
+        old.identityChanges != widget.identityChanges ||
+        old.pendingStore != widget.pendingStore ||
+        (old.ownerID == null) != (widget.ownerID == null)) {
+      _data.removeListener(_changed);
+      _data.dispose();
+      if (_ownsClient) _client.close();
+      _clear();
+      _bind();
+    }
   }
 
   @override
   void dispose() {
-    if (widget.client == null) _client.close();
+    _data.removeListener(_changed);
+    _data.dispose();
+    _question.dispose();
+    _answer.dispose();
+    if (_ownsClient) _client.close();
     super.dispose();
   }
 
-  Future<void> _load() async {
-    if ((widget.apiBaseUrl ?? _configuredBase).isEmpty) {
-      setState(() {
-        _loading = false;
-        _error = '问答服务暂不可用。';
-      });
+  void _edit([Map<String, dynamic>? row]) {
+    if (!_data.canStart) return;
+    setState(() {
+      _editing = true;
+      _faqID = row?['id'] as String? ?? '';
+      _revision = row?['revision'] as int? ?? 0;
+      _question.text = row?['question'] as String? ?? '';
+      _answer.text = row?['answer'] as String? ?? '';
+      _published = row?['published'] as bool? ?? false;
+      _formError = null;
+    });
+  }
+
+  Future<void> _save() async {
+    final c = _data;
+    final input = HumanFAQInput(
+      organizationID: widget.organizationID,
+      operationID: const Uuid().v4(),
+      action: _faqID.isEmpty ? 'CREATE' : 'UPDATE',
+      expectedVersion: _revision,
+      faqID: _faqID,
+      question: _question.text.trim(),
+      answer: _answer.text.trim(),
+      published: _published,
+    );
+    if (!input.valid) {
+      setState(() => _formError = '问题需2–300字，回答需1–3000字。');
       return;
     }
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
-    try {
-      final response = await _client
-          .get(_url(), headers: _headers())
-          .timeout(const Duration(seconds: 12));
-      if (response.statusCode != 200) throw StateError('FAQ load failed');
-      final rows =
-          (jsonDecode(response.body) as Map<String, dynamic>)['data']
-              as List<dynamic>;
-      if (mounted) {
-        setState(() {
-          _items = [
-            for (final row in rows)
-              OrganizationFAQ.fromJson(row as Map<String, dynamic>),
-          ];
-          _loading = false;
-        });
-      }
-    } catch (_) {
-      if (mounted) {
-        setState(() {
-          _loading = false;
-          _error = '问答加载失败，请重试。';
-        });
-      }
-    }
-  }
-
-  Future<void> _edit([OrganizationFAQ? existing]) async {
-    final input =
-        await showDialog<({String question, String answer, bool published})>(
-          context: context,
-          builder: (context) => _FAQEditorDialog(existing: existing),
-        );
-    if (input == null || !mounted) return;
-    try {
-      final response =
-          await (existing == null
-                  ? _client.post(
-                      _url(),
-                      headers: _headers(json: true),
-                      body: jsonEncode({
-                        'question': input.question,
-                        'answer': input.answer,
-                        'published': input.published,
-                      }),
-                    )
-                  : _client.put(
-                      _url('/${Uri.encodeComponent(existing.id)}'),
-                      headers: _headers(json: true),
-                      body: jsonEncode({
-                        'question': input.question,
-                        'answer': input.answer,
-                        'published': input.published,
-                      }),
-                    ))
-              .timeout(const Duration(seconds: 12));
-      if (response.statusCode != (existing == null ? 201 : 200)) {
-        throw StateError('FAQ save failed');
-      }
-      await _load();
-    } catch (_) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('问答保存失败，请重试。')));
-      }
-    }
-  }
-
-  Future<void> _delete(OrganizationFAQ item) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('删除这条问答？'),
-        content: Text(item.question),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('取消'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('删除'),
-          ),
-        ],
-      ),
-    );
-    if (confirmed != true || !mounted) return;
-    try {
-      final response = await _client
-          .delete(_url('/${Uri.encodeComponent(item.id)}'), headers: _headers())
-          .timeout(const Duration(seconds: 12));
-      if (response.statusCode != 204) throw StateError('FAQ delete failed');
-      await _load();
-    } catch (_) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('问答删除失败，请重试。')));
-      }
-    }
+    final r = await c.checkAndConfirm(context, input);
+    if (mounted && identical(c, _data) && c.current && r?.status == 'SUCCEEDED')
+      setState(_clear);
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('组织常见问答')),
-    body: RefreshIndicator(
-      onRefresh: _load,
-      child: ListView(
-        physics: const AlwaysScrollableScrollPhysics(),
+  Widget build(BuildContext context) {
+    final c = _data, s = c.snapshot, e = c.epoch;
+    final current = c.current && humanControlID(c.owner);
+    bool frame() =>
+        mounted &&
+        identical(c, _data) &&
+        c.current &&
+        e == c.epoch &&
+        identical(s, c.snapshot) &&
+        s?.current == true;
+    final rows = current && s is HumanFAQSnapshot
+        ? s.items
+        : const <Map<String, dynamic>>[];
+    final editCurrent =
+        _faqID.isEmpty ||
+        rows.any((r) => r['id'] == _faqID && r['revision'] == _revision);
+    return Scaffold(
+      appBar: birdtieAppBar(context, title: const Text('组织常见问答')),
+      body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 40),
         children: [
-          const Text('管理员维护的已发布问答，仅在组织身份通过核验后用于组织 Agent 回答。'),
-          const SizedBox(height: 16),
-          FilledButton.icon(
-            onPressed: () => _edit(),
-            icon: const Icon(Icons.add),
-            label: const Text('新增问答'),
-          ),
-          const SizedBox(height: 20),
-          if (_loading) const Center(child: CircularProgressIndicator()),
-          if (_error != null)
-            TextButton(onPressed: _load, child: Text(_error!)),
-          if (!_loading && _error == null && _items.isEmpty)
-            const Text('还没有常见问答。可以先保存草稿。'),
-          for (final item in _items)
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(14),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+          if (!c.current)
+            Text(c.error ?? '当前身份或组织来源已变化。')
+          else ...[
+            HumanCausalOperationPanel(controller: c),
+            if (current && s is HumanFAQSnapshot) ...[
+              const Text('管理员维护的已发布问答，仅在组织身份通过核验后用于组织 Agent 回答。'),
+              const SizedBox(height: 16),
+              if (!_editing)
+                FilledButton.icon(
+                  onPressed: c.canStart
+                      ? () {
+                          if (frame()) _edit();
+                        }
+                      : null,
+                  icon: const Icon(Icons.add),
+                  label: const Text('新增问答'),
+                ),
+              if (_editing && editCurrent) ...[
+                Text(
+                  _faqID.isEmpty ? '新增常见问答' : '编辑常见问答',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                TextField(
+                  key: const Key('faq-question'),
+                  controller: _question,
+                  enabled: !c.busy && c.pending == null,
+                  maxLength: 300,
+                  decoration: const InputDecoration(labelText: '问题'),
+                  onChanged: (_) => c.invalidatePreview(),
+                ),
+                TextField(
+                  key: const Key('faq-answer'),
+                  controller: _answer,
+                  enabled: !c.busy && c.pending == null,
+                  maxLength: 3000,
+                  maxLines: 5,
+                  decoration: const InputDecoration(labelText: '回答'),
+                  onChanged: (_) => c.invalidatePreview(),
+                ),
+                SwitchListTile(
+                  title: const Text('发布给组织 Agent'),
+                  subtitle: const Text('组织核验通过后，公开提问可使用此回答。'),
+                  value: _published,
+                  onChanged: !c.busy && c.pending == null
+                      ? (v) {
+                          if (frame()) {
+                            c.invalidatePreview();
+                            setState(() => _published = v);
+                          }
+                        }
+                      : null,
+                ),
+                if (_formError != null) Text(_formError!),
+                Wrap(
                   children: [
-                    Text(
-                      item.question,
-                      style: Theme.of(context).textTheme.titleMedium,
+                    TextButton(
+                      onPressed: !c.busy && c.pending == null
+                          ? () {
+                              if (frame()) setState(_clear);
+                            }
+                          : null,
+                      child: const Text('取消'),
                     ),
-                    const SizedBox(height: 6),
-                    Text(item.answer),
-                    const SizedBox(height: 8),
-                    Text(item.published ? '已发布' : '草稿 · 仅管理员可见'),
-                    Wrap(
-                      children: [
-                        TextButton(
-                          onPressed: () => _edit(item),
-                          child: const Text('编辑'),
-                        ),
-                        TextButton(
-                          onPressed: () => _delete(item),
-                          child: const Text('删除'),
-                        ),
-                      ],
+                    FilledButton(
+                      key: const Key('faq-check'),
+                      onPressed: c.canStart
+                          ? () {
+                              if (frame()) unawaited(_save());
+                            }
+                          : null,
+                      child: const Text('检查保存问答'),
                     ),
                   ],
                 ),
-              ),
-            ),
+              ] else if (_editing)
+                const Text('原问答版本已变化，旧编辑不再提交。请取消并重新选择当前问答。'),
+              if (_editing && !editCurrent)
+                TextButton(
+                  onPressed: () => setState(_clear),
+                  child: const Text('取消旧编辑'),
+                ),
+              const SizedBox(height: 20),
+              if (rows.isEmpty) const Text('还没有常见问答。可以先保存草稿。'),
+              for (final row in rows)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        row['question'] as String,
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: 6),
+                      Text(row['answer'] as String),
+                      Text(row['published'] == true ? '已发布' : '草稿 · 仅管理员可见'),
+                      Wrap(
+                        children: [
+                          TextButton(
+                            onPressed: c.canStart
+                                ? () {
+                                    if (frame()) _edit(row);
+                                  }
+                                : null,
+                            child: const Text('编辑'),
+                          ),
+                          TextButton(
+                            onPressed: c.canStart
+                                ? () {
+                                    if (frame())
+                                      unawaited(
+                                        c.checkAndConfirm(
+                                          context,
+                                          HumanFAQInput(
+                                            organizationID:
+                                                widget.organizationID,
+                                            operationID: const Uuid().v4(),
+                                            action: 'DELETE',
+                                            faqID: row['id'] as String,
+                                            expectedVersion:
+                                                row['revision'] as int,
+                                          ),
+                                        ),
+                                      );
+                                  }
+                                : null,
+                            child: const Text('删除'),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+            ] else if (!c.busy)
+              const Text('当前组织问答不可读，不能开始新的修改；本人原操作仍可核实。'),
+          ],
         ],
       ),
-    ),
-  );
-}
-
-class _FAQEditorDialog extends StatefulWidget {
-  const _FAQEditorDialog({this.existing});
-  final OrganizationFAQ? existing;
-
-  @override
-  State<_FAQEditorDialog> createState() => _FAQEditorDialogState();
-}
-
-class _FAQEditorDialogState extends State<_FAQEditorDialog> {
-  late final TextEditingController _question = TextEditingController(
-    text: widget.existing?.question,
-  );
-  late final TextEditingController _answer = TextEditingController(
-    text: widget.existing?.answer,
-  );
-  late bool _published = widget.existing?.published ?? false;
-
-  @override
-  void dispose() {
-    _question.dispose();
-    _answer.dispose();
-    super.dispose();
+    );
   }
-
-  @override
-  Widget build(BuildContext context) => AlertDialog(
-    title: Text(widget.existing == null ? '新增常见问答' : '编辑常见问答'),
-    content: SingleChildScrollView(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          TextField(
-            controller: _question,
-            maxLength: 300,
-            decoration: const InputDecoration(labelText: '问题'),
-          ),
-          TextField(
-            controller: _answer,
-            maxLength: 3000,
-            maxLines: 5,
-            decoration: const InputDecoration(labelText: '回答'),
-          ),
-          SwitchListTile(
-            title: const Text('发布给组织 Agent'),
-            subtitle: const Text('仅当组织身份已认证，公开提问才能使用此回答。'),
-            value: _published,
-            onChanged: (value) => setState(() => _published = value),
-          ),
-        ],
-      ),
-    ),
-    actions: [
-      TextButton(
-        onPressed: () => Navigator.pop(context),
-        child: const Text('取消'),
-      ),
-      FilledButton(
-        onPressed: () {
-          if (_question.text.trim().runes.length < 2 ||
-              _answer.text.trim().isEmpty) {
-            return;
-          }
-          Navigator.pop(context, (
-            question: _question.text.trim(),
-            answer: _answer.text.trim(),
-            published: _published,
-          ));
-        },
-        child: const Text('保存'),
-      ),
-    ],
-  );
 }

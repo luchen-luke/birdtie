@@ -159,7 +159,7 @@ class _MomentTimeChoiceState extends State<MomentTimeChoice> {
   Widget build(BuildContext context) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      const Text('发生时间', style: TextStyle(fontWeight: FontWeight.w600)),
+      Text('发生时间', style: Theme.of(context).textTheme.titleMedium),
       const SizedBox(height: 8),
       DropdownButtonFormField<String>(
         initialValue: _precision,

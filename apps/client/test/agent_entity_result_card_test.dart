@@ -53,13 +53,14 @@ void main() {
     expect(tester.getSize(share).height, greaterThanOrEqualTo(48));
     await tester.tap(share);
     expect(shared, same(item));
-    final open = find.widgetWithText(TextButton, '查看详情');
+    expect(find.text('查看详情'), findsNothing);
+    final open = find.byKey(Key('agent-entity-${item.entity.mapID}'));
     await tester.ensureVisible(open);
     await tester.pumpAndSettle();
     expect(tester.getSize(open).height, greaterThanOrEqualTo(48));
     await tester.tap(open);
     expect(opened, same(item));
-    expect(find.textContaining('仅你可见'), findsOneWidget);
+    expect(find.textContaining('仅自己可见'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
   testWidgets('旧Group与未知源无假详情和分享按钮', (tester) async {
@@ -82,6 +83,6 @@ void main() {
     );
     expect(find.text('查看详情'), findsNothing);
     expect(find.text('分享给好友'), findsNothing);
-    expect(find.textContaining('来源类型未核实'), findsOneWidget);
+    expect(find.textContaining('待核实'), findsOneWidget);
   });
 }

@@ -1,0 +1,212 @@
+{
+  "capturedAtUtc": "2026-10-09T19:15:19.4749583Z",
+  "source": "actual unauthenticated PUBLIC GET, diagnostic bounds, not claimed native current bounds",
+  "uri": "http://127.0.0.1:18109/v1/cities/aberdeen-gb/map-layers?west=-2.25&south=57.08&east=-2.00&north=57.25",
+  "statusCode": 200,
+  "requestID": [
+    "724a8f1703de026e0a9f488b2da7fddd"
+  ],
+  "scope": "PUBLIC",
+  "responseKeys": [
+    "schemaVersion",
+    "cityId",
+    "scope",
+    "observedAt",
+    "validUntil",
+    "truncated",
+    "items"
+  ],
+  "count": 19,
+  "items": [
+    {
+      "entityID": "398312ca-99f5-4118-93d9-7cfff9526721",
+      "kind": "MOMENT",
+      "placeID": "35d701af-9256-493d-afda-b8789f91f921",
+      "precision": "point",
+      "coordinateSystem": "wgs84",
+      "latitude": 57.1450032,
+      "longitude": -2.1036916,
+      "sourceVersion": "2"
+    },
+    {
+      "entityID": "022a173f-00d1-479c-8211-bff2f395da3d",
+      "kind": "PLACE",
+      "placeID": "022a173f-00d1-479c-8211-bff2f395da3d",
+      "precision": "point",
+      "coordinateSystem": "wgs84",
+      "latitude": 57.1434033,
+      "longitude": -2.0973128,
+      "sourceVersion": "2026-10-08 19:22:45.835888+00"
+    },
+    {
+      "entityID": "0751c8a8-5b2e-4e23-81d8-5d34e3aa85a4",
+      "kind": "PLACE",
+      "placeID": "0751c8a8-5b2e-4e23-81d8-5d34e3aa85a4",
+      "precision": "point",
+      "coordinateSystem": "wgs84",
+      "latitude": 57.1496745,
+      "longitude": -2.1162258,
+      "sourceVersion": "2026-10-08 19:22:45.967234+00"
+    },
+    {
+      "entityID": "2ae06fc1-b442-4526-bb7d-4d5aae718b46",
+      "kind": "PLACE",
+      "placeID": "2ae06fc1-b442-4526-bb7d-4d5aae718b46",
+      "precision": "point",
+      "coordinateSystem": "wgs84",
+      "latitude": 57.1436261,
+      "longitude": -2.1111339,
+      "sourceVersion": "2026-10-08 19:22:46.151366+00"
+    },
+    {
+      "entityID": "320f8992-2567-4d53-8027-2249aaaa2daf",
+      "kind": "PLACE",
+      "placeID": "320f8992-2567-4d53-8027-2249aaaa2daf",
+      "precision": "point",
+      "coordinateSystem": "wgs84",
+      "latitude": 57.1346059,
+      "longitude": -2.1272761,
+      "sourceVersion": "2026-10-08 19:22:46.003941+00"
+    },
+    {
+      "entityID": "35d701af-9256-493d-afda-b8789f91f921",
+      "kind": "PLACE",
+      "placeID": "35d701af-9256-493d-afda-b8789f91f921",
+      "precision": "point",
+      "coordinateSystem": "wgs84",
+      "latitude": 57.1450032,
+      "longitude": -2.1036916,
+      "sourceVersion": "2026-10-08 19:22:45.773854+00"
+    },
+    {
+      "entityID": "45d4a54e-953c-4fc2-a1b4-9a169e3c6fc2",
+      "kind": "PLACE",
+      "placeID": "45d4a54e-953c-4fc2-a1b4-9a169e3c6fc2",
+      "precision": "point",
+      "coordinateSystem": "wgs84",
+      "latitude": 57.1763498,
+      "longitude": -2.1031116,
+      "sourceVersion": "2026-10-08 19:22:45.856893+00"
+    },
+    {
+      "entityID": "7a578214-5617-47ff-8bbd-f2f41e8e81f0",
+      "kind": "PLACE",
+      "placeID": "7a578214-5617-47ff-8bbd-f2f41e8e81f0",
+      "precision": "point",
+      "coordinateSystem": "wgs84",
+      "latitude": 57.1437677,
+      "longitude": -2.1112463,
+      "sourceVersion": "2026-10-08 19:22:46.098588+00"
+    },
+    {
+      "entityID": "833e1c48-5309-4100-b2fc-32159a031900",
+      "kind": "PLACE",
+      "placeID": "833e1c48-5309-4100-b2fc-32159a031900",
+      "precision": "point",
+      "coordinateSystem": "wgs84",
+      "latitude": 57.1475163,
+      "longitude": -2.1082242,
+      "sourceVersion": "2026-10-08 19:22:45.878988+00"
+    },
+    {
+      "entityID": "917c01f1-e5a7-4034-92ed-62917cee4b5c",
+      "kind": "PLACE",
+      "placeID": "917c01f1-e5a7-4034-92ed-62917cee4b5c",
+      "precision": "point",
+      "coordinateSystem": "wgs84",
+      "latitude": 57.1401281,
+      "longitude": -2.1154851,
+      "sourceVersion": "2026-10-08 19:22:46.022138+00"
+    },
+    {
+      "entityID": "95f8f77a-8a50-47da-ae06-db34693281bb",
+      "kind": "PLACE",
+      "placeID": "95f8f77a-8a50-47da-ae06-db34693281bb",
+      "precision": "point",
+      "coordinateSystem": "wgs84",
+      "latitude": 57.1438671,
+      "longitude": -2.0969393,
+      "sourceVersion": "2026-10-08 19:22:45.813713+00"
+    },
+    {
+      "entityID": "96f0ba04-2624-4ac4-9f53-da3f5c9915f8",
+      "kind": "PLACE",
+      "placeID": "96f0ba04-2624-4ac4-9f53-da3f5c9915f8",
+      "precision": "point",
+      "coordinateSystem": "wgs84",
+      "latitude": 57.148294574336,
+      "longitude": -2.0974767208099,
+      "sourceVersion": "2026-10-07 21:46:19.522446+00"
+    },
+    {
+      "entityID": "9d400bce-af85-436b-9246-ae821b8e5072",
+      "kind": "PLACE",
+      "placeID": "9d400bce-af85-436b-9246-ae821b8e5072",
+      "precision": "point",
+      "coordinateSystem": "wgs84",
+      "latitude": 57.1438304,
+      "longitude": -2.1090502,
+      "sourceVersion": "2026-10-08 19:22:46.06042+00"
+    },
+    {
+      "entityID": "bea8ee0c-9c09-4951-8f0c-8c5819e91c2d",
+      "kind": "PLACE",
+      "placeID": "bea8ee0c-9c09-4951-8f0c-8c5819e91c2d",
+      "precision": "point",
+      "coordinateSystem": "wgs84",
+      "latitude": 57.1464844993,
+      "longitude": -2.0949554443359,
+      "sourceVersion": "2026-10-07 21:46:19.502219+00"
+    },
+    {
+      "entityID": "bf06f520-05c1-43a2-829f-4d6f40f45544",
+      "kind": "PLACE",
+      "placeID": "bf06f520-05c1-43a2-829f-4d6f40f45544",
+      "precision": "point",
+      "coordinateSystem": "wgs84",
+      "latitude": 57.1496177,
+      "longitude": -2.1167834,
+      "sourceVersion": "2026-10-08 19:22:45.920638+00"
+    },
+    {
+      "entityID": "c5e40f4b-93de-4c1d-84aa-6e3074f96ffd",
+      "kind": "PLACE",
+      "placeID": "c5e40f4b-93de-4c1d-84aa-6e3074f96ffd",
+      "precision": "point",
+      "coordinateSystem": "wgs84",
+      "latitude": 57.1494316,
+      "longitude": -2.1200643,
+      "sourceVersion": "2026-10-08 19:22:45.985634+00"
+    },
+    {
+      "entityID": "e4cf8d14-8411-4c5a-bda8-1b4c1e1e6024",
+      "kind": "PLACE",
+      "placeID": "e4cf8d14-8411-4c5a-bda8-1b4c1e1e6024",
+      "precision": "point",
+      "coordinateSystem": "wgs84",
+      "latitude": 57.1447573,
+      "longitude": -2.1283763,
+      "sourceVersion": "2026-10-08 19:22:45.900971+00"
+    },
+    {
+      "entityID": "e7b7544c-0b39-4de6-a7fa-2cc00aacdc8a",
+      "kind": "PLACE",
+      "placeID": "e7b7544c-0b39-4de6-a7fa-2cc00aacdc8a",
+      "precision": "point",
+      "coordinateSystem": "wgs84",
+      "latitude": 57.148085052497,
+      "longitude": -2.1025729179382,
+      "sourceVersion": "2026-10-07 21:46:19.46867+00"
+    },
+    {
+      "entityID": "f9629e02-4287-496b-b401-2b103815a446",
+      "kind": "PLACE",
+      "placeID": "f9629e02-4287-496b-b401-2b103815a446",
+      "precision": "point",
+      "coordinateSystem": "wgs84",
+      "latitude": 57.1438278,
+      "longitude": -2.1078896,
+      "sourceVersion": "2026-10-08 19:22:45.732567+00"
+    }
+  ]
+}

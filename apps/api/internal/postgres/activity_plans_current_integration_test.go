@@ -183,3 +183,216 @@ func TestPlansCurrentNativePublishedPlaceFactsAndHiddenPlaceNeutral(t *testing.T
 		t.Fatal("private place leaked or original Activity lost", e)
 	}
 }
+
+// Proposal only. Append to the registered existing integration test file after
+// preserving its current bytes. No new imports or shared fixture changes needed.
+func plansAuthenticateCurrentFixture(t *testing.T, kind string) (*participationDisclosureFixture, activityplan.CurrentAccess, activityplan.CurrentValidation) {
+	t.Helper()
+	f := participationDisclosureNative(t) // Existing actual fresh child001..119 and owned domain/session fixture.
+	b := f.f
+	if _, e := b.s.PlanActivity(b.ctx, b.a.WorkspacePrincipal.ID, f.activity); e != nil {
+		t.Fatal(e)
+	}
+	a := activityplan.CurrentAccess{OwnerID: b.a.WorkspacePrincipal.ID, SessionDigest: b.a.SessionDigest}
+	var check activityplan.CurrentValidation
+	if kind == "plans" {
+		rows, current, e := b.s.ListActivityPlansCurrent(b.ctx, a)
+		if e != nil || len(rows) != 1 || !rows[0].Available || rows[0].ActivityID != f.activity {
+			t.Fatal("original plans current fixture", e)
+		}
+		check = current
+	} else {
+		rows, current, e := b.s.ListParticipationsCurrent(b.ctx, a)
+		if e != nil || len(rows) != 1 || !rows[0].Available || rows[0].ID != f.p {
+			t.Fatal("original participations current fixture", e)
+		}
+		check = current
+	}
+	if check == nil || check(b.ctx) != nil {
+		t.Fatal("original native current proof unavailable")
+	}
+	return f, a, check
+}
+
+func TestPlansCurrentNativeOriginalAuthenticateRefresh(t *testing.T) {
+	for _, kind := range []string{"plans", "participations"} {
+		t.Run(kind, func(t *testing.T) {
+			// The base fixture has a one-hour idle deadline, whereas original
+			// Authenticate renews to 30 minutes. Establish a still-live shorter
+			// window before capture; do not mistake intentional shortening for
+			// the normal renewal that this test is required to allow.
+			f, a, _ := plansAuthenticateCurrentFixture(t, kind)
+			b := f.f
+			b.exec(`UPDATE sessions SET idle_expires_at=clock_timestamp()+interval '5 minutes' WHERE id=$1`, b.session)
+			var check activityplan.CurrentValidation
+			var e error
+			if kind == "plans" {
+				_, check, e = b.s.ListActivityPlansCurrent(b.ctx, a)
+			} else {
+				_, check, e = b.s.ListParticipationsCurrent(b.ctx, a)
+			}
+			if e != nil || check == nil {
+				t.Fatal("capture before concurrent original auth", e)
+			}
+			before, e := b.s.captureOwnPlans(b.ctx, a)
+			if e != nil {
+				t.Fatal(e)
+			}
+			var oldXmin, newXmin string
+			var oldGeneration, newGeneration int64
+			var oldIdle, newIdle time.Time
+			if e = b.row(`SELECT xmin::text,authorization_generation,idle_expires_at FROM sessions WHERE id=$1`, b.session).Scan(&oldXmin, &oldGeneration, &oldIdle); e != nil {
+				t.Fatal(e)
+			}
+			// Deterministic interleaving of the other request's real original
+			// Authenticate between this request's source capture and validator.
+			// No synthetic UPDATE or mocked source is used for the renewal.
+			done := make(chan error, 1)
+			go func() {
+				for i := 0; i < 3; i++ {
+					actor, err := b.s.Authenticate(b.ctx, a.SessionDigest)
+					if err != nil {
+						done <- err
+						return
+					}
+					if actor.ID != a.OwnerID || actor.AccountType != "person" {
+						done <- errors.New("original auth changed person")
+						return
+					}
+					// The registered native list routes also resolve the current
+					// HumanSocial actor after their original actor() call.
+					actor, err = b.s.AuthenticateHumanSocial(b.ctx, a.SessionDigest)
+					if err != nil {
+						done <- err
+						return
+					}
+					if actor.ID != a.OwnerID || actor.AccountType != "person" {
+						done <- errors.New("original current human auth changed person")
+						return
+					}
+				}
+				done <- nil
+			}()
+			if e = <-done; e != nil {
+				t.Fatal("real original auth refresh", e)
+			}
+			if e = b.row(`SELECT xmin::text,authorization_generation,idle_expires_at FROM sessions WHERE id=$1`, b.session).Scan(&newXmin, &newGeneration, &newIdle); e != nil {
+				t.Fatal(e)
+			}
+			if oldXmin == newXmin || oldGeneration != newGeneration || !newIdle.After(oldIdle) {
+				t.Fatal("positive control did not reproduce real harmless idle renewal")
+			}
+			after, e := b.s.captureOwnPlans(b.ctx, a)
+			if e != nil || before.proof != after.proof {
+				t.Fatal("normal original Authenticate retired current plans source", e)
+			}
+			if e = check(b.ctx); e != nil {
+				t.Fatal("normal concurrent authentication caused false source conflict", e)
+			}
+		})
+	}
+}
+
+func TestPlansCurrentNativeOriginalIdleDeadlineAfterAuthenticate(t *testing.T) {
+	for _, kind := range []string{"plans", "participations"} {
+		t.Run(kind, func(t *testing.T) {
+			f, a, _ := plansAuthenticateCurrentFixture(t, kind)
+			b := f.f
+			var originalDeadline time.Time
+			if e := b.row(`UPDATE sessions SET idle_expires_at=clock_timestamp()+interval '800 milliseconds' WHERE id=$1 RETURNING idle_expires_at`, b.session).Scan(&originalDeadline); e != nil {
+				t.Fatal(e)
+			}
+			var check activityplan.CurrentValidation
+			var e error
+			if kind == "plans" {
+				_, check, e = b.s.ListActivityPlansCurrent(b.ctx, a)
+			} else {
+				_, check, e = b.s.ListParticipationsCurrent(b.ctx, a)
+			}
+			if e != nil || check == nil || check(b.ctx) != nil {
+				t.Fatal("original short deadline proof", e)
+			}
+			var generation, currentGeneration int64
+			if e = b.row(`SELECT authorization_generation FROM sessions WHERE id=$1`, b.session).Scan(&generation); e != nil {
+				t.Fatal(e)
+			}
+			if _, e = b.s.Authenticate(b.ctx, a.SessionDigest); e != nil {
+				t.Fatal("original live short window renewal", e)
+			}
+			if e = b.row(`SELECT authorization_generation FROM sessions WHERE id=$1`, b.session).Scan(&currentGeneration); e != nil || currentGeneration != generation {
+				t.Fatal("harmless live idle extension changed generation", e)
+			}
+			if e = check(b.ctx); e != nil {
+				t.Fatal("live original captured deadline rejected harmless renewal", e)
+			}
+			for {
+				var passed bool
+				if e = b.row(`SELECT clock_timestamp()>=$1`, originalDeadline).Scan(&passed); e != nil {
+					t.Fatal(e)
+				}
+				if passed {
+					break
+				}
+				time.Sleep(10 * time.Millisecond)
+			}
+			if e = check(b.ctx); !errors.Is(e, activityplan.ErrChanged) {
+				t.Fatal("normal auth extended an already captured response deadline", e)
+			}
+			// The same genuine current Session may get a fresh read. That
+			// does not revive the older source proof or its original deadline.
+			if kind == "plans" {
+				_, check, e = b.s.ListActivityPlansCurrent(b.ctx, a)
+			} else {
+				_, check, e = b.s.ListParticipationsCurrent(b.ctx, a)
+			}
+			if e != nil || check == nil || check(b.ctx) != nil {
+				t.Fatal("fresh native read after normal renewal unavailable", e)
+			}
+		})
+	}
+}
+
+func TestPlansCurrentNativeSecurityGenerationABA(t *testing.T) {
+	for _, kind := range []string{"plans", "participations"} {
+		for _, mutation := range []string{"revocation", "method", "idle_shorten"} {
+			t.Run(kind+"/"+mutation, func(t *testing.T) {
+				f, a, check := plansAuthenticateCurrentFixture(t, kind)
+				b := f.f
+				var before, after int64
+				var originalIdle time.Time
+				var originalMethod string
+				if e := b.row(`SELECT authorization_generation,idle_expires_at,authentication_method FROM sessions WHERE id=$1`, b.session).Scan(&before, &originalIdle, &originalMethod); e != nil {
+					t.Fatal(e)
+				}
+				switch mutation {
+				case "revocation":
+					b.exec(`UPDATE sessions SET revoked_at=clock_timestamp() WHERE id=$1`, b.session)
+					b.exec(`UPDATE sessions SET revoked_at=NULL WHERE id=$1`, b.session)
+				case "method":
+					b.exec(`UPDATE sessions SET authentication_method='UNIT-plans-changed' WHERE id=$1`, b.session)
+					b.exec(`UPDATE sessions SET authentication_method=$2 WHERE id=$1`, b.session, originalMethod)
+				case "idle_shorten":
+					b.exec(`UPDATE sessions SET idle_expires_at=clock_timestamp()+interval '1 minute' WHERE id=$1`, b.session)
+					b.exec(`UPDATE sessions SET idle_expires_at=$2 WHERE id=$1`, b.session, originalIdle)
+				}
+				if e := b.row(`SELECT authorization_generation FROM sessions WHERE id=$1`, b.session).Scan(&after); e != nil || after <= before {
+					t.Fatal("native111 security ABA did not retire original generation", e)
+				}
+				if e := check(b.ctx); !errors.Is(e, activityplan.ErrChanged) {
+					t.Fatal("restored Session revived the original captured proof", e)
+				}
+				if kind == "plans" {
+					_, current, e := b.s.ListActivityPlansCurrent(b.ctx, a)
+					if e != nil || current == nil || current(b.ctx) != nil {
+						t.Fatal("fresh current plans unavailable after explicit new epoch", e)
+					}
+				} else {
+					_, current, e := b.s.ListParticipationsCurrent(b.ctx, a)
+					if e != nil || current == nil || current(b.ctx) != nil {
+						t.Fatal("fresh current participations unavailable after new epoch", e)
+					}
+				}
+			})
+		}
+	}
+}

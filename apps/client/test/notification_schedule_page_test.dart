@@ -27,6 +27,7 @@ class _SchedulePageFixture {
       if (r.method == 'GET') {
         return scheduleResponse(scheduleData(version: version));
       }
+      expect(jsonDecode(r.body)['expectedVersion'], version);
       if (gate != null) return gate!.future;
       if (network) throw http.ClientException('unknown');
       final b = jsonDecode(r.body) as Map<String, dynamic>;
@@ -133,10 +134,10 @@ void main() {
     final x = _SchedulePageFixture();
     await x.mount(t);
     await x.check(t);
-    expect(find.text('本人计划 · 当前版本 1'), findsOneWidget);
+    expect(find.text('启用定时汇总'), findsWidgets);
     expect(find.text('明确时区：Europe/London'), findsOneWidget);
     expect(find.textContaining('不代表已投递'), findsNothing);
-    expect(find.textContaining('滚动24小时最多 3'), findsOneWidget);
+    expect(find.textContaining('任意连续24小时最多 3'), findsOneWidget);
     expect(find.textContaining('不停止原活动提醒'), findsOneWidget);
     await t.tap(find.text('返回修改'));
     await t.pumpAndSettle();
@@ -186,11 +187,11 @@ void main() {
     await t.tap(find.text('从此刻起 1 天').last);
     await t.pumpAndSettle();
     await x.check(t);
-    expect(find.text('本人计划 · 当前版本 0'), findsOneWidget);
+    expect(find.text('启用定时汇总'), findsWidgets);
     expect(find.text('明确时区：Asia/Shanghai'), findsOneWidget);
     expect(find.text('当地汇总时间：00:00'), findsOneWidget);
     expect(find.text('静默：不设置'), findsOneWidget);
-    expect(find.textContaining('滚动24小时最多 2'), findsOneWidget);
+    expect(find.textContaining('任意连续24小时最多 2'), findsOneWidget);
     await t.tap(find.text('确认保存'));
     await t.pumpAndSettle();
     final b = jsonDecode(x.requests.singleWhere((r) => r.method == 'PUT').body);

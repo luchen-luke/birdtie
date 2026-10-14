@@ -52,12 +52,12 @@ void main() {
             return validSession
                 ? http.Response('{"data":{"id":"person-1"}}', 200)
                 : http.Response('{"error":{"code":"unauthorized"}}', 401);
-        case 'GET /v1/accounts/person-1/profile':
-          return http.Response.bytes(
-            utf8.encode('{"data":{"displayName":"已验证用户"}}'),
-            200,
-            headers: {'content-type': 'application/json; charset=utf-8'},
-          );
+          case 'GET /v1/accounts/person-1/profile':
+            return http.Response.bytes(
+              utf8.encode('{"data":{"displayName":"已验证用户"}}'),
+              200,
+              headers: {'content-type': 'application/json; charset=utf-8'},
+            );
           case 'POST /v1/session/logout':
             return http.Response('', 204);
           default:
@@ -75,6 +75,8 @@ void main() {
       expect(auth.available, isTrue);
       await auth.signIn();
       final challenge = pending.pending!.challenge;
+      expect(pending.pending!.origin, 'https://api.birdtie.example');
+      expect(pending.pending!.channel, 'NATIVE');
       pendingValueVerifier = pending.pending!.verifier;
       expect(gateway.opened!.path, '/v1/auth/oidc/start');
       expect(gateway.opened!.queryParameters['challenge'], challenge);
@@ -88,6 +90,7 @@ void main() {
       expect(auth.loginMethod, 'oidc');
       expect(auth.displayName, '已验证用户');
       expect(vault.session?.token, 'verified-session');
+      expect(vault.session?.origin, 'https://api.birdtie.example');
       expect(pending.pending, isNull);
       await auth.resumeNativeCallback(
         Uri.parse(
@@ -141,7 +144,8 @@ void main() {
     );
     expect(auth.signedIn, isFalse);
     expect(exchanges, 0);
-    expect(pending.pending, isNull);
+    // An unrelated callback cannot consume the current pending login.
+    expect(pending.pending, isNotNull);
     auth.dispose();
     await gateway.controller.close();
   });

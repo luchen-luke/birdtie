@@ -39,6 +39,31 @@ func TestPlaceFollowupCurrentQuestionAndClosedSlots(t *testing.T) {
 	}
 }
 
+func TestPlaceFollowupLiteralHoursNeverReusesPriorGalleryAsPronoun(t *testing.T) {
+	previous := placeFollowupTask()
+	previous.Filters[PlaceFollowupTopicFilter] = PlaceOpeningHours
+	for _, q := range []string{"Aberdeen Maritime Museum的营业时间", "What are the opening hours of Aberdeen Maritime Museum?", "Aberdeen Maritime Museum的地址是什么"} {
+		t.Run(q, func(t *testing.T) {
+			f, ok := ParsePlaceFollowup(q, &previous)
+			literal, _ := ParseLocalPlaceQuestion(q)
+			if !ok || f.Pronoun || f.Name != "Aberdeen Maritime Museum" || f.Topic != literal.Field {
+				t.Fatalf("Museum request bound to the old Gallery: %#v", f)
+			}
+			if previous.Filters["searchTerm"] != "Aberdeen Art Gallery" {
+				t.Fatal("parser mutated prior Task state")
+			}
+		})
+	}
+	for _, q := range []string{"它几点开门？", "What time does it open?", "Where is it?"} {
+		if f, ok := ParsePlaceFollowup(q, &previous); !ok || !f.Pronoun || f.Name != "" {
+			t.Fatalf("original selected-place pronoun path changed: %q %#v", q, f)
+		}
+	}
+	if _, ok := ParsePlaceFollowup("Aberdeen Maritime Museum的营业时间", &Task{Intent: FindActivity}); ok {
+		t.Fatal("literal question acquired unrelated Task context")
+	}
+}
+
 func TestPlaceFollowupDoesNotInferFromHistoryOrChangeOriginalRoutes(t *testing.T) {
 	previous := placeFollowupTask()
 	previous.Filters[PlaceFollowupTopicFilter] = PlaceOpeningHours

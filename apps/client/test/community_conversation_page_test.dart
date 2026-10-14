@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'human_causal_control_test.dart' show humanSettle;
 
 void main() {
   testWidgets('社群交流使用独立路径和成员提示，加入与退出不改变社群关系', (tester) async {
@@ -142,7 +143,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('移除消息'), findsNothing);
     await tester.tap(find.text('举报消息'));
-    await tester.pumpAndSettle();
+    await humanSettle(tester);
     final support = tester.widget<SupportPage>(find.byType(SupportPage));
     expect(support.targetType, 'community_message');
     expect(support.targetID, 'message');

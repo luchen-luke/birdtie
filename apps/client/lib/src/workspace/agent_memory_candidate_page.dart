@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import '../app/birdtie_app_bar.dart';
 import '../auth/birdtie_auth_controller.dart';
 import 'agent_memory_candidate_api.dart';
 import 'agent_memory_candidate_controller.dart';
@@ -57,7 +58,8 @@ class _AgentMemoryCandidatePageState extends State<AgentMemoryCandidatePage> {
   late final AgentMemoryCandidateController _data =
       AgentMemoryCandidateController(
         api: AgentMemoryCandidateAPI(client: _client, apiBaseUrl: _apiBaseUrl),
-        authorizationHeader: () => _sourceCurrent() ? _auth.authorizationHeader : null,
+        authorizationHeader: () =>
+            _sourceCurrent() ? _auth.authorizationHeader : null,
         accountID: () => _sourceCurrent() ? _auth.accountID : null,
         organizationWorkspaceID: () => _workspaceID?.call(),
         pendingStore: _pendingStore,
@@ -127,15 +129,6 @@ class _AgentMemoryCandidatePageState extends State<AgentMemoryCandidatePage> {
     return '${l.year}年${l.month}月${l.day}日 ${l.hour.toString().padLeft(2, '0')}:${l.minute.toString().padLeft(2, '0')}（本地时间）';
   }
 
-  String _sourceVersion(dynamic value) {
-    final v = value as Map;
-    if (v['kind'] == 'REVISION') return '修订 ${v['revision']}';
-    final token = v['token'];
-    return token is String && token.length >= 12
-        ? '记录快照 ${token.substring(0, 12)}'
-        : '已核验的记录快照';
-  }
-
   Widget _button(
     String text,
     VoidCallback? onPressed, {
@@ -153,7 +146,7 @@ class _AgentMemoryCandidatePageState extends State<AgentMemoryCandidatePage> {
   Widget build(BuildContext context) {
     if (!_sourceCurrent()) {
       return Scaffold(
-        appBar: AppBar(title: const Text('记忆候选')),
+        appBar: birdtieAppBar(context, title: const Text('记忆候选')),
         body: SafeArea(
           child: ListView(
             padding: const EdgeInsets.all(20),
@@ -185,7 +178,7 @@ class _AgentMemoryCandidatePageState extends State<AgentMemoryCandidatePage> {
     final enabled =
         !_data.busy && !_data.unknownAccept && !_data.hasPendingAcceptance;
     return Scaffold(
-      appBar: AppBar(title: const Text('记忆候选')),
+      appBar: birdtieAppBar(context, title: const Text('记忆候选')),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(20),
@@ -276,9 +269,7 @@ class _AgentMemoryCandidatePageState extends State<AgentMemoryCandidatePage> {
                       : null,
                   controlAffinity: ListTileControlAffinity.leading,
                 ),
-              const Text(
-                '最多选择 20 条来源。预览需要至少两个独立来源簇，同一活动的动态与报名仅算一簇，后端会再次核验。候选只作待确认，不是预测概率。',
-              ),
+              const Text('最多选择20条记录。同一活动的动态和报名只计作一项来源；请至少选择两项独立来源。'),
               _button(
                 '保存待确认候选',
                 enabled && _data.selected.isNotEmpty
@@ -288,15 +279,13 @@ class _AgentMemoryCandidatePageState extends State<AgentMemoryCandidatePage> {
               ),
               if (p != null) ...[
                 const Divider(height: 32),
-                Text('具体版本预览', style: Theme.of(context).textTheme.titleLarge),
-                Text('候选版本：${p.candidate.version}'),
+                Text('保存前确认', style: Theme.of(context).textTheme.titleLarge),
                 Text(
                   p.statement,
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
-                Text(
-                  '将新增一条本人明确声明的私密记忆，不覆盖旧记忆。\n声明有效至：${_time(p.memoryValidUntil)}\n本次批准截止：${_time(p.expiresAt)}\n已核验 ${p.review['clusters']} 个独立来源簇。',
-                ),
+                Text('将新增一条仅自己可见的记忆，不覆盖旧记忆。\n有效至：${_time(p.memoryValidUntil)}'),
+                Text('本次确认有效至：${_time(p.expiresAt)}'),
                 const SizedBox(height: 8),
                 for (final raw in p.candidate.raw['sources'] as List)
                   Builder(
@@ -316,12 +305,12 @@ class _AgentMemoryCandidatePageState extends State<AgentMemoryCandidatePage> {
                       return Padding(
                         padding: const EdgeInsets.symmetric(vertical: 6),
                         child: Text(
-                          '来源：$title\n具体版本：${_sourceVersion(source['version'])}\n记录时间：${_time(candidateTime(source['eventTime']))}',
+                          '来源：$title\n记录时间：${_time(candidateTime(source['eventTime']))}',
                         ),
                       );
                     },
                   ),
-                const Text('仅同意上面显示的具体版本；主体、来源或期限变化后批准失效。来源关联并不证明事实。'),
+                const Text('请确认上面的内容。关联记录不代表这项推断已经成立。'),
                 _button(
                   '确认保存这项声明',
                   !_data.busy && !_data.unknownAccept
@@ -333,7 +322,6 @@ class _AgentMemoryCandidatePageState extends State<AgentMemoryCandidatePage> {
               ],
               const Divider(height: 32),
               Text('我的候选记录', style: Theme.of(context).textTheme.titleLarge),
-              const Text('显示最近 50 项；已失效候选不保留原建议内容。'),
               if (_data.records.isEmpty && !_data.busy)
                 const Padding(
                   padding: EdgeInsets.symmetric(vertical: 16),
@@ -369,6 +357,11 @@ class _AgentMemoryCandidatePageState extends State<AgentMemoryCandidatePage> {
                         const Text('已保存为本人声明。记忆改变或撤销后，本记录会失效。'),
                     ],
                   ),
+                ),
+              if (_data.hasMore)
+                _button(
+                  '继续读取候选',
+                  _data.canLoadMore ? () => unawaited(_data.loadMore()) : null,
                 ),
               if (multiBlocked) const Text('请先核实原候选保存结果；当前暂不能发起新的多来源整理。'),
               Semantics(

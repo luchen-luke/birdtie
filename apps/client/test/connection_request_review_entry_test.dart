@@ -62,14 +62,31 @@ void main() {
     var posts = 0, reads = 0;
     final client = MockClient((r) async {
       if (r.method == 'POST') posts++;
-      if (r.url.path == '/v1/me/connection-requests') {
+      if (r.url.path == '/v1/me/connection-requests/page' ||
+          r.url.path == '/v1/me/connection-requests/$reviewID') {
         reads++;
-        return reviewJSON([reviewRequest()]);
+        return reviewJSON(
+          r.url.path.endsWith('/page')
+              ? {
+                  'items': [reviewRequest()],
+                  'nextCursor': null,
+                }
+              : reviewRequest(),
+        );
       }
       if (r.url.path == '/v1/me/notifications' ||
-          r.url.path == '/v1/me/ties' ||
-          r.url.path == '/v1/me/conversations') {
-        return reviewJSON([]);
+          r.url.path == '/v1/me/ties/page' ||
+          r.url.path == '/v1/me/conversations/page') {
+        return reviewJSON(
+          r.url.path.endsWith('/page')
+              ? {
+                  'items': [],
+                  'nextCursor': null,
+                  if (r.url.path == '/v1/me/conversations/page')
+                    'unreadCount': 0,
+                }
+              : [],
+        );
       }
       return reviewAuthResponse(r);
     });
@@ -91,12 +108,12 @@ void main() {
     await t.pumpAndSettle();
     await t.tap(find.text('接受'));
     await t.pumpAndSettle();
-    expect(find.text('审阅申请'), findsOneWidget);
+    expect(find.text('查看申请'), findsOneWidget);
     expect(find.text('测试申请人'), findsWidgets);
-    expect(find.text('审阅接受'), findsOneWidget);
+    expect(find.text('接受'), findsOneWidget);
     expect(reads, 2);
     expect(posts, 0);
-    await t.tap(find.text('审阅接受'));
+    await t.tap(find.text('接受'));
     await t.pumpAndSettle();
     expect(find.text('确认接受这条申请'), findsOneWidget);
     expect(posts, 0);
@@ -111,13 +128,30 @@ void main() {
       var posts = 0;
       http.Response response(http.Request r) {
         if (r.method == 'POST') posts++;
-        if (r.url.path == '/v1/me/connection-requests') {
-          return reviewJSON([reviewRequest()]);
+        if (r.url.path == '/v1/me/connection-requests/page' ||
+            r.url.path == '/v1/me/connection-requests/$reviewID') {
+          return reviewJSON(
+            r.url.path.endsWith('/page')
+                ? {
+                    'items': [reviewRequest()],
+                    'nextCursor': null,
+                  }
+                : reviewRequest(),
+          );
         }
         if (r.url.path == '/v1/me/notifications' ||
-            r.url.path == '/v1/me/ties' ||
-            r.url.path == '/v1/me/conversations') {
-          return reviewJSON([]);
+            r.url.path == '/v1/me/ties/page' ||
+            r.url.path == '/v1/me/conversations/page') {
+          return reviewJSON(
+            r.url.path.endsWith('/page')
+                ? {
+                    'items': [],
+                    'nextCursor': null,
+                    if (r.url.path == '/v1/me/conversations/page')
+                      'unreadCount': 0,
+                  }
+                : [],
+          );
         }
         return reviewAuthResponse(r);
       }
@@ -156,7 +190,7 @@ void main() {
       await t.pumpAndSettle();
       await t.tap(find.text('接受'));
       await t.pumpAndSettle();
-      await t.tap(find.text('审阅接受'));
+      await t.tap(find.text('接受'));
       await t.pumpAndSettle();
       if (change == 'workspace') {
         workspace.value = reviewPeer;
@@ -170,7 +204,7 @@ void main() {
       expect(find.text('确认接受'), findsNothing);
       expect(posts, 0);
       // Boundary replaces retired child; underlying current Inbox may show new list.
-      expect(find.text('审阅接受'), findsNothing);
+      expect(find.text('接受'), findsNothing);
       expect(find.textContaining('请返回当前入口重新核实'), findsOneWidget);
       await t.pumpWidget(const SizedBox());
       workspace.dispose();
@@ -183,16 +217,33 @@ void main() {
     var listReads = 0, writes = 0;
     final client = MockClient((r) async {
       if (r.method == 'POST') writes++;
-      if (r.url.path == '/v1/me/connection-requests') {
+      if (r.url.path == '/v1/me/connection-requests/page' ||
+          r.url.path == '/v1/me/connection-requests/$reviewID') {
         listReads++;
         expect(r.headers['Authorization'], 'Bearer synthetic-review-session');
         expect(r.url.host, 'original.fixture');
-        return reviewJSON([reviewRequest()]);
+        return reviewJSON(
+          r.url.path.endsWith('/page')
+              ? {
+                  'items': [reviewRequest()],
+                  'nextCursor': null,
+                }
+              : reviewRequest(),
+        );
       }
       if (r.url.path == '/v1/me/notifications' ||
-          r.url.path == '/v1/me/ties' ||
-          r.url.path == '/v1/me/conversations') {
-        return reviewJSON([]);
+          r.url.path == '/v1/me/ties/page' ||
+          r.url.path == '/v1/me/conversations/page') {
+        return reviewJSON(
+          r.url.path.endsWith('/page')
+              ? {
+                  'items': [],
+                  'nextCursor': null,
+                  if (r.url.path == '/v1/me/conversations/page')
+                    'unreadCount': 0,
+                }
+              : [],
+        );
       }
       return reviewAuthResponse(r);
     });

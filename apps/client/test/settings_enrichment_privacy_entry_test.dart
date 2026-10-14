@@ -4,6 +4,7 @@ import 'package:birdtie_client/src/auth/birdtie_auth_controller.dart';
 import 'package:birdtie_client/src/city/public_city_controller.dart';
 import 'package:birdtie_client/src/content/private_moment_controller.dart';
 import 'package:birdtie_client/src/workspace/settings_page.dart';
+import 'package:birdtie_client/src/workspace/enrichment_privacy_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -63,20 +64,21 @@ void main() {
       ),
     );
     await t.pumpAndSettle();
-    for (var i = 0; i < 12 && find.text('本地分析许可').evaluate().isEmpty; i++) {
+    for (var i = 0; i < 12 && find.text('本地分析授权').evaluate().isEmpty; i++) {
       await t.drag(find.byType(ListView).first, const Offset(0, -360));
       await t.pumpAndSettle();
     }
     expect(
-      find.text('本地分析许可'),
+      find.text('本地分析授权'),
       findsOneWidget,
       reason: '真实设置页面没有可发现、跨重开的本地分析许可管理入口',
     );
-    await t.ensureVisible(find.text('本地分析许可'));
+    await t.ensureVisible(find.text('本地分析授权'));
     await t.pumpAndSettle();
-    expect(find.text('本地分析许可').hitTestable(), findsOneWidget);
-    await t.tap(find.text('本地分析许可'));
+    expect(find.text('本地分析授权').hitTestable(), findsOneWidget);
+    await t.tap(find.text('本地分析授权'));
     await t.pumpAndSettle();
+    expect(find.byType(EnrichmentPrivacyPage), findsOneWidget);
     expect(find.text('本地分析许可').hitTestable(), findsOneWidget);
     expect(
       wire.sent

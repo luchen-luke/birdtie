@@ -70,7 +70,7 @@ void main() {
       ),
     );
     await t.pumpAndSettle();
-    await _visible(t, find.widgetWithText(ListTile, '本次会话的任务资料许可'));
+    await _visible(t, find.widgetWithText(ListTile, '任务资料授权'));
     expect(wire.sent.where((r) => r.method != 'GET'), isEmpty);
   });
   testWidgets('实际设置读取具体许可版本，经检查确认原DELETE并刷新且不创建许可', (t) async {
@@ -122,7 +122,7 @@ void main() {
       ),
     );
     await t.pumpAndSettle();
-    final entry = find.widgetWithText(ListTile, '本次会话的任务资料许可');
+    final entry = find.widgetWithText(ListTile, '任务资料授权');
     await _visible(t, entry);
     await t.tap(entry.hitTestable());
     await t.pumpAndSettle();
@@ -199,7 +199,7 @@ void main() {
       ),
     );
     await t.pumpAndSettle();
-    final entry = find.widgetWithText(ListTile, '本次会话的任务资料许可');
+    final entry = find.widgetWithText(ListTile, '任务资料授权');
     await _visible(t, entry);
     await t.tap(entry.hitTestable());
     await t.pumpAndSettle();

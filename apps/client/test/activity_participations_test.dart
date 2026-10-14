@@ -4,7 +4,6 @@ import 'dart:async';
 import 'package:birdtie_client/src/workspace/activity_participations.dart';
 import 'package:birdtie_client/src/workspace/activity_plans.dart';
 import 'package:birdtie_client/src/workspace/saved_items.dart';
-import 'package:birdtie_client/src/auth/birdtie_auth_controller.dart';
 import 'package:birdtie_client/src/city/public_city_controller.dart';
 import 'package:birdtie_client/src/workspace/organization_workspaces.dart';
 import 'package:flutter/material.dart';
@@ -400,7 +399,7 @@ void main() {
         client: client,
         apiBaseUrl: 'http://api.test',
       );
-      final auth = BirdtieAuthController(apiBaseUrl: 'http://api.test');
+      final auth = ChatTestAuth()..token = 'Bearer test';
       final city = PublicCityController();
       final organizations = OrganizationWorkspaceController(
         authorizationHeader: () => auth.authorizationHeader,

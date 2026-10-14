@@ -6,6 +6,7 @@ import '../auth/birdtie_auth_controller.dart';
 import 'active_social_intent_api.dart';
 import 'active_social_intent_controller.dart';
 import 'active_social_intent_page.dart';
+import 'now_ui_tokens.dart';
 
 /// Native own-intent selector. Layout height is intrinsic, no map movement or
 /// Task writes. The caller keeps its canvas mounted when this card changes.
@@ -160,6 +161,14 @@ class _ActiveSocialIntentCardState extends State<ActiveSocialIntentCard> {
 
   @override
   Widget build(BuildContext context) {
+    final text = NowUiTokens.of(context);
+    Widget titleLabel(String title) => ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: 48),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Text(title),
+      ),
+    );
     if (!_data.current) {
       final organization = widget.organizationWorkspaceID?.call() != null;
       final anonymous =
@@ -174,16 +183,15 @@ class _ActiveSocialIntentCardState extends State<ActiveSocialIntentCard> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('我的社交意图', style: Theme.of(context).textTheme.titleSmall),
+              Text('我的安排', style: text.placeTitle),
               const SizedBox(height: 8),
               Text(
                 organization
-                    ? '请切回个人身份查看社交意图。'
+                    ? '请切换到个人身份查看。'
                     : anonymous
-                    ? '登录后可查看和管理自己的社交意图。'
-                    : '账号或工作区已变化，请关闭后重新打开意图入口。',
+                    ? '登录后可查看自己的安排。'
+                    : '当前身份已变化，请重新打开。',
               ),
-              if (anonymous && !organization) const Text('请先在个人资料中登录，再重新打开此入口。'),
               if (widget.onClose != null)
                 TextButton(
                   style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
@@ -210,12 +218,7 @@ class _ActiveSocialIntentCardState extends State<ActiveSocialIntentCard> {
           children: [
             Row(
               children: [
-                Expanded(
-                  child: Text(
-                    '当前社交意图',
-                    style: Theme.of(context).textTheme.titleSmall,
-                  ),
-                ),
+                Expanded(child: Text('我的安排', style: text.placeTitle)),
                 IconButton(
                   tooltip: '管理我的意图',
                   onPressed: _data.ready ? _open : null,
@@ -231,23 +234,28 @@ class _ActiveSocialIntentCardState extends State<ActiveSocialIntentCard> {
                 child: const Text('重试读取意图'),
               )
             else if (entries.isEmpty)
-              const Text('尚未开启意图，可在 Now 表达需求。')
+              const Text('暂无正在安排的事项')
             else
               DropdownButton<String>(
                 value: entries.any((i) => i.id == _data.selectedID)
                     ? _data.selectedID
                     : null,
                 isExpanded: true,
-                hint: const Text('选择本轮意图'),
+                isDense: false,
+                itemHeight: null,
+                style: text.placeTitle,
+                hint: const Text('选择安排'),
+                selectedItemBuilder: (context) => [
+                  for (final i in entries)
+                    i.id == _data.selectedID
+                        ? titleLabel(i.title)
+                        : const SizedBox.shrink(),
+                ],
                 items: entries
                     .map(
                       (i) => DropdownMenuItem(
                         value: i.id,
-                        child: Text(
-                          i.title,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
+                        child: titleLabel(i.title),
                       ),
                     )
                     .toList(),
@@ -257,14 +265,10 @@ class _ActiveSocialIntentCardState extends State<ActiveSocialIntentCard> {
               Text(
                 '${intentStates[selected.status]} · ${intentModes[selected.intent['modality']]} · ${selected.audienceLabel}',
               ),
-              Text(
-                selected.locationLabel,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
+              Text(selected.locationLabel, style: text.body),
               TextButton(
                 onPressed: _data.ready ? _data.reset : null,
-                child: const Text('重置本地选择'),
+                child: const Text('取消选择'),
               ),
             ],
             if (_data.message != null) Text(_data.message!),

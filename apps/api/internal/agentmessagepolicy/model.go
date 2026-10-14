@@ -102,6 +102,8 @@ func ValidInput(in PutInput) bool {
 }
 
 type Record struct {
+	// Native proof is never transported or interpreted as an action permission.
+	ResponseProof    any         `json:"-"`
 	Schema           string      `json:"schemaVersion"`
 	OwnerID          string      `json:"ownerId"`
 	AgentID          string      `json:"agentId"`
@@ -114,6 +116,7 @@ type Record struct {
 	ExpiresAt        *time.Time  `json:"expiresAt,omitempty"`
 }
 type Decision struct {
+	ResponseProof       any         `json:"-"`
 	Schema              string      `json:"schemaVersion"`
 	Disposition         Disposition `json:"disposition"`
 	SourceVersion       string      `json:"sourceVersion"`
@@ -127,4 +130,11 @@ type Store interface {
 	GetOwnMessagePolicy(context.Context, agentprofile.PrivateAccess) (Record, error)
 	PutOwnMessagePolicy(context.Context, agentprofile.PrivateAccess, PutInput) (Record, error)
 	ReadMessagePolicyDecision(context.Context, agentprofile.PrivateAccess, string) (Decision, error)
+}
+
+// ResponseValidator is an optional native capability of Store. HTTP policy
+// responses require it; a metadata-only Store cannot publish a stale snapshot.
+type ResponseValidator interface {
+	ValidateOwnMessagePolicyResponse(context.Context, agentprofile.PrivateAccess, Record) error
+	ValidateMessagePolicyDecisionResponse(context.Context, agentprofile.PrivateAccess, string, Decision) error
 }

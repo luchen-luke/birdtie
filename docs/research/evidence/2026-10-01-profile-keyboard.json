@@ -1,0 +1,21 @@
+{
+  "phase": "keyboard",
+  "device": "c641566b",
+  "eventCount": 32299,
+  "flutterUiFrame": {
+    "count": 312,
+    "p50Ms": 8.706,
+    "p95Ms": 14.502,
+    "p99Ms": 17.492,
+    "maxMs": 19.936,
+    "over16_7Ms": 7
+  },
+  "flutterRaster": {
+    "count": 312,
+    "p50Ms": 1.072,
+    "p95Ms": 3.189,
+    "p99Ms": 3.431,
+    "maxMs": 8.66,
+    "over16_7Ms": 0
+  }
+}

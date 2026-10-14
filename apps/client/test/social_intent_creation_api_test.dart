@@ -145,6 +145,19 @@ const nativeCreationWireSnapshots = r'''[
 ]''';
 
 void main() {
+  for (final audience in ['FOLLOWERS','CONNECTIONS','CLOSE']) {
+    test('原保存回执当前实体新受众 $audience 可读取，创建仍private', () {
+      final request=http.Request('POST',Uri.parse('http://synthetic.test/v1/me/social-intents'))
+        ..body=jsonEncode({...creationDraft(),'operationId':creationID});
+      final original=jsonDecode(creationWire(request).body)as Map<String,dynamic>;
+      final data=original['data']as Map<String,dynamic>;
+      data['intent']['audience']=audience;data['intent']['status']='ACTIVE';
+      final receipt=SocialIntentCreationReceipt.decode(jsonEncode(original),owner:creationOwner,
+        operation:creationID,digest:data['requestDigest'],source:'');
+      expect(receipt.intent!['audience'],audience);
+      expect(intentCreationDraft(creationDraft(),'')['audience'],'PRIVATE');
+    });
+  }
   test('原生Go与Dart规范化摘要一致，操作ID不代替内容摘要', () {
     final draft = {
       'type': 'FIND_ACTIVITY',

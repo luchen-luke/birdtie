@@ -141,7 +141,9 @@ func (s *Store) ChangeBusinessPublicPermission(ctx context.Context, a businessco
 	}
 	defer tx.Rollback(context.Background())
 	producer, e := prepareBusinessPublicUpdate(ctx, tx)
-	if e != nil { return out, businessError(e) }
+	if e != nil {
+		return out, businessError(e)
+	}
 	now, e := s.businessBoundary(ctx, tx, b, nil)
 	if e != nil {
 		return out, e
@@ -200,9 +202,11 @@ func (s *Store) ChangeBusinessPublicPermission(ctx context.Context, a businessco
 	if producer && in.Action == "publish" {
 		var auditID string
 		e = auditQueryRow(ctx, tx, `INSERT INTO business_public_profile_audit(business_id,actor_account_id,action,permission_version,profile_version,notification_source) VALUES($1,$2,$3,$4,$5,true) RETURNING id`, a.BusinessID, a.ActingPersonID, in.Action, out.Version, out.ProfileVersion).Scan(&auditID)
-		if e == nil { e = routeBusinessPublicUpdate(ctx, tx, auditID) }
+		if e == nil {
+			e = routeBusinessPublicUpdate(ctx, tx, auditID)
+		}
 	} else {
-	_, e = auditExec(ctx, tx, `INSERT INTO business_public_profile_audit(business_id,actor_account_id,action,permission_version,profile_version) VALUES($1,$2,$3,$4,$5)`, a.BusinessID, a.ActingPersonID, in.Action, out.Version, out.ProfileVersion)
+		_, e = auditExec(ctx, tx, `INSERT INTO business_public_profile_audit(business_id,actor_account_id,action,permission_version,profile_version) VALUES($1,$2,$3,$4,$5)`, a.BusinessID, a.ActingPersonID, in.Action, out.Version, out.ProfileVersion)
 	}
 	if e != nil {
 		return out, businessError(e)
@@ -221,7 +225,7 @@ func (s *Store) ChangeBusinessPublicPermission(ctx context.Context, a businessco
 
 // Explicit aliases for the existing canonical activityColumns. Internal flat
 // JSON is reshaped into the same foundation Activity, never raw activities.*.
-const supplierActivityAliases = `("id","cityId","placeId","placeName","hostLabel","title","summary","description","categoryCode","capacity","participantCount","priceMinor","currency","eligibility","languageCode","officialUrl","startsAt","endsAt","timeZone","cancelledAt","latitude","longitude","sourceLabel","sourceReference","sourceMaintainer","sourceUpdatedAt","sourceVerifiedAt","sourceExpiresAt","organizationId","visibility","organizerType","organizerId","organizerName","organizerAvatarUrl","modality","physicalPlaceStatus","venuePlaceId")`
+const supplierActivityAliases = `("id","cityId","placeId","placeName","hostLabel","title","summary","description","categoryCode","capacity","participantCount","priceMinor","currency","eligibility","languageCode","officialUrl","startsAt","endsAt","timeZone","cancelledAt","latitude","longitude","sourceLabel","sourceReference","sourceMaintainer","sourceUpdatedAt","sourceVerifiedAt","sourceExpiresAt","organizationId","visibility","organizerType","organizerId","organizerName","organizerAvatarUrl","modality","physicalPlaceStatus","venuePlaceId","cover","coverSourceProof")`
 
 func supplierActivitiesJSON(organizerColumn string) string {
 	// Only caller-owned closed literals, never external SQL identifiers.
@@ -248,6 +252,9 @@ func decodeSupplierActivities(raw []byte, now time.Time) ([]foundation.Activity,
 		var a foundation.Activity
 		if e = json.Unmarshal(encoded, &a); e != nil {
 			return nil, e
+		}
+		if json.Unmarshal(row["coverSourceProof"], &a.CoverSourceProof) != nil {
+			return nil, businessconsole.ErrUnavailable
 		}
 		read := func(name string, v any) error { return json.Unmarshal(row[name], v) }
 		if read("sourceLabel", &a.Source.Label) != nil || read("sourceReference", &a.Source.Reference) != nil || read("sourceMaintainer", &a.Source.Maintainer) != nil || read("sourceUpdatedAt", &a.Source.UpdatedAt) != nil || read("sourceVerifiedAt", &a.Source.VerifiedAt) != nil || read("sourceExpiresAt", &a.Source.ExpiresAt) != nil || read("organizerType", &a.Organizer.Type) != nil || read("organizerId", &a.Organizer.ID) != nil || read("organizerName", &a.Organizer.Name) != nil || read("organizerAvatarUrl", &a.Organizer.AvatarURL) != nil {
@@ -360,10 +367,10 @@ func (s *Store) readCoherentPublicOrganization(ctx context.Context, id, viewer s
 	var now time.Time
 	e := s.pool.QueryRow(ctx, `SELECT org.id,org.organization_type,org.name,org.description,org.official_links,org.verification_status,
  EXISTS(SELECT 1 FROM agents ag WHERE ag.principal_account_id=org.account_id AND ag.agent_type='organization' AND ag.status='active'),
- `+supplierActivitiesJSON("ao.organization_id")+`,clock_timestamp()
+ `+supplierActivitiesJSON("ao.organization_id")+`,clock_timestamp(),birdtie_entity_cover_metadata('organization',org.id,$2::uuid,clock_timestamp()),birdtie_entity_cover_authority('organization',org.id,$2::uuid)||':'||COALESCE((SELECT cover.xmin::text FROM entity_covers cover WHERE cover.entity_type='organization' AND cover.entity_id=org.id),'none')
  FROM organizations org JOIN accounts principal ON principal.id=org.account_id AND principal.account_type='organization' AND principal.status='active'
  WHERE org.id=$1 AND org.status='active' AND org.visibility='public'
- AND NOT EXISTS(SELECT 1 FROM account_blocks block WHERE $2::uuid IS NOT NULL AND ((block.blocker_account_id=$2 AND block.blocked_account_id=org.account_id) OR (block.blocked_account_id=$2 AND block.blocker_account_id=org.account_id)))`, id, viewerArg).Scan(&out.ID, &out.OrganizationType, &out.Name, &out.Description, &out.OfficialLinks, &out.VerificationStatus, &out.AgentAvailable, &activities, &now)
+ AND NOT EXISTS(SELECT 1 FROM account_blocks block WHERE $2::uuid IS NOT NULL AND ((block.blocker_account_id=$2 AND block.blocked_account_id=org.account_id) OR (block.blocked_account_id=$2 AND block.blocker_account_id=org.account_id)))`, id, viewerArg).Scan(&out.ID, &out.OrganizationType, &out.Name, &out.Description, &out.OfficialLinks, &out.VerificationStatus, &out.AgentAvailable, &activities, &now, &out.Cover, &out.CoverSourceProof)
 	if errors.Is(e, pgx.ErrNoRows) {
 		return out, organization.ErrNotFound
 	}

@@ -205,6 +205,17 @@ func (s *MemoryCandidateService) ListOwnCandidates(ctx context.Context, access a
 		}
 		out = append(out, agentmemorycandidate.Clone(c.record))
 	}
+	ids, e := candidateReviewCurrent(ctx, tx, b, out)
+	if e != nil {
+		return nil, e
+	}
+	if e = s.finish(ctx, tx, b, ticket, nil, ids...); e != nil {
+		return nil, e
+	}
+	return out, nil
+}
+
+func candidateReviewCurrent(ctx context.Context, tx pgx.Tx, b agentPrivateBinding, out []agentmemorycandidate.Record) ([]string, error) {
 	// All source ACL/clock checks share the final statement after every selected
 	// source lock has been acquired. A later row wait cannot expose an earlier
 	// expired source or a newly blocked activity through this list.
@@ -239,10 +250,7 @@ func (s *MemoryCandidateService) ListOwnCandidates(ctx context.Context, access a
 	if !current {
 		return nil, agentmemory.ErrConflict
 	}
-	if e = s.finish(ctx, tx, b, ticket, nil, ids...); e != nil {
-		return nil, e
-	}
-	return out, nil
+	return ids, nil
 }
 
 // One statement checks every selected source against the current native ACL,

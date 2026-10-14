@@ -1,0 +1,24 @@
+{
+  "package": "BT-NOW-20261008",
+  "task_count": 30,
+  "priorities": {
+    "P0": 23,
+    "P1": 7,
+    "P2": 0
+  },
+  "unique_ids": true,
+  "valid_dependency_refs": true,
+  "acyclic_dependencies": true,
+  "markdown_task_sections_match": true,
+  "csv_json_ids_match": true,
+  "all_initial_status_reconcile_required": true,
+  "all_tests_not_run": true,
+  "validation_scope": "仅验证交付包结构与一致性，不代表 BirdTie 应用测试通过",
+  "files": {
+    "BirdTie-Now-Consolidated-Requirements-and-Changes-2026-10-08.md": "eab0a7c6f0d9180ca553e37ec86f5516cf64fc986f45d64252229762f6c3eb67",
+    "CODEX-MASTER-PROMPT.md": "5bebe8f8af87153f5481cc59adea5a76c9633de9b9870de42e6383f2823c0797",
+    "README.md": "f89795929594a1bf59ea722555a49e49c455dabf3c7dad181daa085557532507",
+    "BT-NOW-20261008-BACKLOG.json": "0a9247aedb97fc9954f74bceccc9862a12ccd86a71dfc9b3cdfb90657cd7a2ea",
+    "BT-NOW-20261008-BACKLOG.csv": "28a4b50cb4eafcf444935e8e54eadbe72898585230a94c5a487f96a4913ac5bb"
+  }
+}

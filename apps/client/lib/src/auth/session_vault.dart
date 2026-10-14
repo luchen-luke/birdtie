@@ -1,12 +1,66 @@
+import 'dart:async';
 import 'dart:convert';
 
+import 'package:crypto/crypto.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
-class StoredSession {
-  const StoredSession({required this.token, required this.method});
+/// Only an explicit HTTP(S) API origin scopes an authentication credential.
+/// Empty development configuration has no credential namespace.
+String canonicalAuthOrigin(String apiBase) {
+  if (apiBase.isEmpty) return '';
+  final uri = Uri.tryParse(apiBase);
+  if (uri == null ||
+      !const {'http', 'https'}.contains(uri.scheme) ||
+      !uri.hasAuthority ||
+      uri.host.isEmpty ||
+      uri.userInfo.isNotEmpty ||
+      uri.hasQuery ||
+      uri.hasFragment ||
+      (uri.path.isNotEmpty && uri.path != '/')) {
+    throw const FormatException('登录服务来源无效。');
+  }
+  return uri.origin;
+}
 
-  final String token;
-  final String method;
+bool canonicalStoredAuthOrigin(String origin) {
+  try {
+    return origin.isNotEmpty && canonicalAuthOrigin(origin) == origin;
+  } on FormatException {
+    return false;
+  }
+}
+
+// Shared per-key serialization is retired before a caller completes. A prior
+// test/event-loop Future is never retained as a permanent tail.
+final _authStoreTails = <String, Future<void>>{};
+Future<T> withAuthStorageKey<T>(String key, Future<T> Function() action) async {
+  final previous = _authStoreTails[key], done = Completer<void>();
+  _authStoreTails[key] = done.future;
+  try {
+    if (previous != null) await previous;
+    return await action();
+  } finally {
+    if (identical(_authStoreTails[key], done.future)) {
+      _authStoreTails.remove(key);
+    }
+    done.complete();
+  }
+}
+
+class StoredSession {
+  const StoredSession({
+    required this.token,
+    required this.method,
+    this.origin = '',
+  });
+
+  final String token, method, origin;
+  bool belongsTo(String expectedOrigin) =>
+      canonicalStoredAuthOrigin(origin) &&
+      origin == expectedOrigin &&
+      token.isNotEmpty &&
+      utf8.encode(token).length <= 4096 &&
+      const {'dev_phone', 'oidc'}.contains(method);
 }
 
 abstract interface class SessionVault {
@@ -17,42 +71,90 @@ abstract interface class SessionVault {
 
 class SecureSessionVault implements SessionVault {
   const SecureSessionVault({
-    this._storage = const FlutterSecureStorage(),
+    this.origin = '',
+    this.storage = const FlutterSecureStorage(),
   });
 
-  static const _key = 'birdtie.session.v1';
-  final FlutterSecureStorage _storage;
-
-  @override
-  Future<StoredSession?> read() async {
-    final raw = await _storage.read(key: _key);
-    if (raw == null) return null;
-    try {
-      final data = jsonDecode(raw) as Map<String, dynamic>;
-      final token = data['token'];
-      final method = data['method'];
-      if (token is String &&
-          token.isNotEmpty &&
-          (method == 'dev_phone' || method == 'oidc')) {
-        return StoredSession(token: token, method: method as String);
-      }
-    } on FormatException {
-      // A damaged entry must not be used as a credential.
-    } on TypeError {
-      // A damaged entry must not be used as a credential.
+  final String origin;
+  final FlutterSecureStorage storage;
+  static String keyForOrigin(String origin) {
+    final canonical = canonicalAuthOrigin(origin);
+    if (canonical.isEmpty) {
+      throw const FormatException('缺少登录服务来源。');
     }
-    await delete();
-    return null;
+    return 'birdtie.session.v2.' +
+        sha256.convert(utf8.encode(canonical)).toString();
   }
 
   @override
-  Future<void> write(StoredSession session) => _storage.write(
-    key: _key,
-    value: jsonEncode({'token': session.token, 'method': session.method}),
-  );
+  Future<StoredSession?> read() async {
+    final expected = canonicalAuthOrigin(origin);
+    if (expected.isEmpty) return null;
+    final key = keyForOrigin(expected);
+    return withAuthStorageKey(key, () async {
+      final raw = await storage.read(key: key);
+      if (raw == null) return null;
+      try {
+        final data = jsonDecode(raw);
+        if (data is Map<String, dynamic> &&
+            data.length == 4 &&
+            data.keys.toSet().containsAll({
+              'schema',
+              'origin',
+              'token',
+              'method',
+            }) &&
+            data['schema'] == 'birdtie-session-v2' &&
+            data['origin'] == expected &&
+            data['token'] is String &&
+            (data['token'] as String).isNotEmpty &&
+            utf8.encode(data['token']).length <= 4096 &&
+            const {'dev_phone', 'oidc'}.contains(data['method'])) {
+          return StoredSession(
+            token: data['token'],
+            method: data['method'],
+            origin: expected,
+          );
+        }
+      } catch (_) {
+        // A damaged entry grants no credential. Retire only this origin key.
+      }
+      await storage.delete(key: key);
+      return null;
+    });
+  }
 
   @override
-  Future<void> delete() => _storage.delete(key: _key);
+  Future<void> write(StoredSession session) async {
+    final expected = canonicalAuthOrigin(origin);
+    if (!session.belongsTo(expected) ||
+        session.token.isEmpty ||
+        utf8.encode(session.token).length > 4096 ||
+        !const {'dev_phone', 'oidc'}.contains(session.method)) {
+      throw const FormatException('登录记录来源不符。');
+    }
+    final key = keyForOrigin(expected);
+    return withAuthStorageKey(
+      key,
+      () => storage.write(
+        key: key,
+        value: jsonEncode({
+          'schema': 'birdtie-session-v2',
+          'origin': expected,
+          'token': session.token,
+          'method': session.method,
+        }),
+      ),
+    );
+  }
+
+  @override
+  Future<void> delete() async {
+    final expected = canonicalAuthOrigin(origin);
+    if (expected.isEmpty) return;
+    final key = keyForOrigin(expected);
+    await withAuthStorageKey(key, () => storage.delete(key: key));
+  }
 }
 
 class MemorySessionVault implements SessionVault {

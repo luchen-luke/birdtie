@@ -1,0 +1,10 @@
+{
+  "State": "PREFLIGHT_PASS",
+  "Targets": 33,
+  "Files": 94467.0,
+  "Bytes": 10494551163.0,
+  "GiB": 9.774,
+  "DriveCFreeBefore": 135307759616,
+  "RecordedUtc": "2026-10-14T10:18:27.8041574Z",
+  "Preserved": "modules-2, wrapper, daemon, kotlin-profile, native, android, notifications; project code/config/signing/artifacts"
+}

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:http/http.dart' as http;
+import '../app/birdtie_app_bar.dart';
 import '../auth/birdtie_auth_controller.dart';
 import 'now_context_selection_api.dart';
 import 'now_context_selection_controller.dart';
@@ -132,7 +133,7 @@ class _NowContextSelectionPageState extends State<NowContextSelectionPage> {
   Widget build(BuildContext context) {
     final selected = _data.selected;
     return Scaffold(
-      appBar: AppBar(title: const Text('选择查看情境')),
+      appBar: birdtieAppBar(context, title: const Text('选择查看情境')),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(16),

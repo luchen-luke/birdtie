@@ -112,3 +112,31 @@ func TestModelOutputScopeMatcherHasNoGrantOrToolAuthority(t *testing.T) {
 		t.Fatal("missing typed proposal")
 	}
 }
+
+func TestCandidateV2NoCandidateCannotEnterActivityOutputScope(t *testing.T) {
+	r := testRequest(Structured)
+	r.TaskKind = MemoryCandidateExtraction
+	r.OutputSchemaVersion = CandidateProposalV2Version
+	r.ToolAllowlist = []string{}
+	h, _ := harness(t, `{"status":"COMPLETED","request_id":"no-candidate-scope","finish_reason":"stop","structured":{"status":"NO_CANDIDATE"}}`)
+	result, err := h.Complete(context.Background(), r)
+	if err != nil || result.Candidate == nil || result.Candidate.Status != NoCandidateStatus {
+		t.Fatal("missing explicit no-candidate outcome", err)
+	}
+	for name, allowed := range map[string][]EntityProposal{
+		"missing_native_scope":   nil,
+		"current_activity_scope": {{Type: "ACTIVITY", ID: fixtureEntity}},
+	} {
+		t.Run(name, func(t *testing.T) {
+			if err := ValidateEntityScope(result, allowed); !errors.Is(err, ErrOutputEntity) {
+				t.Fatal("candidate extraction acquired activity output authority", err)
+			}
+		})
+	}
+	for _, gate := range []LiveGate{nil, &fakeGate{enabled: true}} {
+		result, err := NewGateway(gate).Complete(context.Background(), r)
+		if !errors.Is(err, ErrUnavailable) || result.Mode != Disabled || result.Candidate != nil {
+			t.Fatal("new candidate schema activated the production gateway", err)
+		}
+	}
+}

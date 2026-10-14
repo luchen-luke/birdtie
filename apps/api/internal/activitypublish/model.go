@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/birdtie/birdtie/apps/api/internal/actorref"
+	"github.com/birdtie/birdtie/apps/api/internal/entitycover"
 )
 
 var ErrForbidden = errors.New("organization admin required")
@@ -45,31 +46,33 @@ func (o Organizer) ActorRef() (actorref.ActorRef, error) {
 }
 
 type Activity struct {
-	ID                  string     `json:"id"`
-	Organizer           Organizer  `json:"organizer"`
-	OrganizationID      string     `json:"organizationId"`
-	CityID              string     `json:"cityId"`
-	PlaceID             *string    `json:"placeId,omitempty"`
-	Modality            string     `json:"modality"`
-	PhysicalPlaceStatus string     `json:"physicalPlaceStatus"`
-	VenuePlaceID        *string    `json:"venuePlaceId,omitempty"`
-	Title               string     `json:"title"`
-	Summary             string     `json:"summary"`
-	Description         string     `json:"description"`
-	StartsAt            time.Time  `json:"startsAt"`
-	EndsAt              time.Time  `json:"endsAt"`
-	TimeZone            string     `json:"timeZone"`
-	CategoryCode        *string    `json:"categoryCode,omitempty"`
-	Capacity            *int       `json:"capacity,omitempty"`
-	PriceMinor          int        `json:"priceMinor"`
-	Currency            *string    `json:"currency,omitempty"`
-	Eligibility         string     `json:"eligibility"`
-	LanguageCode        *string    `json:"languageCode,omitempty"`
-	Visibility          string     `json:"visibility"`
-	PublicationStatus   string     `json:"publicationStatus"`
-	PublishedAt         *time.Time `json:"publishedAt,omitempty"`
-	CancelledAt         *time.Time `json:"cancelledAt,omitempty"`
-	Revision            int64      `json:"revision"`
+	Cover               *entitycover.Metadata `json:"cover,omitempty"`
+	CoverSourceProof    string                `json:"-"`
+	ID                  string                `json:"id"`
+	Organizer           Organizer             `json:"organizer"`
+	OrganizationID      string                `json:"organizationId"`
+	CityID              string                `json:"cityId"`
+	PlaceID             *string               `json:"placeId,omitempty"`
+	Modality            string                `json:"modality"`
+	PhysicalPlaceStatus string                `json:"physicalPlaceStatus"`
+	VenuePlaceID        *string               `json:"venuePlaceId,omitempty"`
+	Title               string                `json:"title"`
+	Summary             string                `json:"summary"`
+	Description         string                `json:"description"`
+	StartsAt            time.Time             `json:"startsAt"`
+	EndsAt              time.Time             `json:"endsAt"`
+	TimeZone            string                `json:"timeZone"`
+	CategoryCode        *string               `json:"categoryCode,omitempty"`
+	Capacity            *int                  `json:"capacity,omitempty"`
+	PriceMinor          int                   `json:"priceMinor"`
+	Currency            *string               `json:"currency,omitempty"`
+	Eligibility         string                `json:"eligibility"`
+	LanguageCode        *string               `json:"languageCode,omitempty"`
+	Visibility          string                `json:"visibility"`
+	PublicationStatus   string                `json:"publicationStatus"`
+	PublishedAt         *time.Time            `json:"publishedAt,omitempty"`
+	CancelledAt         *time.Time            `json:"cancelledAt,omitempty"`
+	Revision            int64                 `json:"revision"`
 }
 
 type Store interface {

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:birdtie_client/src/city/public_city_controller.dart';
 import 'package:birdtie_client/src/content/private_moment_controller.dart';
@@ -22,6 +23,9 @@ import 'package:birdtie_client/src/workspace/top_controls.dart';
 import 'package:birdtie_client/src/workspace/remote_agent_task_source.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'now_scope_recovery_test.dart' show NowFixture;
+import 'map_layers_api_test.dart' show mapTestBounds, mapTestItem, mapTestView;
 
 Future<void> _openMoreTools(WidgetTester tester) async {
   await tester.tap(find.byTooltip('打开侧边栏'));
@@ -32,8 +36,7 @@ Future<void> _openMoreTools(WidgetTester tester) async {
   await tester.pumpAndSettle();
 }
 
-// The retained material helper has no Now attachment entry. This tests its
-// legacy draft contract directly, without treating it as a connected UI action.
+// The compatibility helper forwards to the current material/creation menu.
 Future<void> _openLegacyMaterialTools(WidgetTester tester) async {
   final state = tester.state<AgentComposerState>(find.byType(AgentComposer));
   unawaited(state.showMaterialTools(state.context));
@@ -41,6 +44,7 @@ Future<void> _openLegacyMaterialTools(WidgetTester tester) async {
 }
 
 void main() {
+  setUp(() => FlutterSecureStorage.setMockInitialValues({}));
   testWidgets('真实Now联系留言320大字IME下检查与取消可达，零提交', (t) async {
     t.view.physicalSize = const Size(320, 640);
     t.view.devicePixelRatio = 1;
@@ -210,23 +214,29 @@ void main() {
     expect(identical(find.byType(MapCanvas).evaluate().single, canvas), isTrue);
     expect(tester.takeException(), isNull);
   });
-  testWidgets('Now provides an explicit online query context without a city', (
-    tester,
-  ) async {
-    await tester.pumpWidget(const BirdtieApp());
-    await tester.tap(find.byKey(const Key('now-city-picker')));
-    await tester.pumpAndSettle();
-    expect(find.byKey(const Key('now-scope-picker')), findsOneWidget);
-    expect(find.text('选择城市与范围'), findsOneWidget);
-    expect(find.text('登录后可选择本人声明的线上范围。'), findsOneWidget);
-    expect(find.text('选择查询情境'), findsNothing);
-    expect(find.text('选择查看情境'), findsNothing);
-    expect(find.text('当前城市'), findsNothing);
-    final online = find.byKey(const Key('now-scope-online'));
-    await tester.ensureVisible(online);
-    await tester.pumpAndSettle();
-    expect(online.hitTestable(), findsOneWidget);
-  });
+  testWidgets(
+    'Now city directory and account view scope have separate reachable entries',
+    (tester) async {
+      await tester.pumpWidget(const BirdtieApp());
+      await tester.tap(find.byKey(const Key('now-city-picker')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('now-scope-picker')), findsOneWidget);
+      expect(find.text('选择城市'), findsOneWidget);
+      expect(find.byKey(const Key('now-city-search')), findsOneWidget);
+      expect(find.text('登录后可选择本人声明的线上范围。'), findsNothing);
+      expect(find.text('选择查询情境'), findsNothing);
+      expect(find.text('选择查看情境'), findsNothing);
+      expect(find.text('当前城市'), findsNothing);
+      expect(find.byKey(const Key('now-scope-online')), findsNothing);
+      await tester.tap(find.byTooltip('关闭城市选择'));
+      await tester.pumpAndSettle();
+      await _openMoreTools(tester);
+      final online = find.byTooltip('选择查看范围');
+      await tester.ensureVisible(online);
+      await tester.pumpAndSettle();
+      expect(online.hitTestable(), findsOneWidget);
+    },
+  );
   testWidgets('Area Pulse keeps category labels Chinese for seeded data', (
     tester,
   ) async {
@@ -282,12 +292,15 @@ void main() {
         isTrue,
       );
     }
+    await tester.pumpWidget(const SizedBox());
+    // Complete the controlled restoration timeout after disposing the app.
+    await tester.pump(const Duration(milliseconds: 2100));
   });
 
   testWidgets('线上意图入口保留地图实例和当前 Agent 工作区', (tester) async {
     await tester.pumpWidget(const BirdtieApp());
     final originalMap = find.byType(MapCanvas).evaluate().single;
-    expect(find.text('当前：未选城市'), findsOneWidget);
+    expect(find.byTooltip('选择城市：未选城市'), findsOneWidget);
     await _openMoreTools(tester);
     await tester.pumpAndSettle();
     expect(find.byTooltip('打开意图草稿').hitTestable(), findsOneWidget);
@@ -332,29 +345,103 @@ void main() {
     );
   });
 
-  testWidgets('nearby overlay only intercepts its actual content height', (
+  testWidgets('populated nearby overlay scrolls within its actual content height', (
     tester,
   ) async {
     tester.view.physicalSize = const Size(1220, 2656);
     tester.view.devicePixelRatio = 3.25;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
-    await tester.pumpWidget(const BirdtieApp());
+    final f = NowFixture();
+    addTearDown(f.dispose);
+    var reads = 0;
+    final client = MockClient((r) async {
+      expect(r.method, 'GET');
+      expect(r.url.path, '/v1/cities/alpha/map-layers');
+      reads++;
+      final view = mapTestView()..['cityId'] = 'alpha';
+      view['items'] = List.generate(12, (index) {
+        final item = mapTestItem('MOMENT');
+        final id =
+            '12345678-1234-4234-8234-${(index + 1).toString().padLeft(12, '0')}';
+        item['id'] = id;
+        item['entityRef'] = {'type': 'MOMENT', 'id': id};
+        item['detailRef'] = {'type': 'MOMENT', 'id': id};
+        item['anchor']['placeId'] =
+            '22345678-1234-4234-8234-${(index + 1).toString().padLeft(12, '0')}';
+        item['title'] = '公开合成地点 ${index + 1}';
+        return item;
+      });
+      return http.Response(
+        jsonEncode({'data': view}),
+        200,
+        headers: {'content-type': 'application/json; charset=utf-8'},
+      );
+    });
+    addTearDown(client.close);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: MapWorkspace(
+          city: f.city,
+          auth: f.auth,
+          moments: f.moments,
+          agentTaskSource: f.source,
+          seedClient: client,
+          seedApiBaseUrl: f.base,
+        ),
+      ),
+    );
     await tester.pumpAndSettle();
-    final scroll = find.byKey(const Key('now-native-context-scroll'));
+    final canvas = tester.widget<MapCanvas>(find.byType(MapCanvas));
+    final originalElement = find.byType(MapCanvas).evaluate().single;
+    await canvas.layers!.load('alpha', mapTestBounds);
+    await tester.pumpAndSettle();
+    expect(reads, 1);
+    expect(canvas.layers!.publicView!.items.length, 12);
+    expect(
+      find.byKey(const Key('now-explore-handle')).hitTestable(),
+      findsOneWidget,
+    );
+    await tester.tap(find.byKey(const Key('now-explore-handle')));
+    await tester.pumpAndSettle();
+    final scroll = find.byKey(
+      const PageStorageKey<String>('now-native-context-scroll'),
+    );
     expect(scroll, findsOneWidget);
     final content = find
         .descendant(of: scroll, matching: find.byType(Column))
         .first;
     final viewport = tester.getRect(scroll);
     final body = tester.getRect(content);
-    expect(viewport.height, closeTo(body.height, 1));
-    expect(viewport.bottom, lessThan(400));
+    final innerScrollable = find.descendant(
+      of: scroll,
+      matching: find.byType(Scrollable),
+    );
+    expect(
+      tester.state<ScrollableState>(innerScrollable).position.maxScrollExtent,
+      greaterThan(0),
+    );
+    expect(viewport.height, lessThanOrEqualTo(body.height + 1));
+    expect(
+      viewport.bottom,
+      lessThanOrEqualTo(tester.getTopLeft(find.byType(AgentComposer)).dy),
+    );
+    expect(
+      reads,
+      1,
+      reason: 'opening the bounded list reuses the public map snapshot',
+    );
+    expect(f.source.queries, isEmpty);
+    expect(
+      identical(find.byType(MapCanvas).evaluate().single, originalElement),
+      isTrue,
+    );
     expect(tester.takeException(), isNull);
+    await f.unmount(tester);
   });
 
   testWidgets(
-    'legacy material helper preserves quick-action drafts; Now exposes no attachment or fake mic',
+    'compatibility material helper uses current creation view and preserves drafts',
     (tester) async {
       await tester.pumpWidget(const BirdtieApp());
       expect(
@@ -362,29 +449,35 @@ void main() {
         const Locale('zh', 'CN'),
       );
       expect(find.byTooltip('打开快捷操作'), findsNothing);
-      expect(find.byIcon(Icons.add_rounded), findsNothing);
+      expect(find.byTooltip('添加材料'), findsOneWidget);
+      await tester.enterText(find.byType(TextField).first, '当前未发送草稿');
       await _openLegacyMaterialTools(tester);
       await tester.pumpAndSettle();
-      expect(find.text('找活动'), findsOneWidget);
-      expect(find.text('找组织'), findsOneWidget);
-      expect(find.text('找地点'), findsOneWidget);
-      await tester.tap(find.text('找活动'));
+      expect(find.text('添加材料'), findsOneWidget);
+      for (final removed in ['找活动', '找组织', '找地点', '粘贴文字/链接', '为私人记录添加图片']) {
+        expect(find.text(removed), findsNothing);
+      }
+      expect(find.text('创建草稿'), findsOneWidget);
+      expect(find.text('动态'), findsOneWidget);
+      expect(find.text('活动'), findsOneWidget);
+      expect(find.text('选择材料'), findsOneWidget);
+      Navigator.of(tester.element(find.byType(BottomSheet))).pop();
       await tester.pumpAndSettle();
       expect(find.byType(TextField).first, findsOneWidget);
       expect(
         (tester.widget<TextField>(find.byType(TextField).first).controller!)
             .text,
-        isEmpty,
+        '当前未发送草稿',
       );
-      expect(find.byIcon(Icons.mic_none_rounded), findsNothing);
       await _openLegacyMaterialTools(tester);
       await tester.pumpAndSettle();
-      await tester.tap(find.text('找组织'));
+      expect(find.text('添加材料'), findsOneWidget);
+      Navigator.of(tester.element(find.byType(BottomSheet))).pop();
       await tester.pumpAndSettle();
       expect(
         (tester.widget<TextField>(find.byType(TextField).first).controller!)
             .text,
-        '找组织',
+        '当前未发送草稿',
       );
     },
   );
@@ -393,9 +486,16 @@ void main() {
     'map workspace replaces bottom navigation and accepts an intent',
     (tester) async {
       await tester.pumpWidget(const BirdtieApp());
+      final auth = tester.widget<MapWorkspace>(find.byType(MapWorkspace)).auth;
+      for (var i = 0; i < 100 && auth.sessionRestoring; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+      expect(auth.sessionRestoring, isFalse);
+      await tester.pumpAndSettle();
       expect(find.byType(NavigationBar), findsNothing);
       expect(find.byTooltip('打开侧边栏'), findsOneWidget);
-      expect(find.byTooltip('打开收件箱'), findsOneWidget);
+      expect(find.byTooltip('联系'), findsOneWidget);
+      expect(find.byTooltip('通知'), findsOneWidget);
       expect(find.text('你想做什么？'), findsOneWidget);
       expect(
         tester.widget<MapCanvas>(find.byType(MapCanvas)).city.selectedCity,
@@ -418,7 +518,11 @@ void main() {
       expect(find.byType(AreaPulseStack), findsNothing);
       await tester.pump(const Duration(milliseconds: 700));
       await tester.pumpAndSettle();
-      expect(find.text('尚未搜索 · 需要选择城市'), findsOneWidget);
+      final currentWorkspace = tester
+          .widget<MapCanvas>(find.byType(MapCanvas))
+          .workspace;
+      expect(currentWorkspace.queryState, AgentQueryState.needsScope);
+      expect(find.text(currentWorkspace.requestError!), findsOneWidget);
       expect(
         find.byKey(const Key('agent-sheet-choose-city')).hitTestable(),
         findsOneWidget,
@@ -431,7 +535,7 @@ void main() {
           .workspace;
       final task = workspace.task, result = workspace.result;
       expect(workspace.sheetExtent, AgentSheetExtent.peek);
-      expect(find.byType(AgentConversation), findsNothing);
+      expect(find.byType(AgentConversation), findsOneWidget);
       await tester.tap(find.byKey(const Key('agent-sheet-map-toggle')));
       await tester.pumpAndSettle();
       expect(workspace.sheetExtent, AgentSheetExtent.expanded);
@@ -499,10 +603,11 @@ void main() {
         findsOneWidget,
       );
 
-      await tester.tap(find.byTooltip('打开收件箱'));
+      await tester.tap(find.byTooltip('通知'));
       await tester.pumpAndSettle();
-      expect(find.text('收件箱'), findsOneWidget);
-      expect(find.textContaining('收件箱暂不可用'), findsOneWidget);
+      expect(find.text('登录，与朋友保持联系'), findsOneWidget);
+      expect(find.text('收件箱'), findsNothing);
+      expect(find.byType(BottomSheet), findsNothing);
       expect(find.textContaining('Anna'), findsNothing);
     },
   );
@@ -534,7 +639,7 @@ void main() {
       workspace.setSheetExtent(AgentSheetExtent.medium);
       final task = workspace.task, result = workspace.result;
       await tester.pumpAndSettle();
-      final header = tester.getRect(find.byType(TopControls));
+      tester.getRect(find.byType(TopControls));
       for (final inset in [
         0.0,
         260.0,
@@ -553,10 +658,9 @@ void main() {
           find.byType(AgentResultsSheet),
         );
         final composer = tester.getRect(find.byType(AgentComposer));
-        final ornamentEnd = header.bottom + 8 + 48 + 8;
         expect(
           sheet.availableHeight,
-          closeTo((composer.top - 12 - ornamentEnd).clamp(0.0, 640.0), .5),
+          closeTo(tester.getSize(find.byType(AgentResultsSheet)).height, .5),
         );
         expect(
           composer.bottom,
@@ -568,7 +672,7 @@ void main() {
         expect(identical(workspace.result, result), isTrue);
         expect(workspace.selectedEntityId, 'place:stable-selected');
         if (inset == 472 || inset == 540) {
-          final restore = find.byTooltip('收起键盘查看结果');
+          final restore = find.byTooltip('收起键盘');
           expect(restore.hitTestable(), findsOneWidget);
           expect(tester.getSize(restore).height, greaterThanOrEqualTo(48));
           expect(
@@ -579,7 +683,7 @@ void main() {
           await tester.pumpAndSettle();
           expect(workspace.sheetExtent, AgentSheetExtent.medium);
         }
-        if (640 - inset < 48) expect(find.byTooltip('收起键盘查看结果'), findsNothing);
+        if (640 - inset < 48) expect(find.byTooltip('收起键盘'), findsNothing);
       }
       expect(find.byTooltip('打开侧边栏'), findsOneWidget);
       expect(
@@ -629,7 +733,7 @@ void main() {
     final ws = t.widget<MapCanvas>(find.byType(MapCanvas)).workspace;
     expect(ws.queryState, AgentQueryState.error);
     expect(ws.requestError, contains('尚未连接 Birdtie 服务'));
-    expect(find.text('查询未完成'), findsOneWidget);
+    expect(find.text(ws.requestError!), findsOneWidget);
     expect(find.byKey(const Key('agent-sheet-retry')), findsOneWidget);
     expect(find.byKey(const Key('agent-sheet-choose-city')), findsNothing);
     expect(find.textContaining('0 个'), findsNothing);

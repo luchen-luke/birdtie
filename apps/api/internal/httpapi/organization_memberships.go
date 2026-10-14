@@ -54,122 +54,62 @@ func memberPath(w http.ResponseWriter, r *http.Request) string {
 }
 
 func (s *server) listOrganizationMembers(w http.ResponseWriter, r *http.Request) {
-	actorID, ok := s.memberActor(w, r)
-	if !ok {
+	a, p, id, ok := s.orgControlAccess(w, r)
+	if !ok || !orgControlNoBody(w, r) {
 		return
 	}
-	orgID := organizationPath(w, r)
-	if orgID == "" {
+	out, e := p.ReadMembersControl(r.Context(), a, id)
+	if e != nil {
+		orgControlFailure(w, e)
 		return
 	}
-	members, err := s.memberships.ListMembers(r.Context(), actorID, orgID)
-	if memberError(w, err) {
-		return
-	}
-	respond(w, http.StatusOK, map[string]any{"data": members})
+	orgControlRespond(w, r, p, a, id, out.Proof, out.ExpiresAt, out.Members)
 }
 
 func (s *server) listOrganizationInvitations(w http.ResponseWriter, r *http.Request) {
-	actorID, ok := s.memberActor(w, r)
-	if !ok {
-		return
-	}
-	items, err := s.memberships.ListInvitations(r.Context(), actorID)
-	if memberError(w, err) {
-		return
-	}
-	respond(w, http.StatusOK, map[string]any{"data": items})
+	s.listHumanOrganizationInvitations(w, r)
 }
 
 func (s *server) inviteOrganizationMember(w http.ResponseWriter, r *http.Request) {
-	actorID, ok := s.memberActor(w, r)
-	if !ok {
+	if _, ok := s.memberActor(w, r); !ok {
 		return
 	}
-	orgID := organizationPath(w, r)
-	if orgID == "" {
+	if organizationPath(w, r) == "" {
 		return
 	}
-	var input struct {
-		UserAccountID string `json:"userAccountId"`
-		Role          string `json:"role"`
-	}
-	if !decodeStrictJSON(w, r, &input) {
-		return
-	}
-	if !uuidPath.MatchString(input.UserAccountID) ||
-		(input.Role != "member" && input.Role != "moderator" && input.Role != "admin") {
-		respondError(w, http.StatusBadRequest, "invalid_member_invitation")
-		return
-	}
-	m, err := s.memberships.InviteMember(r.Context(), actorID, orgID, input.UserAccountID, input.Role)
-	if memberError(w, err) {
-		return
-	}
-	respond(w, http.StatusCreated, map[string]any{"data": m})
+	w.Header().Set("Cache-Control", "no-store")
+	respondError(w, 409, "organization_control_required")
 }
 
 func (s *server) acceptOrganizationInvitation(w http.ResponseWriter, r *http.Request) {
-	actorID, ok := s.memberActor(w, r)
-	if !ok {
+	if _, ok := s.memberActor(w, r); !ok {
 		return
 	}
-	membershipID := memberPath(w, r)
-	if membershipID == "" {
+	if memberPath(w, r) == "" {
 		return
 	}
-	m, err := s.memberships.AcceptInvitation(r.Context(), actorID, membershipID)
-	if memberError(w, err) {
-		return
-	}
-	respond(w, http.StatusOK, map[string]any{"data": m})
+	w.Header().Set("Cache-Control", "no-store")
+	respondError(w, 409, "organization_control_required")
 }
 
 func (s *server) changeOrganizationMemberRole(w http.ResponseWriter, r *http.Request) {
-	actorID, ok := s.memberActor(w, r)
-	if !ok {
+	if _, ok := s.memberActor(w, r); !ok {
 		return
 	}
-	orgID := organizationPath(w, r)
-	if orgID == "" {
+	if organizationPath(w, r) == "" || memberPath(w, r) == "" {
 		return
 	}
-	membershipID := memberPath(w, r)
-	if membershipID == "" {
-		return
-	}
-	var input struct {
-		Role string `json:"role"`
-	}
-	if !decodeStrictJSON(w, r, &input) {
-		return
-	}
-	if input.Role != "member" && input.Role != "moderator" && input.Role != "admin" && input.Role != "owner" {
-		respondError(w, http.StatusBadRequest, "invalid_member_role")
-		return
-	}
-	m, err := s.memberships.ChangeMemberRole(r.Context(), actorID, orgID, membershipID, input.Role)
-	if memberError(w, err) {
-		return
-	}
-	respond(w, http.StatusOK, map[string]any{"data": m})
+	w.Header().Set("Cache-Control", "no-store")
+	respondError(w, 409, "organization_control_required")
 }
 
 func (s *server) revokeOrganizationMember(w http.ResponseWriter, r *http.Request) {
-	actorID, ok := s.memberActor(w, r)
-	if !ok {
+	if _, ok := s.memberActor(w, r); !ok {
 		return
 	}
-	orgID := organizationPath(w, r)
-	if orgID == "" {
+	if organizationPath(w, r) == "" || memberPath(w, r) == "" {
 		return
 	}
-	membershipID := memberPath(w, r)
-	if membershipID == "" {
-		return
-	}
-	if memberError(w, s.memberships.RevokeMember(r.Context(), actorID, orgID, membershipID)) {
-		return
-	}
-	w.WriteHeader(http.StatusNoContent)
+	w.Header().Set("Cache-Control", "no-store")
+	respondError(w, 409, "organization_control_required")
 }

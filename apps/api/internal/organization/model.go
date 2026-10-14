@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 
+	"github.com/birdtie/birdtie/apps/api/internal/entitycover"
 	"github.com/birdtie/birdtie/apps/api/internal/foundation"
 )
 
@@ -13,6 +14,8 @@ var ErrConflict = errors.New("organization membership conflict")
 var ErrInvalidTarget = errors.New("organization membership target invalid")
 
 type PublicProfile struct {
+	Cover              *entitycover.Metadata `json:"cover,omitempty"`
+	CoverSourceProof   string                `json:"-"`
 	ID                 string                `json:"id"`
 	OrganizationType   string                `json:"organizationType"`
 	Name               string                `json:"name"`
@@ -24,13 +27,15 @@ type PublicProfile struct {
 }
 
 type Organization struct {
-	ID               string   `json:"id"`
-	AccountID        string   `json:"accountId"`
-	OrganizationType string   `json:"organizationType"`
-	Name             string   `json:"name"`
-	Role             string   `json:"role"`
-	Description      string   `json:"description,omitempty"`
-	OfficialLinks    []string `json:"officialLinks,omitempty"`
+	Cover            *entitycover.Metadata `json:"cover,omitempty"`
+	CoverSourceProof string                `json:"-"`
+	ID               string                `json:"id"`
+	AccountID        string                `json:"accountId"`
+	OrganizationType string                `json:"organizationType"`
+	Name             string                `json:"name"`
+	Role             string                `json:"role"`
+	Description      string                `json:"description,omitempty"`
+	OfficialLinks    []string              `json:"officialLinks,omitempty"`
 }
 
 type CreateInput struct {
@@ -48,7 +53,9 @@ type Membership struct {
 	ID               string `json:"id"`
 	OrganizationID   string `json:"organizationId"`
 	UserAccountID    string `json:"userAccountId"`
-	DisplayName      string `json:"displayName"`
+	DisplayName      string `json:"displayName,omitempty"`
+	Version          int64  `json:"version"`
+	AuthorityVersion int64  `json:"authorityVersion"`
 	Role             string `json:"role"`
 	Status           string `json:"status"`
 	OrganizationName string `json:"organizationName,omitempty"`

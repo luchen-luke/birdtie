@@ -1,5 +1,7 @@
 import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
+import 'package:file_selector/file_selector.dart' as files;
 import 'package:image_picker/image_picker.dart';
 import 'moment_image_header.dart';
 
@@ -9,23 +11,78 @@ class MomentImageSelection {
   final MomentImageHeader header;
 }
 
-// One explicit system-gallery selection. No camera/video, broad library scan,
+enum MomentImageSource { gallery, camera, file }
+
+typedef MomentImageFileSelector =
+    Future<XFile?> Function(List<files.XTypeGroup>);
+
+// One explicit system selection. No broad library scan,
 // filename upload or background read. Lost process results never attach to a
 // new owner: the user must select again in the current bound editor.
 class MomentImagePicker {
-  MomentImagePicker({ImagePicker? picker}) : _picker = picker ?? ImagePicker();
+  MomentImagePicker({
+    ImagePicker? picker,
+    MomentImageFileSelector? fileSelector,
+  }) : _picker = picker ?? ImagePicker(),
+       _fileSelector =
+           fileSelector ??
+           ((groups) => files.openFile(acceptedTypeGroups: groups));
   final ImagePicker _picker;
+  final MomentImageFileSelector _fileSelector;
+  bool supportsSource(MomentImageSource source) =>
+      source != MomentImageSource.camera ||
+      !kIsWeb &&
+          const [
+            TargetPlatform.android,
+            TargetPlatform.iOS,
+          ].contains(defaultTargetPlatform);
+  bool get cameraSupported => supportsSource(MomentImageSource.camera);
+  bool get fileSupported => supportsSource(MomentImageSource.file);
+  static const imageFileTypes = [
+    files.XTypeGroup(
+      label: 'JPEG/PNG 图片',
+      extensions: ['jpg', 'jpeg', 'png'],
+      mimeTypes: ['image/jpeg', 'image/png'],
+      uniformTypeIdentifiers: ['public.jpeg', 'public.png'],
+    ),
+  ];
   Future<bool> discardLostSelection() async {
     if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) return false;
     final response = await _picker.retrieveLostData();
     return !response.isEmpty;
   }
 
-  Future<MomentImageSelection?> select() async {
-    final file = await _picker.pickImage(
-      source: ImageSource.gallery,
-      requestFullMetadata: false,
-    );
+  // Keep this gallery signature for existing callers and injected fixtures.
+  Future<MomentImageSelection?> select() => _selectImage(ImageSource.gallery);
+  Future<MomentImageSelection?> selectSource(MomentImageSource source) async {
+    if (source == MomentImageSource.gallery) return select();
+    if (!supportsSource(source))
+      throw const FormatException('此平台暂不支持拍照，可从照片或文件选择图片。');
+    if (source == MomentImageSource.camera)
+      return _selectImage(ImageSource.camera);
+    try {
+      return await _read(await _fileSelector(imageFileTypes));
+    } on PlatformException {
+      throw const FormatException('无法打开图片文件，请重新选择或改从照片选择。');
+    }
+  }
+
+  Future<MomentImageSelection?> _selectImage(ImageSource source) async {
+    try {
+      return await _read(
+        await _picker.pickImage(source: source, requestFullMetadata: false),
+      );
+    } on PlatformException catch (e) {
+      final denied =
+          e.code.toLowerCase().contains('denied') ||
+          e.code.toLowerCase().contains('restricted');
+      throw FormatException(
+        denied ? '未允许使用相机或照片，请检查权限或改从文件选择。' : '图片选择暂不可用，请重试或改从文件选择。',
+      );
+    }
+  }
+
+  Future<MomentImageSelection?> _read(XFile? file) async {
     if (file == null) return null;
     final size = await file.length();
     if (size < 1 || size > momentImageMaxBytes) {

@@ -22,7 +22,16 @@ const inboxColumns = `i.id,i.category,i.title,i.detail,i.resource_type,i.resourc
     CASE WHEN i.resource_type='agent_task' AND i.routing_decision_id IS NULL THEN i.resource_id
       WHEN i.resource_type='agent_task' THEN d.agent_task_id ELSE NULL END,
     CASE WHEN i.resource_type='business_claim_review' THEN d.business_claim_id
-      WHEN i.resource_type='business_update' THEN (SELECT audit.business_id FROM business_public_profile_audit audit WHERE audit.id=d.source_id) ELSE NULL END`
+      WHEN i.resource_type='business_update' THEN (SELECT audit.business_id FROM business_public_profile_audit audit WHERE audit.id=d.source_id) ELSE NULL END,
+    CASE WHEN i.resource_type='connection_request' THEN
+      (SELECT birdtie_person_avatar_metadata(CASE WHEN cr.sender_account_id=i.recipient_account_id THEN cr.recipient_account_id ELSE cr.sender_account_id END,i.recipient_account_id)
+       FROM connection_requests cr WHERE cr.id=CASE WHEN i.routing_decision_id IS NULL THEN i.resource_id ELSE d.connection_request_id END
+        AND i.recipient_account_id IN(cr.sender_account_id,cr.recipient_account_id))
+    WHEN i.resource_type='conversation_message' THEN
+      (SELECT birdtie_person_avatar_metadata(m.sender_account_id,i.recipient_account_id) FROM conversation_messages m
+       WHERE m.id=CASE WHEN i.routing_decision_id IS NULL THEN i.resource_id ELSE d.message_id END
+        AND m.conversation_id=i.target_conversation_id AND m.sender_account_id<>i.recipient_account_id)
+    ELSE NULL END`
 
 // Legacy rows retain their IDs but do not become permanent cached permissions.
 // New routed rows are checked against their exact native source and policy.
@@ -44,8 +53,21 @@ func scanInboxItem(row scanner) (inbox.Item, error) {
 	err := row.Scan(&item.ID, &item.Category, &item.Title, &item.Detail,
 		&item.ResourceType, &item.ResourceID, &item.CreatedAt, &item.ReadAt,
 		&item.TargetActivityID, &item.TargetConversationID, &item.SemanticCategory, &item.NotificationRoute, &item.NotificationPriority,
-		&item.TargetCommunityID, &item.TargetTaskID, &item.TargetBusinessID)
+		&item.TargetCommunityID, &item.TargetTaskID, &item.TargetBusinessID, &item.ActorAvatar)
+	if err == nil {
+		err = projectInboxActorMedia(&item)
+	}
 	return item, err
+}
+
+func projectInboxActorMedia(item *inbox.Item) error {
+	if item.ActorAvatar != nil {
+		item.ActorID = &item.ActorAvatar.AccountID
+	}
+	if !item.ValidActorMedia() {
+		return socialnow.ErrUnavailable
+	}
+	return nil
 }
 
 func (s *Store) ListInbox(ctx context.Context, ownerID string) ([]inbox.Item, error) {
@@ -119,7 +141,7 @@ func (s *Store) beginHumanInboxTx(ctx context.Context, digest [32]byte, actor id
  activity_participations,conversations,conversation_messages,community_conversations,
  community_conversation_members,community_conversation_messages,activity_conversations,
  activity_conversation_members,activity_conversation_messages,agent_tasks,activity_candidates,place_candidates,
- business_claim_controls,business_console_audit_events,business_review_grants,business_memberships,businesses IN ACCESS SHARE MODE`); err != nil {
+ business_claim_controls,business_console_audit_events,business_review_grants,business_memberships,businesses,person_avatars IN ACCESS SHARE MODE`); err != nil {
 		return fail(socialnow.ErrUnavailable)
 	}
 	var id string

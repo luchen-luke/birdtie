@@ -4,6 +4,65 @@ const entityActionSchema = 'entity-actions-v1';
 
 enum EntityActionKind { connect, message, share, join, save, navigate }
 
+/// Only a closed, known pre-commit rejection can confirm that a friend request
+/// was refused. Authentication/5xx responses can follow a committed write, so
+/// they deliberately remain an unknown outcome owned by the shared transport.
+class EntityActionRequestFailure implements Exception {
+  const EntityActionRequestFailure._(this.status, this.code, this.userMessage);
+  final int status;
+  final String code, userMessage;
+
+  static EntityActionRequestFailure? decodeFriendRequest(
+    int status,
+    Object? raw,
+  ) {
+    if (raw is! Map<String, dynamic> ||
+        raw.length != 1 ||
+        !raw.containsKey('error')) {
+      return null;
+    }
+    final error = raw['error'];
+    if (error is! Map<String, dynamic> || error['code'] is! String) {
+      return null;
+    }
+    final code = error['code'] as String;
+    final policy = const {
+      'invalid_message_policy',
+      'message_policy_forbidden',
+      'message_policy_changed',
+    }.contains(code);
+    if (error.length != (policy ? 2 : 1) ||
+        error.keys.any(
+          (key) => key != 'code' && !(policy && key == 'detail'),
+        )) {
+      return null;
+    }
+    if (policy) {
+      try {
+        _text(error['detail'], 300);
+      } on FormatException {
+        return null;
+      }
+    }
+    final message = switch ((status, code)) {
+      (400, 'invalid_connection_request') ||
+      (400, 'invalid_entity_action_request') ||
+      (400, 'invalid_message_policy') => '好友申请内容无法提交，请检查后重新确认。',
+      (403, 'connection_forbidden') ||
+      (403, 'message_policy_forbidden') => '当前无法向这个人发送好友申请。',
+      (404, 'not_found') => '暂时无法找到这个人，请重新查看资料。',
+      (409, 'entity_action_source_changed') => '确认已过期或对方状态已变化，请重新查看后确认。',
+      (409, 'connection_conflict') => '当前已有申请或好友关系，请先查看联系人。',
+      (409, 'message_policy_changed') => '对方的接收设置已变化，请重新查看后确认。',
+      (429, 'rate_limited') => '好友申请过于频繁，请稍后再试。',
+      _ => null,
+    };
+    return message == null
+        ? null
+        : EntityActionRequestFailure._(status, code, message);
+  }
+}
+
 String entityActionWireKind(EntityActionKind kind) => kind.name.toUpperCase();
 Map<String, dynamic> _object(Object? value, Set<String> keys) {
   if (value is! Map<String, dynamic> ||

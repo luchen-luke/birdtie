@@ -9,6 +9,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'moment_control_controller_test.dart';
+import 'moment_control_test.dart';
 
 Map<String, dynamic> record({
   String precision = 'year',
@@ -68,36 +70,30 @@ class _HistoricalCity extends PublicCityController {
 
 void main() {
   test('成功状态但损坏的创建响应仍属结果未知；关闭时迟到结果不恢复', () async {
-    final pending = Completer<http.Response>();
-    var calls = 0;
-    final moments = PrivateMomentController(
-      authorizationHeader: () => 'Bearer A',
-      apiBaseUrl: 'https://birdtie.example',
-      client: MockClient((request) async {
-        calls++;
-        return calls == 1 ? http.Response('{broken', 201) : pending.future;
-      }),
-    );
-    expect(
-      await moments.create(cityID: 'aberdeen-gb', title: '旅行', body: ''),
-      isFalse,
-    );
-    expect(moments.creationUncertain, isTrue);
-    moments.confirmCreationChecked();
-    final save = moments.create(
-      cityID: 'aberdeen-gb',
-      title: '重新检查后新建',
-      body: '',
-    );
-    expect(
-      await moments.create(cityID: 'aberdeen-gb', title: '重复点击', body: ''),
-      isFalse,
-    );
-    moments.dispose();
-    pending.complete(response(record(), 201));
+    final f = MomentFixture()..heldPUT = Completer<http.Response>();
+    addTearDown(f.dispose);
+    final p = await f.prepare(), save = f.controller.commit(p);
+    while (f.puts == 0) {
+      await Future<void>.delayed(Duration.zero);
+    }
+    f.heldPUT!.complete(http.Response('{broken', 200));
     expect(await save, isFalse);
-    expect(moments.moments, isEmpty);
-    expect(calls, 2);
+    expect(f.controller.creationUncertain, isTrue);
+    f.controller.confirmCreationChecked();
+    expect(
+      await f.controller.previewCreate(
+        cityID: 'aberdeen-gb',
+        title: '不能猜列表成功',
+        body: '',
+      ),
+      isNull,
+    );
+    expect(f.puts, 1);
+    expect(f.store.values.length, 1);
+    final pending = f.store.values.values.single;
+    f.controller.dispose();
+    expect(f.controller.operationPreview, isNull);
+    expect(pending.operationID, p.input.operationID);
   });
   testWidgets('实际私人动态页面可编辑历史年份，小屏大字保留草稿并在账号切换清除表单', (tester) async {
     tester.view.physicalSize = const Size(360, 800);
@@ -178,170 +174,142 @@ void main() {
     );
   });
   test('创建、刷新、重建 controller、编辑保留历史时间与精度；显式清为未知', () async {
-    var row = record();
-    final sent = <Map<String, dynamic>>[];
-    http.Client client() => MockClient((request) async {
-      if (request.method == 'GET') return response([row]);
-      final input = jsonDecode(request.body) as Map<String, dynamic>;
-      sent.add(input);
-      row = {
-        ...row,
-        ...input,
-        'revision': request.method == 'POST' ? 1 : (row['revision'] as int) + 1,
-      };
-      if (input['timePrecision'] == 'unknown') row.remove('occurredAt');
-      return response(row, request.method == 'POST' ? 201 : 200);
-    });
-    PrivateMomentController controller() => PrivateMomentController(
-      authorizationHeader: () => 'Bearer owner',
-      client: client(),
-      apiBaseUrl: 'https://birdtie.example',
+    final f = MomentFixture()
+      ..record = {...mcRecord(), 'createdAt': '2026-10-03T04:05:06Z'};
+    addTearDown(f.dispose);
+    final created = await f.controller.previewCreate(
+      cityID: 'aberdeen-gb',
+      title: '历史旅行',
+      body: '',
+      time: MomentTimeValue.parse('year', '2025'),
     );
-    var moments = controller();
-    expect(
-      await moments.create(
-        cityID: 'aberdeen-gb',
-        title: row['title'] as String,
-        body: '',
-        time: MomentTimeValue.parse('year', '2025'),
-      ),
-      isTrue,
+    expect(await f.controller.commit(created!), isTrue);
+    expect(created.input.input!['occurredAt'], '2025-01-01T00:00:00Z');
+    final restarted = PrivateMomentController(
+      authorizationHeader: () => f.identity.value.$1,
+      ownerID: () => f.identity.value.$2,
+      identityChanges: f.identity,
+      client: f.client,
+      apiBaseUrl: 'https://isolated.invalid',
+      pendingStore: f.store,
     );
-    expect(sent.single['occurredAt'], '2025-01-01T00:00:00.000Z');
-    moments.dispose();
-    moments = controller();
-    await moments.refresh();
-    final old = moments.moments.single;
+    addTearDown(restarted.dispose);
+    await restarted.refresh();
+    final old = restarted.moments.single;
     expect(old.createdAt!.year, 2026);
-    expect(
-      await moments.update(moment: old, title: '修改标题', body: '', placeID: ''),
-      isTrue,
+    final edit = await restarted.previewUpdate(
+      moment: old,
+      title: '修改标题',
+      body: '',
+      placeID: '',
     );
-    expect(sent.last['timePrecision'], 'year');
-    expect(sent.last['occurredAt'], '2025-01-01T00:00:00.000Z');
+    expect(edit!.input.input!['timePrecision'], 'year');
+    expect(await restarted.commit(edit), isTrue);
     expect(
-      await moments.update(moment: old, title: '旧版本', body: '', placeID: ''),
-      isFalse,
-    );
-    expect(sent, hasLength(2));
-    expect(
-      await moments.update(
-        moment: moments.moments.single,
-        title: '时间未知',
+      await restarted.previewUpdate(
+        moment: old,
+        title: '旧版本',
         body: '',
         placeID: '',
-        time: MomentTimeValue.unknown,
       ),
-      isTrue,
+      isNull,
     );
-    expect(sent.last.containsKey('occurredAt'), isFalse);
-    expect(moments.moments.single.occurredAt, isNull);
-    moments.dispose();
+    expect(f.puts, 2);
+    final clear = await restarted.previewUpdate(
+      moment: restarted.moments.single,
+      title: '时间未知',
+      body: '',
+      placeID: '',
+      time: MomentTimeValue.unknown,
+    );
+    expect(clear!.input.input!.containsKey('occurredAt'), isFalse);
+    expect(await restarted.commit(clear), isTrue);
+    expect(restarted.moments.single.occurredAt, isNull);
   });
   test('切换账号、迟到成功与失败不复用旧数据、版本或错误', () async {
-    var token = 'Bearer A';
-    final pending = Completer<http.Response>();
-    var reads = 0, writes = 0;
-    final moments = PrivateMomentController(
-      authorizationHeader: () => token,
-      apiBaseUrl: 'https://birdtie.example',
-      client: MockClient((request) async {
-        if (request.method == 'GET') {
-          reads++;
-          return response([record()]);
-        }
-        writes++;
-        return pending.future;
-      }),
-    );
-    await moments.refresh();
-    final old = moments.moments.single;
-    final save = moments.update(
+    final f = MomentFixture()..heldPUT = Completer<http.Response>();
+    addTearDown(f.dispose);
+    await f.controller.refresh();
+    final old = f.controller.moments.single;
+    final p = await f.controller.previewUpdate(
       moment: old,
       title: 'A秘密',
       body: '',
       placeID: '',
     );
-    token = 'Bearer B';
-    expect(moments.moments, isEmpty);
-    expect(moments.error, isNull);
-    pending.complete(response(record(revision: 2)));
-    expect(await save, isFalse);
-    expect(moments.moments, isEmpty);
-    expect(moments.saving, isFalse);
+    final saved = f.controller.commit(p!);
+    while (f.puts == 0) {
+      await Future<void>.delayed(Duration.zero);
+    }
+    f.identity.value = ('Bearer B', mcOp);
+    expect(f.controller.moments, isEmpty);
+    f.heldPUT!.complete(mcJSON(mcReceipt(p.input)));
+    expect(await saved, isFalse);
+    expect(f.controller.moments, isEmpty);
+    expect(f.controller.saving, isFalse);
     expect(
-      await moments.update(moment: old, title: '旧账号', body: '', placeID: ''),
-      isFalse,
-    );
-    expect(writes, 1);
-    expect(reads, 1);
-    moments.dispose();
-  });
-  test('旧 GET 不覆盖更新后的版本；409不重试；dispose阻止迟到恢复', () async {
-    final pending = Completer<http.Response>();
-    var gets = 0, puts = 0;
-    final moments = PrivateMomentController(
-      authorizationHeader: () => 'Bearer A',
-      apiBaseUrl: 'https://birdtie.example',
-      client: MockClient((request) async {
-        if (request.method == 'GET') {
-          gets++;
-          return gets == 1 ? response([record()]) : pending.future;
-        }
-        puts++;
-        return puts == 1
-            ? response(record(revision: 2))
-            : http.Response('', 409);
-      }),
-    );
-    await moments.refresh();
-    final old = moments.moments.single;
-    final refresh = moments.refresh();
-    expect(
-      await moments.update(moment: old, title: '新', body: '', placeID: ''),
-      isTrue,
-    );
-    pending.complete(response([record()]));
-    await refresh;
-    expect(moments.moments.single.revision, 2);
-    expect(
-      await moments.update(
-        moment: moments.moments.single,
-        title: '冲突',
+      await f.controller.previewUpdate(
+        moment: old,
+        title: '旧账号',
         body: '',
         placeID: '',
       ),
-      isFalse,
+      isNull,
     );
-    expect(moments.error, contains('重新打开'));
-    expect(puts, 2);
-    moments.dispose();
+    expect(f.puts, 1);
+  });
+  test('旧 GET 不覆盖更新后的版本；409不重试；dispose阻止迟到恢复', () async {
+    final f = MomentFixture();
+    addTearDown(f.dispose);
+    await f.controller.refresh();
+    final old = f.controller.moments.single;
+    final pending = Completer<http.Response>();
+    f.heldList = pending;
+    final read = f.controller.refresh();
+    await Future<void>.delayed(Duration.zero);
+    final p = await f.controller.previewUpdate(
+      moment: old,
+      title: '新',
+      body: '',
+      placeID: '',
+    );
+    expect(await f.controller.commit(p!), isTrue);
+    pending.complete(mcJSON([mcRecord()]));
+    await read;
+    expect(f.controller.moments.single.revision, 2);
+    f.putStatus = 409;
+    final conflict = await f.controller.previewUpdate(
+      moment: f.controller.moments.single,
+      title: '冲突',
+      body: '',
+      placeID: '',
+    );
+    expect(await f.controller.commit(conflict!), isFalse);
+    expect(f.puts, 2);
+    expect(f.controller.pendingOperations.length, 1);
+    f.controller.dispose();
     expect(
-      await moments.create(cityID: 'aberdeen-gb', title: '关闭', body: ''),
+      await f.controller.create(cityID: 'aberdeen-gb', title: '关闭', body: ''),
       isFalse,
     );
+    expect(f.puts, 2);
   });
   test('POST 响应丢失不能宣称未保存，不自动或盲目重试', () async {
-    var posts = 0;
-    final moments = PrivateMomentController(
-      authorizationHeader: () => 'Bearer A',
-      apiBaseUrl: 'https://birdtie.example',
-      client: MockClient((request) async {
-        posts++;
-        throw http.ClientException('response lost');
-      }),
-    );
+    final f = MomentFixture()..lost = true;
+    addTearDown(f.dispose);
+    final p = await f.prepare();
+    expect(await f.controller.commit(p), isFalse);
+    expect(f.controller.creationUncertain, isTrue);
+    expect(f.controller.operationError, contains('待核实'));
     expect(
-      await moments.create(cityID: 'aberdeen-gb', title: '旅行', body: ''),
-      isFalse,
+      await f.controller.previewCreate(
+        cityID: 'aberdeen-gb',
+        title: '旅行',
+        body: '',
+      ),
+      isNull,
     );
-    expect(moments.creationUncertain, isTrue);
-    expect(moments.error, contains('尚未确认'));
-    expect(
-      await moments.create(cityID: 'aberdeen-gb', title: '旅行', body: ''),
-      isFalse,
-    );
-    expect(posts, 1);
-    moments.dispose();
+    expect(f.puts, 1);
+    expect(f.store.values.length, 1);
   });
 }

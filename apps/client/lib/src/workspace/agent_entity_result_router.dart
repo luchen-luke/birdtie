@@ -8,6 +8,7 @@ import 'entity_share_pending_store.dart';
 import 'entity_action_contract.dart';
 import 'entity_action_dispatcher.dart';
 import 'saved_items.dart';
+import 'human_causal_operation_controller.dart';
 
 /// The exact original domain route is shared by rows and Pins. Actual reads
 /// and concrete recipient preview still use the existing domain services.
@@ -76,16 +77,36 @@ class AgentEntityResultRouter {
       domainCurrent: live,
       handler: (_) async {
         if (!live()) return;
-        await shareEntityToChat(
-          context,
-          authorizationHeader: () => live() ? token : null,
-          type: ref.type,
-          id: ref.id,
-          identityChanges: Listenable.merge([auth, workspaceChanges]),
-          workspaceID: workspaceID,
-          apiBaseUrl: apiBaseUrl,
-          client: client,
-        );
+        final source = HumanCausalSourceSerial();
+        void observeSource() => source.observe((
+          auth,
+          auth.accountID,
+          workspaceID(),
+          apiBaseUrl,
+          client,
+        ));
+        observeSource();
+        auth.addListener(observeSource);
+        workspaceChanges.addListener(observeSource);
+        try {
+          await shareEntityToChat(
+            context,
+            authorizationHeader: () => auth.authorizationHeader,
+            ownerID: () => auth.accountID,
+            sourceCurrent: () => _can(item, ref),
+            sourceKey: () => source.generation,
+            type: ref.type,
+            id: ref.id,
+            identityChanges: Listenable.merge([auth, workspaceChanges, source]),
+            workspaceID: workspaceID,
+            apiBaseUrl: apiBaseUrl,
+            client: client,
+          );
+        } finally {
+          auth.removeListener(observeSource);
+          workspaceChanges.removeListener(observeSource);
+          source.dispose();
+        }
       },
     );
   }
@@ -124,11 +145,7 @@ class AgentEntityResultRouter {
       apiBaseUrl: apiBaseUrl,
       domainCurrent: live,
       handler: (action) async {
-        if (!live() ||
-            action.operation !=
-                (saved.contains(item.bookmarkKind!, ref.id)
-                    ? 'UNSAVE'
-                    : 'SAVE')) {
+        if (!live() || !const {'SAVE', 'UNSAVE'}.contains(action.operation)) {
           throw StateError('收藏状态已变化，请重新检查。');
         }
         await saved.toggle(

@@ -234,6 +234,13 @@ func (g *Gateway) completeNativeLive(ctx context.Context, original Request) (Res
 	}
 	if providerErr != nil {
 		classified := normalizedProviderError(providerErr)
+		if IsAIServiceUnavailable(providerErr) {
+			// This concrete HTTP failure already contains the exact normalized
+			// UNKNOWN/non-retryable ProviderError. Keep its causal anchor instead
+			// of adding an indistinguishable bare UNKNOWN sibling. Settlement and
+			// current authority have already taken precedence above.
+			return fail("provider_"+classified.Code, providerErr)
+		}
 		// Preserve the safe adapter diagnostic and original errors.Is/As cause.
 		// Normalized ProviderError and RetryAfter retain their original contracts.
 		return fail("provider_"+classified.Code, errors.Join(normalizedProviderFailure(providerErr, classified), providerErr))

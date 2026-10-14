@@ -8,6 +8,9 @@ class ActivityConversationPage extends EntityConversationPage {
     required super.authorizationHeader,
     super.apiBaseUrl,
     super.client,
+    super.ownerID,
+    super.identityChanges,
+    super.sourceCurrent,
   }) : super(
          entityID: activityID,
          entityTitle: activityTitle,

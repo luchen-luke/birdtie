@@ -13,7 +13,12 @@ import 'package:http/testing.dart';
 import 'business_console_controller_test.dart' show person, view, reply;
 import 'business_knowledge_api_test.dart' show knowledgeAnswer;
 import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
+import 'ui_copy_secondary_visual_test.dart'
+    show secondaryMount, secondaryCapture;
 
 Future<BirdtieAuthController> signedInAuth() async {
   const owner = 'be000000-0000-4000-8000-000000000099';
@@ -40,7 +45,448 @@ Future<BirdtieAuthController> signedInAuth() async {
   return auth;
 }
 
+const memberTwo = 'be000000-0000-4000-8000-000000000003';
+const memberUnnamed = 'be000000-0000-4000-8000-000000000004';
+const memberRemoved = 'be000000-0000-4000-8000-000000000005';
+const memberNew = 'be000000-0000-4000-8000-000000000006';
+
+class MemberPageFixture {
+  final owner = 'be000000-0000-4000-8000-000000000099';
+  final businessID = 'be000000-0000-4000-8000-000000000001';
+  late String actor;
+  late BirdtieAuthController auth;
+  late PublicCityController city;
+  late OrganizationWorkspaceController org;
+  late BusinessApi api;
+  late BusinessConsoleController controller;
+  bool unknown = false, hideName = false, disposed = false;
+  int reads = 0;
+  final writes = <Map<String, dynamic>>[];
+  final paths = <String>[];
+
+  Map<String, dynamic> current([String? id]) {
+    final transferred =
+        writes.isNotEmpty && writes.last['action'] == 'transfer_owner';
+    final raw = view(owner: !transferred, version: writes.length);
+    if (id != null) (raw['business'] as Map)['id'] = id;
+    raw['members'] = [
+      {
+        'personId': owner,
+        'role': transferred ? 'admin' : 'owner',
+        'status': 'active',
+        'displayName': '样例所有者',
+      },
+      {
+        'personId': person,
+        'role': 'admin',
+        'status': 'active',
+        if (!hideName && !(unknown && writes.isNotEmpty)) 'displayName': '样例店员',
+      },
+      {
+        'personId': memberTwo,
+        'role': 'member',
+        'status': 'active',
+        'displayName': '样例店员',
+      },
+      {
+        'personId': memberUnnamed,
+        'role': transferred ? 'owner' : 'member',
+        'status': 'active',
+      },
+      {
+        'personId': memberRemoved,
+        'role': 'member',
+        'status': 'removed',
+        'displayName': '已移除样例',
+      },
+    ];
+    return raw;
+  }
+
+  static Future<MemberPageFixture> create(
+    WidgetTester t, {
+    bool unknown = false,
+  }) async {
+    final f = MemberPageFixture()..unknown = unknown;
+    f.actor = f.owner;
+    f.auth = await signedInAuth();
+    f.city = PublicCityController();
+    f.org = OrganizationWorkspaceController(
+      authorizationHeader: () => f.auth.authorizationHeader,
+    );
+    f.api = BusinessApi(
+      authorizationHeader: () => f.auth.authorizationHeader,
+      apiBaseUrl: 'http://fixture',
+      client: MockClient((r) async {
+        f.paths.add(r.url.path);
+        if (r.method == 'PUT') {
+          f.writes.add(jsonDecode(r.body) as Map<String, dynamic>);
+          return reply(f.unknown ? null : f.current(), f.unknown ? 503 : 200);
+        }
+        f.reads++;
+        return reply(
+          r.url.path.endsWith('/console')
+              ? f.current(r.url.path.split('/')[4])
+              : [f.current()['business']],
+        );
+      }),
+    );
+    f.controller = BusinessConsoleController(
+      api: f.api,
+      accountID: () => f.actor,
+      authorizationHeader: () => f.auth.authorizationHeader,
+      organizationWorkspaceID: () => f.org.active?.id,
+    );
+    t.view.physicalSize = const Size(390, 844);
+    t.view.devicePixelRatio = 1;
+    addTearDown(t.view.resetPhysicalSize);
+    addTearDown(t.view.resetDevicePixelRatio);
+    addTearDown(() => f.dispose(t));
+    await t.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: BusinessConsolePage(
+            auth: f.auth,
+            city: f.city,
+            organizations: f.org,
+            api: f.api,
+            controller: f.controller,
+          ),
+        ),
+      ),
+    );
+    await t.pumpAndSettle();
+    await t.tap(find.text('本地合成商家').first);
+    await t.pumpAndSettle();
+    return f;
+  }
+
+  Future<void> open(WidgetTester t) async {
+    await t.scrollUntilVisible(find.text('管理成员权限'), 220);
+    await t.pumpAndSettle();
+    await t.tap(find.text('管理成员权限'));
+    await t.pumpAndSettle();
+  }
+
+  Future<void> pick(WidgetTester t, String label, String value) async {
+    final field = find.widgetWithText(DropdownButtonFormField<String>, label);
+    await t.ensureVisible(field);
+    await t.tap(field);
+    await t.pumpAndSettle();
+    await t.tap(find.text(value).last);
+    await t.pumpAndSettle();
+  }
+
+  Future<void> preview(WidgetTester t) async {
+    await t.ensureVisible(find.text('检查并预览'));
+    await t.pumpAndSettle();
+    await t.tap(find.text('检查并预览'));
+    await t.pumpAndSettle();
+  }
+
+  Future<void> confirm(WidgetTester t) async {
+    await t.ensureVisible(find.text('我已核对当前主体、资料和后果'));
+    await t.tap(find.text('我已核对当前主体、资料和后果'));
+    await t.pump();
+    await t.tap(find.text('确认提交'));
+    await t.pumpAndSettle();
+  }
+
+  Future<void> dispose(WidgetTester t) async {
+    if (disposed) return;
+    disposed = true;
+    await t.pumpWidget(const SizedBox.shrink());
+    controller.dispose();
+    api.dispose();
+    org.dispose();
+    city.dispose();
+    auth.dispose();
+  }
+}
+
 void main() {
+  testWidgets(
+    'businessMembers same name choice submits original ID only after approval',
+    (t) async {
+      final f = await MemberPageFixture.create(t);
+      await f.open(t);
+      expect(find.widgetWithText(TextFormField, '对方账号标识'), findsNothing);
+      await f.pick(t, '已存在成员', '样例店员 · 名单第3位 · 成员');
+      await f.preview(t);
+      expect(find.textContaining('对方：样例店员 · 名单第3位'), findsOneWidget);
+      expect(find.text('账号标识：$memberTwo'), findsOneWidget);
+      expect(f.writes, isEmpty);
+      expect(
+        t
+            .widget<FilledButton>(find.widgetWithText(FilledButton, '确认提交'))
+            .onPressed,
+        isNull,
+      );
+      await f.confirm(t);
+      expect(f.writes.single, {
+        'expectedVersion': 0,
+        'targetPersonId': memberTwo,
+        'action': 'grant',
+        'role': 'admin',
+      });
+      expect(f.reads, 3);
+      expect(t.takeException(), isNull);
+      await f.dispose(t);
+    },
+  );
+  testWidgets(
+    'businessMembers missing name still allows revoke and cancel restores selected target',
+    (t) async {
+      final f = await MemberPageFixture.create(t);
+      await f.open(t);
+      await f.pick(t, '成员操作', '撤销成员权限');
+      await f.pick(t, '已存在成员', '账号资料暂不可用 · 名单第4位 · 成员');
+      await f.preview(t);
+      expect(find.text('账号标识：$memberUnnamed'), findsOneWidget);
+      await t.tap(find.text('返回修改'));
+      await t.pumpAndSettle();
+      expect(find.text('账号资料暂不可用 · 名单第4位 · 成员'), findsWidgets);
+      await f.preview(t);
+      await f.confirm(t);
+      expect(f.writes.single['targetPersonId'], memberUnnamed);
+      expect(f.writes.single['action'], 'remove');
+      expect(f.writes.single['role'], '');
+      await f.dispose(t);
+    },
+  );
+  testWidgets(
+    'businessMembers unidentifiable transfer needs explicit known ID and keeps consequences',
+    (t) async {
+      final f = await MemberPageFixture.create(t);
+      await f.open(t);
+      await f.pick(t, '成员操作', '转交所有权');
+      expect(find.textContaining('不能仅凭名单转交'), findsOneWidget);
+      await t.tap(
+        find.widgetWithText(DropdownButtonFormField<String>, '已存在成员'),
+      );
+      await t.pumpAndSettle();
+      expect(find.text('账号资料暂不可用 · 名单第4位 · 成员'), findsNothing);
+      expect(find.textContaining('已移除样例'), findsNothing);
+      await t.tapAt(const Offset(5, 5));
+      await t.pumpAndSettle();
+      await t.ensureVisible(find.text('输入已确认的账号标识'));
+      await t.tap(find.text('输入已确认的账号标识'));
+      await t.pumpAndSettle();
+      await t.enterText(
+        find.widgetWithText(TextFormField, '对方账号标识'),
+        memberUnnamed,
+      );
+      await f.preview(t);
+      expect(find.textContaining('转交后你将不再是所有者'), findsOneWidget);
+      expect(find.text('账号标识：$memberUnnamed'), findsOneWidget);
+      await f.confirm(t);
+      expect(f.writes.single['targetPersonId'], memberUnnamed);
+      expect(f.writes.single['action'], 'transfer_owner');
+      expect(f.writes.single['role'], 'owner');
+      await f.dispose(t);
+    },
+  );
+  testWidgets(
+    'businessMembers new account remains explicit unfinished ID without private directory',
+    (t) async {
+      final f = await MemberPageFixture.create(t);
+      await f.open(t);
+      await t.tap(find.text('输入已确认的账号标识'));
+      await t.pumpAndSettle();
+      expect(find.textContaining('暂无获准的账号姓名目录'), findsOneWidget);
+      await t.enterText(find.widgetWithText(TextFormField, '对方账号标识'), '新店员昵称');
+      await f.preview(t);
+      expect(find.text('核对后再提交'), findsNothing);
+      expect(find.text('请填写对方有效的账号标识。'), findsOneWidget);
+      expect(f.writes, isEmpty);
+      await t.enterText(
+        find.widgetWithText(TextFormField, '对方账号标识'),
+        memberNew,
+      );
+      await f.preview(t);
+      expect(find.textContaining('待添加账号（姓名尚未核验）'), findsOneWidget);
+      expect(find.text('账号标识：$memberNew'), findsOneWidget);
+      await t.tap(find.text('返回修改'));
+      await t.pumpAndSettle();
+      expect(
+        t
+            .widget<TextFormField>(find.widgetWithText(TextFormField, '对方账号标识'))
+            .controller!
+            .text,
+        memberNew,
+      );
+      expect(f.writes, isEmpty);
+      expect(f.paths.every((p) => p.startsWith('/v1/me/businesses')), isTrue);
+      await f.dispose(t);
+    },
+  );
+  for (final axis in ['name', 'business ABA', 'actor ABA', 'preview name']) {
+    testWidgets(
+      'businessMembers $axis permanently retires original selector and preview',
+      (t) async {
+        final f = await MemberPageFixture.create(t);
+        await f.open(t);
+        await f.pick(t, '已存在成员', '样例店员 · 名单第2位 · 管理员');
+        if (axis == 'preview name') await f.preview(t);
+        if (axis == 'business ABA') {
+          await f.controller.select(memberNew);
+          await f.controller.select(f.businessID);
+        } else if (axis == 'actor ABA') {
+          f.actor = memberNew;
+          f.controller.synchronizeIdentity();
+          f.actor = f.owner;
+          f.controller.synchronizeIdentity();
+          await f.controller.select(f.businessID);
+        } else {
+          f.hideName = true;
+          await f.controller.refresh();
+          f.hideName = false;
+          await f.controller.refresh();
+        }
+        await t.pumpAndSettle();
+        if (axis == 'preview name') {
+          expect(
+            find.descendant(
+              of: find.byType(AlertDialog),
+              matching: find.textContaining('样例店员'),
+            ),
+            findsNothing,
+          );
+          expect(find.text('资料或权限已变化'), findsOneWidget);
+        } else {
+          expect(find.textContaining('样例店员'), findsNothing);
+        }
+        expect(find.text('检查并预览'), findsNothing);
+        expect(find.text('确认提交'), findsNothing);
+        expect(f.writes, isEmpty);
+        expect(t.takeException(), isNull);
+        await f.dispose(t);
+      },
+    );
+  }
+  testWidgets(
+    'businessMembers transfer return to grant restores only valid editable role',
+    (t) async {
+      final f = await MemberPageFixture.create(t);
+      await f.open(t);
+      await f.pick(t, '成员操作', '转交所有权');
+      await f.pick(t, '已存在成员', '样例店员 · 名单第2位 · 管理员');
+      await f.preview(t);
+      await t.tap(find.text('返回修改'));
+      await t.pumpAndSettle();
+      await f.pick(t, '成员操作', '添加或修改成员权限');
+      expect(t.takeException(), isNull);
+      await f.preview(t);
+      expect(find.textContaining('权限：管理员'), findsOneWidget);
+      expect(f.writes, isEmpty);
+      await f.confirm(t);
+      expect(f.writes.single['targetPersonId'], person);
+      expect(f.writes.single['action'], 'grant');
+      expect(f.writes.single['role'], 'admin');
+      await f.dispose(t);
+    },
+  );
+  testWidgets(
+    'businessMembers unknown selected mutation performs one PUT and real GET',
+    (t) async {
+      final f = await MemberPageFixture.create(t, unknown: true);
+      await f.open(t);
+      await f.pick(t, '已存在成员', '样例店员 · 名单第2位 · 管理员');
+      await f.preview(t);
+      await f.confirm(t);
+      expect(f.writes.length, 1);
+      expect(f.reads, 3);
+      expect(f.controller.message, contains('未自动重发'));
+      expect(f.controller.draft, isNull);
+      expect(f.controller.snapshot!.existingMembers[1].displayName, isNull);
+      expect(
+        f.paths.where((p) => p.contains('contacts') || p.contains('search')),
+        isEmpty,
+      );
+      await f.dispose(t);
+    },
+  );
+  setUpAll(() async {
+    if (Platform.environment['BIRDTIE_SECONDARY_CAPTURE'] == null) return;
+    for (final font in [
+      ('CopySecondaryFixtureCJK', r'C:\Windows\Fonts\msyh.ttc'),
+      (
+        'MaterialIcons',
+        r'D:\DevTools\flutter\bin\cache\artifacts\material_fonts\MaterialIcons-Regular.otf',
+      ),
+    ]) {
+      await (FontLoader(font.$1)..addFont(
+            Future.value(
+              ByteData.sublistView(await File(font.$2).readAsBytes()),
+            ),
+          ))
+          .load();
+    }
+  });
+  testWidgets('businessMembers isolated normal font before after', (
+    tester,
+  ) async {
+    if (Platform.environment['BIRDTIE_SECONDARY_CAPTURE'] == null) return;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final auth = await signedInAuth();
+    final city = PublicCityController();
+    final org = OrganizationWorkspaceController(
+      authorizationHeader: () => auth.authorizationHeader,
+    );
+    final snapshot = view()
+      ..['members'] = [
+        {
+          'personId': person,
+          'role': 'admin',
+          'status': 'active',
+          'displayName': '本地样例店长',
+        },
+        {
+          'personId': 'be000000-0000-4000-8000-000000000003',
+          'role': 'member',
+          'status': 'active',
+        },
+      ];
+    var writes = 0;
+    final api = BusinessApi(
+      authorizationHeader: () => auth.authorizationHeader,
+      apiBaseUrl: 'http://fixture',
+      client: MockClient((r) async {
+        if (r.method != 'GET') writes++;
+        return reply(
+          r.url.path.endsWith('/console') ? snapshot : [snapshot['business']],
+        );
+      }),
+    );
+    await secondaryMount(
+      tester,
+      Scaffold(
+        body: BusinessConsolePage(
+          auth: auth,
+          city: city,
+          organizations: org,
+          api: api,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('本地合成商家').first);
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(find.text('管理成员权限'), 220);
+    await tester.pumpAndSettle();
+    await secondaryCapture(tester, 'business-members-roster');
+    await tester.tap(find.text('管理成员权限'));
+    await tester.pumpAndSettle();
+    await secondaryCapture(tester, 'business-members-editor');
+    expect(writes, 0);
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+    api.dispose();
+    org.dispose();
+    city.dispose();
+    auth.dispose();
+  });
   testWidgets(
     'same key external controller rebind permanently retires knowledge page without owning controllers',
     (tester) async {

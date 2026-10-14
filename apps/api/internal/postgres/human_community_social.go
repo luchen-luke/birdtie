@@ -223,8 +223,12 @@ func validateHumanCommunityCommand(in community.HumanCommand) error {
 // All snapshot material is server-read native metadata. No private text,
 // session digest, xmin or membership JSON is returned in a confirmation token.
 func communityApprovalMaterial(ctx context.Context, a communityHumanAccess, in community.HumanCommand, lockedTarget string) (string, error) {
-	var group, own, targetAccount, targetMember string
+	var group, own, targetAccount, targetMember, avatarEpoch string
 	e := a.tx.QueryRow(ctx, `SELECT jsonb_build_array(to_jsonb(c),c.xmin::text)::text FROM communities c WHERE id=$1`, in.CommunityID).Scan(&group)
+	if e != nil {
+		return "", e
+	}
+	e = a.tx.QueryRow(ctx, `SELECT COALESCE((SELECT jsonb_build_array(version,sha256,xmin::text)::text FROM community_avatars WHERE community_id=$1),'')`, in.CommunityID).Scan(&avatarEpoch)
 	if e != nil {
 		return "", e
 	}
@@ -304,7 +308,7 @@ func communityApprovalMaterial(ctx context.Context, a communityHumanAccess, in c
 			}
 		}
 	}
-	raw, e := json.Marshal([]any{"COMMUNITY_HUMAN_CURRENT_V1", a.actor, a.accountEpoch, a.session, in.Operation, in.CommunityID, in.TargetID, in.Role, in.Input, group, own, targetAccount, targetMember})
+	raw, e := json.Marshal([]any{"COMMUNITY_HUMAN_CURRENT_V1", a.actor, a.accountEpoch, a.session, in.Operation, in.CommunityID, in.TargetID, in.Role, in.Input, group, own, targetAccount, targetMember, avatarEpoch})
 	return string(raw), e
 }
 func communityApprovalToken(digest [32]byte, material string, issued, expiry int64) string {

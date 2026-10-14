@@ -14,18 +14,34 @@ server {
     ssl_session_timeout 1d;
     ssl_session_cache shared:BirdtieTLS:10m;
     client_max_body_size 1m;
+    client_body_timeout 60s;
+
+    # Shared upstream defaults. No proxy cache/header rewrite: preserve the
+    # API's own auth/private/control no-store and current public media leases.
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto https;
+    proxy_connect_timeout 5s;
+    proxy_read_timeout 130s;
+    proxy_send_timeout 60s;
+
+    # 10 MiB image -> 13,981,016 base64 bytes + <=65,536 envelope bytes.
+    # 14 MiB transport ceiling accepts that envelope; each original handler
+    # still validates its own smaller pixel/binary/JSON limit and permission.
+    location ~ ^/v1/.*(/(avatar|cover|photos|public-photo|private-image-previews|image-previews|image-message-operations)(/|$)|/agent-visual/previews(/|$)) {
+        client_max_body_size 14m;
+        proxy_pass http://127.0.0.1:8080;
+    }
 
     location / {
         proxy_pass http://127.0.0.1:8080;
-        proxy_http_version 1.1;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto https;
-        proxy_connect_timeout 5s;
-        proxy_read_timeout 30s;
-        proxy_send_timeout 30s;
     }
+
+    # Video create/complete/receipt requests are small JSON. The approved
+    # quarantine upload goes directly to the configured storage origin under
+    # its signed 20 MiB limit. No raw-video upload path is invented here.
 
     location = /healthz {
         proxy_pass http://127.0.0.1:8080/healthz;

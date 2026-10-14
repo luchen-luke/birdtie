@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:http/http.dart' as http;
+import '../app/birdtie_app_bar.dart';
 import '../auth/birdtie_auth_controller.dart';
 import 'message_request_policy_controller.dart';
 
@@ -189,7 +190,7 @@ class _MessageRequestPolicyPageState extends State<MessageRequestPolicyPage> {
         d = _data.draft,
         busy = _data.loading || _data.saving;
     return Scaffold(
-      appBar: AppBar(title: const Text('消息请求设置')),
+      appBar: birdtieAppBar(context, title: const Text('消息请求设置')),
       body: SafeArea(
         child: RadioGroup<String>(
           groupValue: d?.incoming,

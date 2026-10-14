@@ -119,6 +119,13 @@ class EntityActionController extends ChangeNotifier {
       return null;
     }
     final fresh = await load();
+    if (fresh != null &&
+        current &&
+        !expected.validUntil.isAfter(fresh.observedAt)) {
+      error = '确认已过期，请重新检查后确认。';
+      _notify();
+      return null;
+    }
     if (fresh == null ||
         !current ||
         fresh.sourceVersion != expected.sourceVersion ||

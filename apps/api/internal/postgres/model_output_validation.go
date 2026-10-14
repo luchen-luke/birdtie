@@ -97,6 +97,15 @@ func (h *nativeModelRunHandle) captureOutputScope(ctx context.Context, tx pgx.Tx
 }
 
 func unchangedOutputProjection(a, b arp.Receipt) bool {
+	var same bool
+	b, same = preservePlacePhotoProjectionLeases(a, b)
+	if !same {
+		return false
+	}
+	b, same = preserveCoverProjectionLeases(a, b)
+	if !same {
+		return false
+	}
 	left, right := append([]arp.Item(nil), a.Items...), append([]arp.Item(nil), b.Items...)
 	for i := range left {
 		left[i].ActionsValidUntil = nil

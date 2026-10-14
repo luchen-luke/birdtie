@@ -58,7 +58,7 @@ const ownPlansFrameSQL = `/* own_plans_current_v1 */
  UNION ALL SELECT v.expires_at FROM venues v WHERE v.place_id IN(SELECT venue_place_id FROM acts) AND v.expires_at>(SELECT at FROM cl)
  UNION ALL SELECT vc.expires_at FROM venue_candidates vc WHERE vc.id IN(SELECT source_candidate_id FROM venues WHERE place_id IN(SELECT venue_place_id FROM acts)) AND vc.status='approved' AND vc.expires_at>(SELECT at FROM cl)
  )
- SELECT encode(sha256(convert_to(jsonb_build_array(owner.id,owner.xmin::text,ss.id,ss.xmin::text,ss.created_at,ss.authentication_method,ss.expires_at,
+ SELECT encode(sha256(convert_to(jsonb_build_array(owner.id,owner.xmin::text,ss.id,ss.authorization_generation,ss.created_at,ss.authentication_method,ss.expires_at,
  (SELECT coalesce(jsonb_agg(jsonb_build_array(kind,id,version) ORDER BY kind,id),'[]'::jsonb) FROM versions))::text,'UTF8')),'hex'),
  cl.at,least(cl.at+interval '30 seconds',ss.expires_at,ss.idle_expires_at,(SELECT min(expires_at) FROM deadlines))
  FROM cl JOIN accounts owner ON owner.id=$1 AND owner.account_type='person' AND owner.status='active'

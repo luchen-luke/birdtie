@@ -29,8 +29,9 @@ ReviewSendClient reviewListClient(
 ) => ReviewSendClient((r) {
   if (r.url.path.endsWith('/self-review') || r.method == 'POST') return read(r);
   return Future.value(
-    reviewResponse(
-      r.url.path.endsWith('/agent-memories') ? [reviewMemoryRow()] : [],
+    reviewReadResponse(
+      r,
+      r.url.path.endsWith('/agent-memories/page') ? [reviewMemoryRow()] : [],
     ),
   );
 });

@@ -1,35 +1,170 @@
 import 'dart:convert';
 
 import 'package:birdtie_client/src/workspace/connections.dart';
+import 'package:birdtie_client/src/workspace/entity_action_contract.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'entity_share_pending_store_test.dart';
 import 'share_entity_to_chat_test.dart' show shareReceipt, shareJSON;
-import 'connection_request_review_entry_test.dart' show reviewRequest, reviewJSON, reviewID;
+import 'connection_request_review_entry_test.dart'
+    show reviewRequest, reviewJSON, reviewID;
 import 'connection_request_review_controller_test.dart' show decisionWire;
 
 void main() {
+  const knownFriendFailures = [
+    (400, 'invalid_connection_request', false),
+    (400, 'invalid_entity_action_request', false),
+    (400, 'invalid_message_policy', true),
+    (403, 'connection_forbidden', false),
+    (403, 'message_policy_forbidden', true),
+    (404, 'not_found', false),
+    (409, 'entity_action_source_changed', false),
+    (409, 'connection_conflict', false),
+    (409, 'message_policy_changed', true),
+    (429, 'rate_limited', false),
+  ];
+  for (final (status, code, policy) in knownFriendFailures) {
+    test('好友申请准确闭集拒绝 $status/$code，原POST仅一次', () async {
+      var posts = 0;
+      final source = ConnectionSource(
+        authorizationHeader: () => 'Bearer fixed-fixture',
+        apiBaseUrl: 'https://original.fixture',
+        client: MockClient((request) async {
+          expect(request.method, 'POST');
+          expect(request.url.path, '/v1/me/connection-requests');
+          posts++;
+          return http.Response.bytes(
+            utf8.encode(
+              jsonEncode({
+                'error': {'code': code, if (policy) 'detail': '服务端原错误说明'},
+              }),
+            ),
+            status,
+          );
+        }),
+      );
+      await expectLater(
+        source.requestFriend('11111111-1111-4111-8111-111111111111', '希望成为好友'),
+        throwsA(
+          isA<EntityActionRequestFailure>()
+              .having((e) => e.status, 'status', status)
+              .having((e) => e.code, 'code', code)
+              .having(
+                (e) => e.userMessage,
+                'userMessage',
+                isNot(contains('服务端原错误说明')),
+              ),
+        ),
+      );
+      await Future<void>.delayed(Duration.zero);
+      expect(posts, 1);
+      source.dispose();
+    });
+  }
+  const unknownFriendFailures = [
+    (409, '{"error":{"code":"new_future_conflict"}}'),
+    (409, '{"error":{"code":"connection_conflict","detail":"额外字段"}}'),
+    (409, '{"error":{"code":"connection_conflict"},"data":{}}'),
+    (409, '{"error":{"code":"message_policy_changed"}}'),
+    (409, '{"error":{"code":"message_policy_changed","detail":123}}'),
+    (
+      409,
+      '{"error":{"code":"message_policy_changed","detail":"原说明","extra":true}}',
+    ),
+    (403, '{"error":{"code":"connection_conflict"}}'),
+    (401, '{"error":{"code":"unauthorized"}}'),
+    (401, '{"error":{"code":"unauthorized","detail":"请重新登录"}}'),
+    (503, '{"error":{"code":"message_policy_unavailable","detail":"不可用"}}'),
+    (503, '{"error":{"code":"connection_conflict"}}'),
+    (409, '<html>gateway failure</html>'),
+    (409, '[]'),
+    (409, '{"error":null}'),
+    (409, ''),
+  ];
+  for (var i = 0; i < unknownFriendFailures.length; i++) {
+    final (status, body) = unknownFriendFailures[i];
+    test('好友申请未知或非闭集回执 $i 保持未知且不重发', () async {
+      var posts = 0;
+      final source = ConnectionSource(
+        authorizationHeader: () => 'Bearer fixed-fixture',
+        apiBaseUrl: 'https://original.fixture',
+        client: MockClient((_) async {
+          posts++;
+          return http.Response.bytes(utf8.encode(body), status);
+        }),
+      );
+      await expectLater(
+        source.requestFriend('11111111-1111-4111-8111-111111111111', '希望成为好友'),
+        throwsA(isA<StateError>()),
+      );
+      await Future<void>.delayed(Duration.zero);
+      expect(posts, 1);
+      source.dispose();
+    });
+  }
+  test('原申请RFC3339偏移保留同一时刻，不接受日期归一化或错误时区', () {
+    final row = reviewRequest()
+      ..['createdAt'] = '2026-10-10T16:47:40.525588+08:00'
+      ..['expiresAt'] = '2026-10-17T09:47:40.525588+01:00';
+    final request = ContactRequest.fromReviewJson(row);
+    expect(request.createdAt, DateTime.utc(2026, 10, 10, 8, 47, 40, 525, 588));
+    expect(request.expiresAt, DateTime.utc(2026, 10, 17, 8, 47, 40, 525, 588));
+    for (final bad in [
+      '2026-02-30T16:47:40+08:00',
+      '2026-10-10T24:00:00Z',
+      '2026-10-10T16:47:40+24:00',
+      '2026-10-10T16:47:40+08:60',
+      '2026-10-10T16:47:40',
+    ]) {
+      expect(
+        () => ContactRequest.fromReviewJson({...row, 'createdAt': bad}),
+        throwsFormatException,
+      );
+    }
+  });
   test('原Request列表保留SCREEN及有效期；原决策实际小DTO', () async {
-    final api = ConnectionSource(authorizationHeader: () => 'Bearer fixed-fixture',
-      apiBaseUrl: 'https://original.fixture', client: MockClient((r) async {
+    final api = ConnectionSource(
+      authorizationHeader: () => 'Bearer fixed-fixture',
+      apiBaseUrl: 'https://original.fixture',
+      client: MockClient((r) async {
         expect(r.headers['Authorization'], 'Bearer fixed-fixture');
         if (r.method == 'GET') return reviewJSON([reviewRequest()]);
         expect(r.url.path, '/v1/me/connection-requests/$reviewID/decision');
         return reviewJSON(decisionWire(reviewRequest(), 'accept'));
-      }));
+      }),
+    );
     final request = (await api.reviewRequests()).single;
-    expect(request.pendingReview, true); expect(request.expiresAt, isNotNull);
+    expect(request.pendingReview, true);
+    expect(request.expiresAt, isNotNull);
     final receipt = await api.decideReviewed(request, 'accept');
-    expect(receipt.id, reviewID); expect(receipt.state, 'accepted');
-    expect(receipt.conversationID, ''); api.dispose();
+    expect(receipt.id, reviewID);
+    expect(receipt.state, 'accepted');
+    expect(receipt.conversationID, '');
+    api.dispose();
   });
-  for (final invalid in ['id', 'direction', 'scope', 'state', 'otherAccountId', 'policyDisposition', 'screeningStatus', 'expiresAt', 'createdAt', 'ownerId', 'confirmed']) {
+  for (final invalid in [
+    'id',
+    'direction',
+    'scope',
+    'state',
+    'otherAccountId',
+    'policyDisposition',
+    'screeningStatus',
+    'expiresAt',
+    'createdAt',
+    'ownerId',
+    'confirmed',
+  ]) {
     test('人工审阅拒绝非法列表字段 $invalid', () async {
       final row = reviewRequest()..[invalid] = 'invalid';
-      final api = ConnectionSource(authorizationHeader: () => 'Bearer fixed-fixture',
-        apiBaseUrl: 'https://original.fixture', client: MockClient((_) async => reviewJSON([row])));
-      await expectLater(api.reviewRequests(), throwsFormatException); api.dispose();
+      final api = ConnectionSource(
+        authorizationHeader: () => 'Bearer fixed-fixture',
+        apiBaseUrl: 'https://original.fixture',
+        client: MockClient((_) async => reviewJSON([row])),
+      );
+      await expectLater(api.reviewRequests(), throwsFormatException);
+      api.dispose();
     });
   }
   for (final invalid in [
@@ -166,7 +301,7 @@ void main() {
     api.dispose();
   });
 
-  test('移除好友与屏蔽分别调用本人鉴权接口', () async {
+  test('移除好友保留原接口；无具体批准的屏蔽不发旧请求', () async {
     final paths = <String>[];
     final api = ConnectionSource(
       authorizationHeader: () => 'Bearer test-session',
@@ -181,11 +316,8 @@ void main() {
       }),
     );
     await api.removeTie('22222222-2222-4222-8222-222222222222');
-    await api.blockAccount(personId);
-    expect(paths, [
-      'DELETE /v1/me/ties/22222222-2222-4222-8222-222222222222',
-      'POST /v1/me/blocks',
-    ]);
+    await expectLater(api.blockAccount(personId), throwsStateError);
+    expect(paths, ['DELETE /v1/me/ties/22222222-2222-4222-8222-222222222222']);
     api.dispose();
   });
 

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'agent_memory_review_page_model.dart';
 import 'dart:math';
 import 'package:http/http.dart' as http;
 import '../config/birdtie_environment.dart';
@@ -315,6 +316,27 @@ class AgentMemoryCandidateAPI {
       throw const FormatException('候选列表身份冲突');
     }
     return r;
+  }
+
+  Future<AgentMemoryReviewPage<HumanMemoryCandidate>> page(
+    String auth,
+    String owner, {
+    String? cursor,
+  }) async {
+    if (cursor != null && !AgentMemoryReviewPage.validCursor(cursor))
+      throw const FormatException('分页地址不符');
+    final route = Uri(
+      path: '$path/page',
+      queryParameters: cursor == null ? null : {'cursor': cursor},
+    ).toString();
+    return AgentMemoryReviewPage.read(
+      await request('GET', route, auth),
+      owner: owner,
+      collection: 'CANDIDATES',
+      parse: (v) => HumanMemoryCandidate.read(v, owner),
+      id: (v) => v.id,
+      agent: (v) => v.raw['agentId'] as String,
+    );
   }
 
   Future<HumanMemoryCandidate> read(

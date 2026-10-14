@@ -1,5 +1,9 @@
 # 栖游/Civu 到 Birdtie 的产品升级与切流计划
 
+2026-10-14 接续：已核对用户最新直接授权，将原Civu在线入口升级为唯一Birdtie产品，不新增长测试域名；数据与旧程序作为受限回滚资产保留。最新杭州SSH/HTTPS节点、真实DB及媒体加密保全、隔离DB恢复已由 [执行交接](HANGZHOU-BIRDTIE-EXECUTION-2026-10-14.md) 接续。下方早期“保全/远端未执行”为历史时间点；稳定映射、Linux服务、身份续接、逐对象媒体对账及实际切流此时仍未完成，不能把恢复成功称为业务迁移完成。
+
+原队列及Closed Pilot/Consumer Beta门槛保留。此次受控远端升级不授予模型LIVE、真人发信、商店发布、收费下单或不可恢复资源删除。当前正式Birdtie库必须独立创建、按新schema迁移，绝不将Birdtie API直接连旧Civu库；旧Session不得成为新权限。先冻结本机当前C6/C5合包，再做原HTTPS入口内受控核验与最终增量/回滚保护后单栈切流。
+
 日期：2026-09-30  
 状态：产品方向已确认；迁移设计与本地 Android 预览已开始；生产数据、身份、签名与线上切流均未执行。
 
@@ -57,3 +61,6 @@ Birdtie 是栖游的下一版产品，在 `D:\Project\birdtie` 按 Agent-native 
 ## 本地 Android 预览记录
 
 2026-09-30：设备 `c641566b`（Xiaomi，Android 16）上已有 `app.civu.civu_mobile` versionCode 2038。Birdtie debug 构建为 `app.civu.civu_mobile.birdtiepreview` versionCode 1；`adb install --no-streaming -r` 成功，两包并存。通过 `adb reverse tcp:8080 tcp:48523` 连接本机 Birdtie API，从本地数据库读取 Aberdeen；Explore Map 展示 Civu 定制 Mapbox 样式。当前本地 City Seed 无已发布 Place，因此尚未验证 marker/点击；高德渲染、登录、上传、覆盖升级和 iOS 均未验证。此预览不构成迁移或发布验收。
+
+
+2026-10-15本机146检查点：当前代码补了原生owner/Note不可变映射、guarded importer/CLI与设置本人旧档案只读路径。真实源prepare 20/83/20通过而未apply/激活；旧Session与历史verified标记不成为Birdtie授权。API实际owned QA启动/readyz核145/146类型和约束触发器，background maintenance默认关闭，原库不运行Birdtie。Windows API/工具、Linux API/CLI cross-build、APK/Web当前成套产物封存batch-c/checkpoint-legacy-owner-archive146；APK/Web仍指本机18113（preview、normal字号、不录屏）。真实old-owner fresh登录、durable staging导入、最终public-origin包与Caddy/TLS/remote运行、最终增量、短维护切流和服务退役均NOT_RUN，旧接口清单/375路线审查、数据/媒体门槛与原商店身份验收继续有效，不能据本地编译宣布已切流。

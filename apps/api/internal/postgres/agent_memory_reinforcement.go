@@ -186,6 +186,7 @@ func reinforcementNativeSources(ctx context.Context, tx pgx.Tx, b agentPrivateBi
  UNION ALL SELECT * FROM (` + stringsReplaceEvidenceSourceID(place) + `) z WHERE e.source_type='SAVED_PLACE') src
  WHERE $2::uuid IS NULL AND e.memory_id=$3 AND e.agent_id=$4 AND e.owner_id=$1 AND e.owner_type='PERSON'
  AND e.status='CURRENT' AND e.memory_version=$6 AND m.version=$6 AND m.owner_id=$1 AND m.agent_id=$4 AND m.source_type='EXPLICIT' AND m.status='ACTIVE'
+	 AND NOT(e.source_type='ACTIVITY_PARTICIPATION' AND EXISTS(SELECT 1 FROM agent_memory_source_invalidations inv WHERE inv.owner_id=e.owner_id AND inv.source_type=e.source_type AND inv.source_id=e.source_id AND inv.created_at>=e.observed_at))
  AND m.valid_from<=clock_timestamp() AND m.valid_until>clock_timestamp() AND ses.revoked_at IS NULL AND ses.expires_at>clock_timestamp() AND ses.idle_expires_at>clock_timestamp() ORDER BY e.id`
 	final, e := tx.Query(ctx, query, b.accountID, nil, m.ID, b.agentID, b.sessionID, m.Version)
 	if e != nil {

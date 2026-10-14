@@ -2,6 +2,8 @@ import 'dart:ui' show ImageFilter, lerpDouble;
 
 import 'package:flutter/material.dart';
 
+import '../workspace/now_ui_tokens.dart';
+
 /// First composer/place samples only. Candidate values require device evidence
 /// before adoption by other surfaces. The platform map is never blurred here.
 @immutable
@@ -96,7 +98,69 @@ ThemeData birdtieTheme(Brightness brightness) {
         ? const Color(0xFFFCFBF8)
         : const Color(0xFF171C19),
   );
-  return theme.copyWith(extensions: [BirdtieSurfaceTokens.fromTheme(theme)]);
+  final text = NowUiTokens.fromTheme(theme);
+  return theme.copyWith(
+    colorScheme: theme.colorScheme.copyWith(
+      onSurface: text.sheetTitle.color,
+      onSurfaceVariant: text.metadata.color,
+    ),
+    textTheme: theme.textTheme.copyWith(
+      displayLarge: text.pageTitle,
+      displayMedium: text.pageTitle,
+      displaySmall: text.pageTitle,
+      headlineLarge: text.pageTitle,
+      headlineMedium: text.pageTitle,
+      headlineSmall: text.pageTitle,
+      titleLarge: text.sheetTitle,
+      titleMedium: text.placeTitle,
+      titleSmall: text.chrome,
+      bodyLarge: text.body,
+      bodyMedium: text.body,
+      bodySmall: text.metadata,
+      labelLarge: text.action,
+      labelMedium: text.action,
+      labelSmall: text.metadata,
+    ),
+    appBarTheme: AppBarTheme(titleTextStyle: text.pageTitle),
+    listTileTheme: ListTileThemeData(
+      titleTextStyle: text.placeTitle,
+      subtitleTextStyle: text.listSubtitle,
+      minTileHeight: 48,
+    ),
+    textButtonTheme: TextButtonThemeData(
+      style: TextButton.styleFrom(
+        minimumSize: const Size(48, 48),
+        textStyle: text.action,
+      ),
+    ),
+    filledButtonTheme: FilledButtonThemeData(
+      style: FilledButton.styleFrom(
+        minimumSize: const Size(48, 48),
+        textStyle: text.action,
+      ),
+    ),
+    outlinedButtonTheme: OutlinedButtonThemeData(
+      style: OutlinedButton.styleFrom(
+        minimumSize: const Size(48, 48),
+        textStyle: text.action,
+      ),
+    ),
+    elevatedButtonTheme: ElevatedButtonThemeData(
+      style: ElevatedButton.styleFrom(
+        minimumSize: const Size(48, 48),
+        textStyle: text.action,
+      ),
+    ),
+    iconButtonTheme: IconButtonThemeData(
+      style: IconButton.styleFrom(minimumSize: const Size(48, 48)),
+    ),
+    inputDecorationTheme: InputDecorationTheme(
+      hintStyle: text.body.copyWith(color: text.metadata.color),
+      helperStyle: text.metadata,
+      errorStyle: text.metadata.copyWith(color: theme.colorScheme.error),
+    ),
+    extensions: [BirdtieSurfaceTokens.fromTheme(theme), text],
+  );
 }
 
 enum BirdtieSurfaceKind { floating, content, critical }

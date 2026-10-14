@@ -10,8 +10,10 @@ services:
     environment:
       BIRDTIE_API_ADDR: 0.0.0.0:8080
       BIRDTIE_DEV_PHONE_AUTH: "false"
-    expose:
-      - "8080"
+      BIRDTIE_BACKGROUND_MAINTENANCE: "false"
+    ports:
+      # The existing host Caddy can reach this port. Never publish on 0.0.0.0.
+      - "127.0.0.1:8080:8080"
     healthcheck:
       # Requires curl in the reviewed application image. If the minimal image
       # omits curl, use the orchestrator's HTTP probe instead of this command.
@@ -26,6 +28,8 @@ services:
         max-size: "20m"
         max-file: "5"
 
-# TLS terminates at the separately managed Nginx/reverse proxy. Ensure curl is
+# TLS terminates at the existing host Caddy/reverse proxy. Ensure curl is
 # present in the reviewed image or replace this with a platform-native probe.
 # PostgreSQL and media object storage are deliberately separate services.
+# BIRDTIE_NATIVE_DATABASE_NAME must exactly match the separately provisioned
+# native database. This example neither creates it nor applies any migrations.

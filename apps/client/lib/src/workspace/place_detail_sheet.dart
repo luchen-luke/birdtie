@@ -13,6 +13,7 @@ import '../content/moment_publication_controller.dart';
 import '../content/moment_publication_sheet.dart';
 import 'connections.dart';
 import 'support_page.dart';
+import 'human_causal_operation_controller.dart';
 import 'follow_button.dart';
 import 'place_history_controller.dart';
 import 'place_history_section.dart';
@@ -23,12 +24,17 @@ import 'private_place_memory_api.dart';
 import 'notification_destination_router.dart';
 import 'entity_action_contract.dart';
 import 'entity_action_dispatcher.dart';
+import 'now_ui_tokens.dart';
+import 'entity_cover.dart';
+import 'place_photo.dart';
+import 'place_photo_editor.dart';
 
 typedef _PlaceReadFrame = ({
   String? token,
   String? workspace,
   String place,
   int epoch,
+  String? owner,
 });
 
 class PlaceDetailSheet extends StatefulWidget {
@@ -47,6 +53,8 @@ class PlaceDetailSheet extends StatefulWidget {
     this.workspaceChanges,
     this.onOpenMoment,
     this.privatePlacePendingStore,
+    this.publicContentFirst = false,
+    this.ownerID,
   });
 
   final String placeID;
@@ -62,6 +70,8 @@ class PlaceDetailSheet extends StatefulWidget {
   final Listenable? workspaceChanges;
   final ValueChanged<String>? onOpenMoment;
   final PlaceDeclarationPendingStore? privatePlacePendingStore;
+  final bool publicContentFirst;
+  final String? Function()? ownerID;
 
   @override
   State<PlaceDetailSheet> createState() => _PlaceDetailSheetState();
@@ -82,10 +92,27 @@ class _PlaceDetailSheetState extends State<PlaceDetailSheet> {
   MomentPublicationController? _publicationController;
   int _ownMomentRequest = 0;
   int _identityEpoch = 0;
+  final _reportSource = HumanCausalSourceSerial();
+  void _observeReportSource() {
+    _reportSource.observe((
+      widget.placeID,
+      widget.client,
+      widget.apiBaseUrl,
+      widget.ownerID?.call(),
+      widget.organizationWorkspaceID?.call(),
+    ));
+    _reportSource.notifyReadBindingChanged();
+  }
+
   final _privateEntryChanges = ValueNotifier<int>(0);
+  final _venueExpansionStorage = PageStorageBucket();
+  final _venueContentStorage = PageStorageBucket();
   bool _privateEntryRetired = false;
   bool _openingPrivateMemory = false;
   String? _identityToken, _identityWorkspace;
+  String? _identityOwner;
+  PlacePhotoEditorial? _photoEditorial;
+  bool _hasPhotoPending = false;
   PublicPlace? _place;
   List<PublicActivity> _activities = const [];
   List<Map<String, dynamic>> _ownMoments = const [];
@@ -106,6 +133,7 @@ class _PlaceDetailSheetState extends State<PlaceDetailSheet> {
     workspace: widget.organizationWorkspaceID?.call(),
     place: widget.placeID,
     epoch: _identityEpoch,
+    owner: widget.ownerID?.call(),
   );
   bool _current(_PlaceReadFrame frame) =>
       mounted &&
@@ -113,6 +141,7 @@ class _PlaceDetailSheetState extends State<PlaceDetailSheet> {
       frame.token == widget.authorizationHeader() &&
       frame.workspace == widget.organizationWorkspaceID?.call() &&
       frame.place == widget.placeID &&
+      frame.owner == widget.ownerID?.call() &&
       frame.epoch == _identityEpoch;
   Map<String, String> _frameHeaders(_PlaceReadFrame frame) =>
       frame.token == null ? const {} : {'Authorization': frame.token!};
@@ -140,6 +169,8 @@ class _PlaceDetailSheetState extends State<PlaceDetailSheet> {
   @override
   void initState() {
     super.initState();
+    widget.workspaceChanges?.addListener(_shareReadBindingChanged);
+    _observeReportSource();
     _borrowedClient = widget.client;
     _ownsClient = _borrowedClient == null;
     _client = _borrowedClient ?? http.Client();
@@ -150,6 +181,7 @@ class _PlaceDetailSheetState extends State<PlaceDetailSheet> {
     _pendingStore = widget.privatePlacePendingStore;
     _identityToken = widget.authorizationHeader();
     _identityWorkspace = widget.organizationWorkspaceID?.call();
+    _identityOwner = widget.ownerID?.call();
     _workspaceChanges?.addListener(_identityChanged);
     _createHistory();
     _createBooking();
@@ -190,6 +222,11 @@ class _PlaceDetailSheetState extends State<PlaceDetailSheet> {
   @override
   void didUpdateWidget(covariant PlaceDetailSheet oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (oldWidget.workspaceChanges != widget.workspaceChanges) {
+      oldWidget.workspaceChanges?.removeListener(_shareReadBindingChanged);
+      widget.workspaceChanges?.addListener(_shareReadBindingChanged);
+    }
+    _observeReportSource();
     if (_connectionRetired) return;
     if (!identical(_borrowedClient, widget.client) ||
         _apiBaseUrl != widget.apiBaseUrl ||
@@ -206,6 +243,8 @@ class _PlaceDetailSheetState extends State<PlaceDetailSheet> {
       _history.invalidate(notify: false);
       _booking.invalidate(notify: false);
       _place = null;
+      _photoEditorial = null;
+      _hasPhotoPending = false;
       _activities = const [];
       _ownMoments = const [];
       _venue = null;
@@ -227,13 +266,20 @@ class _PlaceDetailSheetState extends State<PlaceDetailSheet> {
   }
 
   void _identityChanged() => _checkIdentity(rebuild: true);
+  void _shareReadBindingChanged() => _observeReportSource();
   void _checkIdentity({required bool rebuild}) {
+    _observeReportSource();
     if (_connectionRetired) return;
     final token = widget.authorizationHeader();
     final workspace = widget.organizationWorkspaceID?.call();
-    if (token == _identityToken && workspace == _identityWorkspace) return;
+    final owner = widget.ownerID?.call();
+    if (token == _identityToken &&
+        workspace == _identityWorkspace &&
+        owner == _identityOwner)
+      return;
     _identityToken = token;
     _identityWorkspace = workspace;
+    _identityOwner = owner;
     _identityEpoch++;
     _privateEntryChanges.value++;
     _ownMomentRequest++;
@@ -245,6 +291,8 @@ class _PlaceDetailSheetState extends State<PlaceDetailSheet> {
     _activities = const [];
     _venue = null;
     _place = null;
+    _photoEditorial = null;
+    _hasPhotoPending = false;
     _error = null;
     _activitiesError = null;
     _venueError = null;
@@ -260,6 +308,8 @@ class _PlaceDetailSheetState extends State<PlaceDetailSheet> {
 
   @override
   void dispose() {
+    widget.workspaceChanges?.removeListener(_shareReadBindingChanged);
+    _reportSource.dispose();
     _privateEntryRetired = true;
     _privateEntryChanges.value++;
     _privateEntryChanges.dispose();
@@ -349,6 +399,8 @@ class _PlaceDetailSheetState extends State<PlaceDetailSheet> {
         _venueError = null;
         _actionError = null;
         _place = null;
+        _photoEditorial = null;
+        _hasPhotoPending = false;
         _activities = const [];
         _ownMoments = const [];
         _momentsToken = null;
@@ -370,6 +422,10 @@ class _PlaceDetailSheetState extends State<PlaceDetailSheet> {
       if (place.id != frame.place) throw StateError('Place mismatch');
       if (!_current(frame)) return;
       setState(() => _place = place);
+      if (frame.token != null &&
+          frame.workspace == null &&
+          entityCoverID(frame.owner ?? ''))
+        unawaited(_loadPhotoEditorial(frame));
       await Future.wait([
         if (frame.workspace == null) _loadActivities(frame),
         _loadVenue(frame),
@@ -381,6 +437,67 @@ class _PlaceDetailSheetState extends State<PlaceDetailSheet> {
     } finally {
       if (_current(frame)) setState(() => _loading = false);
     }
+  }
+
+  PlacePhotoAPI _photoAPI(_PlaceReadFrame frame) => PlacePhotoAPI(
+    client: _client,
+    baseUrl: _base,
+    authorizationHeader: () => _current(frame) ? frame.token : null,
+    current: () => _current(frame) && frame.workspace == null,
+  );
+
+  Future<void> _loadPhotoEditorial(_PlaceReadFrame frame) async {
+    PlacePhotoEditorial? editorial;
+    bool pending = false;
+    try {
+      editorial = await _photoAPI(frame).editorial(PlacePhotoRef(frame.place));
+    } catch (_) {
+      /* Permission is granted by the original editorial read only. */
+    }
+    if (!_current(frame)) return;
+    try {
+      pending =
+          await SecurePlacePhotoPendingStore().read(
+            Uri.parse(_base).origin,
+            frame.owner!,
+            PlacePhotoRef(frame.place),
+          ) !=
+          null;
+    } catch (_) {
+      /* A storage failure cannot authorize a contribution. */
+    }
+    if (_current(frame))
+      setState(() {
+        _photoEditorial = editorial;
+        _hasPhotoPending = pending;
+      });
+  }
+
+  Future<void> _openPhotoEditor() async {
+    final frame = _frame(), place = _place;
+    if (!_current(frame) ||
+        place == null ||
+        frame.workspace != null ||
+        frame.token == null ||
+        !entityCoverID(frame.owner ?? '') ||
+        (_photoEditorial == null && !_hasPhotoPending))
+      return;
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        builder: (_) => PlacePhotoEditor(
+          ref: PlacePhotoRef(place.id),
+          name: place.name,
+          ownerID: frame.owner!,
+          api: _photoAPI(frame),
+          identityChanges: _privateEntryChanges,
+          current: () => _current(frame),
+          onChanged: () {
+            if (_current(frame)) unawaited(_load());
+          },
+        ),
+      ),
+    );
+    if (_current(frame)) unawaited(_load());
   }
 
   Future<void> _loadActivities(_PlaceReadFrame frame) async {
@@ -686,19 +803,27 @@ class _PlaceDetailSheetState extends State<PlaceDetailSheet> {
         if (!_current(frame)) return;
         await shareEntityToChat(
           context,
-          authorizationHeader: () => _current(frame) ? frame.token : null,
-          identityChanges: widget.workspaceChanges,
-          workspaceID: widget.organizationWorkspaceID,
-          client: _client,
+          authorizationHeader: () => widget.authorizationHeader(),
+          identityChanges: _reportSource,
+          ownerID: widget.ownerID == null ? null : () => widget.ownerID?.call(),
+          workspaceID: () => widget.organizationWorkspaceID?.call(),
+          sourceKey: () => _reportSource.generation,
+          sourceCurrent: () => mounted,
           type: 'place',
           id: frame.place,
           apiBaseUrl: _apiBaseUrl,
+          client: _client,
         );
       },
     );
   }
 
   String _label(String code) => switch (code) {
+    'restaurant' => '餐厅',
+    'cafe' => '咖啡馆',
+    'museum' => '博物馆',
+    'gallery' => '美术馆',
+    'park' => '公园',
     'sports_venue' => '体育场馆',
     'community_venue' => '社区场地',
     'library' => '图书馆',
@@ -719,19 +844,32 @@ class _PlaceDetailSheetState extends State<PlaceDetailSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = NowUiTokens.of(context);
+    final textActionStyle = TextButton.styleFrom(
+      minimumSize: const Size(48, 48),
+      textStyle: tokens.action,
+    );
+    final outlinedActionStyle = OutlinedButton.styleFrom(
+      minimumSize: const Size(48, 48),
+      textStyle: tokens.action,
+    );
     if (_connectionRetired) {
       return BirdtieSurface(
         kind: BirdtieSurfaceKind.critical,
         child: SafeArea(
           child: ListView(
+            key: PageStorageKey('public-place-scroll:${widget.placeID}'),
+            primary: false,
             padding: const EdgeInsets.all(20),
             children: [
-              const Text('地点页面连接已变更，请返回后重新打开。'),
-              const SizedBox(height: 16),
-              const Text('旧详情、预览和确认不能继续使用。未确认的地点声明仍需核实原记录；没有自动重发、撤回或回滚。'),
+              Text('页面已变化，请返回后重新打开。', style: tokens.body),
+              Text('上次保存如未确认，请在地点记录中核实。', style: tokens.body),
               const SizedBox(height: 16),
               FilledButton(
-                style: FilledButton.styleFrom(minimumSize: const Size(48, 48)),
+                style: FilledButton.styleFrom(
+                  minimumSize: const Size(48, 48),
+                  textStyle: tokens.action,
+                ),
                 onPressed: Navigator.of(context).canPop()
                     ? () => Navigator.of(context).maybePop()
                     : null,
@@ -752,6 +890,11 @@ class _PlaceDetailSheetState extends State<PlaceDetailSheet> {
     final source = _httpsURL(place?.source.reference);
     final ownToken = _personal ? widget.authorizationHeader() : null;
     final ownMomentVisible = ownToken != null && ownToken == _momentsToken;
+    if (_loading && place == null) {
+      // Do not attach an empty viewport that clamps the previous PageStorage
+      // offset to zero before the current place projection has arrived.
+      return const Center(child: CircularProgressIndicator());
+    }
     return BirdtieSurface(
       kind:
           _error != null ||
@@ -764,198 +907,355 @@ class _PlaceDetailSheetState extends State<PlaceDetailSheet> {
         child: Padding(
           padding: const EdgeInsets.fromLTRB(20, 18, 20, 26),
           child: ListView(
+            key: PageStorageKey('public-place-scroll:${widget.placeID}'),
+            primary: false,
             shrinkWrap: true,
             children: [
               if (_loading) const LinearProgressIndicator(),
               if (_error != null) ...[
-                Text(_error!),
-                TextButton(onPressed: _load, child: const Text('重试')),
+                Text(_error!, style: tokens.body),
+                TextButton(
+                  style: textActionStyle,
+                  onPressed: _load,
+                  child: const Text('重试'),
+                ),
               ],
               if (place != null) ...[
-                Text(place.name, style: Theme.of(context).textTheme.titleLarge),
+                if (place.placePhoto != null)
+                  EntityCover(
+                    key: ObjectKey(place),
+                    metadata: place.placePhoto,
+                    api: EntityCoverAPI(
+                      client: _client,
+                      baseUrl: _base,
+                      authorizationHeader: widget.authorizationHeader,
+                    ),
+                    identityChanges: _privateEntryChanges,
+                    current: () =>
+                        _current(businessFrame) && identical(_place, place),
+                    width: 320,
+                    height: 180,
+                    label: '${place.name}的地点照片',
+                  ),
+                Text(place.name, style: tokens.sheetTitle),
                 if (place.categoryCode.isNotEmpty)
-                  Text('地点类别：${_label(place.categoryCode)}'),
-                if (place.summary.isNotEmpty) Text(place.summary),
+                  Text(
+                    '地点类别：${_label(place.categoryCode)}',
+                    style: tokens.metadata,
+                  ),
+                if (place.summary.isNotEmpty)
+                  Text(place.summary, style: tokens.body),
                 if (place.addressLabel.isNotEmpty)
-                  Text('地址：${place.addressLabel}'),
-                Text('资料来源：${place.source.label}'),
+                  Text('地址：${place.addressLabel}', style: tokens.body),
+                Text('资料来源：${place.source.label}', style: tokens.metadata),
                 if (place.source.freshness == 'review_needed')
-                  const Text('资料更新后尚待复核'),
+                  Text('资料更新后尚待复核', style: tokens.metadata),
                 if (place.source.freshness == 'unverified')
-                  const Text('资料尚未核验'),
+                  Text('资料尚未核验', style: tokens.metadata),
                 const SizedBox(height: 12),
                 Wrap(
                   spacing: 8,
+                  runSpacing: 4,
                   children: [
+                    if (_personal &&
+                        entityCoverID(widget.ownerID?.call() ?? '') &&
+                        (_photoEditorial != null || _hasPhotoPending))
+                      OutlinedButton.icon(
+                        key: const Key('place-photo-entry'),
+                        style: outlinedActionStyle,
+                        onPressed: _openPhotoEditor,
+                        icon: const Icon(Icons.photo_outlined),
+                        label: const Text('地点照片'),
+                      ),
                     if (navigation != null)
                       OutlinedButton.icon(
+                        style: outlinedActionStyle,
                         onPressed: _navigate,
                         icon: const Icon(Icons.directions_outlined),
                         label: const Text('导航'),
                       ),
                     OutlinedButton.icon(
+                      style: outlinedActionStyle,
                       onPressed: _share,
                       icon: const Icon(Icons.share_outlined),
                       label: const Text('分享地点'),
                     ),
                     if (_personal)
                       OutlinedButton.icon(
+                        style: outlinedActionStyle,
                         onPressed: _personal ? _shareToFriend : null,
                         icon: const Icon(Icons.chat_bubble_outline),
                         label: const Text('发给好友'),
                       ),
                     if (source != null)
                       TextButton(
+                        style: textActionStyle,
                         onPressed: () => _open(source),
                         child: const Text('查看资料来源'),
                       ),
                   ],
                 ),
-                if (_actionError != null) Text(_actionError!),
-                const SizedBox(height: 16),
-                Text('举办条件', style: Theme.of(context).textTheme.titleMedium),
-                if (_venueError != null) Text(_venueError!),
-                if (!_loading && _venueError == null && venue == null)
-                  const Text('暂无已审核的场地举办资料；不能据此判断是否适合办活动。'),
-                if (venue != null) ...[
-                  if (venue['capacity'] is int)
-                    Text('资料所列容量：${venue['capacity']} 人'),
-                  Text(
-                    _reservationLabel(
-                      venue['reservationSupport'] as String? ?? 'unknown',
+                if (_actionError != null)
+                  Text(_actionError!, style: tokens.body),
+                if (widget.publicContentFirst ||
+                    venue != null ||
+                    _venueError != null)
+                  const SizedBox(height: 16),
+                if (widget.publicContentFirst) ...[
+                  PlaceHistorySection(
+                    controller: _history,
+                    onOpenMoment: widget.onOpenMoment,
+                  ),
+                  const SizedBox(height: 16),
+                ],
+                if (_venueError != null) ...[
+                  Text(_venueError!, style: tokens.body),
+                  TextButton(onPressed: _load, child: const Text('重试场地资料')),
+                ],
+                if (venue != null)
+                  PageStorage(
+                    bucket: _venueExpansionStorage,
+                    child: ExpansionTile(
+                      key: PageStorageKey(
+                        'place-venue-details:${widget.placeID}',
+                      ),
+                      tilePadding: EdgeInsets.zero,
+                      title: Text('场地资料', style: tokens.placeTitle),
+                      children: [
+                        PageStorage(
+                          bucket: _venueContentStorage,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              if (venue['capacity'] is int)
+                                Text(
+                                  '资料所列容量：${venue['capacity']} 人',
+                                  style: tokens.body,
+                                ),
+                              Text(
+                                _reservationLabel(
+                                  venue['reservationSupport'] as String? ??
+                                      'unknown',
+                                ),
+                                style: tokens.body,
+                              ),
+                              if (venue['suitability']
+                                  case final List<dynamic> values)
+                                if (values.isNotEmpty)
+                                  Text(
+                                    '适合：${values.whereType<String>().map(_label).join('、')}',
+                                    style: tokens.body,
+                                  ),
+                              if (venue['amenities']
+                                  case final List<dynamic> values)
+                                if (values.isNotEmpty)
+                                  Text(
+                                    '设施：${values.whereType<String>().map(_label).join('、')}',
+                                    style: tokens.body,
+                                  ),
+                              VerifiedBookingSection(controller: _booking),
+                              if (venue['operatorOrganizationName']
+                                  case final String name)
+                                if (name.isNotEmpty)
+                                  widget.onOpenOrganization != null &&
+                                          venue['operatorOrganizationId']
+                                              is String
+                                      ? TextButton(
+                                          style: textActionStyle,
+                                          onPressed: () =>
+                                              widget.onOpenOrganization!(
+                                                venue['operatorOrganizationId']
+                                                    as String,
+                                              ),
+                                          child: Text('场地关联组织：$name'),
+                                        )
+                                      : Text(
+                                          '场地关联组织：$name',
+                                          style: tokens.body,
+                                        ),
+                              if (venue['businesses']
+                                  case final List<dynamic> businesses)
+                                for (final business
+                                    in businesses
+                                        .whereType<Map<String, dynamic>>())
+                                  if (business['name'] is String)
+                                    Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          '已核验经营关系：${business['name']}',
+                                          style: tokens.placeTitle,
+                                        ),
+                                        Wrap(
+                                          spacing: 8,
+                                          children: [
+                                            if (widget.onOpenBusiness != null &&
+                                                _businessID(business['id']))
+                                              TextButton(
+                                                style: textActionStyle,
+                                                onPressed: () {
+                                                  if (_current(businessFrame)) {
+                                                    widget.onOpenBusiness!(
+                                                      business['id'] as String,
+                                                    );
+                                                  }
+                                                },
+                                                child: const Text('商家资料'),
+                                              ),
+                                            if (_personal &&
+                                                business['id'] is String)
+                                              FollowButton(
+                                                targetType: 'BUSINESS',
+                                                targetID:
+                                                    business['id'] as String,
+                                                identityChanges:
+                                                    widget.workspaceChanges,
+                                                workspaceID: widget
+                                                    .organizationWorkspaceID,
+                                                authorizationHeader:
+                                                    widget.authorizationHeader,
+                                                apiBaseUrl: widget.apiBaseUrl,
+                                                client: widget.client,
+                                              ),
+                                            if (_personal &&
+                                                business['id'] is String)
+                                              TextButton(
+                                                style: textActionStyle,
+                                                onPressed: () => runEntityAction(
+                                                  context,
+                                                  ref: EntityActionRef(
+                                                    'business',
+                                                    business['id'] as String,
+                                                  ),
+                                                  kind: EntityActionKind.share,
+                                                  authorizationHeader: () =>
+                                                      _current(businessFrame)
+                                                      ? businessFrame.token
+                                                      : null,
+                                                  identityChanges:
+                                                      widget.workspaceChanges,
+                                                  workspaceID: widget
+                                                      .organizationWorkspaceID,
+                                                  client: _client,
+                                                  apiBaseUrl: _apiBaseUrl,
+                                                  domainCurrent: () =>
+                                                      _current(businessFrame),
+                                                  handler: (_) async {
+                                                    if (!_current(
+                                                      businessFrame,
+                                                    ))
+                                                      return;
+                                                    await shareEntityToChat(
+                                                      context,
+                                                      authorizationHeader: () =>
+                                                          widget
+                                                              .authorizationHeader(),
+                                                      identityChanges:
+                                                          _reportSource,
+                                                      ownerID:
+                                                          widget.ownerID == null
+                                                          ? null
+                                                          : () => widget.ownerID
+                                                                ?.call(),
+                                                      workspaceID: () => widget
+                                                          .organizationWorkspaceID
+                                                          ?.call(),
+                                                      sourceKey: () => (
+                                                        _reportSource
+                                                            .generation,
+                                                        'business',
+                                                        business['id'],
+                                                      ),
+                                                      sourceCurrent: () =>
+                                                          mounted &&
+                                                          ((_venue?['businesses']
+                                                                      as List?)
+                                                                  ?.whereType<
+                                                                    Map<
+                                                                      String,
+                                                                      dynamic
+                                                                    >
+                                                                  >()
+                                                                  .any(
+                                                                    (b) =>
+                                                                        b['id'] ==
+                                                                        business['id'],
+                                                                  ) ??
+                                                              false),
+                                                      type: 'business',
+                                                      id:
+                                                          business['id']
+                                                              as String,
+                                                      apiBaseUrl: _apiBaseUrl,
+                                                      client: _client,
+                                                    );
+                                                  },
+                                                ),
+                                                child: const Text('发给好友'),
+                                              ),
+                                            if (_personal &&
+                                                business['id'] is String)
+                                              TextButton(
+                                                style: textActionStyle,
+                                                onPressed: () => Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute<void>(
+                                                    builder: (_) => humanSupportDestination(
+                                                      authorizationHeader: widget
+                                                          .authorizationHeader,
+                                                      targetType: 'business',
+                                                      targetID:
+                                                          business['id']
+                                                              as String,
+                                                      apiBaseUrl:
+                                                          widget.apiBaseUrl,
+                                                      ownerID: widget.ownerID,
+                                                      identityChanges: widget
+                                                          .workspaceChanges,
+                                                      sourceCurrent: () =>
+                                                          mounted &&
+                                                          widget.organizationWorkspaceID
+                                                                  ?.call() ==
+                                                              null,
+                                                      client: _client,
+                                                      sourceKey: () =>
+                                                          (_reportSource
+                                                              .generation),
+                                                    ),
+                                                  ),
+                                                ),
+                                                child: const Text('举报商家'),
+                                              ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  if (venue['suitability'] case final List<dynamic> values)
-                    if (values.isNotEmpty)
-                      Text(
-                        '适合：${values.whereType<String>().map(_label).join('、')}',
-                      ),
-                  if (venue['amenities'] case final List<dynamic> values)
-                    if (values.isNotEmpty)
-                      Text(
-                        '设施：${values.whereType<String>().map(_label).join('、')}',
-                      ),
-                  VerifiedBookingSection(controller: _booking),
-                  if (venue['operatorOrganizationName'] case final String name)
-                    if (name.isNotEmpty)
-                      widget.onOpenOrganization != null &&
-                              venue['operatorOrganizationId'] is String
-                          ? TextButton(
-                              onPressed: () => widget.onOpenOrganization!(
-                                venue['operatorOrganizationId'] as String,
-                              ),
-                              child: Text('场地关联组织：$name'),
-                            )
-                          : Text('场地关联组织：$name'),
-                  if (venue['businesses'] case final List<dynamic> businesses)
-                    for (final business
-                        in businesses.whereType<Map<String, dynamic>>())
-                      if (business['name'] is String)
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('已核验经营关系：${business['name']}'),
-                            Wrap(
-                              spacing: 8,
-                              children: [
-                                if (widget.onOpenBusiness != null &&
-                                    _businessID(business['id']))
-                                  TextButton(
-                                    onPressed: () {
-                                      if (_current(businessFrame)) {
-                                        widget.onOpenBusiness!(
-                                          business['id'] as String,
-                                        );
-                                      }
-                                    },
-                                    child: const Text('商家资料'),
-                                  ),
-                                if (_personal && business['id'] is String)
-                                  FollowButton(
-                                    targetType: 'BUSINESS',
-                                    targetID: business['id'] as String,
-                                    authorizationHeader:
-                                        widget.authorizationHeader,
-                                    apiBaseUrl: widget.apiBaseUrl,
-                                    client: widget.client,
-                                  ),
-                                if (_personal && business['id'] is String)
-                                  TextButton(
-                                    onPressed: () => runEntityAction(
-                                      context,
-                                      ref: EntityActionRef(
-                                        'business',
-                                        business['id'] as String,
-                                      ),
-                                      kind: EntityActionKind.share,
-                                      authorizationHeader: () =>
-                                          _current(businessFrame)
-                                          ? businessFrame.token
-                                          : null,
-                                      identityChanges: widget.workspaceChanges,
-                                      workspaceID:
-                                          widget.organizationWorkspaceID,
-                                      client: _client,
-                                      apiBaseUrl: _apiBaseUrl,
-                                      domainCurrent: () =>
-                                          _current(businessFrame),
-                                      handler: (_) async {
-                                        if (!_current(businessFrame)) return;
-                                        await shareEntityToChat(
-                                          context,
-                                          authorizationHeader: () =>
-                                              _current(businessFrame)
-                                              ? businessFrame.token
-                                              : null,
-                                          identityChanges:
-                                              widget.workspaceChanges,
-                                          workspaceID:
-                                              widget.organizationWorkspaceID,
-                                          client: _client,
-                                          type: 'business',
-                                          id: business['id'] as String,
-                                          apiBaseUrl: _apiBaseUrl,
-                                        );
-                                      },
-                                    ),
-                                    child: const Text('发给好友'),
-                                  ),
-                                if (_personal && business['id'] is String)
-                                  TextButton(
-                                    onPressed: () => Navigator.push(
-                                      context,
-                                      MaterialPageRoute<void>(
-                                        builder: (_) => SupportPage(
-                                          authorizationHeader:
-                                              widget.authorizationHeader,
-                                          targetType: 'business',
-                                          targetID: business['id'] as String,
-                                          apiBaseUrl: widget.apiBaseUrl,
-                                        ),
-                                      ),
-                                    ),
-                                    child: const Text('举报商家'),
-                                  ),
-                              ],
-                            ),
-                          ],
-                        ),
-                ],
                 const SizedBox(height: 16),
                 if (!_personal)
-                  const Text('当前为组织工作区，仅展示地点公开资料。请返回个人工作区查看个人记录和可见活动。'),
-                if (_personal)
-                  Text('这里的活动', style: Theme.of(context).textTheme.titleMedium),
-                if (_activitiesError != null) Text(_activitiesError!),
+                  Text(
+                    '当前为组织工作区，仅展示地点公开资料。请返回个人工作区查看个人记录和可见活动。',
+                    style: tokens.body,
+                  ),
+                if (_personal) Text('这里的活动', style: tokens.placeTitle),
+                if (_activitiesError != null)
+                  Text(_activitiesError!, style: tokens.body),
                 if (_personal &&
                     !_loading &&
                     _activitiesError == null &&
                     _activities.isEmpty)
-                  const Text('目前没有可查看的近期活动。'),
+                  Text('目前没有可查看的近期活动。', style: tokens.body),
                 for (final activity in _activities)
                   ListTile(
-                    title: Text(activity.title),
-                    subtitle: Text(activity.schedule),
+                    minTileHeight: 48,
+                    title: Text(activity.title, style: tokens.placeTitle),
+                    subtitle: Text(activity.schedule, style: tokens.metadata),
                     onTap: () => widget.onOpenActivity(activity),
                   ),
                 const SizedBox(height: 16),
@@ -964,9 +1264,13 @@ class _PlaceDetailSheetState extends State<PlaceDetailSheet> {
                     widget.workspaceChanges != null &&
                     _place != null)
                   ListTile(
+                    minTileHeight: 48,
                     leading: const Icon(Icons.lock_outline),
-                    title: const Text('我的地点记录'),
-                    subtitle: const Text('仅自己可见；收藏不等于喜欢，记录关联不代表真实到访。'),
+                    title: Text('我的地点记录', style: tokens.placeTitle),
+                    subtitle: Text(
+                      '仅自己可见；收藏不等于喜欢，记录关联不代表真实到访。',
+                      style: tokens.listSubtitle,
+                    ),
                     trailing: _openingPrivateMemory
                         ? const SizedBox(
                             width: 20,
@@ -976,45 +1280,52 @@ class _PlaceDetailSheetState extends State<PlaceDetailSheet> {
                         : const Icon(Icons.chevron_right),
                     onTap: _openingPrivateMemory ? null : _openPrivateMemory,
                   ),
-                PlaceHistorySection(
-                  controller: _history,
-                  onOpenMoment: widget.onOpenMoment,
-                ),
+                if (!widget.publicContentFirst)
+                  PlaceHistorySection(
+                    controller: _history,
+                    onOpenMoment: widget.onOpenMoment,
+                  ),
                 if (ownToken != null) ...[
                   const SizedBox(height: 16),
-                  Text(
-                    '我关联这里的记录',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const Text('私人草稿仅自己可见，不会随地点分享。明确公开的记录可撤回。'),
-                  if (!ownMomentVisible) const Text('登录状态已变化，请重新打开地点。'),
+                  Text('我关联这里的记录', style: tokens.placeTitle),
+                  Text('私人草稿仅自己可见，不会随地点分享。明确公开的记录可撤回。', style: tokens.metadata),
+                  if (!ownMomentVisible)
+                    Text('登录状态已变化，请重新打开地点。', style: tokens.body),
                   if (ownMomentVisible && !_ownMomentsAvailable)
-                    const Text('私人记录暂不可用，请稍后重试。'),
+                    Text('私人记录暂不可用，请稍后重试。', style: tokens.body),
                   if (ownMomentVisible &&
                       !_loading &&
                       _ownMomentsAvailable &&
                       _ownMoments.isEmpty)
-                    const Text('最近没有找到关联这里的私人记录。'),
+                    Text('最近没有找到关联这里的私人记录。', style: tokens.body),
                   if (ownMomentVisible)
                     for (final moment in _ownMoments)
                       ListTile(
+                        minTileHeight: 48,
                         leading: Icon(
                           moment['status'] == 'published' &&
                                   moment['visibility'] == 'public'
                               ? Icons.public
                               : Icons.lock_outline,
                         ),
-                        title: Text(moment['title'] as String? ?? ''),
+                        title: Text(
+                          moment['title'] as String? ?? '',
+                          style: tokens.placeTitle,
+                        ),
                         subtitle: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             if ((moment['body'] as String? ?? '').isNotEmpty)
-                              Text(moment['body'] as String),
+                              Text(
+                                moment['body'] as String,
+                                style: tokens.body,
+                              ),
                             Text(
                               moment['status'] == 'published' &&
                                       moment['visibility'] == 'public'
                                   ? '已明确公开'
                                   : '仅自己可见，不会随地点分享。',
+                              style: tokens.metadata,
                             ),
                           ],
                         ),
@@ -1028,6 +1339,7 @@ class _PlaceDetailSheetState extends State<PlaceDetailSheet> {
                                     (moment['status'] == 'published' &&
                                         moment['visibility'] == 'public'))
                             ? TextButton(
+                                style: textActionStyle,
                                 onPressed: () => _publication(moment),
                                 child: Text(
                                   moment['status'] == 'published'

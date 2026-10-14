@@ -14,6 +14,14 @@ import (
 
 type publicPlaceFollowupKey struct{}
 
+func isBoundedLocalPlaceFactQuestion(query string) bool {
+	if agentworkspace.IsLocalPlaceHoursFollowupQuery(query) || agentworkspace.IsLocalPlaceAddressFollowupQuery(query) {
+		return true
+	}
+	question, ok := agentworkspace.ParseLocalPlaceQuestion(query)
+	return ok && !question.Recommendation && (question.Field == agentworkspace.PlaceAddress || question.Field == agentworkspace.PlaceOpeningHours)
+}
+
 func (s *server) continuePublicPlaceFollowup(w http.ResponseWriter, r *http.Request, digest [32]byte, actor identity.Actor, task agentworkspace.Task, query string) (agentworkspace.Task, *http.Request, bool) {
 	active := task
 	active.Status = agentworkspace.TaskActive
@@ -21,13 +29,16 @@ func (s *server) continuePublicPlaceFollowup(w http.ResponseWriter, r *http.Requ
 		respondError(w, http.StatusForbidden, "place_followup_forbidden")
 		return task, r, false
 	}
-	// A count/rules reply cannot answer opening hours. Refuse before changing
-	// the original Task when the actual model/source boundary is unavailable.
-	if s.liveAnswers == nil || !s.liveAnswers.Eligible(r.Context(), digest, active) {
-		respond(w, http.StatusServiceUnavailable, map[string]any{"error": map[string]string{"code": "place_answer_unavailable", "message": "地点信息回答暂未接通，本轮尚未回答开放时间。"}})
+	port, ok := s.agent.(agentworkspace.PublicPlaceFollowupPort)
+	localPort, localOK := s.agent.(agentworkspace.LocalPlaceReplyPort)
+	localReady := isBoundedLocalPlaceFactQuestion(query) && localOK && localPort != nil && ok && port != nil
+	// Independently permitted native address/hours facts do not require a model
+	// account. The original native resolver still owns every entity/session gate;
+	// a declined local answer cannot later become a count/rules response.
+	if !localReady && (s.liveAnswers == nil || !s.liveAnswers.Eligible(r.Context(), digest, active)) {
+		respond(w, http.StatusServiceUnavailable, map[string]any{"error": map[string]string{"code": "place_answer_unavailable", "message": "地点信息回答暂未接通，本轮尚未回答你的问题。"}})
 		return task, r, false
 	}
-	port, ok := s.agent.(agentworkspace.PublicPlaceFollowupPort)
 	if !ok || port == nil {
 		respondError(w, http.StatusServiceUnavailable, "place_followup_unavailable")
 		return task, r, false

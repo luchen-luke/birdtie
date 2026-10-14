@@ -1,14 +1,15 @@
 import 'dart:async';
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:http/http.dart' as http;
+import '../app/birdtie_app_bar.dart';
 import '../auth/birdtie_auth_controller.dart';
 import 'agent_memory_candidate_api.dart'
     show HumanMemoryCandidate, candidateCategories;
 import 'agent_memory_correction_api.dart';
 import 'agent_memory_correction_controller.dart';
 import 'agent_memory_correction_pending_store.dart';
+import 'memory_content_fields.dart';
 
 class AgentMemoryCorrectionPage extends StatefulWidget {
   const AgentMemoryCorrectionPage({
@@ -228,7 +229,6 @@ class _AgentMemoryCorrectionPageState extends State<AgentMemoryCorrectionPage> {
           style: Theme.of(context).textTheme.titleLarge,
         ),
         const SizedBox(height: 8),
-        Text('对象版本 ${_memory?.version ?? _candidate?.version} · 当前本人'),
         if (_action == 'EDIT')
           TextField(
             controller: _summary,
@@ -237,12 +237,11 @@ class _AgentMemoryCorrectionPageState extends State<AgentMemoryCorrectionPage> {
             maxLength: 400,
             enabled: _data.canReview,
             decoration: const InputDecoration(
-              labelText: '修订后的本人声明',
+              labelText: '修改后的内容',
               helperText: '其他补充内容、类别和可见范围保持原值。',
             ),
           ),
         if (_action == 'NEGATE') ...[
-          const Text('请明确选择要否定的活动类别；不会根据记忆正文猜测。'),
           DropdownButtonFormField<String>(
             initialValue: _category,
             isExpanded: true,
@@ -258,18 +257,18 @@ class _AgentMemoryCorrectionPageState extends State<AgentMemoryCorrectionPage> {
                 ? (v) => setState(() => _category = v)
                 : null,
           ),
-          const Text('该类候选将持续被抑制。纠正声明删除或到期也不会恢复旧候选或旧批准。'),
+          const Text('此后不再建议你喜欢这类活动；删除这条纠正也不会恢复旧建议。'),
         ],
         if (_action == 'DELETE' || _action == 'REJECT')
-          const Text('不保留这条记忆或候选的正文与支持。原 Moment 不会被修改或删除。'),
+          const Text('将清除这条记忆的内容，不会删除原动态。'),
         _button(
-          '检查具体纠正版本',
+          '检查修改',
           _data.canReview && (_action != 'NEGATE' || _category != null)
               ? () => unawaited(_review())
               : null,
           primary: true,
         ),
-        _button('取消本地草稿', _data.canReview ? () => setState(_clearDraft) : null),
+        _button('取消', _data.canReview ? () => setState(_clearDraft) : null),
       ],
     );
   }
@@ -282,46 +281,25 @@ class _AgentMemoryCorrectionPageState extends State<AgentMemoryCorrectionPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text('检查这次具体纠正', style: Theme.of(context).textTheme.titleLarge),
-        Text(
-          '动作：${correctionActions[p.input['action']]} · 原版本 ${p.input['expectedVersion']}',
-        ),
-        Text('本次确认截止：${_time(p.expiresAt)}'),
+        Text('检查修改', style: Theme.of(context).textTheme.titleLarge),
+        Text('操作：${correctionActions[p.input['action']]}'),
         for (final m in p.memories) ...[
           const Divider(height: 28),
-          Text(
-            '记忆版本 ${m.version} · ${m.sourceType == 'EXPLICIT' ? '本人明确声明' : '待审预留形状'}',
-          ),
+          const Text('当前记忆'),
           SelectableText(m.summary),
-          Text('原记忆有效至：${_time(m.validUntil)}'),
-          Text(
-            m.raw['visibility'] == 'PRIVATE' ? '仅本人私密记忆' : '仅个人助理范围；本次仍由本人检查',
-          ),
-          if ((m.raw['structuredValue'] as Map).isNotEmpty)
-            ExpansionTile(
-              title: const Text('检查原补充内容'),
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: SelectableText(
-                    const JsonEncoder.withIndent(
-                      '  ',
-                    ).convert(m.raw['structuredValue']),
-                  ),
-                ),
-              ],
-            ),
+          Text(m.raw['visibility'] == 'PRIVATE' ? '仅自己可见' : '仅供个人助理使用'),
+          MemoryContentFields(values: m.raw['structuredValue'] as Map),
         ],
         if (p.input['action'] == 'EDIT') ...[
-          const Text('确认后替换为：'),
+          const Text('修改后'),
           SelectableText(p.input['replacement']['summary']),
-          const Text('原其他内容与可见范围保持，按当前版本保存。'),
+          const Text('其他内容和可见范围不变。'),
         ],
         if (p.input['action'] == 'DELETE' || p.input['action'] == 'REJECT')
           Text(
             p.input['targetKind'] == 'MEMORY'
-                ? '确认后丢弃所选记忆并清除正文，使用原 DELETED 终态。原 Moment 不改。'
-                : '确认后拒绝所选候选并清除正文与支持，使用原 REJECTED 终态。原 Moment 不改。',
+                ? '确认后删除所选记忆并清除内容；原动态不受影响。'
+                : '确认后拒绝这条建议并清除内容；原动态不受影响。',
           ),
         if (p.input['action'] == 'NEGATE') ...[
           Text(
@@ -330,29 +308,34 @@ class _AgentMemoryCorrectionPageState extends State<AgentMemoryCorrectionPage> {
           Text(
             '纠正声明有效至：${_time(correctionTime(p.raw['newMemoryValidUntil']))}',
           ),
-          Text('这类当前候选 $candidateCount 条将失效。该类新候选持续被抑制；删除或到期不恢复旧批准。'),
+          Text('将移除这类活动的 $candidateCount 条待确认建议，并停止再次建议你喜欢这类活动。'),
         ],
         ExpansionTile(
-          title: Text('检查全部受影响对象（${affected.length} 项）'),
+          title: Text('受影响的记忆（${affected.length} 项）'),
           children: [
             for (final target in affected)
               Padding(
                 padding: const EdgeInsets.all(12),
-                child: SelectableText(
-                  '${target['kind'] == 'MEMORY' ? '记忆' : '候选'} · 版本 ${target['version']}\n对象标识：${target['id']}',
+                child: Text(
+                  target['kind'] == 'MEMORY'
+                      ? p.memories
+                            .firstWhere((m) => m.id == target['id'])
+                            .summary
+                      : '待确认的活动偏好建议',
                 ),
               ),
           ],
         ),
         const SizedBox(height: 12),
-        const Text(correctionExplanation),
+        if (p.input['action'] == 'NEGATE')
+          const Text('这条纠正删除或到期后，也不会恢复旧建议；原动态不受影响。'),
         _button(
-          '确认此版本的纠正',
+          '确认修改',
           _data.canConfirm ? () => unawaited(_data.confirm()) : null,
           primary: true,
         ),
         _button(
-          '关闭审阅并核实原操作',
+          '取消并核实结果',
           !_data.busy ? () => unawaited(_data.verify()) : null,
         ),
       ],
@@ -366,7 +349,8 @@ class _AgentMemoryCorrectionPageState extends State<AgentMemoryCorrectionPage> {
       children: [
         TextButton(
           onPressed: _data.canReadFieldEvidence(m) && !_data.fieldLoading
-              ? () => unawaited(_data.readFieldEvidence(m)) : null,
+              ? () => unawaited(_data.readFieldEvidence(m))
+              : null,
           child: const Padding(
             padding: EdgeInsets.symmetric(vertical: 12),
             child: Text('查看来源与时间'),
@@ -376,33 +360,34 @@ class _AgentMemoryCorrectionPageState extends State<AgentMemoryCorrectionPage> {
           if (_data.fieldLoading)
             const LinearProgressIndicator(semanticsLabel: '正在读取这条记忆的来源'),
           if (_data.fieldError != null)
-            Semantics(liveRegion: true, child: Text(_data.fieldError!,
-              style: TextStyle(color: Theme.of(context).colorScheme.error))),
+            Semantics(
+              liveRegion: true,
+              child: Text(
+                _data.fieldError!,
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
+              ),
+            ),
           if (detail != null && detail.id == m.id) ...[
             const SizedBox(height: 8),
             Text('这条记忆的来源与时间', style: Theme.of(context).textTheme.titleSmall),
             if (detail.memory != null) ...[
               Text('记录创建时间：${_time(detail.createdAt!)}'),
               Text('记录更新时间：${_time(detail.updatedAt!)}'),
-              Text('有效区间：${_time(detail.validFrom!)} 至 ${_time(detail.memory!.validUntil)}'),
+              Text(
+                '有效区间：${_time(detail.validFrom!)} 至 ${_time(detail.memory!.validUntil)}',
+              ),
             ],
             if (!detail.evidenceAvailable)
-              const Text('当前未提供这条记忆的来源说明；不会猜测或补全。')
+              const Text('暂无来源说明。')
             else if (detail.memory == null)
-              const Text('这条记忆已到期或已删除，当前详情不提供原内容。')
+              const Text('这条记忆已到期或删除。')
             else ...[
-              Text(detail.inferred ? '性质：未经本人确认的推断，仅供检查。'
-                  : '性质：本人明确声明，不等于已核验事实。'),
-              const Text('来源：这条记忆的当前记录'),
+              Text(detail.inferred ? '来源：待确认建议' : '来源：本人填写'),
               if (detail.declaredAt != null)
                 Text('声明时间：${_time(detail.declaredAt!)}')
-              else const Text('声明时间：未提供本人声明时间'),
-              const Text('拍摄时间未采集。记录与读取时间不证明事情发生、到场或到访。'),
-              const Text('这份单条来源说明不包含跨来源比较。'),
+              else
+                const Text('声明时间：未提供'),
             ],
-            Text('本次详情读取时间：${_time(detail.observedAt)}'),
-            Text('详情快照有效至：${_time(detail.expiresAt)}'),
-            const Text('查看来源不会批准更正、启用模型或自动写入。'),
           ],
         ],
       ],
@@ -416,50 +401,60 @@ class _AgentMemoryCorrectionPageState extends State<AgentMemoryCorrectionPage> {
       children: [
         TextButton(
           onPressed: _data.canReadSelfReview(m) && !_data.selfReviewLoading
-              ? () => unawaited(_data.readSelfReview(m)) : null,
+              ? () => unawaited(_data.readSelfReview(m))
+              : null,
           child: const Padding(
             padding: EdgeInsets.symmetric(vertical: 12),
-            child: Text('核对活动偏好与这条记忆', textAlign: TextAlign.center),
+            child: Text('核对活动偏好', textAlign: TextAlign.center),
           ),
         ),
         if (_data.selfReviewMemoryID == m.id) ...[
           if (_data.selfReviewLoading)
-            const LinearProgressIndicator(semanticsLabel: '正在读取本人同体声明'),
+            const LinearProgressIndicator(semanticsLabel: '正在读取活动偏好'),
           if (_data.selfReviewError != null)
-            Semantics(liveRegion: true, child: Text(_data.selfReviewError!,
-              style: TextStyle(color: Theme.of(context).colorScheme.error))),
+            Semantics(
+              liveRegion: true,
+              child: Text(
+                _data.selfReviewError!,
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
+              ),
+            ),
           if (view != null) ...[
             const SizedBox(height: 8),
             Text('一起核对这两份声明', style: Theme.of(context).textTheme.titleSmall),
-            Text(view.profileStatus == 'UNCONFIGURED'
-                ? '活动偏好：尚未设置，不会补全。'
-                : view.categories.isEmpty ? '活动偏好：当前明确选择为空。'
-                : '资料中的活动偏好：${view.categories.map((c) => candidateCategories[c]).join('、')}'),
+            Text(
+              view.profileStatus == 'UNCONFIGURED'
+                  ? '活动偏好：尚未设置，不会补全。'
+                  : view.categories.isEmpty
+                  ? '活动偏好：当前明确选择为空。'
+                  : '资料中的活动偏好：${view.categories.map((c) => candidateCategories[c]).join('、')}',
+            ),
             SelectableText('这条记忆的声明：${m.summary}'),
-            Text('当前记忆版本 ${m.version} · 本人明确声明，不代表已核验事实。'),
             if (view.conflictCategories.isNotEmpty)
-              Semantics(liveRegion: true, child: Text(
-                '声明不一致：${view.conflictCategories.map((c) => candidateCategories[c]).join('、')} · 待本人确认',
-              ))
-            else const Text('本次所选来源未列出相反的明确活动类别偏好；不是全体无冲突。'),
+              Semantics(
+                liveRegion: true,
+                child: Text(
+                  '声明不一致：${view.conflictCategories.map((c) => candidateCategories[c]).join('、')} · 待本人确认',
+                ),
+              )
+            else if (view.profileStatus != 'UNCONFIGURED' &&
+                view.categories.isNotEmpty)
+              const Text('这两份活动偏好未发现不一致。'),
             for (final claim in view.raw['fieldEvidenceSet']['claims'])
-              if (claim['field'] == 'memory.summary' || claim['field'] == 'profile.preferredActivityTypes')
-                Text('${claim['itemKind'] == 'profile' ? '活动偏好来源' : '记忆来源'}更新时间：${_time(correctionTime(claim['sourceUpdatedAt']))}'),
-            Text(view.createdAt == null ? '本次未提供记忆创建时间。'
-                : '记忆创建时间：${_time(view.createdAt!)}'),
-            Text(view.validFrom == null ? '本次未提供记忆有效区间起点。'
-                : '记忆有效区间起点：${_time(view.validFrom!)}'),
-            Text('记忆来源有效至：${_time(m.validUntil)}（这是本次读取中的来源区间）'),
-            Text(view.confidenceProvided ? '置信说明仅描述本人直接声明，不是真实概率或授权。'
-                : '本次未提供置信描述；不会补成分值或概率。'),
-            const Text('拍摄时间未采集。更新时间与读取时间不证明发生、到场、到访或当前位置。'),
-            Text('本次同体读取时间：${_time(view.observedAt)}'),
-            Text('本次审阅快照有效至：${_time(view.expiresAt)}'),
-            Text(view.raw['notice']),
-            const Text('核对不会执行更正、选择赢家、批准写入或启用模型。修改记忆仍须重新检查具体版本。'),
-            const Text('活动偏好仍可返回设置中的“我的智能体”检查；此处不会替你修改资料。'),
-            TextButton(onPressed: _data.closeSelfReview,
-              child: const Padding(padding: EdgeInsets.symmetric(vertical: 12), child: Text('关闭本次核对'))),
+              if (claim['field'] == 'memory.summary' ||
+                  claim['field'] == 'profile.preferredActivityTypes')
+                Text(
+                  '${claim['itemKind'] == 'profile' ? '活动偏好来源' : '记忆来源'}更新时间：${_time(correctionTime(claim['sourceUpdatedAt']))}',
+                ),
+            if (view.createdAt != null)
+              Text('记忆创建时间：${_time(view.createdAt!)}'),
+            TextButton(
+              onPressed: _data.closeSelfReview,
+              child: const Padding(
+                padding: EdgeInsets.symmetric(vertical: 12),
+                child: Text('关闭本次核对'),
+              ),
+            ),
           ],
         ],
       ],
@@ -468,18 +463,17 @@ class _AgentMemoryCorrectionPageState extends State<AgentMemoryCorrectionPage> {
 
   Widget _memoryItem(CorrectableMemory m) {
     final active =
-        m.status != 'DELETED' && m.validUntil.isAfter(_now?.call() ?? DateTime.now().toUtc());
+        m.status != 'DELETED' &&
+        m.validUntil.isAfter(_now?.call() ?? DateTime.now().toUtc());
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(m.summary, style: Theme.of(context).textTheme.titleMedium),
-        Text(
-          '版本 ${m.version} · ${m.sourceType == 'EXPLICIT' ? '本人明确声明' : '待审推断预留形状，尚未确认'}',
-        ),
+        Text(m.sourceType == 'EXPLICIT' ? '已确认' : '待确认'),
         Text('有效至：${_time(m.validUntil)}'),
         _fieldEvidence(m),
         if (m.status == 'ACTIVE' && m.sourceType == 'EXPLICIT') _selfReview(m),
-        if (!active) const Text('已到期，请重新读取后检查；本次不能批准旧版本。'),
+        if (!active) const Text('已到期，请重新读取。'),
         if (active)
           Wrap(
             spacing: 8,
@@ -534,7 +528,8 @@ class _AgentMemoryCorrectionPageState extends State<AgentMemoryCorrectionPage> {
   Widget build(BuildContext context) {
     final scale = MediaQuery.textScalerOf(context).scale(1);
     return Scaffold(
-      appBar: AppBar(
+      appBar: birdtieAppBar(
+        context,
         toolbarHeight: 56 + (scale - 1) * 32,
         title: const Text(
           '管理我的记忆',
@@ -552,7 +547,7 @@ class _AgentMemoryCorrectionPageState extends State<AgentMemoryCorrectionPage> {
             24 + MediaQuery.viewInsetsOf(context).bottom,
           ),
           children: [
-            const Text('本人管理 · 不启用模型或自动写入'),
+            const Text('仅自己可见'),
             if (_data.busy)
               const LinearProgressIndicator(semanticsLabel: '正在核实本人记忆'),
             if (_data.error != null)
@@ -568,16 +563,22 @@ class _AgentMemoryCorrectionPageState extends State<AgentMemoryCorrectionPage> {
                   ),
                 ),
               ),
-            if (_data.message != null)
+            if (_data.message != null &&
+                _data.message != '选择本人当前记忆，先检查具体版本再确认。')
               Semantics(
                 liveRegion: true,
                 child: Padding(
                   padding: const EdgeInsets.symmetric(vertical: 12),
-                  child: Text(_data.message!),
+                  child: Text(
+                    _data.unknown || _data.hasPending && _data.preview == null
+                        ? '保存结果尚未确认，请核实后继续。'
+                        : _data.preview != null
+                        ? '请检查内容和影响，确认后才会保存。'
+                        : _data.message!,
+                  ),
                 ),
               ),
             if (_data.unknown || _data.hasPending && _data.preview == null) ...[
-              const Text('仅读取原操作回执；关闭重开或更换会话 不会恢复旧正文或批准。'),
               _button(
                 '核实原纠正结果',
                 !_data.busy && !_data.retired
@@ -600,6 +601,13 @@ class _AgentMemoryCorrectionPageState extends State<AgentMemoryCorrectionPage> {
               Text('我的当前记忆', style: Theme.of(context).textTheme.titleLarge),
               const SizedBox(height: 12),
               for (final m in _data.memories) _memoryItem(m),
+              if (_data.hasMoreMemories)
+                _button(
+                  '继续读取记忆',
+                  !_data.busy
+                      ? () => unawaited(_data.loadMoreMemories())
+                      : null,
+                ),
               if (_data.candidatesUnavailable)
                 const Text('待审候选暂不可用；仍可管理本人明确声明。'),
               if (_data.candidates.any((c) => c.status == 'CANDIDATE'))
@@ -607,14 +615,19 @@ class _AgentMemoryCorrectionPageState extends State<AgentMemoryCorrectionPage> {
               for (final c in _data.candidates.where(
                 (c) => c.status == 'CANDIDATE',
               )) ...[
-                Text(
-                  '待审${candidateCategories[c.category]}候选 · 版本 ${c.version}',
-                ),
+                Text('可能喜欢${candidateCategories[c.category]}活动'),
                 Text('有效至：${_time(c.validUntil)}'),
                 _button('拒绝这条候选', () => _choose(null, c, 'REJECT')),
                 _button('明确不偏好这类活动', () => _choose(null, c, 'NEGATE')),
                 const Divider(height: 28),
               ],
+              if (_data.hasMoreCandidates)
+                _button(
+                  '继续读取待审候选',
+                  !_data.busy
+                      ? () => unawaited(_data.loadMoreCandidates())
+                      : null,
+                ),
             ],
           ],
         ),

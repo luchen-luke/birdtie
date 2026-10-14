@@ -2607,3 +2607,10 @@ Go/数据库/native/session/ACL/ABA/持久化、真实身份、手机/系统输�
 
 队列：{"DONE": 177, "BLOCKED": 14, "TODO": 49, "PARTIAL": 16}；P0：{"DONE": 120, "BLOCKED": 9, "PARTIAL": 8, "TODO": 13}。
 
+
+
+## 2026-10-10 SAF002 本地五档权限矩阵完成
+
+原任务BT-V4-SAF-002已按登记的五档服务器权限矩阵及本地验收DONE。普通真人Profile和Intent受众、本人明确Close选择及撤销、原字段ACL与grant交集、会话和来源ABA/到期保护已实际实现。不是完整消费者/Agent模型/Memory/试点验收。合同与完整证据分别见 [五档合同](../architecture/RELATIONSHIP-VISIBILITY-MATRIX-V4.md) 与 [本地验收](../testing/evidence/unfinished-completion-2026-10-10/visibility/README.md)。
+
+原唯一队列256项：183DONE、47TODO、13PARTIAL、13BLOCKED，73未闭合（28P0）。只改变原SAF002状态/证据与其lease，其他任务定义、依赖和Gate保持原值；不存在新重复队列。next --parallel没有候选，普通next仍返回Post-Pilot A2A，不自动开放试点后能力。Closed Pilot与Consumer Beta仍NO，详细SHA/命令/原失败及NOT_RUN在visibility/root-checkpoint/MANIFEST.json。

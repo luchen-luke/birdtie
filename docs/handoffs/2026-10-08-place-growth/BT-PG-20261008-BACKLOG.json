@@ -1,0 +1,495 @@
+{
+  "schema_version": 1,
+  "package": "BT-PG-20261008",
+  "baseline_commit": "4637cfb6e7758fc4fa5dd548fad623a8484c4cfb",
+  "status": "RECONCILE_REQUIRED",
+  "tasks": [
+    {
+      "id": "BT-PG-20261008-01",
+      "priority": "P0",
+      "title": "证据审计与旧队列对账",
+      "status": "RECONCILE_REQUIRED",
+      "depends_on": [],
+      "external_dependencies": [
+        "既有 AGE/AIR/Discovery/30NOW 对应任务，审计后映射"
+      ],
+      "requirement": "核验当前 HEAD、AGE/AIR/Discovery/30NOW 与本包的重叠；记录数据模型、代码入口、真实接线、测试、部署五个层次，不以文件存在判定完成。",
+      "acceptance": "每项已有任务映射或新增理由可追踪；保留原 ID、DONE 证据及阻塞，不重复计数；输出当前 HEAD 与本包基准差异。",
+      "test_status": "NOT_RUN",
+      "implementation_owner": "现有 BirdTie Codex 执行队列",
+      "evidence_required": "当前 commit、代码接线、测试命令和结果；运行条件/权限/来源；缺失证据明确标注"
+    },
+    {
+      "id": "BT-PG-20261008-02",
+      "priority": "P0",
+      "title": "来源使用权限与留存审查",
+      "status": "RECONCILE_REQUIRED",
+      "depends_on": [
+        "BT-PG-20261008-01"
+      ],
+      "external_dependencies": [
+        "既有 AGE/AIR/Discovery/30NOW 对应任务，审计后映射"
+      ],
+      "requirement": "按供应商、接口、账户合同版本记录保存字段、期限、展示、模型加工、跨用户复用及署名条件；审查既有 source_batch、回答、来源历史。",
+      "acceptance": "允许、禁止、待确认三态均有测试；待确认不能进入共享缓存/公共库；已有数据处置单独评审，不自动清库。",
+      "test_status": "NOT_RUN",
+      "implementation_owner": "现有 BirdTie Codex 执行队列",
+      "evidence_required": "当前 commit、代码接线、测试命令和结果；运行条件/权限/来源；缺失证据明确标注"
+    },
+    {
+      "id": "BT-PG-20261008-03",
+      "priority": "P0",
+      "title": "查询与学习链路可观测性",
+      "status": "RECONCILE_REQUIRED",
+      "depends_on": [
+        "BT-PG-20261008-01"
+      ],
+      "external_dependencies": [
+        "既有 AGE/AIR/Discovery/30NOW 对应任务，审计后映射"
+      ],
+      "requirement": "记录本地检索、联网、模型、候选、记忆写入和上下文召回的结构化结果及原因码；不记录完整私聊或模型隐含推理。",
+      "acceptance": "可分辨未触发、权限拒绝、无证据、待审核、已持久化、已用于本轮；调用次数、预留成本与实际账单分列。",
+      "test_status": "NOT_RUN",
+      "implementation_owner": "现有 BirdTie Codex 执行队列",
+      "evidence_required": "当前 commit、代码接线、测试命令和结果；运行条件/权限/来源；缺失证据明确标注"
+    },
+    {
+      "id": "BT-PG-20261008-04",
+      "priority": "P0",
+      "title": "规范地点实体与合并规则",
+      "status": "RECONCILE_REQUIRED",
+      "depends_on": [
+        "BT-PG-20261008-01",
+        "BT-PG-20261008-02"
+      ],
+      "external_dependencies": [
+        "既有 AGE/AIR/Discovery/30NOW 对应任务，审计后映射"
+      ],
+      "requirement": "复用 canonical Place、place_candidates、place_sources、aliases、external_refs；补足字段级来源、有效期、坐标 CRS 与实体版本。",
+      "acceptance": "同店中英文别名合并；同名异店不合并；合并可审计和纠错；来源外部 ID 不充当平台唯一 ID。",
+      "test_status": "NOT_RUN",
+      "implementation_owner": "现有 BirdTie Codex 执行队列",
+      "evidence_required": "当前 commit、代码接线、测试命令和结果；运行条件/权限/来源；缺失证据明确标注"
+    },
+    {
+      "id": "BT-PG-20261008-05",
+      "priority": "P0",
+      "title": "合规地点候选入库",
+      "status": "RECONCILE_REQUIRED",
+      "depends_on": [
+        "BT-PG-20261008-02",
+        "BT-PG-20261008-04"
+      ],
+      "external_dependencies": [
+        "既有 AGE/AIR/Discovery/30NOW 对应任务，审计后映射"
+      ],
+      "requirement": "商家提交、用户明确提交并独立核实、许可数据、可合法采集的官方事实进入候选；联网结果按来源权限决定是否能形成任何持久化材料。",
+      "acceptance": "允许来源的名称/地址/坐标可发布；缺留存权时不持久化受限字段，仅可记录不含受限内容的诊断状态；有许可但定位冲突保持候选；自动审核仅限明确许可与规则，复用现有人工审核边界。",
+      "test_status": "NOT_RUN",
+      "implementation_owner": "现有 BirdTie Codex 执行队列",
+      "evidence_required": "当前 commit、代码接线、测试命令和结果；运行条件/权限/来源；缺失证据明确标注"
+    },
+    {
+      "id": "BT-PG-20261008-06",
+      "priority": "P0",
+      "title": "营业信息字段级新鲜度",
+      "status": "RECONCILE_REQUIRED",
+      "depends_on": [
+        "BT-PG-20261008-04",
+        "BT-PG-20261008-05"
+      ],
+      "external_dependencies": [
+        "既有 AGE/AIR/Discovery/30NOW 对应任务，审计后映射"
+      ],
+      "requirement": "分别维护名称、地址、常规营业时间、节假日例外、临时关闭、价格等 observed_at/verified_at/valid_from/valid_to/refresh_due_at。",
+      "acceptance": "“现在开门吗”遇过期或冲突信息需补证或明确未知；名称仍有效不能证明今日营业；不靠整条 Place 的 verified_at 推导全部字段新鲜。",
+      "test_status": "NOT_RUN",
+      "implementation_owner": "现有 BirdTie Codex 执行队列",
+      "evidence_required": "当前 commit、代码接线、测试命令和结果；运行条件/权限/来源；缺失证据明确标注"
+    },
+    {
+      "id": "BT-PG-20261008-07",
+      "priority": "P1",
+      "title": "活动独立时效实体",
+      "status": "RECONCILE_REQUIRED",
+      "depends_on": [
+        "BT-PG-20261008-04",
+        "BT-PG-20261008-05",
+        "BT-PG-20261008-06"
+      ],
+      "external_dependencies": [
+        "既有 AGE/AIR/Discovery/30NOW 对应任务，审计后映射"
+      ],
+      "requirement": "活动以独立 Event/Activity 关联 Place；含发生地时区、起止、取消/改期、来源、有效性，不把本周活动永久写进地点标签。",
+      "acceptance": "活动过期或取消不再推荐；跨时区正确；官网外部活动与 BirdTie 可报名活动动作不同。",
+      "test_status": "NOT_RUN",
+      "implementation_owner": "现有 BirdTie Codex 执行队列",
+      "evidence_required": "当前 commit、代码接线、测试命令和结果；运行条件/权限/来源；缺失证据明确标注"
+    },
+    {
+      "id": "BT-PG-20261008-08",
+      "priority": "P0",
+      "title": "本地充分性判定与受控补搜",
+      "status": "RECONCILE_REQUIRED",
+      "depends_on": [
+        "BT-PG-20261008-02",
+        "BT-PG-20261008-03",
+        "BT-PG-20261008-04",
+        "BT-PG-20261008-06"
+      ],
+      "external_dependencies": [
+        "既有 AGE/AIR/Discovery/30NOW 对应任务，审计后映射"
+      ],
+      "requirement": "先检索已授权本地事实，评估匹配度、覆盖度、字段新鲜度及查询实时性；足够则不调用 WSA，缺什么补什么；显式探索新地点可外搜。",
+      "acceptance": "已知地点有效地址查询为零 WSA；过期营业时间只触发必要补证；用户要求新鲜探索仍可发现库外地点；不用旧试点白名单冒充通用实现。",
+      "test_status": "NOT_RUN",
+      "implementation_owner": "现有 BirdTie Codex 执行队列",
+      "evidence_required": "当前 commit、代码接线、测试命令和结果；运行条件/权限/来源；缺失证据明确标注"
+    },
+    {
+      "id": "BT-PG-20261008-09",
+      "priority": "P1",
+      "title": "授权缓存与并发去重",
+      "status": "RECONCILE_REQUIRED",
+      "depends_on": [
+        "BT-PG-20261008-02",
+        "BT-PG-20261008-08"
+      ],
+      "external_dependencies": [
+        "既有 AGE/AIR/Discovery/30NOW 对应任务，审计后映射"
+      ],
+      "requirement": "只缓存许可来源及许可字段；区分公共事实、用户私有查询与回答；限制 TTL、容量、失效及并发 single-flight，不复用过期授权票据。",
+      "acceptance": "300 个相同公共查询的并发模拟减少上游次数；跨账号无私人偏好泄露；供应商禁止缓存时不启用；授权撤回立即失效。",
+      "test_status": "NOT_RUN",
+      "implementation_owner": "现有 BirdTie Codex 执行队列",
+      "evidence_required": "当前 commit、代码接线、测试命令和结果；运行条件/权限/来源；缺失证据明确标注"
+    },
+    {
+      "id": "BT-PG-20261008-10",
+      "priority": "P0",
+      "title": "库外地点收藏与身份解析",
+      "status": "RECONCILE_REQUIRED",
+      "depends_on": [
+        "BT-PG-20261008-04",
+        "BT-PG-20261008-05"
+      ],
+      "external_dependencies": [
+        "既有 AGE/AIR/Discovery/30NOW 对应任务，审计后映射"
+      ],
+      "requirement": "收藏先建立真实可持久化的用户 SavedItem；依据权限保存 canonical_id 或 pending place reference；后续核实并链接实体，无须重存。",
+      "acceptance": "未授权保存的数据不可冒充已收藏；待核实可见并可删除；解析后收藏 ID、用户备注和可见性不丢；私人收藏不自动公开为推荐理由。",
+      "test_status": "NOT_RUN",
+      "implementation_owner": "现有 BirdTie Codex 执行队列",
+      "evidence_required": "当前 commit、代码接线、测试命令和结果；运行条件/权限/来源；缺失证据明确标注"
+    },
+    {
+      "id": "BT-PG-20261008-11",
+      "priority": "P0",
+      "title": "地点与站内内容权限关联",
+      "status": "RECONCILE_REQUIRED",
+      "depends_on": [
+        "BT-PG-20261008-04",
+        "BT-PG-20261008-05"
+      ],
+      "external_dependencies": [
+        "既有 AGE/AIR/Discovery/30NOW 对应任务，审计后映射"
+      ],
+      "requirement": "地点页按查看者权限联接 BirdTie Moment/Post/活动；公开地点事实不意味着关联内容公开；保留创作者授权、署名、删除及屏蔽。",
+      "acceptance": "私密 Moment 不出现在他人地点页或 CityContext；公开转私密/删除/拉黑立即影响检索；不导入外站评论或照片。",
+      "test_status": "NOT_RUN",
+      "implementation_owner": "现有 BirdTie Codex 执行队列",
+      "evidence_required": "当前 commit、代码接线、测试命令和结果；运行条件/权限/来源；缺失证据明确标注"
+    },
+    {
+      "id": "BT-PG-20261008-12",
+      "priority": "P0",
+      "title": "个人数据与城市公共资料分层",
+      "status": "RECONCILE_REQUIRED",
+      "depends_on": [
+        "BT-PG-20261008-02",
+        "BT-PG-20261008-04",
+        "BT-PG-20261008-11"
+      ],
+      "external_dependencies": [
+        "既有 AGE/AIR/Discovery/30NOW 对应任务，审计后映射"
+      ],
+      "requirement": "公共 Place 与每用户 Profile/Memory/Evidence/Intent 独立存储与授权；CityContext 无人格账号，不积累可识别私聊或私密收藏。",
+      "acceptance": "地点公共字段可复用而私人查询不可跨用户召回；外部搜索默认不携带姓名/完整画像/私聊；目的限定最小化导出。",
+      "test_status": "NOT_RUN",
+      "implementation_owner": "现有 BirdTie Codex 执行队列",
+      "evidence_required": "当前 commit、代码接线、测试命令和结果；运行条件/权限/来源；缺失证据明确标注"
+    },
+    {
+      "id": "BT-PG-20261008-13",
+      "priority": "P0",
+      "title": "日常事件与学习资格接线",
+      "status": "RECONCILE_REQUIRED",
+      "depends_on": [
+        "BT-PG-20261008-01",
+        "BT-PG-20261008-03",
+        "BT-PG-20261008-12"
+      ],
+      "external_dependencies": [
+        "既有 AGE/AIR/Discovery/30NOW 对应任务，审计后映射"
+      ],
+      "requirement": "核对并复用现有事件机制；接入聊天明确偏好、收藏、计划、参加、Moment、反馈；每事件含 actor、目的、同意版本、来源、时间及幂等键。",
+      "acceptance": "普通聊天触发明确资格检查；重放事件不重复学习；游客不生成跨账号个人记忆；撤销同意后新事件不再进入学习。",
+      "test_status": "NOT_RUN",
+      "implementation_owner": "现有 BirdTie Codex 执行队列",
+      "evidence_required": "当前 commit、代码接线、测试命令和结果；运行条件/权限/来源；缺失证据明确标注"
+    },
+    {
+      "id": "BT-PG-20261008-14",
+      "priority": "P0",
+      "title": "明确偏好写入闭环",
+      "status": "RECONCILE_REQUIRED",
+      "depends_on": [
+        "BT-PG-20261008-13"
+      ],
+      "external_dependencies": [
+        "既有 AGE/AIR/Discovery/30NOW 对应任务，审计后映射"
+      ],
+      "requirement": "用户明确说“记住我喜欢海鲜，不吃辣”形成结构化偏好，经验证写入既有 Memory；普通临时要求只影响当前任务，必要时轻量确认长期性。",
+      "acceptance": "明确偏好可见可修改；“替朋友找披萨”不写本人喜欢披萨；不把正常使用变成每一步强制确认或长表单。",
+      "test_status": "NOT_RUN",
+      "implementation_owner": "现有 BirdTie Codex 执行队列",
+      "evidence_required": "当前 commit、代码接线、测试命令和结果；运行条件/权限/来源；缺失证据明确标注"
+    },
+    {
+      "id": "BT-PG-20261008-15",
+      "priority": "P1",
+      "title": "行为证据与候选偏好",
+      "status": "RECONCILE_REQUIRED",
+      "depends_on": [
+        "BT-PG-20261008-13",
+        "BT-PG-20261008-14"
+      ],
+      "external_dependencies": [
+        "既有 AGE/AIR/Discovery/30NOW 对应任务，审计后映射"
+      ],
+      "requirement": "收藏、点击、搜索、规划、出席分别建证据，不将一次行为等同稳定偏好；候选附来源、范围、时间、置信度解释与待验证状态。",
+      "acceptance": "收藏不等于喜欢或到访；行程不等于参加；照片 GPS 不证明用户到访；重复同源事件不会机械加分。",
+      "test_status": "NOT_RUN",
+      "implementation_owner": "现有 BirdTie Codex 执行队列",
+      "evidence_required": "当前 commit、代码接线、测试命令和结果；运行条件/权限/来源；缺失证据明确标注"
+    },
+    {
+      "id": "BT-PG-20261008-16",
+      "priority": "P0",
+      "title": "矛盾修正与时效处理",
+      "status": "RECONCILE_REQUIRED",
+      "depends_on": [
+        "BT-PG-20261008-14"
+      ],
+      "external_dependencies": [
+        "既有 AGE/AIR/Discovery/30NOW 对应任务，审计后映射"
+      ],
+      "requirement": "显式更正优先处理旧推断；区分临时意图、地点事实、长期偏好与时间段；带版本更新并保留必要审计。",
+      "acceptance": "“最近不想社交”不抹去历史兴趣；“我不再喜欢羽毛球”下一轮生效；“我朋友不吃辣”不覆盖本人偏好。",
+      "test_status": "NOT_RUN",
+      "implementation_owner": "现有 BirdTie Codex 执行队列",
+      "evidence_required": "当前 commit、代码接线、测试命令和结果；运行条件/权限/来源；缺失证据明确标注"
+    },
+    {
+      "id": "BT-PG-20261008-17",
+      "priority": "P0",
+      "title": "记忆实际进入检索与排序",
+      "status": "RECONCILE_REQUIRED",
+      "depends_on": [
+        "BT-PG-20261008-08",
+        "BT-PG-20261008-12",
+        "BT-PG-20261008-14",
+        "BT-PG-20261008-16"
+      ],
+      "external_dependencies": [
+        "既有 AGE/AIR/Discovery/30NOW 对应任务，审计后映射"
+      ],
+      "requirement": "在现有 Context Builder 和实时 Now 请求路径召回相关且仍授权的 Memory；用于查询约束、候选排序与简短解释，不另建平行 AI Service。",
+      "acceptance": "相同地点库中，已确认海鲜偏好影响下一次建议；证据 trace 能指出实际使用的 memory_id/version；无相关记忆仍能给出普通答案。",
+      "test_status": "NOT_RUN",
+      "implementation_owner": "现有 BirdTie Codex 执行队列",
+      "evidence_required": "当前 commit、代码接线、测试命令和结果；运行条件/权限/来源；缺失证据明确标注"
+    },
+    {
+      "id": "BT-PG-20261008-18",
+      "priority": "P0",
+      "title": "用户记忆控制与反馈入口",
+      "status": "RECONCILE_REQUIRED",
+      "depends_on": [
+        "BT-PG-20261008-14",
+        "BT-PG-20261008-16",
+        "BT-PG-20261008-17"
+      ],
+      "external_dependencies": [
+        "既有 AGE/AIR/Discovery/30NOW 对应任务，审计后映射"
+      ],
+      "requirement": "在个人 Agent 设置或 Now 对话内查看记住了什么、证据与原因；支持纠正、忘记、暂停学习、导出，避免首页常驻社交状态表单。",
+      "acceptance": "自然语言忘记与设置入口结果一致；拒绝推断后不会马上再推荐同一推断；推荐解释不暴露他人的私人数据。",
+      "test_status": "NOT_RUN",
+      "implementation_owner": "现有 BirdTie Codex 执行队列",
+      "evidence_required": "当前 commit、代码接线、测试命令和结果；运行条件/权限/来源；缺失证据明确标注"
+    },
+    {
+      "id": "BT-PG-20261008-19",
+      "priority": "P0",
+      "title": "撤回删除与衍生数据清理",
+      "status": "RECONCILE_REQUIRED",
+      "depends_on": [
+        "BT-PG-20261008-12",
+        "BT-PG-20261008-14",
+        "BT-PG-20261008-16"
+      ],
+      "external_dependencies": [
+        "既有 AGE/AIR/Discovery/30NOW 对应任务，审计后映射"
+      ],
+      "requirement": "建立来源到记忆、索引、缓存、推荐快照的依赖；撤回/删除后阻止召回并清理或重建派生项；处理备份恢复的删除账本。 基本删除能力不等待可选缓存或完整管理界面；后续缓存接入时必须补齐对应清理链。",
+      "acceptance": "删记忆后下一查询不使用旧索引或旧缓存；恢复备份不复活已删除记忆；合法必须保留的审计最小化且不作个性化。",
+      "test_status": "NOT_RUN",
+      "implementation_owner": "现有 BirdTie Codex 执行队列",
+      "evidence_required": "当前 commit、代码接线、测试命令和结果；运行条件/权限/来源；缺失证据明确标注"
+    },
+    {
+      "id": "BT-PG-20261008-20",
+      "priority": "P1",
+      "title": "主动接收筛选与通知",
+      "status": "RECONCILE_REQUIRED",
+      "depends_on": [
+        "BT-PG-20261008-07",
+        "BT-PG-20261008-17",
+        "BT-PG-20261008-18",
+        "BT-PG-20261008-19",
+        "BT-PG-20261008-22"
+      ],
+      "external_dependencies": [
+        "既有 AGE/AIR/Discovery/30NOW 对应任务，审计后映射"
+      ],
+      "requirement": "按用户兴趣、当前意图、授权地域、阻止名单、频率与安静时段筛选地点/活动/邀请；先推荐和通知，用户可解释、关闭。",
+      "acceptance": "未开主动通知不推送；未知身份/屏蔽者邀请过滤；相关内容也不越过可见性；不以“成长”开启默认社交。",
+      "test_status": "NOT_RUN",
+      "implementation_owner": "现有 BirdTie Codex 执行队列",
+      "evidence_required": "当前 commit、代码接线、测试命令和结果；运行条件/权限/来源；缺失证据明确标注"
+    },
+    {
+      "id": "BT-PG-20261008-21",
+      "priority": "P0",
+      "title": "对外行动与邀请接受边界",
+      "status": "RECONCILE_REQUIRED",
+      "depends_on": [
+        "BT-PG-20261008-01",
+        "BT-PG-20261008-13"
+      ],
+      "external_dependencies": [
+        "既有 AGE/AIR/Discovery/30NOW 对应任务，审计后映射"
+      ],
+      "requirement": "阅读/筛选/排序不等同代用户接受邀请、加入活动或发消息；Runtime 检查权限、收件人、内容、费用与确认版本，执行有幂等和结果核对。",
+      "acceptance": "Agent 兴趣吻合不会自动 RSVP 或发消息；批准只覆盖所见行动；确认后内容变化必须重审；结果未知不盲目重发。",
+      "test_status": "NOT_RUN",
+      "implementation_owner": "现有 BirdTie Codex 执行队列",
+      "evidence_required": "当前 commit、代码接线、测试命令和结果；运行条件/权限/来源；缺失证据明确标注"
+    },
+    {
+      "id": "BT-PG-20261008-22",
+      "priority": "P0",
+      "title": "安全与敏感推断防线",
+      "status": "RECONCILE_REQUIRED",
+      "depends_on": [
+        "BT-PG-20261008-01",
+        "BT-PG-20261008-02",
+        "BT-PG-20261008-12",
+        "BT-PG-20261008-13"
+      ],
+      "external_dependencies": [
+        "既有 AGE/AIR/Discovery/30NOW 对应任务，审计后映射"
+      ],
+      "requirement": "外部页面、Moment、邀请作为不可信数据；屏蔽提示注入越权、敏感属性自动推断与儿童数据过度收集；执行按账户和角色重检。 该防线与个人/公共数据隔离必须先于相应真实写入和模型导出启用；后续各链完成后继续集成回归。",
+      "acceptance": "恶意网页不能写 Memory 或调用工具；跨账号及组织切换不能读取个人记忆；不从地点/照片推断宗教、健康、性取向等敏感属性。",
+      "test_status": "NOT_RUN",
+      "implementation_owner": "现有 BirdTie Codex 执行队列",
+      "evidence_required": "当前 commit、代码接线、测试命令和结果；运行条件/权限/来源；缺失证据明确标注"
+    },
+    {
+      "id": "BT-PG-20261008-23",
+      "priority": "P0",
+      "title": "中文纵向验收与回归",
+      "status": "RECONCILE_REQUIRED",
+      "depends_on": [
+        "BT-PG-20261008-06",
+        "BT-PG-20261008-08",
+        "BT-PG-20261008-10",
+        "BT-PG-20261008-11",
+        "BT-PG-20261008-17",
+        "BT-PG-20261008-18",
+        "BT-PG-20261008-19",
+        "BT-PG-20261008-21",
+        "BT-PG-20261008-22"
+      ],
+      "external_dependencies": [
+        "既有 AGE/AIR/Discovery/30NOW 对应任务，审计后映射"
+      ],
+      "requirement": "用中文、英文、中英混合和真实手机输入运行完整场景；统一 Now 地图与紧凑来源展示遵守当天 UI 包。",
+      "acceptance": "明确偏好→下次推荐→纠正→忘记全链有证据；海鲜中文/English 表达语义一致；已知地点零补搜、动态问题补证；既有搜索/历史恢复不回归。",
+      "test_status": "NOT_RUN",
+      "implementation_owner": "现有 BirdTie Codex 执行队列",
+      "evidence_required": "当前 commit、代码接线、测试命令和结果；运行条件/权限/来源；缺失证据明确标注"
+    },
+    {
+      "id": "BT-PG-20261008-24",
+      "priority": "P1",
+      "title": "匹配质量与节约评估",
+      "status": "RECONCILE_REQUIRED",
+      "depends_on": [
+        "BT-PG-20261008-03",
+        "BT-PG-20261008-08",
+        "BT-PG-20261008-09",
+        "BT-PG-20261008-15",
+        "BT-PG-20261008-17",
+        "BT-PG-20261008-23"
+      ],
+      "external_dependencies": [
+        "既有 AGE/AIR/Discovery/30NOW 对应任务，审计后映射"
+      ],
+      "requirement": "建立脱敏/授权评估集；比较无记忆与有记忆、本地优先前后，统计正确性、过期率、调用数、延迟、误记忆及删除传播。",
+      "acceptance": "报告有样本数、分母、条件和负例；不以缓存命中率代替事实正确；预留额度不报告为实际节省账单；置信度需校准。",
+      "test_status": "NOT_RUN",
+      "implementation_owner": "现有 BirdTie Codex 执行队列",
+      "evidence_required": "当前 commit、代码接线、测试命令和结果；运行条件/权限/来源；缺失证据明确标注"
+    },
+    {
+      "id": "BT-PG-20261008-25",
+      "priority": "P0",
+      "title": "迁移发布回滚与独立门禁",
+      "status": "RECONCILE_REQUIRED",
+      "depends_on": [
+        "BT-PG-20261008-01",
+        "BT-PG-20261008-02",
+        "BT-PG-20261008-23",
+        "BT-PG-20261008-24"
+      ],
+      "external_dependencies": [
+        "既有 AGE/AIR/Discovery/30NOW 对应任务，审计后映射"
+      ],
+      "requirement": "安全检查迁移、索引及回填；版本化特性开关按用户群灰度；客户端和服务端兼容；回滚停用新链不丢原收藏和记忆。",
+      "acceptance": "独立数据库演练通过；有前后对比证据与回滚步骤；无生产授权不部署；此链完成不自动宣称 Closed Pilot Ready。",
+      "test_status": "NOT_RUN",
+      "implementation_owner": "现有 BirdTie Codex 执行队列",
+      "evidence_required": "当前 commit、代码接线、测试命令和结果；运行条件/权限/来源；缺失证据明确标注"
+    },
+    {
+      "id": "BT-PG-20261008-26",
+      "priority": "P0",
+      "title": "增量交付与状态回写",
+      "status": "RECONCILE_REQUIRED",
+      "depends_on": [
+        "BT-PG-20261008-01"
+      ],
+      "external_dependencies": [
+        "既有 AGE/AIR/Discovery/30NOW 对应任务，审计后映射"
+      ],
+      "requirement": "从首次对账开始，在每阶段持续回写既有队列、任务映射、实际完成、未连通与阻塞；交付当前 commit、可复现步骤、测试与运行证据。最后核对本包全部任务，而不是仅以任务25完成作为整包完成。",
+      "acceptance": "每阶段有增量报告；每项 DONE 有实现、接线、测试证据；任务20等未完成范围必须明确保持开放或由用户批准调整范围，不能宣称整包完成；保留当天 Now 包与 AGE/AIR 原历史。",
+      "test_status": "NOT_RUN",
+      "implementation_owner": "现有 BirdTie Codex 执行队列",
+      "evidence_required": "当前 commit、代码接线、测试命令和结果；运行条件/权限/来源；缺失证据明确标注"
+    }
+  ]
+}

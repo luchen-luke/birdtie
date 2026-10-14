@@ -128,6 +128,15 @@ func (s *messagePolicyHTTPSpy) ReadMessagePolicyDecision(_ context.Context, a ag
 	s.called()
 	return s.decision, s.err
 }
+
+// Transport capability spy only; native proof/source/time gates are tested
+// against PostgreSQL in the separately owned native fixture.
+func (s *messagePolicyHTTPSpy) ValidateOwnMessagePolicyResponse(context.Context, agentprofile.PrivateAccess, mp.Record) error {
+	return nil
+}
+func (s *messagePolicyHTTPSpy) ValidateMessagePolicyDecisionResponse(context.Context, agentprofile.PrivateAccess, string, mp.Decision) error {
+	return nil
+}
 func (s *messagePolicyHTTPSpy) CreateRequestCurrent(_ context.Context, a ea.Access, p, city, note, v string, b *ea.BoundCondition) (connection.Request, error) {
 	s.write = a
 	s.peer = p
@@ -164,6 +173,56 @@ func (s *messagePolicyHTTPSpy) SendMessageCurrent(_ context.Context, a ea.Access
 type messagePolicyUnitCatalog struct {
 	foundation.PublicCatalog
 	*messagePolicyHTTPSpy
+}
+
+type messagePolicyNoResponsePort struct {
+	connection.Store
+	policy mp.Store
+}
+
+func (p *messagePolicyNoResponsePort) GetOwnMessagePolicy(ctx context.Context, a agentprofile.PrivateAccess) (mp.Record, error) {
+	return p.policy.GetOwnMessagePolicy(ctx, a)
+}
+func (p *messagePolicyNoResponsePort) PutOwnMessagePolicy(ctx context.Context, a agentprofile.PrivateAccess, in mp.PutInput) (mp.Record, error) {
+	return p.policy.PutOwnMessagePolicy(ctx, a, in)
+}
+func (p *messagePolicyNoResponsePort) ReadMessagePolicyDecision(ctx context.Context, a agentprofile.PrivateAccess, peer string) (mp.Decision, error) {
+	return p.policy.ReadMessagePolicyDecision(ctx, a, peer)
+}
+
+func TestMessagePolicyUnitRequiresTypedGateBeforeNativeCall(t *testing.T) {
+	for _, tc := range []string{"missing", "typed_nil_store", "typed_nil_access", "cancelled"} {
+		for _, endpoint := range []struct{ method, path, body string }{{"GET", messagePolicyPath, ""}, {"PUT", messagePolicyPath, `{"expectedVersion":0,"incomingRequests":"SCREEN","expiresAt":"2026-10-07T12:00:00Z"}`}, {"GET", messagePolicyPath + "/decisions/" + privateProfileHTTPForeign, ""}} {
+			t.Run(tc+endpoint.method+endpoint.path, func(t *testing.T) {
+				_, p, a, token := messagePolicyUnitHTTP(t)
+				var port connection.Store = p
+				var access identity.AccessStore = a
+				if tc == "missing" {
+					port = &messagePolicyNoResponsePort{Store: p, policy: p}
+				}
+				if tc == "typed_nil_store" {
+					var nilStore *messagePolicyHTTPSpy
+					port = nilStore
+				}
+				if tc == "typed_nil_access" {
+					var nilAccess *privateProfileHTTPAccess
+					access = nilAccess
+				}
+				h := New(messagePolicyUnitCatalog{messagePolicyHTTPSpy: p}, access, nil, nil, nil, nil, nil, nil, nil, nil, port, nil, false, nil, nil, nil)
+				r := privateProfileHTTPRequest(endpoint.method, endpoint.path, endpoint.body, token, "application/json")
+				if tc == "cancelled" {
+					ctx, cancel := context.WithCancel(r.Context())
+					cancel()
+					r = r.WithContext(ctx)
+				}
+				w := httptest.NewRecorder()
+				h.ServeHTTP(w, r)
+				if w.Code != 503 || p.calls != 0 || strings.Contains(w.Body.String(), `"data"`) {
+					t.Fatalf("gate %s status=%d calls=%d", tc, w.Code, p.calls)
+				}
+			})
+		}
+	}
 }
 
 func messagePolicyUnitHTTP(t *testing.T) (http.Handler, *messagePolicyHTTPSpy, *privateProfileHTTPAccess, string) {

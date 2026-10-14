@@ -100,8 +100,11 @@ func validManagedActivity(input *activitypublish.Input) string {
 }
 
 func (s *server) managedActivityActor(w http.ResponseWriter, r *http.Request) (identity.Actor, bool) {
-	actor, _, err := s.actor(r, true)
+	actor, digest, err := s.actor(r, true)
 	if authFailed(w, err) {
+		return identity.Actor{}, false
+	}
+	if !s.captureEntityCoverHTTP(w, r, actor, digest) {
 		return identity.Actor{}, false
 	}
 	if actor.AccountType != "person" || s.activityPublish == nil {
@@ -185,7 +188,7 @@ func (s *server) createActivityDraft(w http.ResponseWriter, r *http.Request) {
 		managedActivityError(w, err)
 		return
 	}
-	respond(w, http.StatusCreated, map[string]any{"data": item})
+	s.respondManagedActivityCover(w, r, actor, http.StatusCreated, item, []activitypublish.Activity{item})
 }
 
 func (s *server) updateManagedActivity(w http.ResponseWriter, r *http.Request) {
@@ -206,7 +209,7 @@ func (s *server) updateManagedActivity(w http.ResponseWriter, r *http.Request) {
 		managedActivityError(w, err)
 		return
 	}
-	respond(w, http.StatusOK, map[string]any{"data": item})
+	s.respondManagedActivityCover(w, r, actor, http.StatusOK, item, []activitypublish.Activity{item})
 }
 
 func (s *server) publishManagedActivity(w http.ResponseWriter, r *http.Request) {
@@ -237,7 +240,7 @@ func (s *server) changeManagedActivityState(w http.ResponseWriter, r *http.Reque
 		managedActivityError(w, err)
 		return
 	}
-	respond(w, http.StatusOK, map[string]any{"data": item})
+	s.respondManagedActivityCover(w, r, actor, http.StatusOK, item, []activitypublish.Activity{item})
 }
 
 func (s *server) listManagedActivities(w http.ResponseWriter, r *http.Request) {
@@ -250,5 +253,5 @@ func (s *server) listManagedActivities(w http.ResponseWriter, r *http.Request) {
 		managedActivityError(w, err)
 		return
 	}
-	respond(w, http.StatusOK, map[string]any{"data": items})
+	s.respondManagedActivityCover(w, r, actor, http.StatusOK, items, items)
 }

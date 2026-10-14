@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
+import '../app/birdtie_app_bar.dart';
 import '../auth/birdtie_auth_controller.dart';
 import '../config/birdtie_environment.dart';
 import 'opportunity_reasons.dart';
@@ -774,7 +775,7 @@ class _NewPeoplePageState extends State<NewPeoplePage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(
+    appBar: birdtieAppBar(context,
       title: const Text('找新朋友'),
       actions: [
         IconButton(
@@ -793,9 +794,9 @@ class _NewPeoplePageState extends State<NewPeoplePage> {
         : ListView(
             padding: const EdgeInsets.all(20),
             children: [
-              const Text(
+              Text(
                 '从一件想一起做的事开始',
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
+                style: Theme.of(context).textTheme.headlineSmall,
               ),
               const SizedBox(height: 8),
               const Text(

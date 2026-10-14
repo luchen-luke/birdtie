@@ -15,7 +15,9 @@ import (
 
 	"github.com/birdtie/birdtie/apps/api/internal/agentcognitive"
 	"github.com/birdtie/birdtie/apps/api/internal/agentfeature"
+	"github.com/birdtie/birdtie/apps/api/internal/agenttool"
 	"github.com/birdtie/birdtie/apps/api/internal/httpapi"
+	"github.com/birdtie/birdtie/apps/api/internal/media"
 	"github.com/birdtie/birdtie/apps/api/internal/oidcauth"
 	"github.com/birdtie/birdtie/apps/api/internal/postgres"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -30,19 +32,37 @@ func main() {
 	if databaseURL == "" {
 		log.Fatal("BIRDTIE_DATABASE_URL is required")
 	}
+	maintenanceEnabled, err := loadBackgroundMaintenance(os.LookupEnv)
+	if err != nil {
+		log.Fatal("后台维护配置无效")
+	}
+	poolConfig, err := pgxpool.ParseConfig(databaseURL)
+	if err != nil {
+		log.Fatal("configure database: invalid BIRDTIE_DATABASE_URL")
+	}
+	expectedDatabase, err := loadNativeDatabaseName(os.LookupEnv, poolConfig.ConnConfig.Database)
+	if err != nil {
+		log.Fatal("原生数据库目标配置无效")
+	}
+	// Domain queries use the native public schema, never role-specific shadows.
+	if poolConfig.ConnConfig.RuntimeParams == nil {
+		poolConfig.ConnConfig.RuntimeParams = map[string]string{}
+	}
+	poolConfig.ConnConfig.RuntimeParams["search_path"] = "public"
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 	connectCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
-	pool, err := pgxpool.New(connectCtx, databaseURL)
+	pool, err := pgxpool.NewWithConfig(connectCtx, poolConfig)
 	if err != nil {
 		log.Fatal("configure database: invalid BIRDTIE_DATABASE_URL")
 	}
 	defer pool.Close()
-	if err := pool.Ping(connectCtx); err != nil {
-		log.Fatal("connect database: unavailable")
+	readyDatabase, err := newNativeDatabasePinger(connectCtx, pool, expectedDatabase)
+	if err != nil {
+		log.Fatal("原生数据库身份或必要结构不可用")
 	}
 
 	address := os.Getenv("BIRDTIE_API_ADDR")
@@ -74,26 +94,11 @@ func main() {
 		}
 	}
 	store := postgres.New(pool, devPhoneEnabled)
-	go func() {
-		ticker := time.NewTicker(5 * time.Minute)
-		defer ticker.Stop()
-		for {
-			runCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
-			started := time.Now()
-			count, err := store.EnqueueStartsSoonReminders(runCtx)
-			if err != nil && ctx.Err() == nil {
-				log.Printf("activity_reminder_run status=failed source=api stage=enqueue duration_ms=%d error=%q", time.Since(started).Milliseconds(), err)
-			} else if err == nil {
-				log.Printf("activity_reminder_run status=ok source=api inserted=%d duration_ms=%d", count, time.Since(started).Milliseconds())
-			}
-			cancel()
-			select {
-			case <-ctx.Done():
-				return
-			case <-ticker.C:
-			}
-		}
-	}()
+	videoRuntime, err := media.VideoRuntimeFromEnvironment(os.Getenv)
+	if err != nil {
+		log.Fatal("视频材料配置不完整或未通过可信边界检查")
+	}
+	videoMaterials := media.NewVideoMaterialService(store, videoRuntime)
 	var oidc *oidcauth.Service
 	if os.Getenv("BIRDTIE_OIDC_ISSUER") != "" ||
 		os.Getenv("BIRDTIE_OIDC_CLIENT_ID") != "" ||
@@ -122,6 +127,10 @@ func main() {
 	multiCandidates := postgres.NewMultiCandidatePipeline(store, featureController)
 	agentRuns := postgres.NewAgentRuns(store, featureController)
 	sandboxRecovery := postgres.NewHumanSandboxRecovery(store, featureController)
+	activityJoin, err := loadAgentActivityJoinStartup(os.LookupEnv, store, featureController)
+	if err != nil {
+		log.Fatal("智能体活动报名配置无效")
+	}
 	humanActiveIntents, err := postgres.NewHumanActiveIntents(store)
 	if err != nil {
 		log.Fatal("当前意图管理边界初始化失败")
@@ -138,21 +147,38 @@ func main() {
 	if err != nil {
 		log.Fatal("Now 真实检索与回答配置无效")
 	}
-	baseHandler := httpapi.New(store, store, store, store, store, store, store, store, store, store, store, store, devPhoneEnabled, oidc, pool, allowedOrigins, httpapi.WithMemoryCandidates(candidates), httpapi.WithCandidatePipeline(candidatePipeline), httpapi.WithMultiCandidates(multiCandidates), httpapi.WithHumanActiveIntents(humanActiveIntents), httpapi.WithHumanIntentConversions(humanIntentConversions), httpapi.WithAgentRuns(agentRuns), httpapi.WithNowContextSelection(nowContextSelection), httpapi.WithSandboxRecovery(sandboxRecovery), httpapi.WithNowLiveAnswers(liveAnswers))
+	var openPlaces httpapi.OpenPlaceAcquirer
+	systemPush, err := loadSystemPushStartup(store, os.LookupEnv)
+	if err != nil {
+		log.Fatal("系统通知配置不完整或未通过可信边界检查")
+	}
+	agentVisual, err := loadAgentVisualStartup(os.Getenv("BIRDTIE_AGENT_VISUAL_CONFIG"), address, devPhoneEnabled, store, featureController)
+	if err != nil {
+		log.Fatal("图片分析配置不完整或未通过可信边界检查")
+	}
+	if os.Getenv("BIRDTIE_OPEN_PLACES_ENABLED") == "1" {
+		openPlaces, err = agenttool.NewOpenStreetMapPlaces(nil)
+		if err != nil {
+			log.Fatal("开放地点来源配置无效")
+		}
+	}
+	baseHandler := httpapi.New(store, store, store, store, store, store, store, store, store, store, store, store, devPhoneEnabled, oidc, readyDatabase, allowedOrigins, httpapi.WithMemoryCandidates(candidates), httpapi.WithCandidatePipeline(candidatePipeline), httpapi.WithMultiCandidates(multiCandidates), httpapi.WithHumanActiveIntents(humanActiveIntents), httpapi.WithHumanIntentConversions(humanIntentConversions), httpapi.WithAgentRuns(agentRuns), httpapi.WithAgentActivityJoin(activityJoin), httpapi.WithNowContextSelection(nowContextSelection), httpapi.WithSandboxRecovery(sandboxRecovery), httpapi.WithNowLiveAnswers(liveAnswers), httpapi.WithOpenPlaceAcquirer(openPlaces), httpapi.WithPublicOnlinePlaceCache(store), httpapi.WithVideoMaterials(videoMaterials), httpapi.WithAgentVisualGateway(agentVisual), httpapi.WithSystemPush(systemPush))
 	handler, err := newAgentFeatureBoundaryWithController(featureController, store, baseHandler)
 	if err != nil {
 		log.Fatal("Agent 功能配置无效或边界不可用")
 	}
 	handler = withNowLiveDeadline(liveAnswers, store, handler)
-	writeTimeout := 15 * time.Second
-	if liveAnswers != nil {
-		writeTimeout = 35 * time.Second
+	// Image requests include bounded base64/raw bodies. Permit upload time while
+	// keeping domain/model-specific deadlines and exact media limits unchanged.
+	writeTimeout := 65 * time.Second
+	if os.Getenv("BIRDTIE_AGENT_VISUAL_CONFIG") != "" {
+		writeTimeout = 125 * time.Second
 	}
 	server := &http.Server{
 		Addr:              address,
 		Handler:           handler,
 		ReadHeaderTimeout: 5 * time.Second,
-		ReadTimeout:       10 * time.Second,
+		ReadTimeout:       60 * time.Second,
 		WriteTimeout:      writeTimeout,
 		IdleTimeout:       60 * time.Second,
 	}
@@ -166,6 +192,8 @@ func main() {
 		}
 	}()
 
+	// Only start maintenance after every startup dependency passed validation.
+	startBackgroundMaintenance(ctx, maintenanceEnabled, store)
 	log.Printf("Birdtie API listening on %s", address)
 	if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		log.Fatal(err)

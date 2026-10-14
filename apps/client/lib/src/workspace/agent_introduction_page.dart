@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import '../app/birdtie_app_bar.dart';
 import '../auth/birdtie_auth_controller.dart';
 import 'agent_introduction_api.dart';
 import 'agent_introduction_controller.dart';
@@ -257,7 +258,7 @@ class _AgentIntroductionPageState extends State<AgentIntroductionPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(
+    appBar: birdtieAppBar(context,
       title: const Text('看看共同意图'),
       actions: [
         IconButton(
@@ -275,9 +276,9 @@ class _AgentIntroductionPageState extends State<AgentIntroductionPage> {
         : ListView(
             padding: const EdgeInsets.all(20),
             children: [
-              const Text(
+              Text(
                 '从当前公开的找搭子意图，看看双方明确声明的共同依据。',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
+                style: Theme.of(context).textTheme.bodyMedium,
               ),
               const SizedBox(height: 12),
               const Text('这不是现实关系、位置或长期兴趣判断。不会读取私密偏好、发送申请或调用模型。'),

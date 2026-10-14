@@ -3,13 +3,18 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
+import '../app/birdtie_app_bar.dart';
 import '../config/birdtie_environment.dart';
 import 'connections.dart';
+import 'human_causal_operation_controller.dart';
 import 'follow_button.dart';
 import 'shared_social_context_panel.dart';
 import '../auth/birdtie_auth_controller.dart';
 import 'entity_action_contract.dart';
 import 'entity_action_dispatcher.dart';
+import 'now_ui_tokens.dart';
+import 'human_visibility.dart';
+import 'person_avatar.dart';
 
 class PublicPersonPage extends StatefulWidget {
   const PublicPersonPage({
@@ -21,6 +26,9 @@ class PublicPersonPage extends StatefulWidget {
     this.identityChanges,
     this.workspaceID,
     this.auth,
+    this.embedded = false,
+    this.onOpenOwnProfile,
+    this.onOpenPublicMoments,
   });
 
   final String accountID;
@@ -30,6 +38,9 @@ class PublicPersonPage extends StatefulWidget {
   final Listenable? identityChanges;
   final String? Function()? workspaceID;
   final BirdtieAuthController? auth;
+  final bool embedded;
+  final Future<void> Function()? onOpenOwnProfile;
+  final Future<void> Function()? onOpenPublicMoments;
 
   @override
   State<PublicPersonPage> createState() => _PublicPersonPageState();
@@ -42,15 +53,62 @@ class _PublicPersonPageState extends State<PublicPersonPage> {
   bool _ownsClient = false;
   String get _base => widget.apiBaseUrl ?? BirdtieEnvironment.apiBaseUrl;
   int _epoch = 0;
+  int? _profileEpoch;
+  int? _openingProfileEpoch;
+  int? _openingMomentsEpoch;
+  int _publicNavigationEpoch = 0;
   bool _proposing = false;
-  late (String?, String?) _identity;
-  (String?, String?) get _current =>
-      (widget.authorizationHeader(), widget.workspaceID?.call());
+  late (String?, String?, String?) _identity;
+  late Listenable _actionChanges;
+  final _shareSource = HumanCausalSourceSerial();
+  void _observeShareSource() {
+    _shareSource.observe((
+      widget.accountID,
+      widget.auth,
+      widget.client,
+      widget.apiBaseUrl,
+      widget.auth?.accountID,
+      widget.workspaceID?.call(),
+    ));
+    _shareSource.notifyReadBindingChanged();
+  }
+
+  (String?, String?, String?) get _current => (
+    widget.authorizationHeader(),
+    widget.workspaceID?.call(),
+    widget.auth?.accountID,
+  );
+  bool get _profileCurrent =>
+      _profile != null && _profileEpoch == _epoch && _error == null;
+  bool get _personalSource =>
+      _current.$1 != null &&
+      _current.$2 == null &&
+      (widget.auth == null ||
+          (widget.auth!.signedIn &&
+              widget.auth!.accountID != null &&
+              widget.auth!.authorizationHeader == _current.$1));
+  bool get _ownProfile =>
+      _personalSource &&
+      widget.auth != null &&
+      widget.auth!.accountID == widget.accountID;
+  bool get _publicPersonalSource =>
+      _profileCurrent && _profile!['visibility'] == 'public' && _personalSource;
+  bool get _otherPublicPerson => _publicPersonalSource && !_ownProfile;
+  bool get _publicMomentsSource =>
+      _profileCurrent &&
+      _profile!['visibility'] == 'public' &&
+      _current.$2 == null &&
+      (widget.auth == null ||
+          (widget.auth!.authorizationHeader == _current.$1 &&
+              (_current.$1 == null ||
+                  (widget.auth!.signedIn && widget.auth!.accountID != null))));
 
   @override
   void dispose() {
+    _shareSource.dispose();
     ++_epoch;
     widget.identityChanges?.removeListener(_changed);
+    widget.auth?.removeListener(_changed);
     if (_ownsClient) _client.close();
     super.dispose();
   }
@@ -58,13 +116,17 @@ class _PublicPersonPageState extends State<PublicPersonPage> {
   @override
   void initState() {
     super.initState();
+    _observeShareSource();
     _ownsClient = widget.client == null;
     _identity = _current;
+    _actionChanges = Listenable.merge([widget.identityChanges, widget.auth]);
     widget.identityChanges?.addListener(_changed);
+    widget.auth?.addListener(_changed);
     _load();
   }
 
   void _changed() {
+    _observeShareSource();
     if (_identity == _current) return;
     _identity = _current;
     ++_epoch;
@@ -75,6 +137,10 @@ class _PublicPersonPageState extends State<PublicPersonPage> {
   @override
   void didUpdateWidget(PublicPersonPage old) {
     super.didUpdateWidget(old);
+    _observeShareSource();
+    if (!identical(old.onOpenPublicMoments, widget.onOpenPublicMoments)) {
+      ++_publicNavigationEpoch;
+    }
     final transportChanged =
         !identical(old.client, widget.client) ||
         old.apiBaseUrl != widget.apiBaseUrl;
@@ -87,6 +153,14 @@ class _PublicPersonPageState extends State<PublicPersonPage> {
     if (old.identityChanges != widget.identityChanges) {
       old.identityChanges?.removeListener(_changed);
       widget.identityChanges?.addListener(_changed);
+    }
+    if (!identical(old.auth, widget.auth)) {
+      old.auth?.removeListener(_changed);
+      widget.auth?.addListener(_changed);
+    }
+    if (!identical(old.auth, widget.auth) ||
+        !identical(old.identityChanges, widget.identityChanges)) {
+      _actionChanges = Listenable.merge([widget.identityChanges, widget.auth]);
     }
     if (transportChanged ||
         !identical(old.authorizationHeader, widget.authorizationHeader) ||
@@ -129,7 +203,12 @@ class _PublicPersonPageState extends State<PublicPersonPage> {
                     as Map<String, dynamic>)['data']
                 as Map<String, dynamic>;
         if (value['accountId'] != id) throw const FormatException('个人标识不符');
-        setState(() => _profile = value);
+        humanVisibility(value['visibility']);
+        PersonAvatarMetadata.optional(value['avatar'], id);
+        setState(() {
+          _profile = value;
+          _profileEpoch = epoch;
+        });
       }
     } catch (_) {
       if (mounted && epoch == _epoch && identity == _current) {
@@ -139,7 +218,11 @@ class _PublicPersonPageState extends State<PublicPersonPage> {
   }
 
   Future<void> _personAction(EntityActionKind kind) async {
-    if (_proposing) return;
+    if (_proposing ||
+        !_publicPersonalSource ||
+        (kind != EntityActionKind.share && _ownProfile)) {
+      return;
+    }
     _proposing = true;
     try {
       final identity = _current,
@@ -151,15 +234,15 @@ class _PublicPersonPageState extends State<PublicPersonPage> {
           epoch == _epoch &&
           identity == _current &&
           id == widget.accountID &&
-          auth == widget.auth;
+          auth == widget.auth &&
+          _publicPersonalSource &&
+          (kind == EntityActionKind.share || !_ownProfile);
       String? note;
       if (kind == EntityActionKind.connect) {
         note = await showDialog<String>(
           context: context,
-          builder: (_) => _FriendNoteDialog(
-            current: current,
-            changes: widget.identityChanges,
-          ),
+          builder: (_) =>
+              _FriendNoteDialog(current: current, changes: _actionChanges),
         );
         if (note == null || !current()) return;
       }
@@ -171,7 +254,7 @@ class _PublicPersonPageState extends State<PublicPersonPage> {
         kind: kind,
         authorizationHeader: () => current() ? identity.$1 : null,
         workspaceID: widget.workspaceID,
-        identityChanges: widget.identityChanges,
+        identityChanges: _actionChanges,
         accountID: () => auth?.accountID,
         client: _client,
         apiBaseUrl: _base,
@@ -192,13 +275,18 @@ class _PublicPersonPageState extends State<PublicPersonPage> {
             if (kind == EntityActionKind.share) {
               await shareEntityToChat(
                 context,
-                authorizationHeader: () => current() ? identity.$1 : null,
-                identityChanges: widget.identityChanges,
-                workspaceID: widget.workspaceID,
-                apiBaseUrl: _base,
-                client: _client,
+                authorizationHeader: () => widget.authorizationHeader(),
+                identityChanges: _shareSource,
+                ownerID: widget.auth == null
+                    ? null
+                    : () => widget.auth?.accountID,
+                workspaceID: () => widget.workspaceID?.call(),
+                sourceKey: () => _shareSource.generation,
+                sourceCurrent: () => mounted,
                 type: 'person',
                 id: id,
+                apiBaseUrl: _base,
+                client: _client,
               );
               return;
             }
@@ -219,7 +307,7 @@ class _PublicPersonPageState extends State<PublicPersonPage> {
                   builder: (_) => HumanConversationRoute(
                     auth: auth!,
                     conversation: conversation,
-                    workspaceChanges: widget.identityChanges,
+                    workspaceChanges: _actionChanges,
                     workspaceID: widget.workspaceID,
                     apiBaseUrl: _base,
                     client: _client,
@@ -237,58 +325,197 @@ class _PublicPersonPageState extends State<PublicPersonPage> {
     }
   }
 
+  Future<void> Function()? _ownProfileAction() {
+    final open = widget.onOpenOwnProfile;
+    if (open == null || !_profileCurrent || !_ownProfile) return null;
+    final epoch = _epoch,
+        identity = _current,
+        id = widget.accountID,
+        auth = widget.auth,
+        client = _client,
+        base = _base;
+    bool current() =>
+        mounted &&
+        epoch == _epoch &&
+        identity == _current &&
+        id == widget.accountID &&
+        identical(auth, widget.auth) &&
+        identical(client, _client) &&
+        base == _base &&
+        identical(open, widget.onOpenOwnProfile) &&
+        _profileCurrent &&
+        _ownProfile;
+    return () async {
+      if (!current() || _openingProfileEpoch == epoch) return;
+      setState(() => _openingProfileEpoch = epoch);
+      try {
+        await open();
+        if (current()) await _load();
+      } catch (_) {
+        if (current()) setState(() => _error = '个人资料暂不可访问。');
+      } finally {
+        if (mounted && _openingProfileEpoch == epoch) {
+          setState(() => _openingProfileEpoch = null);
+        }
+      }
+    };
+  }
+
+  Future<void> Function()? _publicMomentsAction() {
+    final open = widget.onOpenPublicMoments;
+    if (open == null || !_publicMomentsSource) return null;
+    final epoch = _epoch,
+        navigationEpoch = _publicNavigationEpoch,
+        identity = _current,
+        id = widget.accountID,
+        auth = widget.auth,
+        client = _client,
+        base = _base;
+    bool current() =>
+        mounted &&
+        epoch == _epoch &&
+        navigationEpoch == _publicNavigationEpoch &&
+        identity == _current &&
+        id == widget.accountID &&
+        identical(auth, widget.auth) &&
+        identical(client, _client) &&
+        base == _base &&
+        identical(open, widget.onOpenPublicMoments) &&
+        _publicMomentsSource;
+    return () async {
+      if (!current() || _openingMomentsEpoch == epoch) return;
+      setState(() => _openingMomentsEpoch = epoch);
+      try {
+        await open();
+      } catch (_) {
+        if (current()) {
+          setState(() => _error = '当前范围的公开动态暂不可访问，请重新打开。');
+        }
+      } finally {
+        if (mounted && _openingMomentsEpoch == epoch) {
+          setState(() => _openingMomentsEpoch = null);
+        }
+      }
+    };
+  }
+
   @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('主办人')),
-    body: _error != null
+  Widget build(BuildContext context) {
+    final body = _body(context);
+    if (widget.embedded) return body;
+    return Scaffold(
+      appBar: birdtieAppBar(
+        context,
+        title: Text('个人主页', style: NowUiTokens.of(context).pageTitle),
+      ),
+      body: body,
+    );
+  }
+
+  Widget _body(BuildContext context) {
+    final tokens = NowUiTokens.of(context);
+    final textActionStyle = TextButton.styleFrom(
+      minimumSize: const Size(48, 48),
+      textStyle: tokens.action,
+    );
+    final outlinedActionStyle = OutlinedButton.styleFrom(
+      minimumSize: const Size(48, 48),
+      textStyle: tokens.action,
+    );
+    return _error != null
         ? Center(
-            child: TextButton(onPressed: _load, child: Text('${_error!} 点击重试')),
+            child: TextButton(
+              style: textActionStyle,
+              onPressed: _load,
+              child: Text('${_error!} 点击重试'),
+            ),
           )
         : _profile == null
         ? const Center(child: CircularProgressIndicator())
         : ListView(
-            padding: const EdgeInsets.all(24),
+            key: PageStorageKey('public-person-scroll:${widget.accountID}'),
+            primary: false,
+            padding: const EdgeInsets.all(16),
             children: [
+              Align(
+                alignment: Alignment.centerLeft,
+                child: PersonAvatar(
+                  metadata: PersonAvatarMetadata.optional(
+                    _profile!['avatar'],
+                    widget.accountID,
+                  ),
+                  authorizationHeader: widget.authorizationHeader,
+                  baseUrl: _base,
+                  client: _client,
+                  identityChanges: _actionChanges,
+                  current: () => _profileCurrent && _current.$2 == null,
+                  radius: 32,
+                ),
+              ),
+              const SizedBox(height: 12),
               Text(
                 _profile!['displayName'] as String? ?? 'Birdtie 用户',
-                style: Theme.of(context).textTheme.headlineSmall,
+                style: tokens.pageTitle,
               ),
-              if (_profile!['visibility'] == 'public')
+              const SizedBox(height: 8),
+              Text(
+                '资料可见范围：${humanVisibilityLabels[_profile!['visibility']]}',
+                style: tokens.metadata,
+              ),
+              if (_publicMomentsSource && widget.onOpenPublicMoments != null)
+                TextButton.icon(
+                  onPressed: _openingMomentsEpoch == _epoch
+                      ? null
+                      : _publicMomentsAction(),
+                  style: textActionStyle,
+                  icon: const Icon(Icons.map_outlined),
+                  label: const Text('当前范围的公开动态'),
+                ),
+              if (_profileCurrent &&
+                  _ownProfile &&
+                  widget.onOpenOwnProfile != null)
+                TextButton.icon(
+                  onPressed: _openingProfileEpoch == _epoch
+                      ? null
+                      : _ownProfileAction(),
+                  style: textActionStyle,
+                  icon: const Icon(Icons.edit_outlined),
+                  label: const Text('编辑我的资料与隐私'),
+                ),
+              if (_otherPublicPerson)
                 FollowButton(
                   targetType: 'PERSON',
                   targetID: widget.accountID,
+                  accountID: () => widget.auth?.accountID,
+                  identityChanges: _actionChanges,
+                  workspaceID: widget.workspaceID,
                   authorizationHeader: widget.authorizationHeader,
                   apiBaseUrl: _base,
                   client: _client,
                 ),
-              if (_profile!['visibility'] == 'public')
+              if (_publicPersonalSource)
                 TextButton.icon(
+                  style: textActionStyle,
                   onPressed: () => _personAction(EntityActionKind.share),
                   icon: const Icon(Icons.chat_bubble_outline),
                   label: const Text('发给好友'),
                 ),
-              if (_profile!['visibility'] == 'public' &&
-                  widget.authorizationHeader() != null &&
-                  widget.workspaceID?.call() == null)
+              if (_otherPublicPerson)
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
                   children: [
                     OutlinedButton.icon(
                       onPressed: () => _personAction(EntityActionKind.connect),
-                      style: OutlinedButton.styleFrom(
-                        minimumSize: const Size(48, 48),
-                      ),
+                      style: outlinedActionStyle,
                       icon: const Icon(Icons.person_add_alt_outlined),
-                      label: const Text('申请连接'),
+                      label: const Text('添加好友'),
                     ),
                     if (widget.auth != null)
                       OutlinedButton.icon(
                         onPressed: () =>
                             _personAction(EntityActionKind.message),
-                        style: OutlinedButton.styleFrom(
-                          minimumSize: const Size(48, 48),
-                        ),
+                        style: outlinedActionStyle,
                         icon: const Icon(Icons.chat_bubble_outline),
                         label: const Text('打开私信'),
                       ),
@@ -296,10 +523,10 @@ class _PublicPersonPageState extends State<PublicPersonPage> {
                 ),
               const SizedBox(height: 16),
               if ((_profile!['bio'] as String? ?? '').isNotEmpty)
-                Text(_profile!['bio'] as String),
-              if (_profile!['visibility'] == 'public')
+                Text(_profile!['bio'] as String, style: tokens.body),
+              if (_otherPublicPerson)
                 SharedSocialContextPanel(
-                  identityChanges: widget.identityChanges,
+                  identityChanges: _actionChanges,
                   workspaceID: widget.workspaceID,
                   accountID: widget.accountID,
                   authorizationHeader: widget.authorizationHeader,
@@ -307,8 +534,8 @@ class _PublicPersonPageState extends State<PublicPersonPage> {
                   client: _client,
                 ),
             ],
-          ),
-  );
+          );
+  }
 }
 
 class _FriendNoteDialog extends StatefulWidget {
@@ -331,28 +558,38 @@ class _FriendNoteDialogState extends State<_FriendNoteDialog> {
   Widget build(BuildContext context) => AnimatedBuilder(
     animation: Listenable.merge([_input, widget.changes]),
     builder: (_, _) => AlertDialog(
-      title: const Text('好友申请'),
+      title: Text('好友申请', style: NowUiTokens.of(context).sheetTitle),
       content: SingleChildScrollView(
         child: widget.current()
             ? TextField(
                 controller: _input,
+                style: NowUiTokens.of(context).composer,
                 maxLength: 280,
                 maxLines: 3,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: '给对方的说明',
                   helperText: '需对方接受后成为好友，不自动发送私信。',
+                  labelStyle: NowUiTokens.of(context).body,
+                  helperStyle: NowUiTokens.of(context).metadata,
+                  helperMaxLines: 4,
                 ),
               )
-            : const Text('身份或页面来源已变化，请取消后重新打开。'),
+            : Text('身份或页面来源已变化，请取消后重新打开。', style: NowUiTokens.of(context).body),
       ),
       actions: [
         TextButton(
-          style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
+          style: TextButton.styleFrom(
+            minimumSize: const Size(48, 48),
+            textStyle: NowUiTokens.of(context).action,
+          ),
           onPressed: () => Navigator.pop(context),
           child: const Text('取消'),
         ),
         FilledButton(
-          style: FilledButton.styleFrom(minimumSize: const Size(48, 48)),
+          style: FilledButton.styleFrom(
+            minimumSize: const Size(48, 48),
+            textStyle: NowUiTokens.of(context).action,
+          ),
           onPressed: widget.current() && _input.text.trim().isNotEmpty
               ? () => Navigator.pop(context, _input.text.trim())
               : null,

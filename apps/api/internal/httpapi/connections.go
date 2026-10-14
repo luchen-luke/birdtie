@@ -211,7 +211,10 @@ func nilConnectionRequestReader(port any) bool {
 }
 
 func (s *server) decideConnectionRequest(w http.ResponseWriter, r *http.Request) {
-	if nilConnectionRequestReader(s.access) || r.Context().Err()!=nil {messagePolicyFailure(w,mp.ErrUnavailable);return}
+	if nilConnectionRequestReader(s.access) || r.Context().Err() != nil {
+		messagePolicyFailure(w, mp.ErrUnavailable)
+		return
+	}
 	access, ok := s.messageWriteAccess(w, r)
 	if !ok {
 		return
@@ -227,7 +230,7 @@ func (s *server) decideConnectionRequest(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	var input struct {
-		Action string `json:"action"`
+		Action      string          `json:"action"`
 		OperationID json.RawMessage `json:"operationId,omitempty"`
 	}
 	if !decodeStrictJSON(w, r, &input) {
@@ -239,13 +242,29 @@ func (s *server) decideConnectionRequest(w http.ResponseWriter, r *http.Request)
 	}
 	if input.OperationID != nil {
 		var operationID string
-		if json.Unmarshal(input.OperationID,&operationID)!=nil{respondError(w,400,"invalid_operation_id");return}
-		if !connection.ValidDecisionID(operationID){respondError(w,400,"invalid_operation_id");return}
-		operationPort,ok:=s.connections.(connection.DecisionOperationStore);if !ok||nilConnectionRequestReader(operationPort){messagePolicyFailure(w,mp.ErrUnavailable);return}
-		receipt,e:=operationPort.DecideRequestOperation(r.Context(),access,id,input.Action,operationID)
-		if connectionDecisionOperationError(w,e){return}
-		if connection.ValidateDecisionReceipt(receipt,access.Actor.ID,id,operationID,input.Action)!=nil{messagePolicyFailure(w,mp.ErrUnavailable);return}
-		s.connectionDecisionOperationResponse(w,r,access,receipt);return
+		if json.Unmarshal(input.OperationID, &operationID) != nil {
+			respondError(w, 400, "invalid_operation_id")
+			return
+		}
+		if !connection.ValidDecisionID(operationID) {
+			respondError(w, 400, "invalid_operation_id")
+			return
+		}
+		operationPort, ok := s.connections.(connection.DecisionOperationStore)
+		if !ok || nilConnectionRequestReader(operationPort) {
+			messagePolicyFailure(w, mp.ErrUnavailable)
+			return
+		}
+		receipt, e := operationPort.DecideRequestOperation(r.Context(), access, id, input.Action, operationID)
+		if connectionDecisionOperationError(w, e) {
+			return
+		}
+		if connection.ValidateDecisionReceipt(receipt, access.Actor.ID, id, operationID, input.Action) != nil {
+			messagePolicyFailure(w, mp.ErrUnavailable)
+			return
+		}
+		s.connectionDecisionOperationResponse(w, r, access, receipt)
+		return
 	}
 	request, err := port.DecideRequestCurrent(r.Context(), access, id, input.Action)
 	if connectionError(w, err) {
@@ -337,13 +356,8 @@ func (s *server) sendMessage(w http.ResponseWriter, r *http.Request) {
 	}
 	input.Body = strings.TrimSpace(input.Body)
 	if input.Entity != nil {
-		if !uuidPath.MatchString(input.Entity.ID) || !validChatEntityType(input.Entity.Type) {
-			respondError(w, http.StatusBadRequest, "invalid_message_entity")
-			return
-		}
-		if input.Body == "" {
-			input.Body = "分享了一张卡片"
-		}
+		respondError(w, 409, "entity_share_control_required")
+		return
 	}
 	if len(input.Body) < 1 || len(input.Body) > 2000 {
 		respondError(w, http.StatusBadRequest, "invalid_message")

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../app/birdtie_app_bar.dart';
 import '../auth/birdtie_auth_controller.dart';
 import '../city/public_city_controller.dart';
 import 'aberdeen_schedule.dart';
@@ -12,6 +13,9 @@ import 'organization_analytics_page.dart';
 import 'organization_membership_pages.dart';
 import 'organization_map_location_page.dart';
 import 'organization_workspaces.dart';
+import 'entity_cover.dart';
+import 'entity_cover_editor.dart';
+import 'notification_destination_router.dart';
 
 String _visibilityLabel(String value) => switch (value) {
   'public' => '公开',
@@ -87,15 +91,76 @@ class OrganizationConsolePage extends StatefulWidget {
 }
 
 class _OrganizationConsolePageState extends State<OrganizationConsolePage> {
-  late final OrganizationActivityApi _api;
+  late OrganizationActivityApi _api;
   List<OrganizationActivity> _activities = const [];
   bool _loading = true;
   String? _error;
   String? _workingId;
+  int _coverEpoch = 0;
+  int _humanEpoch = 0;
+  Object? _humanSeen;
+  Object get _humanIdentity => (
+    widget.auth,
+    widget.organizations,
+    widget.auth.accountID,
+    widget.organizations.active?.id,
+    widget.organizations.active?.role,
+    widget.api,
+  );
+  Object? _coverSeen;
+  Object get _coverIdentity => (
+    widget.auth,
+    widget.organizations,
+    widget.auth.accountID,
+    widget.auth.authorizationHeader,
+    widget.organizations.active?.id,
+    widget.organizations.active?.role,
+    widget.api,
+  );
+  void _observeCover() {
+    var humanChanged = false;
+    if (_humanSeen != _humanIdentity) {
+      _humanSeen = _humanIdentity;
+      ++_humanEpoch;
+      humanChanged = true;
+      _activities = const [];
+      _error = null;
+      _workingId = null;
+    }
+    if (_coverSeen == _coverIdentity) return;
+    _coverSeen = _coverIdentity;
+    _humanSeen = _humanIdentity;
+    ++_coverEpoch;
+    if (mounted) setState(() {});
+    if (humanChanged && mounted) unawaited(_load());
+  }
+
+  @override
+  void didUpdateWidget(OrganizationConsolePage old) {
+    super.didUpdateWidget(old);
+    if (old.api != widget.api || old.auth != widget.auth) {
+      if (old.api == null) _api.dispose();
+      _api =
+          widget.api ??
+          OrganizationActivityApi(
+            authorizationHeader: () => widget.auth.authorizationHeader,
+          );
+    }
+    if (old.auth != widget.auth) {
+      old.auth.removeListener(_observeCover);
+      widget.auth.addListener(_observeCover);
+    }
+    if (old.organizations != widget.organizations) {
+      old.organizations.removeListener(_observeCover);
+      widget.organizations.addListener(_observeCover);
+    }
+    _observeCover();
+  }
 
   OrganizationWorkspace? get _organization => widget.organizations.active;
   bool get _canManage =>
       widget.auth.signedIn &&
+      _api.authorizationHeader() == widget.auth.authorizationHeader &&
       _organization != null &&
       (_organization!.role == 'owner' || _organization!.role == 'admin');
 
@@ -107,17 +172,31 @@ class _OrganizationConsolePageState extends State<OrganizationConsolePage> {
         OrganizationActivityApi(
           authorizationHeader: () => widget.auth.authorizationHeader,
         );
+    _coverSeen = _coverIdentity;
+    _humanSeen = _humanIdentity;
+    widget.auth.addListener(_observeCover);
+    widget.organizations.addListener(_observeCover);
     unawaited(_load());
   }
 
   @override
   void dispose() {
+    ++_humanEpoch;
+    ++_coverEpoch;
+    widget.auth.removeListener(_observeCover);
+    widget.organizations.removeListener(_observeCover);
     if (widget.api == null) _api.dispose();
     super.dispose();
   }
 
   Future<void> _load() async {
-    final org = _organization;
+    final org = _organization, api = _api;
+    final epoch = _humanEpoch, identity = _humanIdentity;
+    bool current() =>
+        mounted &&
+        epoch == _humanEpoch &&
+        identity == _humanIdentity &&
+        identical(api, _api);
     if (org == null || !_canManage) {
       setState(() => _loading = false);
       return;
@@ -127,12 +206,12 @@ class _OrganizationConsolePageState extends State<OrganizationConsolePage> {
       _error = null;
     });
     try {
-      final items = await _api.list(org.id);
-      if (mounted) setState(() => _activities = items);
+      final items = await api.list(org.id);
+      if (current()) setState(() => _activities = items);
     } catch (error) {
-      if (mounted) setState(() => _error = _message(error));
+      if (current()) setState(() => _error = _message(error));
     } finally {
-      if (mounted) setState(() => _loading = false);
+      if (current()) setState(() => _loading = false);
     }
   }
 
@@ -141,78 +220,152 @@ class _OrganizationConsolePageState extends State<OrganizationConsolePage> {
       : '连接失败，请检查网络后重试。';
 
   Future<void> _edit([OrganizationActivity? activity]) async {
-    final org = _organization;
-    if (org == null) return;
+    final org = _organization, api = _api;
+    final epoch = _humanEpoch, identity = _humanIdentity;
+    bool current() =>
+        mounted &&
+        _canManage &&
+        epoch == _humanEpoch &&
+        identity == _humanIdentity &&
+        identical(api, _api);
+    if (org == null || !current()) return;
     final changed = await Navigator.push<bool>(
       context,
       MaterialPageRoute(
-        builder: (_) => ActivityEditorPage(
-          api: _api,
-          auth: widget.auth,
-          organizations: widget.organizations,
-          initialOrganizer: ActivityOrganizer(
-            type: 'ORGANIZATION',
-            id: org.id,
-            name: org.name,
+        builder: (_) => NotificationDestinationBoundary(
+          identityChanges: Listenable.merge([
+            widget.auth,
+            widget.organizations,
+          ]),
+          current: current,
+          builder: (_) => ActivityEditorPage(
+            api: api,
+            auth: widget.auth,
+            organizations: widget.organizations,
+            initialOrganizer: ActivityOrganizer(
+              type: 'ORGANIZATION',
+              id: org.id,
+              name: org.name,
+            ),
+            city: widget.city,
+            existing: activity,
           ),
-          city: widget.city,
-          existing: activity,
         ),
       ),
     );
-    if (changed == true) {
+    if (changed == true && current()) {
       await _load();
       unawaited(widget.city.loadActivities());
     }
+  }
+
+  Future<void> _editOrganizationCover() async {
+    final org = _organization, owner = widget.auth.accountID;
+    if (!_canManage || org == null || owner == null) return;
+    final epoch = _coverEpoch, binding = _coverIdentity;
+    bool current() =>
+        mounted &&
+        epoch == _coverEpoch &&
+        binding == _coverIdentity &&
+        _canManage;
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => EntityCoverEditor(
+          ref: EntityCoverRef('organization', org.id),
+          name: org.name,
+          ownerID: owner,
+          api: EntityCoverAPI(
+            client: _api.coverClient,
+            baseUrl: _api.coverBaseUrl,
+            authorizationHeader: () => widget.auth.authorizationHeader,
+            current: current,
+          ),
+          identityChanges: Listenable.merge([
+            widget.auth,
+            widget.organizations,
+          ]),
+          current: current,
+        ),
+      ),
+    );
   }
 
   Future<void> _stateAction(
     OrganizationActivity activity,
     String action,
   ) async {
-    final org = _organization;
-    if (org == null || _workingId != null) return;
+    final org = _organization, api = _api;
+    final epoch = _humanEpoch, identity = _humanIdentity;
+    bool current() =>
+        mounted &&
+        _canManage &&
+        epoch == _humanEpoch &&
+        identity == _humanIdentity &&
+        identical(api, _api);
+    if (org == null || _workingId != null || !current()) return;
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(action == 'publish' ? '确认发布活动' : '确认取消活动'),
-        content: Text(
-          action == 'publish'
-              ? activity.visibility == 'public'
-                    ? '“${activity.title}”发布后会出现在公开活动和智能体搜索中。'
-                    : '“${activity.title}”发布后可见范围：${_visibilityLabel(activity.visibility)}。'
-              : '取消后活动仍可查看，但不能再报名。',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('返回'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text(action == 'publish' ? '确认发布' : '确认取消'),
-          ),
-        ],
+      builder: (context) => AnimatedBuilder(
+        animation: Listenable.merge([widget.auth, widget.organizations]),
+        builder: (context, _) => !current()
+            ? AlertDialog(
+                title: const Text('请重新打开操作'),
+                content: const Text('身份或组织已变化，请返回当前入口重新核实。'),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context, false),
+                    child: const Text('返回'),
+                  ),
+                ],
+              )
+            : AlertDialog(
+                title: Text(action == 'publish' ? '确认发布活动' : '确认取消活动'),
+                content: Text(
+                  action == 'publish'
+                      ? activity.visibility == 'public'
+                            ? '“${activity.title}”发布后会出现在公开活动和智能体搜索中。'
+                            : '“${activity.title}”发布后可见范围：${_visibilityLabel(activity.visibility)}。'
+                      : '取消后活动仍可查看，但不能再报名。',
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context, false),
+                    child: const Text('返回'),
+                  ),
+                  FilledButton(
+                    onPressed: () {
+                      if (current() &&
+                          context.mounted &&
+                          ModalRoute.of(context)?.isActive == true) {
+                        Navigator.pop(context, true);
+                      }
+                    },
+                    child: Text(action == 'publish' ? '确认发布' : '确认取消'),
+                  ),
+                ],
+              ),
       ),
     );
-    if (confirmed != true || !mounted) return;
+    if (confirmed != true || !current()) return;
     setState(() => _workingId = activity.id);
     try {
       if (action == 'publish') {
-        await _api.publish(org.id, activity.id);
+        await api.publish(org.id, activity.id);
       } else {
-        await _api.cancel(org.id, activity.id);
+        await api.cancel(org.id, activity.id);
       }
-      await _load();
-      unawaited(widget.city.loadActivities());
+      if (current()) {
+        await _load();
+        if (current()) unawaited(widget.city.loadActivities());
+      }
     } catch (error) {
-      if (mounted) {
+      if (current()) {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text(_message(error))));
       }
     } finally {
-      if (mounted) setState(() => _workingId = null);
+      if (current()) setState(() => _workingId = null);
     }
   }
 
@@ -221,6 +374,18 @@ class _OrganizationConsolePageState extends State<OrganizationConsolePage> {
     final org = _organization;
     if (org == null) return const Center(child: Text('请先在侧边栏选择组织工作区。'));
     if (!_canManage) return const Center(child: Text('只有组织所有者或管理员可以管理活动。'));
+    final coverEpoch = _coverEpoch, coverIdentity = _coverIdentity;
+    final humanEpoch = _humanEpoch, humanIdentity = _humanIdentity;
+    bool humanCurrent() =>
+        mounted &&
+        _canManage &&
+        humanEpoch == _humanEpoch &&
+        humanIdentity == _humanIdentity;
+    bool coverCurrent() =>
+        mounted &&
+        _canManage &&
+        coverEpoch == _coverEpoch &&
+        coverIdentity == _coverIdentity;
     return RefreshIndicator(
       onRefresh: _load,
       child: ListView(
@@ -245,22 +410,38 @@ class _OrganizationConsolePageState extends State<OrganizationConsolePage> {
             ),
           const SizedBox(height: 8),
           OutlinedButton.icon(
+            key: const Key('organization_cover_editor'),
+            onPressed: _editOrganizationCover,
+            icon: const Icon(Icons.image_outlined),
+            label: const Text('管理组织封面'),
+          ),
+          const SizedBox(height: 8),
+          OutlinedButton.icon(
             key: const Key('organization_map_location'),
-            onPressed: widget.city.selectedCity == null
-                ? null
-                : () async {
-                    await Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (_) => OrganizationMapLocationPage(
-                          organizationID: org.id,
-                          cityID: widget.city.selectedCity!.id,
-                          authorizationHeader: () =>
-                              widget.auth.authorizationHeader,
-                        ),
-                      ),
-                    );
-                    await widget.city.loadOrganizationPins();
-                  },
+            onPressed: () async {
+              if (!humanCurrent()) return;
+              await Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => OrganizationMapLocationPage(
+                    organizationID: org.id,
+                    cityID: widget.city.selectedCity?.id ?? '',
+                    authorizationHeader: () => widget.auth.authorizationHeader,
+                    ownerID: () =>
+                        humanCurrent() ? widget.auth.accountID : null,
+                    identityChanges: Listenable.merge([
+                      widget.auth,
+                      widget.organizations,
+                      widget.city,
+                    ]),
+                    sourceCurrent: humanCurrent,
+                    citySource: () => widget.city.selectedCity,
+                    client: _api.coverClient,
+                    apiBaseUrl: _api.coverBaseUrl,
+                  ),
+                ),
+              );
+              if (humanCurrent()) await widget.city.loadOrganizationPins();
+            },
             icon: const Icon(Icons.location_on_outlined),
             label: const Text('管理组织地图位置'),
           ),
@@ -268,6 +449,7 @@ class _OrganizationConsolePageState extends State<OrganizationConsolePage> {
           OutlinedButton.icon(
             key: const Key('organization_manage_members'),
             onPressed: () async {
+              if (!humanCurrent()) return;
               await Navigator.of(context).push(
                 MaterialPageRoute<void>(
                   builder: (context) => OrganizationMembersPage(
@@ -275,10 +457,19 @@ class _OrganizationConsolePageState extends State<OrganizationConsolePage> {
                     organizationName: org.name,
                     currentRole: org.role,
                     authorizationHeader: () => widget.auth.authorizationHeader,
+                    ownerID: () =>
+                        humanCurrent() ? widget.auth.accountID : null,
+                    identityChanges: Listenable.merge([
+                      widget.auth,
+                      widget.organizations,
+                    ]),
+                    sourceCurrent: humanCurrent,
+                    client: _api.coverClient,
+                    apiBaseUrl: _api.coverBaseUrl,
                   ),
                 ),
               );
-              await widget.organizations.load();
+              if (humanCurrent()) await widget.organizations.load();
               if (mounted) setState(() {});
             },
             icon: const Icon(Icons.people_outline),
@@ -286,14 +477,34 @@ class _OrganizationConsolePageState extends State<OrganizationConsolePage> {
           ),
           const SizedBox(height: 8),
           OutlinedButton.icon(
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (context) => OrganizationFAQPage(
-                  organizationID: org.id,
-                  authorizationHeader: () => widget.auth.authorizationHeader,
+            onPressed: () {
+              if (!humanCurrent()) return;
+              Navigator.of(context).push<void>(
+                MaterialPageRoute<void>(
+                  builder: (_) => NotificationDestinationBoundary(
+                    identityChanges: Listenable.merge([
+                      widget.auth,
+                      widget.organizations,
+                    ]),
+                    current: humanCurrent,
+                    builder: (_) => OrganizationFAQPage(
+                      organizationID: org.id,
+                      authorizationHeader: () =>
+                          widget.auth.authorizationHeader,
+                      ownerID: () =>
+                          humanCurrent() ? widget.auth.accountID : null,
+                      sourceCurrent: humanCurrent,
+                      identityChanges: Listenable.merge([
+                        widget.auth,
+                        widget.organizations,
+                      ]),
+                      client: _api.coverClient,
+                      apiBaseUrl: _api.coverBaseUrl,
+                    ),
+                  ),
                 ),
-              ),
-            ),
+              );
+            },
             icon: const Icon(Icons.question_answer_outlined),
             label: const Text('管理组织常见问答'),
           ),
@@ -313,7 +524,12 @@ class _OrganizationConsolePageState extends State<OrganizationConsolePage> {
           const SizedBox(height: 20),
           if (_loading) const Center(child: CircularProgressIndicator()),
           if (_error != null) ...[
-            Text(_error!, style: const TextStyle(color: Colors.red)),
+            Text(
+              _error!,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.error,
+              ),
+            ),
             TextButton(onPressed: _load, child: const Text('重试')),
           ],
           if (!_loading && _error == null && _activities.isEmpty)
@@ -326,6 +542,28 @@ class _OrganizationConsolePageState extends State<OrganizationConsolePage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    if (activity.cover != null &&
+                        activity.cover!.ref ==
+                            EntityCoverRef('activity', activity.id))
+                      EntityCover(
+                        key: ObjectKey(activity),
+                        metadata: activity.cover,
+                        api: EntityCoverAPI(
+                          client: _api.coverClient,
+                          baseUrl: _api.coverBaseUrl,
+                          authorizationHeader: () =>
+                              widget.auth.authorizationHeader,
+                          current: coverCurrent,
+                        ),
+                        identityChanges: Listenable.merge([
+                          widget.auth,
+                          widget.organizations,
+                        ]),
+                        current: coverCurrent,
+                        width: 320,
+                        height: 180,
+                        label: '${activity.title}的活动封面',
+                      ),
                     Text(
                       activity.title,
                       style: Theme.of(context).textTheme.titleMedium,
@@ -416,10 +654,57 @@ class _ActivityEditorPageState extends State<ActivityEditorPage> {
   bool _organizersLoading = true;
   List<ActivityOrganizer> _organizers = const [];
   ActivityOrganizer? _organizer;
+  int _coverEpoch = 0;
+  Object? _coverSeen;
+  Object get _coverIdentity => (
+    widget.auth,
+    widget.organizations,
+    widget.auth.accountID,
+    widget.auth.authorizationHeader,
+    widget.organizations.active?.id,
+    widget.organizations.active?.role,
+    widget.api,
+    widget.existing?.id,
+    widget.existing?.organizer?.type,
+    widget.existing?.organizer?.id,
+  );
+  void _observeCover() {
+    if (_coverSeen == _coverIdentity) return;
+    _coverSeen = _coverIdentity;
+    ++_coverEpoch;
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void didUpdateWidget(ActivityEditorPage old) {
+    super.didUpdateWidget(old);
+    if (old.auth != widget.auth) {
+      old.auth.removeListener(_observeCover);
+      widget.auth.addListener(_observeCover);
+    }
+    if (old.organizations != widget.organizations) {
+      old.organizations.removeListener(_observeCover);
+      widget.organizations.addListener(_observeCover);
+    }
+    _observeCover();
+  }
+
+  bool get _canEditCover {
+    final organizer = widget.existing?.organizer;
+    return !_busy &&
+        !_organizersLoading &&
+        organizer != null &&
+        _organizers.any(
+          (o) => o.type == organizer.type && o.id == organizer.id,
+        );
+  }
 
   @override
   void initState() {
     super.initState();
+    _coverSeen = _coverIdentity;
+    widget.auth.addListener(_observeCover);
+    widget.organizations.addListener(_observeCover);
     final existing = widget.existing;
     final tomorrow = DateTime.now().add(const Duration(days: 1));
     final start = existing == null
@@ -458,6 +743,7 @@ class _ActivityEditorPageState extends State<ActivityEditorPage> {
 
   Future<void> _loadOrganizers() async {
     final accountID = widget.auth.accountID;
+    final coverEpoch = _coverEpoch, coverBinding = _coverIdentity;
     if (accountID == null) {
       if (mounted) {
         setState(() {
@@ -469,12 +755,17 @@ class _ActivityEditorPageState extends State<ActivityEditorPage> {
     }
     final api = CommunityApi(
       authorizationHeader: () => widget.auth.authorizationHeader,
+      client: widget.api.coverClient,
+      apiBaseUrl: widget.api.coverBaseUrl,
     );
     try {
       await widget.organizations.load();
       final communities = await api.mine();
       final businesses = await widget.api.managedBusinessOrganizers();
-      if (!mounted) return;
+      if (!mounted ||
+          coverEpoch != _coverEpoch ||
+          coverBinding != _coverIdentity)
+        return;
       final options = authorizedActivityOrganizers(
         accountID,
         communities,
@@ -492,7 +783,9 @@ class _ActivityEditorPageState extends State<ActivityEditorPage> {
         _organizersLoading = false;
       });
     } catch (_) {
-      if (mounted) {
+      if (mounted &&
+          coverEpoch == _coverEpoch &&
+          coverBinding == _coverIdentity) {
         setState(() {
           _organizersLoading = false;
           _error = '主办方权限暂不可核对，请重试。';
@@ -505,6 +798,9 @@ class _ActivityEditorPageState extends State<ActivityEditorPage> {
 
   @override
   void dispose() {
+    ++_coverEpoch;
+    widget.auth.removeListener(_observeCover);
+    widget.organizations.removeListener(_observeCover);
     _title.dispose();
     _description.dispose();
     _capacity.dispose();
@@ -513,6 +809,48 @@ class _ActivityEditorPageState extends State<ActivityEditorPage> {
 
   String _dateLabel(DateTime date) =>
       MaterialLocalizations.of(context).formatMediumDate(date);
+  Future<void> _editCover() async {
+    final activity = widget.existing, owner = widget.auth.accountID;
+    final organizer = activity?.organizer;
+    if (activity == null ||
+        owner == null ||
+        organizer == null ||
+        _busy ||
+        _organizersLoading ||
+        !_organizers.any(
+          (o) => o.type == organizer.type && o.id == organizer.id,
+        ))
+      return;
+    final epoch = _coverEpoch, binding = _coverIdentity;
+    bool current() =>
+        mounted &&
+        epoch == _coverEpoch &&
+        binding == _coverIdentity &&
+        widget.auth.signedIn &&
+        _organizers.any(
+          (o) => o.type == organizer.type && o.id == organizer.id,
+        );
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => EntityCoverEditor(
+          ref: EntityCoverRef('activity', activity.id),
+          name: activity.title,
+          ownerID: owner,
+          api: EntityCoverAPI(
+            client: widget.api.coverClient,
+            baseUrl: widget.api.coverBaseUrl,
+            authorizationHeader: () => widget.auth.authorizationHeader,
+            current: current,
+          ),
+          identityChanges: Listenable.merge([
+            widget.auth,
+            widget.organizations,
+          ]),
+          current: current,
+        ),
+      ),
+    );
+  }
 
   Future<void> _pickDate(bool end) async {
     final picked = await showDatePicker(
@@ -673,12 +1011,26 @@ class _ActivityEditorPageState extends State<ActivityEditorPage> {
     final places = widget.city.places;
     final selectedPlace = places.any((p) => p.id == _placeId) ? _placeId : null;
     return Scaffold(
-      appBar: AppBar(title: Text(widget.existing == null ? '创建活动' : '编辑活动')),
+      appBar: birdtieAppBar(
+        context,
+        title: Text(widget.existing == null ? '创建活动' : '编辑活动'),
+      ),
       body: Form(
         key: _formKey,
         child: ListView(
           padding: const EdgeInsets.all(20),
           children: [
+            if (widget.existing != null) ...[
+              OutlinedButton.icon(
+                key: const Key('activity_cover_editor'),
+                onPressed: _canEditCover ? _editCover : null,
+                icon: const Icon(Icons.image_outlined),
+                label: const Text('管理活动封面'),
+              ),
+              if (!_organizersLoading && !_canEditCover)
+                const Text('当前主办方权限尚不可核对，暂不能编辑封面。'),
+              const SizedBox(height: 16),
+            ],
             const Text('活动时间均按阿伯丁当地时间填写。'),
             const SizedBox(height: 16),
             if (_organizersLoading) const LinearProgressIndicator(),

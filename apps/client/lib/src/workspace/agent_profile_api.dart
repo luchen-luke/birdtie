@@ -1,11 +1,14 @@
 import 'dart:async';
 import 'dart:convert';
+import 'agent_memory_review_page_model.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:http/http.dart' as http;
 import '../config/birdtie_environment.dart';
 import '../content/agent_profile_completion_api.dart'
     show completionMap, completionVersion;
 import 'agent_memory_candidate_api.dart' show candidateIDValid;
 import 'agent_memory_correction_api.dart';
+import 'agent_policy_revision.dart';
 import 'agent_introduction_api.dart'
     show IntroductionPolicy, introductionCategories;
 import 'person_community_interest_api.dart';
@@ -109,17 +112,21 @@ const memoryDetailExplanation =
 
 class AgentMemoryDetailView {
   AgentMemoryDetailView(dynamic raw, String owner, String requestedID) {
-    final m = completionMap(raw, {
-      'schemaVersion',
-      'owner',
-      'agentId',
-      'target',
-      'memory',
-      'observedAt',
-      'expiresAt',
-      'explanation',
-      'modelAccess',
-    }, optional: {'fieldEvidenceSet'});
+    final m = completionMap(
+      raw,
+      {
+        'schemaVersion',
+        'owner',
+        'agentId',
+        'target',
+        'memory',
+        'observedAt',
+        'expiresAt',
+        'explanation',
+        'modelAccess',
+      },
+      optional: {'fieldEvidenceSet'},
+    );
     final o = completionMap(m['owner'], {'type', 'id'}),
         t = completionMap(m['target'], {'id', 'version', 'status'});
     profileRequire(
@@ -186,7 +193,12 @@ const profileEvents = {
 };
 
 class AgentPolicySummary {
-  AgentPolicySummary(dynamic raw, String family, DateTime observed) {
+  AgentPolicySummary(
+    dynamic raw,
+    String family,
+    DateTime observed, {
+    bool isWeb = kIsWeb,
+  }) {
     final m = completionMap(
       raw,
       {'family', 'configured', 'nativeRevision', 'status', 'settings'},
@@ -195,9 +207,7 @@ class AgentPolicySummary {
     profileRequire(
       m['family'] == family &&
           m['configured'] is bool &&
-          m['nativeRevision'] is int &&
-          m['nativeRevision'] >= 0 &&
-          m['nativeRevision'] <= 9223372036854775806 &&
+          agentPolicyRevisionValid(m['nativeRevision'], isWeb: isWeb) &&
           m['status'] is String,
     );
     configured = m['configured'];
@@ -298,7 +308,7 @@ class AgentPolicySummary {
 }
 
 class AgentPoliciesView {
-  AgentPoliciesView(dynamic raw, String owner) {
+  AgentPoliciesView(dynamic raw, String owner, {bool isWeb = kIsWeb}) {
     final m = completionMap(raw, {
       'schemaVersion',
       'ownerType',
@@ -319,10 +329,10 @@ class AgentPoliciesView {
     agentID = m['agentId'];
     observedAt = correctionTime(m['observedAt']);
     // Reuse the complete native social rule validation as well.
-    IntroductionPolicy(m, owner);
+    IntroductionPolicy(m, owner, isWeb: isWeb);
     records = Map.unmodifiable({
       for (final f in ['ATTENTION', 'SOCIAL', 'AUTONOMY'])
-        f: AgentPolicySummary(m[f.toLowerCase()], f, observedAt),
+        f: AgentPolicySummary(m[f.toLowerCase()], f, observedAt, isWeb: isWeb),
     });
   }
   late final String agentID;
@@ -398,6 +408,18 @@ class AgentProfileAPI {
     );
     return rows;
   }
+
+  Future<AgentMemoryReviewPage<CorrectableMemory>> memoryPage(
+    String token,
+    String owner,
+  ) async => AgentMemoryReviewPage.read(
+    await _get(token, '/v1/me/agent-memories/page'),
+    owner: owner,
+    collection: 'MEMORIES',
+    parse: (v) => CorrectableMemory.read(v, owner),
+    id: (v) => v.id,
+    agent: (v) => v.agentID,
+  );
 
   Future<AgentMemoryDetailView> detail(
     String token,

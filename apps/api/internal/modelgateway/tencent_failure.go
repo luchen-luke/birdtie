@@ -278,3 +278,59 @@ func SafeModelFailureSummary(cause error) (string, bool) {
 	}
 	return "", false
 }
+
+// IsAIServiceUnavailable identifies a reviewed provider failure, never a
+// grant to dispatch, retry, release a budget hold, or infer a cash charge.
+func IsAIServiceUnavailable(cause error) bool {
+	var diagnostic *modelFailureDiagnostic
+	return compatibleAIServiceFailure(cause, 0, false) &&
+		errors.As(cause, &diagnostic) && diagnostic != nil
+}
+
+// Every branch must describe the same reviewed service failure. In particular,
+// a joined cancellation, permission/budget error, current-source failure or
+// unknown settlement cannot borrow a sibling's older provider diagnostic.
+// Native/fmt wrappers keep their existing Unwrap identity; no Error text is
+// inspected. The depth bound fails closed for malformed error graphs.
+func compatibleAIServiceFailure(cause error, depth int, anchored bool) bool {
+	if cause == nil || depth >= 32 {
+		return false
+	}
+	switch e := cause.(type) {
+	case *modelFailureDiagnostic:
+		if e == nil || e.stageName() != "TENCENT_HTTP" || e.kindName() != "HTTP" ||
+			e.status != httpStatusAIServiceUnavailable ||
+			(e.reasonName() != "unknown" && e.reasonName() != "provider_UNKNOWN") {
+			return false
+		}
+		metadata := e.http.normalized()
+		if modelDiagnosticName(uint8(metadata.code), tencentHTTPCodes[:]) != "403004" ||
+			modelDiagnosticName(uint8(metadata.source), tencentHTTPSources[:]) != "gateway" {
+			return false
+		}
+		return compatibleAIServiceFailure(e.Unwrap(), depth+1, true)
+	case ProviderError:
+		return anchored && e.Code == "UNKNOWN" && !e.Retryable
+	case *ProviderError:
+		return anchored && e != nil && e.Code == "UNKNOWN" && !e.Retryable
+	case interface{ Unwrap() []error }:
+		children := e.Unwrap()
+		if len(children) == 0 {
+			return false
+		}
+		for _, child := range children {
+			// Each independent branch needs its own concrete HTTP anchor; an
+			// inherited/sibling diagnostic cannot classify a bare UNKNOWN.
+			if !compatibleAIServiceFailure(child, depth+1, false) {
+				return false
+			}
+		}
+		return true
+	case interface{ Unwrap() error }:
+		return compatibleAIServiceFailure(e.Unwrap(), depth+1, anchored)
+	default:
+		return false
+	}
+}
+
+const httpStatusAIServiceUnavailable = 402

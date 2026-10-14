@@ -8,15 +8,18 @@ import (
 	"fmt"
 	arp "github.com/birdtie/birdtie/apps/api/internal/agentresultprojection"
 	"io"
+	"log"
 	"mime"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/birdtie/birdtie/apps/api/internal/actorref"
 	"github.com/birdtie/birdtie/apps/api/internal/agentruntime"
 	"github.com/birdtie/birdtie/apps/api/internal/agentworkspace"
 	"github.com/birdtie/birdtie/apps/api/internal/foundation"
 	"github.com/birdtie/birdtie/apps/api/internal/identity"
+	"github.com/birdtie/birdtie/apps/api/internal/modelgateway"
 	"github.com/birdtie/birdtie/apps/api/internal/organization"
 )
 
@@ -77,6 +80,29 @@ func (a *organizationTaskContextAgent) Search(ctx context.Context, city, viewer 
 	return a.Store.Search(ctx, city, "", terms)
 }
 func agentTaskWriteFailure(w http.ResponseWriter, err error, org bool) {
+	if errors.Is(err, errLocalPlaceAnswerUnavailable) || errors.Is(err, agentworkspace.ErrLocalPlaceFactsUnavailable) || errors.Is(err, agentworkspace.ErrLicensedPlaceFactsUnavailable) {
+		respond(w, http.StatusServiceUnavailable, map[string]any{"error": map[string]string{"code": "place_answer_unavailable", "message": "地点信息回答暂未接通，本轮尚未回答你的问题。"}})
+		return
+	}
+	if errors.Is(err, agentworkspace.ErrLocalPlaceHoursUnavailable) {
+		respondError(w, http.StatusUnprocessableEntity, "place_hours_unavailable")
+		return
+	}
+	if errors.Is(err, agentworkspace.ErrSearchRetentionPending) {
+		respondError(w, http.StatusServiceUnavailable, "search_retention_permission_pending")
+		return
+	}
+	if !org && modelgateway.IsAIServiceUnavailable(err) {
+		// The closed model diagnostic is safe to log. Provider response text,
+		// selected model, business code and accounting never enter this reply.
+		if summary, ok := modelgateway.SafeModelFailureSummary(err); ok {
+			log.Printf("request_id=%s AI service unavailable: %s", w.Header().Get("X-Request-ID"), summary)
+		}
+		respond(w, http.StatusServiceUnavailable, map[string]any{"error": map[string]string{
+			"code": "ai_service_unavailable", "message": "AI 服务目前不可用，本轮没有生成新回答。原对话仍保留。",
+		}})
+		return
+	}
 	if org {
 		organizationTaskContextFailure(w, err)
 	} else {
@@ -145,9 +171,10 @@ func (s *server) createAgentTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var input struct {
-		Query     string                    `json:"query"`
-		TaskID    string                    `json:"taskId"`
-		MapBounds *agentworkspace.MapBounds `json:"mapBounds"`
+		Query              string                    `json:"query"`
+		TaskID             string                    `json:"taskId"`
+		MapBounds          *agentworkspace.MapBounds `json:"mapBounds"`
+		OnlinePlaceContext *onlinePlaceContext       `json:"onlinePlaceContext,omitempty"`
 	}
 	decoder := json.NewDecoder(http.MaxBytesReader(w, r.Body, 4096))
 	decoder.DisallowUnknownFields()
@@ -167,6 +194,10 @@ func (s *server) createAgentTask(w http.ResponseWriter, r *http.Request) {
 	}
 	if input.MapBounds != nil && !input.MapBounds.Valid() {
 		respondError(w, http.StatusBadRequest, "invalid_map_bounds")
+		return
+	}
+	if input.MapBounds != nil && input.OnlinePlaceContext != nil {
+		respondError(w, http.StatusBadRequest, "online_place_scope_conflict")
 		return
 	}
 	principalType, policy := workspaceAgentPolicy(organizationWorkspace)
@@ -201,6 +232,8 @@ func (s *server) createAgentTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var task agentworkspace.Task
+	newPublicTopic := false
+	_, explicitPreference := agentworkspace.ParseNowExplicitPreference(query)
 	if input.TaskID != "" {
 		if actor.ID == "" || !uuidPath.MatchString(input.TaskID) {
 			respondError(w, http.StatusBadRequest, "invalid_task_id")
@@ -223,7 +256,29 @@ func (s *server) createAgentTask(w http.ResponseWriter, r *http.Request) {
 			respondError(w, http.StatusConflict, "task_city_mismatch")
 			return
 		}
-		if _, followup := agentworkspace.ParsePlaceFollowup(query, &task); followup {
+		if !explicitPreference && input.MapBounds == nil && s.tryOnlineRestaurantFollowup(w, r, digest, actor, task, input.OnlinePlaceContext, query, workspace, role, permissions) {
+			return
+		}
+		if task.Intent == agentworkspace.FindPlace && len(task.Conversation) > 0 {
+			last := task.Conversation[len(task.Conversation)-1]
+			p := last.ExternalPlaceReply
+			if last.Role == "assistant" && p != nil && p.Schema == "birdtie-online-places-v2" && p.Provider == "openstreetmap" && p.CityID == cityID && restaurantFollowupNewTopic(query) {
+				// Empty/unavailable replies still establish the previous topic,
+				// but only a server-bound, valid retained snapshot can isolate it.
+				// This reuses the existing full history/provenance validator.
+				validated, validationErr := s.retainedOnlineRestaurantTask(r.Context(), task)
+				if validationErr != nil {
+					resultProjectionFailure(w, validationErr)
+					return
+				}
+				newPublicTopic = validated != nil
+			}
+		}
+		followup := false
+		if !newPublicTopic {
+			_, followup = agentworkspace.ParsePlaceFollowup(query, &task)
+		}
+		if followup {
 			var continued bool
 			task, r, continued = s.continuePublicPlaceFollowup(w, r, digest, actor, task, query)
 			if !continued {
@@ -235,6 +290,16 @@ func (s *server) createAgentTask(w http.ResponseWriter, r *http.Request) {
 			task.Status = agentworkspace.TaskActive
 		}
 	} else {
+		if input.OnlinePlaceContext != nil {
+			publicTask := agentworkspace.Task{PrincipalType: principalType, PrincipalID: principalID, ActingUserID: actor.ID, CityID: cityID, Query: query, ContextType: "CITY", Filters: map[string]string{}}
+			if !explicitPreference && actor.ID == "" && s.tryOnlineRestaurantFollowup(w, r, digest, actor, publicTask, input.OnlinePlaceContext, query, workspace, role, permissions) {
+				return
+			}
+			if actor.ID != "" {
+				respondError(w, http.StatusBadRequest, "online_place_task_required")
+				return
+			}
+		}
 		task = agentworkspace.Task{
 			PrincipalType: principalType, PrincipalID: principalID, ActingUserID: actor.ID,
 			CityID: cityID, Query: query, Intent: "PENDING", Status: agentworkspace.TaskActive,
@@ -249,6 +314,10 @@ func (s *server) createAgentTask(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
+	if _, preference := agentworkspace.ParseNowExplicitPreference(query); preference {
+		s.executeNowPreference(w, r, digest, actor, task, principalType, workspace, role, permissions)
+		return
+	}
 	mapBounds := input.MapBounds
 	if mapBounds == nil && input.TaskID != "" {
 		mapBounds, err = agentworkspace.BoundsFromFilters(task.Filters)
@@ -257,7 +326,30 @@ func (s *server) createAgentTask(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	mvp := agentworkspace.ParseMVPIntent(query, taskContext(task, input.TaskID != ""))
+	semanticContext := taskContext(task, input.TaskID != "")
+	if newPublicTopic {
+		// The same Task retains its real conversation, but a new target cannot
+		// become a pronoun for the last restaurant through either parser entry.
+		// Ordinary native single-Place admission/hours followups keep context.
+		semanticContext = nil
+	}
+	mvp := agentworkspace.ParseMVPIntent(query, semanticContext)
+	if isOnlineRestaurantRefresh(query) {
+		location := "city"
+		if input.TaskID != "" && task.Filters["locationPreference"] == "viewport" {
+			location = "viewport"
+		}
+		mvp = agentworkspace.MVPIntent{Operation: agentworkspace.FindPlace, Target: agentworkspace.FindPlace, Category: "restaurant", LocationPreference: location, Supported: true, Reason: agentworkspace.RestaurantDiscovery}
+	}
+	// A named CURRENT catalog city is a scope, not part of a venue name.
+	// Unknown/different cities are not silently discarded or sent to a provider.
+	if mvp.Reason != agentworkspace.RestaurantDiscovery {
+		if city, e := s.catalog.GetCity(r.Context(), cityID); e == nil {
+			if publicRestaurant, yes := restaurantDiscoveryInCity(query, city); yes {
+				mvp = publicRestaurant
+			}
+		}
+	}
 	if currentPublicPlaceFollowup(r) {
 		// Native storage has resolved the public name. Preserve that exact
 		// catalog search value rather than reusing the raw replacement alias.
@@ -545,6 +637,30 @@ func (s *server) getAgentTask(w http.ResponseWriter, r *http.Request) {
 		s.respondCurrentAgentTask(w, r, result, digest, actor)
 		return
 	}
+	retained, err := s.retainedOnlineRestaurantTask(r.Context(), task)
+	if err != nil {
+		resultProjectionFailure(w, err)
+		return
+	}
+	if retained != nil || task.Filters["reason"] == agentworkspace.RestaurantDiscovery {
+		result := emptyAgentResults(task.CityID, currentQuery)
+		result.OnlinePlaceSearch = retained
+		result.Message = "这轮旧版查询未保存完整地点，请重新查询一次。"
+		result.Note = "公开地点结果保留在本对话中；资料更新时间与对话保留分开处理。"
+		last := len(task.Conversation) - 1
+		if retained != nil {
+			result.Message = task.Conversation[last].Text
+		}
+		if last >= 0 && task.Conversation[last].Role == "user" {
+			result.Message = "这轮查询尚未完成；原有回答保留在对话中。"
+		}
+		principalType, policy := workspaceAgentPolicy(organizationWorkspace)
+		result = workspaceEnvelope(result, task, true, principalType, string(policy.Role), role, policy.PermissionStrings(), w.Header().Get("X-Request-ID"))
+		r = r.WithContext(context.WithValue(r.Context(), onlineRestaurantHistoryKey{}, true))
+		s.respondCurrentAgentTask(w, r, result, digest, actor)
+		return
+	}
+
 	if newTypedOperation(task.Intent) || task.Intent == agentworkspace.FindOrganization || task.Intent == agentworkspace.FindPlace ||
 		task.Intent == agentworkspace.CompareResults || task.Intent == agentworkspace.CreateActivity ||
 		task.Intent == agentworkspace.UnsupportedIntent || task.Intent == agentworkspace.PersonalRelationshipContext || task.Intent == agentworkspace.FindNewPeople {
@@ -652,7 +768,7 @@ func (s *server) respondCurrentAgentTask(w http.ResponseWriter, r *http.Request,
 			respondError(w, http.StatusServiceUnavailable, "organization_context_unavailable")
 			return
 		}
-		copyAgentResponseBuffer(w, buffer)
+		s.releaseCurrentAgentTask(w, r, buffer, result)
 		return
 	}
 	result, history, historyPrimary, err := s.prepareAgentMessageResults(r, result, digest, actor)
@@ -714,7 +830,7 @@ func (s *server) respondCurrentAgentTask(w http.ResponseWriter, r *http.Request,
 				return
 			}
 		}
-		copyAgentResponseBuffer(w, buffer)
+		s.releaseCurrentAgentTask(w, r, buffer, result)
 		return
 	}
 	if buffer.status == http.StatusOK && actor.AccountType == "person" && r.Header.Get("X-Birdtie-Organization-Workspace") == "" {
@@ -764,14 +880,28 @@ func (s *server) respondCurrentAgentTask(w http.ResponseWriter, r *http.Request,
 		respondError(w, http.StatusServiceUnavailable, "task_unavailable")
 		return
 	}
-	for key, values := range buffer.header {
-		w.Header()[key] = values
+	if err = revalidateCurrentNowReply(r); err != nil {
+		resultProjectionFailure(w, err)
+		return
 	}
-	if buffer.status == 0 {
-		buffer.status = http.StatusInternalServerError
+	s.releaseCurrentAgentTask(w, r, buffer, result)
+}
+
+func (s *server) releaseCurrentAgentTask(w http.ResponseWriter, r *http.Request, buffer *taskResponseBuffer, result agentworkspace.Results) {
+	if search := result.OnlinePlaceSearch; search != nil && search.Schema != "birdtie-online-places-v2" && buffer.status == http.StatusOK {
+		now := time.Now().UTC()
+		if !search.ExpiresAt.After(now) {
+			resultProjectionFailure(w, arp.ErrChanged)
+			return
+		}
+		for _, candidate := range search.Places {
+			if !candidate.ExpiresAt.After(now) {
+				resultProjectionFailure(w, arp.ErrChanged)
+				return
+			}
+		}
 	}
-	w.WriteHeader(buffer.status)
-	_, _ = w.Write(buffer.Bytes())
+	copyAgentResponseBuffer(w, buffer)
 }
 
 func workspaceTaskMatches(task agentworkspace.Task, kind, id string) bool {

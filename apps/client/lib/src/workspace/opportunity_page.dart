@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
+import '../app/birdtie_app_bar.dart';
 import '../auth/birdtie_auth_controller.dart';
 import '../city/public_city_controller.dart';
 import '../config/birdtie_environment.dart';
@@ -354,6 +355,8 @@ class _OpportunityPageState extends State<OpportunityPage> {
         builder: (sheet) {
           _overlayContext = sheet;
           return ActivityDetailSheet(
+            accountID: () => widget.auth.accountID,
+            identityChanges: widget.auth,
             activity: activity,
             authorizationHeader: () =>
                 widget.auth.authorizationHeader == token ? token : null,
@@ -390,7 +393,8 @@ class _OpportunityPageState extends State<OpportunityPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(
+    appBar: birdtieAppBar(
+      context,
       title: const Text('为你找到的活动'),
       actions: [
         IconButton(
@@ -407,9 +411,9 @@ class _OpportunityPageState extends State<OpportunityPage> {
         : ListView(
             padding: const EdgeInsets.all(20),
             children: [
-              const Text(
+              Text(
                 '从你想做的事出发',
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
+                style: Theme.of(context).textTheme.headlineSmall,
               ),
               const SizedBox(height: 8),
               const Text(

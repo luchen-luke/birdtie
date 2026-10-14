@@ -850,6 +850,12 @@ func (h *nativeLiveSourceAnswerRun) CompleteSourceModel(ctx context.Context, ada
 	if e != nil || !nativeLiveRequestEqual(current.Request(), p.Request()) || r.control.Steps[1].State != modelrequestrun.StepUnknown {
 		return empty, modelegressbudget.ErrDenied
 	}
+	// Usage has already been observed. A rejected answer keeps the original
+	// UNKNOWN reservation and cannot finish the Run, publish text or retry.
+	stage = "model-source-answer-policy"
+	if e = validateLiveSourceAnswerForPrompt(current.Request().PromptVersion, result.Text, h.batch.data.Sources); e != nil {
+		return empty, e
+	}
 	stage = "model-finish-run"
 	if _, e = tx.Exec(ctx, `UPDATE model_request_runs SET state='FINISHED',revision=revision+1,updated_at=clock_timestamp() WHERE id=$1 AND fence=$2 AND state='RUNNING'`, h.id, h.fence); e != nil {
 		return empty, egressError(e)
@@ -865,6 +871,17 @@ func (h *nativeLiveSourceAnswerRun) CompleteSourceModel(ctx context.Context, ada
 	}
 	h.completedResult = cloneValidatedLiveSourceTextResult(result)
 	return result, nil
+}
+
+// Prompt selection comes from the revalidated native configuration binding.
+// Historical configurations retain their original output contract; v2 must be
+// explicitly registered and activated through the existing route CAS.
+func validateLiveSourceAnswerForPrompt(promptVersion, answer string, sources []modelegressbudget.LivePublicSource) error {
+	if promptVersion == modelegressbudget.LiveSourceAnswerPolicyVersion {
+		return modelegressbudget.ValidateLivePublicSourceAnswer(answer, sources)
+	}
+	_, err := modelegressbudget.LivePublicSourcesDigest(sources)
+	return err
 }
 
 // Only the validated native TEXT completion path calls this helper. Keeping

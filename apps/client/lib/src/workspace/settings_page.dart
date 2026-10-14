@@ -5,14 +5,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
+import '../app/birdtie_app_bar.dart';
 import '../auth/birdtie_auth_controller.dart';
 import '../city/public_city_controller.dart';
 import '../content/private_moment_controller.dart';
+import '../content/legacy_archive_page.dart';
 import '../content/agent_seed_sheet.dart';
 import '../content/social_preference_seed_sheet.dart';
 import '../legacy/legacy_shell.dart';
 import 'agent_debug_panel.dart';
 import 'support_page.dart';
+import 'privacy_control_page.dart';
+import 'human_causal_control.dart';
+import 'human_causal_pending_store.dart';
+import 'human_causal_operation_controller.dart';
 import 'person_contexts_page.dart';
 import 'person_community_interest_page.dart';
 import 'activity_participation_disclosure_page.dart';
@@ -33,7 +39,10 @@ import 'task_context_privacy_page.dart';
 import 'agent_profile_visibility_page.dart';
 import 'agent_introduction_page.dart';
 import 'chat_entity_router.dart';
+import 'voice_input_consent.dart';
 import 'notification_destination_router.dart';
+import 'system_push_controller.dart';
+import 'system_push_settings_page.dart';
 import '../config/birdtie_environment.dart';
 
 class SettingsPage extends StatefulWidget {
@@ -46,6 +55,8 @@ class SettingsPage extends StatefulWidget {
     this.apiBaseUrl,
     this.workspaceChanges,
     this.organizationWorkspaceID,
+    this.systemPush,
+    this.humanPendingStore,
   });
 
   final BirdtieAuthController auth;
@@ -55,6 +66,8 @@ class SettingsPage extends StatefulWidget {
   final String? apiBaseUrl;
   final Listenable? workspaceChanges;
   final String? Function()? organizationWorkspaceID;
+  final SystemPushController? systemPush;
+  final HumanCausalPendingStore? humanPendingStore;
 
   @override
   State<SettingsPage> createState() => _SettingsPageState();
@@ -65,6 +78,25 @@ class _SettingsPageState extends State<SettingsPage> {
   late http.Client _client;
   late bool _ownsClient;
   final _entryChanges = ValueNotifier<int>(0);
+  final _reportSource = HumanCausalSourceSerial();
+  final _archiveSource = HumanCausalSourceSerial();
+  void _observeArchiveSource() => _archiveSource.observe((
+    widget.auth,
+    widget.auth.signedIn,
+    widget.auth.accountID,
+    widget.organizationWorkspaceID?.call(),
+    widget.organizationWorkspaceID,
+    widget.workspaceChanges,
+    _client,
+    _apiBase,
+  ));
+  void _observeReportSource() => _reportSource.observe((
+    widget.auth,
+    widget.auth.accountID,
+    widget.organizationWorkspaceID?.call(),
+    _client,
+    _apiBase,
+  ));
   int _entryEpoch = 0;
   late (String?, String?, String?) _settingsIdentity;
   (String?, String?, String?) get _currentIdentity => (
@@ -75,6 +107,8 @@ class _SettingsPageState extends State<SettingsPage> {
   String get _apiBase => widget.apiBaseUrl ?? _defaultApiBase;
   List<Map<String, dynamic>> _blocks = const [];
   List<Map<String, dynamic>> _grants = const [];
+  List<HumanCausalPending> _humanPending = const [];
+  String? _humanRecoveryError;
   bool _loading = false;
   bool _failed = false;
   String? _workingID;
@@ -89,6 +123,8 @@ class _SettingsPageState extends State<SettingsPage> {
     _client = widget.client ?? http.Client();
     _ownsClient = widget.client == null;
     _settingsIdentity = _currentIdentity;
+    _observeReportSource();
+    _observeArchiveSource();
     widget.auth.addListener(_onAuthChanged);
     widget.workspaceChanges?.addListener(_onAuthChanged);
     if (widget.auth.signedIn &&
@@ -98,6 +134,8 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   void _onAuthChanged() {
+    _observeReportSource();
+    _observeArchiveSource();
     if (_settingsIdentity != _currentIdentity) {
       _resetBinding();
       return;
@@ -118,6 +156,8 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   void _resetBinding() {
+    _observeReportSource();
+    _observeArchiveSource();
     ++_serial;
     ++_entryEpoch;
     _settingsIdentity = _currentIdentity;
@@ -125,6 +165,7 @@ class _SettingsPageState extends State<SettingsPage> {
     setState(() {
       _blocks = const [];
       _grants = const [];
+      _humanPending = const [];
       _loading = _failed = false;
       _workingID = null;
     });
@@ -177,6 +218,29 @@ class _SettingsPageState extends State<SettingsPage> {
       _failed = false;
     });
     try {
+      try {
+        final owner = widget.auth.accountID;
+        if (humanControlID(owner)) {
+          final pending =
+              await (widget.humanPendingStore ??
+                      SecureHumanCausalPendingStore())
+                  .read(_apiBase.replaceFirst(RegExp(r'/$'), ''), owner!);
+          if (!current() || serial != _serial) return;
+          _humanRecoveryError = null;
+          _humanPending = pending
+              .where(
+                (p) => const {
+                  HumanCausalFamily.grantRevoke,
+                  HumanCausalFamily.block,
+                }.contains(p.selector.family),
+              )
+              .toList();
+        }
+      } catch (_) {
+        if (current() && serial == _serial) {
+          _humanRecoveryError = '本机原操作列表暂不可读，请重新读取。';
+        }
+      }
       final responses = await Future.wait([
         _client.get(
           _endpoint('/v1/me/blocks'),
@@ -219,20 +283,50 @@ class _SettingsPageState extends State<SettingsPage> {
         widget.organizationWorkspaceID?.call() != null) {
       return;
     }
-    final epoch = _entryEpoch;
+    final auth = widget.auth, client = _client, base = _apiBase;
+    final owner = auth.accountID;
     bool current() =>
         mounted &&
-        epoch == _entryEpoch &&
-        widget.auth.authorizationHeader == token &&
+        auth == widget.auth &&
+        client == _client &&
+        base == _apiBase &&
+        owner == auth.accountID &&
+        auth.signedIn &&
         widget.organizationWorkspaceID?.call() == null;
     setState(() => _workingID = id);
     try {
-      final response = await _client
-          .delete(_endpoint(path), headers: {'Authorization': token})
-          .timeout(const Duration(seconds: 12));
-      if (response.statusCode != 204) {
-        throw StateError('Settings update failed');
-      }
+      await Navigator.of(context).push<void>(
+        MaterialPageRoute(
+          builder: (_) => HumanCausalEntryBoundary(
+            ownerID: () => auth.accountID,
+            authorizationHeader: () => auth.authorizationHeader,
+            sourceKey: () => _reportSource.generation,
+            sourceCurrent: current,
+            identityChanges: Listenable.merge([
+              auth,
+              widget.workspaceChanges,
+              _reportSource,
+            ]),
+            builder: (_, live) => PrivacyControlPage(
+              family: path.contains('/consents/')
+                  ? HumanCausalFamily.grantRevoke
+                  : HumanCausalFamily.block,
+              targetID: id,
+              authorizationHeader: () => auth.authorizationHeader,
+              ownerID: () => auth.accountID,
+              sourceCurrent: live,
+              identityChanges: Listenable.merge([
+                auth,
+                widget.workspaceChanges,
+                _reportSource,
+              ]),
+              client: client,
+              apiBaseUrl: base,
+              pendingStore: widget.humanPendingStore,
+            ),
+          ),
+        ),
+      );
       if (current()) await _load();
     } catch (_) {
       if (mounted && current()) {
@@ -258,7 +352,7 @@ class _SettingsPageState extends State<SettingsPage> {
     final workspace = widget.organizationWorkspaceID;
     _openPersonalRoute(
       (context) => Scaffold(
-        appBar: AppBar(title: const Text('个人资料')),
+        appBar: birdtieAppBar(context, title: const Text('个人资料')),
         body: LegacyProfilePage(
           auth: auth,
           city: city,
@@ -369,19 +463,70 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
+  void _openLegacyArchive() {
+    _observeArchiveSource();
+    final auth = widget.auth, client = _client, base = _apiBase;
+    final owner = auth.accountID, generation = _archiveSource.generation;
+    final workspace = widget.organizationWorkspaceID;
+    bool current() =>
+        mounted &&
+        generation == _archiveSource.generation &&
+        auth == widget.auth &&
+        client == _client &&
+        base == _apiBase &&
+        auth.signedIn &&
+        owner == auth.accountID &&
+        widget.organizationWorkspaceID?.call() == null;
+    if (!current()) return;
+    final changes = Listenable.merge([
+      auth,
+      widget.workspaceChanges,
+      _archiveSource,
+    ]);
+    String? header() => auth.authorizationHeader;
+    String? ownerID() => auth.accountID;
+    Object source() => _archiveSource.generation;
+    Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        builder: (_) => LegacyArchivePage(
+          authorizationHeader: header,
+          ownerID: ownerID,
+          organizationWorkspaceID: workspace,
+          identityChanges: changes,
+          sourceCurrent: current,
+          sourceKey: source,
+          client: client,
+          apiBaseUrl: base,
+        ),
+      ),
+    );
+  }
+
   void _openProfileVisibility() {
     final epoch = _entryEpoch, auth = widget.auth, client = widget.client;
     final ownedClient = _client, base = _apiBase, identity = _currentIdentity;
-    final changes = Listenable.merge([_entryChanges, auth, widget.workspaceChanges]);
+    final changes = Listenable.merge([
+      _entryChanges,
+      auth,
+      widget.workspaceChanges,
+    ]);
     final workspace = widget.organizationWorkspaceID;
     bool current() =>
-        mounted && epoch == _entryEpoch && auth == widget.auth &&
-        client == widget.client && ownedClient == _client &&
-        base == _apiBase && identity == _currentIdentity;
+        mounted &&
+        epoch == _entryEpoch &&
+        auth == widget.auth &&
+        client == widget.client &&
+        ownedClient == _client &&
+        base == _apiBase &&
+        identity == _currentIdentity;
     _openPersonalRoute(
       (_) => AgentProfileVisibilityPage(
-        auth: auth, client: client, apiBaseUrl: base,
-        workspaceChanges: changes, organizationWorkspaceID: workspace, current: current,
+        auth: auth,
+        client: client,
+        apiBaseUrl: base,
+        workspaceChanges: changes,
+        organizationWorkspaceID: workspace,
+        current: current,
       ),
     );
   }
@@ -389,15 +534,28 @@ class _SettingsPageState extends State<SettingsPage> {
   void _openTaskContextPrivacy() {
     final epoch = _entryEpoch, auth = widget.auth, client = widget.client;
     final ownedClient = _client, base = _apiBase, identity = _currentIdentity;
-    final changes = Listenable.merge([_entryChanges, auth, widget.workspaceChanges]);
+    final changes = Listenable.merge([
+      _entryChanges,
+      auth,
+      widget.workspaceChanges,
+    ]);
     final workspace = widget.organizationWorkspaceID;
-    bool current() => mounted && epoch == _entryEpoch && auth == widget.auth &&
-        client == widget.client && ownedClient == _client && base == _apiBase &&
+    bool current() =>
+        mounted &&
+        epoch == _entryEpoch &&
+        auth == widget.auth &&
+        client == widget.client &&
+        ownedClient == _client &&
+        base == _apiBase &&
         identity == _currentIdentity;
     _openPersonalRoute(
       (_) => TaskContextPrivacyPage(
-        auth: auth, client: client, apiBaseUrl: base,
-        workspaceChanges: changes, organizationWorkspaceID: workspace, current: current,
+        auth: auth,
+        client: client,
+        apiBaseUrl: base,
+        workspaceChanges: changes,
+        organizationWorkspaceID: workspace,
+        current: current,
       ),
     );
   }
@@ -576,22 +734,42 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   void _openPersonContexts() {
-    final epoch = _entryEpoch, auth = widget.auth, client = widget.client;
-    final ownedClient = _client, base = _apiBase, identity = _currentIdentity;
+    final auth = widget.auth,
+        client = _client,
+        base = _apiBase,
+        owner = widget.auth.accountID;
     bool current() =>
         mounted &&
-        epoch == _entryEpoch &&
         auth == widget.auth &&
-        client == widget.client &&
-        ownedClient == _client &&
+        client == _client &&
         base == _apiBase &&
-        identity == _currentIdentity;
-    _openPersonalRoute(
-      (_) => PersonContextsPage(
-        auth: auth,
-        client: client,
-        apiBaseUrl: base,
-        current: current,
+        owner == auth.accountID &&
+        auth.signedIn &&
+        widget.organizationWorkspaceID?.call() == null;
+    Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        builder: (_) => HumanCausalEntryBoundary(
+          ownerID: () => auth.accountID,
+          authorizationHeader: () => auth.authorizationHeader,
+          sourceKey: () => _reportSource.generation,
+          identityChanges: Listenable.merge([
+            auth,
+            widget.workspaceChanges,
+            _reportSource,
+          ]),
+          sourceCurrent: current,
+          builder: (_, live) => PersonContextsPage(
+            auth: auth,
+            client: client,
+            apiBaseUrl: base,
+            current: live,
+            identityChanges: Listenable.merge([
+              widget.workspaceChanges,
+              _reportSource,
+            ]),
+            pendingStore: widget.humanPendingStore,
+          ),
+        ),
       ),
     );
   }
@@ -681,6 +859,8 @@ class _SettingsPageState extends State<SettingsPage> {
 
   @override
   void dispose() {
+    _archiveSource.dispose();
+    _reportSource.dispose();
     ++_serial;
     ++_entryEpoch;
     _entryChanges.value++;
@@ -700,44 +880,103 @@ class _SettingsPageState extends State<SettingsPage> {
     ],
   );
 
+  Widget _voiceInputEntry() => ListTile(
+    leading: const Icon(Icons.mic_none_rounded),
+    title: const Text('语音输入'),
+    onTap: () => unawaited(showVoiceInputInformation(context)),
+  );
+
+  Widget _heading(String label) => Padding(
+    padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
+    child: Text(label, style: Theme.of(context).textTheme.titleMedium),
+  );
+
+  Widget _entry(
+    IconData icon,
+    String label,
+    VoidCallback onTap, {
+    String? value,
+  }) => ListTile(
+    leading: Icon(icon),
+    title: Text(label),
+    subtitle: value == null ? null : Text(value),
+    onTap: widget.organizationWorkspaceID?.call() == null ? onTap : null,
+  );
+
+  String _recipientName(Map<String, dynamic> row, String fallback) {
+    final label = row['displayName'];
+    return label is String && label.trim().isNotEmpty ? label : fallback;
+  }
+
+  Widget _helpEntry() => ListTile(
+    leading: const Icon(Icons.help_outline),
+    title: const Text('帮助与举报'),
+    onTap: () {
+      final auth = widget.auth, client = _client, base = _apiBase;
+      final owner = auth.accountID;
+      bool current() =>
+          mounted &&
+          auth == widget.auth &&
+          client == _client &&
+          base == _apiBase &&
+          owner == auth.accountID &&
+          widget.organizationWorkspaceID?.call() == null;
+      Navigator.of(context).push<void>(
+        MaterialPageRoute(
+          builder: (_) => HumanCausalEntryBoundary(
+            ownerID: () => auth.accountID,
+            authorizationHeader: () => auth.authorizationHeader,
+            sourceKey: () => _reportSource.generation,
+            sourceCurrent: current,
+            identityChanges: Listenable.merge([
+              auth,
+              widget.workspaceChanges,
+              _reportSource,
+            ]),
+            builder: (_, live) => SupportPage(
+              authorizationHeader: () => auth.authorizationHeader,
+              ownerID: () => auth.accountID,
+              sourceCurrent: live,
+              identityChanges: Listenable.merge([
+                auth,
+                widget.workspaceChanges,
+                _reportSource,
+              ]),
+              client: client,
+              apiBaseUrl: base,
+              pendingStore: widget.humanPendingStore,
+            ),
+          ),
+        ),
+      );
+    },
+  );
+
   @override
   Widget build(BuildContext context) {
-    if (_apiBase.isEmpty) {
+    if (_apiBase.isEmpty || !widget.auth.signedIn) {
       return ListView(
+        padding: const EdgeInsets.symmetric(vertical: 16),
         children: [
-          if (kDebugMode) _debugEntry(),
-          const Center(child: Text('请连接 Birdtie API 后管理设置。')),
-        ],
-      );
-    }
-    if (!widget.auth.signedIn) {
-      return ListView(
-        children: [
-          if (kDebugMode) _debugEntry(),
-          const Center(child: Text('登录后即可管理设置。')),
-          ListTile(
-            leading: const Icon(Icons.login),
-            title: const Text('登录 Birdtie'),
-            subtitle: Text(
-              widget.auth.available ? '通过当前可用的身份服务登录。' : '登录服务暂不可用，仍可浏览公开城市内容。',
-            ),
-            onTap: widget.auth.available && !widget.auth.busy
-                ? widget.auth.signIn
-                : null,
-          ),
-          ListTile(
-            leading: const Icon(Icons.help_outline),
-            title: const Text('帮助与举报'),
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute<void>(
-                builder: (_) => SupportPage(
-                  authorizationHeader: () => widget.auth.authorizationHeader,
-                  apiBaseUrl: _apiBase,
-                ),
-              ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Text(
+              _apiBase.isEmpty ? '设置暂不可用' : '登录后管理设置',
+              style: Theme.of(context).textTheme.titleMedium,
             ),
           ),
+          if (_apiBase.isNotEmpty)
+            ListTile(
+              leading: const Icon(Icons.login),
+              title: const Text('登录 Birdtie'),
+              subtitle: widget.auth.available ? null : const Text('登录服务暂不可用'),
+              onTap: widget.auth.available && !widget.auth.busy
+                  ? widget.auth.signIn
+                  : null,
+            ),
+          _voiceInputEntry(),
+          _helpEntry(),
+          if (kDebugMode) _debugEntry(),
         ],
       );
     }
@@ -746,133 +985,90 @@ class _SettingsPageState extends State<SettingsPage> {
       if (grant['revokedAt'] != null) return false;
       final expiry = DateTime.tryParse(grant['expiresAt'] as String? ?? '');
       return expiry == null || expiry.isAfter(now);
-    });
+    }).toList();
+    final revocableGrants = _grants
+        .where((grant) => grant['revokedAt'] == null)
+        .toList();
+    final organization = widget.organizationWorkspaceID?.call() != null;
     return RefreshIndicator(
       onRefresh: _load,
       child: ListView(
-        padding: const EdgeInsets.fromLTRB(18, 20, 18, 36),
+        padding: const EdgeInsets.fromLTRB(2, 16, 2, 28),
         children: [
-          if (kDebugMode) _debugEntry(),
-          Text(
-            widget.auth.displayName ?? 'Birdtie 账号',
-            style: Theme.of(context).textTheme.titleLarge,
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  widget.auth.displayName ?? 'Birdtie 账号',
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                if (widget.auth.loginMethod == 'dev_phone')
+                  const Text('本地开发账号 · 手机号尚未验证'),
+                if (organization) const Text('组织工作身份 · 切换到个人身份管理个人设置'),
+              ],
+            ),
           ),
-          Text(
-            widget.auth.loginMethod == 'dev_phone'
-                ? '本地开发账号 · 尚未验证手机号归属'
-                : '已登录 Birdtie',
-            style: const TextStyle(color: Color(0xFF747B73)),
+          _heading('账号'),
+          _entry(Icons.person_outline, '个人资料', _openProfile),
+          _entry(Icons.tune, '昵称、城市与语言', _openSeed),
+          if (!organization) ...[
+            _heading('本人内容'),
+            _entry(Icons.inventory_2_outlined, '旧内容档案', _openLegacyArchive),
+          ],
+          _heading('通知'),
+          _entry(Icons.notifications_outlined, '通知偏好', _openNotificationPolicy),
+          if (widget.systemPush != null)
+            AnimatedBuilder(
+              animation: widget.systemPush!,
+              builder: (_, _) => _entry(
+                Icons.notifications_active_outlined,
+                '系统通知',
+                () => _openPersonalRoute(
+                  (_) => SystemPushSettingsPage(controller: widget.systemPush!),
+                ),
+                value: !widget.systemPush!.initialized
+                    ? '尚未读取'
+                    : widget.systemPush!.uncertain
+                    ? '状态待核实'
+                    : widget.systemPush!.view == null
+                    ? '暂不可用'
+                    : widget.systemPush!.enabled
+                    ? '已启用'
+                    : '未启用',
+              ),
+            ),
+          _entry(Icons.schedule_outlined, '定时汇总', _openNotificationSchedule),
+          _heading('隐私'),
+          _entry(Icons.visibility_outlined, '资料可见范围', _openProfileVisibility),
+          _entry(
+            Icons.mark_email_unread_outlined,
+            '消息请求',
+            () => _openPersonalRoute(
+              (_) => MessageRequestPolicyPage(
+                auth: widget.auth,
+                client: widget.client,
+                apiBaseUrl: _apiBase,
+                workspaceChanges: widget.workspaceChanges,
+                organizationWorkspaceID: widget.organizationWorkspaceID,
+              ),
+            ),
           ),
-          const SizedBox(height: 16),
-          ListTile(
-            leading: const Icon(Icons.person_search_outlined),
-            title: const Text('我的智能体'),
-            subtitle: const Text('查看本人资料、记忆、兴趣、报名与当前设置。'),
-            onTap: widget.organizationWorkspaceID?.call() == null
-                ? () {
-                    final auth = widget.auth, client = widget.client;
-                    final base = _apiBase, changes = widget.workspaceChanges;
-                    final workspace = widget.organizationWorkspaceID;
-                    _openPersonalRoute(
-                      (_) => AgentProfilePage(
-                        auth: auth,
-                        client: client,
-                        apiBaseUrl: base,
-                        workspaceChanges: changes,
-                        organizationWorkspaceID: workspace,
-                      ),
-                    );
-                  }
-                : null,
+          _entry(
+            Icons.event_available_outlined,
+            '报名可见范围',
+            _openParticipationDisclosures,
           ),
-          ListTile(
-            leading: const Icon(Icons.edit_note),
-            title: const Text('管理我的记忆'),
-            subtitle: const Text('修改、纠正、拒绝或删除本人记忆'),
-            onTap: widget.organizationWorkspaceID?.call() == null
-                ? _openMemoryCorrection
-                : null,
+          _entry(
+            Icons.people_outline,
+            '共同信息展示',
+            () => _openSocialVisibility(relationship: false),
           ),
-          ListTile(
-            leading: const Icon(Icons.tune),
-            title: const Text('我的初始设置'),
-            subtitle: const Text('昵称、城市声明、交流语言、私密意图与可选兴趣。'),
-            onTap: _openSeed,
-          ),
-          ListTile(
-            leading: const Icon(Icons.edit_note),
-            title: const Text('完善我的选择'),
-            subtitle: const Text('一次选一组，不重复填写已有设置。'),
-            onTap: () => _openSeed(progressive: true),
-          ),
-          ListTile(
-            leading: const Icon(Icons.person_outline),
-            title: const Text('个人资料与可见范围'),
-            subtitle: const Text('编辑公开名称、简介和可见范围。'),
-            onTap: _openProfile,
-          ),
-          ListTile(
-            leading: const Icon(Icons.visibility_outlined),
-            title: const Text('各项资料的可见范围'),
-            subtitle: const Text('逐项选择谁可以读取；不会开启模型或自动学习。'),
-            onTap: _openProfileVisibility,
-          ),
-          ListTile(
-            leading: const Icon(Icons.explore_outlined),
-            title: const Text('我的生活情境'),
-            subtitle: const Text('记录当前城市、过往学校、目的地和线上兴趣。'),
-            onTap: _openPersonContexts,
-          ),
-          ListTile(
-            leading: const Icon(Icons.people_outline),
-            title: const Text('社交偏好'),
-            subtitle: const Text('选择喜欢的社交方式，私密保存，也可以跳过。'),
-            onTap: _openSocialPreferences,
-          ),
-          const Divider(height: 32),
-          ListTile(
-            leading: const Icon(Icons.people_outline),
-            title: const Text('我的社交近况'),
-            subtitle: const Text('查看好友分享的想法与相关活动，打开前核对当前来源。'),
-            onTap: _openSocialNow,
-          ),
-          ListTile(
-            leading: const Icon(Icons.notifications_outlined),
-            title: const Text('通知设置'),
-            subtitle: const Text('按类型选择提醒方式，关闭自定义会恢复普通提醒。'),
-            onTap: _openNotificationPolicy,
-          ),
-          ListTile(
-            leading: const Icon(Icons.schedule_outlined),
-            title: const Text('定时汇总计划'),
-            subtitle: const Text('明确时区、汇总时间与额度；只保存计划，不保证已投递。'),
-            onTap: _openNotificationSchedule,
-          ),
-          Text('隐私与安全', style: Theme.of(context).textTheme.titleMedium),
-          ListTile(
-            leading: const Icon(Icons.mark_email_unread_outlined),
-            title: const Text('消息请求设置'),
-            subtitle: const Text('由本人决定请求处理方式；人工审阅不会自动接受或聊天。'),
-            onTap: widget.organizationWorkspaceID?.call() == null
-                ? () {
-                    final auth = widget.auth, client = widget.client;
-                    final base = _apiBase, changes = widget.workspaceChanges;
-                    final workspace = widget.organizationWorkspaceID;
-                    _openPersonalRoute(
-                      (_) => MessageRequestPolicyPage(
-                        auth: auth, client: client, apiBaseUrl: base,
-                        workspaceChanges: changes,
-                        organizationWorkspaceID: workspace,
-                      ),
-                    );
-                  }
-                : null,
-          ),
-          ListTile(
-            leading: const Icon(Icons.manage_search_outlined),
-            title: const Text('模型请求与预算'),
-            subtitle: const Text('核对请求内容、授权与预算；批准不会直接运行模型。'),
-            onTap: () => _openPersonalRoute(
+          _entry(
+            Icons.manage_search_outlined,
+            'AI 使用与预算',
+            () => _openPersonalRoute(
               (_) => ModelEgressPage(
                 auth: widget.auth,
                 client: widget.client,
@@ -882,147 +1078,165 @@ class _SettingsPageState extends State<SettingsPage> {
               ),
             ),
           ),
-          ListTile(
-            leading: const Icon(Icons.privacy_tip_outlined),
-            title: const Text('本地分析许可'),
-            subtitle: const Text('查看并撤回已允许的本地分析；不会开启模型或自动学习。'),
-            onTap: _openEnrichmentPrivacy,
-          ),
-          ListTile(
-            leading: const Icon(Icons.rule_folder_outlined),
-            title: const Text('本次会话的任务资料许可'),
-            subtitle: const Text('查看当前任务允许使用的资料范围，检查具体许可后撤回。'),
-            onTap: _openTaskContextPrivacy,
-          ),
-          ListTile(
-            leading: const Icon(Icons.fact_check_outlined),
-            title: const Text('待确认的记忆'),
-            subtitle: const Text('选择自己的记录，核对来源后确认保存；不会自动分析或公开。'),
-            onTap: _openMemoryCandidates,
-          ),
-          ListTile(
-            leading: const Icon(Icons.event_available_outlined),
-            title: const Text('为你找到的活动'),
-            subtitle: const Text('查看与你的意图相符的活动及推荐理由。'),
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute<void>(
-                builder: (_) => OpportunityPage(
-                  auth: widget.auth,
-                  apiBaseUrl: _apiBase,
-                  client: widget.client,
-                ),
+          _entry(Icons.privacy_tip_outlined, '本地分析授权', _openEnrichmentPrivacy),
+          _entry(Icons.rule_folder_outlined, '任务资料授权', _openTaskContextPrivacy),
+          if (!organization)
+            ExpansionTile(
+              title: const Text('屏蔽与资料访问授权'),
+              subtitle: Text(
+                _loading
+                    ? '正在加载'
+                    : _failed
+                    ? '暂不可用'
+                    : '${_blocks.length} 个屏蔽账号 · ${activeGrants.length} 项有效授权',
               ),
+              leading: const Icon(Icons.shield_outlined),
+              children: [
+                if (_loading) const LinearProgressIndicator(),
+                if (_humanRecoveryError != null)
+                  TextButton(
+                    onPressed: _loading ? null : _load,
+                    child: Text(_humanRecoveryError!),
+                  ),
+                if (_failed)
+                  TextButton(
+                    onPressed: _load,
+                    child: const Text('隐私设置暂不可用，点击重试。'),
+                  ),
+                if (!_loading &&
+                    !_failed &&
+                    _blocks.isEmpty &&
+                    revocableGrants.isEmpty)
+                  const Padding(
+                    padding: EdgeInsets.all(16),
+                    child: Text('暂无屏蔽账号或访问授权'),
+                  ),
+                if (_blocks.isNotEmpty) _heading('已屏蔽账号'),
+                for (final block in _blocks)
+                  ListTile(
+                    title: Text(_recipientName(block, '账号资料暂不可用')),
+                    trailing: TextButton(
+                      onPressed: _workingID != null
+                          ? null
+                          : () => _remove(
+                              '/v1/me/blocks/${Uri.encodeComponent(block['accountId'] as String)}',
+                              block['accountId'] as String,
+                            ),
+                      child: const Text('取消屏蔽'),
+                    ),
+                  ),
+                if (revocableGrants.isNotEmpty) _heading('资料访问授权'),
+                for (final grant in revocableGrants)
+                  ListTile(
+                    title: Text(_recipientName(grant, '账号资料暂不可用')),
+                    subtitle: Text('有效至 ${grant['expiresAt'] ?? '期限未提供'}'),
+                    trailing: TextButton(
+                      onPressed: _workingID != null
+                          ? null
+                          : () => _remove(
+                              '/v1/me/consents/${Uri.encodeComponent(grant['id'] as String)}',
+                              grant['id'] as String,
+                            ),
+                      child: const Text('撤销授权'),
+                    ),
+                  ),
+                for (final p in _humanPending)
+                  ListTile(
+                    key: Key('privacy-recovery-${p.selector.family.wire}'),
+                    title: const Text('核实本人原隐私操作'),
+                    subtitle: Text(
+                      '${p.selector.family.label} · 只核实原回执，不授予新权限',
+                    ),
+                    onTap: () => _remove(
+                      p.selector.family == HumanCausalFamily.grantRevoke
+                          ? '/v1/me/consents/${p.selector.targetID}'
+                          : '/v1/me/blocks/${p.selector.targetID}',
+                      p.selector.targetID,
+                    ),
+                  ),
+                if (_blocks.isNotEmpty)
+                  const Padding(
+                    padding: EdgeInsets.fromLTRB(16, 8, 16, 16),
+                    child: Text('取消屏蔽不会恢复之前已撤销的授权。'),
+                  ),
+              ],
             ),
-          ),
-          ListTile(
-            leading: const Icon(Icons.person_add_alt_1_outlined),
-            title: const Text('引荐与社交许可'),
-            subtitle: const Text('检查有效公开意图的建议；联系对方仍需单独确认。'),
-            onTap: _openIntroductions,
-          ),
-          ListTile(
-            leading: const Icon(Icons.groups_outlined),
-            title: const Text('我的社群兴趣'),
-            subtitle: const Text('管理本人兴趣声明，公开前检查；不代表加入社群。'),
-            onTap: _openCommunityInterests,
-          ),
-          ListTile(
-            leading: const Icon(Icons.event_available_outlined),
-            title: const Text('我的报名可见范围'),
-            subtitle: const Text('默认私密；公开前检查期限。隐藏声明不会取消报名。'),
-            onTap: _openParticipationDisclosures,
-          ),
-          ListTile(
-            leading: const Icon(Icons.person_add_alt_1_outlined),
-            title: const Text('找新朋友'),
-            subtitle: const Text('公开找伙伴意图后，自主查看候选与发送申请。'),
-            onTap: () => _openPersonalRoute(
-              (_) => NewPeoplePage(
+          _heading('智能体与偏好'),
+          _entry(
+            Icons.person_search_outlined,
+            '我的智能体',
+            () => _openPersonalRoute(
+              (_) => AgentProfilePage(
                 auth: widget.auth,
-                apiBaseUrl: _apiBase,
                 client: widget.client,
+                apiBaseUrl: _apiBase,
                 workspaceChanges: widget.workspaceChanges,
                 organizationWorkspaceID: widget.organizationWorkspaceID,
               ),
             ),
           ),
-          ListTile(
-            leading: const Icon(Icons.psychology_outlined),
-            title: const Text('Agent 关系信号'),
-            subtitle: const Text('默认关闭，审阅个人 Agent 可使用的互动记录。'),
-            onTap: () => _openSocialVisibility(relationship: true),
+          _entry(Icons.edit_note, '管理我的记忆', _openMemoryCorrection),
+          _entry(Icons.fact_check_outlined, '待确认的记忆', _openMemoryCandidates),
+          _entry(Icons.explore_outlined, '城市与生活资料', _openPersonContexts),
+          _entry(Icons.people_outline, '社交偏好', _openSocialPreferences),
+          _entry(
+            Icons.psychology_outlined,
+            '互动记录使用范围',
+            () => _openSocialVisibility(relationship: true),
           ),
-          ListTile(
-            leading: const Icon(Icons.people_outline),
-            title: const Text('共同信息展示'),
-            subtitle: const Text('决定是否展示共同好友、公开社群和活动。'),
-            onTap: () => _openSocialVisibility(relationship: false),
+          _entry(
+            Icons.person_add_alt_1_outlined,
+            '引荐与社交授权',
+            _openIntroductions,
           ),
-          const SizedBox(height: 8),
-          if (_loading) const LinearProgressIndicator(),
-          if (_failed)
-            TextButton(onPressed: _load, child: const Text('隐私设置暂不可用，点击重试。')),
-          const SizedBox(height: 16),
-          const Text('已屏蔽账号'),
-          if (!_loading && !_failed && _blocks.isEmpty) const Text('没有已屏蔽的账号。'),
-          for (final block in _blocks)
-            ListTile(
-              title: Text(block['accountId'] as String? ?? '账号'),
-              subtitle: const Text('双方将无法查看彼此的个人资料和公开活动。'),
-              trailing: TextButton(
-                onPressed: _workingID != null
-                    ? null
-                    : () => _remove(
-                        '/v1/me/blocks/${Uri.encodeComponent(block['accountId'] as String)}',
-                        block['accountId'] as String,
-                      ),
-                child: const Text('取消屏蔽'),
-              ),
-            ),
-          const SizedBox(height: 20),
-          const Text('个人资料访问授权'),
-          if (!_loading && !_failed && activeGrants.isEmpty)
-            const Text('当前没有有效的个人资料访问授权。'),
-          for (final grant in activeGrants)
-            ListTile(
-              title: Text(grant['recipientAccountId'] as String? ?? '账号'),
-              subtitle: Text('有效期至 ${grant['expiresAt'] ?? '已撤销'}'),
-              trailing: TextButton(
-                onPressed: _workingID != null
-                    ? null
-                    : () => _remove(
-                        '/v1/me/consents/${Uri.encodeComponent(grant['id'] as String)}',
-                        grant['id'] as String,
-                      ),
-                child: const Text('撤销授权'),
-              ),
-            ),
-          const SizedBox(height: 14),
-          const Text(
-            '取消屏蔽不会恢复之前已撤销的授权。',
-            style: TextStyle(color: Color(0xFF747B73), fontSize: 12),
-          ),
-          const Divider(height: 40),
-          ListTile(
-            leading: const Icon(Icons.help_outline),
-            title: const Text('帮助与举报'),
-            subtitle: const Text('提交问题并查看编号与处理状态。'),
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute<void>(
-                builder: (_) => SupportPage(
-                  authorizationHeader: () => widget.auth.authorizationHeader,
-                  apiBaseUrl: _apiBase,
+          _entry(Icons.groups_outlined, '社群兴趣', _openCommunityInterests),
+          ExpansionTile(
+            title: const Text('发现与近况'),
+            leading: const Icon(Icons.travel_explore),
+            children: [
+              _entry(Icons.people_outline, '好友近况', _openSocialNow),
+              _entry(
+                Icons.event_available_outlined,
+                '为你找到的活动',
+                () => _openPersonalRoute(
+                  (_) => OpportunityPage(
+                    auth: widget.auth,
+                    apiBaseUrl: _apiBase,
+                    client: widget.client,
+                  ),
                 ),
               ),
-            ),
+              _entry(
+                Icons.person_add_alt_1_outlined,
+                '找新朋友',
+                () => _openPersonalRoute(
+                  (_) => NewPeoplePage(
+                    auth: widget.auth,
+                    apiBaseUrl: _apiBase,
+                    client: widget.client,
+                    workspaceChanges: widget.workspaceChanges,
+                    organizationWorkspaceID: widget.organizationWorkspaceID,
+                  ),
+                ),
+              ),
+              _entry(
+                Icons.edit_note_outlined,
+                '完善我的选择',
+                () => _openSeed(progressive: true),
+              ),
+            ],
           ),
-          const SizedBox(height: 8),
-          OutlinedButton.icon(
-            onPressed: widget.auth.busy ? null : widget.auth.signOut,
-            icon: const Icon(Icons.logout),
-            label: const Text('退出登录'),
+          _heading('帮助'),
+          _voiceInputEntry(),
+          _helpEntry(),
+          if (kDebugMode) _debugEntry(),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
+            child: OutlinedButton.icon(
+              onPressed: widget.auth.busy ? null : widget.auth.signOut,
+              icon: const Icon(Icons.logout),
+              label: const Text('退出登录'),
+            ),
           ),
         ],
       ),

@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 
 import '../config/birdtie_environment.dart';
 import 'entity_action_contract.dart';
+import 'community_avatar.dart';
 
 class CommunityItem {
   const CommunityItem({
@@ -15,6 +16,7 @@ class CommunityItem {
     required this.status,
     required this.memberCount,
     this.avatarUrl,
+    this.avatar,
     this.cityId,
     this.myRole,
     this.myStatus,
@@ -29,6 +31,7 @@ class CommunityItem {
 
   final int memberCount;
   final String? avatarUrl;
+  final CommunityAvatarMetadata? avatar;
   final String? cityId;
   final String? myRole;
   final String? myStatus;
@@ -46,6 +49,10 @@ class CommunityItem {
     status: json['status'] as String,
     memberCount: json['memberCount'] as int? ?? 0,
     avatarUrl: json['avatarUrl'] as String?,
+    avatar: CommunityAvatarMetadata.optional(
+      json['avatar'],
+      json['id'] as String,
+    ),
     cityId: json['cityId'] as String?,
     myRole: json['myRole'] as String?,
     myStatus: json['myStatus'] as String?,
@@ -101,15 +108,24 @@ class CommunityApi {
     http.Client? client,
     String? apiBaseUrl,
   }) : _client = client ?? http.Client(),
+       _ownsClient = client == null,
        _base = apiBaseUrl ?? BirdtieEnvironment.apiBaseUrl;
 
   final String? Function() authorizationHeader;
   final http.Client _client;
+  final bool _ownsClient;
   http.Client get followClient => _client;
   String get followApiBaseUrl => _base;
+  CommunityAvatarAPI get avatarAPI => CommunityAvatarAPI(
+    client: _client,
+    baseUrl: _base,
+    authorizationHeader: authorizationHeader,
+  );
   final String _base;
 
-  void dispose() => _client.close();
+  void dispose() {
+    if (_ownsClient) _client.close();
+  }
 
   Future<http.Response> _send(
     String method,

@@ -68,10 +68,51 @@ dynamic _immutable(dynamic value) {
   return value;
 }
 
+/// A member already returned by this business's authorized console read.
+/// The optional public name is presentation only; commands use personID.
+class BusinessMember {
+  const BusinessMember._(
+    this.personID,
+    this.role,
+    this.status,
+    this.displayName,
+  );
+  final String personID, role, status;
+  final String? displayName;
+
+  factory BusinessMember.fromJson(Map<String, dynamic> json) {
+    final id = json['personId'], role = json['role'], status = json['status'];
+    final name = json['displayName'];
+    if (id is! String ||
+        !BusinessApi.validID(id) ||
+        !const {'owner', 'admin', 'member'}.contains(role) ||
+        !const {'active', 'removed'}.contains(status)) {
+      throw const BusinessApiException(503);
+    }
+    if (name != null) {
+      if (name is! String ||
+          name != name.trim() ||
+          utf8.encode(name).length < 2 ||
+          utf8.encode(name).length > 80 ||
+          utf8.decode(utf8.encode(name)) != name ||
+          name.runes.any((r) => r < 32 || (r >= 127 && r <= 159))) {
+        throw const BusinessApiException(503);
+      }
+    }
+    return BusinessMember._(
+      id,
+      role as String,
+      status as String,
+      name as String?,
+    );
+  }
+}
+
 class BusinessConsoleSnapshot {
-  BusinessConsoleSnapshot._(this.data, this.business);
+  BusinessConsoleSnapshot._(this.data, this.business, this.existingMembers);
   final Map<String, dynamic> data;
   final BusinessSummary business;
+  final List<BusinessMember> existingMembers;
   bool get canManage => data['canManage'] as bool;
   bool get canManageMembers => data['canManageMembers'] as bool;
   List<String> get reviewPermissions =>
@@ -109,9 +150,18 @@ class BusinessConsoleSnapshot {
         (json['profile'] != null && json['profile'] is! Map<String, dynamic>)) {
       throw const BusinessApiException(503);
     }
+    final members = (json['members'] as List)
+        .map(
+          (member) => BusinessMember.fromJson(member as Map<String, dynamic>),
+        )
+        .toList();
+    if (members.map((m) => m.personID).toSet().length != members.length) {
+      throw const BusinessApiException(503);
+    }
     return BusinessConsoleSnapshot._(
       _immutable(json) as Map<String, dynamic>,
       BusinessSummary.fromJson(business),
+      List<BusinessMember>.unmodifiable(members),
     );
   }
 }
@@ -273,19 +323,36 @@ class BusinessApi {
     }
   }
 
-  Future<BusinessAgentIdentity> readAgentIdentity(String id, {DateTime? now}) async {
+  Future<BusinessAgentIdentity> readAgentIdentity(
+    String id, {
+    DateTime? now,
+  }) async {
     return BusinessAgentIdentity.read(
       await _object('GET', _path(id, '/agent-identity')),
-      businessID: id, now: now ?? DateTime.now().toUtc(),
+      businessID: id,
+      now: now ?? DateTime.now().toUtc(),
     );
   }
 
-  Future<BusinessAgentIdentity> establishAgentIdentity(String id, int claimVersion, {DateTime? now}) async {
+  Future<BusinessAgentIdentity> establishAgentIdentity(
+    String id,
+    int claimVersion, {
+    DateTime? now,
+  }) async {
     if (claimVersion < 1) throw const BusinessApiException(400);
-    final data = await _object('POST', _path(id, '/agent-identity'), body: {'expectedClaimVersion': claimVersion});
+    final data = await _object(
+      'POST',
+      _path(id, '/agent-identity'),
+      body: {'expectedClaimVersion': claimVersion},
+    );
     try {
-      final result = BusinessAgentIdentity.read(data, businessID: id, now: now ?? DateTime.now().toUtc());
-      if (result.agentID == null || result.claimVersion != claimVersion) throw const BusinessApiException(503);
+      final result = BusinessAgentIdentity.read(
+        data,
+        businessID: id,
+        now: now ?? DateTime.now().toUtc(),
+      );
+      if (result.agentID == null || result.claimVersion != claimVersion)
+        throw const BusinessApiException(503);
       return result;
     } on Object {
       throw const BusinessApiException(503, outcomeUnknown: true);

@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
+import '../app/birdtie_app_bar.dart';
 import '../auth/birdtie_auth_controller.dart';
 import '../config/birdtie_environment.dart';
 
@@ -151,7 +152,7 @@ class _SocialDisclosurePageState extends State<SocialDisclosurePage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('共同信息展示')),
+    appBar: birdtieAppBar(context, title: const Text('共同信息展示')),
     body: !_entryCurrent
         ? const Center(child: Text('工作身份或来源已变化，请返回当前入口重新核实。'))
         : widget.auth.authorizationHeader == null

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../workspace/now_ui_tokens.dart';
 import 'moment_publication_controller.dart';
 
 class MomentPublicationSheet extends StatefulWidget {
@@ -31,6 +32,7 @@ class _MomentPublicationSheetState extends State<MomentPublicationSheet> {
   Widget build(BuildContext context) => AnimatedBuilder(
     animation: widget.controller,
     builder: (context, _) {
+      final text = NowUiTokens.of(context);
       final c = widget.controller, p = c.preview;
       if (!identical(p, _shown)) {
         _shown = p;
@@ -45,7 +47,7 @@ class _MomentPublicationSheetState extends State<MomentPublicationSheet> {
               children: [
                 Text(
                   widget.withdrawal ? '撤回这条公开记录' : '确认公开这条记录',
-                  style: Theme.of(context).textTheme.titleLarge,
+                  style: text.sheetTitle,
                 ),
                 const SizedBox(height: 12),
                 Text(
@@ -60,10 +62,10 @@ class _MomentPublicationSheetState extends State<MomentPublicationSheet> {
                   ),
                 if (p != null) ...[
                   const SizedBox(height: 16),
-                  Text(p.title, style: Theme.of(context).textTheme.titleMedium),
+                  Text(p.title, style: text.placeTitle),
                   if (p.body.isNotEmpty) Text(p.body),
                   Text('关联地点：${p.placeName}'),
-                  Text('记录版本：${p.revision}'),
+                  Text('记录版本：${p.revision}', style: text.metadata),
                   CheckboxListTile(
                     contentPadding: EdgeInsets.zero,
                     value: _checked,
@@ -72,9 +74,14 @@ class _MomentPublicationSheetState extends State<MomentPublicationSheet> {
                         : (v) => setState(() => _checked = v ?? false),
                     title: Text(
                       widget.withdrawal ? '我确认撤回此版本' : '我已检查，确认公开此版本',
+                      style: text.body,
                     ),
                   ),
                   FilledButton(
+                    style: FilledButton.styleFrom(
+                      minimumSize: const Size(48, 48),
+                      textStyle: text.action,
+                    ),
                     onPressed: _checked && !c.saving ? () => _confirm(p) : null,
                     child: Text(
                       c.saving
@@ -89,6 +96,10 @@ class _MomentPublicationSheetState extends State<MomentPublicationSheet> {
                   Semantics(liveRegion: true, child: Text(c.error!)),
                 if (c.resolvedStatus != null)
                   FilledButton(
+                    style: FilledButton.styleFrom(
+                      minimumSize: const Size(48, 48),
+                      textStyle: text.action,
+                    ),
                     onPressed: () => Navigator.pop(context, true),
                     child: const Text('完成核对'),
                   ),
@@ -97,10 +108,18 @@ class _MomentPublicationSheetState extends State<MomentPublicationSheet> {
                     !c.saving &&
                     c.resolvedStatus == null)
                   TextButton(
+                    style: TextButton.styleFrom(
+                      minimumSize: const Size(48, 48),
+                      textStyle: text.action,
+                    ),
                     onPressed: () => c.load(withdrawal: widget.withdrawal),
                     child: Text(c.uncertain ? '重新读取当前状态' : '重新查看'),
                   ),
                 TextButton(
+                  style: TextButton.styleFrom(
+                    minimumSize: const Size(48, 48),
+                    textStyle: text.action,
+                  ),
                   onPressed: c.saving
                       ? null
                       : () => Navigator.pop(context, false),

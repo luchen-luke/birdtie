@@ -16,8 +16,8 @@ void main() {
     addTearDown(auth.dispose);
     final at = DateTime.now().toUtc();
     final client = MockClient(
-      (r) async => correctionResponse({
-        'data': r.url.path.endsWith('agent-memories')
+      (r) async => correctionReadResponse(r, {
+        'data': r.url.path.endsWith('agent-memories/page')
             ? [correctionMemoryRaw(at: at)]
             : [],
       }),
@@ -60,8 +60,8 @@ void main() {
             'data': memoryDetailWire(at: at, memory: m, status: m['status']),
           });
         }
-        return correctionResponse({
-          'data': r.url.path.endsWith('agent-memories') ? [m] : [],
+        return correctionReadResponse(r, {
+          'data': r.url.path.endsWith('agent-memories/page') ? [m] : [],
         });
       });
       await t.pumpWidget(
@@ -75,14 +75,11 @@ void main() {
       await correctionTap(t, '查看来源与时间');
       expect(gets, 1);
       expect(posts, 0);
-      expect(
-        find.text(inferred ? '性质：未经本人确认的推断，仅供检查。' : '性质：本人明确声明，不等于已核验事实。'),
-        findsOneWidget,
-      );
-      expect(find.text('拍摄时间未采集。记录与读取时间不证明事情发生、到场或到访。'), findsOneWidget);
-      expect(find.text('这份单条来源说明不包含跨来源比较。'), findsOneWidget);
+      expect(find.text(inferred ? '来源：待确认建议' : '来源：本人填写'), findsOneWidget);
+      expect(find.textContaining('详情快照'), findsNothing);
+      expect(find.textContaining('本次详情读取时间'), findsNothing);
       expect(find.textContaining('记录创建时间：'), findsOneWidget);
-      if (inferred) expect(find.text('声明时间：未提供本人声明时间'), findsOneWidget);
+      if (inferred) expect(find.text('声明时间：未提供'), findsOneWidget);
       await t.pumpWidget(const SizedBox());
     });
   }
@@ -93,10 +90,10 @@ void main() {
     var posts = 0;
     final client = MockClient((r) async {
       if (r.method == 'POST') posts++;
-      return correctionResponse({
+      return correctionReadResponse(r, {
         'data': r.url.path.endsWith(correctionMemory)
             ? memoryDetailWire(at: at, metadata: false)
-            : r.url.path.endsWith('agent-memories')
+            : r.url.path.endsWith('agent-memories/page')
             ? [correctionMemoryRaw(at: at)]
             : [],
       });
@@ -110,7 +107,7 @@ void main() {
     );
     await correctionSettle(t);
     await correctionTap(t, '查看来源与时间');
-    expect(find.text('当前未提供这条记忆的来源说明；不会猜测或补全。'), findsOneWidget);
+    expect(find.text('暂无来源说明。'), findsOneWidget);
     expect(find.textContaining('声明时间：'), findsNothing);
     expect(find.textContaining('记录创建时间：'), findsOneWidget);
     expect(find.textContaining('记录更新时间：'), findsOneWidget);
@@ -132,8 +129,8 @@ void main() {
               ? http.Response('', status)
               : correctionResponse({'data': memoryDetailWire(at: at)});
         }
-        return correctionResponse({
-          'data': r.url.path.endsWith('agent-memories')
+        return correctionReadResponse(r, {
+          'data': r.url.path.endsWith('agent-memories/page')
               ? [correctionMemoryRaw(at: at)]
               : [],
         });
@@ -177,10 +174,10 @@ void main() {
     addTearDown(auth.dispose);
     final at = DateTime.now().toUtc();
     final client = MockClient(
-      (r) async => correctionResponse({
+      (r) async => correctionReadResponse(r, {
         'data': r.url.path.endsWith(correctionMemory)
             ? memoryDetailWire(at: at)
-            : r.url.path.endsWith('agent-memories')
+            : r.url.path.endsWith('agent-memories/page')
             ? [correctionMemoryRaw(at: at)]
             : [],
       }),
@@ -200,7 +197,7 @@ void main() {
     await correctionSettle(t);
     expect(note.hitTestable(), findsOneWidget);
     await correctionTap(t, '拒绝保留');
-    expect(find.widgetWithText(FilledButton, '检查具体纠正版本'), findsOneWidget);
+    expect(find.widgetWithText(FilledButton, '检查修改'), findsOneWidget);
     expect(t.takeException(), isNull);
     await t.pumpWidget(const SizedBox());
   });
@@ -216,8 +213,8 @@ void main() {
           detailGets++;
           return pending.future;
         }
-        return correctionResponse({
-          'data': r.url.path.endsWith('agent-memories')
+        return correctionReadResponse(r, {
+          'data': r.url.path.endsWith('agent-memories/page')
               ? [correctionMemoryRaw(at: at)]
               : [],
         });

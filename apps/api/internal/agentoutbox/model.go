@@ -1,6 +1,6 @@
-// Package agentoutbox owns metadata and delivery controls for native Moment
-// transactions. Its records, keys and leases never authorize analysis, a model
-// call or a MemoryCandidate. The actual consumer remains unavailable.
+// Package agentoutbox owns metadata and delivery controls for native sources.
+// Maintenance may retire stale references; records, keys and leases never
+// authorize analysis, a model call or a MemoryCandidate.
 package agentoutbox
 
 import (
@@ -70,8 +70,8 @@ type SourceReference struct {
 	Fingerprint string                `json:"fingerprint"`
 }
 
-// Envelope is distinct from AIR014's air.event.v1. The three event types record
-// current native Moment mutations, not physical deletion history or permission.
+// Envelope is distinct from AIR014's air.event.v1. Closed source families record
+// current native mutations, not physical deletion history or permission.
 type Envelope struct {
 	SchemaVersion      string                `json:"schema_version"`
 	EventID            string                `json:"event_id"`
@@ -124,10 +124,21 @@ func digest(value string) bool {
 }
 
 func ValidateHandlerVersion(value HandlerVersion) error {
-	if value != HandlerV1 && value != HandlerV2 && value != MemoryHandler && value != PreferenceHandler {
+	if value != HandlerV1 && value != HandlerV2 && !nativeMaintenanceHandler(value) {
 		return ErrInvalid
 	}
 	return nil
+}
+
+// Closed maintenance families report actual invalidation controls. Adding a
+// family here grants no source permission, candidate analysis or model call.
+func nativeMaintenanceHandler(value HandlerVersion) bool {
+	return value == MemoryHandler || value == PreferenceHandler ||
+		value == TaskRequestHandler || value == ParticipationHandler
+}
+func nativeMaintenanceSchema(value string) bool {
+	return value == MemorySchema || value == PreferenceSchema ||
+		value == TaskRequestSchema || value == ParticipationSchema
 }
 
 func NormalizeWorkerID(value string) (string, error) {
@@ -156,6 +167,12 @@ func StableEventID(e Envelope) string {
 }
 
 func ValidateEnvelope(e Envelope, now time.Time) error {
+	if e.SchemaVersion == TaskRequestSchema {
+		return validateTaskRequestEnvelope(e, now)
+	}
+	if e.SchemaVersion == ParticipationSchema {
+		return validateParticipationEnvelope(e, now)
+	}
 	if e.SchemaVersion == PreferenceSchema {
 		return validatePreferenceEnvelope(e, now)
 	}
@@ -227,7 +244,7 @@ func ValidateRecord(r Record) error {
 	if r.Attempt > r.Fence {
 		return ErrInvalid
 	}
-	if (r.Event.SchemaVersion == MemorySchema || r.Event.SchemaVersion == PreferenceSchema) && r.State != Pending && r.State != Leased && r.State != Invalidated && r.State != Expired && r.State != DeadLetter && r.State != MemoryComplete {
+	if nativeMaintenanceSchema(r.Event.SchemaVersion) && r.State != Pending && r.State != Leased && r.State != Invalidated && r.State != Expired && r.State != DeadLetter && r.State != MemoryComplete {
 		return ErrInvalid
 	}
 	switch r.State {
@@ -241,7 +258,7 @@ func ValidateRecord(r Record) error {
 			return ErrInvalid
 		}
 	case Unavailable, Invalidated, Expired, DeadLetter, CandidateStaged, MemoryComplete:
-		if r.State == MemoryComplete && r.Event.SchemaVersion != MemorySchema && r.Event.SchemaVersion != PreferenceSchema {
+		if r.State == MemoryComplete && !nativeMaintenanceSchema(r.Event.SchemaVersion) {
 			return ErrInvalid
 		}
 		if r.LeaseOwner != "" || r.LeaseUntil != nil {

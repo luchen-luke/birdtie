@@ -24,7 +24,7 @@ const notificationRouteLabels = {
 const notificationCategoryLabels = {
   'ACTIVITY': '活动与匹配机会',
   'AGENT': '任务状态',
-  'BUSINESS': '商家（当前无独立来源）',
+  'BUSINESS': '商家公开更新与审核通知',
   'COMMUNITY': '社群消息',
   'MESSAGE': '会话消息',
   'ORGANIZATION': '组织邀请与成员状态',

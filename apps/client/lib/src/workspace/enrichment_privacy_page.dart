@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import '../app/birdtie_app_bar.dart';
 import '../auth/birdtie_auth_controller.dart';
 import 'agent_multi_candidate_pending_store.dart';
 import 'enrichment_privacy_api.dart';
@@ -119,7 +120,7 @@ class _EnrichmentPrivacyPageState extends State<EnrichmentPrivacyPage> {
   Widget build(BuildContext context) {
     final v = _data.inventory, a = _data.approval;
     return Scaffold(
-      appBar: AppBar(title: const Text('本地分析许可')),
+      appBar: birdtieAppBar(context, title: const Text('本地分析许可')),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(16),

@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 import '../config/birdtie_environment.dart';
+import 'entity_cover.dart';
 
 class ActivityOrganizer {
   const ActivityOrganizer({
@@ -55,6 +56,7 @@ class OrganizationActivity {
     required this.publicationStatus,
     required this.cancelledAt,
     this.organizer,
+    this.cover,
   });
 
   final String id;
@@ -78,11 +80,16 @@ class OrganizationActivity {
   final String publicationStatus;
   final DateTime? cancelledAt;
   final ActivityOrganizer? organizer;
+  final EntityCoverMetadata? cover;
 
   factory OrganizationActivity.fromJson(
     Map<String, dynamic> data,
   ) => OrganizationActivity(
     id: data['id'] as String,
+    cover: EntityCoverMetadata.optional(
+      data['cover'],
+      EntityCoverRef('activity', data['id'] as String),
+    ),
     title: data['title'] as String,
     summary: data['summary'] as String? ?? '',
     description: data['description'] as String? ?? '',
@@ -147,6 +154,10 @@ class OrganizationActivityApi {
   final http.Client _client;
   final bool _ownsClient;
   final String _base;
+
+  /// The cover editor borrows this same configured, current domain transport.
+  http.Client get coverClient => _client;
+  String get coverBaseUrl => _base;
 
   Uri _uri(String path) =>
       Uri.parse('${_base.replaceFirst(RegExp(r'/$'), '')}$path');

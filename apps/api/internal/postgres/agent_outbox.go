@@ -10,6 +10,7 @@ import (
 
 	"github.com/birdtie/birdtie/apps/api/internal/actorref"
 	"github.com/birdtie/birdtie/apps/api/internal/agentoutbox"
+	"github.com/birdtie/birdtie/apps/api/internal/agentoutboxmaintenance"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 )
@@ -172,6 +173,12 @@ func scanAgentOutbox(row scanner) (agentoutbox.Record, error) {
 	if e.SchemaVersion == agentoutbox.PreferenceSchema {
 		e.Source.Type = agentoutbox.PreferenceSource
 	}
+	if e.SchemaVersion == agentoutbox.TaskRequestSchema {
+		e.Source.Type = agentoutbox.TaskRequestSource
+	}
+	if e.SchemaVersion == agentoutbox.ParticipationSchema {
+		e.Source.Type = agentoutbox.ParticipationSource
+	}
 	e.OccurredAt, e.ReceivedAt, e.ExpiresAt = e.OccurredAt.UTC(), e.ReceivedAt.UTC(), e.ExpiresAt.UTC()
 	if err := agentoutbox.ValidateRecord(r); err != nil {
 		return agentoutbox.Record{}, err
@@ -221,11 +228,38 @@ func (s *Store) claimAgentOutboxControl(ctx context.Context, worker string, hand
 	if handler == agentoutbox.PreferenceHandler {
 		return s.claimPreferenceOutbox(ctx, worker, subjectID)
 	}
+	if handler == agentoutbox.TaskRequestHandler {
+		return s.claimTaskRequestOutbox(ctx, worker, subjectID)
+	}
+	if handler == agentoutbox.ParticipationHandler {
+		return s.claimParticipationOutbox(ctx, worker, subjectID)
+	}
 	tx, err := s.pool.BeginTx(ctx, pgx.TxOptions{IsoLevel: pgx.ReadCommitted})
 	if err != nil {
 		return agentoutbox.Record{}, agentoutbox.Claim{}, err
 	}
 	defer tx.Rollback(ctx)
+	r, claim, err := claimMomentOutboxControlTx(ctx, tx, worker, handler, subjectID)
+	if err == errMomentTerminalControl {
+		if err = tx.Commit(ctx); err != nil {
+			return agentoutbox.Record{}, agentoutbox.Claim{}, err
+		}
+		return agentoutbox.Record{}, agentoutbox.Claim{}, agentoutbox.ErrUnavailable
+	}
+	if err != nil {
+		return agentoutbox.Record{}, agentoutbox.Claim{}, err
+	}
+	if err = tx.Commit(ctx); err != nil {
+		return agentoutbox.Record{}, agentoutbox.Claim{}, err
+	}
+	return r, claim, nil
+}
+
+var errMomentTerminalControl = errors.New("native Moment terminal control pending commit")
+
+// The fixed and mixed entrances share the original Moment claim transaction.
+// The outer owner commits retirement before classifying its actual result.
+func claimMomentOutboxControlTx(ctx context.Context, tx pgx.Tx, worker string, handler agentoutbox.HandlerVersion, subjectID string) (agentoutbox.Record, agentoutbox.Claim, error) {
 	r, admissionObservedAt, err := selectAgentOutboxControlTx(ctx, tx, handler, subjectID)
 	if err != nil {
 		return agentoutbox.Record{}, agentoutbox.Claim{}, err
@@ -261,10 +295,9 @@ func (s *Store) claimAgentOutboxControl(ctx context.Context, worker string, hand
  WHERE event_id=$1 AND fence=$2 AND control_state='LEASED'`, r.Event.EventID, r.Fence, terminal, reason); err != nil {
 			return agentoutbox.Record{}, agentoutbox.Claim{}, err
 		}
-		if err = tx.Commit(ctx); err != nil {
-			return agentoutbox.Record{}, agentoutbox.Claim{}, err
-		}
-		return agentoutbox.Record{}, agentoutbox.Claim{}, agentoutbox.ErrUnavailable
+		// Fixed-handler compatibility: the committed retirement is still
+		// reported as agentoutbox.ErrUnavailable, without a fabricated inbox.
+		return agentoutbox.Record{}, agentoutbox.Claim{}, errMomentTerminalControl
 	}
 	r, err = scanAgentOutbox(tx.QueryRow(ctx, `WITH clk AS MATERIALIZED(SELECT clock_timestamp() AS at)
  UPDATE agent_domain_outbox d SET delivery_state='LEASED',
@@ -295,10 +328,80 @@ func (s *Store) claimAgentOutboxControl(ctx context.Context, worker string, hand
 	if err = outboxControlAdmissionClock(admissionObservedAt, now); err != nil {
 		return agentoutbox.Record{}, agentoutbox.Claim{}, err
 	}
-	if err = tx.Commit(ctx); err != nil {
+	return r, claim, nil
+}
+
+// Mixed maintenance is a trusted native entrance, not a human/Agent endpoint.
+// No model, candidate, message, RSVP or cross-owner content grant is introduced.
+func (s *Store) ClaimMixedAgentOutboxControl(ctx context.Context, worker string) (agentoutbox.Record, agentoutbox.Claim, error) {
+	return s.claimMixedAgentOutboxControl(ctx, worker, "")
+}
+func (s *Store) ClaimMixedAgentOutboxControlForSubject(ctx context.Context, subject actorref.PrincipalRef, worker string) (agentoutbox.Record, agentoutbox.Claim, error) {
+	ref, err := actorref.ParsePrincipal("PERSON", subject.ID)
+	if err != nil || subject.Type != actorref.Person || ref != subject || ref.ID == "00000000-0000-0000-0000-000000000000" {
+		return agentoutbox.Record{}, agentoutbox.Claim{}, agentoutbox.ErrInvalid
+	}
+	return s.claimMixedAgentOutboxControl(ctx, worker, subject.ID)
+}
+func (s *Store) claimMixedAgentOutboxControl(ctx context.Context, worker, subject string) (agentoutbox.Record, agentoutbox.Claim, error) {
+	if ctx == nil || ctx.Err() != nil || s == nil || s.pool == nil {
+		return agentoutbox.Record{}, agentoutbox.Claim{}, agentoutbox.ErrUnavailable
+	}
+	if _, err := agentoutbox.NormalizeWorkerID(worker); err != nil {
+		return agentoutbox.Record{}, agentoutbox.Claim{}, agentoutbox.ErrInvalid
+	}
+	tx, err := s.pool.BeginTx(ctx, pgx.TxOptions{IsoLevel: pgx.ReadCommitted})
+	if err != nil {
 		return agentoutbox.Record{}, agentoutbox.Claim{}, err
 	}
-	return r, claim, nil
+	defer tx.Rollback(ctx)
+	owner, handler, admission, err := selectMixedOutboxControlTx(ctx, tx, subject)
+	if err != nil {
+		return agentoutbox.Record{}, agentoutbox.Claim{}, err
+	}
+	// Nomination takes no source/outbox row lock. Each original trusted Tx
+	// claim preserves its metadata -> owner/root -> source -> outbox ordering.
+	// The same admission lock and transaction stay held through actual claim.
+	var r agentoutbox.Record
+	var c agentoutbox.Claim
+	switch handler {
+	case agentoutbox.MemoryHandler:
+		r, c, err = claimMemoryOutboxTx(ctx, tx, worker, owner)
+	case agentoutbox.PreferenceHandler:
+		r, c, err = claimPreferenceOutboxTx(ctx, tx, worker, owner)
+	case agentoutbox.TaskRequestHandler:
+		r, c, err = claimTaskRequestOutboxTx(ctx, tx, worker, owner)
+	case agentoutbox.ParticipationHandler:
+		r, c, err = claimParticipationOutboxTx(ctx, tx, worker, owner)
+	case agentoutbox.HandlerV1:
+		r, c, err = claimMomentOutboxControlTx(ctx, tx, worker, handler, owner)
+	default:
+		return agentoutbox.Record{}, agentoutbox.Claim{}, agentoutbox.ErrUnavailable
+	}
+	if err == nil || err == errMemoryTerminalControl || err == errPreferenceTerminalControl || err == errMomentTerminalControl || err == errTaskRequestTerminalControl || err == errParticipationTerminalControl {
+		var final time.Time
+		if clockErr := tx.QueryRow(ctx, `SELECT clock_timestamp()`).Scan(&final); clockErr != nil {
+			return agentoutbox.Record{}, agentoutbox.Claim{}, clockErr
+		}
+		if clockErr := outboxControlAdmissionClock(admission, final); clockErr != nil {
+			return agentoutbox.Record{}, agentoutbox.Claim{}, clockErr
+		}
+	}
+	if err == errMemoryTerminalControl || err == errPreferenceTerminalControl || err == errMomentTerminalControl || err == errTaskRequestTerminalControl || err == errParticipationTerminalControl {
+		if err = tx.Commit(ctx); err != nil {
+			return agentoutbox.Record{}, agentoutbox.Claim{}, err
+		}
+		return agentoutbox.Record{}, agentoutbox.Claim{}, agentoutboxmaintenance.ErrNativeControlRetired
+	}
+	if err != nil {
+		return agentoutbox.Record{}, agentoutbox.Claim{}, err
+	}
+	if c.HandlerVersion != handler || c.Subject.ID != owner || r.Event.Subject.ID != owner {
+		return agentoutbox.Record{}, agentoutbox.Claim{}, agentoutbox.ErrUnavailable
+	}
+	// A lost COMMIT reply returns no claim. A new invocation uses native
+	// fences/leases/history; this method never guesses that a retry is safe.
+	return commitMemoryClaimTx(ctx, tx, r, c)
 }
 
 // ConsumeAgentOutboxControl makes a fenced control receipt in the same native
@@ -316,6 +419,12 @@ func (s *Store) ConsumeAgentOutboxControl(ctx context.Context, claim agentoutbox
 	}
 	if claim.HandlerVersion == agentoutbox.PreferenceHandler {
 		return s.consumePreferenceOutbox(ctx, claim)
+	}
+	if claim.HandlerVersion == agentoutbox.TaskRequestHandler {
+		return s.consumeTaskRequestOutbox(ctx, claim)
+	}
+	if claim.HandlerVersion == agentoutbox.ParticipationHandler {
+		return s.consumeParticipationOutbox(ctx, claim)
 	}
 	tx, err := s.pool.BeginTx(ctx, pgx.TxOptions{IsoLevel: pgx.ReadCommitted})
 	if err != nil {

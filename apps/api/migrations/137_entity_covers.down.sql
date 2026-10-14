@@ -1,0 +1,11 @@
+BEGIN;
+LOCK TABLE entity_covers,entity_cover_operations IN ACCESS EXCLUSIVE MODE;
+DO $$ BEGIN IF EXISTS(SELECT 1 FROM entity_covers) OR EXISTS(SELECT 1 FROM entity_cover_operations) THEN RAISE EXCEPTION 'preserve used cover and operation history before downgrade' USING ERRCODE='55000'; END IF; END $$;
+DROP TABLE entity_cover_operations;
+DROP FUNCTION birdtie_entity_cover_operation_immutable();
+DROP FUNCTION birdtie_entity_cover_metadata(text,uuid,uuid,timestamptz);
+DROP FUNCTION birdtie_entity_cover_authority(text,uuid,uuid);
+DROP FUNCTION birdtie_entity_cover_visible(text,uuid,uuid,timestamptz);
+DROP FUNCTION birdtie_entity_cover_manage(text,uuid,uuid);
+DROP TABLE entity_covers;
+COMMIT;

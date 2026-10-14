@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'agent_result_projection.dart';
 import 'public_query_field_evidence.dart';
 
@@ -88,7 +89,7 @@ class _PublicQueryFieldEvidencePanelState
   String _stamp(DateTime t) {
     final local = t.toLocal();
     String two(int n) => n.toString().padLeft(2, '0');
-    return '${local.year}年${local.month}月${local.day}日 ${two(local.hour)}:${two(local.minute)}:${two(local.second)}（本机时间）';
+    return '${local.year}年${local.month}月${local.day}日 ${two(local.hour)}:${two(local.minute)}';
   }
 
   @override
@@ -96,6 +97,14 @@ class _PublicQueryFieldEvidencePanelState
     final live = _live;
     final evidence = widget.evidence,
         detail = evidence.times[widget.item.entity.id];
+    final reference = Uri.tryParse(detail?.sourceReference ?? '');
+    final link =
+        reference != null &&
+            reference.scheme == 'https' &&
+            reference.host.isNotEmpty &&
+            reference.userInfo.isEmpty
+        ? reference
+        : null;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -113,35 +122,49 @@ class _PublicQueryFieldEvidencePanelState
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 if (!live)
-                  const Text('来源说明已失效，请重新查询后查看。原内容与操作保留。')
+                  const Text('来源说明已失效，请重新查询。')
                 else if (evidence.invalid)
-                  const Text('来源说明暂不可用。可继续查看原内容及详情。')
+                  const Text('来源说明暂不可用。')
                 else ...[
-                  const Text('本次公开来源记录；说明只读，不提供身份、到访或操作权限。'),
                   if (detail != null) ...[
-                    Text('来源更新时间：${_stamp(detail.updatedAt)}'),
                     Text(
-                      detail.sourceExpiresAt == null
-                          ? '来源到期时间：未提供'
-                          : '来源到期时间：${_stamp(detail.sourceExpiresAt!)}',
+                      detail.sourceLabel.isNotEmpty
+                          ? detail.sourceLabel
+                          : evidence.queryKind == 'activity'
+                          ? '公开活动资料'
+                          : '公开地点资料',
                     ),
+                    Text('来源更新时间：${_stamp(detail.updatedAt)}'),
+                    if (detail.sourceExpiresAt != null)
+                      Text('来源到期时间：${_stamp(detail.sourceExpiresAt!)}'),
+                    if (detail.freshness == 'unverified' ||
+                        detail.freshness == 'review_needed')
+                      const Text('此来源尚未核实。'),
+                    if (link != null)
+                      TextButton.icon(
+                        onPressed: () {
+                          if (_live)
+                            unawaited(
+                              launchUrl(
+                                link,
+                                mode: LaunchMode.externalApplication,
+                              ),
+                            );
+                        },
+                        icon: const Icon(Icons.open_in_new),
+                        label: const Text('打开来源'),
+                      ),
+                    if (evidence.queryKind == 'activity')
+                      const Text('活动资料不代表实际出席。'),
                   ] else
-                    const Text('当前内容未提供可展开的公开字段来源。非公开来源不会自动标为公开。'),
+                    const Text('此结果暂无可核对的来源。'),
                   if ((evidence.omitted['EXPIRED_SOURCE'] ?? 0) > 0)
-                    const Text('部分来源已过期，其附加字段说明不可用。'),
+                    const Text('部分结果的来源已过期。'),
                   if ((evidence.omitted['UNKNOWN_SOURCE_TIME'] ?? 0) > 0)
-                    const Text('部分来源更新时间未提供，保持未知。'),
+                    const Text('部分来源未提供更新时间。'),
                   if ((evidence.omitted['SOURCE_METADATA_UNAVAILABLE'] ?? 0) >
                       0)
-                    const Text('部分公开来源说明暂不可用。'),
-                  if ((evidence.omitted['OMITTED_BUDGET'] ?? 0) > 0)
-                    Text(
-                      '因说明大小限制省略了 ${evidence.omitted['OMITTED_BUDGET']} 个对象的字段说明；原结果保留。',
-                    ),
-                  Text('本次读取时间：${_stamp(evidence.observedAt!)}'),
-                  Text('本次说明读取期限：${_stamp(evidence.readExpiresAt!)}'),
-                  const Text('拍摄时间：未采集。更新时间和读取时间不表示发生、出席、到访或当前位置。'),
-                  const Text('本次未提供跨来源冲突核对，不代表所有声明都没有冲突。'),
+                    const Text('部分来源暂不可用。'),
                 ],
               ],
             ),

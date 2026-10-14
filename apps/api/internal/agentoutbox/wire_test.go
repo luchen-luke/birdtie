@@ -15,6 +15,50 @@ func envelopeJSON(t *testing.T) string {
 	}
 	return string(raw)
 }
+
+// These are parser fixtures, not evidence of current native source authority.
+func TestAgentOutboxWireClosedNativeRevisionSentinels(t *testing.T) {
+	for _, family := range []string{"task", "participation"} {
+		t.Run(family, func(t *testing.T) {
+			e := outboxEvent(MomentCreated)
+			e.Source.Revision = 0
+			if family == "task" {
+				e.SchemaVersion, e.EventType = TaskRequestSchema, TaskRequestChanged
+				e.Source.Type, e.Source.Status = TaskRequestSource, TaskRequestActive
+				e.LogicalOperationID = TaskRequestOperationID(e.Source.ID, e.Source.Fingerprint, e.EventType)
+			} else {
+				e.SchemaVersion, e.EventType = ParticipationSchema, ParticipationUpdated
+				e.Source.Type, e.Source.Status = ParticipationSource, ParticipationGoing
+				e.LogicalOperationID = ParticipationOperationID(e.Source.ID, e.Source.Fingerprint)
+			}
+			e.RootTraceID, e.EventID = e.LogicalOperationID, StableEventID(e)
+			raw, err := json.Marshal(e)
+			decoded, decodeErr := DecodeEnvelope(raw, outboxTime())
+			if err != nil || decodeErr != nil || decoded != e {
+				t.Fatal("native closed sentinel wire", err, decodeErr)
+			}
+			for _, key := range []string{"query", "body", "session", "token", "authority", "consent", "effect_key"} {
+				private := strings.TrimSuffix(string(raw), "}") + `,"` + key + `":true}`
+				if out, err := DecodeEnvelope([]byte(private), outboxTime()); err != ErrInvalid || out != (Envelope{}) {
+					t.Fatal("native metadata accepted authority/private field", key, err)
+				}
+			}
+			e.Source.Revision = 1
+			e.EventID = StableEventID(e)
+			raw, _ = json.Marshal(e)
+			if _, err := DecodeEnvelope(raw, outboxTime()); err != ErrInvalid {
+				t.Fatal("invented source counter accepted", err)
+			}
+		})
+	}
+	legacy := outboxEvent(MomentCreated)
+	legacy.Source.Revision = 0
+	legacy.EventID = StableEventID(legacy)
+	raw, _ := json.Marshal(legacy)
+	if _, err := DecodeEnvelope(raw, outboxTime()); err != ErrInvalid {
+		t.Fatal("native sentinel weakened original Moment contract", err)
+	}
+}
 func TestAgentOutboxMetadataWireRoundTrip(t *testing.T) {
 	for _, kind := range []EventType{MomentCreated, MomentUpdated, MomentWithdrawn} {
 		t.Run(string(kind), func(t *testing.T) {

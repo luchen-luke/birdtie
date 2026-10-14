@@ -22,6 +22,15 @@ class NativeCityMapView extends StatelessWidget {
     this.contextKey = '',
     this.preserveViewport = false,
     this.ornamentTop,
+    this.contentRect,
+    this.focusRevision = 0,
+    this.onSelectedAnchor,
+    this.readerChanges,
+    this.currentReaderEntities,
+    this.currentReaderScope,
+    this.onMapReaderVisibilityChanged,
+    this.onCoordinateSelected,
+    this.coordinateSourceCurrent,
   });
 
   final PublicCity? city;
@@ -40,6 +49,16 @@ class NativeCityMapView extends StatelessWidget {
   final String contextKey;
   final bool preserveViewport;
   final double? ornamentTop;
+  final Rect? contentRect;
+  final int focusRevision;
+  final ValueChanged<({String? id, Offset? point})>? onSelectedAnchor;
+  final Listenable? readerChanges;
+  final List<MapEntity> Function()? currentReaderEntities;
+  final Object? Function()? currentReaderScope;
+  final ValueChanged<({Object token, bool visible})>?
+  onMapReaderVisibilityChanged;
+  final void Function(double latitude, double longitude)? onCoordinateSelected;
+  final bool Function()? coordinateSourceCurrent;
 
   @override
   Widget build(BuildContext context) => const SizedBox.shrink();

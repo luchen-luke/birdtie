@@ -3,6 +3,8 @@
 package main
 
 import (
+	"bytes"
+	"compress/gzip"
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
@@ -10,14 +12,17 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"html"
 	"io"
 	"net"
 	"net/url"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/birdtie/birdtie/apps/api/internal/actorref"
 	"github.com/birdtie/birdtie/apps/api/internal/agentcognitive"
@@ -37,6 +42,9 @@ import (
 
 const tariffHash = "7b018d27ae8dbfa4dceb7282a95e55173a74dee2767ade557e4de3fd1165b5fd"
 const priceVersion = "tariff_deepseek0813_20261008_7b018d27"
+const licensedTariffHash = "5ae0a95dbf22a4c59584963b53a5db1ea928326105e56836c94a68c0c26e3efd"
+const licensedPriceVersion = "tariff_deepseek0813_20261009_5ae0a95d"
+const licensedTariffObservedAt = "2026-10-08T21:39:12.997641Z"
 const probeQuery = "请只回答：连接成功。"
 
 type liveConfig struct {
@@ -48,27 +56,29 @@ type liveConfig struct {
 }
 
 type receipt struct {
-	AtUTC          time.Time          `json:"atUTC"`
-	Action         string             `json:"action"`
-	Stage          string             `json:"stage"`
-	Status         string             `json:"status"`
-	Model          string             `json:"model"`
-	Endpoint       string             `json:"endpoint"`
-	HTTPStatus     int                `json:"httpStatus"`
-	BusinessCode   string             `json:"businessCode"`
-	RequestID      string             `json:"request_id"`
-	TaskID         string             `json:"taskId,omitempty"`
-	OperationID    string             `json:"operationId,omitempty"`
-	RootID         string             `json:"rootTraceId,omitempty"`
-	Diagnostic     string             `json:"diagnostic,omitempty"`
-	UpperMicros    int64              `json:"upperMicrosCNY"`
-	Usage          modelgateway.Usage `json:"usage"`
-	PriceVersion   string             `json:"priceVersion"`
-	CashStatus     string             `json:"cashStatus"`
-	ProviderCalls  int                `json:"providerCalls"`
-	RuntimeUpdated bool               `json:"runtimeUpdated"`
-	BoundBasis     string             `json:"boundBasis"`
-	ParityStatus   string             `json:"hostedTokenizerParity"`
+	AtUTC                time.Time          `json:"atUTC"`
+	Action               string             `json:"action"`
+	Stage                string             `json:"stage"`
+	Status               string             `json:"status"`
+	Model                string             `json:"model"`
+	Endpoint             string             `json:"endpoint"`
+	HTTPStatus           int                `json:"httpStatus"`
+	BusinessCode         string             `json:"businessCode"`
+	RequestID            string             `json:"request_id"`
+	TaskID               string             `json:"taskId,omitempty"`
+	OperationID          string             `json:"operationId,omitempty"`
+	RootID               string             `json:"rootTraceId,omitempty"`
+	Diagnostic           string             `json:"diagnostic,omitempty"`
+	UpperMicros          int64              `json:"upperMicrosCNY"`
+	Usage                modelgateway.Usage `json:"usage"`
+	PriceVersion         string             `json:"priceVersion"`
+	CashStatus           string             `json:"cashStatus"`
+	ProviderCalls        int                `json:"providerCalls"`
+	RuntimeUpdated       bool               `json:"runtimeUpdated"`
+	BoundBasis           string             `json:"boundBasis"`
+	ParityStatus         string             `json:"hostedTokenizerParity"`
+	ConfigurationVersion string             `json:"configurationVersion,omitempty"`
+	RouteRevision        int64              `json:"routeRevision,omitempty"`
 }
 
 type options struct {
@@ -77,7 +87,7 @@ type options struct {
 
 func validateOptions(o options, rawDSN string) (*url.URL, error) {
 	u, e := url.Parse(rawDSN)
-	if e != nil || (u.Scheme != "postgres" && u.Scheme != "postgresql") || !strings.HasPrefix(o.database, "birdtie_ui_live_20261008_") || strings.TrimPrefix(u.Path, "/") != o.database || !filepath.IsAbs(o.dir) || !filepath.IsAbs(o.tariffs) || !filepath.IsAbs(o.output) || (o.action != "register" && o.action != "probe") {
+	if e != nil || (u.Scheme != "postgres" && u.Scheme != "postgresql") || !strings.HasPrefix(o.database, "birdtie_ui_live_20261008_") || strings.TrimPrefix(u.Path, "/") != o.database || !filepath.IsAbs(o.dir) || !filepath.IsAbs(o.tariffs) || !filepath.IsAbs(o.output) || (o.action != "register" && o.action != "probe" && o.action != "source-policy" && o.action != "licensed-place-policy") {
 		return nil, modelgateway.ErrInvalid
 	}
 	ip := net.ParseIP(u.Hostname())
@@ -137,7 +147,7 @@ func loadConfig(path string) (liveConfig, error) {
 	d := json.NewDecoder(strings.NewReader(string(raw)))
 	d.DisallowUnknownFields()
 	var extra any
-	if d.Decode(&v) != nil || d.Decode(&extra) != io.EOF || v.OwnerID == "" || v.ConfigurationVersion != "now_public_sources_20261008_v1" || v.RouteRevision < 1 || v.SearchPriceVersion == "" || v.ModelPriceVersion == "" {
+	if d.Decode(&v) != nil || d.Decode(&extra) != io.EOF || v.OwnerID == "" || (v.ConfigurationVersion != "now_public_sources_20261008_v1" && v.ConfigurationVersion != modelegressbudget.LiveSourceAnswerPolicyVersion && v.ConfigurationVersion != modelegressbudget.LiveLicensedPlacePolicyVersion) || v.RouteRevision < 1 || v.SearchPriceVersion == "" || v.ModelPriceVersion == "" {
 		return liveConfig{}, modelgateway.ErrInvalid
 	}
 	return v, nil
@@ -179,6 +189,133 @@ func reviewedPrice(dir string, now time.Time) (modelegressbudget.LivePrice, erro
 	return modelegressbudget.LivePrice{}, modelgateway.ErrInvalid
 }
 
+// A separate reviewed snapshot for the explicit new licensed-place action.
+// The original price/probe snapshot, old TTL and UNKNOWN cash holds are intact.
+func reviewedLicensedPlacePrice(dir string, now time.Time) (modelegressbudget.LivePrice, error) {
+	var manifest struct {
+		Artifacts []struct {
+			Name          string `json:"name"`
+			SourceURL     string `json:"sourceURL"`
+			SHA256        string `json:"sha256"`
+			ObservedAtUTC string `json:"observedAtUTC"`
+			Bytes         int    `json:"bytes"`
+		} `json:"artifacts"`
+		ProviderAPICalls *int `json:"providerAPICalls"`
+	}
+	raw, e := os.ReadFile(filepath.Join(dir, "manifest.json"))
+	if e != nil || len(raw) > 16384 {
+		return modelegressbudget.LivePrice{}, modelgateway.ErrInvalid
+	}
+	d := json.NewDecoder(bytes.NewReader(raw))
+	d.DisallowUnknownFields()
+	if d.Decode(&manifest) != nil || d.Decode(new(any)) != io.EOF || len(manifest.Artifacts) != 1 || manifest.ProviderAPICalls == nil || *manifest.ProviderAPICalls != 0 {
+		return modelegressbudget.LivePrice{}, modelgateway.ErrInvalid
+	}
+	a := manifest.Artifacts[0]
+	observed, e := time.Parse(time.RFC3339Nano, a.ObservedAtUTC)
+	expected, _ := time.Parse(time.RFC3339Nano, licensedTariffObservedAt)
+	if e != nil || !observed.Equal(expected) || a.Name != "models" || a.SourceURL != modelegressbudget.LiveModelPriceURL || a.SHA256 != licensedTariffHash {
+		return modelegressbudget.LivePrice{}, modelgateway.ErrInvalid
+	}
+	path := filepath.Join(dir, "models.html")
+	info, e := os.Lstat(path)
+	if e != nil || !info.Mode().IsRegular() || info.Size() > 4*1024*1024 {
+		return modelegressbudget.LivePrice{}, modelgateway.ErrInvalid
+	}
+	raw, e = os.ReadFile(path)
+	if e != nil || len(raw) != a.Bytes {
+		return modelegressbudget.LivePrice{}, modelgateway.ErrInvalid
+	}
+	h := sha256.Sum256(raw)
+	if hex.EncodeToString(h[:]) != licensedTariffHash {
+		return modelegressbudget.LivePrice{}, modelgateway.ErrInvalid
+	}
+	// The captured response is gzip bytes. Hash the original artifact first;
+	// decode at most 4MiB for the selected row check, without rewriting it.
+	compressed, e := gzip.NewReader(bytes.NewReader(raw))
+	if e != nil {
+		return modelegressbudget.LivePrice{}, modelgateway.ErrInvalid
+	}
+	decoded, e := io.ReadAll(io.LimitReader(compressed, 4*1024*1024+1))
+	closeErr := compressed.Close()
+	if e != nil || closeErr != nil || validateLicensedTariffHTML(decoded) != nil {
+		return modelegressbudget.LivePrice{}, modelgateway.ErrInvalid
+	}
+	observed = observed.UTC().Truncate(time.Microsecond)
+	expires := observed.Add(23 * time.Hour)
+	p := modelegressbudget.LivePrice{Kind: modelegressbudget.LiveToken, RequestCeiling: 1, Base: modelegressbudget.Price{Version: licensedPriceVersion, Destination: modelegressbudget.LiveDeepSeek0813Destination(), Region: modelcapability.APAC, Retention: modelegressbudget.LiveRetentionUnknown, Currency: "CNY", InputMicrosPerToken: 9, OutputMicrosPerToken: 27, InputTokenCeiling: modelgateway.TencentDeepSeekMaxInputTokens, OutputTokenCeiling: 768, Evidence: modelegressbudget.LiveTariffEvidence, ExpiresAt: expires}, Snapshot: modelegressbudget.LiveSnapshot{SourceURL: a.SourceURL, ArtifactSHA256: licensedTariffHash, ObservedAt: observed, ExpiresAt: expires, DocumentUpdatedAt: time.Date(2026, 9, 24, 12, 8, 15, 0, time.UTC)}}
+	return p, modelegressbudget.ValidateLivePrice(p, now)
+}
+
+var tariffTableHTML = regexp.MustCompile(`(?s)<table\b[^>]*>.*?</table>`)
+var tariffRowHTML = regexp.MustCompile(`(?s)<tr\b[^>]*>.*?</tr>`)
+var tariffCellHTML = regexp.MustCompile(`(?s)<(?:td|th)\b[^>]*>(.*?)</(?:td|th)>`)
+var tariffTagHTML = regexp.MustCompile(`<[^>]*>`)
+
+func validateLicensedTariffHTML(raw []byte) error {
+	if len(raw) == 0 || len(raw) > 4*1024*1024 || !utf8.Valid(raw) {
+		return modelgateway.ErrInvalid
+	}
+	text := string(raw)
+	if !strings.Contains(text, "2026-09-24 20:08:15") {
+		return modelgateway.ErrInvalid
+	}
+	table := tariffTableHTML.FindStringIndex(text)
+	if len(table) != 2 {
+		return modelgateway.ErrInvalid
+	}
+	start := table[0] - 2400
+	if start < 0 {
+		start = 0
+	}
+	region := text[start:table[0]]
+	if !strings.Contains(region, `tse-tabs__item is-active" draggable="false"><div class="tse-tabs__item-cont"><div class="tse-tabs__item-label">广州</div>`) || !strings.Contains(region, `tse-tabs__cont is-active`) {
+		return modelgateway.ErrInvalid
+	}
+	rows := tariffRowHTML.FindAllString(text[table[0]:table[1]], -1)
+	cells := func(row string) []string {
+		result := []string{}
+		for _, match := range tariffCellHTML.FindAllStringSubmatch(row, -1) {
+			s := html.UnescapeString(tariffTagHTML.ReplaceAllString(match[1], ""))
+			s = strings.ReplaceAll(s, "\ufeff", "")
+			result = append(result, strings.Join(strings.Fields(s), " "))
+		}
+		return result
+	}
+	if len(rows) < 3 {
+		return modelgateway.ErrInvalid
+	}
+	header := cells(rows[0])
+	expected := []string{"模型名称", "条件（token）", "峰谷计费", "推理输入（元/百万 tokens）", "推理输出（元/百万 tokens）", "缓存命中（元/百万 tokens）"}
+	if len(header) != len(expected) {
+		return modelgateway.ErrInvalid
+	}
+	for i := range expected {
+		if header[i] != expected[i] {
+			return modelgateway.ErrInvalid
+		}
+	}
+	matched := 0
+	for i, row := range rows {
+		c := cells(row)
+		if len(c) < 1 || c[0] != "DeepSeek-V4-Pro 0813 正式版" {
+			continue
+		}
+		matched++
+		if len(c) != 6 || c[1] != "-" || c[2] != "空闲时段" || c[3] != "4.5" || c[4] != "13.5" || c[5] != "0.15" || i+1 >= len(rows) {
+			return modelgateway.ErrInvalid
+		}
+		peak := cells(rows[i+1])
+		if len(peak) != 6 || peak[0] != "" || peak[1] != "" || peak[2] != "高峰时段" || peak[3] != "9" || peak[4] != "27" || peak[5] != "0.3" {
+			return modelgateway.ErrInvalid
+		}
+	}
+	if matched != 1 {
+		return modelgateway.ErrInvalid
+	}
+	return nil
+}
+
 type featureGate struct{ controller *agentfeature.Controller }
 
 func (g featureGate) InferenceEnabled(ctx context.Context) bool {
@@ -213,7 +350,11 @@ func execute(o options, r *receipt) error {
 		return e
 	}
 	r.Stage = "reviewed-tariff"
-	price, e := reviewedPrice(o.tariffs, time.Now())
+	loadPrice := reviewedPrice
+	if o.action == "licensed-place-policy" {
+		loadPrice = reviewedLicensedPlacePrice
+	}
+	price, e := loadPrice(o.tariffs, time.Now())
 	if e != nil {
 		return e
 	}
@@ -229,6 +370,17 @@ func execute(o options, r *receipt) error {
 	}
 	defer pool.Close()
 	store := postgres.New(pool, true)
+	if o.action == "source-policy" {
+		return activateSourceAnswerPolicy(ctx, store, pool, cfgPath, config, r)
+	}
+	if o.action == "licensed-place-policy" {
+		r.Stage = "native-price-registration"
+		if e = store.RegisterLivePrice(ctx, price); e != nil {
+			return e
+		}
+		r.PriceVersion = price.Base.Version
+		return activateLicensedPlacePolicy(ctx, store, pool, cfgPath, config, r, price.Base.Version)
+	}
 	r.Stage = "native-price-registration"
 	if e = store.RegisterLivePrice(ctx, price); e != nil {
 		return e
@@ -408,11 +560,14 @@ func main() {
 	flag.StringVar(&o.database, "expected-database", "", "Exact authorized isolated database")
 	flag.StringVar(&o.dir, "config-dir", "", "Ignored local server configuration directory")
 	flag.StringVar(&o.tariffs, "tariff-dir", "", "Reviewed public tariff directory")
-	flag.StringVar(&o.action, "action", "", "register or probe; no automatic retry")
+	flag.StringVar(&o.action, "action", "", "register, source-policy, licensed-place-policy or probe; no automatic retry")
 	flag.StringVar(&o.output, "receipt", "", "New exclusive sanitized receipt")
 	flag.Parse()
 	r := receipt{AtUTC: time.Now().UTC(), Action: o.action, Status: "FAILED", Model: "deepseek-v4-pro-0813", Endpoint: modelgateway.TencentTokenHubBaseURL + "/chat/completions", BusinessCode: "NOT_AVAILABLE", RequestID: "NOT_AVAILABLE", CashStatus: "UNKNOWN", PriceVersion: priceVersion,
 		BoundBasis: "SELECTED_OFFICIAL_MODEL_BYTE_BPE_UPPER_BOUND", ParityStatus: "INFERRED_FROM_SELECTED_MODEL_NOT_MEASURED"}
+	if o.action == "licensed-place-policy" {
+		r.PriceVersion = licensedPriceVersion
+	}
 	// Persist a separate exclusive claim before any native mutation or transport.
 	// A crash leaves it in place, preventing the same invocation from replaying.
 	if _, e := validateOptions(o, os.Getenv("BIRDTIE_DATABASE_URL")); e != nil {

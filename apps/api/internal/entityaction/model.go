@@ -127,7 +127,7 @@ func Project(ref Ref, f Facts, observed, deadline time.Time, title, version stri
 		a := Descriptor{Kind: k, Operation: operations[i], Target: ref, State: Unavailable, Label: labels[i], Reason: "当前对象或身份不支持此操作。", RequiresConfirmation: k != Message}
 		if allowed[i] {
 			a.State = Available
-			a.Reason = "提交前仍需检查当前领域权限和状态。"
+			a.Reason = "提交前将再次确认权限和状态。"
 		}
 		switch k {
 		case Share:

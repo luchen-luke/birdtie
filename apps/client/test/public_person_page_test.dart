@@ -6,8 +6,29 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'entity_action_contract_test.dart' show actionWire;
+import 'package:birdtie_client/src/workspace/human_visibility.dart';
 
 void main() {
+  for (final visibility in ['followers','connections','close','private']) {
+    testWidgets('合法资料 $visibility 明确范围不扩大公开分享和动态入口', (t) async {
+      const id='81000000-0000-4000-8000-000000000002';
+      final c=MockClient((_)async=>http.Response(jsonEncode({'data':{'accountId':id,'displayName':'已获准合成资料','bio':'可见简介','visibility':visibility}}),200,
+        headers:{'content-type':'application/json; charset=utf-8'}));addTearDown(c.close);
+      await t.pumpWidget(MaterialApp(home:PublicPersonPage(accountID:id,authorizationHeader:()=> 'Bearer synthetic',client:c,
+        onOpenPublicMoments:()async{})));
+      await t.pumpAndSettle();expect(find.text('资料可见范围：${humanVisibilityLabels[visibility]}'),findsOneWidget);
+      expect(find.text('发给好友'),findsNothing);expect(find.text('当前范围的公开动态'),findsNothing);expect(find.text('添加好友'),findsNothing);
+      await t.pumpWidget(const SizedBox());
+    });
+  }
+  testWidgets('未知个人资料范围不显示正文和任何公开动作', (t) async {
+    const id='81000000-0000-4000-8000-000000000002';
+    final c=MockClient((_)async=>http.Response(jsonEncode({'data':{'accountId':id,'displayName':'隐藏测试内容','visibility':'UNKNOWN'}}),200,
+      headers:{'content-type':'application/json; charset=utf-8'}));addTearDown(c.close);
+    await t.pumpWidget(MaterialApp(home:PublicPersonPage(accountID:id,authorizationHeader:()=> 'Bearer synthetic',client:c)));
+    await t.pumpAndSettle();expect(find.text('隐藏测试内容'),findsNothing);expect(find.text('个人资料暂不可访问。 点击重试'),findsOneWidget);
+    await t.pumpWidget(const SizedBox());
+  });
   testWidgets('同key个人详情transport重绑使旧好友批准永久失效', (tester) async {
     const id = '22e9cd18-babb-4359-9d1e-53593bedff47';
     final binding = ValueNotifier(false);
@@ -57,7 +78,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.text('申请连接'));
+    await tester.tap(find.text('添加好友'));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField), '旧来源明确留言');
     await tester.pump();
@@ -134,7 +155,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.text('申请连接'));
+    await tester.tap(find.text('添加好友'));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField), '旧来源明确留言');
     await tester.pump();
@@ -213,7 +234,7 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      await tester.tap(find.text('申请连接'));
+      await tester.tap(find.text('添加好友'));
       await tester.pumpAndSettle();
       await tester.enterText(find.byType(TextField), '希望一起打球');
       await tester.pump();

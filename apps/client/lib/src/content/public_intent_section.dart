@@ -7,6 +7,10 @@ import 'package:http/http.dart' as http;
 import '../auth/birdtie_auth_controller.dart';
 import '../city/public_city_controller.dart';
 import '../config/birdtie_environment.dart';
+import '../workspace/human_visibility.dart';
+import '../workspace/close_connections_page.dart';
+import '../workspace/now_ui_tokens.dart';
+import '../workspace/person_avatar_editor.dart';
 
 typedef _PublicIntentBinding = (
   BirdtieAuthController,
@@ -44,6 +48,7 @@ class _PublicIntentSectionState extends State<PublicIntentSection> {
   late bool _ownsClient;
   late _PublicIntentBinding _binding;
   int _bindingEpoch = 0;
+  final _bindingChanges = ValueNotifier<int>(0);
   String get _apiBase => widget.apiBaseUrl ?? BirdtieEnvironment.apiBaseUrl;
   _PublicIntentBinding get _currentBinding => (
     widget.auth,
@@ -79,7 +84,8 @@ class _PublicIntentSectionState extends State<PublicIntentSection> {
   final _details = TextEditingController();
   final _area = TextEditingController();
   List<Map<String, dynamic>> _intents = const [];
-  bool _public = false;
+  String _visibility = 'private';
+  bool get _public => _visibility == 'public';
   bool _confirmed = false;
   bool _loading = false;
   bool _saving = false;
@@ -108,6 +114,7 @@ class _PublicIntentSectionState extends State<PublicIntentSection> {
 
   void _resetBinding() {
     ++_bindingEpoch;
+    _bindingChanges.value++;
     ++_serial;
     _binding = _currentBinding;
     _name.clear();
@@ -117,7 +124,8 @@ class _PublicIntentSectionState extends State<PublicIntentSection> {
     _area.clear();
     setState(() {
       _intents = const [];
-      _public = _confirmed = _profileLoaded = false;
+      _visibility = 'private';
+      _confirmed = _profileLoaded = false;
       _durationDays = 7;
       _publicMapZone = '';
       _message = null;
@@ -198,15 +206,21 @@ class _PublicIntentSectionState extends State<PublicIntentSection> {
       if (profile['accountId'] != null && profile['accountId'] != accountID) {
         throw StateError('Profile binding changed');
       }
+      final visibility = humanVisibility(profile['visibility']);
       setState(() {
         _name.text = profile['displayName'] as String;
         _bio.text = profile['bio'] as String;
-        _public = profile['visibility'] == 'public';
+        _visibility = visibility;
         _intents = [for (final raw in records) raw as Map<String, dynamic>];
         _profileLoaded = true;
       });
     } catch (_) {
-      if (current()) setState(() => _failed = true);
+      if (current()) {
+        setState(() {
+          _failed = true;
+          _profileLoaded = false;
+        });
+      }
     } finally {
       if (current()) setState(() => _loading = false);
     }
@@ -215,7 +229,9 @@ class _PublicIntentSectionState extends State<PublicIntentSection> {
   Future<void> _saveProfile() async {
     if (_saving || _loading || !_profileLoaded || !_personalReady) return;
     final binding = _currentBinding, epoch = _bindingEpoch;
-    final name = _name.text.trim(), bio = _bio.text.trim(), public = _public;
+    final name = _name.text.trim(),
+        bio = _bio.text.trim(),
+        visibility = _visibility;
     setState(() {
       _saving = true;
       _message = null;
@@ -228,17 +244,31 @@ class _PublicIntentSectionState extends State<PublicIntentSection> {
             body: jsonEncode({
               'displayName': name,
               'bio': bio,
-              'visibility': public ? 'public' : 'private',
+              'visibility': visibility,
             }),
           )
           .timeout(const Duration(seconds: 10));
       if (response.statusCode != 200) throw StateError('Profile rejected');
       if (!_current(binding, epoch)) return;
+      final saved =
+          (jsonDecode(utf8.decode(response.bodyBytes))
+                  as Map<String, dynamic>)['data']
+              as Map<String, dynamic>;
+      if (saved['accountId'] != binding.$2 ||
+          saved['displayName'] != name ||
+          saved['bio'] != bio ||
+          humanVisibility(saved['visibility']) != visibility) {
+        throw const FormatException('Profile response binding changed');
+      }
       binding.$1.updateProfileDisplayName(name);
       await _load();
-      if (_current(binding, epoch)) {
+      if (_current(binding, epoch) && _profileLoaded && !_failed) {
         setState(
-          () => _message = public ? '资料已保存。原公开意图仍按有效期展示。' : '资料已设为私密，原公开意图已撤回。',
+          () => _message = visibility == 'public'
+              ? '资料已保存。原公开意图仍按有效期展示。'
+              : visibility == 'private'
+              ? '资料已设为私密，原公开意图已撤回。'
+              : '资料已设为${humanVisibilityLabels[visibility]}可见，原公开意图已撤回。',
         );
       }
     } catch (_) {
@@ -314,6 +344,30 @@ class _PublicIntentSectionState extends State<PublicIntentSection> {
     }
   }
 
+  Future<void> _openCloseConnections() async {
+    if (!_personalReady || !_profileLoaded || _loading || _saving) return;
+    final binding = _currentBinding, epoch = _bindingEpoch;
+    final workspaceChanges = Listenable.merge([
+      widget.workspaceChanges,
+      _bindingChanges,
+    ]);
+    final organizationWorkspaceID = widget.organizationWorkspaceID;
+    bool bindingCurrent() => _current(binding, epoch);
+    await Navigator.push(
+      context,
+      MaterialPageRoute<void>(
+        builder: (_) => CloseConnectionsPage(
+          auth: binding.$1,
+          client: binding.$4,
+          apiBaseUrl: binding.$5,
+          workspaceChanges: workspaceChanges,
+          organizationWorkspaceID: organizationWorkspaceID,
+          bindingCurrent: bindingCurrent,
+        ),
+      ),
+    );
+  }
+
   Future<void> _withdraw(String id) async {
     if (!_personalReady || !_profileLoaded || _loading || _saving) return;
     final binding = _currentBinding, epoch = _bindingEpoch;
@@ -343,6 +397,8 @@ class _PublicIntentSectionState extends State<PublicIntentSection> {
   void dispose() {
     ++_serial;
     ++_bindingEpoch;
+    _bindingChanges.value++;
+    _bindingChanges.dispose();
     widget.auth.removeListener(_onBindingChanged);
     widget.workspaceChanges?.removeListener(_onBindingChanged);
     if (_ownsClient) _client.close();
@@ -365,14 +421,23 @@ class _PublicIntentSectionState extends State<PublicIntentSection> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          '个人资料与社交',
-          style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
-        ),
+        Text('个人资料与社交', style: Theme.of(context).textTheme.titleMedium),
         const SizedBox(height: 8),
-        const Text('公开资料和人员意图会用于智能体的用户搜索结果。只填写大致区域，不要填写住址。'),
+        const Text('公开资料与明确公开的人员意图可出现在人员搜索结果中。只填写大致区域，不要填写住址。'),
         if (_loading) const LinearProgressIndicator(),
         if (_failed) TextButton(onPressed: _load, child: const Text('读取失败，重试')),
+        if (_personalReady && _profileLoaded)
+          PersonAvatarEditor(
+            key: ValueKey(
+              'own-avatar:${widget.auth.accountID}:${_bindingEpoch}',
+            ),
+            ownerID: widget.auth.accountID!,
+            baseUrl: _apiBase,
+            client: _client,
+            authorizationHeader: () => widget.auth.authorizationHeader,
+            identityChanges: _bindingChanges,
+            current: () => _personalReady,
+          ),
         TextField(
           controller: _name,
           enabled: _profileLoaded && !_loading && !_saving,
@@ -386,15 +451,37 @@ class _PublicIntentSectionState extends State<PublicIntentSection> {
           maxLines: 2,
           decoration: const InputDecoration(labelText: '简介（可选）'),
         ),
-        SwitchListTile.adaptive(
-          contentPadding: EdgeInsets.zero,
-          title: const Text('公开个人资料'),
-          subtitle: const Text('公开后，任何人都可能看到名称与简介。'),
-          value: _public,
+        const SizedBox(height: 12),
+        DropdownButtonFormField<String>(
+          key: ValueKey('profile-visibility:$_visibility'),
+          initialValue: _visibility,
+          isExpanded: true,
+          decoration: const InputDecoration(labelText: '谁可以查看我的资料'),
+          items: [
+            for (final entry in humanVisibilityLabels.entries)
+              DropdownMenuItem(value: entry.key, child: Text(entry.value)),
+          ],
           onChanged: !_profileLoaded || _saving || _loading
               ? null
-              : (value) => setState(() => _public = value),
+              : (value) {
+                  if (value != null) setState(() => _visibility = value);
+                },
         ),
+        const SizedBox(height: 8),
+        Text(
+          humanVisibilityDescriptions[_visibility]!,
+          style: NowUiTokens.of(context).body,
+        ),
+        const SizedBox(height: 8),
+        const Text('这些范围只控制资料展示，不开放私聊、Agent 资料或记忆。'),
+        if (_visibility == 'close')
+          TextButton.icon(
+            onPressed: !_profileLoaded || _loading || _saving
+                ? null
+                : _openCloseConnections,
+            icon: const Icon(Icons.people_outline),
+            label: const Text('管理亲密好友'),
+          ),
         OutlinedButton(
           onPressed: !_profileLoaded || _saving || _loading
               ? null
@@ -402,10 +489,7 @@ class _PublicIntentSectionState extends State<PublicIntentSection> {
           child: const Text('保存个人资料'),
         ),
         const Divider(height: 36),
-        const Text(
-          '我的人员意图',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
-        ),
+        Text('我的人员意图', style: Theme.of(context).textTheme.titleMedium),
         for (final item in _intents)
           ListTile(
             contentPadding: EdgeInsets.zero,
@@ -426,10 +510,7 @@ class _PublicIntentSectionState extends State<PublicIntentSection> {
                   )
                 : null,
           ),
-        const Text(
-          '提交一个意图',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
-        ),
+        Text('提交一个意图', style: Theme.of(context).textTheme.titleMedium),
         const Text('从提交时起在当前城市有效；个人资料保持公开时，可出现在用户搜索结果中。'),
         TextField(
           controller: _topic,
@@ -450,9 +531,9 @@ class _PublicIntentSectionState extends State<PublicIntentSection> {
           maxLength: 160,
           decoration: const InputDecoration(labelText: '粗略区域，例如 Aberdeen 市中心'),
         ),
-        const Text(
+        Text(
           '地图区域标记可选；仅展示城市级大范围的示意锚点，不代表你的位置。',
-          style: TextStyle(color: Color(0xFF747B73), fontSize: 12),
+          style: Theme.of(context).textTheme.bodySmall,
         ),
         DropdownButtonFormField<String>(
           key: ValueKey(_publicMapZone),
@@ -489,9 +570,9 @@ class _PublicIntentSectionState extends State<PublicIntentSection> {
             ),
           ],
         ),
-        const Text(
+        Text(
           '每人暂时最多同时发布 3 条有效意图。',
-          style: TextStyle(color: Color(0xFF747B73), fontSize: 12),
+          style: Theme.of(context).textTheme.bodySmall,
         ),
         CheckboxListTile(
           contentPadding: EdgeInsets.zero,
@@ -502,7 +583,9 @@ class _PublicIntentSectionState extends State<PublicIntentSection> {
           title: const Text('我确认公开此意图'),
         ),
         FilledButton(
-          onPressed: _saving || _loading ? null : _submit,
+          onPressed: _saving || _loading || !_profileLoaded || !_public
+              ? null
+              : _submit,
           child: const Text('公开意图'),
         ),
         if (_message != null)

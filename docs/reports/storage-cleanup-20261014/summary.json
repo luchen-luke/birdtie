@@ -1,0 +1,72 @@
+{
+  "RecordedLocalDate": "2026-10-14",
+  "Root": "D:\\Project\\birdtie",
+  "State": "COMPLETED_BY_USER_MANUAL_EXECUTION",
+  "DeletionPerformed": true,
+  "DeletedFiles": 264664.0,
+  "DeletedBytes": 57424048204.0,
+  "ApprovalRejectionReason": "blocked by policy",
+  "RejectedActions": [
+    "Validated multi-target cache and superseded-output deletion",
+    "Single literal-path Gradle cache directory deletion"
+  ],
+  "BeforeLogicalBytes": 87546820814,
+  "BeforeLogicalGiB": 81.534,
+  "ReviewedRemovableBytes": 57424048204,
+  "ReviewedRemovableGiB": 53.48,
+  "ReviewedTargetCount": 561,
+  "ReviewedFileCount": 264664,
+  "ExpectedRemainingGiBAfterManualExecution": 28.054,
+  "Preserved": [
+    "All tracked and untracked source, tests, migrations and requirements",
+    "Git history, task queue and historical states",
+    "Original failure logs, screenshots, videos and historical source snapshots",
+    "Credentials, local config and selected migration data",
+    "Current APK, API and Web delivery artifacts"
+  ],
+  "ExternalReparsePointsUntouched": true,
+  "ProtectedGitFileHashesCaptured": 24874,
+  "RetainedArtifactAndEvidenceFileHashesCaptured": 82,
+  "AllReviewedTargetsStillExist": true,
+  "ExistingGitStatusUnchangedExcludingNewCleanupMaterials": true,
+  "ManualScript": "scripts/cleanup_local_artifacts_20261014.ps1",
+  "ManualScriptExecuted": true,
+  "DryRunDefault": true,
+  "ApplicationTestsRun": false,
+  "ApplicationBuildsRun": false,
+  "TaskQueueModified": false,
+  "RemainingHistoricalEvidenceNote": "After removable generated output is cleared, approximately 28 GiB remains, primarily preserved historical source snapshots, JSON results, logs and screenshots.",
+  "CompatibilityRepair": {
+    "VerifiedUtc": "2026-10-14T08:46:39.4402447Z",
+    "OriginalError": "Windows PowerShell 5.1 wrapped the 561-entry JSON array as one pipeline object",
+    "SecondaryError": "Windows PowerShell 5.1/.NET Framework could not inspect a Gradle cache path longer than 260 characters",
+    "Fixes": [
+      "Normalize the assigned JSON array before enforcing the unchanged 561-entry count",
+      "Launch the existing PowerShell 7 runtime from Windows PowerShell 5.1",
+      "Exclude only the two generated execution reports from source and Git status comparisons",
+      "Serialize result arrays consistently for zero, one and many entries"
+    ],
+    "Verification": "Full read-only dry run from Windows PowerShell 5.1 launcher",
+    "DryRunExitCode": 0,
+    "DryRunTargets": 561,
+    "DryRunRemovableGiB": 53.48,
+    "DryRunOutput": "Verified targets: 561; removable GiB: 53.48. DRY RUN ONLY. No files deleted.",
+    "ManualExecuteInvokedByAgent": false,
+    "DeletionPerformed": false,
+    "ReadyForManualExecution": true,
+    "ScriptSha256": "018bcc7a35b5df650e115766e985048897947102d10e10f7e28c3a25e25ff9da"
+  },
+  "AutomaticDeletionState": "BLOCKED_BY_AUTOMATIC_APPROVAL",
+  "CompletionEvidence": {
+    "Summary": "docs/reports/storage-cleanup-20261014/manual-execution-summary.json",
+    "Results": "docs/reports/storage-cleanup-20261014/manual-execution-results.json",
+    "CompletedUtc": "2026-10-14T08:52:30.8143178Z",
+    "RemovedTargets": 561,
+    "FailedOrPartialTargets": 0,
+    "RemovedGiB": 53.48,
+    "ProtectedSourceContentUnchanged": true,
+    "GitStatusUnchangedExcludingCleanupLogs": true,
+    "RetainedCurrentApkApiWebPresent": true,
+    "VerificationUtc": "2026-10-14T09:08:12.4889218Z"
+  }
+}

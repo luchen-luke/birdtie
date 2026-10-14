@@ -321,3 +321,90 @@ func TestOfflineAdapterConcurrentCallsKeepEachNativeRequest(t *testing.T) {
 		t.Fatal("concurrent fixture call count", f.calls)
 	}
 }
+
+func TestCandidateV2OfflineOutcomesKeepV1AndNativeIdentity(t *testing.T) {
+	candidate := `{"status":"CANDIDATE","predicate":"ACTIVITY_CATEGORY","value":"sports","source_ref_ids":["` + fixtureContext + `"],"subject_attribution":"UNVERIFIED"}`
+	for _, schema := range []string{CandidateProposalVersion, CandidateProposalV2Version} {
+		for _, tc := range []struct {
+			name, body, status string
+			pass               bool
+		}{
+			{"candidate", candidate, "CANDIDATE", true},
+			{"no_candidate", `{"status":"NO_CANDIDATE"}`, NoCandidateStatus, schema == CandidateProposalV2Version},
+		} {
+			t.Run(schema+"/"+tc.name, func(t *testing.T) {
+				r := testRequest(Structured)
+				r.TaskKind = MemoryCandidateExtraction
+				r.OutputSchemaVersion = schema
+				r.ToolAllowlist = []string{}
+				h, adapter := harness(t, `{"status":"COMPLETED","request_id":"candidate-local","finish_reason":"stop","structured":`+tc.body+`}`)
+				result, err := h.Complete(context.Background(), r)
+				if !tc.pass {
+					if !errors.Is(err, ErrAdapter) || result.Status != Invalid || result.Candidate != nil || result.ProviderRequestID != "" {
+						t.Fatal("v1 accepted the v2 no-candidate outcome", err)
+					}
+					return
+				}
+				if err != nil || result.Status != Completed || result.Mode != OfflineContract || result.Candidate == nil || result.Candidate.Status != tc.status || result.RunID != r.RunID || result.Agent != r.Agent || result.Text != "" || result.Answer != nil || len(result.ToolProposals) != 0 || result.Usage.Status != "UNKNOWN" || result.Usage.CostStatus != "UNKNOWN" || result.Usage.InputTokens != nil || result.Usage.OutputTokens != nil || adapter.calls != 1 || adapter.received.OutputSchemaVersion != schema {
+					t.Fatal("candidate outcome/identity/accounting changed", err)
+				}
+				wire, err := json.Marshal(result.Candidate)
+				if err != nil || string(wire) != tc.body {
+					t.Fatalf("candidate outcome did not retain exact wire shape: %s, %v", wire, err)
+				}
+			})
+		}
+	}
+}
+
+func TestCandidateV2UnionRejectsAmbiguousAndAuthorityPayloads(t *testing.T) {
+	noCandidate := `{"status":"NO_CANDIDATE"}`
+	candidate := `{"status":"CANDIDATE","predicate":"ACTIVITY_CATEGORY","value":"sports","source_ref_ids":["` + fixtureContext + `"],"subject_attribution":"UNVERIFIED"}`
+	cases := map[string]string{
+		"null":                           `null`,
+		"array":                          `[]`,
+		"missing_status":                 `{}`,
+		"null_status":                    `{"status":null}`,
+		"numeric_status":                 `{"status":1}`,
+		"case_status":                    `{"Status":"NO_CANDIDATE"}`,
+		"lower_status":                   `{"status":"no_candidate"}`,
+		"unknown_status":                 `{"status":"ACTIVE"}`,
+		"duplicate_status":               `{"status":"CANDIDATE","status":"NO_CANDIDATE"}`,
+		"escaped_duplicate_status":       `{"status":"NO_CANDIDATE","\u0073tatus":"NO_CANDIDATE"}`,
+		"trailing":                       noCandidate + `{}`,
+		"malformed":                      `{"status":"NO_CANDIDATE"`,
+		"invalid_utf8":                   string([]byte{0xff}) + noCandidate,
+		"oversized":                      noCandidate + strings.Repeat(" ", MaxResultBytes),
+		"candidate_empty":                `{"status":"CANDIDATE"}`,
+		"candidate_null_value":           strings.Replace(candidate, `"value":"sports"`, `"value":null`, 1),
+		"candidate_null_sources":         strings.Replace(candidate, `["`+fixtureContext+`"]`, `null`, 1),
+		"candidate_no_sources":           strings.Replace(candidate, `["`+fixtureContext+`"]`, `[]`, 1),
+		"candidate_duplicate_sources":    strings.Replace(candidate, `["`+fixtureContext+`"]`, `["`+fixtureContext+`","`+fixtureContext+`"]`, 1),
+		"candidate_source_url":           strings.Replace(candidate, fixtureContext, "https://private.invalid", 1),
+		"candidate_sensitive_predicate":  strings.Replace(candidate, "ACTIVITY_CATEGORY", "HEALTH_CONDITION", 1),
+		"candidate_sensitive_value":      strings.Replace(candidate, "sports", "depression", 1),
+		"candidate_human_only_hiking":    strings.Replace(candidate, "sports", "hiking", 1),
+		"candidate_verified_attribution": strings.Replace(candidate, "UNVERIFIED", "VERIFIED_OWNER", 1),
+		"candidate_duplicate_value":      strings.Replace(candidate, `"value":`, `"value":"culture","value":`, 1),
+	}
+	for _, field := range []string{"predicate", "value", "source_ref_ids", "subject_attribution", "confirmed", "approved", "owner", "agent_id", "current_version", "permission_override"} {
+		cases["no_candidate_"+field+"_null"] = strings.TrimSuffix(noCandidate, "}") + `,"` + field + `":null}`
+		cases["candidate_"+field+"_extra"] = strings.TrimSuffix(candidate, "}") + `,"` + field + `":true}`
+	}
+	for name, body := range cases {
+		t.Run(name, func(t *testing.T) {
+			if proposal, err := decodeCandidateV2([]byte(body)); !errors.Is(err, ErrAdapter) || proposal != nil {
+				t.Fatal("invalid candidate union retained a proposal", err)
+			}
+			r := testRequest(Structured)
+			r.TaskKind = MemoryCandidateExtraction
+			r.OutputSchemaVersion = CandidateProposalV2Version
+			r.ToolAllowlist = []string{}
+			h, _ := harness(t, `{"status":"COMPLETED","request_id":"invalid-candidate","finish_reason":"stop","structured":`+body+`}`)
+			result, err := h.Complete(context.Background(), r)
+			if !errors.Is(err, ErrAdapter) || result.Status != Invalid || result.Candidate != nil || result.Answer != nil || result.Text != "" || len(result.ToolProposals) != 0 || result.ProviderID != "" || result.ProviderRequestID != "" || result.Usage.Status != "UNKNOWN" {
+				t.Fatal("invalid candidate payload escaped the harness", err)
+			}
+		})
+	}
+}

@@ -66,6 +66,20 @@ android {
             throw GradleException("Release versionCode must exceed the installed Civu baseline 2038; also check every Play track before publishing")
         }
         manifestPlaceholders["AMAP_ANDROID_KEY"] = amapProperties.getProperty("android.key", "")
+        externalNativeBuild {
+            cmake {
+                // This JNI boundary owns its C++ objects; avoid a new shared
+                // STL package alongside existing map/OCR native libraries.
+                arguments += "-DANDROID_STL=c++_static"
+            }
+        }
+    }
+
+    externalNativeBuild {
+        cmake {
+            path = file("src/main/cpp/birdtie_asr/CMakeLists.txt")
+            version = "3.22.1"
+        }
     }
 
     signingConfigs {

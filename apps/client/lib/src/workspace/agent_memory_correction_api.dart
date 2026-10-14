@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'agent_memory_review_page_model.dart';
 import 'dart:math';
 import 'package:http/http.dart' as http;
 import '../config/birdtie_environment.dart';
@@ -422,13 +423,21 @@ class AgentMemoryCorrectionAPI {
     String suffix,
     String token, {
     Map<String, dynamic>? body,
+    String? cursor,
   }) async {
     String path;
     bool envelope = false;
-    if (method == 'GET' && {'memories', 'candidates'}.contains(suffix)) {
-      path = suffix == 'memories'
+    if (method == 'GET' &&
+        {
+          'memories',
+          'candidates',
+          'memories/page',
+          'candidates/page',
+        }.contains(suffix)) {
+      path = suffix.startsWith('memories')
           ? '/v1/me/agent-memories'
           : '/v1/me/agent-memory-candidates';
+      if (suffix.endsWith('/page')) path += '/page';
       envelope = true;
     } else if (method == 'GET' &&
         suffix.startsWith('memories/') &&
@@ -437,11 +446,19 @@ class AgentMemoryCorrectionAPI {
       path = '/v1/me/agent-memories/${suffix.split('/').last}';
       envelope = true;
     } else if (method == 'POST' && suffix == 'self-review') {
-      final m = completionMap(body, {'profileFields', 'memoryIds', 'policyFamilies'});
-      _require(jsonEncode(m['profileFields']) == '["preferredActivityTypes"]' &&
-          m['memoryIds'] is List && (m['memoryIds'] as List).length == 1 &&
-          candidateIDValid((m['memoryIds'] as List).single) &&
-          m['policyFamilies'] is List && (m['policyFamilies'] as List).isEmpty);
+      final m = completionMap(body, {
+        'profileFields',
+        'memoryIds',
+        'policyFamilies',
+      });
+      _require(
+        jsonEncode(m['profileFields']) == '["preferredActivityTypes"]' &&
+            m['memoryIds'] is List &&
+            (m['memoryIds'] as List).length == 1 &&
+            candidateIDValid((m['memoryIds'] as List).single) &&
+            m['policyFamilies'] is List &&
+            (m['policyFamilies'] as List).isEmpty,
+      );
       path = '/v1/me/agent-context/self-review';
       envelope = true;
     } else if (method == 'POST' && suffix == 'previews') {
@@ -460,13 +477,20 @@ class AgentMemoryCorrectionAPI {
       throw const FormatException('请求范围不符');
     }
     _require(token.isNotEmpty && (method != 'GET' || body == null));
-    final uri = Uri.parse('${base.replaceAll(RegExp(r'/$'), '')}$path');
+    var uri = Uri.parse('${base.replaceAll(RegExp(r'/$'), '')}$path');
     _require(
       uri.host.isNotEmpty &&
           {'http', 'https'}.contains(uri.scheme) &&
           uri.query.isEmpty &&
           uri.fragment.isEmpty,
     );
+    _require(
+      cursor == null ||
+          (method == 'GET' &&
+              suffix.endsWith('/page') &&
+              AgentMemoryReviewPage.validCursor(cursor)),
+    );
+    if (cursor != null) uri = uri.replace(queryParameters: {'cursor': cursor});
     final req = http.Request(method, uri)..headers['Authorization'] = token;
     if (body != null) {
       req.headers['Content-Type'] = 'application/json';
@@ -500,6 +524,31 @@ class AgentMemoryCorrectionAPI {
     );
     return List.unmodifiable(result);
   }
+
+  Future<AgentMemoryReviewPage<CorrectableMemory>> memoryPage(
+    String token,
+    String owner, {
+    String? cursor,
+  }) async => AgentMemoryReviewPage.read(
+    await request('GET', 'memories/page', token, cursor: cursor),
+    owner: owner,
+    collection: 'MEMORIES',
+    parse: (v) => CorrectableMemory.read(v, owner),
+    id: (v) => v.id,
+    agent: (v) => v.agentID,
+  );
+  Future<AgentMemoryReviewPage<HumanMemoryCandidate>> candidatePage(
+    String token,
+    String owner, {
+    String? cursor,
+  }) async => AgentMemoryReviewPage.read(
+    await request('GET', 'candidates/page', token, cursor: cursor),
+    owner: owner,
+    collection: 'CANDIDATES',
+    parse: (v) => HumanMemoryCandidate.read(v, owner),
+    id: (v) => v.id,
+    agent: (v) => v.raw['agentId'] as String,
+  );
 
   Future<List<HumanMemoryCandidate>> candidates(
     String token,

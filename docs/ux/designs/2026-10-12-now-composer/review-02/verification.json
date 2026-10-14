@@ -1,0 +1,59 @@
+{
+  "scope": "第二轮浏览器原型检查；非生产或真实录音验收",
+  "errors": [],
+  "checks": [
+    {
+      "name": "左侧为全高侧边栏，底部弹窗未打开",
+      "passed": true
+    },
+    {
+      "name": "右侧全部联系人包含会话摘要与未读",
+      "passed": true
+    },
+    {
+      "name": "联系人进入独立聊天而非引用",
+      "passed": true
+    },
+    {
+      "name": "换联系人不搬运原草稿",
+      "passed": true
+    },
+    {
+      "name": "返回联系人恢复各自草稿",
+      "passed": true
+    },
+    {
+      "name": "返回 Now 恢复 Agent 草稿",
+      "passed": true
+    },
+    {
+      "name": "录音直接在唯一输入框内，无录音弹窗",
+      "passed": true
+    },
+    {
+      "name": "取消录音恢复原草稿",
+      "passed": true
+    },
+    {
+      "name": "转写回原输入框且未自动发送",
+      "passed": true
+    },
+    {
+      "name": "切收件人使旧转写结果退休",
+      "passed": true
+    },
+    {
+      "name": "好友录音停在语音预览，等待明确发送",
+      "passed": true
+    },
+    {
+      "name": "360px预览无横向溢出",
+      "passed": true
+    },
+    {
+      "name": "320px录音操作区可见",
+      "passed": true
+    }
+  ],
+  "passed": true
+}

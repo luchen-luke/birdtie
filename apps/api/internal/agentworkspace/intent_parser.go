@@ -39,8 +39,22 @@ func ParseMVPIntent(query string, current *Task) MVPIntent {
 	if text == "" {
 		return MVPIntent{Operation: UnsupportedIntent, Reason: "empty_query"}
 	}
+	if refinement, recognized := ParsePlaceRefinement(query, current); recognized {
+		return refinement
+	}
+	if q, ok := ParseLocalPlaceQuestion(query); ok {
+		term := q.Name
+		category := ""
+		if q.Recommendation {
+			term, category = "", "restaurant"
+		}
+		return MVPIntent{Operation: FindPlace, Target: FindPlace, SearchTerm: term, Category: category, LocationPreference: "city", Supported: true}
+	}
 	if quoted, ok := quotedPlaceIntent(text); ok {
 		return quoted
+	}
+	if discovery, ok := ParseRestaurantDiscoveryQuery(query); ok {
+		return discovery
 	}
 	if followup, ok := ParsePlaceFollowup(query, current); ok {
 		return placeFollowupIntent(followup, current)

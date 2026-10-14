@@ -48,6 +48,8 @@ func validMomentInput(input *content.MomentInput) bool {
 }
 func momentFailure(w http.ResponseWriter, err error) {
 	switch {
+	case errors.Is(err, identity.ErrControlChanged), errors.Is(err, identity.ErrControlInvalid), errors.Is(err, identity.ErrControlUnavailable):
+		humanControlFailure(w, err)
 	case errors.Is(err, identity.ErrUnauthorized):
 		authFailed(w, err)
 	case errors.Is(err, content.ErrNotFound):
@@ -70,12 +72,11 @@ func momentNoQuery(w http.ResponseWriter, r *http.Request) bool {
 	return true
 }
 func (s *server) createMomentDraft(w http.ResponseWriter, r *http.Request) {
-	actor, digest, ok := s.momentActor(w, r)
+	_, _, ok := s.momentActor(w, r)
 	if !ok {
 		return
 	}
-	store, ok := s.humanMomentGateway(w)
-	if !ok || !momentNoQuery(w, r) {
+	if !momentNoQuery(w, r) {
 		return
 	}
 	var input content.MomentInput
@@ -86,15 +87,10 @@ func (s *server) createMomentDraft(w http.ResponseWriter, r *http.Request) {
 		respondError(w, 400, "invalid_moment_draft")
 		return
 	}
-	m, err := store.CreateHumanMomentDraft(r.Context(), digest, actor, input)
-	if err != nil {
-		momentFailure(w, err)
-	} else {
-		respond(w, 201, map[string]any{"data": m})
-	}
+	respondError(w, 409, "moment_control_required")
 }
 func (s *server) listOwnMoments(w http.ResponseWriter, r *http.Request) {
-	actor, digest, ok := s.momentActor(w, r)
+	r, actor, digest, ok := s.humanControlActor(w, r)
 	if !ok {
 		return
 	}
@@ -106,11 +102,11 @@ func (s *server) listOwnMoments(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		momentFailure(w, err)
 	} else {
-		respond(w, 200, map[string]any{"data": rows})
+		s.respondHumanControl(w, r, digest, actor, map[string]any{"data": rows}, nil, false)
 	}
 }
 func (s *server) getOwnMoment(w http.ResponseWriter, r *http.Request) {
-	actor, digest, ok := s.momentActor(w, r)
+	r, actor, digest, ok := s.humanControlActor(w, r)
 	if !ok {
 		return
 	}
@@ -127,16 +123,15 @@ func (s *server) getOwnMoment(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		momentFailure(w, err)
 	} else {
-		respond(w, 200, map[string]any{"data": m})
+		s.respondHumanControl(w, r, digest, actor, map[string]any{"data": m}, nil, false)
 	}
 }
 func (s *server) updateMomentDraft(w http.ResponseWriter, r *http.Request) {
-	actor, digest, ok := s.momentActor(w, r)
+	_, _, ok := s.momentActor(w, r)
 	if !ok {
 		return
 	}
-	store, ok := s.humanMomentGateway(w)
-	if !ok || !momentNoQuery(w, r) {
+	if !momentNoQuery(w, r) {
 		return
 	}
 	id := r.PathValue("momentID")
@@ -155,19 +150,10 @@ func (s *server) updateMomentDraft(w http.ResponseWriter, r *http.Request) {
 		respondError(w, 400, "invalid_moment_draft")
 		return
 	}
-	m, err := store.UpdateHumanMomentDraft(r.Context(), digest, actor, id, request.Revision, request.MomentInput)
-	if err != nil {
-		momentFailure(w, err)
-	} else {
-		respond(w, 200, map[string]any{"data": m})
-	}
+	respondError(w, 409, "moment_control_required")
 }
 func (s *server) withdrawMoment(w http.ResponseWriter, r *http.Request) {
-	actor, digest, ok := s.momentActor(w, r)
-	if !ok {
-		return
-	}
-	store, ok := s.humanMomentGateway(w)
+	_, _, ok := s.momentActor(w, r)
 	if !ok {
 		return
 	}
@@ -178,9 +164,5 @@ func (s *server) withdrawMoment(w http.ResponseWriter, r *http.Request) {
 		respondError(w, 400, "invalid_moment_revision")
 		return
 	}
-	if err := store.WithdrawHumanMoment(r.Context(), digest, actor, id, revision); err != nil {
-		momentFailure(w, err)
-	} else {
-		w.WriteHeader(204)
-	}
+	respondError(w, 409, "moment_control_required")
 }

@@ -73,7 +73,7 @@ func ValidateConsumerRecord(r ConsumerRecord) error {
 		!validTime(r.CreatedAt) || !validTime(r.UpdatedAt) || r.UpdatedAt.Before(r.CreatedAt) {
 		return ErrInvalid
 	}
-	if r.HandlerVersion == MemoryHandler || r.HandlerVersion == PreferenceHandler {
+	if nativeMaintenanceHandler(r.HandlerVersion) {
 		return validateMemoryConsumer(r)
 	}
 	switch r.State {

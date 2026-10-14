@@ -16,6 +16,26 @@ class BirdtieEnvironment {
   static const mapboxMobilePublicToken = String.fromEnvironment(
     'BIRDTIE_MAPBOX_MOBILE_PUBLIC_TOKEN',
   );
+  // Local GL JS previews may use the already approved public mobile token.
+  // Formal builds still require the independent Web input checked below.
+  static String get mapboxGlWebPublicToken => selectMapboxGlWebToken(
+    environment: name,
+    webToken: mapboxWebPublicToken,
+    mobileToken: mapboxMobilePublicToken,
+  );
+
+  @visibleForTesting
+  static String selectMapboxGlWebToken({
+    required String environment,
+    required String webToken,
+    required String mobileToken,
+  }) {
+    if (webToken.isNotEmpty) return webToken;
+    return environment == 'development' && mobileToken.startsWith('pk.')
+        ? mobileToken
+        : '';
+  }
+
   static const amapWebPublicKey = String.fromEnvironment(
     'BIRDTIE_AMAP_WEB_PUBLIC_KEY',
   );

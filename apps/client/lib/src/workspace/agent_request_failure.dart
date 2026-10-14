@@ -7,8 +7,12 @@ class AgentRequestFailure implements Exception {
 
   bool get needsCity => code == 'NEEDS_CITY';
 
+  bool get _aiServiceUnavailable =>
+      statusCode == 503 && code == 'ai_service_unavailable';
+
   bool get permitsUnchangedRetry =>
       !needsCity &&
+      !_aiServiceUnavailable &&
       statusCode != 401 &&
       statusCode != 403 &&
       code != 'online_result_unknown' &&
@@ -17,7 +21,7 @@ class AgentRequestFailure implements Exception {
 
   String? get recoveryMessage {
     if (statusCode == 401) {
-      return '请先通过个人资料重新登录，再发起查询。';
+      return '重新登录后可继续；原内容不会自动发送。';
     }
     if (statusCode == 403) {
       return '请先确认当前身份和访问权限；恢复权限后再发起查询。';
@@ -30,6 +34,9 @@ class AgentRequestFailure implements Exception {
     }
     if (code == 'PUBLIC_CONTEXT_EXPIRED') {
       return '本轮范围或来源已变化，请重新发起查询。';
+    }
+    if (_aiServiceUnavailable) {
+      return '可从最近对话查看之前的内容，服务恢复后再发起查询。';
     }
     return null;
   }

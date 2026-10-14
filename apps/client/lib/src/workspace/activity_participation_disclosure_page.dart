@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import '../app/birdtie_app_bar.dart';
 import '../auth/birdtie_auth_controller.dart';
 import 'activity_participation_disclosure_api.dart';
 import 'activity_participation_disclosure_controller.dart';
@@ -281,14 +282,14 @@ class _DisclosurePageState extends State<ActivityParticipationDisclosurePage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('我的公开报名')),
+    appBar: birdtieAppBar(context, title: const Text('我的公开报名')),
     body: SafeArea(
       child: ListView(
         padding: const EdgeInsets.all(20),
         children: [
-          const Text(
+          Text(
             '由你决定哪些报名可以被看见',
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700),
+            style: Theme.of(context).textTheme.headlineSmall,
           ),
           const SizedBox(height: 12),
           const Text('报名默认仅自己可见。公开后，可作为共同报名的引荐依据；它不代表实际到场、组织成员或邀请许可。'),
@@ -311,7 +312,7 @@ class _DisclosurePageState extends State<ActivityParticipationDisclosurePage> {
             const SizedBox(height: 16),
             Text(
               _data.resultOnly ? '本次操作结果（刷新可查看全部报名）' : '我的报名',
-              style: const TextStyle(fontWeight: FontWeight.w700),
+              style: Theme.of(context).textTheme.titleMedium,
             ),
             if (_data.own!.records.isEmpty)
               const Padding(
@@ -326,7 +327,7 @@ class _DisclosurePageState extends State<ActivityParticipationDisclosurePage> {
                   children: [
                     Text(
                       r.title,
-                      style: const TextStyle(fontWeight: FontWeight.w600),
+                      style: Theme.of(context).textTheme.titleMedium,
                     ),
                     const SizedBox(height: 6),
                     Text(

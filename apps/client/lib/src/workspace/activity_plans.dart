@@ -8,6 +8,8 @@ import 'activity_participations.dart';
 import 'saved_items.dart';
 import '../config/birdtie_environment.dart';
 import '../auth/birdtie_auth_controller.dart';
+import '../auth/birdtie_login_sheet.dart';
+import '../auth/account_access_notice.dart';
 import '../city/public_city_controller.dart';
 import 'organization_activity_api.dart';
 import 'organization_console.dart';
@@ -239,6 +241,7 @@ class MyActivitiesPage extends StatefulWidget {
     required this.auth,
     required this.city,
     required this.organizations,
+    this.onSignIn,
   });
   final ActivityPlansController plans;
   final ActivityParticipationController participations;
@@ -246,6 +249,7 @@ class MyActivitiesPage extends StatefulWidget {
   final BirdtieAuthController auth;
   final PublicCityController city;
   final OrganizationWorkspaceController organizations;
+  final VoidCallback? onSignIn;
 
   @override
   State<MyActivitiesPage> createState() => _MyActivitiesPageState();
@@ -261,7 +265,8 @@ class _MyActivitiesPageState extends State<MyActivitiesPage> {
         mounted &&
         epoch == _entryEpoch &&
         widget.plans == plans &&
-        token == widget.auth.authorizationHeader;
+        token == widget.auth.authorizationHeader &&
+        _sourcesCurrent;
     return OrganizationActivityApi(
       authorizationHeader: () => live() ? token : null,
       apiBaseUrl: plans.apiBaseUrl,
@@ -271,14 +276,86 @@ class _MyActivitiesPageState extends State<MyActivitiesPage> {
 
   List<OrganizationActivity> _managed = const [];
   int _entryEpoch = 0;
+  int? _scheduledPersonalLoadEpoch;
   Route<void>? _detailRoute;
+  final _loginEntryChanges = ValueNotifier<int>(0);
+
+  void _notifyLoginEntryChanges({bool dispose = false}) {
+    void notify() {
+      if (dispose || mounted) _loginEntryChanges.value++;
+      if (dispose) _loginEntryChanges.dispose();
+    }
+
+    if (SchedulerBinding.instance.schedulerPhase ==
+        SchedulerPhase.persistentCallbacks) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => notify());
+    } else {
+      notify();
+    }
+  }
+
+  (String?, String?, String?)? _observedIdentity;
+  (String?, String?, String?) get _currentIdentity => (
+    widget.auth.authorizationHeader,
+    widget.auth.accountID,
+    widget.organizations.active?.id,
+  );
+  bool get _sourcesCurrent =>
+      widget.plans.authorizationHeader() == widget.auth.authorizationHeader &&
+      widget.participations.authorizationHeader() ==
+          widget.auth.authorizationHeader &&
+      widget.saved.authorizationHeader() == widget.auth.authorizationHeader;
+
+  void _loadPersonal() {
+    if (SchedulerBinding.instance.schedulerPhase ==
+        SchedulerPhase.persistentCallbacks) {
+      final epoch = _entryEpoch;
+      if (_scheduledPersonalLoadEpoch == epoch) return;
+      _scheduledPersonalLoadEpoch = epoch;
+      final identity = _currentIdentity;
+      final plans = widget.plans,
+          saved = widget.saved,
+          participations = widget.participations;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_scheduledPersonalLoadEpoch == epoch)
+          _scheduledPersonalLoadEpoch = null;
+        if (mounted &&
+            epoch == _entryEpoch &&
+            identity == _currentIdentity &&
+            identical(plans, widget.plans) &&
+            identical(saved, widget.saved) &&
+            identical(participations, widget.participations)) {
+          _loadPersonal();
+        }
+      });
+      return;
+    }
+    if (!_sourcesCurrent ||
+        widget.auth.sessionRestoring ||
+        !widget.auth.signedIn)
+      return;
+    unawaited(widget.plans.load());
+    if (!_sourcesCurrent) return;
+    unawaited(widget.participations.load());
+    if (!_sourcesCurrent) return;
+    unawaited(widget.saved.load(paged: false));
+  }
+
   void _identity() {
+    if (_observedIdentity == _currentIdentity) return;
+    _retireIdentity();
+  }
+
+  void _retireIdentity() {
+    _observedIdentity = _currentIdentity;
     ++_entryEpoch;
+    _notifyLoginEntryChanges();
     final building =
         SchedulerBinding.instance.schedulerPhase ==
         SchedulerPhase.persistentCallbacks;
     widget.plans.clear(notify: !building);
     widget.participations.clear(notify: !building);
+    widget.saved.clear(notify: !building);
     _managed = const [];
     _managedError = null;
     _managedLoading = false;
@@ -298,8 +375,7 @@ class _MyActivitiesPageState extends State<MyActivitiesPage> {
     }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        unawaited(widget.plans.load());
-        unawaited(widget.participations.load());
+        _loadPersonal();
         unawaited(_loadManaged());
       }
     });
@@ -311,10 +387,11 @@ class _MyActivitiesPageState extends State<MyActivitiesPage> {
     if (old.auth != widget.auth ||
         old.organizations != widget.organizations ||
         old.plans != widget.plans ||
-        old.participations != widget.participations) {
+        old.participations != widget.participations ||
+        old.saved != widget.saved) {
       old.auth.removeListener(_identity);
       old.organizations.removeListener(_identity);
-      _identity();
+      _retireIdentity();
       widget.auth.addListener(_identity);
       widget.organizations.addListener(_identity);
     }
@@ -322,6 +399,7 @@ class _MyActivitiesPageState extends State<MyActivitiesPage> {
 
   Future<void> _openActivity(String id) async {
     if (!chatEntityUUID.hasMatch(id) ||
+        !_sourcesCurrent ||
         widget.plans.authorizationHeader() == null) {
       return;
     }
@@ -337,15 +415,18 @@ class _MyActivitiesPageState extends State<MyActivitiesPage> {
         token == widget.auth.authorizationHeader &&
         owner == widget.auth.accountID &&
         org == widget.organizations.active?.id;
+    String? currentWorkspaceID() => widget.organizations.active?.id;
+    final workspaceID = currentWorkspaceID;
+    final client = _PlansDetailClient(plans.detailClient, live);
     final route = MaterialPageRoute<void>(
       builder: (_) => ChatEntityDetail(
         type: 'activity',
         id: id,
         auth: widget.auth,
         workspaceChanges: widget.organizations,
-        workspaceID: () => widget.organizations.active?.id,
+        workspaceID: workspaceID,
         apiBaseUrl: plans.apiBaseUrl,
-        client: _PlansDetailClient(plans.detailClient, live),
+        client: client,
       ),
     );
     _detailRoute = route;
@@ -359,12 +440,11 @@ class _MyActivitiesPageState extends State<MyActivitiesPage> {
   @override
   void initState() {
     super.initState();
+    _observedIdentity = _currentIdentity;
     _publishing = _makePublishing();
     widget.auth.addListener(_identity);
     widget.organizations.addListener(_identity);
-    unawaited(widget.plans.load());
-    unawaited(widget.participations.load());
-    unawaited(widget.saved.load());
+    _loadPersonal();
     unawaited(_loadManaged());
   }
 
@@ -373,6 +453,7 @@ class _MyActivitiesPageState extends State<MyActivitiesPage> {
     widget.auth.removeListener(_identity);
     widget.organizations.removeListener(_identity);
     ++_entryEpoch;
+    _notifyLoginEntryChanges(dispose: true);
     _publishing.dispose();
     final route = _detailRoute;
     _detailRoute = null;
@@ -385,8 +466,13 @@ class _MyActivitiesPageState extends State<MyActivitiesPage> {
   Future<void> _loadManaged() async {
     final epoch = _entryEpoch, api = _publishing;
     bool live() =>
-        mounted && epoch == _entryEpoch && identical(api, _publishing);
-    if (!widget.auth.signedIn) {
+        mounted &&
+        epoch == _entryEpoch &&
+        identical(api, _publishing) &&
+        _sourcesCurrent;
+    if (!widget.auth.signedIn ||
+        widget.auth.sessionRestoring ||
+        !_sourcesCurrent) {
       if (mounted) {
         setState(() {
           _managed = const [];
@@ -410,6 +496,7 @@ class _MyActivitiesPageState extends State<MyActivitiesPage> {
   }
 
   Future<void> _editManaged([OrganizationActivity? activity]) async {
+    if (!_sourcesCurrent || !widget.auth.signedIn) return;
     final changed = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
         builder: (_) => ActivityEditorPage(
@@ -431,6 +518,7 @@ class _MyActivitiesPageState extends State<MyActivitiesPage> {
     OrganizationActivity activity,
     String action,
   ) async {
+    if (!_sourcesCurrent || !widget.auth.signedIn) return;
     final epoch = _entryEpoch, api = _publishing;
     final confirmed = await showDialog<bool>(
       context: context,
@@ -456,6 +544,7 @@ class _MyActivitiesPageState extends State<MyActivitiesPage> {
     if (confirmed != true ||
         !mounted ||
         epoch != _entryEpoch ||
+        !_sourcesCurrent ||
         !identical(api, _publishing)) {
       return;
     }
@@ -483,6 +572,7 @@ class _MyActivitiesPageState extends State<MyActivitiesPage> {
   }
 
   Future<void> _remove(ActivityPlan plan) async {
+    if (!_sourcesCurrent || !widget.auth.signedIn) return;
     try {
       await widget.plans.toggle(plan.activityId);
     } catch (_) {
@@ -494,9 +584,27 @@ class _MyActivitiesPageState extends State<MyActivitiesPage> {
     }
   }
 
+  void _signIn() {
+    final auth = widget.auth, epoch = _entryEpoch, plans = widget.plans;
+    bool current() =>
+        mounted &&
+        identical(widget.auth, auth) &&
+        identical(widget.plans, plans) &&
+        epoch == _entryEpoch;
+    unawaited(
+      showBirdtieLoginSheet(
+        context,
+        auth,
+        isCurrent: current,
+        entryChanges: _loginEntryChanges,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) => AnimatedBuilder(
     animation: Listenable.merge([
+      widget.auth,
       widget.plans,
       widget.participations,
       widget.saved,
@@ -518,11 +626,29 @@ class _MyActivitiesPageState extends State<MyActivitiesPage> {
       final savedActivities = saved.items
           .where((item) => item.kind == 'activity')
           .toList();
-      if (!controller.configured) {
-        return const Center(child: Text('请连接 Birdtie API 后查看我的活动。'));
+      if (widget.auth.sessionRestoring) {
+        return const AccountAccessNotice(
+          title: '正在恢复账户',
+          message: '账户核验完成后会加载本人的活动。',
+          restoring: true,
+        );
       }
-      if (controller.authorizationHeader() == null) {
-        return const Center(child: Text('登录后即可查看我的活动。'));
+      if (!controller.configured) {
+        return const Center(child: Text('活动暂不可用，请稍后重试。'));
+      }
+      if (!widget.auth.signedIn) {
+        return AccountAccessNotice(
+          title: '登录后查看我的活动',
+          message: '你报名、发起、计划参加和收藏的活动会显示在这里。',
+          actionLabel: '登录',
+          onAction: widget.onSignIn ?? _signIn,
+        );
+      }
+      if (!_sourcesCurrent) {
+        return const AccountAccessNotice(
+          title: '账户来源已变化',
+          message: '请返回后重新打开我的活动；本页没有读取旧账户的数据。',
+        );
       }
       if ((controller.loading || attendance.loading || saved.loading) &&
           controller.plans.isEmpty &&
@@ -540,9 +666,10 @@ class _MyActivitiesPageState extends State<MyActivitiesPage> {
       }
       return RefreshIndicator(
         onRefresh: () async {
+          if (!_sourcesCurrent || !widget.auth.signedIn) return;
           await Future.wait([
             attendance.load(),
-            saved.load(),
+            saved.load(paged: false),
             controller.load(),
             _loadManaged(),
           ]);
@@ -552,10 +679,10 @@ class _MyActivitiesPageState extends State<MyActivitiesPage> {
           children: [
             Row(
               children: [
-                const Expanded(
+                Expanded(
                   child: Text(
                     '我发起的',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+                    style: Theme.of(context).textTheme.titleMedium,
                   ),
                 ),
                 FilledButton.icon(
@@ -571,8 +698,21 @@ class _MyActivitiesPageState extends State<MyActivitiesPage> {
             if (_managedLoading) const LinearProgressIndicator(),
             if (_managedError != null)
               TextButton(onPressed: _loadManaged, child: Text(_managedError!)),
-            if (!_managedLoading && _managed.isEmpty && _managedError == null)
-              const ListTile(title: Text('你还没有发起活动。')),
+            if (widget.city.selectedCity?.id != 'aberdeen-gb')
+              const Padding(
+                padding: EdgeInsets.only(top: 8),
+                child: Text('目前仅支持在阿伯丁发起活动。'),
+              ),
+            if (!_managedLoading &&
+                _managedError == null &&
+                _managed.isEmpty &&
+                upcoming.isEmpty &&
+                past.isEmpty &&
+                savedActivities.isEmpty &&
+                controller.plans.isEmpty &&
+                !saved.failed &&
+                !controller.failed)
+              const ListTile(title: Text('暂无活动')),
             for (final activity in _managed)
               Card(
                 margin: const EdgeInsets.only(top: 10),
@@ -620,12 +760,10 @@ class _MyActivitiesPageState extends State<MyActivitiesPage> {
                   ),
                 ),
               ),
-            const SizedBox(height: 20),
-            const Text(
-              '即将参加',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
-            ),
-            if (upcoming.isEmpty) const ListTile(title: Text('暂无已报名的近期活动。')),
+            if (upcoming.isNotEmpty) ...[
+              const SizedBox(height: 20),
+              Text('即将参加', style: Theme.of(context).textTheme.titleMedium),
+            ],
             for (final item in upcoming)
               ListTile(
                 onTap: item.available
@@ -639,26 +777,24 @@ class _MyActivitiesPageState extends State<MyActivitiesPage> {
                       : '活动暂不可见',
                 ),
               ),
-            const SizedBox(height: 20),
-            const Text(
-              '收藏的活动',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
-            ),
-            if (saved.failed) const ListTile(title: Text('收藏加载失败，下拉重试。')),
-            if (savedActivities.isEmpty && !saved.failed)
-              const ListTile(title: Text('还没有收藏活动。')),
+            if (savedActivities.isNotEmpty || saved.failed) ...[
+              const SizedBox(height: 20),
+              Text('收藏的活动', style: Theme.of(context).textTheme.titleMedium),
+              if (saved.failed) const ListTile(title: Text('收藏加载失败，下拉重试。')),
+            ],
             for (final item in savedActivities)
               ListTile(
                 leading: const Icon(Icons.bookmark_outline),
                 title: Text(item.available ? item.title : '活动暂不可用'),
+                onTap: item.available
+                    ? () => _openActivity(item.targetId)
+                    : null,
                 subtitle: const Text('已收藏 · 不代表已报名'),
               ),
-            const SizedBox(height: 20),
-            const Text(
-              '已结束',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
-            ),
-            if (past.isEmpty) const ListTile(title: Text('暂无已结束的报名活动。')),
+            if (past.isNotEmpty) ...[
+              const SizedBox(height: 20),
+              Text('已结束', style: Theme.of(context).textTheme.titleMedium),
+            ],
             for (final item in past)
               ListTile(
                 leading: const Icon(Icons.history),
@@ -672,19 +808,17 @@ class _MyActivitiesPageState extends State<MyActivitiesPage> {
                       : '活动暂不可见',
                 ),
               ),
-            const SizedBox(height: 20),
-            const Text(
-              '个人提醒',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
-            ),
-            const Text(
-              '个人提醒不代表已报名或确认参加。',
-              style: TextStyle(color: Color(0xFF747B73)),
-            ),
-            if (controller.failed)
-              const ListTile(title: Text('个人提醒加载失败，下拉重试。')),
-            if (controller.plans.isEmpty && !controller.failed)
-              const ListTile(title: Text('还没有个人活动提醒。')),
+            if (controller.plans.isNotEmpty || controller.failed) ...[
+              const SizedBox(height: 20),
+              Text('个人提醒', style: Theme.of(context).textTheme.titleMedium),
+              if (controller.plans.isNotEmpty)
+                Text(
+                  '个人提醒不代表已报名或确认参加。',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              if (controller.failed)
+                const ListTile(title: Text('个人提醒加载失败，下拉重试。')),
+            ],
             for (final plan in controller.plans)
               ListTile(
                 onTap: plan.available

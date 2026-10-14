@@ -1,11 +1,15 @@
 package httpapi
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
+	"golang.org/x/sync/singleflight"
+	"io"
 	"log"
 	"math"
+	"mime"
 	"net/http"
 	"regexp"
 	"strconv"
@@ -28,6 +32,7 @@ import (
 	"github.com/birdtie/birdtie/apps/api/internal/agentpolicysettings"
 	"github.com/birdtie/birdtie/apps/api/internal/agentrun"
 	"github.com/birdtie/birdtie/apps/api/internal/agentseed"
+	"github.com/birdtie/birdtie/apps/api/internal/agentvisual"
 	"github.com/birdtie/birdtie/apps/api/internal/agentworkspace"
 	"github.com/birdtie/birdtie/apps/api/internal/analytics"
 	"github.com/birdtie/birdtie/apps/api/internal/cityseed"
@@ -37,12 +42,15 @@ import (
 	"github.com/birdtie/birdtie/apps/api/internal/content"
 	"github.com/birdtie/birdtie/apps/api/internal/contextgraph"
 	"github.com/birdtie/birdtie/apps/api/internal/devauth"
+	"github.com/birdtie/birdtie/apps/api/internal/entitycover"
 	"github.com/birdtie/birdtie/apps/api/internal/follow"
 	"github.com/birdtie/birdtie/apps/api/internal/foundation"
 	"github.com/birdtie/birdtie/apps/api/internal/identity"
 	"github.com/birdtie/birdtie/apps/api/internal/inbox"
 	"github.com/birdtie/birdtie/apps/api/internal/intent"
 	"github.com/birdtie/birdtie/apps/api/internal/intentconversion"
+	"github.com/birdtie/birdtie/apps/api/internal/legacyarchive"
+	"github.com/birdtie/birdtie/apps/api/internal/media"
 	"github.com/birdtie/birdtie/apps/api/internal/newpeople"
 	"github.com/birdtie/birdtie/apps/api/internal/nowcontextselection"
 	"github.com/birdtie/birdtie/apps/api/internal/oidcauth"
@@ -54,6 +62,7 @@ import (
 	"github.com/birdtie/birdtie/apps/api/internal/saved"
 	"github.com/birdtie/birdtie/apps/api/internal/socialcontext"
 	"github.com/birdtie/birdtie/apps/api/internal/socialintent"
+	"github.com/birdtie/birdtie/apps/api/internal/systempush"
 	"github.com/birdtie/birdtie/apps/api/internal/venue"
 )
 
@@ -62,6 +71,7 @@ type pinger interface {
 }
 
 type server struct {
+	legacyArchives         legacyarchive.HumanStore
 	sandboxRecovery        aa.HumanRecoveryGateway
 	humanIntentConversions intentconversion.Gateway
 	catalog                foundation.PublicCatalog
@@ -115,12 +125,27 @@ type server struct {
 	multiCandidates        agentmulticandidate.Gateway
 	humanActiveIntents     activeintent.Gateway
 	agentRuns              agentrun.Gateway
+	activityJoin           aa.ActivityJoinHumanGateway
 	nowContextSelection    nowcontextselection.Gateway
 	liveAnswers            agentworkspace.LiveAnswers
+	openPlaces             OpenPlaceAcquirer
+	onlinePlaceCache       agentworkspace.PublicOnlinePlaceCache
+	onlinePlaceFlights     *singleflight.Group
+	videoMaterials         *media.VideoMaterialService
+	agentVisual            agentvisual.Gateway
+	systemPush             systempush.HumanGateway
 }
 
 // Options are trusted startup dependencies, never client feature overrides.
 type Option func(*server)
+
+func WithAgentVisualGateway(gateway agentvisual.Gateway) Option {
+	return func(s *server) { s.agentVisual = gateway }
+}
+
+func WithSystemPush(gateway systempush.HumanGateway) Option {
+	return func(s *server) { s.systemPush = gateway }
+}
 
 func WithSandboxRecovery(gateway aa.HumanRecoveryGateway) Option {
 	return func(s *server) { s.sandboxRecovery = gateway }
@@ -149,6 +174,10 @@ func WithAgentRuns(gateway agentrun.Gateway) Option {
 	return func(s *server) { s.agentRuns = gateway }
 }
 
+func WithAgentActivityJoin(gateway aa.ActivityJoinHumanGateway) Option {
+	return func(s *server) { s.activityJoin = gateway }
+}
+
 func WithNowContextSelection(gateway nowcontextselection.Gateway) Option {
 	return func(s *server) { s.nowContextSelection = gateway }
 }
@@ -172,6 +201,7 @@ func New(catalog foundation.PublicCatalog, access identity.AccessStore, seed cit
 	venueStore, _ := catalog.(venue.Store)
 	s := &server{catalog: catalog, access: access, seed: seed, content: contentStore, agent: agentStore, communities: communityStore, inbox: inboxStore, intents: intentStore, saved: savedStore, activityPlans: activityPlans, participations: participationStore, connections: connectionStore, devPhone: devPhoneStore, devPhoneEnabled: devPhoneEnabled, oidc: oidc, db: db, organizations: orgStore, memberships: membershipStore, mapLocations: mapLocationStore, faqs: faqStore, activityPublish: publishStore, analytics: analyticsStore, safety: safetyStore}
 	s.socialCommunities = socialCommunityStore
+	s.legacyArchives, _ = catalog.(legacyarchive.HumanStore)
 	s.socialIntents = socialIntentStore
 	s.opportunities = opportunityStore
 	s.placeMatches = placeMatchStore
@@ -203,6 +233,23 @@ func New(catalog foundation.PublicCatalog, access identity.AccessStore, seed cit
 		}
 	}
 	mux := http.NewServeMux()
+	mux.HandleFunc("POST /v1/me/agent-activity-join/previews", s.previewOwnAgentActivityJoin)
+	mux.HandleFunc("POST /v1/me/agent-activity-join/approvals/{approvalID}/confirm", s.confirmOwnAgentActivityJoin)
+	mux.HandleFunc("POST /v1/me/agent-activity-join/approvals/{approvalID}/execute", s.executeOwnAgentActivityJoin)
+	mux.HandleFunc("POST /v1/me/agent-activity-join/approvals/{approvalID}/reconcile", s.reconcileOwnAgentActivityJoin)
+	mux.HandleFunc("POST /v1/me/agent-activity-join/approvals/{approvalID}/revoke", s.revokeOwnAgentActivityJoin)
+	s.registerVideoMaterialRoutes(mux)
+	mux.HandleFunc("POST /v1/me/agent-visual/previews", s.createAgentVisualPreview)
+	mux.HandleFunc("GET /v1/me/agent-visual/previews/{previewID}/pixels", s.getAgentVisualPixels)
+	mux.HandleFunc("POST /v1/me/agent-visual/previews/{previewID}/analyze", s.analyzeAgentVisual)
+	mux.HandleFunc("GET /v1/me/agent-visual/operations/{operationID}", s.getAgentVisualOperation)
+	mux.HandleFunc("GET /v1/me/system-push/options", s.systemPushOptions)
+	mux.HandleFunc("GET /v1/me/system-push/installations/{installationID}", s.getSystemPushInstallation)
+	mux.HandleFunc("PUT /v1/me/system-push/installations/{installationID}", s.putSystemPushInstallation)
+	mux.HandleFunc("DELETE /v1/me/system-push/installations/{installationID}", s.deleteSystemPushInstallation)
+	mux.HandleFunc("POST /v1/me/system-push/installations/{installationID}/address-check", s.systemPushCheckAddress)
+	mux.HandleFunc("GET /v1/me/system-push/installations/{installationID}/operations/{operationID}", s.getSystemPushOperation)
+	mux.HandleFunc("GET /v1/me/system-push/events/{eventID}", s.resolveSystemPushEvent)
 	mux.HandleFunc("POST /v1/me/agent-sandbox-approvals/{approvalID}/reconcile", s.recoverOwnSandboxApproval)
 	mux.HandleFunc("POST /v1/me/moments/{momentID}/private-image-previews", s.previewPrivateMomentImage)
 	mux.HandleFunc("PUT /v1/me/moments/{momentID}/private-image-previews/{imageID}/content", s.savePrivateMomentImage)
@@ -305,6 +352,18 @@ func New(catalog foundation.PublicCatalog, access identity.AccessStore, seed cit
 	mux.HandleFunc("POST /v1/me/model-egress/approvals", s.approveModelEgress)
 	mux.HandleFunc("DELETE /v1/me/model-egress/previews/{previewID}", s.revokeModelEgress)
 	mux.HandleFunc("GET /v1/me/model-egress/roots/{rootID}/tasks/{taskID}/budget", s.readModelEgressBudget)
+	mux.HandleFunc("GET /v1/contact-code", s.getOwnContactCode)
+	s.registerPersonalCollectionRoutes(mux)
+	mux.HandleFunc("GET /v1/me/agent-memories/page", s.listOwnAgentMemoryPage)
+	mux.HandleFunc("GET /v1/me/agent-memory-candidates/page", s.listOwnAgentMemoryCandidatePage)
+	mux.HandleFunc("GET /v1/me/avatar", s.getOwnPersonAvatar)
+	mux.HandleFunc("PUT /v1/me/avatar", s.putOwnPersonAvatar)
+	mux.HandleFunc("DELETE /v1/me/avatar", s.deleteOwnPersonAvatar)
+	mux.HandleFunc("GET /v1/me/avatar/operations/{operationID}", s.getOwnPersonAvatarOperation)
+	mux.HandleFunc("GET /v1/accounts/{accountID}/avatar/{version}/content", s.getPersonAvatarContent)
+	mux.HandleFunc("POST /v1/contact-code", s.changeOwnContactCode)
+	mux.HandleFunc("DELETE /v1/contact-code", s.changeOwnContactCode)
+	mux.HandleFunc("POST /v1/contact-code/resolve", s.resolveContactCode)
 	mux.HandleFunc("GET /v1/me/agent-profile-visibility", s.ownProfileVisibility)
 	mux.HandleFunc("PUT /v1/me/agent-profile-visibility", s.replaceProfileVisibility)
 	mux.HandleFunc("GET /v1/accounts/{accountID}/agent-profile-fields", s.profileFields)
@@ -343,6 +402,10 @@ func New(catalog foundation.PublicCatalog, access identity.AccessStore, seed cit
 	mux.HandleFunc("GET /v1/accounts/{accountID}/shared-context", s.sharedSocialContext)
 	mux.HandleFunc("GET /healthz", s.health)
 	mux.HandleFunc("GET /readyz", s.ready)
+	mux.HandleFunc("GET /v1/me/migration-archive", s.listLegacyArchives)
+	mux.HandleFunc("GET /v1/me/migration-archive/{archiveID}", s.readLegacyArchive)
+	mux.HandleFunc("GET /v1/me/migration-archive-records", s.listLegacyPersonalArchives)
+	mux.HandleFunc("GET /v1/me/migration-archive-records/{archiveID}", s.readLegacyPersonalArchive)
 	mux.HandleFunc("GET /v1/cities", s.listCities)
 	mux.HandleFunc("GET /v1/me/social-intents/{intentID}/activity-conversion", s.getOwnIntentActivityConversion)
 	mux.HandleFunc("POST /v1/me/social-intents/{intentID}/activity-conversion/preview", s.previewOwnIntentActivityConversion)
@@ -352,6 +415,7 @@ func New(catalog foundation.PublicCatalog, access identity.AccessStore, seed cit
 	mux.HandleFunc("GET /v1/cities/{cityID}/map-layers", s.getPublicMapLayers)
 	mux.HandleFunc("POST /v1/me/agent-runs", s.scheduleOwnAgentRun)
 	mux.HandleFunc("GET /v1/me/agent-runs/{runID}", s.readOwnAgentRun)
+	mux.HandleFunc("GET /v1/me/agent-runs/page", s.listOwnAgentRunPage)
 	mux.HandleFunc("POST /v1/me/agent-runs/{runID}/cancel", s.cancelOwnAgentRun)
 	mux.HandleFunc("POST /v1/me/agent-runs/{runID}/retention-grant", s.attachOwnAgentRunGrant)
 	mux.HandleFunc("GET /v1/me/agent-runs/failures", s.listOwnAgentRunFailures)
@@ -371,9 +435,12 @@ func New(catalog foundation.PublicCatalog, access identity.AccessStore, seed cit
 	mux.HandleFunc("GET /v1/places/{placeID}", s.getPlace)
 	mux.HandleFunc("GET /v1/places/{placeID}/profile", s.getPublicPlaceProfile)
 	mux.HandleFunc("GET /v1/places/{placeID}/social-history", s.getPublicPlaceSocialHistory)
+	mux.HandleFunc("GET /v1/places/{placeID}/social-history/moments", s.getPublicPlaceHistoryMomentsPage)
 	mux.HandleFunc("GET /v1/moments/{momentID}", s.getPublicMoment)
 	mux.HandleFunc("POST /v1/me/conversations/{conversationID}/entity-shares", s.shareHumanEntity)
 	mux.HandleFunc("GET /v1/me/conversations/{conversationID}/entity-shares/{operationID}", s.getHumanEntityShare)
+	s.registerEntityShareControlRoutes(mux)
+	s.registerMomentControlRoutes(mux)
 	mux.HandleFunc("POST /v1/cities/{cityID}/places/{placeID}/profile-candidates", s.submitPlaceProfileCandidate)
 	mux.HandleFunc("GET /v1/cities/{cityID}/place-profile-candidates", s.listPlaceProfileCandidates)
 	mux.HandleFunc("POST /v1/place-profile-candidates/{candidateID}/review", s.reviewPlaceProfileCandidate)
@@ -392,12 +459,26 @@ func New(catalog foundation.PublicCatalog, access identity.AccessStore, seed cit
 	mux.HandleFunc("GET /v1/me/participations", s.listOwnParticipations)
 	mux.HandleFunc("POST /v1/activities/{activityID}/participations", s.joinActivity)
 	mux.HandleFunc("DELETE /v1/activities/{activityID}/participations/me", s.cancelOwnParticipation)
+	mux.HandleFunc("POST /v1/activities/{activityID}/participation-operations", s.writeHumanParticipationOperation)
+	mux.HandleFunc("GET /v1/activities/{activityID}/participation-operations/{operationID}", s.readHumanParticipationOperation)
+	mux.HandleFunc("POST /v1/activities/{activityID}/participation-operations/{operationID}/close", s.closeHumanParticipationOperation)
+	mux.HandleFunc("GET /v1/activities/{activityID}/participation-operations/{operationID}/closure", s.readHumanParticipationClosure)
 	mux.HandleFunc("POST /v1/cities/{cityID}/agent/tasks", s.createAgentTask)
 	mux.HandleFunc("GET /v1/me/agent-tasks", s.listAgentTasks)
 	mux.HandleFunc("GET /v1/me/agent-tasks/{taskID}", s.getAgentTask)
+	mux.HandleFunc("POST /v1/me/agent-tasks/{taskID}/image-previews", s.previewHumanTaskImage)
+	mux.HandleFunc("PUT /v1/me/agent-tasks/{taskID}/image-previews/{imageID}/content", s.saveHumanTaskImage)
+	mux.HandleFunc("GET /v1/me/agent-tasks/{taskID}/images", s.readHumanTaskImages)
+	mux.HandleFunc("GET /v1/me/agent-tasks/{taskID}/image-operations/{imageID}", s.readHumanTaskImageOperation)
+	mux.HandleFunc("GET /v1/me/agent-tasks/{taskID}/images/{imageID}/content", s.readHumanTaskImageContent)
+	mux.HandleFunc("DELETE /v1/me/agent-tasks/{taskID}/images/{imageID}", s.deleteHumanTaskImage)
 	mux.HandleFunc("POST /v1/cities/{cityID}/communities", s.submitCommunity)
 	mux.HandleFunc("GET /v1/communities", s.discoverSocialCommunities)
 	mux.HandleFunc("POST /v1/communities", s.createSocialCommunity)
+	s.registerCommunityAvatarRoutes(mux)
+	s.registerEntityCoverRoutes(mux)
+	s.registerPlacePhotoRoutes(mux)
+	s.registerMomentPhotoRoutes(mux)
 	mux.HandleFunc("GET /v1/communities/{communityID}", s.getSocialCommunity)
 	mux.HandleFunc("PATCH /v1/communities/{communityID}", s.updateSocialCommunity)
 	mux.HandleFunc("POST /v1/communities/{communityID}/archive", s.archiveSocialCommunity)
@@ -415,6 +496,9 @@ func New(catalog foundation.PublicCatalog, access identity.AccessStore, seed cit
 	mux.HandleFunc("GET /v1/me/communities", s.listOwnCommunities)
 	mux.HandleFunc("POST /v1/me/communities/{communityID}/withdraw", s.withdrawCommunity)
 	mux.HandleFunc("GET /v1/me/saved", s.listSaved)
+	mux.HandleFunc("GET /v1/me/saved/page", s.listSavedPage)
+	mux.HandleFunc("GET /v1/me/saved/target/{kind}/{targetID}", s.getSavedTarget)
+	s.registerSavedNoteRoutes(mux)
 	mux.HandleFunc("POST /v1/me/reports", s.createIncidentReport)
 	mux.HandleFunc("GET /v1/me/reports", s.listOwnIncidentReports)
 	mux.HandleFunc("POST /v1/me/saved", s.saveItem)
@@ -423,19 +507,33 @@ func New(catalog foundation.PublicCatalog, access identity.AccessStore, seed cit
 	mux.HandleFunc("POST /v1/me/activity-plans", s.planActivity)
 	mux.HandleFunc("DELETE /v1/me/activity-plans/{planID}", s.removeActivityPlan)
 	mux.HandleFunc("GET /v1/me/connection-requests", s.listConnectionRequests)
+	mux.HandleFunc("GET /v1/me/connection-requests/page", s.listContactRequestsPage)
+	mux.HandleFunc("GET /v1/me/connection-requests/{requestID}", s.getContactRequestCurrent)
 	mux.HandleFunc("POST /v1/me/connection-requests", s.createConnectionRequest)
 	mux.HandleFunc("POST /v1/me/connection-requests/{requestID}/decision", s.decideConnectionRequest)
 	mux.HandleFunc("GET /v1/me/connection-requests/{requestID}/decision-operations/{operationID}", s.getConnectionDecisionOperation)
 	mux.HandleFunc("GET /v1/me/ties", s.listPersonTies)
+	mux.HandleFunc("GET /v1/me/ties/page", s.listContactTiesPage)
 	mux.HandleFunc("DELETE /v1/me/ties/{tieID}", s.removePersonTie)
 	mux.HandleFunc("POST /v1/me/ties/{tieID}/conversation", s.startFriendConversation)
 	mux.HandleFunc("GET /v1/me/conversations", s.listConversations)
+	mux.HandleFunc("GET /v1/me/conversations/page", s.listConversationsPage)
+	mux.HandleFunc("GET /v1/me/conversations/{conversationID}", s.getConversationCurrent)
+	mux.HandleFunc("GET /v1/me/conversations/{conversationID}/messages/page", s.listMessagesPage)
 	mux.HandleFunc("GET /v1/me/conversations/{conversationID}/messages", s.listMessages)
 	mux.HandleFunc("POST /v1/me/conversations/{conversationID}/read", s.markConversationRead)
 	mux.HandleFunc("POST /v1/me/conversations/{conversationID}/messages", s.sendMessage)
 	mux.HandleFunc("POST /v1/me/conversations/{conversationID}/message-operations", s.sendHumanMessageOperation)
 	mux.HandleFunc("GET /v1/me/conversations/{conversationID}/message-operations/{operationID}", s.readHumanMessageOperation)
+	mux.HandleFunc("POST /v1/me/conversations/{conversationID}/audio-message-operations", s.sendHumanAudioMessageOperation)
+	mux.HandleFunc("GET /v1/me/conversations/{conversationID}/audio-message-operations/{operationID}", s.readHumanAudioMessageOperation)
+	mux.HandleFunc("GET /v1/me/conversations/{conversationID}/messages/{messageID}/audio", s.readHumanAudioMessageContent)
+	mux.HandleFunc("POST /v1/me/conversations/{conversationID}/image-message-operations", s.sendHumanImageMessageOperation)
+	mux.HandleFunc("GET /v1/me/conversations/{conversationID}/image-message-operations/{operationID}", s.readHumanImageMessageOperation)
+	mux.HandleFunc("GET /v1/me/conversations/{conversationID}/messages/{messageID}/image", s.readHumanImageMessageContent)
 	mux.HandleFunc("GET /v1/me/inbox", s.listInbox)
+	mux.HandleFunc("GET /v1/me/inbox/page", s.listInboxPage)
+	mux.HandleFunc("GET /v1/me/inbox/{itemID}/review-result", s.readInboxReviewResult)
 	mux.HandleFunc("POST /v1/me/inbox/{itemID}/read", s.markInboxRead)
 	mux.HandleFunc("GET /v1/cities/{cityID}/activity-candidates", s.listActivityCandidates)
 	mux.HandleFunc("POST /v1/cities/{cityID}/activity-candidates", s.submitActivityCandidate)
@@ -447,12 +545,15 @@ func New(catalog foundation.PublicCatalog, access identity.AccessStore, seed cit
 	mux.HandleFunc("GET /v1/me/now/online/tasks/{taskID}", s.getOwnNowOnlineTask)
 	mux.HandleFunc("GET /v1/me/now/online/intents/{intentID}", s.getOwnNowOnlineIntent)
 	mux.HandleFunc("GET /v1/me/follows", s.listOwnFollows)
+	mux.HandleFunc("GET /v1/me/follows/page", s.listContactFollowsPage)
 	mux.HandleFunc("POST /v1/me/follows", s.followTarget)
 	mux.HandleFunc("DELETE /v1/me/follows/{targetType}/{targetID}", s.unfollowTarget)
 	mux.HandleFunc("POST /v1/me/contexts", s.declareOwnContext)
 	mux.HandleFunc("DELETE /v1/me/contexts/{contextID}/{relation}", s.removeOwnContext)
 	mux.HandleFunc("GET /v1/me/organizations", s.listOrganizations)
 	mux.HandleFunc("GET /v1/me/organization-invitations", s.listOrganizationInvitations)
+	s.registerOrganizationControlRoutes(mux)
+	s.registerHumanWriteControlRoutes(mux)
 	mux.HandleFunc("POST /v1/me/organization-invitations/{membershipID}/accept", s.acceptOrganizationInvitation)
 	mux.HandleFunc("GET /v1/me/organizations/{organizationID}/members", s.listOrganizationMembers)
 	mux.HandleFunc("POST /v1/me/organizations/{organizationID}/members", s.inviteOrganizationMember)
@@ -531,8 +632,13 @@ func New(catalog foundation.PublicCatalog, access identity.AccessStore, seed cit
 	mux.HandleFunc("POST /v1/me/consents", s.grantConsent)
 	mux.HandleFunc("DELETE /v1/me/consents/{grantID}", s.revokeConsent)
 	mux.HandleFunc("GET /v1/accounts/{accountID}/profile", s.getProfile)
+	mux.HandleFunc("GET /v1/people/search", s.searchPeople)
+	mux.HandleFunc("GET /v1/me/close-connections", s.listOwnCloseConnections)
+	mux.HandleFunc("PUT /v1/me/close-connections/{personID}", s.putOwnCloseConnection)
+	mux.HandleFunc("DELETE /v1/me/close-connections/{personID}", s.deleteOwnCloseConnection)
 	mux.HandleFunc("GET /v1/cities/{cityID}/place-candidates", s.listPlaceCandidates)
 	mux.HandleFunc("POST /v1/cities/{cityID}/place-candidates", s.submitPlaceCandidate)
+	mux.HandleFunc("POST /v1/cities/{cityID}/place-candidates/acquire", s.acquireOpenPlaceCandidates)
 	mux.HandleFunc("POST /v1/place-candidates/{candidateID}/review", s.reviewPlaceCandidate)
 	mux.HandleFunc("GET /v1/auth/oidc/start", s.startOIDC)
 	mux.HandleFunc("GET /v1/auth/oidc/status", s.oidcStatus)
@@ -576,6 +682,9 @@ func (s *server) getCity(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *server) listPlaces(w http.ResponseWriter, r *http.Request) {
+	if !s.beginPhotoCatalog(w, r) {
+		return
+	}
 	cityID := r.PathValue("cityID")
 	query := strings.TrimSpace(r.URL.Query().Get("q"))
 	if len(query) > 240 {
@@ -591,10 +700,13 @@ func (s *server) listPlaces(w http.ResponseWriter, r *http.Request) {
 		serverError(w, err)
 		return
 	}
-	respond(w, http.StatusOK, map[string]any{"data": places})
+	s.respondPublicPlacePhotos(w, r, places, places)
 }
 
 func (s *server) getPlace(w http.ResponseWriter, r *http.Request) {
+	if !s.beginPhotoCatalog(w, r) {
+		return
+	}
 	id := r.PathValue("placeID")
 	if !uuidPath.MatchString(id) {
 		respondError(w, http.StatusBadRequest, "invalid_place_id")
@@ -604,7 +716,7 @@ func (s *server) getPlace(w http.ResponseWriter, r *http.Request) {
 	if handleReadError(w, err) {
 		return
 	}
-	respond(w, http.StatusOK, map[string]any{"data": place})
+	s.respondPublicPlacePhotos(w, r, place, []foundation.Place{place})
 }
 
 func (s *server) listPlaceActivities(w http.ResponseWriter, r *http.Request) {
@@ -613,8 +725,11 @@ func (s *server) listPlaceActivities(w http.ResponseWriter, r *http.Request) {
 		respondError(w, http.StatusBadRequest, "invalid_place_id")
 		return
 	}
-	actor, _, err := s.actor(r, false)
+	actor, digest, err := s.actor(r, false)
 	if authFailed(w, err) {
+		return
+	}
+	if !s.captureEntityCoverHTTP(w, r, actor, digest) {
 		return
 	}
 	if _, err := s.catalog.GetPlace(r.Context(), id); handleReadError(w, err) {
@@ -630,12 +745,15 @@ func (s *server) listPlaceActivities(w http.ResponseWriter, r *http.Request) {
 		serverError(w, err)
 		return
 	}
-	respond(w, http.StatusOK, map[string]any{"data": items})
+	s.respondActivityCoverList(w, r, actor, digest, items)
 }
 
 func (s *server) listActivities(w http.ResponseWriter, r *http.Request) {
-	actor, _, err := s.actor(r, false)
+	actor, digest, err := s.actor(r, false)
 	if authFailed(w, err) {
+		return
+	}
+	if !s.captureEntityCoverHTTP(w, r, actor, digest) {
 		return
 	}
 	cityID := r.PathValue("cityID")
@@ -658,12 +776,15 @@ func (s *server) listActivities(w http.ResponseWriter, r *http.Request) {
 		serverError(w, err)
 		return
 	}
-	respond(w, http.StatusOK, map[string]any{"data": activities})
+	s.respondActivityCoverList(w, r, actor, digest, activities)
 }
 
 func (s *server) areaPulse(w http.ResponseWriter, r *http.Request) {
-	actor, _, err := s.actor(r, false)
+	actor, digest, err := s.actor(r, false)
 	if authFailed(w, err) {
+		return
+	}
+	if !s.captureEntityCoverHTTP(w, r, actor, digest) {
 		return
 	}
 	cityID := r.PathValue("cityID")
@@ -693,7 +814,7 @@ func (s *server) areaPulse(w http.ResponseWriter, r *http.Request) {
 	pulse.From, pulse.To = filter.From, filter.To
 	pulse.Activities = activities
 	pulse.Truncated = pulse.Total > int64(len(activities))
-	respond(w, http.StatusOK, map[string]any{"data": pulse})
+	s.respondActivityCoverPayload(w, r, actor, digest, pulse, activities)
 }
 
 var activityCategory = regexp.MustCompile(`^[a-z0-9][a-z0-9_-]{0,39}$`)
@@ -744,8 +865,11 @@ func parseActivitySearch(r *http.Request) (foundation.ActivitySearchFilter, bool
 }
 
 func (s *server) getActivity(w http.ResponseWriter, r *http.Request) {
-	actor, _, err := s.actor(r, false)
+	actor, digest, err := s.actor(r, false)
 	if authFailed(w, err) {
+		return
+	}
+	if !s.captureEntityCoverHTTP(w, r, actor, digest) {
 		return
 	}
 	id := r.PathValue("activityID")
@@ -757,7 +881,36 @@ func (s *server) getActivity(w http.ResponseWriter, r *http.Request) {
 	if handleReadError(w, err) {
 		return
 	}
-	respond(w, http.StatusOK, map[string]any{"data": activity})
+	if activity.CoverSourceProof != "" || activity.Cover != nil {
+		port, ok := s.access.(entitycover.Store)
+		if !ok {
+			entityCoverFailure(w, entitycover.ErrUnavailable)
+			return
+		}
+		a := entitycover.Access{AccountID: actor.ID, AccountType: actor.AccountType, SessionDigest: digest}
+		w.Header().Set("Cache-Control", "no-store")
+		s.respondEntityCover(w, r, a, activity, func() error {
+			current, e := s.catalog.GetActivity(r.Context(), id, actor.ID)
+			if e != nil {
+				return e
+			}
+			if current.Cover != nil {
+				copy := *current.Cover
+				current.Cover = &copy
+			}
+			if current.CoverSourceProof != activity.CoverSourceProof || !entitycover.PreserveLease(activity.Cover, current.Cover, time.Now().UTC()) {
+				return entitycover.ErrChanged
+			}
+			first, _ := json.Marshal(activity)
+			latest, _ := json.Marshal(current)
+			if !bytes.Equal(first, latest) {
+				return entitycover.ErrChanged
+			}
+			return port.ValidateEntityCoverProjection(r.Context(), a, entitycover.Ref{Type: "activity", ID: id}, activity.Cover, activity.CoverSourceProof)
+		})
+		return
+	}
+	s.respondCoverWithoutMedia(w, r, entitycover.Access{AccountID: actor.ID, AccountType: actor.AccountType, SessionDigest: digest}, 200, activity)
 }
 
 func handleReadError(w http.ResponseWriter, err error) bool {
@@ -805,7 +958,7 @@ func cors(next http.Handler, allowedOrigins []string) http.Handler {
 			if allowed[origin] {
 				w.Header().Set("Access-Control-Allow-Origin", origin)
 				w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-				w.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type, X-Request-ID, X-Birdtie-Entry-Source")
+				w.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type, X-Request-ID, X-Birdtie-Entry-Source, X-Birdtie-Map-Media, X-Birdtie-Public-Moment-Media")
 				w.Header().Set("Access-Control-Expose-Headers", "X-Request-ID")
 			} else if r.Method == http.MethodOptions {
 				respondError(w, http.StatusForbidden, "origin_not_allowed")
@@ -818,4 +971,159 @@ func cors(next http.Handler, allowedOrigins []string) http.Handler {
 		}
 		next.ServeHTTP(w, r)
 	})
+}
+
+// Human controls keep a server-only initial native Session frame. Neither the
+// payload nor an organization workspace can supply or refresh that authority.
+func (s *server) humanControlActor(w http.ResponseWriter, r *http.Request) (*http.Request, identity.Actor, [32]byte, bool) {
+	w.Header().Set("Cache-Control", "no-store")
+	a, d, e := s.humanSocialActor(r, true)
+	if humanSocialAuthFailed(w, e) {
+		return r, a, d, false
+	}
+	if a.AccountType != "person" || len(r.Header.Values("X-Birdtie-Organization-Workspace")) != 0 {
+		respondError(w, 403, "person_account_required")
+		return r, a, d, false
+	}
+	port, ok := s.access.(identity.HumanControlSessionStore)
+	if !ok || port == nil {
+		respondError(w, 503, "human_control_unavailable")
+		return r, a, d, false
+	}
+	frame, e := port.CaptureHumanControlSession(r.Context(), d, a)
+	if e != nil {
+		humanControlFailure(w, e)
+		return r, a, d, false
+	}
+	return r.WithContext(identity.WithHumanControlFrame(r.Context(), d, a, frame)), a, d, true
+}
+func humanControlFailure(w http.ResponseWriter, e error) {
+	switch {
+	case errors.Is(e, identity.ErrUnauthorized):
+		respondError(w, 401, "unauthorized")
+	case errors.Is(e, identity.ErrControlInvalid), errors.Is(e, identity.ErrInvalidGrant):
+		respondError(w, 400, "invalid_human_control")
+	case errors.Is(e, identity.ErrControlChanged), errors.Is(e, organization.ErrFAQConflict):
+		respondError(w, 409, "human_control_changed")
+	case errors.Is(e, organization.ErrForbidden):
+		respondError(w, 403, "organization_admin_required")
+	case errors.Is(e, identity.ErrNotFound), errors.Is(e, organization.ErrNotFound), errors.Is(e, organization.ErrFAQNotFound), errors.Is(e, contextgraph.ErrNotFound), errors.Is(e, contextgraph.ErrUnavailable), errors.Is(e, safety.ErrTargetNotFound):
+		respondError(w, 404, "not_found")
+	case errors.Is(e, safety.ErrRateLimited):
+		respondError(w, 429, "report_rate_limited")
+	default:
+		respondError(w, 503, "human_control_unavailable")
+	}
+}
+func humanControlPath(w http.ResponseWriter, r *http.Request, names ...string) bool {
+	if r.URL.RawQuery != "" || r.URL.ForceQuery {
+		respondError(w, 400, "invalid_human_control")
+		return false
+	}
+	for _, n := range names {
+		if !identity.HumanControlUUID(r.PathValue(n)) {
+			respondError(w, 400, "invalid_human_control")
+			return false
+		}
+	}
+	return true
+}
+func humanControlNoBody(w http.ResponseWriter, r *http.Request) bool {
+	raw, e := io.ReadAll(http.MaxBytesReader(w, r.Body, 1))
+	if e != nil || len(raw) != 0 {
+		respondError(w, 400, "invalid_human_control")
+		return false
+	}
+	return true
+}
+func humanControlBody(w http.ResponseWriter, r *http.Request) ([]byte, bool) {
+	m, _, e := mime.ParseMediaType(r.Header.Get("Content-Type"))
+	if e != nil || m != "application/json" {
+		respondError(w, 415, "json_required")
+		return nil, false
+	}
+	raw, e := io.ReadAll(http.MaxBytesReader(w, r.Body, 32768))
+	if e != nil {
+		respondError(w, 400, "invalid_human_control")
+		return nil, false
+	}
+	return raw, true
+}
+func (s *server) respondHumanControl(w http.ResponseWriter, r *http.Request, d [32]byte, a identity.Actor, value any, proof identity.HumanControlProof, requireProof bool) {
+	raw, e := json.Marshal(value)
+	if e != nil || requireProof && proof == nil {
+		respondError(w, 503, "human_control_unavailable")
+		return
+	}
+	frame, valid, _ := identity.OriginalHumanControlFrame(r.Context(), d, a)
+	port, ok := s.access.(identity.HumanControlSessionStore)
+	if !valid || !ok {
+		respondError(w, 503, "human_control_unavailable")
+		return
+	}
+	if e = port.ValidateHumanControlSession(r.Context(), d, a, frame); e != nil {
+		humanControlFailure(w, e)
+		return
+	}
+	// Source proofs also check their original Session. Keep them after the
+	// potentially waiting generic Session check so a retired source cannot
+	// revive during that check (including account suspension/reactivation).
+	if proof != nil {
+		if e = proof.RevalidateHumanControl(r.Context()); e != nil {
+			humanControlFailure(w, e)
+			return
+		}
+	}
+	if r.Context().Err() != nil {
+		respondError(w, 503, "human_control_unavailable")
+		return
+	}
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	_, _ = w.Write(raw)
+}
+func (s *server) legacyHumanControlWrite(w http.ResponseWriter, r *http.Request) {
+	_, _, _, ok := s.humanControlActor(w, r)
+	if !ok {
+		return
+	}
+	respondError(w, 409, "human_control_required")
+}
+func (s *server) registerHumanWriteControlRoutes(mux *http.ServeMux) {
+	s.registerFAQControlRoutes(mux)
+	s.registerDeclarationControlRoutes(mux)
+	s.registerReportControlRoutes(mux)
+	s.registerGrantRevokeControlRoutes(mux)
+	s.registerBlockControlRoutes(mux)
+}
+
+type humanControlFunctionProof func(context.Context) error
+
+func (p humanControlFunctionProof) RevalidateHumanControl(ctx context.Context) error { return p(ctx) }
+func humanControlReceiptMatches(v identity.HumanControlReceipt, family, op string) bool {
+	if v.Family != family || v.OperationID != op || v.AppliedVersion < 0 || v.AppliedVersion > identity.HumanControlMaxVersion {
+		return false
+	}
+	if v.Status == "STOPPED" {
+		return v.AppliedVersion == 0 && v.Action == "" && v.TargetID == "" && v.ResultID == "" && v.PayloadDigest == "" && v.CommittedAt == nil
+	}
+	if v.Status != "SUCCEEDED" || len(v.PayloadDigest) != 64 || v.CommittedAt == nil {
+		return false
+	}
+	switch family {
+	case "FAQ":
+		return (v.Action == "CREATE" || v.Action == "UPDATE" || v.Action == "DELETE") && identity.HumanControlUUID(v.TargetID) && v.TargetID == v.ResultID && v.AppliedVersion >= 1
+	case "CONTEXT":
+		return (v.Action == "DECLARE" || v.Action == "REMOVE") && identity.HumanControlUUID(v.TargetID) && v.TargetID == v.ResultID && v.AppliedVersion >= 1
+	case "REPORT":
+		return v.Action == "SUBMIT" && identity.HumanControlUUID(v.ResultID) && (v.TargetID == "" || identity.HumanControlUUID(v.TargetID)) && v.AppliedVersion == 0
+	case "GRANT_REVOKE":
+		return v.Action == "REVOKE" && identity.HumanControlUUID(v.TargetID) && v.ResultID == "" && v.AppliedVersion >= 1
+	case "BLOCK":
+		return (v.Action == "BLOCK" || v.Action == "UNBLOCK") && identity.HumanControlUUID(v.TargetID) && v.ResultID == "" && v.AppliedVersion >= 1
+	}
+	return false
+}
+func humanControlPreviewMatches(v identity.HumanControlPreview, op, action, digest string) bool {
+	return v.OperationID == op && v.Action == action && v.PayloadDigest == digest && v.Approval != "" && v.ObservedAt.Before(v.ExpiresAt) && v.ExpiresAt.Sub(v.ObservedAt) <= 30*time.Second
 }

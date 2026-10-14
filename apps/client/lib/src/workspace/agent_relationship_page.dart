@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import '../app/birdtie_app_bar.dart';
 import '../auth/birdtie_auth_controller.dart';
 import '../config/birdtie_environment.dart';
 
@@ -125,8 +126,8 @@ class _AgentRelationshipPageState extends State<AgentRelationshipPage> {
       if (_current(serial, token)) {
         setState(
           () => _error = save == null
-              ? '关系信号暂不可用，请重试。停用的个人 Agent 无法读取。'
-              : '设置或信号读取失败，请刷新确认当前授权状态。',
+              ? '互动记录暂不可用，请重试。停用的个人智能体无法读取。'
+              : '设置或互动记录加载失败，请刷新确认授权状态。',
         );
       }
     } finally {
@@ -141,8 +142,9 @@ class _AgentRelationshipPageState extends State<AgentRelationshipPage> {
   };
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(
-      title: const Text('Agent 关系信号'),
+    appBar: birdtieAppBar(
+      context,
+      title: const Text('互动记录使用范围'),
       actions: [
         IconButton(
           onPressed: _busy ? null : _load,
@@ -154,14 +156,14 @@ class _AgentRelationshipPageState extends State<AgentRelationshipPage> {
     body: !_entryCurrent
         ? const Center(child: Text('工作身份或来源已变化，请返回当前入口重新核实。'))
         : widget.auth.authorizationHeader == null
-        ? const Center(child: Text('登录后管理本人的 Agent 关系信号。'))
+        ? const Center(child: Text('登录后管理互动记录授权。'))
         : _base.isEmpty
-        ? const Center(child: Text('请连接 Birdtie 后管理关系信号。'))
+        ? const Center(child: Text('互动记录授权暂不可用，请稍后重试。'))
         : ListView(
             padding: const EdgeInsets.all(20),
             children: [
               const Text(
-                '默认关闭。开启后，仅本人的 Personal Agent 可使用当前好友关系、最近 30 天本人发送消息的数量和活跃日数。你可以随时关闭。',
+                '默认关闭。开启后，个人智能体可使用你的当前好友关系、最近 30 天发送消息的数量和活跃日数。你可以随时关闭。',
               ),
               const SizedBox(height: 12),
               const Text(
@@ -170,7 +172,7 @@ class _AgentRelationshipPageState extends State<AgentRelationshipPage> {
               const SizedBox(height: 16),
               SwitchListTile(
                 contentPadding: EdgeInsets.zero,
-                title: const Text('允许个人 Agent 使用关系信号'),
+                title: const Text('允许智能体使用互动记录'),
                 value: _enabled ?? false,
                 onChanged: _busy || _enabled == null
                     ? null
@@ -183,12 +185,12 @@ class _AgentRelationshipPageState extends State<AgentRelationshipPage> {
                   child: Text(_error!),
                 ),
               if (!_busy && _error == null && _enabled == false)
-                const Text('尚未开启，不向 Agent 提供关系信号。'),
+                const Text('尚未开启，不向智能体提供互动记录。'),
               if (!_busy &&
                   _error == null &&
                   _enabled == true &&
                   _peers.isEmpty)
-                const Text('暂无符合当前授权的好友信号。'),
+                const Text('暂无获准使用的好友互动记录。'),
               if (_truncated) const Text('当前显示最多 50 位好友，按本人近期对话记录排序。'),
               for (final peer in _peers)
                 Padding(

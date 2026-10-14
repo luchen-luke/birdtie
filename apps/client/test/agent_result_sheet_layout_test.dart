@@ -2,6 +2,7 @@ import 'dart:ui' show SemanticsAction;
 import 'package:birdtie_client/src/workspace/agent_conversation.dart';
 import 'package:birdtie_client/src/workspace/agent_result_sheet.dart';
 import 'package:birdtie_client/src/workspace/agent_workspace_controller.dart';
+import 'package:birdtie_client/src/workspace/now_ui_tokens.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -469,11 +470,22 @@ void main() {
         .first;
     final searching = find.text('正在查找当前公开信息…');
     for (var i = 0; i < 12 && searching.hitTestable().evaluate().isEmpty; i++) {
-      await tester.drag(scroll, const Offset(0, -40));
+      // At 300% the paragraph is taller than this 132dp viewport. Following
+      // its bottom can put its center just above the viewport, so reading the
+      // earlier lines requires a real downward scroll rather than more up.
+      final direction =
+          searching.evaluate().isNotEmpty &&
+              tester.getRect(searching).center.dy < tester.getRect(scroll).top
+          ? 40.0
+          : -40.0;
+      await tester.drag(scroll, Offset(0, direction));
       await tester.pump(const Duration(milliseconds: 260));
       expect(tester.takeException(), isNull);
     }
     expect(searching.hitTestable(), findsOneWidget);
+    final loadingText = tester.widget<Text>(searching);
+    expect(loadingText.maxLines, isNull);
+    expect(loadingText.overflow, isNot(TextOverflow.ellipsis));
     expect(find.textContaining('0 个'), findsNothing);
   });
   testWidgets(
@@ -527,7 +539,10 @@ void main() {
         ),
       );
       final title = tester.widget<Text>(find.text('我的关系信号'));
-      expect(title.style?.fontSize, 16);
+      expect(
+        title.style?.fontSize,
+        NowUiTokens.reviewedTypography(ThemeData()).sheetTitle.fontSize,
+      );
       await tester.tap(handle);
       await tester.pumpAndSettle();
       expect(workspace.sheetExtent, AgentSheetExtent.medium);

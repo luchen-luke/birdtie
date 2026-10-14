@@ -31,7 +31,8 @@ func managedActivityColumns(viewerSQL string) string {
               LEFT JOIN businesses b ON b.id=ao.business_id
               WHERE ao.activity_id=a.id),a.host_label),
     (SELECT c.avatar_url FROM activity_organizers ao JOIN communities c ON c.id=ao.community_id
-     WHERE ao.activity_id=a.id)`
+     WHERE ao.activity_id=a.id),birdtie_entity_cover_metadata('activity',a.id,` + viewerSQL + `::uuid,clock_timestamp()),
+     birdtie_entity_cover_authority('activity',a.id,` + viewerSQL + `::uuid)||':'||COALESCE((SELECT cover.xmin::text FROM entity_covers cover WHERE cover.entity_type='activity' AND cover.entity_id=a.id),'none')`
 }
 
 const activityLocationPublishGuard = `
@@ -53,7 +54,7 @@ func scanManagedActivity(row scanner) (activitypublish.Activity, error) {
 		&out.Currency, &out.Eligibility, &out.LanguageCode, &out.Visibility,
 		&out.PublicationStatus, &out.PublishedAt, &out.CancelledAt, &out.Revision,
 		&out.Modality, &out.PhysicalPlaceStatus, &out.VenuePlaceID,
-		&out.Organizer.Type, &out.Organizer.ID, &out.Organizer.Name, &out.Organizer.AvatarURL)
+		&out.Organizer.Type, &out.Organizer.ID, &out.Organizer.Name, &out.Organizer.AvatarURL, &out.Cover, &out.CoverSourceProof)
 	return out, err
 }
 

@@ -29,6 +29,9 @@ func (s *Store) UpdateHumanProfile(ctx context.Context, digest [32]byte, initial
 	if err != nil {
 		return identity.Profile{}, err
 	}
+	if principal.Type != actorref.Person && input.Visibility != "public" && input.Visibility != "private" {
+		return identity.Profile{}, identity.ErrInvalidProfile
+	}
 	if ctx.Err() != nil {
 		return identity.Profile{}, identity.ErrProfileUnavailable
 	}

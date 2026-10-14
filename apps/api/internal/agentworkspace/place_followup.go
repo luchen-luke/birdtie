@@ -10,7 +10,33 @@ import (
 	arp "github.com/birdtie/birdtie/apps/api/internal/agentresultprojection"
 )
 
-const PlaceOpeningHours = "opening_hours"
+const (
+	PlaceOpeningHours      = "opening_hours"
+	PlaceAdmission         = "admission"
+	PlaceAccessibility     = "accessibility"
+	PlaceTransport         = "transport"
+	PlacePublicInformation = "public_information"
+)
+
+func ValidPlaceQuestionTopic(topic string) bool {
+	return oneOf(topic, "", PlaceAddress, PlaceOpeningHours, PlaceAdmission, PlaceAccessibility, PlaceTransport, PlacePublicInformation)
+}
+
+// Search terms contain only a current public place name and fixed topic words.
+// The actual question is already bound separately in the original query scope.
+func PlaceQuestionSearchTerm(name, topic string) (string, bool) {
+	if !ValidPlaceFollowupName(name) || !ValidPlaceQuestionTopic(topic) {
+		return "", false
+	}
+	suffix := map[string]string{
+		PlaceOpeningHours:  " opening hours",
+		PlaceAdmission:     " tickets admission booking",
+		PlaceAccessibility: " accessibility wheelchair access",
+		PlaceTransport:     " address directions public transport parking",
+	}[topic]
+	term := name + suffix
+	return term, len(term) <= 240
+}
 
 // These server-written Task filters are correlation data, never a read or
 // egress grant. The response whitelist excludes them. Native storage re-reads
@@ -59,25 +85,51 @@ func ValidPlaceFollowupName(name string) bool {
 	return true
 }
 
-// A place followup is deliberately narrower than a general conversation
-// resolver. Explicit operation words still use their original parser path.
+// The current question resolves only against an existing public Place task.
+// No free transcript or private asset becomes model input. Explicit operations
+// and private questions still use their original parser/permission paths.
 func ParsePlaceFollowup(query string, current *Task) (PlaceFollowup, bool) {
 	var none PlaceFollowup
 	if current == nil || baseIntent(current) != FindPlace {
 		return none, false
 	}
+	// The original HTTP handler checks this resolver before ParseMVPIntent.
+	// A complete category+objective-fields request starts a current category
+	// refinement; it is never a pronoun or alias for the old selected Place.
+	if _, objective := parseObjectivePlaceRefinement(query); objective {
+		return none, false
+	}
 	text := strings.TrimSpace(query)
 	lower := strings.ToLower(text)
-	if text == "" || len(text) > 240 || !utf8.ValidString(text) || strings.HasPrefix(lower, "找地点") {
+	for _, prefix := range []string{"找", "寻找", "find ", "search ", "发布", "创建", "发起"} {
+		if strings.HasPrefix(lower, prefix) {
+			return none, false
+		}
+	}
+	if text == "" || len(text) > 240 || !utf8.ValidString(text) || strings.HasPrefix(lower, "找地点") || containsAny(lower, "私聊", "私人", "私有", "画像", "记忆", "用户住址", "发消息", "发布", "创建", "发起", "帮我买", "帮我预订", "帮我预约", "替我", "private", "profile", "memory", "publish", "create", "send message", "book it", "reserve it") {
 		return none, false
 	}
 	topic := current.Filters[PlaceFollowupTopicFilter]
-	if topic != "" && topic != PlaceOpeningHours {
+	if !ValidPlaceQuestionTopic(topic) {
 		return none, false
 	}
+	askingAddress := IsLocalPlaceAddressFollowupQuery(text)
 	askingHours := containsAny(lower, "几点开门", "几点关门", "开放时间", "营业时间", "开门时间", "闭馆时间", "opening hours", "when does it open", "when is it open", "what time does it open", "what time does it close")
-	if askingHours {
+	askingAdmission := containsAny(lower, "门票", "票价", "买票", "收费", "免费", "需要预约", "需要预订", "ticket", "admission", "entry fee", "free entry", "need to book")
+	askingAccess := containsAny(lower, "无障碍", "輪椅", "轮椅", "wheelchair", "accessible", "accessibility")
+	askingTransport := containsAny(lower, "地址", "怎么去", "如何去", "公交", "停车", "在哪里", "directions", "get there", "public transport", "parking", "where is it")
+	knownQuestion := askingAddress || askingHours || askingAdmission || askingAccess || askingTransport
+	switch {
+	case askingAddress:
+		topic = PlaceAddress
+	case askingHours:
 		topic = PlaceOpeningHours
+	case askingAdmission:
+		topic = PlaceAdmission
+	case askingAccess:
+		topic = PlaceAccessibility
+	case askingTransport:
+		topic = PlaceTransport
 	}
 	when := activityTime(lower)
 	if when == "anytime" && !containsAny(lower, "不限时间", "任何时间", "anytime") {
@@ -85,6 +137,11 @@ func ParsePlaceFollowup(query string, current *Task) (PlaceFollowup, bool) {
 	}
 	if !oneOf(when, "", "anytime", "today", "tonight", "tomorrow", "weekend") {
 		return none, false
+	}
+	// A literal new place name is not a pronoun for the prior result. Resolve it
+	// through the original named-place path and its canonical city/version proof.
+	if literal, ok := ParseLocalPlaceQuestion(text); ok && !literal.Recommendation {
+		return PlaceFollowup{Name: literal.Name, Topic: literal.Field, TimePreference: when}, true
 	}
 	trimmed := strings.Trim(text, " ?？!！。.")
 	name, named := "", false
@@ -99,8 +156,12 @@ func ParsePlaceFollowup(query string, current *Task) (PlaceFollowup, bool) {
 		}
 		return PlaceFollowup{Name: name, Topic: topic, TimePreference: when}, true
 	}
-	pronoun := strings.HasPrefix(lower, "它") || strings.HasPrefix(lower, "这家") || strings.HasPrefix(lower, "这个地方") || strings.HasPrefix(lower, "那里") || strings.HasPrefix(lower, "it ") || strings.HasPrefix(lower, "this place ") || strings.HasPrefix(lower, "when does it ") || strings.HasPrefix(lower, "when is it ") || strings.HasPrefix(lower, "what time does it ")
-	if pronoun && askingHours {
+	pronoun := strings.HasPrefix(lower, "它") || strings.HasPrefix(lower, "这家") || strings.HasPrefix(lower, "这个地方") || strings.HasPrefix(lower, "那里") || strings.HasPrefix(lower, "it ") || strings.HasPrefix(lower, "this place ") || strings.HasPrefix(lower, "is it ") || strings.HasPrefix(lower, "does it ") || strings.HasPrefix(lower, "can it ") || containsAny(lower, " is it ", " does it ", " can it ", " do they ")
+	question := containsAny(lower, "?", "？", "吗", "呢", "怎样", "为什么", "如何", "是否", "what ", "when ", "where ", "why ", "how ", "is it ", "does it ", "can it ")
+	if knownQuestion || (pronoun && question) {
+		if !knownQuestion {
+			topic = PlacePublicInformation
+		}
 		return PlaceFollowup{Topic: topic, TimePreference: when, Pronoun: true}, true
 	}
 	return none, false

@@ -180,7 +180,14 @@ func parseNormalizedResponse(r Request, d ProviderDescriptor, raw []byte) (Resul
 					return result, ErrAdapter
 				}
 				if r.TaskKind == MemoryCandidateExtraction {
-					result.Candidate, err = decodeCandidate(obj["structured"])
+					switch r.OutputSchemaVersion {
+					case CandidateProposalVersion:
+						result.Candidate, err = decodeCandidate(obj["structured"])
+					case CandidateProposalV2Version:
+						result.Candidate, err = decodeCandidateV2(obj["structured"])
+					default:
+						err = ErrAdapter
+					}
 				} else {
 					result.Answer, err = decodeAnswer(obj["structured"])
 				}

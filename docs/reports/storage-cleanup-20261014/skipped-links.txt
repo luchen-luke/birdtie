@@ -1,0 +1,5 @@
+apps\client\.gradle-user-home\repair\caches\jars-9
+apps\client\.gradle-user-home\repair\caches\modules-2
+apps\client\.gradle-user-home\repair\wrapper
+work\ui-repair-2026-10-07\.gradle-user-home\caches\modules-2
+work\ui-repair-2026-10-07\.gradle-user-home\wrapper\dists

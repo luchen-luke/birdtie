@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'agent_workspace_controller.dart';
 import 'agent_request_failure.dart';
 import 'remote_agent_task_source.dart';
+import '../app/birdtie_app_bar.dart';
 
 /// Human read of the original task. No model run, inferred approval or retry
 /// of the task's business effects is performed by this page.
@@ -84,7 +85,7 @@ class _AgentTaskDetailPageState extends State<AgentTaskDetailPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('我的任务')),
+    appBar: birdtieAppBar(context, title: const Text('我的任务')),
     body: _loading
         ? const Center(child: CircularProgressIndicator())
         : ListView(

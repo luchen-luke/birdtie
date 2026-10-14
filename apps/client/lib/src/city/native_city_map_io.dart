@@ -1,15 +1,54 @@
 import 'dart:async';
+import 'map_cluster_members_sheet.dart';
+import 'map_point_selection_sheet.dart';
+import 'dart:convert';
 import 'dart:ui' as ui;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 
 import 'mapbox_style.dart';
 import 'map_camera_focus.dart';
 import 'native_map_failure.dart';
+import 'now_map_compass.dart';
 import 'public_city_controller.dart';
 import '../workspace/map_entities.dart';
 import '../workspace/map_marker_bitmap.dart';
+import '../workspace/map_marker_visual.dart';
+import '../workspace/map_display_policy.dart';
+
+const _northCameraEvidenceEnabled =
+    kDebugMode &&
+    bool.fromEnvironment('BIRDTIE_NOW_CAMERA_EVIDENCE', defaultValue: false);
+
+/// Snapshot serialization only; values must come from getCameraState on device.
+@visibleForTesting
+Map<String, Object> nowNorthCameraEvidenceSnapshot(CameraState camera) => {
+  'center': {
+    'longitude': camera.center.coordinates.lng.toDouble(),
+    'latitude': camera.center.coordinates.lat.toDouble(),
+  },
+  'zoom': camera.zoom,
+  'pitch': camera.pitch,
+  'bearing': camera.bearing,
+};
+
+class _NorthCameraEvidence {
+  _NorthCameraEvidence({
+    required this.id,
+    required this.map,
+    required this.focusSerial,
+    required this.scopeGeneration,
+    required this.before,
+  });
+  final int id;
+  final MapboxMap map;
+  final int focusSerial;
+  final int scopeGeneration;
+  final Map<String, Object> before;
+  final Stopwatch elapsed = Stopwatch()..start();
+}
 
 class NativeCityMapView extends StatefulWidget {
   const NativeCityMapView({
@@ -30,6 +69,15 @@ class NativeCityMapView extends StatefulWidget {
     this.contextKey = '',
     this.preserveViewport = false,
     this.ornamentTop,
+    this.contentRect,
+    this.focusRevision = 0,
+    this.onSelectedAnchor,
+    this.readerChanges,
+    this.currentReaderEntities,
+    this.currentReaderScope,
+    this.onMapReaderVisibilityChanged,
+    this.onCoordinateSelected,
+    this.coordinateSourceCurrent,
   });
 
   final PublicCity? city;
@@ -48,6 +96,16 @@ class NativeCityMapView extends StatefulWidget {
   final String contextKey;
   final bool preserveViewport;
   final double? ornamentTop;
+  final Rect? contentRect;
+  final int focusRevision;
+  final ValueChanged<({String? id, Offset? point})>? onSelectedAnchor;
+  final Listenable? readerChanges;
+  final List<MapEntity> Function()? currentReaderEntities;
+  final Object? Function()? currentReaderScope;
+  final ValueChanged<({Object token, bool visible})>?
+  onMapReaderVisibilityChanged;
+  final void Function(double latitude, double longitude)? onCoordinateSelected;
+  final bool Function()? coordinateSourceCurrent;
 
   @override
   State<NativeCityMapView> createState() => _NativeCityMapViewState();
@@ -55,6 +113,10 @@ class NativeCityMapView extends StatefulWidget {
 
 class _NativeCityMapViewState extends State<NativeCityMapView> {
   MapboxMap? _map;
+  final _readerChanges = MapReaderChanges();
+  final _pointSemantics =
+      ValueNotifier<List<({MapEntity entity, Offset point})>>([]);
+  int _readerEpoch = 0;
   PointAnnotationManager? _markers;
   Cancelable? _markerTapSubscription;
   final Map<String, PointAnnotation> _annotations = {};
@@ -62,9 +124,9 @@ class _NativeCityMapViewState extends State<NativeCityMapView> {
   Future<void> _markerUpdates = Future<void>.value();
   Timer? _cameraSettleTimer;
   DateTime _lastCameraChangeAt = DateTime.fromMillisecondsSinceEpoch(0);
-  double? _renderedClusterZoom;
   DateTime _ignoreIdleUntil = DateTime.fromMillisecondsSinceEpoch(0);
   bool _styleReady = false;
+  bool _coordinateMapLoaded = false;
   final _mapFailure = NativeMapFailureState();
   Timer? _mapRetryTimer;
   CameraOptions? _retryCamera;
@@ -72,8 +134,12 @@ class _NativeCityMapViewState extends State<NativeCityMapView> {
   String? _retryContextKey;
   String? _retrySelectionID;
   int _ornamentSerial = 0;
+  final _bearing = ValueNotifier<double>(0);
   int _scopeGeneration = 0;
   int _focusSerial = 0;
+  int _northEvidenceSerial = 0;
+  _NorthCameraEvidence? _northEvidence;
+  Timer? _northEvidenceTimer;
   MapCameraFocusInput? _retryFocusInput;
   int? _retryMotionGeneration;
   late final CameraViewportState _initialViewport;
@@ -86,11 +152,13 @@ class _NativeCityMapViewState extends State<NativeCityMapView> {
     _initialViewport = CameraViewportState(
       center: Point(
         coordinates: Position(
-          viewport?.longitude ?? 0,
-          viewport?.latitude ?? 0,
+          viewport?.longitude ?? -2.0943,
+          viewport?.latitude ?? 57.1497,
         ),
       ),
-      zoom: viewport?.defaultZoom ?? 1,
+      // The requested initial Aberdeen camera is only an exploration view.
+      // No GPS fix, selected city, public location or entity is manufactured.
+      zoom: viewport?.defaultZoom ?? 13,
     );
   }
 
@@ -99,21 +167,52 @@ class _NativeCityMapViewState extends State<NativeCityMapView> {
         city: view.city,
         contextKey: view.contextKey,
         places: view.places,
-        entities: view.entities,
+        entities: view.entities
+            .where((e) => e.hasMapAnchor)
+            .toList(growable: false),
         selectedEntityId: view.selectedEntityId,
         preserveViewport: view.preserveViewport,
       );
 
+  double _bitmapPixelRatio = 1;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final next = MapMarkerBitmap.pixelRatio(
+      MediaQuery.devicePixelRatioOf(context),
+    );
+    if (next == _bitmapPixelRatio) return;
+    _bitmapPixelRatio = next;
+    if (_styleReady) unawaited(_refreshMarkers());
+  }
+
   @override
   void didUpdateWidget(covariant NativeCityMapView oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (oldWidget.city?.id != widget.city?.id ||
+        oldWidget.contextKey != widget.contextKey) {
+      ++_readerEpoch;
+    }
+    if (_placeFingerprint(oldWidget.places) !=
+            _placeFingerprint(widget.places) ||
+        _entityFingerprint(oldWidget.entities) !=
+            _entityFingerprint(widget.entities) ||
+        oldWidget.selectedEntityId != widget.selectedEntityId) {
+      _pointSemantics.value = const [];
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _readerChanges.changed();
+    });
     final previous = _focusInput(oldWidget);
     final current = _focusInput(widget);
+    final explicitFocus = oldWidget.focusRevision != widget.focusRevision;
     if (!current.hasSameViewInputs(previous)) {
       _scopeGeneration++;
       _focusSerial++;
     }
-    if (_styleReady && current.shouldFocusAfter(previous)) {
+    if (explicitFocus) _focusSerial++;
+    if (_styleReady && (current.shouldFocusAfter(previous) || explicitFocus)) {
       unawaited(_focusContext());
     }
     if (_styleReady && current.cityKey != previous.cityKey) {
@@ -139,6 +238,9 @@ class _NativeCityMapViewState extends State<NativeCityMapView> {
     // the shared entity selection, task result or user camera.
     _focusSerial++;
     _cameraMotionGeneration++;
+    if (_northCameraEvidenceEnabled) {
+      _cancelNorthCameraEvidence('pointer_or_north_action');
+    }
   }
 
   Future<void> _focusContext() async {
@@ -181,7 +283,7 @@ class _NativeCityMapViewState extends State<NativeCityMapView> {
             ),
             infiniteBounds: false,
           ),
-          MbxEdgeInsets(top: 150, left: 48, bottom: 180, right: 48),
+          _focusPadding(),
           0,
           0,
           14,
@@ -193,6 +295,7 @@ class _NativeCityMapViewState extends State<NativeCityMapView> {
             coordinates: Position(center.longitude, center.latitude),
           ),
           zoom: input.zoom,
+          padding: widget.contentRect == null ? null : _focusPadding(),
         );
       }
       if (!current()) return;
@@ -203,11 +306,174 @@ class _NativeCityMapViewState extends State<NativeCityMapView> {
     }
   }
 
+  MbxEdgeInsets _focusPadding() {
+    final box = context.findRenderObject();
+    final mapSize = box is RenderBox && box.hasSize
+        ? box.size
+        : MediaQuery.sizeOf(context);
+    final padding = MapDisplayPolicy.focusPadding(mapSize, widget.contentRect);
+    return MbxEdgeInsets(
+      top: padding.top,
+      left: padding.left,
+      bottom: padding.bottom,
+      right: padding.right,
+    );
+  }
+
   Future<void> _animateCamera(MapboxMap map, CameraOptions camera) async {
+    if (_northCameraEvidenceEnabled) {
+      _cancelNorthCameraEvidence('programmatic_focus');
+    }
     _cameraChangedSinceIdle = false;
     _cameraMotionGeneration++;
     _ignoreIdleUntil = DateTime.now().add(const Duration(milliseconds: 750));
     await map.flyTo(camera, MapAnimationOptions(duration: 450));
+  }
+
+  Future<void> _returnNorth() async {
+    final map = _map;
+    if (map == null || !mounted) return;
+    _invalidatePendingFocus();
+    final focusSerial = _focusSerial;
+    final scopeGeneration = _scopeGeneration;
+    _NorthCameraEvidence? evidence;
+    if (_northCameraEvidenceEnabled) {
+      final id = ++_northEvidenceSerial;
+      try {
+        final before = await map.getCameraState();
+        // The extra debug snapshot await must never deliver a north reset after
+        // a new user gesture, scope change or map replacement.
+        if (!mounted ||
+            map != _map ||
+            focusSerial != _focusSerial ||
+            scopeGeneration != _scopeGeneration ||
+            id != _northEvidenceSerial) {
+          return;
+        }
+        evidence = _NorthCameraEvidence(
+          id: id,
+          map: map,
+          focusSerial: focusSerial,
+          scopeGeneration: scopeGeneration,
+          before: nowNorthCameraEvidenceSnapshot(before),
+        );
+        _northEvidence = evidence;
+        _logNorthCameraEvidence({
+          'operationId': id,
+          'phase': 'before',
+          'camera': evidence.before,
+        });
+      } catch (_) {
+        _logNorthCameraEvidence({
+          'operationId': id,
+          'phase': 'before_unavailable',
+        });
+      }
+      if (!mounted ||
+          map != _map ||
+          focusSerial != _focusSerial ||
+          scopeGeneration != _scopeGeneration ||
+          id != _northEvidenceSerial) {
+        return;
+      }
+    }
+    try {
+      await map.easeTo(
+        CameraOptions(bearing: 0),
+        MapAnimationOptions(duration: 300),
+      );
+      if (_northCameraEvidenceEnabled &&
+          evidence != null &&
+          identical(_northEvidence, evidence) &&
+          _isCurrentNorthCameraEvidence(evidence)) {
+        // Android's easeTo Future only acknowledges animation start. Prefer a
+        // real SDK idle callback; fallback is explicitly not an idle claim.
+        _northEvidenceTimer?.cancel();
+        _northEvidenceTimer = Timer(const Duration(milliseconds: 600), () {
+          unawaited(_completeNorthCameraEvidence('sample_after_timeout'));
+        });
+      }
+    } catch (_) {
+      if (_northCameraEvidenceEnabled && identical(_northEvidence, evidence)) {
+        _cancelNorthCameraEvidence('ease_to_failed');
+      }
+      if (mounted) debugPrint('Birdtie map north reset unavailable.');
+    }
+  }
+
+  bool _isCurrentNorthCameraEvidence(_NorthCameraEvidence evidence) =>
+      mounted &&
+      evidence.map == _map &&
+      evidence.id == _northEvidenceSerial &&
+      evidence.focusSerial == _focusSerial &&
+      evidence.scopeGeneration == _scopeGeneration;
+
+  void _logNorthCameraEvidence(Map<String, Object?> payload) {
+    if (!_northCameraEvidenceEnabled) return;
+    debugPrint(
+      'BirdtieNorthCameraEvidence ${jsonEncode(payload)}',
+      wrapWidth: 4096,
+    );
+  }
+
+  void _cancelNorthCameraEvidence(String reason) {
+    final evidence = _northEvidence;
+    _northEvidence = null;
+    _northEvidenceTimer?.cancel();
+    _northEvidenceTimer = null;
+    if (evidence == null) return;
+    _logNorthCameraEvidence({
+      'operationId': evidence.id,
+      'phase': 'cancelled',
+      'reason': reason,
+      'elapsedMs': evidence.elapsed.elapsedMilliseconds,
+    });
+  }
+
+  Future<void> _completeNorthCameraEvidence(String sampleSource) async {
+    final evidence = _northEvidence;
+    if (evidence == null) return;
+    // A previous gesture can deliver an already queued idle event while the
+    // north animation starts. Do not label its pre-duration state as "after".
+    if (sampleSource == 'sdk_idle' &&
+        evidence.elapsed.elapsedMilliseconds < 300) {
+      return;
+    }
+    // Claim once before awaiting native state so idle and timeout cannot emit
+    // two after snapshots for the same operation.
+    _northEvidence = null;
+    _northEvidenceTimer?.cancel();
+    _northEvidenceTimer = null;
+    if (!_isCurrentNorthCameraEvidence(evidence)) {
+      _logNorthCameraEvidence({
+        'operationId': evidence.id,
+        'phase': 'superseded',
+      });
+      return;
+    }
+    try {
+      final after = await evidence.map.getCameraState();
+      if (!_isCurrentNorthCameraEvidence(evidence)) {
+        _logNorthCameraEvidence({
+          'operationId': evidence.id,
+          'phase': 'superseded',
+        });
+        return;
+      }
+      _logNorthCameraEvidence({
+        'operationId': evidence.id,
+        'phase': 'after',
+        'sampleSource': sampleSource,
+        'elapsedMs': evidence.elapsed.elapsedMilliseconds,
+        'before': evidence.before,
+        'after': nowNorthCameraEvidenceSnapshot(after),
+      });
+    } catch (_) {
+      _logNorthCameraEvidence({
+        'operationId': evidence.id,
+        'phase': 'after_unavailable',
+      });
+    }
   }
 
   bool _cameraChangedSinceIdle = false;
@@ -258,6 +524,10 @@ class _NativeCityMapViewState extends State<NativeCityMapView> {
   }
 
   void _onCameraChanged(CameraChangedEventData event) {
+    if (mounted) {
+      _bearing.value = event.cameraState.bearing;
+      if (_pointSemantics.value.isNotEmpty) _pointSemantics.value = const [];
+    }
     if (!_styleReady) return;
     final now = DateTime.now();
     if (now.isAfter(_ignoreIdleUntil)) {
@@ -285,8 +555,12 @@ class _NativeCityMapViewState extends State<NativeCityMapView> {
   }
 
   Future<void> _onMapIdle(MapIdleEventData event) async {
+    if (_northCameraEvidenceEnabled) {
+      unawaited(_completeNorthCameraEvidence('sdk_idle'));
+    }
     if (!_styleReady) return;
     if (DateTime.now().isBefore(_ignoreIdleUntil) || !_cameraChangedSinceIdle) {
+      unawaited(_refreshMarkers());
       return;
     }
     await _publishViewport();
@@ -328,9 +602,7 @@ class _NativeCityMapViewState extends State<NativeCityMapView> {
           widget.onViewportSettled != null &&
           visible.isValid) {
         widget.onViewportSettled!(visible);
-        if (_renderedClusterZoom != camera.zoom) {
-          unawaited(_refreshMarkers());
-        }
+        unawaited(_refreshMarkers());
       }
     } catch (_) {
       // A camera snapshot can be unavailable while the native map is starting.
@@ -339,6 +611,13 @@ class _NativeCityMapViewState extends State<NativeCityMapView> {
 
   @override
   void dispose() {
+    ++_readerEpoch;
+    _readerChanges.changed();
+    _readerChanges.dispose();
+    _pointSemantics.dispose();
+    _northEvidenceTimer?.cancel();
+    _northEvidence = null;
+    _bearing.dispose();
     _cameraSettleTimer?.cancel();
     _mapRetryTimer?.cancel();
     _markerTapSubscription?.cancel();
@@ -355,7 +634,7 @@ class _NativeCityMapViewState extends State<NativeCityMapView> {
   String _entityFingerprint(List<MapEntity> entities) => entities
       .map(
         (entity) =>
-            '${entity.id}:${entity.latitude}:${entity.longitude}:${entity.kind}:${entity.title}:${entity.subtitle}',
+            '${entity.id}:${entity.latitude}:${entity.longitude}:${entity.kind}:${entity.title}:${entity.subtitle}:${entity.placeID}:${entity.precision}:${entity.publicLocation}:${entity.isTaskResult}:${entity.decorationKey}',
       )
       .join('|');
 
@@ -365,6 +644,8 @@ class _NativeCityMapViewState extends State<NativeCityMapView> {
     final serial = ++_ornamentSerial;
     final top = widget.ornamentTop ?? MediaQuery.paddingOf(context).top + 8;
     try {
+      await map.compass.updateSettings(CompassSettings(enabled: false));
+      if (!mounted || map != _map || serial != _ornamentSerial) return;
       await map.logo.updateSettings(
         LogoSettings(
           enabled: true,
@@ -408,35 +689,12 @@ class _NativeCityMapViewState extends State<NativeCityMapView> {
     _styleReady = true;
     _markers ??= await map.annotations.createPointAnnotationManager();
     await _markers!.setIconAllowOverlap(true);
+    // A colliding label must not hide the object's independently drawn icon.
+    await _markers!.setTextOptional(true);
     _markerTapSubscription ??= _markers!.tapEvents(
       onTap: (annotation) async {
         final entityId = annotation.customData?['entityId'];
-        if (entityId is String) {
-          if (entityId.startsWith('cluster:')) {
-            final cluster = _renderedEntities.where(
-              (entity) => entity.id == entityId,
-            );
-            if (cluster.isNotEmpty) {
-              await _openClusterMembers(cluster.first);
-            }
-            return;
-          }
-          if (entityId.startsWith('place:')) {
-            final placeId = entityId.substring('place:'.length);
-            for (final place in widget.places) {
-              if (place.id == placeId) {
-                widget.onPlaceSelected(place);
-                return;
-              }
-            }
-          }
-          for (final entity in widget.entities) {
-            if (entity.id == entityId) {
-              widget.onEntitySelected?.call(entity);
-              return;
-            }
-          }
-        }
+        if (entityId is String) await _selectMapPoint(entityId);
       },
     );
     await _refreshMarkers();
@@ -464,6 +722,7 @@ class _NativeCityMapViewState extends State<NativeCityMapView> {
 
   void _onMapLoadError(MapLoadingErrorEventData event) {
     if (!mounted) return;
+    _coordinateMapLoaded = false;
     final changed = _mapFailure.report(event.type.name, event.message);
     _mapRetryTimer?.cancel();
     if (changed) {
@@ -479,7 +738,9 @@ class _NativeCityMapViewState extends State<NativeCityMapView> {
   }
 
   void _onMapLoaded() {
-    if (!mounted || !_mapFailure.mapLoaded()) return;
+    if (!mounted) return;
+    _coordinateMapLoaded = true;
+    if (!_mapFailure.mapLoaded()) return;
     _mapRetryTimer?.cancel();
     setState(() {});
     // Publish recovered bounds without changing the user's camera or task.
@@ -533,49 +794,171 @@ class _NativeCityMapViewState extends State<NativeCityMapView> {
     }
   }
 
-  Future<void> _openClusterMembers(MapEntity cluster) async {
-    final members = cluster.memberIDs
-        .map((id) {
-          for (final entity in widget.entities) {
-            if (entity.id == id) return entity;
-          }
-          for (final place in widget.places) {
-            if ('place:${place.id}' == id && place.location.hasPublicPoint) {
-              return MapEntity(
-                id: id,
+  Object? _pointReaderScope() => mounted
+      ? (_readerEpoch, widget.currentReaderScope?.call() ?? widget.contextKey)
+      : null;
+
+  List<MapEntity> _currentPointSource() {
+    final source =
+        widget.currentReaderEntities?.call() ??
+        <MapEntity>[
+          ...widget.entities,
+          for (final place in widget.places)
+            if (place.location.hasPublicPoint)
+              MapEntity(
+                id: 'place:${place.id}',
                 kind: MapEntityKind.place,
                 title: place.name,
                 subtitle: place.summary,
                 latitude: place.location.latitude!,
                 longitude: place.location.longitude!,
-              );
-            }
-          }
-          return null;
-        })
-        .whereType<MapEntity>()
-        .toList();
-    if (!mounted || members.isEmpty) return;
-    final selected = await showModalBottomSheet<MapEntity>(
+                placeID: place.id,
+                publicLocation: true,
+              ),
+        ];
+    final byID = <String, MapEntity>{};
+    for (final entity in source.where((e) => e.hasMapAnchor)) {
+      byID.putIfAbsent(entity.id, () => entity);
+    }
+    return byID.values.toList();
+  }
+
+  void _dispatchCurrentPoint(MapEntity chosen) {
+    final current = _currentPointSource()
+        .where((e) => e.id == chosen.id && e.kind == chosen.kind)
+        .firstOrNull;
+    if (current == null) return;
+    for (final place in widget.places) {
+      if (current.kind == MapEntityKind.place &&
+          place.location.hasPublicPoint &&
+          'place:${place.id}' == current.id) {
+        widget.onPlaceSelected(place);
+        return;
+      }
+    }
+    widget.onEntitySelected?.call(current);
+  }
+
+  bool _pointChoiceOpen = false;
+  Future<void> _selectMapPoint(String tappedID) async {
+    final map = _map;
+    if (!mounted || map == null || _pointChoiceOpen) return;
+    final rendered = _renderedEntities
+        .where((e) => e.id == tappedID)
+        .firstOrNull;
+    if (rendered == null) return;
+    // Preserve genuinely source-provided privacy-group behavior. The display
+    // policy never creates new cluster identities from PLACE/MOMENT objects.
+    if (rendered.isCluster) {
+      await _openClusterMembers(rendered);
+      return;
+    }
+    _pointChoiceOpen = true;
+    final scope = _pointReaderScope(), generation = _scopeGeneration;
+    final motion = _cameraMotionGeneration;
+    bool current() =>
+        mounted &&
+        map == _map &&
+        scope == _pointReaderScope() &&
+        generation == _scopeGeneration;
+    try {
+      final shown = _renderedEntities.map((e) => (e.id, e.kind)).toSet();
+      final originals = _currentPointSource()
+          .where((e) => shown.contains((e.id, e.kind)))
+          .toList();
+      if (!originals.any((e) => e.id == tappedID)) return;
+      final pixels = await map.pixelsForCoordinates([
+        for (final entity in originals)
+          Point(coordinates: Position(entity.longitude, entity.latitude)),
+      ]);
+      if (!current() || motion != _cameraMotionGeneration) return;
+      final rawPositions = <String, Offset>{
+        for (var i = 0; i < originals.length && i < pixels.length; i++)
+          if (pixels[i] case final pixel?)
+            originals[i].id: Offset(pixel.x, pixel.y),
+      };
+      final positions = rawPositions;
+      final hits = MapDisplayPolicy.overlappingHitTargets(
+        entities: originals,
+        positions: positions,
+        tappedID: tappedID,
+      );
+      // Native SDK hit testing may return any image at the shared anchor.
+      // Always retain every authorized exact-anchor sibling in the chooser.
+      final tapped = originals.firstWhere((entity) => entity.id == tappedID);
+      bool preciseRecord(MapEntity entity) =>
+          entity.precision == 'point' &&
+          {MapEntityKind.place, MapEntityKind.moment}.contains(entity.kind);
+      final identities = {
+        ...hits.map((entity) => (entity.id, entity.kind)),
+        if (preciseRecord(tapped))
+          for (final entity in originals)
+            if (preciseRecord(entity) &&
+                entity.latitude == tapped.latitude &&
+                entity.longitude == tapped.longitude)
+              (entity.id, entity.kind),
+      };
+      List<MapEntity> freshHits() => _currentPointSource()
+          .where((e) => identities.contains((e.id, e.kind)))
+          .toList();
+      final fresh = freshHits();
+      if (fresh.isEmpty || !current()) return;
+      final selected = fresh.length == 1
+          ? fresh.single
+          : await showCurrentMapPointChoices(
+              context: context,
+              changes: Listenable.merge([_readerChanges, widget.readerChanges]),
+              currentCandidates: freshHits,
+              currentScope: _pointReaderScope,
+              onVisibilityChanged: widget.onMapReaderVisibilityChanged,
+            );
+      if (selected != null && current()) _dispatchCurrentPoint(selected);
+    } catch (_) {
+      if (mounted)
+        debugPrint('Birdtie current map-point selection unavailable.');
+    } finally {
+      _pointChoiceOpen = false;
+    }
+  }
+
+  List<MapEntity> _currentClusterMembers(MapEntity cluster) {
+    final originals =
+        widget.currentReaderEntities?.call() ??
+        <MapEntity>[
+          ...widget.entities,
+          for (final place in widget.places)
+            if (place.location.hasPublicPoint)
+              MapEntity(
+                id: 'place:${place.id}',
+                kind: MapEntityKind.place,
+                title: place.name,
+                subtitle: place.summary,
+                latitude: place.location.latitude!,
+                longitude: place.location.longitude!,
+                placeID: place.id,
+                publicLocation: true,
+              ),
+        ];
+    final byID = {for (final entity in originals) entity.id: entity};
+    return [
+      for (final id in cluster.memberIDs)
+        if (byID[id] case final entity?) entity,
+    ];
+  }
+
+  Future<void> _openClusterMembers(MapEntity cluster) async {
+    final selected = await showCurrentMapClusterMembers(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: const Color(0xFFFCFBF8),
-      builder: (sheetContext) => SafeArea(
-        child: SizedBox(
-          height: MediaQuery.sizeOf(sheetContext).height * 0.72,
-          child: ListView(
-            children: [
-              const ListTile(title: Text('这里有多个活动、组织与地点')),
-              for (final member in members)
-                ListTile(
-                  title: Text(member.title),
-                  subtitle: Text(member.subtitle),
-                  onTap: () => Navigator.pop(sheetContext, member),
-                ),
-            ],
-          ),
-        ),
-      ),
+      cluster: cluster,
+      changes: Listenable.merge([_readerChanges, widget.readerChanges]),
+      currentMembers: () => _currentClusterMembers(cluster),
+      currentScope: () => mounted
+          ? (
+              _readerEpoch,
+              widget.currentReaderScope?.call() ?? widget.contextKey,
+            )
+          : null,
+      onVisibilityChanged: widget.onMapReaderVisibilityChanged,
     );
     if (selected == null || !mounted) return;
     if (selected.id.startsWith('place:')) {
@@ -590,14 +973,44 @@ class _NativeCityMapViewState extends State<NativeCityMapView> {
   }
 
   Future<void> _refreshMarkers() async {
-    _markerUpdates = _markerUpdates.then((_) => _syncMarkers());
+    final serial = ++_markerSerial;
+    _markerUpdates = _markerUpdates
+        .then((_) => _syncMarkers(serial))
+        .catchError((Object error) {
+          if (mounted) debugPrint('Birdtie marker projection unavailable.');
+        });
     await _markerUpdates;
   }
 
-  Future<void> _syncMarkers() async {
+  int _markerSerial = 0;
+  String? _lastDisplayInputs;
+  Set<String> _previousVisibleIDs = const {};
+
+  Future<void> _syncMarkers(int serial) async {
     final markers = _markers;
-    if (!_styleReady || markers == null) return;
-    final source = <MapEntity>[
+    final map = _map;
+    if (!_styleReady ||
+        markers == null ||
+        map == null ||
+        !mounted ||
+        serial != _markerSerial) {
+      return;
+    }
+    final scope = _scopeGeneration, motion = _cameraMotionGeneration;
+    final ratio = _bitmapPixelRatio;
+    final sourceKey =
+        '${_entityFingerprint(widget.entities)}:${_placeFingerprint(widget.places)}:${widget.selectedEntityId}';
+    bool current() =>
+        mounted &&
+        serial == _markerSerial &&
+        map == _map &&
+        scope == _scopeGeneration &&
+        motion == _cameraMotionGeneration &&
+        ratio == _bitmapPixelRatio &&
+        sourceKey ==
+            '${_entityFingerprint(widget.entities)}:${_placeFingerprint(widget.places)}:${widget.selectedEntityId}';
+    final unique = <String, MapEntity>{};
+    for (final entity in <MapEntity>[
       ...widget.entities,
       for (final place in widget.places)
         if (place.location.hasPublicPoint)
@@ -608,47 +1021,169 @@ class _NativeCityMapViewState extends State<NativeCityMapView> {
             subtitle: place.summary,
             latitude: place.location.latitude!,
             longitude: place.location.longitude!,
+            placeID: place.id,
+            publicLocation: true,
           ),
-    ];
-    final camera = await _map!.getCameraState();
-    _renderedClusterZoom = camera.zoom;
-    _renderedEntities = clusterMapEntities(
-      source,
+    ]) {
+      if (entity.hasMapAnchor) unique.putIfAbsent(entity.id, () => entity);
+    }
+    final source = unique.values.toList(growable: false);
+    // Remove retired source identities before awaiting a camera projection.
+    // A stale cluster count must not keep a withdrawn/expired member visible.
+    for (final previous in _renderedEntities) {
+      // Retire cached private pixels before any camera/projection await. Keep
+      // the authorized object's annotation at exactly the existing geometry.
+      final existing = _annotations[previous.id];
+      if (existing != null &&
+          previous.recentMoments != null &&
+          !previous.recentMoments!.currentAt(DateTime.now().toUtc())) {
+        existing.textField = previous.title;
+        await markers.update(existing);
+        _annotationFingerprints.remove(previous.id);
+        if (!current()) return;
+      }
+      if (existing != null &&
+          previous.mediaPixels != null &&
+          (previous.mediaPixels?.current() != true ||
+              unique[previous.id]?.mediaPixels?.key !=
+                  previous.mediaPixels!.key)) {
+        final fallback = await MapMarkerBitmap.render(
+          kind: previous.kind,
+          selected: previous.id == widget.selectedEntityId,
+          devicePixelRatio: ratio,
+        );
+        if (!current()) return;
+        existing.image = fallback;
+        existing.textField = previous.title;
+        await markers.update(existing);
+        _annotationFingerprints.remove(previous.id);
+        if (!current()) return;
+      }
+      final members = previous.isCluster ? previous.memberIDs : [previous.id];
+      if (members.any((id) => !unique.containsKey(id))) {
+        final annotation = _annotations.remove(previous.id);
+        _annotationFingerprints.remove(previous.id);
+        if (annotation != null) await markers.delete(annotation);
+        if (!mounted || serial != _markerSerial || map != _map) return;
+      }
+    }
+    final camera = await map.getCameraState();
+    if (!current()) return;
+    final cameraKey =
+        '${camera.center.coordinates.lng}:${camera.center.coordinates.lat}:${camera.zoom}:${camera.bearing}:${camera.pitch}:${camera.padding.left}:${camera.padding.top}:${camera.padding.right}:${camera.padding.bottom}';
+    final displayInputs = '$sourceKey:$cameraKey:$ratio';
+    // ContentRect is consumed on real source/camera updates, not on each IME
+    // layout frame. Keyboard motion never bulk-removes the existing markers.
+    if (_lastDisplayInputs == displayInputs) {
+      _pointSemantics.value = [
+        for (final entity in _renderedEntities)
+          if (_lastPointPositions[entity.id] case final point?)
+            (entity: entity, point: point),
+      ];
+      return;
+    }
+    final pixels = await map.pixelsForCoordinates([
+      for (final entity in source)
+        Point(coordinates: Position(entity.longitude, entity.latitude)),
+    ]);
+    if (!current()) return;
+    final positions = <String, Offset>{
+      for (var i = 0; i < source.length && i < pixels.length; i++)
+        if (pixels[i] case final pixel?) source[i].id: Offset(pixel.x, pixel.y),
+    };
+    final displayedPositions = positions;
+    widget.onSelectedAnchor?.call((
+      id: widget.selectedEntityId,
+      point: displayedPositions[widget.selectedEntityId],
+    ));
+    final plan = MapDisplayPolicy.plan(
+      entities: source,
+      positions: positions,
       zoom: camera.zoom,
-      selectedId: widget.selectedEntityId,
+      selectedID: widget.selectedEntityId,
+      contentRect: widget.contentRect,
+      previouslyVisibleIDs: _previousVisibleIDs,
+      protectedIDs: {
+        for (final entity in source)
+          if (entity.isTaskResult) entity.id,
+      },
     );
     final specs = <String, PointAnnotationOptions>{};
-    for (final entity in _renderedEntities) {
-      final bytes = await MapMarkerBitmap.render(
-        kind: entity.kind,
-        selected: entity.id == widget.selectedEntityId,
-        count: entity.isCluster ? entity.memberIDs.length : 0,
-      );
+    for (final entity in plan.entities) {
+      final bytes =
+          entity.mediaPixels?.png(
+            selected: entity.id == widget.selectedEntityId,
+            dense: plan.denseIDs.contains(entity.id),
+            ratio: ratio,
+          ) ??
+          await MapMarkerBitmap.render(
+            kind: entity.kind,
+            selected: entity.id == widget.selectedEntityId,
+            count: entity.isCluster ? entity.memberIDs.length : 0,
+            approximate: entity.precision == 'area',
+            dense: plan.denseIDs.contains(entity.id),
+            devicePixelRatio: ratio,
+          );
+      if (!current()) return;
       specs[entity.id] = PointAnnotationOptions(
         geometry: Point(
           coordinates: Position(entity.longitude, entity.latitude),
         ),
         image: bytes,
-        iconAnchor: IconAnchor.BOTTOM,
-        iconSize: entity.id == widget.selectedEntityId ? 1.08 : 1,
+        iconAnchor:
+            {MapEntityKind.place, MapEntityKind.moment}.contains(entity.kind) &&
+                entity.precision == 'point'
+            ? IconAnchor.CENTER
+            : IconAnchor.BOTTOM,
+        iconSize:
+            {MapEntityKind.place, MapEntityKind.moment}.contains(entity.kind) &&
+                entity.precision == 'point'
+            ? 1.0
+            : entity.id == widget.selectedEntityId
+            ? 1.08
+            : entity.isCluster
+            ? 1
+            : 0.78,
         symbolSortKey: entity.id == widget.selectedEntityId ? 100 : 0,
-        customData: {'entityId': entity.id},
+        customData: {'entityId': entity.id, 'kind': entity.kind.name},
+        textField: plan.labelIDs.contains(entity.id)
+            ? (entity.groupSummary.isNotEmpty &&
+                      entity.id == widget.selectedEntityId
+                  ? '${entity.title}\n${entity.groupSummary}'
+                  : MapMarkerVisual.nativeLabel(
+                      entity.title,
+                      selected: entity.id == widget.selectedEntityId,
+                      recent: entity.recentMoments?.labelAt(
+                        DateTime.now().toUtc(),
+                      ),
+                    ))
+            : '',
+        textSize: 14,
+        textMaxWidth: 10.28,
+        textOffset: [0, 0.6],
+        textAnchor: TextAnchor.TOP,
+        textColor: const Color(0xFF193B32).toARGB32(),
+        textHaloColor: Colors.white.toARGB32(),
+        textHaloWidth: 2,
       );
     }
+    if (!current()) return;
+    _renderedEntities = plan.entities;
     final stale = _annotations.keys
         .where((id) => !specs.containsKey(id))
         .toList();
     for (final id in stale) {
+      if (!current()) return;
       final annotation = _annotations.remove(id);
       _annotationFingerprints.remove(id);
       if (annotation != null) await markers.delete(annotation);
     }
     for (final entry in specs.entries) {
-      if (!mounted) return;
+      if (!current()) return;
       final id = entry.key;
       final option = entry.value;
       final fingerprint =
-          '${option.geometry.coordinates.lng}:${option.geometry.coordinates.lat}:${option.image.hashCode}:${option.symbolSortKey}';
+          '${option.geometry.coordinates.lng}:${option.geometry.coordinates.lat}:${option.image.hashCode}:${option.symbolSortKey}:${option.iconSize}:${option.textField}:${option.textSize}';
       final annotation = _annotations[id];
       if (annotation == null) {
         final created = await markers.create(option);
@@ -661,16 +1196,68 @@ class _NativeCityMapViewState extends State<NativeCityMapView> {
         annotation.iconSize = option.iconSize;
         annotation.symbolSortKey = option.symbolSortKey;
         annotation.customData = option.customData;
+        annotation.textField = option.textField;
+        annotation.textSize = option.textSize;
+        annotation.textMaxWidth = option.textMaxWidth;
+        annotation.textOffset = option.textOffset;
+        annotation.textAnchor = option.textAnchor;
+        annotation.textColor = option.textColor;
+        annotation.textHaloColor = option.textHaloColor;
+        annotation.textHaloWidth = option.textHaloWidth;
         await markers.update(annotation);
         _annotationFingerprints[id] = fingerprint;
       }
     }
+    if (!current()) return;
+    _lastPointPositions = displayedPositions;
+    _pointSemantics.value = [
+      for (final entity in plan.entities)
+        if (displayedPositions[entity.id] case final point?)
+          (entity: entity, point: point),
+    ];
+    _lastDisplayInputs = displayInputs;
+    _previousVisibleIDs = plan.entities.map((e) => e.id).toSet();
+    if (_northCameraEvidenceEnabled && mounted) {
+      final public = source.where((e) => e.publicLocation).toList();
+      final sample =
+          public.where((e) => e.id == widget.selectedEntityId).firstOrNull ??
+          public.firstOrNull;
+      final box = context.findRenderObject();
+      debugPrint(
+        'Birdtie map display evidence ${jsonEncode({
+          'annotationManagerID': markers.id,
+          'rendering': 'individual original objects -> point annotations; density only affects glyph/label',
+          'camera': nowNorthCameraEvidenceSnapshot(camera),
+          'logicalMapSize': box is RenderBox && box.hasSize ? [box.size.width, box.size.height] : null,
+          'dpr': MediaQuery.devicePixelRatioOf(context),
+          'contentRect': widget.contentRect == null ? null : [widget.contentRect!.left, widget.contentRect!.top, widget.contentRect!.right, widget.contentRect!.bottom],
+          'publicSourceCount': public.length,
+          'renderedCount': plan.entities.length,
+          'publicSample': sample == null ? null : {
+                  'entityID': sample.id,
+                  'placeID': sample.placeID,
+                  'kind': sample.kind.name,
+                  'precision': sample.precision,
+                  'latitude': sample.latitude,
+                  'longitude': sample.longitude,
+                  'logicalPixel': positions[sample.id] == null ? null : [positions[sample.id]!.dx, positions[sample.id]!.dy],
+                },
+          'groups': [
+            for (final entity in plan.entities)
+              if (entity.isCluster && entity.publicLocation) {'entityID': entity.id, 'memberIDs': entity.memberIDs, 'label': entity.groupSummary},
+          ],
+        })}',
+      );
+    }
   }
 
   List<MapEntity> _renderedEntities = const [];
+  Map<String, Offset> _lastPointPositions = const {};
 
   @override
   Widget build(BuildContext context) {
+    final coordinateScope = _pointReaderScope();
+    final coordinateCallback = widget.onCoordinateSelected;
     final pointCount = widget.places
         .where((place) => place.location.hasPublicPoint)
         .length;
@@ -686,14 +1273,87 @@ class _NativeCityMapViewState extends State<NativeCityMapView> {
                 key: const ValueKey('now-mapbox-sdk'),
                 styleUri: mapboxStyleUri,
                 viewport: _initialViewport,
-                onMapCreated: (map) => _map = map,
+                onMapCreated: (map) {
+                  _map = map;
+                  debugPrint('Birdtie native map created.');
+                  unawaited(_updateOrnaments());
+                },
                 onStyleLoadedListener: (_) => unawaited(_onStyleLoaded()),
                 onMapLoadErrorListener: _onMapLoadError,
                 onMapLoadedListener: (_) => _onMapLoaded(),
                 onCameraChangeListener: _onCameraChanged,
                 onMapIdleListener: _onMapIdle,
+                onTapListener: coordinateCallback == null
+                    ? null
+                    : (gesture) {
+                        final latitude = gesture.point.coordinates.lat
+                            .toDouble();
+                        final longitude = gesture.point.coordinates.lng
+                            .toDouble();
+                        if (mounted &&
+                            _coordinateMapLoaded &&
+                            _styleReady &&
+                            _mapFailure.failure == null &&
+                            coordinateScope == _pointReaderScope() &&
+                            identical(
+                              coordinateCallback,
+                              widget.onCoordinateSelected,
+                            ) &&
+                            (widget.coordinateSourceCurrent?.call() ?? true) &&
+                            latitude.isFinite &&
+                            longitude.isFinite &&
+                            latitude >= -90 &&
+                            latitude <= 90 &&
+                            longitude >= -180 &&
+                            longitude <= 180) {
+                          coordinateCallback(latitude, longitude);
+                        }
+                      },
               ),
             ),
+            ValueListenableBuilder<List<({MapEntity entity, Offset point})>>(
+              valueListenable: _pointSemantics,
+              builder: (context, points, _) => Stack(
+                children: [
+                  for (final point in points)
+                    Positioned(
+                      left: point.point.dx - 24,
+                      top: point.point.dy - 24,
+                      width: 48,
+                      height: 48,
+                      child: Semantics(
+                        key: ValueKey(
+                          'native-map-point-semantics:${point.entity.id}',
+                        ),
+                        container: true,
+                        button: true,
+                        selected: point.entity.id == widget.selectedEntityId,
+                        label:
+                            '${mapPointKindLabel(point.entity.kind)} · ${point.entity.title} · ${point.entity.subtitle}',
+                        onTap: () =>
+                            unawaited(_selectMapPoint(point.entity.id)),
+                        // Semantics owns the action; transparent children must not
+                        // capture native drag/tap gestures or create a second map.
+                        child: const IgnorePointer(child: SizedBox.expand()),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            if (widget.fullBleed && _mapFailure.failure == null)
+              Positioned(
+                top:
+                    widget.ornamentTop ??
+                    MediaQuery.viewPaddingOf(context).top + 64,
+                left: 16,
+                child: ValueListenableBuilder<double>(
+                  valueListenable: _bearing,
+                  builder: (context, bearing, _) => NowMapCompass(
+                    bearing: bearing,
+                    onNorth: () => unawaited(_returnNorth()),
+                  ),
+                ),
+              ),
             if (_mapFailure.failure case final failure?)
               Positioned(
                 top: widget.fullBleed
@@ -727,9 +1387,9 @@ class _NativeCityMapViewState extends State<NativeCityMapView> {
                               children: [
                                 Text(failure.message),
                                 const SizedBox(height: 2),
-                                const Text(
+                                Text(
                                   '已保留地点与结果。',
-                                  style: TextStyle(fontSize: 12),
+                                  style: Theme.of(context).textTheme.bodySmall,
                                 ),
                               ],
                             ),
@@ -759,7 +1419,9 @@ class _NativeCityMapViewState extends State<NativeCityMapView> {
                 right: 12,
                 child: DecoratedBox(
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.94),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.surface.withValues(alpha: 0.94),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Padding(
@@ -769,7 +1431,7 @@ class _NativeCityMapViewState extends State<NativeCityMapView> {
                     ),
                     child: Text(
                       widget.placeStateMessage ?? '当前列表没有可公开的精确地点标记。',
-                      style: const TextStyle(fontSize: 12),
+                      style: Theme.of(context).textTheme.bodySmall,
                     ),
                   ),
                 ),

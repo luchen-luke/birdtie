@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../city/public_city_controller.dart';
 import 'agent_workspace_controller.dart';
 import 'organization_workspaces.dart';
+import 'now_glass_surface.dart';
+import 'now_ui_tokens.dart';
 
 enum SidebarDestination {
   home,
@@ -39,6 +41,7 @@ class Sidebar extends StatelessWidget {
     this.onTools,
     this.onWorkspaceSelected,
     this.signedIn = true,
+    this.sessionRestoring = false,
   });
   final AgentWorkspaceController workspace;
   // Retained for callers; the Now top bar owns the only visible city selector.
@@ -54,9 +57,12 @@ class Sidebar extends StatelessWidget {
   final VoidCallback? onTools;
   final VoidCallback? onWorkspaceSelected;
   final bool signedIn;
+  final bool sessionRestoring;
 
   bool get _maySwitch =>
-      signedIn && organizations.authorizationHeader() != null;
+      signedIn &&
+      !sessionRestoring &&
+      organizations.authorizationHeader() != null;
 
   void _accountSelected(String value) {
     if (value == 'tools') {
@@ -94,261 +100,283 @@ class Sidebar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Drawer(
-    backgroundColor: const Color(0xFFFCFBF8),
-    child: SafeArea(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const Padding(
-            padding: EdgeInsets.fromLTRB(24, 22, 18, 12),
-            child: Text(
-              'birdtie',
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.w700,
-                letterSpacing: -1.2,
-                color: Color(0xFF193B32),
-              ),
-            ),
-          ),
-          Expanded(
-            child: AnimatedBuilder(
-              animation: Listenable.merge([workspace, organizations]),
-              builder: (context, _) => ListView(
-                key: const PageStorageKey('sidebar-navigation-history'),
-                padding: EdgeInsets.zero,
+    width: (MediaQuery.sizeOf(context).width - NowUiTokens.actionHitSize)
+        .clamp(
+          0.0,
+          (NowUiTokens.sidebarWidth +
+                  (MediaQuery.textScalerOf(context).scale(16) - 16) * 3)
+              .clamp(NowUiTokens.sidebarWidth, NowUiTokens.sidebarMaxWidth),
+        )
+        .toDouble(),
+    backgroundColor: Colors.transparent,
+    elevation: 0,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.horizontal(
+        right: Radius.circular(NowUiTokens.sheetCornerTop),
+      ),
+    ),
+    clipBehavior: Clip.antiAlias,
+    child: NowGlassSurface(
+      role: NowGlassRole.navigation,
+      radius: 0,
+      backdropBlur: false,
+      child: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 12, 12, 8),
+              child: Row(
                 children: [
-                  _item(
-                    Icons.map_outlined,
-                    'Now',
-                    () => onDestination(SidebarDestination.home),
-                  ),
-                  if (signedIn) ...[
-                    ExpansionTile(
-                      key: const PageStorageKey('sidebar-my-content'),
-                      leading: const Icon(Icons.folder_open_outlined),
-                      title: const Text('我的内容'),
-                      children: [
-                        _item(
-                          Icons.event_outlined,
-                          '我的活动',
-                          () => onDestination(SidebarDestination.activities),
-                        ),
-                        _item(
-                          Icons.group_outlined,
-                          '社群',
-                          () => onDestination(SidebarDestination.groups),
-                        ),
-                        _item(
-                          Icons.bookmark_outline,
-                          '收藏',
-                          () => onDestination(SidebarDestination.saved),
-                        ),
-                        // Merchant permissions come from the native Business
-                        // API, independently of Organization roles.
-                        if (organizations.active == null)
-                          _item(
-                            Icons.storefront_outlined,
-                            '我的商家与认领',
-                            () => onDestination(SidebarDestination.business),
-                          ),
-                      ],
-                    ),
-                    if (organizations.active case final active?)
-                      if (active.canManage)
-                        _item(
-                          Icons.dashboard_outlined,
-                          '组织活动管理',
-                          () => onDestination(SidebarDestination.organization),
-                        ),
-                  ],
-                  const Divider(height: 25, indent: 24, endIndent: 24),
-                  const Padding(
-                    padding: EdgeInsets.fromLTRB(24, 0, 24, 8),
+                  Expanded(
                     child: Text(
-                      '最近对话',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF747B73),
-                      ),
+                      'birdtie',
+                      style: NowUiTokens.of(context).pageTitle,
                     ),
                   ),
-                  if (workspace.recentLoading)
-                    const Padding(
-                      padding: EdgeInsets.fromLTRB(24, 8, 24, 8),
-                      child: Text('正在读取最近对话…'),
-                    )
-                  else if (workspace.recentError != null)
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(24, 8, 24, 8),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text('最近对话读取失败'),
-                          Text(workspace.recentError!),
-                          if (workspace.recentFailure?.statusCode == 401)
-                            const Text('请先通过账户重新登录，再读取最近对话。')
-                          else if (workspace.recentFailure?.statusCode == 403)
-                            const Text('请先确认当前身份和访问权限；恢复权限后再读取最近对话。'),
-                          if (workspace.permitsRecentRetry)
-                            TextButton(
-                              key: const Key('sidebar-retry-history'),
-                              style: TextButton.styleFrom(
-                                minimumSize: const Size(0, 48),
-                              ),
-                              onPressed: workspace.retryRecent,
-                              child: const Text('重新读取最近对话'),
-                            ),
-                        ],
-                      ),
-                    )
-                  else if (workspace.recent.isEmpty)
-                    const Padding(
-                      padding: EdgeInsets.fromLTRB(24, 8, 24, 8),
-                      child: Text(
-                        '你开始的对话会显示在这里。',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Color(0xFF747B73),
-                        ),
-                      ),
+                  IconButton(
+                    key: const Key('sidebar-close'),
+                    tooltip: '关闭侧边栏',
+                    onPressed: Scaffold.maybeOf(context)?.closeDrawer,
+                    style: IconButton.styleFrom(
+                      minimumSize: const Size.square(NowUiTokens.actionHitSize),
+                      tapTargetSize: MaterialTapTargetSize.padded,
                     ),
-                  for (final task in workspace.recent)
-                    _item(
-                      Icons.chat_bubble_outline,
-                      task.query,
-                      () => onRecent(task),
-                    ),
+                    icon: const Icon(Icons.close, size: 20),
+                  ),
                 ],
               ),
             ),
-          ),
-          const Divider(height: 1, indent: 24, endIndent: 24),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-            child: Row(
-              children: [
-                Expanded(
-                  child: FilledButton.icon(
-                    key: const Key('sidebar-new-conversation'),
-                    onPressed: onNew,
-                    icon: const Icon(Icons.add, size: 19),
-                    label: const Text('新建对话'),
-                    style: FilledButton.styleFrom(
-                      backgroundColor: const Color(0xFF193B32),
-                      minimumSize: const Size.fromHeight(48),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 12,
-                      ),
-                    ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              child: FilledButton.icon(
+                key: const Key('sidebar-new-conversation'),
+                onPressed: onNew,
+                icon: const Icon(Icons.add, size: 20),
+                label: const Text('新建对话'),
+                style: FilledButton.styleFrom(
+                  backgroundColor: Theme.of(context).colorScheme.primary,
+                  minimumSize: const Size.fromHeight(NowUiTokens.actionHitSize),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 12,
                   ),
                 ),
-                const SizedBox(width: 12),
-                AnimatedBuilder(
-                  animation: organizations,
-                  builder: (context, _) => PopupMenuButton<String>(
-                    key: const Key('sidebar-account'),
-                    tooltip: !signedIn
-                        ? '登录 / 账户 · 未登录'
-                        : '账户 · ${organizations.active?.name ?? '个人身份'}',
-                    onSelected: _accountSelected,
-                    itemBuilder: (context) => [
-                      PopupMenuItem(
-                        value: 'profile',
-                        child: Text(signedIn ? '个人资料与账户' : '登录 / 账户'),
+              ),
+            ),
+            Expanded(
+              child: AnimatedBuilder(
+                animation: Listenable.merge([workspace, organizations]),
+                builder: (context, _) => ListView(
+                  key: const PageStorageKey('sidebar-navigation-history'),
+                  padding: EdgeInsets.zero,
+                  children: [
+                    _item(
+                      Icons.map_outlined,
+                      'Now',
+                      () => onDestination(SidebarDestination.home),
+                    ),
+                    if (signedIn && !sessionRestoring) ...[
+                      ExpansionTile(
+                        key: const PageStorageKey('sidebar-my-content'),
+                        leading: const Icon(Icons.folder_open_outlined),
+                        title: const Text('我的内容'),
+                        children: [
+                          _item(
+                            Icons.event_outlined,
+                            '我的活动',
+                            () => onDestination(SidebarDestination.activities),
+                          ),
+                          _item(
+                            Icons.group_outlined,
+                            '社群',
+                            () => onDestination(SidebarDestination.groups),
+                          ),
+                          _item(
+                            Icons.bookmark_outline,
+                            '收藏',
+                            () => onDestination(SidebarDestination.saved),
+                          ),
+                          // Merchant permissions come from the native Business
+                          // API, independently of Organization roles.
+                          if (organizations.active == null)
+                            _item(
+                              Icons.storefront_outlined,
+                              '我的商家与认领',
+                              () => onDestination(SidebarDestination.business),
+                            ),
+                        ],
                       ),
-                      const PopupMenuItem(value: 'settings', child: Text('设置')),
-                      if (onTools != null)
-                        const PopupMenuItem(
-                          value: 'tools',
-                          child: Text('更多工具'),
+                      if (organizations.active case final active?)
+                        if (active.canManage)
+                          _item(
+                            Icons.dashboard_outlined,
+                            '组织活动管理',
+                            () =>
+                                onDestination(SidebarDestination.organization),
+                          ),
+                    ],
+                    if (workspace.recentLoading ||
+                        workspace.recentError != null ||
+                        workspace.recent.isNotEmpty) ...[
+                      const Divider(height: 25, indent: 24, endIndent: 24),
+                      Padding(
+                        padding: EdgeInsets.fromLTRB(24, 0, 24, 8),
+                        child: Text(
+                          '最近对话',
+                          style: Theme.of(context).textTheme.bodySmall,
                         ),
-                      if (_maySwitch) ...[
-                        const PopupMenuDivider(),
-                        const PopupMenuItem(
-                          value: 'invitations',
-                          child: Text('我的组织邀请'),
+                      ),
+                      if (workspace.recentLoading)
+                        const Padding(
+                          padding: EdgeInsets.fromLTRB(24, 8, 24, 8),
+                          child: Text('正在读取最近对话…'),
+                        )
+                      else if (workspace.recentError != null)
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(24, 8, 24, 8),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                switch (workspace.recentFailure?.statusCode) {
+                                  401 => '登录已失效，请重新登录。',
+                                  403 => '当前身份无法查看这些对话。',
+                                  _ => '最近对话加载失败。',
+                                },
+                              ),
+                              if (workspace.permitsRecentRetry)
+                                TextButton(
+                                  key: const Key('sidebar-retry-history'),
+                                  style: TextButton.styleFrom(
+                                    minimumSize: const Size(0, 48),
+                                  ),
+                                  onPressed: workspace.retryRecent,
+                                  child: const Text('重试'),
+                                ),
+                            ],
+                          ),
+                        ),
+                    ],
+                    for (final task in workspace.recent)
+                      _item(
+                        Icons.chat_bubble_outline,
+                        task.query,
+                        () => onRecent(task),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+            const Divider(height: 1, indent: 24, endIndent: 24),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text('账户', style: NowUiTokens.of(context).chrome),
+                  ),
+                  const SizedBox(width: 12),
+                  AnimatedBuilder(
+                    animation: organizations,
+                    builder: (context, _) => PopupMenuButton<String>(
+                      key: const Key('sidebar-account'),
+                      tooltip: sessionRestoring
+                          ? '正在恢复账户'
+                          : !signedIn
+                          ? '登录 / 账户 · 未登录'
+                          : '账户 · ${organizations.active?.name ?? '个人身份'}',
+                      onSelected: _accountSelected,
+                      itemBuilder: (context) => [
+                        PopupMenuItem(
+                          value: 'profile',
+                          enabled: !sessionRestoring,
+                          child: Text(
+                            sessionRestoring
+                                ? '正在恢复账户'
+                                : signedIn
+                                ? '个人资料与账户'
+                                : '登录 / 账户',
+                          ),
                         ),
                         const PopupMenuItem(
-                          value: 'create',
-                          child: Text('创建组织'),
+                          value: 'settings',
+                          child: Text('设置'),
                         ),
-                        if (organizations.active != null ||
-                            organizations.organizations.any(
-                              (o) => o.canManage,
-                            )) ...[
+                        if (onTools != null)
+                          const PopupMenuItem(
+                            value: 'tools',
+                            child: Text('更多工具'),
+                          ),
+                        if (_maySwitch) ...[
                           const PopupMenuDivider(),
                           const PopupMenuItem(
-                            enabled: false,
-                            child: Text('选择本次工作身份'),
+                            value: 'invitations',
+                            child: Text('我的组织邀请'),
                           ),
                           const PopupMenuItem(
-                            value: 'personal',
-                            child: Text('以个人身份使用'),
+                            value: 'create',
+                            child: Text('创建组织'),
                           ),
-                          for (final item in organizations.organizations)
-                            if (item.canManage)
-                              PopupMenuItem(
-                                value: 'organization:${item.id}',
-                                child: Text(
-                                  '以 ${item.name} 身份使用 · ${_workspaceRoleLabel(item.role)}',
+                          if (organizations.active != null ||
+                              organizations.organizations.any(
+                                (o) => o.canManage,
+                              )) ...[
+                            const PopupMenuDivider(),
+                            const PopupMenuItem(
+                              enabled: false,
+                              child: Text('选择本次工作身份'),
+                            ),
+                            const PopupMenuItem(
+                              value: 'personal',
+                              child: Text('以个人身份使用'),
+                            ),
+                            for (final item in organizations.organizations)
+                              if (item.canManage)
+                                PopupMenuItem(
+                                  value: 'organization:${item.id}',
+                                  child: Text(
+                                    '以 ${item.name} 身份使用 · ${_workspaceRoleLabel(item.role)}',
+                                  ),
                                 ),
-                              ),
+                          ],
                         ],
                       ],
-                    ],
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(
-                        minWidth: 64,
-                        minHeight: 48,
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 6,
-                        ),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(
+                      child: Semantics(
+                        button: true,
+                        child: SizedBox.square(
+                          dimension: 48,
+                          child: Center(
+                            child: Icon(
                               Icons.account_circle_outlined,
                               size: 28,
-                              color: Color(0xFF193B32),
+                              color: Theme.of(context).colorScheme.primary,
                             ),
-                            const SizedBox(height: 4),
-                            Text(
-                              signedIn ? '账户' : '登录',
-                              style: const TextStyle(
-                                color: Color(0xFF193B32),
-                                fontSize: 12,
-                              ),
-                            ),
-                          ],
+                          ),
                         ),
                       ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     ),
   );
 
-  Widget _item(IconData icon, String label, VoidCallback onTap) => ListTile(
-    minTileHeight: 48,
-    contentPadding: const EdgeInsets.symmetric(horizontal: 24),
-    leading: Icon(icon, color: const Color(0xFF193B32), size: 21),
-    title: Text(
-      label,
-      maxLines: 2,
-      overflow: TextOverflow.ellipsis,
-      style: const TextStyle(fontSize: 14, color: Color(0xFF193B32)),
+  Widget _item(IconData icon, String label, VoidCallback onTap) => Builder(
+    builder: (context) => ListTile(
+      minTileHeight: 48,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 24),
+      leading: Icon(
+        icon,
+        color: Theme.of(context).colorScheme.primary,
+        size: 21,
+      ),
+      title: Text(label, style: Theme.of(context).textTheme.titleSmall),
+      onTap: onTap,
     ),
-    onTap: onTap,
   );
 }

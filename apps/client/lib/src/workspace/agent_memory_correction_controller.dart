@@ -59,6 +59,10 @@ class AgentMemoryCorrectionController extends ChangeNotifier {
   String? error, message;
   List<CorrectableMemory> memories = const [];
   List<HumanMemoryCandidate> candidates = const [];
+  String? memoryNextCursor, candidateNextCursor, _pageAgentID;
+  DateTime? _memoryPageExpiresAt, _candidatePageExpiresAt;
+  bool get hasMoreMemories => memoryNextCursor != null;
+  bool get hasMoreCandidates => candidateNextCursor != null;
   CorrectionPreview? preview;
   PendingMemoryCorrection? _pending;
   bool get retired => _retired;
@@ -99,8 +103,14 @@ class AgentMemoryCorrectionController extends ChangeNotifier {
   Duration? _selfReviewDeadline;
   CorrectableMemory? _selfReviewSelected;
   bool canReadSelfReview(CorrectableMemory m) =>
-      _current && !busy && !unknown && !storageBlocked && memories.contains(m) &&
-      m.sourceType == 'EXPLICIT' && m.status == 'ACTIVE' && m.validUntil.isAfter(_now());
+      _current &&
+      !busy &&
+      !unknown &&
+      !storageBlocked &&
+      memories.contains(m) &&
+      m.sourceType == 'EXPLICIT' &&
+      m.status == 'ACTIVE' &&
+      m.validUntil.isAfter(_now());
 
   void _invalidateSelfReview() {
     _selfReviewSerial++;
@@ -114,8 +124,11 @@ class AgentMemoryCorrectionController extends ChangeNotifier {
   bool _selfReviewCurrent(int serial, CorrectableMemory m) {
     identityChanged();
     if (serial != _selfReviewSerial) return false;
-    if (!_current || !memories.contains(m) || m.sourceType != 'EXPLICIT' ||
-        m.status != 'ACTIVE' || !m.validUntil.isAfter(_now())) {
+    if (!_current ||
+        !memories.contains(m) ||
+        m.sourceType != 'EXPLICIT' ||
+        m.status != 'ACTIVE' ||
+        !m.validUntil.isAfter(_now())) {
       _invalidateSelfReview();
       _changed();
       return false;
@@ -130,7 +143,9 @@ class AgentMemoryCorrectionController extends ChangeNotifier {
     final serial = _selfReviewSerial, started = _ticks();
     final token = _boundToken!, owner = _boundOwner!;
     final body = <String, dynamic>{
-      'profileFields': ['preferredActivityTypes'], 'memoryIds': [m.id], 'policyFamilies': [],
+      'profileFields': ['preferredActivityTypes'],
+      'memoryIds': [m.id],
+      'policyFamilies': [],
     };
     selfReviewMemoryID = m.id;
     _selfReviewSelected = m;
@@ -141,7 +156,12 @@ class AgentMemoryCorrectionController extends ChangeNotifier {
     try {
       final raw = await api.request('POST', 'self-review', token, body: body);
       if (!_selfReviewCurrent(serial, m)) return;
-      final view = MemorySelfReview.read(raw, owner: owner, selected: m, now: _now());
+      final view = MemorySelfReview.read(
+        raw,
+        owner: owner,
+        selected: m,
+        now: _now(),
+      );
       final received = _ticks(), wait = received - started;
       final native = view.expiresAt.difference(view.observedAt) - wait;
       final utc = view.expiresAt.difference(_now());
@@ -162,8 +182,8 @@ class AgentMemoryCorrectionController extends ChangeNotifier {
               _ => '暂时无法核对这些来源；当前记忆和更正批准未改变。',
             }
           : e is FormatException
-              ? '同体审阅或当前记忆版本不符，请重新读取当前记忆后核对。'
-              : '暂时无法核对这些来源；当前记忆和更正批准未改变。';
+          ? '同体审阅或当前记忆版本不符，请重新读取当前记忆后核对。'
+          : '暂时无法核对这些来源；当前记忆和更正批准未改变。';
     } finally {
       if (_selfReviewCurrent(serial, m)) {
         selfReviewLoading = false;
@@ -177,8 +197,10 @@ class AgentMemoryCorrectionController extends ChangeNotifier {
     final view = selfReview;
     if (!_current || view == null) return;
     final selected = _selfReviewSelected;
-    if (selected == null || !_selfReviewCurrent(_selfReviewSerial, selected)) return;
-    if (_selfReviewDeadline != null && _ticks() < _selfReviewDeadline! &&
+    if (selected == null || !_selfReviewCurrent(_selfReviewSerial, selected))
+      return;
+    if (_selfReviewDeadline != null &&
+        _ticks() < _selfReviewDeadline! &&
         view.expiresAt.isAfter(_now())) {
       return;
     }
@@ -193,6 +215,7 @@ class AgentMemoryCorrectionController extends ChangeNotifier {
     _invalidateSelfReview();
     _changed();
   }
+
   // Detail is an independent, expiring human read, never a correction approval.
   MemoryFieldEvidenceDetail? fieldDetail;
   String? fieldMemoryID, fieldError;
@@ -230,11 +253,16 @@ class AgentMemoryCorrectionController extends ChangeNotifier {
       final raw = await api.request('GET', 'memories/${m.id}', _boundToken!);
       if (!_fieldCurrent(serial, m)) return;
       final detail = MemoryFieldEvidenceDetail.read(
-        raw, owner: _boundOwner!, memoryID: m.id, agentID: m.agentID,
-        version: m.version, now: _now(),
+        raw,
+        owner: _boundOwner!,
+        memoryID: m.id,
+        agentID: m.agentID,
+        version: m.version,
+        now: _now(),
       );
       if (detail.status != m.status ||
-          detail.memory != null && _canonical(detail.memory!.raw) != _canonical(m.raw)) {
+          detail.memory != null &&
+              _canonical(detail.memory!.raw) != _canonical(m.raw)) {
         throw const FormatException('当前记忆版本已改变');
       }
       final received = _ticks(), wait = received - started;
@@ -258,8 +286,8 @@ class AgentMemoryCorrectionController extends ChangeNotifier {
               _ => '暂时无法读取来源与时间，请稍后再次查看。',
             }
           : e is FormatException
-              ? '来源详情或记忆版本已变化，请重新读取当前记忆后查看来源。'
-              : '暂时无法读取来源与时间，请稍后再次查看。';
+          ? '来源详情或记忆版本已变化，请重新读取当前记忆后查看来源。'
+          : '暂时无法读取来源与时间，请稍后再次查看。';
     } finally {
       if (_fieldCurrent(serial, m)) {
         fieldLoading = false;
@@ -272,7 +300,8 @@ class AgentMemoryCorrectionController extends ChangeNotifier {
     identityChanged();
     final detail = fieldDetail;
     if (!_current || detail == null) return;
-    if (_fieldDeadline != null && _ticks() < _fieldDeadline! &&
+    if (_fieldDeadline != null &&
+        _ticks() < _fieldDeadline! &&
         detail.expiresAt.isAfter(_now())) {
       return;
     }
@@ -296,13 +325,15 @@ class AgentMemoryCorrectionController extends ChangeNotifier {
     preview = null;
     memories = const [];
     candidates = const [];
+    _clearPages();
     message = null;
     error = '身份或连接已变化，请关闭后以当前身份重新打开。';
     _changed();
   }
 
   bool _bind() {
-    if (denied || _closed || _retired || !(current?.call() ?? true)) return false;
+    if (denied || _closed || _retired || !(current?.call() ?? true))
+      return false;
     if (_bound) {
       identityChanged();
       return _current;
@@ -348,20 +379,31 @@ class AgentMemoryCorrectionController extends ChangeNotifier {
         await verify();
         return;
       }
-      final ms = await api.memories(_boundToken!, _boundOwner!);
+      final mp = await api.memoryPage(_boundToken!, _boundOwner!);
       if (!_current) return;
+      final ms = mp.items;
       memories = ms;
+      memoryNextCursor = mp.nextCursor;
+      _memoryPageExpiresAt = mp.expiresAt;
+      _pageAgentID = mp.agentID;
       candidates = const [];
+      candidateNextCursor = null;
+      _candidatePageExpiresAt = null;
       candidatesUnavailable = false;
       try {
-        final cs = await api.candidates(_boundToken!, _boundOwner!);
+        final cp = await api.candidatePage(_boundToken!, _boundOwner!);
         if (!_current) return;
+        if (cp.agentID != mp.agentID)
+          throw const FormatException('当前Agent绑定不符');
+        final cs = cp.items;
         final agents = {
           ...ms.map((m) => m.agentID),
           ...cs.map((c) => c.raw['agentId'] as String),
         };
         if (agents.length > 1) throw const FormatException('当前Agent绑定不符');
         candidates = cs;
+        candidateNextCursor = cp.nextCursor;
+        _candidatePageExpiresAt = cp.expiresAt;
       } on CorrectionHTTPError catch (e) {
         if (!_current) return;
         if (e.status != 503) rethrow;
@@ -373,6 +415,11 @@ class AgentMemoryCorrectionController extends ChangeNotifier {
           : '选择本人当前记忆，先检查具体版本再确认。';
     } catch (e) {
       if (_current) {
+        if (e is CorrectionHTTPError && {401, 403}.contains(e.status)) {
+          denied = true;
+          retire();
+          return;
+        }
         if (readingStorage) {
           storageBlocked = true;
           error = '本机核实记录暂时无法安全读取，未提交新操作。请重新核实。';
@@ -380,9 +427,99 @@ class AgentMemoryCorrectionController extends ChangeNotifier {
           storageBlocked = true;
           error = '回执或本机核实记录不符，未提交新操作。';
         } else {
-          memories = const [];
-          candidates = const [];
           error = '暂时无法读取，请稍后重试。';
+        }
+      }
+    } finally {
+      if (_current) {
+        busy = false;
+        _changed();
+      }
+    }
+  }
+
+  void _clearPages() {
+    memoryNextCursor = candidateNextCursor = _pageAgentID = null;
+    _memoryPageExpiresAt = _candidatePageExpiresAt = null;
+  }
+
+  Future<void> loadMoreMemories() => _loadMorePage(false);
+  Future<void> loadMoreCandidates() => _loadMorePage(true);
+  Future<void> _loadMorePage(bool candidate) async {
+    identityChanged();
+    if (!canReview || preview != null) return;
+    final cursor = candidate ? candidateNextCursor : memoryNextCursor,
+        deadline = candidate ? _candidatePageExpiresAt : _memoryPageExpiresAt;
+    if (cursor == null) return;
+    if (deadline?.isAfter(_now()) != true) {
+      if (candidate) {
+        candidateNextCursor = null;
+      } else {
+        memoryNextCursor = null;
+      }
+      error = '本页已到期，请重新读取当前记忆。';
+      _changed();
+      return;
+    }
+    busy = true;
+    error = null;
+    _changed();
+    try {
+      if (!_current) return;
+      if (candidate) {
+        final page = await api.candidatePage(
+          _boundToken!,
+          _boundOwner!,
+          cursor: cursor,
+        );
+        if (!_current) return;
+        if (page.agentID != _pageAgentID ||
+            candidateNextCursor != cursor ||
+            page.nextCursor == cursor)
+          throw const FormatException('分页来源不符');
+        final ids = candidates.map((c) => c.id).toSet();
+        candidates = List.unmodifiable([
+          ...candidates,
+          ...page.items.where((c) => ids.add(c.id)),
+        ]);
+        candidateNextCursor = page.nextCursor;
+        _candidatePageExpiresAt = page.expiresAt;
+      } else {
+        final page = await api.memoryPage(
+          _boundToken!,
+          _boundOwner!,
+          cursor: cursor,
+        );
+        if (!_current) return;
+        if (page.agentID != _pageAgentID ||
+            memoryNextCursor != cursor ||
+            page.nextCursor == cursor)
+          throw const FormatException('分页来源不符');
+        final ids = memories.map((m) => m.id).toSet();
+        memories = List.unmodifiable([
+          ...memories,
+          ...page.items.where((m) => ids.add(m.id)),
+        ]);
+        memoryNextCursor = page.nextCursor;
+        _memoryPageExpiresAt = page.expiresAt;
+      }
+    } catch (e) {
+      if (_current) {
+        if (e is CorrectionHTTPError && {401, 403}.contains(e.status)) {
+          denied = true;
+          retire();
+        } else {
+          if (e is FormatException ||
+              e is CorrectionHTTPError && e.status == 409) {
+            if (candidate) {
+              candidateNextCursor = null;
+            } else {
+              memoryNextCursor = null;
+            }
+          }
+          error = e is CorrectionHTTPError && e.status == 409
+              ? '列表或身份版本已变化，请重新读取首页。'
+              : '继续读取失败，已保留当前记录，请重试。';
         }
       }
     } finally {
@@ -566,6 +703,7 @@ class AgentMemoryCorrectionController extends ChangeNotifier {
     preview = null;
     memories = const [];
     candidates = const [];
+    _clearPages();
     unknown = true;
     message = '具体预览已到期，已清除本机审阅材料。仅保留原操作引用，请读取原结果；不会自动提交。';
     _changed();
@@ -629,6 +767,7 @@ class AgentMemoryCorrectionController extends ChangeNotifier {
     preview = null;
     memories = const [];
     candidates = const [];
+    _clearPages();
     storageBlocked = false;
     message = r.state == 'COMMITTED'
         ? (r.currentMatches

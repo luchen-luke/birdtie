@@ -11,8 +11,11 @@ import (
 )
 
 func (s *server) socialActivityActor(w http.ResponseWriter, r *http.Request, needsID bool) (identity.Actor, bool) {
-	a, _, err := s.actor(r, true)
+	a, digest, err := s.actor(r, true)
 	if authFailed(w, err) {
+		return identity.Actor{}, false
+	}
+	if !s.captureEntityCoverHTTP(w, r, a, digest) {
 		return identity.Actor{}, false
 	}
 	if a.AccountType != "person" {
@@ -91,7 +94,7 @@ func (s *server) createSocialActivityDraft(w http.ResponseWriter, r *http.Reques
 		socialActivityError(w, err)
 		return
 	}
-	respond(w, http.StatusCreated, map[string]any{"data": out})
+	s.respondManagedActivityCover(w, r, a, http.StatusCreated, out, []activitypublish.Activity{out})
 }
 
 func (s *server) listManagedBusinessOrganizers(w http.ResponseWriter, r *http.Request) {
@@ -121,7 +124,7 @@ func (s *server) updateSocialActivity(w http.ResponseWriter, r *http.Request) {
 		socialActivityError(w, err)
 		return
 	}
-	respond(w, http.StatusOK, map[string]any{"data": out})
+	s.respondManagedActivityCover(w, r, a, http.StatusOK, out, []activitypublish.Activity{out})
 }
 
 func (s *server) publishSocialActivity(w http.ResponseWriter, r *http.Request) {
@@ -134,7 +137,7 @@ func (s *server) publishSocialActivity(w http.ResponseWriter, r *http.Request) {
 		socialActivityError(w, err)
 		return
 	}
-	respond(w, http.StatusOK, map[string]any{"data": out})
+	s.respondManagedActivityCover(w, r, a, http.StatusOK, out, []activitypublish.Activity{out})
 }
 
 func (s *server) cancelSocialActivity(w http.ResponseWriter, r *http.Request) {
@@ -147,7 +150,7 @@ func (s *server) cancelSocialActivity(w http.ResponseWriter, r *http.Request) {
 		socialActivityError(w, err)
 		return
 	}
-	respond(w, http.StatusOK, map[string]any{"data": out})
+	s.respondManagedActivityCover(w, r, a, http.StatusOK, out, []activitypublish.Activity{out})
 }
 
 func (s *server) listSocialManagedActivities(w http.ResponseWriter, r *http.Request) {
@@ -160,7 +163,7 @@ func (s *server) listSocialManagedActivities(w http.ResponseWriter, r *http.Requ
 		socialActivityError(w, err)
 		return
 	}
-	respond(w, http.StatusOK, map[string]any{"data": out})
+	s.respondManagedActivityCover(w, r, a, http.StatusOK, out, out)
 }
 
 func (s *server) inviteSocialActivityPerson(w http.ResponseWriter, r *http.Request) {

@@ -65,13 +65,13 @@ void main() {
     await t.pump();
     expect(find.textContaining('来源更新时间：'), findsOneWidget);
     expect(find.textContaining('来源到期时间：'), findsOneWidget);
-    expect(find.textContaining('本次读取时间：'), findsOneWidget);
-    expect(find.textContaining('本次说明读取期限：'), findsOneWidget);
-    expect(find.textContaining('拍摄时间：未采集'), findsOneWidget);
-    expect(find.textContaining('不代表所有声明'), findsOneWidget);
+    expect(find.textContaining('本次读取时间：'), findsNothing);
+    expect(find.textContaining('本次说明读取期限：'), findsNothing);
+    expect(find.text('活动资料不代表实际出席。'), findsOneWidget);
+    expect(find.textContaining('不代表所有声明'), findsNothing);
     expect(workspace.selectedEntityId, selection);
     expect(workspace.result!.projectionItems!.single, same(items.single));
-    final open = find.widgetWithText(TextButton, '查看详情');
+    final open = find.byType(ListTile);
     await t.ensureVisible(open);
     await t.tap(open);
     expect(opened, same(items.single));
@@ -109,7 +109,7 @@ void main() {
     await t.pump(const Duration(seconds: 21));
     expect(find.textContaining('来源说明已失效'), findsOneWidget);
     expect(find.textContaining('来源更新时间：'), findsNothing);
-    await t.tap(find.text('查看详情'));
+    await t.tap(find.byType(ListTile));
     expect(opened, same(item));
     expect(find.text(item.title), findsOneWidget);
     await t.pumpWidget(const SizedBox());
@@ -146,7 +146,7 @@ void main() {
     await t.pump();
     expect(find.textContaining('来源说明已失效'), findsOneWidget);
     expect(metadata.current, isFalse);
-    await t.tap(find.text('查看详情'));
+    await t.tap(find.byType(ListTile));
     expect(opens, 1);
     expect(find.textContaining('source version'), findsNothing);
     await t.pumpWidget(const SizedBox());
@@ -203,7 +203,8 @@ void main() {
       ),
     );
     expect(find.text('查看来源与时间'), findsNothing);
-    expect(find.text('查看详情'), findsOneWidget);
+    expect(find.text('查看详情'), findsNothing);
+    expect(find.byType(ListTile), findsOneWidget);
     await t.pumpWidget(
       MaterialApp(
         home: Scaffold(
@@ -221,7 +222,7 @@ void main() {
     );
     await t.tap(find.text('查看来源与时间'));
     await t.pump();
-    expect(find.textContaining('非公开来源不会自动标为公开'), findsOneWidget);
+    expect(find.text('此结果暂无可核对的来源。'), findsOneWidget);
     expect(find.textContaining('来源更新时间：'), findsNothing);
     await t.pumpWidget(const SizedBox());
     changes.dispose();
@@ -272,7 +273,7 @@ void main() {
       await t.tap(expand);
       await t.pump();
       expect(find.textContaining('省略了 1 个对象'), findsOneWidget);
-      final open = find.widgetWithText(TextButton, '查看详情');
+      final open = find.byType(ListTile);
       await t.ensureVisible(open);
       await t.pumpAndSettle();
       expect(t.getSize(open).height, greaterThanOrEqualTo(48));

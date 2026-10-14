@@ -181,18 +181,15 @@ func nativeResolvedPlaceFromTaskTx(ctx context.Context, tx pgx.Tx, t agentworksp
 	if !hasID && !hasGeneration && !hasTopic {
 		return nativeResolvedPublicPlace{}, "", nil
 	}
-	if !hasID || !hasGeneration || !hasTopic || !egressUUID(id) || !livePlaceGeneration(generation) || t.Intent != agentworkspace.FindPlace || t.Filters["targetIntent"] != agentworkspace.FindPlace || (topic != "" && topic != agentworkspace.PlaceOpeningHours) {
+	if !hasID || !hasGeneration || !hasTopic || !egressUUID(id) || !livePlaceGeneration(generation) || t.Intent != agentworkspace.FindPlace || t.Filters["targetIntent"] != agentworkspace.FindPlace || !agentworkspace.ValidPlaceQuestionTopic(topic) {
 		return nativeResolvedPublicPlace{}, "", modelegressbudget.ErrDenied
 	}
 	place, e := nativePublicFollowupPlaceTx(ctx, tx, id, t.CityID, deadline)
 	if e != nil || place.generation != generation || place.name != t.Filters["searchTerm"] {
 		return nativeResolvedPublicPlace{}, "", modelegressbudget.ErrDenied
 	}
-	term := place.name
-	if topic == agentworkspace.PlaceOpeningHours {
-		term += " opening hours"
-	}
-	if strings.TrimSpace(term) != term || len(term) > 240 {
+	term, valid := agentworkspace.PlaceQuestionSearchTerm(place.name, topic)
+	if !valid {
 		return nativeResolvedPublicPlace{}, "", modelegressbudget.ErrDenied
 	}
 	return place, term, nil

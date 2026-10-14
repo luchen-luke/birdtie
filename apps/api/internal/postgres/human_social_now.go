@@ -76,7 +76,7 @@ const humanSocialRelations = `LOCK TABLE accounts,sessions,person_ties,connectio
  user_profiles,agents,agent_profiles,agent_profile_field_visibility,communities,community_memberships,activities,activity_organizers,
  activity_invitations,places,cities,contexts,person_contexts,follows,organizations,
  organization_memberships,businesses,business_memberships,business_venue_relations,
- venues,venue_candidates IN ACCESS SHARE MODE`
+ venues,venue_candidates,person_close_connections IN ACCESS SHARE MODE`
 
 type humanSocialPayload struct {
 	Now     time.Time             `json:"now"`
@@ -189,7 +189,7 @@ const humanTiePredicate = `t.status='active' AND (t.person_a_account_id=$1 OR t.
 // All JSON below is materialized by PostgreSQL from current native rows. It is
 // not caller JSON, a provider self-description, a calibrated model judgment or
 // a current-purpose authorization resolver for Agent processing.
-const humanSocialSQL = `WITH clock AS MATERIALIZED(SELECT clock_timestamp() AS n),
+var humanSocialSQL = `WITH clock AS MATERIALIZED(SELECT clock_timestamp() AS n),
  current_ties AS MATERIALIZED(SELECT t.id,t.created_at,
  CASE WHEN t.person_a_account_id=$1 THEN t.person_b_account_id ELSE t.person_a_account_id END AS peer
  FROM person_ties t JOIN connection_requests r ON r.id=t.request_id
@@ -202,7 +202,7 @@ const humanSocialSQL = `WITH clock AS MATERIALIZED(SELECT clock_timestamp() AS n
  WHERE $5 IN ('intents','intent') AND ($5<>'intent' OR i.id::text=$6)
  AND i.status='ACTIVE' AND i.expires_at>clock.n AND birdtie_social_intent_visible_to(i.id,$1::uuid)
  AND (i.audience<>'LOCAL' OR EXISTS(SELECT 1 FROM social_intent_audience_targets target JOIN cities city ON city.id=target.city_id WHERE target.intent_id=i.id AND city.publication_status='published' AND (city.expires_at IS NULL OR city.expires_at>clock.n)))
- AND (i.audience<>'FRIENDS' OR EXISTS(SELECT 1 FROM current_ties t WHERE t.peer=i.creator_account_id))
+ AND (i.audience NOT IN('FRIENDS','CONNECTIONS') OR EXISTS(SELECT 1 FROM current_ties t WHERE t.peer=i.creator_account_id))
  AND (i.audience<>'COMMUNITY' OR EXISTS(SELECT 1 FROM social_intent_audience_targets target
  JOIN communities c ON c.id=target.community_id AND c.lifecycle_status='active' AND c.publication_status='published'
  WHERE target.intent_id=i.id AND (c.expires_at IS NULL OR c.expires_at>clock.n)))
@@ -252,7 +252,7 @@ const humanSocialSQL = `WITH clock AS MATERIALIZED(SELECT clock_timestamp() AS n
  AND ($4::boolean OR s.authentication_method<>'dev_phone') AND a.account_type='person' AND a.status='active')
  SELECT CASE WHEN EXISTS(SELECT 1 FROM current_authority) THEN jsonb_build_object(
  'now',(SELECT n FROM clock),
- 'ties',CASE WHEN $5='ties' THEN coalesce((SELECT jsonb_agg(jsonb_build_object('id',t.id,'otherAccountId',t.peer,'otherName',CASE WHEN birdtie_agent_profile_field_allowed(t.peer,$1::uuid,'displayName') THEN coalesce(nullif(p.display_name,''),nullif(peer.handle,''),'Birdtie 成员') ELSE 'Birdtie 成员' END,'createdAt',t.created_at) ORDER BY t.created_at DESC,t.id DESC) FROM (SELECT * FROM current_ties ORDER BY created_at DESC,id DESC LIMIT 100) t JOIN accounts peer ON peer.id=t.peer LEFT JOIN user_profiles p ON p.account_id=t.peer),'[]'::jsonb) ELSE '[]'::jsonb END,
+ 'ties',CASE WHEN $5='ties' THEN coalesce((SELECT jsonb_agg(jsonb_build_object('id',t.id,'otherAccountId',t.peer,'otherName',CASE WHEN birdtie_agent_profile_field_allowed(t.peer,$1::uuid,'displayName') THEN coalesce(nullif(p.display_name,''),nullif(peer.handle,''),'Birdtie 成员') ELSE 'Birdtie 成员' END,'createdAt',t.created_at,'avatar',birdtie_person_avatar_metadata(t.peer,$1::uuid)) ORDER BY t.created_at DESC,t.id DESC) FROM (SELECT * FROM current_ties ORDER BY created_at DESC,id DESC LIMIT 100) t JOIN accounts peer ON peer.id=t.peer LEFT JOIN user_profiles p ON p.account_id=t.peer),'[]'::jsonb) ELSE '[]'::jsonb END,
  'intents',coalesce((SELECT jsonb_agg(` + humanIntentJSON + ` ORDER BY i.created_at DESC,i.id DESC) FROM visible_intents i),'[]'::jsonb),
  'inputs',jsonb_build_object('Intents',coalesce((SELECT jsonb_agg(` + humanIntentJSON + ` ORDER BY i.created_at DESC,i.id DESC) FROM own_intents i),'[]'::jsonb),
  'Supply',coalesce((SELECT jsonb_agg(DISTINCT payload) FROM supply),'[]'::jsonb),

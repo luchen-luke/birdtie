@@ -46,7 +46,16 @@ void main() {
       lessThan(tester.getTopLeft(card).dy),
     );
     expect(tester.widget<TextButton>(source).onPressed, isNotNull);
-    expect(find.textContaining('来源：本地测试来源甲'), findsOneWidget);
+    expect(
+      find.descendant(of: source, matching: find.text('来源')),
+      findsOneWidget,
+    );
+    await tester.tap(source);
+    await tester.pumpAndSettle();
+    expect(find.text('本地测试来源甲'), findsOneWidget);
+    expect(find.byTooltip('关闭来源详情'), findsOneWidget);
+    await tester.tap(find.byTooltip('关闭来源详情'));
+    await tester.pumpAndSettle();
 
     await tester.tap(card);
     expect(opened, same(reply.projectionItems!.single));

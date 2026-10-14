@@ -224,6 +224,15 @@ func (s *Store) PutOwnMemoryEvidence(ctx context.Context, access agentprofile.Pr
 		return agentmemory.Evidence{}, agentmemory.ErrUnavailable
 	}
 	if !missing {
+		if current.Source != nil && current.Source.Type == agentevent.ParticipationSource {
+			var invalidated bool
+			if tx.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM agent_memory_source_invalidations inv WHERE inv.owner_id=$1 AND inv.source_type='ACTIVITY_PARTICIPATION' AND inv.source_id=$2 AND inv.created_at>=$3::timestamptz)`, b.accountID, current.Source.ID, current.ObservedAt).Scan(&invalidated) != nil {
+				return agentmemory.Evidence{}, agentmemory.ErrUnavailable
+			}
+			if invalidated {
+				return agentmemory.Evidence{}, agentmemory.ErrConflict
+			}
+		}
 		if current.Status != "CURRENT" || current.MemoryVersion != m.Version || current.Source == nil || !reflect.DeepEqual(*current.Source, source) {
 			return agentmemory.Evidence{}, agentmemory.ErrConflict
 		}
@@ -374,6 +383,7 @@ func (s *Store) ReadOwnMemoryProvenance(ctx context.Context, access agentprofile
 	 UNION ALL SELECT * FROM (` + correlate(participation) + `) z WHERE e.source_type='ACTIVITY_PARTICIPATION'
 	 UNION ALL SELECT * FROM (` + correlate(place) + `) z WHERE e.source_type='SAVED_PLACE') src
 	 WHERE $2::uuid IS NULL AND e.memory_id=$3 AND e.agent_id=$4 AND e.owner_id=$1 AND e.status='CURRENT' AND e.memory_version=$6
+	 AND NOT(e.source_type='ACTIVITY_PARTICIPATION' AND EXISTS(SELECT 1 FROM agent_memory_source_invalidations inv WHERE inv.owner_id=e.owner_id AND inv.source_type=e.source_type AND inv.source_id=e.source_id AND inv.created_at>=e.observed_at))
 	 AND m.version=$6 AND m.agent_id=$4 AND m.owner_id=$1 AND m.status='ACTIVE' AND m.source_type='EXPLICIT'
 	 AND m.valid_from<=clock_timestamp() AND m.valid_until>clock_timestamp() AND ses.revoked_at IS NULL AND ses.expires_at>clock_timestamp()
 	 AND ses.idle_expires_at>clock_timestamp() ORDER BY e.observed_at,e.id`

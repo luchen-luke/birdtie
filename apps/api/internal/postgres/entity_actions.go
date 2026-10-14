@@ -278,7 +278,7 @@ UNION ALL SELECT 'venue-operator',o.id::text,concat_ws(':',o.xmin::text,a.xmin::
  SELECT scope.value#>>'{}' FROM agent_profile_field_visibility v CROSS JOIN LATERAL jsonb_array_elements(coalesce(v.rules->'displayName'->'communityIds','[]'::jsonb)) scope(value)
  WHERE v.owner_id=$1 AND v.rules->'displayName'->>'visibility'='COMMUNITY')),
  action_source AS MATERIALIZED (SELECT * FROM (` + source + `) original_source WHERE NOT $6::boolean OR ($5='place' OR ($5='activity' AND EXISTS(SELECT 1 FROM activities public_activity WHERE public_activity.id=$1 AND public_activity.visibility='public')))),share_source AS MATERIALIZED (` + share + `),
- current_session AS MATERIALIZED(SELECT se.id,se.created_at,se.expires_at,se.idle_expires_at,se.authentication_method,a.xmin::text account_epoch
+ current_session AS MATERIALIZED(SELECT se.id,se.created_at,se.expires_at,se.idle_expires_at,se.authentication_method,se.authorization_generation,a.xmin::text account_epoch
  FROM sessions se JOIN accounts a ON a.id=se.account_id CROSS JOIN action_clock WHERE se.token_sha256=$3 AND se.account_id=$2 AND a.account_type='person' AND a.status='active' AND se.revoked_at IS NULL AND se.expires_at>n AND se.idle_expires_at>n AND ($4::boolean OR se.authentication_method<>'dev_phone'))
  SELECT n,least(n+interval '30 seconds',(SELECT least(expires_at,idle_expires_at) FROM current_session),
  (SELECT a.expires_at FROM activities a WHERE a.id=$1),(SELECT a.ends_at FROM activities a WHERE a.id=$1 AND a.ends_at>n),
@@ -290,7 +290,7 @@ UNION ALL SELECT 'venue-operator',o.id::text,concat_ws(':',o.xmin::text,a.xmin::
  (SELECT min(r.expires_at) FROM connection_requests r WHERE r.sender_account_id=$2 AND r.state='pending' AND r.expires_at>n),
  (SELECT min(v.expires_at) FROM venues v WHERE v.place_id IN(SELECT place_id FROM activities WHERE id=$1) AND v.expires_at>n)),
  ($6::boolean OR EXISTS(SELECT 1 FROM current_session)),EXISTS(SELECT 1 FROM action_source),coalesce((SELECT title FROM action_source),''),` + entityActionFactsSQL() + `,
- encode(sha256(convert_to(jsonb_build_array((` + closure + `),(SELECT jsonb_build_array(id,created_at,expires_at,authentication_method,account_epoch) FROM current_session))::text,'UTF8')),'hex')
+ encode(sha256(convert_to(jsonb_build_array((` + closure + `),(SELECT jsonb_build_array(id,created_at,expires_at,authentication_method,authorization_generation,account_epoch) FROM current_session))::text,'UTF8')),'hex')
  FROM action_clock`
 	q = strings.Replace(q, entityActionFactsSQL(), facts, 1)
 	return strings.NewReplacer("clock_timestamp()", "(SELECT n FROM action_clock)").Replace(strings.Replace(q, "SELECT clock_timestamp() n", "SELECT statement_timestamp() n", 1))

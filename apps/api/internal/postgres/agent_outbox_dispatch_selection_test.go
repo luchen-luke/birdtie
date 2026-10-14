@@ -119,6 +119,70 @@ func readyControlDispatchTx() *outboxDispatchUnitTx {
 	return &outboxDispatchUnitTx{at: at, locked: true, record: controlDispatchRecord(at, controlOwnerA), heads: []ar.DispatchTenant{{Owner: controlOwnerA, NextDue: at.Add(-time.Minute)}}}
 }
 
+type mixedDispatchUnitTx struct {
+	*outboxDispatchUnitTx
+	handler   agentoutbox.HandlerVersion
+	familyErr error
+}
+
+func (x *mixedDispatchUnitTx) QueryRow(ctx context.Context, q string, args ...any) pgx.Row {
+	if q != mixedOutboxFamilySQL {
+		return x.outboxDispatchUnitTx.QueryRow(ctx, q, args...)
+	}
+	x.commands = append(x.commands, q)
+	x.args = append(x.args, args)
+	x.selected++
+	return dispatchUnitRow{fn: func(d []any) error {
+		if x.familyErr != nil {
+			return x.familyErr
+		}
+		*d[0].(*agentoutbox.HandlerVersion) = x.handler
+		return nil
+	}}
+}
+func TestMixedMaintenanceUnitNativeSelectorWholeFamilyNomination(t *testing.T) {
+	for _, handler := range []agentoutbox.HandlerVersion{agentoutbox.HandlerV1, agentoutbox.MemoryHandler, agentoutbox.PreferenceHandler, agentoutbox.TaskRequestHandler, agentoutbox.ParticipationHandler} {
+		t.Run(string(handler), func(t *testing.T) {
+			x := &mixedDispatchUnitTx{outboxDispatchUnitTx: readyControlDispatchTx(), handler: handler}
+			last := x.at.Add(-time.Second)
+			x.heads = []ar.DispatchTenant{{Owner: controlOwnerA, LastServed: &last, NextDue: x.at.Add(-10 * time.Minute)}, {Owner: controlOwnerB, NextDue: x.at.Add(-time.Second)}}
+			owner, h, at, e := selectMixedOutboxControlTx(context.Background(), x, "")
+			if e != nil || owner != controlOwnerB || h != handler || at != x.at || len(x.commands) != 4 || x.commands[0] != outboxControlDispatchLockSQL || x.commands[1] != outboxControlDispatchCountSQL || x.commands[2] != mixedOutboxDispatchHeadsSQL || x.args[3][0] != controlOwnerB || x.args[3][1] != x.at || x.args[2][1] != nil || x.args[2][2] != agentoutbox.MaxControlTenantHeads || !x.rows.closed {
+				t.Fatal("mixed nomination changed native admission/owner/order", owner, h, e, x.commands, x.args)
+			}
+			if strings.Contains(mixedOutboxFamilySQL, "FOR UPDATE") || strings.Contains(mixedOutboxDispatchHeadsSQL, "FOR UPDATE") {
+				t.Fatal("nomination took event locks before the original trusted source claim")
+			}
+		})
+	}
+}
+func TestMixedMaintenanceUnitNativeSelectorCapacityAndClosedFamily(t *testing.T) {
+	for _, c := range []struct {
+		name   string
+		change func(*mixedDispatchUnitTx)
+		want   error
+	}{
+		{"busy-lock", func(x *mixedDispatchUnitTx) { x.locked = false }, agentoutbox.ErrDispatchBusy},
+		{"global-four", func(x *mixedDispatchUnitTx) { x.active = 4 }, agentoutbox.ErrDispatchBusy},
+		{"owner-one", func(x *mixedDispatchUnitTx) { x.active = 1; x.heads[0].Active = 1 }, agentoutbox.ErrDispatchBusy},
+		{"empty", func(x *mixedDispatchUnitTx) { x.heads = nil }, agentoutbox.ErrNotFound},
+		{"family-retired", func(x *mixedDispatchUnitTx) { x.familyErr = pgx.ErrNoRows }, agentoutbox.ErrDispatchBusy},
+		{"unknown-family", func(x *mixedDispatchUnitTx) { x.handler = "invented-handler" }, agentoutbox.ErrUnavailable},
+		{"v2-not-mixed", func(x *mixedDispatchUnitTx) { x.handler = agentoutbox.HandlerV2 }, agentoutbox.ErrUnavailable},
+		{"foreign-owner", func(x *mixedDispatchUnitTx) { x.heads[0].Owner = controlOwnerB }, agentoutbox.ErrUnavailable},
+		{"clock-regression", func(x *mixedDispatchUnitTx) { x.at = time.Time{} }, agentoutbox.ErrUnavailable},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			x := &mixedDispatchUnitTx{outboxDispatchUnitTx: readyControlDispatchTx(), handler: agentoutbox.MemoryHandler}
+			c.change(x)
+			owner, h, _, e := selectMixedOutboxControlTx(context.Background(), x, controlOwnerA)
+			if e != c.want || owner != "" || h != "" {
+				t.Fatal("mixed selection escaped closed failure", owner, h, e)
+			}
+		})
+	}
+}
+
 func TestAgentOutboxControlDispatchUnitOriginalClaimQuota(t *testing.T) {
 	for _, tc := range []struct {
 		name        string

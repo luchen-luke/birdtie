@@ -99,6 +99,17 @@ http.Response nowResponse(Map<String, dynamic> v) => http.Response(
   headers: {'content-type': 'application/json; charset=utf-8'},
 );
 void main() {
+  for (final audience in ['FOLLOWERS','CONNECTIONS','CLOSE','FRIENDS']) {
+    test('实际API解码新受众 $audience 并保持原字段约束', () async {
+      final item=nowItem();item['intent']['audience']=audience;
+      final api=ActiveSocialIntentAPI(client:MockClient((_)async=>nowResponse(nowList(item))));
+      addTearDown(api.dispose);
+      final current=await api.list('Bearer synthetic',nowOwner);
+      expect(current.items.single.intent['audience'],audience);
+      expect(current.items.single.draft['audience'],audience);
+      expect(current.items.single.intent.containsKey('inviteeAccountIds'),false);
+    });
+  }
   test(
     'converted association is strict optional trio and not sent back as draft authority',
     () {

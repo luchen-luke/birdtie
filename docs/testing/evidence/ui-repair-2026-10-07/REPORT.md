@@ -2,11 +2,11 @@
 
 更新时间：2026-10-08。正式仓库：`D:/Project/birdtie`。状态：**PARTIAL，未完成整体验收**。
 
-最新检查点：广州 TokenHub `deepseek-v4-pro-0813` 已取得真实生成成功。API14/原 APK12 在同一手机完成 Gallery 首问、周末开放时间代词追问、换 Museum 的三轮真实 WSA+模型回答；原任务保存三组来源和实体，卡片、详情、地图及 Recent/冷启动后的恢复已核验。42 条整体仍 **PARTIAL**；附件、通用多轮、Save/原能力完整回归、来源权威性判断及其他验收缺口没有标为完成。详见文末 API13–14 检查点。下列旧构建的 401006、NOT_IMPLEMENTED 和费用数值保留为历史，不能当作当前结论。
+当前检查点为 **API16 / APK14，限定真机链路已核验、整体验收 PARTIAL**：实际 API16 图片 HTTP 链与同一旧 Task 的真实 WSA+DeepSeek 交通追问通过。正确本人账户在 APK14 恢复 8 条 Recent，原四轮 Task 显示最新来源、Museum 卡与真实 Mapbox pin；同 Museum 卡→地图→详情→返回会话保留选择，以及原 user 消息的合成私有图片两次复核、准备、保存、读取像素与明确删除已取得设备证据。图片仅供本人阅读，**不是模型输入或检索答案**。四段精选原视频已核对实际时长、哈希及代表帧；范围见 [CHECKPOINT16-DEVICE.json](CHECKPOINT16-DEVICE.json)。**手机安全存储 journal 冷启动、首次无 Task 附件、AI 视觉、生产 IdP 与完整回归 NOT_RUN**。API16/APK13 和 CHECKPOINT16.json 为此前整理快照，原 API14/APK12 视频为历史；42 条整体仍 PARTIAL。
 
 来源为用户指定的 `D:/Project/birdtie/BirdTie-UI-Repair-Package-2026-10-07.zip` 中 01–05 文件及 42 条候选。修复复用原 `BT-FIX-NOW-UI-001`、AIR、AGE 与领域任务，未创建平行队列。原任务历史、未提交工作及旧 worktree 均保留。本报告是实际改动与证据记录。
 
-## 实际代码
+## 前序检查点实际代码（最新增量见文末 API16 / APK14）
 
 - `sidebar.dart`：权限驱动组织导航，底部同一行左新建、右账户；历史在中间滚动，个人资产、组织和原账号菜单保留。
 - `organization_workspaces.dart`：401/403、角色撤销、账号变化与迟到响应退役；仅身份/角色实际变化才清退旧工作区请求。
@@ -40,7 +40,7 @@ Mapbox 新公开移动令牌已放入被 Git 忽略的本地配置，实际瓦�
 - 同 APK05/API05 的会话/地图切换执行 **20 对**，每对保存地图和会话截图，命令全部 exit 0。20 张地图截图的裁剪区像素完全相同；首、末地图与末会话人工检查同一体育馆、3 个地点及同一视野。`device/switch-cycles-05/receipt.json`、`visual-check.json` 与 `device/build05-switches.mp4`。这是该开发结果集的视图稳定性证据，不是所有地图点选/身份/性能矩阵通过。
 - 修复前的特定缺陷证据：`device/build04-before-followup.mp4`（APK04，3→0）；修复后 APK05 为 3→3。前后修复包是不同 APK，明确区分；APK05 内连续操作和 20 对切换属于同一构建。没有原始整套 UI 修复前的完整录屏，记 **NOT_RUN**。
 
-## 实际运行边界
+## API05 当时的运行边界（历史，后续检查点已增量更新）
 
 只启动本次自有只读 API（127.0.0.1:18090），在录屏检查点核验旧自有进程的准确 exe/监听端口后替换为 API05。连接已有隔离开发数据库 `birdtie_oct07_phone_ec1d5cb204`，没有导入、重置或执行 migration；PostgreSQL 强制只读。站内匿名地点查询实际 HTTP 200、规则回答与 3 个开发地点可用；这些来源是 **dev-seed:// 开发示例**，不是真实城市供给或联网来源。详情中的公开摘要目前不可用，没有计为成功。
 
@@ -50,7 +50,7 @@ Mapbox 新公开移动令牌已放入被 Git 忽略的本地配置，实际瓦�
 
 AIR-009 已在 UI 自然检查点后串行接续。`tencent_tokenhub.go`/测试修复默认 HTTP/2/请求体重放与连接复用的隐藏重发风险，固定 HY3 `thinking.type=disabled`，完善空搜索与缓存 token 合同；modelgateway **379 测试及子测试 PASS，0 FAIL/0 SKIP**，凭证 `tencent-wire-fix-01.result.json`。此后端增量发生在 API05 构建之后，未声称已包含在 APK05/API05 中，也未声称真实派发可用。
 
-## 尚未验收
+## API05 当时尚未验收（历史状态）
 
 - 真实模型 + 站内/联网检索 + 来源链接 + 可点实体 + 同结果地图 + 多轮完整闭环：**PARTIAL / 首次真实尝试 FAILED**，模型、来源回答与同构建多轮验收仍 NOT_RUN。
 - 开发地点 UI/地图连续流程和特定缺陷前后录屏：已取得历史证据；真实官网 Place 已通过原流程发布到批准的隔离库。后续 APK07 已实际打开官网来源，见检查点；真实检索回答完整闭环仍未完成。dev-seed 链接不能证明真实 HTTP(S) 来源打开。
@@ -245,3 +245,64 @@ API14 三轮各 CALL ¥0.08、TOKEN ¥0.168192，新增最坏占用 **¥0.744576
 此次证明限定于批准隔离库、本人CITY、已发布唯一地点的开放时间和显式换地点。未知/歧义地点、通用多轮、地图发起地点续问/任意pin/cluster、Save及原组织/聊天/活动/提醒/资产完整回归仍未验收。地图“搜索此区域”仍为 Activity AreaDiscovery，不称已继承地点开放时间语境。
 
 真实回答质量仍有缺口：Gallery第二轮把 Aberdeen Inspired 的[source-1]称为“官方来源”，它不是卡片的 Council 官网；Museum来源的周日开放时间互相冲突。初问文字称资料未给地址，但站内卡片有已审核Schoolhill地址；模型当前只收到允许的联网片段。**来源权威性归类与全部事实一致性未修复/未验收**，不能写开放时间已由市政府官网核验。Now附件仍UNCONNECTED；紧凑登录待办恢复、历史搜索、逐会话持久草稿、完整Business导航、Moment/story卡、全产品tokens、读屏/其他平台及原LIVE/生产门槛保持原状态。42候选未批量改DONE。
+
+## 2026-10-08 API16 / APK14：登录、会话图片与来源规则增量
+
+本次接续用户指出的真实缺口，归属原 `BT-FIX-NOW-UI-001`，没有另起项目或队列。开发阶段只运行相关单元测试；全套回归与全量 analyze 本次 **NOT_RUN**，待功能完成后统一执行。四个原队列/状态文件的 SHA256 与此前相同，原 Task/Run、原费用 UNKNOWN 记录保留。[CHECKPOINT16.json](CHECKPOINT16.json) 是此前 API16/APK13 的整理快照；当前 API16/APK14 的限定真机证据见 [CHECKPOINT16-DEVICE.json](CHECKPOINT16-DEVICE.json)，42 条映射见 [TASK-MAPPING.md](TASK-MAPPING.md)。这份记录不把部分能力标成原领域任务 DONE。
+
+### 实际改动文件
+
+| 文件（相对于正式仓库） | 实际变化与限制 |
+|---|---|
+| `apps/client/lib/src/auth/birdtie_auth_controller.dart`、新增 `birdtie_login_sheet.dart`、`account_access_notice.dart`；`dev_phone_login_sheet.dart` | `/me` 完成前显示恢复中；统一登录在途归属，串行保管凭据/挑战；旧回调不能消费新挑战或覆盖新账号。紧凑方法选择器可取消、就地回到原页面。成功登录仍沿用原隐私行为清理 Now 草稿/任务，**没有自动恢复此前 Save/Inbox 待办**。 |
+| `workspace/sidebar.dart`、`inbox.dart`、`activity_plans.dart`、`saved_items.dart`、`map_workspace.dart`；`legacy/legacy_shell.dart` | 游客/恢复中提供紧凑真实登录及返回入口；仅授权身份实际变化刷新个人数据。新 auth 对象配旧数据源时拒绝读取/动作，阶段通知不重复 GET；跨路由构建通知延迟到帧后。原组织、聊天、活动、Saved 入口保留，完整真机回归未运行。 |
+| 新增 `workspace/task_image_controller.dart`、`task_image_page.dart`、`task_image_pending_store.dart`；`agent_composer.dart`、`agent_conversation.dart`、`agent_result_sheet.dart`、`map_workspace.dart` | 仅已接通原接口、原本人 CITY Task 有 user 消息时显示“会话图片”加号。真实系统图库→遮罩复核→元数据 preview→明确确认上传→原 user 消息图片→ fresh 读取/明确删除。账号、城市、任务、前缀及页面更换后迟到像素不得进入新页面；流读取完成再校验摘要、MIME、大小与到期。**助手暂不读取图片**；首次无 Task 的附件、AI 视觉与其他素材类型没有接通。 |
+| 新增 `apps/api/internal/media/task_image.go`、`postgres/human_task_images.go`、`httpapi/agent_task_images.go`；原 `httpapi/server.go` 六个路由；迁移 `113_human_task_message_images.sql/.down.sql` | 原会话消息与原 media_assets 显式关联，JPEG/PNG 解码并重新编码去元数据。当前本人/acting/原 Agent/City/Session 授权代次与原消息前缀检查；读写结束与提交前复核。原 Task/conversation/membership 不改写，图片不进入 WSA/模型。删除为原媒体墓碑。113 仅应用到用户批准的原隔离验证库。 |
+| 同上 preview operation GET；client pending store | metadata 持久日志仅存原 owner/Task/context 与原上传摘要，不存文本、像素、密钥或批准。先持久记录再写接口；UNKNOWN/冷启动只能核实原 operation，不自动 POST/PUT。过期/新会话 preview 只可返回 `invalidated_preview` 元数据并明确删除，不能沿用批准上传；真实跨 Session 恢复与清理已通过，手机安全存储冷启动 **NOT_RUN**。 |
+| `postgres/human_task_images.go`、`human_moment_media.go` | 实际 API15 图片 save503 查明为同参数 text/uuid 类型冲突，改为显式 UUID 后拼接私有 key。API16 原 Task 保存成功。Moment 同 SQL 参数位置同步修正，但 Moment 实际保存 **NOT_RUN**，不声称整项回归通过。 |
+| 新增 `modelegressbudget/live_source_answer.go`；`postgres/model_request_live_sources.go`、`model_request_live_reply.go`；`cmd/now-live-verify/source_policy.go` 与原 CLI/prepare | v2 只接受当轮真实 source 编号与 URL host，严格拒绝畸形引用、虚构域名和未经证明的“官方/权威”措辞。旧 v1 不可变历史保留；v2 在原配置/CAS 路径登记为 revision602。使用量先记原账本，拒绝回答不自动重试或退款 UNKNOWN。**文字规则不能证明所有事实或所有权威性语义**，完整来源分类与事实一致性仍 PARTIAL。 |
+| `agentworkspace/place_followup.go`、`httpapi/agent_place_followup.go`、`postgres/agent_place_followup.go` | 在原成功 Place refs 与当前公开地点基础上支持 opening/admission/accessibility/transport/public_information；歧义与行动意图继续明确拒绝，既有创建/检索优先级保留。不是通用任意多轮；不导出私有历史、画像或附件。 |
+| 新增/修改的对应 `_test.go`、`auth_*_test.dart`、`native_oidc_auth_test.dart`、`task_image_*_test.dart` | 真实针对 source、解析、登录边界、图库/二进制/页面 ABA 与日志重建的单元覆盖。没有以 mock 单元代替真实图库、模型或地图验收。 |
+
+### 单元结果（范围重叠，不累加）
+
+| 范围及原始目录（均在 `work/ui-repair-2026-10-07`） | 实际结果 |
+|---|---|
+| source v2 与 native source validator：`source-and-followup-15-02` source group | 37 PASS / 0 FAIL / 0 SKIP；SQL NOT_RUN |
+| Place public followup：同目录 followup group | 59 PASS / 0 FAIL / 0 SKIP；SQL NOT_RUN，含 HTTP doubles |
+| 原 source-policy 维护 CLI：`source-policy-maintenance-15-01` | 3 PASS / 0 FAIL / 0 SKIP |
+| 认证恢复/OIDC/DevPhone：`auth-serialization-15-02` | 12 PASS / 0 FAIL / 0 SKIP |
+| 登录挑战与迟到边界：`auth-boundaries-15-01` | 5 PASS / 0 FAIL / 0 SKIP |
+| auth/个人数据源与 UI：`client-boundaries-15-02` | 30 PASS / 0 FAIL / 0 SKIP |
+| 图片 controller/composer/MapWorkspace：`task-images-client-unit-15-03` | 30 PASS / 0 FAIL / 0 SKIP |
+| 最新图片 controller/Page：`task-image-expiry-16-04` | 16 PASS / 0 FAIL / 0 SKIP；含冷恢复、失效 preview 不可 PUT、晚到/到期像素、同 key Page A→B，以及取消删除或另一次读取失败后原图片到期清理；替代此前 `task-image-page-boundaries-16-02` 的14 PASS检查点，原日志保留，与上述图片范围重叠 |
+| 新原生图片纯单元：`task-images-native-unit-16-01` | 24 PASS / 0 FAIL / 0 SKIP（8 顶层，其余子测试）；此单元命令 SQL NOT_RUN |
+| 安全 metadata journal：`task-image-journal-01/freeze-02.json` | 26 PASS / 0 FAIL / 0 SKIP；输入字节前后相同 |
+
+静态 UI 检测对本次五个组件输出空 finding，exit0；`git diff --check` 无错误。这不等于全量 analyze、生产授权集成或真机通过。本次的 SQL503、假异步 widget 挂起、早期认证用例失败和一次收据脚本失败原始记录保留；最终相关单元通过没有改写旧失败或旧全 Go FAILED。
+
+### 实际 API16 原生图片链
+
+在批准的隔离库 `birdtie_ui_live_20261008_b160550993`，对原 Task `4f34622c-66c7-4575-9f3a-384a66c3844f` 第4条真实 user 消息执行原 HTTP：preview201、同 operation 重放201/同 ID、缺确认400、明确确认 save200、list200、binary200、ready operation200；binary SHA/大小/MIME 与 fresh 回执一致，PNG 元数据 canary 不再出现。组织作用域403、错误 revision409；删除204及幂等删除204、删后 binary404、operation 墓碑200。测试图片明确是**合成 PNG 的媒体契约验证 fixture，不是模型回答、测试活动或公共地点**；最终已删像素。整个原 Task JSON 与原 Task/Run/budget/reservation 哈希前后相同，供应商调用0。凭据：`task-images-native-http-16-01/receipt.json`。
+
+API15 已提交但保存失败的 preview，使用新 Session 在 API16 核实原 operation，返回200/`invalidated_preview`，随后显式 DELETE204及 deleted operation200。原 Task/Run/预算仍未改写，供应商调用0。没有根据 UNKNOWN/409重建或自动续上传。凭据：`task-image-preview-recovery-http-16-01/receipt.json`；原 API15 失败保留在 `task-images-native-http-15-01/failure.receipt.json`。
+
+### 实际 API16 真实联网追问
+
+原 Task 上一次提交 **`How do I get there?`**，HTTP **200**、业务错误码 **NONE**，原 Run `6e8e1ef8-149c-43c1-9c61-62fd7ca474a7` FINISHED。Birdtie request_id **`98f564b61af2f1e38a9ed4385604f49e`**；模型上游 request_id 为 **NOT_AVAILABLE_IN_PERSISTED_ORIGINAL_RUN**，没有拿 Birdtie ID 冒充腾讯 ID。地址仍为广州 `https://tokenhub.tencentmaas.com/v1/chat/completions`，精确 `deepseek-v4-pro-0813`；从 Windows User 级环境变量在同进程读取，不输出密钥或回退旧配置。
+
+真实回答给出 Shiprow、市中心/交通/停车的来源编号，并明确两个来源对周日开放时间有冲突、尚未核实；三个 site 与真实 URL host 相符，未再把旅游站点称为“官方”。原六条消息逐条保持，新增 user/assistant 分别为6/7；该轮 refs、resultSet entity/detail/anchor 与 map pin 同为 Museum `bea8ee0c-9c09-4951-8f0c-8c5819e91c2d`。这是**原 HTTP 返回的数据一致性证据**，凭据 `source-answer-live-http-16-01/receipt.json`。此前 APK13 的设备操作未运行；当前 API16/APK14 已实际观察同 Museum 卡、Mapbox pin、详情与返回对话，覆盖范围和录屏核验限制见下节，不扩展为完整双向操作矩阵通过。
+
+只有这一次 Now POST，无自动重试。新增 CALL 上界 ¥0.08、TOKEN 上界 ¥0.168192，每请求均≤¥0.20；model usage 为1041 input/142 output，新增上界占用 ¥0.248192。原两个镜像 scope 各 **¥2.388320 / ¥10**，不能双加；现金账单及免费抵扣仍 UNKNOWN。旧 Run、旧 reservation 哈希保持，没有释放旧 UNKNOWN。
+
+### 构建、录屏与仍未完成项
+
+- API16 SHA256 **`64ec29d1101d7dc2dfd29419c061eb4596834e7cfe1bcfeaf94bcc2f258b4c9f`**；API build exit0，1314 个输入冻结。原标签误写 API15 的收据未覆盖，`build16-backend-01/command-label-correction.json` 记录真实 argv/exe 是 API16。
+- 历史 APK13 SHA256 **`192cb5e7db55ccbcaddac23ab5dbaf31c3a7d1f44f492f398d7c47edc5a4076e`**；当时 debug build exit0，255 个生产/构建输入与忽略的地图定义配置前后相同。凭据 `build13-client-01/receipt.json`；`device/build13-live.apk` 与其设备 NOT_RUN 记录保留，不作为当前源码或手机证据。
+- 当前 APK14 SHA256 **`e2277f15c21f71de7394c567d573cb5545ac1359f384da627e73af32aa341300`**；debug build exit0，255 个生产/构建输入前后一致，现已逐项核对与当前源码相同，地图定义配置未变。凭据 `build14-client-01/receipt.json`；APK `device/build14-live.apk`。沿用同 API16、原数据与原 Task，没有用旧 APK12 视频替代当前观察。
+- 仅在准确自有进程/exe/端口、0活动 Run及0其他写事务的检查点替换 API15→API16；沿用原隔离库、原路由/预算、原 Task。`safe-checkpoint-before-api16-01.json`、`tokenhub-model-fix/live16-api-01.receipt.json`。该检查点 adb 无设备；当前手机已连接并在 API16/APK14 上继续验证。
+- **同构建地点链路**：最初 Recent 空是测试手机号输错，未确认为代码缺陷；切到正确本人账户后实际恢复8条 Recent。原四轮 Task `4f34622c-66c7-4575-9f3a-384a66c3844f` 显示最新来源与 Museum 卡。未裁剪 `device/api16-apk14-card-map-detail-06.mp4` 的容器实际时长为 **5.573389 秒**，不是录制命令起止间隔的约7秒；已通过 ffprobe 和解码后的 view_image 检查0.0秒卡/来源、1.2秒 Mapbox 选中 pin、3.2秒同 Museum/Shiprow 详情及5.5秒返回会话卡面板且保留选择。它没有覆盖完整四轮提交或来源官网加载。
+- **同构建会话图片**：根代理在手机系统图库选入明确标注的合成 PNG。`image-confirm-save-12.mp4` **2.979700 秒**显示首次勾选、准备、预览后重新勾选与保存启动，但结束时请求仍在进行，不能仅凭该段称保存完成。原 `task-image-device-16-01/ready-receipt.json` 的200/`ready_private`及 SHA 校验，与 `image-read-13.mp4` **1.001367 秒**实际像素展示共同证明保存和读取；图片 `31e3e3f2-25e9-4eb6-b592-91d597a8f536` 绑定 messageIndex6（界面第7条消息）。`image-remove-14.mp4` **2.816489 秒**显示明确确认删除，随后像素清空、列表为空，after 收据也为0张。三段文件名均以 `api16-apk14-` 开头；精选视频不包含系统图库过程，不能扩称所有相册/权限场景通过。
+- 四段 start/stop JSON 均绑定上述 API16/APK14，原视频 SHA 与实际文件一致。原 Task 数据及 Task/Run/budget/reservation 摘要在图片操作前、ready和删除后保持相同；图片链供应商调用0。当前255个构建输入、忽略的地图定义和四个原 queue/state 文件再次核验不变。[CHECKPOINT16-DEVICE.json](CHECKPOINT16-DEVICE.json) 记录实际时长、代表帧/收据哈希、范围与未运行项；最初两次元数据整理脚本失败也如实保留。原03/05视频包含其他应用/个人图库，保留本地原件，排除发布和 release 证据；原始媒体未在本次提交操作中上传。
+- **图库授权拒绝、手机安全存储 pending journal 冷启动、首次无 Task 附件、AI 视觉及生产 IdP NOT_RUN**；完整功能/平台回归也 NOT_RUN。本次只核验一张合成私人附件，未验证普通私人照片、旋转、所有平台、离线恢复或完整撤权矩阵；附件保存不等于实体 Save 功能验收。
+- **42 条仍 PARTIAL**：通用多轮、AI 图片理解/首次 Task 附件、完整来源权威性/事实一致性、Save登录待办恢复、逐会话持久草稿/自动冷恢复、历史/城市搜索、完整 Business 导航、Moment/story 统一卡、图层/活动详情收敛、全产品 tokens/读屏、其他平台及原组织/聊天/活动/提醒/个人资产完整回归尚未完成。原 IdP/生产/pilot/隐私门槛不变；本次不等待 Profile/Trip/ThemeMap 或导入完成才补基础 Agent。

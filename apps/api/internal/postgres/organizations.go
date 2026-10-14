@@ -99,7 +99,7 @@ func (s *Store) ResolveWorkspace(ctx context.Context, userID, organizationID str
 }
 
 func (s *Store) ListOrganizations(ctx context.Context, userID string) ([]organization.Organization, error) {
-	rows, err := s.pool.Query(ctx, `SELECT o.id, o.account_id, o.organization_type, o.name, m.role
+	rows, err := s.pool.Query(ctx, `SELECT o.id, o.account_id, o.organization_type, o.name, m.role,birdtie_entity_cover_metadata('organization',o.id,$1::uuid,clock_timestamp()),birdtie_entity_cover_authority('organization',o.id,$1::uuid)||':'||COALESCE((SELECT cover.xmin::text FROM entity_covers cover WHERE cover.entity_type='organization' AND cover.entity_id=o.id),'none')
         FROM organization_memberships m JOIN organizations o ON o.id = m.organization_id
         WHERE m.user_account_id = $1 AND m.status = 'active' AND o.status = 'active'
         ORDER BY lower(o.name), o.id`, userID)
@@ -110,7 +110,7 @@ func (s *Store) ListOrganizations(ctx context.Context, userID string) ([]organiz
 	out := make([]organization.Organization, 0)
 	for rows.Next() {
 		var item organization.Organization
-		if err := rows.Scan(&item.ID, &item.AccountID, &item.OrganizationType, &item.Name, &item.Role); err != nil {
+		if err := rows.Scan(&item.ID, &item.AccountID, &item.OrganizationType, &item.Name, &item.Role, &item.Cover, &item.CoverSourceProof); err != nil {
 			return nil, err
 		}
 		out = append(out, item)

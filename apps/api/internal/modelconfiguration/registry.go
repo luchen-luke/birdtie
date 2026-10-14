@@ -119,7 +119,7 @@ func NormalizeConfiguration(input Configuration) (Configuration, error) {
 			return Configuration{}, ErrInvalid
 		}
 	case modelgateway.MemoryCandidateExtraction:
-		if c.OutputSchemaVersion != "air.candidate_proposal.v1" || c.OutputMode != modelgateway.Structured || len(c.ToolAllowlist) != 0 {
+		if (c.OutputSchemaVersion != modelgateway.CandidateProposalVersion && c.OutputSchemaVersion != modelgateway.CandidateProposalV2Version) || c.OutputMode != modelgateway.Structured || len(c.ToolAllowlist) != 0 {
 			return Configuration{}, ErrInvalid
 		}
 	default:

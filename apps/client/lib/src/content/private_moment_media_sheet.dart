@@ -1,6 +1,9 @@
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import '../app/birdtie_app_bar.dart';
+import '../workspace/now_ui_tokens.dart';
 import 'moment_image_header.dart';
+import 'moment_image_picker.dart';
 import 'private_moment_media_controller.dart';
 
 class PrivateMomentMediaSheet extends StatefulWidget {
@@ -42,7 +45,8 @@ class _PrivateMomentMediaSheetState extends State<PrivateMomentMediaSheet> {
     final answer = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('保存这张私人图片？'),
+        scrollable: true,
+        title: Text('保存这张私人图片？', style: NowUiTokens.of(context).sheetTitle),
         content: Text(
           '记录：${widget.momentTitle}\n只对本人开放，最长保留 30 天。\n敏感像素${c.pixelRisk == 'USER_MASKED' ? '只遮挡了你划定的部分' : '尚未检测，可能仍在图片中'}。不公开，不用于 AI 分析，也不加入记忆。',
         ),
@@ -71,7 +75,8 @@ class _PrivateMomentMediaSheetState extends State<PrivateMomentMediaSheet> {
     final yes = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('移除私人图片？'),
+        scrollable: true,
+        title: Text('移除私人图片？', style: NowUiTokens.of(context).sheetTitle),
         content: const Text('图片将无法继续读取。这个操作不会删除文字记录，也不会撤回已经公开的其他内容。'),
         actions: [
           TextButton(
@@ -96,7 +101,8 @@ class _PrivateMomentMediaSheetState extends State<PrivateMomentMediaSheet> {
     final yes = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('遮挡所选文字区域？'),
+        scrollable: true,
+        title: Text('遮挡所选文字区域？', style: NowUiTokens.of(context).sheetTitle),
         content: const Text(
           '请检查图片中的提示框。将用实色遮挡所选整行区域，可能同时遮挡其他文字。其他敏感内容仍未检测；此操作只修改本机图片，不会保存或上传。',
         ),
@@ -210,8 +216,9 @@ class _PrivateMomentMediaSheetState extends State<PrivateMomentMediaSheet> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(
-      title: const Text('私人图片'),
+    appBar: birdtieAppBar(
+      context,
+      title: Text('私人图片', style: NowUiTokens.of(context).pageTitle),
       leading: IconButton(
         tooltip: '关闭私人图片',
         icon: const Icon(Icons.close),
@@ -223,13 +230,11 @@ class _PrivateMomentMediaSheetState extends State<PrivateMomentMediaSheet> {
         animation: widget.controller,
         builder: (context, _) {
           final c = widget.controller;
+          final text = NowUiTokens.of(context);
           return ListView(
             padding: const EdgeInsets.all(20),
             children: [
-              Text(
-                widget.momentTitle,
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
+              Text(widget.momentTitle, style: text.placeTitle),
               const SizedBox(height: 8),
               const Text('仅管理这条已保存私人记录的图片。选择后先在本机处理；不会自动上传、分析或公开。'),
               if (c.retired || c.requiresReopen) ...[
@@ -241,7 +246,7 @@ class _PrivateMomentMediaSheetState extends State<PrivateMomentMediaSheet> {
                   Text(
                     c.error!,
                     key: const ValueKey('private-image-error'),
-                    style: TextStyle(
+                    style: text.body.copyWith(
                       color: Theme.of(context).colorScheme.error,
                     ),
                   ),
@@ -257,14 +262,15 @@ class _PrivateMomentMediaSheetState extends State<PrivateMomentMediaSheet> {
                   ),
                   for (final pending in c.pendingOperations)
                     ListTile(
+                      minTileHeight: NowUiTokens.actionHitSize,
                       selected: c.isSelectedPending(pending),
                       title: Text(switch (pending.phase) {
                         'preview' => '预览结果待核实',
                         'save' => '图片保存结果待核实',
                         _ => '图片移除结果待核实',
-                      }),
+                      }, style: text.placeTitle),
                       subtitle: c.isSelectedPending(pending)
-                          ? const Text('当前核实的操作')
+                          ? Text('当前核实的操作', style: text.metadata)
                           : null,
                       trailing: const Icon(Icons.chevron_right),
                       onTap: c.canRead ? () => c.choosePending(pending) : null,
@@ -283,6 +289,21 @@ class _PrivateMomentMediaSheetState extends State<PrivateMomentMediaSheet> {
                   onPressed: c.canChangeLocal ? c.select : null,
                   icon: const Icon(Icons.photo_outlined),
                   label: const Text('选择一张图片'),
+                ),
+                if (c.supportsSource(MomentImageSource.camera))
+                  OutlinedButton.icon(
+                    onPressed: c.canSelectSource(MomentImageSource.camera)
+                        ? () => c.select(source: MomentImageSource.camera)
+                        : null,
+                    icon: const Icon(Icons.photo_camera_outlined),
+                    label: const Text('拍照'),
+                  ),
+                OutlinedButton.icon(
+                  onPressed: c.canSelectSource(MomentImageSource.file)
+                      ? () => c.select(source: MomentImageSource.file)
+                      : null,
+                  icon: const Icon(Icons.folder_open_outlined),
+                  label: const Text('从文件选择图片'),
                 ),
                 if (c.hasLocalImage) ...[
                   const SizedBox(height: 12),
@@ -309,8 +330,14 @@ class _PrivateMomentMediaSheetState extends State<PrivateMomentMediaSheet> {
                   for (var i = 0; i < c.textHints.length; i++)
                     CheckboxListTile(
                       key: ValueKey('private-image-text-hint-$i'),
-                      title: Text('提示 ${i + 1}：${c.textHints[i].label}'),
-                      subtitle: const Text('仅为可能的文字所在行，请查看图片中的框。'),
+                      title: Text(
+                        '提示 ${i + 1}：${c.textHints[i].label}',
+                        style: text.body,
+                      ),
+                      subtitle: Text(
+                        '仅为可能的文字所在行，请查看图片中的框。',
+                        style: text.metadata,
+                      ),
                       value: c.textHintSelected(i),
                       onChanged: c.canChangeLocal && !c.textChecking
                           ? (value) => c.selectTextHint(i, value == true)
@@ -330,11 +357,12 @@ class _PrivateMomentMediaSheetState extends State<PrivateMomentMediaSheet> {
                     '未自动检测人脸、地址等敏感像素。去除图片元数据不等于遮挡图片内容；你可以在图上划定实色遮挡，或不处理并清除图片。',
                   ),
                   SwitchListTile(
-                    title: const Text('在图上划定实色遮挡'),
+                    title: Text('在图上划定实色遮挡', style: text.body),
                     subtitle: Text(
                       c.pixelRisk == 'USER_MASKED'
                           ? '已遮挡你划定的部分，其他像素仍未检测。'
                           : '拖动划定区域后才会遮挡。',
+                      style: text.metadata,
                     ),
                     value: _masking,
                     onChanged: c.canChangeLocal
@@ -343,7 +371,7 @@ class _PrivateMomentMediaSheetState extends State<PrivateMomentMediaSheet> {
                   ),
                   CheckboxListTile(
                     key: const ValueKey('private-image-local-review'),
-                    title: const Text('仅在本机处理，我已检查当前图片及未遮挡内容'),
+                    title: Text('仅在本机处理，我已检查当前图片及未遮挡内容', style: text.body),
                     value: c.localReviewed,
                     onChanged: c.canChangeLocal
                         ? (v) => c.acknowledgeLocal(v == true)
@@ -361,6 +389,7 @@ class _PrivateMomentMediaSheetState extends State<PrivateMomentMediaSheet> {
                   if (c.preview?.status == 'preview') ...[
                     Text(
                       '已选图片 ${c.preview!.byteSize} 字节 · 预览有效至 ${c.preview!.previewExpiresAt.toLocal()}\n最长保留 30 天，仅自己可读。',
+                      style: text.metadata,
                     ),
                     FilledButton(
                       onPressed: c.canSave ? _confirmSave : null,
@@ -369,10 +398,7 @@ class _PrivateMomentMediaSheetState extends State<PrivateMomentMediaSheet> {
                   ],
                 ],
                 const SizedBox(height: 20),
-                Text(
-                  '已保存的私人图片',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
+                Text('已保存的私人图片', style: text.sheetTitle),
                 if (c.loaded && c.images.isEmpty) const Text('当前记录没有可读取的私人图片。'),
                 if (!c.loaded && !c.busy)
                   TextButton(
@@ -381,8 +407,12 @@ class _PrivateMomentMediaSheetState extends State<PrivateMomentMediaSheet> {
                   ),
                 for (final v in c.images)
                   ListTile(
-                    title: const Text('私人图片'),
-                    subtitle: Text('仅自己可读 · 保留至 ${v.retainUntil.toLocal()}'),
+                    minTileHeight: NowUiTokens.actionHitSize,
+                    title: Text('私人图片', style: text.placeTitle),
+                    subtitle: Text(
+                      '仅自己可读 · 保留至 ${v.retainUntil.toLocal()}',
+                      style: text.metadata,
+                    ),
                     onTap: !c.canRead || c.unknown ? null : () => c.read(v),
                     trailing: IconButton(
                       tooltip: '移除私人图片',

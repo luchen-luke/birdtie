@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'map_layers_api.dart';
 import 'map_layers_controller.dart';
+import 'now_ui_tokens.dart';
 
 class MapLayerControls extends StatelessWidget {
   const MapLayerControls({
@@ -21,8 +22,8 @@ class MapLayerControls extends StatelessWidget {
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          Text('地图图层', style: Theme.of(context).textTheme.titleLarge),
-          const Text('仅显示明确公开的点位。公开记录的地点不代表作者当前位置；商家点位代表经营场地。'),
+          Text('地图图层', style: NowUiTokens.of(context).pageTitle),
+          Text('选择此范围内的内容图层。', style: NowUiTokens.of(context).body),
           if (!current())
             const Text('账号或情境已变化，请关闭后重新打开。')
           else ...[
@@ -30,7 +31,10 @@ class MapLayerControls extends StatelessWidget {
               SwitchListTile(
                 key: ValueKey('map-layer-$kind'),
                 contentPadding: EdgeInsets.zero,
-                title: Text(mapLayerLabel(kind)),
+                title: Text(
+                  mapLayerLabel(kind),
+                  style: NowUiTokens.of(context).placeTitle,
+                ),
                 subtitle: kind == 'OPPORTUNITY'
                     ? const Text('仅本人可见，不公开意图或关系。打开后读取当前公开活动。')
                     : null,
@@ -70,18 +74,38 @@ class MapLayerControls extends StatelessWidget {
                 controller.error == null &&
                 controller.items.isEmpty)
               const Text('当前图层没有符合公开点位条件的内容。'),
+            if (mapLayerScopeNotices(controller.items).isNotEmpty &&
+                onRefresh != null &&
+                !controller.loading &&
+                (controller.error == null || controller.partial))
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                child: Semantics(
+                  container: true,
+                  label: '位置与公开范围说明',
+                  child: Text(
+                    mapLayerScopeNotices(controller.items).join('\n'),
+                    style: NowUiTokens.of(context).metadata,
+                  ),
+                ),
+              ),
             for (final item
                 in onRefresh != null &&
-                        controller.error == null &&
+                        (controller.error == null || controller.partial) &&
                         !controller.loading
                     ? controller.items
                     : <TypedMapItem>[])
               ListTile(
                 key: ValueKey('map-layer-card-${item.mapID}'),
                 contentPadding: EdgeInsets.zero,
-                title: Text(item.title),
+                minTileHeight: NowUiTokens.actionHitSize,
+                title: Text(
+                  item.title,
+                  style: NowUiTokens.of(context).placeTitle,
+                ),
                 subtitle: Text(
-                  '${mapLayerLabel(item.kind)} · ${item.explanation}',
+                  item.rowSubtitle,
+                  style: NowUiTokens.of(context).listSubtitle,
                 ),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () {

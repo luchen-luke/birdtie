@@ -3,6 +3,8 @@ package follow
 import (
 	"context"
 	"errors"
+	"github.com/birdtie/birdtie/apps/api/internal/communityavatar"
+	"github.com/birdtie/birdtie/apps/api/internal/profileavatar"
 	"strings"
 	"time"
 )
@@ -26,10 +28,20 @@ type Target struct {
 }
 
 type Record struct {
-	ID        string    `json:"id"`
-	Target    Target    `json:"target"`
-	Label     string    `json:"label"`
-	CreatedAt time.Time `json:"createdAt"`
+	ID              string                    `json:"id"`
+	Target          Target                    `json:"target"`
+	Label           string                    `json:"label"`
+	Avatar          *profileavatar.Metadata   `json:"avatar,omitempty"`
+	CommunityAvatar *communityavatar.Metadata `json:"communityAvatar,omitempty"`
+	SourceProof     any                       `json:"-"`
+	CreatedAt       time.Time                 `json:"createdAt"`
+}
+
+func (r Record) ValidMedia() bool {
+	if r.Avatar != nil && (r.Target.Type != Person || !r.Avatar.Valid() || r.Avatar.AccountID != r.Target.ID) {
+		return false
+	}
+	return r.CommunityAvatar == nil || r.Target.Type == Community && r.Avatar == nil && r.CommunityAvatar.Valid() && r.CommunityAvatar.CommunityID == r.Target.ID
 }
 
 type Store interface {

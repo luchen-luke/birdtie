@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
+import 'agent_memory_review_page_model.dart';
 import 'agent_profile_api.dart';
 import 'agent_memory_correction_api.dart';
 import 'person_community_interest_api.dart';
@@ -157,8 +158,10 @@ class AgentProfileController extends ChangeNotifier {
       _read(
         'memories',
         g,
-        api.memories,
-        (v) => v.isEmpty ? '' : v.first.agentID,
+        api.memoryPage,
+        (v) => v.agentID,
+        observed: (v) => v.observedAt,
+        end: (v) => v.expiresAt,
       ),
       _read(
         'policies',
@@ -199,7 +202,7 @@ class AgentProfileController extends ChangeNotifier {
   Future<void> detail(String id) async {
     identityChanged();
     if (!current || loading.contains('detail')) return;
-    final rows = values['memories'] as List<CorrectableMemory>?;
+    final rows = memories;
     if (rows == null || !rows.any((m) => m.id == id)) return;
     values.remove('detail');
     errors.remove('detail');
@@ -217,7 +220,11 @@ class AgentProfileController extends ChangeNotifier {
   AgentPrivateProfileView? get profile =>
       values['profile'] as AgentPrivateProfileView?;
   List<CorrectableMemory>? get memories =>
-      values['memories'] as List<CorrectableMemory>?;
+      (values['memories'] as AgentMemoryReviewPage<CorrectableMemory>?)?.items;
+  bool get hasMoreMemories =>
+      (values['memories'] as AgentMemoryReviewPage<CorrectableMemory>?)
+          ?.nextCursor !=
+      null;
   AgentPoliciesView? get policies => values['policies'] as AgentPoliciesView?;
   CommunityInterestView? get interests =>
       values['interests'] as CommunityInterestView?;

@@ -1,0 +1,19 @@
+{
+  "Root": "D:\\Project\\birdtie",
+  "StartedUtc": "2026-10-14T08:51:01.4304563Z",
+  "CompletedUtc": "2026-10-14T08:52:30.8143178Z",
+  "RemovedTargets": 561,
+  "FailedOrPartialTargets": 0,
+  "RemovedBytesForFullyRemovedTargets": 57424048204.0,
+  "ProtectedSourceHashBefore": "8b6d8fea317675d3e17642590468f93c4b401a0f6536612869e3b0644334ad67",
+  "ProtectedSourceHashAfter": "8b6d8fea317675d3e17642590468f93c4b401a0f6536612869e3b0644334ad67",
+  "ProtectedSourceContentUnchanged": true,
+  "GitStatusUnchangedExcludingCleanupLogs": true,
+  "ExcludedCleanupLogFiles": [
+    "docs/reports/storage-cleanup-20261014/manual-execution-results.json",
+    "docs/reports/storage-cleanup-20261014/manual-execution-summary.json"
+  ],
+  "DriveDFreeBefore": 149460135936,
+  "DriveDFreeAfter": 207276679168,
+  "Scope": "Caches and superseded generated outputs only; no tests, builds or task queue updates."
+}

@@ -1,6 +1,10 @@
 import 'map_entities.dart';
 import 'entity_action_contract.dart';
 import 'now_context_query_api.dart' show onlineStamp;
+import 'person_avatar.dart' show PersonAvatarMetadata;
+import 'community_avatar.dart' show CommunityAvatarMetadata;
+import 'entity_cover.dart';
+import 'place_photo.dart';
 
 const typedAgentResultSchema = 'typed-agent-results-v1';
 const _productKinds = {
@@ -124,6 +128,10 @@ class AgentResultItem {
     this.actions,
     this.actionsValidUntil,
     this.actionsSourceVersion = '',
+    this.avatar,
+    this.communityAvatar,
+    this.cover,
+    this.placePhoto,
   });
   final AgentResultRef entity;
   final String title, summary, scope, sourceVersion;
@@ -132,6 +140,10 @@ class AgentResultItem {
   final List<EntityActionDescriptor>? actions;
   final DateTime? actionsValidUntil;
   final String actionsSourceVersion;
+  final PersonAvatarMetadata? avatar;
+  final CommunityAvatarMetadata? communityAvatar;
+  final EntityCoverMetadata? cover;
+  final EntityCoverMetadata? placePhoto;
   EntityActionDescriptor? action(EntityActionKind kind) {
     if (actionsValidUntil?.isAfter(DateTime.now().toUtc()) != true) return null;
     for (final a in actions ?? const <EntityActionDescriptor>[]) {
@@ -148,6 +160,27 @@ class AgentResultItem {
     _ => null,
   };
   bool get valid {
+    if (placePhoto != null &&
+        (entity.type != 'place' ||
+            !placePhoto!.ref.valid ||
+            placePhoto!.ref != PlacePhotoRef(entity.id)))
+      return false;
+    final coverTarget = entity.type == 'opportunity' ? detail : entity;
+    if (cover != null &&
+        (!cover!.ref.valid ||
+            coverTarget == null ||
+            !const {'activity', 'organization'}.contains(coverTarget.type) ||
+            cover!.ref != EntityCoverRef(coverTarget.type, coverTarget.id)))
+      return false;
+    if (avatar != null &&
+        (entity.type != 'person' || avatar!.accountID != entity.id)) {
+      return false;
+    }
+    if (communityAvatar != null &&
+        (entity.type != 'community' ||
+            communityAvatar!.communityID != entity.id)) {
+      return false;
+    }
     if (actions != null &&
         (actions!.length != 6 ||
             actions!.map((a) => a.kind).toSet().length != 6 ||
@@ -211,6 +244,10 @@ class AgentResultItem {
             'actions',
             'actionsValidUntil',
             'actionsSourceVersion',
+            'avatar',
+            'communityAvatar',
+            'cover',
+            'placePhoto',
           }.contains(k),
         ) ||
         value['title'] is! String ||
@@ -237,6 +274,18 @@ class AgentResultItem {
           ? null
           : AgentResultAnchor.decode(value['anchor']),
       sourceVersion: value['sourceVersion'] as String? ?? '',
+      cover: value['cover'] == null
+          ? null
+          : EntityCoverMetadata.fromJson(
+              value['cover'],
+              EntityCoverRef(target?.type ?? '', target?.id ?? ''),
+            ),
+      placePhoto: value['placePhoto'] == null
+          ? null
+          : EntityCoverMetadata.fromJson(
+              value['placePhoto'],
+              PlacePhotoRef(entity.id),
+            ),
       actions: !value.containsKey('actions')
           ? null
           : decodeEntityActions(
@@ -251,6 +300,19 @@ class AgentResultItem {
           : value['actionsSourceVersion'] is String
           ? value['actionsSourceVersion'] as String
           : throw const FormatException('动作版本无法读取'),
+      avatar: value['avatar'] == null
+          ? null
+          : entity.type == 'person'
+          ? PersonAvatarMetadata.fromJson(value['avatar'], entity.id)
+          : throw const FormatException('头像与人物来源不符'),
+      communityAvatar: value['communityAvatar'] == null
+          ? null
+          : entity.type == 'community'
+          ? CommunityAvatarMetadata.fromJson(
+              value['communityAvatar'],
+              entity.id,
+            )
+          : throw const FormatException('头像与社群来源不符'),
     );
     if (!item.valid) throw const FormatException('实体引用或权限范围不一致');
     return item;

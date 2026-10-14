@@ -247,7 +247,7 @@ func withdrawMomentInTx(ctx context.Context, tx pgx.Tx, authorID, momentID strin
 	var id string
 	err := tx.QueryRow(ctx, `UPDATE moments
         SET status = 'withdrawn', visibility = 'private',
-            revision = revision + 1, updated_at = now()
+            revision = LEAST(revision + 1, 8999999999999999), updated_at = now()
         WHERE id = $1 AND author_account_id = $2 AND revision = $3
           AND status <> 'withdrawn'
         RETURNING id`, momentID, authorID, revision).Scan(&id)

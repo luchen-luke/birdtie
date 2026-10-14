@@ -3,6 +3,7 @@ import 'package:birdtie_client/src/workspace/agent_memory_candidate_api.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'agent_memory_review_page_fixture.dart';
 
 const candidateOwner = '11111111-1111-4111-8111-111111111111';
 const candidateAgent = '22222222-2222-4222-8222-222222222222';
@@ -76,6 +77,23 @@ http.Response candidateResponse(dynamic value) => http.Response(
   200,
   headers: {'content-type': 'application/json; charset=utf-8'},
 );
+http.Response candidatePageResponse(List<dynamic> items) => candidateResponse(
+  memoryReviewPageFixture(
+    owner: candidateOwner,
+    agent: candidateAgent,
+    collection: 'CANDIDATES',
+    items: items,
+  ),
+);
+http.Response candidateReadResponse(http.BaseRequest request, dynamic value) =>
+    candidateResponse(
+      memoryReviewReadFixture(
+        request,
+        value,
+        owner: candidateOwner,
+        agent: candidateAgent,
+      ),
+    );
 // Exact historical native1 registered receipt; metadata parsing is not authority.
 const historicalHikingReceiptWire = r'''
 {"schemaVersion":"agent-multi-candidate-v1","state":"CANDIDATE_STAGED","retentionGrantId":"44538a0e-3b2f-4afa-89c6-117797617462","owner":{"type":"PERSON","id":"533fcfb3-0f17-4dc4-a4dc-eebf942852ff"},"agentId":"e4fb42bb-21b4-431d-a4ef-d1910948208f","eventId":"71b21904-86e5-8cbe-a0ff-0ba9f84079ce","logicalOperationId":"518a971e-707f-8180-ba9b-a4bcc7979aff","effectKey":"93b5aabfe3a244b5497b8d99c54bb7daddd2c572ef8e9f351cc5869f2e3bee68","handlerVersion":"mom-candidate-multi-v1","candidateId":"669939c0-76d6-4ec6-afb6-0ea18db2285b","candidate":{"schemaVersion":"agent-memory-candidate-v1","id":"669939c0-76d6-4ec6-afb6-0ea18db2285b","agentId":"e4fb42bb-21b4-431d-a4ef-d1910948208f","owner":{"type":"PERSON","id":"533fcfb3-0f17-4dc4-a4dc-eebf942852ff"},"version":1,"status":"CANDIDATE","predicate":"ACTIVITY_CATEGORY","category":"hiking","assessment":{"semantics":"ORDINAL","level":"LOW"},"sources":[{"selector":{"type":"MOMENT","id":"450a4682-f0e2-4bda-b0be-cf568c01f2dc"},"version":{"kind":"REVISION","revision":3},"eventTime":"2026-10-05T10:02:23.470708Z","fingerprint":"26342b4b40e035fef1203c4ea0e5152dbe2c54d5004905be7cf7c139d974211b","anchors":["MOMENT:450a4682-f0e2-4bda-b0be-cf568c01f2dc"]},{"selector":{"type":"MOMENT","id":"90bbd776-e3d0-4831-80a5-e06d3b621e5b"},"version":{"kind":"REVISION","revision":1},"eventTime":"2026-10-05T10:02:23.506418Z","fingerprint":"4ff1706c2507b32d40521ec94b3c7befdefe90c4b083c9c4de75c3d10f38d4e2","anchors":["MOMENT:90bbd776-e3d0-4831-80a5-e06d3b621e5b"]}],"validUntil":"2026-10-05T10:02:54.054454Z","createdAt":"2026-10-05T10:02:24.054454Z","updatedAt":"2026-10-05T10:02:24.060584Z","modelAccess":"UNAVAILABLE"},"observedAt":"2026-10-05T10:02:24.730707Z","committed":true,"modelAccess":false,"memoryPromotionAllowed":false,"explanation":"已在原生事务中保留一项私密待核验候选；关键词不证明偏好或到场，不调用模型，不写正式记忆。"}

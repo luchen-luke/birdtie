@@ -353,7 +353,8 @@ func (s *Store) ListRequests(ctx context.Context, ownerID string) ([]connection.
             r.scope,
             CASE WHEN r.state = 'pending' AND r.expires_at <= now()
                  THEN 'expired' ELSE r.state END,
-            COALESCE(cv.id::text, ''), r.expires_at, r.created_at,COALESCE(pb.disposition,''),CASE WHEN pb.disposition='SCREEN' AND r.state='pending' AND r.expires_at>clock_timestamp() THEN 'PENDING_REVIEW' ELSE '' END
+            COALESCE(cv.id::text, ''), r.expires_at, r.created_at,COALESCE(pb.disposition,''),CASE WHEN pb.disposition='SCREEN' AND r.state='pending' AND r.expires_at>clock_timestamp() THEN 'PENDING_REVIEW' ELSE '' END,
+            birdtie_person_avatar_metadata(other.id,$1::uuid)
         FROM connection_requests r
         JOIN accounts other ON other.id = CASE WHEN r.sender_account_id = $1
             THEN r.recipient_account_id ELSE r.sender_account_id END
@@ -371,7 +372,7 @@ func (s *Store) ListRequests(ctx context.Context, ownerID string) ([]connection.
 		var item connection.Request
 		if err := rows.Scan(&item.ID, &item.Direction, &item.OtherAccountID,
 			&item.OtherName, &item.CityID, &item.Note, &item.Scope, &item.State,
-			&item.ConversationID, &item.ExpiresAt, &item.CreatedAt, &item.PolicyDisposition, &item.ScreeningStatus); err != nil {
+			&item.ConversationID, &item.ExpiresAt, &item.CreatedAt, &item.PolicyDisposition, &item.ScreeningStatus, &item.Avatar); err != nil {
 			return nil, err
 		}
 		items = append(items, item)
@@ -380,14 +381,24 @@ func (s *Store) ListRequests(ctx context.Context, ownerID string) ([]connection.
 }
 
 func (s *Store) DecideRequest(ctx context.Context, actorID, id, action string) (connection.Request, error) {
- tx,err:=s.pool.BeginTx(ctx,pgx.TxOptions{IsoLevel:pgx.ReadCommitted});if err!=nil{return connection.Request{},err};defer tx.Rollback(ctx)
- value,err:=decideRequestInTx(ctx,tx,actorID,id,action,nil);if err!=nil{return connection.Request{},err}
- if err=tx.Commit(ctx);err!=nil{return connection.Request{},err};return value,nil
+	tx, err := s.pool.BeginTx(ctx, pgx.TxOptions{IsoLevel: pgx.ReadCommitted})
+	if err != nil {
+		return connection.Request{}, err
+	}
+	defer tx.Rollback(ctx)
+	value, err := decideRequestInTx(ctx, tx, actorID, id, action, nil)
+	if err != nil {
+		return connection.Request{}, err
+	}
+	if err = tx.Commit(ctx); err != nil {
+		return connection.Request{}, err
+	}
+	return value, nil
 }
 
 // Single original writer for old clients and keyed causal decisions.
-func decideRequestInTx(ctx context.Context,tx pgx.Tx,actorID,id,action string,operation *connectionDecisionOperation)(connection.Request,error){
- var err error
+func decideRequestInTx(ctx context.Context, tx pgx.Tx, actorID, id, action string, operation *connectionDecisionOperation) (connection.Request, error) {
+	var err error
 	if action != "accept" && action != "decline" && action != "withdraw" {
 		return connection.Request{}, connection.ErrForbidden
 	}
@@ -418,7 +429,9 @@ func decideRequestInTx(ctx context.Context,tx pgx.Tx,actorID,id,action string,op
 		return connection.Request{}, connection.ErrForbidden
 	}
 	if operation != nil {
-		if _, err = tx.Exec(ctx, `SELECT pg_advisory_xact_lock(76043,hashtext($1))`, actorID+":"+operation.id); err != nil { return connection.Request{}, connection.ErrOperationUnavailable }
+		if _, err = tx.Exec(ctx, `SELECT pg_advisory_xact_lock(76043,hashtext($1))`, actorID+":"+operation.id); err != nil {
+			return connection.Request{}, connection.ErrOperationUnavailable
+		}
 	}
 	var senderID, recipientID, cityID, note, scope, state string
 	var expiresAt, createdAt time.Time
@@ -437,19 +450,36 @@ func decideRequestInTx(ctx context.Context,tx pgx.Tx,actorID,id,action string,op
 		return connection.Request{}, connection.ErrNotFound
 	}
 	if operation != nil {
-		prior, e := connectionDecisionPrior(ctx,tx,actorID,id,action,operation)
-		if e != nil { return connection.Request{},e }
-		if prior { if e=finishMessageRouteForActor(ctx,tx,routeFence,actorID);e!=nil{return connection.Request{},e};return connection.Request{},nil }
+		prior, e := connectionDecisionPrior(ctx, tx, actorID, id, action, operation)
+		if e != nil {
+			return connection.Request{}, e
+		}
+		if prior {
+			if e = finishMessageRouteForActor(ctx, tx, routeFence, actorID); e != nil {
+				return connection.Request{}, e
+			}
+			return connection.Request{}, nil
+		}
 	}
 	var decisionAt time.Time
 	if tx.QueryRow(ctx, `SELECT clock_timestamp()`).Scan(&decisionAt) != nil {
 		return connection.Request{}, mp.ErrUnavailable
 	}
 	if state != "pending" || !expiresAt.After(decisionAt) {
-		if operation == nil { return connection.Request{}, connection.ErrConflict }
-		reason:="EXPIRED";if state!="pending"{reason="ALREADY_DECIDED"}
-		if e:=recordConnectionDecision(ctx,tx,actorID,id,action,scope,"NO_EFFECT",reason,decisionAt,operation);e!=nil{return connection.Request{},e}
-		if e:=finishMessageRouteForActor(ctx,tx,routeFence,actorID);e!=nil{return connection.Request{},e};return connection.Request{},nil
+		if operation == nil {
+			return connection.Request{}, connection.ErrConflict
+		}
+		reason := "EXPIRED"
+		if state != "pending" {
+			reason = "ALREADY_DECIDED"
+		}
+		if e := recordConnectionDecision(ctx, tx, actorID, id, action, scope, "NO_EFFECT", reason, decisionAt, operation); e != nil {
+			return connection.Request{}, e
+		}
+		if e := finishMessageRouteForActor(ctx, tx, routeFence, actorID); e != nil {
+			return connection.Request{}, e
+		}
+		return connection.Request{}, nil
 	}
 	if action == "accept" {
 		var eligible bool
@@ -516,7 +546,9 @@ func decideRequestInTx(ctx context.Context,tx pgx.Tx,actorID,id,action string,op
 		return connection.Request{}, err
 	}
 	if operation != nil {
-		if err=recordConnectionDecision(ctx,tx,actorID,id,action,scope,"COMMITTED","",decisionAt,operation);err!=nil{return connection.Request{},err}
+		if err = recordConnectionDecision(ctx, tx, actorID, id, action, scope, "COMMITTED", "", decisionAt, operation); err != nil {
+			return connection.Request{}, err
+		}
 	}
 	if expiresAt.Before(routeFence.until) {
 		routeFence.until = expiresAt
@@ -534,7 +566,7 @@ func (s *Store) ListTies(ctx context.Context, ownerID string) ([]connection.Tie,
 	rows, err := s.pool.Query(ctx, `SELECT t.id,other.id,
         CASE WHEN birdtie_agent_profile_field_allowed(other.id,$1::uuid,'displayName')
             THEN COALESCE(NULLIF(p.display_name,''),NULLIF(other.handle,''),'Birdtie 成员')
-            ELSE 'Birdtie 成员' END,t.created_at
+            ELSE 'Birdtie 成员' END,t.created_at,birdtie_person_avatar_metadata(other.id,$1::uuid)
         FROM person_ties t
         JOIN connection_requests source_request ON source_request.id=t.request_id
             AND source_request.scope='friend' AND source_request.state='accepted'
@@ -557,7 +589,7 @@ func (s *Store) ListTies(ctx context.Context, ownerID string) ([]connection.Tie,
 	out := make([]connection.Tie, 0)
 	for rows.Next() {
 		var tie connection.Tie
-		if err := rows.Scan(&tie.ID, &tie.OtherAccountID, &tie.OtherName, &tie.CreatedAt); err != nil {
+		if err := rows.Scan(&tie.ID, &tie.OtherAccountID, &tie.OtherName, &tie.CreatedAt, &tie.Avatar); err != nil {
 			return nil, err
 		}
 		out = append(out, tie)
@@ -601,7 +633,10 @@ func (s *Store) ListConversations(ctx context.Context, ownerID string) ([]connec
 		   AND m.created_at>cms.baseline_at
 		   AND (cms.last_read_message_id IS NULL OR (m.created_at,m.id)>(
 		       SELECT cursor.created_at,cursor.id FROM conversation_messages cursor
-		       WHERE cursor.id=cms.last_read_message_id)))
+		       WHERE cursor.id=cms.last_read_message_id))),
+		COALESCE((SELECT left(regexp_replace(last.body,E'[\\r\\n]+',' ','g'),80)
+		 FROM conversation_messages last WHERE last.conversation_id=cv.id
+		 ORDER BY last.created_at DESC,last.id DESC LIMIT 1),''),birdtie_person_avatar_metadata(other.id,$1::uuid)
         FROM conversations cv
         JOIN connection_requests r ON r.id = cv.request_id AND r.state = 'accepted'
 		AND (r.scope='conversation' OR EXISTS(
@@ -627,7 +662,7 @@ func (s *Store) ListConversations(ctx context.Context, ownerID string) ([]connec
 	for rows.Next() {
 		var item connection.Conversation
 		if err := rows.Scan(&item.ID, &item.OtherAccountID, &item.OtherName,
-			&item.CreatedAt, &item.LastReadAt, &item.UnreadCount); err != nil {
+			&item.CreatedAt, &item.LastReadAt, &item.UnreadCount, &item.LastMessagePreview, &item.Avatar); err != nil {
 			return nil, err
 		}
 		items = append(items, item)
@@ -717,10 +752,13 @@ func (s *Store) ListMessages(ctx context.Context, actorID, id string) ([]connect
 	if _, err := conversationMember(ctx, tx, actorID, id); err != nil {
 		return nil, err
 	}
-	rows, err := tx.Query(ctx, `SELECT id, conversation_id, sender_account_id,
-		speaker_kind, body, created_at, entity_type, entity_id FROM conversation_messages
-        WHERE conversation_id = $1
-        ORDER BY created_at DESC, id DESC LIMIT 100`, id)
+	rows, err := tx.Query(ctx, `SELECT m.id, m.conversation_id, m.sender_account_id,
+		m.speaker_kind, m.body, m.created_at, m.entity_type, m.entity_id,
+		a.mime_type,a.byte_size,a.sha256,a.duration_millis,`+chatImageProjectionSQL+` FROM conversation_messages m
+        LEFT JOIN human_conversation_audio a ON a.message_id=m.id
+        LEFT JOIN human_conversation_images i ON i.message_id=m.id
+        WHERE m.conversation_id = $1
+        ORDER BY m.created_at DESC, m.id DESC LIMIT 100`, id)
 	if err != nil {
 		return nil, err
 	}
@@ -730,8 +768,28 @@ func (s *Store) ListMessages(ctx context.Context, actorID, id string) ([]connect
 	for rows.Next() {
 		var item connection.Message
 		var ref reference
+		var audioMIME, audioSHA *string
+		var audioSize, audioDuration *int64
+		var imageRaw []byte
 		if err := rows.Scan(&item.ID, &item.ConversationID, &item.SenderID,
-			&item.SpeakerKind, &item.Body, &item.CreatedAt, &ref.kind, &ref.id); err != nil {
+			&item.SpeakerKind, &item.Body, &item.CreatedAt, &ref.kind, &ref.id,
+			&audioMIME, &audioSize, &audioSHA, &audioDuration, &imageRaw); err != nil {
+			rows.Close()
+			return nil, err
+		}
+		if audioMIME != nil || audioSize != nil || audioSHA != nil || audioDuration != nil {
+			if audioMIME == nil || audioSize == nil || audioSHA == nil || audioDuration == nil {
+				rows.Close()
+				return nil, connection.ErrConflict
+			}
+			meta := connection.AudioMetadata{MIME: *audioMIME, ByteSize: *audioSize, SHA256: *audioSHA, DurationMillis: *audioDuration}
+			if !connection.ValidAudioMetadata(meta) {
+				rows.Close()
+				return nil, connection.ErrConflict
+			}
+			item.Audio = &meta
+		}
+		if err = attachChatImage(&item, imageRaw, ref.kind, ref.id); err != nil {
 			rows.Close()
 			return nil, err
 		}
@@ -807,12 +865,27 @@ func (s *Store) sendMessageWithOperation(ctx context.Context, actorID, id, body,
 			if existing.ConversationID != id || existing.Body != body || existing.SenderID != actorID {
 				return connection.Message{}, connection.ErrConflict
 			}
-			if e = finishMessageRoute(ctx, tx, routeFence); e != nil { return connection.Message{}, e }
-			if ctx.Err() != nil { return connection.Message{}, ctx.Err() }
-			if e = tx.Commit(ctx); e != nil { return connection.Message{}, e }
+			if e = finishMessageRoute(ctx, tx, routeFence); e != nil {
+				return connection.Message{}, e
+			}
+			if ctx.Err() != nil {
+				return connection.Message{}, ctx.Err()
+			}
+			if e = tx.Commit(ctx); e != nil {
+				return connection.Message{}, e
+			}
 			return existing, nil
 		}
-		if !errors.Is(e, pgx.ErrNoRows) { return connection.Message{}, e }
+		if !errors.Is(e, pgx.ErrNoRows) {
+			return connection.Message{}, e
+		}
+		var used bool
+		if e = tx.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM conversation_messages WHERE sender_account_id=$1 AND client_operation_id=$2)`, actorID, operation).Scan(&used); e != nil {
+			return connection.Message{}, e
+		}
+		if used {
+			return connection.Message{}, connection.ErrConflict
+		}
 	}
 	var entityCard *connection.EntityCard
 	if entityType != "" {
@@ -846,12 +919,12 @@ func (s *Store) sendMessageWithOperation(ctx context.Context, actorID, id, body,
 		(conversation_id, sender_account_id, body, entity_type, entity_id)
 		VALUES ($1, $2, $3, NULLIF($4,''), NULLIF($5,'')::uuid)
 		RETURNING id, conversation_id, sender_account_id, speaker_kind, body, created_at`,
-		id, actorID, body, entityType, entityID).Scan(&item.ID, &item.ConversationID,
-		&item.SenderID, &item.SpeakerKind, &item.Body, &item.CreatedAt)
+			id, actorID, body, entityType, entityID).Scan(&item.ID, &item.ConversationID,
+			&item.SenderID, &item.SpeakerKind, &item.Body, &item.CreatedAt)
 	} else {
 		err = tx.QueryRow(ctx, `INSERT INTO conversation_messages(conversation_id,sender_account_id,body,client_operation_id)
 		VALUES($1,$2,$3,$4) RETURNING id,conversation_id,sender_account_id,speaker_kind,body,created_at`,
-		id,actorID,body,operation).Scan(&item.ID,&item.ConversationID,&item.SenderID,&item.SpeakerKind,&item.Body,&item.CreatedAt)
+			id, actorID, body, operation).Scan(&item.ID, &item.ConversationID, &item.SenderID, &item.SpeakerKind, &item.Body, &item.CreatedAt)
 	}
 	if err != nil {
 		return connection.Message{}, err
@@ -866,7 +939,9 @@ func (s *Store) sendMessageWithOperation(ctx context.Context, actorID, id, body,
 	if err := tx.Commit(ctx); err != nil {
 		return connection.Message{}, err
 	}
-	if ctx.Err() != nil { return connection.Message{}, ctx.Err() }
+	if ctx.Err() != nil {
+		return connection.Message{}, ctx.Err()
+	}
 	item.Entity = entityCard
 	return item, nil
 }
@@ -881,7 +956,7 @@ func chatEntityQuery(kind string) string {
 		    WHERE a.id=$1 AND a.publication_status='published' AND c.publication_status='published'
 		    AND a.cancelled_at IS NULL AND (a.expires_at IS NULL OR a.expires_at>clock_timestamp())
             AND (c.expires_at IS NULL OR c.expires_at>clock_timestamp())
-		    AND birdtie_activity_visible_to(a.id,$2::uuid)
+		    AND birdtie_activity_visible_to(a.id,$2::uuid) AND(a.place_id IS NULL OR EXISTS(SELECT 1 FROM places physical WHERE physical.id=a.place_id AND physical.city_id=a.city_id AND physical.publication_status='published' AND(physical.expires_at IS NULL OR physical.expires_at>clock_timestamp()) AND ` + currentRetainedPlaceVisibilitySQL("physical", "clock_timestamp()") + `))
 		    AND NOT EXISTS (SELECT 1 FROM account_blocks b WHERE
 		      (b.blocker_account_id=$2 AND b.blocked_account_id=a.host_account_id) OR
 		      (b.blocked_account_id=$2 AND b.blocker_account_id=a.host_account_id))`
@@ -889,7 +964,7 @@ func chatEntityQuery(kind string) string {
 		query = `SELECT p.name AS title FROM places p JOIN cities c ON c.id=p.city_id
 		    WHERE p.id=$1 AND p.publication_status='published' AND c.publication_status='published'
 		    AND (p.expires_at IS NULL OR p.expires_at>clock_timestamp())
-            AND (c.expires_at IS NULL OR c.expires_at>clock_timestamp())`
+            AND (c.expires_at IS NULL OR c.expires_at>clock_timestamp()) AND ` + currentRetainedPlaceVisibilitySQL("p", "clock_timestamp()") + ``
 	case "person":
 		query = `SELECT CASE WHEN birdtie_agent_profile_field_allowed(a.id,$2::uuid,'displayName')
                 THEN COALESCE(NULLIF(p.display_name,''),NULLIF(a.handle,''),'Birdtie 成员')
@@ -925,6 +1000,7 @@ func chatEntityQuery(kind string) string {
             AND m.author_confirmed_at<=m.published_at AND m.published_at<=clock_timestamp()
             AND p.publication_status='published' AND c.publication_status='published'
             AND (p.expires_at IS NULL OR p.expires_at>clock_timestamp()) AND (c.expires_at IS NULL OR c.expires_at>clock_timestamp())
+            AND ` + currentRetainedPlaceVisibilitySQL("p", "clock_timestamp()") + `
             AND NOT EXISTS(SELECT 1 FROM account_blocks b WHERE (b.blocker_account_id=$2 AND b.blocked_account_id=a.id)
               OR (b.blocker_account_id=a.id AND b.blocked_account_id=$2))`
 	default:

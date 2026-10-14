@@ -11,6 +11,7 @@ import 'package:http/http.dart' as http;
 import 'moment_image_header.dart';
 import 'moment_image_picker.dart';
 import 'private_moment_media_pending_store.dart';
+import '../workspace/local_image_draft.dart' show decodeLocalImagePixels;
 
 const privateMomentImagePurpose = 'PRIVATE_MOMENT_ATTACHMENT';
 final _imageID = RegExp(
@@ -114,6 +115,10 @@ class PrivateMomentMediaController extends ChangeNotifier {
   final bool _ownsClient;
   final String _base;
   final MomentImagePicker _picker;
+  bool supportsSource(MomentImageSource source) =>
+      _picker.supportsSource(source);
+  bool canSelectSource(MomentImageSource source) =>
+      canChangeLocal && supportsSource(source);
   final DateTime Function() _clock;
   final PrivateImagePendingStore _pendingStore;
   final MomentImageTextRecognizer _textRecognizer;
@@ -198,7 +203,10 @@ class PrivateMomentMediaController extends ChangeNotifier {
 
   Future<void> maskSelectedTextHints({required bool confirmed}) async {
     _observe();
-    if (!confirmed || !canChangeLocal || textChecking || !hasSelectedTextHints) {
+    if (!confirmed ||
+        !canChangeLocal ||
+        textChecking ||
+        !hasSelectedTextHints) {
       return;
     }
     // Capture the actual regions before mask() invalidates all stale OCR state.
@@ -208,7 +216,9 @@ class PrivateMomentMediaController extends ChangeNotifier {
     var expected = _serial;
     for (final rect in masks) {
       _observe();
-      if (!_current(expected) || !canChangeLocal || !identical(_pixels, image)) {
+      if (!_current(expected) ||
+          !canChangeLocal ||
+          !identical(_pixels, image)) {
         return;
       }
       await mask(rect);
@@ -537,7 +547,9 @@ class PrivateMomentMediaController extends ChangeNotifier {
     }
   }
 
-  Future<void> select() async {
+  Future<void> select({
+    MomentImageSource source = MomentImageSource.gallery,
+  }) async {
     if (!canChangeLocal) return;
     _observe();
     if (retired) return;
@@ -552,14 +564,9 @@ class PrivateMomentMediaController extends ChangeNotifier {
     ui.Image? decoded;
     try {
       if (!await _restoreJournal(n) || unknown) return;
-      final chosen = await _picker.select();
+      final chosen = await _picker.selectSource(source);
       if (!_current(n) || chosen == null) return;
-      final codec = await ui.instantiateImageCodec(chosen.bytes);
-      try {
-        decoded = (await codec.getNextFrame()).image;
-      } finally {
-        codec.dispose();
-      }
+      decoded = await decodeLocalImagePixels(chosen);
       if (!_current(n)) {
         decoded.dispose();
         decoded = null;

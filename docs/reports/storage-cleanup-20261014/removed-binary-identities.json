@@ -1,0 +1,2067 @@
+[
+  {
+    "Path": "work\\unfinished-completion-2026-10-10\\api-build-01\\birdtie-api-unfinished-completion.exe",
+    "Bytes": 28910592,
+    "Sha256": "4808dcad0525c2da2ebd803a3a110f20805670c676ef433624631ca4bb15b5bc"
+  },
+  {
+    "Path": "work\\remaining-execution-20261014\\apk-build-org-bc3\\birdtie-batch-b.apk",
+    "Bytes": 320093450,
+    "Sha256": "48d3c0a5d34bf8f5234c1f358e4fecffed45b9754864ae23ff7f0296cb45b672"
+  },
+  {
+    "Path": "work\\remaining-execution-20261014\\apk-build-org-bc3\\previous-generated.apk",
+    "Bytes": 319634698,
+    "Sha256": "f1234fc223e234467900113f9f5144c83b42816d2c93e97b937affce74d4a1fc"
+  },
+  {
+    "Path": "work\\remaining-execution-20261014\\apk-build-copy-bc4\\previous-generated.apk",
+    "Bytes": 320093450,
+    "Sha256": "48d3c0a5d34bf8f5234c1f358e4fecffed45b9754864ae23ff7f0296cb45b672"
+  },
+  {
+    "Path": "work\\remaining-execution-20261014\\apk-build-bc2\\birdtie-batch-b.apk",
+    "Bytes": 319634698,
+    "Sha256": "f1234fc223e234467900113f9f5144c83b42816d2c93e97b937affce74d4a1fc"
+  },
+  {
+    "Path": "work\\remaining-execution-20261014\\apk-build-bc2\\previous-generated.apk",
+    "Bytes": 319159562,
+    "Sha256": "e714937297bcdbaa6dc06f91b8359b05def4e5be2a19d5756e77bab3cb26e8c8"
+  },
+  {
+    "Path": "work\\remaining-execution-20261014\\apk-build-bc01\\birdtie-batch-b.apk",
+    "Bytes": 319159562,
+    "Sha256": "e714937297bcdbaa6dc06f91b8359b05def4e5be2a19d5756e77bab3cb26e8c8"
+  },
+  {
+    "Path": "work\\remaining-execution-20261014\\apk-build-bc01\\previous-generated.apk",
+    "Bytes": 318864650,
+    "Sha256": "387ba7daf9e12dfe2066c0818c375b33de007008270fc2b20e2903a8684762b9"
+  },
+  {
+    "Path": "work\\remaining-execution-20261014\\apk-build-a01\\birdtie-batch-a.apk",
+    "Bytes": 318864650,
+    "Sha256": "387ba7daf9e12dfe2066c0818c375b33de007008270fc2b20e2903a8684762b9"
+  },
+  {
+    "Path": "work\\remaining-execution-20261014\\apk-build-a01\\previous-generated.apk",
+    "Bytes": 318700810,
+    "Sha256": "bdf5fb9a0b580813481dd5bd39db737bffa2cad0459061b72a9073593f7a404f"
+  },
+  {
+    "Path": "work\\remaining-execution-20261014\\api-build-place-b02\\artifact\\activity-reminders.exe",
+    "Bytes": 15009792,
+    "Sha256": "5935b76df7b620ad9106445f89a424825fd2e09a84daddf1e0c431e07951029b"
+  },
+  {
+    "Path": "work\\remaining-execution-20261014\\api-build-place-b02\\artifact\\agent-candidate-cleanup.exe",
+    "Bytes": 13702656,
+    "Sha256": "0de66f60b39ac2ad4fcd87ffeb8c76de7d87adf7a7508f4e1fba54f04939ca02"
+  },
+  {
+    "Path": "work\\remaining-execution-20261014\\api-build-place-b02\\artifact\\agent-enrichment-worker.exe",
+    "Bytes": 15424000,
+    "Sha256": "77c9394dea262fa5dbfe84e8131807b669618a2e51623af8360032b23b148d5c"
+  },
+  {
+    "Path": "work\\remaining-execution-20261014\\api-build-place-b02\\artifact\\agent-outbox-control.exe",
+    "Bytes": 15552512,
+    "Sha256": "12a94e48761aa8c98c3757611352c36e4a468a7197d7f9dc66b3e240f2b580b0"
+  },
+  {
+    "Path": "work\\remaining-execution-20261014\\api-build-place-b02\\artifact\\api.exe",
+    "Bytes": 32014336,
+    "Sha256": "f124f0ebb2944832dc4dcf430fabf590c5fbbdb1cb14cf3e1f5160420e71f90e"
+  },
+  {
+    "Path": "work\\remaining-execution-20261014\\api-build-place-b02\\artifact\\city-editor-access.exe",
+    "Bytes": 13756416,
+    "Sha256": "9af5496007ab896953abf7f51e4528cefc0f992615754f1199452a5a76e32b65"
+  },
+  {
+    "Path": "work\\remaining-execution-20261014\\api-build-place-b02\\artifact\\media-retention.exe",
+    "Bytes": 15037952,
+    "Sha256": "cdfa8e3a4b2d1836ed384ef5c6d31731605f318a4f4e8fab0f7eb307ad144d35"
+  },
+  {
+    "Path": "work\\remaining-execution-20261014\\api-build-place-b02\\artifact\\notification-schedules.exe",
+    "Bytes": 15228416,
+    "Sha256": "ec8fe8df9b2a076f91f7ef5c6710c3393150949430002e4ae28a522be674495f"
+  },
+  {
+    "Path": "work\\remaining-execution-20261014\\api-build-place-b02\\artifact\\now-live-prepare.exe",
+    "Bytes": 15249920,
+    "Sha256": "60b1ce9ca5238e07df2bbac87b6743a94af134e49e33169b63acf4904626c487"
+  },
+  {
+    "Path": "work\\remaining-execution-20261014\\api-build-place-b02\\artifact\\now-live-verify.exe",
+    "Bytes": 17333248,
+    "Sha256": "56e2fcada65124cf775ad1492419e6d5f085410697e5061085a3be1d04b400cb"
+  },
+  {
+    "Path": "work\\remaining-execution-20261014\\api-build-place-b02\\artifact\\system-push-worker.exe",
+    "Bytes": 16448000,
+    "Sha256": "4d3718144d858ae81582e9da43f435552e59fee0ecbe24c21bca25395162cbcc"
+  },
+  {
+    "Path": "work\\remaining-execution-20261014\\api-build-place-b02\\artifact\\video-media-worker.exe",
+    "Bytes": 16426496,
+    "Sha256": "6f4d87c928ae11d88df5727fc65eed882934492eca07403e420fa61b3125ac9b"
+  },
+  {
+    "Path": "work\\remaining-execution-20261014\\api-build-org-b03\\artifact\\activity-reminders.exe",
+    "Bytes": 15009792,
+    "Sha256": "b96b1e0996c428b2273b327c63c48938cf66d5d70ad773291536551e0dd8015a"
+  },
+  {
+    "Path": "work\\remaining-execution-20261014\\api-build-org-b03\\artifact\\agent-candidate-cleanup.exe",
+    "Bytes": 13702656,
+    "Sha256": "0de66f60b39ac2ad4fcd87ffeb8c76de7d87adf7a7508f4e1fba54f04939ca02"
+  },
+  {
+    "Path": "work\\remaining-execution-20261014\\api-build-org-b03\\artifact\\agent-enrichment-worker.exe",
+    "Bytes": 15425024,
+    "Sha256": "6a76191fde8eec8d06d02ff22a7029e1683f9b073356b7b82f2945d104c20292"
+  },
+  {
+    "Path": "work\\remaining-execution-20261014\\api-build-org-b03\\artifact\\agent-outbox-control.exe",
+    "Bytes": 15553024,
+    "Sha256": "6b30a6d21050879ebebcbb3a57c1daba53b319e137fe9d58ee227e1b5176213e"
+  },
+  {
+    "Path": "work\\remaining-execution-20261014\\api-build-org-b03\\artifact\\api.exe",
+    "Bytes": 32156160,
+    "Sha256": "c21f82c0d4ef6d21c42fe0a37d540b3b6bfd35988e4a422b33c0ec21e84251d2"
+  },
+  {
+    "Path": "work\\remaining-execution-20261014\\api-build-org-b03\\artifact\\city-editor-access.exe",
+    "Bytes": 13756416,
+    "Sha256": "9af5496007ab896953abf7f51e4528cefc0f992615754f1199452a5a76e32b65"
+  },
+  {
+    "Path": "work\\remaining-execution-20261014\\api-build-org-b03\\artifact\\media-retention.exe",
+    "Bytes": 15037952,
+    "Sha256": "0762275d83bbcb835f6a4f745d181c9a482f919bb9510fda716ac9bd52682def"
+  },
+  {
+    "Path": "work\\remaining-execution-20261014\\api-build-org-b03\\artifact\\notification-schedules.exe",
+    "Bytes": 15228928,
+    "Sha256": "26d3ac6b9a0c432858433fb8c161ed72703670538bf223aeabc59a9ea8c111b7"
+  },
+  {
+    "Path": "work\\remaining-execution-20261014\\api-build-org-b03\\artifact\\now-live-prepare.exe",
+    "Bytes": 15251456,
+    "Sha256": "737da8e69e770737762304a6958aafcfb34435ad81bb245f26a8ee8e9654f23c"
+  },
+  {
+    "Path": "work\\remaining-execution-20261014\\api-build-org-b03\\artifact\\now-live-verify.exe",
+    "Bytes": 17334272,
+    "Sha256": "5eafe3616eb773c2dc6f6471c6eb0f6cb822e65fbeffad250a4c36214b8509a1"
+  },
+  {
+    "Path": "work\\remaining-execution-20261014\\api-build-org-b03\\artifact\\system-push-worker.exe",
+    "Bytes": 16450560,
+    "Sha256": "d7135f0c74eb5a3d3923db142688b7733eb45b642ce6e9be3774007d7c0774a6"
+  },
+  {
+    "Path": "work\\remaining-execution-20261014\\api-build-org-b03\\artifact\\video-media-worker.exe",
+    "Bytes": 16435712,
+    "Sha256": "2335f8b6c0078d5d7bdecd471f53aeb4c0fcf17d9d3a95a4a231625730e8b58d"
+  },
+  {
+    "Path": "work\\remaining-execution-20261014\\api-build-human-controls-b05\\artifact\\activity-reminders.exe",
+    "Bytes": 15010816,
+    "Sha256": "892d4a4c90c541b1cfb4a6b25bbed06b314f60ae63b0e550769744979c421186"
+  },
+  {
+    "Path": "work\\remaining-execution-20261014\\api-build-human-controls-b05\\artifact\\agent-candidate-cleanup.exe",
+    "Bytes": 13702656,
+    "Sha256": "0de66f60b39ac2ad4fcd87ffeb8c76de7d87adf7a7508f4e1fba54f04939ca02"
+  },
+  {
+    "Path": "work\\remaining-execution-20261014\\api-build-human-controls-b05\\artifact\\agent-enrichment-worker.exe",
+    "Bytes": 15428096,
+    "Sha256": "ac58ef8621498374734dd978aca822e391786dfd58d05b818745170101af86df"
+  },
+  {
+    "Path": "work\\remaining-execution-20261014\\api-build-human-controls-b05\\artifact\\agent-outbox-control.exe",
+    "Bytes": 15556096,
+    "Sha256": "d01dfaf764bbdeb61d4b458efa7e40081b6dea7a35d65f9ab72089321e11233b"
+  },
+  {
+    "Path": "work\\remaining-execution-20261014\\api-build-human-controls-b05\\artifact\\api.exe",
+    "Bytes": 32859648,
+    "Sha256": "b67b9c80cd7d06ef75f4041edabe3fdee83a92507d7d24ffc1333be5398caa37"
+  },
+  {
+    "Path": "work\\remaining-execution-20261014\\api-build-human-controls-b05\\artifact\\city-editor-access.exe",
+    "Bytes": 13756416,
+    "Sha256": "9af5496007ab896953abf7f51e4528cefc0f992615754f1199452a5a76e32b65"
+  },
+  {
+    "Path": "work\\remaining-execution-20261014\\api-build-human-controls-b05\\artifact\\media-retention.exe",
+    "Bytes": 15037440,
+    "Sha256": "de6f183a424956fc8a7afa8cd4ab82c876c666565a06bd16df1ced2781088b01"
+  },
+  {
+    "Path": "work\\remaining-execution-20261014\\api-build-human-controls-b05\\artifact\\notification-schedules.exe",
+    "Bytes": 15230464,
+    "Sha256": "2f038b72e747360af60e7950cbefc6b0e4237cf445e8a007c7c31090641818b7"
+  },
+  {
+    "Path": "work\\remaining-execution-20261014\\api-build-human-controls-b05\\artifact\\now-live-prepare.exe",
+    "Bytes": 15251968,
+    "Sha256": "28ff1e109b09dd7e16fdbcb54c1e8f572fba26edad828969b824052c3bfea18c"
+  },
+  {
+    "Path": "work\\remaining-execution-20261014\\api-build-human-controls-b05\\artifact\\now-live-verify.exe",
+    "Bytes": 17336832,
+    "Sha256": "2b0b094b5d89736e7ce7848090f1f9bcfe8f68ac78be367a5d5d44f2cb9ff312"
+  },
+  {
+    "Path": "work\\remaining-execution-20261014\\api-build-human-controls-b05\\artifact\\system-push-worker.exe",
+    "Bytes": 16453120,
+    "Sha256": "0db80ff64682bf920568dddda07359e89b8c667a5a6aba84194edf4a9d5c4caf"
+  },
+  {
+    "Path": "work\\remaining-execution-20261014\\api-build-human-controls-b05\\artifact\\video-media-worker.exe",
+    "Bytes": 16438272,
+    "Sha256": "2cf5382c4818d3438caef49837abbec39539a02ca129485e9026af672a9a70d9"
+  },
+  {
+    "Path": "work\\remaining-execution-20261014\\api-build-cover-frame-b04\\artifact\\activity-reminders.exe",
+    "Bytes": 15009792,
+    "Sha256": "3872d44ecfe661b08da153a353ba09364f3ef2368539db1ce84d9d7f24119be7"
+  },
+  {
+    "Path": "work\\remaining-execution-20261014\\api-build-cover-frame-b04\\artifact\\agent-candidate-cleanup.exe",
+    "Bytes": 13702656,
+    "Sha256": "0de66f60b39ac2ad4fcd87ffeb8c76de7d87adf7a7508f4e1fba54f04939ca02"
+  },
+  {
+    "Path": "work\\remaining-execution-20261014\\api-build-cover-frame-b04\\artifact\\agent-enrichment-worker.exe",
+    "Bytes": 15425536,
+    "Sha256": "db26b9f137ee2519708db7dca995c649815318f0ec2ed5e2b689d52d93fd48e6"
+  },
+  {
+    "Path": "work\\remaining-execution-20261014\\api-build-cover-frame-b04\\artifact\\agent-outbox-control.exe",
+    "Bytes": 15553536,
+    "Sha256": "cecbc0703f31bfd21eb1ec6cea564af8ce79947bfc94e189988fb16238f95245"
+  },
+  {
+    "Path": "work\\remaining-execution-20261014\\api-build-cover-frame-b04\\artifact\\api.exe",
+    "Bytes": 32198656,
+    "Sha256": "637c88de100f2a6f5368eb0daa11a559493ec68d2411eb129fd5ffd5096b7a7d"
+  },
+  {
+    "Path": "work\\remaining-execution-20261014\\api-build-cover-frame-b04\\artifact\\city-editor-access.exe",
+    "Bytes": 13756416,
+    "Sha256": "9af5496007ab896953abf7f51e4528cefc0f992615754f1199452a5a76e32b65"
+  },
+  {
+    "Path": "work\\remaining-execution-20261014\\api-build-cover-frame-b04\\artifact\\media-retention.exe",
+    "Bytes": 15037952,
+    "Sha256": "99dbb84d08c9e6a4cb1c39a63eac1c79e04de4595233a13886764714cb393292"
+  },
+  {
+    "Path": "work\\remaining-execution-20261014\\api-build-cover-frame-b04\\artifact\\notification-schedules.exe",
+    "Bytes": 15228928,
+    "Sha256": "9af78dc9bcee727b890846b1940b6706924a8c41f67c6a276c464bfc2b200c6a"
+  },
+  {
+    "Path": "work\\remaining-execution-20261014\\api-build-cover-frame-b04\\artifact\\now-live-prepare.exe",
+    "Bytes": 15251456,
+    "Sha256": "044a53b0d8dac1acd5b9b0ea9c5fc1c2137beaaa7e72b9b4e1fc148e0f18578d"
+  },
+  {
+    "Path": "work\\remaining-execution-20261014\\api-build-cover-frame-b04\\artifact\\now-live-verify.exe",
+    "Bytes": 17334784,
+    "Sha256": "c7ec7804553e02363177ef5b88692d7d34ee0494f7533fb7be08b380737c3a98"
+  },
+  {
+    "Path": "work\\remaining-execution-20261014\\api-build-cover-frame-b04\\artifact\\system-push-worker.exe",
+    "Bytes": 16451072,
+    "Sha256": "5da987170f7f4223aaa240da89aed823e5c13fc454fe6ad3d502620663729b05"
+  },
+  {
+    "Path": "work\\remaining-execution-20261014\\api-build-cover-frame-b04\\artifact\\video-media-worker.exe",
+    "Bytes": 16436224,
+    "Sha256": "7182fc69449edb1898fc0a26ca0d761716a3692dd82674a4989eb873f4e059d8"
+  },
+  {
+    "Path": "work\\remaining-execution-20261014\\api-build-collection-copy-c01\\artifact\\activity-reminders.exe",
+    "Bytes": 15009792,
+    "Sha256": "4748e994c75b62abd060f28fcd4c7d5dc7331cda9e95b22790d1391ba1bcf8a5"
+  },
+  {
+    "Path": "work\\remaining-execution-20261014\\api-build-collection-copy-c01\\artifact\\agent-candidate-cleanup.exe",
+    "Bytes": 13702656,
+    "Sha256": "0de66f60b39ac2ad4fcd87ffeb8c76de7d87adf7a7508f4e1fba54f04939ca02"
+  },
+  {
+    "Path": "work\\remaining-execution-20261014\\api-build-collection-copy-c01\\artifact\\agent-enrichment-worker.exe",
+    "Bytes": 15426560,
+    "Sha256": "d7a56e638c64356dfe147124797de96ba69f979d1f2c1be2dd43313c64de1826"
+  },
+  {
+    "Path": "work\\remaining-execution-20261014\\api-build-collection-copy-c01\\artifact\\agent-outbox-control.exe",
+    "Bytes": 15554048,
+    "Sha256": "201a2aa81aefef73e07e07c2fd2ade2540fe2d3c53657b987f710b70f8b0c736"
+  },
+  {
+    "Path": "work\\remaining-execution-20261014\\api-build-collection-copy-c01\\artifact\\api.exe",
+    "Bytes": 32388096,
+    "Sha256": "ce3278850e0debffad24fe9c04562a9e29235195f15335976dfe1d187f29a252"
+  },
+  {
+    "Path": "work\\remaining-execution-20261014\\api-build-collection-copy-c01\\artifact\\city-editor-access.exe",
+    "Bytes": 13756416,
+    "Sha256": "9af5496007ab896953abf7f51e4528cefc0f992615754f1199452a5a76e32b65"
+  },
+  {
+    "Path": "work\\remaining-execution-20261014\\api-build-collection-copy-c01\\artifact\\media-retention.exe",
+    "Bytes": 15037440,
+    "Sha256": "03ab02c77ec6178bb8a869408aea6958129c9e2fb695c069207f5ae494fd415a"
+  },
+  {
+    "Path": "work\\remaining-execution-20261014\\api-build-collection-copy-c01\\artifact\\notification-schedules.exe",
+    "Bytes": 15228928,
+    "Sha256": "f624a14cbeca6ea468c2e34b8f686be708d2f7578d86c64972391c168ab9cf74"
+  },
+  {
+    "Path": "work\\remaining-execution-20261014\\api-build-collection-copy-c01\\artifact\\now-live-prepare.exe",
+    "Bytes": 15251456,
+    "Sha256": "566e430b43abb98aa6af0c57e9ce1a5ee0e2ffd71c31af7ba5a0adc9e5d56c2f"
+  },
+  {
+    "Path": "work\\remaining-execution-20261014\\api-build-collection-copy-c01\\artifact\\now-live-verify.exe",
+    "Bytes": 17334784,
+    "Sha256": "c2d250967282ba2db0120c88446b7680d8b4d1ffdaff8bc6c1c084118ac397d9"
+  },
+  {
+    "Path": "work\\remaining-execution-20261014\\api-build-collection-copy-c01\\artifact\\system-push-worker.exe",
+    "Bytes": 16452096,
+    "Sha256": "89603c4192294d53312e8fef4082ca62094ebcb213b7a4d70de521baf0e9cf7e"
+  },
+  {
+    "Path": "work\\remaining-execution-20261014\\api-build-collection-copy-c01\\artifact\\video-media-worker.exe",
+    "Bytes": 16436736,
+    "Sha256": "2ffdd019b119d68b962ddd320058a0ed87a601f1f7ca90fdd78654231e698754"
+  },
+  {
+    "Path": "work\\remaining-execution-20261014\\api-build-b01\\artifact\\activity-reminders.exe",
+    "Bytes": 15010304,
+    "Sha256": "4b7049ff0e4419a8583cc29da9bb0e5e2d7c7a9c38ce1fcf0c27c8ccd1d0f60f"
+  },
+  {
+    "Path": "work\\remaining-execution-20261014\\api-build-b01\\artifact\\agent-candidate-cleanup.exe",
+    "Bytes": 13702656,
+    "Sha256": "0de66f60b39ac2ad4fcd87ffeb8c76de7d87adf7a7508f4e1fba54f04939ca02"
+  },
+  {
+    "Path": "work\\remaining-execution-20261014\\api-build-b01\\artifact\\agent-enrichment-worker.exe",
+    "Bytes": 15422464,
+    "Sha256": "f3d59154c070afde8442b6f58a1c7f3431f9eb01b58ff2d00720d37198148fe2"
+  },
+  {
+    "Path": "work\\remaining-execution-20261014\\api-build-b01\\artifact\\agent-outbox-control.exe",
+    "Bytes": 15550976,
+    "Sha256": "33e48bdc0d0f0afacabfb2dcc8c212e082c6e2108694916818ce11fe714706fd"
+  },
+  {
+    "Path": "work\\remaining-execution-20261014\\api-build-b01\\artifact\\api.exe",
+    "Bytes": 31787008,
+    "Sha256": "2b094a3f62d53e4eb4cf08f0bd084a6889a4d46e780fbadc7a7b6d83a5b85b5b"
+  },
+  {
+    "Path": "work\\remaining-execution-20261014\\api-build-b01\\artifact\\city-editor-access.exe",
+    "Bytes": 13756416,
+    "Sha256": "9af5496007ab896953abf7f51e4528cefc0f992615754f1199452a5a76e32b65"
+  },
+  {
+    "Path": "work\\remaining-execution-20261014\\api-build-b01\\artifact\\notification-schedules.exe",
+    "Bytes": 15225856,
+    "Sha256": "37c755434b560f8b0fbe344dc9e24f86fd83db5c3485bf954c7ba02da63b2847"
+  },
+  {
+    "Path": "work\\remaining-execution-20261014\\api-build-b01\\artifact\\now-live-prepare.exe",
+    "Bytes": 15248896,
+    "Sha256": "7a1576da5daef67cde2792136235e0bca0f5466c86a5647aa3712d6a311ff547"
+  },
+  {
+    "Path": "work\\remaining-execution-20261014\\api-build-b01\\artifact\\now-live-verify.exe",
+    "Bytes": 17330176,
+    "Sha256": "128b9881f01bac463895e5b4af7e5a4d5ec4f19b5808c1225826c767131b4a6d"
+  },
+  {
+    "Path": "work\\remaining-execution-20261014\\api-build-b01\\artifact\\system-push-worker.exe",
+    "Bytes": 16449024,
+    "Sha256": "3073301a21fb436515e4c31a4683f635fdae4738b9293603a227242583b470a3"
+  },
+  {
+    "Path": "work\\remaining-execution-20261014\\api-build-b01\\artifact\\video-media-worker.exe",
+    "Bytes": 16432640,
+    "Sha256": "78dbde59533e058da51d029a4da4516a4ad9791cb27c9a5ba88e5c708f794140"
+  },
+  {
+    "Path": "work\\remaining-execution-20261014\\api-build-a01\\artifact\\activity-reminders.exe",
+    "Bytes": 15008768,
+    "Sha256": "b90660d80fedcb8f5aa3480ab4fc93a3cd26aa292091cbdb569b51a44e491fb4"
+  },
+  {
+    "Path": "work\\remaining-execution-20261014\\api-build-a01\\artifact\\agent-candidate-cleanup.exe",
+    "Bytes": 13702656,
+    "Sha256": "0de66f60b39ac2ad4fcd87ffeb8c76de7d87adf7a7508f4e1fba54f04939ca02"
+  },
+  {
+    "Path": "work\\remaining-execution-20261014\\api-build-a01\\artifact\\agent-enrichment-worker.exe",
+    "Bytes": 15420928,
+    "Sha256": "76de8f399b046d047c29015da882d8404cd501e5c8123a8560f3d62d78cc947a"
+  },
+  {
+    "Path": "work\\remaining-execution-20261014\\api-build-a01\\artifact\\agent-outbox-control.exe",
+    "Bytes": 15542272,
+    "Sha256": "d30ddb22d17d9a68b87589878d1637d9c738cdd9ea8b4cd2e423c2f7c1b49a74"
+  },
+  {
+    "Path": "work\\remaining-execution-20261014\\api-build-a01\\artifact\\api.exe",
+    "Bytes": 31570432,
+    "Sha256": "6bbf4534f6ffcea190183a700f532bfb15d8a91654390b2e7767c68b9b06f89c"
+  },
+  {
+    "Path": "work\\remaining-execution-20261014\\api-build-a01\\artifact\\city-editor-access.exe",
+    "Bytes": 13756416,
+    "Sha256": "9af5496007ab896953abf7f51e4528cefc0f992615754f1199452a5a76e32b65"
+  },
+  {
+    "Path": "work\\remaining-execution-20261014\\api-build-a01\\artifact\\notification-schedules.exe",
+    "Bytes": 15222784,
+    "Sha256": "babb12ff5000f9e1b189861bd26142ede435d6163c0b58223e6f03045270bc7e"
+  },
+  {
+    "Path": "work\\remaining-execution-20261014\\api-build-a01\\artifact\\now-live-prepare.exe",
+    "Bytes": 15247872,
+    "Sha256": "aab616dcd2e2e67499a2ac01294cbbe6de6007da1524e4abb90432dd16d0c501"
+  },
+  {
+    "Path": "work\\remaining-execution-20261014\\api-build-a01\\artifact\\now-live-verify.exe",
+    "Bytes": 17329152,
+    "Sha256": "725aadabf36bb93667fc91b496b7b15de92540b83a7669334e4e321a65cc70c1"
+  },
+  {
+    "Path": "work\\remaining-execution-20261014\\api-build-a01\\artifact\\system-push-worker.exe",
+    "Bytes": 16447488,
+    "Sha256": "d8cfd8a4ed632a798eea6af49f41afc57ad32bf3eafaf95c6294f5fd1109af53"
+  },
+  {
+    "Path": "work\\remaining-execution-20261014\\api-build-a01\\artifact\\video-media-worker.exe",
+    "Bytes": 16430592,
+    "Sha256": "84b1e097fe680435b7b0844dc9a349f2f35d825f5037622bedadb6bfa2176964"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\profile-saved-build28-01\\birdtie-now28-batch28.apk",
+    "Bytes": 279465769,
+    "Sha256": "2cdcf87e9e9fa47a5a1b863e430a38e49d51cfc88921e0314eb1eeb60341a8fa"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\profile-saved-build28-01\\previous-generated-0.apk",
+    "Bytes": 279252777,
+    "Sha256": "2a7d60f5b345760b24017eb14357c945df81ee17d14c715b1ff6dab81ac1453a"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\profile-saved-build28-01\\previous-generated-1.apk",
+    "Bytes": 279252777,
+    "Sha256": "2a7d60f5b345760b24017eb14357c945df81ee17d14c715b1ff6dab81ac1453a"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\profile-glass-build26-02\\birdtie-now26-batch26.apk",
+    "Bytes": 279252777,
+    "Sha256": "2a7d60f5b345760b24017eb14357c945df81ee17d14c715b1ff6dab81ac1453a"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\profile-glass-build26-02\\previous-generated-0.apk",
+    "Bytes": 279252777,
+    "Sha256": "7e1eca67e5666fd67178b3469dde9914761df5599e9eb1780f2ad134d5bd5b85"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\profile-glass-build26-02\\previous-generated-1.apk",
+    "Bytes": 279252777,
+    "Sha256": "7e1eca67e5666fd67178b3469dde9914761df5599e9eb1780f2ad134d5bd5b85"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\profile-glass-build26\\birdtie-now26-batch26.apk",
+    "Bytes": 279252777,
+    "Sha256": "7e1eca67e5666fd67178b3469dde9914761df5599e9eb1780f2ad134d5bd5b85"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\profile-glass-build26\\previous-generated-0.apk",
+    "Bytes": 278925097,
+    "Sha256": "ddfe81905b4067782896b441acb73a893bb4ef311d86ea7374e9140b855fb27b"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\profile-glass-build26\\previous-generated-1.apk",
+    "Bytes": 278925097,
+    "Sha256": "ddfe81905b4067782896b441acb73a893bb4ef311d86ea7374e9140b855fb27b"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\profile-glass-build25\\birdtie-now25-batch25.apk",
+    "Bytes": 278925097,
+    "Sha256": "ddfe81905b4067782896b441acb73a893bb4ef311d86ea7374e9140b855fb27b"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\profile-glass-build25\\previous-generated-0.apk",
+    "Bytes": 278859561,
+    "Sha256": "68383170a27eb24b7e8a2c61c2edc44144570ceae2d1b61e0c56001e2bc05b37"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\profile-glass-build25\\previous-generated-1.apk",
+    "Bytes": 278859561,
+    "Sha256": "68383170a27eb24b7e8a2c61c2edc44144570ceae2d1b61e0c56001e2bc05b37"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\profile-glass-build24\\birdtie-now24-batch24.apk",
+    "Bytes": 278859561,
+    "Sha256": "68383170a27eb24b7e8a2c61c2edc44144570ceae2d1b61e0c56001e2bc05b37"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\profile-glass-build24\\previous-generated-0.apk",
+    "Bytes": 278416381,
+    "Sha256": "a8ec6bfbfabadc162612f3e3b90dc8d06f712ceb069528efd3624a4808ddd56e"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\profile-glass-build24\\previous-generated-1.apk",
+    "Bytes": 278416381,
+    "Sha256": "a8ec6bfbfabadc162612f3e3b90dc8d06f712ceb069528efd3624a4808ddd56e"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\profile-glass-build23-03\\birdtie-now23-batch23.apk",
+    "Bytes": 278416381,
+    "Sha256": "a8ec6bfbfabadc162612f3e3b90dc8d06f712ceb069528efd3624a4808ddd56e"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\profile-glass-build23-03\\previous-generated-0.apk",
+    "Bytes": 278416381,
+    "Sha256": "cf5543fd541202d3db1486582b21da99440de880b918069b4d5e148b961464b0"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\profile-glass-build23-03\\previous-generated-1.apk",
+    "Bytes": 278416381,
+    "Sha256": "cf5543fd541202d3db1486582b21da99440de880b918069b4d5e148b961464b0"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\profile-glass-build23-02\\birdtie-now23-batch23.apk",
+    "Bytes": 278416381,
+    "Sha256": "cf5543fd541202d3db1486582b21da99440de880b918069b4d5e148b961464b0"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\profile-glass-build23-02\\previous-generated-0.apk",
+    "Bytes": 278416381,
+    "Sha256": "20d3729ed3902b0cf19bbdba22d9174978a4d2379faf2704493068fb5f98fbbd"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\profile-glass-build23-02\\previous-generated-1.apk",
+    "Bytes": 278416381,
+    "Sha256": "20d3729ed3902b0cf19bbdba22d9174978a4d2379faf2704493068fb5f98fbbd"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\profile-glass-build23\\birdtie-now23-batch23.apk",
+    "Bytes": 278416381,
+    "Sha256": "20d3729ed3902b0cf19bbdba22d9174978a4d2379faf2704493068fb5f98fbbd"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\profile-glass-build23\\previous-generated-0.apk",
+    "Bytes": 278105085,
+    "Sha256": "8a2cfd9555cd092f657d923657f09ac6af2a5ed5a9b5388be1a1d0962ba90274"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\profile-glass-build23\\previous-generated-1.apk",
+    "Bytes": 278105085,
+    "Sha256": "8a2cfd9555cd092f657d923657f09ac6af2a5ed5a9b5388be1a1d0962ba90274"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\profile-glass-build22-02\\birdtie-now22-batch22.apk",
+    "Bytes": 278105085,
+    "Sha256": "8a2cfd9555cd092f657d923657f09ac6af2a5ed5a9b5388be1a1d0962ba90274"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\profile-glass-build22-02\\previous-generated-0.apk",
+    "Bytes": 278105085,
+    "Sha256": "f6d8d5b32fe4aaff547dacf405c84c6a84caab21b6651b4cb24912694d7a2897"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\profile-glass-build22-02\\previous-generated-1.apk",
+    "Bytes": 278105085,
+    "Sha256": "f6d8d5b32fe4aaff547dacf405c84c6a84caab21b6651b4cb24912694d7a2897"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\profile-glass-build22\\birdtie-now22-batch22.apk",
+    "Bytes": 278105085,
+    "Sha256": "f6d8d5b32fe4aaff547dacf405c84c6a84caab21b6651b4cb24912694d7a2897"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\profile-glass-build22\\previous-generated-0.apk",
+    "Bytes": 278105085,
+    "Sha256": "e48079a8c377735d21ee401736fc29cd6f0e900f827694747ae25e4242bf7bcc"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\profile-glass-build22\\previous-generated-1.apk",
+    "Bytes": 278105085,
+    "Sha256": "e48079a8c377735d21ee401736fc29cd6f0e900f827694747ae25e4242bf7bcc"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\profile-glass-build21\\birdtie-now21-batch21.apk",
+    "Bytes": 278105085,
+    "Sha256": "e48079a8c377735d21ee401736fc29cd6f0e900f827694747ae25e4242bf7bcc"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\profile-glass-build21\\previous-generated-0.apk",
+    "Bytes": 273122189,
+    "Sha256": "08a77ae31e89f8e6823dbc3e95be483194db3476757192a1073afa0f38081ac7"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\profile-glass-build21\\previous-generated-1.apk",
+    "Bytes": 273122189,
+    "Sha256": "08a77ae31e89f8e6823dbc3e95be483194db3476757192a1073afa0f38081ac7"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\profile-glass-build20\\birdtie-now20-batch20.apk",
+    "Bytes": 273122189,
+    "Sha256": "08a77ae31e89f8e6823dbc3e95be483194db3476757192a1073afa0f38081ac7"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\profile-glass-build20\\previous-generated-0.apk",
+    "Bytes": 272499597,
+    "Sha256": "f4db9482364c15c3e2170116d5e58c7a30097d15006de70c1786c2241527f2f3"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\profile-glass-build20\\previous-generated-1.apk",
+    "Bytes": 272499597,
+    "Sha256": "f4db9482364c15c3e2170116d5e58c7a30097d15006de70c1786c2241527f2f3"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\profile-glass-build19\\birdtie-now20.apk",
+    "Bytes": 272499597,
+    "Sha256": "f4db9482364c15c3e2170116d5e58c7a30097d15006de70c1786c2241527f2f3"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\profile-glass-build19\\previous-generated-0.apk",
+    "Bytes": 272450445,
+    "Sha256": "faadd291542f96d646f732660976c3146652811d103ec4a6aab02d22e4aded39"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\profile-glass-build19\\previous-generated-1.apk",
+    "Bytes": 272450445,
+    "Sha256": "faadd291542f96d646f732660976c3146652811d103ec4a6aab02d22e4aded39"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\profile-glass-build18\\birdtie-now20.apk",
+    "Bytes": 272450445,
+    "Sha256": "faadd291542f96d646f732660976c3146652811d103ec4a6aab02d22e4aded39"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\profile-glass-build17\\birdtie-now20.apk",
+    "Bytes": 272450445,
+    "Sha256": "765a4ce52ecb972bd1455cfb1782d3fa437742738577145775037e1592297144"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\copy30-client-apk-build01\\birdtie-members30.apk",
+    "Bytes": 318700810,
+    "Sha256": "bdf5fb9a0b580813481dd5bd39db737bffa2cad0459061b72a9073593f7a404f"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\copy30-client-apk-build01\\previous-generated.apk",
+    "Bytes": 318684426,
+    "Sha256": "9617978dac3e4fa08ac3e5ab72b5c50b511d0c0639fe7417541e2f97413093aa"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\copy30-all-api-build01\\artifact\\activity-reminders.exe",
+    "Bytes": 15004160,
+    "Sha256": "71eb6d503106604a4de57014ed4d08c49dbcf5fb929ec1902e81bc0b1e1414a4"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\copy30-all-api-build01\\artifact\\agent-candidate-cleanup.exe",
+    "Bytes": 13702656,
+    "Sha256": "0de66f60b39ac2ad4fcd87ffeb8c76de7d87adf7a7508f4e1fba54f04939ca02"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\copy30-all-api-build01\\artifact\\agent-enrichment-worker.exe",
+    "Bytes": 15416320,
+    "Sha256": "902e759df4c323d1d7b8ecd0bfbbb43f437d794da1612f34f4d2bd345b02eb3d"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\copy30-all-api-build01\\artifact\\agent-outbox-control.exe",
+    "Bytes": 15536640,
+    "Sha256": "7a30dda0996e0440c17d4cabcd5371bdc2fdb7bc2455c90646a069d883dd7e51"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\copy30-all-api-build01\\artifact\\api.exe",
+    "Bytes": 31397888,
+    "Sha256": "d4a90caf2845f8eaa82c25840cb08631f6ca089952db68edc62f11cf1387f5b6"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\copy30-all-api-build01\\artifact\\city-editor-access.exe",
+    "Bytes": 13756416,
+    "Sha256": "9af5496007ab896953abf7f51e4528cefc0f992615754f1199452a5a76e32b65"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\copy30-all-api-build01\\artifact\\notification-schedules.exe",
+    "Bytes": 15218688,
+    "Sha256": "6a2f5fa4fecb5085679e1e6b62e2100c7e2a4ee2571c4ad5840171f4fc15bd89"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\copy30-all-api-build01\\artifact\\now-live-prepare.exe",
+    "Bytes": 15242752,
+    "Sha256": "c7d09edfb7de6e01a474a7fabd78ea22cc2d1e973a6d2b7373eaca5542f0925f"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\copy30-all-api-build01\\artifact\\now-live-verify.exe",
+    "Bytes": 17324544,
+    "Sha256": "37363e4bfd52cb11079c543f8a0a45b8427417b187e06113906f2f4dc55bb679"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\copy30-all-api-build01\\artifact\\system-push-worker.exe",
+    "Bytes": 16442368,
+    "Sha256": "1bb14b3f96f58f56c43bc8688edfa09d3953be5f3fbe455b0fc7ef8b3339cac2"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\copy30-all-api-build01\\artifact\\video-media-worker.exe",
+    "Bytes": 16424960,
+    "Sha256": "0c39d13dc957135ff5f4ea448609d765fb0d7992ced9c3d9fd198594ce0f5df5"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\copy29-client-apk-build01\\birdtie-copy-media29.apk",
+    "Bytes": 318684426,
+    "Sha256": "9617978dac3e4fa08ac3e5ab72b5c50b511d0c0639fe7417541e2f97413093aa"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\copy29-client-apk-build01\\previous-generated.apk",
+    "Bytes": 279465769,
+    "Sha256": "2cdcf87e9e9fa47a5a1b863e430a38e49d51cfc88921e0314eb1eeb60341a8fa"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\copy29-all-api-build02\\artifact\\activity-reminders.exe",
+    "Bytes": 15004160,
+    "Sha256": "c3d76d276c5ae1a1fb9433a64dc23719a19bb3bcb38d55e07282b76da2b47360"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\copy29-all-api-build02\\artifact\\agent-candidate-cleanup.exe",
+    "Bytes": 13702656,
+    "Sha256": "0de66f60b39ac2ad4fcd87ffeb8c76de7d87adf7a7508f4e1fba54f04939ca02"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\copy29-all-api-build02\\artifact\\agent-enrichment-worker.exe",
+    "Bytes": 15416320,
+    "Sha256": "7b878be1ac582ff421a35d9a24ff3f8d90fbf334da9b7a0de1feb89bf30d6309"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\copy29-all-api-build02\\artifact\\agent-outbox-control.exe",
+    "Bytes": 15536640,
+    "Sha256": "63af4bcd43c5b5d17986f794a81b53b68394fcef327b6c83cbcbed5ba74956e2"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\copy29-all-api-build02\\artifact\\api.exe",
+    "Bytes": 31393280,
+    "Sha256": "284ce3f470a352b74a5c8e79e5c21bf5c7570ab26222ab34134a7296c6fcb219"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\copy29-all-api-build02\\artifact\\city-editor-access.exe",
+    "Bytes": 13756416,
+    "Sha256": "9af5496007ab896953abf7f51e4528cefc0f992615754f1199452a5a76e32b65"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\copy29-all-api-build02\\artifact\\notification-schedules.exe",
+    "Bytes": 15218688,
+    "Sha256": "61393b5b1d036216913ff8c8a89cf4902ee0bbad6703bb294b788600aab5472c"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\copy29-all-api-build02\\artifact\\now-live-prepare.exe",
+    "Bytes": 15242752,
+    "Sha256": "f9bcd85caf2d6483d330cf861838e5ca94f9262df7ce7ef1e64ffd3e96a7a11f"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\copy29-all-api-build02\\artifact\\now-live-verify.exe",
+    "Bytes": 17324032,
+    "Sha256": "e697bf3be7961406a8c55f1c457ac391ea046ce00cbedfd23185d10409accc9b"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\copy29-all-api-build02\\artifact\\system-push-worker.exe",
+    "Bytes": 16442368,
+    "Sha256": "a2bef376a3f950ea380ecf4afd630b68752f197d14664451c4ab23a73505b8fc"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\copy29-all-api-build02\\artifact\\video-media-worker.exe",
+    "Bytes": 16424960,
+    "Sha256": "1672366b156006c38460aa6f8c78b575832c8fea0c539de70ef61bae4c4fddca"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\copy29-all-api-build01\\artifact\\activity-reminders.exe",
+    "Bytes": 15003136,
+    "Sha256": "c8c41a3eac70a44fc888925bf2eb9fe6c5116276246b245d31dc990fb835c058"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\copy29-all-api-build01\\artifact\\agent-candidate-cleanup.exe",
+    "Bytes": 13702656,
+    "Sha256": "0de66f60b39ac2ad4fcd87ffeb8c76de7d87adf7a7508f4e1fba54f04939ca02"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\copy29-all-api-build01\\artifact\\agent-enrichment-worker.exe",
+    "Bytes": 15416320,
+    "Sha256": "ea1fed949658f70b9f992daf18accf76b846b477b719506eec4c5572dd26b11b"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\copy29-all-api-build01\\artifact\\agent-outbox-control.exe",
+    "Bytes": 15535616,
+    "Sha256": "f6827f0ad2a9835bb2bed67d58c0eff5d96bcddc0bd50ab0160bb51f1c57eb4e"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\copy29-all-api-build01\\artifact\\api.exe",
+    "Bytes": 31390208,
+    "Sha256": "fce4ce97952868c1cd71881b9f7b6447e1ecbf0e88bddc7208b65c70b442760e"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\copy29-all-api-build01\\artifact\\city-editor-access.exe",
+    "Bytes": 13756416,
+    "Sha256": "9af5496007ab896953abf7f51e4528cefc0f992615754f1199452a5a76e32b65"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\copy29-all-api-build01\\artifact\\notification-schedules.exe",
+    "Bytes": 15218688,
+    "Sha256": "7c5c19c1de115ec37bfb678464448e7b8a914b6b82b76a32816f6b7071b9d0ea"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\copy29-all-api-build01\\artifact\\now-live-prepare.exe",
+    "Bytes": 15242752,
+    "Sha256": "35cdcb78287ba5fd2b2b87aa63a3a841d775016a4c291e364480732cbedff0f1"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\copy29-all-api-build01\\artifact\\now-live-verify.exe",
+    "Bytes": 17324032,
+    "Sha256": "257a12fc23a7d603c0676626989658c326ec4a7f1b0298c1961ec5f2a946f5a6"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\copy29-all-api-build01\\artifact\\system-push-worker.exe",
+    "Bytes": 16441856,
+    "Sha256": "82d92ce3224c59ac4284fa27cbec3b0e3e5c0dd90c90fd855af9e4139b49faa1"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\copy29-all-api-build01\\artifact\\video-media-worker.exe",
+    "Bytes": 16426496,
+    "Sha256": "47e0192b57c2c5964bb4e88f4b32f321e583cb1d3137f816d8ec9a9fc9854281"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\api-build06\\birdtie-now20.exe",
+    "Bytes": 29792256,
+    "Sha256": "2b10778dcebeae4475bb6fbeba7aa5e44ad15bbd7e1ff3a4a1aa298b857c7de9"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\api-build05\\birdtie-now20.exe",
+    "Bytes": 29640192,
+    "Sha256": "ff986cf22c934a87f183df6ee5def2e23b8602b992bdfc13c075892b93cff4bb"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\api-build04\\birdtie-now20.exe",
+    "Bytes": 29505024,
+    "Sha256": "d11de802f34baadbf55fc710dabdaa0851c80fa3fe2655e45eb7a63d548a69ea"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\activeintent.test.exe",
+    "Bytes": 4948992,
+    "Sha256": "fc3f12c545b0f051ce4803ae54b0bfdabac85f95e03cced26a774f47685182da"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\activityparticipation.test.exe",
+    "Bytes": 4982272,
+    "Sha256": "bca0e3e71d7769d72e3454e3be3d1035e8231fb762cb9f8a7e829b6635914db7"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\activityparticipationdisclosure.test.exe",
+    "Bytes": 4961280,
+    "Sha256": "dd5cf24cd24d12fe1453d3894dbca239ac1527f311ef06183f5027f71d7c7d61"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\activityplan.test.exe",
+    "Bytes": 4703232,
+    "Sha256": "fbc3f63c34b17870ac849b61b7373f7071129afaeb85ba8881615b25c116b23d"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\activitypublish.test.exe",
+    "Bytes": 4433920,
+    "Sha256": "b480c65844a7e21f9b97deb9c0549172ce67b3aee926673ddad7f155a29468c5"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\actorref.test.exe",
+    "Bytes": 4918784,
+    "Sha256": "eeebd41b9efa8b4cb96e4fc90f068fde2b43c019d9d207a43d5d75101c0e7181"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agent-candidate-cleanup.test.exe",
+    "Bytes": 14611968,
+    "Sha256": "1b97615f51221e1ecb4d427075d1bec960e5a019c6121d4e42b24d4dec58d6a0"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agent-outbox-control.test.exe",
+    "Bytes": 11380736,
+    "Sha256": "99a2278e017bd192c423b9b842a42c336d9b55772f84d2932f2748b18247ef60"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agentaction.test.exe",
+    "Bytes": 7565312,
+    "Sha256": "6248e83d15f201da01e00b3de3ea2640b8d0ef22b75873acc759491aeda504fc"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agentattention.test.exe",
+    "Bytes": 7399424,
+    "Sha256": "b8e2c622bdf430d0f898789a8d5d7a04e54d62a9d308d9210dc6577a88d91f5b"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agentautonomy.test.exe",
+    "Bytes": 7513600,
+    "Sha256": "e32b16d1fd2d69dae95c787d2dac0e32bef2f50da1010187730156d4acd1bcfa"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agentbusiness.test.exe",
+    "Bytes": 7261184,
+    "Sha256": "342e6889197717912983b532ef45ec93207b56da2ab0ecc45e3bcae34cf26ffa"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agentcandidatepipeline.test.exe",
+    "Bytes": 7717376,
+    "Sha256": "8e58e09f1d19d1654e8cbd30f15e603a2fcd410b9d82d70329f8bb017d205bf9"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agentcandidateretention.test.exe",
+    "Bytes": 7651840,
+    "Sha256": "7edf4362ea2ffe1b4c765c74f8372c08b112c09e69b040f1f6eb22da0e62821d"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agentcitymemory.test.exe",
+    "Bytes": 7316992,
+    "Sha256": "6bf30d159c7dd9fbed9ea12f34a93b2c1cd00e3d1f51c37c26f2742068bd4cb4"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agentcognitive.test.exe",
+    "Bytes": 29537792,
+    "Sha256": "ae4b87154b94d9071f6f129e03669be015623b5bf762c0c00555c94c860121cf"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agentconfidence.test.exe",
+    "Bytes": 16337408,
+    "Sha256": "ee0ebbc7dcafcfa8a7ed004e84b9f02585e8c33ceda3a2088a2106110a20b6d2"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agentcontextadapter.test.exe",
+    "Bytes": 7970816,
+    "Sha256": "e3685c60ec21b26c6ac8f1be07af6b1d3e3ce4bc8d54e61b8fc2fa18da85d00b"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agentcontextbuilder.test.exe",
+    "Bytes": 8228352,
+    "Sha256": "17109cd296fb98887a337f59267bcda15fce650dba87e5e7de1bdb6828ed7116"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agentcontextrelevance.test.exe",
+    "Bytes": 8101888,
+    "Sha256": "c62f25d5ebe5759da0953a9fab2253dc1db4c1f56d6f8cdcf4793c41c07f29ca"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agentcurrentcontext.test.exe",
+    "Bytes": 16412672,
+    "Sha256": "8ed1c066e783766f6b36bd6cfca43b2b64fa5e7a57b80ffd66b902a41362485f"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agentdecay.test.exe",
+    "Bytes": 7167488,
+    "Sha256": "6287516ac659ae5b83b1d060bda8cd8cf239a1a6d9502fc234fe8cce1b6c75f3"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agentenrichmentmetrics.test.exe",
+    "Bytes": 4467712,
+    "Sha256": "3efa39482414ff1f5b83283fe50f5e89acf4c6e063a0e862232e6c171a771c46"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agentenrichmentpurpose.test.exe",
+    "Bytes": 4988928,
+    "Sha256": "688a4e15aec606e88b8df81fa8aa39e1f6908b4a784ab35e76735a213d26ab2b"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agentenrichmentworker.test.exe",
+    "Bytes": 6639616,
+    "Sha256": "947290659098b1183b5a94a862326015c104f3e508c50349b126a364989b8ec8"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agentevent.test.exe",
+    "Bytes": 7370240,
+    "Sha256": "3c422f7f38c8452a0b59a060b06da7ea9081d8ef49adda653bf477ede2101ae0"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agentfeature.test.exe",
+    "Bytes": 4990976,
+    "Sha256": "390bba7b25b97811ad99d800fb3347e4f0d0ea521faa8793f376978265035e28"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agentintroduction.test.exe",
+    "Bytes": 4776960,
+    "Sha256": "e1dca6e4738985ad1c75a3f31a73138c424cb0e2bf9bc98095157e9083434018"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agentlocalcandidate.test.exe",
+    "Bytes": 7159296,
+    "Sha256": "c4946e8107d6235b94c6af0a1cf1b966aeb85cf25ed32a63d9cea496988bb872"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agentmembershipsignal.test.exe",
+    "Bytes": 16318464,
+    "Sha256": "b401c27830d37c269ab64097839748a0ae07b144502f94fe541a46d4e1df2af7"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agentmemory.test.exe",
+    "Bytes": 7602688,
+    "Sha256": "30ce38048b9c87985ae78997b3b2c6501c804aac20337e6ce7039fbe21cf4f17"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agentmemorycandidate.test.exe",
+    "Bytes": 7448576,
+    "Sha256": "89e5ac23d9b4ba88ff612634ce2ea142064cc4bb08bd05685a8e1bf81110bfe9"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agentmemorycorrection.test.exe",
+    "Bytes": 7693312,
+    "Sha256": "6622b3a09681ad6aff0fe20de9c29dace8991a46dd45a12fb015dafaa2b69a22"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agentmessagepolicy.test.exe",
+    "Bytes": 4950016,
+    "Sha256": "e1facddf92a760784b23df6ac010cf16f8ebb00fc9b676f788bb1847cf60d93f"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agentmulticandidate.test.exe",
+    "Bytes": 7708160,
+    "Sha256": "bd7bd2ceb7dd659b623a0ca94eb5782f6a5e31905fc58f86ec33620272c926d1"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agentnotification.test.exe",
+    "Bytes": 7316992,
+    "Sha256": "be7d8d489e052c7153fcdb5a1821b75b71ecc900115aa4e20e8ca11afb9dbd36"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agentnotificationschedule.test.exe",
+    "Bytes": 7717376,
+    "Sha256": "509be298ed8dce4e47da23d3b27528ac5be6e1d9bad17973addb5e9aac879703"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agentorganization.test.exe",
+    "Bytes": 5172736,
+    "Sha256": "de32c999834f1c3eaab7c66e36ad24c92dda04f4e1a93515320de0e612e7e43d"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agentorganizationevidence.test.exe",
+    "Bytes": 7269888,
+    "Sha256": "35847c152233c77349079392b9281d720e05e727f02d77474cb5334941020fdd"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agentorganizationmemory.test.exe",
+    "Bytes": 7185408,
+    "Sha256": "34391b3fa915282903fe40704cedbdc406cd721c4b2955c24e00668f3bfdda9f"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agentoutbox.test.exe",
+    "Bytes": 7495168,
+    "Sha256": "aaa7bbf1ed52aba323f6ba583d8220f46e80115dea18bef16d6d8b0d730632c3"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agentoutboxmaintenance.test.exe",
+    "Bytes": 7125504,
+    "Sha256": "845be4c8a68f2659179ff1e8730497c9f03ce99b2db637b5eed0c183e0b29579"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agentparticipationsignal.test.exe",
+    "Bytes": 16252928,
+    "Sha256": "563b732e88bd3122039000ed7293c6daf120b0bc0c0c035c57a1ea5204af322f"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agentplacememory.test.exe",
+    "Bytes": 7304704,
+    "Sha256": "a638dd04fddcdd15ea446a1b4c2205de2f7cefb3294c2e8535093623d9124923"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agentplanner.test.exe",
+    "Bytes": 7194112,
+    "Sha256": "931ab112ad1fded7f3fa26276a83eb775980ba88a75796eb8df4e6cada5858d0"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agentpolicysettings.test.exe",
+    "Bytes": 7278080,
+    "Sha256": "e26e10b42776687e384966afd4f24c99d51216ac1d78a02e4b848e118a1272fd"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agentprofile.test.exe",
+    "Bytes": 7425536,
+    "Sha256": "8898b1697544281e05c0157463778542840324c74920d538ba5f8f7e644d4919"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agentprofilecompletion.test.exe",
+    "Bytes": 7757824,
+    "Sha256": "e0c7b23e9aef6bfa30b83b60f74e44f80a8f27a9e4d3af6e38c8466ad179284f"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agentpurpose.test.exe",
+    "Bytes": 4910080,
+    "Sha256": "e78b1ebf61e66ec07226ef4f7bd7d12469a013518ee1850d25baa37a93269fca"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agentreinforcement.test.exe",
+    "Bytes": 7694848,
+    "Sha256": "589ea5225db26def2ad15fababeba3993951a0182603a307585b55f4f1d2b358"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agentresultprojection.test.exe",
+    "Bytes": 7846400,
+    "Sha256": "bcd217a99dad803925d562346dce73a6f010d3d4cd205156e4b4368c127dd378"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agentrun.test.exe",
+    "Bytes": 7181312,
+    "Sha256": "52a829404b88e57d6835baae3a329b0babac322e2742be5c70b7a395e4ff59c8"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agentruntime.test.exe",
+    "Bytes": 5465600,
+    "Sha256": "b7f916d8f0aa987ee023c44508137bfc236d00513159756c7a53cb26d80fa1f1"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agentseed.test.exe",
+    "Bytes": 4972032,
+    "Sha256": "29c1cddeee7074d340eeb28621c1acd8c585043cabae566153fbfd5a1051d3cb"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agentsocialpolicy.test.exe",
+    "Bytes": 7418880,
+    "Sha256": "b4215409f4325ececdfef4544c2fb87f76b7fdec23995a324cebd9d17060937c"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agenttool.test.exe",
+    "Bytes": 11815424,
+    "Sha256": "74c4b27bb899fd13a26bea86bedf130ded7c5b2ebaf9826c1a953a5fbc783226"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\agentworkspace.test.exe",
+    "Bytes": 8604160,
+    "Sha256": "73d932aa0e4c3c3a03c026cf2ba7c746701888fc8a6b994e8c5b3b73ddc4a90b"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\analytics.test.exe",
+    "Bytes": 4418560,
+    "Sha256": "54d42ca2fcef51c123b5bfd93ce592240429cd107cd399a4ee06dc2e6c369484"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\api.test.exe",
+    "Bytes": 12180480,
+    "Sha256": "c796bcf23ac416c11c0f6524a67e785139503e42eaf7affeeb4156d2ebbfab36"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\audittrace.test.exe",
+    "Bytes": 4430336,
+    "Sha256": "e3b72ec670f2e69454e081b8e37a4d2dcb1b457c54c14528eddf5543263d0989"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\bookinganalytics.test.exe",
+    "Bytes": 4729344,
+    "Sha256": "8895968b3256b0823b55756429a71ce509f01c43f79241e24205426d7655ae20"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\businessconsole.test.exe",
+    "Bytes": 6702080,
+    "Sha256": "8a3df86854dcacb88f9ee2e5cfc4a68cda3b8da463254144af1115788495328c"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\cityseed.test.exe",
+    "Bytes": 5142016,
+    "Sha256": "02162f741d73baae0e937e015f4614cb72a84b553c166e3483628abd93be0216"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\connection.test.exe",
+    "Bytes": 5091328,
+    "Sha256": "2d339f5b1c472722a99e590dadb59334a7647ae0b794095b48a6d1f11c83bb2d"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\content.test.exe",
+    "Bytes": 4929024,
+    "Sha256": "72ec697131f603045248e50f4006a639201788071963275a65cfed50647247e4"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\contextgraph.test.exe",
+    "Bytes": 4943360,
+    "Sha256": "67c1709eca319c998d1fcdd3a40dcf94ccaef0c946fe14042f55e687c9e9b3de"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\devauth.test.exe",
+    "Bytes": 4423680,
+    "Sha256": "7e8acecc13439ded47efd44649988e5c91df6d914daccf0e8fc676bb40723ecb"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\entityaction.test.exe",
+    "Bytes": 4472832,
+    "Sha256": "4c97778cf2d80a0e0e90f4a3ffa69d2b8bec66ed9d850a8bd2df151c8671698b"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\foundation.test.exe",
+    "Bytes": 4423680,
+    "Sha256": "a4b3ee02bec4892114463752fd0acb8b293aa1d6bb34ba01293ee142947d2758"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\httpapi.test.exe",
+    "Bytes": 60206592,
+    "Sha256": "2f95940b1023abab85d6efa5516f614e12d97c77f57cc7dbf6bc34be405982b6"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\identity.test.exe",
+    "Bytes": 4434432,
+    "Sha256": "030071cb9734bfff021b5355d2e1615fca1ab7f1296259379a6cea049731eea1"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\inbox.test.exe",
+    "Bytes": 4943872,
+    "Sha256": "8abb5d2ebaa5d592c4d354b32cf04a6c2d49ef30c0352968a479d3030df38c04"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\intentconversion.test.exe",
+    "Bytes": 4724736,
+    "Sha256": "fc96c7392965ea3a9bdd5103459fddeaa6d2bc3d4dc4b2a7954298097d66219d"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\mapprojection.test.exe",
+    "Bytes": 7166976,
+    "Sha256": "2428c6034474539ccf8b262c91b4b55b2191475146af63d10dad2159989492ec"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\media.test.exe",
+    "Bytes": 7860736,
+    "Sha256": "c2e71ec8437191eb4bb00c9c23872501966753523869cbc239597d37ccc7883a"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\modelcapability.test.exe",
+    "Bytes": 10679808,
+    "Sha256": "31c372c99a68cf031c018582e13acf90751253b257d40a51bb3318fb038a517f"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\modelconfiguration.test.exe",
+    "Bytes": 7330816,
+    "Sha256": "d613e1192495acd794af67d4f0a870076f1faa4caaa61ec9ac5c185bc4e7a5f2"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\modelegressbudget.test.exe",
+    "Bytes": 11769344,
+    "Sha256": "4f2e7cbf3ac65bdc4ddc078d938233a8cc5852e7d1fb6f3225ac482f45dba42e"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\modelgateway.test.exe",
+    "Bytes": 11333120,
+    "Sha256": "de0e836bd757d2f9f1cda87904eb36b0c696e609dacac14e8b5a94a766388dc9"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\modelrequestrun.test.exe",
+    "Bytes": 7250432,
+    "Sha256": "c7377dfe03e040e2bf053810d5e0f4cbeb349accc51799fd93fef6b61e159b6d"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\modelresilience.test.exe",
+    "Bytes": 10810880,
+    "Sha256": "7f7d3777d605457c1048ddff776c93df79a889f1282c0834bf0916e344fa2318"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\newpeople.test.exe",
+    "Bytes": 5046272,
+    "Sha256": "2cf8526f6e87be33c5b883493360e9229c67815d615417d0e24bfc88d70b9634"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\notification-schedules.test.exe",
+    "Bytes": 16059392,
+    "Sha256": "714beff68df54de31c9861a021a7dbf153fa8d9f2def3acde29ad24f9985cc5f"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\now-live-prepare.test.exe",
+    "Bytes": 8272896,
+    "Sha256": "2bb0e029e0050cfebf0683c4e9b3f4e7df6380297c9fbd27f2a1b4630d858ca3"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\now-live-verify.test.exe",
+    "Bytes": 11948544,
+    "Sha256": "955e5c52ed6637de3f3252829cb3696e1d6e2c9ec0d552cab6a6785731b99a7d"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\nowcontextquery.test.exe",
+    "Bytes": 7619584,
+    "Sha256": "6c2f3e66afeb5d904c6fcf38a67609f669c4602e8cf1bd901d82c0af2280d4d3"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\nowcontextselection.test.exe",
+    "Bytes": 7167488,
+    "Sha256": "daa21231d8dfa3dc15506d9c46cf613fca86255bdfa58f41f9a6a031391deffa"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\oidcauth.test.exe",
+    "Bytes": 6632448,
+    "Sha256": "51054a37a761719d13053f9e798e95e074c3aa08eb41a87e3fb4bf7a95242ae2"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\onlinesocialopportunity.test.exe",
+    "Bytes": 7142912,
+    "Sha256": "96611e080b67bb39eaedf0c9ee9f59bd0751a0c0ed3e739bd5483d6d65927feb"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\opportunity.test.exe",
+    "Bytes": 5070848,
+    "Sha256": "2958a2bccf2887af791bca1dd41d29c439d28f55c889e68dd3a35161ba796685"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\organization.test.exe",
+    "Bytes": 4452864,
+    "Sha256": "d4c768091eb59cf7c82e9b321e782be2f89642b72be673d56903620cddb9b505"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\organizationannouncement.test.exe",
+    "Bytes": 7187968,
+    "Sha256": "aee13c1d980088b83be9563f13a8c0558a24a0d89437357e76662a17535a27ae"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\placehistory.test.exe",
+    "Bytes": 5195264,
+    "Sha256": "98c9ae7a0f595892861457dc8061a1a50e5422f22f3d39a3aa73308b05526849"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\placematch.test.exe",
+    "Bytes": 5201408,
+    "Sha256": "c1b65cccc4536621482007b4776907a9d0219efefa7381eb898a554dc71d0b40"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\placeprofile.test.exe",
+    "Bytes": 5135360,
+    "Sha256": "516237dc479ea2db5caf9ae25b4d411d2f3c79fa0134ee1b6882de54772c9e81"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\postgres.test.exe",
+    "Bytes": 46653440,
+    "Sha256": "eec61165a5bb5689d9c16daf58d0f92fa0c81fc8dc88a1f33d0c780c09ace8c9"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\safety.test.exe",
+    "Bytes": 4417024,
+    "Sha256": "d523ef0bffe465a086be7b9ebf1028e041648cab2ec5bedefc425fdbe3a9780e"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\socialcontext.test.exe",
+    "Bytes": 4438528,
+    "Sha256": "50d3c8d3ab007926c5b06fea2b87fe7247bf757ede657d39310739bb9f03dfaf"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\socialintent.test.exe",
+    "Bytes": 4988928,
+    "Sha256": "9affc970f6b8aca478abd4e68066d188683106a87d3c9f7bf9feaecf54aed086"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\sponsoredopportunity.test.exe",
+    "Bytes": 7195648,
+    "Sha256": "8227b87b65f4e11cdc2323f3371f6af2f4975ffb7d1c56b03b0d131787e3038c"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-tests-compile01\\bin\\supplierprofile.test.exe",
+    "Bytes": 7156736,
+    "Sha256": "930e890fa8e1d151f0a76d63fb7483bb780a1915a0948c11ad134fd5c37775f3"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build28-01\\artifact\\activity-reminders.exe",
+    "Bytes": 15003136,
+    "Sha256": "b5e685873d0f4bc21f2c04e1e3381b92af12418e0ae2fe72d8251f05b03adb57"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build28-01\\artifact\\agent-candidate-cleanup.exe",
+    "Bytes": 13702656,
+    "Sha256": "0de66f60b39ac2ad4fcd87ffeb8c76de7d87adf7a7508f4e1fba54f04939ca02"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build28-01\\artifact\\agent-enrichment-worker.exe",
+    "Bytes": 15414784,
+    "Sha256": "009e318f16db76b4588cf53064ea8bbe1240700d4250e3002b5821d025ae1d5f"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build28-01\\artifact\\agent-outbox-control.exe",
+    "Bytes": 15543296,
+    "Sha256": "97f06847a0510a4311654ee4e38c0160cd4f2125f5dd7446f4d8381bbbd6fa75"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build28-01\\artifact\\api.exe",
+    "Bytes": 31271936,
+    "Sha256": "9e883f80657eb2422e3c89ac47b9777b19c251b4dceadd2d4ea50c732dcc05dc"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build28-01\\artifact\\city-editor-access.exe",
+    "Bytes": 13756416,
+    "Sha256": "9af5496007ab896953abf7f51e4528cefc0f992615754f1199452a5a76e32b65"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build28-01\\artifact\\notification-schedules.exe",
+    "Bytes": 15219712,
+    "Sha256": "870360e666e90783a7f380aaec4d580c15dc98640ecaca897ad681ebf6b4958a"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build28-01\\artifact\\now-live-prepare.exe",
+    "Bytes": 15241728,
+    "Sha256": "900c0f55d59c3165b651b2cfc8ef3c648975a6dac33d201817f1dd57b9d31767"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build28-01\\artifact\\now-live-verify.exe",
+    "Bytes": 17332224,
+    "Sha256": "722f963b2ebae6e4b70b585d267f28dbf5cb7917b1849ea6a163df8beac57925"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build28-01\\artifact\\system-push-worker.exe",
+    "Bytes": 16441856,
+    "Sha256": "d65d8174726573165413e63bf9db78df239b19df96b2fd1f74745749930db655"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build28-01\\artifact\\video-media-worker.exe",
+    "Bytes": 16426496,
+    "Sha256": "19eae09300d21ac5fa1bd73c43dabcff6a1f5952f7b84e7c816dc894e88faffb"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build27-03\\artifact\\activity-reminders.exe",
+    "Bytes": 15002624,
+    "Sha256": "5e19738f3592e1a4f7aa3b29377ff8a44d371ac31a37934220d9555488312c24"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build27-03\\artifact\\agent-candidate-cleanup.exe",
+    "Bytes": 13702656,
+    "Sha256": "0de66f60b39ac2ad4fcd87ffeb8c76de7d87adf7a7508f4e1fba54f04939ca02"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build27-03\\artifact\\agent-enrichment-worker.exe",
+    "Bytes": 15415296,
+    "Sha256": "d2bbda296ea3c66db9be1a85a73183dad18b19ef563d156eca6345fcbff68b2f"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build27-03\\artifact\\agent-outbox-control.exe",
+    "Bytes": 15542784,
+    "Sha256": "5608da7ed976bc8e326c63f662d686909b882a300029f4a09b330d8d1178422b"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build27-03\\artifact\\api.exe",
+    "Bytes": 31178752,
+    "Sha256": "c49fd3c80e42dad402e84f060497b0587bc660fa51c7e60de73449a02e4af423"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build27-03\\artifact\\city-editor-access.exe",
+    "Bytes": 13756416,
+    "Sha256": "9af5496007ab896953abf7f51e4528cefc0f992615754f1199452a5a76e32b65"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build27-03\\artifact\\notification-schedules.exe",
+    "Bytes": 15217664,
+    "Sha256": "203039491f63ba41c845f6ef5f97b36903445f4334a443b41f7a089aceafdf47"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build27-03\\artifact\\now-live-prepare.exe",
+    "Bytes": 15241728,
+    "Sha256": "b88e2755f7ee743e37ed45726f02a600462adc1b9d5b49efb9e04389053a7775"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build27-03\\artifact\\now-live-verify.exe",
+    "Bytes": 17331712,
+    "Sha256": "e3d1363bce377245f724b92fdcd095dda9086acb50628f8eb299160f5dffa283"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build27-03\\artifact\\system-push-worker.exe",
+    "Bytes": 16439808,
+    "Sha256": "4265babdc0b5feaf5861f198bfb64ea28201f16f9ebe42a0ddbb379594b621d4"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build27-03\\artifact\\video-media-worker.exe",
+    "Bytes": 16424448,
+    "Sha256": "74a64ab216036121bf89f53a7bd557aba089da99b4f58e33a088a5228944c427"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build27-02\\artifact\\activity-reminders.exe",
+    "Bytes": 15002624,
+    "Sha256": "5e19738f3592e1a4f7aa3b29377ff8a44d371ac31a37934220d9555488312c24"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build27-02\\artifact\\agent-candidate-cleanup.exe",
+    "Bytes": 13702656,
+    "Sha256": "0de66f60b39ac2ad4fcd87ffeb8c76de7d87adf7a7508f4e1fba54f04939ca02"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build27-02\\artifact\\agent-enrichment-worker.exe",
+    "Bytes": 15415296,
+    "Sha256": "d2bbda296ea3c66db9be1a85a73183dad18b19ef563d156eca6345fcbff68b2f"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build27-02\\artifact\\agent-outbox-control.exe",
+    "Bytes": 15542784,
+    "Sha256": "5608da7ed976bc8e326c63f662d686909b882a300029f4a09b330d8d1178422b"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build27-02\\artifact\\api.exe",
+    "Bytes": 31178752,
+    "Sha256": "c49fd3c80e42dad402e84f060497b0587bc660fa51c7e60de73449a02e4af423"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build27-02\\artifact\\city-editor-access.exe",
+    "Bytes": 13756416,
+    "Sha256": "9af5496007ab896953abf7f51e4528cefc0f992615754f1199452a5a76e32b65"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build27-02\\artifact\\notification-schedules.exe",
+    "Bytes": 15217664,
+    "Sha256": "203039491f63ba41c845f6ef5f97b36903445f4334a443b41f7a089aceafdf47"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build27-02\\artifact\\now-live-prepare.exe",
+    "Bytes": 15241728,
+    "Sha256": "b88e2755f7ee743e37ed45726f02a600462adc1b9d5b49efb9e04389053a7775"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build27-02\\artifact\\now-live-verify.exe",
+    "Bytes": 17331712,
+    "Sha256": "e3d1363bce377245f724b92fdcd095dda9086acb50628f8eb299160f5dffa283"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build27-02\\artifact\\system-push-worker.exe",
+    "Bytes": 16439808,
+    "Sha256": "4265babdc0b5feaf5861f198bfb64ea28201f16f9ebe42a0ddbb379594b621d4"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build27-02\\artifact\\video-media-worker.exe",
+    "Bytes": 16424448,
+    "Sha256": "74a64ab216036121bf89f53a7bd557aba089da99b4f58e33a088a5228944c427"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build27\\artifact\\activity-reminders.exe",
+    "Bytes": 15002624,
+    "Sha256": "c60de9b7d854b8052242abe7f84ba8449e26c1d7f02a2cebd04df4d92a5a4bd3"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build27\\artifact\\agent-candidate-cleanup.exe",
+    "Bytes": 13702656,
+    "Sha256": "0de66f60b39ac2ad4fcd87ffeb8c76de7d87adf7a7508f4e1fba54f04939ca02"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build27\\artifact\\agent-enrichment-worker.exe",
+    "Bytes": 15415296,
+    "Sha256": "df816603f17d05a6f6c2df447660cd57759d8b9ceb80d0316fae463af746f10a"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build27\\artifact\\agent-outbox-control.exe",
+    "Bytes": 15542272,
+    "Sha256": "442b2a401d1d712707e2ec458fbfeef4eacc3f4a998727b6dbadb0815aa6986a"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build27\\artifact\\api.exe",
+    "Bytes": 31178752,
+    "Sha256": "1dbcde4b0f2deb77e4a760364cff206107970ab7f81c5f4824e8f6be347bc09a"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build27\\artifact\\city-editor-access.exe",
+    "Bytes": 13756416,
+    "Sha256": "9af5496007ab896953abf7f51e4528cefc0f992615754f1199452a5a76e32b65"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build27\\artifact\\notification-schedules.exe",
+    "Bytes": 15217664,
+    "Sha256": "9a2e981cb3606ff44f240306bb9e8b0ce91952795863a7da0dee90bd72f7a870"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build27\\artifact\\now-live-prepare.exe",
+    "Bytes": 15241728,
+    "Sha256": "2b3ba305481e9d0a85281e18857df58629d9a3035bc90008c21ea0b1cbc4830d"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build27\\artifact\\now-live-verify.exe",
+    "Bytes": 17331712,
+    "Sha256": "7a33b869a5bdbf8973fa5b2435fc77ee3c99c1f4c7b4420d87ba9665b6cf97d0"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build27\\artifact\\system-push-worker.exe",
+    "Bytes": 16439808,
+    "Sha256": "6f4e2ed9a0d127ada8ac1f8ddab239cdcf2c8476f5bf5ffe394b69fb54d21a98"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build27\\artifact\\video-media-worker.exe",
+    "Bytes": 16424448,
+    "Sha256": "ea435c93c76ac5f2d9a8d41f753ce16ca8f25cfcbd68f64958987db792a93d5b"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build26\\artifact\\activity-reminders.exe",
+    "Bytes": 15001600,
+    "Sha256": "201830def3b9609eb9372bdd33288cad65a355d24ff5474d52781b9df64569f0"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build26\\artifact\\agent-candidate-cleanup.exe",
+    "Bytes": 13702656,
+    "Sha256": "0de66f60b39ac2ad4fcd87ffeb8c76de7d87adf7a7508f4e1fba54f04939ca02"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build26\\artifact\\agent-enrichment-worker.exe",
+    "Bytes": 15413760,
+    "Sha256": "7cc742bc7ed316320e3b135b3fef1cf48056f76bd662e7607ee2c409cd0855df"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build26\\artifact\\agent-outbox-control.exe",
+    "Bytes": 15395840,
+    "Sha256": "b96bc25fd6400a446f812dce87ebeab29c8d7465caf65bc7374a7cf192a2316e"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build26\\artifact\\api.exe",
+    "Bytes": 31166464,
+    "Sha256": "a6517417a2ab0d7708485ef48cda5bf83cee17e18a68d124e616188b77d1ed43"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build26\\artifact\\city-editor-access.exe",
+    "Bytes": 13756416,
+    "Sha256": "9af5496007ab896953abf7f51e4528cefc0f992615754f1199452a5a76e32b65"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build26\\artifact\\notification-schedules.exe",
+    "Bytes": 15216640,
+    "Sha256": "278cb7a0b694515a5947133127802e20204f96e1785cb43bc5bad7e0cbf7a73f"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build26\\artifact\\now-live-prepare.exe",
+    "Bytes": 15240192,
+    "Sha256": "2df1e2516014fe40c0076bbcf8551c1a8f7de6e6924098bca91d4a1fe69b9130"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build26\\artifact\\now-live-verify.exe",
+    "Bytes": 17330176,
+    "Sha256": "d1a86ea7121979e56bdc3f74ed25caec9fc3c2d86e918e55fc20fd9a67fefff9"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build26\\artifact\\system-push-worker.exe",
+    "Bytes": 16437760,
+    "Sha256": "21cabca4e81a0911494b134c8e0102a24547b3ae2066cd1dcf74ac6c984b833d"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build26\\artifact\\video-media-worker.exe",
+    "Bytes": 16423424,
+    "Sha256": "0608bffbbe4381bde690520445b9f78d8e414b40c4695db707cc4e46f0180809"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build25\\artifact\\activity-reminders.exe",
+    "Bytes": 15001600,
+    "Sha256": "d33cdf5a39b35238f3ae387f45cbd2b660e7691c7ec27ae073e5b2dc1c5d0fd5"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build25\\artifact\\agent-candidate-cleanup.exe",
+    "Bytes": 13702656,
+    "Sha256": "0de66f60b39ac2ad4fcd87ffeb8c76de7d87adf7a7508f4e1fba54f04939ca02"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build25\\artifact\\agent-enrichment-worker.exe",
+    "Bytes": 15413760,
+    "Sha256": "e80736a1ba4e05e199bc2b10d90d28926966674061610cb2a4af48ee5295cfbb"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build25\\artifact\\agent-outbox-control.exe",
+    "Bytes": 15395328,
+    "Sha256": "02c43bca3c3d23efc996f921b0fd36ec884a0e5a70ef5556049cd00b924a13cd"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build25\\artifact\\api.exe",
+    "Bytes": 31125504,
+    "Sha256": "5dc31ab001ec19b7cab3b4266bcc0661c3a0eb601f7b1fe6dd0ab0adf38b7a05"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build25\\artifact\\city-editor-access.exe",
+    "Bytes": 13756416,
+    "Sha256": "9af5496007ab896953abf7f51e4528cefc0f992615754f1199452a5a76e32b65"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build25\\artifact\\notification-schedules.exe",
+    "Bytes": 15216128,
+    "Sha256": "ce4f0f28fb82f2ee11bcb58ddaa16e9ddb656744e7a6a08c823fc4a622645667"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build25\\artifact\\now-live-prepare.exe",
+    "Bytes": 15240192,
+    "Sha256": "b64175db01e493e7afa1ba6682ebf33ac3e5d167df88d2247ce53daaad945a8f"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build25\\artifact\\now-live-verify.exe",
+    "Bytes": 17330176,
+    "Sha256": "36150ea33274aaddbe005be716b556b175d986c82b6a10c13789c84c32b91b92"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build25\\artifact\\system-push-worker.exe",
+    "Bytes": 16437760,
+    "Sha256": "1a7f48546ab4fcfc788eacafc7980886a3aefbff7886745ccccab50ceb242765"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build25\\artifact\\video-media-worker.exe",
+    "Bytes": 16423424,
+    "Sha256": "6e09f7bd1634151456fbb7eb09920b2e1669b353cb3013f7dec56aa7fa045e0a"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build24\\artifact\\activity-reminders.exe",
+    "Bytes": 14992896,
+    "Sha256": "eb7d80692e90f925a664879fdd1a5d0e7895d1fa73b0aab291824ae85f9f9e45"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build24\\artifact\\agent-candidate-cleanup.exe",
+    "Bytes": 13702656,
+    "Sha256": "0de66f60b39ac2ad4fcd87ffeb8c76de7d87adf7a7508f4e1fba54f04939ca02"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build24\\artifact\\agent-enrichment-worker.exe",
+    "Bytes": 15409152,
+    "Sha256": "06b6259dfbe57f13fd05aa7706d9669b890c79e5abef6e12566b895eadd3bb38"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build24\\artifact\\agent-outbox-control.exe",
+    "Bytes": 15363584,
+    "Sha256": "09a2db76c8833d8a4d8f85c90a7b3ab960f3327aaae2d64c3e5d15ea155ae0dd"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build24\\artifact\\api.exe",
+    "Bytes": 30924288,
+    "Sha256": "27c6245ab4f4c923e634c6d12e577d44444c3f356d315f4e5c80001575db2d7f"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build24\\artifact\\city-editor-access.exe",
+    "Bytes": 13756416,
+    "Sha256": "9af5496007ab896953abf7f51e4528cefc0f992615754f1199452a5a76e32b65"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build24\\artifact\\notification-schedules.exe",
+    "Bytes": 15207936,
+    "Sha256": "b4f4fcb1fb0b743af04120b3a2f656891be53714ba94cb3cb653e19507da5bd3"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build24\\artifact\\now-live-prepare.exe",
+    "Bytes": 15232512,
+    "Sha256": "d5e4be0f283f3de9187f665065c2f42985ad17e3fdff61f32a59143e315ac3f4"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build24\\artifact\\now-live-verify.exe",
+    "Bytes": 17320960,
+    "Sha256": "14a91c7aa7d50173fb71c652bef269a31ac26a294639bae1c659a6734dbf8aa5"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build24\\artifact\\system-push-worker.exe",
+    "Bytes": 16430080,
+    "Sha256": "fb808e4f7446ef4d57f72dad7060b161846d1610186dee6fa26c61e50ff241df"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build24\\artifact\\video-media-worker.exe",
+    "Bytes": 16415744,
+    "Sha256": "35443e64e62c9a31be6f7c001a63fbf91af3ced27d76890cce27e34e3bfd23ec"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build23\\artifact\\activity-reminders.exe",
+    "Bytes": 14974976,
+    "Sha256": "45b32e84d4eadaecc02e6a1e43e13071c124793b027ede6a787dfe6d2d016e97"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build23\\artifact\\agent-candidate-cleanup.exe",
+    "Bytes": 13702656,
+    "Sha256": "0de66f60b39ac2ad4fcd87ffeb8c76de7d87adf7a7508f4e1fba54f04939ca02"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build23\\artifact\\agent-enrichment-worker.exe",
+    "Bytes": 15391744,
+    "Sha256": "e07c58e437f0255464289ca2ea4f3ccc99368efb09004b28a0bce6981b702674"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build23\\artifact\\agent-outbox-control.exe",
+    "Bytes": 15346688,
+    "Sha256": "4f5cbcbcaf122ebde9ed0371311e94d3114912d14948092858d99ce0240a6855"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build23\\artifact\\api.exe",
+    "Bytes": 30844928,
+    "Sha256": "e4e5fa9ca119d8b289cbec4bfcea38cedf2bc9827b843143c23a117f6eb0f197"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build23\\artifact\\city-editor-access.exe",
+    "Bytes": 13756416,
+    "Sha256": "9af5496007ab896953abf7f51e4528cefc0f992615754f1199452a5a76e32b65"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build23\\artifact\\notification-schedules.exe",
+    "Bytes": 15191552,
+    "Sha256": "e8750ccee50019a6318b5f549d6a7883e5d791754ade6dafcc4168c5fa9481f3"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build23\\artifact\\now-live-prepare.exe",
+    "Bytes": 15214080,
+    "Sha256": "4e2fcd2eeea6e331c741e2e9e4138d96aa1401030e52ec1381b6243727980406"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build23\\artifact\\now-live-verify.exe",
+    "Bytes": 17302016,
+    "Sha256": "08058696a6b211622363fa6f9422fb03f7eed3c652f404e0b420488ef4d1a749"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build23\\artifact\\system-push-worker.exe",
+    "Bytes": 16429056,
+    "Sha256": "372fcdc653ca9616b5aff3df476bddd1aceae8ea1b125ca87b462fe9c01ed65e"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build23\\artifact\\video-media-worker.exe",
+    "Bytes": 16394240,
+    "Sha256": "2973038948be49bf5ec1b905a12de555a0a241c421b4b1528ff7a85098b190e5"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build21-02\\artifact\\activity-reminders.exe",
+    "Bytes": 14979072,
+    "Sha256": "be310b263e395869913301cbbe3b3e62c9fb5f0173046a13446eeb4012e41b9b"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build21-02\\artifact\\agent-candidate-cleanup.exe",
+    "Bytes": 13702656,
+    "Sha256": "0de66f60b39ac2ad4fcd87ffeb8c76de7d87adf7a7508f4e1fba54f04939ca02"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build21-02\\artifact\\agent-enrichment-worker.exe",
+    "Bytes": 15390208,
+    "Sha256": "667d078f5a2b13469ebbcfe45f46243593fecfe8aa1c3101e7e803561127aa34"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build21-02\\artifact\\agent-outbox-control.exe",
+    "Bytes": 15344128,
+    "Sha256": "fe28cd4ebc8290787b49302c15b3cd03b54e9e667053ddbb6309a089c6608d92"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build21-02\\artifact\\api.exe",
+    "Bytes": 30670336,
+    "Sha256": "6e79fd3707bf778d59bc3184dfd946f0873e1e8642c35bfad1c1d673bc7342c1"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build21-02\\artifact\\city-editor-access.exe",
+    "Bytes": 13756416,
+    "Sha256": "9af5496007ab896953abf7f51e4528cefc0f992615754f1199452a5a76e32b65"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build21-02\\artifact\\notification-schedules.exe",
+    "Bytes": 15188992,
+    "Sha256": "32099f3ef5efb6533930a4908ef4f2da33eff68bb4f3f65a4d3669a3cbf8b99b"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build21-02\\artifact\\now-live-prepare.exe",
+    "Bytes": 15215104,
+    "Sha256": "e14187d4e8e60a58ee88997fb8436a4405a1f655425ae26fbc43ca92ca63048b"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build21-02\\artifact\\now-live-verify.exe",
+    "Bytes": 17302016,
+    "Sha256": "31a4eb7b5f4f50a77b2910d3dbe0007e8042e8d32c0024a5f8cf0d170b8996cc"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build21-02\\artifact\\system-push-worker.exe",
+    "Bytes": 16428032,
+    "Sha256": "8cf0d155214ab5a5b8a02c4f88c8915719e7c39c5b18c04d9ce37c42df57e460"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build21-02\\artifact\\video-media-worker.exe",
+    "Bytes": 16395264,
+    "Sha256": "3565922226ba6618c79576f0913355480f21942165412bd9179f14ebc46835ab"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build21\\artifact\\activity-reminders.exe",
+    "Bytes": 14979072,
+    "Sha256": "be310b263e395869913301cbbe3b3e62c9fb5f0173046a13446eeb4012e41b9b"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build21\\artifact\\agent-candidate-cleanup.exe",
+    "Bytes": 13702656,
+    "Sha256": "0de66f60b39ac2ad4fcd87ffeb8c76de7d87adf7a7508f4e1fba54f04939ca02"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build21\\artifact\\agent-enrichment-worker.exe",
+    "Bytes": 15390208,
+    "Sha256": "667d078f5a2b13469ebbcfe45f46243593fecfe8aa1c3101e7e803561127aa34"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build21\\artifact\\agent-outbox-control.exe",
+    "Bytes": 15344128,
+    "Sha256": "fe28cd4ebc8290787b49302c15b3cd03b54e9e667053ddbb6309a089c6608d92"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build21\\artifact\\api.exe",
+    "Bytes": 30670336,
+    "Sha256": "6e79fd3707bf778d59bc3184dfd946f0873e1e8642c35bfad1c1d673bc7342c1"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build21\\artifact\\city-editor-access.exe",
+    "Bytes": 13756416,
+    "Sha256": "9af5496007ab896953abf7f51e4528cefc0f992615754f1199452a5a76e32b65"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build21\\artifact\\notification-schedules.exe",
+    "Bytes": 15188992,
+    "Sha256": "32099f3ef5efb6533930a4908ef4f2da33eff68bb4f3f65a4d3669a3cbf8b99b"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build21\\artifact\\now-live-prepare.exe",
+    "Bytes": 15215104,
+    "Sha256": "e14187d4e8e60a58ee88997fb8436a4405a1f655425ae26fbc43ca92ca63048b"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build21\\artifact\\now-live-verify.exe",
+    "Bytes": 17302016,
+    "Sha256": "31a4eb7b5f4f50a77b2910d3dbe0007e8042e8d32c0024a5f8cf0d170b8996cc"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build21\\artifact\\system-push-worker.exe",
+    "Bytes": 16428032,
+    "Sha256": "8cf0d155214ab5a5b8a02c4f88c8915719e7c39c5b18c04d9ce37c42df57e460"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build21\\artifact\\video-media-worker.exe",
+    "Bytes": 16395264,
+    "Sha256": "3565922226ba6618c79576f0913355480f21942165412bd9179f14ebc46835ab"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build20\\artifact\\activity-reminders.exe",
+    "Bytes": 14974976,
+    "Sha256": "64a08274d4a6dc40027cc5a207e9dc761043017e356843d11dbc5dcbab493be5"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build20\\artifact\\agent-candidate-cleanup.exe",
+    "Bytes": 13702656,
+    "Sha256": "0de66f60b39ac2ad4fcd87ffeb8c76de7d87adf7a7508f4e1fba54f04939ca02"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build20\\artifact\\agent-enrichment-worker.exe",
+    "Bytes": 15384064,
+    "Sha256": "b348da8976f561030d621a82069b43d493c393c4f63e85dbd331513431f73548"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build20\\artifact\\agent-outbox-control.exe",
+    "Bytes": 15338496,
+    "Sha256": "727d44b3f52c5169e1d372f8145ee45b00d38dbbfcfec66d896c2e564d4c0f63"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build20\\artifact\\api.exe",
+    "Bytes": 30038016,
+    "Sha256": "ebac926ad4b860b56b8fcfff2495e649a12ce78ca9579f84ed666e7826918e1b"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build20\\artifact\\city-editor-access.exe",
+    "Bytes": 13756416,
+    "Sha256": "9af5496007ab896953abf7f51e4528cefc0f992615754f1199452a5a76e32b65"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build20\\artifact\\notification-schedules.exe",
+    "Bytes": 15186432,
+    "Sha256": "840fcbb2522d2a181e393a5428d4567fdbb8deb8e9b7352f2e7c24d7ee469730"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build20\\artifact\\now-live-prepare.exe",
+    "Bytes": 15210496,
+    "Sha256": "94bcb6e2c1025381455ce2cfcc93a2d0588d6a3950082f953ec624dd9bdb6852"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build20\\artifact\\now-live-verify.exe",
+    "Bytes": 17294336,
+    "Sha256": "239b06f79fe46510210c476642edacda186221995453217dbb617a845f18cd0f"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build03\\bin\\activity-reminders.exe",
+    "Bytes": 14971392,
+    "Sha256": "2838ff73bd0cff90ddf9f8efa8445c7da01aec202017c80b008f4534ccd4d7ca"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build03\\bin\\agent-candidate-cleanup.exe",
+    "Bytes": 13702656,
+    "Sha256": "0de66f60b39ac2ad4fcd87ffeb8c76de7d87adf7a7508f4e1fba54f04939ca02"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build03\\bin\\agent-enrichment-worker.exe",
+    "Bytes": 15388160,
+    "Sha256": "31a1df11ba63aefa4310c3712089d422ea9166222b02e42f6e9d57dcad9e2a24"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build03\\bin\\agent-outbox-control.exe",
+    "Bytes": 15336960,
+    "Sha256": "6ff5829717c6a5867e32336fe10c6997f38317c168950038bf8ee92c522df01b"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build03\\bin\\api.exe",
+    "Bytes": 29792256,
+    "Sha256": "2b10778dcebeae4475bb6fbeba7aa5e44ad15bbd7e1ff3a4a1aa298b857c7de9"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build03\\bin\\city-editor-access.exe",
+    "Bytes": 13756416,
+    "Sha256": "9af5496007ab896953abf7f51e4528cefc0f992615754f1199452a5a76e32b65"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build03\\bin\\notification-schedules.exe",
+    "Bytes": 15183872,
+    "Sha256": "bbf6d3787ba7eb25553f856ab46b4a4db25250eebc8fe17d837b20a8d95cecab"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build03\\bin\\now-live-prepare.exe",
+    "Bytes": 15207424,
+    "Sha256": "a97644816733b7dafde230b817fd162ed2e0a0a0eb9371a88bb5173f61d625ac"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build03\\bin\\now-live-verify.exe",
+    "Bytes": 17293824,
+    "Sha256": "e3ca57822135792e696d9e63e19541c0560e47bed31a014347040cf480115843"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build02\\bin\\activity-reminders.exe",
+    "Bytes": 14971392,
+    "Sha256": "5bdf563417f0401497dc8849338a69eddf5833d7f4c5190d7c3da8a26c7bb66b"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build02\\bin\\agent-candidate-cleanup.exe",
+    "Bytes": 13702656,
+    "Sha256": "0de66f60b39ac2ad4fcd87ffeb8c76de7d87adf7a7508f4e1fba54f04939ca02"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build02\\bin\\agent-enrichment-worker.exe",
+    "Bytes": 15387648,
+    "Sha256": "111ca66dc070644c91633fd6dca5e76d3a38c3272335288b8da798059e7427eb"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build02\\bin\\agent-outbox-control.exe",
+    "Bytes": 15336960,
+    "Sha256": "a079ecd296303d6c47b4358c950b7ed18382edb4d880dff27eafb97a0e6788dd"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build02\\bin\\api.exe",
+    "Bytes": 29640192,
+    "Sha256": "ff986cf22c934a87f183df6ee5def2e23b8602b992bdfc13c075892b93cff4bb"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build02\\bin\\city-editor-access.exe",
+    "Bytes": 13756416,
+    "Sha256": "9af5496007ab896953abf7f51e4528cefc0f992615754f1199452a5a76e32b65"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build02\\bin\\notification-schedules.exe",
+    "Bytes": 15184384,
+    "Sha256": "6a0ac82863cda468c917b0acb7cacaf6f4f2d4b2c68dc3c8ce06058d8f273980"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build02\\bin\\now-live-prepare.exe",
+    "Bytes": 15206912,
+    "Sha256": "12e52603b906c6cdba9d52c14200c082ff350969ea421e97a839c6e2f3177ea6"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation20\\all-api-build02\\bin\\now-live-verify.exe",
+    "Bytes": 17292800,
+    "Sha256": "e7a7b609f2437cde488cc59b236f5fe71f0c58c21602897162e7a164bbc6989b"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation19\\client-build10\\birdtie-now19.apk",
+    "Bytes": 283812372,
+    "Sha256": "17a164b46a6f807fa5734c9579982f52ff65d81cc935af694aa10129c15822bd"
+  },
+  {
+    "Path": "work\\now-v4-v41-integration-20261010\\continuation19\\client-build09\\birdtie-now19.apk",
+    "Bytes": 283812139,
+    "Sha256": "40512074200570c4205bf52b09ded34de3375da3c9494c292f6bb14497ad6837"
+  }
+]

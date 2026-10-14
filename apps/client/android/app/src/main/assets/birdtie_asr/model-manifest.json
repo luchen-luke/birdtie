@@ -1,0 +1,18 @@
+{
+  "schema": "birdtie.bundled-offline-speech-model.v1",
+  "modelId": "whisper-base-multilingual-q5_1",
+  "fileName": "ggml-base-q5_1.bin",
+  "format": "whisper.cpp-ggml",
+  "byteLength": 59707625,
+  "sha256": "422f1ae452ade6f30a004d7e5c6a43195e4433bc370bf23fac9cc591f01a8898",
+  "license": "MIT",
+  "codeCommit": "7e26d3b0d5bced6c8217ef09710ec2f969001241",
+  "codeLicenseSHA256": "94f29bbed6a22c35b992c5c6ebf0e7c92f13b836b90f36f461c9cf2f0f1d010d",
+  "officialModelURL": "https://huggingface.co/ggerganov/whisper.cpp/resolve/5359861c739e955e79d9a303bcbc70fb988958b1/ggml-base-q5_1.bin",
+  "officialModelRepositoryRevision": "5359861c739e955e79d9a303bcbc70fb988958b1",
+  "openaiLicenseRevision": "86098128c0b4f24f0e2aa2994de830614b474227",
+  "openaiLicenseSHA256": "b5d65a59060e68c4ff940e1eddfa6f94b2d68fdf58ed7f4dd57721c997e35e9d",
+  "decodeMode": "transcribe_auto_not_translate",
+  "processing": "on_device_no_audio_upload",
+  "mixedLanguageValidation": "NOT_RUN"
+}

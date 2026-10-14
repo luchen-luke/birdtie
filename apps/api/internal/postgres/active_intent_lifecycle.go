@@ -75,7 +75,7 @@ func (g *humanActiveIntents) begin(ctx context.Context, a ai.Access, write bool)
 		return nil, b, ai.ErrUnavailable
 	}
 	fail := func(e error) (pgx.Tx, activeBinding, error) { _ = tx.Rollback(context.Background()); return nil, b, e }
-	if _, e = tx.Exec(ctx, `SET LOCAL TIME ZONE 'UTC';LOCK TABLE accounts,agents,agent_profiles,sessions,user_profiles,social_intents,social_intent_audience_targets,social_intent_invitations,cities,places,contexts,person_contexts,communities,community_memberships,account_blocks,person_ties,connection_requests IN ACCESS SHARE MODE`); e != nil {
+	if _, e = tx.Exec(ctx, `SET LOCAL TIME ZONE 'UTC';LOCK TABLE accounts,agents,agent_profiles,sessions,user_profiles,social_intents,social_intent_audience_targets,social_intent_invitations,cities,places,contexts,person_contexts,communities,community_memberships,account_blocks,person_ties,connection_requests,follows,person_close_connections IN ACCESS SHARE MODE`); e != nil {
 		return fail(ai.ErrUnavailable)
 	}
 	if write {
@@ -186,6 +186,9 @@ const activeIntentSourcesSQL = `WITH stamp AS MATERIALIZED(SELECT clock_timestam
  context.id contextid,context.context_type,context.city_id contextcity,context.xmin::text contextx,
  contextcity.id contextcityid,contextcity.xmin::text contextcityx,contextcity.publication_status contextcitystatus,contextcity.expires_at contextcityend,
  profile.visibility,profile.xmin::text profilex,
+ coalesce((SELECT jsonb_agg(jsonb_build_array(f.id,f.xmin::text,f.follower_account_id,a.xmin::text,a.status) ORDER BY f.id) FROM follows f JOIN accounts a ON a.id=f.follower_account_id WHERE d.v->>'audience'='FOLLOWERS' AND f.person_account_id=$1),'[]') follower_frame,
+ coalesce((SELECT jsonb_agg(jsonb_build_array(t.id,t.xmin::text,t.status,r.id,r.xmin::text,r.state,r.scope,a.id,a.xmin::text,a.status) ORDER BY t.id) FROM person_ties t JOIN connection_requests r ON r.id=t.request_id JOIN accounts a ON a.id=CASE WHEN t.person_a_account_id=$1 THEN t.person_b_account_id ELSE t.person_a_account_id END WHERE d.v->>'audience' IN('FRIENDS','CONNECTIONS','CLOSE') AND(t.person_a_account_id=$1 OR t.person_b_account_id=$1)),'[]') connection_frame,
+ coalesce((SELECT jsonb_agg(jsonb_build_array(c.person_account_id,c.xmin::text,c.native_revision,c.is_active,c.tie_id,c.request_id) ORDER BY c.person_account_id) FROM person_close_connections c WHERE d.v->>'audience'='CLOSE' AND c.owner_account_id=$1),'[]') close_frame,
  coalesce((SELECT jsonb_agg(jsonb_build_array(a.id,a.xmin::text,a.status,a.account_type,EXISTS(SELECT 1 FROM account_blocks b WHERE (b.blocker_account_id=$1 AND b.blocked_account_id=a.id) OR(b.blocked_account_id=$1 AND b.blocker_account_id=a.id))) ORDER BY a.id) FROM accounts a WHERE a.id::text IN(SELECT jsonb_array_elements_text(coalesce(d.v->'inviteeAccountIds','[]')))),'[]') peers,
  coalesce((SELECT jsonb_agg(jsonb_build_array(b.blocker_account_id,b.blocked_account_id,b.xmin::text) ORDER BY b.blocker_account_id,b.blocked_account_id) FROM account_blocks b WHERE (b.blocker_account_id=$1 AND b.blocked_account_id::text IN(SELECT jsonb_array_elements_text(coalesce(d.v->'inviteeAccountIds','[]')))) OR(b.blocked_account_id=$1 AND b.blocker_account_id::text IN(SELECT jsonb_array_elements_text(coalesce(d.v->'inviteeAccountIds','[]'))))),'[]') blocks
  FROM d CROSS JOIN stamp LEFT JOIN places p ON p.id::text=d.v->'constraints'->>'placeId'
@@ -193,7 +196,7 @@ const activeIntentSourcesSQL = `WITH stamp AS MATERIALIZED(SELECT clock_timestam
  LEFT JOIN community_memberships m ON m.community_id=c.id AND m.user_account_id=$1
  LEFT JOIN contexts context ON context.id::text=d.v->>'contextId' LEFT JOIN cities contextcity ON contextcity.id=context.city_id
  LEFT JOIN user_profiles profile ON profile.account_id=$1)
- SELECT jsonb_build_array(pid,px,pstatus,pend,pcity,pcid,pcx,pcstatus,pcend,cityid,cityx,citystatus,cityend,cid,cx,cstatus,mid,mx,mstatus,contextid,context_type,contextcity,contextx,contextcityx,contextcitystatus,contextcityend,profilex,visibility,peers,blocks),
+ SELECT jsonb_build_array(pid,px,pstatus,pend,pcity,pcid,pcx,pcstatus,pcend,cityid,cityx,citystatus,cityend,cid,cx,cstatus,mid,mx,mstatus,contextid,context_type,contextcity,contextx,contextcityx,contextcitystatus,contextcityend,profilex,visibility,peers,blocks,follower_frame,connection_frame,close_frame),
  (coalesce(v->'constraints'->>'placeId','')='' OR(pid IS NOT NULL AND pstatus='published' AND(pend IS NULL OR pend>n) AND pcid IS NOT NULL AND pcstatus='published' AND(pcend IS NULL OR pcend>n) AND(v->>'audience'<>'LOCAL' OR pcity=v->>'cityId') AND(coalesce(v->>'contextId','')='' OR context_type<>'CITY' OR pcity=contextcity)))
  AND(coalesce(v->>'contextId','')='' OR(contextid IS NOT NULL AND ((v->>'modality'='ONLINE' AND context_type='ONLINE') OR(v->>'modality'<>'ONLINE' AND context_type='CITY' AND contextcityid IS NOT NULL AND contextcitystatus='published' AND(contextcityend IS NULL OR contextcityend>n)))))
  AND CASE v->>'audience' WHEN 'LOCAL' THEN cityid IS NOT NULL AND citystatus='published' AND(cityend IS NULL OR cityend>n)
@@ -203,7 +206,7 @@ const activeIntentSourcesSQL = `WITH stamp AS MATERIALIZED(SELECT clock_timestam
  CASE WHEN v->>'modality'='ONLINE' THEN coalesce(nullif(v->'constraints'->>'onlinePlatform',''),'线上方式未设定')
  WHEN pid IS NOT NULL AND pstatus='published' AND(pend IS NULL OR pend>n) AND pcid IS NOT NULL AND pcstatus='published' AND(pcend IS NULL OR pcend>n) THEN pname
  WHEN coalesce(v->'constraints'->>'placeId','')<>'' THEN '地点暂不可用' ELSE coalesce(nullif(v->'constraints'->>'areaLabel',''),'地点未设定') END,
- CASE v->>'audience' WHEN 'PRIVATE' THEN '仅自己' WHEN 'PUBLIC' THEN '公开' WHEN 'FRIENDS' THEN '好友'
+ CASE v->>'audience' WHEN 'PRIVATE' THEN '仅自己' WHEN 'PUBLIC' THEN '公开' WHEN 'FRIENDS' THEN '好友' WHEN 'FOLLOWERS' THEN '关注我的人' WHEN 'CONNECTIONS' THEN '好友' WHEN 'CLOSE' THEN '亲近好友'
  WHEN 'LOCAL' THEN CASE WHEN cityid IS NOT NULL AND citystatus='published' AND(cityend IS NULL OR cityend>n) THEN cityname||'本地用户' ELSE '本地范围暂不可用' END
  WHEN 'COMMUNITY' THEN CASE WHEN cid IS NOT NULL AND cstatus='active' AND mstatus='active' THEN cname||'社群成员' ELSE '社群范围暂不可用' END WHEN 'INVITE_ONLY' THEN '仅指定邀请对象' ELSE '范围未知' END,
  least(coalesce(pend,'infinity'),coalesce(pcend,'infinity'),coalesce(cityend,'infinity'),coalesce(contextcityend,'infinity'),n+interval '90 days') FROM src`

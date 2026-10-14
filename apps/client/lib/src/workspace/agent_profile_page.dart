@@ -1,21 +1,24 @@
 import 'dart:async';
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:http/http.dart' as http;
+import '../app/birdtie_app_bar.dart';
 import '../auth/birdtie_auth_controller.dart';
 import '../content/social_preference_seed_sheet.dart';
 import 'agent_profile_api.dart';
 import 'agent_profile_controller.dart';
 import 'agent_memory_correction_page.dart';
 import 'agent_memory_candidate_page.dart';
-import 'agent_memory_candidate_api.dart' show candidateCategories;
+import 'agent_run_page.dart';
+import 'agent_activity_join_page.dart';
+import 'memory_content_fields.dart';
 import 'agent_introduction_page.dart';
 import 'person_community_interest_page.dart';
 import 'activity_participation_disclosure_page.dart';
 import 'notification_policy_page.dart';
 import 'model_egress_page.dart';
 import 'notification_destination_router.dart';
+import 'now_ui_tokens.dart';
 
 class AgentProfilePage extends StatefulWidget {
   const AgentProfilePage({
@@ -43,6 +46,10 @@ class _AgentProfilePageState extends State<AgentProfilePage> {
   late final _workspace = widget.organizationWorkspaceID;
   late final AgentProfileController _data;
   late final Listenable _nestedChanges;
+  late final bool Function() _nestedSourceCurrent = () => _current;
+  late final String? Function() _nestedAuthorization = () =>
+      _auth.authorizationHeader;
+  late final String? Function() _nestedOwner = () => _auth.accountID;
   final _scroll = ScrollController();
   bool _queued = false;
   @override
@@ -142,7 +149,7 @@ class _AgentProfilePageState extends State<AgentProfilePage> {
       children: [
         Semantics(
           header: true,
-          child: Text(title, style: Theme.of(context).textTheme.titleLarge),
+          child: Text(title, style: NowUiTokens.of(context).placeTitle),
         ),
         const SizedBox(height: 10),
         ...children,
@@ -154,19 +161,36 @@ class _AgentProfilePageState extends State<AgentProfilePage> {
     final all = _data.memories;
     if (all == null) return [_notice('memories')];
     final rows = all.where((m) => types.contains(m.raw['memoryType'])).toList();
-    if (rows.isEmpty) return [const Text('尚无这一类记忆。')];
+    if (rows.isEmpty)
+      return [
+        Text(_data.hasMoreMemories ? '当前页没有这一类记忆，可在管理记忆中继续查看。' : '尚无这一类记忆。'),
+      ];
     return [
+      if (_data.hasMoreMemories) const Text('仅显示当前页记录，可在管理记忆中继续查看。'),
       for (final m in rows)
         ListTile(
           key: ValueKey('profile-memory-${m.id}'),
           contentPadding: EdgeInsets.zero,
-          title: Text(m.sourceType == 'EXPLICIT' ? '本人明确声明' : '待审推断预留'),
-          subtitle: Text(switch (m.status) {
-            'ACTIVE' => '读取时已确认 · 查看当前详情',
-            'PENDING_REVIEW' => '待本人检查，尚未确认为事实',
-            'DELETED' => '当前已丢弃，不返回内容',
-            _ => '当前已过期',
-          }),
+          minTileHeight: 48,
+          title: Text(switch (m.status) {
+            'ACTIVE' || 'PENDING_REVIEW' => m.summary,
+            'DELETED' => '已删除的记忆',
+            _ => '已过期的记忆',
+          }, style: NowUiTokens.of(context).body),
+          subtitle: Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(switch (m.status) {
+                  'ACTIVE' => '已确认',
+                  'PENDING_REVIEW' => '待确认',
+                  'DELETED' => '已删除',
+                  _ => '已过期',
+                }, style: NowUiTokens.of(context).metadata),
+              ],
+            ),
+          ),
           trailing: const Icon(Icons.chevron_right),
           minVerticalPadding: 12,
           onTap: _current ? () => unawaited(_showDetail(m.id)) : null,
@@ -213,38 +237,15 @@ class _AgentProfilePageState extends State<AgentProfilePage> {
     }
     return _section('当前记忆详情', [
       if (d.memory == null)
-        const Text('当前已过期或已丢弃，不返回正文。')
+        const Text('这条记忆已过期或删除。')
       else ...[
-        Text(
-          d.memory!.sourceType == 'EXPLICIT' ? '本人明确确认的声明' : '待审预留内容，尚未确认为事实',
-        ),
+        Text(d.memory!.sourceType == 'EXPLICIT' ? '已确认' : '待确认'),
         const SizedBox(height: 8),
         SelectableText(d.memory!.summary),
-        if ((d.memory!.raw['structuredValue'] as Map).isNotEmpty) ...[
-          const SizedBox(height: 8),
-          if (candidateCategories.containsKey(
-            (d.memory!.raw['structuredValue'] as Map)['activityCategory'],
-          ))
-            Text(
-              '本人保留的活动类别：${candidateCategories[(d.memory!.raw['structuredValue'] as Map)['activityCategory']]}',
-            ),
-          ExpansionTile(
-            title: const Text('检查原补充内容'),
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(12),
-                child: SelectableText(
-                  const JsonEncoder.withIndent(
-                    '  ',
-                  ).convert(d.memory!.raw['structuredValue']),
-                ),
-              ),
-            ],
-          ),
-        ],
+        MemoryContentFields(values: d.memory!.raw['structuredValue'] as Map),
       ],
       const SizedBox(height: 8),
-      const Text('此详情仅供本人查看，不是模型读取许可。'),
+      const Text('仅自己可见'),
       _button('管理与纠正记忆', (_openMemories)),
     ]);
   }
@@ -267,7 +268,7 @@ class _AgentProfilePageState extends State<AgentProfilePage> {
           ? '我的智能体仅供个人身份查看，请返回个人工作区。'
           : '请先登录个人账号，再查看我的智能体。';
       return Scaffold(
-        appBar: AppBar(title: const Text('我的智能体')),
+        appBar: birdtieAppBar(context, title: const Text('我的智能体')),
         body: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
           child: Text(reason),
@@ -278,7 +279,7 @@ class _AgentProfilePageState extends State<AgentProfilePage> {
         activities = _data.participations,
         policies = _data.policies;
     return Scaffold(
-      appBar: AppBar(title: const Text('我的智能体')),
+      appBar: birdtieAppBar(context, title: const Text('我的智能体')),
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: _data.load,
@@ -291,12 +292,10 @@ class _AgentProfilePageState extends State<AgentProfilePage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      const Text(
+                      Text(
                         '仅本人查看',
-                        style: TextStyle(fontWeight: FontWeight.w600),
+                        style: Theme.of(context).textTheme.bodySmall,
                       ),
-                      const SizedBox(height: 8),
-                      const Text('查看你填写、确认和仍可读取的资料。报名不等于到场，社群兴趣不等于成员资格。'),
                       _button(
                         '刷新当前资料',
                         () => unawaited(_data.load()),
@@ -324,7 +323,6 @@ class _AgentProfilePageState extends State<AgentProfilePage> {
                   'RELATIONSHIP_CONTEXT',
                   'ORGANIZATION',
                 }),
-                const Text('候选只表示待检查的建议；低、中、高不代表已校准概率。'),
                 _button(
                   '待确认的记忆',
                   () => _open(
@@ -334,6 +332,19 @@ class _AgentProfilePageState extends State<AgentProfilePage> {
                       apiBaseUrl: _base,
                       workspaceChanges: _changes,
                       organizationWorkspaceID: _workspace,
+                    ),
+                  ),
+                ),
+                _button(
+                  '智能体处理状态',
+                  () => _open(
+                    (_) => AgentRunPage(
+                      auth: _auth,
+                      client: _client,
+                      apiBaseUrl: _base,
+                      workspaceChanges: _nestedChanges,
+                      organizationWorkspaceID: _workspace,
+                      sourceCurrent: _nestedSourceCurrent,
                     ),
                   ),
                 ),
@@ -362,14 +373,27 @@ class _AgentProfilePageState extends State<AgentProfilePage> {
                 _button('管理我的记忆', _openMemories),
               ]),
               _section('地点', [
-                const Text('只展示本人保留的地点记忆；不据此推断到访或位置。'),
                 ..._memoryRows({'PLACE'}),
-                const Text('地点的喜欢、去过或回避声明仍在原地点详情中管理。'),
               ]),
               _section('活动', [
+                _button(
+                  '核实智能体报名',
+                  () => _open(
+                    (_) => AgentActivityJoinPage(
+                      authorizationHeader: _nestedAuthorization,
+                      ownerID: _nestedOwner,
+                      client: _client,
+                      apiBaseUrl: _base,
+                      identityChanges: _nestedChanges,
+                      organizationWorkspaceID: _workspace,
+                      sourceCurrent: _nestedSourceCurrent,
+                    ),
+                  ),
+                  key: const Key('profile-agent-join-recovery'),
+                ),
                 ..._fields(['preferredActivityTypes']),
                 ..._memoryRows({'ACTIVITY'}),
-                const Text('原活动报名记录（不代表出席）'),
+                const Text('我的报名'),
                 if (activities == null)
                   _notice('participations')
                 else ...[
@@ -399,7 +423,7 @@ class _AgentProfilePageState extends State<AgentProfilePage> {
               ]),
               _section('社群', [
                 ..._memoryRows({'COMMUNITY'}),
-                const Text('本人社群兴趣声明（不是成员资格）'),
+                const Text('感兴趣的社群'),
                 if (interests == null)
                   _notice('interests')
                 else ...[
@@ -447,7 +471,6 @@ class _AgentProfilePageState extends State<AgentProfilePage> {
                             : '已到期'}',
                       ),
                     ),
-                const Text('资料可见范围、记忆、本地分析和本次会话任务资料许可可在设置中分别管理。修改偏好不授予模型读取、长期保留或自动执行权限；资料使用仍需当前用途的具体批准。'),
                 _button(
                   '检查社交建议设置',
                   () => _open(

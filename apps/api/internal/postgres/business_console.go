@@ -833,6 +833,9 @@ func readBusinessConsoleTx(ctx context.Context, tx pgx.Tx, b businessBinding) (b
 	if rows.Err() != nil || len(out.Members) > 100 {
 		return out, businessconsole.ErrUnavailable
 	}
+	if e = attachBusinessMemberDisplayNames(ctx, tx, b, out.Members); e != nil {
+		return out, e
+	}
 	return out, nil
 }
 func (s *Store) ReadBusinessConsole(ctx context.Context, a businessconsole.Access) (businessconsole.Console, error) {

@@ -90,4 +90,83 @@ void main() {
       expect(() => PendingEntityShare.fromJson(value), throwsFormatException);
     });
   }
+  for (final secure in [false, true]) {
+    test(
+      '143 ${secure ? 'secure' : 'memory'} prepared repair cannot resurrect UNKNOWN',
+      () async {
+        FlutterSecureStorage.setMockInitialValues({});
+        final EntitySharePendingStore store = secure
+            ? const SecureEntitySharePendingStore()
+            : MemoryEntitySharePendingStore();
+        final prepared = PendingEntityShare.control(
+          operationID: shareOperation,
+          recipientType: 'FRIEND_TIE',
+          recipientID: shareConversation,
+          type: 'moment',
+          entityID: shareTarget,
+          sourceVersion: 'a' * 64,
+          payloadDigest: entitySharePayloadDigest(
+            shareOperation,
+            'FRIEND_TIE',
+            shareConversation,
+            'moment',
+            shareTarget,
+          ),
+          stage: 'PREPARED',
+        );
+        await store.write('https://api.example', shareOwner, prepared);
+        expect(
+          (await store.read('https://api.example', shareOwner)).single.stage,
+          'PREPARED',
+        );
+        await store.remove('https://api.example', shareOwner, prepared);
+        await expectLater(
+          store.write('https://api.example', shareOwner, prepared.unknown),
+          throwsStateError,
+        );
+        expect(await store.read('https://api.example', shareOwner), isEmpty);
+      },
+    );
+    test(
+      '143 ${secure ? 'secure' : 'memory'} exact stage cleanup cannot delete promoted UNKNOWN',
+      () async {
+        FlutterSecureStorage.setMockInitialValues({});
+        final EntitySharePendingStore store = secure
+            ? const SecureEntitySharePendingStore()
+            : MemoryEntitySharePendingStore();
+        final p = PendingEntityShare.control(
+          operationID: shareOperation,
+          recipientType: 'CONVERSATION',
+          recipientID: shareConversation,
+          type: 'place',
+          entityID: shareTarget,
+          sourceVersion: 'a' * 64,
+          payloadDigest: entitySharePayloadDigest(
+            shareOperation,
+            'CONVERSATION',
+            shareConversation,
+            'place',
+            shareTarget,
+          ),
+          stage: 'PREPARED',
+        );
+        await store.write('https://api.example', shareOwner, p);
+        await store.write('https://api.example', shareOwner, p.unknown);
+        await expectLater(
+          store.remove('https://api.example', shareOwner, p),
+          throwsStateError,
+        );
+        await expectLater(
+          store.delete('https://api.example', shareOwner, shareOperation),
+          throwsStateError,
+        );
+        expect(
+          (await store.read('https://api.example', shareOwner)).single.stage,
+          'UNKNOWN',
+        );
+        expect(jsonEncode(p.unknown.toJson()), isNot(contains('approval')));
+        await store.remove('https://api.example', shareOwner, p.unknown);
+      },
+    );
+  }
 }

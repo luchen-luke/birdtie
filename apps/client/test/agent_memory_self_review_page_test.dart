@@ -24,8 +24,8 @@ void main() {
       if (r.method == 'POST' && r.url.path.endsWith('/self-review')) {
         readPosts++;
       }
-      return correctionResponse({
-        'data': r.url.path.endsWith('/agent-memories')
+      return correctionReadResponse(r, {
+        'data': r.url.path.endsWith('/agent-memories/page')
             ? [correctionMemoryRaw(at: at)]
             : [],
       });
@@ -56,8 +56,9 @@ void main() {
       final client = ReviewSendClient(
         (r) async => r.url.path.endsWith('/self-review')
             ? reviewWireResponse()
-            : reviewResponse(
-                r.url.path.endsWith('/agent-memories')
+            : reviewReadResponse(
+                r,
+                r.url.path.endsWith('/agent-memories/page')
                     ? [reviewMemoryRow()]
                     : [],
               ),
@@ -102,8 +103,9 @@ void main() {
         (r) => r.url.path.endsWith('/self-review')
             ? gate.future
             : Future.value(
-                reviewResponse(
-                  r.url.path.endsWith('/agent-memories')
+                reviewReadResponse(
+                  r,
+                  r.url.path.endsWith('/agent-memories/page')
                       ? [reviewMemoryRow()]
                       : [],
                 ),
@@ -185,8 +187,11 @@ void main() {
     final client = ReviewSendClient(
       (r) async => r.url.path.endsWith('/self-review')
           ? reviewWireResponse()
-          : reviewResponse(
-              r.url.path.endsWith('/agent-memories') ? [reviewMemoryRow()] : [],
+          : reviewReadResponse(
+              r,
+              r.url.path.endsWith('/agent-memories/page')
+                  ? [reviewMemoryRow()]
+                  : [],
             ),
     );
     await t.pumpWidget(

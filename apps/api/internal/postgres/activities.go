@@ -76,12 +76,15 @@ var activityColumns = `a.id, a.city_id, COALESCE(p.id::text, ''), COALESCE(p.nam
          WHEN ao.community_id IS NOT NULL THEN cc.name
          WHEN ao.business_id IS NOT NULL THEN bb.name ELSE oo.name END,
     cc.avatar_url, a.modality, a.physical_place_status,
-    CASE WHEN v.place_id IS NOT NULL THEN v.place_id::text END`
+    CASE WHEN v.place_id IS NOT NULL THEN v.place_id::text END,
+    birdtie_entity_cover_metadata('activity',a.id,$2::uuid,clock_timestamp()),
+    birdtie_entity_cover_authority('activity',a.id,$2::uuid)||':'||COALESCE((SELECT cover.xmin::text FROM entity_covers cover WHERE cover.entity_type='activity' AND cover.entity_id=a.id),'none')`
 
-const publishedActivityFrom = ` FROM activities a
+var publishedActivityFrom = ` FROM activities a
     JOIN cities c ON c.id = a.city_id AND c.publication_status = 'published'
     LEFT JOIN places p ON p.id = a.place_id AND p.publication_status = 'published'
       AND (p.expires_at IS NULL OR p.expires_at > now())
+      AND ` + currentRetainedPlaceVisibilitySQL("p", "clock_timestamp()") + `
     LEFT JOIN organizations o ON o.id=a.organization_id AND o.visibility='public'
       AND o.status='active'
     JOIN activity_organizers ao ON ao.activity_id=a.id
@@ -313,6 +316,7 @@ func scanActivity(row scanner) (foundation.Activity, error) {
 		&activity.Organizer.Type, &activity.Organizer.ID, &activity.Organizer.Name,
 		&activity.Organizer.AvatarURL,
 		&activity.Modality, &activity.PhysicalPlaceStatus, &activity.VenuePlaceID,
+		&activity.Cover, &activity.CoverSourceProof,
 	)
 	if err != nil {
 		return foundation.Activity{}, notFound(err)

@@ -1,6 +1,8 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:http/http.dart' as http;
 import '../config/birdtie_environment.dart';
+import 'agent_policy_revision.dart';
 import 'model_egress_api.dart' show egressTime, egressIDValid;
 
 const introductionCategories = <String>[
@@ -86,10 +88,13 @@ class IntroductionIntent {
 }
 
 class IntroductionPolicy {
-  IntroductionPolicy(Map<String, dynamic> b, String owner)
-    : ownerID = _id(b['ownerId']),
-      agentID = _id(b['agentId']),
-      observedAt = egressTime(b['observedAt']) {
+  IntroductionPolicy(
+    Map<String, dynamic> b,
+    String owner, {
+    bool isWeb = kIsWeb,
+  }) : ownerID = _id(b['ownerId']),
+       agentID = _id(b['agentId']),
+       observedAt = egressTime(b['observedAt']) {
     if (b['schemaVersion'] != 'agent-policy-settings-v1' ||
         b['ownerType'] != 'PERSON' ||
         ownerID != owner) {
@@ -103,9 +108,7 @@ class IntroductionPolicy {
     );
     if (s['family'] != 'SOCIAL' ||
         s['configured'] is! bool ||
-        s['nativeRevision'] is! int ||
-        (s['nativeRevision'] as int) < 0 ||
-        (s['nativeRevision'] as int) > 9223372036854775806) {
+        !agentPolicyRevisionValid(s['nativeRevision'], isWeb: isWeb)) {
       throw const FormatException('策略版本无效');
     }
     revision = s['nativeRevision'] as int;

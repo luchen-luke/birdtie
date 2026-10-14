@@ -3,6 +3,8 @@ package foundation
 import (
 	"context"
 	"errors"
+	"github.com/birdtie/birdtie/apps/api/internal/entitycover"
+	"github.com/birdtie/birdtie/apps/api/internal/placephoto"
 	"time"
 )
 
@@ -58,14 +60,16 @@ type Location struct {
 }
 
 type Place struct {
-	ID           string   `json:"id"`
-	CityID       string   `json:"cityId"`
-	Name         string   `json:"name"`
-	CategoryCode string   `json:"categoryCode"`
-	Summary      string   `json:"summary"`
-	AddressLabel string   `json:"addressLabel,omitempty"`
-	Location     Location `json:"location"`
-	Source       Source   `json:"source"`
+	PlacePhoto       *placephoto.Metadata `json:"placePhoto,omitempty"`
+	PhotoSourceProof string               `json:"-"`
+	ID               string               `json:"id"`
+	CityID           string               `json:"cityId"`
+	Name             string               `json:"name"`
+	CategoryCode     string               `json:"categoryCode"`
+	Summary          string               `json:"summary"`
+	AddressLabel     string               `json:"addressLabel,omitempty"`
+	Location         Location             `json:"location"`
+	Source           Source               `json:"source"`
 }
 
 // PlaceActivityCatalog resolves activities from the same canonical Place ID.
@@ -75,36 +79,38 @@ type PlaceActivityCatalog interface {
 }
 
 type Activity struct {
-	ID                  string            `json:"id"`
-	Organizer           ActivityOrganizer `json:"organizer"`
-	Visibility          string            `json:"visibility"`
-	OrganizationID      *string           `json:"organizationId,omitempty"`
-	CityID              string            `json:"cityId"`
-	PlaceID             string            `json:"placeId,omitempty"`
-	PlaceName           string            `json:"placeName,omitempty"`
-	Modality            string            `json:"modality"`
-	PhysicalPlaceStatus string            `json:"physicalPlaceStatus"`
-	VenuePlaceID        *string           `json:"venuePlaceId,omitempty"`
-	HostLabel           string            `json:"hostLabel"`
-	Title               string            `json:"title"`
-	Summary             string            `json:"summary"`
-	Description         string            `json:"description"`
-	CategoryCode        string            `json:"categoryCode,omitempty"`
-	Capacity            *int              `json:"capacity,omitempty"`
-	ParticipantCount    *int              `json:"participantCount,omitempty"`
-	PriceMinor          int               `json:"priceMinor"`
-	Currency            string            `json:"currency,omitempty"`
-	Eligibility         string            `json:"eligibility,omitempty"`
-	LanguageCode        string            `json:"languageCode,omitempty"`
-	OfficialURL         string            `json:"officialUrl,omitempty"`
-	StartsAt            time.Time         `json:"startsAt"`
-	EndsAt              time.Time         `json:"endsAt"`
-	TimeZone            string            `json:"timeZone"`
-	Schedule            string            `json:"schedule"`
-	EndSchedule         string            `json:"endSchedule"`
-	Status              string            `json:"status"`
-	Location            *Location         `json:"location,omitempty"`
-	Source              Source            `json:"source"`
+	Cover               *entitycover.Metadata `json:"cover,omitempty"`
+	CoverSourceProof    string                `json:"-"`
+	ID                  string                `json:"id"`
+	Organizer           ActivityOrganizer     `json:"organizer"`
+	Visibility          string                `json:"visibility"`
+	OrganizationID      *string               `json:"organizationId,omitempty"`
+	CityID              string                `json:"cityId"`
+	PlaceID             string                `json:"placeId,omitempty"`
+	PlaceName           string                `json:"placeName,omitempty"`
+	Modality            string                `json:"modality"`
+	PhysicalPlaceStatus string                `json:"physicalPlaceStatus"`
+	VenuePlaceID        *string               `json:"venuePlaceId,omitempty"`
+	HostLabel           string                `json:"hostLabel"`
+	Title               string                `json:"title"`
+	Summary             string                `json:"summary"`
+	Description         string                `json:"description"`
+	CategoryCode        string                `json:"categoryCode,omitempty"`
+	Capacity            *int                  `json:"capacity,omitempty"`
+	ParticipantCount    *int                  `json:"participantCount,omitempty"`
+	PriceMinor          int                   `json:"priceMinor"`
+	Currency            string                `json:"currency,omitempty"`
+	Eligibility         string                `json:"eligibility,omitempty"`
+	LanguageCode        string                `json:"languageCode,omitempty"`
+	OfficialURL         string                `json:"officialUrl,omitempty"`
+	StartsAt            time.Time             `json:"startsAt"`
+	EndsAt              time.Time             `json:"endsAt"`
+	TimeZone            string                `json:"timeZone"`
+	Schedule            string                `json:"schedule"`
+	EndSchedule         string                `json:"endSchedule"`
+	Status              string                `json:"status"`
+	Location            *Location             `json:"location,omitempty"`
+	Source              Source                `json:"source"`
 }
 
 type ActivityOrganizer struct {

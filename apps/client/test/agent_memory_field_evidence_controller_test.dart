@@ -19,8 +19,8 @@ class FieldSendClient extends http.BaseClient {
     final response = r.url.path.endsWith(correctionMemory) || r.method == 'POST'
         ? detail(r)
         : Future.value(
-            correctionResponse({
-              'data': r.url.path.endsWith('agent-memories')
+            correctionReadResponse(r, {
+              'data': r.url.path.endsWith('agent-memories/page')
                   ? [correctionMemoryRaw()]
                   : [],
             }),

@@ -10,16 +10,21 @@ import (
 )
 
 func (s *server) listSaved(w http.ResponseWriter, r *http.Request) {
-	actor, _, err := s.actor(r, true)
-	if authFailed(w, err) {
+	actor, digest, ok := s.savedHumanActor(w, r)
+	if !ok {
 		return
 	}
-	items, err := s.saved.ListSaved(r.Context(), actor.ID)
+	port, ok := s.saved.(saved.HumanListStore)
+	if !ok || port == nil {
+		respondError(w, http.StatusServiceUnavailable, "saved_note_unavailable")
+		return
+	}
+	items, err := port.ListHumanSaved(r.Context(), digest, actor)
 	if err != nil {
-		serverError(w, err)
+		savedNoteFailure(w, err)
 		return
 	}
-	respond(w, http.StatusOK, map[string]any{"data": items})
+	s.respondHumanSocialNow(w, r, digest, actor, map[string]any{"data": items})
 }
 
 func (s *server) saveItem(w http.ResponseWriter, r *http.Request) {

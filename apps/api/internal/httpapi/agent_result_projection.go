@@ -47,7 +47,10 @@ func (s *server) prepareAgentMessageResults(r *http.Request, result agentworkspa
 	_, humanPost := r.Context().Value(nowHumanReplyKey{}).(bool)
 	liveReply, livePost := r.Context().Value(nowLiveReplyKey{}).(agentworkspace.LiveReply)
 	livePost = livePost && liveReply != nil && r.Method == http.MethodPost
-	if (r.Method != http.MethodGet && !humanPost && !livePost) || result.Task == nil || actor.AccountType != "person" || result.Task.PrincipalType != "person" || result.Task.PrincipalID != actor.ID || result.Task.ContextType != "CITY" || r.Header.Get("X-Birdtie-Organization-Workspace") != "" {
+	// Ordinary and unsupported personal POST replies need the same currently
+	// authorized history envelope as GET. A nil serialization is not an empty
+	// owned read; keep the original native read and final revalidation below.
+	if (r.Method != http.MethodGet && r.Method != http.MethodPost) || result.Task == nil || actor.AccountType != "person" || result.Task.PrincipalType != "person" || result.Task.PrincipalID != actor.ID || result.Task.ContextType != "CITY" || r.Header.Get("X-Birdtie-Organization-Workspace") != "" {
 		return result, nil, false, nil
 	}
 	port, ok := s.agent.(agentworkspace.HumanReplyResultsPort)
@@ -70,7 +73,40 @@ func (s *server) prepareAgentMessageResults(r *http.Request, result agentworkspa
 	if result.MessageResults == nil {
 		result.MessageResults = []agentworkspace.MessageResult{}
 	}
+	if r.Method == http.MethodPost && !humanPost && !livePost {
+		// This fresh owned read only supplies separately authorized history.
+		// Ordinary/unsupported/public-place POSTs cannot promote an old model
+		// round into the current answer or acquire a sealed live answer grant.
+		return result, read, false, nil
+	}
 	last := len(task.Conversation) - 1
+	if r.Method == http.MethodGet && task.Status == agentworkspace.TaskActive && task.Intent == agentworkspace.FindPlace &&
+		(task.Filters["targetIntent"] == "" || task.Filters["targetIntent"] == agentworkspace.FindPlace) && last >= 1 &&
+		task.Conversation[last].Role == "user" && task.Conversation[last-1].Role == "assistant" && task.Conversation[last-1].LicensedPlaceModelEvidence != nil {
+		// A new user turn after a licensed place answer is still unfinished.
+		// Reading it may preserve separately authorized old history, but neither
+		// that old answer nor a new city search is the current round's result.
+		currentQuery := task.Filters["currentQuery"]
+		if currentQuery == "" {
+			currentQuery = task.Query
+		}
+		if currentQuery == "" || task.Conversation[last].Text != currentQuery || agentworkspace.ValidateReplyMembership(task, last-1) != nil || task.Conversation[last-1].ResultMembership.Kind != "place" {
+			return result, read, false, arp.ErrChanged
+		}
+		result.NativeProjection = true
+		result.ProjectionItems = []arp.Item{}
+		result.PublicFieldEvidence = nil
+		result.PublicCommercialRefs = []arp.Ref{}
+		result.Activities = []foundation.Activity{}
+		result.Places = []foundation.Place{}
+		result.Organizations = []agentworkspace.Organization{}
+		result.People = []agentworkspace.Person{}
+		result.Groups = []agentworkspace.Group{}
+		result = agentworkspace.WithContract(result, task, result.RequestID)
+		result.Message = "这轮查询尚未完成；尚无可用结果。"
+		result.Note = "原会话文字保留；本轮没有已确认的结果和来源。"
+		return result, read, true, nil
+	}
 	if r.Method == http.MethodGet && task.Status == agentworkspace.TaskCompleted && last >= 0 {
 		message := task.Conversation[last]
 		if message.Role == "assistant" && message.ResultMembership == nil && message.SourceRunID != "" && message.SourceEvidenceDigest != "" && len(message.Sources) > 0 {
@@ -97,6 +133,11 @@ func (s *server) prepareAgentMessageResults(r *http.Request, result agentworkspa
 		}
 	}
 	if task.Status != agentworkspace.TaskCompleted || agentworkspace.ValidateReplyMembership(task, last) != nil || task.Conversation[last].ResultMembership.Kind != nativeResultKind(task.Intent) {
+		if task.Status == agentworkspace.TaskCompleted && last >= 0 && task.Conversation[last].LicensedPlaceModelEvidence != nil {
+			// An existing licensed model round cannot acquire a newly searched
+			// set when its original task/membership correlation is invalid.
+			return result, read, false, arp.ErrChanged
+		}
 		return result, read, false, nil
 	}
 	currentQuery := task.Filters["currentQuery"]
@@ -104,6 +145,9 @@ func (s *server) prepareAgentMessageResults(r *http.Request, result agentworkspa
 		currentQuery = task.Query
 	}
 	if last < 1 || task.Conversation[last-1].Role != "user" || task.Conversation[last-1].Text != currentQuery {
+		if task.Conversation[last].LicensedPlaceModelEvidence != nil {
+			return result, read, false, arp.ErrChanged
+		}
 		return result, read, false, nil
 	}
 	for _, entry := range result.MessageResults {
@@ -131,7 +175,11 @@ func (s *server) prepareAgentMessageResults(r *http.Request, result agentworkspa
 		result.MapEffects = entry.MapEffects
 		result.Message = task.Conversation[last].Text
 		message := task.Conversation[last]
-		if message.SourceRunID != "" && message.SourceEvidenceDigest != "" && len(message.Sources) > 0 {
+		if message.LocalReplyEvidence != nil && message.SourceEvidenceDigest != "" && len(message.Sources) > 0 {
+			result.ResultSet.Sources = append([]agentworkspace.AnswerSource(nil), message.Sources...)
+			result.Mode = "rules"
+			result.Note = "站内许可地点资料；已重新检查资料与本人偏好是否仍有效。"
+		} else if message.SourceRunID != "" && message.SourceEvidenceDigest != "" && len(message.Sources) > 0 {
 			result.ResultSet.Sources = append([]agentworkspace.AnswerSource(nil), message.Sources...)
 			result.Mode = "live"
 			result.Note = "历史模型回答；站内结果已重新检查当前权限与有效期。"
@@ -139,6 +187,28 @@ func (s *server) prepareAgentMessageResults(r *http.Request, result agentworkspa
 			result.Mode = "rules"
 			result.Note = "按站内规则整理；历史结果已重新检查当前权限与有效期。"
 		}
+		return result, read, true, nil
+	}
+	if task.Conversation[last].LocalReplyEvidence != nil || task.Conversation[last].LicensedPlaceModelEvidence != nil {
+		// The exact old native or licensed round failed current fields/Memory
+		// validation. In particular, missing licensed history is not permission
+		// to re-query the city and attach a broader set to the original answer.
+		// Do not attach a newly searched set to that persisted explanation.
+		result.NativeProjection = true
+		result.ProjectionItems = []arp.Item{}
+		result.Activities = []foundation.Activity{}
+		result.Places = []foundation.Place{}
+		result.Organizations = []agentworkspace.Organization{}
+		result.People = []agentworkspace.Person{}
+		result.Groups = []agentworkspace.Group{}
+		result.PublicCommercialRefs = []arp.Ref{}
+		result.PublicFieldEvidence = nil
+		result = agentworkspace.WithContract(result, task, result.RequestID)
+		result.Message = "这条推荐使用的偏好或地点资料已经变更，请重新询问。"
+		if task.Conversation[last].LicensedPlaceModelEvidence != nil {
+			result.Message = "这条回答使用的地点资料已经变更，请重新询问。"
+		}
+		result.Note = "原会话文字保留；旧结果和来源操作已停用。"
 		return result, read, true, nil
 	}
 	return result, read, false, nil
@@ -183,6 +253,14 @@ func (s *server) prepareNativeAgentResults(r *http.Request, result agentworkspac
 	task := *result.Task
 	if task.Status == agentworkspace.TaskFailed || nativeResultKind(task.Intent) == "none" {
 		return result, nil, a, q, receipt, nil // Preserve each existing action/private proof.
+	}
+	if history, _ := r.Context().Value(onlineRestaurantHistoryKey{}).(bool); r.Method == http.MethodGet && history {
+		return result, nil, a, q, receipt, nil
+	}
+	if continuation, _ := r.Context().Value(onlineRestaurantFollowupKey{}).(bool); continuation && result.OnlinePlaceSearch != nil {
+		// This question describes the reread public batch, not a new native
+		// search. The original final owned Task/session release remains intact.
+		return result, nil, a, q, receipt, nil
 	}
 	q = arp.Query{CityID: task.CityID, Kind: nativeResultKind(task.Intent), SearchTerm: task.Filters["searchTerm"], Category: task.Filters["category"], TimePreference: task.Filters["timePreference"], Closer: task.Filters["distancePreference"] == "closer", CompareIDs: []string{}}
 	b, e := agentworkspace.BoundsFromFilters(task.Filters)

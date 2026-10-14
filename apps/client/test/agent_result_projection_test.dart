@@ -1,6 +1,8 @@
 import 'package:birdtie_client/src/workspace/agent_result_projection.dart';
 import 'package:birdtie_client/src/workspace/map_entities.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'community_avatar_test.dart' show communityAvatarMetadata;
+import 'person_avatar_fixture.dart' show avatarOwner, avatarPeer;
 
 Map<String, dynamic> typedItem(
   String kind,
@@ -31,6 +33,42 @@ Map<String, dynamic> typedSet(List<Map<String, dynamic>> items) => {
 };
 
 void main() {
+  test('communityProjection 原社群头像闭合ID/版本/路径且不借人物类型', () {
+    final raw = {
+      ...typedItem('community', avatarOwner),
+      'communityAvatar': communityAvatarMetadata(),
+    };
+    final item = AgentResultItem.decode(raw);
+    expect(item.communityAvatar?.communityID, avatarOwner);
+    expect(item.avatar, isNull);
+    for (final invalid in [
+      {...raw, ...typedItem('person', avatarOwner)},
+      {...raw, 'communityAvatar': communityAvatarMetadata(id: avatarPeer)},
+      {
+        ...raw,
+        'communityAvatar': {
+          ...communityAvatarMetadata(),
+          'thumbnailPath': 'https://external.invalid/avatar.jpg',
+        },
+      },
+      {
+        ...raw,
+        'communityAvatar': {...communityAvatarMetadata(), 'version': 2},
+      },
+      {
+        ...raw,
+        'communityAvatar': {...communityAvatarMetadata(), 'sha256': 'bad'},
+      },
+    ]) {
+      expect(() => AgentResultItem.decode(invalid), throwsFormatException);
+    }
+    expect(
+      AgentResultItem.decode(
+        typedItem('community', avatarOwner),
+      ).communityAvatar,
+      isNull,
+    );
+  });
   test('真实七类协议接收闭集动作合同并保持原Ref', () {
     const id = '22e9cd18-babb-4359-9d1e-53593bedff47';
     final raw = typedItem('activity', id)

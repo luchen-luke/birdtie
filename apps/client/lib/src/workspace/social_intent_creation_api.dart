@@ -242,6 +242,9 @@ class SocialIntentCreationReceipt {
           !{
             'PRIVATE',
             'FRIENDS',
+            'FOLLOWERS',
+            'CONNECTIONS',
+            'CLOSE',
             'PUBLIC',
             'LOCAL',
             'COMMUNITY',

@@ -1,7 +1,9 @@
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
+import 'package:flutter/foundation.dart';
 import '../config/birdtie_environment.dart';
+import 'person_avatar.dart' show PersonAvatarMetadata;
 
 class InboxItem {
   const InboxItem({
@@ -21,6 +23,8 @@ class InboxItem {
     this.notificationRoute,
     this.semanticCategory,
     this.notificationPriority,
+    this.actorID,
+    this.actorAvatar,
   });
   final String id;
   final String category;
@@ -38,6 +42,8 @@ class InboxItem {
   final String? notificationRoute;
   final String? semanticCategory;
   final int? notificationPriority;
+  final String? actorID;
+  final PersonAvatarMetadata? actorAvatar;
 
   factory InboxItem.fromJson(Map<String, dynamic> data) {
     String id(dynamic v) {
@@ -77,6 +83,7 @@ class InboxItem {
       'community',
       'opportunity_available',
       'business_claim_review',
+      'business_update',
     ];
     if (!const [
           'needs_attention',
@@ -92,7 +99,8 @@ class InboxItem {
       throw const FormatException('Unknown notification');
     }
     final route = data['notificationRoute'];
-    if (route != null && !const ['NORMAL', 'IMMEDIATE', 'DIGEST'].contains(route)) {
+    if (route != null &&
+        !const ['NORMAL', 'IMMEDIATE', 'DIGEST'].contains(route)) {
       throw const FormatException('Undelivered notification');
     }
     final semantic = data['semanticCategory'];
@@ -117,9 +125,18 @@ class InboxItem {
       throw const FormatException('Invalid delivered digest metadata');
     }
     if ((data['targetBusinessId'] != null &&
-            data['resourceType'] != 'business_claim_review') ||
-        (data['resourceType'] == 'business_claim_review' &&
+            !const [
+              'business_claim_review',
+              'business_update',
+            ].contains(data['resourceType'])) ||
+        (const [
+              'business_claim_review',
+              'business_update',
+            ].contains(data['resourceType']) &&
             (data['targetBusinessId'] == null || semantic != 'BUSINESS')) ||
+        (data['resourceType'] == 'business_update' &&
+            (data['category'] != 'updates' ||
+                !const ['NORMAL', 'IMMEDIATE', 'DIGEST'].contains(route))) ||
         (data['targetBusinessId'] != null &&
             [
               data['targetActivityId'],
@@ -144,6 +161,19 @@ class InboxItem {
                 data['targetConversationId'] != null))) {
       throw const FormatException('Conflicting notification destinations');
     }
+    final rawAvatar = data['actorAvatar'], rawActor = data['actorId'];
+    if ((rawAvatar == null) != (rawActor == null) ||
+        (rawAvatar != null &&
+            !const {
+              'connection_request',
+              'conversation_message',
+            }.contains(data['resourceType']))) {
+      throw const FormatException('通知头像与来源不符');
+    }
+    final actor = rawActor == null ? null : id(rawActor);
+    final avatar = rawAvatar == null
+        ? null
+        : PersonAvatarMetadata.fromJson(rawAvatar, actor!);
     return InboxItem(
       id: id(data['id']),
       category: data['category'] as String,
@@ -171,7 +201,143 @@ class InboxItem {
       notificationRoute: route as String?,
       semanticCategory: semantic as String?,
       notificationPriority: priority is int ? priority : null,
+      actorID: actor,
+      actorAvatar: avatar,
     );
+  }
+}
+
+class InboxReadFailure implements Exception {
+  const InboxReadFailure(this.statusCode);
+  final int statusCode;
+}
+
+class InboxReviewResult {
+  const InboxReviewResult({
+    required this.itemID,
+    required this.kind,
+    required this.status,
+    this.targetID,
+  });
+  final String itemID, kind, status;
+  final String? targetID;
+  factory InboxReviewResult.decode(Object? raw, InboxItem item) {
+    bool uuid(Object? v) =>
+        v is String &&
+        RegExp(
+          r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',
+        ).hasMatch(v) &&
+        v != '00000000-0000-0000-0000-000000000000';
+    if (raw is! Map<String, dynamic> ||
+        raw.keys.any(
+          (k) => !const {
+            'schemaVersion',
+            'itemId',
+            'kind',
+            'status',
+            'targetId',
+            'targetAvailable',
+          }.contains(k),
+        ) ||
+        raw['schemaVersion'] != 'inbox-review-result-v1' ||
+        raw['itemId'] != item.id ||
+        !uuid(raw['itemId']) ||
+        raw['kind'] != item.resourceType ||
+        (raw['kind'] == 'activity_candidate'
+            ? !const {'published', 'rejected'}.contains(raw['status'])
+            : raw['kind'] != 'place_candidate' ||
+                  !const {
+                    'published',
+                    'linked_duplicate',
+                    'rejected',
+                  }.contains(raw['status'])) ||
+        raw['targetAvailable'] is! bool ||
+        raw['targetAvailable'] != (raw['targetId'] != null) ||
+        raw['targetId'] != null &&
+            (!uuid(raw['targetId']) || raw['status'] == 'rejected')) {
+      throw const FormatException('当前审核结果与本人通知不符');
+    }
+    return InboxReviewResult(
+      itemID: raw['itemId'],
+      kind: raw['kind'],
+      status: raw['status'],
+      targetID: raw['targetId'],
+    );
+  }
+}
+
+/// A bounded notification page. Its cursor locates data; it grants no access.
+class InboxNotificationPage {
+  InboxNotificationPage({
+    required List<InboxItem> items,
+    required this.nextCursor,
+    required this.unreadCount,
+  }) : items = List.unmodifiable(items);
+  final List<InboxItem> items;
+  final String? nextCursor;
+  final int unreadCount;
+
+  factory InboxNotificationPage.fromJson(
+    Map<String, dynamic> data, {
+    int limit = 50,
+    String? previousCursor,
+  }) {
+    const fields = {'items', 'nextCursor', 'unreadCount'};
+    final rows = data['items'],
+        unread = data['unreadCount'],
+        cursor = data['nextCursor'];
+    if (data.length != fields.length ||
+        !fields.every(data.containsKey) ||
+        limit < 1 ||
+        limit > 50 ||
+        rows is! List ||
+        rows.length > limit ||
+        unread is! int ||
+        unread < 0) {
+      throw const FormatException('Invalid notification page');
+    }
+    final items = <InboxItem>[];
+    for (final row in rows) {
+      if (row is! Map<String, dynamic>) {
+        throw const FormatException('Invalid notification row');
+      }
+      final item = InboxItem.fromJson(row);
+      if (item.resourceType == 'conversation_message') {
+        throw const FormatException('Messages do not belong in notifications');
+      }
+      items.add(item);
+    }
+    if (items.map((i) => i.id).toSet().length != items.length ||
+        cursor != null &&
+            (cursor is! String ||
+                !_validInboxCursor(cursor) ||
+                cursor == previousCursor ||
+                items.isEmpty)) {
+      throw const FormatException(
+        'Invalid notification cursor or duplicate row',
+      );
+    }
+    return InboxNotificationPage(
+      items: items,
+      nextCursor: cursor as String?,
+      unreadCount: unread,
+    );
+  }
+}
+
+bool _validInboxCursor(String value) {
+  if (value.isEmpty ||
+      value.length > 1024 ||
+      !RegExp(r'^[A-Za-z0-9_-]+$').hasMatch(value)) {
+    return false;
+  }
+  try {
+    return base64Url
+            .encode(base64Url.decode(base64Url.normalize(value)))
+            .replaceAll('=', '') ==
+        value;
+  } on FormatException {
+    return false;
   }
 }
 
@@ -180,13 +346,30 @@ class RemoteInboxSource {
     required this.authorizationHeader,
     http.Client? client,
     String? apiBaseUrl,
+    this.onUnauthorized,
+    this.identityEpoch,
+    this.isCurrent,
+    this.identityChanges,
   }) : _client = client ?? http.Client(),
-       _apiBaseUrl = apiBaseUrl ?? apiBase;
+       _ownsClient = client == null,
+       _apiBaseUrl = apiBaseUrl ?? apiBase {
+    identityChanges?.addListener(_identityChanged);
+  }
 
   static const apiBase = BirdtieEnvironment.apiBaseUrl;
   final String? Function() authorizationHeader;
   final http.Client _client;
+  final bool _ownsClient;
   final String _apiBaseUrl;
+  final Future<void> Function(String expectedAuthorization)? onUnauthorized;
+  final int Function()? identityEpoch;
+  final bool Function()? isCurrent;
+  final Listenable? identityChanges;
+  int _epoch = 0;
+  bool _closed = false;
+  void _identityChanged() => ++_epoch;
+  Object get identityVersion => (_epoch, identityEpoch?.call());
+  bool get active => !_closed && isCurrent?.call() != false;
   http.Client get followClient => _client;
   String get followApiBaseUrl => _apiBaseUrl;
 
@@ -199,15 +382,71 @@ class RemoteInboxSource {
     return {'Authorization': bearer};
   }
 
+  void _checkIdentity(String bearer, Object version) {
+    if (!active ||
+        bearer != authorizationHeader() ||
+        version != identityVersion) {
+      throw StateError('Inbox identity changed');
+    }
+  }
+
+  Future<InboxNotificationPage> loadNotificationsPage({
+    int limit = 20,
+    String? cursor,
+  }) async {
+    if (limit < 1 || limit > 50) {
+      throw const FormatException('Invalid notification limit');
+    }
+    final position = cursor == null || cursor.isEmpty ? null : cursor;
+    if (position != null && !_validInboxCursor(position)) {
+      throw const FormatException('Invalid notification cursor');
+    }
+    final bearer = _headers()['Authorization']!, version = identityVersion;
+    _checkIdentity(bearer, version);
+    final response = await _client
+        .get(
+          _endpoint('/v1/me/inbox/page').replace(
+            queryParameters: {
+              'view': 'notifications',
+              'limit': '$limit',
+              'cursor': ?position,
+            },
+          ),
+          headers: {'Authorization': bearer},
+        )
+        .timeout(const Duration(seconds: 10));
+    _checkIdentity(bearer, version);
+    if (response.statusCode == 401) await onUnauthorized?.call(bearer);
+    if (response.statusCode != 200) throw InboxReadFailure(response.statusCode);
+    if (response.bodyBytes.length > 1024 * 1024) {
+      throw const FormatException('Unbounded notification response');
+    }
+    final root = jsonDecode(utf8.decode(response.bodyBytes));
+    if (root is! Map<String, dynamic> ||
+        root['data'] is! Map<String, dynamic>) {
+      throw const FormatException('Missing notification page');
+    }
+    final page = InboxNotificationPage.fromJson(
+      root['data'] as Map<String, dynamic>,
+      limit: limit,
+      previousCursor: position,
+    );
+    _checkIdentity(bearer, version);
+    return page;
+  }
+
   Future<List<InboxItem>> load() async {
     final headers = _headers();
+    final version = identityVersion;
+    _checkIdentity(headers['Authorization']!, version);
     final response = await _client
         .get(_endpoint('/v1/me/inbox'), headers: headers)
         .timeout(const Duration(seconds: 10));
-    if (headers['Authorization'] != authorizationHeader()) {
-      throw StateError('Identity changed');
+    _checkIdentity(headers['Authorization']!, version);
+    if (response.statusCode == 401) {
+      await onUnauthorized?.call(headers['Authorization']!);
     }
-    if (response.statusCode != 200) throw StateError('Inbox unavailable');
+    if (response.statusCode != 200) throw InboxReadFailure(response.statusCode);
     final data =
         (jsonDecode(utf8.decode(response.bodyBytes))
                 as Map<String, dynamic>)['data']
@@ -226,16 +465,19 @@ class RemoteInboxSource {
 
   Future<InboxItem> markRead(String id) async {
     final headers = _headers();
+    final version = identityVersion;
+    _checkIdentity(headers['Authorization']!, version);
     final response = await _client
         .post(
           _endpoint('/v1/me/inbox/${Uri.encodeComponent(id)}/read'),
           headers: headers,
         )
         .timeout(const Duration(seconds: 10));
-    if (headers['Authorization'] != authorizationHeader()) {
-      throw StateError('Identity changed');
+    _checkIdentity(headers['Authorization']!, version);
+    if (response.statusCode == 401) {
+      await onUnauthorized?.call(headers['Authorization']!);
     }
-    if (response.statusCode != 200) throw StateError('Cannot mark item read');
+    if (response.statusCode != 200) throw InboxReadFailure(response.statusCode);
     final item = InboxItem.fromJson(
       (jsonDecode(utf8.decode(response.bodyBytes))
               as Map<String, dynamic>)['data']
@@ -247,5 +489,34 @@ class RemoteInboxSource {
     return item;
   }
 
-  void dispose() => _client.close();
+  Future<InboxReviewResult> reviewResult(InboxItem item) async {
+    final bearer = _headers()['Authorization']!, version = identityVersion;
+    _checkIdentity(bearer, version);
+    final response = await _client
+        .get(
+          _endpoint(
+            '/v1/me/inbox/${Uri.encodeComponent(item.id)}/review-result',
+          ),
+          headers: {'Authorization': bearer},
+        )
+        .timeout(const Duration(seconds: 10));
+    _checkIdentity(bearer, version);
+    if (response.statusCode == 401) await onUnauthorized?.call(bearer);
+    _checkIdentity(bearer, version);
+    if (response.statusCode != 200) throw InboxReadFailure(response.statusCode);
+    if (response.bodyBytes.length > 8192) throw const FormatException('审核结果过大');
+    final root = jsonDecode(utf8.decode(response.bodyBytes));
+    if (root is! Map<String, dynamic>) throw const FormatException('缺少审核结果');
+    final value = InboxReviewResult.decode(root['data'], item);
+    _checkIdentity(bearer, version);
+    return value;
+  }
+
+  void dispose() {
+    if (_closed) return;
+    _closed = true;
+    ++_epoch;
+    identityChanges?.removeListener(_identityChanged);
+    if (_ownsClient) _client.close();
+  }
 }

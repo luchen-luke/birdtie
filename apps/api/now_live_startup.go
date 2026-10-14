@@ -12,6 +12,7 @@ import (
 	"github.com/birdtie/birdtie/apps/api/internal/agentfeature"
 	"github.com/birdtie/birdtie/apps/api/internal/agenttool"
 	"github.com/birdtie/birdtie/apps/api/internal/agentworkspace"
+	"github.com/birdtie/birdtie/apps/api/internal/modelegressbudget"
 	"github.com/birdtie/birdtie/apps/api/internal/modelgateway"
 	"github.com/birdtie/birdtie/apps/api/internal/postgres"
 )
@@ -66,6 +67,17 @@ func loadNowLiveStartup(path, address string, devPhone bool, store *postgres.Sto
 	if d.Decode(&extra) != io.EOF || strings.TrimSpace(config.OwnerID) != config.OwnerID {
 		return nil, modelgateway.ErrUnavailable
 	}
+	if config.ConfigurationVersion == modelegressbudget.LiveLicensedPlacePolicyVersion {
+		model, err := loadNowLiveModelProvider(filepath.Dir(path), os.LookupEnv)
+		if err != nil {
+			return nil, modelgateway.ErrUnavailable
+		}
+		native, err := postgres.NewOwnNowLicensedPlaceAnswers(store, controller, nowLiveFeatureGate{controller: controller}, model, postgres.NowLicensedPlaceAnswerOptions{OwnerID: config.OwnerID, ConfigurationVersion: config.ConfigurationVersion, RouteRevision: config.RouteRevision, ModelPriceVersion: config.ModelPriceVersion})
+		if err != nil {
+			return nil, err
+		}
+		return &nowLiveOwnerBoundAnswers{LiveAnswers: native, ownerID: config.OwnerID}, nil
+	}
 	model, search, e := loadNowLiveProviders(filepath.Dir(path), os.LookupEnv)
 	if e != nil {
 		return nil, modelgateway.ErrUnavailable
@@ -80,15 +92,11 @@ func loadNowLiveStartup(path, address string, devPhone bool, store *postgres.Sto
 // Explicit runtime environment credentials supersede the old ignored file.
 // This only constructs adapters; it performs no request or native approval.
 func loadNowLiveProviders(dir string, lookup func(string) (string, bool)) (*modelgateway.TencentTokenHubAdapter, *agenttool.TencentWSAAdapter, error) {
-	modelConfig, e := modelgateway.LoadTencentTokenHubConfigFromEnvironment(filepath.Join(dir, ".env.tencent.local.json"), lookup)
+	model, e := loadNowLiveModelProvider(dir, lookup)
 	if e != nil {
 		return nil, nil, modelgateway.ErrUnavailable
 	}
 	searchConfig, e := agenttool.LoadTencentWSAConfig(filepath.Join(dir, ".env.wsa.local.json"))
-	if e != nil {
-		return nil, nil, modelgateway.ErrUnavailable
-	}
-	model, e := modelgateway.NewTencentTokenHubAdapter(modelConfig, nil)
 	if e != nil {
 		return nil, nil, modelgateway.ErrUnavailable
 	}
@@ -97,4 +105,16 @@ func loadNowLiveProviders(dir string, lookup func(string) (string, bool)) (*mode
 		return nil, nil, modelgateway.ErrUnavailable
 	}
 	return model, search, nil
+}
+
+func loadNowLiveModelProvider(dir string, lookup func(string) (string, bool)) (*modelgateway.TencentTokenHubAdapter, error) {
+	config, err := modelgateway.LoadTencentTokenHubConfigFromEnvironment(filepath.Join(dir, ".env.tencent.local.json"), lookup)
+	if err != nil {
+		return nil, modelgateway.ErrUnavailable
+	}
+	model, err := modelgateway.NewTencentTokenHubAdapter(config, nil)
+	if err != nil {
+		return nil, modelgateway.ErrUnavailable
+	}
+	return model, nil
 }

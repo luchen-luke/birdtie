@@ -11,10 +11,15 @@ import 'activity_analytics.dart';
 import 'activity_conversation_page.dart';
 import 'saved_items.dart';
 import 'support_page.dart';
+import 'human_causal_operation_controller.dart';
 import '../config/birdtie_environment.dart';
 import 'connections.dart';
 import 'entity_action_contract.dart';
 import 'entity_action_dispatcher.dart';
+import 'activity_participation_operation.dart';
+import 'activity_participation_pending_store.dart';
+import 'activity_participation_operation_controller.dart';
+import 'entity_cover.dart';
 
 class ActivityDetailSheet extends StatefulWidget {
   const ActivityDetailSheet({
@@ -32,6 +37,9 @@ class ActivityDetailSheet extends StatefulWidget {
     this.entrySource = 'direct',
     this.identityChanges,
     this.workspaceID,
+    this.accountID,
+    this.participationPendingStore,
+    this.domainCurrent,
   });
 
   final PublicActivity activity;
@@ -47,6 +55,9 @@ class ActivityDetailSheet extends StatefulWidget {
   final String entrySource;
   final Listenable? identityChanges;
   final String? Function()? workspaceID;
+  final String? Function()? accountID;
+  final ParticipationPendingStore? participationPendingStore;
+  final bool Function()? domainCurrent;
 
   @override
   State<ActivityDetailSheet> createState() => _ActivityDetailSheetState();
@@ -64,22 +75,44 @@ class _ActivityDetailSheetState extends State<ActivityDetailSheet> {
   bool _saving = false;
   bool _detailRecorded = false;
   int _identityEpoch = 0;
-  late (String?, String?) _identity;
-  (String?, String?) get _currentIdentity =>
-      (widget.authorizationHeader(), widget.workspaceID?.call());
-  ({int epoch, String? token, String? workspace, String id}) _frame() => (
+  final _reportSource = HumanCausalSourceSerial();
+  void _observeReportSource() {
+    _reportSource.observe((
+      widget.activity.id,
+      widget.client,
+      widget.apiBaseUrl,
+      widget.accountID?.call(),
+      widget.workspaceID?.call(),
+    ));
+    _reportSource.notifyReadBindingChanged();
+  }
+
+  ParticipationOperationController? _recovery;
+  bool _recoveryWasPending = false;
+  late (String?, String?, String?) _identity;
+  (String?, String?, String?) get _currentIdentity => (
+    widget.authorizationHeader(),
+    widget.workspaceID?.call(),
+    widget.accountID?.call(),
+  );
+  ({int epoch, String? token, String? workspace, String? owner, String id})
+  _frame() => (
     epoch: _identityEpoch,
     token: widget.authorizationHeader(),
     workspace: widget.workspaceID?.call(),
+    owner: widget.accountID?.call(),
     id: widget.activity.id,
   );
   bool _current(
-    ({int epoch, String? token, String? workspace, String id}) frame,
+    ({int epoch, String? token, String? workspace, String? owner, String id})
+    frame,
   ) =>
       mounted &&
       frame.epoch == _identityEpoch &&
       frame.token == widget.authorizationHeader() &&
       frame.workspace == widget.workspaceID?.call() &&
+      frame.owner == widget.accountID?.call() &&
+      widget.domainCurrent?.call() != false &&
       frame.id == widget.activity.id;
 
   Uri _url(String suffix) => Uri.parse(
@@ -91,12 +124,84 @@ class _ActivityDetailSheetState extends State<ActivityDetailSheet> {
     super.initState();
     _ownsClient = widget.client == null;
     _identity = _currentIdentity;
+    _observeReportSource();
     widget.identityChanges?.addListener(_identityChanged);
     widget.saved?.addListener(_onSavedChange);
+    _createRecovery();
     _refresh();
   }
 
+  void _createRecovery() {
+    _recovery?.removeListener(_recoveryChanged);
+    _recovery?.dispose();
+    _recovery = null;
+    _recoveryWasPending = false;
+    final frame = _frame();
+    if (frame.owner == null ||
+        !participationID(frame.owner!) ||
+        frame.token == null ||
+        frame.workspace != null) {
+      return;
+    }
+    _recovery = ParticipationOperationController(
+      activityID: frame.id,
+      base: widget.apiBaseUrl ?? _configuredBase,
+      client: _client,
+      ownerID: () => widget.accountID?.call(),
+      authorizationHeader: widget.authorizationHeader,
+      workspaceID: widget.workspaceID,
+      identityChanges: widget.identityChanges,
+      domainCurrent: () => _current(frame),
+      store: widget.participationPendingStore,
+    )..addListener(_recoveryChanged);
+    unawaited(_recovery!.initialize());
+  }
+
+  void _recoveryChanged() {
+    if (!mounted) return;
+    final recovery = _recovery;
+    if (recovery == null || !recovery.current) return;
+    final finished = _recoveryWasPending && recovery.pending == null;
+    _recoveryWasPending = recovery.pending != null;
+    setState(() {});
+    // A historical receipt never replaces current participation state.
+    if (finished) {
+      widget.onParticipationChanged?.call();
+      unawaited(_refresh());
+    }
+  }
+
+  Future<void> _stopParticipationSubmission() async {
+    final recovery = _recovery, frame = _frame();
+    final pending = recovery?.pending;
+    if (recovery == null || pending == null || recovery.busy) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(pending.stopRequested ? '再次确认停止提交' : '停止这次提交'),
+        content: const Text('停止后，这次操作不会继续提交。它可能已经完成，停止提交不会取消已有报名；请随后核对当前报名状态。'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('返回'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('确认停止提交'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true &&
+        _current(frame) &&
+        identical(recovery, _recovery) &&
+        identical(pending, recovery.pending)) {
+      await recovery.stopAfterConfirmation(confirmedPending: pending);
+    }
+  }
+
   void _identityChanged() {
+    _observeReportSource();
     if (_identity == _currentIdentity) return;
     _identity = _currentIdentity;
     ++_identityEpoch;
@@ -104,12 +209,14 @@ class _ActivityDetailSheetState extends State<ActivityDetailSheet> {
     _busy = false;
     _saving = false;
     _detailRecorded = false;
+    _createRecovery();
     unawaited(_refresh());
   }
 
   @override
   void didUpdateWidget(ActivityDetailSheet old) {
     super.didUpdateWidget(old);
+    _observeReportSource();
     final transportChanged =
         !identical(old.client, widget.client) ||
         old.apiBaseUrl != widget.apiBaseUrl;
@@ -130,12 +237,22 @@ class _ActivityDetailSheetState extends State<ActivityDetailSheet> {
     if (transportChanged ||
         !identical(old.authorizationHeader, widget.authorizationHeader) ||
         !identical(old.workspaceID, widget.workspaceID) ||
+        !identical(old.accountID, widget.accountID) ||
+        !identical(old.domainCurrent, widget.domainCurrent) ||
+        !identical(
+          old.participationPendingStore,
+          widget.participationPendingStore,
+        ) ||
         !identical(old.identityChanges, widget.identityChanges) ||
         old.activity.id != widget.activity.id ||
         _identity != _currentIdentity) {
       _identity = _currentIdentity;
       ++_identityEpoch;
       _participationStatus = null;
+      _busy = false;
+      _saving = false;
+      _detailRecorded = false;
+      _createRecovery();
       unawaited(_refresh());
     }
   }
@@ -146,9 +263,12 @@ class _ActivityDetailSheetState extends State<ActivityDetailSheet> {
 
   @override
   void dispose() {
+    _reportSource.dispose();
     ++_identityEpoch;
     widget.identityChanges?.removeListener(_identityChanged);
     widget.saved?.removeListener(_onSavedChange);
+    _recovery?.removeListener(_recoveryChanged);
+    _recovery?.dispose();
     if (_ownsClient) _client.close();
     super.dispose();
   }
@@ -219,7 +339,7 @@ class _ActivityDetailSheetState extends State<ActivityDetailSheet> {
   }
 
   Future<void> _changeParticipation({EntityActionDescriptor? approved}) async {
-    if (_busy) return;
+    if (_busy || _recovery?.blocked == true) return;
     final frame = _frame();
     if (frame.token == null || frame.workspace != null) return;
     if (approved == null) {
@@ -266,53 +386,21 @@ class _ActivityDetailSheetState extends State<ActivityDetailSheet> {
       await _refresh();
       throw StateError('参加状态已变化，请重新检查。');
     }
-    final headers = {
-      'Authorization': frame.token!,
-      'X-Birdtie-Entry-Source': widget.entrySource,
-      ...approved.conditionHeaders,
-    };
+    final recovery = _recovery;
+    if (recovery == null || !recovery.current) {
+      setState(() => _error = '无法核对当前个人身份，暂不提交报名操作。');
+      return;
+    }
     setState(() {
       _busy = true;
       _error = null;
     });
     try {
-      final joined =
-          _participationStatus == 'going' || _participationStatus == 'pending';
-      final response = joined
-          ? await _client
-                .delete(_url('/participations/me'), headers: headers)
-                .timeout(const Duration(seconds: 12))
-          : await _client
-                .post(_url('/participations'), headers: headers)
-                .timeout(const Duration(seconds: 12));
-      if (response.statusCode != 200 && response.statusCode != 201) {
-        String? code;
-        try {
-          code =
-              ((jsonDecode(response.body) as Map<String, dynamic>)['error']
-                      as Map<String, dynamic>)['code']
-                  as String?;
-        } catch (_) {}
-        throw StateError(switch (code) {
-          'activity_full' => '活动名额已满。',
-          'activity_unavailable' => '活动已关闭报名。',
-          'unauthorized' => '请先登录再报名。',
-          _ => '报名状态更新失败，请重试。',
-        });
-      }
-      final data =
-          (jsonDecode(response.body) as Map<String, dynamic>)['data']
-              as Map<String, dynamic>;
-      if (!_current(frame)) return;
-      setState(() {
-        _participationStatus = data['status'] as String?;
-      });
-      widget.onParticipationChanged?.call();
-      await _refresh();
+      await recovery.submit(approved);
     } catch (error) {
       if (!_current(frame)) return;
       setState(() {
-        _error = error is StateError ? error.message : '报名状态更新失败，请重试。';
+        _error = '报名结果尚未核实，请核对原操作。';
       });
     } finally {
       if (_current(frame)) setState(() => _busy = false);
@@ -357,8 +445,7 @@ class _ActivityDetailSheetState extends State<ActivityDetailSheet> {
     }
     if (approved.target != EntityActionRef('activity', frame.id) ||
         saved.authorizationHeader() != frame.token ||
-        approved.operation !=
-            (saved.contains('activity', frame.id) ? 'UNSAVE' : 'SAVE')) {
+        !const {'SAVE', 'UNSAVE'}.contains(approved.operation)) {
       throw StateError('收藏状态或身份已变化，请重新检查。');
     }
     setState(() {
@@ -403,13 +490,18 @@ class _ActivityDetailSheetState extends State<ActivityDetailSheet> {
         if (!_current(frame)) return;
         await shareEntityToChat(
           context,
-          authorizationHeader: () => _current(frame) ? frame.token : null,
-          identityChanges: widget.identityChanges,
-          workspaceID: widget.workspaceID,
-          client: _client,
+          authorizationHeader: () => widget.authorizationHeader(),
+          identityChanges: _reportSource,
+          ownerID: widget.accountID == null
+              ? null
+              : () => widget.accountID?.call(),
+          workspaceID: () => widget.workspaceID?.call(),
+          sourceKey: () => _reportSource.generation,
+          sourceCurrent: () => mounted && widget.domainCurrent?.call() != false,
           type: 'activity',
           id: frame.id,
           apiBaseUrl: widget.apiBaseUrl,
+          client: _client,
         );
       },
     );
@@ -632,6 +724,7 @@ class _ActivityDetailSheetState extends State<ActivityDetailSheet> {
     final navigation = _navigationURL;
     final official = _httpsURL(_activity.officialURL);
     final source = _httpsURL(_activity.source.reference);
+    final coverFrame = _frame();
     final price = _activity.priceMinor == 0
         ? '免费'
         : '${_activity.currency} ${(_activity.priceMinor / 100).toStringAsFixed(2)}';
@@ -646,11 +739,34 @@ class _ActivityDetailSheetState extends State<ActivityDetailSheet> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              if (!_loading &&
+                  _error == null &&
+                  _activity.cover != null &&
+                  _activity.cover!.ref ==
+                      EntityCoverRef('activity', _activity.id))
+                EntityCover(
+                  key: ValueKey((
+                    'activity-cover',
+                    _activity.id,
+                    coverFrame.epoch,
+                  )),
+                  metadata: _loading ? null : _activity.cover,
+                  api: EntityCoverAPI(
+                    client: _client,
+                    baseUrl: widget.apiBaseUrl ?? _configuredBase,
+                    authorizationHeader: widget.authorizationHeader,
+                    current: () => _current(coverFrame),
+                  ),
+                  identityChanges: widget.identityChanges,
+                  current: () =>
+                      !_loading && _error == null && _current(coverFrame),
+                  width: 320,
+                  height: 180,
+                  label: '${_activity.title}的活动封面',
+                ),
               Text(
                 _activity.title,
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
+                style: Theme.of(context).textTheme.titleLarge,
               ),
               const SizedBox(height: 8),
               Text(switch (_activity.status) {
@@ -659,7 +775,7 @@ class _ActivityDetailSheetState extends State<ActivityDetailSheet> {
                 'cancelled' => '活动已取消',
                 'past' || 'completed' => '活动已结束',
                 _ => '活动状态待核对',
-              }, style: const TextStyle(color: Color(0xFF5A695F))),
+              }, style: Theme.of(context).textTheme.bodySmall),
               const SizedBox(height: 18),
               if (_activity.organizer case final organizer?)
                 widget.onOpenOrganizer == null
@@ -730,10 +846,40 @@ class _ActivityDetailSheetState extends State<ActivityDetailSheet> {
               const SizedBox(height: 12),
               if (_loading) const LinearProgressIndicator(),
               if (_error != null) ...[
-                Text(_error!, style: const TextStyle(color: Color(0xFF9F3D31))),
-                TextButton(onPressed: _refresh, child: const Text('重试')),
+                Text(
+                  _error!,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.error,
+                  ),
+                ),
+                TextButton(onPressed: _refresh, child: const Text('重新读取详情')),
               ],
               if (!_loading) ...[
+                if (_recovery?.message case final message?) ...[
+                  Text(message, style: Theme.of(context).textTheme.bodyMedium),
+                  const SizedBox(height: 8),
+                ],
+                if (_recovery?.pending != null)
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      OutlinedButton(
+                        onPressed: _recovery!.busy ? null : _recovery!.verify,
+                        child: const Text('核对原操作'),
+                      ),
+                      TextButton(
+                        onPressed: _recovery!.busy
+                            ? null
+                            : _stopParticipationSubmission,
+                        child: Text(
+                          _recovery!.pending!.stopRequested
+                              ? '再次确认停止提交'
+                              : '停止这次提交',
+                        ),
+                      ),
+                    ],
+                  ),
                 if (_participationStatus == 'going') const Text('你已报名'),
                 if (_participationStatus == 'pending') const Text('报名待确认'),
                 if (widget.authorizationHeader() == null)
@@ -743,7 +889,10 @@ class _ActivityDetailSheetState extends State<ActivityDetailSheet> {
                 else if (open || joined)
                   FilledButton(
                     onPressed:
-                        _busy || (_error != null && !full) || (full && !joined)
+                        _busy ||
+                            _recovery?.blocked == true ||
+                            (_error != null && !full) ||
+                            (full && !joined)
                         ? null
                         : _changeParticipation,
                     child: Text(
@@ -768,6 +917,10 @@ class _ActivityDetailSheetState extends State<ActivityDetailSheet> {
                             builder: (_) => ActivityConversationPage(
                               activityID: _activity.id,
                               activityTitle: _activity.title,
+                              ownerID: widget.accountID,
+                              identityChanges: widget.identityChanges,
+                              sourceCurrent: () =>
+                                  mounted && widget.workspaceID?.call() == null,
                               authorizationHeader: widget.authorizationHeader,
                               apiBaseUrl: widget.apiBaseUrl,
                               client: widget.client,
@@ -809,11 +962,20 @@ class _ActivityDetailSheetState extends State<ActivityDetailSheet> {
                     TextButton.icon(
                       onPressed: () => Navigator.of(context).push(
                         MaterialPageRoute<void>(
-                          builder: (_) => SupportPage(
+                          builder: (_) => humanSupportDestination(
                             authorizationHeader: widget.authorizationHeader,
                             apiBaseUrl: widget.apiBaseUrl ?? _configuredBase,
                             targetType: 'activity',
                             targetID: _activity.id,
+                            ownerID: widget.accountID,
+                            identityChanges: Listenable.merge([
+                              widget.identityChanges,
+                              _reportSource,
+                            ]),
+                            sourceCurrent: () =>
+                                mounted && widget.workspaceID?.call() == null,
+                            client: _client,
+                            sourceKey: () => _reportSource.generation,
                           ),
                         ),
                       ),

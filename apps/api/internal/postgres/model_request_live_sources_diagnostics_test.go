@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"strings"
 	"testing"
@@ -83,5 +84,46 @@ func TestModelLiveSourceDiagnosticsFormatNeverProjectsPrivateErrorText(t *testin
 	}
 	if wrapped := fmt.Errorf("%w", err); !errors.Is(wrapped, private) || strings.Contains(wrapped.Error(), "PRIVATE") {
 		t.Fatal("native error wrapping lost safe cause identity")
+	}
+}
+
+func TestModelLiveSourceDiagnosticsAIServiceAvailabilitySurvivesOriginalNativeWrapper(t *testing.T) {
+	// Minimal synthetic body from the old 402/403004 receipt; original packet
+	// was NOT_CAPTURED. This selected-model transport never leaves this test.
+	config, e := modelgateway.ParseTencentTokenHubConfig([]byte(`{"provider":"tencent_tokenhub","baseUrl":"https://tokenhub.tencentmaas.com/v1","model":"deepseek-v4-pro-0813","maxOutputTokens":768,"apiKey":"synthetic-unit-placeholder"}`))
+	if e != nil {
+		t.Fatal(e)
+	}
+	calls := 0
+	adapter, e := modelgateway.NewTencentTokenHubAdapter(config, modelDiagnosticTestTransport(func(*http.Request) (*http.Response, error) {
+		calls++
+		return &http.Response{StatusCode: 402, Header: http.Header{"Content-Type": {"application/json"}}, Body: io.NopCloser(strings.NewReader(`{"error":{"code":"403004","source":"gateway","message":"PRIVATE_BODY_SENTINEL"}}`))}, nil
+	}))
+	if e != nil {
+		t.Fatal(e)
+	}
+	_, err := adapter.Complete(context.Background(), modelgateway.ProviderRequest{TaskKind: modelgateway.ActivityQuery, PromptVersion: "unit.diagnostic.v1", OutputMode: modelgateway.Text, OutputSchemaVersion: "air.answer.v1", MaxOutputTokens: 128, DeadlineAt: time.Now().Add(time.Minute), Messages: []modelgateway.Message{{Role: "system", Content: "Synthetic public context"}, {Role: "user", Content: "Synthetic public question"}}})
+	wrapped := nativeLiveStage("model-gateway-complete", modelgateway.WithLiveFailureReason(err, "provider_UNKNOWN"))
+	var provider modelgateway.ProviderError
+	if calls != 1 || !errors.As(wrapped, &provider) || provider.Code != "UNKNOWN" || provider.Retryable {
+		t.Fatal("native wrapper changed dispatch/retry/provider class")
+	}
+	if !modelgateway.IsAIServiceUnavailable(wrapped) {
+		t.Fatal("original native diagnostic wrapper hid AI service failure")
+	}
+	for _, blocked := range []error{context.Canceled, context.DeadlineExceeded, modelgateway.ErrUnavailable} {
+		if modelgateway.IsAIServiceUnavailable(nativeLiveStage("model-gateway-complete", errors.Join(wrapped, blocked))) {
+			t.Fatal("availability replaced original cancellation or native failure")
+		}
+	}
+	for _, reason := range []string{"live_release_or_settlement_unknown", "live_current_authority_unavailable", "live_wire_unavailable"} {
+		if modelgateway.IsAIServiceUnavailable(nativeLiveStage("model-gateway-complete", modelgateway.WithLiveFailureReason(wrapped, reason))) {
+			t.Fatal("availability ignored original native reason")
+		}
+	}
+	for _, format := range []string{"%v", "%+v", "%#v", "%s", "%q", "%w"} {
+		if text := fmt.Sprintf(format, wrapped); strings.Contains(text, "PRIVATE") || strings.Contains(text, "synthetic-unit-placeholder") {
+			t.Fatal("native service diagnostic exposed provider body/key")
+		}
 	}
 }

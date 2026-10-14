@@ -2,6 +2,10 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+    <key>FirebaseMessagingAutoInitEnabled</key>
+    <false/>
+    <key>FirebaseAnalyticsCollectionEnabled</key>
+    <false/>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>
@@ -9,7 +13,7 @@
 	<key>CFBundleDisplayName</key>
 	<string>Birdtie</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>仅在你选择图片时读取所选图片，用于本人私人记录的附件；不会自动分析或公开。</string>
+	<string>仅在你选择图片或视频时读取所选材料，用于本人私有记录；分析图片前会另行征求批准，不会自动公开。</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -41,6 +45,8 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>在你主动拍照或扫一扫时使用相机。照片先在本机供你检查，不会自动上传、分析或发送。</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

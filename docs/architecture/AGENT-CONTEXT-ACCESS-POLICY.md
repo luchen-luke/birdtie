@@ -21,3 +21,8 @@
 `context_access_test.go` 的红队场景覆盖草稿/Block、伪造 Personal principal、无成员授权、组织管理员读取个人私密记忆、聊天不等于 Tie、Close 无资源授权、Business 未启用以及组织/个人任务历史隔离。Go 全量测试和现有 PostgreSQL Community/Activity 可见性测试是本阶段回归；没有真实试点数据或生产身份参与。
 
 跨 Agent 请求另遵守 [任务与用途权限合同](AGENT-TO-AGENT-PERMISSION-CONTRACT-V4.md)。本文件的 Scope 或本人读取授权不能直接升级为其他 Agent 的共享许可；任务级双侧同意、发送/接收主体、资源、期限和 revision 必须独立核验。该合同尚未开放通信入口，PRIVATE/CLOSE/组织管理员继承等跨 Agent 路径继续拒绝。
+
+
+## 2026-10-10 普通真人五档资源受众与 Agent 边界
+
+上方旧状态描述是其日期的Agent Context合同。118/119现已实现普通真人Profile/Intent的Follow、Friend和本人Close受众，详见[五档合同](RELATIONSHIP-VISIBILITY-MATRIX-V4.md)。这些普通资源权限不新增Agent Context枚举，也不授予模型、Memory、私密聊天或A2A读取。Agent CONNECTION/CLOSE仍需要原具体资源与用途授权；没有相应入口时保持原默认拒绝。组织/商家整体Profile仍public/private，字段可见性独立且与整体权限相交。服务端真实当前关系、双方Block、原会话generation和原期限仍为依据，客户端confirmed和模型文本不能证明权限。

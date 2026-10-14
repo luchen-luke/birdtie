@@ -1,0 +1,44 @@
+# Reference snippets for the original HTTPS entry https://47.110.154.133.
+# Import birdtie_hangzhou_api inside its EXISTING verified site block only
+# after the native target/runtime and rollback are checked. Keep its current
+# TLS certificate/issuer/storage, Web/static routes and global options.
+# This file is not a replacement for the running Caddyfile and is not applied.
+# Official syntax: https://caddyserver.com/docs/caddyfile/directives/request_body
+# https://caddyserver.com/docs/caddyfile/directives/reverse_proxy
+
+(birdtie_native_api_proxy) {
+    reverse_proxy 127.0.0.1:8080 {
+        transport http {
+            dial_timeout 5s
+            response_header_timeout 130s
+            read_timeout 130s
+            write_timeout 60s
+        }
+        # No automatic retries of write requests, no response cache, and no
+        # replacement of the API's Cache-Control/auth/media lease headers.
+    }
+}
+
+(birdtie_hangzhou_api) {
+    @birdtie_media path_regexp birdtie_media ^/v1/.*(/(avatar|cover|photos|public-photo|private-image-previews|image-previews|image-message-operations)(/|$)|/agent-visual/previews(/|$))
+    @birdtie_api path /v1/* /healthz /readyz
+
+    # Mutually exclusive handle groups: the ordinary 1 MiB ceiling must not
+    # also wrap image requests. 10 MiB base64 + largest 64 KiB JSON envelope is
+    # 14,046,552 bytes, below this 14 MiB transport limit. Handler limits stay.
+    handle @birdtie_media {
+        request_body {
+            max_size 14680064
+        }
+        import birdtie_native_api_proxy
+    }
+    handle @birdtie_api {
+        request_body {
+            max_size 1048576
+        }
+        import birdtie_native_api_proxy
+    }
+    # Video API routes carry only small create/complete/control JSON. Original
+    # signed uploads go to the separately configured trusted quarantine origin
+    # with a 20 MiB binary limit; this adds no video upload or storage service.
+}

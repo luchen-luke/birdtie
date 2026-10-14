@@ -206,7 +206,7 @@ func TestActiveIntentNativeTwoApproversOnlyOneEffect(t *testing.T) {
 	}
 }
 func TestActiveIntentNativeAudienceModalityAndCurrentTargets(t *testing.T) {
-	for _, audience := range []string{"PRIVATE", "FRIENDS", "PUBLIC", "LOCAL", "COMMUNITY", "INVITE_ONLY"} {
+	for _, audience := range []string{"PRIVATE", "FRIENDS", "PUBLIC", "LOCAL", "COMMUNITY", "INVITE_ONLY", "FOLLOWERS", "CONNECTIONS", "CLOSE"} {
 		for _, mode := range []string{"ONLINE", "IN_PERSON", "HYBRID"} {
 			t.Run(audience+"_"+mode, func(t *testing.T) {
 				f, a, g, r := activeNative(t)

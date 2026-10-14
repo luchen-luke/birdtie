@@ -177,6 +177,30 @@ func decodeCandidate(data []byte) (*CandidateProposal, error) {
 	return &c, nil
 }
 
+// The original v1 candidate remains unchanged. Only the v2 schema can express
+// successful extraction without a candidate, with no source or trait payload.
+func decodeCandidateV2(data []byte) (*CandidateProposal, error) {
+	obj, err := strictObject(data, []string{"status"}, []string{"predicate", "value", "source_ref_ids", "subject_attribution"})
+	if err != nil {
+		return nil, err
+	}
+	status, err := stringValue(obj["status"], 40)
+	if err != nil {
+		return nil, err
+	}
+	switch status {
+	case "CANDIDATE":
+		return decodeCandidate(data)
+	case NoCandidateStatus:
+		if len(obj) != 1 {
+			return nil, ErrAdapter
+		}
+		return &CandidateProposal{Status: NoCandidateStatus}, nil
+	default:
+		return nil, ErrAdapter
+	}
+}
+
 func decodeTools(data []byte, allowlist []string) ([]ToolProposal, error) {
 	var raws []json.RawMessage
 	if json.Unmarshal(data, &raws) != nil || len(raws) < 1 || len(raws) > 4 {

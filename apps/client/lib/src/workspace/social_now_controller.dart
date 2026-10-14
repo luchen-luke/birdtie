@@ -56,6 +56,9 @@ class SocialNowIntent {
     }
     if (!const [
           'FRIENDS',
+          'FOLLOWERS',
+          'CONNECTIONS',
+          'CLOSE',
           'COMMUNITY',
           'LOCAL',
           'PUBLIC',

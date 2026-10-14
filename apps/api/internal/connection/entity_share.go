@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"io"
 	"regexp"
+	"time"
+	"unicode/utf8"
 
 	"github.com/birdtie/birdtie/apps/api/internal/identity"
 )
@@ -101,4 +103,112 @@ func DecodeEntityShare(raw []byte) (EntityShareInput, error) {
 		return EntityShareInput{}, ErrConflict
 	}
 	return in, nil
+}
+
+// The recipient is a current native relationship selector, never an arbitrary
+// account ID, caption, URL, permission flag or copied snapshot.
+type EntityShareRecipient struct {
+	Type string `json:"type"`
+	ID   string `json:"id"`
+}
+type EntityShareRef struct {
+	Type string `json:"type"`
+	ID   string `json:"id"`
+}
+type EntityShareControlInput struct {
+	OperationID   string         `json:"operationId"`
+	Entity        EntityShareRef `json:"entity"`
+	SourceVersion string         `json:"sourceVersion,omitempty"`
+	Approval      string         `json:"approval,omitempty"`
+}
+type EntityShareControlPreview struct {
+	OperationID        string                     `json:"operationId"`
+	Recipient          EntityShareRecipient       `json:"recipient"`
+	Entity             EntityShareRef             `json:"entity"`
+	EntityTitle        string                     `json:"entityTitle"`
+	RecipientAccountID string                     `json:"recipientAccountId"`
+	SourceVersion      string                     `json:"sourceVersion"`
+	PayloadDigest      string                     `json:"payloadDigest"`
+	ObservedAt         time.Time                  `json:"observedAt"`
+	ExpiresAt          time.Time                  `json:"expiresAt"`
+	Approval           string                     `json:"approval"`
+	ResponseProof      identity.HumanControlProof `json:"-"`
+}
+type EntityShareControlReceipt struct {
+	OperationID    string               `json:"operationId"`
+	Status         string               `json:"status"`
+	Recipient      EntityShareRecipient `json:"recipient"`
+	ConversationID string               `json:"conversationId,omitempty"`
+	MessageID      string               `json:"messageId,omitempty"`
+	Entity         *EntityShareRef      `json:"entity,omitempty"`
+	PayloadDigest  string               `json:"payloadDigest,omitempty"`
+	CommittedAt    *time.Time           `json:"committedAt,omitempty"`
+}
+type EntityShareControlStore interface {
+	PreviewEntityShareControl(context.Context, EntityShareAccess, EntityShareRecipient, EntityShareControlInput) (EntityShareControlPreview, error)
+	CommitEntityShareControl(context.Context, EntityShareAccess, EntityShareRecipient, EntityShareControlInput) (EntityShareControlReceipt, error)
+	ReadEntityShareControlOperation(context.Context, EntityShareAccess, EntityShareRecipient, string) (EntityShareControlReceipt, error)
+	StopEntityShareControlOperation(context.Context, EntityShareAccess, EntityShareRecipient, string) (EntityShareControlReceipt, error)
+}
+
+func ValidEntityShareRecipient(v EntityShareRecipient) bool {
+	return (v.Type == "CONVERSATION" || v.Type == "FRIEND_TIE") && identity.HumanControlUUID(v.ID)
+}
+func ValidEntityShareRef(v EntityShareRef) bool {
+	if !identity.HumanControlUUID(v.ID) {
+		return false
+	}
+	switch v.Type {
+	case "activity", "place", "person", "community", "organization", "business", "moment":
+		return true
+	}
+	return false
+}
+func NormalizeEntityShareControl(target EntityShareRecipient, in EntityShareControlInput, commit bool) (EntityShareControlInput, error) {
+	if !ValidEntityShareRecipient(target) || !identity.HumanControlUUID(in.OperationID) || !ValidEntityShareRef(in.Entity) || !identity.HumanControlApprovalValid(in.Approval, commit) {
+		return in, identity.ErrControlInvalid
+	}
+	if commit {
+		if len(in.SourceVersion) != 64 {
+			return in, identity.ErrControlInvalid
+		}
+		for _, c := range in.SourceVersion {
+			if !(c >= '0' && c <= '9' || c >= 'a' && c <= 'f') {
+				return in, identity.ErrControlInvalid
+			}
+		}
+	} else if in.SourceVersion != "" {
+		return in, identity.ErrControlInvalid
+	}
+	return in, nil
+}
+func DecodeEntityShareControl(raw []byte, target EntityShareRecipient, commit bool) (EntityShareControlInput, error) {
+	var in EntityShareControlInput
+	keys := []string{"operationId", "entity"}
+	if commit {
+		keys = append(keys, "sourceVersion", "approval")
+	}
+	if !utf8.Valid(raw) || identity.HumanControlClosedJSON(raw, keys, nil) != nil {
+		return in, identity.ErrControlInvalid
+	}
+	fields, e := shareObject(raw, keys...)
+	if e != nil {
+		return in, identity.ErrControlInvalid
+	}
+	if _, e = shareObject(fields["entity"], "type", "id"); e != nil || json.Unmarshal(raw, &in) != nil {
+		return in, identity.ErrControlInvalid
+	}
+	return NormalizeEntityShareControl(target, in, commit)
+}
+func EntityShareControlDigest(target EntityShareRecipient, in EntityShareControlInput) string {
+	return identity.HumanControlTupleHash([]any{"human-entity-share-v1", in.OperationID, target.Type, target.ID, in.Entity.Type, in.Entity.ID})
+}
+func ValidEntityShareControlReceipt(v EntityShareControlReceipt, target EntityShareRecipient, op string) bool {
+	if v.OperationID != op || v.Recipient != target {
+		return false
+	}
+	if v.Status == "STOPPED" {
+		return v.ConversationID == "" && v.MessageID == "" && v.Entity == nil && v.PayloadDigest == "" && v.CommittedAt == nil
+	}
+	return v.Status == "SUCCEEDED" && identity.HumanControlUUID(v.ConversationID) && identity.HumanControlUUID(v.MessageID) && v.Entity != nil && ValidEntityShareRef(*v.Entity) && len(v.PayloadDigest) == 64 && v.CommittedAt != nil
 }

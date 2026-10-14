@@ -66,7 +66,7 @@ void main() {
           .where(
             (r) => {
               '/v1/me/agent-private-profile',
-              '/v1/me/agent-memories',
+              '/v1/me/agent-memories/page',
               '/v1/me/agent-policies',
               '/v1/me/community-interests',
               '/v1/me/activity-participation-disclosures',

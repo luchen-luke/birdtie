@@ -5,6 +5,10 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../config/birdtie_environment.dart';
 import 'moment_time_choice.dart';
+import 'moment_control.dart';
+import 'moment_control_pending_store.dart';
+import '../workspace/human_causal_control.dart';
+import 'package:flutter/scheduler.dart';
 
 class PrivateMoment {
   const PrivateMoment({
@@ -96,10 +100,14 @@ class PrivateMomentController extends ChangeNotifier {
     required this.authorizationHeader,
     this.ownerID,
     this.identityChanges,
+    MomentControlPendingStore? pendingStore,
     http.Client? client,
     String? apiBaseUrl,
   }) : _client = client ?? http.Client(),
-       _apiBase = apiBaseUrl ?? BirdtieEnvironment.apiBaseUrl {
+       _ownsClient = client == null,
+       _apiBase = apiBaseUrl ?? BirdtieEnvironment.apiBaseUrl,
+       operationStore =
+           pendingStore ?? const SecureMomentControlPendingStore() {
     _syncActor();
     identityChanges?.addListener(_onIdentityChanged);
   }
@@ -108,6 +116,8 @@ class PrivateMomentController extends ChangeNotifier {
   final String? Function()? ownerID;
   final Listenable? identityChanges;
   final http.Client _client;
+  final bool _ownsClient;
+  final MomentControlPendingStore operationStore;
   // Read-only references for another human consumer of this same Moment source.
   // The borrower does not own or close this client.
   http.Client get borrowedClient => _client;
@@ -123,7 +133,54 @@ class PrivateMomentController extends ChangeNotifier {
       _saving = false,
       _closed = false,
       _creationUncertain = false;
-  int _epoch = 0, _request = 0;
+  int _epoch = 0, _request = 0, _logicalEpoch = 0;
+  int get logicalIdentityEpoch {
+    _syncActor();
+    return _logicalEpoch;
+  }
+
+  late final _controlAPI = MomentControlAPI(
+    client: _client,
+    apiBaseUrl: _apiBase,
+    authorizationHeader: authorizationHeader,
+  );
+  List<MomentControlPending> pendingOperations = [];
+  MomentControlPreview? operationPreview;
+  MomentControlReceipt? operationReceipt;
+  String? operationError, operationNotice, _controlOwner, _lastControlOwner;
+  bool operationBusy = false, _pendingReady = false;
+  MomentControlPending? _notSubmitted;
+  bool get canStartOperation {
+    _syncActor();
+    return !_closed &&
+        _actor != null &&
+        _ownerReady &&
+        humanControlID(_controlOwner) &&
+        _pendingReady &&
+        pendingOperations.isEmpty &&
+        _notSubmitted == null &&
+        !operationBusy &&
+        !_saving;
+  }
+
+  List<MomentControlPending> get recoveryOperations {
+    _syncActor();
+    final local = _notSubmitted;
+    return [
+      ...pendingOperations,
+      if (local != null && !pendingOperations.any((p) => p.same(local))) local,
+    ];
+  }
+
+  bool currentOwnedVersion(PrivateMoment moment) {
+    _syncActor();
+    return _ownsVersion(moment);
+  }
+
+  Timer? _previewTimer;
+  int _previewEpoch = -1;
+  bool Function()? _previewSourceCurrent;
+
   int? _readStatus;
   int? get readStatus {
     _syncActor();
@@ -136,6 +193,23 @@ class PrivateMomentController extends ChangeNotifier {
     final token = authorizationHeader();
     final owner = ownerID?.call();
     if (token != _actor || owner != _owner) {
+      final changedOwner = ownerID != null
+          ? owner != _owner
+          : token == null || _actor == null;
+      if (changedOwner) {
+        _logicalEpoch++;
+        pendingOperations = [];
+        operationReceipt = null;
+        _controlOwner = null;
+        operationNotice = null;
+        _notSubmitted = null;
+      }
+      _previewTimer?.cancel();
+      operationPreview = null;
+      _previewSourceCurrent = null;
+      operationBusy = false;
+      _pendingReady = false;
+      operationError = null;
       _actor = token;
       _owner = owner;
       _epoch++;
@@ -156,7 +230,16 @@ class PrivateMomentController extends ChangeNotifier {
     if (_closed) return;
     final epoch = _epoch;
     _syncActor();
-    if (epoch == _epoch) return;
+    if (_actor == null || !_ownerReady) {
+      _notify();
+      return;
+    }
+    // Another listener may already have observed the renewed credential via
+    // identityEpoch/current getters. The cleared authoritative read still
+    // needs replacing even when this listener sees an unchanged epoch.
+    if (epoch == _epoch && _loadedToken == _actor && _loadedOwner == _owner)
+      return;
+    if (_loading) return;
     // Retire on the actual event, not the next widget frame. A -> B -> A
     // receives new epochs and authoritative reads for each current identity.
     unawaited(refresh());
@@ -199,9 +282,11 @@ class PrivateMomentController extends ChangeNotifier {
 
   void confirmCreationChecked() {
     _syncActor();
-    _creationUncertain = false;
-    _error = null;
-    _notify();
+    // A list inspection cannot prove the outcome of an original operation.
+    if (pendingOperations.isNotEmpty) {
+      operationError = '请核实或停止原操作，不能根据列表文字判断上次保存结果。';
+      _notify();
+    }
   }
 
   bool _current(String token, int epoch) =>
@@ -209,7 +294,15 @@ class PrivateMomentController extends ChangeNotifier {
   Uri _endpoint(String path) =>
       Uri.parse('${_apiBase.replaceFirst(RegExp(r'/$'), '')}$path');
   void _notify() {
-    if (!_closed) notifyListeners();
+    if (_closed) return;
+    if (SchedulerBinding.instance.schedulerPhase ==
+        SchedulerPhase.persistentCallbacks) {
+      SchedulerBinding.instance.addPostFrameCallback((_) {
+        if (!_closed) notifyListeners();
+      });
+    } else {
+      notifyListeners();
+    }
   }
 
   bool _ownsVersion(PrivateMoment moment) =>
@@ -218,7 +311,7 @@ class PrivateMomentController extends ChangeNotifier {
       _ownerReady &&
       (ownerID == null || moment.authorAccountID == _owner) &&
       _moments.any(
-        (item) => identical(item, moment) && item.revision == moment.revision,
+        (item) => item.id == moment.id && item.revision == moment.revision,
       );
 
   Future<void> refresh({bool Function()? current}) async {
@@ -236,6 +329,11 @@ class PrivateMomentController extends ChangeNotifier {
       _notify();
       return;
     }
+    if (!_pendingReady) await loadOperations();
+    if (!_current(token, epoch) ||
+        request != _request ||
+        current?.call() == false)
+      return;
     _loading = true;
     _error = null;
     _readStatus = null;
@@ -256,10 +354,16 @@ class PrivateMomentController extends ChangeNotifier {
       }
       _readStatus = response.statusCode;
       if (response.statusCode != 200) {
+        if (response.statusCode == 403 || response.statusCode == 404) {
+          _moments = const [];
+          _loadedToken = null;
+          _loadedOwner = null;
+        }
         throw const FormatException('unavailable');
       }
       final rows =
-          (jsonDecode(response.body) as Map<String, dynamic>)['data']
+          (jsonDecode(utf8.decode(response.bodyBytes))
+                  as Map<String, dynamic>)['data']
               as List<dynamic>;
       final next = rows
           .map((row) => PrivateMoment.fromJson(row as Map<String, dynamic>))
@@ -274,11 +378,23 @@ class PrivateMomentController extends ChangeNotifier {
         _loadedToken = token;
         _loadedOwner = owner;
       }
-    } catch (_) {
+    } catch (error) {
       if (_current(token, epoch) &&
           request == _request &&
           current?.call() != false) {
-        _error = '无法读取私人草稿，请稍后重试。';
+        _error = switch (_readStatus) {
+          401 => '登录已失效，请重新登录后读取私人草稿。',
+          403 => '当前账号无权读取私人草稿。',
+          404 => '私人草稿暂不可访问，请返回后重新查看。',
+          429 => '读取过于频繁，请稍后重试。',
+          int status when status >= 500 => '私人草稿服务暂不可用，请稍后重试。',
+          200 => '私人草稿数据暂不可用，请重新读取。',
+          null =>
+            error is TimeoutException
+                ? '读取私人草稿超时，请检查网络后重试。'
+                : '无法连接私人草稿服务，请检查网络后重试。',
+          _ => '未能读取私人草稿，请稍后重试。',
+        };
       }
     } finally {
       if (_current(token, epoch) && request == _request) {
@@ -288,6 +404,505 @@ class PrivateMomentController extends ChangeNotifier {
     }
   }
 
+  Map<String, Object?> _input({
+    required String cityID,
+    required String title,
+    required String body,
+    required String placeID,
+    String? activityID,
+    String? communityID,
+    String? organizationID,
+    required MomentTimeValue time,
+    String? locationPrecision,
+  }) => {
+    'cityId': cityID.trim(),
+    'placeId': placeID.trim().toLowerCase(),
+    'title': title.trim(),
+    'body': body.trim(),
+    'timePrecision': time.precision,
+    if (time.occurredAt != null) 'occurredAt': momentUTC(time.occurredAt!),
+    'locationPrecision':
+        locationPrecision ?? (placeID.isEmpty ? 'city' : 'place'),
+    if (activityID != null) 'activityId': activityID.trim().toLowerCase(),
+    if (communityID != null) 'communityId': communityID.trim().toLowerCase(),
+    if (organizationID != null)
+      'organizationId': organizationID.trim().toLowerCase(),
+  };
+  Future<bool> _resolveControlOwner(bool Function() valid) async {
+    final found = ownerID?.call() ?? await _controlAPI.api.owner(valid);
+    if (!valid() || !humanControlID(found)) return false;
+    if (_lastControlOwner != null && _lastControlOwner != found) {
+      _logicalEpoch++;
+      pendingOperations = [];
+      operationPreview = null;
+      operationReceipt = null;
+    }
+    _controlOwner = found;
+    _lastControlOwner = found;
+    return true;
+  }
+
+  Future<void> loadOperations() async {
+    final token = _syncActor(), e = _epoch;
+    if (token == null || _closed || !_ownerReady) return;
+    bool valid() => _current(token, e);
+    _pendingReady = false;
+    try {
+      if (!await _resolveControlOwner(valid)) return;
+      final records = await operationStore.read(
+        _controlAPI.api.origin,
+        _controlOwner!,
+      );
+      if (!valid()) return;
+      pendingOperations = records;
+      _pendingReady = true;
+      _creationUncertain = records.any(
+        (p) => p.action == 'CREATE' && p.stage == 'UNKNOWN',
+      );
+      operationError = null;
+    } catch (_) {
+      if (valid()) operationError = '本机动态操作记录暂不可读取。请先检查原记录，不要再次提交。';
+    } finally {
+      if (valid()) _notify();
+    }
+  }
+
+  void retirePreview() {
+    _previewTimer?.cancel();
+    operationPreview = null;
+    _previewSourceCurrent = null;
+    _previewEpoch = -1;
+    _notify();
+  }
+
+  Future<MomentControlPreview?> previewCreate({
+    required String cityID,
+    required String title,
+    required String body,
+    String placeID = '',
+    String activityID = '',
+    String communityID = '',
+    String organizationID = '',
+    MomentTimeValue time = MomentTimeValue.unknown,
+    bool Function()? current,
+  }) => _prepare(
+    MomentControlInput(
+      operationID: newMomentOperationID(),
+      action: 'CREATE',
+      expectedRevision: 0,
+      input: _input(
+        cityID: cityID,
+        title: title,
+        body: body,
+        placeID: placeID,
+        activityID: activityID,
+        communityID: communityID,
+        organizationID: organizationID,
+        time: time,
+      ),
+    ),
+    current,
+  );
+  Future<MomentControlPreview?> previewUpdate({
+    required PrivateMoment moment,
+    required String title,
+    required String body,
+    required String placeID,
+    String? activityID,
+    String? communityID,
+    String? organizationID,
+    MomentTimeValue? time,
+    String? locationPrecision,
+    bool Function()? current,
+  }) async {
+    _syncActor();
+    if (!moment.isEditableDraft || !_ownsVersion(moment)) return null;
+    return _prepare(
+      MomentControlInput(
+        operationID: newMomentOperationID(),
+        action: 'UPDATE',
+        momentID: moment.id,
+        expectedRevision: moment.revision,
+        input: _input(
+          cityID: moment.cityID,
+          title: title,
+          body: body,
+          placeID: placeID,
+          activityID: activityID,
+          communityID: communityID,
+          organizationID: organizationID,
+          time: time ?? moment.time,
+          locationPrecision: locationPrecision,
+        ),
+      ),
+      current,
+    );
+  }
+
+  Future<MomentControlPreview?> previewWithdraw(
+    PrivateMoment moment, {
+    bool Function()? current,
+  }) async {
+    _syncActor();
+    if (!_ownsVersion(moment)) return null;
+    return _prepare(
+      MomentControlInput(
+        operationID: newMomentOperationID(),
+        action: 'WITHDRAW',
+        momentID: moment.id,
+        expectedRevision: moment.revision,
+      ),
+      current,
+    );
+  }
+
+  Future<MomentControlPreview?> previewPublish(
+    PrivateMoment moment, {
+    bool Function()? current,
+  }) async {
+    _syncActor();
+    if (!moment.isEditableDraft ||
+        !_ownsVersion(moment) ||
+        moment.placeID.isEmpty ||
+        moment.locationPrecision != 'place')
+      return null;
+    return _prepare(
+      MomentControlInput(
+        operationID: newMomentOperationID(),
+        action: 'PUBLISH',
+        momentID: moment.id,
+        expectedRevision: moment.revision,
+        input: _input(
+          cityID: moment.cityID,
+          title: moment.title,
+          body: moment.body,
+          placeID: moment.placeID,
+          time: moment.time,
+          locationPrecision: moment.locationPrecision,
+        ),
+      ),
+      current,
+    );
+  }
+
+  Future<MomentControlPreview?> previewPublicUpdate({
+    required PrivateMoment moment,
+    required String title,
+    required String body,
+    bool Function()? current,
+  }) async {
+    _syncActor();
+    if (moment.status != 'published' ||
+        moment.visibility != 'public' ||
+        !_ownsVersion(moment))
+      return null;
+    return _prepare(
+      MomentControlInput(
+        operationID: newMomentOperationID(),
+        action: 'UPDATE_PUBLIC',
+        momentID: moment.id,
+        expectedRevision: moment.revision,
+        input: _input(
+          cityID: moment.cityID,
+          title: title,
+          body: body,
+          placeID: moment.placeID,
+          time: moment.time,
+          locationPrecision: moment.locationPrecision,
+        ),
+      ),
+      current,
+    );
+  }
+
+  /// Read this exact owned record instead of relying on the bounded owner list.
+  Future<PrivateMoment?> readOwned(
+    String id, {
+    bool Function()? current,
+  }) async {
+    final token = _syncActor(), epoch = _epoch, owner = _owner;
+    if (token == null || !_ownerReady || _closed || current?.call() == false)
+      return null;
+    bool valid() => _current(token, epoch) && current?.call() != false;
+    if (!_pendingReady) await loadOperations();
+    if (!valid()) return null;
+    final response = await _client
+        .get(
+          _endpoint('/v1/me/moments/${Uri.encodeComponent(id)}'),
+          headers: {'Authorization': token},
+        )
+        .timeout(const Duration(seconds: 10));
+    if (!valid() || response.statusCode != 200) return null;
+    final raw = jsonDecode(utf8.decode(response.bodyBytes));
+    final moment = PrivateMoment.fromJson(
+      Map<String, dynamic>.from(raw['data'] as Map),
+    );
+    if (!valid() || moment.id != id) return null;
+    _checkAuthor(moment, owner);
+    _loadedToken = token;
+    _loadedOwner = owner;
+    _moments = [
+      for (final item in _moments)
+        if (item.id != id) item,
+      moment,
+    ];
+    _notify();
+    return moment;
+  }
+
+  Future<MomentControlPreview?> _prepare(
+    MomentControlInput input,
+    bool Function()? sourceCurrent,
+  ) async {
+    final token = _syncActor(), e = _epoch;
+    if (token == null ||
+        _closed ||
+        !_ownerReady ||
+        operationBusy ||
+        sourceCurrent?.call() == false)
+      return null;
+    bool valid() => _current(token, e) && sourceCurrent?.call() != false;
+    operationBusy = true;
+    operationError = null;
+    operationNotice = null;
+    operationReceipt = null;
+    retirePreview();
+    try {
+      if (!await _resolveControlOwner(valid)) return null;
+      final records = await operationStore.read(
+        _controlAPI.api.origin,
+        _controlOwner!,
+      );
+      if (!valid()) return null;
+      pendingOperations = records;
+      _pendingReady = true;
+      if (records.isNotEmpty) {
+        operationError = '有待核实的原动态操作。请先核实或停止原操作。';
+        return null;
+      }
+      final p = await _controlAPI.preview(input, valid);
+      if (!valid()) return null;
+      operationPreview = p;
+      _previewSourceCurrent = sourceCurrent;
+      _previewEpoch = e;
+      _previewTimer = Timer(p.expiresAt.difference(DateTime.now().toUtc()), () {
+        if (identical(operationPreview, p)) {
+          operationPreview = null;
+          operationError = '这次确认已到期，旧批准已移除。请重新检查。';
+          _notify();
+        }
+      });
+      return p;
+    } catch (_) {
+      if (valid()) operationError = '当前动态、版本或关联已变化，暂不可取得具体预览。';
+      return null;
+    } finally {
+      if (_current(token, e)) {
+        operationBusy = false;
+        _notify();
+      }
+    }
+  }
+
+  bool previewCurrent(MomentControlPreview p, {bool Function()? current}) =>
+      !_closed &&
+      _syncActor() != null &&
+      _epoch == _previewEpoch &&
+      identical(operationPreview, p) &&
+      p.live &&
+      _previewSourceCurrent?.call() != false &&
+      current?.call() != false;
+  Future<bool> commit(
+    MomentControlPreview p, {
+    bool Function()? current,
+  }) async {
+    if (operationBusy ||
+        !_pendingReady ||
+        _controlOwner == null ||
+        !previewCurrent(p, current: current))
+      return false;
+    final token = _actor!, e = _epoch, owner = _controlOwner!;
+    bool valid() => _current(token, e) && previewCurrent(p, current: current);
+    var record = MomentControlPending.preview(p), sent = false;
+    operationBusy = true;
+    _saving = true;
+    operationError = null;
+    operationNotice = null;
+    _notSubmitted = record;
+    _notify();
+    try {
+      await operationStore.write(_controlAPI.api.origin, owner, record);
+      if (!valid()) return false;
+      var records = await operationStore.read(_controlAPI.api.origin, owner);
+      if (!valid()) return false;
+      if (!records.any((v) => v.same(record) && v.stage == 'PREPARED'))
+        throw StateError('原准备未读回');
+      record = record.unknown;
+      await operationStore.write(_controlAPI.api.origin, owner, record);
+      if (!valid()) return false;
+      records = await operationStore.read(_controlAPI.api.origin, owner);
+      if (!valid()) return false;
+      if (!records.any((v) => v.same(record) && v.stage == 'UNKNOWN'))
+        throw StateError('原提交记录未读回');
+      pendingOperations = records;
+      sent = true;
+      _notSubmitted = null;
+      final receipt = await _controlAPI.put(p, valid);
+      if (!valid()) return false;
+      return await _finishOperation(receipt, record, () => _current(token, e));
+    } catch (_) {
+      if (_current(token, e)) {
+        try {
+          final records = await operationStore.read(
+            _controlAPI.api.origin,
+            owner,
+          );
+          if (_current(token, e)) pendingOperations = records;
+        } catch (_) {
+          _pendingReady = false;
+        }
+        if (_current(token, e)) {
+          _creationUncertain = sent && p.input.action == 'CREATE';
+          operationError = sent
+              ? '保存结果待核实，可能已经完成。只能核实或停止原操作，不会重新提交。'
+              : '尚未提交。本机准备记录需要检查，不会直接重新发送。';
+        }
+      }
+      return false;
+    } finally {
+      if (_current(token, e)) {
+        // Expiry/cancellation during durable preparation still leaves a
+        // findable original selector, even though no PUT was dispatched.
+        try {
+          final records = await operationStore.read(
+            _controlAPI.api.origin,
+            owner,
+          );
+          if (_current(token, e)) pendingOperations = records;
+        } catch (_) {
+          if (_current(token, e)) _pendingReady = false;
+        }
+        if (!_current(token, e)) return false;
+        operationBusy = false;
+        _saving = false;
+        retirePreview();
+        _notify();
+      }
+    }
+  }
+
+  bool locallyPrepared(MomentControlPending p) =>
+      p.stage == 'PREPARED' || _notSubmitted?.same(p) == true;
+  Future<void> repairPrepared(MomentControlPending p) async {
+    final token = _syncActor(), e = _epoch;
+    if (token == null || operationBusy || !locallyPrepared(p)) return;
+    bool valid() => _current(token, e);
+    operationBusy = true;
+    _notify();
+    try {
+      if (!await _resolveControlOwner(valid)) return;
+      final list = await operationStore.read(
+        _controlAPI.api.origin,
+        _controlOwner!,
+      );
+      if (!valid()) return;
+      final selected = list.where((v) => v.same(p)).firstOrNull;
+      if (selected != null &&
+          (selected.stage == 'PREPARED' ||
+              _notSubmitted?.same(selected) == true))
+        await operationStore.remove(
+          _controlAPI.api.origin,
+          _controlOwner!,
+          selected,
+        );
+      if (!valid()) return;
+      pendingOperations = await operationStore.read(
+        _controlAPI.api.origin,
+        _controlOwner!,
+      );
+      if (!valid()) return;
+      _notSubmitted = null;
+      _pendingReady = true;
+      operationError = null;
+      operationNotice = '尚未提交的本机准备记录已检查，可重新取得具体预览。';
+    } catch (_) {
+      if (valid()) operationError = '本机准备记录仍不可核实，没有再次提交。';
+    } finally {
+      if (valid()) {
+        operationBusy = false;
+        _notify();
+      }
+    }
+  }
+
+  Future<void> recoverOperation(
+    MomentControlPending p, {
+    bool stop = false,
+  }) async {
+    if (locallyPrepared(p)) {
+      await repairPrepared(p);
+      return;
+    }
+    final token = _syncActor(), e = _epoch;
+    if (token == null || operationBusy) return;
+    bool valid() => _current(token, e);
+    operationBusy = true;
+    operationError = null;
+    operationNotice = null;
+    retirePreview();
+    try {
+      if (!await _resolveControlOwner(valid)) return;
+      final raw = await _controlAPI.original(p.operationID, valid, stop: stop);
+      if (!valid()) return;
+      final r = MomentControlReceipt.fromJson(
+        raw,
+        operationID: p.operationID,
+        action: p.action,
+        momentID: p.momentID,
+        expectedRevision: p.expectedRevision,
+        digest: p.payloadDigest,
+      );
+      await _finishOperation(r, p, valid);
+    } catch (_) {
+      if (valid()) operationError = '原结果仍待核实；未找到回执不等于没有保存。只可核实或停止原操作。';
+    } finally {
+      if (valid()) {
+        operationBusy = false;
+        _saving = false;
+        _notify();
+      }
+    }
+  }
+
+  Future<bool> _finishOperation(
+    MomentControlReceipt r,
+    MomentControlPending p,
+    bool Function() valid,
+  ) async {
+    operationReceipt = r;
+    operationNotice = r.succeeded
+        ? '原操作已完成。当前动态需重新读取，不能由回执推断现在仍可见。'
+        : '原操作已停止，不会执行迟到提交；已完成的保存不会被撤销。';
+    operationError = null;
+    _creationUncertain = false;
+    try {
+      await operationStore.remove(_controlAPI.api.origin, _controlOwner!, p);
+      if (!valid()) return false;
+      pendingOperations = await operationStore.read(
+        _controlAPI.api.origin,
+        _controlOwner!,
+      );
+      if (!valid()) return false;
+      _pendingReady = true;
+    } catch (_) {
+      if (valid()) operationError = '原结果已核实，本机记录尚未清理。可再次核实同一原操作。';
+    }
+    if (valid()) await refresh(current: valid);
+    // Current list failure does not erase an immutable original fact.
+    return valid() && r.succeeded;
+  }
+
+  /// Retained SDK surface requires the exact explicit approval. Raw writes are retired.
   Future<bool> create({
     required String cityID,
     required String title,
@@ -297,18 +912,29 @@ class PrivateMomentController extends ChangeNotifier {
     String communityID = '',
     String organizationID = '',
     MomentTimeValue time = MomentTimeValue.unknown,
+    MomentControlPreview? approved,
   }) async {
-    return _write('POST', '/v1/me/moments', {
-      'cityId': cityID,
-      'placeId': placeID,
-      'activityId': activityID,
-      'communityId': communityID,
-      'organizationId': organizationID,
-      'title': title,
-      'body': body,
-      ...time.payload,
-      'locationPrecision': placeID.isEmpty ? 'city' : 'place',
-    });
+    if (approved == null) {
+      _syncActor();
+      if (_actor != null) operationError = '请先检查具体预览并确认保存。';
+      return false;
+    }
+    final expected = MomentControlInput(
+      operationID: approved.input.operationID,
+      action: 'CREATE',
+      expectedRevision: 0,
+      input: _input(
+        cityID: cityID,
+        title: title,
+        body: body,
+        placeID: placeID,
+        activityID: activityID,
+        communityID: communityID,
+        organizationID: organizationID,
+        time: time,
+      ),
+    );
+    return expected.digest == approved.input.digest ? commit(approved) : false;
   }
 
   Future<bool> update({
@@ -320,142 +946,49 @@ class PrivateMomentController extends ChangeNotifier {
     String? communityID,
     String? organizationID,
     MomentTimeValue? time,
+    MomentControlPreview? approved,
   }) async {
-    _syncActor();
-    if (!moment.isEditableDraft || !_ownsVersion(moment)) return false;
-    return _write('PUT', '/v1/me/moments/${moment.id}', {
-      'cityId': moment.cityID,
-      'placeId': placeID,
-      'title': title,
-      'body': body,
-      ...(time ?? moment.time).payload,
-      'locationPrecision': placeID.isEmpty ? 'city' : 'place',
-      'revision': moment.revision,
-      'activityId': ?activityID,
-      'communityId': ?communityID,
-      'organizationId': ?organizationID,
-    }, moment: moment);
-  }
-
-  Future<bool> withdraw(PrivateMoment moment) async {
-    _syncActor();
-    if (!_ownsVersion(moment)) return false;
-    return _write(
-      'DELETE',
-      '/v1/me/moments/${moment.id}',
-      const {},
-      moment: moment,
+    if (approved == null) return false;
+    final expected = MomentControlInput(
+      operationID: approved.input.operationID,
+      action: 'UPDATE',
+      momentID: moment.id,
+      expectedRevision: moment.revision,
+      input: _input(
+        cityID: moment.cityID,
+        title: title,
+        body: body,
+        placeID: placeID,
+        activityID: activityID,
+        communityID: communityID,
+        organizationID: organizationID,
+        time: time ?? moment.time,
+      ),
     );
+    return expected.digest == approved.input.digest ? commit(approved) : false;
   }
 
-  Future<bool> _write(
-    String method,
-    String path,
-    Map<String, dynamic> payload, {
-    PrivateMoment? moment,
-  }) async {
-    if (_closed) return false;
-    final token = _syncActor(), epoch = _epoch;
-    final owner = _owner;
-    if (token == null ||
-        _apiBase.isEmpty ||
-        !_ownerReady ||
-        _saving ||
-        (method == 'POST' && _creationUncertain)) {
-      return false;
-    }
-    _request++;
-    _loading = false;
-    _saving = true;
-    _error = null;
-    _notify();
-    var received = false, accepted = false;
-    try {
-      final headers = {
-        'Authorization': token,
-        'Content-Type': 'application/json',
-      };
-      final uri = _endpoint(path);
-      final response = await (switch (method) {
-        'POST' => _client.post(
-          uri,
-          headers: headers,
-          body: jsonEncode(payload),
-        ),
-        'PUT' => _client.put(uri, headers: headers, body: jsonEncode(payload)),
-        _ => _client.delete(
-          uri.replace(queryParameters: {'revision': '${moment!.revision}'}),
-          headers: headers,
-        ),
-      }).timeout(const Duration(seconds: 10));
-      received = true;
-      if (response.statusCode == 409) throw const FormatException('changed');
-      if (response.statusCode !=
-          (method == 'POST'
-              ? 201
-              : method == 'PUT'
-              ? 200
-              : 204)) {
-        throw const FormatException('rejected');
-      }
-      accepted = true;
-      if (!_current(token, epoch)) return false;
-      _request++;
-      _loading = false;
-      _loadedToken = token;
-      _loadedOwner = owner;
-      if (method == 'DELETE') {
-        _moments = List.unmodifiable(
-          _moments.where((item) => item.id != moment!.id),
-        );
-      } else {
-        final result = PrivateMoment.fromJson(
-          (jsonDecode(response.body) as Map<String, dynamic>)['data']
-              as Map<String, dynamic>,
-        );
-        _checkAuthor(result, owner);
-        if (method == 'PUT' &&
-            (result.id != moment!.id || result.revision <= moment.revision)) {
-          throw const FormatException('invalid result');
-        }
-        _moments = List.unmodifiable([
-          result,
-          ..._moments.where((item) => item.id != result.id),
-        ]);
-      }
-      _notify();
-      if (method == 'POST') await refresh();
-      return _current(token, epoch);
-    } catch (error) {
-      if (_current(token, epoch)) {
-        // The API has no create idempotency key. A lost response is not proof
-        // of failure, so require review instead of automatically repeating it.
-        _creationUncertain = method == 'POST' && (!received || accepted);
-        _error = _creationUncertain
-            ? '保存结果尚未确认，请返回列表检查，避免重复保存。'
-            : error is FormatException && error.message == 'changed'
-            ? '草稿已在别处更新，请刷新后重新打开。'
-            : method == 'DELETE'
-            ? '撤回未确认，请刷新列表检查。'
-            : '保存未确认，请检查内容并刷新列表。';
-        _notify();
-      }
-      return false;
-    } finally {
-      if (_current(token, epoch)) {
-        _saving = false;
-        _notify();
-      }
-    }
-  }
+  Future<bool> withdraw(
+    PrivateMoment moment, {
+    MomentControlPreview? approved,
+  }) async =>
+      approved != null &&
+          approved.input.action == 'WITHDRAW' &&
+          approved.input.momentID == moment.id &&
+          approved.input.expectedRevision == moment.revision
+      ? commit(approved)
+      : false;
 
   @override
   void dispose() {
+    if (_closed) return;
     _closed = true;
+    _previewTimer?.cancel();
+    operationPreview = null;
     identityChanges?.removeListener(_onIdentityChanged);
     _epoch++;
     _request++;
-    _client.close();
+    if (_ownsClient) _client.close();
     super.dispose();
   }
 }

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:http/http.dart' as http;
+import '../app/birdtie_app_bar.dart';
 import '../auth/birdtie_auth_controller.dart';
 import 'chat_entity_router.dart';
 import 'connections.dart';
@@ -249,7 +250,7 @@ class _OnlineSocialOpportunityPageState
   Widget _body(BuildContext inner) {
     final options = _data.options, view = _data.view;
     return Scaffold(
-      appBar: AppBar(title: const Text('线上社交发现')),
+      appBar: birdtieAppBar(context, title: const Text('线上社交发现')),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -369,7 +370,7 @@ class _OnlineSocialOpportunityPageState
   Widget build(BuildContext context) {
     if (_retired || !_data.current) {
       return Scaffold(
-        appBar: AppBar(title: const Text('线上社交发现')),
+        appBar: birdtieAppBar(context, title: const Text('线上社交发现')),
         body: ListView(
           padding: const EdgeInsets.all(24),
           children: [

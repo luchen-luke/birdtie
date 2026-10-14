@@ -10,13 +10,16 @@ import (
 )
 
 const membershipColumns = `m.id,m.organization_id,m.user_account_id,
-    COALESCE(CASE WHEN birdtie_agent_profile_field_allowed(m.user_account_id,$2::uuid,'displayName')
-        THEN p.display_name END,'Birdtie 用户'),m.role,m.status`
+    COALESCE(CASE WHEN p.visibility='public' AND birdtie_profile_visible_to(m.user_account_id,$2::uuid)
+      AND birdtie_agent_profile_field_allowed(m.user_account_id,$2::uuid,'displayName')
+        THEN p.display_name END,''),m.role,m.status,m.control_version,
+    (SELECT version FROM organization_human_authority WHERE organization_id=m.organization_id)`
 
 func scanMembership(row pgx.Row) (organization.Membership, error) {
 	var m organization.Membership
 	err := row.Scan(&m.ID, &m.OrganizationID, &m.UserAccountID,
-		&m.DisplayName, &m.Role, &m.Status)
+		&m.DisplayName, &m.Role, &m.Status, &m.Version, &m.AuthorityVersion)
+	m.DisplayName = organization.NormalizeMemberDisplayName(m.DisplayName)
 	return m, err
 }
 
@@ -75,9 +78,10 @@ func (s *Store) ListInvitations(ctx context.Context, actorID string) ([]organiza
 	out := []organization.Membership{}
 	for rows.Next() {
 		var m organization.Membership
-		if err := rows.Scan(&m.ID, &m.OrganizationID, &m.UserAccountID, &m.DisplayName, &m.Role, &m.Status, &m.OrganizationName); err != nil {
+		if err := rows.Scan(&m.ID, &m.OrganizationID, &m.UserAccountID, &m.DisplayName, &m.Role, &m.Status, &m.Version, &m.AuthorityVersion, &m.OrganizationName); err != nil {
 			return nil, err
 		}
+		m.DisplayName = organization.NormalizeMemberDisplayName(m.DisplayName)
 		out = append(out, m)
 	}
 	return out, rows.Err()
@@ -273,7 +277,7 @@ func (s *Store) ChangeMemberRole(ctx context.Context, actorID, orgID, membership
 	}
 	if oldRole == "owner" {
 		var count int
-		if err = tx.QueryRow(ctx, `SELECT count(*) FROM organization_memberships WHERE organization_id=$1 AND role='owner' AND status='active'`, orgID).Scan(&count); err != nil {
+		if err = tx.QueryRow(ctx, `SELECT count(*) FROM organization_memberships m JOIN accounts a ON a.id=m.user_account_id AND a.status='active' AND a.account_type='person' WHERE m.organization_id=$1 AND m.role='owner' AND m.status='active'`, orgID).Scan(&count); err != nil {
 			return organization.Membership{}, err
 		}
 		if count <= 1 {
@@ -321,7 +325,7 @@ func (s *Store) RevokeMember(ctx context.Context, actorID, orgID, membershipID s
 	}
 	if oldRole == "owner" && status == "active" {
 		var count int
-		if err = tx.QueryRow(ctx, `SELECT count(*) FROM organization_memberships WHERE organization_id=$1 AND role='owner' AND status='active'`, orgID).Scan(&count); err != nil {
+		if err = tx.QueryRow(ctx, `SELECT count(*) FROM organization_memberships m JOIN accounts a ON a.id=m.user_account_id AND a.status='active' AND a.account_type='person' WHERE m.organization_id=$1 AND m.role='owner' AND m.status='active'`, orgID).Scan(&count); err != nil {
 			return err
 		}
 		if count <= 1 {

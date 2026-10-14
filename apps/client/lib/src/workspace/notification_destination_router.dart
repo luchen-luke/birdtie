@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
+import '../app/birdtie_app_bar.dart';
 
 /// Contains all child routes and approval dialogs under one original identity.
 /// Once retired, returning to the same identity cannot revive the old subtree.
@@ -63,7 +64,7 @@ class _BoundaryState extends State<NotificationDestinationBoundary> {
   Widget build(BuildContext context) {
     if (!_valid) {
       return Scaffold(
-        appBar: AppBar(title: const Text('请重新打开内容')),
+        appBar: birdtieAppBar(context, title: const Text('请重新打开内容')),
         body: const Padding(
           padding: EdgeInsets.all(24),
           child: Text('工作身份或来源已变化，请返回当前入口重新核实。'),

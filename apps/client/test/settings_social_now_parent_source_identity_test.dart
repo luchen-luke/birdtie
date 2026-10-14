@@ -81,8 +81,14 @@ void main() {
       'http://social-a.test',
     ));
     const settingsKey = ValueKey('original-settings-parent');
-    final entry = find.widgetWithText(ListTile, '我的社交近况');
+    final entry = find.widgetWithText(ListTile, '好友近况');
     Future<void> showEntry() async {
+      if (entry.evaluate().isEmpty) {
+        await t.scrollUntilVisible(find.text('发现与近况'), 120, maxScrolls: 60,
+          scrollable: find.byType(Scrollable).last);
+        await t.tap(find.text('发现与近况'));
+        await t.pumpAndSettle();
+      }
       await t.scrollUntilVisible(
         entry,
         120,

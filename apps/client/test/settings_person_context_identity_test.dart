@@ -140,7 +140,7 @@ Future<void> _tapText(WidgetTester t, String text) async {
 Future<void> _open(WidgetTester t, _ContextScenario s) async {
   await t.pumpWidget(_settings(s));
   await t.pumpAndSettle();
-  await _tapText(t, '我的生活情境');
+  await _tapText(t, '城市与生活资料');
   expect(find.byType(PersonContextsPage), findsOneWidget);
 }
 
@@ -172,7 +172,7 @@ void main() {
     await t.pumpAndSettle();
     s.toB();
     await t.pumpAndSettle();
-    await _tapText(t, '我的生活情境');
+    await _tapText(t, '城市与生活资料');
     await _onlineDraft(t, '乙本人的新合成记录');
     await _tapText(t, '保存情境');
     final posts = s.client.requests.where((r) => r.method == 'POST').toList();
@@ -280,7 +280,7 @@ void main() {
     if (retiredBeforeResponse) {
       await t.pageBack();
       await t.pumpAndSettle();
-      await _tapText(t, '我的生活情境');
+      await _tapText(t, '城市与生活资料');
     }
     expect(find.byType(PersonContextsPage), findsOneWidget);
     s.client.pendingPost!.complete(s.client.response({}, 503));

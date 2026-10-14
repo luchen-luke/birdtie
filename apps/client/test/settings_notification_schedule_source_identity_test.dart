@@ -78,7 +78,7 @@ Future<void> _show(WidgetTester t, Finder target) async {
 }
 Future<void> _open(WidgetTester t, _Scenario s) async {
   await t.pumpWidget(_home(s)); await t.pumpAndSettle();
-  final entry=find.widgetWithText(ListTile,'定时汇总计划');
+  final entry=find.widgetWithText(ListTile,'定时汇总');
   await _show(t,entry); await t.tap(entry); await t.pumpAndSettle();
   expect(find.byType(NotificationSchedulePage),findsOneWidget);
   expect(find.text('当前状态：已启用 · 版本 1'), findsOneWidget);

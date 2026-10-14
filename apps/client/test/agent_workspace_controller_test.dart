@@ -899,7 +899,7 @@ void main() {
       await workspace.submit('  badminton this weekend  ', [], []);
       expect(workspace.state, AgentViewState.results);
       expect(workspace.task?.query, 'badminton this weekend');
-      expect(workspace.sheetExtent, AgentSheetExtent.expanded);
+      expect(workspace.sheetExtent, AgentSheetExtent.peek);
       expect(workspace.recent.single.query, 'badminton this weekend');
       expect(workspace.conversation.map((message) => message.role), [
         'user',
@@ -1007,6 +1007,8 @@ void main() {
       );
       expect(workspace.result, same(result));
       expect(workspace.selectedEntityId, 'activity:one');
+      expect(workspace.sheetExtent, AgentSheetExtent.expanded);
+      workspace.stopTyping();
       expect(workspace.sheetExtent, extent);
       expect(mapState.searchAreaBounds, mapState.viewportBounds);
       workspace.dispose();

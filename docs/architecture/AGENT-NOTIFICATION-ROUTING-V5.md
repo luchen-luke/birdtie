@@ -125,3 +125,15 @@ List/Read 对新路由行重新检查当前原生 source 和偏好。当前实�
 原测试以 DIGEST 为非法路由的一个夹具精确改为 SILENT，原目标/ID/读取时间断言保留。真实旧解析器 RED：合法 schema fixture 抛 Undelivered notification，exit1；修后新6行为＋原3解析控制共9PASS，exit0。直接 widget 覆盖混合分组不自动写、逐条当前读取后打开原活动、404拒绝、320宽大字号及48dp、同 source 替换/组织 ABA 后迟到 Read 不跳转。此处响应为原 Item DTO/099 合同的合成 schema fixture，不是抓取的原生 HTTP、PG 或生产通知。
 
 本次不改调度器、SQL/DDL、producer、provider 或导航。无真实每日槽边界字段，不称一份完整每日汇总或全历史；原普通 business_update producer 仍 Unavailable。新版本 native GET/Read DIGEST→客户端链、调度实际送达/运营、真实身份/推送、真机/读屏/性能、全面 analyze/test/build 与发布 NOT_RUN，整个 AGE040 保留 PARTIAL，Closed Pilot/Consumer Beta NO。适用 UX-CHECK-01/04/05/06/07/08/09/10/11/13/14 的本片单元范围，实际可用性与设备范围不由单元代替。证据见 docs/testing/evidence/age040-digest-consumer-2026-10-07/MANIFEST.json，原日阶段历史按其原范围保留。
+
+## 2026-10-10 AGE040：公开商家更新及原生摘要闭环续接
+
+用户明确恢复既有未完开发。复用10月7日106公开发布来源、原Follow/Block资格、099调度器、061决定及现有公开商家页；本轮没有新增生产DDL或另一个通知账本。客户端原Inbox闭集现在接受`business_update`，要求`updates + BUSINESS`、唯一`targetBusinessId`及已投递的NORMAL/IMMEDIATE/DIGEST。Read仍使用Inbox ID；`resourceId`是原notification decision ID，不是Business或publish audit ID。公开更新进入原PublicBusinessPage，私有经营权审核保留原页。
+
+每次打开仍先取得当前Read回执。Read失败、旧source、身份/组织ABA或迟到回执不继续打开详情；设置文案改为“商家公开更新与审核通知”，不改变确认、CAS或授权。原定时汇总分组、中文层级、系统TextScaler和48dp入口保持，未知/pending/SILENT/BLOCK/冲突typed目标拒绝。
+
+本轮后端相关单元210、原生PG25、注册NORMAL HTTP1、注册DIGEST HTTP1，共237个不同成功叶场景；没有把父测试、10月7日旧结果或多轮重跑相加。新DIGEST实际经过本人策略/计划、原公开发布、PG未来due、两个调度器并发、Inbox→同ID Read→公开商家，还验证重复执行、撤权和错误收件人。三个本轮随机自有测试库均经精确身份核查后清理，未修改手机库或生产服务。
+
+客户端相关10文件64测试通过；随后两份直接消费测试17项通过且5个修改文件analyze零问题（17与64重叠，不相加）。六个320dp/明暗/100%/130%/200%场景使用冻结原生HTTP JSON原字节，但运输仍为MockClient。4张可读组件截图采用现有系统中文字体及Flutter现有图标字体，仅用于测试，不是新增APK字体，也不是真机截图。首次旧消费者2PASS/4FAIL、首次新增截图测试因fake async文件读取中断、后续analyze两条info均保留，实际修复后通过。
+
+Android构建及最终源冻结由本期总报告记录。真机通知正例、OS推送、真实IdP/商户/运营、AT/性能、实际IMMEDIATE注册HTTP正例和发布继续NOT_RUN；本地CODE_AND_LOCAL_VERIFICATION不代表这些门槛满足。Closed Pilot/Consumer Beta仍NO。适用UX-CHECK-01/04/05/06/07/08/09/10/11/13/14。证据：`docs/testing/evidence/unfinished-completion-2026-10-10`，本期报告：`docs/reports/BIRDTIE-UNFINISHED-COMPLETION-2026-10-10.md`。历史文字按原日期保留。

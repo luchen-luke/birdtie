@@ -127,3 +127,14 @@ Go 新单位明确标记 `UNIT_STATIC`：从实际 `ListRequests` 的 Query AST 
 写前 journal → 原最新 Request 再读/具体预览复验 → 原 keyed POST。未知后重开只查询同一服务 operation，服务当前列表/同状态/LIMIT100缺项均不是因果回执；错主体、迟到、Source/账号 ABA永久退役，不能清新引用。只有完整匹配的服务 COMMITTED/NO_EFFECT 才 exact compare-clear 原 v2 引用；无自动重发、旧确认恢复或自动 winner。一般 HTTP409也不是拒绝凭证，独立操作绑定冲突不进入旧 `connection_conflict` 清理。已发写不可取消或声称回滚。
 
 本切片相关单元通过仅证明 registered handler/严格 wire parser/现消费者/原 native Tx 代码在 scripted SQL 下的执行。103未执行；SQL NULL、text resourceID cast、同 Request 与审计 XID guard/down仅 UNIT_STATIC。真实 Session、数据库 Commit/restart/concurrency/锁序和跨进程存储、手机与OS、完整 SCREEN与所有五族隐私/发布能力未验，整个 AGE042 仍 PARTIAL，Closed Pilot/Beta NO。
+
+
+## 2026-10-10 原四态本地验收完成
+
+原098、Settings与Inbox同Request人工审阅接续已完成登记的CODE_AND_LOCAL_VERIFICATION；SCREEN仍只是PENDING_REVIEW人工路由，模型筛查OFF。最后原生101唯一叶及直接单位82唯一叶共183不同检查PASS，0FAIL/SKIP，全API帧相同；098 fresh/current-data空down/reapply、CAS并发/audit rollback/旧rows-xmin-catalog保留/used-down拒绝、六原writer与专用conversation ACL、当前源及Session/Block ABA、真实续期与最后等待时钟均实际执行。保留原103完整历史，本次103仅原sameID keyed accept原包与消费，不称完整103组重跑。
+
+实际RED修复为本人GET/PUT/Decision的typed native返回保护、不可延长的原source/deadline/Session代际；Session撤销→恢复仍能BoundCreate成功的反例修复为现111 authorization_generation加入共享EntityAction源的两处SQL。原Block/Unblock个人安全审计因果加入原source摘要，禁止集合恢复使旧摘要复活。无新DDL/账本/主体或自动Agent写。共享EA精确二处逆证、原SQLShape真实PG prepare及BoundJoinCancel已验证；此前AIR038整组90Go未重跑。
+
+客户端从最终13组注册HTTP原字节直接消费；真实Request时间带+08偏移被UTC-only parser拒绝的产品RED已修，严格保留日历/offset验证并归一UTC同一时刻。最终7相关Flutter文件82PASS、仅新native-wire测试scoped analyze0、diff0；4张320dp组件PNG为Windows现有中文测试字体，不替换生产字体，也不等于真机。final03漏载测试Roboto字形方框，final04修测试字体后已实际看图，不用旧图作视觉通过。
+
+根核所有170后端证据/10源、最终两Go帧、客户端14源与原真实DTO SHA；本轮parent+3child精确清理、3原历史库身份不变。新全Go/vet/build、真机消息请求/真实IdP/跨进程OS存储CAS/吞吐/真实SCREEN/运营及部署NOT_RUN。原任务DONE仅登记本地四态范围，Closed Pilot/Consumer Beta仍NO。完整证据unfinished-completion-2026-10-10/message-policy/root-checkpoint/MANIFEST.json。

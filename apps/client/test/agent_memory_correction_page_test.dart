@@ -140,8 +140,8 @@ void main() {
         input = Map<String, dynamic>.from(jsonDecode(r.body));
         return response.future;
       }
-      return correctionResponse({
-        'data': r.url.path.endsWith('agent-memories')
+      return correctionReadResponse(r, {
+        'data': r.url.path.endsWith('agent-memories/page')
             ? [correctionMemoryRaw(at: at)]
             : [],
       });
@@ -149,7 +149,7 @@ void main() {
     await t.pumpWidget(correctionPageHarness(auth, client, store));
     await correctionSettle(t);
     await correctionTap(t, '拒绝保留');
-    final button = find.widgetWithText(FilledButton, '检查具体纠正版本');
+    final button = find.widgetWithText(FilledButton, '检查修改');
     await t.ensureVisible(button);
     await correctionSettle(t);
     await t.tap(button);
@@ -172,8 +172,8 @@ void main() {
     );
     await correctionSettle(t);
     expect(posts, 1);
-    expect(find.text('检查这次具体纠正'), findsNothing);
-    expect(find.text('确认此版本的纠正'), findsNothing);
+    expect(find.text('检查修改'), findsNothing);
+    expect(find.text('确认修改'), findsNothing);
     expect(find.text('核实原纠正结果'), findsOneWidget);
     await correctionCapture(t, 'delayed-review-metadata-only');
     await t.pumpWidget(const SizedBox());
@@ -212,8 +212,8 @@ void main() {
               ..remove('resultMemoryVersion');
         return correctionResponse(receipt);
       }
-      return correctionResponse({
-        'data': r.url.path.endsWith('agent-memory-candidates')
+      return correctionReadResponse(r, {
+        'data': r.url.path.endsWith('agent-memory-candidates/page')
             ? [candidate]
             : [],
       });
@@ -227,14 +227,17 @@ void main() {
     );
     await correctionSettle(t);
     await correctionTap(t, '拒绝这条候选');
-    await correctionTap(t, '检查具体纠正版本');
-    expect(find.textContaining('使用原 REJECTED'), findsOneWidget);
+    await correctionTap(t, '检查修改');
+    expect(find.text('确认后拒绝这条建议并清除内容；原动态不受影响。'), findsOneWidget);
     expect(find.textContaining('使用原 DELETED'), findsNothing);
-    await correctionTap(t, '检查全部受影响对象（1 项）');
-    expect(find.textContaining('候选 · 版本 1'), findsOneWidget);
-    expect(find.textContaining(candidateTarget), findsOneWidget);
+    await correctionTap(t, '受影响的记忆（1 项）');
+    expect(find.text('待确认的活动偏好建议'), findsOneWidget);
+    expect(find.textContaining(candidateTarget), findsNothing);
+    expect(input!['targetId'], candidateTarget);
+    expect(input!['expectedVersion'], 1);
+    expect(input!['action'], 'REJECT');
     await correctionCapture(t, 'candidate-reject-affected-review');
-    await correctionTap(t, '确认此版本的纠正');
+    await correctionTap(t, '确认修改');
     expect(posts, 2);
     await t.pumpWidget(const SizedBox());
     client.close();
@@ -269,8 +272,8 @@ void main() {
                 correctionReceiptRaw(input: input, at: at),
               );
             }
-            return correctionResponse({
-              'data': r.url.path.endsWith('agent-memories')
+            return correctionReadResponse(r, {
+              'data': r.url.path.endsWith('agent-memories/page')
                   ? [correctionMemoryRaw(at: at)]
                   : [],
             });
@@ -300,11 +303,11 @@ void main() {
           );
           await correctionSettle(t);
           await t.enterText(find.byType(TextField), '本人明确修订');
-          await correctionTap(t, '检查具体纠正版本');
+          await correctionTap(t, '检查修改');
           expect(posts, 1);
-          expect(find.text('检查这次具体纠正'), findsOneWidget);
-          expect(find.textContaining('原记忆有效至：'), findsOneWidget);
-          expect(find.textContaining('本次确认截止：'), findsOneWidget);
+          expect(find.text('检查修改'), findsOneWidget);
+          expect(find.text('修改后'), findsOneWidget);
+          expect(find.textContaining('本次确认截止：'), findsNothing);
           expect(find.text('我偏好徒步活动'), findsWidgets);
           expect(find.text('本人明确修订'), findsOneWidget);
           await correctionCapture(
@@ -312,14 +315,14 @@ void main() {
             'review-${dark ? 'dark' : 'light'}-font$scale',
           );
           final semantics = t.ensureSemantics();
-          final button = find.widgetWithText(FilledButton, '确认此版本的纠正');
+          final button = find.widgetWithText(FilledButton, '确认修改');
           await t.ensureVisible(button);
           expect(t.getSize(button).height, greaterThanOrEqualTo(48));
           expect(
             t.getSemantics(button).getSemanticsData().label,
-            contains('确认此版本'),
+            contains('确认修改'),
           );
-          await correctionTap(t, '确认此版本的纠正');
+          await correctionTap(t, '确认修改');
           expect(posts, 2);
           expect(
             t
@@ -329,7 +332,7 @@ void main() {
             0,
           );
           expect(find.textContaining('原纠正已完成'), findsOneWidget);
-          expect(find.text('检查具体纠正版本'), findsNothing);
+          expect(find.text('检查修改'), findsNothing);
           expect(t.takeException(), isNull);
           await correctionCapture(
             t,
@@ -349,8 +352,8 @@ void main() {
     final at = DateTime.now().toUtc();
     final client = MockClient((r) async {
       if (r.method == 'POST') posts++;
-      return correctionResponse({
-        'data': r.url.path.endsWith('agent-memories')
+      return correctionReadResponse(r, {
+        'data': r.url.path.endsWith('agent-memories/page')
             ? [correctionMemoryRaw(at: at)]
             : [],
       });
@@ -364,11 +367,9 @@ void main() {
     );
     await correctionSettle(t);
     await correctionTap(t, '纠正活动偏好');
-    final b = t.widget<FilledButton>(
-      find.widgetWithText(FilledButton, '检查具体纠正版本'),
-    );
+    final b = t.widget<FilledButton>(find.widgetWithText(FilledButton, '检查修改'));
     expect(b.onPressed, isNull);
-    expect(find.textContaining('持续被抑制'), findsWidgets);
+    expect(find.textContaining('不再建议你喜欢'), findsWidgets);
     expect(posts, 0);
     await t.pumpWidget(const SizedBox());
     client.close();
@@ -389,8 +390,8 @@ void main() {
     });
     await t.pumpWidget(correctionPageHarness(auth, client, store));
     await correctionSettle(t);
-    expect(find.text('确认此版本的纠正'), findsNothing);
-    expect(find.textContaining('旧审阅内容无法恢复'), findsOneWidget);
+    expect(find.text('确认修改'), findsNothing);
+    expect(find.textContaining('保存结果尚未确认'), findsOneWidget);
     await correctionCapture(t, 'unknown-metadata-only');
     await t.pumpWidget(const SizedBox());
     auth.token = 'Bearer next';
@@ -405,7 +406,7 @@ void main() {
       ),
       true,
     );
-    expect(find.text('确认此版本的纠正'), findsNothing);
+    expect(find.text('确认修改'), findsNothing);
     await t.pumpWidget(const SizedBox());
     client.close();
   });
@@ -430,8 +431,8 @@ void main() {
               .toIso8601String(),
         });
       }
-      return correctionResponse({
-        'data': r.url.path.endsWith('agent-memories')
+      return correctionReadResponse(r, {
+        'data': r.url.path.endsWith('agent-memories/page')
             ? [correctionMemoryRaw(at: at)]
             : [],
       });
@@ -439,15 +440,15 @@ void main() {
     await t.pumpWidget(correctionPageHarness(auth, client, store));
     await correctionSettle(t);
     await correctionTap(t, '拒绝保留');
-    await correctionTap(t, '检查具体纠正版本');
-    expect(find.text('检查这次具体纠正'), findsOneWidget);
+    await correctionTap(t, '检查修改');
+    expect(find.text('检查修改'), findsOneWidget);
     await t.runAsync(
       () => Future<void>.delayed(const Duration(milliseconds: 450)),
     );
     await t.pump(const Duration(seconds: 1));
     await correctionSettle(t);
-    expect(find.text('检查这次具体纠正'), findsNothing);
-    expect(find.text('确认此版本的纠正'), findsNothing);
+    expect(find.text('检查修改'), findsNothing);
+    expect(find.text('确认修改'), findsNothing);
     expect(find.text('核实原纠正结果'), findsOneWidget);
     expect(posts, 1);
     expect(await store.read('http://local', correctionOwner), isNotNull);
@@ -485,8 +486,8 @@ void main() {
               ),
             );
           }
-          return correctionResponse({
-            'data': r.url.path.endsWith('agent-memories')
+          return correctionReadResponse(r, {
+            'data': r.url.path.endsWith('agent-memories/page')
                 ? [correctionMemoryRaw(at: at)]
                 : [],
           });
@@ -529,8 +530,8 @@ void main() {
         await correctionTap(t, '修改这条记忆');
         await t.enterText(find.byType(TextField), '私密具体版本');
         if (stage == 'preview') {
-          await correctionTap(t, '检查具体纠正版本');
-          expect(find.text('确认此版本的纠正'), findsOneWidget);
+          await correctionTap(t, '检查修改');
+          expect(find.text('确认修改'), findsOneWidget);
         }
         final count = calls;
         signal.value = 1;
@@ -543,7 +544,7 @@ void main() {
         expect(confirms, 0);
         expect(find.textContaining('身份或连接已变化'), findsOneWidget);
         expect(find.text('私密具体版本'), findsNothing);
-        expect(find.text('确认此版本的纠正'), findsNothing);
+        expect(find.text('确认修改'), findsNothing);
         expect(find.byType(TextField), findsNothing);
         await t.pumpWidget(const SizedBox());
         first.close();

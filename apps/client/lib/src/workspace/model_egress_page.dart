@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import '../app/birdtie_app_bar.dart';
 import '../auth/birdtie_auth_controller.dart';
 import 'model_egress_api.dart';
 import 'model_egress_controller.dart';
@@ -133,8 +134,6 @@ class _ModelEgressPageState extends State<ModelEgressPage> {
             '目标：${p.data['destination']['Provider']} / ${p.data['destination']['Model']} / ${p.data['destination']['Version']}\n'
             '地区：${const {'UK': '英国', 'EU': '欧盟', 'US': '美国', 'APAC': '亚太'}[p.data['region']]}\n'
             '保留：无状态、不存储（未核验供应商）\n'
-            '提示词版本：${p.data['request']['prompt_version']}\n'
-            '价格版本：${p.data['priceVersion']}\n'
             '费用上界：${(p.data['upper']['costMicros'] as int) / 1000000} ${p.data['currency']}（本地合成估计）\n'
             '期限：${_time(p.expiry)}\n\n'
             '只确认此具体版本的本地许可。模型服务当前不可用，不会执行网络请求、收费、写入记忆或报名。',
@@ -169,19 +168,13 @@ class _ModelEgressPageState extends State<ModelEgressPage> {
   Widget build(BuildContext context) {
     final enabled = !_data.busy, p = _data.preview;
     return Scaffold(
-      appBar: AppBar(title: const Text('模型请求与预算')),
+      appBar: birdtieAppBar(context, title: const Text('AI 使用与预算')),
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
-          const Text(
-            '本人任务的人审记录',
-            style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
-          ),
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 12),
-            child: Text(
-              '模型服务当前不可用。这里仅检查具体请求、确认或撤回本地许可，查看已有预算；不会调用模型或收费。价格与 token 上界为本地合成配置，不是供应商计费证明。',
-            ),
+            child: Text('AI 服务当前不可用。本地授权不会产生调用或费用；以下费用为估算。'),
           ),
           if (!_data.personal)
             const Text('请使用已登录的个人身份查看；组织工作台不能沿用此许可。')
@@ -197,11 +190,11 @@ class _ModelEgressPageState extends State<ModelEgressPage> {
               ),
             _button('刷新已有配置与原记录', enabled ? () => _data.load() : null),
             if (_data.options.isEmpty && !_data.busy)
-              const Text('尚无可用的本人任务配置。需要已有任务、固定配置、价格依据和预算；这里不会自动创建或增加额度。'),
+              const Text('暂无可检查的 AI 请求'),
             if (_data.options.isNotEmpty)
-              const Text(
+              Text(
                 '选择已配置的本人任务',
-                style: TextStyle(fontWeight: FontWeight.w700),
+                style: Theme.of(context).textTheme.titleMedium,
               ),
             for (final o in _data.options)
               ListTile(
@@ -237,18 +230,12 @@ class _ModelEgressPageState extends State<ModelEgressPage> {
               ),
             if (p != null) ...[
               const Divider(height: 32),
-              const Text(
-                '具体请求预览',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
-              ),
+              Text('具体请求预览', style: Theme.of(context).textTheme.titleLarge),
               Text(
                 '目标：${p.data['destination']['Provider']} / ${p.data['destination']['Model']} / ${p.data['destination']['Version']}',
               ),
               Text(
                 '地区：${const {'UK': '英国', 'EU': '欧盟', 'US': '美国', 'APAC': '亚太'}[p.data['region']]}；保留策略：无状态、不存储（本地合同，未核验供应商）',
-              ),
-              Text(
-                '提示词版本：${p.data['request']['prompt_version']}\n输入版本：${p.data['request']['input_schema_version']}\n输出版本：${p.data['request']['output_schema_version']}\n价格版本：${p.data['priceVersion']}',
               ),
               Text(
                 '输入上界 ${p.data['upper']['inputTokens']}，输出上界 ${p.data['upper']['outputTokens']} token；费用上界 ${(p.data['upper']['costMicros'] as int) / 1000000} ${p.data['currency']}（合成估计，未分配）',
@@ -279,10 +266,7 @@ class _ModelEgressPageState extends State<ModelEgressPage> {
                 enabled ? () => _data.revoke(_data.current!.id) : null,
               ),
             const Divider(height: 32),
-            const Text(
-              '已有的人审记录',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
-            ),
+            Text('已有的人审记录', style: Theme.of(context).textTheme.titleLarge),
             const Text('最近 50 项；重新读取原记录才能判断是否仍可检查。换会话后旧批准不会恢复。'),
             for (final r in _data.receipts)
               ListTile(

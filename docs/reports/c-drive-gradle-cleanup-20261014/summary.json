@@ -1,0 +1,41 @@
+{
+  "State": "BLOCKED_BY_AUTOMATIC_APPROVAL",
+  "RootScope": [
+    "C:\\bt-g07",
+    "C:\\Users\\chens\\.gradle",
+    "C:\\Users\\chens\\.gradle-birdtie-build"
+  ],
+  "DeletionPerformed": false,
+  "DeletedBytes": 0,
+  "ApprovalRejectionReason": "blocked by policy",
+  "RejectedTarget": "C:\\bt-g07\\caches\\9.1.0",
+  "ReviewedTargetCount": 33,
+  "ReviewedBytes": 10494551163.0,
+  "ReviewedGiB": 9.774,
+  "ManualScript": "scripts/cleanup_c_drive_gradle_cache_20261014.ps1",
+  "ManualExecuteInvokedByAgent": false,
+  "ApplicationTestsRun": false,
+  "ApplicationBuildsRun": false,
+  "TaskQueueModified": false,
+  "Preserved": [
+    "Downloaded modules-2 dependencies",
+    "Gradle wrapper distributions",
+    "Daemon logs and Kotlin diagnostic profiles",
+    "native/android/notifications support files",
+    "Civu signing keys and local configuration",
+    "All project source and current delivery artifacts",
+    "Shared jars-9 folder targeted by preserved Birdtie junction"
+  ],
+  "Verification": {
+    "VerifiedUtc": "2026-10-14T10:26:20.1446499Z",
+    "Launcher": "Windows PowerShell 5.1 -> installed PowerShell 7",
+    "FullDryRunExitCode": 0,
+    "FullDryRunTargets": 33,
+    "FullDryRunRemovableGiB": 9.774,
+    "Output": "Verified targets: 33; removable GiB: 9.774. DRY RUN ONLY. No files deleted.",
+    "ExistingReviewedTargetsStillPresent": true,
+    "ManualExecuteInvokedByAgent": false,
+    "ReadyForManualExecution": true,
+    "ScriptSha256": "836b0cf1c8be06727738667ae5a1b683143535a68b386e42847281278465b18c"
+  }
+}

@@ -335,11 +335,13 @@ func lockVisibilityProjectionRelations(ctx context.Context, tx pgx.Tx, targetID,
 			AND resource_id=$1::uuid::text AND purpose='profile_view' ORDER BY id FOR SHARE`, targetID, viewerID); err != nil {
 		return err
 	}
-	connections := false
-	for _, rule := range rules {
-		connections = connections || rule.Visibility == agentprofile.VisibilityConnections
+	// Whole-Profile audiences now also depend on Follow, accepted Friend and
+	// explicit Close. Lock their source even when the field overlay is PUBLIC.
+	if err := lockVisibilityRows(ctx, tx, `SELECT id FROM follows WHERE
+		person_account_id=$1 AND follower_account_id=$2 ORDER BY id FOR SHARE`, targetID, viewerID); err != nil {
+		return err
 	}
-	if connections {
+	{
 		// Accepted friend request proof precedes the durable Tie lock, matching
 		// DecideRequest's request-before-Tie order. A conversation is not a Tie.
 		if err := lockVisibilityRows(ctx, tx, `SELECT id FROM connection_requests
@@ -350,6 +352,10 @@ func lockVisibilityProjectionRelations(ctx context.Context, tx pgx.Tx, targetID,
 		if err := lockVisibilityRows(ctx, tx, `SELECT id FROM person_ties
 			WHERE person_a_account_id=LEAST($1::uuid,$2::uuid)
 				AND person_b_account_id=GREATEST($1::uuid,$2::uuid) ORDER BY id FOR SHARE`, targetID, viewerID); err != nil {
+			return err
+		}
+		if err := lockVisibilityRows(ctx, tx, `SELECT tie_id FROM person_close_connections
+			WHERE owner_account_id=$1 AND person_account_id=$2 FOR SHARE`, targetID, viewerID); err != nil {
 			return err
 		}
 	}
@@ -390,11 +396,7 @@ func queryAgentFieldProjection(ctx context.Context, tx pgx.Tx, targetID, viewerI
 		WHERE p.account_id=$1 AND ($2::uuid IS NULL OR EXISTS(SELECT 1 FROM accounts viewer WHERE viewer.id=$2 AND viewer.status='active'))
 			AND NOT EXISTS(SELECT 1 FROM account_blocks b WHERE $2::uuid IS NOT NULL AND
 				((b.blocker_account_id=$1 AND b.blocked_account_id=$2) OR (b.blocker_account_id=$2 AND b.blocked_account_id=$1)))
-			AND (p.visibility='public' OR p.account_id=$2 OR EXISTS(SELECT 1 FROM consent_grants g
-				WHERE g.owner_account_id=p.account_id AND g.recipient_account_id=$2
-					AND g.resource_type='profile' AND g.resource_id=p.account_id::text AND g.purpose='profile_view'
-					AND g.actions @> ARRAY['read']::text[] AND g.revoked_at IS NULL
-					AND (g.expires_at IS NULL OR g.expires_at>clock_timestamp())))
+			AND birdtie_profile_visible_to(p.account_id,$2::uuid)
 			AND birdtie_agent_profile_field_allowed(p.account_id,$2::uuid,candidate.key)
 			AND candidate.value IS NOT NULL AND candidate.value NOT IN ('null'::jsonb,'""'::jsonb,'[]'::jsonb)
 		ORDER BY candidate.key`, targetID, viewer)

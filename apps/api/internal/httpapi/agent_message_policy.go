@@ -66,11 +66,16 @@ func (s *server) messageWriteAccess(w http.ResponseWriter, r *http.Request) (ea.
 	return access, true
 }
 func (s *server) messagePolicyAccess(w http.ResponseWriter, r *http.Request) (agentprofile.PrivateAccess, bool) {
+	if nilConnectionRequestReader(s.access) || r.Context().Err() != nil {
+		messagePolicyFailure(w, mp.ErrUnavailable)
+		return agentprofile.PrivateAccess{}, false
+	}
 	a, ok := s.messageWriteAccess(w, r)
 	if !ok {
 		return agentprofile.PrivateAccess{}, false
 	}
-	if s.messagePolicies == nil {
+	validator, typed := s.messagePolicies.(mp.ResponseValidator)
+	if nilConnectionRequestReader(s.messagePolicies) || !typed || nilConnectionRequestReader(validator) {
 		messagePolicyFailure(w, mp.ErrUnavailable)
 		return agentprofile.PrivateAccess{}, false
 	}
@@ -98,8 +103,43 @@ func messagePolicyNoBody(w http.ResponseWriter, r *http.Request) bool {
 	}
 	return true
 }
-func (s *server) messagePolicyResponse(w http.ResponseWriter, r *http.Request, a agentprofile.PrivateAccess, value any) {
-	s.messageWriteResponse(w, r, eaMessageHTTPAccess(a), http.StatusOK, value)
+func (s *server) messagePolicyResponse(w http.ResponseWriter, r *http.Request, a agentprofile.PrivateAccess, peer string, value any) {
+	raw, e := json.Marshal(map[string]any{"data": value})
+	if e != nil {
+		messagePolicyFailure(w, mp.ErrUnavailable)
+		return
+	}
+	access, ok := s.access.(socialnow.HumanSessionStore)
+	validator, typed := s.messagePolicies.(mp.ResponseValidator)
+	if !ok || !typed || nilConnectionRequestReader(access) || nilConnectionRequestReader(validator) {
+		messagePolicyFailure(w, mp.ErrUnavailable)
+		return
+	}
+	// Retain the captured-session check after encoding. The native policy gate
+	// then checks original source and deadline with its own last database clock.
+	if e = access.ValidateHumanSocialResponse(r.Context(), a.SessionDigest, eaMessageHTTPAccess(a).Actor); e != nil {
+		messagePolicyFailure(w, e)
+		return
+	}
+	switch v := value.(type) {
+	case mp.Record:
+		e = validator.ValidateOwnMessagePolicyResponse(r.Context(), a, v)
+	case mp.Decision:
+		e = validator.ValidateMessagePolicyDecisionResponse(r.Context(), a, peer, v)
+	default:
+		e = mp.ErrUnavailable
+	}
+	if e != nil {
+		messagePolicyFailure(w, e)
+		return
+	}
+	if r.Context().Err() != nil {
+		messagePolicyFailure(w, mp.ErrUnavailable)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write(append(raw, '\n'))
 }
 func eaMessageHTTPAccess(a agentprofile.PrivateAccess) ea.Access {
 	return ea.Access{Actor: identity.Actor{ID: a.WorkspacePrincipal.ID, AccountType: "person"}, SessionDigest: a.SessionDigest}
@@ -141,7 +181,7 @@ func (s *server) getOwnMessagePolicy(w http.ResponseWriter, r *http.Request) {
 		messagePolicyFailure(w, mp.ErrUnavailable)
 		return
 	}
-	s.messagePolicyResponse(w, r, a, p)
+	s.messagePolicyResponse(w, r, a, "", p)
 }
 func (s *server) putOwnMessagePolicy(w http.ResponseWriter, r *http.Request) {
 	a, ok := s.messagePolicyAccess(w, r)
@@ -182,7 +222,7 @@ func (s *server) putOwnMessagePolicy(w http.ResponseWriter, r *http.Request) {
 		messagePolicyFailure(w, mp.ErrUnavailable)
 		return
 	}
-	s.messagePolicyResponse(w, r, a, p)
+	s.messagePolicyResponse(w, r, a, "", p)
 }
 func (s *server) getMessagePolicyDecision(w http.ResponseWriter, r *http.Request) {
 	a, ok := s.messagePolicyAccess(w, r)
@@ -203,5 +243,5 @@ func (s *server) getMessagePolicyDecision(w http.ResponseWriter, r *http.Request
 		messagePolicyFailure(w, mp.ErrUnavailable)
 		return
 	}
-	s.messagePolicyResponse(w, r, a, p)
+	s.messagePolicyResponse(w, r, a, peer, p)
 }

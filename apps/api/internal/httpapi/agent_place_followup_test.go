@@ -64,13 +64,18 @@ func (s *placeFollowupHTTPStore) ContinueOwnPublicPlace(ctx context.Context, a a
 
 type placeFollowupHTTPAnswers struct {
 	*nowHTTPFakeAnswers
-	seen []agentworkspace.Task
+	seen          []agentworkspace.Task
+	expectedTopic string
 }
 
 func (s *placeFollowupHTTPAnswers) Execute(ctx context.Context, digest [32]byte, task agentworkspace.Task) (agentworkspace.LiveReply, error) {
 	s.sends++
 	s.seen = append(s.seen, task)
-	if digest == ([32]byte{}) || task.Status != agentworkspace.TaskActive || !reflect.DeepEqual(task, s.store.task) || task.Filters["currentQuery"] == "" || task.Filters[agentworkspace.PlaceFollowupTopicFilter] != agentworkspace.PlaceOpeningHours || task.Filters["timePreference"] != "weekend" {
+	topic := s.expectedTopic
+	if topic == "" {
+		topic = agentworkspace.PlaceOpeningHours
+	}
+	if digest == ([32]byte{}) || task.Status != agentworkspace.TaskActive || !reflect.DeepEqual(task, s.store.task) || task.Filters["currentQuery"] == "" || task.Filters[agentworkspace.PlaceFollowupTopicFilter] != topic || task.Filters["timePreference"] != "weekend" {
 		s.t.Fatal("native continuation/current slots were not persisted before the model boundary")
 	}
 	if s.err != nil {

@@ -1,0 +1,233 @@
+[
+  {
+    "Path": "C:\\bt-g07\\caches\\9.1.0",
+    "ExpectedBytes": 3355707439,
+    "ExpectedFiles": 30896,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "Path": "C:\\bt-g07\\caches\\jars-9",
+    "ExpectedBytes": 256984,
+    "ExpectedFiles": 83,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "Path": "C:\\bt-g07\\caches\\journal-1",
+    "ExpectedBytes": 384898,
+    "ExpectedFiles": 3,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "Path": "C:\\bt-g07\\.tmp",
+    "ExpectedBytes": 0,
+    "ExpectedFiles": 0,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "Path": "C:\\Users\\chens\\.gradle\\caches\\9.1.0",
+    "ExpectedBytes": 4013577682,
+    "ExpectedFiles": 37103,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "Path": "C:\\Users\\chens\\.gradle\\caches\\jars-9\\05368511f4689b82993aa403dbbf4f6f",
+    "ExpectedBytes": 6595,
+    "ExpectedFiles": 4,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "Path": "C:\\Users\\chens\\.gradle\\caches\\jars-9\\0bbd04443d23e34712829e0be0929884",
+    "ExpectedBytes": 55438,
+    "ExpectedFiles": 16,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "Path": "C:\\Users\\chens\\.gradle\\caches\\jars-9\\0f5accef394daf1e49094c63905d9b22",
+    "ExpectedBytes": 13258,
+    "ExpectedFiles": 5,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "Path": "C:\\Users\\chens\\.gradle\\caches\\jars-9\\130b8a71c6c8046257dd0f7c34cbbec0",
+    "ExpectedBytes": 9872,
+    "ExpectedFiles": 5,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "Path": "C:\\Users\\chens\\.gradle\\caches\\jars-9\\22764076af0646e0e6d81abc255225de",
+    "ExpectedBytes": 13244,
+    "ExpectedFiles": 5,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "Path": "C:\\Users\\chens\\.gradle\\caches\\jars-9\\428dc5df577f255f1cfbd437be24317b",
+    "ExpectedBytes": 9920,
+    "ExpectedFiles": 5,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "Path": "C:\\Users\\chens\\.gradle\\caches\\jars-9\\467ee6a6e467c2e19989efdfce448afc",
+    "ExpectedBytes": 2,
+    "ExpectedFiles": 2,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "Path": "C:\\Users\\chens\\.gradle\\caches\\jars-9\\5528fe6ff60f6585031b2a68c8a4f369",
+    "ExpectedBytes": 2,
+    "ExpectedFiles": 2,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "Path": "C:\\Users\\chens\\.gradle\\caches\\jars-9\\5d6c562ca92ab441907295b5b52d83cd",
+    "ExpectedBytes": 59036,
+    "ExpectedFiles": 16,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "Path": "C:\\Users\\chens\\.gradle\\caches\\jars-9\\658afbb6a00508f756df766e749c51f9",
+    "ExpectedBytes": 9896,
+    "ExpectedFiles": 5,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "Path": "C:\\Users\\chens\\.gradle\\caches\\jars-9\\87feed92a0cbf50072db20317ef00463",
+    "ExpectedBytes": 58288,
+    "ExpectedFiles": 16,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "Path": "C:\\Users\\chens\\.gradle\\caches\\jars-9\\8a09b71dbba8b2421ded7f668afccc29",
+    "ExpectedBytes": 31292,
+    "ExpectedFiles": 10,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "Path": "C:\\Users\\chens\\.gradle\\caches\\jars-9\\9648423ff3a15cb723dd516599890e35",
+    "ExpectedBytes": 2,
+    "ExpectedFiles": 2,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "Path": "C:\\Users\\chens\\.gradle\\caches\\jars-9\\9be83e5ab36b35e14f90a5c90f06f869",
+    "ExpectedBytes": 13938,
+    "ExpectedFiles": 6,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "Path": "C:\\Users\\chens\\.gradle\\caches\\jars-9\\a3d5f8f14a2e4dad982e407ece0f8a1e",
+    "ExpectedBytes": 63361,
+    "ExpectedFiles": 17,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "Path": "C:\\Users\\chens\\.gradle\\caches\\jars-9\\c10f8f3d76f82349d0940c1e4f5bfe0f",
+    "ExpectedBytes": 9905,
+    "ExpectedFiles": 5,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "Path": "C:\\Users\\chens\\.gradle\\caches\\jars-9\\c6437dad8f43b47acb13adc627cb6db7",
+    "ExpectedBytes": 6605,
+    "ExpectedFiles": 4,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "Path": "C:\\Users\\chens\\.gradle\\caches\\jars-9\\ee918dca564084b0e36210f4455f733e",
+    "ExpectedBytes": 14882,
+    "ExpectedFiles": 6,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "Path": "C:\\Users\\chens\\.gradle\\caches\\jars-9\\f1dc09c43c972a3994e0fc44acbbb9e8",
+    "ExpectedBytes": 39474,
+    "ExpectedFiles": 11,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "Path": "C:\\Users\\chens\\.gradle\\caches\\jars-9\\fc34f4e989112e0c0c33c0742df020d5",
+    "ExpectedBytes": 2,
+    "ExpectedFiles": 2,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "Path": "C:\\Users\\chens\\.gradle\\caches\\jars-9\\gc.properties",
+    "ExpectedBytes": 0,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "Path": "C:\\Users\\chens\\.gradle\\caches\\jars-9\\jars-9.lock",
+    "ExpectedBytes": 39,
+    "ExpectedFiles": 1,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "Path": "C:\\Users\\chens\\.gradle\\caches\\journal-1",
+    "ExpectedBytes": 958683,
+    "ExpectedFiles": 3,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "Path": "C:\\Users\\chens\\.gradle\\.tmp",
+    "ExpectedBytes": 48951015,
+    "ExpectedFiles": 117,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "Path": "C:\\Users\\chens\\.gradle-birdtie-build\\caches\\9.1.0",
+    "ExpectedBytes": 3073660104,
+    "ExpectedFiles": 26030,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "Path": "C:\\Users\\chens\\.gradle-birdtie-build\\caches\\jars-9",
+    "ExpectedBytes": 256984,
+    "ExpectedFiles": 83,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "Path": "C:\\Users\\chens\\.gradle-birdtie-build\\caches\\journal-1",
+    "ExpectedBytes": 382323,
+    "ExpectedFiles": 3,
+    "Status": "REMOVED",
+    "Error": null
+  },
+  {
+    "Path": "C:\\Users\\chens\\.gradle-birdtie-build\\.tmp",
+    "ExpectedBytes": 0,
+    "ExpectedFiles": 0,
+    "Status": "REMOVED",
+    "Error": null
+  }
+]

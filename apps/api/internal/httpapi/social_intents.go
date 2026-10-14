@@ -26,7 +26,7 @@ func validSocialIntentDraft(input *socialintent.DraftInput) bool {
 		return false
 	}
 	switch input.Audience {
-	case "PRIVATE", "FRIENDS", "COMMUNITY", "LOCAL", "PUBLIC", "INVITE_ONLY":
+	case "PRIVATE", "FRIENDS", "COMMUNITY", "LOCAL", "PUBLIC", "INVITE_ONLY", "FOLLOWERS", "CONNECTIONS", "CLOSE":
 	default:
 		return false
 	}

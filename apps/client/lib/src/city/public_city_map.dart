@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'map_cluster_members_sheet.dart';
+import 'map_point_selection_sheet.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
@@ -10,16 +12,16 @@ import '../config/birdtie_environment.dart';
 import 'map_link.dart';
 import 'amap_city_map_stub.dart'
     if (dart.library.html) 'amap_city_map_web.dart';
-import 'mapbox_style.dart';
+import 'mapbox_web_basemap.dart';
 import 'map_camera_focus.dart';
 import 'native_city_map_stub.dart'
     if (dart.library.io) 'native_city_map_io.dart';
 import 'public_city_controller.dart';
 import '../workspace/map_entities.dart';
+import '../workspace/map_display_policy.dart';
 
-const _mapboxPublicToken = BirdtieEnvironment.mapboxWebPublicToken;
+String get _mapboxPublicToken => BirdtieEnvironment.mapboxGlWebPublicToken;
 const _mapboxMobileToken = BirdtieEnvironment.mapboxMobilePublicToken;
-// The public token used with Static Tiles must include styles:tiles.
 
 class PublicCityMapView extends StatefulWidget {
   const PublicCityMapView({
@@ -40,6 +42,15 @@ class PublicCityMapView extends StatefulWidget {
     this.preserveViewport = false,
     this.ornamentTop,
     this.onOrnamentHeightChanged,
+    this.contentRect,
+    this.focusRevision = 0,
+    this.onSelectedAnchor,
+    this.readerChanges,
+    this.currentReaderEntities,
+    this.currentReaderScope,
+    this.onMapReaderVisibilityChanged,
+    this.onCoordinateSelected,
+    this.coordinateSourceCurrent,
   });
 
   final PublicCity? city;
@@ -58,6 +69,18 @@ class PublicCityMapView extends StatefulWidget {
   final bool preserveViewport;
   final double? ornamentTop;
   final ValueChanged<double>? onOrnamentHeightChanged;
+  final Rect? contentRect;
+  final int focusRevision;
+  final ValueChanged<({String? id, Offset? point})>? onSelectedAnchor;
+  final Listenable? readerChanges;
+  final List<MapEntity> Function()? currentReaderEntities;
+  final Object? Function()? currentReaderScope;
+  final ValueChanged<({Object token, bool visible})>?
+  onMapReaderVisibilityChanged;
+
+  /// Optional editor input; a map tap is never a Place, visit or GPS fact.
+  final void Function(double latitude, double longitude)? onCoordinateSelected;
+  final bool Function()? coordinateSourceCurrent;
 
   @override
   State<PublicCityMapView> createState() => _PublicCityMapViewState();
@@ -65,17 +88,24 @@ class PublicCityMapView extends StatefulWidget {
 
 class _PublicCityMapViewState extends State<PublicCityMapView> {
   bool _tilesFailed = false;
+  int _webBasemapEpoch = 0;
+  final _readerChanges = MapReaderChanges();
+  int _readerEpoch = 0;
   final MapController _webMapController = MapController();
   bool _webMapReady = false;
+  bool _webBasemapReady = false;
   int _webFocusSerial = 0;
   int _webMotionGeneration = 0;
+  final ValueNotifier<int> _webDisplayRevision = ValueNotifier(0);
 
   MapCameraFocusInput _focusInput(PublicCityMapView view) =>
       MapCameraFocusInput(
         city: view.city,
         contextKey: view.contextKey,
         places: view.places,
-        entities: view.entities,
+        entities: view.entities
+            .where((e) => e.hasMapAnchor)
+            .toList(growable: false),
         selectedEntityId: view.selectedEntityId,
         preserveViewport: view.preserveViewport,
       );
@@ -88,12 +118,23 @@ class _PublicCityMapViewState extends State<PublicCityMapView> {
   @override
   void didUpdateWidget(covariant PublicCityMapView oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (oldWidget.city?.id != widget.city?.id ||
+        oldWidget.contextKey != widget.contextKey) {
+      ++_readerEpoch;
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _readerChanges.changed();
+    });
     final previous = _focusInput(oldWidget), current = _focusInput(widget);
-    if (!current.hasSameViewInputs(previous)) _webFocusSerial++;
+    final explicitFocus = oldWidget.focusRevision != widget.focusRevision;
+    if (!current.hasSameViewInputs(previous) || explicitFocus) {
+      _webFocusSerial++;
+    }
     if (oldWidget.city?.id != widget.city?.id) _tilesFailed = false;
     if (!_usesWebMapbox) {
       _webMapReady = false;
-    } else if (current.shouldFocusAfter(previous)) {
+      _webBasemapReady = false;
+    } else if (current.shouldFocusAfter(previous) || explicitFocus) {
       _scheduleWebFocus();
     }
   }
@@ -101,6 +142,33 @@ class _PublicCityMapViewState extends State<PublicCityMapView> {
   void _invalidatePendingWebFocus() {
     _webFocusSerial++;
     _webMotionGeneration++;
+  }
+
+  void _webBasemapStatus(bool ready) {
+    if (!mounted || !_usesWebMapbox) return;
+    final becameReady = ready && !_webBasemapReady;
+    _webBasemapReady = ready;
+    if (_tilesFailed != !ready) setState(() => _tilesFailed = !ready);
+    if (!ready) {
+      widget.onMapUnavailable?.call('地图底图暂不可用，请使用地点列表。');
+    } else if (becameReady && _webMapReady) {
+      final bounds = _webMapController.camera.visibleBounds;
+      final initial = MapBounds(
+        west: bounds.west,
+        south: bounds.south,
+        east: bounds.east,
+        north: bounds.north,
+      );
+      if (initial.isValid) widget.onViewportInitialized?.call(initial);
+    }
+  }
+
+  void _retryWebBasemap() {
+    setState(() {
+      ++_webBasemapEpoch;
+      _tilesFailed = false;
+      _webBasemapReady = false;
+    });
   }
 
   void _scheduleWebFocus() {
@@ -125,7 +193,7 @@ class _PublicCityMapViewState extends State<PublicCityMapView> {
               for (final point in input.points)
                 LatLng(point.latitude, point.longitude),
             ]),
-            padding: const EdgeInsets.fromLTRB(48, 150, 48, 180),
+            padding: _webFocusPadding(),
             maxZoom: 14,
           ),
         );
@@ -133,15 +201,34 @@ class _PublicCityMapViewState extends State<PublicCityMapView> {
         _webMapController.move(
           LatLng(center.latitude, center.longitude),
           input.zoom,
+          offset: widget.contentRect == null
+              ? Offset.zero
+              : widget.contentRect!.center -
+                    Offset(
+                      _webMapController.camera.nonRotatedSize.x / 2,
+                      _webMapController.camera.nonRotatedSize.y / 2,
+                    ),
         );
       }
     });
   }
 
+  EdgeInsets _webFocusPadding() {
+    final box = context.findRenderObject();
+    final size = box is RenderBox && box.hasSize
+        ? box.size
+        : MediaQuery.sizeOf(context);
+    return MapDisplayPolicy.focusPadding(size, widget.contentRect);
+  }
+
   @override
   void dispose() {
+    ++_readerEpoch;
+    _readerChanges.changed();
+    _readerChanges.dispose();
     _webFocusSerial++;
     _webMapController.dispose();
+    _webDisplayRevision.dispose();
     super.dispose();
   }
 
@@ -149,6 +236,13 @@ class _PublicCityMapViewState extends State<PublicCityMapView> {
   Widget build(BuildContext context) {
     final city = widget.city;
     final viewport = city?.map;
+    final coordinateScope = _pointReaderScope();
+    final coordinateCallback = widget.onCoordinateSelected;
+    bool coordinateCurrent() =>
+        mounted &&
+        coordinateScope == _pointReaderScope() &&
+        identical(coordinateCallback, widget.onCoordinateSelected) &&
+        (widget.coordinateSourceCurrent?.call() ?? true);
     // The native basemap uses public build configuration, not business catalog
     // availability. A world camera is a view, never a guessed city or GPS fix.
     if (!kIsWeb &&
@@ -176,6 +270,15 @@ class _PublicCityMapViewState extends State<PublicCityMapView> {
         contextKey: city == null ? 'idle' : widget.contextKey,
         preserveViewport: widget.preserveViewport,
         ornamentTop: widget.ornamentTop,
+        contentRect: widget.contentRect,
+        focusRevision: widget.focusRevision,
+        onSelectedAnchor: widget.onSelectedAnchor,
+        readerChanges: widget.readerChanges,
+        currentReaderEntities: widget.currentReaderEntities,
+        currentReaderScope: widget.currentReaderScope,
+        onMapReaderVisibilityChanged: widget.onMapReaderVisibilityChanged,
+        onCoordinateSelected: city == null ? null : widget.onCoordinateSelected,
+        coordinateSourceCurrent: widget.coordinateSourceCurrent,
       );
     }
     if (city == null) {
@@ -185,6 +288,8 @@ class _PublicCityMapViewState extends State<PublicCityMapView> {
       return const _MapUnavailable('该城市尚未配置地图视图。');
     }
     if (viewport.provider == 'amap') {
+      if (coordinateCallback != null)
+        return const _MapUnavailable('当前地图尚不支持可核对的 WGS84 选点，请返回填写获准坐标。');
       return AMapCityMapView(
         key: ValueKey('${city.id}-amap'),
         city: city,
@@ -194,6 +299,17 @@ class _PublicCityMapViewState extends State<PublicCityMapView> {
         onPlaceSelected: widget.onPlaceSelected,
         onEntitySelected: widget.onEntitySelected,
         fullBleed: widget.fullBleed,
+        contextKey: widget.contextKey,
+        readerChanges: widget.readerChanges,
+        currentReaderEntities: widget.currentReaderEntities,
+        currentReaderScope: widget.currentReaderScope,
+        onMapReaderVisibilityChanged: widget.onMapReaderVisibilityChanged,
+        onSelectedAnchor: widget.onSelectedAnchor,
+        onCameraMotion: widget.onCameraMotion,
+        onMapUnavailable: widget.onMapUnavailable,
+        preserveViewport: widget.preserveViewport,
+        focusRevision: widget.focusRevision,
+        contentRect: widget.contentRect,
       );
     }
     if (viewport.provider != 'mapbox') {
@@ -236,6 +352,22 @@ class _PublicCityMapViewState extends State<PublicCityMapView> {
                 key: const ValueKey('now-mapbox-web'),
                 mapController: _webMapController,
                 options: MapOptions(
+                  onTap: coordinateCallback == null
+                      ? null
+                      : (_, point) {
+                          if (coordinateCurrent() &&
+                              _webMapReady &&
+                              _webBasemapReady &&
+                              !_tilesFailed &&
+                              point.latitude.isFinite &&
+                              point.longitude.isFinite &&
+                              point.latitude >= -90 &&
+                              point.latitude <= 90 &&
+                              point.longitude >= -180 &&
+                              point.longitude <= 180) {
+                            coordinateCallback(point.latitude, point.longitude);
+                          }
+                        },
                   initialCenter: LatLng(center.latitude, center.longitude),
                   initialZoom: focusInput.zoom,
                   onMapReady: () {
@@ -245,23 +377,30 @@ class _PublicCityMapViewState extends State<PublicCityMapView> {
                       return;
                     }
                     _webMapReady = true;
+                    _webDisplayRevision.value++;
                     _scheduleWebFocus();
                   },
                   initialCameraFit: focusInput.fitsBounds
                       ? CameraFit.bounds(
                           bounds: LatLngBounds.fromPoints(taskPoints),
-                          padding: const EdgeInsets.fromLTRB(48, 150, 48, 180),
+                          padding: _webFocusPadding(),
                           maxZoom: 14,
                         )
                       : null,
                   minZoom: 3,
                   maxZoom: 18,
-                  backgroundColor: const Color(0xFFE9ECE4),
+                  backgroundColor: Colors.transparent,
                   onMapEvent: (event) {
+                    if (event.source != MapEventSource.mapController &&
+                        event is! MapEventMoveEnd &&
+                        event is! MapEventFlingAnimationEnd) {
+                      widget.onCameraMotion?.call();
+                    }
                     if (event is! MapEventMoveEnd &&
                         event is! MapEventFlingAnimationEnd) {
                       return;
                     }
+                    _webDisplayRevision.value++;
                     if (event.source == MapEventSource.mapController) return;
                     final eventInput = _focusInput(widget);
                     final motion = _webMotionGeneration;
@@ -285,43 +424,43 @@ class _PublicCityMapViewState extends State<PublicCityMapView> {
                   },
                 ),
                 children: [
-                  TileLayer(
-                    urlTemplate:
-                        'https://api.mapbox.com/styles/v1/$mapboxStylePath/tiles/512/{z}/{x}/{y}?access_token=$_mapboxPublicToken',
-                    tileSize: 512,
-                    zoomOffset: -1,
-                    userAgentPackageName: 'com.birdtie.client',
-                    errorTileCallback: (tile, error, stackTrace) {
-                      if (mounted && !_tilesFailed) {
-                        setState(() => _tilesFailed = true);
-                      }
+                  Builder(
+                    builder: (mapContext) {
+                      final camera = MapCamera.of(mapContext);
+                      return MapboxWebBasemap(
+                        key: ValueKey('mapbox-web-basemap:$_webBasemapEpoch'),
+                        accessToken: _mapboxPublicToken,
+                        camera: MapboxWebCamera(
+                          latitude: camera.center.latitude,
+                          longitude: camera.center.longitude,
+                          zoom: camera.zoom,
+                          rotation: camera.rotation,
+                        ),
+                        onReady: () => _webBasemapStatus(true),
+                        onUnavailable: () => _webBasemapStatus(false),
+                      );
                     },
                   ),
-                  MarkerLayer(
-                    markers: [
-                      for (final place in points)
-                        Marker(
-                          point: LatLng(
-                            place.location.latitude!,
-                            place.location.longitude!,
-                          ),
-                          width: 44,
-                          height: 44,
-                          child: IconButton.filled(
-                            tooltip: place.name,
-                            onPressed: () => widget.onPlaceSelected(place),
-                            icon: const Icon(Icons.place, size: 20),
-                          ),
-                        ),
-                    ],
-                  ),
-                  if (widget.entities.isNotEmpty &&
-                      widget.onEntitySelected != null)
-                    MapEntityLayer(
+                  ValueListenableBuilder<int>(
+                    valueListenable: _webDisplayRevision,
+                    builder: (context, revision, _) => WebMapDisplayLayer(
+                      places: widget.places,
                       entities: widget.entities,
-                      selectedId: widget.selectedEntityId,
-                      onSelected: widget.onEntitySelected!,
+                      selectedID: widget.selectedEntityId,
+                      contentRect: widget.contentRect,
+                      revision: revision,
+                      onSelected: _selectWebEntity,
+                      readerChanges: Listenable.merge([
+                        _readerChanges,
+                        widget.readerChanges,
+                      ]),
+                      currentReaderEntities: _currentPointSource,
+                      currentReaderScope: _pointReaderScope,
+                      onMapReaderVisibilityChanged:
+                          widget.onMapReaderVisibilityChanged,
+                      onSelectedAnchor: widget.onSelectedAnchor,
                     ),
+                  ),
                 ],
               ),
             ),
@@ -332,10 +471,20 @@ class _PublicCityMapViewState extends State<PublicCityMapView> {
                 top: 12,
                 left: 12,
                 right: 12,
-                child: _MapNote(
-                  _tilesFailed
-                      ? '地图底图暂不可用，请使用地点列表。'
-                      : widget.placeStateMessage ?? '当前列表没有可公开的精确地点标记。',
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _MapNote(
+                      _tilesFailed
+                          ? '地图底图暂不可用，请使用地点列表。'
+                          : widget.placeStateMessage ?? '当前列表没有可公开的精确地点标记。',
+                    ),
+                    if (_tilesFailed)
+                      TextButton(
+                        onPressed: _retryWebBasemap,
+                        child: const Text('重试底图'),
+                      ),
+                  ],
                 ),
               ),
             Positioned(
@@ -363,6 +512,293 @@ class _PublicCityMapViewState extends State<PublicCityMapView> {
       ),
     );
   }
+
+  Object? _pointReaderScope() => mounted
+      ? (_readerEpoch, widget.currentReaderScope?.call() ?? widget.contextKey)
+      : null;
+  List<MapEntity> _currentPointSource() {
+    final source =
+        widget.currentReaderEntities?.call() ??
+        <MapEntity>[
+          ...widget.entities,
+          for (final place in widget.places)
+            if (place.location.hasPublicPoint)
+              MapEntity(
+                id: 'place:${place.id}',
+                kind: MapEntityKind.place,
+                title: place.name,
+                subtitle: place.summary,
+                latitude: place.location.latitude!,
+                longitude: place.location.longitude!,
+                placeID: place.id,
+                publicLocation: true,
+              ),
+        ];
+    final byID = <String, MapEntity>{};
+    for (final entity in source.where((e) => e.hasMapAnchor)) {
+      byID.putIfAbsent(entity.id, () => entity);
+    }
+    return byID.values.toList();
+  }
+
+  List<MapEntity> _currentClusterMembers(MapEntity cluster) {
+    final originals =
+        widget.currentReaderEntities?.call() ??
+        <MapEntity>[
+          ...widget.entities,
+          for (final place in widget.places)
+            if (place.location.hasPublicPoint)
+              MapEntity(
+                id: 'place:${place.id}',
+                kind: MapEntityKind.place,
+                title: place.name,
+                subtitle: place.summary,
+                latitude: place.location.latitude!,
+                longitude: place.location.longitude!,
+                placeID: place.id,
+                publicLocation: true,
+              ),
+        ];
+    final byID = {for (final entity in originals) entity.id: entity};
+    return [
+      for (final id in cluster.memberIDs)
+        if (byID[id] case final entity?) entity,
+    ];
+  }
+
+  Future<void> _selectWebEntity(MapEntity entity) async {
+    if (entity.isCluster) {
+      final selected = await showCurrentMapClusterMembers(
+        context: context,
+        cluster: entity,
+        changes: Listenable.merge([_readerChanges, widget.readerChanges]),
+        currentMembers: () => _currentClusterMembers(entity),
+        currentScope: () => mounted
+            ? (
+                _readerEpoch,
+                widget.currentReaderScope?.call() ?? widget.contextKey,
+              )
+            : null,
+        onVisibilityChanged: widget.onMapReaderVisibilityChanged,
+      );
+      if (!mounted || selected == null) return;
+      await _selectWebEntity(selected);
+      return;
+    }
+    for (final place in widget.places) {
+      if ('place:${place.id}' == entity.id) {
+        widget.onPlaceSelected(place);
+        return;
+      }
+    }
+    widget.onEntitySelected?.call(entity);
+  }
+}
+
+/// The actual FlutterMap layer used by the Mapbox Web provider. Keeping this
+/// provider boundary mountable also lets widget tests exercise real projection,
+/// true-anchor shapes and current-source selection without a second map backend.
+class WebMapDisplayLayer extends StatefulWidget {
+  const WebMapDisplayLayer({
+    super.key,
+    required this.places,
+    required this.entities,
+    required this.selectedID,
+    required this.contentRect,
+    required this.revision,
+    required this.onSelected,
+    required this.readerChanges,
+    required this.currentReaderEntities,
+    required this.currentReaderScope,
+    this.onMapReaderVisibilityChanged,
+    this.onSelectedAnchor,
+  });
+  final List<PublicPlace> places;
+  final List<MapEntity> entities;
+  final String? selectedID;
+  final Rect? contentRect;
+  final int revision;
+  final ValueChanged<MapEntity> onSelected;
+  final Listenable readerChanges;
+  final List<MapEntity> Function() currentReaderEntities;
+  final Object? Function() currentReaderScope;
+  final ValueChanged<({Object token, bool visible})>?
+  onMapReaderVisibilityChanged;
+  final ValueChanged<({String? id, Offset? point})>? onSelectedAnchor;
+  @override
+  State<WebMapDisplayLayer> createState() => _WebMapDisplayLayerState();
+}
+
+class _WebMapDisplayLayerState extends State<WebMapDisplayLayer> {
+  String? _inputs;
+  MapDisplayPlan? _plan;
+
+  final _readerChanges = MapReaderChanges();
+  int _readerEpoch = 0, _anchorFrame = 0;
+  Object? _pointReaderScope() =>
+      mounted ? (_readerEpoch, widget.currentReaderScope()) : null;
+  List<MapEntity> _currentPointSource() => {
+    for (final entity in widget.currentReaderEntities())
+      if (entity.hasMapAnchor) entity.id: entity,
+  }.values.toList();
+
+  Map<String, Offset> _project(Iterable<MapEntity> source, MapCamera camera) =>
+      {
+        for (final entity in source)
+          if (entity.hasMapAnchor)
+            entity.id: () {
+              final point = camera.latLngToScreenPoint(
+                LatLng(entity.latitude, entity.longitude),
+              );
+              return Offset(point.x, point.y);
+            }(),
+      };
+
+  @override
+  void didUpdateWidget(WebMapDisplayLayer oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _readerChanges.changed();
+    });
+  }
+
+  @override
+  void dispose() {
+    ++_readerEpoch;
+    ++_anchorFrame;
+    _readerChanges.changed();
+    _readerChanges.dispose();
+    super.dispose();
+  }
+
+  bool _pointChoiceOpen = false;
+  Future<void> _selectPoint(MapEntity tapped) async {
+    if (!mounted || _pointChoiceOpen) return;
+    if (tapped.isCluster) {
+      widget.onSelected(tapped);
+      return;
+    }
+    _pointChoiceOpen = true;
+    final scope = _pointReaderScope();
+    try {
+      final source = _currentPointSource();
+      final camera = MapCamera.of(context);
+      final rawPositions = _project(source, camera);
+      final hits = MapDisplayPolicy.overlappingHitTargets(
+        entities: source,
+        tappedID: tapped.id,
+        positions: rawPositions,
+      );
+      // Independent 48 dp targets may overlap at their true anchors. Keep
+      // every exact-anchor sibling reachable through the current chooser.
+      final sameAnchor = source.where(
+        (entity) =>
+            tapped.precision == 'point' &&
+            entity.precision == 'point' &&
+            {MapEntityKind.place, MapEntityKind.moment}.contains(tapped.kind) &&
+            {MapEntityKind.place, MapEntityKind.moment}.contains(entity.kind) &&
+            entity.latitude == tapped.latitude &&
+            entity.longitude == tapped.longitude,
+      );
+      if (!source.any(
+        (entity) => entity.id == tapped.id && entity.kind == tapped.kind,
+      ))
+        return;
+      final identities = [
+        ...hits,
+        ...sameAnchor,
+      ].map((e) => (e.id, e.kind)).toSet();
+      List<MapEntity> freshHits() => _currentPointSource()
+          .where((e) => identities.contains((e.id, e.kind)))
+          .toList();
+      final fresh = freshHits();
+      if (fresh.isEmpty || scope != _pointReaderScope()) return;
+      final selected = fresh.length == 1
+          ? fresh.single
+          : await showCurrentMapPointChoices(
+              context: context,
+              changes: Listenable.merge([_readerChanges, widget.readerChanges]),
+              currentCandidates: freshHits,
+              currentScope: _pointReaderScope,
+              onVisibilityChanged: widget.onMapReaderVisibilityChanged,
+            );
+      if (selected != null && mounted && scope == _pointReaderScope()) {
+        final current = freshHits()
+            .where((e) => e.id == selected.id && e.kind == selected.kind)
+            .firstOrNull;
+        if (current != null) widget.onSelected(current);
+      }
+    } finally {
+      _pointChoiceOpen = false;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final camera = MapCamera.of(context);
+    final unique = <String, MapEntity>{};
+    for (final entity in <MapEntity>[
+      ...widget.entities,
+      for (final place in widget.places)
+        if (place.location.hasPublicPoint)
+          MapEntity(
+            id: 'place:${place.id}',
+            kind: MapEntityKind.place,
+            title: place.name,
+            subtitle: place.summary,
+            latitude: place.location.latitude!,
+            longitude: place.location.longitude!,
+            placeID: place.id,
+            publicLocation: true,
+          ),
+    ]) {
+      unique.putIfAbsent(entity.id, () => entity);
+    }
+    final positions = _project(unique.values, camera);
+    final inputs =
+        '${widget.revision}:${widget.selectedID}:${unique.values.map((e) => '${e.id}:${e.kind}:${e.title}:${e.subtitle}:${e.latitude}:${e.longitude}:${e.placeID}:${e.precision}:${e.isTaskResult}:${e.memberIDs.join(',')}:${e.decorationKey}').join('|')}';
+    // Moving the camera repositions the existing MarkerLayer. Recompute its
+    // density only after the camera settles, or authorized source changes.
+    if (_inputs != inputs) {
+      _inputs = inputs;
+      _plan = MapDisplayPolicy.plan(
+        entities: unique.values.toList(),
+        zoom: camera.zoom,
+        selectedID: widget.selectedID,
+        contentRect: widget.contentRect,
+        previouslyVisibleIDs:
+            _plan?.entities.map((e) => e.id).toSet() ?? const {},
+        protectedIDs: {
+          for (final entity in unique.values)
+            if (entity.isTaskResult) entity.id,
+        },
+        positions: positions,
+      );
+    }
+    final selected = unique[widget.selectedID];
+    final anchor = (
+      id: widget.selectedID,
+      point: selected?.hasMapAnchor == true ? positions[selected!.id]! : null,
+    );
+    final frame = ++_anchorFrame, scope = _pointReaderScope();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted &&
+          frame == _anchorFrame &&
+          scope == _pointReaderScope() &&
+          widget.selectedID == anchor.id) {
+        widget.onSelectedAnchor?.call(anchor);
+      }
+    });
+    return MapEntityLayer(
+      entities: _plan!.entities,
+      labelIDs: _plan!.labelIDs,
+      denseIDs: _plan!.denseIDs,
+      selectedId: widget.selectedID,
+      onSelected: (entity) {
+        if (scope == _pointReaderScope()) _selectPoint(entity);
+      },
+    );
+  }
 }
 
 class _MapUnavailable extends StatelessWidget {
@@ -374,7 +810,7 @@ class _MapUnavailable extends StatelessWidget {
     height: double.infinity,
     alignment: Alignment.center,
     decoration: BoxDecoration(
-      color: const Color(0xFFE9ECE4),
+      color: Theme.of(context).colorScheme.surface,
       borderRadius: BorderRadius.circular(18),
     ),
     child: Padding(
@@ -392,10 +828,10 @@ class _MapNote extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
     decoration: BoxDecoration(
-      color: Colors.white.withValues(alpha: 0.94),
+      color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.94),
       borderRadius: BorderRadius.circular(8),
     ),
-    child: Text(message, style: const TextStyle(fontSize: 12)),
+    child: Text(message, style: Theme.of(context).textTheme.bodySmall),
   );
 }
 
@@ -408,7 +844,7 @@ class _MapboxAttribution extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
     decoration: BoxDecoration(
-      color: Colors.white.withValues(alpha: 0.96),
+      color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.94),
       borderRadius: BorderRadius.circular(8),
     ),
     child: Wrap(
@@ -460,11 +896,9 @@ class _AttributionLink extends StatelessWidget {
     onTap: () => onOpen(address),
     child: Text(
       label,
-      style: const TextStyle(
-        fontSize: 11,
-        color: Color(0xFF193B32),
-        decoration: TextDecoration.underline,
-      ),
+      style: Theme.of(
+        context,
+      ).textTheme.bodySmall?.copyWith(decoration: TextDecoration.underline),
     ),
   );
 }

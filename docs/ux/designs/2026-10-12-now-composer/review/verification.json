@@ -1,0 +1,51 @@
+{
+  "errors": [],
+  "checks": [
+    {
+      "name": "菜单返回保留输入",
+      "passed": true
+    },
+    {
+      "name": "语音取消保留原稿",
+      "passed": true
+    },
+    {
+      "name": "转写填稿未自动发送",
+      "passed": true
+    },
+    {
+      "name": "手动提交展示同地点卡",
+      "passed": true
+    },
+    {
+      "name": "回地图后恢复阅读位置",
+      "passed": true
+    },
+    {
+      "name": "预览明确正文与受众",
+      "passed": true
+    },
+    {
+      "name": "选中地点进入草稿字段及预览",
+      "passed": true
+    },
+    {
+      "name": "短回答导航与来源完整可见",
+      "passed": true
+    },
+    {
+      "name": "窄屏无横向溢出",
+      "passed": true
+    },
+    {
+      "name": "输入面板贴键盘边缘",
+      "passed": true
+    },
+    {
+      "name": "大文字正文与输入可滚动",
+      "passed": true
+    }
+  ],
+  "passed": true,
+  "scope": "浏览器设计原型；非原生产品验收"
+}

@@ -27,7 +27,7 @@ func followTargetVisible(kind string) string {
 	switch kind {
 	case follow.Person:
 		return `EXISTS(SELECT 1 FROM accounts a JOIN user_profiles p ON p.account_id=a.id
-			WHERE a.id=$2 AND a.account_type='person' AND a.status='active' AND p.visibility='public'
+			WHERE a.id=$2 AND a.account_type='person' AND a.status='active' AND birdtie_profile_visible_to(a.id,$1::uuid)
 			AND a.id<>$1 AND NOT EXISTS(SELECT 1 FROM account_blocks b WHERE
 			(b.blocker_account_id=$1 AND b.blocked_account_id=a.id) OR
 			(b.blocker_account_id=a.id AND b.blocked_account_id=$1)))`
@@ -129,10 +129,10 @@ func (s *Store) ListOwnFollows(ctx context.Context, actor string) ([]follow.Reco
                 THEN COALESCE(NULLIF(p.display_name,''),NULLIF(person.handle,''),'Birdtie 成员')
                 ELSE 'Birdtie 成员' END
             ELSE COALESCE(o.name,c.name,b.name,'Birdtie 成员') END,
-		f.created_at
+		f.created_at,birdtie_person_avatar_metadata(f.person_account_id,$1::uuid)
 		FROM follows f
 		LEFT JOIN accounts person ON person.id=f.person_account_id AND person.status='active'
-		LEFT JOIN user_profiles p ON p.account_id=person.id AND p.visibility='public'
+		LEFT JOIN user_profiles p ON p.account_id=person.id AND birdtie_profile_visible_to(person.id,$1::uuid)
 		LEFT JOIN organizations o ON o.id=f.organization_id AND o.status='active'
 		LEFT JOIN communities c ON c.id=f.community_id AND c.lifecycle_status='active'
 			AND c.publication_status='published' AND c.visibility='public'
@@ -153,7 +153,7 @@ func (s *Store) ListOwnFollows(ctx context.Context, actor string) ([]follow.Reco
 	for rows.Next() {
 		var item follow.Record
 		if err := rows.Scan(&item.ID, &item.Target.Type, &item.Target.ID,
-			&item.Label, &item.CreatedAt); err != nil {
+			&item.Label, &item.CreatedAt, &item.Avatar); err != nil {
 			return nil, err
 		}
 		out = append(out, item)

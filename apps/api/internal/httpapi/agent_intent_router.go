@@ -25,7 +25,23 @@ func emptyAgentResults(cityID, query string) agentworkspace.Results {
 func (s *server) executeSpecialAgentIntent(w http.ResponseWriter, r *http.Request,
 	task agentworkspace.Task, intent agentworkspace.MVPIntent, query, cityID, actorID,
 	principalType, workspace, role string, permissions []string, bounds *agentworkspace.MapBounds, digest [32]byte) {
+	if intent.Reason == agentworkspace.RestaurantDiscovery && intent.LocationPreference == "city" {
+		bounds = nil
+	}
+	if intent.Reason == agentworkspace.RestaurantDiscovery && intent.LocationPreference == "viewport" && bounds == nil {
+		intent.Supported, intent.Reason = false, "map_bounds_required"
+	}
+	if intent.Reason == agentworkspace.ExplicitPlaceRefinement {
+		if intent.LocationPreference == "city" {
+			bounds = nil // An explicit city change retires the prior viewport.
+		} else if bounds == nil {
+			intent.Supported, intent.Reason = false, "map_bounds_required"
+		}
+	}
 	usesBuilder := actorID != "" && principalType == "person" && intent.Supported && (intent.Operation == agentworkspace.FindPlace || intent.Operation == agentworkspace.CompareResults)
+	if intent.Operation == agentworkspace.FindPlace && intent.Supported {
+		task = specialPlaceTaskSlots(task, intent, query, bounds)
+	}
 	if usesBuilder {
 		if task.Filters == nil {
 			task.Filters = map[string]string{}
@@ -71,6 +87,15 @@ func (s *server) executeSpecialAgentIntent(w http.ResponseWriter, r *http.Reques
 	}
 	task.Filters["targetIntent"] = intent.Target
 	task.Filters["searchTerm"] = intent.SearchTerm
+	if intent.Operation == agentworkspace.FindPlace {
+		task.Filters["category"] = intent.Category
+		task.Filters["timePreference"] = intent.TimePreference
+		if intent.DistancePreference == "" {
+			delete(task.Filters, "distancePreference")
+		} else {
+			task.Filters["distancePreference"] = intent.DistancePreference
+		}
+	}
 	task.Filters["locationPreference"] = intent.LocationPreference
 	task.Filters["currentQuery"] = query
 	task.Filters["reason"] = intent.Reason
@@ -81,10 +106,26 @@ func (s *server) executeSpecialAgentIntent(w http.ResponseWriter, r *http.Reques
 		for key, value := range bounds.Filters() {
 			task.Filters[key] = value
 		}
+	} else if intent.Operation == agentworkspace.FindPlace {
+		for _, key := range []string{"mapWest", "mapSouth", "mapEast", "mapNorth"} {
+			delete(task.Filters, key)
+		}
 	}
-	task, r, err = s.finishCurrentNowQuery(r, digest, task, message)
+	if intent.Reason == agentworkspace.RestaurantDiscovery && principalType == "person" {
+		result.OnlinePlaceSearch, err = s.discoverOnlineRestaurants(r.Context(), cityID, query, w.Header().Get("X-Request-ID"), bounds, isOnlineRestaurantRefresh(query))
+		if err == nil {
+			message = onlineRestaurantMessage(result.OnlinePlaceSearch, len(result.Places))
+			task, err = s.finishOnlineRestaurantQuery(r, digest, task, result.OnlinePlaceSearch, message)
+			if err == nil {
+				result.OnlinePlaceSearch = task.Conversation[len(task.Conversation)-1].ExternalPlaceReply
+			}
+		}
+		w.Header().Set("Cache-Control", "no-store")
+	} else {
+		task, r, err = s.finishCurrentNowQuery(r, digest, task, message)
+	}
 	if err != nil {
-		serverError(w, err)
+		agentTaskWriteFailure(w, err, principalType == "organization")
 		return
 	}
 	result.Message = message
@@ -102,6 +143,37 @@ func (s *server) executeSpecialAgentIntent(w http.ResponseWriter, r *http.Reques
 	s.respondCurrentAgentTask(w, r, result, digest, responseActor)
 }
 
+// Persist the final explicit search before the original context/source read.
+// No prior selected-place correlation can constrain a new category/scope.
+func specialPlaceTaskSlots(task agentworkspace.Task, intent agentworkspace.MVPIntent, query string, bounds *agentworkspace.MapBounds) agentworkspace.Task {
+	filters := make(map[string]string, len(task.Filters)+8)
+	for key, value := range task.Filters {
+		filters[key] = value
+	}
+	task.Filters = filters
+	if intent.Reason == agentworkspace.ExplicitPlaceRefinement {
+		agentworkspace.ClearPlaceFollowupContext(&task)
+		delete(task.Filters, "resultIDs")
+	}
+	task.Intent, task.Status = agentworkspace.FindPlace, agentworkspace.TaskActive
+	task.Filters["targetIntent"], task.Filters["searchTerm"], task.Filters["currentQuery"] = agentworkspace.FindPlace, intent.SearchTerm, query
+	task.Filters["category"], task.Filters["locationPreference"], task.Filters["timePreference"] = intent.Category, intent.LocationPreference, intent.TimePreference
+	task.Filters["reason"] = intent.Reason
+	delete(task.Filters, "distancePreference")
+	if intent.DistancePreference != "" {
+		task.Filters["distancePreference"] = intent.DistancePreference
+	}
+	for _, key := range []string{"mapWest", "mapSouth", "mapEast", "mapNorth"} {
+		delete(task.Filters, key)
+	}
+	if bounds != nil {
+		for key, value := range bounds.Filters() {
+			task.Filters[key] = value
+		}
+	}
+	return task
+}
+
 func (s *server) specialAgentResults(ctx context.Context, task agentworkspace.Task,
 	intent agentworkspace.MVPIntent, query, cityID, actorID string,
 	bounds *agentworkspace.MapBounds) (agentworkspace.Results, string, error) {
@@ -112,6 +184,8 @@ func (s *server) specialAgentResults(ctx context.Context, task agentworkspace.Ta
 			return result, "请先移动地图并选定搜索范围。", nil
 		case "previous_results_required":
 			return result, "请先搜索活动，再继续筛选或比较结果。", nil
+		case "previous_place_results_required":
+			return result, "请先查询地点，再明确要继续查看的地点类别或范围。", nil
 		case "opportunity_filters_unavailable":
 			return result, "社交机会暂不支持额外筛选。请先输入“我的社交机会”，再查看原活动详情。", nil
 		default:
@@ -164,6 +238,9 @@ func (s *server) specialAgentResults(ctx context.Context, task agentworkspace.Ta
 			return result, "", err
 		}
 		for _, place := range places {
+			if intent.Category != "" && place.CategoryCode != intent.Category {
+				continue
+			}
 			if bounds != nil && !pointInBounds(place.Location, bounds) {
 				continue
 			}

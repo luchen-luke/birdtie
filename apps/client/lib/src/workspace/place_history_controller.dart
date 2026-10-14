@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../config/birdtie_environment.dart';
+import 'public_moment_api.dart';
 
 class PlaceHistoryMoment {
   const PlaceHistoryMoment(
@@ -10,11 +11,14 @@ class PlaceHistoryMoment {
     this.publishedAt, {
     this.id,
     this.revision,
+    this.authorPublicProfile,
   });
   final String title, excerpt;
   final DateTime publishedAt;
   final String? id;
   final int? revision;
+  final PublicMomentAuthorProfile? authorPublicProfile;
+  String? get authorID => authorPublicProfile?.accountID;
 }
 
 class PlaceHistoryPattern {
@@ -60,8 +64,9 @@ class PlaceHistorySummary {
 
   factory PlaceHistorySummary.fromJson(
     Map<String, dynamic> d,
-    String expected,
-  ) {
+    String expected, {
+    bool includePublicAuthor = false,
+  }) {
     _keys(d, {
       'schemaVersion',
       'placeId',
@@ -74,7 +79,10 @@ class PlaceHistorySummary {
       'activityPatterns',
       'suitability',
     });
-    if (d['schemaVersion'] != 'place-social-history-v1' ||
+    if (d['schemaVersion'] !=
+            (includePublicAuthor
+                ? 'place-social-history-v2'
+                : 'place-social-history-v1') ||
         d['placeId'] != expected ||
         !_uuid.hasMatch(expected) ||
         d['cityId'] is! String ||
@@ -98,7 +106,14 @@ class PlaceHistorySummary {
     final ids = <String>{}, moments = <PlaceHistoryMoment>[];
     for (final row in rows) {
       final r = row as Map<String, dynamic>;
-      _keys(r, {'id', 'title', 'excerpt', 'revision', 'publishedAt'});
+      _keys(r, {
+        'id',
+        'title',
+        'excerpt',
+        'revision',
+        'publishedAt',
+        if (includePublicAuthor) ...{'authorId', 'authorPublicProfile'},
+      });
       if (r['id'] is! String ||
           !_uuid.hasMatch(r['id']) ||
           !ids.add(r['id']) ||
@@ -124,6 +139,9 @@ class PlaceHistorySummary {
           at,
           id: r['id'],
           revision: r['revision'],
+          authorPublicProfile: includePublicAuthor
+              ? PublicMomentAuthorProfile.fromPublicPair(r)
+              : null,
         ),
       );
     }
@@ -292,6 +310,7 @@ class PlaceHistoryController extends ChangeNotifier {
   PlaceHistoryController({
     required this.placeID,
     required this.authorizationHeader,
+    this.includePublicAuthor = false,
     http.Client? client,
     String? apiBaseUrl,
   }) : _client = client ?? http.Client(),
@@ -299,6 +318,7 @@ class PlaceHistoryController extends ChangeNotifier {
        _base = apiBaseUrl ?? BirdtieEnvironment.apiBaseUrl;
   final String placeID, _base;
   final String? Function() authorizationHeader;
+  final bool includePublicAuthor;
   final http.Client _client;
   final bool _ownsClient;
   bool _closed = false, _loading = false;
@@ -356,6 +376,10 @@ class PlaceHistoryController extends ChangeNotifier {
           .get(
             Uri.parse(
               '${_base.replaceFirst(RegExp(r'/$'), '')}/v1/places/${Uri.encodeComponent(placeID)}/social-history',
+            ).replace(
+              queryParameters: includePublicAuthor
+                  ? {'include': 'public-author'}
+                  : null,
             ),
             headers: token == null ? {} : {'Authorization': token},
           )
@@ -367,7 +391,11 @@ class PlaceHistoryController extends ChangeNotifier {
           raw['data'] is! Map<String, dynamic>) {
         throw const FormatException();
       }
-      final next = PlaceHistorySummary.fromJson(raw['data'], placeID);
+      final next = PlaceHistorySummary.fromJson(
+        raw['data'],
+        placeID,
+        includePublicAuthor: includePublicAuthor,
+      );
       if (_current(token, epoch, serial)) _summary = next;
     } catch (_) {
       if (_current(token, epoch, serial)) _error = '公开摘要暂不可用，请重试。';

@@ -1,49 +1,163 @@
-import 'dart:convert';
-
 import 'package:http/http.dart' as http;
-
 import '../config/birdtie_environment.dart';
+import 'organization_human_control.dart';
+
+const organizationMemberRoles = {'owner', 'admin', 'moderator', 'member'};
 
 class OrganizationMember {
   const OrganizationMember({
     required this.id,
     required this.organizationID,
     required this.userAccountID,
-    required this.displayName,
     required this.role,
     required this.status,
+    required this.version,
+    required this.authorityVersion,
+    this.displayName = '',
     this.organizationName = '',
   });
-  final String id;
-  final String organizationID;
-  final String userAccountID;
-  final String displayName;
-  final String role;
-  final String status;
-  final String organizationName;
+  final String id,
+      organizationID,
+      userAccountID,
+      displayName,
+      role,
+      status,
+      organizationName;
+  final int version, authorityVersion;
+  factory OrganizationMember.fromJson(Map<String, dynamic> raw) {
+    final m = organizationControlObject(
+      raw,
+      const {
+        'id',
+        'organizationId',
+        'userAccountId',
+        'role',
+        'status',
+        'version',
+        'authorityVersion',
+      },
+      optional: const {'displayName', 'organizationName'},
+    );
+    if (!organizationControlID(m['id']) ||
+        !organizationControlID(m['organizationId']) ||
+        !organizationControlID(m['userAccountId']) ||
+        !organizationMemberRoles.contains(m['role']) ||
+        !const {'invited', 'active', 'removed'}.contains(m['status']) ||
+        !organizationControlVersion(m['version'], zero: false) ||
+        !organizationControlVersion(m['authorityVersion'], zero: false) ||
+        m.containsKey('displayName') &&
+            !organizationControlText(m['displayName'], 80, empty: false) ||
+        m.containsKey('organizationName') &&
+            !organizationControlText(
+              m['organizationName'],
+              200,
+              empty: false,
+            )) {
+      throw const FormatException('组织成员资料或版本不符');
+    }
+    return OrganizationMember(
+      id: m['id'],
+      organizationID: m['organizationId'],
+      userAccountID: m['userAccountId'],
+      displayName: m['displayName'] ?? '',
+      role: m['role'],
+      status: m['status'],
+      version: m['version'],
+      authorityVersion: m['authorityVersion'],
+      organizationName: m['organizationName'] ?? '',
+    );
+  }
+}
 
-  factory OrganizationMember.fromJson(Map<String, dynamic> json) =>
-      OrganizationMember(
-        id: json['id'] as String,
-        organizationID: json['organizationId'] as String,
-        userAccountID: json['userAccountId'] as String,
-        displayName: json['displayName'] as String,
-        role: json['role'] as String,
-        status: json['status'] as String,
-        organizationName: json['organizationName'] as String? ?? '',
-      );
+class OrganizationMembersControl {
+  const OrganizationMembersControl({
+    required this.organizationID,
+    required this.authorityVersion,
+    required this.role,
+    required this.members,
+    required this.observedAt,
+    required this.expiresAt,
+  });
+  final String organizationID, role;
+  final int authorityVersion;
+  final List<OrganizationMember> members;
+  final DateTime observedAt, expiresAt;
+  bool get current => expiresAt.isAfter(DateTime.now().toUtc());
+  bool get canManage =>
+      current &&
+      const {'owner', 'admin'}.contains(role) &&
+      authorityVersion < organizationMaxControlVersion;
+  bool canChange(OrganizationMember m) =>
+      canManage &&
+      m.version < organizationMaxControlVersion &&
+      m.status != 'removed' &&
+      (role == 'owner' || m.role != 'owner' && m.role != 'admin');
+  factory OrganizationMembersControl.fromJson(Object? raw, String org) {
+    final m = organizationControlObject(raw, const {
+      'organizationId',
+      'authorityVersion',
+      'role',
+      'members',
+      'observedAt',
+      'expiresAt',
+    });
+    final observed = organizationControlTime(m['observedAt']),
+        expires = organizationControlTime(m['expiresAt']);
+    organizationControlLease(observed, expires);
+    if (m['organizationId'] != org ||
+        !organizationControlID(org) ||
+        !organizationControlVersion(m['authorityVersion'], zero: false) ||
+        !organizationMemberRoles.contains(m['role']) ||
+        m['members'] is! List ||
+        (m['members'] as List).length > 2000) {
+      throw const FormatException('组织成员来源不符');
+    }
+    final members = (m['members'] as List)
+        .map((e) {
+          if (e is! Map<String, dynamic>)
+            throw const FormatException('组织成员资料不符');
+          return OrganizationMember.fromJson(e);
+        })
+        .toList(growable: false);
+    if (members.any(
+          (e) =>
+              e.organizationID != org ||
+              e.authorityVersion != m['authorityVersion'],
+        ) ||
+        members.map((e) => e.id).toSet().length != members.length ||
+        members.map((e) => e.userAccountID).toSet().length != members.length)
+      throw const FormatException('组织成员目标或版本重复');
+    return OrganizationMembersControl(
+      organizationID: org,
+      authorityVersion: m['authorityVersion'],
+      role: m['role'],
+      members: members,
+      observedAt: observed,
+      expiresAt: expires,
+    );
+  }
+}
+
+class OrganizationInvitePerson {
+  const OrganizationInvitePerson(this.accountID, this.displayName);
+  final String accountID, displayName;
+  factory OrganizationInvitePerson.fromJson(Object? raw) {
+    final m = organizationControlObject(raw, const {
+      'accountId',
+      'displayName',
+    });
+    if (!organizationControlID(m['accountId']) ||
+        !organizationControlText(m['displayName'], 80, empty: false)) {
+      throw const FormatException('获准的人员搜索资料不符');
+    }
+    return OrganizationInvitePerson(m['accountId'], m['displayName']);
+  }
 }
 
 class OrganizationMembershipException implements Exception {
   const OrganizationMembershipException(this.status);
   final int status;
-  String get message => switch (status) {
-    400 => '账号 ID 或角色无效。',
-    401 => '登录已失效，请重新登录。',
-    403 => '没有执行此操作的权限。',
-    409 => '邀请已存在、角色未变化，或不能移除最后一位所有者。',
-    _ => '成员操作暂不可用，请稍后重试。',
-  };
+  String get message => OrganizationControlFailure(status).message;
 }
 
 class OrganizationMembershipApi {
@@ -51,103 +165,96 @@ class OrganizationMembershipApi {
     required this.authorizationHeader,
     http.Client? client,
     String? apiBaseUrl,
+    bool Function()? current,
   }) : _client = client ?? http.Client(),
-       _base = apiBaseUrl ?? BirdtieEnvironment.apiBaseUrl;
-
+       _ownsClient = client == null,
+       baseUrl = apiBaseUrl ?? BirdtieEnvironment.apiBaseUrl,
+       current = current;
   final String? Function() authorizationHeader;
   final http.Client _client;
-  final String _base;
-  void dispose() => _client.close();
+  final bool _ownsClient;
+  final String baseUrl;
+  final bool Function()? current;
+  http.Client get client => _client;
+  OrganizationHumanControlApi get controlApi => OrganizationHumanControlApi(
+    client: _client,
+    baseUrl: baseUrl,
+    authorizationHeader: authorizationHeader,
+    current: current,
+  );
+  void dispose() {
+    if (_ownsClient) _client.close();
+  }
 
-  Uri _uri(String path) =>
-      Uri.parse('${_base.replaceFirst(RegExp(r'/$'), '')}$path');
-  Map<String, String> get _headers => {
-    'Accept': 'application/json',
-    'Authorization': ?authorizationHeader(),
-  };
-
-  Future<http.Response> _send(
-    String method,
-    String path, {
-    Map<String, dynamic>? body,
+  Future<OrganizationMembersControl> membersControl(
+    String org, {
+    bool Function()? guard,
   }) async {
-    if (_base.isEmpty || authorizationHeader() == null) {
-      throw const OrganizationMembershipException(401);
-    }
-    final request = http.Request(method, _uri(path))..headers.addAll(_headers);
-    if (body != null) {
-      request.headers['Content-Type'] = 'application/json';
-      request.body = jsonEncode(body);
-    }
-    final response = await _client
-        .send(request)
-        .timeout(const Duration(seconds: 10));
-    return http.Response.fromStream(response);
-  }
-
-  List<OrganizationMember> _list(http.Response response) {
-    if (response.statusCode != 200) {
-      throw OrganizationMembershipException(response.statusCode);
-    }
-    final data =
-        (jsonDecode(response.body) as Map<String, dynamic>)['data']
-            as List<dynamic>;
-    return data
-        .map(
-          (item) => OrganizationMember.fromJson(item as Map<String, dynamic>),
-        )
-        .toList();
-  }
-
-  OrganizationMember _one(http.Response response, int expected) {
-    if (response.statusCode != expected) {
-      throw OrganizationMembershipException(response.statusCode);
-    }
-    return OrganizationMember.fromJson(
-      (jsonDecode(response.body) as Map<String, dynamic>)['data']
-          as Map<String, dynamic>,
+    final api = guard == null ? controlApi : controlApi.scoped(guard);
+    return OrganizationMembersControl.fromJson(
+      await api.json('GET', '${api.path(org)}/members/control'),
+      org,
     );
   }
 
-  Future<List<OrganizationMember>> list(String organizationID) async =>
-      _list(await _send('GET', '/v1/me/organizations/$organizationID/members'));
-  Future<List<OrganizationMember>> invitations() async =>
-      _list(await _send('GET', '/v1/me/organization-invitations'));
-  Future<OrganizationMember> invite(
-    String organizationID,
-    String accountID,
-    String role,
-  ) async => _one(
-    await _send(
-      'POST',
-      '/v1/me/organizations/$organizationID/members',
-      body: {'userAccountId': accountID, 'role': role},
-    ),
-    201,
-  );
-  Future<OrganizationMember> accept(String membershipID) async => _one(
-    await _send('POST', '/v1/me/organization-invitations/$membershipID/accept'),
-    200,
-  );
+  Future<List<OrganizationMember>> list(String org) async =>
+      (await membersControl(org)).members;
+  Future<List<OrganizationMember>> invitations({bool Function()? guard}) async {
+    final api = guard == null ? controlApi : controlApi.scoped(guard);
+    final data = await api.json('GET', '/v1/me/organization-invitations');
+    if (data is! List || data.length > 2000)
+      throw const FormatException('组织邀请资料不符');
+    final result = data
+        .map((e) {
+          if (e is! Map<String, dynamic>)
+            throw const FormatException('组织邀请资料不符');
+          return OrganizationMember.fromJson(e);
+        })
+        .toList(growable: false);
+    if (result.any((m) => m.status != 'invited') ||
+        result.map((m) => m.id).toSet().length != result.length) {
+      throw const FormatException('邀请目标或状态不符');
+    }
+    return result;
+  }
+
+  Future<String> personalOwner({bool Function()? guard}) async {
+    final api = guard == null ? controlApi : controlApi.scoped(guard);
+    final data = await api.json('GET', '/v1/me');
+    if (data is! Map<String, dynamic> || !organizationControlID(data['id']))
+      throw const FormatException('当前个人账号不符');
+    return data['id'];
+  }
+
+  Future<List<OrganizationInvitePerson>> searchPeople(
+    String query, {
+    bool Function()? guard,
+  }) async {
+    final q = query.trim();
+    if (q.runes.length < 2 || !organizationControlText(q, 80, empty: false))
+      throw const FormatException('请输入至少两个字，且不超过80字节的姓名。');
+    final api = guard == null ? controlApi : controlApi.scoped(guard);
+    final data = await api.json('GET', '/v1/people/search', query: {'q': q});
+    if (data is! List || data.length > 20)
+      throw const FormatException('人员搜索结果不符');
+    final list = data
+        .map(OrganizationInvitePerson.fromJson)
+        .toList(growable: false);
+    if (list.map((p) => p.accountID).toSet().length != list.length)
+      throw const FormatException('人员搜索目标重复');
+    return list;
+  }
+
+  // Old callers cannot bypass the explicit original preview and approval.
+  Future<OrganizationMember> invite(String org, String id, String role) async =>
+      throw const OrganizationMembershipException(409);
+  Future<OrganizationMember> accept(String membershipID) async =>
+      throw const OrganizationMembershipException(409);
   Future<OrganizationMember> changeRole(
-    String organizationID,
-    String membershipID,
+    String org,
+    String id,
     String role,
-  ) async => _one(
-    await _send(
-      'PUT',
-      '/v1/me/organizations/$organizationID/members/$membershipID/role',
-      body: {'role': role},
-    ),
-    200,
-  );
-  Future<void> revoke(String organizationID, String membershipID) async {
-    final response = await _send(
-      'DELETE',
-      '/v1/me/organizations/$organizationID/members/$membershipID',
-    );
-    if (response.statusCode != 204) {
-      throw OrganizationMembershipException(response.statusCode);
-    }
-  }
+  ) async => throw const OrganizationMembershipException(409);
+  Future<void> revoke(String org, String id) async =>
+      throw const OrganizationMembershipException(409);
 }

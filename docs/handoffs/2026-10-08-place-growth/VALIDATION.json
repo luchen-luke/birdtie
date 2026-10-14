@@ -1,0 +1,19 @@
+{
+  "artifact_checks": "PASS",
+  "task_count": 26,
+  "unique_ids": true,
+  "internal_dependencies_exist": true,
+  "dependency_graph_acyclic": true,
+  "json_csv_consistent_count": true,
+  "statuses": [
+    "RECONCILE_REQUIRED"
+  ],
+  "application_tests": "NOT_RUN",
+  "production_inspection": "NOT_RUN",
+  "priority_counts": {
+    "P0": 21,
+    "P1": 5,
+    "P2": 0
+  },
+  "review_corrections": "dependency decoupling, nonretention gate, per-phase reporting and final scope reconciliation"
+}

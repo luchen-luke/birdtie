@@ -2,86 +2,148 @@ package httpapi
 
 import (
 	"errors"
-	"io"
-	"net/http"
-
 	"github.com/birdtie/birdtie/apps/api/internal/connection"
 	"github.com/birdtie/birdtie/apps/api/internal/identity"
+	"net/http"
 )
 
-func (s *server) humanEntityShareAccess(w http.ResponseWriter, r *http.Request) (connection.EntityShareAccess, connection.HumanEntityShareStore, bool) {
-	w.Header().Set("Cache-Control", "no-store")
-	if r.URL.RawQuery != "" || r.URL.ForceQuery || len(r.Header.Values("X-Birdtie-Organization-Workspace")) > 0 || !uuidPath.MatchString(r.PathValue("conversationID")) {
-		respondError(w, 400, "invalid_entity_share")
-		return connection.EntityShareAccess{}, nil, false
+func entityShareControlFailure(w http.ResponseWriter, e error) {
+	switch {
+	case errors.Is(e, connection.ErrNotFound):
+		respondError(w, 404, "not_found")
+	case errors.Is(e, connection.ErrConflict):
+		respondError(w, 409, "entity_share_changed")
+	case errors.Is(e, connection.ErrRateLimit):
+		respondError(w, 429, "message_rate_limited")
+	default:
+		humanControlFailure(w, e)
 	}
-	actor, digest, e := s.actor(r, true)
-	if e != nil || actor.AccountType != "person" {
-		respondError(w, 401, "unauthorized")
-		return connection.EntityShareAccess{}, nil, false
-	}
-	store, ok := s.connections.(connection.HumanEntityShareStore)
-	if !ok {
-		respond(w, 503, map[string]any{"error": map[string]string{"code": "entity_share_unavailable", "message": "分享暂不可用，请稍后重试"}})
-		return connection.EntityShareAccess{}, nil, false
-	}
-	return connection.EntityShareAccess{Actor: actor, SessionDigest: digest}, store, true
 }
-func entityShareFailure(w http.ResponseWriter, e error) bool {
-	if errors.Is(e, identity.ErrUnauthorized) {
-		respondError(w, 401, "unauthorized")
-		return true
-	}
-	return connectionError(w, e)
-}
+
+// Original raw074 POST is closed. Historical GET/STOP are exact namespace
+// bridges; they expose only the original own tiny fact, never a copied card.
 func (s *server) shareHumanEntity(w http.ResponseWriter, r *http.Request) {
-	a, store, ok := s.humanEntityShareAccess(w, r)
+	_, _, _, ok := s.humanControlActor(w, r)
 	if !ok {
 		return
 	}
-	raw, e := io.ReadAll(io.LimitReader(r.Body, 2049))
-	if e != nil {
-		respondError(w, 400, "invalid_entity_share")
-		return
-	}
-	in, e := connection.DecodeEntityShare(raw)
-	if e != nil {
-		respondError(w, 400, "invalid_entity_share")
-		return
-	}
-	out, e := store.ShareHumanEntity(r.Context(), a, r.PathValue("conversationID"), in)
-	if entityShareFailure(w, e) {
-		return
-	}
-	if out.OperationID != in.OperationID || out.Message.ConversationID != r.PathValue("conversationID") || out.Message.SenderID != a.Actor.ID || out.Message.ID == "" {
-		respondError(w, 503, "entity_share_unavailable")
-		return
-	}
-	respond(w, 201, map[string]any{"data": out})
+	respondError(w, 409, "entity_share_control_required")
 }
 func (s *server) getHumanEntityShare(w http.ResponseWriter, r *http.Request) {
-	a, store, ok := s.humanEntityShareAccess(w, r)
+	s.historyEntityShareControl(w, r, connection.EntityShareRecipient{Type: "CONVERSATION", ID: r.PathValue("conversationID")}, false)
+}
+func (s *server) stopLegacyHumanEntityShare(w http.ResponseWriter, r *http.Request) {
+	s.historyEntityShareControl(w, r, connection.EntityShareRecipient{Type: "CONVERSATION", ID: r.PathValue("conversationID")}, true)
+}
+func entityShareTarget(r *http.Request) connection.EntityShareRecipient {
+	return connection.EntityShareRecipient{Type: r.PathValue("recipientType"), ID: r.PathValue("recipientID")}
+}
+func (s *server) entityShareControlGateway(w http.ResponseWriter, r *http.Request, target connection.EntityShareRecipient) (*http.Request, connection.EntityShareAccess, connection.EntityShareControlStore, bool) {
+	r, a, d, ok := s.humanControlActor(w, r)
+	access := connection.EntityShareAccess{Actor: a, SessionDigest: d}
+	if !ok {
+		return r, access, nil, false
+	}
+	if !humanControlPath(w, r) || !connection.ValidEntityShareRecipient(target) {
+		respondError(w, 400, "invalid_entity_share")
+		return r, access, nil, false
+	}
+	port, ok := s.connections.(connection.EntityShareControlStore)
+	if !ok || port == nil {
+		respondError(w, 503, "entity_share_unavailable")
+		return r, access, nil, false
+	}
+	return r, access, port, true
+}
+func (s *server) previewEntityShareControl(w http.ResponseWriter, r *http.Request) {
+	target := entityShareTarget(r)
+	r, a, port, ok := s.entityShareControlGateway(w, r, target)
 	if !ok {
 		return
 	}
-	if !uuidPath.MatchString(r.PathValue("operationID")) {
-		respondError(w, 400, "invalid_entity_share")
+	raw, ok := humanControlBody(w, r)
+	if !ok {
 		return
 	}
-	if r.Body != nil {
-		body, e := io.ReadAll(io.LimitReader(r.Body, 1))
-		if e != nil || len(body) > 0 {
-			respondError(w, 400, "invalid_entity_share")
-			return
-		}
-	}
-	out, e := store.GetHumanEntityShare(r.Context(), a, r.PathValue("conversationID"), r.PathValue("operationID"))
-	if entityShareFailure(w, e) {
+	in, e := connection.DecodeEntityShareControl(raw, target, false)
+	if e != nil {
+		entityShareControlFailure(w, e)
 		return
 	}
-	if out.OperationID != r.PathValue("operationID") || out.Message.ConversationID != r.PathValue("conversationID") || out.Message.SenderID != a.Actor.ID || out.Message.ID == "" {
+	v, e := port.PreviewEntityShareControl(r.Context(), a, target, in)
+	if e != nil {
+		entityShareControlFailure(w, e)
+		return
+	}
+	if v.OperationID != in.OperationID || v.Recipient != target || v.Entity != in.Entity || v.EntityTitle == "" || !identity.HumanControlUUID(v.RecipientAccountID) || v.RecipientAccountID == a.Actor.ID || len(v.SourceVersion) != 64 || v.PayloadDigest != connection.EntityShareControlDigest(target, in) || v.Approval == "" || !v.ObservedAt.Before(v.ExpiresAt) || v.ExpiresAt.Sub(v.ObservedAt) > 30*1000000000 {
 		respondError(w, 503, "entity_share_unavailable")
 		return
 	}
-	respond(w, 200, map[string]any{"data": out})
+	s.respondHumanControl(w, r, a.SessionDigest, a.Actor, map[string]any{"data": v}, v.ResponseProof, true)
+}
+func (s *server) commitEntityShareControl(w http.ResponseWriter, r *http.Request) {
+	target := entityShareTarget(r)
+	r, a, port, ok := s.entityShareControlGateway(w, r, target)
+	if !ok || !humanControlPath(w, r, "operationID") {
+		return
+	}
+	raw, ok := humanControlBody(w, r)
+	if !ok {
+		return
+	}
+	in, e := connection.DecodeEntityShareControl(raw, target, true)
+	if e != nil {
+		entityShareControlFailure(w, e)
+		return
+	}
+	if in.OperationID != r.PathValue("operationID") {
+		respondError(w, 400, "invalid_entity_share")
+		return
+	}
+	v, e := port.CommitEntityShareControl(r.Context(), a, target, in)
+	if e != nil {
+		entityShareControlFailure(w, e)
+		return
+	}
+	if !connection.ValidEntityShareControlReceipt(v, target, in.OperationID) || v.Status == "SUCCEEDED" && (v.Entity == nil || *v.Entity != in.Entity || v.PayloadDigest != connection.EntityShareControlDigest(target, in)) {
+		respondError(w, 503, "entity_share_unavailable")
+		return
+	}
+	s.respondHumanControl(w, r, a.SessionDigest, a.Actor, map[string]any{"data": v}, nil, false)
+}
+func (s *server) readEntityShareControlOperation(w http.ResponseWriter, r *http.Request) {
+	s.historyEntityShareControl(w, r, entityShareTarget(r), false)
+}
+func (s *server) stopEntityShareControlOperation(w http.ResponseWriter, r *http.Request) {
+	s.historyEntityShareControl(w, r, entityShareTarget(r), true)
+}
+func (s *server) historyEntityShareControl(w http.ResponseWriter, r *http.Request, target connection.EntityShareRecipient, stop bool) {
+	r, a, port, ok := s.entityShareControlGateway(w, r, target)
+	if !ok || !humanControlPath(w, r, "operationID") || !humanControlNoBody(w, r) {
+		return
+	}
+	var v connection.EntityShareControlReceipt
+	var e error
+	if stop {
+		v, e = port.StopEntityShareControlOperation(r.Context(), a, target, r.PathValue("operationID"))
+	} else {
+		v, e = port.ReadEntityShareControlOperation(r.Context(), a, target, r.PathValue("operationID"))
+	}
+	if e != nil {
+		entityShareControlFailure(w, e)
+		return
+	}
+	if !connection.ValidEntityShareControlReceipt(v, target, r.PathValue("operationID")) {
+		respondError(w, 503, "entity_share_unavailable")
+		return
+	}
+	s.respondHumanControl(w, r, a.SessionDigest, a.Actor, map[string]any{"data": v}, nil, false)
+}
+func (s *server) registerEntityShareControlRoutes(mux *http.ServeMux) {
+	base := "/v1/me/entity-shares/{recipientType}/{recipientID}"
+	mux.HandleFunc("POST "+base+"/previews", s.previewEntityShareControl)
+	mux.HandleFunc("PUT "+base+"/operations/{operationID}", s.commitEntityShareControl)
+	mux.HandleFunc("GET "+base+"/operations/{operationID}", s.readEntityShareControlOperation)
+	mux.HandleFunc("POST "+base+"/operations/{operationID}/stop", s.stopEntityShareControlOperation)
+	mux.HandleFunc("POST /v1/me/conversations/{conversationID}/entity-shares/{operationID}/stop", s.stopLegacyHumanEntityShare)
 }

@@ -67,6 +67,12 @@ Map<String, dynamic> nowTie() => {
 };
 
 void main() {
+  test('同一服务器获准好友投影接受三新受众，仍不推断非好友资格', () {
+    for (final audience in ['FOLLOWERS','CONNECTIONS','CLOSE','FRIENDS']) {
+      expect(SocialNowIntent.read(nowIntent(30,audience:audience),{nowFriend},DateTime.now())?.id,nowID(30));
+      expect(SocialNowIntent.read(nowIntent(30,audience:audience),{},DateTime.now()),isNull);
+    }
+  });
   test('有限去重；好友公开当前意图与规则分组，不投影私密长期兴趣/原reason', () async {
     final calls = <String>[];
     final c = SocialNowController(

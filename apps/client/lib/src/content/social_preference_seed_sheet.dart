@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import '../app/birdtie_app_bar.dart';
 import '../auth/birdtie_auth_controller.dart';
 import 'social_preference_seed_controller.dart';
 
@@ -138,7 +139,7 @@ class _SocialPreferenceSeedSheetState extends State<SocialPreferenceSeedSheet> {
         );
     final selectionValid = !staleChoices && _selected.length <= 20;
     return Scaffold(
-      appBar: AppBar(title: const Text('社交偏好')),
+      appBar: birdtieAppBar(context, title: const Text('社交偏好')),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),

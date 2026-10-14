@@ -34,6 +34,25 @@ class NowBorrowedClient extends MockClient {
 }
 
 void main() {
+  for (final audience in ['FOLLOWERS','CONNECTIONS','CLOSE']) {
+    testWidgets('实际编辑页新受众$audience保留批准流程与清楚后果', (t) async {
+      final auth=await egressAuth();addTearDown(auth.dispose);
+      final item=nowItem(status:'ACTIVE');item['intent']['audience']=audience;
+      final writes=<Map<String,dynamic>>[];
+      final client=MockClient((r)async{
+        if(r.url.path.endsWith('/preview')){final body=jsonDecode(r.body)as Map<String,dynamic>;writes.add(body);return nowResponse(nowPreview(item,body['operation'],edit:body['edit']));}
+        return nowResponse(r.url.path.endsWith('/options')?nowOptions():nowList(item));
+      });addTearDown(client.close);
+      await t.pumpWidget(MaterialApp(home:ActiveSocialIntentPage(auth:auth,client:client,initialIntentID:nowIntent)));
+      await t.pumpAndSettle();await nowTap(t,'编辑并检查');
+      expect(find.textContaining(audience=='FOLLOWERS'?'当前关注你的人':audience=='CLOSE'?'仅你明确选中':'当前已互相接受'),findsWidgets);
+      await nowTap(t,'检查具体修改');
+      expect(writes.single['edit']['audience'],audience);
+      expect(find.text('批准此具体版本'),findsOneWidget);
+      await nowTap(t,'取消');expect(writes,hasLength(1));
+      await t.pumpWidget(const SizedBox());
+    });
+  }
   testWidgets(
     'original FIND_ACTIVITY entry opens real current joined selector no implicit POST',
     (t) async {

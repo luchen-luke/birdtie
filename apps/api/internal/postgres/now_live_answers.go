@@ -22,6 +22,9 @@ type NowLiveAnswerOptions struct {
 	ConfigurationVersion                  string
 	RouteRevision                         int64
 	SearchPriceVersion, ModelPriceVersion string
+	// New persisted WSA results require an independently reviewed account
+	// contract. Prior successful runs, an API key and a paid budget are not it.
+	SearchRetentionConfirmed bool
 }
 
 type ownNowLiveAnswers struct {
@@ -59,6 +62,9 @@ func (n *ownNowLiveAnswers) Eligible(ctx context.Context, digest [32]byte, task 
 }
 
 func (n *ownNowLiveAnswers) Execute(ctx context.Context, digest [32]byte, expected agentworkspace.Task) (agentworkspace.LiveReply, error) {
+	if n != nil && !n.options.SearchRetentionConfirmed {
+		return nil, agentworkspace.ErrSearchRetentionPending
+	}
 	if !n.Eligible(ctx, digest, expected) || !n.gate.InferenceEnabled(ctx) {
 		return nil, modelegressbudget.ErrDenied
 	}

@@ -4,6 +4,7 @@ import 'package:birdtie_client/src/workspace/agent_profile_api.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'agent_memory_review_page_fixture.dart';
 import 'agent_memory_correction_api_test.dart'
     show
         correctionMemoryRaw,
@@ -153,6 +154,14 @@ dynamic profileData(String path) {
   if (path == '/v1/me/agent-private-profile') return profileRaw();
   if (path == '/v1/me/agent-memories') {
     return [correctionMemoryRaw(at: DateTime.now().toUtc())];
+  }
+  if (path == '/v1/me/agent-memories/page') {
+    return memoryReviewPageFixture(
+      owner: profileOwner,
+      agent: profileAgent,
+      collection: 'MEMORIES',
+      items: [correctionMemoryRaw(at: DateTime.now().toUtc())],
+    );
   }
   if (path == '/v1/me/agent-policies') return policiesRaw();
   if (path == '/v1/me/community-interests') return interestRaw();

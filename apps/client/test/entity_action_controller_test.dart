@@ -10,6 +10,44 @@ import 'entity_action_contract_test.dart' show actionWire, actionRef;
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  for (final late in [Duration.zero, const Duration(microseconds: 1)]) {
+    test('服务端已达原确认期限 $late，客户端时钟未到也拒绝旧批准', () async {
+      final originalTime = DateTime.now().toUtc();
+      final originalUntil = originalTime.add(const Duration(seconds: 25));
+      var reads = 0;
+      final api = EntityActionApi(
+        client: MockClient((_) async {
+          reads++;
+          return http.Response.bytes(
+            utf8.encode(
+              jsonEncode({
+                'data': actionWire(
+                  now: reads == 1 ? originalTime : originalUntil.add(late),
+                ),
+              }),
+            ),
+            200,
+          );
+        }),
+        apiBaseUrl: 'http://127.0.0.1:3707',
+      );
+      final c = EntityActionController(
+        api: api,
+        ref: actionRef,
+        identity: () => ('Bearer a', 'owner', null),
+      );
+      final approved = (await c.load())!;
+      expect(approved.live(DateTime.now()), isTrue);
+      expect(await c.recheck(approved, EntityActionKind.save), isNull);
+      expect(approved.live(DateTime.now()), isTrue);
+      expect(c.error, '确认已过期，请重新检查后确认。');
+      expect(c.view!.validUntil.isAfter(approved.validUntil), isTrue);
+      expect(approved.validUntil, originalUntil);
+      expect(reads, 2);
+      c.dispose();
+      api.dispose();
+    });
+  }
   test('正常具体源重复核验，撤权还原版本变化拒绝旧批准', () async {
     String version = 'a' * 64;
     final api = EntityActionApi(

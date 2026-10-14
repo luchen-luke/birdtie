@@ -12,7 +12,7 @@ class EntityPeekCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Material(
-    color: const Color(0xFFFCFBF8),
+    color: Theme.of(context).scaffoldBackgroundColor,
     elevation: 5,
     borderRadius: BorderRadius.circular(18),
     child: Padding(
@@ -28,7 +28,7 @@ class EntityPeekCard extends StatelessWidget {
             MapEntityKind.community => Icons.groups_outlined,
             MapEntityKind.person => Icons.person_outline,
             _ => Icons.place_outlined,
-          }, color: const Color(0xFF193B32)),
+          }, color: Theme.of(context).colorScheme.primary),
           const SizedBox(width: 10),
           Expanded(
             child: Column(
@@ -37,18 +37,10 @@ class EntityPeekCard extends StatelessWidget {
               children: [
                 Text(
                   entity.title,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Color(0xFF193B32),
-                    fontWeight: FontWeight.w700,
-                  ),
+                  style: Theme.of(context).textTheme.titleMedium,
                 ),
                 if (entity.kind == MapEntityKind.opportunity)
-                  const Text(
-                    '仅你可见',
-                    style: TextStyle(color: Color(0xFF193B32)),
-                  ),
+                  Text('仅你可见', style: Theme.of(context).textTheme.bodySmall),
               ],
             ),
           ),
@@ -101,7 +93,7 @@ class AreaPulseStack extends StatelessWidget {
   Widget build(BuildContext context) {
     final current = pulse != null && pulse!.bounds == bounds;
     return Material(
-      color: const Color(0xFFF9F8F3),
+      color: Theme.of(context).colorScheme.surface,
       elevation: 2,
       borderRadius: BorderRadius.circular(16),
       child: Padding(
@@ -112,10 +104,7 @@ class AreaPulseStack extends StatelessWidget {
           children: [
             Text(
               fallbackActivities == null ? '这片区域有什么' : '当前城市近期活动',
-              style: const TextStyle(
-                fontWeight: FontWeight.w700,
-                color: Color(0xFF193B32),
-              ),
+              style: Theme.of(context).textTheme.titleMedium,
             ),
             if (fallbackActivities != null) ...[
               const Text('地图暂不可用。以下活动来自当前城市公开数据。'),
@@ -145,8 +134,7 @@ class AreaPulseStack extends StatelessWidget {
                             children: [
                               Text(
                                 activity.title,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
+                                style: Theme.of(context).textTheme.titleMedium,
                               ),
                               if (activity.organizer?.name.isNotEmpty == true)
                                 Text(
@@ -162,8 +150,6 @@ class AreaPulseStack extends StatelessWidget {
                                   if (activity.source.label.isNotEmpty)
                                     activity.source.label,
                                 ].join(' · '),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
                                 style: Theme.of(context).textTheme.bodySmall,
                               ),
                             ],

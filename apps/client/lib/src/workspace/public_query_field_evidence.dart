@@ -56,9 +56,16 @@ bool _id(Object? raw) =>
     raw != '00000000-0000-0000-0000-000000000000';
 
 class PublicQueryFieldEvidenceTimes {
-  const PublicQueryFieldEvidenceTimes(this.updatedAt, this.sourceExpiresAt);
+  const PublicQueryFieldEvidenceTimes(
+    this.updatedAt,
+    this.sourceExpiresAt, {
+    this.sourceLabel = '',
+    this.sourceReference = '',
+    this.freshness = '',
+  });
   final DateTime updatedAt;
   final DateTime? sourceExpiresAt;
+  final String sourceLabel, sourceReference, freshness;
 }
 
 /// Read-only descriptions from one original response. Not an action descriptor,
@@ -369,6 +376,12 @@ class PublicQueryFieldEvidence {
       times[id] = PublicQueryFieldEvidenceTimes(
         _time(c['sourceUpdatedAt']),
         sourceExpires,
+        sourceLabel: _displayText((nativeSource as Map)['label']),
+        sourceReference: _displayText(
+          nativeSource['reference'],
+          maxLength: 2048,
+        ),
+        freshness: _displayText(nativeSource['freshness'], maxLength: 32),
       );
     }
     _require(
@@ -401,4 +414,13 @@ class PublicQueryFieldEvidence {
       current: current,
     );
   }
+}
+
+String _displayText(Object? raw, {int maxLength = 200}) {
+  if (raw is! String ||
+      raw.trim() != raw ||
+      raw.runes.length > maxLength ||
+      raw.runes.any((r) => r < 32 || r == 127))
+    return '';
+  return raw;
 }

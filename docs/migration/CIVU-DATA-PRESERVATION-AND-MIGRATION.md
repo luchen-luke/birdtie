@@ -1,5 +1,11 @@
 # Civu 数据保全与 Birdtie 选择性迁移
 
+2026-10-14 接续：用户已续费杭州节点，并在原地图方案聊天明确授权远端连接、原真实数据适配导入和原Civu入口升级为唯一Birdtie产品。已核对直接用户消息 `01a13afa-2b23-7862-97b6-a301306f1e76` 与 `01a13b0f-db28-7530-b1d8-b0f5669f8a07`；不是仅凭另一代理的转述扩权。最新真实保全/恢复及当前节点事实见 [杭州执行交接](HANGZHOU-BIRDTIE-EXECUTION-2026-10-14.md)。下方10月8日未找到工具/资源未核实是历史时间点，现已被实际SSH登录、加密DB和媒体备份、隔离DB恢复证据接续，历史记录保留。
+
+原件在 `C:\Users\chens\Documents\Codex\2026-10-14\birdtie-hangzhou\HANGZHOU-BIRDTIE-EXECUTION-2026-10-14.md`，仅明确选择的该文档复制到本目录；备份密文/DPAPI密钥留原受限目录，不复制到仓库。数据库verification实际认证及pg_restore exit0；媒体verification实际837归档成员/字节与密文认证通过，逐对象媒体与来源权利仍待ETL。不能将这些事实换算成已迁移或已切流。当前owned Birdtie QA与隔离 `civu_restore` 严格区分；Birdtie API不得连接旧库试运行。
+
+此次远端受控接入/升级仍不代表Closed Pilot或Consumer Beta放行。费用下单、不可恢复释放旧盘需具体报价及回滚核验后由用户明确批准；不删除旧数据/备份，不继承旧Session或把历史公开媒体扩大到新受众。先冻结本机C6/C5合包，再按该交接顺序实施原身份/稳定映射、Linux部署与实际远端核验。
+
 日期：2026-10-08（Asia/Shanghai）  
 状态：本地审计与安全脚本准备完成；生产数据保全、隔离恢复与迁移演练未执行。
 
@@ -46,7 +52,7 @@ scripts/backup_civu_postgres.sh
 | `places`、`regions`、`place_provider_refs` | `cities`/`places`/`place_external_refs`，仅在来源权利、城市、坐标系、来源与新 schema 合格后选择性导入 | 原 Place ID 写迁移映射表；地点目录是平台/供应商资产，不是个人内容，默认排除批量搬迁；坐标需确认 WGS84/GCJ 与精度。 |
 | `user_saved_places`、`note_saves`、`theme_map_saves` | 经 owner 映射后可映射至 `saved_items(place_id)`；Moment/Journey/ThemeMap 无一一等价目标则保留旧库只读或等待产品语义决策 | 只迁移主动用户确属个人收藏，记录原 ID/时间；不可据“已收藏”授予目标对象读取权限。 |
 | `journeys`、`journey_members`、`journey_arrangements`、`journey_notes`、`journey_media`、`journey_publications` | `journeys`/`journey_stops` 仅能在目的地、时间、成员授权及位置可见性映射规则确定后迁移；行程清单/私密备注尚无 Birdtie 等价表，留只读档案或未来经用户确认转换 | 映射旅程和成员旧 ID，保留成员角色/状态、时间、顺序、归属。私人旅程转 `visibility=private,status=draft`；公开发布需 owner 重新确认，不能自动发布。 |
-| `theme_maps`、`theme_map_entries` | 没有当前同构 Birdtie 表；保留旧内容只读导出，不伪装成 `journeys` 或公共 Place 目录 | 保留 owner、entry 顺序、保存、发布/审核状态与旧 ID 对照；未来转换需用户确认。 |
+| `theme_maps`、`theme_map_entries` | 当前 `124_personal_collections.sql` 已有本人 `theme_maps`/`theme_map_places`；可准备明确选择的私人草稿候选，不能把旧发布/审核、成员或媒体合同直接等同 | 原 ID/版本/顺序保留来源映射；新目标 ID 由当前原 writer 分配；owner、城市、Place 当前读取与权利需再确认，私人备注/Section/媒体留原档案。见 [本地准备合同](CIVU-SELECTED-COLLECTION-PREPARATION.md)。 |
 | `notes`（Civu Moment/Post）、`note_places`、journey/activity links、likes/comments | `moments` 与地点/活动/旅程 link 只有在语义、城市、owner、可见范围与作者确认重建后迁移；互动关系当前没有完整等价映射则保留旧库 | 私人/旅程团队内容一律 private/draft；历史 public 也不直接 `published`，要求 owner 确认、审核和新可见性规则。评论/点赞不伪造为新 Connections 或消息。 |
 | `media_assets`、`note_media`、`journey_media` + 本地文件/OSS 对象 | `media_assets` quarantine/private 状态和新对象键；先复制/校验二进制，再写关联 | 保存 Civu media ID → Birdtie media ID 和 object key 映射、SHA-256/尺寸/MIME；从私有原件重建派生版本前先扫描/脱敏 EXIF；存储失败时不写“ready”。媒体需单独备份与迁移，SQL 不含文件。 |
 | `follows`、followers、sessions/refresh tokens | 默认不导入 Birdtie ties、consent 或 sessions；旧认证在过渡期走独立兼容桥接 | 原授权与 Birdtie Connection/Tie 的语义不同；用户重新验证并显式同意前不建立关系。 |
@@ -66,5 +72,8 @@ scripts/backup_civu_postgres.sh
 - schema 映射：**PARTIAL**（依据本地迁移文件初绘；无生产 schema introspection/数据量，未生成 ETL apply 程序）。
 - 真实数据备份：**BLOCKED**（无 SSH/云 API、客户端工具/连接；未备份任何真实数据）。
 - 隔离恢复：**BLOCKED/NOT RUN**。
-- 选择性迁移：**仅方案**，没有执行 dry-run、导入或隔离样本验证；没有迁移用户/媒体。
+- 选择性迁移：已有 [明确选择集合的本地准备工具](CIVU-SELECTED-COLLECTION-PREPARATION.md)，其合成检查结果单独保存在本轮批 F 证据；真实导出 dry-run、导入、owner/Place 权利与隔离恢复仍 **NOT_RUN**，没有迁移真实用户/媒体。
 - 实际实例状态/释放期限/费用：**BLOCKED**，需云控制台核验。
+
+
+2026-10-15接续事实：先前「未有extractor」为历史时间点。scripts/extract_civu_hangzhou.py已对受限隔离源实际READ ONLY抽取固定29表/396列；原备份、dpapi与真实JSON留CurrentUser受限仓外。媒体AES-GCM全流核验/严格media+storage_key匹配已实际运行，407selectors中335仅integrity候选，均NOT_SCANNED/RIGHTS_NOT_REVIEWED，未抽出明文媒体、导入或公开。当前原生146导入CLI真实输入prepare为20 owners、83 live notes、20 tombstones，尚未真实native apply/身份激活。旧元数据和公开标记不授新权限，未知CRS/rights保留deferred；原哈希/备份不可删除。详细证据见batch-c/checkpoint-legacy-owner-archive146及hangzhou-media-matcher/real-stream01。

@@ -5,8 +5,10 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
+import '../app/birdtie_app_bar.dart';
 import '../config/birdtie_environment.dart';
 import 'support_page.dart';
+import 'human_causal_operation_controller.dart';
 
 enum ConversationKind { activity, community }
 
@@ -19,6 +21,9 @@ class EntityConversationPage extends StatefulWidget {
     required this.kind,
     this.apiBaseUrl,
     this.client,
+    this.ownerID,
+    this.identityChanges,
+    this.sourceCurrent,
   });
   final ConversationKind kind;
   final String entityID;
@@ -26,6 +31,9 @@ class EntityConversationPage extends StatefulWidget {
   final String? Function() authorizationHeader;
   final String? apiBaseUrl;
   final http.Client? client;
+  final String? Function()? ownerID;
+  final Listenable? identityChanges;
+  final bool Function()? sourceCurrent;
 
   @override
   State<EntityConversationPage> createState() => _EntityConversationPageState();
@@ -44,6 +52,14 @@ class _EntityConversationPageState extends State<EntityConversationPage> {
   String? _pendingID;
   String? _pendingBody;
   int _serial = 0;
+  final _reportSource = HumanCausalSourceSerial();
+  void _observeReportSource() => _reportSource.observe((
+    widget.kind,
+    widget.entityID,
+    widget.client,
+    widget.apiBaseUrl,
+    widget.ownerID?.call(),
+  ));
   String get _base => widget.apiBaseUrl ?? BirdtieEnvironment.apiBaseUrl;
   bool get _community => widget.kind == ConversationKind.community;
   String get _label => _community ? '社群交流' : '活动交流';
@@ -58,6 +74,7 @@ class _EntityConversationPageState extends State<EntityConversationPage> {
   void initState() {
     super.initState();
     _token = widget.authorizationHeader();
+    _observeReportSource();
     // Only observe identity changes; messages refresh after actions or by request.
     _identityWatch = Timer.periodic(
       const Duration(seconds: 1),
@@ -67,6 +84,7 @@ class _EntityConversationPageState extends State<EntityConversationPage> {
   }
 
   void _identityChanged() {
+    _observeReportSource();
     final token = widget.authorizationHeader();
     if (!mounted || token == _token) return;
     ++_serial;
@@ -85,7 +103,14 @@ class _EntityConversationPageState extends State<EntityConversationPage> {
   }
 
   @override
+  void didUpdateWidget(EntityConversationPage old) {
+    super.didUpdateWidget(old);
+    _observeReportSource();
+  }
+
+  @override
   void dispose() {
+    _reportSource.dispose();
     ++_serial;
     _identityWatch?.cancel();
     _composer.dispose();
@@ -330,13 +355,22 @@ class _EntityConversationPageState extends State<EntityConversationPage> {
                 } else {
                   Navigator.of(context).push(
                     MaterialPageRoute<void>(
-                      builder: (_) => SupportPage(
+                      builder: (_) => humanSupportDestination(
                         authorizationHeader: widget.authorizationHeader,
                         apiBaseUrl: _base,
                         targetType: _community
                             ? 'community_message'
                             : 'activity_message',
                         targetID: message['id'] as String,
+                        ownerID: widget.ownerID,
+                        identityChanges: Listenable.merge([
+                          widget.identityChanges,
+                          _reportSource,
+                        ]),
+                        sourceCurrent: () =>
+                            mounted && widget.sourceCurrent?.call() != false,
+                        sourceKey: () => _reportSource.generation,
+                        client: _client,
                       ),
                     ),
                   );
@@ -364,7 +398,8 @@ class _EntityConversationPageState extends State<EntityConversationPage> {
     final authorized = token != null && token == _token;
     final joined = authorized && _state?['joined'] == true;
     return Scaffold(
-      appBar: AppBar(
+      appBar: birdtieAppBar(
+        context,
         title: Text(_label),
         actions: [
           IconButton(

@@ -59,7 +59,7 @@ func actionPreviewTx(ctx context.Context, tx pgx.Tx, id string, lock bool) (aa.P
 	var p aa.Preview
 	var binding, payload string
 	var approved, consumed, cancelled *time.Time
-	q := `SELECT binding_canonical,binding_digest,payload_canonical,approved_at,consumed_at,cancelled_at FROM agent_action_approvals WHERE id=$1`
+	q := `SELECT binding_canonical,binding_digest,payload_canonical,approved_at,consumed_at,cancelled_at FROM agent_action_approvals WHERE id=$1 AND binding_canonical::jsonb->>'schema_version'='air.sandbox_action.v1'`
 	if lock {
 		q += ` FOR UPDATE`
 	}

@@ -1,0 +1,100 @@
+{
+  "_meta": {
+    "status": "design_reference_not_drop_in_runtime_config",
+    "scope": "phone_portrait",
+    "date": "2026-10-10",
+    "unit": "logical_px_at_baseline_TextScaler",
+    "note": "映射实际Flutter主题与布局；不得关闭系统文字缩放；高度为最小值/基线而非固定裁剪约束。"
+  },
+  "sheet": {
+    "margin": {
+      "left": 0,
+      "right": 0,
+      "bottom": 0
+    },
+    "cornerRadius": {
+      "topLeft": 24,
+      "topRight": 24,
+      "bottomLeft": 0,
+      "bottomRight": 0
+    },
+    "contentInsetHorizontal": 16,
+    "backgroundExtendsThroughBottomSafeArea": true
+  },
+  "composer": {
+    "insetHorizontalWithinSheet": 16,
+    "minHeight": 56,
+    "fontRole": "body",
+    "singleOwnerOfKeyboardInset": true
+  },
+  "typography": {
+    "sheetTitle": {
+      "size": 20,
+      "lineHeight": 28,
+      "weight": 600
+    },
+    "placeTitle": {
+      "size": 18,
+      "lineHeight": 26,
+      "weight": 600
+    },
+    "chromeLabel": {
+      "size": 16,
+      "lineHeight": 22,
+      "weight": 600
+    },
+    "body": {
+      "size": 16,
+      "lineHeight": 24,
+      "weight": 400
+    },
+    "address": {
+      "size": 15,
+      "lineHeight": 22,
+      "weight": 400
+    },
+    "action": {
+      "size": 14,
+      "lineHeight": 20,
+      "weight": 500
+    },
+    "listSubtitle": {
+      "size": 14,
+      "lineHeight": 20,
+      "weight": 400
+    },
+    "metadata": {
+      "size": 12,
+      "lineHeight": 18,
+      "weight": 400
+    }
+  },
+  "spacing": [
+    4,
+    8,
+    12,
+    16,
+    24,
+    32
+  ],
+  "controls": {
+    "minTouchTarget": 48,
+    "sourceVisualSize": 20,
+    "topControlVisualIconSize": 24
+  },
+  "placeAnswer": {
+    "primaryContent": "one_place_card",
+    "sourceEntryCount": 1,
+    "primaryAction": "navigate",
+    "secondaryActionsContainer": "more",
+    "cardTap": "focus_entity_in_existing_map",
+    "repeatFormattedAddressInProse": false
+  },
+  "mapInvariants": {
+    "useAuthorizedRealGeometry": true,
+    "fallbackToCityCenterForMissingCoordinates": false,
+    "protectedSelectionBypassesPermission": false,
+    "requireCompleteAccessibleResultList": true,
+    "copyCivuZoomThresholdsWithoutValidation": false
+  }
+}

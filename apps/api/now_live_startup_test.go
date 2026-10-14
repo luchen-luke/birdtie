@@ -79,6 +79,24 @@ func TestNowLiveProvidersUseExactModelAndRequiredEnvironmentCredential(t *testin
 	}
 }
 
+func TestNowLicensedModelProviderDoesNotRequireSearchCredential(t *testing.T) {
+	dir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(dir, ".env.tencent.local.json"), []byte(`{"provider":"tencent_tokenhub","baseUrl":"https://tokenhub.tencentmaas.com/v1","model":"deepseek-v4-pro-0813","maxOutputTokens":768,"apiKey":"old-unit-placeholder"}`), 0600); err != nil {
+		t.Fatal("synthetic config write failed")
+	}
+	lookups := 0
+	model, err := loadNowLiveModelProvider(dir, func(name string) (string, bool) {
+		lookups++
+		if name != "BIRDTIE_TENCENT_TOKENHUB_API_KEY" {
+			t.Fatal("unrelated credential was requested")
+		}
+		return "updated-unit-placeholder", true
+	})
+	if err != nil || model == nil || lookups != 1 {
+		t.Fatal("licensed native facts model retained a search-key dependency", err)
+	}
+}
+
 func TestNowLiveFeatureGateKeepsOriginalControllerBrake(t *testing.T) {
 	config, e := agentfeature.LoadConfig(func(string) (string, bool) { return "", false })
 	if e != nil {

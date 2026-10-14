@@ -87,7 +87,10 @@ func startMessageRoute(ctx context.Context, tx pgx.Tx, actor, peer string) (mess
 	if f.route != mp.Allow && expires != nil && expires.After(f.checkedAt) && expires.Before(f.until) {
 		f.until = *expires
 	}
-	e = tx.QueryRow(ctx, `SELECT encode(sha256(convert_to(jsonb_build_array($3::text,COALESCE((SELECT jsonb_agg(jsonb_build_object('id',t.id,'status',t.status,'request',t.request_id,'xmin',t.xmin::text,'rxmin',r.xmin::text) ORDER BY t.id) FROM person_ties t JOIN connection_requests r ON r.id=t.request_id WHERE t.person_a_account_id=LEAST($1::uuid,$2::uuid) AND t.person_b_account_id=GREATEST($1::uuid,$2::uuid)),'[]'::jsonb))::text,'UTF8')),'hex')`, actor, peer, f.static).Scan(&f.version)
+	if f.route != mp.Allow && from != nil && from.After(f.checkedAt) && from.Before(f.until) {
+		f.until = *from
+	}
+	e = tx.QueryRow(ctx, messagePolicyVersionSQL, actor, peer, f.static).Scan(&f.version)
 	if e != nil {
 		return f, mp.ErrUnavailable
 	}
@@ -102,8 +105,87 @@ const messagePolicyStaticSQL = `SELECT encode(sha256(convert_to(jsonb_build_arra
  (SELECT jsonb_build_object('id',id,'type',account_type,'status',status,'xmin',xmin::text) FROM accounts WHERE id=$2),
  (SELECT jsonb_build_object('id',account_id,'visibility',visibility,'xmin',xmin::text) FROM user_profiles WHERE account_id=$2),
  COALESCE((SELECT jsonb_agg(jsonb_build_object('blocker',blocker_account_id,'blocked',blocked_account_id,'created',created_at,'xmin',xmin::text) ORDER BY blocker_account_id,blocked_account_id) FROM account_blocks WHERE (blocker_account_id=$1 AND blocked_account_id=$2) OR (blocker_account_id=$2 AND blocked_account_id=$1)),'[]'::jsonb),
+ COALESCE((SELECT jsonb_agg(jsonb_build_array(a.id,a.xmin::text) ORDER BY a.id) FROM audit_events a WHERE a.resource_type='account' AND a.action IN('block','unblock') AND a.purpose='personal_safety' AND ((a.actor_account_id=$1 AND a.resource_id=$2::text) OR (a.actor_account_id=$2 AND a.resource_id=$1::text))),'[]'::jsonb),
  COALESCE((SELECT jsonb_agg(to_jsonb(p)||jsonb_build_object('xmin',p.xmin::text) ORDER BY p.agent_id) FROM agent_message_request_policies p WHERE p.owner_id=$2),'[]'::jsonb),
  COALESCE((SELECT jsonb_agg(jsonb_build_object('id',ag.id,'status',ag.status,'xmin',ag.xmin::text,'apxmin',ap.xmin::text) ORDER BY ag.id) FROM agents ag LEFT JOIN agent_profiles ap ON ap.agent_id=ag.id WHERE ag.principal_account_id=$2 AND ag.agent_type='personal'),'[]'::jsonb))::text,'UTF8')),'hex')`
+
+const messagePolicyVersionSQL = `SELECT encode(sha256(convert_to(jsonb_build_array($3::text,COALESCE((SELECT jsonb_agg(jsonb_build_object('id',t.id,'status',t.status,'request',t.request_id,'xmin',t.xmin::text,'rxmin',r.xmin::text) ORDER BY t.id) FROM person_ties t JOIN connection_requests r ON r.id=t.request_id WHERE t.person_a_account_id=LEAST($1::uuid,$2::uuid) AND t.person_b_account_id=GREATEST($1::uuid,$2::uuid)),'[]'::jsonb))::text,'UTF8')),'hex')`
+
+// Opaque BLOCK still has a private source fence; it exposes no reusable source
+// version and its public zero-duration lease remains backward compatible.
+func opaqueMessagePolicyRoute(ctx context.Context, tx pgx.Tx, actor, peer string) (messageRouteFence, error) {
+	f := messageRouteFence{actor: actor, peer: peer, route: mp.Block}
+	if _, e := tx.Exec(ctx, `LOCK TABLE account_blocks,user_profiles,intents,cities,agents,agent_profiles,agent_message_request_policies IN SHARE MODE;LOCK TABLE connection_requests,person_ties,conversations IN SHARE ROW EXCLUSIVE MODE`); e != nil {
+		return f, mp.ErrUnavailable
+	}
+	if e := messageLockCurrent(ctx, tx, actor); e != nil {
+		return f, e
+	}
+	if tx.QueryRow(ctx, messagePolicyStaticSQL, actor, peer).Scan(&f.static) != nil || tx.QueryRow(ctx, messagePolicyVersionSQL, actor, peer, f.static).Scan(&f.version) != nil {
+		return f, mp.ErrUnavailable
+	}
+	if tx.QueryRow(ctx, `SELECT clock_timestamp()`).Scan(&f.checkedAt) != nil {
+		return f, mp.ErrUnavailable
+	}
+	f.until = f.checkedAt.Add(30 * time.Second)
+	return f, nil
+}
+
+func (s *Store) sealMessagePolicyDecision(a agentprofile.PrivateAccess, peer string, d *mp.Decision, f messageRouteFence, session string, generation int64) {
+	d.ResponseProof = &messagePolicyResponseProof{store: s, owner: a.WorkspacePrincipal.ID, peer: peer, session: session, generation: generation, digest: a.SessionDigest, epoch: f.static, version: f.version, until: f.until, wire: messagePolicyWireHash(*d)}
+}
+
+func messageDecisionResponseClock(ctx context.Context, tx pgx.Tx, a agentprofile.PrivateAccess, f messageRouteFence, dev bool) (string, int64, error) {
+	var now time.Time
+	var epoch, version, session string
+	var current bool
+	var generation int64
+	if tx.QueryRow(ctx, `WITH n AS MATERIALIZED(SELECT clock_timestamp() AS checked_at),se AS MATERIALIZED(SELECT s.id,s.authorization_generation FROM sessions s JOIN accounts a ON a.id=s.account_id CROSS JOIN n WHERE s.token_sha256=$4 AND a.id=$1 AND a.account_type='person' AND a.status='active' AND s.revoked_at IS NULL AND s.expires_at>n.checked_at AND s.idle_expires_at>n.checked_at AND ($5::boolean OR s.authentication_method<>'dev_phone')) SELECT n.checked_at,(`+messagePolicyStaticSQL+`),(`+messagePolicyVersionSQL+`),EXISTS(SELECT 1 FROM se),COALESCE((SELECT id::text FROM se),''),COALESCE((SELECT authorization_generation FROM se),0) FROM n`, f.actor, f.peer, f.static, a.SessionDigest[:], dev).Scan(&now, &epoch, &version, &current, &session, &generation) != nil {
+		return "", 0, mp.ErrUnavailable
+	}
+	if !current {
+		return "", 0, identity.ErrUnauthorized
+	}
+	if !now.Before(f.until) || epoch != f.static || version != f.version {
+		return "", 0, mp.ErrChanged
+	}
+	return session, generation, nil
+}
+
+func (s *Store) ValidateMessagePolicyDecisionResponse(ctx context.Context, a agentprofile.PrivateAccess, peer string, expected mp.Decision) error {
+	p, ok := expected.ResponseProof.(*messagePolicyResponseProof)
+	if !ok || p == nil || ctx == nil || ctx.Err() != nil || s == nil || s.pool == nil || p.store != s || p.owner != a.WorkspacePrincipal.ID || p.peer != peer || p.digest != a.SessionDigest || p.wire != messagePolicyWireHash(expected) || !mp.ValidDecision(expected) {
+		return mp.ErrUnavailable
+	}
+	ctx, e := s.messageCurrentAccess(ctx, eaMessageAccess(a), "")
+	if e != nil {
+		return e
+	}
+	tx, e := s.pool.BeginTx(ctx, pgx.TxOptions{IsoLevel: pgx.ReadCommitted})
+	if e != nil {
+		return mp.ErrUnavailable
+	}
+	defer tx.Rollback(context.Background())
+	_, e = startMessageRoute(ctx, tx, a.WorkspacePrincipal.ID, peer)
+	if errors.Is(e, connection.ErrNotFound) {
+		_, e = opaqueMessagePolicyRoute(ctx, tx, a.WorkspacePrincipal.ID, peer)
+	}
+	if e != nil {
+		return e
+	}
+	// Source and captured session use the same last clock after every lock wait.
+	session, generation, e := messageDecisionResponseClock(ctx, tx, a, messageRouteFence{actor: a.WorkspacePrincipal.ID, peer: peer, static: p.epoch, version: p.version, until: p.until}, s.devPhoneEnabled)
+	if e != nil {
+		return e
+	}
+	if session != p.session || generation != p.generation {
+		return mp.ErrChanged
+	}
+	if ctx.Err() != nil || tx.Commit(ctx) != nil {
+		return mp.ErrUnavailable
+	}
+	return nil
+}
 
 func finishMessageRoute(ctx context.Context, tx pgx.Tx, f messageRouteFence) error {
 	return finishMessageRouteForActor(ctx, tx, f, f.actor)
@@ -134,6 +216,9 @@ func finishMessageRouteForActor(ctx context.Context, tx pgx.Tx, f messageRouteFe
 	return nil
 }
 func (s *Store) ReadMessagePolicyDecision(ctx context.Context, a agentprofile.PrivateAccess, peer string) (mp.Decision, error) {
+	if ctx == nil || ctx.Err() != nil || s == nil || s.pool == nil {
+		return mp.Decision{}, mp.ErrUnavailable
+	}
 	if agentprofile.ValidatePrivateAccess(a) != nil {
 		return mp.Decision{}, mp.ErrDenied
 	}
@@ -148,25 +233,33 @@ func (s *Store) ReadMessagePolicyDecision(ctx context.Context, a agentprofile.Pr
 	}
 	f, e := startMessageRoute(ctx, tx, a.WorkspacePrincipal.ID, peer)
 	if errors.Is(e, connection.ErrNotFound) {
-		var now time.Time
-		if tx.QueryRow(ctx, `SELECT clock_timestamp()`).Scan(&now) != nil {
-			return mp.Decision{}, mp.ErrUnavailable
-		}
-		if e = messageAuthenticateCurrent(ctx, tx, a.WorkspacePrincipal.ID); e != nil {
+		f, e = opaqueMessagePolicyRoute(ctx, tx, a.WorkspacePrincipal.ID, peer)
+		if e != nil {
 			return mp.Decision{}, e
 		}
-		return mp.Decision{Schema: mp.Schema, Disposition: mp.Block, Authority: mp.Authority, ObservedAt: now.UTC(), ValidUntil: now.UTC()}, nil
+		session, generation, e := messageDecisionResponseClock(ctx, tx, a, f, s.devPhoneEnabled)
+		if e != nil {
+			return mp.Decision{}, e
+		}
+		d := mp.Decision{Schema: mp.Schema, Disposition: mp.Block, Authority: mp.Authority, ObservedAt: f.checkedAt.UTC(), ValidUntil: f.checkedAt.UTC()}
+		s.sealMessagePolicyDecision(a, peer, &d, f, session, generation)
+		if tx.Commit(ctx) != nil {
+			return mp.Decision{}, mp.ErrUnavailable
+		}
+		return d, nil
 	}
 	if e != nil {
 		return mp.Decision{}, e
 	}
-	if e = finishMessageRoute(ctx, tx, f); e != nil {
+	session, generation, e := messageDecisionResponseClock(ctx, tx, a, f, s.devPhoneEnabled)
+	if e != nil {
 		return mp.Decision{}, e
 	}
 	d := mp.Decision{Schema: mp.Schema, Disposition: f.route, SourceVersion: f.version, ObservedAt: f.checkedAt.UTC(), ValidUntil: f.until.UTC(), Authority: mp.Authority}
 	if f.route == mp.Block {
 		d.SourceVersion = ""
 	}
+	s.sealMessagePolicyDecision(a, peer, &d, f, session, generation)
 	if tx.Commit(ctx) != nil {
 		return mp.Decision{}, mp.ErrUnavailable
 	}

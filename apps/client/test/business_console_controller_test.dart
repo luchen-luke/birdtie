@@ -66,6 +66,45 @@ class Fixture {
 
 void main() {
   test(
+    'businessMembers names are not authority and unknown mutation only rereads',
+    () async {
+      var writes = 0, reads = 0;
+      final f = Fixture((r) {
+        if (r.method == 'PUT') {
+          writes++;
+          expect(jsonDecode(r.body), {
+            'expectedVersion': 0,
+            'targetPersonId': person,
+            'action': 'grant',
+            'role': 'admin',
+          });
+          return reply(null, 503);
+        }
+        reads++;
+        return reply(
+          view(version: reads > 1 ? 1 : 0)
+            ..['members'] = [
+              {
+                'personId': person,
+                'role': 'admin',
+                'status': 'active',
+                if (reads == 1) 'displayName': '样例店长',
+              },
+            ],
+        );
+      });
+      addTearDown(f.dispose);
+      await f.controller.select(merchant);
+      f.controller.edit(memberDraft());
+      await f.controller.submit(f.controller.preview()!);
+      expect(writes, 1);
+      expect(reads, 2);
+      expect(f.controller.snapshot!.existingMembers.single.displayName, isNull);
+      expect(f.controller.message, contains('未自动重发'));
+      expect(f.controller.draft, isNull);
+    },
+  );
+  test(
     'List and selection are reads; preview cancel produces no write',
     () async {
       final methods = <String>[];

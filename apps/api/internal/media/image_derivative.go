@@ -32,6 +32,42 @@ type LocalImageDerivativeBuilder struct{}
 var _ DerivativeBuilder = (*LocalImageDerivativeBuilder)(nil)
 
 func (*LocalImageDerivativeBuilder) BuildPublic(ctx context.Context, src io.Reader, mime string) (io.ReadCloser, string, error) {
+	return buildImageDerivative(ctx, src, mime, MaxImageInputBytes, MaxImagePixels, false)
+}
+
+// BuildLegacyPrivateJPEG is reserved for the guarded historical media importer.
+// It keeps the full frame and the original orientation correction; it grants no
+// public purpose and does not change ordinary upload limits. The importer must
+// authenticate the exact backup object before calling it, one image at a time.
+func (*LocalImageDerivativeBuilder) BuildLegacyPrivateJPEG(ctx context.Context, src io.Reader) (io.ReadCloser, string, error) {
+	return buildImageDerivative(ctx, src, "image/jpeg", 16*1024*1024, 48*1024*1024, true)
+}
+
+type imageDerivativeFailure struct {
+	stage string
+	cause error
+}
+
+func (e *imageDerivativeFailure) Error() string { return "image_derivative_" + e.stage }
+func (e *imageDerivativeFailure) Unwrap() error { return e.cause }
+
+// ImageDerivativeFailureStage returns a closed diagnostic label, never source
+// data or an underlying decoder/provider message.
+func ImageDerivativeFailureStage(err error) string {
+	var e *imageDerivativeFailure
+	if errors.As(err, &e) {
+		return e.stage
+	}
+	return "UNCLASSIFIED"
+}
+
+func buildImageDerivative(ctx context.Context, src io.Reader, mime string, inputLimit int64, pixelLimit int, diagnostic bool) (result io.ReadCloser, outputMIME string, failure error) {
+	stage := "INPUT"
+	defer func() {
+		if diagnostic && failure != nil {
+			failure = &imageDerivativeFailure{stage, failure}
+		}
+	}()
 	if ctx == nil || src == nil {
 		return nil, "", ErrImageInvalid
 	}
@@ -41,13 +77,15 @@ func (*LocalImageDerivativeBuilder) BuildPublic(ctx context.Context, src io.Read
 	if mime != "image/jpeg" && mime != "image/png" {
 		return nil, "", ErrImageType
 	}
-	data, err := io.ReadAll(io.LimitReader(&imageContextReader{ctx, src}, MaxImageInputBytes+1))
+	data, err := io.ReadAll(io.LimitReader(&imageContextReader{ctx, src}, inputLimit+1))
+	defer clear(data)
 	if err != nil {
 		return nil, "", err
 	}
-	if len(data) > MaxImageInputBytes {
+	if int64(len(data)) > inputLimit {
 		return nil, "", ErrImageLimit
 	}
+	stage = "HEADER"
 	cfg, format, err := image.DecodeConfig(bytes.NewReader(data))
 	if err != nil {
 		return nil, "", ErrImageInvalid
@@ -55,13 +93,16 @@ func (*LocalImageDerivativeBuilder) BuildPublic(ctx context.Context, src io.Read
 	if (format == "jpeg" && mime != "image/jpeg") || (format == "png" && mime != "image/png") || (format != "jpeg" && format != "png") {
 		return nil, "", ErrImageType
 	}
-	if cfg.Width < 1 || cfg.Height < 1 || cfg.Width > MaxImageDimension || cfg.Height > MaxImageDimension || int64(cfg.Width)*int64(cfg.Height) > MaxImagePixels {
+	stage = "DIMENSION_OR_PIXEL_LIMIT"
+	if cfg.Width < 1 || cfg.Height < 1 || cfg.Width > MaxImageDimension || cfg.Height > MaxImageDimension || int64(cfg.Width)*int64(cfg.Height) > int64(pixelLimit) {
 		return nil, "", ErrImageLimit
 	}
-	orientation, err := imageOrientation(data, format)
+	stage = "ORIENTATION"
+	orientation, err := imageOrientationWithPolicy(data, format, diagnostic)
 	if err != nil {
 		return nil, "", err
 	}
+	stage = "DECODE"
 	decoded, decodedFormat, err := image.Decode(&imageContextReader{ctx, bytes.NewReader(data)})
 	if err != nil {
 		if ctx.Err() != nil {
@@ -72,10 +113,12 @@ func (*LocalImageDerivativeBuilder) BuildPublic(ctx context.Context, src io.Read
 	if decodedFormat != format || decoded.Bounds().Dx() != cfg.Width || decoded.Bounds().Dy() != cfg.Height {
 		return nil, "", ErrImageInvalid
 	}
+	stage = "ORIENTATION_TRANSFORM"
 	pixels, err := orientImage(ctx, decoded, orientation)
 	if err != nil {
 		return nil, "", err
 	}
+	stage = "ENCODE"
 	out := &imageContextWriter{ctx: ctx}
 	if format == "jpeg" {
 		err = jpeg.Encode(out, pixels, &jpeg.Options{Quality: 85})

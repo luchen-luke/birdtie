@@ -11,7 +11,7 @@ import (
 const momentControlTestOp = "11111111-1111-4111-8111-111111111111"
 const momentControlTestID = "22222222-2222-4222-8222-222222222222"
 
-func TestMomentPublicControlRequiresExplicitCityOrPlaceAndPreservedContext(t *testing.T) {
+func TestMomentPublicControlAllowsOptionalGeographyAndPreservesContext(t *testing.T) {
 	for _, action := range []string{"PUBLISH", "UPDATE_PUBLIC"} {
 		in := momentControlTestInput()
 		in.Action = action
@@ -21,8 +21,8 @@ func TestMomentPublicControlRequiresExplicitCityOrPlaceAndPreservedContext(t *te
 			t.Fatal("explicit city-only public action rejected", action, err)
 		}
 		in.Input.LocationPrecision = "none"
-		if _, err := NormalizeMomentControl(in, false); err == nil {
-			t.Fatal("public action without explicit location precision accepted", action)
+		if _, err := NormalizeMomentControl(in, false); err != nil {
+			t.Fatal("public action required optional geography", action, err)
 		}
 		in.Input.PlaceID = momentControlTestID
 		in.Input.LocationPrecision = "place"

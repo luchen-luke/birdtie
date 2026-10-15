@@ -412,6 +412,7 @@ func New(catalog foundation.PublicCatalog, access identity.AccessStore, seed cit
 	mux.HandleFunc("POST /v1/me/social-intents/{intentID}/activity-conversion/approve", s.approveOwnIntentActivityConversion)
 	mux.HandleFunc("GET /v1/cities/{cityID}", s.getCity)
 	mux.HandleFunc("GET /v1/cities/{cityID}/places", s.listPlaces)
+	mux.HandleFunc("GET /v1/places", s.listPlaces)
 	mux.HandleFunc("GET /v1/cities/{cityID}/map-layers", s.getPublicMapLayers)
 	mux.HandleFunc("POST /v1/me/agent-runs", s.scheduleOwnAgentRun)
 	mux.HandleFunc("GET /v1/me/agent-runs/{runID}", s.readOwnAgentRun)
@@ -505,6 +506,7 @@ func New(catalog foundation.PublicCatalog, access identity.AccessStore, seed cit
 	mux.HandleFunc("GET /v1/me/saved/page", s.listSavedPage)
 	mux.HandleFunc("GET /v1/me/saved/target/{kind}/{targetID}", s.getSavedTarget)
 	s.registerSavedNoteRoutes(mux)
+	s.registerLegacyPlaceReferenceRoutes(mux)
 	mux.HandleFunc("POST /v1/me/reports", s.createIncidentReport)
 	mux.HandleFunc("GET /v1/me/reports", s.listOwnIncidentReports)
 	mux.HandleFunc("POST /v1/me/saved", s.saveItem)
@@ -697,9 +699,11 @@ func (s *server) listPlaces(w http.ResponseWriter, r *http.Request) {
 		respondError(w, http.StatusBadRequest, "invalid_place_query")
 		return
 	}
-	_, err := s.catalog.GetCity(r.Context(), cityID)
-	if handleReadError(w, err) {
-		return
+	if cityID != "" {
+		_, err := s.catalog.GetCity(r.Context(), cityID)
+		if handleReadError(w, err) {
+			return
+		}
 	}
 	places, err := s.catalog.ListPlaces(r.Context(), cityID, query)
 	if err != nil {

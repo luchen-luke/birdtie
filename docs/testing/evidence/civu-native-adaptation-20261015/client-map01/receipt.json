@@ -1,0 +1,13 @@
+{
+  "command": [
+    "D:\\DevTools\\flutter\\bin\\flutter.bat",
+    "test",
+    "test/map_layers_api_test.dart",
+    "--plain-name",
+    "无标题动态保留真实地点与原内容标识，其他对象仍验证名称",
+    "--reporter",
+    "expanded"
+  ],
+  "cwd": "D:\\Project\\birdtie\\apps\\client",
+  "exitCode": 0
+}

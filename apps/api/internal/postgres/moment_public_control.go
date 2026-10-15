@@ -8,17 +8,17 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// Public actions preserve the original context. A publication cannot edit an
-// unreviewed draft; public editing changes only the displayed title and body.
+// Publication approves the concrete draft. Public editing may explicitly
+// replace or remove geography; time and unrelated contexts stay unchanged.
 func momentPublicInputMatches(old content.Moment, in content.MomentControlInput) bool {
 	v := in.Input
-	if v == nil || old.CityID != v.CityID || old.PlaceID != v.PlaceID || old.TimePrecision != v.TimePrecision || old.LocationPrecision != v.LocationPrecision || v.ActivityID != nil || v.CommunityID != nil || v.OrganizationID != nil {
+	if v == nil || old.TimePrecision != v.TimePrecision || v.ActivityID != nil || v.CommunityID != nil || v.OrganizationID != nil {
 		return false
 	}
 	if (old.OccurredAt == nil) != (v.OccurredAt == nil) || old.OccurredAt != nil && !old.OccurredAt.Equal(*v.OccurredAt) {
 		return false
 	}
-	return in.Action != "PUBLISH" || old.Title == v.Title && old.Body == v.Body
+	return in.Action != "PUBLISH" || old.Title == v.Title && old.Body == v.Body && old.CityID == v.CityID && old.PlaceID == v.PlaceID && old.LocationPrecision == v.LocationPrecision
 }
 
 func applyMomentPublicControl(ctx context.Context, f humanWriteFrame, in content.MomentControlInput) (content.Moment, error) {
@@ -28,10 +28,7 @@ func applyMomentPublicControl(ctx context.Context, f humanWriteFrame, in content
 	case "PUBLISH":
 		err = f.tx.QueryRow(ctx, `WITH stamp AS MATERIALIZED(SELECT clock_timestamp() at) UPDATE moments m SET visibility='public',status='published',author_confirmed_at=stamp.at,published_at=stamp.at,updated_at=stamp.at,revision=revision+1 FROM stamp WHERE m.id=$1 AND m.author_account_id=$2 AND m.revision=$3 AND m.status='draft' AND m.visibility='private' RETURNING m.id`, in.MomentID, f.a.ID, in.ExpectedRevision).Scan(&id)
 	case "UPDATE_PUBLIC":
-		// 145 retires the previous public image in this same transaction. The
-		// concrete editor warns about this before approval; it never silently
-		// carries a photo approved for an older Moment revision into the new one.
-		err = f.tx.QueryRow(ctx, `UPDATE moments SET title=$4,body=$5,updated_at=clock_timestamp(),revision=revision+1 WHERE id=$1 AND author_account_id=$2 AND revision=$3 AND status='published' AND visibility='public' RETURNING id`, in.MomentID, f.a.ID, in.ExpectedRevision, in.Input.Title, in.Input.Body).Scan(&id)
+		err = f.tx.QueryRow(ctx, `UPDATE moments SET title=$4,body=$5,city_id=NULLIF($6,''),place_id=NULLIF($7,'')::uuid,location_precision=$8,updated_at=clock_timestamp(),revision=revision+1 WHERE id=$1 AND author_account_id=$2 AND revision=$3 AND status='published' AND visibility='public' RETURNING id`, in.MomentID, f.a.ID, in.ExpectedRevision, in.Input.Title, in.Input.Body, in.Input.CityID, in.Input.PlaceID, in.Input.LocationPrecision).Scan(&id)
 	default:
 		return content.Moment{}, identity.ErrControlInvalid
 	}

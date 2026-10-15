@@ -20,15 +20,22 @@ type PublicMomentWithContext struct {
 }
 
 func ValidatePublicMomentWithContext(v PublicMomentWithContext, id string) error {
-	if v.SchemaVersion != PublicMomentContextSchemaVersion || v.ID != id || !momentUUID.MatchString(id) || v.CityID == "" || len(v.CityID) > 80 || !utf8.ValidString(v.CityID) || v.CityName == "" || len(v.CityName) > 640 || !utf8.ValidString(v.CityName) || v.Title == "" || len(v.Title) > 160 || !utf8.ValidString(v.Title) || len(v.Body) > 5000 || !utf8.ValidString(v.Body) || v.Revision < 2 || v.Revision > MomentControlMaxRevision || v.PublishedAt.IsZero() || v.SourceBinding == "" || v.ObservedAt.IsZero() || !v.ValidUntil.After(v.ObservedAt) || v.ValidUntil.Sub(v.ObservedAt) > time.Minute || ValidatePublicMomentAuthor(v.AuthorID, v.AuthorPublicProfile) != nil {
+	if v.SchemaVersion != PublicMomentContextSchemaVersion || v.ID != id || !momentUUID.MatchString(id) || len(v.CityID) > 80 || !utf8.ValidString(v.CityID) || len(v.CityName) > 640 || !utf8.ValidString(v.CityName) || (v.CityID == "") != (v.CityName == "") || len(v.Title) > 160 || !utf8.ValidString(v.Title) || len(v.Body) > 5000 || !utf8.ValidString(v.Body) || v.Revision < 2 || v.Revision > MomentControlMaxRevision || v.PublishedAt.IsZero() || v.SourceBinding == "" || v.ObservedAt.IsZero() || !v.ValidUntil.After(v.ObservedAt) || v.ValidUntil.Sub(v.ObservedAt) > time.Minute || ValidatePublicMomentAuthor(v.AuthorID, v.AuthorPublicProfile) != nil {
 		return ErrInvalid
 	}
 	switch v.LocationPrecision {
+	case "none":
+		if v.CityID != "" || v.CityName != "" || v.PlaceID != "" || v.PlaceName != "" || v.Photo != nil {
+			return ErrInvalid
+		}
 	case "city":
-		if v.PlaceID != "" || v.PlaceName != "" || v.Photo != nil {
+		if v.CityID == "" || v.PlaceID != "" || v.PlaceName != "" || v.Photo != nil {
 			return ErrInvalid
 		}
 	case "place":
+		if v.PlaceID == "" || v.PlaceName == "" {
+			return ErrInvalid
+		}
 		legacy := v.PublicMomentWithPhoto
 		legacy.SchemaVersion = PublicMomentPhotoSchemaVersion
 		if ValidatePublicMomentWithPhoto(legacy, id) != nil {

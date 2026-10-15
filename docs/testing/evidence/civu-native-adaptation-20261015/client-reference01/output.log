@@ -1,0 +1,33 @@
+Flutter assets will be downloaded from https://storage.flutter-io.cn. Make sure you trust this source!
+00:00 +0: loading D:/Project/birdtie/apps/client/test/legacy_place_reference_test.dart
+00:00 +0: private legacy references bind exact saved or theme records without public/map authority
+00:00 +1: owner list opens another city independently and reads leased private details
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following assertion was thrown running a test:
+pumpAndSettle timed out
+
+When the exception was thrown, this was the stack:
+#0      WidgetTester.pumpAndSettle.<anonymous closure> (package:flutter_test/src/widget_tester.dart:717:11)
+<asynchronous suspension>
+#1      TestAsyncUtils.guard.<anonymous closure> (package:flutter_test/src/test_async_utils.dart:130:27)
+<asynchronous suspension>
+#2      main.<anonymous closure> (file:///D:/Project/birdtie/apps/client/test/legacy_place_reference_test.dart:260:7)
+<asynchronous suspension>
+#3      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#4      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1952:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+The test description was:
+  owner list opens another city independently and reads leased private details
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:02 +1 -1: owner list opens another city independently and reads leased private details [E]
+  Test failed. See exception logs above.
+  The test description was: owner list opens another city independently and reads leased private details
+  
+00:02 +1 -1: Some tests failed.
+
+Failing tests:
+  D:/Project/birdtie/apps/client/test/legacy_place_reference_test.dart: owner list opens another city independently and reads leased private details

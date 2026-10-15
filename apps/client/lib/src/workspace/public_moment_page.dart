@@ -489,8 +489,6 @@ class _PublicMomentPageState extends State<PublicMomentPage> {
               primary: false,
               padding: const EdgeInsets.all(16),
               children: [
-                Text(_moment!.title, style: tokens.pageTitle),
-                const SizedBox(height: 12),
                 PublicMomentPhoto(
                   metadata: _moment!.photo,
                   api: _photoAPI(),
@@ -548,6 +546,10 @@ class _PublicMomentPageState extends State<PublicMomentPage> {
                       );
                   },
                 ),
+                if (_moment!.title.isNotEmpty) ...[
+                  Text(_moment!.title, style: tokens.pageTitle),
+                  const SizedBox(height: 12),
+                ],
                 if (_moment!.authorPublicProfile case final author?)
                   ListTile(
                     contentPadding: EdgeInsets.zero,
@@ -563,15 +565,20 @@ class _PublicMomentPageState extends State<PublicMomentPage> {
                   '本人明确公开 · ${supplierDate(_moment!.publishedAt)}',
                   style: tokens.metadata,
                 ),
-                const SizedBox(height: 16),
-                Text(_moment!.body, style: tokens.body),
-                const SizedBox(height: 16),
-                Text(
-                  _moment!.placeID.isEmpty
-                      ? '公开城市：${_moment!.cityName}'
-                      : '公开地点：${_moment!.placeName}',
-                  style: tokens.body,
-                ),
+                if (_moment!.body.isNotEmpty) ...[
+                  const SizedBox(height: 16),
+                  Text(_moment!.body, style: tokens.body),
+                ],
+                if (_moment!.placeID.isNotEmpty ||
+                    _moment!.cityName.isNotEmpty) ...[
+                  const SizedBox(height: 16),
+                  Text(
+                    _moment!.placeID.isEmpty
+                        ? '公开城市：${_moment!.cityName}'
+                        : '公开地点：${_moment!.placeName}',
+                    style: tokens.body,
+                  ),
+                ],
                 if (widget.onOpenPlace != null && _moment!.placeID.isNotEmpty)
                   TextButton.icon(
                     style: actionStyle,

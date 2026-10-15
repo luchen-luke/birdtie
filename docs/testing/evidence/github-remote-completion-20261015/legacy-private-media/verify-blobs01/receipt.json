@@ -1,0 +1,21 @@
+{
+  "startedAtUTC": "2026-10-15T06:15:38.237533+00:00",
+  "endedAtUTC": "2026-10-15T06:16:06.916956+00:00",
+  "command": "go run ./cmd/legacy-media-import --run-id <original> --source <protected> --manifest <protected> --matched <protected> --authenticated-seal <protected> --authenticated-seal-sha256 <original-receipt-pin> --blob-directory <protected-authenticated-jpeg-directory> --verify-blobs",
+  "cwd": "D:\\Project\\birdtie\\apps\\api",
+  "exitCode": 1,
+  "sourceBefore": {
+    "apps/api/cmd/legacy-media-import/main.go": "475ee6b132ea9b4669667dbb710200be45fff6f20b59c529a91abf465ea8296b",
+    "apps/api/internal/legacymedia/model.go": "4f1d299abc00f3b0e7a8282e0fd944d8646e35c37fe2c8ed4faac7939644597b",
+    "apps/api/internal/media/image_derivative.go": "64682e2f6c523a41b0f31d45da9eed4813deb5a49c1a5d6941f8d02a7cf139ff"
+  },
+  "sourceAfter": {
+    "apps/api/cmd/legacy-media-import/main.go": "475ee6b132ea9b4669667dbb710200be45fff6f20b59c529a91abf465ea8296b",
+    "apps/api/internal/legacymedia/model.go": "4f1d299abc00f3b0e7a8282e0fd944d8646e35c37fe2c8ed4faac7939644597b",
+    "apps/api/internal/media/image_derivative.go": "64682e2f6c523a41b0f31d45da9eed4813deb5a49c1a5d6941f8d02a7cf139ff"
+  },
+  "sourceFrameStable": true,
+  "databaseAccessed": false,
+  "mediaWritten": false,
+  "privatePathsOrSelectorsSaved": false
+}

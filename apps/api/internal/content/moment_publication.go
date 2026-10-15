@@ -61,10 +61,17 @@ func DecodeMomentPublication(raw []byte) (MomentPublicationInput, error) {
 	return out, nil
 }
 func ValidateMomentPublicationPreview(p MomentPublicationPreview, id string) error {
-	if p.MomentID != id || p.Revision < 1 || p.PlaceName == "" || !utf8.ValidString(p.PlaceName) || len(p.PlaceName) > 640 || p.ExpiresAt.IsZero() || !publicationToken.MatchString(p.Snapshot) {
+	if p.MomentID != id || p.Revision < 1 || (p.PlaceID == "") != (p.PlaceName == "") || !utf8.ValidString(p.PlaceName) || len(p.PlaceName) > 640 || p.ExpiresAt.IsZero() || !publicationToken.MatchString(p.Snapshot) || !HasMomentBody(p.Body) {
 		return ErrInvalid
 	}
-	_, e := NormalizeMomentInput(MomentInput{CityID: p.CityID, PlaceID: p.PlaceID, Title: p.Title, Body: p.Body, TimePrecision: "unknown", LocationPrecision: "place"})
+	precision := "none"
+	if p.CityID != "" {
+		precision = "city"
+	}
+	if p.PlaceID != "" {
+		precision = "place"
+	}
+	_, e := NormalizeMomentInput(MomentInput{CityID: p.CityID, PlaceID: p.PlaceID, Title: p.Title, Body: p.Body, TimePrecision: "unknown", LocationPrecision: precision})
 	return e
 }
 

@@ -1,0 +1,11 @@
+{
+  "mode": "apply",
+  "exitCode": 1,
+  "remoteScriptSHA256": "145552559c67be9cc98fcd0f2eab2b3cc0169d19a6e7ebf5e897b3806574314a",
+  "result": {
+    "status": "UNKNOWN_REQUIRES_INSPECTION",
+    "stage": "apply",
+    "errorType": "RuntimeError",
+    "privateValuesOmitted": true
+  }
+}

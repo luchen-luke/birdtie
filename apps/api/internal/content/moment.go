@@ -86,7 +86,7 @@ func NormalizeMomentInput(input MomentInput) (MomentInput, error) {
 			*slot = &value
 		}
 	}
-	if len(input.CityID) == 0 || len(input.CityID) > 80 || len(input.Title) == 0 || len(input.Title) > 160 || len(input.Body) > 5000 || (input.PlaceID != "" && !momentUUID.MatchString(input.PlaceID)) {
+	if len(input.CityID) > 80 || len(input.Title) > 160 || len(input.Body) > 5000 || (input.PlaceID != "" && !momentUUID.MatchString(input.PlaceID)) {
 		return MomentInput{}, ErrInvalid
 	}
 	switch input.TimePrecision {
@@ -115,5 +115,19 @@ func NormalizeMomentInput(input MomentInput) (MomentInput, error) {
 	default:
 		return MomentInput{}, ErrInvalid
 	}
+	// Geography is optional. A chosen Place can identify itself independently
+	// of the compatibility City field; it still requires current native checks.
+	if input.CityID == "" {
+		if input.LocationPrecision == "city" || input.LocationPrecision == "none" && input.PlaceID != "" {
+			return MomentInput{}, ErrInvalid
+		}
+		for _, slot := range []*string{input.ActivityID, input.CommunityID, input.OrganizationID} {
+			if slot != nil && *slot != "" {
+				return MomentInput{}, ErrInvalid
+			}
+		}
+	}
 	return input, nil
 }
+
+func HasMomentBody(body string) bool { return strings.TrimSpace(body) != "" }

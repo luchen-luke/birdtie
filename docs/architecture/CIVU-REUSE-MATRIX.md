@@ -195,3 +195,15 @@ Birdtie 当前工作树核对：144 UPDATE 只允许私人草稿，公开撤回�
 原杭州公网唯一IP入口已切Birdtie Web02与API05，旧Civu writer和Pelias停写，旧库／媒体／配置保留。146／149私人档案与154固定验证码123456的18唯一旧手机号原owner绑定已实际提交；真实一人接续、Person激活而Agent暂停，旧Session不复制。原映射historic UNCLAIMED保持，测试登录不伪称原所有权认证。
 
 20 owner／103 Note／34 Journey／3 ThemeMap／189 SavedPlace为受限私人档案，非当前全可编辑／公开对象。5511地点／339城市CRS与live_only合法目录映射、407旧媒体完整性差额和扫描／权利、旧关系消息组织、2仅邮箱账号及最终停写增量仍未补齐。使用原保护合同，未知事实不猜。完整证据与产物见 [交付记录](../reports/BIRDTIE-GITHUB-REMOTE-MIGRATION-2026-10-15.md)，没有据本批关闭整站或发布门槛。
+
+## 13. 2026-10-15 既有备份原生适配增量
+
+用户本轮明确授权“允许读取既有备份并迁入 Birdtie”，同时保留原库、私人内容归原账号且不自动公开。新实现仅为 Birdtie 自有 `legacycatalog`、`legacynative`、156阶段账本和守护CLI；没有复制Civu业务代码或旧schema，没有向旧库写入。146/149来源档案、删除墓碑及原阶段回执保持不可变。
+
+实际源纠正：5484个旧region_id为空不代表缺城市；5245个地点能沿明确admin_area_id及父链映射城市。339个旧中国城市由CN+adcode唯一映射，1067个active城市目录含唯一确证的Aberdeen→既有aberdeen-gb，避免重复身份。源中未发现Mapbox/live_only字段或值，前节关于它们的泛化不能作为本备份实际事实。第三方地点来源权利仍须逐类核对，不能由这项纠正推出公开许可。
+
+城市目录只采用行政名称、国家、父级与确定IANA时区，城市中心保持未知。只读来源 `D:\Program\Civu\Civu-server\api\internal\placeprovider\amap.go`、`httpapi/places_handlers.go`、`cmd/sync-china-destinations/main.go`、`store/china_administrative_catalog.go` 与 `store/cities_postgres.go` 显示geo center混合了未转换AMap值和地点均值，禁止整体猜定WGS或再做全量GCJ转换。地点只有storedCoordinateSystem明确WGS或wgs坐标对与当前stored值匹配且无冲突时保留坐标；其他位置为空。
+
+转换保留source→native永久映射、原owner归属、私人草稿状态与未承载字段清单。复杂旅程、未映射地点及旧媒体不能靠截断、第一地点或公开URL伪装成完成。实际落库、验证数量和仍未完成部分见 [原生适配记录](../reports/BIRDTIE-CIVU-NATIVE-ADAPTATION-2026-10-15.md)。
+
+156/157现已真实提交：1,067城市、5,245草稿地点、83私人动态、3私人主题图、184收藏，以及135张归属8原账号／52动态的私人照片；不恢复墓碑、旧Session或Agent激活。原回执与重复执行一致，导入照片实际字节和归属已核对。旧方向0标记按原编码画面重编码，不猜旋转；EXIF已移除，扫描仍为NOT_RUN。现有已接续用户实际16动态、33收藏、2主题图／9私有地点引用读取通过，全部验证会话退出。私有地点明细只沿原146/149/156及当前owner关系读取，不开放全局draft目录；其编辑、删除、撤权沿Birdtie自身领域控制。22存续旅程详细安排、5视频、缺失媒体、旧关系／消息／组织与最终增量仍未完成，详见上述记录。

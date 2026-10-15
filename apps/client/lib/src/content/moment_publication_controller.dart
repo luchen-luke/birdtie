@@ -139,7 +139,7 @@ class MomentPublicationController extends ChangeNotifier {
       if (response.statusCode != 200) throw const FormatException();
       final d = _data(response);
       if (d['id'] != momentID ||
-          d['placeId'] != placeID ||
+          (d['placeId'] ?? '') != placeID ||
           d['revision'] is! int ||
           d['revision'] < 1) {
         throw const FormatException();
@@ -208,7 +208,7 @@ class MomentPublicationController extends ChangeNotifier {
     if (token == null ||
         _workspace != null ||
         !_uuid.hasMatch(momentID) ||
-        !_uuid.hasMatch(placeID) ||
+        placeID.isNotEmpty && !_uuid.hasMatch(placeID) ||
         _base.isEmpty) {
       _error = _workspace == null ? '请登录后查看自己的记录。' : '当前为组织工作区，个人记录和公开操作已暂停。';
       _notify();
@@ -228,7 +228,7 @@ class MomentPublicationController extends ChangeNotifier {
       }
       final d = _data(response),
           id = d[withdrawal ? 'id' : 'momentId'],
-          target = d['placeId'],
+          target = d['placeId'] ?? '',
           revision = d['revision'];
       if (id != momentID ||
           target != placeID ||
@@ -239,9 +239,7 @@ class MomentPublicationController extends ChangeNotifier {
         throw const FormatException();
       }
       final title = d['title'] as String, body = d['body'] as String;
-      if (title.isEmpty ||
-          utf8.encode(title).length > 160 ||
-          utf8.encode(body).length > 5000) {
+      if (utf8.encode(title).length > 160 || utf8.encode(body).length > 5000) {
         throw const FormatException();
       }
       late final DateTime expiry;
@@ -252,7 +250,7 @@ class MomentPublicationController extends ChangeNotifier {
         }
         expiry = DateTime.now().toUtc().add(const Duration(seconds: 90));
         snapshot = '';
-        placeName = '当前关联地点';
+        placeName = placeID.isEmpty ? '' : '当前关联地点';
       } else {
         const keys = {
           'momentId',
@@ -268,9 +266,7 @@ class MomentPublicationController extends ChangeNotifier {
         if (d.keys.toSet().difference(keys).isNotEmpty ||
             d.length != keys.length ||
             d['cityId'] is! String ||
-            d['cityId'].isEmpty ||
             d['placeName'] is! String ||
-            d['placeName'].isEmpty ||
             d['snapshot'] is! String ||
             !_snapshot.hasMatch(d['snapshot'])) {
           throw const FormatException();
@@ -368,7 +364,7 @@ class MomentPublicationController extends ChangeNotifier {
         if (d.keys.toSet().difference(keys).isNotEmpty ||
             d.length != 5 ||
             d['momentId'] != momentID ||
-            d['placeId'] != placeID ||
+            (d['placeId'] ?? '') != placeID ||
             d['revision'] != expected.revision + 1 ||
             d['status'] != 'published') {
           throw const FormatException();

@@ -9,6 +9,7 @@ class NowCreationDraft {
     required this.kind,
     required this.cityID,
     required this.cityName,
+    this.nativeMomentID = '',
     this.title = '',
     this.body = '',
     this.placeID = '',
@@ -19,6 +20,7 @@ class NowCreationDraft {
   });
 
   final String kind, cityID, cityName, title, body, placeID, placeName;
+  final String nativeMomentID;
   final DateTime? startsAt, endsAt;
   final List<String> orderedPlaceIDs;
 
@@ -42,6 +44,9 @@ class NowCreationDraft {
   };
 
   NowCreationDraft copyWith({
+    String? nativeMomentID,
+    String? cityID,
+    String? cityName,
     String? title,
     String? body,
     String? placeID,
@@ -51,8 +56,9 @@ class NowCreationDraft {
     List<String>? orderedPlaceIDs,
   }) => NowCreationDraft(
     kind: kind,
-    cityID: cityID,
-    cityName: cityName,
+    nativeMomentID: nativeMomentID ?? this.nativeMomentID,
+    cityID: cityID ?? this.cityID,
+    cityName: cityName ?? this.cityName,
     title: title ?? this.title,
     body: body ?? this.body,
     placeID: placeID ?? this.placeID,
@@ -67,6 +73,7 @@ class NowCreationDraft {
   Map<String, dynamic> toJson() => {
     'schemaVersion': 'birdtie-now-creation-material-v1',
     'kind': kind,
+    if (nativeMomentID.isNotEmpty) 'nativeMomentId': nativeMomentID,
     'cityId': cityID,
     'cityName': cityName,
     'title': title,
@@ -79,7 +86,8 @@ class NowCreationDraft {
   };
 
   factory NowCreationDraft.fromJson(Map<String, dynamic> json) {
-    const keys = {
+    final keys = {
+      if (json.containsKey('nativeMomentId')) 'nativeMomentId',
       'schemaVersion',
       'kind',
       'cityId',
@@ -126,6 +134,8 @@ class NowCreationDraft {
       return parsed;
     }
 
+    final nativeID = json['nativeMomentId'] as String? ?? '';
+    if (nativeID.isNotEmpty && (json['kind'] != 'moment' || !RegExp(r'^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$').hasMatch(nativeID))) { throw const FormatException('原动态引用无效'); }
     final places = json['orderedPlaceIds'];
     if (places is! List ||
         places.length > 50 ||
@@ -141,7 +151,8 @@ class NowCreationDraft {
     }
     return NowCreationDraft(
       kind: json['kind'] as String,
-      cityID: text('cityId', 160, empty: false),
+      nativeMomentID: nativeID,
+      cityID: text('cityId', 160, empty: json['kind'] == 'moment'),
       cityName: text('cityName', 512),
       title: text('title', 1024),
       body: text('body', 12000),
@@ -153,8 +164,10 @@ class NowCreationDraft {
     );
   }
 
-  /// Preserve the body verbatim; derive a title only when one is still absent.
+  /// Ordinary Moment text is body only. Existing titles are preserved as
+  /// compatibility material; they are never inferred from the author's body.
   NowCreationDraft withText(String text, {bool titleOnly = false}) {
+    if (kind == 'moment') return copyWith(body: text);
     if (titleOnly) return copyWith(title: _firstLineTitle(text));
     return copyWith(
       title: title.trim().isEmpty ? _firstLineTitle(text) : title,

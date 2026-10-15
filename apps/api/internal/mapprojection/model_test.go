@@ -6,6 +6,34 @@ import (
 	"time"
 )
 
+func TestMapProjectionUntitledMomentPreservesRealAnchor(t *testing.T) {
+	id, place := "11111111-1111-4111-8111-111111111111", "22222222-2222-4222-8222-222222222222"
+	item := Item{Kind: "MOMENT", ID: id, Entity: Ref{Type: "MOMENT", ID: id}, Detail: Ref{Type: "MOMENT", ID: id}, Anchor: Anchor{PlaceID: place, Label: "真实获准地点", CoordinateSystem: "wgs84", Precision: "point", Latitude: 57.2, Longitude: -2.1}, SourceVersion: "2"}
+	for _, scope := range []string{Public, PublicAuthor} {
+		if !ValidItem(item, scope) {
+			t.Fatal("untitled Moment lost its canonical public point", scope)
+		}
+	}
+	if item.Title != "" {
+		t.Fatal("invented author title")
+	}
+	for _, kind := range []string{"PLACE", "ACTIVITY", "ORGANIZATION", "BUSINESS"} {
+		bad := item
+		bad.Kind = kind
+		bad.Entity.Type, bad.Detail.Type = kind, kind
+		if ValidItem(bad, Public) {
+			t.Fatal("unrelated entity lost its name requirement", kind)
+		}
+	}
+	for _, change := range []func(*Item){func(v *Item) { v.Anchor.PlaceID = "" }, func(v *Item) { v.Anchor.Precision = "area" }, func(v *Item) { v.Anchor.CoordinateSystem = "gcj02" }, func(v *Item) { v.Anchor.Latitude = math.NaN() }, func(v *Item) { v.Detail.ID = place }} {
+		bad := item
+		change(&bad)
+		if ValidItem(bad, Public) {
+			t.Fatal("optional title admitted a fake point or substituted detail")
+		}
+	}
+}
+
 func TestMapProjectionClosedKindsAndBounds(t *testing.T) {
 	for _, k := range []string{"PLACE", "ACTIVITY", "MOMENT", "ORGANIZATION", "BUSINESS", "OPPORTUNITY"} {
 		if !ValidKind(k) {

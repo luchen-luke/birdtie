@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"strings"
 
@@ -22,12 +23,12 @@ var humanSavedRowsSQL = `WITH anchor AS MATERIALIZED (
 SELECT s.id,
  CASE WHEN s.place_id IS NOT NULL THEN 'place' WHEN s.activity_id IS NOT NULL THEN 'activity' ELSE 'group' END,
  COALESCE(s.place_id,s.activity_id,s.community_id)::text,
- COALESCE(p.name,a.title,g.name,''),COALESCE(p.summary,a.summary,g.summary,''),
- COALESCE(p.city_id,a.city_id,g.city_id,''),
+ COALESCE(p.name,a.title,g.name,legacy.name,''),COALESCE(p.summary,a.summary,g.summary,legacy.summary,''),
+ COALESCE(p.city_id,a.city_id,g.city_id,legacy.city_id,''),
  (p.id IS NOT NULL OR a.id IS NOT NULL OR g.id IS NOT NULL),s.created_at,
  COALESCE(n.note,''),COALESCE(n.revision,0),
  COALESCE((SELECT c.name FROM cities c WHERE c.id=COALESCE(p.city_id,a.city_id,g.city_id)
-  AND c.publication_status='published' AND(c.expires_at IS NULL OR c.expires_at>clock_timestamp())),''),
+  AND c.publication_status='published' AND(c.expires_at IS NULL OR c.expires_at>clock_timestamp())),legacy.city_name,''),
  CASE WHEN g.id IS NOT NULL THEN birdtie_community_avatar_metadata(g.id,$1::uuid) END,
  CASE WHEN p.location_precision='point' AND p.coordinate_system='wgs84' AND p.latitude BETWEEN -90 AND 90 AND p.longitude BETWEEN -180 AND 180 THEN p.latitude END,
  CASE WHEN p.location_precision='point' AND p.coordinate_system='wgs84' AND p.latitude BETWEEN -90 AND 90 AND p.longitude BETWEEN -180 AND 180 THEN p.longitude END,
@@ -40,15 +41,17 @@ SELECT s.id,
   (SELECT ca.xmin::text FROM community_avatars ca WHERE ca.community_id=g.id),` + retainedPlaceReadBindingSQL("p") + `,
   CASE WHEN a.id IS NOT NULL THEN birdtie_entity_cover_authority('activity',a.id,$1::uuid) END,
   (SELECT cover.xmin::text FROM entity_covers cover WHERE cover.entity_type='activity' AND cover.entity_id=a.id),
-  CASE WHEN p.id IS NOT NULL THEN birdtie_place_photo_proof(p.id) END)::text,
+  CASE WHEN p.id IS NOT NULL THEN birdtie_place_photo_proof(p.id) END,legacy.source)::text,
  CASE WHEN a.id IS NOT NULL THEN birdtie_entity_cover_metadata('activity',a.id,$1::uuid,clock_timestamp()) END,
- CASE WHEN p.id IS NOT NULL THEN birdtie_place_photo_metadata(p.id,clock_timestamp()) END
+ CASE WHEN p.id IS NOT NULL THEN birdtie_place_photo_metadata(p.id,clock_timestamp()) END,
+ ` + legacyPlaceReferenceSummarySQL("legacy", "'saved_place'", "s.id", "s.place_id", "legacy.observed_at") + `
 FROM saved_items s
 LEFT JOIN private_saved_notes n ON n.saved_item_id=s.id
 LEFT JOIN places p ON p.id=s.place_id AND p.publication_status='published'
  AND(p.expires_at IS NULL OR p.expires_at>clock_timestamp())
  AND ` + currentRetainedPlaceVisibilitySQL("p", "clock_timestamp()") + `
  AND EXISTS(SELECT 1 FROM cities c WHERE c.id=p.city_id AND c.publication_status='published' AND(c.expires_at IS NULL OR c.expires_at>clock_timestamp()))
+LEFT JOIN LATERAL (` + legacyPlaceReferenceSQLFor("s.owner_account_id", "'saved_place'", "s.id", "s.place_id") + `) legacy ON s.place_id IS NOT NULL AND p.id IS NULL
 LEFT JOIN activities a ON a.id=s.activity_id AND a.publication_status='published' AND a.visibility='public'
  AND(a.expires_at IS NULL OR a.expires_at>clock_timestamp())
  AND EXISTS(SELECT 1 FROM cities c WHERE c.id=a.city_id AND c.publication_status='published')
@@ -91,8 +94,12 @@ func humanSavedRead(ctx context.Context, tx pgx.Tx, owner, cursor string, limit 
 	for rows.Next() {
 		var item saved.Item
 		var privateSource string
-		if err := rows.Scan(&item.ID, &item.Kind, &item.TargetID, &item.Title, &item.Summary, &item.CityID, &item.Available, &item.SavedAt, &item.Note, &item.NoteRevision, &item.CityName, &item.CommunityAvatar, &item.Latitude, &item.Longitude, &item.SourceExpiresAt, &privateSource, &item.Cover, &item.PlacePhoto); err != nil {
+		var legacyRaw []byte
+		if err := rows.Scan(&item.ID, &item.Kind, &item.TargetID, &item.Title, &item.Summary, &item.CityID, &item.Available, &item.SavedAt, &item.Note, &item.NoteRevision, &item.CityName, &item.CommunityAvatar, &item.Latitude, &item.Longitude, &item.SourceExpiresAt, &privateSource, &item.Cover, &item.PlacePhoto, &legacyRaw); err != nil {
 			return nil, savedPageNativeFailure(err)
+		}
+		if len(legacyRaw) > 0 && json.Unmarshal(legacyRaw, &item.LegacyReference) != nil {
+			return nil, saved.ErrPageUnavailable
 		}
 		if !item.ValidCommunityMedia() {
 			return nil, saved.ErrPageUnavailable
@@ -181,7 +188,11 @@ func (s *Store) GetHumanSavedTarget(ctx context.Context, digest [32]byte, actor 
 		if rows.Next() {
 			value := saved.Item{}
 			var privateSource string
-			e = rows.Scan(&value.ID, &value.Kind, &value.TargetID, &value.Title, &value.Summary, &value.CityID, &value.Available, &value.SavedAt, &value.Note, &value.NoteRevision, &value.CityName, &value.CommunityAvatar, &value.Latitude, &value.Longitude, &value.SourceExpiresAt, &privateSource, &value.Cover, &value.PlacePhoto)
+			var legacyRaw []byte
+			e = rows.Scan(&value.ID, &value.Kind, &value.TargetID, &value.Title, &value.Summary, &value.CityID, &value.Available, &value.SavedAt, &value.Note, &value.NoteRevision, &value.CityName, &value.CommunityAvatar, &value.Latitude, &value.Longitude, &value.SourceExpiresAt, &privateSource, &value.Cover, &value.PlacePhoto, &legacyRaw)
+			if e == nil && len(legacyRaw) > 0 {
+				e = json.Unmarshal(legacyRaw, &value.LegacyReference)
+			}
 			if e == nil && !value.ValidCommunityMedia() {
 				e = saved.ErrPageUnavailable
 			}

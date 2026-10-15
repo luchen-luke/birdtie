@@ -80,12 +80,14 @@ func momentPhotoSourceTx(ctx context.Context, f humanWriteFrame, moment string) 
 	var public *string
 	var until *time.Time
 	var photo []byte
+	var deleteLeavesContent bool
 	e := f.tx.QueryRow(ctx, `SELECT m.revision,jsonb_build_array(m.xmin::text,a.xmin::text)::text,
  image.photo_id::text,coalesce(image.version,0),coalesce(jsonb_build_array(image.xmin::text,image.photo_id,image.version,image.status)::text,'none'),
- source.binding,source.deadline,clock_timestamp(),birdtie_public_moment_photo_metadata(m.id,$2,clock_timestamp())
+ source.binding,source.deadline,clock_timestamp(),birdtie_public_moment_photo_metadata(m.id,$2,clock_timestamp()),
+ (m.status<>'published' OR m.visibility<>'public' OR length(regexp_replace(m.body,'[[:space:]]','','g'))>0)
  FROM moments m JOIN accounts a ON a.id=m.author_account_id LEFT JOIN public_moment_photos image ON image.moment_id=m.id
  LEFT JOIN LATERAL birdtie_public_moment_photo_source(m.id,clock_timestamp()) source ON true
- WHERE m.id=$1 AND m.author_account_id=$2 AND a.account_type='person' AND a.status='active'`, moment, f.a.ID).Scan(&out.state.MomentRevision, &raw, &out.state.PhotoID, &out.state.PhotoVersion, &slot, &public, &until, &out.state.ObservedAt, &photo)
+ WHERE m.id=$1 AND m.author_account_id=$2 AND a.account_type='person' AND a.status='active'`, moment, f.a.ID).Scan(&out.state.MomentRevision, &raw, &out.state.PhotoID, &out.state.PhotoVersion, &slot, &public, &until, &out.state.ObservedAt, &photo, &deleteLeavesContent)
 	if errors.Is(e, pgx.ErrNoRows) {
 		return out, mp.ErrChanged
 	}
@@ -103,7 +105,7 @@ func momentPhotoSourceTx(ctx context.Context, f humanWriteFrame, moment string) 
 	out.stamp = identity.HumanControlTextHash(raw + ":" + slot + ":" + out.publicBinding)
 	out.state.SourceVersion = out.stamp
 	out.state.CanSave = public != nil && out.state.PhotoVersion < mp.MaxVersion
-	out.state.CanDelete = out.state.PhotoID != nil && out.state.PhotoVersion > 0
+	out.state.CanDelete = out.state.PhotoID != nil && out.state.PhotoVersion > 0 && deleteLeavesContent
 	return out, nil
 }
 func momentPhotoInputSource(in mp.Input, src momentPhotoSource) error {

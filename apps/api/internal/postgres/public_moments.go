@@ -56,17 +56,15 @@ func publicMomentReadSQL(withAuthor bool) string {
 		authorColumn = "," + publicMomentAuthorProfileSQL("a")
 	}
 	return `WITH cl AS MATERIALIZED(SELECT clock_timestamp() at)
-SELECT m.id,m.title,m.body,p.id,p.name,c.id,m.revision,m.published_at,
- concat_ws(':',m.xmin::text,a.xmin::text,p.xmin::text,c.xmin::text,` + retainedPlaceReadBindingSQL("p") + authorBinding + `)` + authorColumn + `
+SELECT m.id,m.title,m.body,coalesce(p.id::text,''),coalesce(p.name,''),CASE WHEN m.location_precision='none' THEN '' ELSE coalesce(c.id,'') END,m.revision,m.published_at,
+ concat_ws(':',birdtie_moment_public_binding(m.id,$2,cl.at),` + momentMediaReadBindingSQL("m") + `,m.xmin::text,a.xmin::text,p.xmin::text,c.xmin::text,` + retainedPlaceReadBindingSQL("p") + authorBinding + `)` + authorColumn + `
 FROM moments m JOIN accounts a ON a.id=m.author_account_id
-JOIN places p ON p.id=m.place_id AND p.city_id=m.city_id JOIN cities c ON c.id=p.city_id CROSS JOIN cl
-WHERE m.id=$1 AND m.status='published' AND m.visibility='public' AND m.location_precision='place'
+LEFT JOIN places p ON p.id=m.place_id AND(m.city_id IS NULL OR p.city_id=m.city_id) LEFT JOIN cities c ON c.id=m.city_id CROSS JOIN cl
+WHERE m.id=$1 AND m.status='published' AND m.visibility='public'
 AND m.author_confirmed_at IS NOT NULL AND m.published_at IS NOT NULL
 AND m.author_confirmed_at<=m.published_at AND m.published_at<=cl.at
 AND a.account_type='person' AND a.status='active'
-AND p.publication_status='published' AND c.publication_status='published'
-AND (p.expires_at IS NULL OR p.expires_at>cl.at) AND (c.expires_at IS NULL OR c.expires_at>cl.at)
-AND ` + currentRetainedPlaceVisibilitySQL("p", "cl.at") + `
+AND birdtie_moment_public_binding(m.id,$2,cl.at) IS NOT NULL
 AND NOT EXISTS(SELECT 1 FROM account_blocks b WHERE $2::uuid IS NOT NULL
 AND ((b.blocker_account_id=$2 AND b.blocked_account_id=a.id) OR (b.blocker_account_id=a.id AND b.blocked_account_id=$2)))
 AND ($2::uuid IS NULL OR EXISTS(SELECT 1 FROM accounts viewer JOIN sessions ss ON ss.account_id=viewer.id

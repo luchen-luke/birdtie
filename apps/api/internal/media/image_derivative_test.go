@@ -15,6 +15,109 @@ import (
 	"testing"
 )
 
+func TestLegacyPrivateJPEGBoundedSeamKeepsOrdinaryLimits(t *testing.T) {
+	var b bytes.Buffer
+	if e := jpeg.Encode(&b, image.NewNRGBA(image.Rect(0, 0, 2, 3)), nil); e != nil {
+		t.Fatal(e)
+	}
+	// Trailing synthetic bytes exercise the larger migration envelope without
+	// allocating a large decoded image. Re-encoding must discard those bytes.
+	raw := append([]byte{}, b.Bytes()...)
+	raw = append(raw, bytes.Repeat([]byte{0}, MaxImageInputBytes+1-len(raw))...)
+	if _, _, e := (&LocalImageDerivativeBuilder{}).BuildPublic(context.Background(), bytes.NewReader(raw), "image/jpeg"); !errors.Is(e, ErrImageLimit) {
+		t.Fatal("ordinary limit changed", e)
+	}
+	r, mime, e := (&LocalImageDerivativeBuilder{}).BuildLegacyPrivateJPEG(context.Background(), bytes.NewReader(raw))
+	if e != nil || mime != "image/jpeg" {
+		t.Fatal("bounded historical JPEG rejected", e)
+	}
+	defer r.Close()
+	out, e := io.ReadAll(r)
+	if e != nil || len(out) >= len(raw) {
+		t.Fatal("original metadata/raw bytes retained", e)
+	}
+	cfg, kind, e := image.DecodeConfig(bytes.NewReader(out))
+	if e != nil || kind != "jpeg" || cfg.Width != 2 || cfg.Height != 3 {
+		t.Fatal("migration cropped or changed dimensions", e)
+	}
+	if _, _, e = (&LocalImageDerivativeBuilder{}).BuildLegacyPrivateJPEG(context.Background(), io.LimitReader(bytes.NewReader(bytes.Repeat([]byte{0}, 16*1024*1024+1)), 16*1024*1024+1)); !errors.Is(e, ErrImageLimit) {
+		t.Fatal("migration input unbounded", e)
+	}
+}
+
+func TestLegacyPrivateJPEGOrientationPolicy(t *testing.T) {
+	var b bytes.Buffer
+	if e := jpeg.Encode(&b, image.NewNRGBA(image.Rect(0, 0, 2, 3)), nil); e != nil {
+		t.Fatal(e)
+	}
+	withExif := func(tiff []byte, duplicate bool) []byte {
+		meta := append([]byte("Exif\x00\x00"), tiff...)
+		segment := []byte{255, 225, 0, 0}
+		binary.BigEndian.PutUint16(segment[2:], uint16(len(meta)+2))
+		segment = append(segment, meta...)
+		raw := append([]byte{}, b.Bytes()[:2]...)
+		raw = append(raw, segment...)
+		if duplicate {
+			raw = append(raw, segment...)
+		}
+		return append(raw, b.Bytes()[2:]...)
+	}
+	for _, big := range []bool{false, true} {
+		for _, typ := range []uint16{3, 4} {
+			for _, value := range []uint16{0, 6, 9} {
+				t.Run(fmt.Sprintf("endian_%v_type_%d_value_%d", big, typ, value), func(t *testing.T) {
+					tiff := imageUnitTIFF(value, big)
+					var order binary.ByteOrder = binary.LittleEndian
+					if big {
+						order = binary.BigEndian
+					}
+					order.PutUint16(tiff[12:], typ)
+					if typ == 4 {
+						order.PutUint32(tiff[18:], uint32(value))
+					}
+					raw := withExif(tiff, false)
+					ordinary, _, oldErr := (&LocalImageDerivativeBuilder{}).BuildPublic(context.Background(), bytes.NewReader(raw), "image/jpeg")
+					if ordinary != nil {
+						ordinary.Close()
+					}
+					if (oldErr == nil) != (typ == 3 && value == 6) {
+						t.Fatal("ordinary strict orientation changed")
+					}
+					r, _, e := (&LocalImageDerivativeBuilder{}).BuildLegacyPrivateJPEG(context.Background(), bytes.NewReader(raw))
+					if value == 9 {
+						if e == nil || ImageDerivativeFailureStage(e) != "ORIENTATION" {
+							t.Fatal("invalid nonzero orientation accepted", e)
+						}
+						return
+					}
+					if e != nil {
+						t.Fatal(e)
+					}
+					defer r.Close()
+					out, e := io.ReadAll(r)
+					if e != nil || bytes.Contains(out, []byte("Exif")) {
+						t.Fatal("EXIF not stripped", e)
+					}
+					cfg, e := jpeg.DecodeConfig(bytes.NewReader(out))
+					if e != nil {
+						t.Fatal(e)
+					}
+					w, h := 2, 3
+					if value == 6 {
+						w, h = 3, 2
+					}
+					if cfg.Width != w || cfg.Height != h {
+						t.Fatal("unspecified frame guessed or known rotation lost")
+					}
+					if _, _, e = (&LocalImageDerivativeBuilder{}).BuildLegacyPrivateJPEG(context.Background(), bytes.NewReader(withExif(tiff, true))); e == nil {
+						t.Fatal("duplicate EXIF accepted")
+					}
+				})
+			}
+		}
+	}
+}
+
 func imageUnitPNG(t *testing.T) []byte {
 	t.Helper()
 	im := image.NewNRGBA(image.Rect(0, 0, 2, 3))

@@ -262,10 +262,9 @@ Future<bool?> showPrivateMomentDraft(
   String? Function()? organizationWorkspaceID,
   bool Function()? current,
 }) async {
-  final selected = city.selectedCity;
   final draftOwner = auth.accountID;
   final draftWorkspace = organizationWorkspaceID?.call();
-  if (!context.mounted || !auth.signedIn || selected == null) return null;
+  if (!context.mounted || !auth.signedIn) return null;
   var retired = false;
   final ownedRoutes = <Route<bool>>[];
   bool live() =>
@@ -273,7 +272,6 @@ Future<bool?> showPrivateMomentDraft(
       context.mounted &&
       auth.signedIn &&
       auth.accountID == draftOwner &&
-      city.selectedCity?.id == selected.id &&
       organizationWorkspaceID?.call() == draftWorkspace &&
       (current?.call() ?? true);
   void observeBinding() {
@@ -288,7 +286,7 @@ Future<bool?> showPrivateMomentDraft(
     WidgetsBinding.instance.ensureVisualUpdate();
   }
 
-  final changes = Listenable.merge([auth, city, workspaceChanges]);
+  final changes = Listenable.merge([auth, workspaceChanges]);
   changes.addListener(observeBinding);
   try {
     if (!live()) return null;
@@ -306,11 +304,11 @@ Future<bool?> showPrivateMomentDraft(
         to: navigator.context,
       ),
       builder: (_) => _MomentDraftSheet(
-        cityID: selected.id,
-        cityName: selected.name,
+        cityID: '',
+        cityName: '',
         moments: moments,
-        places: city.places,
-        activities: city.activities,
+        places: const [],
+        activities: const [],
         auth: auth,
         client: client,
         apiBaseUrl: apiBaseUrl,
@@ -885,6 +883,7 @@ class _MomentDraftSheetState extends State<_MomentDraftSheet> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _title;
   late final TextEditingController _body;
+  late String _lastTitleText, _lastBodyText;
   late final CommunityApi _communityApi;
   late final http.Client _lookupClient;
   late final bool _ownsLookupClient;
@@ -917,6 +916,8 @@ class _MomentDraftSheetState extends State<_MomentDraftSheet> {
     super.initState();
     _title = TextEditingController(text: widget.existing?.title);
     _body = TextEditingController(text: widget.existing?.body);
+    _lastTitleText = _title.text;
+    _lastBodyText = _body.text;
     _placeID = widget.existing?.placeID ?? '';
     _activityID = widget.existing?.activityIDs.firstOrNull ?? '';
     _communityID = widget.existing?.communityID ?? '';
@@ -931,8 +932,8 @@ class _MomentDraftSheetState extends State<_MomentDraftSheet> {
       widget.workspaceChanges,
     ]);
     _draftBindingChanges.addListener(_onActorChanged);
-    _title.addListener(_edited);
-    _body.addListener(_edited);
+    _title.addListener(_textEdited);
+    _body.addListener(_textEdited);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) unawaited(widget.moments.loadOperations());
     });
@@ -1000,6 +1001,13 @@ class _MomentDraftSheetState extends State<_MomentDraftSheet> {
     }
   }
 
+  void _textEdited() {
+    if (_title.text == _lastTitleText && _body.text == _lastBodyText) return;
+    _lastTitleText = _title.text;
+    _lastBodyText = _body.text;
+    _edited();
+  }
+
   void _edited() {
     ++_editGeneration;
     widget.moments.retirePreview();
@@ -1021,7 +1029,10 @@ class _MomentDraftSheetState extends State<_MomentDraftSheet> {
         _current &&
         credentialEpoch == widget.moments.identityEpoch &&
         token == widget.auth.authorizationHeader;
-    if (!_current || token == null || _lookupBase.isEmpty) {
+    if (!_current ||
+        widget.cityID.isEmpty ||
+        token == null ||
+        _lookupBase.isEmpty) {
       return;
     }
     setState(() {
@@ -1197,13 +1208,15 @@ class _MomentDraftSheetState extends State<_MomentDraftSheet> {
                 children: [
                   if (live) ...[
                     if (p.input.input != null) ...[
-                      Text(
-                        p.input.input!['title'] as String,
-                        style: Theme.of(c).textTheme.titleMedium,
-                      ),
+                      if ((p.input.input!['title'] as String).isNotEmpty)
+                        Text(
+                          p.input.input!['title'] as String,
+                          style: Theme.of(c).textTheme.titleMedium,
+                        ),
                       if ((p.input.input!['body'] as String).isNotEmpty)
                         Text(p.input.input!['body'] as String),
-                      Text('发生时间：${_time?.label ?? '未知'}'),
+                      if (_time?.occurredAt != null)
+                        Text('发生时间：${_time!.label}'),
                       const Text('保存为本人私人草稿，不会公开发布，也不会上传私人图片。'),
                       if (p.preservedPlaceUnavailable)
                         const Text('此前地点已不可读取。本次仅保留原关联并隐藏精确位置，不会恢复旧地点名称或坐标。'),
@@ -1360,7 +1373,11 @@ class _MomentDraftSheetState extends State<_MomentDraftSheet> {
               ),
               const SizedBox(height: 6),
               Text(
-                '${widget.cityName} · ${widget.existing?.visibilityLabel ?? '仅自己可见'} · 本页不会发布',
+                [
+                  if (widget.cityName.isNotEmpty) widget.cityName,
+                  widget.existing?.visibilityLabel ?? '仅自己可见',
+                  '本页不会发布',
+                ].join(' · '),
                 style: Theme.of(context).textTheme.bodySmall,
               ),
               const SizedBox(height: 20),
@@ -1373,19 +1390,19 @@ class _MomentDraftSheetState extends State<_MomentDraftSheet> {
                 const Text('图片只用于这条已保存的私人记录；公开或撤回记录会移除图片。'),
                 const SizedBox(height: 12),
               ],
-              TextFormField(
-                controller: _title,
-                enabled: !widget.moments.saving,
-                autofocus: true,
-                maxLength: 160,
-                decoration: const InputDecoration(labelText: '标题'),
-                validator: (value) {
-                  final title = value?.trim() ?? '';
-                  if (title.isEmpty) return '请输入标题';
-                  if (utf8.encode(title).length > 160) return '标题太长';
-                  return null;
-                },
-              ),
+              if (widget.existing?.title.isNotEmpty == true)
+                TextFormField(
+                  controller: _title,
+                  enabled: !widget.moments.saving,
+                  autofocus: true,
+                  maxLength: 160,
+                  decoration: const InputDecoration(labelText: '标题'),
+                  validator: (value) {
+                    final title = value?.trim() ?? '';
+                    if (utf8.encode(title).length > 160) return '标题太长';
+                    return null;
+                  },
+                ),
               const SizedBox(height: 10),
               TextFormField(
                 controller: _body,
@@ -1415,69 +1432,76 @@ class _MomentDraftSheetState extends State<_MomentDraftSheet> {
                 ),
               ],
               const SizedBox(height: 20),
-              Text('关联情境（可选）', style: Theme.of(context).textTheme.titleMedium),
-              const SizedBox(height: 6),
-              Text(
-                '只关联你选择的真实地点、活动和已加入的社群或组织；草稿仍只对自己可见。',
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-              const SizedBox(height: 12),
-              MomentContextChoice(
-                label: '地点',
-                value: _placeID,
-                available: {
-                  for (final place in widget.places) place.id: place.name,
-                },
-                onChanged: (value) => setState(() {
-                  _placeID = value;
-                  _edited();
-                }),
-              ),
-              MomentContextChoice(
-                label: '活动',
-                value: _activityID,
-                available: {
-                  for (final activity in widget.activities)
-                    activity.id: activity.title,
-                },
-                onChanged: (value) => setState(() {
-                  _activityID = value;
-                  _edited();
-                }),
-              ),
-              TextButton(
-                onPressed: _loadingContexts ? null : _loadContexts,
-                child: Text(_loadingContexts ? '正在读取我的社群与组织…' : '选择我加入的社群或组织'),
-              ),
-              if (_contextError != null)
+              if (widget.cityID.isNotEmpty) ...[
                 Text(
-                  _contextError!,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.error,
+                  '关联情境（可选）',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  '只关联你选择的真实地点、活动和已加入的社群或组织；草稿仍只对自己可见。',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+                const SizedBox(height: 12),
+                MomentContextChoice(
+                  label: '地点',
+                  value: _placeID,
+                  available: {
+                    for (final place in widget.places) place.id: place.name,
+                  },
+                  onChanged: (value) => setState(() {
+                    _placeID = value;
+                    _edited();
+                  }),
+                ),
+                MomentContextChoice(
+                  label: '活动',
+                  value: _activityID,
+                  available: {
+                    for (final activity in widget.activities)
+                      activity.id: activity.title,
+                  },
+                  onChanged: (value) => setState(() {
+                    _activityID = value;
+                    _edited();
+                  }),
+                ),
+                TextButton(
+                  onPressed: _loadingContexts ? null : _loadContexts,
+                  child: Text(
+                    _loadingContexts ? '正在读取我的社群与组织…' : '选择我加入的社群或组织',
                   ),
                 ),
-              MomentContextChoice(
-                label: '社群',
-                value: _communityID,
-                available: {
-                  for (final item in _communities) item.id: item.name,
-                },
-                onChanged: (value) => setState(() {
-                  _communityID = value;
-                  _edited();
-                }),
-              ),
-              MomentContextChoice(
-                label: '组织',
-                value: _organizationID,
-                available: {
-                  for (final item in _organizations) item.$1: item.$2,
-                },
-                onChanged: (value) => setState(() {
-                  _organizationID = value;
-                  _edited();
-                }),
-              ),
+                if (_contextError != null)
+                  Text(
+                    _contextError!,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                  ),
+                MomentContextChoice(
+                  label: '社群',
+                  value: _communityID,
+                  available: {
+                    for (final item in _communities) item.id: item.name,
+                  },
+                  onChanged: (value) => setState(() {
+                    _communityID = value;
+                    _edited();
+                  }),
+                ),
+                MomentContextChoice(
+                  label: '组织',
+                  value: _organizationID,
+                  available: {
+                    for (final item in _organizations) item.$1: item.$2,
+                  },
+                  onChanged: (value) => setState(() {
+                    _organizationID = value;
+                    _edited();
+                  }),
+                ),
+              ],
               const SizedBox(height: 8),
               AnimatedBuilder(
                 animation: widget.moments,
@@ -1601,10 +1625,14 @@ class _MyBirdtiePage extends StatelessWidget {
       backgroundColor: Theme.of(context).colorScheme.surface,
       builder: (context) => _MomentDraftSheet(
         cityID: moment.cityID,
-        cityName: cityNames.isEmpty ? '城市名称暂不可用' : cityNames.first,
+        cityName: moment.cityID.isEmpty
+            ? ''
+            : cityNames.isEmpty
+            ? '城市名称暂不可用'
+            : cityNames.first,
         moments: moments,
-        places: city.places,
-        activities: city.activities,
+        places: moment.cityID.isEmpty ? const [] : city.places,
+        activities: moment.cityID.isEmpty ? const [] : city.activities,
         auth: auth,
         existing: moment,
         client: client,
@@ -1749,9 +1777,7 @@ class _MyBirdtiePage extends StatelessWidget {
               children: [
                 const Expanded(child: _SectionLabel('我的动态与草稿')),
                 TextButton(
-                  onPressed: city.selectedCity == null
-                      ? null
-                      : () => _createMoment(context),
+                  onPressed: () => _createMoment(context),
                   child: const Text('新建草稿'),
                 ),
                 TextButton(
@@ -1797,10 +1823,11 @@ class _MyBirdtiePage extends StatelessWidget {
             else
               for (final moment in _records) ...[
                 const Divider(height: 22),
-                Text(
-                  moment.title,
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
+                if (moment.title.isNotEmpty)
+                  Text(
+                    moment.title,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
                 if (moment.body.isNotEmpty) ...[
                   const SizedBox(height: 4),
                   Text(
@@ -1811,7 +1838,11 @@ class _MyBirdtiePage extends StatelessWidget {
                 ],
                 const SizedBox(height: 4),
                 Text(
-                  '${moment.visibilityLabel} · ${moment.statusLabel} · ${moment.time.label}',
+                  [
+                    moment.visibilityLabel,
+                    moment.statusLabel,
+                    if (moment.occurredAt != null) moment.time.label,
+                  ].join(' · '),
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
                 if (moment.createdAt != null)

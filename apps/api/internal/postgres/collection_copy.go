@@ -537,6 +537,14 @@ func (p *collectionPrivateCopyProof) RevalidateCollection(ctx context.Context) e
 		return content.ErrConflict
 	}
 	for i := range fresh.Entries {
+		if old := p.collection.Entries[i].LegacyReference; old != nil {
+			next := fresh.Entries[i].LegacyReference
+			if next == nil || next.Reference != old.Reference || next.SourceVersion != old.SourceVersion || !old.Valid(time.Now().UTC()) || next.ValidUntil.Before(old.ValidUntil) {
+				return content.ErrConflict
+			}
+			fixed := *old
+			fresh.Entries[i].LegacyReference = &fixed
+		}
 		old := p.collection.Entries[i].SourceExpiresAt
 		next := fresh.Entries[i].SourceExpiresAt
 		if old != nil {

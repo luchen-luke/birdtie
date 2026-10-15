@@ -24,6 +24,7 @@ class PendingPrivateImageOperation {
     this.assetID,
     this.assetRevision,
     this.derivativeHash,
+    this.origin = '',
   }) {
     _validate(toJson());
   }
@@ -33,7 +34,8 @@ class PendingPrivateImageOperation {
       phase,
       mime,
       inputHash,
-      pixelRisk;
+      pixelRisk,
+      origin;
   final int momentRevision, byteSize;
   final String? assetID, derivativeHash;
   final int? assetRevision;
@@ -55,6 +57,7 @@ class PendingPrivateImageOperation {
     'derivativeSha256': derivativeHash,
     'observedAt': observedAt.toUtc().toIso8601String(),
     'deadlineAt': deadlineAt.toUtc().toIso8601String(),
+    if (origin.isNotEmpty) 'origin': origin,
   };
   static const _keys = {
     'schema',
@@ -94,8 +97,11 @@ class PendingPrivateImageOperation {
   }
 
   static void _validate(Map<String, dynamic> d) {
-    if (d.length != _keys.length ||
-        d.keys.toSet().difference(_keys).isNotEmpty ||
+    final keys = {..._keys, if (d.containsKey('origin')) 'origin'};
+    final importedDelete =
+        d['phase'] == 'delete' && d['origin'] == 'LEGACY_PRIVATE_IMPORT';
+    if (d.length != keys.length ||
+        d.keys.toSet().difference(keys).isNotEmpty ||
         d['schema'] != 'private-image-pending-v1' ||
         [
           'ownerId',
@@ -108,7 +114,8 @@ class PendingPrivateImageOperation {
         !['image/png', 'image/jpeg'].contains(d['mimeType']) ||
         d['byteSize'] is! int ||
         d['byteSize'] < 1 ||
-        d['byteSize'] > 10 * 1024 * 1024 ||
+        d['byteSize'] > (importedDelete ? 16 : 10) * 1024 * 1024 ||
+        (d.containsKey('origin') && !importedDelete) ||
         d['inputSha256'] is! String ||
         !_hash.hasMatch(d['inputSha256']) ||
         !['UNKNOWN', 'USER_MASKED'].contains(d['pixelRisk']) ||
@@ -129,7 +136,9 @@ class PendingPrivateImageOperation {
     }
     final at = _date(d['observedAt']), end = _date(d['deadlineAt']);
     // Historical deadlines are references, not permission or a no-effect verdict.
-    if (end.isAfter(at.add(const Duration(days: 30)))) {
+    // Imported retention is preserved by the server. This local deadline is
+    // only an original-operation selector and never extends read/delete rights.
+    if (!importedDelete && end.isAfter(at.add(const Duration(days: 30)))) {
       throw const FormatException('图片恢复期限不符');
     }
   }
@@ -149,6 +158,7 @@ class PendingPrivateImageOperation {
       assetID: d['assetId'],
       assetRevision: d['assetRevision'],
       derivativeHash: d['derivativeSha256'],
+      origin: d['origin'] as String? ?? '',
       observedAt: _date(d['observedAt']),
       deadlineAt: _date(d['deadlineAt']),
     );

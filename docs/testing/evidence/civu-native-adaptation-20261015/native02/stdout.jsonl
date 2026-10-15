@@ -1,0 +1,9 @@
+{"Time":"2026-10-15T13:02:36.8565798+08:00","Action":"start","Package":"github.com/birdtie/birdtie/apps/api/internal/postgres"}
+{"Time":"2026-10-15T13:02:38.9136713+08:00","Action":"run","Package":"github.com/birdtie/birdtie/apps/api/internal/postgres","Test":"TestLegacyNativeAdaptationNativeStablePrivateTargets"}
+{"Time":"2026-10-15T13:02:38.9136713+08:00","Action":"output","Package":"github.com/birdtie/birdtie/apps/api/internal/postgres","Test":"TestLegacyNativeAdaptationNativeStablePrivateTargets","Output":"=== RUN   TestLegacyNativeAdaptationNativeStablePrivateTargets\n"}
+{"Time":"2026-10-15T13:02:40.8986953+08:00","Action":"output","Package":"github.com/birdtie/birdtie/apps/api/internal/postgres","Test":"TestLegacyNativeAdaptationNativeStablePrivateTargets","Output":"    legacy_native_adaptation_native_test.go:67: migration roundtrip uses independently owned database birdtie_owned_migration_f517effaad0ba0b44e70e299 with 156 actual migrations\n"}
+{"Time":"2026-10-15T13:02:41.0238212+08:00","Action":"output","Package":"github.com/birdtie/birdtie/apps/api/internal/postgres","Test":"TestLegacyNativeAdaptationNativeStablePrivateTargets","Output":"--- PASS: TestLegacyNativeAdaptationNativeStablePrivateTargets (2.11s)\n"}
+{"Time":"2026-10-15T13:02:41.0238212+08:00","Action":"pass","Package":"github.com/birdtie/birdtie/apps/api/internal/postgres","Test":"TestLegacyNativeAdaptationNativeStablePrivateTargets","Elapsed":2.11}
+{"Time":"2026-10-15T13:02:41.0238212+08:00","Action":"output","Package":"github.com/birdtie/birdtie/apps/api/internal/postgres","Output":"PASS\n"}
+{"Time":"2026-10-15T13:02:41.0264965+08:00","Action":"output","Package":"github.com/birdtie/birdtie/apps/api/internal/postgres","Output":"ok  \tgithub.com/birdtie/birdtie/apps/api/internal/postgres\t4.170s\n"}
+{"Time":"2026-10-15T13:02:41.0264965+08:00","Action":"pass","Package":"github.com/birdtie/birdtie/apps/api/internal/postgres","Elapsed":4.17}

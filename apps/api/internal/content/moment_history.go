@@ -73,8 +73,12 @@ func ValidateMomentHistoryQuery(q MomentHistoryQuery, own bool) error {
 		return ErrInvalid
 	}
 	switch q.Scope {
-	case "city", "following", "friends":
+	case "city":
 		if q.CityID == "" || q.AuthorID != "" {
+			return ErrInvalid
+		}
+	case "following", "friends":
+		if q.AuthorID != "" {
 			return ErrInvalid
 		}
 	case "author":

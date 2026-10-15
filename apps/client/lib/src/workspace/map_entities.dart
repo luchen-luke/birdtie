@@ -404,7 +404,7 @@ class IndividualMapMarker extends StatelessWidget {
           children: [
             IconButton(
               key: ValueKey('individual-map-target:${entity.id}'),
-              tooltip: entity.title,
+              tooltip: entity.title.isEmpty && moment ? '查看动态' : entity.title,
               constraints: const BoxConstraints.tightFor(width: 48, height: 48),
               padding: EdgeInsets.zero,
               onPressed: onTap,
@@ -447,7 +447,9 @@ class IndividualMapMarker extends StatelessWidget {
                       ),
               ),
             ),
-            if (showLabel && !pale)
+            if (showLabel &&
+                !pale &&
+                (entity.title.isNotEmpty || recent != null))
               Positioned(
                 top: 46,
                 left: -48,
@@ -456,16 +458,17 @@ class IndividualMapMarker extends StatelessWidget {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(
-                        entity.title,
-                        maxLines: selected ? 2 : 1,
-                        overflow: TextOverflow.ellipsis,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontSize: MapMarkerVisual.labelFontSize,
-                          color: Color(0xFF193B32),
+                      if (entity.title.isNotEmpty)
+                        Text(
+                          entity.title,
+                          maxLines: selected ? 2 : 1,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontSize: MapMarkerVisual.labelFontSize,
+                            color: Color(0xFF193B32),
+                          ),
                         ),
-                      ),
                       if (recent != null)
                         Text(
                           recent,

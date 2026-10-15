@@ -916,15 +916,23 @@ class HumanBlockSnapshot extends HumanCausalSnapshot {
 }
 
 class HumanCausalFailure implements Exception {
-  const HumanCausalFailure(this.status);
+  const HumanCausalFailure(this.status, {this.code = ''});
   final int status;
-  String get message => switch (status) {
-    401 => '当前个人登录已失效。',
-    403 => '当前没有此项操作权限。',
-    404 => '当前资料或原操作不可读。',
-    409 => '当前资料、权限或具体版本已变化，请重新读取。',
-    _ => '服务暂不可用，请稍后读取。',
-  };
+  final String code;
+  bool get legacyMomentPhotoReselectionRequired =>
+      status == 409 && code == 'legacy_moment_photo_reselection_required';
+  String get message {
+    if (legacyMomentPhotoReselectionRequired) {
+      return '这张旧版配图需要重新选择后才能修改公开动态；也可以添加正文并明确移除配图。';
+    }
+    return switch (status) {
+      401 => '当前个人登录已失效。',
+      403 => '当前没有此项操作权限。',
+      404 => '当前资料或原操作不可读。',
+      409 => '当前资料、权限或具体版本已变化，请重新读取。',
+      _ => '服务暂不可用，请稍后读取。',
+    };
+  }
 }
 
 class HumanCausalApi {
@@ -975,8 +983,24 @@ class HumanCausalApi {
     }
     if (!current() || token != authorizationHeader())
       throw const HumanCausalFailure(401);
-    if (response.statusCode != 200)
-      throw HumanCausalFailure(response.statusCode);
+    if (response.statusCode != 200) {
+      var code = '';
+      if (response.statusCode == 409) {
+        try {
+          final body = jsonDecode(utf8.decode(bytes.takeBytes()));
+          if (body is Map<String, dynamic>) {
+            final error = body['error'];
+            if (error is Map<String, dynamic> &&
+                error['code'] == 'legacy_moment_photo_reselection_required') {
+              code = 'legacy_moment_photo_reselection_required';
+            }
+          }
+        } catch (_) {
+          // Error bodies never supply display text or executable recovery data.
+        }
+      }
+      throw HumanCausalFailure(response.statusCode, code: code);
+    }
     return humanControlObject(jsonDecode(utf8.decode(bytes.takeBytes())), {
       'data',
     })['data'];

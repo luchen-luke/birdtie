@@ -9,7 +9,7 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-const momentColumns = `m.id, m.author_account_id, m.city_id,
+const momentColumns = `m.id, m.author_account_id, COALESCE(m.city_id, ''),
     COALESCE(m.place_id::text, ''), m.title, m.body, m.occurred_at,
     m.time_precision, m.location_precision,
     ARRAY(SELECT l.activity_id::text FROM moment_activity_links l
@@ -47,15 +47,21 @@ func (s *Store) CreateMomentDraft(ctx context.Context, authorID string, input co
 }
 
 func createMomentDraftInTx(ctx context.Context, tx pgx.Tx, authorID string, input content.MomentInput) (content.Moment, error) {
+	input, err := content.NormalizeMomentInput(input)
+	if err != nil {
+		return content.Moment{}, err
+	}
 	m, err := scanMoment(tx.QueryRow(ctx, `INSERT INTO moments AS m (
         author_account_id, city_id, place_id, title, body, occurred_at,
         time_precision, location_precision
     )
-    SELECT $1, c.id, NULLIF($3, '')::uuid, $4, $5, $6, $7, $8
-    FROM cities c WHERE c.id = $2 AND c.publication_status = 'published'
+    SELECT $1, NULLIF($2, ''), NULLIF($3, '')::uuid, $4, $5, $6, $7, $8
+    FROM (SELECT 1) input LEFT JOIN cities c ON c.id = $2
+    WHERE (($2 = '' AND (($3 = '' AND $8 = 'none') OR ($3 <> '' AND $8 = 'place')))
+      OR (c.id IS NOT NULL AND c.publication_status = 'published'))
       AND ($3 = '' OR EXISTS (
         SELECT 1 FROM places p WHERE p.id = NULLIF($3, '')::uuid
-          AND p.city_id = c.id AND p.publication_status = 'published'
+          AND ($2 = '' OR p.city_id = c.id) AND p.publication_status = 'published'
       ))
     RETURNING `+momentColumns, authorID, input.CityID, input.PlaceID,
 		input.Title, input.Body, input.OccurredAt, input.TimePrecision,
@@ -127,24 +133,33 @@ func (s *Store) UpdateMomentDraft(ctx context.Context, authorID, momentID string
 }
 
 func updateMomentDraftInTx(ctx context.Context, tx pgx.Tx, authorID, momentID string, revision int64, input content.MomentInput) (content.Moment, error) {
+	input, err := content.NormalizeMomentInput(input)
+	if err != nil {
+		return content.Moment{}, err
+	}
 	m, err := scanMoment(tx.QueryRow(ctx, `UPDATE moments m
-        SET city_id = $4, place_id = NULLIF($5, '')::uuid,
+        SET city_id = NULLIF($4, ''), place_id = NULLIF($5, '')::uuid,
             title = $6, body = $7, occurred_at = $8,
             time_precision = $9, location_precision = $10,
             revision = m.revision + 1, updated_at = now()
         WHERE m.id = $1 AND m.author_account_id = $2
-          AND m.revision = $3 AND m.status = 'draft'
-          AND EXISTS (
+          AND m.revision = $3 AND m.status = 'draft' AND m.visibility = 'private'
+          AND (($4 = '' AND (($5 = '' AND $10 = 'none') OR($5 <> '' AND $10='place'))
+            AND ($11 OR NOT EXISTS(SELECT 1 FROM moment_activity_links l WHERE l.moment_id=m.id))
+            AND ($12 OR NOT EXISTS(SELECT 1 FROM moment_community_links l WHERE l.moment_id=m.id))
+            AND ($13 OR NOT EXISTS(SELECT 1 FROM moment_organization_links l WHERE l.moment_id=m.id)))
+          OR ($4 <> '' AND EXISTS (
             SELECT 1 FROM cities c WHERE c.id = $4
               AND c.publication_status = 'published'
-          )
+          )))
           AND ($5 = '' OR m.place_id = NULLIF($5, '')::uuid OR EXISTS (
             SELECT 1 FROM places p WHERE p.id = NULLIF($5, '')::uuid
-              AND p.city_id = $4 AND p.publication_status = 'published'
+              AND ($4 = '' OR p.city_id = $4) AND p.publication_status = 'published'
           ))
         RETURNING `+momentColumns, momentID, authorID, revision,
 		input.CityID, input.PlaceID, input.Title, input.Body, input.OccurredAt,
-		input.TimePrecision, input.LocationPrecision))
+		input.TimePrecision, input.LocationPrecision,
+		input.ActivityID != nil && *input.ActivityID == "", input.CommunityID != nil && *input.CommunityID == "", input.OrganizationID != nil && *input.OrganizationID == ""))
 	if errors.Is(err, pgx.ErrNoRows) {
 		return content.Moment{}, content.ErrConflict
 	}

@@ -53,7 +53,7 @@ class _MomentPublicationSheetState extends State<MomentPublicationSheet> {
                 Text(
                   widget.withdrawal
                       ? '撤回后将不再出现在地点公开摘要中。已被他人看到或转发的内容无法收回。'
-                      : '下面的标题和正文会公开出现在关联地点，任何人都可能看到。私人关联、时间自述和坐标不会随摘要展示。',
+                      : '下面的内容将公开，任何人都可能看到。请检查这版内容和可见范围。',
                 ),
                 if (c.loading)
                   const Padding(
@@ -62,9 +62,9 @@ class _MomentPublicationSheetState extends State<MomentPublicationSheet> {
                   ),
                 if (p != null) ...[
                   const SizedBox(height: 16),
-                  Text(p.title, style: text.placeTitle),
+                  if (p.title.isNotEmpty) Text(p.title, style: text.placeTitle),
                   if (p.body.isNotEmpty) Text(p.body),
-                  Text('关联地点：${p.placeName}'),
+                  if (p.placeName.isNotEmpty) Text('关联地点：${p.placeName}'),
                   Text('记录版本：${p.revision}', style: text.metadata),
                   CheckboxListTile(
                     contentPadding: EdgeInsets.zero,

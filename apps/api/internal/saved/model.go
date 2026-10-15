@@ -6,6 +6,7 @@ import (
 	"github.com/birdtie/birdtie/apps/api/internal/communityavatar"
 	ea "github.com/birdtie/birdtie/apps/api/internal/entityaction"
 	"github.com/birdtie/birdtie/apps/api/internal/entitycover"
+	lpr "github.com/birdtie/birdtie/apps/api/internal/legacyplacereference"
 	"github.com/birdtie/birdtie/apps/api/internal/placephoto"
 	"math"
 	"time"
@@ -31,11 +32,15 @@ type Item struct {
 	Latitude        *float64                  `json:"latitude,omitempty"`
 	Longitude       *float64                  `json:"longitude,omitempty"`
 	SourceExpiresAt *time.Time                `json:"sourceExpiresAt,omitempty"`
+	LegacyReference *lpr.Summary              `json:"legacyReference,omitempty"`
 }
 
 // A Saved reference grants no point permission. Coordinates are an optional
 // current public Place projection, never a private note or inferred location.
 func (i Item) ValidPoint(now time.Time) bool {
+	if i.LegacyReference != nil && (!i.LegacyReference.Valid(now) || i.LegacyReference.Kind != "saved_place" || i.LegacyReference.RecordID != i.ID || i.LegacyReference.PlaceID != i.TargetID || i.Kind != "place" || i.Available || i.Latitude != nil || i.Longitude != nil || i.SourceExpiresAt != nil || i.PlacePhoto != nil || i.Cover != nil || i.CommunityAvatar != nil) {
+		return false
+	}
 	if i.Latitude == nil && i.Longitude == nil && i.SourceExpiresAt == nil {
 		return true
 	}

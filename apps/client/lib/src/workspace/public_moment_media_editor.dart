@@ -162,25 +162,30 @@ class _PublicMomentMediaEditorState extends State<PublicMomentMediaEditor> {
                       IconButton(
                         tooltip: '将图片 ${index + 1} 前移',
                         onPressed: c.canEdit && index > 0
-                            ? () => c.reorder(index, index - 1)
+                            ? () => unawaited(c.reorder(index, index - 1))
                             : null,
                         icon: const Icon(Icons.arrow_upward),
                       ),
                       IconButton(
                         tooltip: '将图片 ${index + 1} 后移',
                         onPressed: c.canEdit && index < c.images.length - 1
-                            ? () => c.reorder(index, index + 1)
+                            ? () => unawaited(c.reorder(index, index + 1))
                             : null,
                         icon: const Icon(Icons.arrow_downward),
                       ),
                       IconButton(
                         tooltip: '移除图片 ${index + 1}',
-                        onPressed: c.canEdit ? () => c.remove(index) : null,
+                        onPressed: c.canEdit
+                            ? () => unawaited(c.remove(index))
+                            : null,
                         icon: const Icon(Icons.close),
                       ),
                     ],
                   ),
-                  if (preview != null && index < preview.thumbnails.length)
+                  if (c.images[index].stage != null &&
+                      !c.images[index].stage!.current)
+                    Text('这份暂存材料已过期，请移除后重新选择。', style: tokens.metadata)
+                  else if (preview != null && index < preview.thumbnails.length)
                     Image.memory(
                       preview.thumbnails[index],
                       height: 144,
@@ -275,6 +280,11 @@ class _PublicMomentMediaEditorState extends State<PublicMomentMediaEditor> {
               liveRegion: true,
               child: Text(c.notice!, style: tokens.body),
             ),
+          if (c.hasUnresolvedStagedMaterials && !c.busy)
+            TextButton(
+              onPressed: c.current ? () => unawaited(c.load()) : null,
+              child: const Text('重读原暂存材料'),
+            ),
           if (preview != null) ...[
             Text(
               preview.input.action == 'DELETE'
@@ -299,7 +309,7 @@ class _PublicMomentMediaEditorState extends State<PublicMomentMediaEditor> {
                       c.materialOnly ? _prepareForThread() : c.prepare(),
                     )
                   : null,
-              child: Text(c.materialOnly ? '准备这条材料，随串文一起确认' : '检查全部材料和公开范围'),
+              child: Text(c.materialOnly ? '准备这条材料，随动态一起确认' : '检查全部材料和公开范围'),
             ),
           if (c.state?.canDelete == true && preview == null)
             TextButton(

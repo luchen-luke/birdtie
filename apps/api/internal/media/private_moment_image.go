@@ -32,6 +32,9 @@ type PrivateImageInput struct {
 	Purpose        string `json:"purpose"`
 }
 type PrivateImageReceipt struct {
+	// Origin is a read projection from immutable migration provenance. It is
+	// never accepted in an ordinary upload, approval or pending operation input.
+	Origin           string    `json:"origin,omitempty"`
 	ID               string    `json:"id"`
 	OperationID      string    `json:"operationId"`
 	MomentID         string    `json:"momentId"`

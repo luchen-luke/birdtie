@@ -14,6 +14,7 @@ import 'private_moment_media_pending_store.dart';
 import '../workspace/local_image_draft.dart' show decodeLocalImagePixels;
 
 const privateMomentImagePurpose = 'PRIVATE_MOMENT_ATTACHMENT';
+const privateMomentLegacyImportOrigin = 'LEGACY_PRIVATE_IMPORT';
 final _imageID = RegExp(
   r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',
 );
@@ -33,6 +34,7 @@ class PrivateMomentImageReceipt {
       pixelRisk = j['pixelRisk'] as String,
       purpose = j['purpose'] as String,
       status = j['status'] as String,
+      origin = j['origin'] as String? ?? '',
       revision = j['revision'] as int,
       previewExpiresAt = _date(j['previewExpiresAt']),
       retainUntil = _date(j['retainUntil']) {
@@ -43,11 +45,15 @@ class PrivateMomentImageReceipt {
         momentRevision < 1 ||
         revision < 1 ||
         byteSize < 1 ||
-        byteSize > momentImageMaxBytes ||
+        byteSize >
+            (legacyPrivateImport
+                ? momentImageMaxDerivativeBytes
+                : momentImageMaxBytes) ||
         !_imageHash.hasMatch(inputHash) ||
         !['image/png', 'image/jpeg'].contains(mime) ||
         !['UNKNOWN', 'USER_MASKED'].contains(pixelRisk) ||
         purpose != privateMomentImagePurpose ||
+        (origin.isNotEmpty && !legacyPrivateImport) ||
         !['preview', 'ready_private', 'deleted'].contains(status) ||
         (status == 'ready_private' && !_imageHash.hasMatch(hash)) ||
         !retainUntil.isAfter(previewExpiresAt)) {
@@ -70,9 +76,13 @@ class PrivateMomentImageReceipt {
       hash,
       pixelRisk,
       purpose,
-      status;
+      status,
+      origin;
   final int momentRevision, byteSize, revision;
   final DateTime previewExpiresAt, retainUntil;
+  bool get legacyPrivateImport =>
+      origin == privateMomentLegacyImportOrigin &&
+      const ['ready_private', 'deleted'].contains(status);
 }
 
 class PrivateMomentMediaController extends ChangeNotifier {
@@ -422,6 +432,9 @@ class PrivateMomentMediaController extends ChangeNotifier {
       assetID: asset?.id,
       assetRevision: asset?.revision,
       derivativeHash: phase == 'delete' ? asset!.hash : null,
+      origin: phase == 'delete' && asset!.legacyPrivateImport
+          ? privateMomentLegacyImportOrigin
+          : '',
       observedAt: at,
       deadlineAt: phase == 'preview'
           ? at.add(const Duration(minutes: 5))
@@ -486,6 +499,7 @@ class PrivateMomentMediaController extends ChangeNotifier {
       r.byteSize == p.byteSize &&
       r.inputHash == p.inputHash &&
       r.pixelRisk == p.pixelRisk &&
+      r.origin == p.origin &&
       (p.assetID == null || r.id == p.assetID);
   Uri _uri(String path) => Uri.parse('$_base/v1/me/moments/$momentID/$path');
   String _newOperation() {
@@ -525,6 +539,7 @@ class PrivateMomentMediaController extends ChangeNotifier {
   }
 
   bool _exact(PrivateMomentImageReceipt r) =>
+      r.origin.isEmpty &&
       r.operationID == _operation &&
       r.momentRevision == momentRevision &&
       r.inputHash == sha256.convert(localBytes!).toString() &&
@@ -972,7 +987,11 @@ class PrivateMomentMediaController extends ChangeNotifier {
           sha256.convert(r.bodyBytes).toString() != v.hash) {
         throw const FormatException('图片内容不匹配');
       }
-      if (MomentImageHeader.inspect(r.bodyBytes, storedDerivative: true).mime !=
+      if (MomentImageHeader.inspect(
+            r.bodyBytes,
+            storedDerivative: true,
+            importedLegacyPrivate: v.legacyPrivateImport,
+          ).mime !=
           v.mime) {
         throw const FormatException('图片格式不匹配');
       }

@@ -12,6 +12,7 @@ class MomentImageHeader {
   static MomentImageHeader inspect(
     Uint8List b, {
     bool storedDerivative = false,
+    bool importedLegacyPrivate = false,
   }) {
     final limit = storedDerivative
         ? momentImageMaxDerivativeBytes
@@ -20,12 +21,15 @@ class MomentImageHeader {
       throw const FormatException('图片超过处理大小限制或为空');
     }
     final data = ByteData.sublistView(b);
+    final maxPixels = storedDerivative && importedLegacyPrivate
+        ? 48 * 1024 * 1024
+        : momentImageMaxPixels;
     void bounds(int w, int h) {
       if (w < 1 ||
           h < 1 ||
           w > momentImageMaxDimension ||
           h > momentImageMaxDimension ||
-          w * h > momentImageMaxPixels) {
+          w * h > maxPixels) {
         throw const FormatException('图片尺寸超过处理范围');
       }
     }

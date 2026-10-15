@@ -1,0 +1,14 @@
+{
+  "command": [
+    "C:\\Users\\chens\\AppData\\Local\\Android\\Sdk\\platform-tools\\adb.exe",
+    "-s",
+    "c641566b",
+    "install",
+    "-r",
+    "D:\\Project\\birdtie\\work\\social-remote-migration-20261015\\final-apk03\\birdtie-social-core.apk"
+  ],
+  "exitCode": 0,
+  "apkSHA256": "2c39b6a228c3021529cc6f6008e7f78469d28a644f4864272e66691d44e8e117",
+  "installed": true,
+  "uiAcceptance": "NOT_RUN"
+}

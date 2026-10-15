@@ -76,6 +76,7 @@ import 'now_context_selection_api.dart';
 import 'now_context_selection_page.dart';
 import 'online_social_opportunity_page.dart';
 import 'saved_items.dart';
+import 'legacy_place_reference_page.dart';
 import 'saved_map_projection.dart';
 import '../content/saved_collection_append.dart';
 import 'entity_share_pending_store.dart' show chatEntityUUID;
@@ -100,6 +101,7 @@ import 'now_social_edge.dart';
 import 'now_social_edge_source.dart';
 import 'now_composer_draft_state.dart';
 import 'now_creation_draft.dart';
+import 'moment_location_picker.dart';
 import 'now_creation_draft_state.dart';
 import 'now_creation_panel.dart';
 import 'now_image_materials.dart';
@@ -141,19 +143,6 @@ const _friendImageRolloutEnabled = bool.fromEnvironment(
   'BIRDTIE_FRIEND_IMAGE_ENABLED',
   defaultValue: false,
 );
-
-/// Transfer only the already selected local pixels into the existing private
-/// Moment media action; never reopen the gallery or reuse an upload approval.
-class _NowSelectedImagePicker extends MomentImagePicker {
-  _NowSelectedImagePicker(this._bytes);
-  Uint8List? _bytes;
-  @override
-  Future<MomentImageSelection?> selectSource(MomentImageSource source) async {
-    final bytes = _bytes;
-    _bytes = null;
-    return bytes == null ? null : MomentImageSelection(bytes);
-  }
-}
 
 class _NowMaterialPicker extends MomentImagePicker {
   _NowMaterialPicker(this.picker, this.source);
@@ -220,8 +209,11 @@ class _MapWorkspaceState extends State<MapWorkspace>
   Object _creationMaterialToken = Object();
   PublicMomentMediaController? _creationMedia;
   bool _creationUsesMediaSet = false;
+  int? _creationMediaApprovalSelection;
   MomentThreadController? _momentThread;
   final _threadImages = <String, PublicMomentMediaController>{};
+  final _threadStagesForCommit = <PublicMomentMediaController, List<String>>{};
+  String? _threadStageOperation;
   String? _threadActiveEntry;
   int _threadEntrySerial = 0;
   Object? _threadScope;
@@ -241,11 +233,6 @@ class _MapWorkspaceState extends State<MapWorkspace>
         _composerDrafts.target.human ||
         _organizations.active != null)
       return;
-    final city = widget.city.selectedCity;
-    if (city == null) {
-      await _chooseCity();
-      return;
-    }
     if (_threadCurrent) return;
     if (_creationCurrent) _exitCreation();
     _retireMomentThread();
@@ -264,7 +251,13 @@ class _MapWorkspaceState extends State<MapWorkspace>
     );
     _momentThread = c;
     c.addListener(_threadChanged);
-    await c.begin(cityID: city.id, initialText: _composerDrafts.value.text);
+    await c.begin(cityID: '', initialText: _composerDrafts.value.text);
+    if (mounted && _threadCurrent && identical(c, _momentThread)) {
+      for (final entry in c.entries) {
+        await _threadImageController(entry.localID).load();
+        if (!mounted || !_threadCurrent || !identical(c, _momentThread)) return;
+      }
+    }
     if (!mounted || !_threadCurrent || !identical(c, _momentThread)) return;
     setState(() {
       _socialExpanded = false;
@@ -296,6 +289,33 @@ class _MapWorkspaceState extends State<MapWorkspace>
       ++_threadEntrySerial;
     }
     if (t != null) {
+      for (final entry in t.entries) {
+        if (!_threadImages.containsKey(entry.localID)) {
+          unawaited(_threadImageController(entry.localID).load());
+        }
+      }
+      final operation = t.pending?.operationID;
+      if (operation != null &&
+          (operation != _threadStageOperation ||
+              _threadStagesForCommit.isEmpty)) {
+        _threadStageOperation = operation;
+        _threadStagesForCommit
+          ..clear()
+          ..addEntries(
+            _threadImages.values.map((c) => MapEntry(c, c.stagedOperationIDs)),
+          );
+      }
+      if (t.receipt?.status == 'SUCCEEDED' &&
+          t.receipt?.action == 'CREATE_PUBLISH' &&
+          t.receipt?.operationID == _threadStageOperation) {
+        for (final entry in _threadStagesForCommit.entries) {
+          unawaited(
+            entry.key.releaseStagedAfterPublication(operationIDs: entry.value),
+          );
+        }
+        _threadStagesForCommit.clear();
+        _threadStageOperation = null;
+      }
       final live = t.entries.map((e) => e.localID).toSet();
       for (final id
           in _threadImages.keys.where((id) => !live.contains(id)).toList())
@@ -351,7 +371,8 @@ class _MapWorkspaceState extends State<MapWorkspace>
     if (t == null) return false;
     for (final entry in t.entries) {
       final c = _threadImages[entry.localID];
-      if (c == null) continue;
+      if (c == null || !c.journalReady || c.hasUnresolvedStagedMaterials)
+        return false;
       if (c.busy || c.uncertain) return false;
       if (c.images.isEmpty) continue;
       if (c.images.any(
@@ -423,40 +444,28 @@ class _MapWorkspaceState extends State<MapWorkspace>
   }
 
   Future<void> _chooseThreadPlace(String entryID) async {
-    final t = _momentThread,
-        serial = _threadEntrySerial,
-        city = widget.city.selectedCity;
-    if (!_threadCurrent || t == null || !t.editable || city == null) return;
-    final place = await showModalBottomSheet<CollectionPlace>(
+    final t = _momentThread, serial = _threadEntrySerial;
+    bool current() =>
+        mounted &&
+        _threadCurrent &&
+        t != null &&
+        identical(t, _momentThread) &&
+        serial == _threadEntrySerial &&
+        t.editable &&
+        t.entries[t.activeIndex].localID == entryID;
+    if (!current()) return;
+    final place = await showModalBottomSheet<MomentLocationChoice>(
       context: context,
       useSafeArea: true,
-      showDragHandle: true,
-      builder: (sheet) => ListView(
-        shrinkWrap: true,
-        children: [
-          ListTile(
-            title: Text('仅关联 ${city.name}'),
-            onTap: () =>
-                Navigator.pop(sheet, const CollectionPlace(id: '', name: '')),
-          ),
-          for (final p in widget.city.places)
-            ListTile(
-              title: Text(p.name),
-              onTap: () =>
-                  Navigator.pop(sheet, CollectionPlace(id: p.id, name: p.name)),
-            ),
-        ],
+      isScrollControlled: true,
+      builder: (_) => MomentLocationPicker(
+        client: widget.moments.borrowedClient,
+        baseUrl: widget.moments.apiBaseUrl,
+        current: current,
       ),
     );
-    if (!mounted ||
-        !_threadCurrent ||
-        !identical(t, _momentThread) ||
-        serial != _threadEntrySerial ||
-        !t.editable ||
-        place == null ||
-        t.entries[t.activeIndex].localID != entryID)
-      return;
-    t.setActiveContext(cityID: city.id, placeID: place.id);
+    if (!current() || place == null) return;
+    t!.setActiveContext(cityID: place.cityID, placeID: place.placeID);
   }
 
   Widget _threadEntryMaterials() {
@@ -479,7 +488,9 @@ class _MapWorkspaceState extends State<MapWorkspace>
               : null,
           icon: const Icon(Icons.place_outlined),
           label: Text(
-            entry.placeID.isEmpty ? '所选城市 · 选择这条地点' : placeName ?? '这条地点名称待核实',
+            entry.placeID.isEmpty
+                ? (entry.cityID.isEmpty ? '添加位置' : '已选城市 · 修改位置')
+                : placeName ?? '查看或修改位置',
           ),
         ),
         if (entry.media.isNotEmpty)
@@ -518,6 +529,8 @@ class _MapWorkspaceState extends State<MapWorkspace>
     _momentThread?.dispose();
     for (final c in _threadImages.values) c.dispose();
     _threadImages.clear();
+    _threadStagesForCommit.clear();
+    _threadStageOperation = null;
     _threadActiveEntry = null;
     ++_threadEntrySerial;
     _momentThread = null;
@@ -546,6 +559,10 @@ class _MapWorkspaceState extends State<MapWorkspace>
         _creationImages.busy ||
         _creationImages.images.length >= 9)
       return;
+    if (_creationMedia?.materialOnly == true) {
+      await _selectPublishedCreationImages(source: source);
+      return;
+    }
     final scope = (_creationScope, _creationMaterialToken);
     final authorization = widget.auth.authorizationHeader;
     _composerKey.currentState?.pauseEditing();
@@ -604,7 +621,6 @@ class _MapWorkspaceState extends State<MapWorkspace>
     widget.auth,
     widget.auth.accountID,
     widget.city,
-    widget.city.selectedCity?.id,
     _organizations.active?.id,
     _personalSourceSerial,
     widget.seedClient,
@@ -614,6 +630,8 @@ class _MapWorkspaceState extends State<MapWorkspace>
   bool get _creationCurrent =>
       _creation != null &&
       _creationScope == _creationIdentity &&
+      (_creation!.kind == 'moment' ||
+          _creation!.cityID == widget.city.selectedCity?.id) &&
       widget.auth.signedIn &&
       _organizations.active == null &&
       !_composerDrafts.target.human;
@@ -626,7 +644,7 @@ class _MapWorkspaceState extends State<MapWorkspace>
 
   void _rememberCreation({bool includeInput = false}) {
     if (!_creationCurrent) return;
-    var draft = _creation!;
+    var draft = _creation!.copyWith(nativeMomentID: _creationMomentID ?? '');
     final text = _composerDrafts.value.text;
     if (includeInput && text.isNotEmpty) {
       draft = draft.withText(text, titleOnly: _creationTitleEditing);
@@ -663,6 +681,9 @@ class _MapWorkspaceState extends State<MapWorkspace>
       _creationError = _creationDrafts.storageError;
       if (restored != null) {
         _creation = restored;
+        _creationMomentID = restored.nativeMomentID.isEmpty
+            ? null
+            : restored.nativeMomentID;
         _creationPlaces.clear();
         for (final id in restored.orderedPlaceIDs) {
           final place = widget.city.places.where((p) => p.id == id).firstOrNull;
@@ -674,6 +695,41 @@ class _MapWorkspaceState extends State<MapWorkspace>
         _creationNotice = null;
       }
     });
+    await _restoreCreationNativeMoment();
+  }
+
+  Future<void> _restoreCreationNativeMoment() async {
+    final id = _creationMomentID, scope = _creationScope;
+    if (id == null || !_creationCurrent || _creation!.kind != 'moment') return;
+    bool current() =>
+        mounted &&
+        _creationCurrent &&
+        id == _creationMomentID &&
+        scope == _creationScope;
+    setState(() => _creationBusy = true);
+    try {
+      final moment = await widget.moments.readOwned(id, current: current);
+      if (!current()) return;
+      if (moment == null) {
+        setState(() => _creationError = '原动态暂时无法读取，保留本机文字，请重试保存时核实。');
+        return;
+      }
+      setState(() {
+        _creationPublished =
+            moment.status == 'published' && moment.visibility == 'public';
+        _creationPublishedRevision = _creationPublished
+            ? moment.revision
+            : null;
+      });
+      if (_creationPublished) {
+        _syncCreationMedia();
+      } else {
+        _syncCreationDraftMedia();
+        await _creationMedia?.load();
+      }
+    } finally {
+      if (current()) setState(() => _creationBusy = false);
+    }
   }
 
   void _onCreationDraftStorageChange() {
@@ -713,7 +769,7 @@ class _MapWorkspaceState extends State<MapWorkspace>
       if (_threadCurrent) return;
     }
     final city = widget.city.selectedCity;
-    if (city == null) {
+    if (city == null && kind != 'moment') {
       await _chooseCity();
       return;
     }
@@ -730,10 +786,12 @@ class _MapWorkspaceState extends State<MapWorkspace>
     if (_creationCurrent) {
       _rememberCreation(includeInput: true);
     }
+    final cityID = kind == 'moment' ? '' : city!.id;
+    final cityName = kind == 'moment' ? '' : city!.name;
     final text = _composerDrafts.value.text;
     _syncCreationDraftIdentity();
     final restoreSerial = ++_creationRestoreSerial;
-    final restored = _creationDrafts.cached(city.id, kind);
+    final restored = _creationDrafts.cached(cityID, kind);
     _beforeCreationInput ??= _composerDrafts.value;
     _retireCreationApprovals();
     _disposeCreationPublicPhoto();
@@ -742,7 +800,7 @@ class _MapWorkspaceState extends State<MapWorkspace>
     _creationPlaces.clear();
     var draft =
         restored ??
-        NowCreationDraft(kind: kind, cityID: city.id, cityName: city.name);
+        NowCreationDraft(kind: kind, cityID: cityID, cityName: cityName);
     if (draft.body.isEmpty && text.trim().isNotEmpty)
       draft = draft.withText(text);
     for (final id in draft.orderedPlaceIDs) {
@@ -755,8 +813,11 @@ class _MapWorkspaceState extends State<MapWorkspace>
       _creationScope = _creationIdentity;
       _creationCollapsed = false;
       _creationTitleEditing = false;
-      _creationError = _creationNotice = _creationMomentID =
-          _creationActivityID = _creationOperationID = null;
+      _creationError = _creationNotice = _creationActivityID =
+          _creationOperationID = null;
+      _creationMomentID = draft.nativeMomentID.isEmpty
+          ? null
+          : draft.nativeMomentID;
       _creationError = _creationDrafts.storageError;
       if (restored != null) _creationNotice = '已恢复本机草稿，请检查内容后保存。';
       _creationRestorePending = restored == null && text.trim().isEmpty;
@@ -772,10 +833,11 @@ class _MapWorkspaceState extends State<MapWorkspace>
     _composerDrafts.update(TextEditingValue.empty);
     if (_creationRestorePending) {
       unawaited(
-        _restoreCreationMaterial(city.id, kind, _creationScope, restoreSerial),
+        _restoreCreationMaterial(cityID, kind, _creationScope, restoreSerial),
       );
     } else {
       _rememberCreation();
+      unawaited(_restoreCreationNativeMoment());
     }
   }
 
@@ -843,6 +905,40 @@ class _MapWorkspaceState extends State<MapWorkspace>
   Future<void> _chooseCreationPlace() async {
     if (!_creationCurrent || _creationBusy || _creationUncertain) return;
     final scope = _creationScope;
+    if (_creation!.kind == 'moment') {
+      final picked = await showModalBottomSheet<MomentLocationChoice>(
+        context: context,
+        useSafeArea: true,
+        showDragHandle: true,
+        isScrollControlled: true,
+        builder: (_) => SizedBox(
+          height: MediaQuery.sizeOf(context).height * .8,
+          child: MomentLocationPicker(
+            client: widget.moments.borrowedClient,
+            baseUrl: widget.moments.apiBaseUrl,
+            current: () =>
+                mounted && _creationCurrent && scope == _creationScope,
+          ),
+        ),
+      );
+      if (!mounted ||
+          !_creationCurrent ||
+          scope != _creationScope ||
+          picked == null)
+        return;
+      _retireCreationApprovals();
+      setState(() {
+        _creation = _creation!.copyWith(
+          cityID: picked.cityID,
+          cityName: picked.cityName,
+          placeID: picked.placeID,
+          placeName: picked.placeName,
+        );
+        _creationError = _creationNotice = null;
+      });
+      _rememberCreation();
+      return;
+    }
     final selected = await showModalBottomSheet<CollectionPlace>(
       context: context,
       useSafeArea: true,
@@ -979,10 +1075,10 @@ class _MapWorkspaceState extends State<MapWorkspace>
         _creationCurrent &&
         scope == _creationScope &&
         identical(draft, _creation);
-    if (draft.title.trim().isEmpty ||
+    if ((draft.kind != 'moment' && draft.title.trim().isEmpty) ||
         utf8.encode(draft.title.trim()).length > 160 ||
         utf8.encode(draft.body).length > 5000) {
-      setState(() => _creationError = '先在下方写下内容；名称或正文较长时，请缩短后保存。');
+      setState(() => _creationError = '名称或正文较长时，请缩短后保存。');
       return;
     }
     setState(() {
@@ -991,9 +1087,13 @@ class _MapWorkspaceState extends State<MapWorkspace>
     });
     try {
       if (draft.kind == 'moment') {
-        final original = widget.moments.moments
-            .where((m) => m.id == _creationMomentID)
-            .firstOrNull;
+        final original = _creationMomentID == null
+            ? null
+            : await widget.moments.readOwned(
+                _creationMomentID!,
+                current: current,
+              );
+        if (!current()) return;
         if (_creationMomentID != null && original == null) {
           setState(() => _creationError = '原草稿当前不可读取，请先到个人记录核实。');
           return;
@@ -1011,6 +1111,7 @@ class _MapWorkspaceState extends State<MapWorkspace>
                 title: draft.title,
                 body: draft.body,
                 placeID: draft.placeID,
+                cityID: draft.cityID,
                 current: current,
               );
         if (current())
@@ -1156,16 +1257,19 @@ class _MapWorkspaceState extends State<MapWorkspace>
       if (saved && publicUpdate)
         _creationPublishedRevision =
             widget.moments.operationReceipt?.appliedRevision;
-      if (saved && withdrawal) _creationPublished = false;
+      if (saved && withdrawal) {
+        _creationPublished = false;
+        _creation = _creation?.copyWith(nativeMomentID: '');
+      }
       _creationNotice = saved
           ? withdrawal
                 ? '这条公开动态已撤回，本机文字草稿仍保留。'
                 : publicUpdate
-                ? '公开文字已修改。之前公开的图片已撤下，请重新选择并确认。'
+                ? '这条动态已修改。'
                 : '动态文字草稿已保存，仅自己可见。'
           : null;
       _creationError = saved ? null : widget.moments.operationError;
-      _creationUncertain = widget.moments.creationUncertain;
+      _creationUncertain = widget.moments.recoveryOperations.isNotEmpty;
     });
     if (saved && (publicUpdate || withdrawal)) {
       _disposeCreationPublicPhoto();
@@ -1177,11 +1281,11 @@ class _MapWorkspaceState extends State<MapWorkspace>
       _creationPhotoPublished = false;
       if (publicUpdate) _syncCreationMedia();
     }
-    if (saved &&
-        !publicUpdate &&
-        !withdrawal &&
-        _imageDraft?.localBytes != null)
-      await _prepareCreationLocalImage();
+    if (saved) _rememberCreation();
+    if (saved && !publicUpdate && !withdrawal) {
+      _syncCreationDraftMedia();
+      await _creationMedia?.load();
+    }
   }
 
   Future<void> _previewPublishedCreationChange({bool withdraw = false}) async {
@@ -1211,6 +1315,13 @@ class _MapWorkspaceState extends State<MapWorkspace>
               moment: moment,
               title: draft!.title.trim(),
               body: draft.body.trim(),
+              cityID: draft.cityID,
+              placeID: draft.placeID,
+              locationPrecision: draft.placeID.isNotEmpty
+                  ? 'place'
+                  : draft.cityID.isNotEmpty
+                  ? 'city'
+                  : 'none',
               current: current,
             );
       if (current())
@@ -1220,7 +1331,7 @@ class _MapWorkspaceState extends State<MapWorkspace>
               ? null
               : withdraw
               ? '确认后撤回这条公开动态及其当前图片。'
-              : '确认后修改这条公开动态的文字，并撤下当前公开图片；图片需重新选择并确认。';
+              : '确认后修改这条公开动态，现有有效媒体会保留。';
         });
     } catch (_) {
       if (current()) setState(() => _creationError = '这条公开动态暂不可核实，编辑内容已保留。');
@@ -1228,41 +1339,6 @@ class _MapWorkspaceState extends State<MapWorkspace>
       if (mounted && _creationCurrent && scope == _creationScope)
         setState(() => _creationBusy = false);
     }
-  }
-
-  Future<void> _prepareCreationLocalImage() async {
-    final pixels = _imageDraft?.localBytes, id = _creationMomentID;
-    final moment = widget.moments.moments.where((m) => m.id == id).firstOrNull;
-    if (!_creationCurrent || pixels == null || id == null || moment == null)
-      return;
-    final scope = _creationScope, selected = _localImageSelectionSerial;
-    final owner = widget.auth.accountID;
-    _creationImage?.dispose();
-    final c = PrivateMomentMediaController(
-      momentID: id,
-      momentRevision: moment.revision,
-      authorizationHeader: () => widget.auth.authorizationHeader,
-      ownerID: () => widget.auth.accountID,
-      identityChanges: _activeIntentChanges,
-      sourceCurrent: () =>
-          mounted &&
-          _creationCurrent &&
-          scope == _creationScope &&
-          selected == _localImageSelectionSerial &&
-          widget.auth.accountID == owner &&
-          _imageDraft?.localBytes != null,
-      organizationWorkspaceID: () => _organizations.active?.id,
-      apiBaseUrl: widget.seedApiBaseUrl ?? BirdtieEnvironment.apiBaseUrl,
-      client: _authenticatedTransport(widget.seedClient),
-      picker: _NowSelectedImagePicker(Uint8List.fromList(pixels)),
-    );
-    _creationImage = c;
-    await c.select();
-    if (mounted && _creationCurrent && identical(c, _creationImage))
-      setState(() {
-        _creationError = c.error;
-        if (c.hasLocalImage) _creationNotice = '文字草稿已保存。下方这张图片待确认加入该动态，仅自己可见。';
-      });
   }
 
   Future<void> _saveCreationImage() async {
@@ -1294,96 +1370,249 @@ class _MapWorkspaceState extends State<MapWorkspace>
       });
   }
 
+  void _syncCreationDraftMedia() {
+    if (!_creationCurrent || _creationPublished || _creationMomentID == null)
+      return;
+    // Load the durable stage journal even when raw selection bytes are gone.
+    if (_creationMedia?.materialOnly != true ||
+        _creationMedia?.current != true) {
+      _creationMedia?.dispose();
+      final scope = _creationScope,
+          id = _creationMomentID!,
+          owner = widget.auth.accountID;
+      final c = PublicMomentMediaController(
+        momentID: id,
+        expectedMomentRevision: 1,
+        localScopeOverride: id,
+        materialOnly: true,
+        ownerID: () => widget.auth.accountID,
+        authorizationHeader: () => widget.auth.authorizationHeader,
+        sourceCurrent: () =>
+            mounted &&
+            _creationCurrent &&
+            !_creationPublished &&
+            scope == _creationScope &&
+            id == _creationMomentID &&
+            owner == widget.auth.accountID,
+        boundaryChanges: _activeIntentChanges,
+        client: widget.moments.borrowedClient,
+        apiBaseUrl: widget.moments.apiBaseUrl,
+      );
+      c.addListener(_creationMediaChanged);
+      _creationMedia = c;
+    }
+    final c = _creationMedia!;
+    if (!c.canEdit) return;
+    if (_creationImages.images.isNotEmpty) {
+      final before = c.images.length;
+      c.addSelectedBytes(_creationImages.images);
+      if (c.images.length > before) _creationImages.clear();
+    }
+    final local = _imageDraft;
+    if (local?.current == true && local?.localBytes != null) {
+      final before = c.images.length;
+      c.addSelectedBytes([local!.localBytes!]);
+      if (c.images.length > before) local.removeLocal();
+    }
+    _takeSelectedVideo(c);
+    _creationUsesMediaSet = c.images.isNotEmpty;
+  }
+
+  void _creationMediaChanged() {
+    if (_creationPublishPreview != null &&
+        _creationMediaApprovalSelection != _creationMedia?.selectionRevision) {
+      _creationPublishPreview = null;
+      widget.moments.retirePreview();
+    }
+    _requestInlineRebuild();
+  }
+
   Future<void> _publishCreation() async {
-    if (!_creationCurrent || _creationBusy || _creationMomentID == null) return;
-    if (_creation!.placeID.isEmpty &&
-        _creationImages.images.isEmpty &&
-        (_imageDraft?.localBytes != null || _creationImage != null)) {
-      setState(() => _creationError = '城市文字可以直接公开。公开图片需先关联真实地点，或移除图片后发布文字。');
+    if (!_creationCurrent || _creationBusy || _creationUncertain) return;
+    if (_creationMedia?.busy == true ||
+        _creationMedia?.uncertain == true ||
+        _creationMedia?.hasUnresolvedStagedMaterials == true ||
+        _creationMedia?.pending.isNotEmpty == true ||
+        _creationImages.busy ||
+        _videoMaterials?.busy == true) {
+      setState(() => _creationError = '媒体操作尚未完成，请先核实或停止原操作。');
       return;
     }
+    if (_composerDrafts.value.text.isNotEmpty)
+      _updateCreation(_composerDrafts.value.text);
     if (_videoMaterials?.selection != null &&
         (_creationImages.images.isNotEmpty ||
-            _imageDraft?.localBytes != null)) {
+            _imageDraft?.localBytes != null ||
+            _creationMedia?.images.any(
+                  (image) =>
+                      image.mime != 'video/mp4' && image.stage?.isVideo != true,
+                ) ==
+                true)) {
       setState(() => _creationError = '一条动态使用最多 9 张图片，或 1 段视频。请先移除另一种材料。');
       return;
     }
-    if (_videoMaterials?.current == true && _videoMaterials?.selection != null)
-      _creationUsesMediaSet = true;
-    if (_creationImage?.unknown == true || _creationImage?.busy == true) {
-      setState(() => _creationError = '请先核实原私人图片保存操作，再公开这条动态。');
-      return;
-    }
-    final scope = _creationScope;
-    final c = widget.moments;
-    final draft = _creation!;
+    final scope = _creationScope, draft = _creation!, c = widget.moments;
     bool current() =>
         mounted &&
         _creationCurrent &&
         scope == _creationScope &&
         identical(draft, _creation);
-    setState(() => _creationBusy = true);
+    setState(() {
+      _creationBusy = true;
+      _creationError = null;
+    });
     try {
-      final m = await c.readOwned(_creationMomentID!, current: current);
-      if (current() && m != null) {
-        if (m.cityID != draft.cityID ||
-            m.placeID != draft.placeID ||
-            m.title != draft.title.trim() ||
-            m.body != draft.body.trim()) {
-          _creationError = '当前内容还没有保存。请先确认保存这版草稿，再检查公开发布。';
-        } else {
-          _creationError = null;
-          _creationPublishPreview = await c.previewPublish(m, current: current);
+      // A private save is reversible. Only the following concrete preview can
+      // authorize publication, with text and uploaded media in one transaction.
+      var m = _creationMomentID == null
+          ? null
+          : await c.readOwned(_creationMomentID!, current: current);
+      if (!current()) return;
+      if (_creationMomentID != null && m == null) {
+        _creationError = c.operationError ?? '原草稿暂不可读取，内容仍保留。';
+        return;
+      }
+      if (m == null ||
+          m.cityID != draft.cityID ||
+          m.placeID != draft.placeID ||
+          m.title != draft.title.trim() ||
+          m.body != draft.body.trim()) {
+        final save = m == null
+            ? await c.previewCreate(
+                cityID: draft.cityID,
+                title: draft.title,
+                body: draft.body,
+                placeID: draft.placeID,
+                current: current,
+              )
+            : await c.previewUpdate(
+                moment: m,
+                title: draft.title,
+                body: draft.body,
+                placeID: draft.placeID,
+                cityID: draft.cityID,
+                current: current,
+              );
+        if (!current() || save == null) {
+          _creationError = c.operationError;
+          return;
+        }
+        _creationOperationID = save.input.operationID;
+        if (!await c.commit(save, current: current) || !current()) {
+          _creationUncertain = c.recoveryOperations.isNotEmpty;
+          _creationError = c.operationError;
+          return;
+        }
+        _creationMomentID = c.operationReceipt!.momentID;
+        _rememberCreation();
+        m = await c.readOwned(_creationMomentID!, current: current);
+      }
+      if (!current() || m == null) return;
+      _syncCreationDraftMedia();
+      final media = _creationMedia;
+      List<PublicMomentMediaSelection>? selections;
+      if (media != null && media.materialOnly) {
+        if (!media.journalReady) await media.load();
+        if (!current()) return;
+        if (!media.journalReady ||
+            media.hasUnresolvedStagedMaterials ||
+            media.uncertain) {
+          _creationError = media.error ?? '请先核实或移除无法恢复的媒体。';
+          return;
         }
       }
-    } catch (_) {
-      if (current()) _creationError = '当前草稿暂不可核实，文字已保留。';
-    }
-    if (mounted && _creationCurrent && scope == _creationScope)
-      setState(() {
-        _creationBusy = false;
-        _creationError = c.operationError ?? _creationError;
+      if (media != null && media.materialOnly && media.images.isNotEmpty) {
+        if (!media.journalReady) await media.load();
+        if (!current()) return;
+        if (media.images.any((image) => image.rights?.valid != true)) {
+          _creationError = '请在已选媒体中确认公开使用权，再检查发布。';
+          return;
+        }
+        selections = await media.prepareMaterials();
+        if (!current()) return;
+        if (selections == null || selections.length != media.images.length) {
+          _creationError = media.error ?? '媒体尚未上传成功，请重试或移除后发布。';
+          return;
+        }
+      }
+      if (_creationImages.images.isNotEmpty ||
+          _imageDraft?.localBytes != null ||
+          _videoMaterials?.selection != null) {
+        _creationError = '所选媒体尚未准备完成，请检查后重试。';
+        return;
+      }
+      if (draft.body.trim().isEmpty &&
+          (selections == null || selections.isEmpty)) {
+        _creationError = '写点内容或添加图片、视频后再发布。';
+        return;
+      }
+      _creationMediaApprovalSelection = media?.selectionRevision;
+      _creationPublishPreview = await c.previewPublish(
+        m,
+        media: selections,
+        localScope: selections == null ? '' : media!.localScope,
+        current: current,
+      );
+      if (current()) {
+        _creationError = c.operationError;
         _creationNotice = _creationPublishPreview == null
             ? null
-            : _imageDraft?.localBytes != null ||
-                  _creationImages.images.isNotEmpty ||
-                  _videoMaterials?.selection != null
-            ? '本次先公开这版文字。所选材料仍未公开，随后需确认使用权和整组公开结果。'
-            : draft.placeID.isEmpty
-            ? '公开后，所有人可在所选城市查看这版文字。'
-            : '公开后，所有人可在关联地点查看这版文字。';
-      });
+            : '确认后公开这条动态及本次选定的媒体。';
+      }
+    } catch (_) {
+      if (current()) _creationError = '暂时无法检查发布，内容和媒体仍保留。';
+    } finally {
+      if (mounted && _creationCurrent && scope == _creationScope)
+        setState(() => _creationBusy = false);
+    }
   }
 
   Future<void> _confirmCreationPublication() async {
     final c = widget.moments, p = _creationPublishPreview;
     if (!_creationCurrent || _creationBusy || p == null) return;
-    final scope = _creationScope;
+    if (_creationMediaApprovalSelection != _creationMedia?.selectionRevision ||
+        _creationImages.images.isNotEmpty ||
+        _imageDraft?.localBytes != null ||
+        _videoMaterials?.selection != null) {
+      _retireCreationApprovals();
+      setState(() => _creationError = '媒体已变化，请重新检查这版动态。');
+      return;
+    }
+    final scope = _creationScope, materialController = _creationMedia;
+    final stagedOps =
+        materialController?.stagedOperationIDs ?? const <String>[];
     _creationOperationID = p.input.operationID;
     setState(() => _creationBusy = true);
     final saved = await c.commit(
       p,
       current: () => mounted && _creationCurrent && scope == _creationScope,
     );
-    if (mounted && _creationCurrent && scope == _creationScope)
-      setState(() {
-        _creationBusy = false;
-        _creationError = c.operationError;
-        _creationUncertain = c.recoveryOperations.isNotEmpty;
-        _creationPublishPreview = null;
-        _creationNotice = saved ? '这条文字动态已公开发布。' : null;
-        _creationPublished = saved;
-        if (saved)
-          _creationPublishedRevision = c.operationReceipt?.appliedRevision;
-      });
-    if (saved && _creationCurrent) {
+    if (saved && materialController != null) {
+      await materialController.releaseStagedAfterPublication(
+        operationIDs: stagedOps,
+      );
+    }
+    if (!mounted || !_creationCurrent || scope != _creationScope) return;
+    if (saved) {
+      _creationMedia?.dispose();
+      _creationMedia = null;
       _creationImage?.dispose();
       _creationImage = null;
-      _syncCreationPublicPhoto();
-      _syncCreationMedia();
     }
-    if (saved && mounted && _layers.cityID != null && _layers.bounds != null) {
-      unawaited(_layers.load(_layers.cityID!, _layers.bounds!));
+    setState(() {
+      _creationBusy = false;
+      _creationError = c.operationError;
+      _creationUncertain = c.recoveryOperations.isNotEmpty;
+      _creationPublishPreview = null;
+      _creationNotice = saved ? '这条动态已公开发布。' : null;
+      _creationPublished = saved;
+      if (saved)
+        _creationPublishedRevision = c.operationReceipt?.appliedRevision;
+    });
+    if (saved) {
+      _syncCreationMedia();
+      if (_layers.cityID != null && _layers.bounds != null)
+        unawaited(_layers.load(_layers.cityID!, _layers.bounds!));
     }
   }
 
@@ -1661,10 +1890,7 @@ class _MapWorkspaceState extends State<MapWorkspace>
       onChooseTime: () => unawaited(_chooseCreationTime()),
       onSave: () => unawaited(_saveCreation()),
       onPublish:
-          draft.kind == 'moment' &&
-              !_creationPublished &&
-              _creationMomentID != null &&
-              !_creationUncertain
+          draft.kind == 'moment' && !_creationPublished && !_creationUncertain
           ? () => unawaited(_publishCreation())
           : null,
       onRecover: _creationUncertain && draft.kind == 'moment'
@@ -1703,6 +1929,8 @@ class _MapWorkspaceState extends State<MapWorkspace>
                     final withdrawn = receipt.action == 'WITHDRAW';
                     final publicUpdate = receipt.action == 'UPDATE_PUBLIC';
                     _creationMomentID = withdrawn ? null : receipt.momentID;
+                    if (withdrawn)
+                      _creation = _creation?.copyWith(nativeMomentID: '');
                     _creationPublished =
                         receipt.action == 'PUBLISH' || publicUpdate;
                     if (_creationPublished)
@@ -1719,14 +1947,13 @@ class _MapWorkspaceState extends State<MapWorkspace>
                     _creationNotice = withdrawn
                         ? '原撤回结果已核实，本机文字草稿保留。'
                         : publicUpdate
-                        ? '原公开修改结果已核实；之前图片已撤下。'
+                        ? '原公开修改结果已核实。'
                         : _creationPublished
                         ? '原公开发布结果已核实。'
                         : '原动态保存结果已核实。';
                   }
                 });
               if (current() && _creationPublished) {
-                _syncCreationPublicPhoto();
                 _syncCreationMedia();
               }
             }
@@ -1836,16 +2063,26 @@ class _MapWorkspaceState extends State<MapWorkspace>
           ),
         if (_creationPublishPreview != null &&
             widget.moments.previewCurrent(_creationPublishPreview!))
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final material in _creationPublishPreview!.materials)
+                Image.memory(
+                  material.thumbnail,
+                  width: 80,
+                  height: 80,
+                  fit: BoxFit.contain,
+                ),
+            ],
+          ),
+        if (_creationPublishPreview != null &&
+            widget.moments.previewCurrent(_creationPublishPreview!))
           FilledButton(
             onPressed: _creationBusy
                 ? null
                 : () => unawaited(_confirmCreationPublication()),
-            child: Text(
-              _imageDraft?.localBytes != null ||
-                      _creationImages.images.isNotEmpty
-                  ? '确认先公开这版文字'
-                  : '确认公开发布这版文字',
-            ),
+            child: const Text('确认公开发布这条动态'),
           ),
       ],
       extraContent: Column(
@@ -1853,27 +2090,34 @@ class _MapWorkspaceState extends State<MapWorkspace>
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           if (_creationMedia case final media?)
-            PublicMomentMediaEditor(
-              key: ObjectKey(media),
-              controller: media,
-              embedded: true,
-              ownsController: false,
-              onChooseImages: () => unawaited(_selectPublishedCreationImages()),
-              onChooseVideo: () => unawaited(_openVideoMaterials()),
-              onResolved: () {
-                if (mounted &&
-                    _creationCurrent &&
-                    identical(media, _creationMedia)) {
-                  setState(() {
-                    _creationImages.clear();
-                    _creationPhotoPublished = media.state?.status == 'READY';
-                    _creationNotice = media.notice;
-                  });
-                  _mapMedia.retire();
-                  if (_layers.cityID != null && _layers.bounds != null)
-                    unawaited(_layers.load(_layers.cityID!, _layers.bounds!));
-                }
-              },
+            AbsorbPointer(
+              absorbing:
+                  _creationBusy ||
+                  _creationUncertain ||
+                  _creationPublishPreview != null,
+              child: PublicMomentMediaEditor(
+                key: ObjectKey(media),
+                controller: media,
+                embedded: true,
+                ownsController: false,
+                onChooseImages: () =>
+                    unawaited(_selectPublishedCreationImages()),
+                onChooseVideo: () => unawaited(_openVideoMaterials()),
+                onResolved: () {
+                  if (mounted &&
+                      _creationCurrent &&
+                      identical(media, _creationMedia)) {
+                    setState(() {
+                      _creationImages.clear();
+                      _creationPhotoPublished = media.state?.status == 'READY';
+                      _creationNotice = media.notice;
+                    });
+                    _mapMedia.retire();
+                    if (_layers.cityID != null && _layers.bounds != null)
+                      unawaited(_layers.load(_layers.cityID!, _layers.bounds!));
+                  }
+                },
+              ),
             ),
           if (_creationShowingDetail && _creationMomentID != null)
             SizedBox(
@@ -5268,7 +5512,9 @@ class _MapWorkspaceState extends State<MapWorkspace>
     final localSelectionOnly =
         _threadCurrent || _creationCurrent && _creation!.kind == 'moment';
     final materialRealm = localSelectionOnly
-        ? (_threadCurrent ? _threadScope : _creationScope)
+        ? (_threadCurrent
+              ? (_threadScope, _threadActiveEntry, _threadEntrySerial)
+              : (_creationScope, _creationMaterialToken))
         : null;
     bool current() =>
         mounted &&
@@ -5281,10 +5527,13 @@ class _MapWorkspaceState extends State<MapWorkspace>
         source == _personalSourceSerial &&
         (!localSelectionOnly ||
             materialRealm ==
-                (_threadCurrent ? _threadScope : _creationScope)) &&
-        draftIdentity == _composerDrafts.identity &&
-        taskEpoch == _workspace.taskIdentityEpoch &&
-        selectedCity == city.selectedCity?.id &&
+                (_threadCurrent
+                    ? (_threadScope, _threadActiveEntry, _threadEntrySerial)
+                    : (_creationScope, _creationMaterialToken))) &&
+        (localSelectionOnly ||
+            (draftIdentity == _composerDrafts.identity &&
+                taskEpoch == _workspace.taskIdentityEpoch &&
+                selectedCity == city.selectedCity?.id)) &&
         identical(client, widget.seedClient) &&
         base == widget.seedApiBaseUrl &&
         _organizations.active == null;
@@ -5304,9 +5553,9 @@ class _MapWorkspaceState extends State<MapWorkspace>
       source,
       client,
       base,
-      draftIdentity,
-      taskEpoch,
-      selectedCity,
+      localSelectionOnly ? null : draftIdentity,
+      localSelectionOnly ? null : taskEpoch,
+      localSelectionOnly ? null : selectedCity,
       localSelectionOnly,
       materialRealm,
     );
@@ -6750,7 +6999,7 @@ class _MapWorkspaceState extends State<MapWorkspace>
       _ => '',
     };
     final id = item.targetId;
-    if (!item.available ||
+    if (!item.readable ||
         type.isEmpty ||
         !chatEntityUUID.hasMatch(id) ||
         !widget.auth.signedIn ||
@@ -6768,6 +7017,23 @@ class _MapWorkspaceState extends State<MapWorkspace>
         identity == _currentSeedIdentity &&
         epoch == _seedEntryEpoch;
     if (!current()) return;
+    final legacy = item.legacyReference;
+    if (legacy != null) {
+      if (_organizations.active != null) return;
+      await Navigator.of(context).push<void>(
+        MaterialPageRoute(
+          builder: (_) => LegacyPlaceReferencePage(
+            reference: legacy,
+            authorizationHeader: saved.authorizationHeader,
+            sourceCurrent: () => current() && _organizations.active == null,
+            identityChanges: changes,
+            apiBaseUrl: saved.followApiBaseUrl,
+            client: saved.followClient,
+          ),
+        ),
+      );
+      return;
+    }
     String? currentWorkspaceID() => _organizations.active?.id;
     final workspaceID = currentWorkspaceID;
     await Navigator.of(context).push<void>(

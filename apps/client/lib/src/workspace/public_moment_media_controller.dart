@@ -71,9 +71,11 @@ class PublicMomentMediaController extends ChangeNotifier {
   bool _disposed = false, _retired = false;
   int _epoch = 0, _selection = 0;
   int get selectionRevision => _selection;
-  Timer? _previewTimer, _setTimer;
+  Timer? _previewTimer, _setTimer, _stageTimer;
   final images = <PublicMomentMediaDraftImage>[];
   List<PublicMomentMediaPending> pending = [];
+  List<PublicMomentMediaPending> _staged = [];
+  bool _stagedReadFailed = false, _journalWriteFailed = false;
   PublicMomentMediaSet? state;
   PublicMomentMediaPreview? preview;
   bool busy = false, journalReady = false, uncertain = false;
@@ -110,14 +112,28 @@ class PublicMomentMediaController extends ChangeNotifier {
       journalReady = false;
       _previewTimer?.cancel();
       _setTimer?.cancel();
+      _stageTimer?.cancel();
     }
     return !_disposed && !_retired;
   }
 
-  bool get canEdit => current && !busy && !uncertain && pending.isEmpty;
+  bool get canEdit =>
+      current && !busy && !uncertain && pending.isEmpty && !_journalWriteFailed;
+  bool get hasUnresolvedStagedMaterials =>
+      _stagedReadFailed ||
+      _journalWriteFailed ||
+      _staged.any((reference) {
+        final image = images
+            .where((p) => p.operationID == reference.operationID)
+            .firstOrNull;
+        return image?.stage?.current != true;
+      });
+  List<String> get stagedOperationIDs =>
+      List.unmodifiable(_staged.map((p) => p.operationID));
   bool get canPreview =>
       canEdit &&
       journalReady &&
+      !hasUnresolvedStagedMaterials &&
       (materialOnly || state?.current == true && state!.canReplace) &&
       images.isNotEmpty &&
       images.every((p) => p.rights?.valid == true);
@@ -184,15 +200,21 @@ class PublicMomentMediaController extends ChangeNotifier {
     try {
       final operations = await _store.read(api.origin, _owner!);
       if (!valid()) return;
-      pending = operations
+      final scoped = operations
           .where(
             (p) => p.kind == 'STAGE'
                 ? p.targetID == localScope && p.journalEntryID == journalEntryID
                 : !materialOnly && p.targetID == momentID,
           )
           .toList();
+      pending = scoped.where((p) => !p.staged).toList();
+      _staged = scoped.where((p) => p.staged).toList()
+        ..sort((a, b) => a.materialOrder!.compareTo(b.materialOrder!));
       uncertain = pending.isNotEmpty;
       journalReady = true;
+      _journalWriteFailed = false;
+      await _restoreStagedMaterials(valid);
+      if (!valid()) return;
       if (materialOnly) return;
       final next = await api.ownSet(momentID, expectedMomentRevision);
       if (!valid()) return;
@@ -209,6 +231,8 @@ class PublicMomentMediaController extends ChangeNotifier {
     } catch (_) {
       if (valid()) {
         error = '当前图片资料暂不可读取，请重试。';
+        journalReady = false;
+        _stagedReadFailed = true;
         state = null;
       }
     } finally {
@@ -216,6 +240,176 @@ class PublicMomentMediaController extends ChangeNotifier {
         busy = false;
         _notify();
       }
+    }
+  }
+
+  Future<void> _restoreStagedMaterials(bool Function() valid) async {
+    _stagedReadFailed = false;
+    if (_staged.isEmpty) return;
+    final restored = <PublicMomentMediaDraftImage>[];
+    final stagedIDs = _staged.map((p) => p.operationID).toSet();
+    final local = images
+        .where((p) => !stagedIDs.contains(p.operationID))
+        .toList();
+    for (final reference in _staged) {
+      final existing = images
+          .where((p) => p.operationID == reference.operationID)
+          .firstOrNull;
+      final image =
+          existing ??
+          PublicMomentMediaDraftImage(operationID: reference.operationID);
+      image.rights = null;
+      try {
+        final result = await api.request(
+          'GET',
+          '/v1/me/moment-media-materials/operations/${reference.operationID}',
+        );
+        if (!valid()) return;
+        image.stage = _stageReceipt(result, reference);
+        if (image.stage?.current != true) {
+          _stagedReadFailed = true;
+        } else if (!await _videoPoster(image, valid, _selection)) {
+          return;
+        }
+      } catch (_) {
+        if (!valid()) return;
+        image.stage = null;
+        image.rights = null;
+        _stagedReadFailed = true;
+      }
+      restored.add(image);
+    }
+    if (!valid()) return;
+    images
+      ..clear()
+      ..addAll(restored)
+      ..addAll(local);
+    _armStageLease();
+    if (images.length > 9 ||
+        images.length > 1 && images.any((p) => p.stage?.isVideo == true)) {
+      _stagedReadFailed = true;
+    }
+    if (_stagedReadFailed) {
+      error = '部分暂存材料已过期或暂不可核实。请重试读取，或明确移除后重新选择；不会直接按纯文字发布。';
+    } else {
+      notice = '已找回原暂存材料，请重新确认公开使用权。原暂存期限没有延长。';
+    }
+  }
+
+  Future<bool> _saveStagedSelection(
+    List<PublicMomentMediaPending> selection,
+    bool Function() valid,
+  ) async {
+    try {
+      await _store.saveStagedSelection(
+        api.origin,
+        _owner!,
+        localScope,
+        journalEntryID,
+        _staged,
+        selection,
+      );
+      if (!valid()) return false;
+      _staged = List.of(selection);
+      _armStageLease();
+      _journalWriteFailed = false;
+      pending.removeWhere(
+        (p) => selection.any((s) => s.operationID == p.operationID),
+      );
+      uncertain = pending.isNotEmpty;
+      return true;
+    } catch (_) {
+      if (valid()) {
+        _journalWriteFailed = true;
+        journalReady = false;
+        error = '本机材料记录尚未保存，当前材料仍保留。请重试读取原记录后继续。';
+      }
+      rethrow;
+    }
+  }
+
+  void _armStageLease() {
+    _stageTimer?.cancel();
+    final selected = _staged.map((p) => p.operationID).toSet();
+    final deadlines =
+        images
+            .where(
+              (p) =>
+                  selected.contains(p.operationID) && p.stage?.current == true,
+            )
+            .map((p) => p.stage!.retainUntil)
+            .toList()
+          ..sort();
+    if (deadlines.isEmpty) return;
+    _stageTimer = Timer(deadlines.first.difference(DateTime.now().toUtc()), () {
+      if (!current) return;
+      for (final image in images.where(
+        (p) => p.stage != null && !p.stage!.current,
+      )) {
+        image.poster?.fillRange(0, image.poster!.length, 0);
+        image.poster = null;
+        image.rights = null;
+      }
+      _stagedReadFailed = true;
+      _clearApproval();
+      error = '暂存材料已过期，请移除后重新选择。';
+      _notify();
+      _armStageLease();
+    });
+  }
+
+  List<PublicMomentMediaPending> _orderedReferences(
+    List<PublicMomentMediaDraftImage> ordered, {
+    PublicMomentMediaPending? promoted,
+  }) {
+    final references = <PublicMomentMediaPending>[];
+    for (final image in ordered) {
+      final reference = promoted?.operationID == image.operationID
+          ? promoted
+          : _staged
+                .where((p) => p.operationID == image.operationID)
+                .firstOrNull;
+      if (reference != null)
+        references.add(reference.asStaged(references.length));
+    }
+    return references;
+  }
+
+  /// Call only after reading the original successful publication fact.
+  /// This removes local known-stage selectors only. It remains safe after the
+  /// host disposes its controller; unknown operations are never discarded.
+  Future<bool> releaseStagedAfterPublication({
+    Iterable<String>? operationIDs,
+  }) async {
+    final owner = _owner;
+    if (owner == null || _staged.isEmpty) return true;
+    final original = List<PublicMomentMediaPending>.of(_staged);
+    final selected =
+        operationIDs?.toSet() ?? original.map((p) => p.operationID).toSet();
+    final remaining = <PublicMomentMediaPending>[];
+    for (final reference in original) {
+      if (!selected.contains(reference.operationID)) {
+        remaining.add(reference.asStaged(remaining.length));
+      }
+    }
+    try {
+      await _store.saveStagedSelection(
+        api.origin,
+        owner,
+        localScope,
+        journalEntryID,
+        original,
+        remaining,
+      );
+      _staged = remaining;
+      _armStageLease();
+      return true;
+    } catch (_) {
+      if (!_disposed) {
+        error = '发布结果已确认，本机材料记录尚未清理。请重试核实原结果。';
+        _notify();
+      }
+      return false;
     }
   }
 
@@ -265,8 +459,14 @@ class PublicMomentMediaController extends ChangeNotifier {
     _notify();
   }
 
-  void remove(int index) {
+  Future<void> remove(int index) async {
     if (!canEdit || index < 0 || index >= images.length) return;
+    ++_selection;
+    _clearApproval();
+    _notify();
+    final ordered = List<PublicMomentMediaDraftImage>.of(images)
+      ..removeAt(index);
+    if (!await _persistReorder(ordered)) return;
     final image = images.removeAt(index);
     image.bytes?.fillRange(0, image.bytes!.length, 0);
     image.bytes = null;
@@ -276,7 +476,15 @@ class PublicMomentMediaController extends ChangeNotifier {
       0,
     );
     image.poster?.fillRange(0, image.poster!.length, 0);
-    ++_selection;
+    _stagedReadFailed = _staged.any(
+      (p) =>
+          images
+              .where((i) => i.operationID == p.operationID)
+              .firstOrNull
+              ?.stage
+              ?.current !=
+          true,
+    );
     _clearApproval();
     _notify();
   }
@@ -349,18 +557,43 @@ class PublicMomentMediaController extends ChangeNotifier {
     next._notify();
   }
 
-  void reorder(int from, int to) {
+  Future<void> reorder(int from, int to) async {
     if (!canEdit ||
         from < 0 ||
         to < 0 ||
         from >= images.length ||
         to >= images.length)
       return;
-    final image = images.removeAt(from);
-    images.insert(to, image);
+    if (from == to) return;
     ++_selection;
     _clearApproval();
     _notify();
+    final ordered = List<PublicMomentMediaDraftImage>.of(images);
+    ordered.insert(to, ordered.removeAt(from));
+    if (!await _persistReorder(ordered)) return;
+    final image = images.removeAt(from);
+    images.insert(to, image);
+    _clearApproval();
+    _notify();
+  }
+
+  Future<bool> _persistReorder(
+    List<PublicMomentMediaDraftImage> ordered,
+  ) async {
+    if (_staged.isEmpty) return true;
+    final valid = _capture();
+    busy = true;
+    _notify();
+    try {
+      return await _saveStagedSelection(_orderedReferences(ordered), valid);
+    } catch (_) {
+      return false;
+    } finally {
+      if (valid()) {
+        busy = false;
+        _notify();
+      }
+    }
   }
 
   void setRights(int index, EntityCoverRights? rights) {
@@ -490,6 +723,7 @@ class PublicMomentMediaController extends ChangeNotifier {
         action: 'PREPARE',
         media: const [],
         journalEntryID: journalEntryID,
+        materialOrder: images.indexOf(image),
       );
       if (!await _persist(operation, valid)) return false;
       Object? response;
@@ -513,7 +747,14 @@ class PublicMomentMediaController extends ChangeNotifier {
       }
       if (!valid() || generation != _selection) return false;
       image.stage = _stageReceipt(response, operation);
-      await _retirePending(operation, valid);
+      if (image.stage == null) {
+        await _retirePending(operation, valid);
+      } else if (!await _saveStagedSelection(
+        _orderedReferences(images, promoted: operation),
+        valid,
+      )) {
+        return false;
+      }
       if (image.stage?.current != true) {
         image.operationID = newMomentOperationID();
         throw const FormatException('图片准备已停止或到期');
@@ -550,6 +791,7 @@ class PublicMomentMediaController extends ChangeNotifier {
   Future<List<PublicMomentMediaSelection>?> prepareMaterials() async {
     if (!canEdit ||
         !journalReady ||
+        hasUnresolvedStagedMaterials ||
         images.isEmpty ||
         images.any((p) => p.rights?.valid != true))
       return null;
@@ -560,7 +802,7 @@ class PublicMomentMediaController extends ChangeNotifier {
     _notify();
     try {
       if (!await _prepareStages(valid, generation) || !valid()) return null;
-      notice = '图片已准备，待随串文检查和确认。';
+      notice = '媒体已准备，待随动态检查和确认。';
       return List.unmodifiable([
         for (final image in images)
           PublicMomentMediaSelection(
@@ -684,6 +926,8 @@ class PublicMomentMediaController extends ChangeNotifier {
       if (!valid()) return false;
       confirmed = _setReceipt(result, operation);
       if (confirmed) {
+        if (!await releaseStagedAfterPublication())
+          throw StateError('本机材料尚未清理');
         _emitFact(operation);
         _clearApproval();
         _clearImages();
@@ -738,31 +982,47 @@ class PublicMomentMediaController extends ChangeNotifier {
       if (!valid()) return;
       if (operation.kind == 'STAGE') {
         final stage = _stageReceipt(result, operation);
-        if (stage != null && stage.current) {
+        if (stage != null) {
           final image = images
               .where((i) => i.operationID == operation.operationID)
               .firstOrNull;
           if (image != null) {
             image.stage = stage;
           } else if (images.length < 9) {
-            images.add(
+            images.insert(
+              (operation.materialOrder ?? images.length).clamp(
+                0,
+                images.length,
+              ),
               PublicMomentMediaDraftImage(
                 operationID: operation.operationID,
                 stage: stage,
               ),
             );
           }
+          if (!await _saveStagedSelection(
+            _orderedReferences(images, promoted: operation),
+            valid,
+          ))
+            return;
+          _stagedReadFailed = !stage.current;
         }
       } else {
         if (_setReceipt(result, operation)) {
+          if (!await releaseStagedAfterPublication())
+            throw StateError('本机材料尚未清理');
           _emitFact(operation);
           _clearImages();
         }
         _clearApproval();
       }
-      await _retirePending(operation, valid);
+      if (pending.any((p) => p.operationID == operation.operationID)) {
+        await _retirePending(operation, valid);
+      }
       if (!valid()) return;
-      notice = '原图片操作已核实，请检查当前图片集合。';
+      notice = hasUnresolvedStagedMaterials
+          ? '原操作已核实，材料已经过期。请移除后重新选择，原期限不会延长。'
+          : '原材料操作已核实，请检查当前材料并重新确认使用权。';
       if (!materialOnly)
         state = await api.ownSet(momentID, expectedMomentRevision);
     } catch (_) {
@@ -782,6 +1042,7 @@ class PublicMomentMediaController extends ChangeNotifier {
     ++_epoch;
     _previewTimer?.cancel();
     _setTimer?.cancel();
+    _stageTimer?.cancel();
     _clearImages();
     _clearApproval();
     api.dispose();

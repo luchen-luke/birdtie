@@ -1,0 +1,12 @@
+{
+  "mode": "apply",
+  "exitCode": 1,
+  "remoteScriptSHA256": "1d9c14b136f23b654ff4bd584c7838e394ee102608f3f3d0cb103e8b87b37032",
+  "result": {
+    "status": "UNKNOWN_REQUIRES_INSPECTION",
+    "stage": "apply",
+    "errorType": "RuntimeError",
+    "controlledCode": "legacy_private_media_derivative_rejected",
+    "privateValuesOmitted": true
+  }
+}

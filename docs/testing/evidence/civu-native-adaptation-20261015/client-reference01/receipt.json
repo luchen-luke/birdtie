@@ -1,0 +1,28 @@
+{
+  "command": [
+    "D:\\DevTools\\flutter\\bin\\flutter.bat",
+    "test",
+    "test/legacy_place_reference_test.dart",
+    "--reporter",
+    "expanded"
+  ],
+  "cwd": "D:\\Project\\birdtie\\apps\\client",
+  "exitCode": 1,
+  "sourceBefore": {
+    "apps/client/lib/src/content/personal_collection_controller.dart": "8d21a323a21f0e122e75baf9deaae5e844d81efcbe268fec29ef5cc471a7dab1",
+    "apps/client/lib/src/content/personal_collection_page.dart": "85e9b1310fbcd6a50d70836e809935499dca392b05ecd4f491a99241bfa91bda",
+    "apps/client/lib/src/workspace/legacy_place_reference_page.dart": "c6046acbd9aacdef7ac7a436b239c8befc7af772fca4fd9a12cfc671b791e3bf",
+    "apps/client/lib/src/workspace/saved_items.dart": "724f0ed1b894316ee068174e1265ad3426b489ca82aa9272148d76559dd3b99c",
+    "apps/client/lib/src/workspace/map_workspace.dart": "78fc2ed7b755b799e025062a82d83258f6282a05ce48c4f5f5ccf71ad3d3f57b",
+    "apps/client/test/legacy_place_reference_test.dart": "0950b1af3734c33998a83d4eb2a4661077483e6e2bf01181b014c2df8828344b"
+  },
+  "sourceAfter": {
+    "apps/client/lib/src/content/personal_collection_controller.dart": "8d21a323a21f0e122e75baf9deaae5e844d81efcbe268fec29ef5cc471a7dab1",
+    "apps/client/lib/src/content/personal_collection_page.dart": "85e9b1310fbcd6a50d70836e809935499dca392b05ecd4f491a99241bfa91bda",
+    "apps/client/lib/src/workspace/legacy_place_reference_page.dart": "c6046acbd9aacdef7ac7a436b239c8befc7af772fca4fd9a12cfc671b791e3bf",
+    "apps/client/lib/src/workspace/saved_items.dart": "724f0ed1b894316ee068174e1265ad3426b489ca82aa9272148d76559dd3b99c",
+    "apps/client/lib/src/workspace/map_workspace.dart": "78fc2ed7b755b799e025062a82d83258f6282a05ce48c4f5f5ccf71ad3d3f57b",
+    "apps/client/test/legacy_place_reference_test.dart": "0950b1af3734c33998a83d4eb2a4661077483e6e2bf01181b014c2df8828344b"
+  },
+  "sourceStable": true
+}

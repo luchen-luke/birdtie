@@ -164,46 +164,47 @@ class NowCreationPanel extends StatelessWidget {
         const SizedBox(height: 4),
         Text(statusLabel, style: tokens.metadata),
         const SizedBox(height: 8),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.only(top: 10),
-                child: Text(
-                  draft.title.trim().isEmpty
-                      ? '未命名${draft.label}'
-                      : draft.title,
-                  style: tokens.sheetTitle,
+        if (mediaPreview != null) ...[mediaPreview!, const SizedBox(height: 8)],
+        if (draft.kind != 'moment') ...[
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 10),
+                  child: Text(
+                    draft.title.trim().isEmpty
+                        ? '未命名${draft.label}'
+                        : draft.title,
+                    style: tokens.sheetTitle,
+                  ),
                 ),
               ),
-            ),
-            IconButton(
-              onPressed: busy || !editingEnabled ? null : onEditTitle,
-              tooltip: '修改标题',
-              constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-              icon: const Icon(Icons.edit_outlined, size: 18),
-            ),
-          ],
-        ),
-        const SizedBox(height: 4),
+              IconButton(
+                onPressed: busy || !editingEnabled ? null : onEditTitle,
+                tooltip: '修改标题',
+                constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+                icon: const Icon(Icons.edit_outlined, size: 18),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+        ] else if (draft.title.isNotEmpty) ...[
+          Text(draft.title, style: tokens.sheetTitle),
+          const SizedBox(height: 4),
+        ],
         if (hasBody)
           Text(draft.body, style: tokens.body)
-        else
+        else if (draft.kind != 'moment')
           Text('在下方输入框写下${draft.label}内容。', style: tokens.body),
         Align(
           alignment: Alignment.centerLeft,
           child: TextButton(
             style: actionStyle,
             onPressed: busy || !editingEnabled ? null : onEditBody,
-            child: Text(hasBody ? '修改内容' : '开始写内容'),
+            child: Text(hasBody ? '修改内容' : '添加文字'),
           ),
         ),
-        if (mediaPreview != null) ...[
-          const SizedBox(height: 8),
-          mediaPreview!,
-          const SizedBox(height: 8),
-        ],
         _contextAction(
           icon: Icons.place_outlined,
           text: _placeLabel,
@@ -279,7 +280,7 @@ class NowCreationPanel extends StatelessWidget {
     if (draft.placeID.isNotEmpty) {
       return city.isEmpty ? '关联地点名称待核实' : '$city · 地点名称待核实';
     }
-    return city.isEmpty ? '选择城市或地点' : '$city · 选择关联地点';
+    return city.isEmpty ? '添加位置' : city;
   }
 
   String _timeLabel(BuildContext context) {

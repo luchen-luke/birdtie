@@ -8,6 +8,7 @@ import 'moment_time_choice.dart';
 import 'moment_control.dart';
 import 'moment_control_pending_store.dart';
 import '../workspace/human_causal_control.dart';
+import '../workspace/public_moment_media.dart';
 import 'package:flutter/scheduler.dart';
 
 class PrivateMoment {
@@ -70,26 +71,43 @@ class PrivateMoment {
     final occurrence = date('occurredAt');
     final precision = json['timePrecision'] as String;
     MomentTimeValue.fromWire(precision, occurrence);
+    final cityID = json['cityId'] as String,
+        placeID = json['placeId'] as String? ?? '',
+        locationPrecision = json['locationPrecision'] as String,
+        visibility = json['visibility'] as String?,
+        status = json['status'] as String,
+        activityIDs = List<String>.unmodifiable(
+          (json['activityIds'] as List<dynamic>? ?? const []).cast<String>(),
+        ),
+        communityID = json['communityId'] as String? ?? '',
+        organizationID = json['organizationId'] as String? ?? '';
+    if (cityID.isEmpty &&
+        ((placeID.isEmpty
+                ? locationPrecision != 'none'
+                : locationPrecision != 'place') ||
+            activityIDs.isNotEmpty ||
+            communityID.isNotEmpty ||
+            organizationID.isNotEmpty)) {
+      throw const FormatException('动态位置关联不符');
+    }
     return PrivateMoment(
       id: json['id'] as String,
       authorAccountID: json['authorAccountId'] as String?,
-      visibility: json['visibility'] as String?,
-      cityID: json['cityId'] as String,
-      placeID: json['placeId'] as String? ?? '',
-      title: json['title'] as String,
+      visibility: visibility,
+      cityID: cityID,
+      placeID: placeID,
+      title: json['title'] as String? ?? '',
       body: json['body'] as String? ?? '',
       timePrecision: precision,
       occurredAt: occurrence,
       createdAt: date('createdAt'),
       updatedAt: date('updatedAt'),
-      locationPrecision: json['locationPrecision'] as String,
-      status: json['status'] as String,
+      locationPrecision: locationPrecision,
+      status: status,
       revision: json['revision'] as int,
-      activityIDs: List.unmodifiable(
-        (json['activityIds'] as List<dynamic>? ?? const []).cast<String>(),
-      ),
-      communityID: json['communityId'] as String? ?? '',
-      organizationID: json['organizationId'] as String? ?? '',
+      activityIDs: activityIDs,
+      communityID: communityID,
+      organizationID: organizationID,
     );
   }
   bool get isEditableDraft => status == 'draft' && visibility != 'public';
@@ -759,7 +777,8 @@ class PrivateMomentController extends ChangeNotifier {
     'timePrecision': time.precision,
     if (time.occurredAt != null) 'occurredAt': momentUTC(time.occurredAt!),
     'locationPrecision':
-        locationPrecision ?? (placeID.isEmpty ? 'city' : 'place'),
+        locationPrecision ??
+        (cityID.trim().isEmpty ? 'none' : (placeID.isEmpty ? 'city' : 'place')),
     if (activityID != null) 'activityId': activityID.trim().toLowerCase(),
     if (communityID != null) 'communityId': communityID.trim().toLowerCase(),
     if (organizationID != null)
@@ -845,6 +864,7 @@ class PrivateMomentController extends ChangeNotifier {
     required String title,
     required String body,
     required String placeID,
+    String? cityID,
     String? activityID,
     String? communityID,
     String? organizationID,
@@ -861,7 +881,7 @@ class PrivateMomentController extends ChangeNotifier {
         momentID: moment.id,
         expectedRevision: moment.revision,
         input: _input(
-          cityID: moment.cityID,
+          cityID: cityID ?? moment.cityID,
           title: title,
           body: body,
           placeID: placeID,
@@ -895,12 +915,17 @@ class PrivateMomentController extends ChangeNotifier {
 
   Future<MomentControlPreview?> previewPublish(
     PrivateMoment moment, {
+    List<PublicMomentMediaSelection>? media,
+    String localScope = '',
     bool Function()? current,
   }) async {
     _syncActor();
     if (!moment.isEditableDraft ||
         !_ownsVersion(moment) ||
-        !((moment.placeID.isEmpty && moment.locationPrecision == 'city') ||
+        !((moment.cityID.isEmpty &&
+                moment.placeID.isEmpty &&
+                moment.locationPrecision == 'none') ||
+            (moment.placeID.isEmpty && moment.locationPrecision == 'city') ||
             (moment.placeID.isNotEmpty && moment.locationPrecision == 'place')))
       return null;
     return _prepare(
@@ -909,6 +934,8 @@ class PrivateMomentController extends ChangeNotifier {
         action: 'PUBLISH',
         momentID: moment.id,
         expectedRevision: moment.revision,
+        media: media,
+        localScope: localScope,
         input: _input(
           cityID: moment.cityID,
           title: moment.title,
@@ -926,6 +953,11 @@ class PrivateMomentController extends ChangeNotifier {
     required PrivateMoment moment,
     required String title,
     required String body,
+    List<PublicMomentMediaSelection>? media,
+    String localScope = '',
+    String? cityID,
+    String? placeID,
+    String? locationPrecision,
     bool Function()? current,
   }) async {
     _syncActor();
@@ -939,13 +971,23 @@ class PrivateMomentController extends ChangeNotifier {
         action: 'UPDATE_PUBLIC',
         momentID: moment.id,
         expectedRevision: moment.revision,
+        media: media,
+        localScope: localScope,
         input: _input(
-          cityID: moment.cityID,
+          cityID: cityID ?? moment.cityID,
           title: title,
           body: body,
-          placeID: moment.placeID,
+          placeID: placeID ?? moment.placeID,
           time: moment.time,
-          locationPrecision: moment.locationPrecision,
+          locationPrecision:
+              locationPrecision ??
+              (cityID != null || placeID != null
+                  ? ((cityID ?? moment.cityID).isEmpty
+                        ? 'none'
+                        : (placeID ?? moment.placeID).isEmpty
+                        ? 'city'
+                        : 'place')
+                  : moment.locationPrecision),
         ),
       ),
       current,
@@ -1030,8 +1072,14 @@ class PrivateMomentController extends ChangeNotifier {
         }
       });
       return p;
-    } catch (_) {
-      if (valid()) operationError = '当前动态、版本或关联已变化，暂不可取得具体预览。';
+    } catch (error) {
+      if (valid()) {
+        operationError =
+            error is HumanCausalFailure &&
+                error.legacyMomentPhotoReselectionRequired
+            ? error.message
+            : '当前动态、版本或关联已变化，暂不可取得具体预览。';
+      }
       return null;
     } finally {
       if (_current(token, e)) {
@@ -1087,7 +1135,7 @@ class PrivateMomentController extends ChangeNotifier {
       final receipt = await _controlAPI.put(p, valid);
       if (!valid()) return false;
       return await _finishOperation(receipt, record, () => _current(token, e));
-    } catch (_) {
+    } catch (error) {
       if (_current(token, e)) {
         try {
           final records = await operationStore.read(
@@ -1103,6 +1151,10 @@ class PrivateMomentController extends ChangeNotifier {
           operationError = sent
               ? '保存结果待核实，可能已经完成。只能核实或停止原操作，不会重新提交。'
               : '尚未提交。本机准备记录需要检查，不会直接重新发送。';
+          if (error is HumanCausalFailure &&
+              error.legacyMomentPhotoReselectionRequired) {
+            operationError = '$operationError ${error.message}';
+          }
         }
       }
       return false;

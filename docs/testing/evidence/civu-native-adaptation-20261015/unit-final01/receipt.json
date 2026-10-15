@@ -1,0 +1,15 @@
+{
+  "command": [
+    "C:\\Program Files\\Go\\bin\\go.exe",
+    "test",
+    "-mod=readonly",
+    "./internal/legacynative",
+    "./cmd/legacy-media-import",
+    "-count=1",
+    "-json"
+  ],
+  "cwd": "D:\\Project\\birdtie\\apps\\api",
+  "exitCode": 0,
+  "pass": 4,
+  "fail": 0
+}

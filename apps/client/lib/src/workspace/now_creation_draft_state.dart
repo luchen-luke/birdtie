@@ -28,7 +28,8 @@ class NowCreationDraftState extends ChangeNotifier {
   bool get suspended => _suspended;
   static String slot(String cityID) =>
       'now-creation:${sha256.convert(utf8.encode(cityID))}';
-  static String _key(String cityID, String kind) => '$kind:${slot(cityID)}';
+  static String _slot(String cityID, String kind) => slot(kind == 'moment' ? '' : cityID);
+  static String _key(String cityID, String kind) => '$kind:${_slot(cityID, kind)}';
 
   NowCreationDraft? cached(String cityID, String kind) {
     if (_disposed || _suspended || _owner == null) return null;
@@ -90,7 +91,7 @@ class NowCreationDraftState extends ChangeNotifier {
         if (row.origin != origin || row.owner != owner) {
           throw const FormatException('创建草稿主体不符');
         }
-        if (row.kind != kind || row.slotID != slot(cityID)) continue;
+        if (row.kind != kind || row.slotID != _slot(cityID, kind)) continue;
         final draft = _decode(row, cityID, kind);
         _rows[key] = row;
         storageError = null;
@@ -118,10 +119,10 @@ class NowCreationDraftState extends ChangeNotifier {
     final draft = NowCreationDraft.fromJson(
       jsonDecode(row.text) as Map<String, dynamic>,
     );
-    if (draft.cityID != cityID ||
+    if ((kind != 'moment' && draft.cityID != cityID) ||
         draft.kind != kind ||
         row.kind != kind ||
-        row.slotID != slot(cityID)) {
+        row.slotID != _slot(cityID, kind)) {
       throw const FormatException('创建草稿城市或类型不符');
     }
     return draft;
@@ -139,7 +140,7 @@ class NowCreationDraftState extends ChangeNotifier {
           origin: _origin,
           kind: draft.kind,
           text: text,
-          slotID: slot(draft.cityID),
+          slotID: _slot(draft.cityID, draft.kind),
         );
     _dirty.add(key);
     _saveTimer?.cancel();

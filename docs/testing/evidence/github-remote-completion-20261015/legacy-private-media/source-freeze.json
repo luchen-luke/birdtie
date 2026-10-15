@@ -1,0 +1,21 @@
+{
+  "status": "SOURCE_READY",
+  "recordedAtUTC": "2026-10-15T05:52:18.027711+00:00",
+  "ownedSourceSHA256": {
+    "apps/api/internal/legacymedia/model.go": "4f1d299abc00f3b0e7a8282e0fd944d8646e35c37fe2c8ed4faac7939644597b",
+    "apps/api/internal/legacymedia/model_test.go": "978986cdd7998186abc8b511361ff5f015298a7ebb16c3ab81886d11764a38cf",
+    "apps/api/internal/postgres/legacy_private_media_import.go": "7d3f707a9e51f49e8d6e865666ea01b28585c9322bb13a720a07f16a8122938b",
+    "apps/api/internal/postgres/legacy_private_media_import_native_test.go": "43bc31fe479cbe9f980023ee122aa84361d6fc17c13d18e9d470bb1654a86e18",
+    "apps/api/cmd/legacy-media-import/main.go": "af297ea9751eae4ca5f3f5592a54239c13f1d9f6df9604c8b24e31034b892b7d",
+    "apps/api/cmd/legacy-media-import/main_test.go": "772a5d3299b84781f60a3afbc3c858d0f049a4896bd0933f1aadc9438f8d45b8",
+    "apps/api/internal/media/image_derivative.go": "a8959a96ffefe352dc4f822564b1dc6f83a3b4ab63b34c70f44b84d649812aca",
+    "apps/api/internal/media/image_derivative_test.go": "ebfd8d482d4b12a2ce386fbb27a3dc22a9282a3a6bba28cd9d84283e58c2333e",
+    "apps/api/internal/media/private_moment_image.go": "575c833e2831074d362f5b94f0d68adf1d4f1711467e07bf79e673236b8bc794",
+    "apps/api/internal/postgres/human_moment_media.go": "f98da710d7074e105ce02519c32010ba3de00cf59f05ab4be4752af278126c98"
+  },
+  "rootOwnedDDL": "apps/api/migrations/157_legacy_private_media.sql",
+  "nativeTest": "TestLegacyPrivateMediaNativeOriginalOwnerReadableAndNoResurrection",
+  "cliUnitTest": "TestPrivateBlobAndAggregateOutputGuards",
+  "privateSourceDetailsSaved": false,
+  "sourceHashScope": "These 10 current files only. The unit command predates the late origin DTO/CLI refinement. Root owns DDL/host integration and final combined native evidence."
+}

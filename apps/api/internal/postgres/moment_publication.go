@@ -45,16 +45,22 @@ func (s *Store) lockPublicationFrame(ctx context.Context, tx pgx.Tx, digest [32]
 	if e != nil {
 		return f, content.ErrUnavailable
 	}
-	if m.Status != "draft" || m.Visibility != "private" || m.PlaceID == "" || m.LocationPrecision != "place" {
+	if m.Status != "draft" || m.Visibility != "private" || !content.HasMomentBody(m.Body) {
 		return f, content.ErrConflict
 	}
 	f.moment = m
-	e = tx.QueryRow(ctx, `SELECT p.name,c.xmin::text,p.xmin::text FROM cities c JOIN places p ON p.city_id=c.id WHERE c.id=$1 AND p.id=$2 AND c.publication_status='published' AND p.publication_status='published' AND (c.expires_at IS NULL OR c.expires_at>clock_timestamp()) AND (p.expires_at IS NULL OR p.expires_at>clock_timestamp()) FOR SHARE OF c,p`, m.CityID, m.PlaceID).Scan(&f.placeName, &f.cityEpoch, &f.placeEpoch)
-	if errors.Is(e, pgx.ErrNoRows) {
+	input := content.MomentInput{CityID: m.CityID, PlaceID: m.PlaceID, Title: m.Title, Body: m.Body, OccurredAt: m.OccurredAt, TimePrecision: m.TimePrecision, LocationPrecision: m.LocationPrecision}
+	if _, e = content.NormalizeMomentControl(content.MomentControlInput{OperationID: id, Action: "PUBLISH", MomentID: id, ExpectedRevision: m.Revision, Input: &input}, false); e != nil {
 		return f, content.ErrConflict
 	}
+	f.cityEpoch, _, _, e = momentControlExternal(ctx, humanWriteFrame{tx: tx, a: actor}, content.MomentControlInput{Action: "PUBLISH", Input: &input}, m)
 	if e != nil {
-		return f, content.ErrUnavailable
+		return f, content.ErrConflict
+	}
+	if m.PlaceID != "" {
+		if e = tx.QueryRow(ctx, `SELECT name FROM places WHERE id=$1`, m.PlaceID).Scan(&f.placeName); e != nil {
+			return f, content.ErrUnavailable
+		}
 	}
 	if e = s.lockHumanMomentSession(ctx, tx, digest, actor.ID); e != nil {
 		return f, e
@@ -87,7 +93,7 @@ func publicationSnapshot(digest [32]byte, material string, issued, expiry int64)
 }
 func (s *Store) finishPublication(ctx context.Context, tx pgx.Tx, digest [32]byte, actor identity.Actor, f publicationFrame, expiry int64) error {
 	var alive bool
-	e := tx.QueryRow(ctx, `WITH cl AS MATERIALIZED(SELECT clock_timestamp() at) SELECT EXISTS(SELECT 1 FROM accounts a JOIN sessions ss ON ss.account_id=a.id JOIN cities c ON c.id=$4 JOIN places p ON p.id=$5 AND p.city_id=c.id CROSS JOIN cl WHERE a.id=$1 AND a.account_type='person' AND a.status='active' AND a.xmin::text=$6 AND ss.id=$7 AND ss.token_sha256=$2 AND ss.revoked_at IS NULL AND ss.expires_at>cl.at AND ss.idle_expires_at>cl.at AND ($3::boolean OR ss.authentication_method<>'dev_phone') AND c.publication_status='published' AND p.publication_status='published' AND c.xmin::text=$8 AND p.xmin::text=$9 AND (c.expires_at IS NULL OR c.expires_at>cl.at) AND (p.expires_at IS NULL OR p.expires_at>cl.at) AND cl.at<$10::timestamptz)`, actor.ID, digest[:], s.devPhoneEnabled, f.moment.CityID, f.moment.PlaceID, f.accountEpoch, f.session, f.cityEpoch, f.placeEpoch, time.Unix(0, expiry).UTC()).Scan(&alive)
+	e := tx.QueryRow(ctx, `WITH cl AS MATERIALIZED(SELECT clock_timestamp() at) SELECT EXISTS(SELECT 1 FROM accounts a JOIN sessions ss ON ss.account_id=a.id CROSS JOIN cl WHERE a.id=$1 AND a.account_type='person' AND a.status='active' AND a.xmin::text=$4 AND ss.id=$5 AND ss.token_sha256=$2 AND ss.revoked_at IS NULL AND ss.expires_at>cl.at AND ss.idle_expires_at>cl.at AND ($3::boolean OR ss.authentication_method<>'dev_phone') AND cl.at<$6::timestamptz)`, actor.ID, digest[:], s.devPhoneEnabled, f.accountEpoch, f.session, time.Unix(0, expiry).UTC()).Scan(&alive)
 	if e != nil || ctx.Err() != nil {
 		return content.ErrUnavailable
 	}
@@ -95,6 +101,12 @@ func (s *Store) finishPublication(ctx context.Context, tx pgx.Tx, digest [32]byt
 		if e = checkHumanMomentSession(ctx, tx, digest, actor.ID, s.devPhoneEnabled); e != nil {
 			return e
 		}
+		return content.ErrConflict
+	}
+	m := f.moment
+	input := content.MomentInput{CityID: m.CityID, PlaceID: m.PlaceID, Title: m.Title, Body: m.Body, OccurredAt: m.OccurredAt, TimePrecision: m.TimePrecision, LocationPrecision: m.LocationPrecision}
+	external, _, _, e := momentControlExternal(ctx, humanWriteFrame{tx: tx, a: actor}, content.MomentControlInput{Action: "PUBLISH", Input: &input}, m)
+	if e != nil || external != f.cityEpoch {
 		return content.ErrConflict
 	}
 	if e = tx.Commit(ctx); e != nil {
@@ -160,7 +172,7 @@ func (s *Store) PublishHumanMoment(ctx context.Context, digest [32]byte, actor i
 	if e1 != nil || e2 != nil || issued <= 0 || expiry <= issued || expiry-issued != int64(momentPublicationTTL) || issued > now.UnixNano() || expiry <= now.UnixNano() || !hmac.Equal([]byte(in.Snapshot), []byte(publicationSnapshot(digest, f.material, issued, expiry))) {
 		return out, content.ErrConflict
 	}
-	e = tx.QueryRow(ctx, `WITH stamp AS MATERIALIZED(SELECT clock_timestamp() at) UPDATE moments m SET visibility='public',status='published',author_confirmed_at=stamp.at,published_at=stamp.at,updated_at=stamp.at,revision=revision+1 FROM stamp WHERE m.id=$1 AND m.author_account_id=$2 AND m.revision=$3 AND m.status='draft' AND m.visibility='private' RETURNING m.id,m.place_id,m.revision,m.status,m.published_at`, id, actor.ID, in.Revision).Scan(&out.MomentID, &out.PlaceID, &out.Revision, &out.Status, &out.PublishedAt)
+	e = tx.QueryRow(ctx, `WITH stamp AS MATERIALIZED(SELECT clock_timestamp() at) UPDATE moments m SET visibility='public',status='published',author_confirmed_at=stamp.at,published_at=stamp.at,updated_at=stamp.at,revision=revision+1 FROM stamp WHERE m.id=$1 AND m.author_account_id=$2 AND m.revision=$3 AND m.status='draft' AND m.visibility='private' RETURNING m.id,coalesce(m.place_id::text,''),m.revision,m.status,m.published_at`, id, actor.ID, in.Revision).Scan(&out.MomentID, &out.PlaceID, &out.Revision, &out.Status, &out.PublishedAt)
 	if errors.Is(e, pgx.ErrNoRows) {
 		return out, content.ErrConflict
 	}

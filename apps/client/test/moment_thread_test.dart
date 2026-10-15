@@ -8,6 +8,8 @@ import 'package:birdtie_client/src/workspace/moment_thread_api.dart';
 import 'package:birdtie_client/src/workspace/moment_thread_controller.dart';
 import 'package:birdtie_client/src/workspace/moment_thread_panel.dart';
 import 'package:birdtie_client/src/workspace/moment_thread_pending_store.dart';
+import 'package:birdtie_client/src/workspace/public_moment_media.dart';
+import 'package:birdtie_client/src/workspace/entity_cover.dart';
 
 const owner = '00000000-0000-4000-8000-000000000901';
 const firstID = '00000000-0000-4000-8000-000000000902';
@@ -87,6 +89,67 @@ Map<String, Object?> receipt(MomentThreadPending original) => {
 };
 
 void main() {
+  test(
+    'thread restore clears legacy rights and saves only derived media-free draft',
+    () async {
+      final values = <String, String>{}, store = journal(values);
+      final media = PublicMomentMediaSelection(
+        secondID,
+        1,
+        EntityCoverRights(
+          basis: 'OWNED',
+          attribution: '',
+          licenseReference: '',
+          canRetain: true,
+          canPublish: true,
+          retentionUntil: DateTime.now().toUtc().add(const Duration(days: 1)),
+        ),
+      );
+      await store.saveDraft(
+        owner,
+        'https://thread-stage.test',
+        MomentThreadJournalState(
+          threadID,
+          [
+            MomentThreadDraftEntry(
+              localID: firstID,
+              cityID: '',
+              text: '本人文字',
+              media: [media],
+            ),
+            MomentThreadDraftEntry(localID: secondID, cityID: '', text: '第二条'),
+          ],
+          0,
+          null,
+        ),
+      );
+      var requests = 0;
+      final c = MomentThreadController(
+        ownerID: owner,
+        journal: store,
+        api: MomentThreadAPI(
+          baseUrl: 'https://thread-stage.test',
+          authorizationHeader: () => 'Bearer synthetic',
+          current: () => true,
+          client: MockClient((_) async {
+            requests++;
+            throw StateError('no HTTP expected');
+          }),
+        ),
+      );
+      expect(await c.restore(), isTrue);
+      expect(c.activeText, '本人文字');
+      expect(c.entries.every((entry) => entry.media.isEmpty), isTrue);
+      c.setActiveMedia([media]);
+      expect(c.entries.first.media.single.rights, same(media.rights));
+      await Future<void>.delayed(Duration.zero);
+      final reopened = (await store.load(owner, c.origin))!;
+      expect(reopened.entries.every((entry) => entry.media.isEmpty), isTrue);
+      expect(values.values.single, isNot(contains('rights')));
+      expect(requests, 0);
+      c.dispose();
+    },
+  );
   testWidgets(
     'thread panel edits selected entries through the existing composer and preserves order',
     (tester) async {

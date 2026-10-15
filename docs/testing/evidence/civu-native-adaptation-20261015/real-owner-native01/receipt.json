@@ -1,0 +1,23 @@
+{
+  "exitCode": 1,
+  "remoteScriptSHA256": "3c93fe983c30495d066114a5dae40cce1ad4e607ae58b94e2c72b5f5531dc139",
+  "result": {
+    "status": "FAIL",
+    "devOnly": true,
+    "productionIdentityVerified": false,
+    "productionPhoneVerification": false,
+    "fixedCodeUsed": true,
+    "sourceWrites": 0,
+    "databaseDirectWrites": 0,
+    "remoteConfigurationChanged": false,
+    "agentActivationRequested": false,
+    "oldSessionAccepted": false,
+    "messagesSent": 0,
+    "privateValuesPersisted": false,
+    "allCreatedSessionsLoggedOut": true,
+    "failureStage": "private_media_read",
+    "failureType": "RuntimeError",
+    "failureCode": "SELECTED_OWNER_MEDIA_MISSING",
+    "privateInputUnchanged": true
+  }
+}

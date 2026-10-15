@@ -130,7 +130,11 @@ func NormalizeMomentThread(in MomentThreadInput, commit bool) (MomentThreadInput
 		seen := map[string]bool{}
 		for i := range in.Items {
 			item := &in.Items[i]
-			v, e := NormalizeMomentControl(MomentControlInput{OperationID: in.OperationID, Action: "PUBLISH", MomentID: in.OperationID, ExpectedRevision: 1, Input: &item.Input}, false)
+			control := MomentControlInput{OperationID: in.OperationID, Action: "PUBLISH", MomentID: in.OperationID, ExpectedRevision: 1, Input: &item.Input}
+			if len(item.Media) > 0 {
+				control.Media, control.LocalScope = &item.Media, in.LocalScope
+			}
+			v, e := NormalizeMomentControl(control, false)
 			if e != nil || item.Media == nil || len(item.Media) > momentmedia.MaxImages {
 				return bad()
 			}

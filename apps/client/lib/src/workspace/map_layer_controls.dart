@@ -99,10 +99,12 @@ class MapLayerControls extends StatelessWidget {
                 key: ValueKey('map-layer-card-${item.mapID}'),
                 contentPadding: EdgeInsets.zero,
                 minTileHeight: NowUiTokens.actionHitSize,
-                title: Text(
-                  item.title,
-                  style: NowUiTokens.of(context).placeTitle,
-                ),
+                title: item.title.isEmpty
+                    ? null
+                    : Text(
+                        item.title,
+                        style: NowUiTokens.of(context).placeTitle,
+                      ),
                 subtitle: Text(
                   item.rowSubtitle,
                   style: NowUiTokens.of(context).listSubtitle,

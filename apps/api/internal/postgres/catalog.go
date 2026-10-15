@@ -29,7 +29,7 @@ const cityColumns = `id, name, region, country_code, time_zone, content_status,
 
 func (s *Store) ListCities(ctx context.Context) ([]foundation.City, error) {
 	rows, err := s.pool.Query(ctx, `SELECT `+cityColumns+`
-        FROM cities WHERE publication_status = 'published' ORDER BY name, id LIMIT 50`)
+        FROM cities WHERE publication_status = 'published' ORDER BY name, id LIMIT 5000`)
 	if err != nil {
 		return nil, err
 	}
@@ -72,7 +72,7 @@ const placeColumns = `p.id, p.city_id, p.name, p.category_code, p.summary,
 func (s *Store) ListPlaces(ctx context.Context, cityID, query string) ([]foundation.Place, error) {
 	rows, err := s.pool.Query(ctx, `SELECT `+placeColumns+`
         FROM places p JOIN cities c ON c.id = p.city_id
-		WHERE p.city_id = $1 AND p.publication_status = 'published'
+		WHERE ($1 = '' OR p.city_id = $1) AND p.publication_status = 'published'
 		  AND c.publication_status = 'published'
 		  AND (p.expires_at IS NULL OR p.expires_at > now())
 		  AND `+currentRetainedPlaceVisibilitySQL("p", "clock_timestamp()")+`

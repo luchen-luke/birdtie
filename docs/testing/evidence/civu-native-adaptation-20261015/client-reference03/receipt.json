@@ -1,0 +1,15 @@
+{
+  "cwd": "D:\\Project\\birdtie\\apps\\client",
+  "command": "flutter test test/legacy_place_reference_test.dart --plain-name \"owner list opens another city independently and reads leased private details\" --reporter expanded",
+  "startedAt": "2026-10-15T07:43:43.3405659Z",
+  "finishedAt": "2026-10-15T07:43:47.0927256Z",
+  "exitCode": 0,
+  "change": "Await actual child route completion in its real async zone; assert child controller disposal",
+  "priorFailures": [
+    "../client-reference01/output.log",
+    "../client-reference02/output.log"
+  ],
+  "assertions": "Existing functional assertions retained; natural controller disposal asserted",
+  "build": "NOT_RUN",
+  "device": "NOT_RUN"
+}

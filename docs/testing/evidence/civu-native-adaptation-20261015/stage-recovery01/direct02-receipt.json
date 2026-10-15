@@ -1,0 +1,12 @@
+{
+  "cwd": "D:\\Project\\birdtie\\apps\\client",
+  "command": "flutter test test/public_moment_media_controller_test.dart --name \"successful staged selection|expired successful stages\" --reporter expanded",
+  "startedAt": "2026-10-15T06:53:35.5612582Z",
+  "finishedAt": "2026-10-15T06:53:38.5473391Z",
+  "exitCode": 0,
+  "scope": "Final selector cleanup subset, journal read failure, stage restoration and expiry",
+  "reason": "Final review found parent publication cleanup and local storage failure boundaries after direct01",
+  "testKind": "Focused Flutter unit",
+  "build": "NOT_RUN",
+  "device": "NOT_RUN"
+}

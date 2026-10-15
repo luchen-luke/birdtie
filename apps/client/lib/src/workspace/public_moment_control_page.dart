@@ -204,13 +204,14 @@ class _PublicMomentControlPageState extends State<PublicMomentControlPage> {
           if (ready) ...[
             Text('本人动态 · 公开可见', style: tokens.metadata),
             const SizedBox(height: 16),
-            TextField(
-              controller: _title,
-              enabled: !c.operationBusy,
-              maxLength: 160,
-              onChanged: _edited,
-              decoration: const InputDecoration(labelText: '标题'),
-            ),
+            if (_moment!.title.isNotEmpty)
+              TextField(
+                controller: _title,
+                enabled: !c.operationBusy,
+                maxLength: 160,
+                onChanged: _edited,
+                decoration: const InputDecoration(labelText: '标题'),
+              ),
             const SizedBox(height: 12),
             TextField(
               controller: _body,
@@ -248,12 +249,20 @@ class _PublicMomentControlPageState extends State<PublicMomentControlPage> {
                 style: tokens.body,
               )
             else ...[
-              Text(p.input.input!['title'] as String, style: tokens.placeTitle),
-              const SizedBox(height: 8),
-              Text(p.input.input!['body'] as String, style: tokens.body),
+              if ((p.input.input!['title'] as String).isNotEmpty) ...[
+                Text(
+                  p.input.input!['title'] as String,
+                  style: tokens.placeTitle,
+                ),
+                const SizedBox(height: 8),
+              ],
+              if ((p.input.input!['body'] as String).isNotEmpty)
+                Text(p.input.input!['body'] as String, style: tokens.body),
               const SizedBox(height: 12),
               Text(
-                '受众仍为公开，关联地点与发生时间保持原值。如已关联公开图片，保存本次修改会撤回图片，之后可重新添加。',
+                p.preservedMedia != null
+                    ? '受众仍为公开；这次保留已核实的${p.preservedMedia!.attachments.length}项媒体。'
+                    : '受众仍为公开。未列为保留的旧图片将撤回，之后可重新添加。',
                 style: tokens.metadata,
               ),
             ],

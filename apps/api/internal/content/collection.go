@@ -9,19 +9,21 @@ import (
 	"unicode/utf8"
 
 	"github.com/birdtie/birdtie/apps/api/internal/identity"
+	lpr "github.com/birdtie/birdtie/apps/api/internal/legacyplacereference"
 )
 
 const CollectionPageSize = 20
 
 type CollectionEntry struct {
-	PlaceID            string     `json:"placeId"`
-	Note               string     `json:"note"`
-	LocationVisibility string     `json:"locationVisibility"`
-	PlaceName          string     `json:"placeName,omitempty"`
-	Available          bool       `json:"available"`
-	Latitude           *float64   `json:"latitude,omitempty"`
-	Longitude          *float64   `json:"longitude,omitempty"`
-	SourceExpiresAt    *time.Time `json:"sourceExpiresAt,omitempty"`
+	PlaceID            string       `json:"placeId"`
+	Note               string       `json:"note"`
+	LocationVisibility string       `json:"locationVisibility"`
+	PlaceName          string       `json:"placeName,omitempty"`
+	Available          bool         `json:"available"`
+	Latitude           *float64     `json:"latitude,omitempty"`
+	Longitude          *float64     `json:"longitude,omitempty"`
+	SourceExpiresAt    *time.Time   `json:"sourceExpiresAt,omitempty"`
+	LegacyReference    *lpr.Summary `json:"legacyReference,omitempty"`
 }
 type CollectionInput struct {
 	Kind    string            `json:"kind"`
@@ -77,7 +79,7 @@ func NormalizeCollectionInput(in CollectionInput) (CollectionInput, error) {
 	for i, entry := range in.Entries {
 		entry.PlaceID = strings.ToLower(strings.TrimSpace(entry.PlaceID))
 		entry.Note = strings.TrimSpace(entry.Note)
-		if !ValidCollectionID(entry.PlaceID) || seen[entry.PlaceID] || !utf8.ValidString(entry.Note) || len(entry.Note) > 2000 || entry.PlaceName != "" || entry.Available || entry.Latitude != nil || entry.Longitude != nil || entry.SourceExpiresAt != nil {
+		if !ValidCollectionID(entry.PlaceID) || seen[entry.PlaceID] || !utf8.ValidString(entry.Note) || len(entry.Note) > 2000 || entry.PlaceName != "" || entry.Available || entry.Latitude != nil || entry.Longitude != nil || entry.SourceExpiresAt != nil || entry.LegacyReference != nil {
 			return CollectionInput{}, ErrInvalid
 		}
 		if entry.LocationVisibility != "hidden" && entry.LocationVisibility != "city" && entry.LocationVisibility != "place" {

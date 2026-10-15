@@ -85,10 +85,11 @@ var mapProjectionRowsSQL = `WITH stamp AS MATERIALIZED(SELECT clock_timestamp() 
  AND (ao.business_id IS NULL OR EXISTS(SELECT 1 FROM business_venue_relations relation JOIN venues venue ON venue.place_id=relation.place_id JOIN venue_candidates candidate ON candidate.id=venue.source_candidate_id AND candidate.status='approved' AND candidate.place_id=venue.place_id AND candidate.city_id=venue.city_id AND candidate.reviewed_by=venue.reviewed_by WHERE relation.business_id=ao.business_id AND relation.place_id=p.id AND relation.status='verified' AND venue.expires_at>stamp.at))
  AND birdtie_activity_visible_to(a.id,$6::uuid)
  AND NOT EXISTS(SELECT 1 FROM account_blocks bl WHERE $6::uuid IS NOT NULL AND ((bl.blocker_account_id=$6 AND bl.blocked_account_id=a.host_account_id) OR (bl.blocker_account_id=a.host_account_id AND bl.blocked_account_id=$6)))
- UNION ALL SELECT 'MOMENT',m.id::text,m.title,p.id::text,p.name,p.latitude,p.longitude,m.revision::text,p.retained_until,concat_ws(':',m.xmin::text,author.xmin::text,p.row_token)
- FROM moments m JOIN point p ON p.id=m.place_id AND p.city_id=m.city_id JOIN accounts author ON author.id=m.author_account_id,stamp
+ UNION ALL SELECT 'MOMENT',m.id::text,m.title,p.id::text,p.name,p.latitude,p.longitude,m.revision::text,least(p.retained_until,` + momentPublishableMediaDeadlineSQL("m") + `),concat_ws(':',m.xmin::text,author.xmin::text,p.row_token,birdtie_moment_public_binding(m.id,$6::uuid,stamp.at),` + momentMediaReadBindingSQL("m") + `)
+ FROM moments m JOIN point p ON p.id=m.place_id AND(m.city_id IS NULL OR p.city_id=m.city_id) JOIN accounts author ON author.id=m.author_account_id,stamp
  WHERE m.status='published' AND m.visibility='public' AND m.location_precision='place' AND m.author_confirmed_at IS NOT NULL
  AND m.author_confirmed_at<=m.published_at AND m.published_at<=stamp.at AND author.account_type='person' AND author.status='active'
+ AND birdtie_moment_public_binding(m.id,$6::uuid,stamp.at) IS NOT NULL
  AND NOT EXISTS(SELECT 1 FROM account_blocks bl WHERE $6::uuid IS NOT NULL AND ((bl.blocker_account_id=$6 AND bl.blocked_account_id=author.id) OR (bl.blocker_account_id=author.id AND bl.blocked_account_id=$6)))
  UNION ALL SELECT 'ORGANIZATION',o.id::text,o.name,''::text,'组织明确公开地点',l.latitude,l.longitude,l.revision::text,NULL::timestamptz,concat_ws(':',o.xmin::text,principal.xmin::text,l.xmin::text)
  FROM organization_map_locations l JOIN organizations o ON o.id=l.organization_id JOIN accounts principal ON principal.id=o.account_id JOIN city c ON c.id=l.city_id

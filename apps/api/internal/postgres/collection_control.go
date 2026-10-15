@@ -144,6 +144,9 @@ func collectionControlAuthority(ctx context.Context, tx pgx.Tx, owner string, in
 		return "withdraw-owned-private", nil, nil
 	}
 	p := collectionControlLegacy(in)
+	if handled, authority, deadline, e := legacyCollectionRetainedAuthorityTx(ctx, tx, owner, in.CollectionID, p); handled || e != nil {
+		return authority, deadline, e
+	}
 	if lock {
 		if e := collectionSourcesTx(ctx, tx, p); e != nil {
 			return "", nil, e

@@ -1,0 +1,40 @@
+{
+  "command": [
+    "D:\\DevTools\\flutter\\bin\\dart.bat",
+    "analyze",
+    "--format",
+    "machine",
+    "lib/src/content/moment_control.dart",
+    "lib/src/content/moment_image_header.dart",
+    "lib/src/content/moment_publication_controller.dart",
+    "lib/src/content/moment_publication_sheet.dart",
+    "lib/src/content/private_moment_controller.dart",
+    "lib/src/content/private_moment_media_controller.dart",
+    "lib/src/content/private_moment_media_pending_store.dart",
+    "lib/src/content/private_moment_media_sheet.dart",
+    "lib/src/legacy/legacy_shell.dart",
+    "lib/src/workspace/human_causal_control.dart",
+    "lib/src/workspace/map_workspace.dart",
+    "lib/src/workspace/moment_thread_api.dart",
+    "lib/src/workspace/moment_thread_controller.dart",
+    "lib/src/workspace/moment_thread_panel.dart",
+    "lib/src/workspace/now_creation_draft.dart",
+    "lib/src/workspace/now_creation_draft_state.dart",
+    "lib/src/workspace/now_creation_panel.dart",
+    "lib/src/workspace/public_author_moments.dart",
+    "lib/src/workspace/public_moment_api.dart",
+    "lib/src/workspace/public_moment_control_page.dart",
+    "lib/src/workspace/public_moment_history_page.dart",
+    "lib/src/workspace/public_moment_media_controller.dart",
+    "lib/src/workspace/public_moment_media_editor.dart",
+    "lib/src/workspace/public_moment_page.dart",
+    "lib/src/workspace/moment_location_picker.dart"
+  ],
+  "cwd": "D:\\Project\\birdtie\\apps\\client",
+  "exitCode": 2,
+  "diagnostics": {
+    "ERROR": 0,
+    "WARNING": 1,
+    "INFO": 264
+  }
+}

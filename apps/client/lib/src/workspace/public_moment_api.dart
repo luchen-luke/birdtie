@@ -118,11 +118,20 @@ class PublicMoment {
       throw const FormatException('公开动态格式不符');
     }
     final cityOnly = cityContext && d['locationPrecision'] == 'city';
+    final unplaced = cityContext && d['locationPrecision'] == 'none';
+    final placeWithoutCity = cityContext && d['locationPrecision'] == 'place' && d['cityId'] == '';
     if (cityContext &&
         (d['cityName'] is! String ||
-            (d['cityName'] as String).trim().isEmpty ||
+            (!unplaced && !placeWithoutCity && (d['cityName'] as String).trim().isEmpty) ||
             utf8.encode(d['cityName'] as String).length > 640 ||
-            (cityOnly
+            (placeWithoutCity && d['cityName'] != '') ||
+            (unplaced
+                ? d['cityId'] != '' ||
+                      d['cityName'] != '' ||
+                      d['placeId'] != '' ||
+                      d['placeName'] != '' ||
+                      d['photo'] != null
+                : cityOnly
                 ? d['placeId'] != '' ||
                       d['placeName'] != '' ||
                       d['photo'] != null
@@ -139,7 +148,9 @@ class PublicMoment {
       final value = d[entry.key];
       if (value is! String ||
           (entry.key != 'body' &&
-              !(cityOnly && entry.key == 'placeName') &&
+              entry.key != 'title' &&
+              !((cityOnly || unplaced) && entry.key == 'placeName') &&
+              !((unplaced || placeWithoutCity) && entry.key == 'cityId') &&
               value.trim().isEmpty) ||
           utf8.encode(value).length > entry.value) {
         throw const FormatException('公开动态字段不符');

@@ -35,7 +35,7 @@ type PublicMomentStore interface {
 }
 
 func ValidatePublicMoment(p PublicMoment, expected string) error {
-	if p.SchemaVersion != "public-moment-v1" || p.ID != expected || !momentUUID.MatchString(p.ID) || !momentUUID.MatchString(p.PlaceID) || p.Title == "" || len(p.Title) > 160 || len(p.Body) > 5000 || !utf8.ValidString(p.Title) || !utf8.ValidString(p.Body) || p.PlaceName == "" || !utf8.ValidString(p.PlaceName) || len(p.PlaceName) > 640 || p.CityID == "" || len(p.CityID) > 80 || p.Revision < 2 || p.PublishedAt.IsZero() || p.SourceBinding == "" {
+	if p.SchemaVersion != "public-moment-v1" || p.ID != expected || !momentUUID.MatchString(p.ID) || (p.PlaceID != "" && !momentUUID.MatchString(p.PlaceID)) || len(p.Title) > 160 || len(p.Body) > 5000 || !utf8.ValidString(p.Title) || !utf8.ValidString(p.Body) || !utf8.ValidString(p.PlaceName) || len(p.PlaceName) > 640 || !utf8.ValidString(p.CityID) || len(p.CityID) > 80 || p.Revision < 2 || p.PublishedAt.IsZero() || p.SourceBinding == "" || (p.PlaceID == "") != (p.PlaceName == "") {
 		return ErrInvalid
 	}
 	return nil

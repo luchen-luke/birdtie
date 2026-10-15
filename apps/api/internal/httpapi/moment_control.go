@@ -1,13 +1,18 @@
 package httpapi
 
 import (
+	"encoding/base64"
 	"errors"
 	"github.com/birdtie/birdtie/apps/api/internal/content"
+	mm "github.com/birdtie/birdtie/apps/api/internal/momentmedia"
 	"net/http"
+	"time"
 )
 
 func momentControlFailure(w http.ResponseWriter, e error) {
 	switch {
+	case errors.Is(e, content.ErrMomentLegacyPhotoReselection):
+		respond(w, 409, map[string]any{"error": map[string]string{"code": "legacy_moment_photo_reselection_required", "message": "这张旧版配图需要重新选择后才能修改公开动态；也可以添加正文并明确移除配图。"}})
 	case errors.Is(e, content.ErrNotFound):
 		respondError(w, 404, "not_found")
 	case errors.Is(e, content.ErrConflict):
@@ -54,6 +59,26 @@ func (s *server) previewMomentControl(w http.ResponseWriter, r *http.Request) {
 	if !humanControlPreviewMatches(v.HumanControlPreview, in.OperationID, in.Action, content.MomentControlDigest(in)) || v.MomentID != in.MomentID || v.ExpectedRevision != in.ExpectedRevision || v.InputSHA256 != content.MomentControlInputHash(in.Input) || content.MomentControlInputHash(v.Input) != v.InputSHA256 || !content.MomentControlHex(v.SourceVersion) || v.PreservedPlaceUnavailable && (in.Action != "UPDATE" || in.Input == nil || in.Input.LocationPrecision == "place") {
 		respondError(w, 503, "moment_unavailable")
 		return
+	}
+	count := 0
+	if in.Media != nil {
+		count = len(*in.Media)
+	}
+	if len(v.Materials) != count || v.PreservedMedia != nil && (in.Action != "UPDATE_PUBLIC" || in.Media != nil || !v.PreservedMedia.Valid(in.MomentID, time.Now().UTC()) || !v.PreservedMedia.CanReplace || v.PreservedMedia.Status != "READY") {
+		respondError(w, 503, "moment_unavailable")
+		return
+	}
+	for i, preview := range v.Materials {
+		material := preview.Material
+		if !mm.StageValid(material) || material.MediaID != (*in.Media)[i].MediaID || material.Version != (*in.Media)[i].MediaVersion || material.LocalScope != in.LocalScope || !material.RetainUntil.After(time.Now().UTC()) || len(preview.ThumbnailBase64) > base64.StdEncoding.EncodedLen(mm.MaxThumbnailBytes) {
+			respondError(w, 503, "moment_unavailable")
+			return
+		}
+		thumbnail, e := base64.StdEncoding.Strict().DecodeString(preview.ThumbnailBase64)
+		if e != nil || len(thumbnail) != material.ThumbnailBytes || mm.DigestBytes(thumbnail) != material.ThumbnailSHA {
+			respondError(w, 503, "moment_unavailable")
+			return
+		}
 	}
 	s.respondHumanControl(w, r, d, a, map[string]any{"data": v}, v.ResponseProof, true)
 }

@@ -1,0 +1,29 @@
+{
+  "exitCode": 0,
+  "remoteScriptSHA256": "a4df46f5a369d80a5d6fe6dfc754580335323573c16c429188c7c1c91bd00632",
+  "result": {
+    "status": "PASS",
+    "checks": {
+      "notes": 52,
+      "images": 135,
+      "owners": 8,
+      "sourceSizesMatch": true,
+      "assetProofMatches": true,
+      "privateDraftsOnly": true,
+      "ownerBindingsMatch": true,
+      "derivativeBytesMatch": true,
+      "noFabricatedSessions": true,
+      "noScanOrPrivacyClaim": true,
+      "ownerAgentsSuspended": true,
+      "previouslyEnrolledOwnerCount": 1
+    },
+    "anonymousImageRejected": true,
+    "privateMomentPublicReadRejected": true,
+    "databaseWrites": 0,
+    "newSessions": 0,
+    "newOwnerEnrolled": false,
+    "originalInputUnchanged": true,
+    "actualOwnerImageHTTPRead": "NOT_RUN: previously enrolled owner has no imported images",
+    "defaultTLSValidated": true
+  }
+}

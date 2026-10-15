@@ -1,0 +1,24 @@
+{
+  "startedAtUTC": "2026-10-15T06:21:04.301202+00:00",
+  "endedAtUTC": "2026-10-15T06:21:39.664645+00:00",
+  "command": "go run ./cmd/legacy-media-import --run-id <original> --source <protected> --manifest <protected> --matched <protected> --authenticated-seal <protected> --authenticated-seal-sha256 <original-receipt-pin> --blob-directory <protected-authenticated-jpeg-directory> --verify-blobs",
+  "cwd": "D:\\Project\\birdtie\\apps\\api",
+  "exitCode": 0,
+  "sourceBefore": {
+    "apps/api/cmd/legacy-media-import/main.go": "475ee6b132ea9b4669667dbb710200be45fff6f20b59c529a91abf465ea8296b",
+    "apps/api/internal/legacymedia/model.go": "4f1d299abc00f3b0e7a8282e0fd944d8646e35c37fe2c8ed4faac7939644597b",
+    "apps/api/internal/media/image_derivative.go": "bde55083a5552573f3d0a876ff9afa04b7c1cc6117c3ab6df5d9b1f6616d3345",
+    "apps/api/internal/media/image_orientation.go": "725bee1785bccbb61b4382fda427b325f5d8c8eeca5a352c2426c2ccfa112a0a"
+  },
+  "sourceAfter": {
+    "apps/api/cmd/legacy-media-import/main.go": "475ee6b132ea9b4669667dbb710200be45fff6f20b59c529a91abf465ea8296b",
+    "apps/api/internal/legacymedia/model.go": "4f1d299abc00f3b0e7a8282e0fd944d8646e35c37fe2c8ed4faac7939644597b",
+    "apps/api/internal/media/image_derivative.go": "bde55083a5552573f3d0a876ff9afa04b7c1cc6117c3ab6df5d9b1f6616d3345",
+    "apps/api/internal/media/image_orientation.go": "725bee1785bccbb61b4382fda427b325f5d8c8eeca5a352c2426c2ccfa112a0a"
+  },
+  "sourceFrameStable": true,
+  "databaseAccessed": false,
+  "mediaWritten": false,
+  "privatePathsOrSelectorsSaved": false,
+  "orientationCompatibility": "28 historical images had unspecified orientation zero (24 LONG/count1, 4 SHORT/count1). Preserve encoded frame and strip metadata; no inferred rotation. Ordinary upload remains strict."
+}

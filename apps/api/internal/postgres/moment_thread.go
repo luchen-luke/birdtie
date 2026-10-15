@@ -255,8 +255,10 @@ func (s *Store) momentThreadSource(ctx context.Context, f humanWriteFrame, in co
 		values = append(values, stamp)
 		momentControlAddDeadline(&out.deadline, until)
 		contextValue := content.MomentThreadContext{CityID: item.Input.CityID, PlaceID: item.Input.PlaceID}
-		if e = f.tx.QueryRow(ctx, `SELECT name FROM cities WHERE id=$1`, item.Input.CityID).Scan(&contextValue.CityName); e != nil {
-			return out, identity.ErrControlUnavailable
+		if item.Input.CityID != "" {
+			if e = f.tx.QueryRow(ctx, `SELECT name FROM cities WHERE id=$1`, item.Input.CityID).Scan(&contextValue.CityName); e != nil {
+				return out, identity.ErrControlUnavailable
+			}
 		}
 		if item.Input.PlaceID != "" {
 			if e = f.tx.QueryRow(ctx, `SELECT name FROM places WHERE id=$1`, item.Input.PlaceID).Scan(&contextValue.PlaceName); e != nil {
@@ -608,7 +610,7 @@ func (s *Store) ReadMomentThread(ctx context.Context, access content.PublicMomen
 	view.ValidUntil = view.ObservedAt.Add(30 * time.Second)
 	// Bound the lease to every currently disclosed city's and Place's expiry.
 	var expiry *time.Time
-	e = tx.QueryRow(ctx, `SELECT min(c.expires_at) FROM moment_thread_members x JOIN moments m ON m.id=x.moment_id JOIN cities c ON c.id=m.city_id WHERE x.thread_id=$1 AND birdtie_moment_public_binding(m.id,NULLIF($2,'')::uuid,clock_timestamp()) IS NOT NULL`, view.ThreadID, access.Actor.ID).Scan(&expiry)
+	e = tx.QueryRow(ctx, `SELECT min(least(c.expires_at,pc.expires_at,`+momentPublishableMediaDeadlineSQL("m")+`,CASE WHEN p.id IS NOT NULL THEN `+currentRetainedPlaceDeadlineSQL("p", "clock_timestamp()")+` END)) FROM moment_thread_members x JOIN moments m ON m.id=x.moment_id LEFT JOIN cities c ON c.id=m.city_id LEFT JOIN places p ON p.id=m.place_id AND(m.city_id IS NULL OR p.city_id=m.city_id) LEFT JOIN cities pc ON pc.id=p.city_id WHERE x.thread_id=$1 AND birdtie_moment_public_binding(m.id,NULLIF($2,'')::uuid,clock_timestamp()) IS NOT NULL`, view.ThreadID, access.Actor.ID).Scan(&expiry)
 	if e != nil {
 		return view, identity.ErrControlUnavailable
 	}

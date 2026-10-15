@@ -39,6 +39,42 @@ class _FailingStore extends DraftMemoryStore {
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
+  test('动态草稿独立于浏览城市恢复，并只保留可清除的原动态标识', () async {
+    final store = DraftMemoryStore();
+    const id = '11111111-1111-4111-8111-111111111111';
+    final first = NowCreationDraftState(store: store)
+      ..configure(_origin, _owner);
+    first.remember(
+      const NowCreationDraft(
+        kind: 'moment',
+        cityID: 'alpha',
+        cityName: '甲城',
+        body: '保留正文',
+        nativeMomentID: id,
+      ),
+    );
+    await first.flush();
+    first.dispose();
+    final next = NowCreationDraftState(store: store)
+      ..configure(_origin, _owner);
+    final restored = (await next.restore('beta', 'moment'))!;
+    expect(restored.cityID, 'alpha');
+    expect(restored.nativeMomentID, id);
+    expect(restored.title, isEmpty);
+    next.remember(
+      restored.copyWith(cityID: '', cityName: '', nativeMomentID: ''),
+    );
+    await next.flush();
+    next.dispose();
+    final reopened = NowCreationDraftState(store: store)
+      ..configure(_origin, _owner);
+    final cleared = (await reopened.restore('', 'moment'))!;
+    expect(cleared.body, '保留正文');
+    expect(cleared.nativeMomentID, isEmpty);
+    expect(cleared.cityID, isEmpty);
+    reopened.dispose();
+  });
+
   test('本人材料通过原SecureStore恢复，标题正文UTC日期与地点顺序完整', () async {
     FlutterSecureStorage.setMockInitialValues({});
     final first = NowCreationDraftState()..configure(_origin, _owner);

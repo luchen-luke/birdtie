@@ -1,0 +1,28 @@
+{
+  "status": "SOURCE_READY",
+  "frozenAt": "2026-10-15T07:44:28.4403771Z",
+  "sources": [
+    {
+      "path": "apps/client/lib/src/content/personal_collection_controller.dart",
+      "sha256": "8d21a323a21f0e122e75baf9deaae5e844d81efcbe268fec29ef5cc471a7dab1"
+    },
+    {
+      "path": "apps/client/lib/src/content/personal_collection_page.dart",
+      "sha256": "175c5eef380378ffc873446cf1a30baf3cf141630be2d3534a0653e3e706fb77"
+    },
+    {
+      "path": "apps/client/test/legacy_place_reference_test.dart",
+      "sha256": "1538aebd58de3e5209cb597cf38b40ca96838b8fd52763d9918bb670177e52ea"
+    }
+  ],
+  "diffCheckExit": 0,
+  "finalValidation": "client-reference03 targeted original widget PASS exit0; DTO test unchanged and passed in client-reference01/02",
+  "failuresPreserved": [
+    "client-reference01/output.log",
+    "client-reference02/output.log"
+  ],
+  "productFix": "End openingSaved after readonly open, before child route push",
+  "testFix": "Await actual child route completed future in runAsync; assert natural disposal",
+  "build": "NOT_RUN",
+  "device": "NOT_RUN"
+}

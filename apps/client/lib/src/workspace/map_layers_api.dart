@@ -307,7 +307,7 @@ class TypedMapItem {
     return TypedMapItem(
       kind: kind,
       id: id,
-      title: _mapText(x['title'], media ? 300 : 160),
+      title: _mapText(x['title'], media ? 300 : 160, empty: kind == 'MOMENT'),
       detailType: dr['type'],
       detailID: dr['id'],
       placeID: place,

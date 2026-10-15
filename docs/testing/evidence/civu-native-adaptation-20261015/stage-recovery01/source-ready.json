@@ -1,0 +1,39 @@
+{
+  "status": "SOURCE_READY",
+  "frozenAt": "2026-10-15T06:54:38.7936365Z",
+  "sources": [
+    {
+      "path": "apps/client/lib/src/workspace/public_moment_media_pending_store.dart",
+      "sha256": "b630316f5492e14ffbbdddc5214cd98dcf55f3ef76559c4016cb66fd0ace8a4a"
+    },
+    {
+      "path": "apps/client/lib/src/workspace/public_moment_media_controller.dart",
+      "sha256": "c471f2dfc4bc039482c1b35647e34e33011236c72a67d9141ab1ca2d4eda0c8c"
+    },
+    {
+      "path": "apps/client/lib/src/workspace/public_moment_media_editor.dart",
+      "sha256": "6b35aaed2004fd87212885483b7a354185ea9e50043d37050bd9c1c71fc49b4f"
+    },
+    {
+      "path": "apps/client/lib/src/workspace/moment_thread_controller.dart",
+      "sha256": "84525d53771b3828310d77ca15378b40e060fb20cc3d3e3f1e7c99dfcba699c6"
+    },
+    {
+      "path": "apps/client/test/public_moment_media_controller_test.dart",
+      "sha256": "c19d4fa8722f605fd4d8e8ca851a422fc2750d35d2c85bb5f626eb9c11002767"
+    },
+    {
+      "path": "apps/client/test/moment_thread_test.dart",
+      "sha256": "34f7d1195e356867a03ad44c7c88b3b06ad569fd1ad8523b9263995a04932c1f"
+    }
+  ],
+  "direct01": "Two files 11 PASS / 0 FAIL / 0 skip, exit0",
+  "direct02": "Final affected 2 cases PASS / 0 FAIL / 0 skip, exit0",
+  "diffCheckExit": 0,
+  "backendChanges": "NONE",
+  "stageTTL": "Existing 10 minute lease unchanged",
+  "recovery": "Read original operation; selectors only, rights null; UNKNOWN never automatically replayed",
+  "build": "NOT_RUN",
+  "device": "NOT_RUN",
+  "host": "Root owns map_workspace.dart integration"
+}

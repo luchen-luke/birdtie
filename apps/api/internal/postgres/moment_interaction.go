@@ -125,7 +125,7 @@ func (s *Store) interactionSource(ctx context.Context, f humanWriteFrame, in con
 	var city string
 	var place *string
 	var revision int64
-	e := f.tx.QueryRow(ctx, `SELECT author_account_id,city_id,place_id,revision FROM moments WHERE id=$1 FOR UPDATE`, in.MomentID).Scan(&out.author, &city, &place, &revision)
+	e := f.tx.QueryRow(ctx, `SELECT author_account_id,coalesce(city_id,''),place_id,revision FROM moments WHERE id=$1 FOR UPDATE`, in.MomentID).Scan(&out.author, &city, &place, &revision)
 	if errors.Is(e, pgx.ErrNoRows) {
 		return out, content.ErrNotFound
 	}
@@ -136,8 +136,10 @@ func (s *Store) interactionSource(ctx context.Context, f humanWriteFrame, in con
 		return out, identity.ErrControlChanged
 	}
 	var cityID string
-	if e = f.tx.QueryRow(ctx, `SELECT id FROM cities WHERE id=$1 AND publication_status='published' AND(expires_at IS NULL OR expires_at>clock_timestamp()) FOR SHARE`, city).Scan(&cityID); e != nil {
-		return out, identity.ErrControlChanged
+	if city != "" {
+		if e = f.tx.QueryRow(ctx, `SELECT id FROM cities WHERE id=$1 AND publication_status='published' AND(expires_at IS NULL OR expires_at>clock_timestamp()) FOR SHARE`, city).Scan(&cityID); e != nil {
+			return out, identity.ErrControlChanged
+		}
 	}
 	if place != nil {
 		var id string

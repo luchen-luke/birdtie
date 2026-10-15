@@ -8,6 +8,7 @@ import 'package:http/http.dart' as http;
 import '../config/birdtie_environment.dart';
 import 'collection_control.dart';
 import 'collection_control_pending_store.dart';
+import '../workspace/legacy_place_reference_page.dart';
 
 final _collectionUUID = RegExp(
   r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',
@@ -51,13 +52,24 @@ class PersonalCollectionEntry {
     this.longitude,
     this.sourceExpiresAt,
     this.selectorOnly = false,
+    this.legacyReference,
   });
   final String placeID, note, locationVisibility, placeName;
   final bool available;
   final double? latitude, longitude;
   final DateTime? sourceExpiresAt;
   final bool selectorOnly;
+  final LegacyPlaceReference? legacyReference;
+  bool get readable =>
+      sourceCurrent ||
+      !selectorOnly &&
+          !available &&
+          locationVisibility == 'hidden' &&
+          latitude == null &&
+          longitude == null &&
+          legacyReference?.current == true;
   bool get sourceCurrent =>
+      legacyReference == null &&
       available &&
       !selectorOnly &&
       (sourceExpiresAt == null ||
@@ -80,6 +92,7 @@ class PersonalCollectionEntry {
     longitude: longitude,
     sourceExpiresAt: sourceExpiresAt,
     selectorOnly: selectorOnly,
+    legacyReference: legacyReference,
   );
   factory PersonalCollectionEntry.fromJson(Map<String, dynamic> p) {
     final id = p['placeId'] as String;
@@ -89,6 +102,9 @@ class PersonalCollectionEntry {
     final expires = p['sourceExpiresAt'] == null
         ? null
         : DateTime.parse(p['sourceExpiresAt'] as String).toUtc();
+    final legacy = p['legacyReference'] == null
+        ? null
+        : LegacyPlaceReference.decode(p['legacyReference']);
     if (!_collectionUUID.hasMatch(id) ||
         !const ['hidden', 'city', 'place'].contains(precision) ||
         (lat == null) != (lng == null) ||
@@ -99,7 +115,15 @@ class PersonalCollectionEntry {
                 !lng!.isFinite ||
                 lng < -180 ||
                 lng > 180)) ||
-        (p['available'] == true && expires == null))
+        (p['available'] == true && expires == null) ||
+        legacy != null &&
+            (legacy.kind != 'theme_map' ||
+                legacy.placeID != id ||
+                p['available'] != false ||
+                precision != 'hidden' ||
+                lat != null ||
+                lng != null ||
+                expires != null))
       throw const FormatException('invalid collection entry');
     return PersonalCollectionEntry(
       placeID: id,
@@ -110,6 +134,7 @@ class PersonalCollectionEntry {
       latitude: lat,
       longitude: lng,
       sourceExpiresAt: expires,
+      legacyReference: legacy,
     );
   }
 }
@@ -201,6 +226,8 @@ class PersonalCollection {
   final int revision;
   final bool privatePlaceCopyRestricted;
   final List<PersonalCollectionEntry> entries;
+  bool get hasPrivateLegacyReferences =>
+      entries.any((e) => e.legacyReference != null);
   factory PersonalCollection.fromJson(Map<String, dynamic> p) {
     final entries = (p['entries'] as List)
         .map((e) => PersonalCollectionEntry.fromJson(e as Map<String, dynamic>))
@@ -219,6 +246,18 @@ class PersonalCollection {
         entries.length > 50 ||
         entries.map((e) => e.placeID).toSet().length != entries.length)
       throw const FormatException('invalid collection receipt');
+    if (entries.any(
+      (e) =>
+          e.legacyReference != null &&
+          (kind != 'theme_map' ||
+              status != 'draft' ||
+              p['visibility'] != 'private' ||
+              e.legacyReference!.recordID != id),
+    )) {
+      throw const FormatException(
+        'private collection reference source changed',
+      );
+    }
     if (p.containsKey('privatePlaceCopyRestricted') &&
         p['privatePlaceCopyRestricted'] is! bool)
       throw const FormatException('invalid private copy capability');
@@ -331,6 +370,9 @@ class PersonalCollectionController extends ChangeNotifier {
   List<PersonalCollection> items = const [];
   List<CollectionPlace> places = const [];
   PersonalCollection? editing;
+  bool get hasPrivateLegacyReferences =>
+      editing?.hasPrivateLegacyReferences == true ||
+      draftEntries.any((e) => e.legacyReference != null);
   String title = '', summary = '';
   List<PersonalCollectionEntry> draftEntries = const [];
   Map<String, dynamic>? _pending;
@@ -592,7 +634,10 @@ class PersonalCollectionController extends ChangeNotifier {
       !_publicationRecoveryFailed &&
       editing?.status != 'published';
   bool get publicationVersionCurrent =>
-      current && !_editingNeedsRevalidation && !controlBlocked;
+      current &&
+      !_editingNeedsRevalidation &&
+      !controlBlocked &&
+      !hasPrivateLegacyReferences;
   bool get canSwitchDraft =>
       current &&
       !saving &&
@@ -689,11 +734,15 @@ class PersonalCollectionController extends ChangeNotifier {
   void _scheduleSourceExpiry() {
     _sourceExpiry?.cancel();
     final deadlines = [
-      for (final e in draftEntries)
+      for (final e in draftEntries) ...[
         if (e.sourceExpiresAt != null && e.sourceCurrent) e.sourceExpiresAt!,
+        if (e.legacyReference?.current == true) e.legacyReference!.validUntil,
+      ],
       for (final v in items)
-        for (final e in v.entries)
+        for (final e in v.entries) ...[
           if (e.sourceExpiresAt != null && e.sourceCurrent) e.sourceExpiresAt!,
+          if (e.legacyReference?.current == true) e.legacyReference!.validUntil,
+        ],
     ];
     if (deadlines.isEmpty || !current) return;
     deadlines.sort();
@@ -724,6 +773,24 @@ class PersonalCollectionController extends ChangeNotifier {
     if (v.ownerID != _owner || v.kind != kind || v.cityID != cityID)
       throw const FormatException('collection source changed');
     return v;
+  }
+
+  Set<String> _retainedPrivatePlaceIDs(PersonalCollection? original) {
+    if (original == null ||
+        original.ownerID != _owner ||
+        original.kind != kind ||
+        original.cityID != cityID ||
+        original.status != 'draft' ||
+        original.visibility != 'private')
+      return const {};
+    return original.entries
+        .where(
+          (entry) =>
+              original.privatePlaceCopyRestricted ||
+              entry.legacyReference != null,
+        )
+        .map((entry) => entry.placeID)
+        .toSet();
   }
 
   void setText({String? title, String? summary}) {
@@ -834,7 +901,6 @@ class PersonalCollectionController extends ChangeNotifier {
         final v = PersonalCollection.fromJson(row as Map<String, dynamic>);
         if (v.ownerID != _owner ||
             v.kind != kind ||
-            v.cityID != cityID ||
             !const ['draft', 'published'].contains(v.status)) {
           if (v.ownerID != _owner || v.kind != kind)
             throw const FormatException();
@@ -981,14 +1047,7 @@ class PersonalCollectionController extends ChangeNotifier {
     if (!current || saving) return false;
     if (_pending == null) {
       final original = editing;
-      final retainedUnavailableIDs =
-          original != null &&
-              original.privatePlaceCopyRestricted &&
-              original.ownerID == _owner &&
-              original.kind == kind &&
-              original.cityID == cityID
-          ? original.entries.map((e) => e.placeID).toSet()
-          : const <String>{};
+      final retainedUnavailableIDs = _retainedPrivatePlaceIDs(original);
       if (utf8.encode(title.trim()).length > 160 ||
           title.trim().isEmpty ||
           utf8.encode(summary.trim()).length > 5000 ||
@@ -997,6 +1056,7 @@ class PersonalCollectionController extends ChangeNotifier {
           draftEntries.any(
             (e) =>
                 utf8.encode(e.note).length > 2000 ||
+                e.legacyReference != null && e.locationVisibility != 'hidden' ||
                 !e.available && !retainedUnavailableIDs.contains(e.placeID),
           )) {
         error = '填写名称并添加 1–50 个当前可见地点；移除已不可用地点后保存。';
@@ -1243,16 +1303,12 @@ class PersonalCollectionController extends ChangeNotifier {
     final original = editing!;
     CollectionControlInput input;
     try {
-      final retained =
-          original.privatePlaceCopyRestricted &&
-              original.ownerID == _owner &&
-              original.kind == kind &&
-              original.cityID == cityID
-          ? original.entries.map((e) => e.placeID).toSet()
-          : const <String>{};
+      final retained = _retainedPrivatePlaceIDs(original);
       if (action == 'UPDATE' &&
           draftEntries.any(
-            (e) => !e.available && !retained.contains(e.placeID),
+            (e) =>
+                e.legacyReference != null && e.locationVisibility != 'hidden' ||
+                !e.available && !retained.contains(e.placeID),
           )) {
         throw const FormatException();
       }

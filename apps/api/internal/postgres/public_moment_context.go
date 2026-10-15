@@ -18,6 +18,21 @@ import (
 
 var _ content.PublicMomentWithContextStore = (*Store)(nil)
 
+func momentMediaReadBindingSQL(alias string) string {
+	return `jsonb_build_array(
+ (SELECT jsonb_build_array(s.version,s.status,s.approved_moment_revision,s.xmin::text) FROM public_moment_media_sets s WHERE s.moment_id=` + alias + `.id),
+ (SELECT coalesce(jsonb_agg(jsonb_build_array(a.position,a.xmin::text) ORDER BY a.position),'[]'::jsonb) FROM public_moment_media_attachments a JOIN public_moment_media_sets s ON s.moment_id=a.moment_id AND s.version=a.set_version WHERE a.moment_id=` + alias + `.id),
+ (SELECT coalesce(jsonb_agg(jsonb_build_array(v.position,v.xmin::text) ORDER BY v.position),'[]'::jsonb) FROM public_moment_media_video_payloads v JOIN public_moment_media_sets s ON s.moment_id=v.moment_id AND s.version=v.set_version WHERE v.moment_id=` + alias + `.id))::text`
+}
+
+// A media-only row cannot outlive the bytes that make it publishable. Text
+// remains independently readable when optional media later expires.
+func momentPublishableMediaDeadlineSQL(alias string) string {
+	return `CASE WHEN length(regexp_replace(` + alias + `.body,'[[:space:]]','','g'))=0 THEN least(
+ (SELECT min(a.retention_until) FROM public_moment_media_sets s JOIN public_moment_media_attachments a ON a.moment_id=s.moment_id AND a.set_version=s.version WHERE s.moment_id=` + alias + `.id AND s.status='READY' AND s.approved_moment_revision=` + alias + `.revision AND a.display IS NOT NULL AND a.thumbnail IS NOT NULL),
+ (SELECT p.retention_until FROM public_moment_photos p WHERE p.moment_id=` + alias + `.id AND p.status='READY' AND p.approved_moment_revision=` + alias + `.revision AND p.thumbnail IS NOT NULL)) END`
+}
+
 func publicMomentContextReadSQL(author bool) string {
 	authorColumn, authorBinding := "NULL::jsonb", ""
 	if author {
@@ -25,22 +40,21 @@ func publicMomentContextReadSQL(author bool) string {
 		authorBinding = "," + publicMomentAuthorBindingSQL("a")
 	}
 	return `WITH cl AS MATERIALIZED(SELECT clock_timestamp() at)
-SELECT m.id,m.title,m.body,coalesce(p.id::text,''),coalesce(p.name,''),c.id,c.name,m.location_precision,m.revision,m.published_at,
- jsonb_build_array(m.xmin::text,a.xmin::text,p.xmin::text,c.xmin::text,` + retainedPlaceReadBindingSQL("p") + authorBinding + `,
+SELECT m.id,m.title,m.body,coalesce(p.id::text,''),coalesce(p.name,''),CASE WHEN m.location_precision='none' THEN '' ELSE coalesce(c.id,'') END,CASE WHEN m.location_precision='none' THEN '' ELSE coalesce(c.name,'') END,m.location_precision,m.revision,m.published_at,
+ jsonb_build_array(birdtie_moment_public_binding(m.id,$2,cl.at),` + momentMediaReadBindingSQL("m") + `,m.xmin::text,a.xmin::text,p.xmin::text,c.xmin::text,` + retainedPlaceReadBindingSQL("p") + authorBinding + `,
  (SELECT viewer.xmin::text FROM accounts viewer WHERE viewer.id=$2),
  (SELECT coalesce(jsonb_agg(jsonb_build_array(ep.owner_account_id,ep.target_account_id,ep.version,ep.xmin::text) ORDER BY ep.owner_account_id,ep.target_account_id),'[]'::jsonb)
  FROM person_block_control_epochs ep WHERE $2::uuid IS NOT NULL AND((ep.owner_account_id=$2 AND ep.target_account_id=a.id) OR(ep.owner_account_id=a.id AND ep.target_account_id=$2))))::text,
  ` + authorColumn + `,cl.at,
- least(cl.at+interval '60 seconds',c.expires_at,CASE WHEN p.id IS NOT NULL THEN ` + currentRetainedPlaceDeadlineSQL("p", "cl.at") + ` END,
+ least(cl.at+interval '60 seconds',c.expires_at,pc.expires_at,` + momentPublishableMediaDeadlineSQL("m") + `,CASE WHEN p.id IS NOT NULL THEN ` + currentRetainedPlaceDeadlineSQL("p", "cl.at") + ` END,
  (SELECT least(se.expires_at,se.idle_expires_at) FROM sessions se WHERE se.account_id=$2 AND se.token_sha256=$3)),
  CASE WHEN $5::boolean AND m.location_precision='place' THEN birdtie_public_moment_photo_metadata(m.id,$2,cl.at) ELSE NULL END,
  CASE WHEN $5::boolean AND m.location_precision='place' THEN birdtie_public_moment_photo_proof(m.id,$2) ELSE '' END
-FROM moments m JOIN accounts a ON a.id=m.author_account_id JOIN cities c ON c.id=m.city_id
-LEFT JOIN places p ON p.id=m.place_id AND p.city_id=m.city_id CROSS JOIN cl
+FROM moments m JOIN accounts a ON a.id=m.author_account_id LEFT JOIN cities c ON c.id=m.city_id
+LEFT JOIN places p ON p.id=m.place_id AND(m.city_id IS NULL OR p.city_id=m.city_id) LEFT JOIN cities pc ON pc.id=p.city_id CROSS JOIN cl
 WHERE m.id=$1 AND m.status='published' AND m.visibility='public'
 AND m.author_confirmed_at IS NOT NULL AND m.published_at IS NOT NULL AND m.author_confirmed_at<=m.published_at AND m.published_at<=cl.at
-AND a.account_type='person' AND a.status='active' AND c.publication_status='published' AND(c.expires_at IS NULL OR c.expires_at>cl.at)
-AND((m.place_id IS NULL AND m.location_precision='city') OR(m.location_precision='place' AND p.id IS NOT NULL AND p.publication_status='published' AND(p.expires_at IS NULL OR p.expires_at>cl.at) AND ` + currentRetainedPlaceVisibilitySQL("p", "cl.at") + `))
+AND birdtie_moment_public_binding(m.id,$2,cl.at) IS NOT NULL
 AND NOT EXISTS(SELECT 1 FROM account_blocks b WHERE $2::uuid IS NOT NULL AND((b.blocker_account_id=$2 AND b.blocked_account_id=a.id) OR(b.blocker_account_id=a.id AND b.blocked_account_id=$2)))
 AND($2::uuid IS NULL OR EXISTS(SELECT 1 FROM accounts viewer JOIN sessions ss ON ss.account_id=viewer.id
 WHERE viewer.id=$2 AND viewer.account_type='person' AND viewer.status='active' AND ss.token_sha256=$3

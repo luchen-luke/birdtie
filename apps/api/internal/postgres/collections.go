@@ -8,7 +8,9 @@ import (
 
 	"github.com/birdtie/birdtie/apps/api/internal/content"
 	"github.com/birdtie/birdtie/apps/api/internal/identity"
+	lpr "github.com/birdtie/birdtie/apps/api/internal/legacyplacereference"
 	"github.com/jackc/pgx/v5"
+	"time"
 )
 
 var _ content.HumanCollectionStore = (*Store)(nil)
@@ -83,6 +85,24 @@ func collectionReadTx(ctx context.Context, tx pgx.Tx, owner, kind, id string, lo
 	}
 	if rows.Err() != nil {
 		return v, content.ErrUnavailable
+	}
+	rows.Close()
+	if kind == "theme_map" && v.Status == "draft" && v.Visibility == "private" {
+		for i := range v.Entries {
+			entry := &v.Entries[i]
+			if entry.Available {
+				continue
+			}
+			private, e := legacyPlaceReferenceTx(ctx, tx, owner, lpr.Reference{Kind: kind, RecordID: id, PlaceID: entry.PlaceID}, time.Time{})
+			if errors.Is(e, lpr.ErrNotFound) {
+				continue
+			}
+			if e != nil {
+				return v, e
+			}
+			entry.PlaceName = private.Name
+			entry.LegacyReference = &private.Reference
+		}
 	}
 	return v, nil
 }
@@ -393,8 +413,12 @@ func updateHumanCollectionTx(ctx context.Context, tx pgx.Tx, owner, id string, r
 	if oldCity != in.CityID {
 		return 0, content.ErrConflict
 	}
-	if e = collectionSourcesTx(ctx, tx, in); e != nil {
-		return 0, e
+	if retained, _, _, err := legacyCollectionRetainedAuthorityTx(ctx, tx, owner, id, in); err != nil {
+		return 0, err
+	} else if !retained {
+		if e = collectionSourcesTx(ctx, tx, in); e != nil {
+			return 0, e
+		}
 	}
 	if e = collectionEntriesTx(ctx, tx, id, in); e != nil {
 		return 0, e

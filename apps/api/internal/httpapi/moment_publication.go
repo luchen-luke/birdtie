@@ -119,7 +119,7 @@ func (s *server) publishMomentPublication(w http.ResponseWriter, r *http.Request
 		publicationFailure(w, e)
 		return
 	}
-	if receipt.MomentID != id || !uuidPath.MatchString(receipt.PlaceID) || receipt.Revision != in.Revision+1 || receipt.Status != "published" || receipt.PublishedAt.IsZero() {
+	if receipt.MomentID != id || receipt.PlaceID != "" && !uuidPath.MatchString(receipt.PlaceID) || receipt.Revision != in.Revision+1 || receipt.Status != "published" || receipt.PublishedAt.IsZero() {
 		publicationFailure(w, content.ErrUnavailable)
 		return
 	}

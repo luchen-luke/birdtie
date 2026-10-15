@@ -115,10 +115,12 @@ func savedSearchSQL() string {
 	base = strings.Replace(base, "clock_timestamp()+interval '60 seconds'", "$4::timestamptz+interval '60 seconds'", 1)
 	base = strings.Replace(base, "birdtie_entity_cover_metadata('activity',a.id,$1::uuid,clock_timestamp())", "birdtie_entity_cover_metadata('activity',a.id,$1::uuid,$4::timestamptz)", 1)
 	base = strings.Replace(base, "birdtie_place_photo_metadata(p.id,clock_timestamp())", "birdtie_place_photo_metadata(p.id,$4::timestamptz)", 1)
-	return `WITH projected(id,kind,target_id,title,summary,city_id,available,saved_at,note,note_revision,city_name,community_avatar,latitude,longitude,source_expires_at,private_source,cover,place_photo) AS MATERIALIZED (` + base + `)
+	base = strings.ReplaceAll(base, "'observedAt',legacy.observed_at", "'observedAt',$4::timestamptz")
+	base = strings.ReplaceAll(base, "legacy.observed_at+interval '30 seconds'", "$4::timestamptz+interval '30 seconds'")
+	return `WITH projected(id,kind,target_id,title,summary,city_id,available,saved_at,note,note_revision,city_name,community_avatar,latitude,longitude,source_expires_at,private_source,cover,place_photo,legacy_reference) AS MATERIALIZED (` + base + `)
  SELECT * FROM projected WHERE saved_at<=$8::timestamptz
  AND ($10::uuid IS NULL OR(saved_at,id)<($9::timestamptz,$10::uuid))
- AND (($5='' AND $6='' AND $7='') OR available)
+ AND (($5='' AND $6='' AND $7='') OR available OR legacy_reference IS NOT NULL)
  AND($5='' OR strpos(lower(title||E'\n'||summary||E'\n'||city_name),lower($5))>0)
  AND($6='' OR kind=$6) AND($7='' OR city_id=$7)
  ORDER BY saved_at DESC,id DESC LIMIT $3`
@@ -142,7 +144,11 @@ func readSavedSearch(ctx context.Context, tx pgx.Tx, q saved.Query, cursor strin
 	for rows.Next() {
 		var i saved.Item
 		var epoch string
-		e = rows.Scan(&i.ID, &i.Kind, &i.TargetID, &i.Title, &i.Summary, &i.CityID, &i.Available, &i.SavedAt, &i.Note, &i.NoteRevision, &i.CityName, &i.CommunityAvatar, &i.Latitude, &i.Longitude, &i.SourceExpiresAt, &epoch, &i.Cover, &i.PlacePhoto)
+		var legacyRaw []byte
+		e = rows.Scan(&i.ID, &i.Kind, &i.TargetID, &i.Title, &i.Summary, &i.CityID, &i.Available, &i.SavedAt, &i.Note, &i.NoteRevision, &i.CityName, &i.CommunityAvatar, &i.Latitude, &i.Longitude, &i.SourceExpiresAt, &epoch, &i.Cover, &i.PlacePhoto, &legacyRaw)
+		if e == nil && len(legacyRaw) > 0 {
+			e = json.Unmarshal(legacyRaw, &i.LegacyReference)
+		}
 		if e != nil {
 			rows.Close()
 			return out, [32]byte{}, savedPageNativeFailure(e)
@@ -289,6 +295,18 @@ func (s *Store) ValidateHumanSavedSearchPage(ctx context.Context, d [32]byte, a 
 	if b.Owner != p.binding.Owner || b.Session != p.binding.Session || b.Generation != p.binding.Generation || b.Source != p.binding.Source || !now.Before(p.observed.Add(60*time.Second)) {
 		return saved.ErrPageChanged
 	}
+	var privateUntil *time.Time
+	for _, item := range out.Items {
+		if ref := item.LegacyReference; ref != nil {
+			if !ref.Valid(now) {
+				return saved.ErrPageChanged
+			}
+			if privateUntil == nil || ref.ValidUntil.Before(*privateUntil) {
+				until := ref.ValidUntil
+				privateUntil = &until
+			}
+		}
+	}
 	current, source, e := readSavedSearch(ctx, tx, q, cursor, p.binding, p.observed)
 	if e != nil {
 		return e
@@ -307,6 +325,14 @@ func (s *Store) ValidateHumanSavedSearchPage(ctx context.Context, d [32]byte, a 
 	}
 	if e = checkHumanMomentSession(ctx, tx, d, a.ID, s.devPhoneEnabled); e != nil {
 		return savedPageNativeFailure(e)
+	}
+	if privateUntil != nil {
+		if e = tx.QueryRow(ctx, `SELECT clock_timestamp()`).Scan(&now); e != nil {
+			return saved.ErrPageUnavailable
+		}
+		if !now.Before(*privateUntil) {
+			return saved.ErrPageChanged
+		}
 	}
 	if e = tx.Commit(ctx); e != nil || ctx.Err() != nil {
 		return saved.ErrPageUnavailable

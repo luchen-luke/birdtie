@@ -423,7 +423,11 @@ class _PrivateMomentMediaSheetState extends State<PrivateMomentMediaSheet> {
                     ),
                   ),
                 if (c.displayedBytes != null)
-                  Image.memory(c.displayedBytes!, fit: BoxFit.contain),
+                  Image.memory(
+                    c.displayedBytes!,
+                    fit: BoxFit.contain,
+                    cacheWidth: 1536,
+                  ),
                 const SizedBox(height: 12),
                 const Text(
                   '图片无法用于公开发布或 AI 分析。公开或撤回这条记录会移除其私人图片；普通文字编辑不会自动公开图片。',

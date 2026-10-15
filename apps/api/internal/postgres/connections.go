@@ -993,15 +993,12 @@ func chatEntityQuery(kind string) string {
             AND NOT EXISTS(SELECT 1 FROM account_blocks block WHERE (block.blocker_account_id=$2 AND block.blocked_account_id=a.id)
               OR (block.blocker_account_id=a.id AND block.blocked_account_id=$2))`
 	case "moment":
-		query = `SELECT m.title FROM moments m JOIN accounts a ON a.id=m.author_account_id
-            JOIN cities c ON c.id=m.city_id LEFT JOIN places p ON p.id=m.place_id AND p.city_id=m.city_id
+		// This is a share description, never a title written back to the Moment.
+		query = `SELECT coalesce(nullif(trim(m.title),''),nullif(left(trim(m.body),120),''),'分享动态') AS title FROM moments m JOIN accounts a ON a.id=m.author_account_id
 		    WHERE m.id=$1 AND m.status='published' AND m.visibility='public' AND a.status='active' AND a.account_type='person'
             AND m.author_confirmed_at IS NOT NULL AND m.published_at IS NOT NULL
             AND m.author_confirmed_at<=m.published_at AND m.published_at<=clock_timestamp()
-            AND c.publication_status='published' AND (c.expires_at IS NULL OR c.expires_at>clock_timestamp())
-            AND((m.place_id IS NULL AND m.location_precision='city') OR(m.location_precision='place' AND p.id IS NOT NULL
-              AND p.publication_status='published' AND (p.expires_at IS NULL OR p.expires_at>clock_timestamp())
-              AND ` + currentRetainedPlaceVisibilitySQL("p", "clock_timestamp()") + `))
+            AND birdtie_moment_public_binding(m.id,$2,clock_timestamp()) IS NOT NULL
             AND NOT EXISTS(SELECT 1 FROM account_blocks b WHERE (b.blocker_account_id=$2 AND b.blocked_account_id=a.id)
               OR (b.blocker_account_id=a.id AND b.blocked_account_id=$2))`
 	default:

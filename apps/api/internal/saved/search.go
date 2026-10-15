@@ -22,8 +22,9 @@ type Query struct {
 	CityID string `json:"cityId"`
 }
 
-// Query searches approved public entity labels only. Private bookmark notes
-// remain in human output but are not search inputs, ranking or Agent sources.
+// Query searches current readable entity labels, including the person's exact
+// retained imported references. Private bookmark notes are not search inputs,
+// ranking or Agent sources.
 type HumanSearchPageStore interface {
 	SearchHumanSavedPage(context.Context, [32]byte, identity.Actor, Query, string) (Page, error)
 	ValidateHumanSavedSearchPage(context.Context, [32]byte, identity.Actor, Query, string, Page) error
@@ -72,7 +73,7 @@ func ValidateSearchPage(p Page, q Query, cursor string) error {
 		return ErrInvalidPage
 	}
 	for _, i := range p.Items {
-		if !i.Available || q.Kind != "" && i.Kind != q.Kind || q.CityID != "" && i.CityID != q.CityID {
+		if (!i.Available && i.LegacyReference == nil) || q.Kind != "" && i.Kind != q.Kind || q.CityID != "" && i.CityID != q.CityID {
 			return ErrInvalidPage
 		}
 	}

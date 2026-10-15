@@ -1,0 +1,10 @@
+{"databaseAccessed":false,"expected":135,"failed":4,"failureStages":{"ORIENTATION":4},"mediaWritten":false,"processed":15,"status":"VERIFYING_NOT_IMPORTED","verified":11}
+{"databaseAccessed":false,"expected":135,"failed":4,"failureStages":{"ORIENTATION":4},"mediaWritten":false,"processed":30,"status":"VERIFYING_NOT_IMPORTED","verified":26}
+{"databaseAccessed":false,"expected":135,"failed":4,"failureStages":{"ORIENTATION":4},"mediaWritten":false,"processed":45,"status":"VERIFYING_NOT_IMPORTED","verified":41}
+{"databaseAccessed":false,"expected":135,"failed":5,"failureStages":{"ORIENTATION":5},"mediaWritten":false,"processed":60,"status":"VERIFYING_NOT_IMPORTED","verified":55}
+{"databaseAccessed":false,"expected":135,"failed":5,"failureStages":{"ORIENTATION":5},"mediaWritten":false,"processed":75,"status":"VERIFYING_NOT_IMPORTED","verified":70}
+{"databaseAccessed":false,"expected":135,"failed":12,"failureStages":{"ORIENTATION":12},"mediaWritten":false,"processed":90,"status":"VERIFYING_NOT_IMPORTED","verified":78}
+{"databaseAccessed":false,"expected":135,"failed":21,"failureStages":{"ORIENTATION":21},"mediaWritten":false,"processed":105,"status":"VERIFYING_NOT_IMPORTED","verified":84}
+{"databaseAccessed":false,"expected":135,"failed":28,"failureStages":{"ORIENTATION":28},"mediaWritten":false,"processed":120,"status":"VERIFYING_NOT_IMPORTED","verified":92}
+{"databaseAccessed":false,"expected":135,"failed":28,"failureStages":{"ORIENTATION":28},"mediaWritten":false,"processed":135,"status":"VERIFYING_NOT_IMPORTED","verified":107}
+{"archivesChanged":false,"databaseAccessed":false,"expected":135,"failed":28,"failureStages":{"ORIENTATION":28},"mediaWritten":false,"processed":135,"status":"VERIFICATION_FAILED_NOT_IMPORTED","unprocessed":0,"verified":107}

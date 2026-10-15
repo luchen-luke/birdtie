@@ -1,8 +1,10 @@
 import 'dart:convert';
 import 'dart:math';
+import 'dart:typed_data';
 import 'package:crypto/crypto.dart';
 import 'package:http/http.dart' as http;
 import '../workspace/human_causal_control.dart';
+import '../workspace/public_moment_media.dart';
 
 const momentControlMaxRevision = humanControlMaxVersion;
 String newMomentOperationID() {
@@ -34,13 +36,35 @@ class MomentControlInput {
     this.momentID = '',
     required this.expectedRevision,
     Map<String, Object?>? input,
-  }) : input = input == null ? null : Map.unmodifiable(input) {
+    List<PublicMomentMediaSelection>? media,
+    this.localScope = '',
+  }) : input = input == null ? null : Map.unmodifiable(input),
+       media = media == null ? null : List.unmodifiable(media) {
     if (!valid) throw const FormatException('动态操作输入不符');
   }
   final String operationID, action, momentID;
   final int expectedRevision;
   final Map<String, Object?>? input;
+  final List<PublicMomentMediaSelection>? media;
+  final String localScope;
   bool get valid {
+    final selections = media;
+    if (selections == null
+        ? localScope.isNotEmpty
+        : !const {'PUBLISH', 'UPDATE_PUBLIC'}.contains(action) ||
+              selections.length > 9 ||
+              selections.isNotEmpty && !humanControlID(localScope) ||
+              selections.isEmpty && localScope.isNotEmpty ||
+              selections.map((selection) => selection.mediaID).toSet().length !=
+                  selections.length ||
+              selections.any(
+                (selection) =>
+                    !humanControlID(selection.mediaID) ||
+                    !humanControlVersion(selection.version, zero: false) ||
+                    !selection.rights.valid,
+              )) {
+      return false;
+    }
     if (!humanControlID(operationID) || !humanControlVersion(expectedRevision))
       return false;
     if (action == 'CREATE'
@@ -60,8 +84,18 @@ class MomentControlInput {
       return false;
     final d = input;
     if (d == null) return true;
+    if ((action == 'PUBLISH' || action == 'UPDATE_PUBLIC' && media != null) &&
+        d['body'] is String &&
+        (d['body'] as String).trim().isEmpty &&
+        (media == null || media!.isEmpty))
+      return false;
     if (const {'PUBLISH', 'UPDATE_PUBLIC'}.contains(action) &&
-        (!((d['placeId'] == '' && d['locationPrecision'] == 'city') ||
+        (!((d['cityId'] == '' &&
+                    d['placeId'] == '' &&
+                    d['locationPrecision'] == 'none') ||
+                (d['cityId'] != '' &&
+                    d['placeId'] == '' &&
+                    d['locationPrecision'] == 'city') ||
                 (d['placeId'] is String &&
                     (d['placeId'] as String).isNotEmpty &&
                     d['locationPrecision'] == 'place')) ||
@@ -90,8 +124,8 @@ class MomentControlInput {
         d.keys.any((k) => !required.contains(k) && !optional.contains(k)))
       return false;
     for (final entry in {
-      'cityId': (1, 80),
-      'title': (1, 160),
+      'cityId': (0, 80),
+      'title': (0, 160),
       'body': (0, 5000),
     }.entries) {
       final v = d[entry.key];
@@ -109,6 +143,15 @@ class MomentControlInput {
       if (d.containsKey(key) &&
           (d[key] is! String || (d[key] != '' && !humanControlID(d[key]))))
         return false;
+    }
+    if (d['cityId'] == '' &&
+        ((d['placeId'] == '' ? d['locationPrecision'] != 'none' : d['locationPrecision'] != 'place') ||
+            const [
+              'activityId',
+              'communityId',
+              'organizationId',
+            ].any((key) => d.containsKey(key) && d[key] != ''))) {
+      return false;
     }
     if (!const {
           'unknown',
@@ -158,6 +201,19 @@ class MomentControlInput {
     momentID,
     expectedRevision,
     inputHash,
+    if (media != null) ...[
+      'moment-media-v1',
+      localScope,
+      media!
+          .map(
+            (selection) => [
+              selection.mediaID,
+              selection.version,
+              selection.rights.digest,
+            ],
+          )
+          .toList(),
+    ],
   ]);
   Map<String, Object> toJson() => {
     'operationId': operationID,
@@ -165,7 +221,16 @@ class MomentControlInput {
     'expectedRevision': expectedRevision,
     if (action != 'CREATE') 'momentId': momentID,
     if (input != null) 'input': input!,
+    if (media != null)
+      'media': media!.map((selection) => selection.toJson()).toList(),
+    if (localScope.isNotEmpty) 'localScope': localScope,
   };
+}
+
+class MomentControlMaterial {
+  const MomentControlMaterial(this.stage, this.thumbnail);
+  final PublicMomentMediaStage stage;
+  final Uint8List thumbnail;
 }
 
 class MomentControlPreview {
@@ -176,12 +241,20 @@ class MomentControlPreview {
     required this.observedAt,
     required this.expiresAt,
     required this.preservedPlaceUnavailable,
+    this.materials = const [],
+    this.preservedMedia,
   });
   final MomentControlInput input;
   final String sourceVersion, approval;
   final DateTime observedAt, expiresAt;
   final bool preservedPlaceUnavailable;
-  bool get live => DateTime.now().toUtc().isBefore(expiresAt);
+  final List<MomentControlMaterial> materials;
+  final PublicMomentMediaSet? preservedMedia;
+  bool get live =>
+      DateTime.now().toUtc().isBefore(expiresAt) &&
+      materials.every((material) => material.stage.current) &&
+      (input.media?.every((selection) => selection.rights.valid) ?? true) &&
+      (preservedMedia?.current ?? true);
   Map<String, Object> get body => {
     ...input.toJson(),
     'sourceVersion': sourceVersion,
@@ -191,20 +264,24 @@ class MomentControlPreview {
     Object? raw,
     MomentControlInput expected,
   ) {
-    final m = humanControlObject(raw, {
-      'operationId',
-      'action',
-      'payloadDigest',
-      'observedAt',
-      'expiresAt',
-      'approval',
-      'expectedRevision',
-      'inputSha256',
-      'sourceVersion',
-      'preservedPlaceUnavailable',
-      if (expected.action != 'CREATE') 'momentId',
-      if (expected.action != 'WITHDRAW') 'input',
-    });
+    final m = humanControlObject(
+      raw,
+      {
+        'operationId',
+        'action',
+        'payloadDigest',
+        'observedAt',
+        'expiresAt',
+        'approval',
+        'expectedRevision',
+        'inputSha256',
+        'sourceVersion',
+        'preservedPlaceUnavailable',
+        if (expected.action != 'CREATE') 'momentId',
+        if (expected.action != 'WITHDRAW') 'input',
+      },
+      optional: {'materials', 'preservedMedia'},
+    );
     if (m['operationId'] != expected.operationID ||
         m['action'] != expected.action ||
         m['expectedRevision'] != expected.expectedRevision ||
@@ -246,6 +323,8 @@ class MomentControlPreview {
         momentID: expected.momentID,
         expectedRevision: expected.expectedRevision,
         input: echo,
+        media: expected.media,
+        localScope: expected.localScope,
       );
       if (echoed.inputHash != expected.inputHash)
         throw const FormatException('动态规范正文不符');
@@ -260,6 +339,58 @@ class MomentControlPreview {
     humanControlLease(at, until);
     if (until.isAfter(at.add(const Duration(seconds: 30))))
       throw const FormatException('批准期限不符');
+    final rawMaterials = m['materials'] ?? const [];
+    final selections = expected.media ?? const <PublicMomentMediaSelection>[];
+    if (rawMaterials is! List ||
+        rawMaterials.length != selections.length ||
+        selections.isNotEmpty && !m.containsKey('materials')) {
+      throw const FormatException('动态批准材料范围不符');
+    }
+    final materials = <MomentControlMaterial>[];
+    for (var i = 0; i < selections.length; i++) {
+      final value = humanControlObject(rawMaterials[i], {
+        'material',
+        'thumbnailBase64',
+      });
+      final stage = PublicMomentMediaStage.decode(value['material']);
+      if (stage.mediaID != selections[i].mediaID ||
+          stage.version != selections[i].version ||
+          stage.localScope != expected.localScope ||
+          !stage.current ||
+          !selections[i].rights.valid ||
+          value['thumbnailBase64'] is! String) {
+        throw const FormatException('动态批准原材料已变化');
+      }
+      final thumbnail = base64Decode(value['thumbnailBase64'] as String);
+      momentMediaJPEG(
+        thumbnail,
+        stage.thumbnailBytes,
+        stage.thumbnailSHA,
+        320,
+        180,
+      );
+      materials.add(MomentControlMaterial(stage, thumbnail));
+    }
+    if (materials.any((material) => material.stage.isVideo) &&
+        materials.length != 1) {
+      throw const FormatException('一条动态使用图片或一段视频');
+    }
+    PublicMomentMediaSet? preservedMedia;
+    if (m['preservedMedia'] != null) {
+      if (expected.action != 'UPDATE_PUBLIC' || expected.media != null) {
+        throw const FormatException('动态保留材料范围不符');
+      }
+      preservedMedia = PublicMomentMediaSet.decode(
+        m['preservedMedia'],
+        expected.momentID,
+        expectedRevision: expected.expectedRevision,
+        own: true,
+      );
+      if (preservedMedia.status != 'READY' ||
+          preservedMedia.attachments.isEmpty) {
+        throw const FormatException('动态原媒体已不可用');
+      }
+    }
     return MomentControlPreview(
       input: expected,
       sourceVersion: m['sourceVersion'],
@@ -267,6 +398,8 @@ class MomentControlPreview {
       observedAt: at,
       expiresAt: until,
       preservedPlaceUnavailable: preserved,
+      materials: List.unmodifiable(materials),
+      preservedMedia: preservedMedia,
     );
   }
 }

@@ -1,0 +1,18 @@
+{
+  "recordedAtUTC": "2026-10-15T06:21:48.875683+00:00",
+  "command": "\"C:\\Program Files\\Go\\bin\\go.exe\" test ./internal/media -run \"^TestLegacyPrivateJPEGOrientationPolicy$\" -count=1",
+  "cwd": "D:\\Project\\birdtie\\apps\\api",
+  "exitCode": 0,
+  "toolChunkID": "75d80d",
+  "stdout": "ok  \tgithub.com/birdtie/birdtie/apps/api/internal/media\t0.947s\n",
+  "coverage": "Focused synthetic SHORT/LONG, little/big-endian, unspecified zero/full-frame, known rotation6, reject invalid9/duplicate EXIF, preserve ordinary strict upload behavior.",
+  "sourceBeforeCaptured": false,
+  "sourceAfter": {
+    "apps/api/internal/media/image_derivative.go": "bde55083a5552573f3d0a876ff9afa04b7c1cc6117c3ab6df5d9b1f6616d3345",
+    "apps/api/internal/media/image_orientation.go": "725bee1785bccbb61b4382fda427b325f5d8c8eeca5a352c2426c2ccfa112a0a",
+    "apps/api/internal/media/image_derivative_test.go": "86680e1306cb71aa1cc8ea64917772b97c110dfcb5bfb5645c28135878ab8a61"
+  },
+  "realPhotoCountClaimedByThisUnit": 0,
+  "fullFrameStableClaimed": false,
+  "privateSourceDetailsSaved": false
+}

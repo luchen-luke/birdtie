@@ -42,8 +42,12 @@ class MomentThreadController extends ChangeNotifier {
   bool get editable =>
       current && !busy && pending == null && previewValue == null;
   String get activeText => _entries.isEmpty ? '' : _entries[activeIndex].text;
-  MomentThreadJournalState get _state =>
-      MomentThreadJournalState(localScope, entries, activeIndex, pending);
+  MomentThreadJournalState get _state => MomentThreadJournalState(
+    localScope,
+    entries.map((entry) => entry.copy(media: const [])).toList(),
+    activeIndex,
+    pending,
+  );
   bool _same(int epoch) => current && epoch == _epoch;
   void _notify() {
     if (!_disposed) {
@@ -61,7 +65,7 @@ class MomentThreadController extends ChangeNotifier {
   }
 
   Future<void> begin({
-    required String cityID,
+    String cityID = '',
     String placeID = '',
     String initialText = '',
   }) async {
@@ -105,7 +109,11 @@ class MomentThreadController extends ChangeNotifier {
       }
       if (state != null) {
         localScope = state.localScope;
-        _entries = state.entries.toList();
+        // Media is reconstructed by its original stage operations. A private
+        // journal cannot restore a use-rights declaration or publication grant.
+        _entries = state.entries
+            .map((entry) => entry.copy(media: const []))
+            .toList();
         activeIndex = state.activeIndex;
         pending = state.pending;
         if (pending != null) {
@@ -192,13 +200,8 @@ class MomentThreadController extends ChangeNotifier {
     if (!editable || _entries.length >= 20 || _entries.isEmpty) {
       return;
     }
-    final active = _entries[activeIndex];
     _entries.add(
-      MomentThreadDraftEntry(
-        localID: newMomentOperationID(),
-        cityID: active.cityID,
-        placeID: active.placeID,
-      ),
+      MomentThreadDraftEntry(localID: newMomentOperationID(), cityID: ''),
     );
     activeIndex = _entries.length - 1;
     _saveDraft();

@@ -57,7 +57,7 @@ func ValidatePage(page Page, cursor string) error {
 		if item.Kind != "place" && item.Kind != "activity" && item.Kind != "group" {
 			return ErrInvalidPage
 		}
-		if !item.Available && (item.Title != "" || item.Summary != "" || item.CityID != "") {
+		if !item.Available && item.LegacyReference == nil && (item.Title != "" || item.Summary != "" || item.CityID != "") {
 			return ErrInvalidPage
 		}
 		seen[item.ID] = true

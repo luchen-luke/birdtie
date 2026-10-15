@@ -35,11 +35,12 @@ func mapPublicAuthorReadSQL() string {
  author_target AS MATERIALIZED(SELECT id,token FROM public_author_source WHERE public_profile IS NOT NULL),
  raw_sources AS MATERIALIZED(
  SELECT 'MOMENT'::text kind,m.id::text id,m.title title,p.id::text place_id,p.name label,p.latitude,p.longitude,
- m.revision::text version,p.retained_until deadline,concat_ws(':',m.xmin::text,author.xmin::text,p.row_token) token
- FROM moments m JOIN point p ON p.id=m.place_id AND p.city_id=m.city_id
+ m.revision::text version,least(p.retained_until,` + momentPublishableMediaDeadlineSQL("m") + `) deadline,concat_ws(':',m.xmin::text,author.xmin::text,p.row_token,birdtie_moment_public_binding(m.id,$6::uuid,stamp.at),` + momentMediaReadBindingSQL("m") + `) token
+ FROM moments m JOIN point p ON p.id=m.place_id AND(m.city_id IS NULL OR p.city_id=m.city_id)
  JOIN accounts author ON author.id=m.author_account_id JOIN author_target target ON target.id=author.id CROSS JOIN stamp
  WHERE m.status='published' AND m.visibility='public' AND m.location_precision='place' AND m.author_confirmed_at IS NOT NULL
  AND m.author_confirmed_at<=m.published_at AND m.published_at<=stamp.at
+ AND birdtie_moment_public_binding(m.id,$6::uuid,stamp.at) IS NOT NULL
  AND author.account_type='person' AND author.status='active'),
 `
 	query := before + target + " logical AS MATERIALIZED(" + after

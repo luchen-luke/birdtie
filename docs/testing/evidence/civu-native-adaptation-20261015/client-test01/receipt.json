@@ -1,0 +1,15 @@
+{
+  "command": [
+    "D:\\DevTools\\flutter\\bin\\flutter.bat",
+    "test",
+    "test/moment_optional_content_test.dart",
+    "test/legacy_unplaced_moment_test.dart",
+    "test/legacy_private_media_contract_test.dart",
+    "test/now_creation_draft_state_test.dart",
+    "--reporter",
+    "expanded"
+  ],
+  "cwd": "D:\\Project\\birdtie\\apps\\client",
+  "exitCode": 0,
+  "logSHA256": "acc7e2748862bb8def128bcab962ad93c3093e59b52a34868dc7b8189571f6a2"
+}

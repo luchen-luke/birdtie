@@ -1,0 +1,14 @@
+Flutter assets will be downloaded from https://storage.flutter-io.cn. Make sure you trust this source!
+00:00 +0: loading D:/Project/birdtie/apps/client/test/public_moment_media_controller_test.dart
+00:00 +0: D:/Project/birdtie/apps/client/test/public_moment_media_controller_test.dart: thread material preparation has no published parent or SET call and isolates opaque scope
+00:00 +1: D:/Project/birdtie/apps/client/test/public_moment_media_controller_test.dart: nine local selections require each explicit rights declaration and retire owned RAM
+00:00 +2: D:/Project/birdtie/apps/client/test/public_moment_media_controller_test.dart: lost stage result persists selectors only and never blindly repeats upload
+00:00 +3: D:/Project/birdtie/apps/client/test/public_moment_media_controller_test.dart: secure journal is origin owner separated and rejects arbitrary approval fields
+00:00 +4: D:/Project/birdtie/apps/client/test/public_moment_media_controller_test.dart: successful staged selection survives reopening in saved order without rights or upload replay
+00:00 +5: D:/Project/birdtie/apps/client/test/public_moment_media_controller_test.dart: expired successful stages remain visible until explicit removal
+00:00 +6: D:/Project/birdtie/apps/client/test/public_moment_media_controller_test.dart: streamed content refuses oversized body before accepting pixels
+00:00 +7: D:/Project/birdtie/apps/client/test/moment_thread_test.dart: thread restore clears legacy rights and saves only derived media-free draft
+00:00 +8: D:/Project/birdtie/apps/client/test/moment_thread_test.dart: thread panel edits selected entries through the existing composer and preserves order
+00:00 +9: D:/Project/birdtie/apps/client/test/moment_thread_test.dart: lost atomic publish response recovers the original thread and child IDs without PUT replay
+00:00 +10: D:/Project/birdtie/apps/client/test/moment_thread_test.dart: draft storage cap keeps RAM text and retired approval sends zero writes
+00:00 +11: All tests passed!

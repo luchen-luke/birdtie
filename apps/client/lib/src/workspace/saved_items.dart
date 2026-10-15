@@ -13,6 +13,7 @@ import 'now_ui_tokens.dart';
 import 'community_avatar.dart';
 import 'entity_cover.dart';
 import 'place_photo.dart';
+import 'legacy_place_reference_page.dart';
 
 class SavedItem {
   const SavedItem({
@@ -32,6 +33,7 @@ class SavedItem {
     this.latitude,
     this.longitude,
     this.sourceExpiresAt,
+    this.legacyReference,
   });
 
   final String id;
@@ -49,6 +51,8 @@ class SavedItem {
   final EntityCoverMetadata? placePhoto;
   final double? latitude, longitude;
   final DateTime? sourceExpiresAt;
+  final LegacyPlaceReference? legacyReference;
+  bool get readable => available || legacyReference?.current == true;
   bool get mapCurrent =>
       kind == 'place' &&
       available &&
@@ -74,9 +78,27 @@ class SavedItem {
     latitude: latitude,
     longitude: longitude,
     sourceExpiresAt: sourceExpiresAt,
+    legacyReference: legacyReference,
   );
 
   factory SavedItem.fromJson(Map<String, dynamic> json) {
+    final legacy = json['legacyReference'] == null
+        ? null
+        : LegacyPlaceReference.decode(json['legacyReference']);
+    if (legacy != null &&
+        (json['kind'] != 'place' ||
+            json['available'] != false ||
+            legacy.kind != 'saved_place' ||
+            legacy.recordID != json['id'] ||
+            legacy.placeID != json['targetId'] ||
+            json['latitude'] != null ||
+            json['longitude'] != null ||
+            json['sourceExpiresAt'] != null ||
+            json['placePhoto'] != null ||
+            json['cover'] != null ||
+            json['communityAvatar'] != null)) {
+      throw const FormatException('本人地点引用不符');
+    }
     final lat = (json['latitude'] as num?)?.toDouble();
     final lng = (json['longitude'] as num?)?.toDouble();
     final expires = json['sourceExpiresAt'] == null
@@ -110,6 +132,7 @@ class SavedItem {
       latitude: lat,
       longitude: lng,
       sourceExpiresAt: expires,
+      legacyReference: legacy,
     );
   }
 
@@ -949,6 +972,7 @@ class _SavedPageState extends State<SavedPage> {
   String? _kind, _city;
   bool _localOnly = false;
   Timer? _searchTimer;
+  Timer? _privateExpiry;
   final _selected = <String>{};
   int _loadEpoch = 0;
   void _scheduleInitialLoad() {
@@ -968,13 +992,39 @@ class _SavedPageState extends State<SavedPage> {
   @override
   void initState() {
     super.initState();
+    widget.saved.addListener(_schedulePrivateExpiry);
+    _schedulePrivateExpiry();
     _scheduleInitialLoad();
+  }
+
+  void _schedulePrivateExpiry() {
+    _privateExpiry?.cancel();
+    final deadlines = [
+      for (final item in widget.saved.items)
+        if (item.legacyReference?.current == true)
+          item.legacyReference!.validUntil,
+    ]..sort();
+    if (deadlines.isNotEmpty) {
+      _privateExpiry = Timer(
+        deadlines.first.difference(DateTime.now().toUtc()) +
+            const Duration(milliseconds: 1),
+        () {
+          if (mounted) {
+            setState(() {});
+            _schedulePrivateExpiry();
+          }
+        },
+      );
+    }
   }
 
   @override
   void didUpdateWidget(SavedPage old) {
     super.didUpdateWidget(old);
     if (old.saved != widget.saved) {
+      old.saved.removeListener(_schedulePrivateExpiry);
+      widget.saved.addListener(_schedulePrivateExpiry);
+      _schedulePrivateExpiry();
       _search.clear();
       _kind = _city = null;
       _localOnly = false;
@@ -987,6 +1037,8 @@ class _SavedPageState extends State<SavedPage> {
   @override
   void dispose() {
     ++_loadEpoch;
+    widget.saved.removeListener(_schedulePrivateExpiry);
+    _privateExpiry?.cancel();
     _searchTimer?.cancel();
     _search.dispose();
     super.dispose();
@@ -1009,7 +1061,7 @@ class _SavedPageState extends State<SavedPage> {
   }
 
   void _open(SavedItem item) {
-    if (!item.available) return;
+    if (!item.readable) return;
     if (widget.onOpenItem != null)
       widget.onOpenItem!(item);
     else if (item.kind == 'activity')
@@ -1370,7 +1422,7 @@ class _SavedPageState extends State<SavedPage> {
               ListTile(
                 contentPadding: EdgeInsets.zero,
                 onTap:
-                    item.available &&
+                    item.readable &&
                         (widget.onOpenItem != null ||
                             item.kind == 'activity' &&
                                 widget.onOpenActivity != null)
@@ -1378,7 +1430,7 @@ class _SavedPageState extends State<SavedPage> {
                     : null,
                 leading: _leading(item),
                 title: Text(
-                  item.available ? item.title : '内容暂不可用',
+                  item.readable ? item.title : '内容暂不可用',
                   style: tokens.placeTitle,
                 ),
                 subtitle: Column(
@@ -1399,7 +1451,7 @@ class _SavedPageState extends State<SavedPage> {
                             : null,
                       ),
                     Text(
-                      item.available
+                      item.readable
                           ? [
                               if (item.cityId.isNotEmpty &&
                                   (item.cityName.isNotEmpty ||
@@ -1410,6 +1462,7 @@ class _SavedPageState extends State<SavedPage> {
                                     ? item.cityName
                                     : widget.cityNames[item.cityId]!,
                               _savedKind(item.kind),
+                              if (item.legacyReference != null) '仅本人可见',
                               if (item.summary.isNotEmpty) item.summary,
                             ].join(' · ')
                           : '该内容已不可见，你可以保留备注或取消收藏。',

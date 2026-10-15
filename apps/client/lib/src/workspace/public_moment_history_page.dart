@@ -210,7 +210,9 @@ class _PublicMomentHistoryPageState extends State<PublicMomentHistoryPage> {
                   ListTile(
                     contentPadding: EdgeInsets.zero,
                     minVerticalPadding: 12,
-                    title: Text(item.title, style: tokens.placeTitle),
+                    title: item.title.isEmpty
+                        ? null
+                        : Text(item.title, style: tokens.placeTitle),
                     subtitle: Padding(
                       padding: const EdgeInsets.only(top: 8),
                       child: Column(
@@ -228,9 +230,11 @@ class _PublicMomentHistoryPageState extends State<PublicMomentHistoryPage> {
                             [
                               if (item.authorPublicProfile != null)
                                 item.authorPublicProfile!.displayName,
-                              item.locationPrecision == 'place'
-                                  ? item.placeName
-                                  : item.cityName,
+                              if (item.placeName.isNotEmpty ||
+                                  item.cityName.isNotEmpty)
+                                item.locationPrecision == 'place'
+                                    ? item.placeName
+                                    : item.cityName,
                               MaterialLocalizations.of(
                                 context,
                               ).formatMediumDate(item.publishedAt.toLocal()),

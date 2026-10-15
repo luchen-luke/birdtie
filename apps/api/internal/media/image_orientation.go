@@ -8,6 +8,10 @@ import (
 // Read only the bounded IFD0 orientation needed for pixel transformation. GPS,
 // capture time and other EXIF never become identity, visit or location evidence.
 func tiffOrientation(data []byte) (int, error) {
+	return tiffOrientationWithPolicy(data, false)
+}
+
+func tiffOrientationWithPolicy(data []byte, legacyPrivate bool) (int, error) {
 	if len(data) < 8 {
 		return 0, ErrImageInvalid
 	}
@@ -37,11 +41,23 @@ func tiffOrientation(data []byte) (int, error) {
 		if order.Uint16(entry[:2]) != 0x112 {
 			continue
 		}
-		if seen || order.Uint16(entry[2:4]) != 3 || order.Uint32(entry[4:8]) != 1 {
+		typ := order.Uint16(entry[2:4])
+		if seen || (typ != 3 && !(legacyPrivate && typ == 4)) || order.Uint32(entry[4:8]) != 1 {
 			return 0, ErrImageInvalid
 		}
 		seen = true
-		orientation = int(order.Uint16(entry[8:10]))
+		value := uint32(order.Uint16(entry[8:10]))
+		if typ == 4 {
+			value = order.Uint32(entry[8:12])
+		}
+		// Some authenticated historical encoders wrote an unspecified zero,
+		// including with LONG type. Preserve their encoded frame; do not infer a
+		// rotation from other EXIF. Ordinary uploads retain the strict contract.
+		if legacyPrivate && value == 0 {
+			orientation = 1
+		} else {
+			orientation = int(value)
+		}
 		if orientation < 1 || orientation > 8 {
 			return 0, ErrImageInvalid
 		}
@@ -50,6 +66,10 @@ func tiffOrientation(data []byte) (int, error) {
 }
 
 func imageOrientation(data []byte, format string) (int, error) {
+	return imageOrientationWithPolicy(data, format, false)
+}
+
+func imageOrientationWithPolicy(data []byte, format string, legacyPrivate bool) (int, error) {
 	orientation, seen := 1, false
 	if format == "jpeg" {
 		if len(data) < 2 || !bytes.Equal(data[:2], []byte{0xff, 0xd8}) {
@@ -87,7 +107,7 @@ func imageOrientation(data []byte, format string) (int, error) {
 				}
 				seen = true
 				var err error
-				orientation, err = tiffOrientation(payload[6:])
+				orientation, err = tiffOrientationWithPolicy(payload[6:], legacyPrivate)
 				if err != nil {
 					return 0, err
 				}
@@ -114,7 +134,7 @@ func imageOrientation(data []byte, format string) (int, error) {
 			}
 			seen = true
 			var err error
-			orientation, err = tiffOrientation(data[pos+8 : int64(pos)+8+length])
+			orientation, err = tiffOrientationWithPolicy(data[pos+8:int64(pos)+8+length], legacyPrivate)
 			if err != nil {
 				return 0, err
 			}

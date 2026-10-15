@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"github.com/birdtie/birdtie/apps/api/internal/content"
 	"github.com/birdtie/birdtie/apps/api/internal/identity"
 	"github.com/birdtie/birdtie/apps/api/internal/media"
 	mm "github.com/birdtie/birdtie/apps/api/internal/momentmedia"
@@ -247,6 +248,17 @@ func (s *Store) mediaSourceTx(ctx context.Context, tx pgx.Tx, a mm.Access, momen
 	}
 	if src.version != in.ExpectedSetVersion || in.Action == "DELETE" && src.status != "READY" {
 		return src, mm.ErrChanged
+	}
+	if in.Action == "DELETE" {
+		var body string
+		if e = tx.QueryRow(ctx, `SELECT body FROM moments WHERE id=$1`, moment).Scan(&body); e != nil {
+			return src, mm.ErrUnavailable
+		}
+		// A person must first add text or explicitly withdraw a media-only
+		// publication. Expiry cleanup is independent and can still retire bytes.
+		if !content.HasMomentBody(body) {
+			return src, mm.ErrChanged
+		}
 	}
 	src.deadline = src.parent.deadline
 	matProof := ""

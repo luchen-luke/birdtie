@@ -1,0 +1,16 @@
+{
+  "recordedAtUTC": "2026-10-15T05:52:18.027711+00:00",
+  "command": "\"C:\\Program Files\\Go\\bin\\go.exe\" test ./internal/legacymedia ./internal/media -run \"TestPrivateMediaSelection|TestAuthenticatedMedia|TestLegacyPrivateJPEG\" -count=1",
+  "cwd": "D:\\Project\\birdtie\\apps\\api",
+  "exitCode": 0,
+  "toolChunkID": "357fc2",
+  "stdout": "ok  \tgithub.com/birdtie/birdtie/apps/api/internal/legacymedia\t0.455s\nok  \tgithub.com/birdtie/birdtie/apps/api/internal/media\t0.946s\n",
+  "coverage": "3 direct unit tests: original owner/deletion/order selection, invalid proof input rejection, migration codec envelope with unchanged ordinary upload bounds",
+  "sourceBeforeCaptured": false,
+  "fullSourceFrameStableClaimed": false,
+  "laterOriginDTOAndCLIChangesCoveredByThisRun": false,
+  "nativeTestStatus": "NOT_RUN_BY_WORKER_ROOT_COMBINED_VALIDATION_PENDING",
+  "real135DecodeStatus": "NOT_RUN",
+  "archiveDecryptionRunByWorker": false,
+  "mediaImportedByWorker": false
+}

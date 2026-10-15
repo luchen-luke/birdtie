@@ -1,0 +1,12 @@
+{
+  "mode": "transfer",
+  "exitCode": 0,
+  "remoteScriptSHA256": "145552559c67be9cc98fcd0f2eab2b3cc0169d19a6e7ebf5e897b3806574314a",
+  "result": {
+    "status": "PRIVATE_MEDIA_TRANSFER_COMPLETE",
+    "files": 137,
+    "bytes": 313737368,
+    "sourceWrites": 0,
+    "databaseWrites": 0
+  }
+}

@@ -186,7 +186,11 @@ func ValidItem(i Item, scope string) bool {
 		// canonical Place anchor and detail contract stay identical to PUBLIC.
 		scope = Public
 	}
-	if !ValidKind(i.Kind) || !text(i.Title, 1, 300) || !text(i.SourceVersion, 1, 180) || i.Entity.Type != i.Kind || i.Entity.ID != i.ID || i.Anchor.CoordinateSystem != "wgs84" || i.Anchor.Precision != "point" || !text(i.Anchor.Label, 1, 300) {
+	titleMin := 1
+	if i.Kind == "MOMENT" {
+		titleMin = 0
+	}
+	if !ValidKind(i.Kind) || !text(i.Title, titleMin, 300) || !text(i.SourceVersion, 1, 180) || i.Entity.Type != i.Kind || i.Entity.ID != i.ID || i.Anchor.CoordinateSystem != "wgs84" || i.Anchor.Precision != "point" || !text(i.Anchor.Label, 1, 300) {
 		return false
 	}
 	if math.IsNaN(i.Anchor.Latitude) || math.IsNaN(i.Anchor.Longitude) || math.IsInf(i.Anchor.Latitude, 0) || math.IsInf(i.Anchor.Longitude, 0) || i.Anchor.Latitude < -90 || i.Anchor.Latitude > 90 || i.Anchor.Longitude < -180 || i.Anchor.Longitude > 180 {

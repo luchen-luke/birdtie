@@ -25,9 +25,14 @@ const privateImageSourceSQL = `SELECT jsonb_build_array(a.id,a.xmin::text,m.id,m
 const privateImageSessionSQL = `SELECT id::text FROM sessions WHERE account_id=$1 AND token_sha256=$2
  AND revoked_at IS NULL AND expires_at>clock_timestamp() AND idle_expires_at>clock_timestamp()
  AND ($3 OR authentication_method<>'dev_phone') FOR SHARE`
-const privateImageColumns = `id::text,operation_id::text,moment_id::text,owner_account_id::text,moment_revision,
- mime_type,input_size,input_sha256,COALESCE(derivative_sha256,''),pixel_risk,purpose,status,revision,
- preview_expires_at,retain_until,source_binding,session_id::text,NULL::bytea`
+const privateImageColumns = `i.id::text,i.operation_id::text,i.moment_id::text,i.owner_account_id::text,i.moment_revision,
+ i.mime_type,i.input_size,i.input_sha256,COALESCE(i.derivative_sha256,''),i.pixel_risk,i.purpose,i.status,i.revision,
+ i.preview_expires_at,i.retain_until,i.source_binding,COALESCE(i.session_id::text,''),
+ CASE WHEN i.session_id IS NULL AND i.status IN('ready_private','deleted') AND EXISTS(
+ SELECT 1 FROM legacy_private_media_import_items imported WHERE imported.image_id=i.id
+ AND imported.owner_account_id=i.owner_account_id AND imported.moment_id=i.moment_id
+ AND imported.source_input_sha256=i.input_sha256 AND imported.source_input_bytes=i.input_size)
+ THEN 'LEGACY_PRIVATE_IMPORT' ELSE '' END,NULL::bytea`
 
 type privateImageRow struct {
 	receipt         media.PrivateImageReceipt
@@ -51,7 +56,7 @@ func currentPrivateImageRead(v privateImageRow, source, session string, binary b
 func scanPrivateImage(row scanner) (privateImageRow, error) {
 	var v privateImageRow
 	r := &v.receipt
-	err := row.Scan(&r.ID, &r.OperationID, &r.MomentID, &r.OwnerID, &r.MomentRevision, &r.MIME, &r.ByteSize, &r.InputSHA256, &r.SHA256, &r.PixelRisk, &r.Purpose, &r.Status, &r.Revision, &r.PreviewExpiresAt, &r.RetainUntil, &v.source, &v.session, &v.bytes)
+	err := row.Scan(&r.ID, &r.OperationID, &r.MomentID, &r.OwnerID, &r.MomentRevision, &r.MIME, &r.ByteSize, &r.InputSHA256, &r.SHA256, &r.PixelRisk, &r.Purpose, &r.Status, &r.Revision, &r.PreviewExpiresAt, &r.RetainUntil, &v.source, &v.session, &r.Origin, &v.bytes)
 	return v, err
 }
 func imageFailure(e error) error {
@@ -191,7 +196,7 @@ func (s *Store) PreviewHumanPrivateImage(ctx context.Context, d [32]byte, a iden
 	if e != nil {
 		return media.PrivateImageReceipt{}, content.ErrUnavailable
 	}
-	v, e := scanPrivateImage(tx.QueryRow(ctx, `SELECT `+privateImageColumns+` FROM private_moment_images WHERE owner_account_id=$1 AND operation_id=$2 FOR UPDATE`, a.ID, p.OperationID))
+	v, e := scanPrivateImage(tx.QueryRow(ctx, `SELECT `+privateImageColumns+` FROM private_moment_images i WHERE owner_account_id=$1 AND operation_id=$2 FOR UPDATE`, a.ID, p.OperationID))
 	if e != nil {
 		return media.PrivateImageReceipt{}, imageFailure(e)
 	}
@@ -218,7 +223,7 @@ func (s *Store) SaveHumanPrivateImage(ctx context.Context, d [32]byte, a identit
 		return media.PrivateImageReceipt{}, e
 	}
 	defer tx.Rollback(context.Background())
-	v, e := scanPrivateImage(tx.QueryRow(ctx, `SELECT `+privateImageColumns+` FROM private_moment_images WHERE id=$1 AND owner_account_id=$2 AND moment_id=$3 FOR UPDATE`, id, a.ID, moment))
+	v, e := scanPrivateImage(tx.QueryRow(ctx, `SELECT `+privateImageColumns+` FROM private_moment_images i WHERE id=$1 AND owner_account_id=$2 AND moment_id=$3 FOR UPDATE`, id, a.ID, moment))
 	if e != nil {
 		return media.PrivateImageReceipt{}, imageFailure(e)
 	}
@@ -403,7 +408,7 @@ func (s *Store) DeleteHumanPrivateImage(ctx context.Context, d [32]byte, a ident
 		return e
 	}
 	defer tx.Rollback(context.Background())
-	v, e := scanPrivateImage(tx.QueryRow(ctx, `SELECT `+privateImageColumns+` FROM private_moment_images WHERE id=$1 AND owner_account_id=$2 AND moment_id=$3 FOR UPDATE`, id, a.ID, moment))
+	v, e := scanPrivateImage(tx.QueryRow(ctx, `SELECT `+privateImageColumns+` FROM private_moment_images i WHERE id=$1 AND owner_account_id=$2 AND moment_id=$3 FOR UPDATE`, id, a.ID, moment))
 	if e != nil {
 		return imageFailure(e)
 	}

@@ -206,6 +206,10 @@ func entityShareSourceClosure() string {
  UNION ALL SELECT 'moment-author',a.id::text,a.xmin::text FROM accounts a WHERE a.id IN(SELECT author_account_id FROM moments WHERE id=$1)
  UNION ALL SELECT 'moment-place',p.id::text,p.xmin::text FROM places p WHERE p.id IN(SELECT place_id FROM moments WHERE id=$1)
  UNION ALL SELECT 'moment-city',c.id::text,c.xmin::text FROM cities c WHERE c.id IN(SELECT city_id FROM moments WHERE id=$1)
+ UNION ALL SELECT 'moment-place-city',c.id::text,c.xmin::text FROM cities c WHERE c.id IN(SELECT p.city_id FROM places p JOIN moments m ON m.place_id=p.id WHERE m.id=$1)
+ UNION ALL SELECT 'moment-media-set',s.moment_id::text,s.xmin::text FROM public_moment_media_sets s WHERE s.moment_id=$1
+ UNION ALL SELECT 'moment-media',concat_ws(':',a.set_version,a.position),a.xmin::text FROM public_moment_media_attachments a WHERE a.moment_id=$1
+ UNION ALL SELECT 'moment-video',concat_ws(':',v.set_version,v.position),v.xmin::text FROM public_moment_media_video_payloads v WHERE v.moment_id=$1
  UNION ALL SELECT 'retained-place',p.id::text,` + retainedPlaceReadBindingSQL("p") + ` FROM places p WHERE p.id=$1 OR p.id IN(SELECT place_id FROM activities WHERE id=$1 UNION SELECT place_id FROM moments WHERE id=$1)
  UNION ALL SELECT 'block-generation',b.owner_account_id::text||':'||b.target_account_id::text,concat_ws(':',b.version::text,b.xmin::text) FROM person_block_control_epochs b WHERE b.owner_account_id=$2 OR b.target_account_id=$2
  UNION ALL SELECT 'business-member',b.business_id::text||':'||b.user_account_id::text,b.xmin::text FROM business_memberships b WHERE b.business_id=$1 OR b.business_id IN(SELECT business_id FROM activity_organizers WHERE activity_id=$1)`

@@ -1,0 +1,29 @@
+{
+  "status": "SOURCE_READY_CODEC_REPAIR",
+  "recordedAtUTC": "2026-10-15T06:23:23.871100+00:00",
+  "ownedSourceSHA256": {
+    "apps/api/internal/legacymedia/model.go": "4f1d299abc00f3b0e7a8282e0fd944d8646e35c37fe2c8ed4faac7939644597b",
+    "apps/api/internal/legacymedia/model_test.go": "978986cdd7998186abc8b511361ff5f015298a7ebb16c3ab81886d11764a38cf",
+    "apps/api/internal/postgres/legacy_private_media_import.go": "7d3f707a9e51f49e8d6e865666ea01b28585c9322bb13a720a07f16a8122938b",
+    "apps/api/internal/postgres/legacy_private_media_import_native_test.go": "43bc31fe479cbe9f980023ee122aa84361d6fc17c13d18e9d470bb1654a86e18",
+    "apps/api/cmd/legacy-media-import/main.go": "475ee6b132ea9b4669667dbb710200be45fff6f20b59c529a91abf465ea8296b",
+    "apps/api/cmd/legacy-media-import/main_test.go": "772a5d3299b84781f60a3afbc3c858d0f049a4896bd0933f1aadc9438f8d45b8",
+    "apps/api/internal/media/image_derivative.go": "bde55083a5552573f3d0a876ff9afa04b7c1cc6117c3ab6df5d9b1f6616d3345",
+    "apps/api/internal/media/image_derivative_test.go": "86680e1306cb71aa1cc8ea64917772b97c110dfcb5bfb5645c28135878ab8a61",
+    "apps/api/internal/media/private_moment_image.go": "575c833e2831074d362f5b94f0d68adf1d4f1711467e07bf79e673236b8bc794",
+    "apps/api/internal/postgres/human_moment_media.go": "f98da710d7074e105ce02519c32010ba3de00cf59f05ab4be4752af278126c98",
+    "apps/api/internal/media/image_orientation.go": "725bee1785bccbb61b4382fda427b325f5d8c8eeca5a352c2426c2ccfa112a0a"
+  },
+  "verification": "verify-blobs02/receipt.json",
+  "focusedUnit": "unit02-orientation.json",
+  "priorFailureRetained": "verify-blobs01/receipt.json",
+  "actualJPEGsVerified": 135,
+  "actualJPEGsFailed": 0,
+  "sourceFrameStableForActualVerifier": true,
+  "nativeAndRemoteApply": "ROOT_OWNED_NOT_RUN_BY_THIS_WORKER",
+  "newDDLChanged": false,
+  "ordinaryUploadLimitsAndStrictOrientation": "UNCHANGED",
+  "legacyOrientationCaveat": "28 images with unspecified zero: 24 LONG/count1 and 4 SHORT/count1. Preserve encoded frame; infer no rotation; strip EXIF then fully reencode. Other invalid/duplicate orientations remain rejected.",
+  "privateDataOrPathsSaved": false,
+  "scope": "11 owned Go source/test files only; root and other workers own DDL, API build, Flutter and deployment frames."
+}

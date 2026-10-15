@@ -57,6 +57,18 @@ Map<String, dynamic> mapTestView({
 }
 
 void main() {
+  test('无标题动态保留真实地点与原内容标识，其他对象仍验证名称', () {
+    final raw = mapTestItem('MOMENT')..['title'] = '';
+    final parsed = TypedMapItem.decode(raw, 'PUBLIC', mapTestBounds);
+    expect(parsed.title, isEmpty);
+    expect(parsed.detailID, mapTestID);
+    expect(parsed.placeID, mapTestPlace);
+    final place = mapTestItem('PLACE')..['title'] = '';
+    expect(
+      () => TypedMapItem.decode(place, 'PUBLIC', mapTestBounds),
+      throwsFormatException,
+    );
+  });
   test(
     'public header opts in without query changes, legacy response remains honest',
     () async {

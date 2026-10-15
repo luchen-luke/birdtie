@@ -1,0 +1,11 @@
+{
+  "cwd": "D:\\Project\\birdtie\\apps\\client",
+  "command": "flutter test test/public_moment_media_controller_test.dart test/moment_thread_test.dart --reporter expanded",
+  "startedAt": "2026-10-15T06:49:06.5246041Z",
+  "finishedAt": "2026-10-15T06:49:11.8185065Z",
+  "exitCode": 0,
+  "scope": "Stage selector recovery, ordering and ownership; thread draft rights retirement",
+  "testKind": "Direct Flutter unit/widget",
+  "build": "NOT_RUN",
+  "device": "NOT_RUN"
+}

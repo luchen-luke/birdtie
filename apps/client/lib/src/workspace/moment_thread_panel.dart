@@ -160,7 +160,7 @@ class _MomentThreadPanelState extends State<MomentThreadPanel> {
                                 overflow: TextOverflow.ellipsis,
                               ),
                               if (c.entries[index].media.isNotEmpty)
-                                Text('${c.entries[index].media.length}张已准备图片'),
+                                Text('${c.entries[index].media.length}项已准备材料'),
                             ],
                           ),
                         ),
@@ -237,11 +237,18 @@ class _MomentThreadPanelState extends State<MomentThreadPanel> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          '第${index + 1}条 · ${preview.contexts[index]['cityName']}${preview.contexts[index]['placeName'] == '' ? '' : ' · ${preview.contexts[index]['placeName']}'} · 公开',
+                          [
+                            '第${index + 1}条',
+                            if (preview.contexts[index]['cityName'] != '')
+                              preview.contexts[index]['cityName'] as String,
+                            if (preview.contexts[index]['placeName'] != '')
+                              preview.contexts[index]['placeName'] as String,
+                            '公开',
+                          ].join(' · '),
                           style: const TextStyle(fontWeight: FontWeight.w600),
                         ),
-                        Text(preview.input.entries[index].title),
-                        Text(preview.input.entries[index].text.trim()),
+                        if (preview.input.entries[index].text.trim().isNotEmpty)
+                          Text(preview.input.entries[index].text.trim()),
                         if (preview.materials[index].isNotEmpty)
                           Wrap(
                             spacing: 8,
@@ -253,7 +260,7 @@ class _MomentThreadPanelState extends State<MomentThreadPanel> {
                                   width: 128,
                                   height: 72,
                                   fit: BoxFit.contain,
-                                  semanticLabel: '整串批准中的规范图片',
+                                  semanticLabel: '整串批准中的真实媒体预览',
                                 ),
                             ],
                           ),

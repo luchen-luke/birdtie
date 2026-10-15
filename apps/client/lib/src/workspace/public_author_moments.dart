@@ -74,7 +74,7 @@ class PublicAuthorMoments extends StatelessWidget {
               contentPadding: EdgeInsets.zero,
               minVerticalPadding: 12,
               leading: const Icon(Icons.article_outlined),
-              title: Text(item.title),
+              title: item.title.isEmpty ? null : Text(item.title),
               subtitle: Text(item.anchorLabel),
               trailing: const Icon(Icons.chevron_right),
               onTap: () {

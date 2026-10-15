@@ -1,0 +1,12 @@
+{
+  "mode": "inspect",
+  "exitCode": 1,
+  "remoteScriptSHA256": "4e79b41e53e5b703bfa6dbecb20f5b91d68e6118293dca5737cac30f7eae7b9a",
+  "result": {
+    "status": "FAILED",
+    "stage": "inspect",
+    "errorType": "RuntimeError",
+    "controlledCode": "legacy_import_run_not_found",
+    "privateValuesOmitted": true
+  }
+}

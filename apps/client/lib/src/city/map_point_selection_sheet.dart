@@ -163,11 +163,13 @@ class _CurrentPointChoicesState extends State<_CurrentPointChoices> {
                                   ? Icons.notes_outlined
                                   : Icons.place_outlined,
                             ),
-                      title: Text(
-                        row.title,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
+                      title: row.title.isEmpty
+                          ? null
+                          : Text(
+                              row.title,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
                       subtitle: Text(
                         '${mapPointKindLabel(row.kind)} · ${row.subtitle}',
                         maxLines: 2,

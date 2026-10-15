@@ -27,18 +27,7 @@ class MomentThreadDraftEntry {
     text: text ?? this.text,
     media: media ?? this.media,
   );
-  String get title {
-    final first = text.trim().split('\n').first.trim();
-    var title = '';
-    for (final rune in first.runes) {
-      final next = '$title${String.fromCharCode(rune)}';
-      if (utf8.encode(next).length > 160) {
-        break;
-      }
-      title = next;
-    }
-    return title;
-  }
+  String get title => '';
 
   Map<String, Object?> get input => {
     'cityId': cityID,
@@ -47,9 +36,14 @@ class MomentThreadDraftEntry {
     'body': text.trim(),
     'occurredAt': null,
     'timePrecision': 'unknown',
-    'locationPrecision': placeID.isEmpty ? 'city' : 'place',
+    'locationPrecision': cityID.isEmpty
+        ? 'none'
+        : (placeID.isEmpty ? 'city' : 'place'),
   };
   Map<String, Object?> toItem() {
+    if (text.trim().isEmpty && media.isEmpty) {
+      throw const FormatException('每条动态需要正文或已准备材料');
+    }
     MomentControlInput(
       operationID: localID,
       action: 'PUBLISH',
@@ -483,7 +477,9 @@ class MomentThreadPreview {
       if (place['cityId'] != input.entries[i].cityID ||
           place['placeId'] != input.entries[i].placeID ||
           place['cityName'] is! String ||
-          (place['cityName'] as String).isEmpty ||
+          (input.entries[i].cityID.isEmpty
+              ? place['cityName'] != ''
+              : (place['cityName'] as String).isEmpty) ||
           utf8.encode(place['cityName']).length > 640 ||
           place['placeName'] is! String ||
           utf8.encode(place['placeName']).length > 640 ||

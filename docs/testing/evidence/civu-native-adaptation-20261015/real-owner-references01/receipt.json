@@ -1,0 +1,30 @@
+{
+  "exitCode": 0,
+  "remoteScriptSHA256": "93fc510c766e32c96f25f15b04dbd1f090d512c8accb2b18f92953941ab9a41d",
+  "result": {
+    "status": "PASS",
+    "devOnly": true,
+    "productionIdentityVerified": false,
+    "productionPhoneVerification": false,
+    "fixedCodeUsed": true,
+    "sourceWrites": 0,
+    "databaseDirectWrites": 0,
+    "remoteConfigurationChanged": false,
+    "agentActivationRequested": false,
+    "oldSessionAccepted": false,
+    "messagesSent": 0,
+    "privateValuesPersisted": false,
+    "allCreatedSessionsLoggedOut": true,
+    "selectedOwnerSaved": 33,
+    "savedPages": 2,
+    "selectedOwnerThemeMaps": 2,
+    "themePrivateReferences": 9,
+    "privateLabelsAndDetailsReadable": true,
+    "privateSavedSearchMatched": true,
+    "publicPlaceReadRejected": true,
+    "anonymousReadRejected": true,
+    "newOwnerEnrolled": false,
+    "originalInputUnchanged": true,
+    "defaultTLSValidated": true
+  }
+}

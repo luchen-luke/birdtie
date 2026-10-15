@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 
 import '../workspace/now_ui_tokens.dart';
+import '../workspace/legacy_place_reference_page.dart';
 import 'personal_collection_controller.dart';
 import 'collection_control.dart';
 import 'collection_publication_controller.dart';
@@ -38,7 +39,7 @@ class PersonalCollectionPage extends StatefulWidget {
 class _PersonalCollectionPageState extends State<PersonalCollectionPage> {
   final _title = TextEditingController(), _summary = TextEditingController();
   final _search = TextEditingController();
-  bool _showSaved = false;
+  bool _showSaved = false, _openingSaved = false;
   int _pageEpoch = 0;
   Object? _pageTarget;
   bool _pageClosed = false, _dialogChangesDisposed = false;
@@ -176,6 +177,7 @@ class _PersonalCollectionPageState extends State<PersonalCollectionPage> {
         c.controlBlocked ||
         c.editing == null)
       return;
+    if (c.hasPrivateLegacyReferences && c.publicationPending == null) return;
     if (c.editing!.privatePlaceCopyRestricted &&
         c.editing!.status == 'draft' &&
         c.publicationPending == null)
@@ -435,6 +437,108 @@ class _PersonalCollectionPageState extends State<PersonalCollectionPage> {
     }
   }
 
+  Future<void> _openSavedRecord(PersonalCollection record) async {
+    if (!c.current || c.saving || _openingSaved) return;
+    if (record.cityID == c.cityID) {
+      if (await _replaceDraft() &&
+          mounted &&
+          c.current &&
+          await c.open(record) &&
+          mounted) {
+        setState(() => _showSaved = false);
+      }
+      return;
+    }
+    final source = c, owner = c.ownerID();
+    if (owner == null || record.ownerID != owner) return;
+    bool current() =>
+        mounted &&
+        !_pageClosed &&
+        identical(c, source) &&
+        source.current &&
+        source.ownerID() == owner;
+    setState(() => _openingSaved = true);
+    final editor = PersonalCollectionController(
+      kind: record.kind,
+      cityID: record.cityID,
+      authorizationHeader: source.authorizationHeader,
+      ownerID: source.ownerID,
+      sourceCurrent: current,
+      identityChanges: source.identityChanges,
+      client: source.transport,
+      apiBaseUrl: source.apiBaseUrl,
+      controlPendingStore: source.controlPendingStore,
+      publicationRecoveryReader: (id) => CollectionPublicationPendingStore(
+        origin: source.apiBaseUrl,
+        owner: owner,
+        kind: record.kind,
+        id: id,
+      ).load(),
+    );
+    final release = _onceDispose(editor.dispose);
+    try {
+      if (!await editor.openID(record.id) || !current()) {
+        if (current())
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(editor.error ?? '这条已保存内容暂时无法打开，请重试。')),
+          );
+        return;
+      }
+      final route = MaterialPageRoute<void>(
+        builder: (_) => PersonalCollectionPage(
+          controller: editor,
+          cityName: widget.cityNames[record.cityID] ?? '城市名称暂不可读',
+          cityNames: widget.cityNames,
+          copyPendingStore: _copyStore,
+        ),
+      );
+      // Reading has finished. The child route's lifetime is not a load.
+      setState(() => _openingSaved = false);
+      unawaited(route.completed.then((_) => release()));
+      await Navigator.of(context).push(route);
+      await route.completed;
+    } finally {
+      release();
+      if (mounted && identical(c, source))
+        setState(() => _openingSaved = false);
+    }
+  }
+
+  Future<void> _openLegacyReference(PersonalCollectionEntry entry) async {
+    final source = c, record = c.editing, reference = entry.legacyReference;
+    final owner = c.ownerID(), token = c.authorizationHeader();
+    if (!c.current ||
+        !entry.readable ||
+        reference == null ||
+        record == null ||
+        owner == null ||
+        owner != record.ownerID ||
+        token == null)
+      return;
+    bool current() =>
+        mounted &&
+        !_pageClosed &&
+        identical(c, source) &&
+        source.current &&
+        source.ownerID() == owner &&
+        source.authorizationHeader() == token &&
+        source.editing?.id == record.id &&
+        source.editing?.revision == record.revision &&
+        source.draftEntries.any((e) => identical(e, entry));
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => LegacyPlaceReferencePage(
+          reference: reference,
+          authorizationHeader: source.authorizationHeader,
+          sourceCurrent: current,
+          apiBaseUrl: source.apiBaseUrl,
+          client: source.transport,
+          identityChanges: source.identityChanges,
+        ),
+      ),
+    );
+  }
+
   Future<void> _choosePlace() async {
     if (!c.editable) return;
     _search.clear();
@@ -533,7 +637,11 @@ class _PersonalCollectionPageState extends State<PersonalCollectionPage> {
       final note = await showDialog<String>(
         context: context,
         builder: (context) => AlertDialog(
-          title: Text(original.placeName.isEmpty ? '地点备注' : original.placeName),
+          title: Text(
+            !original.readable || original.placeName.isEmpty
+                ? '地点备注'
+                : original.placeName,
+          ),
           content: TextField(
             controller: field,
             minLines: 2,
@@ -852,8 +960,8 @@ class _PersonalCollectionPageState extends State<PersonalCollectionPage> {
     children: [
       Text('已保存${c.label}', style: tokens.sheetTitle),
       const SizedBox(height: 8),
-      Text('${widget.cityName} · 本人的草稿与已公开内容', style: tokens.metadata),
-      if (c.loading) const LinearProgressIndicator(),
+      Text('本人的草稿与已公开内容', style: tokens.metadata),
+      if (c.loading || _openingSaved) const LinearProgressIndicator(),
       if (c.error != null) _error(),
       if (c.items.isEmpty && !c.loading)
         const Padding(
@@ -868,14 +976,8 @@ class _PersonalCollectionPageState extends State<PersonalCollectionPage> {
             '${v.status == 'published' ? '已公开 · ' : '本人草稿 · '}${v.entries.length} 个地点${v.summary.isEmpty ? '' : '\n${v.summary}'}',
           ),
           trailing: const Icon(Icons.chevron_right),
-          onTap: !c.saving
-              ? () async {
-                  if (await _replaceDraft() &&
-                      c.current &&
-                      await c.open(v) &&
-                      mounted)
-                    setState(() => _showSaved = false);
-                }
+          onTap: !c.saving && !_openingSaved
+              ? () => unawaited(_openSavedRecord(v))
               : null,
         ),
       Wrap(
@@ -970,6 +1072,11 @@ class _PersonalCollectionPageState extends State<PersonalCollectionPage> {
         if (c.error != null) _error(),
         if (c.saving) const LinearProgressIndicator(),
         _controlRecovery(),
+        if (c.hasPrivateLegacyReferences)
+          const Padding(
+            padding: EdgeInsets.only(bottom: 12),
+            child: Text('这些旧地点资料仅本人可读。可修改标题、备注和顺序，或移除地点；不会加入公开地点或地图。'),
+          ),
         if (c.editing?.privatePlaceCopyRestricted == true)
           const Padding(
             padding: EdgeInsets.only(bottom: 12),
@@ -1021,7 +1128,10 @@ class _PersonalCollectionPageState extends State<PersonalCollectionPage> {
                     : null,
                 child: Text(c.editing == null ? '保存本人草稿' : '保存修改'),
               ),
-            if (c.editing != null && !c.uncertain && widget.onViewMap != null)
+            if (c.editing != null &&
+                !c.uncertain &&
+                !c.hasPrivateLegacyReferences &&
+                widget.onViewMap != null)
               OutlinedButton.icon(
                 onPressed: !c.saving
                     ? () => widget.onViewMap!(c.editing!)
@@ -1036,6 +1146,8 @@ class _PersonalCollectionPageState extends State<PersonalCollectionPage> {
                     c.current &&
                         !c.saving &&
                         !c.controlBlocked &&
+                        (!c.hasPrivateLegacyReferences ||
+                            c.publicationPending != null) &&
                         (!c.editing!.privatePlaceCopyRestricted ||
                             c.editing!.status == 'published' ||
                             c.publicationPending != null)
@@ -1078,9 +1190,13 @@ class _PersonalCollectionPageState extends State<PersonalCollectionPage> {
             leading: c.kind == 'journey'
                 ? Text('${index + 1}', style: NowUiTokens.of(context).body)
                 : const Icon(Icons.place_outlined),
-            title: Text(e.sourceCurrent ? e.placeName : '地点来源已变化，请重新读取'),
-            subtitle: e.note.isEmpty ? null : Text(e.note),
-            onTap: e.sourceCurrent && widget.onOpenPlace != null
+            title: Text(e.readable ? e.placeName : '地点来源已变化，请重新读取'),
+            subtitle: e.note.isEmpty || e.legacyReference != null && !e.readable
+                ? null
+                : Text(e.note),
+            onTap: e.legacyReference != null && e.readable
+                ? () => unawaited(_openLegacyReference(e))
+                : e.sourceCurrent && widget.onOpenPlace != null
                 ? () => widget.onOpenPlace!(e.placeID)
                 : null,
           ),
@@ -1093,7 +1209,7 @@ class _PersonalCollectionPageState extends State<PersonalCollectionPage> {
                     : null,
                 child: const Text('备注'),
               ),
-              if (c.kind == 'journey') ...[
+              if (c.kind == 'journey' || c.hasPrivateLegacyReferences) ...[
                 IconButton(
                   tooltip: '向前移动地点',
                   onPressed: c.editable && index > 0

@@ -7,7 +7,9 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"github.com/birdtie/birdtie/apps/api/internal/identity"
+	"github.com/birdtie/birdtie/apps/api/internal/momentmedia"
 	"io"
 	"strings"
 	"time"
@@ -16,23 +18,29 @@ import (
 
 const MomentControlMaxRevision = identity.HumanControlMaxVersion
 
+var ErrMomentLegacyPhotoReselection = errors.New("legacy Moment photo requires explicit reselection")
+
 type MomentControlInput struct {
-	OperationID      string       `json:"operationId"`
-	Action           string       `json:"action"`
-	MomentID         string       `json:"momentId,omitempty"`
-	ExpectedRevision int64        `json:"expectedRevision"`
-	Input            *MomentInput `json:"input,omitempty"`
-	SourceVersion    string       `json:"sourceVersion,omitempty"`
-	Approval         string       `json:"approval,omitempty"`
+	OperationID      string                         `json:"operationId"`
+	Action           string                         `json:"action"`
+	MomentID         string                         `json:"momentId,omitempty"`
+	ExpectedRevision int64                          `json:"expectedRevision"`
+	Input            *MomentInput                   `json:"input,omitempty"`
+	SourceVersion    string                         `json:"sourceVersion,omitempty"`
+	Approval         string                         `json:"approval,omitempty"`
+	LocalScope       string                         `json:"localScope,omitempty"`
+	Media            *[]momentmedia.AttachmentInput `json:"media,omitempty"`
 }
 type MomentControlPreview struct {
 	identity.HumanControlPreview
-	MomentID                  string       `json:"momentId,omitempty"`
-	ExpectedRevision          int64        `json:"expectedRevision"`
-	Input                     *MomentInput `json:"input,omitempty"`
-	InputSHA256               string       `json:"inputSha256"`
-	SourceVersion             string       `json:"sourceVersion"`
-	PreservedPlaceUnavailable bool         `json:"preservedPlaceUnavailable"`
+	MomentID                  string                 `json:"momentId,omitempty"`
+	ExpectedRevision          int64                  `json:"expectedRevision"`
+	Input                     *MomentInput           `json:"input,omitempty"`
+	InputSHA256               string                 `json:"inputSha256"`
+	SourceVersion             string                 `json:"sourceVersion"`
+	PreservedPlaceUnavailable bool                   `json:"preservedPlaceUnavailable"`
+	Materials                 []MomentThreadMaterial `json:"materials,omitempty"`
+	PreservedMedia            *momentmedia.Set       `json:"preservedMedia,omitempty"`
 }
 type MomentControlReceipt struct {
 	OperationID      string     `json:"operationId"`
@@ -68,7 +76,15 @@ func MomentControlInputHash(in *MomentInput) string {
 	return MomentControlHash([]any{"moment-input-v1", b64(in.CityID), in.PlaceID, b64(in.Title), b64(in.Body), at, in.TimePrecision, in.LocationPrecision, in.ActivityID, in.CommunityID, in.OrganizationID})
 }
 func MomentControlDigest(in MomentControlInput) string {
-	return MomentControlHash([]any{"human-moment-control-v1", in.OperationID, in.Action, in.MomentID, in.ExpectedRevision, MomentControlInputHash(in.Input)})
+	values := []any{"human-moment-control-v1", in.OperationID, in.Action, in.MomentID, in.ExpectedRevision, MomentControlInputHash(in.Input)}
+	if in.Media != nil {
+		media := []any{}
+		for _, attachment := range *in.Media {
+			media = append(media, []any{attachment.MediaID, attachment.MediaVersion, attachment.Rights.Digest()})
+		}
+		values = append(values, "moment-media-v1", in.LocalScope, media)
+	}
+	return MomentControlHash(values)
 }
 func MomentControlHex(v string) bool {
 	if len(v) != 64 || v != strings.ToLower(v) {
@@ -124,10 +140,27 @@ func NormalizeMomentControl(in MomentControlInput, commit bool) (MomentControlIn
 			return bad()
 		}
 		in.Input = &v
-		publicContext := v.PlaceID == "" && v.LocationPrecision == "city" || v.PlaceID != "" && v.LocationPrecision == "place"
+		publicContext := v.PlaceID == "" && (v.LocationPrecision == "none" || v.CityID != "" && v.LocationPrecision == "city") || v.PlaceID != "" && v.LocationPrecision == "place"
 		if (in.Action == "UPDATE_PUBLIC" || in.Action == "PUBLISH") && (!publicContext || v.ActivityID != nil || v.CommunityID != nil || v.OrganizationID != nil) {
 			return bad()
 		}
+	}
+	if in.Media != nil {
+		if (in.Action != "PUBLISH" && in.Action != "UPDATE_PUBLIC") || len(*in.Media) > momentmedia.MaxImages || len(*in.Media) > 0 && !identity.HumanControlUUID(in.LocalScope) || len(*in.Media) == 0 && in.LocalScope != "" {
+			return bad()
+		}
+		seen := map[string]bool{}
+		for _, attachment := range *in.Media {
+			if !momentmedia.ID(attachment.MediaID) || attachment.MediaVersion < 1 || attachment.MediaVersion > momentmedia.MaxVersion || !attachment.Rights.Valid(time.Time{}) || seen[attachment.MediaID] {
+				return bad()
+			}
+			seen[attachment.MediaID] = true
+		}
+	} else if in.LocalScope != "" {
+		return bad()
+	}
+	if (in.Action == "PUBLISH" || in.Action == "UPDATE_PUBLIC") && !HasMomentBody(in.Input.Body) && (in.Action == "PUBLISH" && (in.Media == nil || len(*in.Media) == 0) || in.Media != nil && len(*in.Media) == 0) {
+		return bad()
 	}
 	if commit {
 		if !MomentControlHex(in.SourceVersion) || !utf8.ValidString(in.Approval) || len(in.Approval) < 1 || len(in.Approval) > 8192 || strings.ContainsRune(in.Approval, 0) {
@@ -183,7 +216,7 @@ func momentControlClosed(raw []byte, required, optional []string, nullable strin
 }
 func DecodeMomentControl(raw []byte, commit bool) (MomentControlInput, error) {
 	required := []string{"operationId", "action", "expectedRevision"}
-	optional := []string{"momentId", "input"}
+	optional := []string{"momentId", "input", "media", "localScope"}
 	if commit {
 		required = append(required, "sourceVersion", "approval")
 	}
@@ -210,6 +243,21 @@ func DecodeMomentControl(raw []byte, commit bool) (MomentControlInput, error) {
 		}
 		if _, e = momentControlClosed(v, []string{"cityId", "placeId", "title", "body", "timePrecision", "locationPrecision"}, []string{"occurredAt", "activityId", "communityId", "organizationId"}, "occurredAt"); e != nil {
 			return in, e
+		}
+	}
+	if rawMedia, ok := m["media"]; ok {
+		var attachments []json.RawMessage
+		if json.Unmarshal(rawMedia, &attachments) != nil || attachments == nil {
+			return in, identity.ErrControlInvalid
+		}
+		for _, rawAttachment := range attachments {
+			attachment, e := momentControlClosed(rawAttachment, []string{"mediaId", "mediaVersion", "rights"}, nil, "")
+			if e != nil {
+				return in, e
+			}
+			if _, e = momentControlClosed(attachment["rights"], []string{"basis", "attribution", "licenseReference", "retentionUntil", "canRetain", "canPublish"}, nil, ""); e != nil {
+				return in, e
+			}
 		}
 	}
 	return NormalizeMomentControl(in, commit)

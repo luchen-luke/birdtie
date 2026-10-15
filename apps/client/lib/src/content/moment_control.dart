@@ -5,6 +5,20 @@ import 'package:crypto/crypto.dart';
 import 'package:http/http.dart' as http;
 import '../workspace/human_causal_control.dart';
 import '../workspace/public_moment_media.dart';
+import 'moment_locations.dart';
+
+Map<String, Object?>? _freezeMomentInput(Map<String, Object?>? input) {
+  if (input == null) return null;
+  return Map.unmodifiable({
+    ...input,
+    if (input.containsKey('locations'))
+      'locations': List.unmodifiable(
+        decodeMomentLocationInputs(
+          input['locations'],
+        ).map((value) => Map<String, Object?>.unmodifiable(value.toJson())),
+      ),
+  });
+}
 
 const momentControlMaxRevision = humanControlMaxVersion;
 String newMomentOperationID() {
@@ -38,7 +52,7 @@ class MomentControlInput {
     Map<String, Object?>? input,
     List<PublicMomentMediaSelection>? media,
     this.localScope = '',
-  }) : input = input == null ? null : Map.unmodifiable(input),
+  }) : input = _freezeMomentInput(input),
        media = media == null ? null : List.unmodifiable(media) {
     if (!valid) throw const FormatException('动态操作输入不符');
   }
@@ -119,10 +133,22 @@ class MomentControlInput {
           'activityId',
           'communityId',
           'organizationId',
+          'locations',
         };
     if (!required.every(d.containsKey) ||
         d.keys.any((k) => !required.contains(k) && !optional.contains(k)))
       return false;
+    if (d.containsKey('locations')) {
+      try {
+        decodeMomentLocationInputs(d['locations']);
+      } catch (_) {
+        return false;
+      }
+      if (d['cityId'] != '' ||
+          d['placeId'] != '' ||
+          d['locationPrecision'] != 'none')
+        return false;
+    }
     for (final entry in {
       'cityId': (0, 80),
       'title': (0, 160),
@@ -145,7 +171,9 @@ class MomentControlInput {
         return false;
     }
     if (d['cityId'] == '' &&
-        ((d['placeId'] == '' ? d['locationPrecision'] != 'none' : d['locationPrecision'] != 'place') ||
+        ((d['placeId'] == ''
+                ? d['locationPrecision'] != 'none'
+                : d['locationPrecision'] != 'place') ||
             const [
               'activityId',
               'communityId',
@@ -191,6 +219,16 @@ class MomentControlInput {
       d['activityId'],
       d['communityId'],
       d['organizationId'],
+      if (d.containsKey('locations')) ...[
+        decodeMomentLocationInputs(
+              d['locations'],
+            ).any((v) => v.kind == 'REFERENCE')
+            ? 'moment-locations-v2'
+            : 'moment-locations-v1',
+        decodeMomentLocationInputs(
+          d['locations'],
+        ).map((value) => value.digestTuple).toList(),
+      ],
     ]);
   }
 
@@ -243,6 +281,8 @@ class MomentControlPreview {
     required this.preservedPlaceUnavailable,
     this.materials = const [],
     this.preservedMedia,
+    this.locations = const [],
+    this.locationsSourceVersion,
   });
   final MomentControlInput input;
   final String sourceVersion, approval;
@@ -250,10 +290,13 @@ class MomentControlPreview {
   final bool preservedPlaceUnavailable;
   final List<MomentControlMaterial> materials;
   final PublicMomentMediaSet? preservedMedia;
+  final List<MomentLocationResolved> locations;
+  final String? locationsSourceVersion;
   bool get live =>
       DateTime.now().toUtc().isBefore(expiresAt) &&
       materials.every((material) => material.stage.current) &&
       (input.media?.every((selection) => selection.rights.valid) ?? true) &&
+      locations.every((location) => !location.available || location.current) &&
       (preservedMedia?.current ?? true);
   Map<String, Object> get body => {
     ...input.toJson(),
@@ -280,7 +323,12 @@ class MomentControlPreview {
         if (expected.action != 'CREATE') 'momentId',
         if (expected.action != 'WITHDRAW') 'input',
       },
-      optional: {'materials', 'preservedMedia'},
+      optional: {
+        'materials',
+        'preservedMedia',
+        'locations',
+        'locationsSourceVersion',
+      },
     );
     if (m['operationId'] != expected.operationID ||
         m['action'] != expected.action ||
@@ -307,7 +355,7 @@ class MomentControlPreview {
           'locationPrecision',
           'occurredAt',
         },
-        optional: {'activityId', 'communityId', 'organizationId'},
+        optional: {'activityId', 'communityId', 'organizationId', 'locations'},
       );
       if (echo.isEmpty) throw const FormatException('动态正文不符');
     }
@@ -330,10 +378,6 @@ class MomentControlPreview {
         throw const FormatException('动态规范正文不符');
     }
     final preserved = m['preservedPlaceUnavailable'] as bool;
-    if (preserved &&
-        (expected.action != 'UPDATE' ||
-            expected.input?['locationPrecision'] == 'place'))
-      throw const FormatException('此前关联地点不符');
     final at = humanControlTime(m['observedAt']),
         until = humanControlTime(m['expiresAt']);
     humanControlLease(at, until);
@@ -391,6 +435,48 @@ class MomentControlPreview {
         throw const FormatException('动态原媒体已不可用');
       }
     }
+    final locations = <MomentLocationResolved>[];
+    if (m.containsKey('locations') != m.containsKey('locationsSourceVersion') ||
+        expected.input?.containsKey('locations') == true &&
+            !m.containsKey('locations')) {
+      throw const FormatException('动态位置批准范围不符');
+    }
+    if (m.containsKey('locations')) {
+      final raw = m['locations'];
+      if (raw is! List ||
+          raw.length > momentLocationMaxLinks ||
+          !humanControlHash(m['locationsSourceVersion']))
+        throw const FormatException('动态位置批准来源不符');
+      for (var i = 0; i < raw.length; i++)
+        locations.add(MomentLocationResolved.decode(raw[i], i));
+      if (locations.map((v) => v.id).toSet().length != locations.length)
+        throw const FormatException('动态位置批准重复');
+      if (expected.input?.containsKey('locations') == true &&
+          jsonEncode(locations.map((v) => v.input.toJson()).toList()) !=
+              jsonEncode(
+                decodeMomentLocationInputs(
+                  expected.input!['locations'],
+                ).map((v) => v.toJson()).toList(),
+              ))
+        throw const FormatException('动态实际位置与选择不符');
+    }
+    if (preserved) {
+      final currentLocationsContract =
+          m.containsKey('locationsSourceVersion') &&
+          const {
+            'UPDATE',
+            'PUBLISH',
+            'UPDATE_PUBLIC',
+          }.contains(expected.action) &&
+          locations.any((location) => !location.available);
+      final legacyPreservation =
+          !m.containsKey('locationsSourceVersion') &&
+          expected.action == 'UPDATE' &&
+          expected.input?['locationPrecision'] != 'place';
+      if (!currentLocationsContract && !legacyPreservation) {
+        throw const FormatException('此前关联地点不符');
+      }
+    }
     return MomentControlPreview(
       input: expected,
       sourceVersion: m['sourceVersion'],
@@ -400,6 +486,8 @@ class MomentControlPreview {
       preservedPlaceUnavailable: preserved,
       materials: List.unmodifiable(materials),
       preservedMedia: preservedMedia,
+      locations: List.unmodifiable(locations),
+      locationsSourceVersion: m['locationsSourceVersion'],
     );
   }
 }

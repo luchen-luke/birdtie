@@ -185,6 +185,21 @@ func writeDevPhoneSummary(out io.Writer, result postgres.LegacyDevPhoneBindingRe
 	return nil
 }
 
+func writeDevEmailSummary(out io.Writer, r postgres.LegacyDevEmailBindingResult) error {
+	value := map[string]any{"runId": r.RunID, "status": r.Status, "credentialKind": "email", "devOnly": true, "countsKnown": false, "activated": false, "agentActivated": false, "oldSessionsCopied": false, "sourceWrites": 0}
+	if r.Status == "DEV_EMAIL_BINDINGS_PREPARED" || r.Status == "DEV_EMAIL_BINDINGS_COMMITTED" {
+		value["countsKnown"] = true
+		value["counts"] = r.Counts
+	}
+	if r.Status == "DEV_EMAIL_BINDINGS_COMMITTED" {
+		value["enrolledOwners"] = r.EnrolledOwners
+	}
+	if json.NewEncoder(out).Encode(value) != nil {
+		return postgres.ErrLegacyMigrationUnavailable
+	}
+	return nil
+}
+
 func devPhoneBindingChannel(config *pgxpool.Config, getenv func(string) string) bool {
 	setting := strings.TrimSpace(getenv("BIRDTIE_DEV_PHONE_AUTH"))
 	if config == nil || (setting != "1" && !strings.EqualFold(setting, "true")) {
@@ -212,6 +227,7 @@ func run(ctx context.Context, args []string, getenv func(string) string, out io.
 	inspect := flags.String("inspect-run", "", "inspect only an original run's immutable facts")
 	validate := flags.Bool("validate", false, "prepare without database access (default)")
 	devBindings := flags.Bool("dev-phone-bindings", false, "prepare/apply exact preserved phone digests for protected fixed-code test login")
+	devEmailBindings := flags.Bool("dev-email-bindings", false, "independent164 exact email-only owner binding for protected fixed123456 test login")
 	database := flags.String("database", "", "exact native database name")
 	databaseOID := flags.Int64("database-oid", 0, "exact native database OID")
 	owner := flags.String("database-owner", "", "exact native database owner role")
@@ -219,7 +235,7 @@ func run(ctx context.Context, args []string, getenv func(string) string, out io.
 	sourceOID := flags.Int64("source-database-oid", 0, "forbidden source database OID in this cluster")
 	deadline := flags.Duration("deadline", 90*time.Second, "bounded operation deadline")
 	if flags.Parse(args) != nil || flags.NArg() != 0 || ctx == nil || ctx.Err() != nil || *deadline < time.Second || *deadline > 2*time.Minute ||
-		*apply && (*inspect != "" || *validate) || *inspect != "" && (*runID != "" || *source != "" || *manifest != "" || *validate || *devBindings) {
+		*devBindings && *devEmailBindings || *apply && (*inspect != "" || *validate) || *inspect != "" && (*runID != "" || *source != "" || *manifest != "" || *validate || *devBindings) {
 		return errArguments
 	}
 	target := postgres.LegacyMigrationTargetIdentity{DatabaseName: *database, DatabaseOID: *databaseOID, Owner: *owner,
@@ -247,6 +263,13 @@ func run(ctx context.Context, args []string, getenv func(string) string, out io.
 			return postgres.ErrLegacyMigrationInvalid
 		}
 		if !*apply {
+			if *devEmailBindings {
+				p, e := legacymigration.BuildDevEmailPlan(*runID, sourceRaw, manifestRaw)
+				if e != nil {
+					return postgres.ErrLegacyMigrationInvalid
+				}
+				return writeDevEmailSummary(out, postgres.LegacyDevEmailBindingResult{RunID: *runID, Status: "DEV_EMAIL_BINDINGS_PREPARED", Counts: p.Counts})
+			}
 			if *devBindings {
 				bindingPlan, e := legacymigration.BuildDevPhonePlan(*runID, sourceRaw, manifestRaw)
 				if e != nil {
@@ -272,7 +295,7 @@ func run(ctx context.Context, args []string, getenv func(string) string, out io.
 	if err != nil {
 		return err
 	}
-	if *devBindings && !devPhoneBindingChannel(config, getenv) {
+	if (*devBindings || *devEmailBindings) && !devPhoneBindingChannel(config, getenv) {
 		return errConfiguration
 	}
 	ctx, cancel := context.WithTimeout(ctx, *deadline)
@@ -290,6 +313,21 @@ func run(ctx context.Context, args []string, getenv func(string) string, out io.
 		result, e := importer.ApplyDevPhoneBindings(ctx, *runID, sourceRaw, manifestRaw)
 		if e == nil || errors.Is(e, postgres.ErrLegacyMigrationUnknown) || errors.Is(e, postgres.ErrLegacyMigrationNotFound) {
 			if outputError := writeDevPhoneSummary(out, result); outputError != nil {
+				return outputError
+			}
+		}
+		return e
+	}
+	if *devEmailBindings {
+		var result postgres.LegacyDevEmailBindingResult
+		var e error
+		if *inspect != "" {
+			result, e = importer.InspectDevEmailBindings(ctx, *runID)
+		} else {
+			result, e = importer.ApplyDevEmailBindings(ctx, *runID, sourceRaw, manifestRaw)
+		}
+		if e == nil || errors.Is(e, postgres.ErrLegacyMigrationUnknown) || errors.Is(e, postgres.ErrLegacyMigrationNotFound) {
+			if outputError := writeDevEmailSummary(out, result); outputError != nil {
 				return outputError
 			}
 		}

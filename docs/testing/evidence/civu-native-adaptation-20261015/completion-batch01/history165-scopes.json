@@ -1,0 +1,47 @@
+{
+  "status": "REGISTERED_ROOT_PARENT_LEASE_WAITING_IMPLEMENTATION_SLOT",
+  "ddl": 165,
+  "contract": "social_history165_contract.md",
+  "evidence": "history165-readonly-receipt01.json",
+  "worker": [
+    "apps/api/migrations/165_legacy_social_history.sql",
+    "apps/api/migrations/165_legacy_social_history.down.sql",
+    "apps/api/internal/legacyhistory/model.go",
+    "apps/api/internal/legacyhistory/build.go",
+    "apps/api/internal/legacyhistory/build_test.go",
+    "apps/api/internal/postgres/legacy_social_history_import.go",
+    "apps/api/internal/postgres/legacy_social_history_native_test.go",
+    "apps/api/cmd/legacy-history-import/main.go",
+    "apps/api/internal/content/journey_history.go",
+    "apps/api/internal/postgres/journey_history.go",
+    "apps/api/internal/httpapi/journey_history.go",
+    "apps/api/internal/inbox/model.go",
+    "apps/api/internal/inbox/page.go",
+    "apps/api/internal/postgres/inbox.go",
+    "apps/api/internal/postgres/inbox_page.go",
+    "apps/api/internal/postgres/moment_interaction.go",
+    "apps/api/internal/httpapi/inbox_page.go",
+    "apps/client/lib/src/content/journey_history_page.dart",
+    "apps/client/lib/src/content/personal_collection_page.dart",
+    "apps/client/lib/src/workspace/remote_inbox_source.dart",
+    "apps/client/lib/src/workspace/inbox.dart",
+    "apps/client/lib/src/workspace/notification_policy_controller.dart",
+    "apps/client/lib/src/workspace/notification_policy_page.dart",
+    "apps/client/test/legacy_social_history_test.dart",
+    "scripts/extract_civu_social_history.py"
+  ],
+  "rootIntegrationOnly": [
+    "apps/api/internal/httpapi/server.go",
+    "apps/api/native_database_startup.go"
+  ],
+  "invariants": [
+    "8 threads and 41 messages, thread owner is authority",
+    "2 deleted Journey links do not resurrect Journeys",
+    "5 draft contexts do not create fake Journeys",
+    "110 original notifications preserve read/seen/deleted/time",
+    "37 original unread are historical, no new delivery/push/event",
+    "2 typed preferences do not activate push/Agent/provider",
+    "no model context, Memory or Agent task auto-import",
+    "sealed original29/social8 and history4 files remain immutable"
+  ]
+}

@@ -32,14 +32,17 @@ func mapMediaProjectionSQL() string {
  'windowStart',stamp.at-interval '30 days','validUntil',` + deadline + `) ELSE NULL END recent,
  recent.token count_token
  FROM bounded b CROSS JOIN stamp CROSS JOIN city c CROSS JOIN payload
- LEFT JOIN LATERAL(SELECT count(*) n,min(m.published_at+interval '30 days') until,
- encode(sha256(convert_to(coalesce(jsonb_agg(jsonb_build_array(m.id,m.xmin::text,a.xmin::text,
+ LEFT JOIN LATERAL(SELECT count(DISTINCT m.id) n,min(least(m.published_at+interval '30 days',links.deadline,` + momentPublishableMediaDeadlineSQL("m") + `)) until,
+ encode(sha256(convert_to(coalesce(jsonb_agg(jsonb_build_array(m.id,m.xmin::text,a.xmin::text,links.binding,
  ` + mapPublicAuthorSafetyGenerationSQL + `,
  (SELECT coalesce(jsonb_agg(jsonb_build_array(ep.owner_account_id,ep.target_account_id,ep.version,ep.xmin::text) ORDER BY ep.owner_account_id,ep.target_account_id),'[]'::jsonb)
  FROM person_block_control_epochs ep WHERE $6::uuid IS NOT NULL AND
  ((ep.owner_account_id=$6 AND ep.target_account_id=a.id) OR(ep.owner_account_id=a.id AND ep.target_account_id=$6)))) ORDER BY m.id),'[]'::jsonb)::text,'UTF8')),'hex') token
  FROM moments m JOIN accounts a ON a.id=m.author_account_id
- WHERE m.place_id=b.id::uuid AND m.city_id=$1 AND ` + recentPublicMomentPredicate("stamp.at", "$6") + `) recent ON true
+ JOIN LATERAL(SELECT min(location.deadline) deadline,string_agg(location.binding,':' ORDER BY location.id) binding
+   FROM birdtie_moment_locations_public(m.id,stamp.at) location
+   WHERE location.kind='PLACE' AND location.precision='place' AND location.place_id=b.id::uuid HAVING count(*)>0) links ON true
+ WHERE ` + recentPublicMomentPredicate("stamp.at", "$6") + `) recent ON true
  WHERE b.kind='PLACE' AND b.rank<=30),
  map_media_payload AS MATERIALIZED(SELECT
  coalesce((SELECT jsonb_agg(item || CASE WHEN item->>'kind'='PLACE' THEN

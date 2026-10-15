@@ -21,10 +21,11 @@ var _ ph.StoreWithAuthor = (*Store)(nil)
 // time-window markers used by historyPageSQLFromBase; neither caller counts a
 // bounded preview page, public author profile, or private attachment.
 func recentPublicMomentPredicate(at, viewer string) string {
-	return `m.status='published' AND m.visibility='public' AND m.location_precision='place'
+	return `m.status='published' AND m.visibility='public'
    AND m.author_confirmed_at IS NOT NULL AND m.author_confirmed_at<=m.published_at
    AND m.published_at>=` + at + `-interval '30 days' AND m.published_at<=` + at + `
    AND a.account_type='person' AND a.status='active'
+   AND birdtie_moment_public_binding(m.id,` + viewer + `::uuid,` + at + `) IS NOT NULL
    AND NOT EXISTS(SELECT 1 FROM account_blocks b WHERE ` + viewer + `::uuid IS NOT NULL
     AND ((b.blocker_account_id=` + viewer + ` AND b.blocked_account_id=a.id) OR (b.blocker_account_id=a.id AND b.blocked_account_id=` + viewer + `)))`
 }
@@ -38,7 +39,9 @@ var placeHistoryPayloadSQL = `WITH clock AS MATERIALIZED (SELECT clock_timestamp
    AND (p.expires_at IS NULL OR p.expires_at>clock.at) AND (c.expires_at IS NULL OR c.expires_at>clock.at)
    AND ` + currentRetainedPlaceVisibilitySQL("p", "clock.at") + `),
  recent AS MATERIALIZED (SELECT m.id,m.title,left(m.body,280) excerpt,m.revision,m.published_at FROM moments m
-   JOIN target t ON t.id=m.place_id AND t.city_id=m.city_id JOIN accounts a ON a.id=m.author_account_id CROSS JOIN clock
+   JOIN target t ON EXISTS(SELECT 1 FROM birdtie_moment_locations_public(m.id,(SELECT at FROM clock)) location
+     WHERE location.kind='PLACE' AND location.precision='place' AND location.place_id=t.id)
+   JOIN accounts a ON a.id=m.author_account_id CROSS JOIN clock
    WHERE ` + recentPublicMomentPredicate("clock.at", "$2") + `),
  arrangements AS MATERIALIZED (SELECT COALESCE(a.category_code,'') category,
    CASE WHEN extract(isodow FROM a.starts_at AT TIME ZONE a.time_zone) IN (6,7) THEN 'WEEKEND' ELSE 'WEEKDAY' END day_kind

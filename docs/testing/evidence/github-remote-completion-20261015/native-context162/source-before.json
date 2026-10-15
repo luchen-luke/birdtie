@@ -1,0 +1,28 @@
+{
+  "at": "2026-10-15T10:23:12.972401+00:00",
+  "scope": {
+    "apps/api/migrations/162_legacy_native_contexts.sql": null,
+    "apps/api/migrations/162_legacy_native_contexts.down.sql": null,
+    "apps/api/internal/legacycontext/model.go": null,
+    "apps/api/internal/legacycontext/build.go": null,
+    "apps/api/internal/legacycontext/build_test.go": null,
+    "apps/api/internal/legacycatalog/catalog.go": "794ff34d2f0a8e42b6b3df443cc98c4e44890e88245fb1f87d3af0aff98218c5",
+    "apps/api/internal/postgres/legacy_context_adaptation.go": null,
+    "apps/api/internal/postgres/legacy_context_adaptation_native_test.go": null,
+    "apps/api/cmd/legacy-context-import/main.go": null,
+    "apps/api/internal/postgres/legacy_place_reference.go": "60a95cad17bab225985eee1652728f1ae2826eb088460dbe2efeb608f09ffe86",
+    "apps/api/internal/legacyplacereference/model.go": "0bb88d091c6475900af56864ada7eb5da91d541a668342aa2c91259e255a597f",
+    "apps/api/internal/content/moment_locations.go": "85a20c04b16c1899d73bd437045d803fdb58ddff3cf88c467f6129d288588548",
+    "apps/api/internal/postgres/moment_locations.go": "bfb40f8434f128ff98a1d2a2186ba58a864ed0ceeb68bfd97fd39448215af22c",
+    "apps/api/internal/postgres/saved_page.go": "783a90e308f195fce11ec9023f293a42ff9c667b62e4dc4c5000a1539b61d11c",
+    "apps/api/internal/content/moment_thread.go": "6ea6981047809da00c3e9255fbcbe572910e7da5e9daa39b48e042088ca8d9f3",
+    "apps/api/internal/postgres/moment_thread.go": "30f2ec1fa457e4b7e635749383ff859a97538bbb8dba97db66b386ff7824ef20",
+    "apps/api/internal/httpapi/moment_thread.go": "216ae1d0b9c1531efec5e237c62f563849ed16876ebbe0c18568c8ff45d71b63",
+    "apps/api/internal/content/moment_media_context.go": null,
+    "apps/api/internal/postgres/moment_media_context.go": null,
+    "apps/api/internal/httpapi/moment_media_context.go": null,
+    "apps/api/internal/content/moment.go": "2bb4e779ea1bd89813f8876a4efb2c9ff5d183b909ae9b7f4fe1923e01887819",
+    "apps/api/internal/content/moment_control.go": "216a5d4c178f76227aa5d357edbc83641f3d9850f9aa9f74b0d8e021d0757275",
+    "apps/api/internal/postgres/moment_control.go": "faa2a0539e60cfffcb8221d332f2ea4b143b7513006c06770beb8ea3b14b0510"
+  }
+}

@@ -1,0 +1,93 @@
+{
+  "status": "SOURCE_READY",
+  "scopeFiles": 25,
+  "sourceFrame": "history165-source-final02.json",
+  "sourceFrameSHA256": "e848d8dd1d2b914308609161fcd93c592bf9849edd539f32b7b153f73ff34dde",
+  "pureTests": [
+    {
+      "test": "TestHistoricalProjectionKeepsThreadOwnerRolesAndOriginalNotificationState",
+      "status": "PASS",
+      "log": "history165-direct01.log"
+    },
+    {
+      "test": "TestLegacySocialHistorySealedSyntheticProjection",
+      "status": "PASS",
+      "log": "history165-direct03.log"
+    }
+  ],
+  "relatedGoCompilation": "PASS via final postgres direct03+actual CLI prepare02; related httpapi/content/inbox compilation in direct02",
+  "failureEvidence": [
+    "history165-compile01.log: own any proof corrected; shared163 mid-edit syntax snapshot",
+    "history165-direct02.log: synthetic social schema fixture used placeholder; corrected to pinned legacysocial.SourceSchemaSHA256; product real prepare01 already passed",
+    "history165-native01/receipt.json and stdout.jsonl: initial fixture token rejected401; all migration and import/replay assertions had passed before first HTTP"
+  ],
+  "client": {
+    "command": "flutter test test/legacy_social_history_test.dart --reporter expanded",
+    "exitCode": 0,
+    "passed": 3,
+    "failed": 0,
+    "skipped": 0,
+    "log": "history165-client01.log"
+  },
+  "analysis": {
+    "scopedFiles": 6,
+    "errors": 0,
+    "warnings": 0,
+    "infos": 63,
+    "exitCode": 0,
+    "log": "history165-analyze01.log"
+  },
+  "detector": {
+    "runs": 1,
+    "findings": 0,
+    "log": "history165-impeccable01.log"
+  },
+  "realPrepare": {
+    "log": "history165-real-prepare02.json",
+    "status": "PREPARED_NOT_IMPORTED",
+    "counts": {
+      "threads": 8,
+      "messages": 41,
+      "notifications": 110,
+      "deletedNotifications": 1,
+      "historicalUnread": 37,
+      "preferences": 2
+    },
+    "sourceWrites": 0,
+    "nativeWrites": 0,
+    "modelCalls": 0,
+    "pushEffects": 0,
+    "newNotificationEffects": 0,
+    "agentActivated": false
+  },
+  "nativeTest": "TestLegacySocialHistoryNativePrivateOwnerInertInboxAndRepeat",
+  "nativeStatus": "PASS",
+  "visualDeviceValidation": "NOT_RUN",
+  "remoteApply": "NOT_RUN",
+  "newShippedExtractorExecution": "NOT_RUN_BY_WORKER_EXISTING_APPROVED_WORK_CAPTURE_ALREADY_PRESERVED",
+  "limitations": [
+    "History notification destinations show neutral typed event summaries and require current existing detail authorization; cached source title/cover are not projected.",
+    "Original preferences are typed read-only historical facts; their true booleans never activate current notification routing or push."
+  ],
+  "notes": [
+    "No model runtime/Memory/task/command import.",
+    "Thread owner alone controls private conversation history; deleted Journey and draft-context never create new Journeys.",
+    "History inbox unread is separated from native current badge; original read/seen/deleted/time immutable, native read/delete do not resurrect on replay.",
+    "Only these25 paths frozen; root/163/166 unrelated work may continue."
+  ],
+  "native": {
+    "receipt": "history165-native02/receipt.json",
+    "passed": 1,
+    "failed": 0,
+    "skipped": 0,
+    "actualMigrationsLoaded": 166,
+    "snapshotSourceStable": true,
+    "assignedParentSourceStable": true,
+    "parentIdentityStable": true,
+    "database": "Independent random marked synthetic child, removed by owned fixture",
+    "initialFailure": "history165-native01: synthetic Bearer lacked canonical bts1_ 32-byte token encoding; only test changed to identity.NewToken; production Auth unchanged"
+  },
+  "changedSinceFirstFreeze": [
+    "apps/api/internal/postgres/legacy_social_history_native_test.go"
+  ]
+}

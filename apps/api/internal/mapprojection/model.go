@@ -20,6 +20,8 @@ const SchemaVersion = "typed-map-layers-v1"
 const PublicAuthorSchemaVersion = "typed-map-layers-v2"
 const MediaSchemaVersion = "typed-map-layers-v3"
 const MomentMediaSchemaVersion = "typed-map-layers-v4"
+const LocationsSchemaVersion = "typed-map-layers-v5"
+const ReferenceSchemaVersion = "typed-map-layers-v6"
 const Public = "PUBLIC"
 const PublicAuthor = "PUBLIC_AUTHOR"
 const SelfPrivate = "SELF_PRIVATE"
@@ -49,9 +51,17 @@ type Query struct {
 	AuthorID                 string
 	Media                    bool
 	MomentMedia              bool
+	References               bool
+	Locations                bool
 }
 
 func ValidateQuery(q Query) error {
+	if q.References && !q.Locations {
+		return ErrInvalid
+	}
+	if q.Locations && (q.Private || !q.MomentMedia || q.Media) {
+		return ErrInvalid
+	}
 	if q.MomentMedia && (q.Private || q.Media) {
 		return ErrInvalid
 	}
@@ -80,6 +90,9 @@ type Ref struct {
 	ID   string `json:"id"`
 }
 type Anchor struct {
+	ReferenceID      string  `json:"referenceId,omitempty"`
+	TargetKind       string  `json:"targetKind,omitempty"`
+	Attribution      string  `json:"attribution,omitempty"`
 	PlaceID          string  `json:"placeId"`
 	Label            string  `json:"label"`
 	CoordinateSystem string  `json:"coordinateSystem"`
@@ -95,6 +108,7 @@ type Item struct {
 	Detail        Ref            `json:"detailRef"`
 	Anchor        Anchor         `json:"anchor"`
 	SourceVersion string         `json:"sourceVersion"`
+	PinIdentity   string         `json:"pinIdentity,omitempty"`
 	PlacePhoto    *pp.Metadata   `json:"placePhoto,omitempty"`
 	RecentMoments *RecentMoments `json:"recentMoments,omitempty"`
 	MomentPhoto   *mp.Metadata   `json:"momentPhoto,omitempty"`
@@ -200,14 +214,17 @@ func ValidItem(i Item, scope string) bool {
 		ids := strings.Split(i.ID, ":")
 		return scope == SelfPrivate && len(ids) == 2 && businessconsole.ValidID(ids[0]) && businessconsole.ValidID(ids[1]) && i.Detail.Type == "ACTIVITY" && i.Detail.ID == ids[1] && businessconsole.ValidID(i.Anchor.PlaceID)
 	}
+	if i.Anchor.ReferenceID != "" || i.Anchor.TargetKind != "" || i.Anchor.Attribution != "" {
+		return scope == Public && i.Kind == "MOMENT" && businessconsole.ValidID(i.ID) && i.Detail == i.Entity && i.Anchor.PlaceID == "" && i.Anchor.TargetKind == "REFERENCE" && businessconsole.ValidID(i.Anchor.ReferenceID) && i.Anchor.Attribution == "© OpenStreetMap contributors · ODbL 1.0"
+	}
 	return scope == Public && businessconsole.ValidID(i.ID) && i.Detail == i.Entity && ((i.Kind == "ORGANIZATION" && i.Anchor.PlaceID == "") || (i.Kind != "ORGANIZATION" && businessconsole.ValidID(i.Anchor.PlaceID)))
 }
 func ValidateView(v View) error {
 	if v.Scope == PublicAuthor {
-		if (v.SchemaVersion != PublicAuthorSchemaVersion && v.SchemaVersion != MomentMediaSchemaVersion) || !businessconsole.ValidID(v.AuthorID) || len(v.Items) > MaxPublicAuthorItems {
+		if (v.SchemaVersion != PublicAuthorSchemaVersion && v.SchemaVersion != MomentMediaSchemaVersion && v.SchemaVersion != LocationsSchemaVersion && v.SchemaVersion != ReferenceSchemaVersion) || !businessconsole.ValidID(v.AuthorID) || len(v.Items) > MaxPublicAuthorItems {
 			return ErrInvalid
 		}
-	} else if (v.SchemaVersion != SchemaVersion && !((v.SchemaVersion == MediaSchemaVersion || v.SchemaVersion == MomentMediaSchemaVersion) && v.Scope == Public)) || (v.Scope != Public && v.Scope != SelfPrivate) || v.AuthorID != "" {
+	} else if (v.SchemaVersion != SchemaVersion && !((v.SchemaVersion == MediaSchemaVersion || v.SchemaVersion == MomentMediaSchemaVersion || v.SchemaVersion == LocationsSchemaVersion || v.SchemaVersion == ReferenceSchemaVersion) && v.Scope == Public)) || (v.Scope != Public && v.Scope != SelfPrivate) || v.AuthorID != "" {
 		return ErrInvalid
 	}
 	if v.Items == nil || len(v.Items) > MaxItems || v.ObservedAt.Year() < 1 || v.ObservedAt.Year() > 9999 || v.ValidUntil.Year() > 9999 || !v.ValidUntil.After(v.ObservedAt) || v.ValidUntil.Sub(v.ObservedAt) > 2*time.Minute || ValidateQuery(Query{CityID: v.CityID, West: -180, South: -90, East: 180, North: 90}) != nil {
@@ -216,11 +233,22 @@ func ValidateView(v View) error {
 	seen := map[string]bool{}
 	for _, i := range v.Items {
 		key := i.Kind + ":" + i.ID
+		if (v.SchemaVersion == LocationsSchemaVersion || v.SchemaVersion == ReferenceSchemaVersion) && i.Kind == "MOMENT" {
+			if !businessconsole.ValidID(i.PinIdentity) {
+				return ErrInvalid
+			}
+			key += ":" + i.PinIdentity
+		} else if i.PinIdentity != "" {
+			return ErrInvalid
+		}
+		if i.Anchor.ReferenceID != "" && v.SchemaVersion != ReferenceSchemaVersion {
+			return ErrInvalid
+		}
 		if !ValidItem(i, v.Scope) || seen[key] {
 			return ErrInvalid
 		}
 		if i.PlacePhoto != nil || i.RecentMoments != nil {
-			if (v.SchemaVersion != MediaSchemaVersion && v.SchemaVersion != MomentMediaSchemaVersion) || v.Scope != Public || i.Kind != "PLACE" || i.ID != i.Anchor.PlaceID {
+			if (v.SchemaVersion != MediaSchemaVersion && v.SchemaVersion != MomentMediaSchemaVersion && v.SchemaVersion != LocationsSchemaVersion && v.SchemaVersion != ReferenceSchemaVersion) || v.Scope != Public || i.Kind != "PLACE" || i.ID != i.Anchor.PlaceID {
 				return ErrInvalid
 			}
 			if i.PlacePhoto != nil && (i.PlacePhoto.EntityID != i.ID || !i.PlacePhoto.Valid(v.ObservedAt)) {
@@ -230,7 +258,7 @@ func ValidateView(v View) error {
 				return ErrInvalid
 			}
 		}
-		if i.MomentPhoto != nil && (v.SchemaVersion != MomentMediaSchemaVersion || (v.Scope != Public && v.Scope != PublicAuthor) || i.Kind != "MOMENT" || i.MomentPhoto.MomentID != i.ID || !i.MomentPhoto.Valid(v.ObservedAt)) {
+		if i.MomentPhoto != nil && ((v.SchemaVersion != MomentMediaSchemaVersion && v.SchemaVersion != LocationsSchemaVersion && v.SchemaVersion != ReferenceSchemaVersion) || (v.Scope != Public && v.Scope != PublicAuthor) || i.Kind != "MOMENT" || i.MomentPhoto.MomentID != i.ID || !i.MomentPhoto.Valid(v.ObservedAt)) {
 			return ErrInvalid
 		}
 		seen[key] = true
@@ -256,7 +284,7 @@ func ValidateViewForQuery(v View, q Query) error {
 	if q.Media != (v.SchemaVersion == MediaSchemaVersion) {
 		return ErrInvalid
 	}
-	if q.MomentMedia != (v.SchemaVersion == MomentMediaSchemaVersion) {
+	if q.MomentMedia != (v.SchemaVersion == MomentMediaSchemaVersion || v.SchemaVersion == LocationsSchemaVersion || v.SchemaVersion == ReferenceSchemaVersion) || q.Locations != (v.SchemaVersion == LocationsSchemaVersion || v.SchemaVersion == ReferenceSchemaVersion) || q.References != (v.SchemaVersion == ReferenceSchemaVersion) {
 		return ErrInvalid
 	}
 	return nil

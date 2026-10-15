@@ -1,0 +1,51 @@
+{
+  "sshExitCode": 0,
+  "sshStderrBytes": 0,
+  "sshStderrSHA256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "remoteProgramSHA256": "62f90b2e315b6b74601dbbee017cd4aa44aa8b32d43e9558ae3ad98fd7788dca",
+  "result": {
+    "status": "ONE_HEIC_READONLY_DIAGNOSED",
+    "selectedImages": 1,
+    "candidateHEICCount": 22,
+    "sameProductArguments": true,
+    "binarySHA256": "0cd22792b8f42a0027d679207af3d030171b5732c0459a07dc4cb1cf6a53f4de",
+    "packageVersion": "1.17.6-1ubuntu4.9",
+    "helpHasThreadsFlag": false,
+    "helpHasQuietFlag": true,
+    "exitCode": 1,
+    "killedBySupervisor": null,
+    "elapsedSeconds": 0.041,
+    "stdoutBytes": 22,
+    "stderrBytes": 66,
+    "stderrSHA256": "7db4accafe53feaa17fa4ffb7d59fa7353b080b99194b3f9ea5231bfe8de5932",
+    "structuralFlags": {
+      "memoryAllocation": false,
+      "resourceUnavailable": false,
+      "unsupported": true,
+      "securityLimit": false,
+      "invalidInput": false,
+      "permission": false,
+      "missingLibrary": false,
+      "warning": false,
+      "successfulWrite": false
+    },
+    "structuralErrors": [
+      "Could not decode image: 0: Unsupported feature: Unsupported codec"
+    ],
+    "outputBytes": 0,
+    "outputPNG": false,
+    "outputDimensions": null,
+    "peakRSSBytes": 1888256,
+    "peakVirtualBytes": 6000640,
+    "memorySamples": 2,
+    "sourceInputsUnchanged": true,
+    "verifiedProtectedFiles": 33,
+    "databaseConfigurationSupplied": false,
+    "databaseWrites": 0,
+    "sourceWrites": 0,
+    "mediaImported": false,
+    "packageChanges": false,
+    "privateValuesOmitted": true,
+    "scratchRemoved": true
+  }
+}

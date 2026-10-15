@@ -1,0 +1,107 @@
+{
+  "sshExitCode": 0,
+  "stderrBytes": 0,
+  "remoteProgramSHA256": "078721adb11e7b4efc4d819b04e19d44a1a40eb487fdb57404890e6cbbc71499",
+  "result": {
+    "mode": "READ_ONLY",
+    "serviceMutations": 0,
+    "sourceWrites": 0,
+    "nativeDatabaseWrites": 0,
+    "apiState": {
+      "Status": "exited",
+      "Running": false,
+      "ExitCode": 1,
+      "OOMKilled": false,
+      "StartedAt": "2026-10-15T10:58:09.952109151Z",
+      "FinishedAt": "2026-10-15T10:58:10.45736804Z",
+      "dockerErrorPresent": false
+    },
+    "knownEnvironment": {
+      "PORT": "4000",
+      "CPUS": "1",
+      "NODE_OPTIONS": "--max-old-space-size=128",
+      "PELIAS_CONFIG": "/code/pelias.json"
+    },
+    "hostBindings": {
+      "4000/tcp": [
+        {
+          "HostIp": "127.0.0.1",
+          "HostPort": "14016"
+        }
+      ]
+    },
+    "networkMode": "birdtie-geocoder166",
+    "logBytes": 893,
+    "errorCodes": [],
+    "classifiers": {
+      "invalidConfig": false,
+      "missingConfigFile": false,
+      "missingModule": false,
+      "addressInUse": false,
+      "elasticConnectionRefused": false,
+      "dnsFailed": false,
+      "permissionDenied": false,
+      "syntaxError": false,
+      "startedListening": false,
+      "clusterWorkerDied": false,
+      "fatalOrUncaught": false,
+      "unknownCommand": false,
+      "oom": false,
+      "configSchema": true
+    },
+    "safeMissingModuleNames": [],
+    "stackKnownFiles": [
+      "pelias/api/helper/TypeMapping.js",
+      "pelias/api/helper/type_mapping.js",
+      "pelias/api/node_modules/pelias-config/index.js"
+    ],
+    "errorTypeTokens": [],
+    "imageEntrypoint": {
+      "equalsImage": true,
+      "sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b",
+      "knownTokens": [],
+      "tokenCount": 0
+    },
+    "imageCmd": {
+      "equalsImage": true,
+      "sha256": "0dc3e25ed22a211c8ca5197412e1bc0955da6334818aa9cf4cc2b6de8391146c",
+      "knownTokens": [],
+      "tokenCount": 1
+    },
+    "containerEntrypoint": {
+      "equalsImage": true,
+      "sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b",
+      "knownTokens": [],
+      "tokenCount": 0
+    },
+    "containerCmd": {
+      "equalsImage": true,
+      "sha256": "0dc3e25ed22a211c8ca5197412e1bc0955da6334818aa9cf4cc2b6de8391146c",
+      "knownTokens": [],
+      "tokenCount": 1
+    },
+    "configKeys": [
+      "api",
+      "esclient",
+      "logger"
+    ],
+    "apiConfigKeys": [
+      "accessLog",
+      "defaultSize",
+      "exposeInternalDebugTools",
+      "indexName",
+      "maxSize",
+      "minSize",
+      "services"
+    ],
+    "elasticConfigKeys": [
+      "hosts"
+    ],
+    "elasticsearchConfigKeys": [],
+    "elasticPointsToNewService": false,
+    "configContainsOldService": false,
+    "apiHostConfigIsLoopback": false,
+    "apiHostConfigIsAllInterfaces": false,
+    "apiPortConfig": null
+  }
+}

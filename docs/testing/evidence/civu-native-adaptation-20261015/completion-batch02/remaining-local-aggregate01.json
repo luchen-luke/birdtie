@@ -1,0 +1,56 @@
+{
+  "unplacedPlaces": {
+    "count": 247,
+    "countries": {
+      "UNKNOWN": 217,
+      "IS": 24,
+      "GB": 6
+    },
+    "adminKinds": {
+      "UNKNOWN": 217,
+      "country": 24,
+      "district": 5,
+      "travel_region": 1
+    }
+  },
+  "remainingSaved": {
+    "count": 5,
+    "owners": 2,
+    "activeUnplaced": 5,
+    "mergedAliases": 0
+  },
+  "multiPlaceNotes": {
+    "count": 2,
+    "relations": 4,
+    "mappedCountsPerNote": [
+      0,
+      2
+    ]
+  },
+  "mediaLocations": {
+    "totalSourceRows": 94,
+    "liveRows": 71,
+    "liveNotes": 37,
+    "coordinatePairs": 49,
+    "mapEnabled": 49,
+    "capturedDates": 15,
+    "sourcePlaceRefs": 43,
+    "mappedPlaceRefs": 41,
+    "coordinateCRS": "NOT_RECORDED_IN_SOURCE_RELATION"
+  },
+  "threadMetadata": {
+    "sourceThreads": 26,
+    "sourceLegs": 5,
+    "liveNotesWithThreadMetadata": 27,
+    "liveDistinctThreads": 22,
+    "liveGroupSizeDistribution": {
+      "1": 19,
+      "4": 1,
+      "2": 2
+    },
+    "deletedOnlyThreads": 4,
+    "legsWithBothNotesLive": 5
+  },
+  "sourceWrites": 0,
+  "privateValuesOmitted": true
+}

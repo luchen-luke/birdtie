@@ -1,0 +1,122 @@
+{
+  "heic161-packages-readonly01.json": {
+    "sha256": "26c2eab48bba93180401214e430ba5236b58d7e69226629097c452cf3c6e7102",
+    "bytes": 3029
+  },
+  "heic161-plugin-readonly01.json": {
+    "sha256": "0549f0733693e1c3c2ab4a905568490dcf88e93db21695194b08012afb661a26",
+    "bytes": 4037
+  },
+  "heic161-readonly-diagnostic01.json": {
+    "sha256": "c48ac5a1adce19e2130752633b87405932842880d639890698d4d1e72cee92d2",
+    "bytes": 1688
+  },
+  "pelias166-activation-receipt01.json": {
+    "sha256": "6c4993faa9bf5ad873ea35dc7f5b5f6f758284a6631c6c1aff18144ead7e8844",
+    "bytes": 400
+  },
+  "pelias166-api-diagnostic02.json": {
+    "sha256": "7802bd354f6b60963ade879185b8373ca3476c95e982281e4de35a851447041a",
+    "bytes": 2981
+  },
+  "pelias166-api-log-schema02.json": {
+    "sha256": "77565c8bdb11c1d4ad5b5601a7eeff809074fe36f3de4231ccf9afac8acf4268",
+    "bytes": 5362
+  },
+  "pelias166-api-public-schema02.json": {
+    "sha256": "260971ce97377f64695414770e653fde5029ac81bf05cb8083211f2ebc789ee9",
+    "bytes": 1090
+  },
+  "pelias166-api-schema-diagnostic02.json": {
+    "sha256": "6f09d0cc943c0af4e7b10a0a549b3cc7471442a8630f7bf924b9e0f8fe08ec1b",
+    "bytes": 553
+  },
+  "pelias166-network-diagnostic01.json": {
+    "sha256": "fdd5bdf3147a4221c3f870129a2bc4f026951fb72ec4c8d87c88fc1c511d40c8",
+    "bytes": 615
+  },
+  "pelias166-oom-diagnostic01.json": {
+    "sha256": "42608a0c584b5fec16b74833b704ffd379919aa9aca6942af9ab444c654f8c91",
+    "bytes": 461
+  },
+  "pelias166-persistence01.json": {
+    "sha256": "4f2371ca606b3824a5c3e5ce68f6709f73fc3d1af33f1af01e3b99506e894365",
+    "bytes": 412
+  },
+  "pelias166-readonly-diagnostic01.json": {
+    "sha256": "0412d42139f8340044fe298f255e4639c94fed79c33f0cc6808925322efd8dc6",
+    "bytes": 2183
+  },
+  "pelias166-readonly-receipt01.json": {
+    "sha256": "0cde04f17b3a5cba77b26bfde92aae1acfc12994643d1431622431780f63bd85",
+    "bytes": 452
+  },
+  "pelias166-readonly-receipt02.json": {
+    "sha256": "205550210ec5538ab16b3c0c30e98df9702e9590a54697c99ce60f77ca28c0fb",
+    "bytes": 7375
+  },
+  "pelias166-readonly-receipt03.json": {
+    "sha256": "cbbd5416e6d3c271494be0b232f8dfcbbd56bece3891a145912b44f3a1711fa1",
+    "bytes": 443
+  },
+  "pelias166-readonly-receipt04.json": {
+    "sha256": "49539b29fafa53ffb1292a3203256c274c57f854222e6d1861dca93807dac839",
+    "bytes": 7759
+  },
+  "pelias166-recover03-readonly-preflight.json": {
+    "sha256": "a0b6cb61a46d1ad826627bbe727c68e420a87c4fc4beede20a43b4aeb07e5237",
+    "bytes": 460
+  },
+  "pelias166-recover03-readonly-preflight02.json": {
+    "sha256": "65188d673fc5fb4d4ad346b54c16a03cc9a432a321e5ebb3a273cb528b34cebd",
+    "bytes": 460
+  },
+  "pelias166-recover03-readonly-preflight03.json": {
+    "sha256": "8440fc900959f4a19262b3c6ba89abc26aac5690fb0fb559d81177ef754acff4",
+    "bytes": 502
+  },
+  "pelias166-recover03-readonly-preflight04.json": {
+    "sha256": "cfd92c775958bb9521a71af55badece139310bd6591842a0c63cb1515d3582b8",
+    "bytes": 550
+  },
+  "pelias166-recover03-shallow-preflight.json": {
+    "sha256": "00195464a9608814683d55612e43b72e441b999b1bd957183a8d91161594c2f7",
+    "bytes": 3091
+  },
+  "pelias166-recovery-receipt02.json": {
+    "sha256": "397b40c6d7aac32032166c105985486b7e61aa8351328a64aa160f6288c70773",
+    "bytes": 704
+  },
+  "pelias166-recovery-receipt03.json": {
+    "sha256": "6a211eb54e63f4880c517cbfbeeb222beac12bf96da307b178f1c7554ea520fb",
+    "bytes": 2073
+  },
+  "pelias166-startup-diagnostic01.json": {
+    "sha256": "74ea73ed5735da4dcff907af1e092547e9306099985c8b2a087e1b129f287be5",
+    "bytes": 5185
+  },
+  "pelias166-thread-diagnostic01.json": {
+    "sha256": "9418fa098accf93e1a5c936bc46ef8afce9fba5fde0a9e4fea7a1f13dec43349",
+    "bytes": 951
+  },
+  "remaining-local-aggregate01.json": {
+    "sha256": "8c170246cd9a4a62ac8695e053fe2b7c064b1f29ba7033ffbbd0fda3c8a29820",
+    "bytes": 1139
+  },
+  "remaining-remote-readonly-receipt.json": {
+    "sha256": "42981fc2965e1cec2cf547d2c634b3ecf87fdcfb3c5e77dd7ffe7ba1ad50d0cc",
+    "bytes": 17539
+  },
+  "remaining-remote-readonly-receipt02.json": {
+    "sha256": "8db1f33da7b4aebc59641e17f8140e89c2f8faddbf607bf8d50b3644cad0f182",
+    "bytes": 19782
+  },
+  "remaining-source-empty-check01.json": {
+    "sha256": "2223643e14b61096970ff259ad4c39e8df09eeefd55fca40bfa9e73b8b43d3ef",
+    "bytes": 507
+  },
+  "receipt.json": {
+    "sha256": "2f270b42a0bb1d7826d0d3560f4326ec129e3ed32c26a595c64244e33656184f",
+    "bytes": 1937
+  }
+}

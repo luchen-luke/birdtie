@@ -33,6 +33,7 @@ class _CreationFixture {
     client = _BorrowedClient((r) async {
       calls.add(r);
       if (r.url.path == '/v1/me/moment-controls/previews') {
+        if (previewStatus != 200) return _json({}, status: previewStatus);
         final m = jsonDecode(r.body) as Map<String, dynamic>;
         final input = MomentControlInput(
           operationID: m['operationId'],
@@ -41,7 +42,12 @@ class _CreationFixture {
           input: Map<String, Object?>.from(m['input']),
         );
         inputs[input.operationID] = input;
-        return _json(mcPreview(input));
+        return _json(
+          mcPreview(input)..addAll({
+            'locations': <Object>[],
+            'locationsSourceVersion': List.filled(64, 'b').join(),
+          }),
+        );
       }
       if (r.method == 'PUT') {
         final pending = pendingWrite;
@@ -87,10 +93,11 @@ class _CreationFixture {
   final rows = <Map<String, Object?>>[];
   late final _BorrowedClient client;
   http.Client? transport;
-  late final PrivateMomentController moments;
+  late PrivateMomentController moments;
   Completer<http.Response>? pendingWrite;
   Completer<http.Response>? pendingContexts;
   int writeStatus = 201;
+  int previewStatus = 200;
   int contextStatus = 200;
   bool current = true;
   List<http.Request> get writes =>
@@ -163,8 +170,8 @@ class _CreationFixture {
   }
 
   Future<void> fill(WidgetTester t) async {
-    await t.enterText(find.byType(TextFormField).first, '可检查的私人动态');
-    await t.enterText(find.byType(TextFormField).last, '保留真实正文');
+    expect(find.byType(TextFormField), findsOneWidget);
+    await t.enterText(find.byType(TextFormField), '保留真实正文');
   }
 
   Future<void> save(WidgetTester t) async {
@@ -235,11 +242,8 @@ void main() {
       f.calls.where((r) => r.url.path.endsWith('/previews')),
       hasLength(1),
     );
-    expect(jsonDecode(request.body)['input'], containsPair('cityId', 'alpha'));
-    expect(
-      jsonDecode(request.body)['input'],
-      containsPair('title', '可检查的私人动态'),
-    );
+    expect(jsonDecode(request.body)['input'], containsPair('cityId', ''));
+    expect(jsonDecode(request.body)['input'], containsPair('title', ''));
     expect(jsonDecode(request.body)['input'], containsPair('body', '保留真实正文'));
     expect(
       jsonDecode(request.body)['input'],
@@ -267,7 +271,7 @@ void main() {
     expect(f.writes, isEmpty);
   });
 
-  for (final boundary in ['ownerABA', 'workspaceABA', 'cityABA', 'source']) {
+  for (final boundary in ['ownerABA', 'workspaceABA', 'source']) {
     testWidgets('$boundary 同步退休私人草稿，不能因返回原值复活保存', (t) async {
       final f = _CreationFixture();
       addTearDown(f.dispose);
@@ -292,9 +296,6 @@ void main() {
         case 'workspaceABA':
           f.workspace.value = '82000000-0000-4000-8000-000000000002';
           f.workspace.value = null;
-        case 'cityABA':
-          f.city.selectCity('beta');
-          f.city.selectCity('alpha');
         case 'source':
           f.current = false;
           f.source.value++;
@@ -309,6 +310,24 @@ void main() {
       expect(t.takeException(), isNull);
     });
   }
+
+  testWidgets('探索城市切换不会退休无城市动态或添加发布门槛', (t) async {
+    final f = _CreationFixture();
+    addTearDown(f.dispose);
+    await f.mount(t);
+    await f.open(t);
+    await f.fill(t);
+    f.city.selectCity('beta');
+    f.city.selectCity('alpha');
+    await t.pumpAndSettle();
+    expect(find.text('新建动态'), findsOneWidget);
+    await f.save(t);
+    await t.pumpAndSettle();
+    final input = jsonDecode(f.writes.single.body)['input'];
+    expect(input['cityId'], '');
+    expect(input['locations'], isEmpty);
+    expect(input['body'], '保留真实正文');
+  });
 
   testWidgets('来源退休只移除自有草稿 route，不弹出其上另一个页面', (t) async {
     final f = _CreationFixture();
@@ -378,36 +397,32 @@ void main() {
     expect(f.results, [true]);
   });
 
-  testWidgets('社群组织只按需读取，复用指定源和借用client且关闭草稿不关闭连接', (t) async {
+  testWidgets('可选位置只按需读取，取消保留草稿且借用client不关闭连接', (t) async {
     final f = _CreationFixture();
     addTearDown(f.dispose);
     await f.mount(t);
     await f.open(t);
     expect(f.calls, isEmpty);
-    await f.tapSheet(t, '选择我加入的社群或组织');
+    await f.tapSheet(t, '添加位置');
     await t.pumpAndSettle();
-    expect(f.calls.map((r) => r.url.path), [
-      '/v1/me/social-communities',
-      '/v1/me/organizations',
-    ]);
+    expect(f.calls.map((r) => r.url.path), ['/v1/cities']);
     for (final request in f.calls) {
       expect(request.method, 'GET');
       expect(request.url.host, 'moment-entry.test');
-      expect(request.headers['Authorization'], f.auth.authorizationHeader);
     }
     expect(f.writes, isEmpty);
-    f.navigator.currentState!.pop();
+    await t.tap(find.text('暂不添加'));
     await t.pumpAndSettle();
     expect(f.client.closed, false);
-    await f.open(t);
     expect(find.text('新建动态'), findsOneWidget);
-    expect(f.calls, hasLength(2));
+    expect(f.calls, hasLength(1));
+    expect(find.text('选择我加入的社群或组织'), findsNothing);
   });
 
-  testWidgets('按需上下文401走共用认证边界一次，不继续读取组织或自动保存', (t) async {
+  testWidgets('私人草稿预览401走共用认证边界一次，不自动保存', (t) async {
     final f = _CreationFixture();
     addTearDown(f.dispose);
-    f.contextStatus = 401;
+    f.previewStatus = 401;
     var recoveries = 0;
     f.transport = AuthenticatedClient(
       auth: f.auth,
@@ -417,13 +432,23 @@ void main() {
         f.auth.changeIdentity(null);
       },
     );
+    f.moments.dispose();
+    f.moments = PrivateMomentController(
+      authorizationHeader: () => f.auth.authorizationHeader,
+      ownerID: () => f.auth.accountID,
+      identityChanges: f.auth,
+      client: f.transport,
+      apiBaseUrl: 'http://moment-entry.test',
+      pendingStore: MemoryMomentControlPendingStore(),
+    );
     await f.mount(t);
     await f.open(t);
-    await f.tapSheet(t, '选择我加入的社群或组织');
+    await f.fill(t);
+    await f.tapSheet(t, '保存私人草稿');
     await t.pumpAndSettle();
     expect(recoveries, 1);
     expect(
-      f.calls.where((r) => r.url.path == '/v1/me/social-communities'),
+      f.calls.where((r) => r.url.path == '/v1/me/moment-controls/previews'),
       hasLength(1),
     );
     expect(f.calls.where((r) => r.url.path == '/v1/me/organizations'), isEmpty);

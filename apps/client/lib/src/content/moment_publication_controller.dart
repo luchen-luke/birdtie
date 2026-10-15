@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../config/birdtie_environment.dart';
+import 'moment_locations.dart';
 
 class MomentPublicPreview {
   const MomentPublicPreview({
@@ -15,11 +16,13 @@ class MomentPublicPreview {
     required this.snapshot,
     required this.expiresAt,
     required this.withdrawal,
+    this.locations,
   });
   final String id, placeID, placeName, title, body, snapshot;
   final int revision;
   final DateTime expiresAt;
   final bool withdrawal;
+  final List<MomentLocationResolved>? locations;
 }
 
 class MomentPublicationController extends ChangeNotifier {
@@ -91,6 +94,11 @@ class MomentPublicationController extends ChangeNotifier {
 
   MomentPublicPreview? get preview {
     _sync();
+    if (_preview != null &&
+        !_preview!.expiresAt.isAfter(DateTime.now().toUtc())) {
+      _preview = null;
+      _error = '预览已到期，请重新检查当前内容。';
+    }
     return _preview;
   }
 
@@ -242,8 +250,9 @@ class MomentPublicationController extends ChangeNotifier {
       if (utf8.encode(title).length > 160 || utf8.encode(body).length > 5000) {
         throw const FormatException();
       }
-      late final DateTime expiry;
+      late DateTime expiry;
       late final String snapshot, placeName;
+      List<MomentLocationResolved>? locations;
       if (withdrawal) {
         if (d['status'] != 'published' || d['visibility'] != 'public') {
           throw const FormatException();
@@ -263,8 +272,13 @@ class MomentPublicationController extends ChangeNotifier {
           'snapshot',
           'expiresAt',
         };
-        if (d.keys.toSet().difference(keys).isNotEmpty ||
-            d.length != keys.length ||
+        final hasLocations = d.containsKey('locations');
+        final allowed = {
+          ...keys,
+          if (hasLocations) ...{'locations', 'locationsSourceVersion'},
+        };
+        if (d.keys.toSet().difference(allowed).isNotEmpty ||
+            d.length != allowed.length ||
             d['cityId'] is! String ||
             d['placeName'] is! String ||
             d['snapshot'] is! String ||
@@ -276,6 +290,30 @@ class MomentPublicationController extends ChangeNotifier {
         expiry = _date(d['expiresAt']);
         if (!expiry.isAfter(DateTime.now().toUtc())) {
           throw const FormatException();
+        }
+        if (hasLocations) {
+          final rows = d['locations'];
+          if (rows is! List ||
+              rows.length > momentLocationMaxLinks ||
+              d['locationsSourceVersion'] is! String ||
+              !RegExp(
+                r'^[0-9a-f]{64}$',
+              ).hasMatch(d['locationsSourceVersion'])) {
+            throw const FormatException();
+          }
+          locations = List.unmodifiable([
+            for (var i = 0; i < rows.length; i++)
+              MomentLocationResolved.decode(rows[i], i),
+          ]);
+          decodeMomentLocationInputs(
+            locations.map((v) => v.input.toJson()).toList(),
+          );
+          for (final location in locations) {
+            if (location.validUntil.isBefore(expiry))
+              expiry = location.validUntil;
+          }
+          if (!expiry.isAfter(DateTime.now().toUtc()))
+            throw const FormatException();
         }
       }
       if (_current(token, epoch) && request == _request) {
@@ -289,6 +327,7 @@ class MomentPublicationController extends ChangeNotifier {
           snapshot: snapshot,
           expiresAt: expiry,
           withdrawal: withdrawal,
+          locations: locations,
         );
       }
     } catch (_) {

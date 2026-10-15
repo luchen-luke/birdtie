@@ -1,5 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
+import '../content/moment_locations.dart';
+import '../workspace/moment_locations_api.dart';
+import '../workspace/moment_location_picker.dart';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -340,6 +343,7 @@ class LegacyProfilePage extends StatefulWidget {
     this.organizationWorkspaceID,
     this.current,
     this.onOpenSocialNow,
+    this.onOpenOwnedMoment,
   });
 
   final BirdtieAuthController auth;
@@ -351,6 +355,7 @@ class LegacyProfilePage extends StatefulWidget {
   final String? Function()? organizationWorkspaceID;
   final bool Function()? current;
   final VoidCallback? onOpenSocialNow;
+  final ValueChanged<String>? onOpenOwnedMoment;
 
   @override
   State<LegacyProfilePage> createState() => _LegacyProfilePageState();
@@ -385,6 +390,7 @@ class _LegacyProfilePageState extends State<LegacyProfilePage> {
     organizationWorkspaceID: widget.organizationWorkspaceID,
     current: _current,
     onOpenSocialNow: widget.onOpenSocialNow,
+    onOpenOwnedMoment: widget.onOpenOwnedMoment,
   );
 }
 
@@ -895,6 +901,11 @@ class _MomentDraftSheetState extends State<_MomentDraftSheet> {
   bool _loadingContexts = false;
   String? _contextError;
   late String _placeID;
+  List<MomentLocationInput>? _locations;
+  final _locationLabels = <String, String>{};
+  Timer? _locationLabelTimer;
+  DateTime? _locationLabelDeadline;
+  bool _locationsLoading = false;
   late String _activityID;
   late String _communityID;
   late String _organizationID;
@@ -921,6 +932,7 @@ class _MomentDraftSheetState extends State<_MomentDraftSheet> {
     _lastTitleText = _title.text;
     _lastBodyText = _body.text;
     _placeID = widget.existing?.placeID ?? '';
+    _locations = widget.existing == null ? [] : null;
     _activityID = widget.existing?.activityIDs.firstOrNull ?? '';
     _communityID = widget.existing?.communityID ?? '';
     _organizationID = widget.existing?.organizationID ?? '';
@@ -949,6 +961,125 @@ class _MomentDraftSheetState extends State<_MomentDraftSheet> {
       client: _lookupClient,
       apiBaseUrl: _lookupBase,
     );
+    if (widget.existing != null) unawaited(_loadMomentLocations());
+  }
+
+  Future<void> _loadMomentLocations() async {
+    final moment = widget.existing;
+    if (!_current || moment == null || _locationsLoading) return;
+    setState(() => _locationsLoading = true);
+    final epoch = widget.moments.identityEpoch;
+    bool current() => _current && epoch == widget.moments.identityEpoch;
+    final api = MomentLocationsAPI(
+      authorizationHeader: () => widget.auth.authorizationHeader,
+      current: current,
+      apiBaseUrl: _lookupBase,
+      client: _lookupClient,
+    );
+    try {
+      final value = await api.read(
+        moment.id,
+        own: true,
+        expectedRevision: moment.revision,
+      );
+      if (!current()) return;
+      setState(() {
+        _locations ??= value.inputs;
+        _locationLabels.clear();
+        for (final item in value.items) {
+          if (item.current) _locationLabels[item.id] = item.label;
+        }
+      });
+      _locationLabelTimer?.cancel();
+      _locationLabelDeadline = value.validUntil;
+      _locationLabelTimer = Timer(
+        value.validUntil.difference(DateTime.now().toUtc()),
+        () {
+          if (mounted)
+            setState(() {
+              _locationLabels.clear();
+              _locationLabelDeadline = null;
+            });
+        },
+      );
+    } catch (_) {
+      if (current()) setState(() => _draftError = '位置暂时无法读取，原有位置会保留，可重试。');
+    } finally {
+      api.dispose();
+      if (mounted) setState(() => _locationsLoading = false);
+    }
+  }
+
+  Future<void> _chooseMomentLocation() async {
+    if (!_current || !widget.moments.canStartOperation || _locations == null)
+      return;
+    final epoch = widget.moments.identityEpoch;
+    bool current() => _current && epoch == widget.moments.identityEpoch;
+    final choice = await showModalBottomSheet<MomentLocationChoice>(
+      context: context,
+      useSafeArea: true,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (_) => SizedBox(
+        height: MediaQuery.sizeOf(context).height * .8,
+        child: MomentLocationPicker(
+          client: _lookupClient,
+          baseUrl: _lookupBase,
+          current: current,
+        ),
+      ),
+    );
+    if (!current() || choice == null) return;
+    final location = choice.toLocation();
+    if (location == null) return;
+    if (_locations!.length >= momentLocationMaxLinks) {
+      setState(() => _draftError = '一条动态最多关联 50 处位置。');
+      return;
+    }
+    if (_locations!.any(
+      (v) =>
+          v.kind == location.kind &&
+          v.cityID == location.cityID &&
+          v.placeID == location.placeID,
+    ))
+      return;
+    setState(() {
+      _locations = [..._locations!, location];
+      _locationLabels[location.id] = choice.displayLabel;
+      _edited();
+    });
+    _locationLabelTimer?.cancel();
+    final now = DateTime.now().toUtc();
+    final proposed = now.add(const Duration(seconds: 60));
+    final prior = _locationLabelDeadline;
+    final until = prior != null && prior.isBefore(proposed) ? prior : proposed;
+    _locationLabelDeadline = until;
+    _locationLabelTimer = Timer(
+      until.isBefore(now) ? Duration.zero : until.difference(now),
+      () {
+        if (mounted)
+          setState(() {
+            _locationLabels.clear();
+            _locationLabelDeadline = null;
+          });
+      },
+    );
+  }
+
+  void _changeMomentLocation(String id, String? precision) {
+    if (!_current || !widget.moments.canStartOperation || _locations == null)
+      return;
+    setState(() {
+      _locations = [
+        for (final item in _locations!)
+          if (item.id != id)
+            item
+          else if (precision != null)
+            item.withPrecision(precision),
+      ];
+      if (precision == null) _locationLabels.remove(id);
+      _edited();
+    });
   }
 
   bool get _matchesBinding =>
@@ -982,6 +1113,7 @@ class _MomentDraftSheetState extends State<_MomentDraftSheet> {
     if (_matchesBinding) {
       final next = widget.moments.identityEpoch;
       if (next != _contextCredentialEpoch) {
+        _locationLabels.clear();
         _contextCredentialEpoch = next;
         _communities = const [];
         _organizations = const [];
@@ -992,6 +1124,7 @@ class _MomentDraftSheetState extends State<_MomentDraftSheet> {
     }
     // Observe each identity event, including A -> B -> A before the next frame.
     _retired = true;
+    _locationLabels.clear();
     _edited();
     if (SchedulerBinding.instance.schedulerPhase ==
         SchedulerPhase.persistentCallbacks) {
@@ -1087,6 +1220,7 @@ class _MomentDraftSheetState extends State<_MomentDraftSheet> {
   @override
   void dispose() {
     _draftBindingChanges.removeListener(_onActorChanged);
+    _locationLabelTimer?.cancel();
     _title.dispose();
     _body.dispose();
     _communityApi.dispose();
@@ -1125,10 +1259,11 @@ class _MomentDraftSheetState extends State<_MomentDraftSheet> {
     final existing = widget.existing;
     final p = existing == null
         ? await widget.moments.previewCreate(
-            cityID: widget.cityID,
+            cityID: '',
+            locations: _locations,
             title: _title.text,
             body: _body.text,
-            placeID: _placeID,
+            placeID: '',
             activityID: _activityID,
             communityID: _communityID,
             organizationID: _organizationID,
@@ -1137,9 +1272,11 @@ class _MomentDraftSheetState extends State<_MomentDraftSheet> {
           )
         : await widget.moments.previewUpdate(
             moment: existing,
+            locations: _locations,
+            cityID: _locations == null ? existing.cityID : '',
             title: _title.text,
             body: _body.text,
-            placeID: _placeID,
+            placeID: _locations == null ? _placeID : '',
             time: _time!,
             activityID: _activityID == existing.activityIDs.firstOrNull
                 ? null
@@ -1150,12 +1287,9 @@ class _MomentDraftSheetState extends State<_MomentDraftSheet> {
             organizationID: _organizationID == existing.organizationID
                 ? null
                 : _organizationID,
-            locationPrecision:
-                _placeID.isNotEmpty &&
-                    _placeID == existing.placeID &&
-                    !widget.places.any((p) => p.id == _placeID)
-                ? 'city'
-                : null,
+            locationPrecision: _locations == null
+                ? existing.locationPrecision
+                : 'none',
             current: source,
           );
     if (!mounted || p == null || !source()) return;
@@ -1219,6 +1353,13 @@ class _MomentDraftSheetState extends State<_MomentDraftSheet> {
                         Text(p.input.input!['body'] as String),
                       if (_time?.occurredAt != null)
                         Text('发生时间：${_time!.label}'),
+                      for (final location in p.locations)
+                        Text(
+                          '${location.label} · ${momentLocationPrecisionLabel(location.precision)}',
+                        ),
+                      if (p.input.input!.containsKey('locations') &&
+                          p.locations.isEmpty)
+                        const Text('这版不关联位置。'),
                       const Text('保存为本人私人草稿，不会公开发布，也不会上传私人图片。'),
                       if (p.preservedPlaceUnavailable)
                         const Text('此前地点已不可读取。本次仅保留原关联并隐藏精确位置，不会恢复旧地点名称或坐标。'),
@@ -1465,6 +1606,32 @@ class _MomentDraftSheetState extends State<_MomentDraftSheet> {
                 ),
               ],
               const SizedBox(height: 20),
+              if (_locations != null)
+                MomentLocationChips(
+                  locations: _locations!,
+                  labels: _locationLabels,
+                  onRemove: widget.moments.saving
+                      ? null
+                      : (id) => _changeMomentLocation(id, null),
+                  onSetPrecision: widget.moments.saving
+                      ? null
+                      : _changeMomentLocation,
+                ),
+              TextButton.icon(
+                onPressed: widget.moments.saving || _locationsLoading
+                    ? null
+                    : _locations == null
+                    ? _loadMomentLocations
+                    : _chooseMomentLocation,
+                icon: const Icon(Icons.add_location_alt_outlined),
+                label: Text(
+                  _locationsLoading
+                      ? '正在读取位置…'
+                      : _locations == null
+                      ? '重试读取位置'
+                      : '添加位置',
+                ),
+              ),
               if (widget.cityID.isNotEmpty) ...[
                 Text(
                   '关联情境（可选）',
@@ -1476,17 +1643,6 @@ class _MomentDraftSheetState extends State<_MomentDraftSheet> {
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
                 const SizedBox(height: 12),
-                MomentContextChoice(
-                  label: '地点',
-                  value: _placeID,
-                  available: {
-                    for (final place in widget.places) place.id: place.name,
-                  },
-                  onChanged: (value) => setState(() {
-                    _placeID = value;
-                    _edited();
-                  }),
-                ),
                 MomentContextChoice(
                   label: '活动',
                   value: _activityID,
@@ -1602,6 +1758,7 @@ class _MyBirdtiePage extends StatelessWidget {
     this.organizationWorkspaceID,
     this.current,
     this.onOpenSocialNow,
+    this.onOpenOwnedMoment,
   });
 
   final BirdtieAuthController auth;
@@ -1613,6 +1770,7 @@ class _MyBirdtiePage extends StatelessWidget {
   final String? Function()? organizationWorkspaceID;
   final bool Function()? current;
   final VoidCallback? onOpenSocialNow;
+  final ValueChanged<String>? onOpenOwnedMoment;
 
   List<PrivateMoment> get _records =>
       moments.historyEnabled ? moments.historyMoments : moments.moments;
@@ -1648,6 +1806,10 @@ class _MyBirdtiePage extends StatelessWidget {
   }
 
   Future<void> _editMoment(BuildContext context, PrivateMoment moment) async {
+    if (onOpenOwnedMoment != null) {
+      onOpenOwnedMoment!(moment.id);
+      return;
+    }
     final cityNames = city.cities
         .where((item) => item.id == moment.cityID)
         .map((item) => item.name);
@@ -1681,6 +1843,7 @@ class _MyBirdtiePage extends StatelessWidget {
     BuildContext context,
     PrivateMoment moment,
   ) async {
+    if (onOpenOwnedMoment != null) { onOpenOwnedMoment!(moment.id); return; }
     final owner = auth.accountID;
     bool valid() =>
         current?.call() != false &&
@@ -1746,6 +1909,8 @@ class _MyBirdtiePage extends StatelessWidget {
                 : auth.signedIn
                 ? auth.loginMethod == 'dev_phone'
                       ? '本地测试会话；手机号所有权尚未验证。'
+                      : auth.loginMethod == 'dev_email'
+                      ? '邮箱测试会话；邮箱所有权尚未验证。'
                       : '已登录 Birdtie。'
                 : '可使用下方可用的登录方式；浏览城市不需要登录。',
             accent: Theme.of(context).colorScheme.primary,
@@ -1772,15 +1937,16 @@ class _MyBirdtiePage extends StatelessWidget {
             ),
           if (!auth.signedIn &&
               !auth.sessionRestoring &&
-              auth.devPhoneAvailable)
+              (auth.devPhoneAvailable || auth.devEmailAvailable))
             FilledButton(
               onPressed: auth.busy ? null : () => _openDevPhoneLogin(context),
-              child: const Text('手机号测试登录'),
+              child: const Text('固定验证码登录'),
             ),
           if (!auth.signedIn &&
               !auth.sessionRestoring &&
               !auth.available &&
-              !auth.devPhoneAvailable)
+              !auth.devPhoneAvailable &&
+              !auth.devEmailAvailable)
             Text(
               auth.configurationChecked
                   ? '登录服务尚未配置或暂不可用。当前仍可浏览公开城市内容。'

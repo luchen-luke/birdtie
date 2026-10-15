@@ -115,18 +115,25 @@ elif mode=='start':
 elif mode=='upgrade':
  settings=json.loads(STATE.read_text());assert settings['database']==DB
  target=payload['targetMigrations'];prior_count=payload['expectedMigrations']
- assert 148 <= prior_count <= target <= 159
+ assert 148 <= prior_count <= target <= 166
  current=json.loads(sql('postgres',"SELECT json_build_object('oid',oid::bigint,'owner',pg_get_userbyid(datdba),'marker',shobj_description(oid,'pg_database')) FROM pg_database WHERE datname='"+DB+"';",True))
  assert current=={'oid':settings['oid'],'owner':ROLE,'marker':settings['marker']}
- data=sys.stdin.buffer.read();assert hashlib.sha256(data).hexdigest()==payload['releaseSHA256']
- release=ROOT/'releases'/payload['release'];assert not release.exists();release.mkdir(mode=0o755)
- archive=release/'release.tar';archive.write_bytes(data)
+ release=ROOT/'releases'/payload['release'];archive=release/'release.tar'
+ if payload.get('reuseStaged'):
+  assert release.is_dir() and not release.is_symlink() and archive.is_file() and not archive.is_symlink()
+  assert digest(archive)==payload['releaseSHA256']
+  assert not sys.stdin.buffer.read()
+ else:
+  data=sys.stdin.buffer.read();assert hashlib.sha256(data).hexdigest()==payload['releaseSHA256']
+  assert not release.exists();release.mkdir(mode=0o755);archive.write_bytes(data)
  with tarfile.open(archive)as t:
-  manifest=json.load(t.extractfile('manifest.json'));assert len(manifest)==target+(6 if target>=159 else 5 if target>=157 else 4 if target>=156 else 3)
+  manifest=json.load(t.extractfile('manifest.json'));assert len(manifest)==target+(9 if target>=165 else 8 if target>=163 else 7 if target>=162 else 6 if target>=159 else 5 if target>=157 else 4 if target>=156 else 3)
   assert sorted(m.name for m in t.getmembers())==sorted(list(manifest)+['manifest.json'])
   for m in t.getmembers():
-   assert m.isfile() and re.fullmatch(r'(manifest\.json|bin/birdtie-(api|legacy-import|legacy-personal-import|legacy-native-import|legacy-media-import|legacy-video-import)|migrations/[0-9]{3}_[a-z0-9_]+\.sql)',m.name)
-   raw=t.extractfile(m).read();p=release/m.name;p.parent.mkdir(parents=True,exist_ok=True);p.write_bytes(raw)
+   assert m.isfile() and re.fullmatch(r'(manifest\.json|bin/birdtie-(api|legacy-import|legacy-personal-import|legacy-native-import|legacy-media-import|legacy-video-import|legacy-context-import|legacy-social-import|legacy-history-import)|migrations/[0-9]{3}_[a-z0-9_]+\.sql)',m.name)
+   raw=t.extractfile(m).read();p=release/m.name
+   if payload.get('reuseStaged'):assert p.is_file() and not p.is_symlink() and p.read_bytes()==raw
+   else:p.parent.mkdir(parents=True,exist_ok=True);p.write_bytes(raw)
    if m.name in manifest:assert len(raw)==manifest[m.name]['bytes'] and hashlib.sha256(raw).hexdigest()==manifest[m.name]['sha256']
  prior=sql(DB,'SELECT filename,sha256 FROM birdtie_schema_migrations ORDER BY version;').decode().strip().splitlines()
  assert len(prior)==prior_count
@@ -134,12 +141,13 @@ elif mode=='upgrade':
   filename,digest1=row.split('|');assert manifest['migrations/'+filename]['sha256']==digest1
  for p in (release/'bin').iterdir():os.chmod(p,0o755)
  migration_names={149:'migrations/149_legacy_personal_archives.sql',150:'migrations/150_city_public_moments.sql',151:'migrations/151_moment_interactions.sql',152:'migrations/152_public_moment_media_sets.sql',153:'migrations/153_moment_threads.sql',154:'migrations/154_legacy_dev_phone_bindings.sql',155:'migrations/155_public_moment_videos.sql',156:'migrations/156_legacy_native_adaptation.sql',157:'migrations/157_legacy_private_media.sql',158:'migrations/158_journey_native_details.sql',159:'migrations/159_legacy_private_videos.sql'}
+ migration_names.update({160:'migrations/160_moment_location_links.sql',161:'migrations/161_legacy_private_image_recovery.sql',162:'migrations/162_legacy_native_contexts.sql',163:'migrations/163_legacy_social_native.sql',164:'migrations/164_legacy_dev_email_bindings.sql',165:'migrations/165_legacy_social_history.sql',166:'migrations/166_external_location_references.sql'})
  assert all(int(Path(n).name.split('_')[0])<=target for n in manifest if n.startswith('migrations/'))
  assert len([n for n in manifest if n.startswith('migrations/')])==target
  bodies=[]
  for version in range(prior_count+1,target+1):
   name=migration_names[version];body=(release/name).read_text();body=re.sub(r'(?im)^\s*(BEGIN|COMMIT);\s*$','',body)
-  bodies.append(body+"\nINSERT INTO birdtie_schema_migrations(version,filename,sha256)VALUES("+str(version)+",'"+Path(name).name+"','"+manifest[name]['sha256']+"');\n")
+  bodies.append(body+"\nSET CONSTRAINTS ALL IMMEDIATE;SET CONSTRAINTS ALL DEFERRED;\nINSERT INTO birdtie_schema_migrations(version,filename,sha256)VALUES("+str(version)+",'"+Path(name).name+"','"+manifest[name]['sha256']+"');\n")
  # Validate service and optional codec configuration before native DDL.
  unit_pre=Path('/etc/systemd/system/birdtie-api.service').read_text()
  assert unit_pre.count('ExecStart='+settings['release']+'/bin/birdtie-api')==1 and 'User=ecs-user' in unit_pre
@@ -153,6 +161,12 @@ elif mode=='upgrade':
    assert not any(line.startswith('BIRDTIE_PUBLIC_MOMENT_VIDEO_') for line in ENV.read_text().splitlines())
   else:
    assert 'BIRDTIE_PUBLIC_MOMENT_VIDEO_ENABLED=true' in ENV.read_text().splitlines()
+ if target>=166:
+  desired='BIRDTIE_LOCATION_SEARCH_URL=http://127.0.0.1:14016'
+  existing=[line for line in ENV.read_text().splitlines()if line.startswith('BIRDTIE_LOCATION_SEARCH_URL=')]
+  assert not existing or existing==[desired]
+  with urllib.request.build_opener(urllib.request.ProxyHandler({})).open('http://127.0.0.1:14016/v1/autocomplete?text=British%20Museum&sources=openstreetmap&layers=venue,address&size=1',timeout=10)as response:
+   assert response.status==200 and json.load(response).get('features')
  if bodies:sql(DB,"BEGIN;SET LOCAL lock_timeout='20s';SET LOCAL statement_timeout='120s';\n"+'\n'.join(bodies)+"COMMIT;\n")
  unit=Path('/etc/systemd/system/birdtie-api.service');text=unit.read_text();old=settings['release']+'/bin/birdtie-api'
  assert text.count('ExecStart='+old)==1 and 'User=ecs-user' in text
@@ -168,6 +182,9 @@ elif mode=='upgrade':
   assert not any(line.startswith(key+'=') for key in config for line in before.splitlines())
   ENV.write_text(before+''.join(key+'='+value+'\n' for key,value in config.items()));os.chmod(ENV,0o600)
   text=text.replace('MemoryMax=256M','MemoryMax=768M')
+ if target>=166 and not existing:
+  backup=ENV.with_name('api.env.before-location166');assert not backup.exists();write(backup,ENV.read_text())
+  ENV.write_text(ENV.read_text().rstrip('\n')+'\n'+desired+'\n');os.chmod(ENV,0o600)
  unit.write_text(text.replace('ExecStart='+old,'ExecStart='+str(release)+'/bin/birdtie-api').replace('WorkingDirectory='+previous,'WorkingDirectory='+str(release)))
  run(['systemctl','daemon-reload']);run(['systemctl','restart','birdtie-api.service'])
  ready=False
@@ -230,16 +247,17 @@ else:raise RuntimeError('unknown stage')
 '''
 
 def main():
- p=argparse.ArgumentParser();p.add_argument('mode',choices=['prepare','private-input','apply','start','upgrade','personal-apply','dev-phone-apply','native-apply']);p.add_argument('--name',choices=['source.json','manifest.json']);p.add_argument('--evidence-name',required=True);p.add_argument('--build-name',default='build02');p.add_argument('--target-migrations',type=int,choices=[149,150,151,152,153,154,155,156,157,158,159],default=149);p.add_argument('--expected-migrations',type=int,choices=[148,149,150,151,152,153,154,155,156,157,158,159],default=148);a=p.parse_args()
+ p=argparse.ArgumentParser();p.add_argument('mode',choices=['prepare','private-input','apply','start','upgrade','personal-apply','dev-phone-apply','native-apply']);p.add_argument('--name',choices=['source.json','manifest.json']);p.add_argument('--evidence-name',required=True);p.add_argument('--build-name',default='build02');p.add_argument('--reuse-staged',action='store_true',help='Reuse only an exact fully hash-verified staged archive after a rolled-back upgrade');p.add_argument('--target-migrations',type=int,choices=list(range(149,167)),default=149);p.add_argument('--expected-migrations',type=int,choices=list(range(148,167)),default=148);a=p.parse_args()
  assert re.fullmatch(r'[a-z0-9-]+',a.evidence_name)
  out=ROOT/'docs/testing/evidence/social-remote-migration-20261015'/a.evidence_name;out.mkdir(parents=True,exist_ok=False)
- payload={'mode':a.mode};raw=b''
+ assert not a.reuse_staged or a.mode=='upgrade'
+ payload={'mode':a.mode,'reuseStaged':a.reuse_staged};raw=b''
  if a.mode in ('prepare','upgrade'):
   assert re.fullmatch(r'[a-z0-9-]+',a.build_name)
   build='build01' if a.mode=='prepare' else a.build_name
   artifact=ROOT/'work/social-remote-migration-20261015'/build/'release.tar';proof=json.loads((ROOT/'docs/testing/evidence/social-remote-migration-20261015'/build/'receipt.json').read_text());assert sha(artifact)==proof['artifact_sha256']
   assert all(sha(ROOT/p)==h for p,h in proof['source_after'].items() if not p.endswith('_test.go'))
-  raw=artifact.read_bytes();payload.update(release='social148-20261015-01' if a.mode=='prepare' else 'social'+str(a.target_migrations)+'-20261015-'+build,releaseSHA256=sha(artifact),targetMigrations=a.target_migrations,expectedMigrations=a.expected_migrations)
+  raw=b'' if a.reuse_staged else artifact.read_bytes();payload.update(release='social148-20261015-01' if a.mode=='prepare' else 'social'+str(a.target_migrations)+'-20261015-'+build,releaseSHA256=sha(artifact),targetMigrations=a.target_migrations,expectedMigrations=a.expected_migrations)
   if a.mode=='upgrade' and a.target_migrations>=155:payload['publicVideoRuntime']=json.loads((ROOT/'docs/testing/evidence/github-remote-completion-20261015/remote-video-tools01/runtime.json').read_text())
  elif a.mode=='private-input':
   assert a.name;src=PRIVATE/a.name;raw=src.read_bytes();payload.update(name=a.name,sha256=sha(src))

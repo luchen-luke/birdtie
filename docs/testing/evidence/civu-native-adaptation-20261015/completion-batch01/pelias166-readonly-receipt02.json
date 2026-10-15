@@ -1,0 +1,257 @@
+{
+  "sshExitCode": 0,
+  "stderrBytes": 0,
+  "stderrSHA256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "remoteScriptSHA256": "3c525e9f930e8c810d2fc199d37fedc8a1ef7a8d5d2fb0968f5d09ac345aa334",
+  "result": {
+    "status": "PELIAS166_METADATA_READONLY",
+    "hostMemory": {
+      "MemTotalBytes": 3669172224,
+      "MemAvailableBytes": 2645360640,
+      "SwapTotalBytes": 8589930496,
+      "SwapFreeBytes": 8416014336
+    },
+    "birdtieService": {
+      "MemoryCurrent": "16674816",
+      "MemoryMax": "805306368",
+      "TasksCurrent": "8",
+      "TasksMax": "4074",
+      "ActiveState": "active"
+    },
+    "retainedContainers": [
+      {
+        "name": "civu_pelias_api",
+        "image": "pelias/api:master",
+        "imageID": "sha256:716a5c9756ecb8d88066644c8eb5f72b74fca64766d49afb5fc8347dcce898d9",
+        "status": "exited",
+        "running": false,
+        "oomKilled": false,
+        "exitCode": 137,
+        "memoryBytes": 0,
+        "memorySwapBytes": 0,
+        "pidsLimit": null,
+        "heapFlags": [],
+        "nodeHeapFlags": [],
+        "workingDirectory": "/code/pelias/api",
+        "ports": {
+          "4000/tcp": [
+            {
+              "HostIp": "127.0.0.1",
+              "HostPort": "4000"
+            }
+          ]
+        },
+        "mounts": [
+          {
+            "source": "/opt/pelias/docker/projects/civu-europe-mvp/pelias.json",
+            "destination": "/code/pelias.json",
+            "readOnly": true
+          },
+          {
+            "source": "/srv/civu-data/docker/volumes/03c574fc2be8a7a782d0598664bae8a848fd8663b80b6164b0c9b143eb254351/_data",
+            "destination": "/data",
+            "readOnly": false
+          }
+        ]
+      },
+      {
+        "name": "civu_pelias_elasticsearch",
+        "image": "pelias/elasticsearch:7.17.27",
+        "imageID": "sha256:8aa3c622abd74192eceaf53e9a3dfd51c1a75e50ee7a537d7f912aa7f80bab05",
+        "status": "exited",
+        "running": false,
+        "oomKilled": false,
+        "exitCode": 137,
+        "memoryBytes": 6442450944,
+        "memorySwapBytes": 12884901888,
+        "pidsLimit": null,
+        "heapFlags": [
+          "-Xms4g",
+          "-Xmx4g"
+        ],
+        "nodeHeapFlags": [],
+        "workingDirectory": "/usr/share/elasticsearch",
+        "ports": {
+          "9200/tcp": [
+            {
+              "HostIp": "127.0.0.1",
+              "HostPort": "9200"
+            }
+          ],
+          "9300/tcp": [
+            {
+              "HostIp": "127.0.0.1",
+              "HostPort": "9300"
+            }
+          ]
+        },
+        "mounts": [
+          {
+            "source": "/opt/pelias/docker/projects/civu-europe-mvp/elasticsearch.yml",
+            "destination": "/usr/share/elasticsearch/config/elasticsearch.yml",
+            "readOnly": true
+          },
+          {
+            "source": "/srv/civu-data/pelias/elasticsearch",
+            "destination": "/usr/share/elasticsearch/data",
+            "readOnly": false
+          }
+        ]
+      },
+      {
+        "name": "civu_pelias_placeholder",
+        "image": "pelias/placeholder:master",
+        "imageID": "sha256:a7c0cde8c11e39b621b383a270c4f6de737b1ec1cb57b25cc8b9c8dfa67deffc",
+        "status": "exited",
+        "running": false,
+        "oomKilled": false,
+        "exitCode": 0,
+        "memoryBytes": 0,
+        "memorySwapBytes": 0,
+        "pidsLimit": null,
+        "heapFlags": [],
+        "nodeHeapFlags": [],
+        "workingDirectory": "/code/pelias/placeholder",
+        "ports": {
+          "4100/tcp": [
+            {
+              "HostIp": "127.0.0.1",
+              "HostPort": "4100"
+            }
+          ]
+        },
+        "mounts": [
+          {
+            "source": "/opt/pelias/docker/projects/civu-europe-mvp/pelias.json",
+            "destination": "/code/pelias.json",
+            "readOnly": true
+          },
+          {
+            "source": "/srv/civu-data/pelias",
+            "destination": "/data",
+            "readOnly": false
+          }
+        ]
+      },
+      {
+        "name": "civu_pelias_libpostal",
+        "image": "pelias/libpostal-service",
+        "imageID": "sha256:72beeef72e968a7865ad7538854d900de7aa9cf27f3de899f29c00cd4a4d96fe",
+        "status": "exited",
+        "running": false,
+        "oomKilled": false,
+        "exitCode": 0,
+        "memoryBytes": 0,
+        "memorySwapBytes": 0,
+        "pidsLimit": null,
+        "heapFlags": [],
+        "nodeHeapFlags": [],
+        "workingDirectory": "",
+        "ports": {
+          "4400/tcp": [
+            {
+              "HostIp": "127.0.0.1",
+              "HostPort": "4400"
+            }
+          ]
+        },
+        "mounts": [
+          {
+            "source": "/srv/civu-data/docker/volumes/1cfaaffc2b5e69bf92ee7f8e51ba15daea03b2f9b2cbef193536c94b94b8036c/_data",
+            "destination": "/data",
+            "readOnly": false
+          }
+        ]
+      }
+    ],
+    "configSHA256": "446543f544b0f3e56fac86a5f6d6103ee8adcefd3fbf78c179f946d60b3dbcd0",
+    "elasticsearchConfigSHA256": "f9f97bbf60dc78a23737ba2e20f7d52819b76fcc30d801eccd6728607b46d186",
+    "apiSettings": {},
+    "configuredServices": {
+      "placeholder": {
+        "configured": true,
+        "timeout": null,
+        "retries": null
+      },
+      "libpostal": {
+        "configured": true,
+        "timeout": null,
+        "retries": null
+      }
+    },
+    "elasticsearchSettings": {
+      "bootstrap.memory_lock": "true"
+    },
+    "indexTotals": {
+      "bytes": 3619193401,
+      "files": 229
+    },
+    "indices": [
+      {
+        "bytes": 20853,
+        "files": 13,
+        "shards": 1,
+        "stateFiles": 1,
+        "luceneSegmentFiles": 1
+      },
+      {
+        "bytes": 44857296,
+        "files": 33,
+        "shards": 1,
+        "stateFiles": 1,
+        "luceneSegmentFiles": 1
+      },
+      {
+        "bytes": 3574211221,
+        "files": 127,
+        "shards": 1,
+        "stateFiles": 1,
+        "luceneSegmentFiles": 1
+      },
+      {
+        "bytes": 2147,
+        "files": 7,
+        "shards": 1,
+        "stateFiles": 1,
+        "luceneSegmentFiles": 1
+      },
+      {
+        "bytes": 12918,
+        "files": 10,
+        "shards": 1,
+        "stateFiles": 1,
+        "luceneSegmentFiles": 1
+      },
+      {
+        "bytes": 24283,
+        "files": 13,
+        "shards": 1,
+        "stateFiles": 1,
+        "luceneSegmentFiles": 1
+      }
+    ],
+    "packages": {
+      "civu_pelias_api": {
+        "name": "pelias-api",
+        "version": "0.0.0-development",
+        "libpostalDependencyPresent": false,
+        "placeholderDependencyPresent": false
+      },
+      "civu_pelias_placeholder": {
+        "name": "pelias-placeholder",
+        "version": "0.0.0-development",
+        "libpostalDependencyPresent": false,
+        "placeholderDependencyPresent": false
+      }
+    },
+    "amapWebServiceKeyConfigured": true,
+    "oldEnvironmentFilesChecked": 1,
+    "serviceStateUnchanged": true,
+    "configUnchanged": true,
+    "sourceWrites": 0,
+    "nativeWrites": 0,
+    "serviceMutations": 0,
+    "providerCalls": 0,
+    "privateValuesOmitted": true
+  }
+}

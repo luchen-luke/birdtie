@@ -283,6 +283,7 @@ class MapLayersController extends ChangeNotifier {
           latest == null ||
           item.kind != latest.kind ||
           item.id != latest.id ||
+          item.pinIdentity != latest.pinIdentity ||
           item.title != latest.title ||
           item.detailType != latest.detailType ||
           item.detailID != latest.detailID ||

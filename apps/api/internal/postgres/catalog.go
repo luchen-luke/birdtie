@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/birdtie/birdtie/apps/api/internal/foundation"
+	lr "github.com/birdtie/birdtie/apps/api/internal/locationreference"
 	"github.com/birdtie/birdtie/apps/api/internal/momentmedia"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -13,6 +14,7 @@ import (
 )
 
 type Store struct {
+	locationSearch  atomic.Pointer[lr.Pelias]
 	pool            *pgxpool.Pool
 	devPhoneEnabled bool
 	momentVideo     atomic.Pointer[momentmedia.FFmpegVideoNormalizer]

@@ -1,0 +1,14 @@
+{
+  "sshExitCode": 2,
+  "stderrBytes": 0,
+  "remoteProgramSHA256": "a442a256749cd9cffb20a1e373e843f4750b20436be836aa64b9fdf8c892d60e",
+  "result": {
+    "status": "REJECTED",
+    "stage": "START_BOUNDED_ES",
+    "sourceWrites": 0,
+    "nativeDatabaseWrites": 0,
+    "newServicesStoppedOnFailure": true,
+    "sourceDataNeverMountedWritable": true,
+    "privateValuesOmitted": true
+  }
+}

@@ -1,0 +1,110 @@
+{
+  "sshExitCode": 0,
+  "stderrBytes": 0,
+  "remoteProgramSHA256": "ae1a5a78910250cc8263894e177267f8a27218032a0e1ec5239c44acb570b753",
+  "result": {
+    "mode": "READ_ONLY",
+    "serviceMutations": 0,
+    "sourceWrites": 0,
+    "nativeDatabaseWrites": 0,
+    "containers": {
+      "birdtie-geocoder166-es": {
+        "running": false,
+        "memory": 1073741824,
+        "memorySwap": 1073741824,
+        "nanoCPUs": 1000000000,
+        "pids": 256,
+        "restart": {
+          "Name": "no",
+          "MaximumRetryCount": 0
+        },
+        "networkMode": "birdtie-geocoder166",
+        "bindings": {
+          "9200/tcp": [
+            {
+              "HostIp": "127.0.0.1",
+              "HostPort": "19216"
+            }
+          ]
+        },
+        "mountCount": 2,
+        "mountDestinations": [
+          "/usr/share/elasticsearch/data",
+          "/usr/share/elasticsearch/config/elasticsearch.yml"
+        ],
+        "mountReadonly": [
+          false,
+          true
+        ],
+        "networkAliases": [
+          "elasticsearch"
+        ],
+        "configKeys": [
+          "birdtie.purpose",
+          "org.label-schema.build-date",
+          "org.label-schema.license",
+          "org.label-schema.name",
+          "org.label-schema.schema-version",
+          "org.label-schema.url",
+          "org.label-schema.usage",
+          "org.label-schema.vcs-ref",
+          "org.label-schema.vcs-url",
+          "org.label-schema.vendor",
+          "org.label-schema.version",
+          "org.opencontainers.image.created",
+          "org.opencontainers.image.documentation",
+          "org.opencontainers.image.licenses",
+          "org.opencontainers.image.ref.name",
+          "org.opencontainers.image.revision",
+          "org.opencontainers.image.source",
+          "org.opencontainers.image.title",
+          "org.opencontainers.image.url",
+          "org.opencontainers.image.vendor",
+          "org.opencontainers.image.version"
+        ]
+      },
+      "birdtie-geocoder166-api": {
+        "running": false,
+        "memory": 268435456,
+        "memorySwap": 268435456,
+        "nanoCPUs": 500000000,
+        "pids": 64,
+        "restart": {
+          "Name": "no",
+          "MaximumRetryCount": 0
+        },
+        "networkMode": "birdtie-geocoder166",
+        "bindings": {
+          "4000/tcp": [
+            {
+              "HostIp": "127.0.0.1",
+              "HostPort": "14016"
+            }
+          ]
+        },
+        "mountCount": 2,
+        "mountDestinations": [
+          "/code/pelias.json",
+          "/data"
+        ],
+        "mountReadonly": [
+          true,
+          false
+        ],
+        "networkAliases": null,
+        "configKeys": [
+          "birdtie.purpose",
+          "maintainer",
+          "org.opencontainers.image.version"
+        ]
+      }
+    },
+    "network": {
+      "name": "birdtie-geocoder166",
+      "driver": "bridge",
+      "internal": false,
+      "labelMatch": true,
+      "containers": 0
+    }
+  }
+}

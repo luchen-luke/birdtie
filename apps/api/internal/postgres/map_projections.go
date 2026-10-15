@@ -142,6 +142,73 @@ func mapProjectionSQL(private bool) string {
 	return strings.ReplaceAll(strings.ReplaceAll(mapProjectionRowsSQL, "PRIVATE_SOURCE_TOKENS", privateTokens), "PRIVATE_HUMAN_PAYLOAD", "("+query+")")
 }
 
+// The v5 opt-in changes only Moment anchor membership. The original source
+// CTE and all other entity ACLs remain intact; each pin retains its own link.
+func mapLocationsProjectionSQL(base string, author bool, references ...bool) string {
+	const rawMarker = " raw_sources AS MATERIALIZED("
+	const logicalMarker = " logical AS MATERIALIZED("
+	if strings.Count(base, rawMarker) != 1 || strings.Count(base, logicalMarker) != 1 {
+		return ""
+	}
+	before, rest, _ := strings.Cut(base, rawMarker)
+	old, after, _ := strings.Cut(rest, logicalMarker)
+	authorFilter := ""
+	if author {
+		authorFilter = " AND EXISTS(SELECT 1 FROM author_target target WHERE target.id=m.author_account_id)"
+	}
+	external := ""
+	if len(references) > 0 && references[0] {
+		external = `
+ UNION ALL SELECT 'MOMENT',m.id::text,m.title,''::text,reference.name,reference.latitude,reference.longitude,
+ concat_ws(':',m.revision::text,link.id::text,encode(sha256(convert_to(reference.binding,'UTF8')),'hex')),
+ least(reference.deadline,` + momentPublishableMediaDeadlineSQL("m") + `),
+ concat_ws(':',m.xmin::text,link.xmin::text,reference.binding,birdtie_moment_public_binding(m.id,$6::uuid,stamp.at),` + momentMediaReadBindingSQL("m") + `),link.id::text
+ FROM moments m CROSS JOIN stamp JOIN moment_location_links link ON link.moment_id=m.id AND link.kind='REFERENCE' AND link.status='ACTIVE' AND link.precision='place'
+ JOIN LATERAL birdtie_location_reference_source(link.reference_id,stamp.at)reference ON true
+ WHERE reference.longitude BETWEEN $2 AND $4 AND reference.latitude BETWEEN $3 AND $5
+ AND birdtie_moment_public_binding(m.id,$6::uuid,stamp.at)IS NOT NULL` + authorFilter
+	}
+	locations := ` raw_sources AS MATERIALIZED(
+ SELECT legacy.*,''::text pin_identity FROM raw_sources_legacy legacy WHERE kind<>'MOMENT'
+ UNION ALL SELECT 'MOMENT',m.id::text,m.title,p.id::text,p.name,p.latitude,p.longitude,
+ concat_ws(':',m.revision::text,location.id::text,encode(sha256(convert_to(location.binding,'UTF8')),'hex')),
+ least(p.retained_until,location.deadline,` + momentPublishableMediaDeadlineSQL("m") + `),
+ concat_ws(':',m.xmin::text,author.xmin::text,p.row_token,location.binding,
+ birdtie_moment_public_binding(m.id,$6::uuid,stamp.at),` + momentMediaReadBindingSQL("m") + `),location.id::text
+ FROM moments m CROSS JOIN stamp
+ JOIN LATERAL birdtie_moment_locations_public(m.id,stamp.at) location ON true
+ JOIN point p ON p.id=location.place_id
+ JOIN accounts author ON author.id=m.author_account_id
+ WHERE location.kind='PLACE' AND location.precision='place'
+ AND location.coordinate_system='wgs84' AND location.location_precision='point'
+ AND location.latitude=p.latitude AND location.longitude=p.longitude
+ AND birdtie_moment_public_binding(m.id,$6::uuid,stamp.at) IS NOT NULL` + authorFilter + external + `),
+`
+	query := before + " raw_sources_legacy AS MATERIALIZED(" + old + locations + logicalMarker + after
+	replacements := [][2]string{
+		{"DISTINCT ON(kind,id) * FROM raw_sources ORDER BY kind,id,place_id", "DISTINCT ON(kind,id,pin_identity) * FROM raw_sources ORDER BY kind,id,pin_identity,place_id"},
+		{"PARTITION BY kind ORDER BY id)", "PARTITION BY kind ORDER BY id,pin_identity)"},
+		{"'kind',kind,'id',id,'title',title,", "'kind',kind,'id',id,'title',title,'pinIdentity',pin_identity,"},
+		{"'sourceVersion',version) ORDER BY kind,id)", "'sourceVersion',version) ORDER BY kind,id,pin_identity)"},
+		{"jsonb_build_array(kind,id,token) ORDER BY kind,id", "jsonb_build_array(kind,id,pin_identity,token) ORDER BY kind,id,pin_identity"},
+	}
+	for _, r := range replacements {
+		if strings.Count(query, r[0]) != 1 {
+			return ""
+		}
+		query = strings.Replace(query, r[0], r[1], 1)
+	}
+	if external != "" {
+		query = strings.Replace(query, "'longitude',longitude),", "'longitude',longitude) || CASE WHEN kind='MOMENT' AND place_id='' THEN jsonb_build_object('targetKind','REFERENCE','referenceId',(SELECT reference_id FROM moment_location_links WHERE id=pin_identity::uuid),'attribution','© OpenStreetMap contributors · ODbL 1.0') ELSE '{}'::jsonb END,", 1)
+	}
+	// Optional photo authority belongs to content, so join it once per Moment;
+	// the base payload still contains every independently authorized pin.
+	query = strings.Replace(query, "map_moment_media_sources AS MATERIALIZED(SELECT b.id,", "map_moment_media_sources AS MATERIALIZED(SELECT DISTINCT b.id,", 1)
+	query = strings.ReplaceAll(query, "ORDER BY item->>'kind',item->>'id'", "ORDER BY item->>'kind',item->>'id',item->>'pinIdentity'")
+	query = strings.ReplaceAll(query, "stamp.at+interval '2 minutes'", "stamp.at+interval '60 seconds'")
+	return query
+}
+
 func (s *Store) captureMapLayers(ctx context.Context, a mp.Access, q mp.Query) (mp.Receipt, error) {
 	var r mp.Receipt
 	if ctx == nil || ctx.Err() != nil || s == nil || s.pool == nil || !a.Valid() || mp.ValidateQuery(q) != nil {
@@ -191,6 +258,10 @@ func (s *Store) captureMapLayers(ctx context.Context, a mp.Access, q mp.Query) (
 	}
 	if q.MomentMedia {
 		query = mapMomentMediaProjectionSQL(q.AuthorID != "")
+	}
+	if q.Locations {
+		baseQuery = mapLocationsProjectionSQL(baseQuery, q.AuthorID != "", q.References)
+		query = mapLocationsProjectionSQL(query, q.AuthorID != "", q.References)
 	}
 	if query == "" {
 		return r, mp.ErrUnavailable
@@ -244,6 +315,12 @@ func (s *Store) captureMapLayers(ctx context.Context, a mp.Access, q mp.Query) (
 	}
 	if q.MomentMedia {
 		r.View.SchemaVersion = mp.MomentMediaSchemaVersion
+	}
+	if q.Locations {
+		r.View.SchemaVersion = mp.LocationsSchemaVersion
+		if q.References {
+			r.View.SchemaVersion = mp.ReferenceSchemaVersion
+		}
 	}
 	r.View.ObservedAt = r.View.ObservedAt.UTC()
 	r.View.ValidUntil = r.View.ValidUntil.UTC()

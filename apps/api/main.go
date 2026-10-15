@@ -17,6 +17,7 @@ import (
 	"github.com/birdtie/birdtie/apps/api/internal/agenttool"
 	"github.com/birdtie/birdtie/apps/api/internal/devauth"
 	"github.com/birdtie/birdtie/apps/api/internal/httpapi"
+	lr "github.com/birdtie/birdtie/apps/api/internal/locationreference"
 	"github.com/birdtie/birdtie/apps/api/internal/media"
 	"github.com/birdtie/birdtie/apps/api/internal/momentmedia"
 	"github.com/birdtie/birdtie/apps/api/internal/oidcauth"
@@ -87,6 +88,13 @@ func main() {
 		log.Print("固定码公网测试登录已启用；未进行短信或生产手机号所有权验证")
 	}
 	store := postgres.New(pool, devPhoneEnabled)
+	if endpoint := os.Getenv("BIRDTIE_LOCATION_SEARCH_URL"); endpoint != "" {
+		provider, err := lr.NewPelias(endpoint)
+		if err != nil {
+			log.Fatal("location provider configuration invalid")
+		}
+		store.ConfigureLocationSearch(provider)
+	}
 	publicVideoSetting := strings.TrimSpace(os.Getenv("BIRDTIE_PUBLIC_MOMENT_VIDEO_ENABLED"))
 	publicVideoEnabled := publicVideoSetting == "1" || strings.EqualFold(publicVideoSetting, "true")
 	if publicVideoSetting != "" && publicVideoSetting != "0" && !strings.EqualFold(publicVideoSetting, "false") && !publicVideoEnabled {

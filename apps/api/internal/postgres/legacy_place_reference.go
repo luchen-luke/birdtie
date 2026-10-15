@@ -17,28 +17,39 @@ var _ lpr.HumanStore = (*Store)(nil)
 // Each read joins the immutable original owner and source frame to an exact
 // current native relationship. Knowing a migrated Place UUID is never a grant.
 func legacyPlaceReferenceSQL() string {
-	return `WITH cl AS MATERIALIZED(SELECT clock_timestamp() at)
- SELECT p.name,p.category_code,p.summary,coalesce(p.address_label,'') address_label,p.city_id,coalesce(c.name,'') city_name,
+	return `WITH cl AS MATERIALIZED(SELECT clock_timestamp() at),
+ mapped_places AS(SELECT run_id,source_key,source_sha256,target_id,xmin::text stamp FROM legacy_native_adaptation_entities WHERE kind='place' UNION ALL SELECT run_id,source_key,source_sha256,target_id::text,xmin::text FROM legacy_native_context_entities WHERE kind='unplaced_place'),
+ mapped_records AS(SELECT run_id,kind,source_key,source_sha256,target_id,owner_account_id,xmin::text stamp FROM legacy_native_adaptation_entities WHERE kind IN('saved_place','theme_map','moment') UNION ALL SELECT run_id,kind,source_key,source_sha256,target_id::text,owner_account_id,xmin::text FROM legacy_native_context_entities WHERE kind='saved_place'),
+ archived_records AS(SELECT run_id,kind,source_key,owner_account_id,source_sha256,deleted,payload,source_system,source_owner_id,xmin::text stamp FROM legacy_personal_archives UNION ALL SELECT n.run_id,'moment',n.source_note_id::text,n.owner_account_id,n.source_sha256,n.deleted,n.source_relationships,n.source_system,u.source_id,n.xmin::text FROM legacy_note_archives n JOIN legacy_entity_mappings u ON u.run_id=n.run_id AND u.entity_kind='user' AND u.target_id=n.owner_account_id AND u.owner_account_id=n.owner_account_id)
+ SELECT p.name,p.category_code,p.summary,coalesce(p.address_label,'') address_label,coalesce(p.city_id,'') city_id,coalesce(c.name,'') city_name,
  CASE WHEN p.coordinate_system='wgs84' AND p.location_precision='point' THEN p.latitude END latitude,
  CASE WHEN p.coordinate_system='wgs84' AND p.location_precision='point' THEN p.longitude END longitude,
- cl.at observed_at,least(cl.at+interval '30 seconds',p.expires_at,` + currentRetainedPlaceDeadlineSQL("p", "cl.at") + `,(SELECT min(least(expires_at,idle_expires_at)) FROM sessions WHERE account_id=$1 AND revoked_at IS NULL AND expires_at>cl.at AND idle_expires_at>cl.at)) valid_until,
- jsonb_build_array(p.xmin::text,c.xmin::text,own.xmin::text,pm.xmin::text,rm.xmin::text,nr.xmin::text,ar.xmin::text,archive_run.xmin::text,u.xmin::text,
+ cl.at observed_at,least(cl.at+interval '30 seconds',p.expires_at,
+ CASE WHEN $2='moment' THEN(SELECT min(least(i.retain_until,v.retain_until)) FROM private_moment_media_contexts ctx JOIN private_moment_media_context_places cp ON cp.context_id=ctx.id AND cp.place_id=p.id JOIN media_assets asset ON asset.id=coalesce(ctx.image_id,ctx.video_id) AND asset.owner_account_id=$1 AND asset.state='ready_private' LEFT JOIN private_moment_images i ON i.id=ctx.image_id AND i.owner_account_id=$1 AND i.status='ready_private' AND i.derivative IS NOT NULL AND i.retain_until>cl.at LEFT JOIN private_moment_videos v ON v.id=ctx.video_id AND v.owner_account_id=$1 AND v.status='ready_private' AND v.content IS NOT NULL AND v.retain_until>cl.at WHERE ctx.moment_id=$3::uuid AND ctx.owner_account_id=$1 AND ctx.status='ACTIVE' AND(i.id IS NOT NULL OR v.id IS NOT NULL)) END,` + currentRetainedPlaceDeadlineSQL("p", "cl.at") + `,(SELECT min(least(expires_at,idle_expires_at)) FROM sessions WHERE account_id=$1 AND revoked_at IS NULL AND expires_at>cl.at AND idle_expires_at>cl.at)) valid_until,
+ jsonb_build_array(p.xmin::text,c.xmin::text,own.xmin::text,pm.stamp,rm.stamp,nr.xmin::text,ar.stamp,archive_run.xmin::text,u.xmin::text,
  ` + retainedPlaceReadBindingSQL("p") + `,
  CASE WHEN $2='saved_place' THEN (SELECT jsonb_build_array(legacy_saved.xmin::text,legacy_saved.owner_account_id,legacy_saved.place_id) FROM saved_items legacy_saved WHERE legacy_saved.id=$3::uuid)
+ WHEN $2='moment' THEN(SELECT jsonb_build_array(m.xmin::text,m.revision,m.status,(SELECT version FROM moment_location_epochs WHERE moment_id=m.id),(SELECT coalesce(jsonb_agg(jsonb_build_array(l.id,l.xmin::text)ORDER BY l.id),'[]') FROM moment_location_links l WHERE l.moment_id=m.id AND l.place_id=p.id AND l.status='ACTIVE'),(SELECT coalesce(jsonb_agg(jsonb_build_array(ctx.id,ctx.xmin::text,cp.id,cp.xmin::text,
+ (SELECT jsonb_build_array(i.xmin::text,asset.xmin::text) FROM private_moment_images i JOIN media_assets asset ON asset.id=i.id WHERE i.id=ctx.image_id),
+ (SELECT jsonb_build_array(v.xmin::text,asset.xmin::text) FROM private_moment_videos v JOIN media_assets asset ON asset.id=v.id WHERE v.id=ctx.video_id))ORDER BY ctx.id,cp.position),'[]') FROM private_moment_media_contexts ctx JOIN private_moment_media_context_places cp ON cp.context_id=ctx.id WHERE ctx.moment_id=m.id AND ctx.owner_account_id=$1 AND ctx.status='ACTIVE' AND cp.place_id=p.id)) FROM moments m WHERE m.id=$3::uuid)
  ELSE (SELECT jsonb_build_array(t.xmin::text,e.xmin::text,t.revision,t.status,t.visibility,e.place_id) FROM theme_maps t JOIN theme_map_places e ON e.theme_map_id=t.id AND e.place_id=p.id WHERE t.id=$3::uuid) END)::text source
- FROM places p JOIN legacy_native_adaptation_entities pm ON pm.kind='place' AND pm.target_id=p.id::text
+ FROM places p JOIN mapped_places pm ON pm.target_id=p.id::text
  JOIN legacy_native_adaptation_runs nr ON nr.run_id=pm.run_id
- JOIN legacy_native_adaptation_entities rm ON rm.kind=$2 AND rm.target_id=$3::text AND rm.owner_account_id=$1 AND rm.run_id=pm.run_id
- JOIN legacy_personal_archives ar ON ar.kind=rm.kind AND ar.source_key=rm.source_key AND ar.owner_account_id=$1 AND ar.run_id=rm.run_id AND ar.source_sha256=rm.source_sha256 AND NOT ar.deleted
- JOIN legacy_personal_archive_runs archive_run ON archive_run.run_id=ar.run_id
+ JOIN mapped_records rm ON rm.kind=$2 AND rm.target_id=$3::text AND rm.owner_account_id=$1 AND rm.run_id=pm.run_id
+ JOIN archived_records ar ON ar.kind=rm.kind AND ar.source_key=rm.source_key AND ar.owner_account_id=$1 AND ar.run_id=rm.run_id AND ar.source_sha256=rm.source_sha256 AND NOT ar.deleted
+ JOIN legacy_import_runs archive_run ON archive_run.run_id=ar.run_id
  JOIN legacy_entity_mappings u ON u.entity_kind='user' AND u.source_system=ar.source_system AND u.source_id=ar.source_owner_id AND u.target_id=$1 AND u.owner_account_id=$1 AND u.run_id=ar.run_id
  JOIN accounts own ON own.id=$1 AND own.account_type='person' AND own.status='active'
  LEFT JOIN cities c ON c.id=p.city_id CROSS JOIN cl
  WHERE p.id=$4::uuid AND p.publication_status='draft' AND(p.expires_at IS NULL OR p.expires_at>cl.at)
  AND ` + currentRetainedPlaceVisibilitySQL("p", "cl.at") + `
- AND(($2='saved_place' AND ar.payload->>'sourcePlaceId'=pm.source_key AND EXISTS(SELECT 1 FROM saved_items legacy_saved WHERE legacy_saved.id=$3::uuid AND legacy_saved.owner_account_id=$1 AND legacy_saved.place_id=p.id))
+ AND((($2='saved_place' AND ar.payload->>'sourcePlaceId'=pm.source_key AND EXISTS(SELECT 1 FROM saved_items legacy_saved WHERE legacy_saved.id=$3::uuid AND legacy_saved.owner_account_id=$1 AND legacy_saved.place_id=p.id))
  OR($2='theme_map' AND EXISTS(SELECT 1 FROM jsonb_array_elements(ar.payload->'entries') original WHERE original->>'sourcePlaceId'=pm.source_key)
  AND EXISTS(SELECT 1 FROM theme_maps t JOIN theme_map_places e ON e.theme_map_id=t.id AND e.place_id=p.id AND e.city_id=p.city_id WHERE t.id=$3::uuid AND t.owner_account_id=$1 AND t.visibility='private' AND t.status='draft')))
+ OR($2='moment' AND ar.kind='moment' AND EXISTS(SELECT 1 FROM moments m WHERE m.id=$3::uuid AND m.author_account_id=$1 AND m.status<>'withdrawn' AND(
+ (EXISTS(SELECT 1 FROM moment_location_links l WHERE l.moment_id=m.id AND l.place_id=p.id AND l.status='ACTIVE') AND EXISTS(SELECT 1 FROM jsonb_array_elements(ar.payload->'places') original WHERE original->>'sourcePlaceId'=pm.source_key))
+ OR EXISTS(SELECT 1 FROM private_moment_media_contexts ctx JOIN private_moment_media_context_places cp ON cp.context_id=ctx.id AND cp.place_id=p.id JOIN legacy_native_context_entities ce ON ce.kind='media_context' AND ce.target_id=ctx.id AND ce.owner_account_id=$1 AND ce.run_id=ar.run_id AND ce.source_parent_key=ar.source_key AND ce.source_parent_sha256=ar.source_sha256 WHERE ctx.moment_id=m.id AND ctx.status='ACTIVE' AND ctx.owner_account_id=$1 AND(
+ (ctx.asset_kind='IMAGE' AND EXISTS(SELECT 1 FROM private_moment_images i WHERE i.id=ctx.image_id AND i.owner_account_id=$1 AND i.moment_id=m.id AND i.status='ready_private' AND i.derivative IS NOT NULL AND i.retain_until>cl.at AND EXISTS(SELECT 1 FROM media_assets asset WHERE asset.id=i.id AND asset.owner_account_id=$1 AND asset.state='ready_private')))OR(ctx.asset_kind='VIDEO' AND EXISTS(SELECT 1 FROM private_moment_videos v WHERE v.id=ctx.video_id AND v.owner_account_id=$1 AND v.moment_id=m.id AND v.status='ready_private' AND v.content IS NOT NULL AND v.retain_until>cl.at AND EXISTS(SELECT 1 FROM media_assets asset WHERE asset.id=v.id AND asset.owner_account_id=$1 AND asset.state='ready_private')))))))))
  FOR SHARE OF p,own`
 }
 

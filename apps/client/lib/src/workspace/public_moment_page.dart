@@ -21,6 +21,7 @@ import '../content/moment_image_picker.dart';
 import '../content/video_material_picker.dart';
 import 'moment_thread_api.dart';
 import 'moment_thread_panel.dart';
+import 'moment_locations_api.dart';
 
 /// One current, explicitly public human publication. It is not attendance evidence.
 class PublicMomentPage extends StatefulWidget {
@@ -569,23 +570,25 @@ class _PublicMomentPageState extends State<PublicMomentPage> {
                   const SizedBox(height: 16),
                   Text(_moment!.body, style: tokens.body),
                 ],
-                if (_moment!.placeID.isNotEmpty ||
-                    _moment!.cityName.isNotEmpty) ...[
-                  const SizedBox(height: 16),
-                  Text(
-                    _moment!.placeID.isEmpty
-                        ? '公开城市：${_moment!.cityName}'
-                        : '公开地点：${_moment!.placeName}',
-                    style: tokens.body,
-                  ),
-                ],
-                if (widget.onOpenPlace != null && _moment!.placeID.isNotEmpty)
-                  TextButton.icon(
-                    style: actionStyle,
-                    onPressed: () => widget.onOpenPlace!(_moment!.placeID),
-                    icon: const Icon(Icons.place_outlined),
-                    label: const Text('查看地点'),
-                  ),
+                MomentLocationsSidecar(
+                  key: ValueKey((
+                    'moment-locations',
+                    widget.momentID,
+                    _moment!.revision,
+                    _epoch,
+                  )),
+                  momentID: widget.momentID,
+                  expectedRevision: _moment!.revision,
+                  authorizationHeader: widget.authorizationHeader,
+                  sourceCurrent: () =>
+                      mounted &&
+                      _moment?.current == true &&
+                      _identity == _current,
+                  identityChanges: _shareSource,
+                  apiBaseUrl: _api.baseUrl,
+                  client: _api.borrowedClient,
+                  onOpenPlace: widget.onOpenPlace,
+                ),
                 const SizedBox(height: 12),
                 Text('这是用户的公开分享，不代表已核验到访或出席。', style: tokens.metadata),
                 if (_canManageMoment && widget.showManagement)

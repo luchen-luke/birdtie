@@ -1,0 +1,20 @@
+{"Time":"2026-10-15T19:02:43.1253163+08:00","Action":"start","Package":"github.com/birdtie/birdtie/apps/api/internal/legacysocial"}
+{"ImportPath":"github.com/birdtie/birdtie/apps/api/internal/postgres","Action":"build-output","Output":"# github.com/birdtie/birdtie/apps/api/internal/postgres\n"}
+{"ImportPath":"github.com/birdtie/birdtie/apps/api/internal/postgres","Action":"build-output","Output":"internal\\postgres\\legacy_social_import.go:103:61: cannot call pointer method Build on media.LocalChatImageDerivativeBuilder\n"}
+{"ImportPath":"github.com/birdtie/birdtie/apps/api/internal/postgres","Action":"build-fail"}
+{"Time":"2026-10-15T19:02:43.6327185+08:00","Action":"run","Package":"github.com/birdtie/birdtie/apps/api/internal/legacysocial","Test":"TestLegacySocialBuildProtectedEightTableProjection"}
+{"Time":"2026-10-15T19:02:43.6327185+08:00","Action":"output","Package":"github.com/birdtie/birdtie/apps/api/internal/legacysocial","Test":"TestLegacySocialBuildProtectedEightTableProjection","Output":"=== RUN   TestLegacySocialBuildProtectedEightTableProjection\n"}
+{"Time":"2026-10-15T19:02:44.0302833+08:00","Action":"start","Package":"github.com/birdtie/birdtie/apps/api/internal/postgres"}
+{"Time":"2026-10-15T19:02:44.0302833+08:00","Action":"output","Package":"github.com/birdtie/birdtie/apps/api/internal/postgres","Output":"FAIL\tgithub.com/birdtie/birdtie/apps/api/internal/postgres [build failed]\n"}
+{"Time":"2026-10-15T19:02:44.0302833+08:00","Action":"fail","Package":"github.com/birdtie/birdtie/apps/api/internal/postgres","Elapsed":0,"FailedBuild":"github.com/birdtie/birdtie/apps/api/internal/postgres"}
+{"Time":"2026-10-15T19:02:44.0302833+08:00","Action":"start","Package":"github.com/birdtie/birdtie/apps/api/internal/httpapi"}
+{"Time":"2026-10-15T19:02:44.0302833+08:00","Action":"output","Package":"github.com/birdtie/birdtie/apps/api/internal/httpapi","Output":"FAIL\tgithub.com/birdtie/birdtie/apps/api/internal/httpapi [build failed]\n"}
+{"Time":"2026-10-15T19:02:44.0302833+08:00","Action":"fail","Package":"github.com/birdtie/birdtie/apps/api/internal/httpapi","Elapsed":0,"FailedBuild":"github.com/birdtie/birdtie/apps/api/internal/postgres"}
+{"Time":"2026-10-15T19:02:44.0302833+08:00","Action":"start","Package":"github.com/birdtie/birdtie/apps/api/cmd/legacy-social-import"}
+{"Time":"2026-10-15T19:02:44.0302833+08:00","Action":"output","Package":"github.com/birdtie/birdtie/apps/api/cmd/legacy-social-import","Output":"FAIL\tgithub.com/birdtie/birdtie/apps/api/cmd/legacy-social-import [build failed]\n"}
+{"Time":"2026-10-15T19:02:44.0302833+08:00","Action":"fail","Package":"github.com/birdtie/birdtie/apps/api/cmd/legacy-social-import","Elapsed":0,"FailedBuild":"github.com/birdtie/birdtie/apps/api/internal/postgres"}
+{"Time":"2026-10-15T19:02:47.1024046+08:00","Action":"output","Package":"github.com/birdtie/birdtie/apps/api/internal/legacysocial","Test":"TestLegacySocialBuildProtectedEightTableProjection","Output":"--- PASS: TestLegacySocialBuildProtectedEightTableProjection (3.47s)\n"}
+{"Time":"2026-10-15T19:02:47.1024046+08:00","Action":"pass","Package":"github.com/birdtie/birdtie/apps/api/internal/legacysocial","Test":"TestLegacySocialBuildProtectedEightTableProjection","Elapsed":3.47}
+{"Time":"2026-10-15T19:02:47.1024046+08:00","Action":"output","Package":"github.com/birdtie/birdtie/apps/api/internal/legacysocial","Output":"PASS\n"}
+{"Time":"2026-10-15T19:02:47.1136777+08:00","Action":"output","Package":"github.com/birdtie/birdtie/apps/api/internal/legacysocial","Output":"ok  \tgithub.com/birdtie/birdtie/apps/api/internal/legacysocial\t3.988s\n"}
+{"Time":"2026-10-15T19:02:47.1136777+08:00","Action":"pass","Package":"github.com/birdtie/birdtie/apps/api/internal/legacysocial","Elapsed":3.988}

@@ -7,6 +7,7 @@ import '../config/birdtie_environment.dart';
 import 'moment_time_choice.dart';
 import 'moment_control.dart';
 import 'moment_control_pending_store.dart';
+import 'moment_locations.dart';
 import '../workspace/human_causal_control.dart';
 import '../workspace/public_moment_media.dart';
 import 'package:flutter/scheduler.dart';
@@ -769,16 +770,22 @@ class PrivateMomentController extends ChangeNotifier {
     String? organizationID,
     required MomentTimeValue time,
     String? locationPrecision,
+    List<MomentLocationInput>? locations,
   }) => {
-    'cityId': cityID.trim(),
-    'placeId': placeID.trim().toLowerCase(),
+    'cityId': locations == null ? cityID.trim() : '',
+    'placeId': locations == null ? placeID.trim().toLowerCase() : '',
     'title': title.trim(),
     'body': body.trim(),
     'timePrecision': time.precision,
     if (time.occurredAt != null) 'occurredAt': momentUTC(time.occurredAt!),
-    'locationPrecision':
-        locationPrecision ??
-        (cityID.trim().isEmpty ? 'none' : (placeID.isEmpty ? 'city' : 'place')),
+    'locationPrecision': locations != null
+        ? 'none'
+        : locationPrecision ??
+              (placeID.isNotEmpty
+                  ? 'place'
+                  : (cityID.trim().isEmpty ? 'none' : 'city')),
+    if (locations != null)
+      'locations': locations.map((value) => value.toJson()).toList(),
     if (activityID != null) 'activityId': activityID.trim().toLowerCase(),
     if (communityID != null) 'communityId': communityID.trim().toLowerCase(),
     if (organizationID != null)
@@ -840,6 +847,7 @@ class PrivateMomentController extends ChangeNotifier {
     String communityID = '',
     String organizationID = '',
     MomentTimeValue time = MomentTimeValue.unknown,
+    List<MomentLocationInput>? locations,
     bool Function()? current,
   }) => _prepare(
     MomentControlInput(
@@ -855,6 +863,7 @@ class PrivateMomentController extends ChangeNotifier {
         communityID: communityID,
         organizationID: organizationID,
         time: time,
+        locations: locations,
       ),
     ),
     current,
@@ -870,6 +879,7 @@ class PrivateMomentController extends ChangeNotifier {
     String? organizationID,
     MomentTimeValue? time,
     String? locationPrecision,
+    List<MomentLocationInput>? locations,
     bool Function()? current,
   }) async {
     _syncActor();
@@ -890,6 +900,7 @@ class PrivateMomentController extends ChangeNotifier {
           organizationID: organizationID,
           time: time ?? moment.time,
           locationPrecision: locationPrecision,
+          locations: locations,
         ),
       ),
       current,
@@ -917,6 +928,7 @@ class PrivateMomentController extends ChangeNotifier {
     PrivateMoment moment, {
     List<PublicMomentMediaSelection>? media,
     String localScope = '',
+    List<MomentLocationInput>? locations,
     bool Function()? current,
   }) async {
     _syncActor();
@@ -943,6 +955,7 @@ class PrivateMomentController extends ChangeNotifier {
           placeID: moment.placeID,
           time: moment.time,
           locationPrecision: moment.locationPrecision,
+          locations: locations,
         ),
       ),
       current,
@@ -958,6 +971,7 @@ class PrivateMomentController extends ChangeNotifier {
     String? cityID,
     String? placeID,
     String? locationPrecision,
+    List<MomentLocationInput>? locations,
     bool Function()? current,
   }) async {
     _syncActor();
@@ -978,6 +992,7 @@ class PrivateMomentController extends ChangeNotifier {
           title: title,
           body: body,
           placeID: placeID ?? moment.placeID,
+          locations: locations,
           time: moment.time,
           locationPrecision:
               locationPrecision ??

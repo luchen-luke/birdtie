@@ -6,6 +6,7 @@ import (
 	"errors"
 	"github.com/birdtie/birdtie/apps/api/internal/actorref"
 	"github.com/birdtie/birdtie/apps/api/internal/connection"
+	ea "github.com/birdtie/birdtie/apps/api/internal/entityaction"
 	"github.com/birdtie/birdtie/apps/api/internal/identity"
 	"github.com/birdtie/birdtie/apps/api/internal/opportunity"
 	"github.com/birdtie/birdtie/apps/api/internal/socialintent"
@@ -143,8 +144,34 @@ func (s *Store) humanSocialRead(ctx context.Context, digest [32]byte, actor iden
 }
 
 func (s *Store) ListHumanTies(ctx context.Context, digest [32]byte, actor identity.Actor) ([]connection.Tie, error) {
-	p, e := s.humanSocialRead(ctx, digest, actor, "ties", "")
-	return p.Ties, e
+	access := ea.Access{Actor: actor, SessionDigest: digest}
+	tx, e := s.beginChatPage(ctx, access)
+	if e != nil {
+		return nil, e
+	}
+	defer tx.Rollback(context.Background())
+	rows, e := tx.Query(ctx, contactTiesBaseSQL+` ORDER BY t.created_at DESC,t.id DESC`, actor.ID)
+	if e != nil {
+		return nil, chatPageNativeFailure(e)
+	}
+	out := []connection.Tie{}
+	for rows.Next() {
+		v, e := scanContactTie(rows)
+		if e != nil {
+			rows.Close()
+			return nil, chatPageNativeFailure(e)
+		}
+		out = append(out, v)
+	}
+	e = rows.Err()
+	rows.Close()
+	if e != nil {
+		return nil, chatPageNativeFailure(e)
+	}
+	if e = s.finishChatPage(ctx, tx, access); e != nil {
+		return nil, e
+	}
+	return out, nil
 }
 func (s *Store) ListHumanVisibleSocialIntents(ctx context.Context, digest [32]byte, actor identity.Actor) ([]socialintent.Record, error) {
 	p, e := s.humanSocialRead(ctx, digest, actor, "intents", "")

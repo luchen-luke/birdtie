@@ -1,0 +1,15 @@
+{
+  "sshExitCode": 2,
+  "stderrBytes": 0,
+  "stderrSHA256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "remoteScriptSHA256": "79376cf1c47e2fd2fa1c02a44d3692f6af403f86cb9a97938b0b6781670f2110",
+  "result": {
+    "status": "REJECTED",
+    "stage": "UNCHANGED_PROOF",
+    "sourceWrites": 0,
+    "nativeWrites": 0,
+    "serviceMutations": 0,
+    "providerCalls": 0,
+    "privateValuesOmitted": true
+  }
+}

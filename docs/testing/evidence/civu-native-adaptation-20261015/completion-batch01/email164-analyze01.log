@@ -1,0 +1,16 @@
+Analyzing birdtie_auth_controller.dart, dev_phone_login_sheet.dart, session_vault.dart, settings_page.dart, dev_phone_auth_controller_test.dart...
+
+   info - lib\src\auth\birdtie_auth_controller.dart:281:7 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - lib\src\auth\birdtie_auth_controller.dart:323:7 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - lib\src\auth\birdtie_auth_controller.dart:375:7 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - lib\src\auth\birdtie_auth_controller.dart:417:7 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - lib\src\auth\birdtie_auth_controller.dart:472:7 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - lib\src\auth\birdtie_auth_controller.dart:581:13 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - lib\src\auth\birdtie_auth_controller.dart:590:13 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - lib\src\auth\birdtie_auth_controller.dart:871:7 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - lib\src\auth\dev_phone_login_sheet.dart:66:48 - Don't use 'BuildContext's across async gaps. Try rewriting the code to not use the 'BuildContext', or guard the use with a 'mounted' check. - use_build_context_synchronously
+   info - lib\src\auth\dev_phone_login_sheet.dart:68:21 - Don't use 'BuildContext's across async gaps. Try rewriting the code to not use the 'BuildContext', or guard the use with a 'mounted' check. - use_build_context_synchronously
+   info - lib\src\auth\session_vault.dart:85:12 - Use interpolation to compose strings and values. Try using string interpolation to build the composite string. - prefer_interpolation_to_compose_strings
+   info - test\dev_phone_auth_controller_test.dart:212:11 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+
+12 issues found.

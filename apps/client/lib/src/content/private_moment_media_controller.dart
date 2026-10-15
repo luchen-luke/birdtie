@@ -11,6 +11,7 @@ import 'package:http/http.dart' as http;
 import 'moment_image_header.dart';
 import 'moment_image_picker.dart';
 import 'private_moment_media_pending_store.dart';
+import 'moment_media_context_api.dart';
 import '../workspace/local_image_draft.dart' show decodeLocalImagePixels;
 
 const privateMomentImagePurpose = 'PRIVATE_MOMENT_ATTACHMENT';
@@ -124,6 +125,12 @@ class PrivateMomentMediaController extends ChangeNotifier {
   final http.Client _client;
   final bool _ownsClient;
   final String _base;
+  MomentMediaContextAPI get mediaContextAPI => MomentMediaContextAPI(
+    client: _client,
+    baseUrl: _base,
+    authorizationHeader: authorizationHeader,
+    current: () => !_disposed && !retired && !requiresReopen && _binding,
+  );
   final MomentImagePicker _picker;
   bool supportsSource(MomentImageSource source) =>
       _picker.supportsSource(source);

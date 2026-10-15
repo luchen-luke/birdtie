@@ -31,12 +31,15 @@ const inboxColumns = `i.id,i.category,i.title,i.detail,i.resource_type,i.resourc
       (SELECT birdtie_person_avatar_metadata(m.sender_account_id,i.recipient_account_id) FROM conversation_messages m
        WHERE m.id=CASE WHEN i.routing_decision_id IS NULL THEN i.resource_id ELSE d.message_id END
         AND m.conversation_id=i.target_conversation_id AND m.sender_account_id<>i.recipient_account_id)
-    ELSE NULL END`
+    ELSE NULL END,i.origin,
+    coalesce((SELECT n.original_type FROM historical_notification_facts n WHERE n.id=i.id AND i.origin='LEGACY_HISTORY'),''),
+    (SELECT n.source_read_at FROM historical_notification_facts n WHERE n.id=i.id AND i.origin='LEGACY_HISTORY'),
+    (SELECT n.source_seen_at FROM historical_notification_facts n WHERE n.id=i.id AND i.origin='LEGACY_HISTORY')`
 
 // Legacy rows retain their IDs but do not become permanent cached permissions.
 // New routed rows are checked against their exact native source and policy.
 const inboxVisibility = `EXISTS(SELECT 1 FROM accounts current_owner WHERE current_owner.id=i.recipient_account_id AND current_owner.status='active') AND
- ((i.routing_decision_id IS NOT NULL AND d.recipient_id=i.recipient_account_id AND birdtie_native_notification_visible(d)) OR
+ ((i.origin='LEGACY_HISTORY' AND EXISTS(SELECT 1 FROM historical_notification_facts original_notice JOIN legacy_social_history_facts original_fact ON original_fact.kind='notification' AND original_fact.target_id=original_notice.id AND original_fact.owner_account_id=original_notice.owner_account_id JOIN legacy_social_history_runs original_run ON original_run.run_id=original_fact.run_id WHERE original_notice.id=i.id AND original_notice.owner_account_id=i.recipient_account_id AND original_notice.source_deleted_at IS NULL)) OR(i.origin='NATIVE' AND ((i.routing_decision_id IS NOT NULL AND d.recipient_id=i.recipient_account_id AND birdtie_native_notification_visible(d)) OR
   (i.routing_decision_id IS NULL AND CASE i.resource_type
     WHEN 'community' THEN EXISTS(SELECT 1 FROM communities co WHERE co.id=i.resource_id AND co.owner_account_id=i.recipient_account_id AND co.lifecycle_status='active')
     ELSE EXISTS(SELECT 1 FROM birdtie_native_notification_source(
@@ -46,14 +49,14 @@ const inboxVisibility = `EXISTS(SELECT 1 FROM accounts current_owner WHERE curre
             THEN 'connection_request' ELSE 'connection_decision' END
         ELSE i.resource_type END,
       CASE WHEN i.resource_type IN ('activity_change','activity_cancelled','activity_reminder') THEN COALESCE(i.target_activity_id,i.resource_id) ELSE i.resource_id END,
-      i.recipient_account_id)) END))`
+      i.recipient_account_id)) END))))`
 
 func scanInboxItem(row scanner) (inbox.Item, error) {
 	var item inbox.Item
 	err := row.Scan(&item.ID, &item.Category, &item.Title, &item.Detail,
 		&item.ResourceType, &item.ResourceID, &item.CreatedAt, &item.ReadAt,
 		&item.TargetActivityID, &item.TargetConversationID, &item.SemanticCategory, &item.NotificationRoute, &item.NotificationPriority,
-		&item.TargetCommunityID, &item.TargetTaskID, &item.TargetBusinessID, &item.ActorAvatar)
+		&item.TargetCommunityID, &item.TargetTaskID, &item.TargetBusinessID, &item.ActorAvatar, &item.Origin, &item.HistoricalType, &item.OriginalReadAt, &item.OriginalSeenAt)
 	if err == nil {
 		err = projectInboxActorMedia(&item)
 	}
@@ -61,6 +64,12 @@ func scanInboxItem(row scanner) (inbox.Item, error) {
 }
 
 func projectInboxActorMedia(item *inbox.Item) error {
+	if item.Origin == "LEGACY_HISTORY" {
+		labels := map[string]string{"follow": "原关注通知", "friend_request": "原好友申请通知", "friend_accepted": "原好友接受通知", "mutual_follow": "原互相关注通知", "note_comment": "原评论通知", "comment_like": "原评论点赞通知", "reaction": "原互动通知", "moment_moderation_changed": "原审核通知", "moment_share": "原分享通知"}
+		if title := labels[item.HistoricalType]; title != "" {
+			item.Title = title
+		}
+	}
 	if item.ActorAvatar != nil {
 		item.ActorID = &item.ActorAvatar.AccountID
 	}
@@ -73,7 +82,7 @@ func projectInboxActorMedia(item *inbox.Item) error {
 func (s *Store) ListInbox(ctx context.Context, ownerID string) ([]inbox.Item, error) {
 	rows, err := s.pool.Query(ctx, `SELECT `+inboxColumns+` FROM inbox_items i
         LEFT JOIN native_notification_decisions d ON d.id=i.routing_decision_id
-        WHERE i.recipient_account_id = $1 AND `+inboxVisibility+`
+        WHERE i.recipient_account_id = $1 AND i.origin='NATIVE' AND `+inboxVisibility+`
         ORDER BY COALESCE(d.priority,50) DESC,i.created_at DESC,i.id DESC LIMIT 100`, ownerID)
 	if err != nil {
 		return nil, err
@@ -168,7 +177,7 @@ func (s *Store) ListHumanInbox(ctx context.Context, digest [32]byte, actor ident
 		return nil, err
 	}
 	rows, err := tx.Query(ctx, `SELECT `+inboxColumns+` FROM inbox_items i LEFT JOIN native_notification_decisions d ON d.id=i.routing_decision_id
- WHERE i.recipient_account_id=$1 AND `+inboxVisibility+` AND EXISTS(SELECT 1 FROM sessions se WHERE se.account_id=$1 AND se.token_sha256=$2 AND se.revoked_at IS NULL AND se.expires_at>clock_timestamp() AND se.idle_expires_at>clock_timestamp() AND ($3::boolean OR se.authentication_method<>'dev_phone'))
+ WHERE i.recipient_account_id=$1 AND i.origin='NATIVE' AND `+inboxVisibility+` AND EXISTS(SELECT 1 FROM sessions se WHERE se.account_id=$1 AND se.token_sha256=$2 AND se.revoked_at IS NULL AND se.expires_at>clock_timestamp() AND se.idle_expires_at>clock_timestamp() AND ($3::boolean OR se.authentication_method<>'dev_phone'))
  ORDER BY COALESCE(d.priority,50) DESC,i.created_at DESC,i.id DESC LIMIT 100`, actor.ID, digest[:], s.devPhoneEnabled)
 	if err != nil {
 		return nil, socialnow.ErrUnavailable

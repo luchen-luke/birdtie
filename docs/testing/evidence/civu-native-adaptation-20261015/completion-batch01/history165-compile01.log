@@ -1,0 +1,21 @@
+?   	github.com/birdtie/birdtie/apps/api/internal/legacyhistory	[no test files]
+# github.com/birdtie/birdtie/apps/api/internal/postgres
+internal\postgres\chat_page.go:64:5: syntax error: unexpected name UNION after top level declaration
+internal\postgres\chat_page.go:90:48: more than one character in rune literal
+internal\postgres\chat_page.go:94:59: invalid character U+0024 '$'
+internal\postgres\chat_page.go:94:79: more than one character in rune literal
+internal\postgres\chat_page.go:139:155: invalid character U+0024 '$'
+internal\postgres\chat_page.go:193:21: invalid character U+0024 '$'
+internal\postgres\chat_page.go:194:38: invalid character U+0024 '$'
+internal\postgres\chat_page.go:235:89: invalid character U+0024 '$'
+internal\postgres\chat_page.go:245:26: invalid character U+0024 '$'
+internal\postgres\chat_page.go:246:7: invalid character U+0024 '$'
+internal\postgres\chat_page.go:246:7: too many errors
+# github.com/birdtie/birdtie/apps/api/internal/httpapi
+internal\httpapi\journey_history.go:67:63: cannot use v.ResponseProof (variable of interface type any) as identity.HumanControlProof value in argument to s.respondHumanControl: any does not implement identity.HumanControlProof (missing method RevalidateHumanControl)
+ok  	github.com/birdtie/birdtie/apps/api/internal/content	0.450s [no tests to run]
+ok  	github.com/birdtie/birdtie/apps/api/internal/inbox	0.289s [no tests to run]
+FAIL	github.com/birdtie/birdtie/apps/api/internal/postgres [build failed]
+FAIL	github.com/birdtie/birdtie/apps/api/internal/httpapi [build failed]
+FAIL	github.com/birdtie/birdtie/apps/api/cmd/legacy-history-import [build failed]
+FAIL

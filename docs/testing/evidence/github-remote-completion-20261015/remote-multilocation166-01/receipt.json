@@ -1,0 +1,281 @@
+{
+  "status": "PASS",
+  "startedAtUTC": "2026-10-15T11:25:48.111729+00:00",
+  "completedAtUTC": "2026-10-15T11:25:51.397477+00:00",
+  "origin": "https://47.110.154.133",
+  "tls": "DEFAULT_CERTIFICATE_AND_HOSTNAME_VALIDATION",
+  "runId": "9623af84-398a-4aa2-8f6a-a60624783f34",
+  "scriptSHA256": "4fae96d62a403d4452b2d56682a26b0e854bcf9d63dc9d6db13493fef68f8abc",
+  "identity": "EXACT_PREVIOUSLY_PROVED_SYNTHETIC03",
+  "realCivuOwnersUsed": 0,
+  "checks": [
+    {
+      "name": "actual_https_ready",
+      "passed": true
+    },
+    {
+      "name": "explicit_fixed_test_channel",
+      "passed": true
+    },
+    {
+      "name": "location_search_real_available",
+      "passed": true
+    },
+    {
+      "name": "exact_public_landmark_candidate",
+      "passed": true
+    },
+    {
+      "name": "candidate_has_real_source",
+      "passed": true
+    },
+    {
+      "name": "location_search_real_available",
+      "passed": true
+    },
+    {
+      "name": "exact_public_landmark_candidate",
+      "passed": true
+    },
+    {
+      "name": "candidate_has_real_source",
+      "passed": true
+    },
+    {
+      "name": "two_independent_reference_identities",
+      "passed": true
+    },
+    {
+      "name": "exact_previously_proved_synthetic_actor",
+      "passed": true
+    },
+    {
+      "name": "preview_authority_shape",
+      "passed": true
+    },
+    {
+      "name": "preview_preserves_unplaced_untitled_input",
+      "passed": true
+    },
+    {
+      "name": "preview_resolves_complete_selection",
+      "passed": true
+    },
+    {
+      "name": "original_operation_identity",
+      "passed": true
+    },
+    {
+      "name": "original_payload_digest",
+      "passed": true
+    },
+    {
+      "name": "original_receipt_immediate_deep_equal",
+      "passed": true
+    },
+    {
+      "name": "preview_authority_shape",
+      "passed": true
+    },
+    {
+      "name": "preview_preserves_unplaced_untitled_input",
+      "passed": true
+    },
+    {
+      "name": "preview_resolves_complete_selection",
+      "passed": true
+    },
+    {
+      "name": "original_operation_identity",
+      "passed": true
+    },
+    {
+      "name": "original_parent_identity",
+      "passed": true
+    },
+    {
+      "name": "original_payload_digest",
+      "passed": true
+    },
+    {
+      "name": "original_receipt_immediate_deep_equal",
+      "passed": true
+    },
+    {
+      "name": "untitled_unplaced_body_current",
+      "passed": true
+    },
+    {
+      "name": "untitled_unplaced_body_current",
+      "passed": true
+    },
+    {
+      "name": "public_body_v4_context_wire",
+      "passed": true
+    },
+    {
+      "name": "complete_current_location_sidecar",
+      "passed": true
+    },
+    {
+      "name": "stable_reference_sidecar_identity",
+      "passed": true
+    },
+    {
+      "name": "stable_reference_sidecar_identity",
+      "passed": true
+    },
+    {
+      "name": "complete_current_location_sidecar",
+      "passed": true
+    },
+    {
+      "name": "stable_reference_sidecar_identity",
+      "passed": true
+    },
+    {
+      "name": "stable_reference_sidecar_identity",
+      "passed": true
+    },
+    {
+      "name": "same_relations_owner_and_public",
+      "passed": true
+    },
+    {
+      "name": "public_exploration_city_available",
+      "passed": true
+    },
+    {
+      "name": "real_v6_map_complete_pins",
+      "passed": true
+    },
+    {
+      "name": "map_reference_not_fake_native_place",
+      "passed": true
+    },
+    {
+      "name": "map_uses_actual_selected_source_coordinates",
+      "passed": true
+    },
+    {
+      "name": "map_reference_not_fake_native_place",
+      "passed": true
+    },
+    {
+      "name": "map_uses_actual_selected_source_coordinates",
+      "passed": true
+    },
+    {
+      "name": "preview_authority_shape",
+      "passed": true
+    },
+    {
+      "name": "preview_preserves_unplaced_untitled_input",
+      "passed": true
+    },
+    {
+      "name": "preview_resolves_complete_selection",
+      "passed": true
+    },
+    {
+      "name": "original_operation_identity",
+      "passed": true
+    },
+    {
+      "name": "original_parent_identity",
+      "passed": true
+    },
+    {
+      "name": "original_payload_digest",
+      "passed": true
+    },
+    {
+      "name": "original_receipt_immediate_deep_equal",
+      "passed": true
+    },
+    {
+      "name": "untitled_unplaced_body_current",
+      "passed": true
+    },
+    {
+      "name": "public_body_v4_context_wire",
+      "passed": true
+    },
+    {
+      "name": "complete_current_location_sidecar",
+      "passed": true
+    },
+    {
+      "name": "complete_current_location_sidecar",
+      "passed": true
+    },
+    {
+      "name": "real_v6_map_complete_pins",
+      "passed": true
+    },
+    {
+      "name": "original_publication_fact_after_location_edit",
+      "passed": true
+    },
+    {
+      "name": "preview_authority_shape",
+      "passed": true
+    },
+    {
+      "name": "original_operation_identity",
+      "passed": true
+    },
+    {
+      "name": "original_parent_identity",
+      "passed": true
+    },
+    {
+      "name": "original_payload_digest",
+      "passed": true
+    },
+    {
+      "name": "original_receipt_immediate_deep_equal",
+      "passed": true
+    },
+    {
+      "name": "qa_withdrawn_tombstone",
+      "passed": true
+    },
+    {
+      "name": "qa_public_now_404",
+      "passed": true
+    },
+    {
+      "name": "qa_public_sidecar_now_404",
+      "passed": true
+    },
+    {
+      "name": "original_publication_fact_after_withdraw",
+      "passed": true
+    },
+    {
+      "name": "cleanup_still_exact_qa_owner",
+      "passed": true
+    }
+  ],
+  "events": 39,
+  "cleanup": [
+    {
+      "qaMomentId": "47ce7ce5-dc4a-44c5-b58f-32d63d1518e1",
+      "withdrawn": true,
+      "public404": true
+    },
+    {
+      "newSessionRevoked": true
+    }
+  ],
+  "cleanupPassed": true,
+  "unresolvedOriginalOperationIds": [],
+  "failure": null,
+  "map": "PASS",
+  "automaticUnknownResends": 0,
+  "privateValuesLogged": false,
+  "tokensAndApprovals": "RAM_ONLY",
+  "qaPublicContent": "WITHDRAWN_USING_ORIGINAL_CONTROL",
+  "uiAndDevice": "NOT_RUN"
+}

@@ -21,6 +21,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/birdtie/birdtie/apps/api/internal/legacyimagerecovery"
 	"github.com/birdtie/birdtie/apps/api/internal/legacymedia"
 	"github.com/birdtie/birdtie/apps/api/internal/legacymigration"
 	"github.com/birdtie/birdtie/apps/api/internal/media"
@@ -277,6 +278,179 @@ func writeSummary(out io.Writer, runID, status string, counts legacymedia.Counts
 	return nil
 }
 
+type recoveryOptions struct {
+	run, source, manifest, matched, seal, sealSHA, blobs, inspect string
+	apply, verify                                                 bool
+	target                                                        postgres.LegacyMigrationTargetIdentity
+	normalizer                                                    legacyimagerecovery.Normalizer
+	deadline                                                      time.Duration
+}
+
+func writeRecoverySummary(out io.Writer, r postgres.LegacyPrivateImageRecoveryResult) error {
+	summary := map[string]any{"runId": r.RunID, "status": r.Status, "protocol": legacyimagerecovery.Protocol, "countsKnown": false, "activated": false, "sourceWrites": 0, "videosImported": false}
+	if r.Status == "PREPARED_NOT_IMPORTED" || r.Status == "COMMITTED" {
+		summary["countsKnown"] = true
+		summary["counts"] = r.Counts
+		summary["deferred"] = r.Deferred
+		summary["mediaImported"] = r.Status == "COMMITTED"
+	}
+	if json.NewEncoder(out).Encode(summary) != nil {
+		return postgres.ErrLegacyMigrationUnavailable
+	}
+	return nil
+}
+func recoveryBlobRoot(root, repository string) error {
+	if !filepath.IsAbs(root) || !filepath.IsAbs(repository) || pathWithin(filepath.Clean(root), filepath.Clean(repository)) || runtime.GOOS == "windows" && pathWithin(filepath.Clean(root), `D:\Project\birdtie`) {
+		return errInputFile
+	}
+	info, e := inputPathState(filepath.Clean(root))
+	if e != nil || !info.IsDir() {
+		return errInputFile
+	}
+	return nil
+}
+func verifyRecoveredBlob(ctx context.Context, root string, r legacyimagerecovery.Record, n *legacyimagerecovery.Normalizer) string {
+	f, e := openPrivateBlob(root, r.Record)
+	if e != nil {
+		return "INPUT_FILE_GUARD"
+	}
+	raw, e := io.ReadAll(io.LimitReader(f, r.InputBytes+1))
+	closed := f.Close()
+	defer clear(raw)
+	if e != nil || closed != nil || int64(len(raw)) != r.InputBytes || legacymedia.Hash(raw) != r.InputSHA256 {
+		return "INPUT_HASH_OR_SIZE"
+	}
+	d, e := n.Normalize(ctx, r, raw)
+	defer d.Erase()
+	if e != nil {
+		return legacyimagerecovery.FailureStage(e)
+	}
+	return ""
+}
+func runImageRecovery(ctx context.Context, o recoveryOptions, getenv func(string) string, out io.Writer) error {
+	if o.inspect != "" {
+		o.run = o.inspect
+	}
+	if !legacymigration.ValidRunID(o.run) {
+		return errArguments
+	}
+	repository := getenv("BIRDTIE_REPOSITORY_ROOT")
+	if repository == "" && runtime.GOOS == "windows" {
+		repository = `D:\Project\birdtie`
+	}
+	var input postgres.LegacyPrivateMediaInput
+	var plan legacyimagerecovery.Plan
+	var e error
+	if o.inspect == "" {
+		if o.source == "" || o.manifest == "" || filepath.Clean(o.source) == filepath.Clean(o.manifest) || o.matched == "" || o.seal == "" || !legacymedia.ValidSHA(o.sealSHA) {
+			return errArguments
+		}
+		if input.Source, e = readPrivateInput(o.source, repository); e != nil {
+			return e
+		}
+		if input.Manifest, e = readPrivateInput(o.manifest, repository); e != nil {
+			return e
+		}
+		if input.Matched, e = readPrivateInput(o.matched, repository); e != nil {
+			return e
+		}
+		if input.AuthenticatedSeal, e = readPrivateInput(o.seal, repository); e != nil {
+			return e
+		}
+		input.ExpectedSealSHA256 = o.sealSHA
+		plan, e = legacyimagerecovery.Build(o.run, input.Source, input.Manifest, input.Matched, input.AuthenticatedSeal, o.sealSHA)
+		if e != nil {
+			return postgres.ErrLegacyMigrationInvalid
+		}
+		if !o.apply && !o.verify {
+			return writeRecoverySummary(out, postgres.LegacyPrivateImageRecoveryResult{RunID: o.run, Status: "PREPARED_NOT_IMPORTED", Counts: plan.Counts, Deferred: plan.Deferred})
+		}
+		if e = recoveryBlobRoot(o.blobs, repository); e != nil {
+			return e
+		}
+		if plan.Counts.HEIC > 0 && o.normalizer.Validate() != nil {
+			return legacyimagerecovery.ErrUnavailable
+		}
+		if o.verify {
+			ctx, cancel := context.WithTimeout(ctx, o.deadline)
+			defer cancel()
+			previous := debug.SetMemoryLimit(512 * 1024 * 1024)
+			defer debug.SetMemoryLimit(previous)
+			verified, processed := 0, 0
+			failures := map[string]int{}
+			for _, r := range plan.Records {
+				if ctx.Err() != nil {
+					failures["DEADLINE"]++
+					break
+				}
+				stage := verifyRecoveredBlob(ctx, o.blobs, r, &o.normalizer)
+				processed++
+				if stage == "" {
+					verified++
+				} else {
+					failures[stage]++
+				}
+				if processed%5 == 0 {
+					if json.NewEncoder(out).Encode(map[string]any{"status": "VERIFYING_NOT_IMPORTED", "processed": processed, "verified": verified, "expected": plan.Counts.Images, "failureStages": failures, "databaseAccessed": false, "mediaWritten": false}) != nil {
+						return errInputFile
+					}
+				}
+			}
+			status := "VERIFIED_NOT_IMPORTED"
+			if verified != plan.Counts.Images {
+				status = "VERIFICATION_FAILED_NOT_IMPORTED"
+			}
+			if json.NewEncoder(out).Encode(map[string]any{"status": status, "processed": processed, "verified": verified, "failed": processed - verified, "expected": plan.Counts.Images, "unprocessed": plan.Counts.Images - processed, "failureStages": failures, "databaseAccessed": false, "mediaWritten": false, "archivesChanged": false, "antivirusScan": "NOT_RUN", "privacyRisk": "UNKNOWN"}) != nil {
+				return errInputFile
+			}
+			if verified != plan.Counts.Images {
+				return errors.New("legacy_image_recovery_verification_failed")
+			}
+			return nil
+		}
+	}
+	if postgres.ValidateLegacyMigrationTarget(o.target) != nil {
+		return errConfiguration
+	}
+	config, e := legacyImportConfig(getenv("BIRDTIE_DATABASE_URL"), o.target, getenv)
+	if e != nil {
+		return e
+	}
+	ctx, cancel := context.WithTimeout(ctx, o.deadline)
+	defer cancel()
+	previous := debug.SetMemoryLimit(512 * 1024 * 1024)
+	defer debug.SetMemoryLimit(previous)
+	pool, e := pgxpool.NewWithConfig(ctx, config)
+	if e != nil {
+		return postgres.ErrLegacyMigrationUnavailable
+	}
+	defer pool.Close()
+	importer, e := postgres.NewLegacyMigrationImporter(pool, o.target)
+	if e != nil {
+		return e
+	}
+	var result postgres.LegacyPrivateImageRecoveryResult
+	if o.inspect != "" {
+		result, e = importer.InspectLegacyPrivateImageRecovery(ctx, o.run)
+	} else {
+		result, e = importer.ApplyLegacyPrivateImageRecovery(ctx, o.run, input, func(ctx context.Context, r legacyimagerecovery.Record) (io.ReadCloser, error) {
+			if ctx.Err() != nil {
+				return nil, errInputFile
+			}
+			return openPrivateBlob(o.blobs, r.Record)
+		}, &o.normalizer)
+	}
+	if e != nil {
+		if errors.Is(e, postgres.ErrLegacyMigrationUnknown) || errors.Is(e, postgres.ErrLegacyMigrationNotFound) {
+			if x := writeRecoverySummary(out, result); x != nil {
+				return x
+			}
+		}
+		return e
+	}
+	return writeRecoverySummary(out, result)
+}
+
 func run(ctx context.Context, args []string, getenv func(string) string, out io.Writer) error {
 	flags := flag.NewFlagSet("legacy-media-import", flag.ContinueOnError)
 	flags.SetOutput(io.Discard)
@@ -297,12 +471,22 @@ func run(ctx context.Context, args []string, getenv func(string) string, out io.
 	blobRoot := flags.String("blob-directory", "", "private original objects named by SHA256 plus .blob, outside repository")
 	verify := flags.Bool("verify-blobs", false, "sequentially verify exact original bytes and native JPEG codec without database access or writing media")
 	deadline := flags.Duration("deadline", 10*time.Minute, "bounded sequential image import deadline")
+	recovery := flags.Bool("metadata-recovery", false, "independent161 authenticated JPEG/HEIC metadata recovery;157 facts unchanged")
+	heif := flags.String("heif-convert", "", "absolute libheif heif-convert executable for full static HEIC decode")
+	prlimit := flags.String("prlimit", "", "absolute Linux prlimit executable for bounded offline decoding")
+	codecTemp := flags.String("codec-temp-root", "", "absolute restricted temporary codec root")
 	if flags.Parse(args) != nil || flags.NArg() != 0 || ctx == nil || ctx.Err() != nil || *deadline < time.Second || *deadline > 15*time.Minute ||
 		*apply && (*inspect != "" || *validate || *verify) || *inspect != "" && (*runID != "" || *source != "" || *manifest != "" || *matched != "" || *seal != "" || *sealSHA != "" || *blobRoot != "" || *validate || *verify) {
 		return errArguments
 	}
 	target := postgres.LegacyMigrationTargetIdentity{DatabaseName: *database, DatabaseOID: *databaseOID, Owner: *owner,
 		Marker: *marker, ForbiddenSourceDatabaseOID: *sourceOID}
+	if *recovery {
+		return runImageRecovery(ctx, recoveryOptions{run: *runID, source: *source, manifest: *manifest, matched: *matched, seal: *seal, sealSHA: *sealSHA, blobs: *blobRoot, inspect: *inspect, apply: *apply, verify: *verify, target: target, normalizer: legacyimagerecovery.Normalizer{HEIFConvertPath: *heif, PrlimitPath: *prlimit, TempRoot: *codecTemp}, deadline: *deadline}, getenv, out)
+	}
+	if *heif != "" || *prlimit != "" || *codecTemp != "" {
+		return errArguments
+	}
 	var sourceRaw, manifestRaw, matchedRaw, sealRaw []byte
 	var err error
 	if *inspect != "" {

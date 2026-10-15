@@ -28,10 +28,13 @@ const privateImageSessionSQL = `SELECT id::text FROM sessions WHERE account_id=$
 const privateImageColumns = `i.id::text,i.operation_id::text,i.moment_id::text,i.owner_account_id::text,i.moment_revision,
  i.mime_type,i.input_size,i.input_sha256,COALESCE(i.derivative_sha256,''),i.pixel_risk,i.purpose,i.status,i.revision,
  i.preview_expires_at,i.retain_until,i.source_binding,COALESCE(i.session_id::text,''),
- CASE WHEN i.session_id IS NULL AND i.status IN('ready_private','deleted') AND EXISTS(
+ CASE WHEN i.session_id IS NULL AND i.status IN('ready_private','deleted') AND (EXISTS(
  SELECT 1 FROM legacy_private_media_import_items imported WHERE imported.image_id=i.id
  AND imported.owner_account_id=i.owner_account_id AND imported.moment_id=i.moment_id
  AND imported.source_input_sha256=i.input_sha256 AND imported.source_input_bytes=i.input_size)
+ OR EXISTS(SELECT 1 FROM legacy_private_image_recovery_items recovered WHERE recovered.image_id=i.id
+ AND recovered.owner_account_id=i.owner_account_id AND recovered.moment_id=i.moment_id
+ AND recovered.source_input_sha256=i.input_sha256 AND recovered.source_input_bytes=i.input_size))
  THEN 'LEGACY_PRIVATE_IMPORT' ELSE '' END,NULL::bytea`
 
 type privateImageRow struct {
@@ -308,7 +311,10 @@ func (s *Store) readHumanPrivateImages(ctx context.Context, d [32]byte, a identi
 	rows, e := tx.Query(ctx, `WITH eligible_clock AS MATERIALIZED(SELECT clock_timestamp() at)
  SELECT `+columns+` FROM private_moment_images i CROSS JOIN eligible_clock ec WHERE owner_account_id=$1 AND moment_id=$2
  AND ($3='' OR (NOT $4::boolean AND id=NULLIF($3,'')::uuid) OR ($4::boolean AND operation_id=NULLIF($3,'')::uuid))
- AND ($3<>'' OR (status='ready_private' AND retain_until>ec.at)) ORDER BY created_at,id LIMIT 12 FOR SHARE OF i`, a.ID, moment, id, operation)
+ AND ($3<>'' OR (status='ready_private' AND retain_until>ec.at))
+ ORDER BY CASE WHEN i.session_id IS NULL THEN 0 ELSE 1 END,
+ COALESCE((SELECT original.source_position FROM legacy_private_media_import_items original WHERE original.image_id=i.id),
+ (SELECT recovered.source_position FROM legacy_private_image_recovery_items recovered WHERE recovered.image_id=i.id),2147483647),i.created_at,i.id LIMIT 12 FOR SHARE OF i`, a.ID, moment, id, operation)
 	if e != nil {
 		return nil, content.ErrUnavailable
 	}

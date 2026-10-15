@@ -189,10 +189,10 @@ func publicHistorySQL() string {
 	tail = "FROM moments m JOIN accounts a" + strings.Replace(tail, "WHERE m.id=$1 AND m.status='published'", "WHERE m.status='published'", 1)
 	// Reuse the v4 current City/Place/PUBLIC/Block/Session predicates exactly.
 	return `WITH cl AS MATERIALIZED(SELECT clock_timestamp() at),eligible AS MATERIALIZED(
- SELECT m.id,m.published_at,least(c.expires_at,pc.expires_at,` + momentPublishableMediaDeadlineSQL("m") + `,CASE WHEN p.id IS NOT NULL THEN ` + currentRetainedPlaceDeadlineSQL("p", "cl.at") + ` END) deadline,
- jsonb_build_array(birdtie_moment_public_binding(m.id,$2,cl.at),` + momentMediaReadBindingSQL("m") + `,m.xmin::text,a.xmin::text,p.xmin::text,c.xmin::text,pc.xmin::text,` + retainedPlaceReadBindingSQL("p") + `,` + publicMomentAuthorBindingSQL("a") + `,
- CASE WHEN m.location_precision='place' THEN birdtie_public_moment_photo_proof(m.id,$2) ELSE '' END)::text token ` + tail + `
- AND($7='' OR(m.city_id=$7 AND m.location_precision<>'none')) AND($8::uuid IS NULL OR m.author_account_id=$8)
+ SELECT m.id,m.published_at,` + momentPublishableMediaDeadlineSQL("m") + ` deadline,
+ jsonb_build_array(birdtie_moment_public_binding(m.id,$2,cl.at),` + momentMediaReadBindingSQL("m") + `,m.xmin::text,a.xmin::text,` + publicMomentAuthorBindingSQL("a") + `,
+ ''::text)::text token ` + tail + `
+ AND($7='' OR EXISTS(SELECT 1 FROM birdtie_moment_locations_public(m.id,cl.at) location WHERE location.city_id=$7)) AND($8::uuid IS NULL OR m.author_account_id=$8)
  AND($9::timestamptz IS NULL OR m.published_at>=$9) AND($10::timestamptz IS NULL OR m.published_at<$10)
  AND m.published_at<=$11
  AND($6 IN('city','author') OR($6='following' AND EXISTS(SELECT 1 FROM follows f WHERE f.follower_account_id=$2 AND f.person_account_id=a.id))

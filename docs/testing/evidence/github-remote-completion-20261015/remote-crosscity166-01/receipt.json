@@ -1,0 +1,223 @@
+{
+  "status": "PASS",
+  "startedAtUTC": "2026-10-15T11:43:54.673075+00:00",
+  "completedAtUTC": "2026-10-15T11:43:57.640340+00:00",
+  "origin": "https://47.110.154.133",
+  "tls": "DEFAULT_CERTIFICATE_AND_HOSTNAME_VALIDATION",
+  "runId": "0357f0dc-adc0-41e6-b72f-0bf1a94203fe",
+  "scriptSHA256": "00cde4007c57341cb861719e80bc0e387a042affadfbad582377e97a04614c3b",
+  "identity": "EXACT_PREVIOUSLY_PROVED_SYNTHETIC03",
+  "realCivuOwnersUsed": 0,
+  "checks": [
+    {
+      "name": "actual_https_ready",
+      "passed": true
+    },
+    {
+      "name": "explicit_fixed_test_channel",
+      "passed": true
+    },
+    {
+      "name": "actual_crosscity_provider_available",
+      "passed": true
+    },
+    {
+      "name": "exact_name_country_actual_city_coordinate_match",
+      "passed": true,
+      "city": "LONDON"
+    },
+    {
+      "name": "real_crosscity_reference_source",
+      "passed": true
+    },
+    {
+      "name": "actual_crosscity_provider_available",
+      "passed": true
+    },
+    {
+      "name": "exact_name_country_actual_city_coordinate_match",
+      "passed": true,
+      "city": "EDINBURGH"
+    },
+    {
+      "name": "real_crosscity_reference_source",
+      "passed": true
+    },
+    {
+      "name": "two_different_cities_actual_points_over_400km_apart",
+      "passed": true,
+      "distanceKmRounded": 532
+    },
+    {
+      "name": "exact_previously_proved_synthetic_actor",
+      "passed": true
+    },
+    {
+      "name": "preview_authority_shape",
+      "passed": true
+    },
+    {
+      "name": "preview_preserves_unplaced_untitled_input",
+      "passed": true
+    },
+    {
+      "name": "preview_resolves_complete_selection",
+      "passed": true
+    },
+    {
+      "name": "original_operation_identity",
+      "passed": true
+    },
+    {
+      "name": "original_payload_digest",
+      "passed": true
+    },
+    {
+      "name": "original_receipt_immediate_deep_equal",
+      "passed": true
+    },
+    {
+      "name": "preview_authority_shape",
+      "passed": true
+    },
+    {
+      "name": "preview_preserves_unplaced_untitled_input",
+      "passed": true
+    },
+    {
+      "name": "preview_resolves_complete_selection",
+      "passed": true
+    },
+    {
+      "name": "original_operation_identity",
+      "passed": true
+    },
+    {
+      "name": "original_parent_identity",
+      "passed": true
+    },
+    {
+      "name": "original_payload_digest",
+      "passed": true
+    },
+    {
+      "name": "original_receipt_immediate_deep_equal",
+      "passed": true
+    },
+    {
+      "name": "exactly_one_created_moment_for_both_cities",
+      "passed": true
+    },
+    {
+      "name": "untitled_unplaced_body_current",
+      "passed": true
+    },
+    {
+      "name": "public_body_v4_context_wire",
+      "passed": true
+    },
+    {
+      "name": "complete_current_location_sidecar",
+      "passed": true
+    },
+    {
+      "name": "stable_reference_sidecar_identity",
+      "passed": true
+    },
+    {
+      "name": "stable_reference_sidecar_identity",
+      "passed": true
+    },
+    {
+      "name": "complete_current_location_sidecar",
+      "passed": true
+    },
+    {
+      "name": "stable_reference_sidecar_identity",
+      "passed": true
+    },
+    {
+      "name": "stable_reference_sidecar_identity",
+      "passed": true
+    },
+    {
+      "name": "public_exploration_city_available",
+      "passed": true
+    },
+    {
+      "name": "real_v6_map_complete_pins",
+      "passed": true
+    },
+    {
+      "name": "map_reference_not_fake_native_place",
+      "passed": true
+    },
+    {
+      "name": "map_uses_actual_selected_source_coordinates",
+      "passed": true
+    },
+    {
+      "name": "map_reference_not_fake_native_place",
+      "passed": true
+    },
+    {
+      "name": "map_uses_actual_selected_source_coordinates",
+      "passed": true
+    },
+    {
+      "name": "preview_authority_shape",
+      "passed": true
+    },
+    {
+      "name": "original_operation_identity",
+      "passed": true
+    },
+    {
+      "name": "original_parent_identity",
+      "passed": true
+    },
+    {
+      "name": "original_payload_digest",
+      "passed": true
+    },
+    {
+      "name": "original_receipt_immediate_deep_equal",
+      "passed": true
+    },
+    {
+      "name": "crosscity_qa_public_now_404",
+      "passed": true
+    },
+    {
+      "name": "original_crosscity_publication_fact_unchanged",
+      "passed": true
+    },
+    {
+      "name": "cleanup_still_exact_qa_owner",
+      "passed": true
+    }
+  ],
+  "events": 28,
+  "cleanup": [
+    {
+      "qaMomentId": "4323975d-8dca-4112-b81c-7bc9f7a9179d",
+      "withdrawn": true,
+      "public404": true
+    },
+    {
+      "newSessionRevoked": true
+    }
+  ],
+  "cleanupPassed": true,
+  "unresolvedOriginalOperationIds": [],
+  "failure": null,
+  "map": "PASS",
+  "automaticUnknownResends": 0,
+  "privateValuesLogged": false,
+  "tokensAndApprovals": "RAM_ONLY",
+  "qaPublicContent": "WITHDRAWN_USING_ORIGINAL_CONTROL",
+  "uiAndDevice": "NOT_RUN",
+  "baseHelperSHA256": "4fae96d62a403d4452b2d56682a26b0e854bcf9d63dc9d6db13493fef68f8abc",
+  "scenario": "T08_ONE_MOMENT_TWO_DIFFERENT_CITIES_LONDON_EDINBURGH",
+  "repeatedOriginal62CheckMatrix": false
+}

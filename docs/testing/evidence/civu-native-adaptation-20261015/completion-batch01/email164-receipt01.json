@@ -1,0 +1,80 @@
+{
+  "status": "SOURCE_READY",
+  "sourceFrame": "email164-source-final01.json",
+  "sourceFrameSHA256": "caec8f935e5da657654674405fc3001ce69be35d2fdfbcbdb285b1f723300112",
+  "scopeFiles": 18,
+  "tests": [
+    {
+      "cwd": "D:\\Project\\birdtie\\apps\\api",
+      "command": "go test ./internal/devauth ./internal/legacymigration ./internal/httpapi ./cmd/legacy-import -run Test(FixedEmail|DevEmail|LegacyDevEmail) -count=1 -json",
+      "exitCode": 0,
+      "pass": 4,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "cwd": "D:\\Project\\birdtie\\apps\\api",
+      "command": "go test ./internal/postgres -run ^TestLegacyDevEmailBindingSourceFixture$ -count=1 -json",
+      "exitCode": 0,
+      "pass": 1,
+      "failed": 0,
+      "skipped": 0,
+      "databaseAccess": false
+    },
+    {
+      "cwd": "D:\\Project\\birdtie\\apps\\client",
+      "command": "flutter test test/dev_phone_auth_controller_test.dart --reporter expanded",
+      "exitCode": 0,
+      "pass": 4,
+      "failed": 0,
+      "skipped": 0,
+      "log": "email164-client01.log"
+    }
+  ],
+  "analysis": {
+    "command": "dart analyze lib/src/auth/birdtie_auth_controller.dart lib/src/auth/dev_phone_login_sheet.dart lib/src/auth/session_vault.dart lib/src/workspace/settings_page.dart test/dev_phone_auth_controller_test.dart",
+    "exitCode": 0,
+    "errors": 0,
+    "warnings": 0,
+    "infosBeforeSmallMountedFix": 12,
+    "log": "email164-analyze01.log",
+    "sheetFinalLog": "email164-analyze02-sheet.log",
+    "sheetFinalIssues": 0
+  },
+  "mechanicalDetector": {
+    "ranOnce": true,
+    "findings": 0,
+    "log": "email164-impeccable01.log"
+  },
+  "realSourcePrepare": {
+    "status": "DEV_EMAIL_BINDINGS_PREPARED",
+    "counts": {
+      "owners": 20,
+      "emailIdentities": 3,
+      "emailOnlyOwners": 2,
+      "bindableOwners": 2
+    },
+    "countsKnown": true,
+    "credentialKind": "email",
+    "devOnly": true,
+    "sourceWrites": 0,
+    "activated": false,
+    "agentActivated": false,
+    "oldSessionsCopied": false,
+    "databaseAccess": false,
+    "originalOwnerLogins": 0
+  },
+  "nativeTest": "TestLegacyDevEmailBindingsNativeFixedLoginOriginalOwnerAndAtomicConflict",
+  "nativeStatus": "NOT_RUN_BY_WORKER_ROOT_BATCH",
+  "remoteApply": "NOT_RUN",
+  "visualValidation": "NOT_RUN",
+  "productionEmailIdentityVerified": false,
+  "semantics": {
+    "uiVaultLoginMethod": "dev_email",
+    "databaseSessionMethod": "dev_phone",
+    "databaseCredentialKind": "email",
+    "issuer": "urn:birdtie:local-dev-email",
+    "fixedCode": "123456",
+    "smtpSent": false
+  }
+}

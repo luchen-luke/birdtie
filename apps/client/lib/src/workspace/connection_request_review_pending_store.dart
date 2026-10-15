@@ -20,16 +20,23 @@ class PendingConnectionReview {
     required this.observedAt,
     required this.requestCreatedAt,
     required this.requestExpiresAt,
+    this.origin = '',
     this.operationID,
     this.requestDigest,
   });
   final String ownerID, requestID, referenceID, action, scope, direction;
   final String? operationID, requestDigest;
   bool get hasServiceOperation => operationID != null;
-  final DateTime observedAt, requestCreatedAt, requestExpiresAt;
+  final String origin;
+  final DateTime observedAt, requestCreatedAt;
+  final DateTime? requestExpiresAt;
 
   Map<String, dynamic> toJson() => {
-    if (hasServiceOperation) ...{'schemaVersion': 'birdtie.connection-review.pending.v2','operationId':operationID,'requestDigest':requestDigest},
+    if (hasServiceOperation) ...{
+      'schemaVersion': 'birdtie.connection-review.pending.v2',
+      'operationId': operationID,
+      'requestDigest': requestDigest,
+    },
     'ownerId': ownerID,
     'requestId': requestID,
     'referenceId': referenceID,
@@ -38,13 +45,15 @@ class PendingConnectionReview {
     'direction': direction,
     'observedAt': observedAt.toUtc().toIso8601String(),
     'requestCreatedAt': requestCreatedAt.toUtc().toIso8601String(),
-    'requestExpiresAt': requestExpiresAt.toUtc().toIso8601String(),
+    'requestExpiresAt': requestExpiresAt?.toUtc().toIso8601String(),
+    if (origin.isNotEmpty) 'origin': origin,
   };
 
   factory PendingConnectionReview.fromJson(Map<String, dynamic> value) {
     final v2 = value.containsKey('schemaVersion');
+    final imported = value['origin'] == 'LEGACY_IMPORT';
     final keys = {
-      if (v2) ...{'schemaVersion','operationId','requestDigest'},
+      if (v2) ...{'schemaVersion', 'operationId', 'requestDigest'},
       'ownerId',
       'requestId',
       'referenceId',
@@ -54,6 +63,7 @@ class PendingConnectionReview {
       'observedAt',
       'requestCreatedAt',
       'requestExpiresAt',
+      if (imported) 'origin',
     };
     DateTime stamp(String key) {
       final raw = value[key];
@@ -83,15 +93,28 @@ class PendingConnectionReview {
                 value['action'] == 'withdraw')) {
       throw const FormatException('申请恢复引用格式不符');
     }
-    if (v2 && (value['schemaVersion']!='birdtie.connection-review.pending.v2' ||
-        value['operationId'] is! String || !chatEntityUUID.hasMatch(value['operationId']) ||
-        value['requestDigest'] != connectionDecisionDigest(value['ownerId'],value['requestId'],value['action']))) {
+    if (v2 &&
+        (value['schemaVersion'] != 'birdtie.connection-review.pending.v2' ||
+            value['operationId'] is! String ||
+            !chatEntityUUID.hasMatch(value['operationId']) ||
+            value['requestDigest'] !=
+                connectionDecisionDigest(
+                  value['ownerId'],
+                  value['requestId'],
+                  value['action'],
+                ))) {
       throw const FormatException('服务恢复引用不符');
     }
     final observed = stamp('observedAt'),
         created = stamp('requestCreatedAt'),
-        expires = stamp('requestExpiresAt');
-    if (!expires.isAfter(created) || !expires.isAfter(observed)) {
+        expires = imported && value['requestExpiresAt'] == null
+            ? null
+            : stamp('requestExpiresAt');
+    if (imported && (!v2 || expires != null) ||
+        !imported &&
+            (expires == null ||
+                !expires.isAfter(created) ||
+                !expires.isAfter(observed))) {
       throw const FormatException('申请恢复引用期限不符');
     }
     return PendingConnectionReview(
@@ -106,6 +129,7 @@ class PendingConnectionReview {
       observedAt: observed,
       requestCreatedAt: created,
       requestExpiresAt: expires,
+      origin: imported ? 'LEGACY_IMPORT' : '',
     );
   }
 }

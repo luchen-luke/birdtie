@@ -1,0 +1,79 @@
+{
+  "status": "SOURCE_READY",
+  "frozenAt": "2026-10-15T09:46:09.4518123Z",
+  "scopeCount": 15,
+  "files": [
+    {
+      "path": "apps/client/lib/src/content/moment_locations.dart",
+      "sha256": "8a4d5b4468895cee86f2cdd5ab5fb61a8ebaf5bf94fca5c7d59d7a829822a541"
+    },
+    {
+      "path": "apps/client/lib/src/content/moment_control.dart",
+      "sha256": "e24ace8dcdd55c035877318df333801510219ccb0fa8222e2b81d1852fdb5100"
+    },
+    {
+      "path": "apps/client/lib/src/content/private_moment_controller.dart",
+      "sha256": "a775c61ca83015ed4f1e28fb58fdc971454224d8287a718cfbce9c76335b816c"
+    },
+    {
+      "path": "apps/client/lib/src/workspace/moment_locations_api.dart",
+      "sha256": "993d7e95b02226bf5ee8a49a52213f06b68d704bd967925346fc3f6a4b8dcc09"
+    },
+    {
+      "path": "apps/client/lib/src/workspace/now_creation_draft.dart",
+      "sha256": "dce24f8b58391637d39b9477426652b714e386f53e70e41106b5290f73f69f58"
+    },
+    {
+      "path": "apps/client/lib/src/workspace/now_creation_panel.dart",
+      "sha256": "2ac3768ac4d35f060ce87f73dbf9d6969fa0130ecfc3b67f77e41d7a1e0933f2"
+    },
+    {
+      "path": "apps/client/lib/src/workspace/moment_location_picker.dart",
+      "sha256": "a4db3e991937a04f147938d4cf0129dcba429dc611fa7206168fbe1be2500bda"
+    },
+    {
+      "path": "apps/client/lib/src/workspace/moment_thread_api.dart",
+      "sha256": "b7d4967230507d7954f24401b660a08fcf358ca54906ef7ad347776bfc1c6b78"
+    },
+    {
+      "path": "apps/client/lib/src/workspace/moment_thread_controller.dart",
+      "sha256": "8ce139bf051945dccda3f3092be8ff0a54d220bd504cb82d8d38287b464c54a1"
+    },
+    {
+      "path": "apps/client/lib/src/workspace/moment_thread_panel.dart",
+      "sha256": "d07b4c23762030e9a654af60beb2dbcca7e9ab45d9e23b832b6f9fda5b214dfe"
+    },
+    {
+      "path": "apps/client/lib/src/workspace/public_moment_page.dart",
+      "sha256": "22d559372592f5c66e3774c98de8190dba8e6f98655a43a58a51ad4de515153e"
+    },
+    {
+      "path": "apps/client/lib/src/workspace/map_layers_api.dart",
+      "sha256": "3e2e1a6c75f5d7da737e4d1fbaa26a7af61ef6df7700b1f4f4cb5bc5f4ed06eb"
+    },
+    {
+      "path": "apps/client/lib/src/workspace/map_layers_controller.dart",
+      "sha256": "dd73ad78241a74686bf05c0a8d5ca0afd37c21279cd6bf865fd5326c08babfaa"
+    },
+    {
+      "path": "apps/client/lib/src/workspace/map_canvas.dart",
+      "sha256": "df301f2cc481484cc6d47141818eb7f757e6344553372f22cd23113fc18edadf"
+    },
+    {
+      "path": "apps/client/test/moment_locations_test.dart",
+      "sha256": "0992e7770da5b1de9ea0880c2eb6435bd23d4489e0fd3dca3a4077ad1057128c"
+    }
+  ],
+  "directTest": "locations160-client02/output.log",
+  "exitCode": 0,
+  "passed": 3,
+  "failed": 0,
+  "skipped": 0,
+  "priorDirect": "locations160-client01",
+  "diffCheckExitCode": 0,
+  "backendWire": "moment-locations-v1, max50, typed-map-layers-v5, preservedPlaceUnavailable160",
+  "build": "NOT_RUN",
+  "device": "NOT_RUN",
+  "apiNative": "NOT_RUN",
+  "rootHostSource": "Outside worker frozen scope"
+}

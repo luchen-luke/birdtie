@@ -1,0 +1,14 @@
+{
+  "sshExitCode": 2,
+  "stderrBytes": 0,
+  "remoteProgramSHA256": "96719336bbb1714cc2234dd11fc8647d9af4383991060d3067fd35fb215de769",
+  "candidateRemoteSHA256": "e4958a20205d6e50820aa6a8bd661961145bf19d56e925af3be95647248f98db",
+  "result": {
+    "status": "READ_ONLY_REPAIR03_PREFLIGHT_REJECTED",
+    "stage": "PREFLIGHT",
+    "errorType": "AssertionError",
+    "sourceWrites": 0,
+    "nativeDatabaseWrites": 0,
+    "serviceMutations": 0
+  }
+}

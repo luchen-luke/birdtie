@@ -140,7 +140,10 @@ func ValidatePublicMomentHistoryPage(p PublicMomentHistoryPage, q MomentHistoryQ
 	}
 	ids := map[string]bool{}
 	for i, m := range p.Items {
-		if ValidatePublicMomentWithContext(m, m.ID) != nil || ids[m.ID] || m.PublishedAt.After(p.SnapshotAt) || (q.CityID != "" && m.CityID != q.CityID) || m.ValidUntil.Before(p.ValidUntil) {
+		// City membership is proved by the native current-location query. The
+		// compatibility DTO intentionally leaves its single City empty when a
+		// Moment has multiple relations; it cannot represent that membership.
+		if ValidatePublicMomentWithContext(m, m.ID) != nil || ids[m.ID] || m.PublishedAt.After(p.SnapshotAt) || m.ValidUntil.Before(p.ValidUntil) {
 			return ErrInvalid
 		}
 		if i > 0 && (m.PublishedAt.After(p.Items[i-1].PublishedAt) || m.PublishedAt.Equal(p.Items[i-1].PublishedAt) && m.ID >= p.Items[i-1].ID) {

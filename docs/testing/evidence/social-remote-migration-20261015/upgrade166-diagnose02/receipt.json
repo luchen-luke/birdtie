@@ -1,0 +1,15 @@
+{
+  "exitCode": 0,
+  "remoteScriptSHA256": "dda13feef130a6e47cf6cb738a48870ae860daef222bcaea293281e0a09cb865",
+  "result": {
+    "status": "FAILED_DDL_ROLLED_BACK_OLD_API_READY",
+    "schemaBefore": 159,
+    "schemaAfter": 159,
+    "activeRelease": "/opt/birdtie/releases/social159-20261015-build12",
+    "diagnosticExit": 3,
+    "sqlstateDiagnostic": "ERROR:  cannot ALTER TABLE \"moment_location_links\" because it has pending trigger events\n",
+    "statementSHA256": "5cda3a09a184c679f054b29b391126384b6c6969fd1e97174ed8acb4f2a07841",
+    "committedDDL": 0
+  },
+  "stderrBytes": 0
+}

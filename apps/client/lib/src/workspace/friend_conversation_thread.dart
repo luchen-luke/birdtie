@@ -62,9 +62,16 @@ class FriendConversationThread extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 8),
                 child: Text(
-                  '发给 ${c.conversation.otherName}',
+                  c.conversation.personalGroup
+                      ? c.conversation.otherName
+                      : '发给 ${c.conversation.otherName}',
                   style: theme.textTheme.titleMedium,
                 ),
+              ),
+            if (c.readOnlyHistory)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Text('原聊天记录 · 当前仅可阅读', style: theme.textTheme.bodySmall),
               ),
             if (c.loading) const LinearProgressIndicator(minHeight: 2),
             if (c.hasEarlierMessages)
@@ -96,73 +103,99 @@ class FriendConversationThread extends StatelessWidget {
                 child: Text('还没有消息。', style: theme.textTheme.bodySmall),
               ),
             for (final m in c.messages)
-              Align(
-                alignment: m.senderAccountId == c.conversation.otherAccountId
-                    ? Alignment.centerLeft
-                    : Alignment.centerRight,
-                child: Container(
-                  constraints: const BoxConstraints(maxWidth: 340),
-                  margin: const EdgeInsets.symmetric(vertical: 4),
+              if (m.system || m.unavailable)
+                Padding(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
                     vertical: 8,
+                    horizontal: 16,
                   ),
-                  decoration: BoxDecoration(
-                    color: m.senderAccountId == c.conversation.otherAccountId
-                        ? theme.colorScheme.surfaceContainerLow
-                        : theme.colorScheme.primaryContainer.withValues(
-                            alpha: .65,
-                          ),
-                    borderRadius: BorderRadius.circular(16),
+                  child: Center(
+                    child: Text(
+                      m.unavailable ? '这条消息已不可查看' : m.body,
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.bodySmall,
+                    ),
                   ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      if (m.image != null)
-                        _FriendImageMessage(
-                          key: ValueKey((m.id, c.imageEpoch)),
-                          controller: c,
-                          message: m,
-                        ),
-                      if (m.audio case final a?)
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            _button(
-                              tooltip: '播放语音消息',
-                              icon: c.playingMessageID == m.id
-                                  ? Icons.volume_up_outlined
-                                  : Icons.play_arrow_rounded,
-                              action: c.audioActive
-                                  ? null
-                                  : () => c.playMessage(m),
+                )
+              else
+                Align(
+                  alignment: !c.sentByMe(m)
+                      ? Alignment.centerLeft
+                      : Alignment.centerRight,
+                  child: Container(
+                    constraints: const BoxConstraints(maxWidth: 340),
+                    margin: const EdgeInsets.symmetric(vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: !c.sentByMe(m)
+                          ? theme.colorScheme.surfaceContainerLow
+                          : theme.colorScheme.primaryContainer.withValues(
+                              alpha: .65,
                             ),
-                            Text(
-                              _duration(a.durationMillis),
-                              style: theme.textTheme.bodyMedium,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (c.conversation.personalGroup && !c.sentByMe(m))
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 4),
+                            child: Text(
+                              'Birdtie 成员',
+                              style: theme.textTheme.labelSmall,
                             ),
-                          ],
-                        ),
-                      if (m.entity case final e?)
-                        TextButton(
-                          onPressed: e.available && onOpenEntity != null
-                              ? () => onOpenEntity!(e)
-                              : null,
-                          child: Text(
-                            e.available
-                                ? e.title ?? e.typeLabel
-                                : '${e.typeLabel}已不可查看',
                           ),
-                        ),
-                      if (m.audio == null &&
-                          (m.entity == null || m.body != '分享了一张卡片') &&
-                          (m.image == null || m.body != '图片消息'))
-                        Text(m.body, style: theme.textTheme.bodyMedium),
-                    ],
+                        if (m.kind == 'STICKER')
+                          const Icon(Icons.emoji_emotions_outlined, size: 22),
+                        if (m.image != null)
+                          _FriendImageMessage(
+                            key: ValueKey((m.id, c.imageEpoch)),
+                            controller: c,
+                            message: m,
+                          ),
+                        if (m.audio case final a?)
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              _button(
+                                tooltip: '播放语音消息',
+                                icon: c.playingMessageID == m.id
+                                    ? Icons.volume_up_outlined
+                                    : Icons.play_arrow_rounded,
+                                action: c.audioActive
+                                    ? null
+                                    : () => c.playMessage(m),
+                              ),
+                              Text(
+                                _duration(a.durationMillis),
+                                style: theme.textTheme.bodyMedium,
+                              ),
+                            ],
+                          ),
+                        if (m.entity case final e?)
+                          TextButton(
+                            onPressed: e.available && onOpenEntity != null
+                                ? () => onOpenEntity!(e)
+                                : null,
+                            child: Text(
+                              e.available
+                                  ? e.title ?? e.typeLabel
+                                  : '${e.typeLabel}已不可查看',
+                            ),
+                          ),
+                        if (m.body.isNotEmpty &&
+                            m.audio == null &&
+                            (m.entity == null || m.body != '分享了一张卡片') &&
+                            (m.image == null || m.body != '图片消息'))
+                          Text(m.body, style: theme.textTheme.bodyMedium),
+                      ],
+                    ),
                   ),
                 ),
-              ),
             for (final p in c.textPending)
               TextButton.icon(
                 onPressed: c.sending ? null : () => c.recoverText(p),

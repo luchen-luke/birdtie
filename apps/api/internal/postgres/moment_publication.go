@@ -19,7 +19,7 @@ import (
 
 var _ content.HumanMomentPublicationStore = (*Store)(nil)
 
-const momentPublicationTTL = 90 * time.Second
+const momentPublicationTTL = 60 * time.Second
 
 // Only short-lived previews use a process-only key. Restart invalidates those
 // previews; it does not alter the persisted native publication ledger.
@@ -33,6 +33,7 @@ func newMomentPublicationSigningKey() ([32]byte, error) {
 
 type publicationFrame struct {
 	moment                                                            content.Moment
+	locations                                                         momentLocationsSnapshot
 	placeName, cityEpoch, placeEpoch, accountEpoch, session, material string
 }
 
@@ -53,14 +54,16 @@ func (s *Store) lockPublicationFrame(ctx context.Context, tx pgx.Tx, digest [32]
 	if _, e = content.NormalizeMomentControl(content.MomentControlInput{OperationID: id, Action: "PUBLISH", MomentID: id, ExpectedRevision: m.Revision, Input: &input}, false); e != nil {
 		return f, content.ErrConflict
 	}
+	f.locations, e = captureMomentLocationsInTx(ctx, humanWriteFrame{tx: tx, a: actor, op: id}, &m, input)
+	if e != nil {
+		return f, e
+	}
 	f.cityEpoch, _, _, e = momentControlExternal(ctx, humanWriteFrame{tx: tx, a: actor}, content.MomentControlInput{Action: "PUBLISH", Input: &input}, m)
 	if e != nil {
 		return f, content.ErrConflict
 	}
-	if m.PlaceID != "" {
-		if e = tx.QueryRow(ctx, `SELECT name FROM places WHERE id=$1`, m.PlaceID).Scan(&f.placeName); e != nil {
-			return f, content.ErrUnavailable
-		}
+	if len(f.locations.Resolved) == 1 && f.locations.Resolved[0].Available && f.locations.Resolved[0].Precision == "place" {
+		f.placeName = f.locations.Resolved[0].PlaceName
 	}
 	if e = s.lockHumanMomentSession(ctx, tx, digest, actor.ID); e != nil {
 		return f, e
@@ -76,7 +79,7 @@ func (s *Store) lockPublicationFrame(ctx context.Context, tx pgx.Tx, digest [32]
 	if e != nil {
 		return f, content.ErrUnavailable
 	}
-	b, e := json.Marshal([]any{"SELF_MOMENT_PUBLICATION_V1", actor.ID, f.accountEpoch, f.session, raw, f.cityEpoch, f.placeEpoch})
+	b, e := json.Marshal([]any{"SELF_MOMENT_PUBLICATION_V1", actor.ID, f.accountEpoch, f.session, raw, f.cityEpoch, f.placeEpoch, f.locations.SourceVersion})
 	if e != nil {
 		return f, content.ErrUnavailable
 	}
@@ -109,6 +112,9 @@ func (s *Store) finishPublication(ctx context.Context, tx pgx.Tx, digest [32]byt
 	if e != nil || external != f.cityEpoch {
 		return content.ErrConflict
 	}
+	if e = revalidateMomentLocationsInTx(ctx, humanWriteFrame{tx: tx, a: actor}, f.locations, time.Unix(0, expiry)); e != nil {
+		return e
+	}
 	if e = tx.Commit(ctx); e != nil {
 		return content.ErrUnavailable
 	}
@@ -133,7 +139,20 @@ func (s *Store) PreviewHumanMomentPublication(ctx context.Context, digest [32]by
 		return out, content.ErrUnavailable
 	}
 	expiry := now.Add(momentPublicationTTL)
-	out = content.MomentPublicationPreview{MomentID: id, PlaceID: f.moment.PlaceID, CityID: f.moment.CityID, PlaceName: f.placeName, Title: f.moment.Title, Body: f.moment.Body, Revision: f.moment.Revision, Snapshot: publicationSnapshot(digest, f.material, now.UnixNano(), expiry.UnixNano()), ExpiresAt: expiry.UTC()}
+	if f.locations.ValidUntil != nil && f.locations.ValidUntil.Before(expiry) {
+		expiry = *f.locations.ValidUntil
+	}
+	city, place, name := "", "", ""
+	if len(f.locations.Resolved) == 1 {
+		r := f.locations.Resolved[0]
+		if r.Available && r.Precision != "none" {
+			city = r.CityID
+			if r.Precision == "place" {
+				place, name = r.PlaceID, r.PlaceName
+			}
+		}
+	}
+	out = content.MomentPublicationPreview{Locations: f.locations.Resolved, LocationsSourceVersion: f.locations.SourceVersion, MomentID: id, PlaceID: place, CityID: city, PlaceName: name, Title: f.moment.Title, Body: f.moment.Body, Revision: f.moment.Revision, Snapshot: publicationSnapshot(digest, f.material, now.UnixNano(), expiry.UnixNano()), ExpiresAt: expiry.UTC()}
 	if out.Snapshot == "" {
 		return content.MomentPublicationPreview{}, content.ErrUnavailable
 	}
@@ -169,10 +188,11 @@ func (s *Store) PublishHumanMoment(ctx context.Context, digest [32]byte, actor i
 	if e = tx.QueryRow(ctx, `SELECT clock_timestamp()`).Scan(&now); e != nil {
 		return out, content.ErrUnavailable
 	}
-	if e1 != nil || e2 != nil || issued <= 0 || expiry <= issued || expiry-issued != int64(momentPublicationTTL) || issued > now.UnixNano() || expiry <= now.UnixNano() || !hmac.Equal([]byte(in.Snapshot), []byte(publicationSnapshot(digest, f.material, issued, expiry))) {
+	if e1 != nil || e2 != nil || issued <= 0 || expiry <= issued || expiry-issued > int64(momentPublicationTTL) || issued > now.UnixNano() || expiry <= now.UnixNano() || !hmac.Equal([]byte(in.Snapshot), []byte(publicationSnapshot(digest, f.material, issued, expiry))) {
 		return out, content.ErrConflict
 	}
-	e = tx.QueryRow(ctx, `WITH stamp AS MATERIALIZED(SELECT clock_timestamp() at) UPDATE moments m SET visibility='public',status='published',author_confirmed_at=stamp.at,published_at=stamp.at,updated_at=stamp.at,revision=revision+1 FROM stamp WHERE m.id=$1 AND m.author_account_id=$2 AND m.revision=$3 AND m.status='draft' AND m.visibility='private' RETURNING m.id,coalesce(m.place_id::text,''),m.revision,m.status,m.published_at`, id, actor.ID, in.Revision).Scan(&out.MomentID, &out.PlaceID, &out.Revision, &out.Status, &out.PublishedAt)
+	city, place, precision := momentLocationLegacyFields(f.locations.Effective)
+	e = tx.QueryRow(ctx, `WITH stamp AS MATERIALIZED(SELECT clock_timestamp() at) UPDATE moments m SET city_id=NULLIF($4,''),place_id=NULLIF($5,'')::uuid,location_precision=$6,visibility='public',status='published',author_confirmed_at=stamp.at,published_at=stamp.at,updated_at=stamp.at,revision=revision+1 FROM stamp WHERE m.id=$1 AND m.author_account_id=$2 AND m.revision=$3 AND m.status='draft' AND m.visibility='private' RETURNING m.id,coalesce(m.place_id::text,''),m.revision,m.status,m.published_at`, id, actor.ID, in.Revision, city, place, precision).Scan(&out.MomentID, &out.PlaceID, &out.Revision, &out.Status, &out.PublishedAt)
 	if errors.Is(e, pgx.ErrNoRows) {
 		return out, content.ErrConflict
 	}

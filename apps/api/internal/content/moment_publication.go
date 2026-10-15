@@ -78,15 +78,17 @@ func ValidateMomentPublicationPreview(p MomentPublicationPreview, id string) err
 // Human-only explicit publication of one currently owned draft. The snapshot
 // is a current source binding, never model/Memory permission or success.
 type MomentPublicationPreview struct {
-	MomentID  string    `json:"momentId"`
-	PlaceID   string    `json:"placeId"`
-	CityID    string    `json:"cityId"`
-	PlaceName string    `json:"placeName"`
-	Title     string    `json:"title"`
-	Body      string    `json:"body"`
-	Revision  int64     `json:"revision"`
-	Snapshot  string    `json:"snapshot"`
-	ExpiresAt time.Time `json:"expiresAt"`
+	Locations              []MomentLocationResolved `json:"locations"`
+	LocationsSourceVersion string                   `json:"locationsSourceVersion"`
+	MomentID               string                   `json:"momentId"`
+	PlaceID                string                   `json:"placeId"`
+	CityID                 string                   `json:"cityId"`
+	PlaceName              string                   `json:"placeName"`
+	Title                  string                   `json:"title"`
+	Body                   string                   `json:"body"`
+	Revision               int64                    `json:"revision"`
+	Snapshot               string                   `json:"snapshot"`
+	ExpiresAt              time.Time                `json:"expiresAt"`
 }
 type MomentPublicationInput struct {
 	Revision      int64  `json:"revision"`

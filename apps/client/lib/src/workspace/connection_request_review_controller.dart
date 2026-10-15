@@ -274,7 +274,10 @@ class ConnectionRequestReviewController extends ChangeNotifier {
         _operationReceipt?.committed != true &&
         r != null &&
         r.state == 'pending' &&
-        r.expiresAt?.isAfter(_now().toUtc()) == true &&
+        (r.expiresAt?.isAfter(_now().toUtc()) == true ||
+            operationReceipts &&
+                r.origin == 'LEGACY_IMPORT' &&
+                r.expiresAt == null) &&
         (r.direction == 'incoming' &&
                 const {'accept', 'decline'}.contains(action) ||
             r.direction == 'outgoing' && action == 'withdraw');
@@ -301,6 +304,7 @@ class ConnectionRequestReviewController extends ChangeNotifier {
       a.conversationId == b.conversationId &&
       a.policyDisposition == b.policyDisposition &&
       a.screeningStatus == b.screeningStatus &&
+      a.origin == b.origin &&
       a.expiresAt == b.expiresAt &&
       a.createdAt == b.createdAt;
 
@@ -339,7 +343,8 @@ class ConnectionRequestReviewController extends ChangeNotifier {
         direction: approval.request.direction,
         observedAt: _now().toUtc(),
         requestCreatedAt: approval.request.createdAt!,
-        requestExpiresAt: approval.request.expiresAt!,
+        requestExpiresAt: approval.request.expiresAt,
+        origin: approval.request.origin,
       );
       _pending = reference;
       await _pendingStore.write(_binding.$6, reference);
@@ -357,7 +362,10 @@ class ConnectionRequestReviewController extends ChangeNotifier {
       }
       if (fresh == null ||
           !_same(approval.request, fresh) ||
-          !fresh.expiresAt!.isAfter(_now().toUtc())) {
+          !(fresh.expiresAt?.isAfter(_now().toUtc()) == true ||
+              operationReceipts &&
+                  fresh.origin == 'LEGACY_IMPORT' &&
+                  fresh.expiresAt == null)) {
         _request = fresh;
         if (!await _clearPending(reference, generation)) return;
         if (!_valid() || generation != _generation) return;

@@ -1,0 +1,32 @@
+{
+  "exitCode": 0,
+  "version": "164",
+  "mode": "apply",
+  "remoteProgramSHA256": "1bf6addcf67e8a9e5a501e6bae6fab5c93a3e12054b4931a5ca4820f6dbbe63b",
+  "result": {
+    "status": "NATIVE_IMPORT_VERIFIED",
+    "version": "164",
+    "result": {
+      "activated": false,
+      "agentActivated": false,
+      "counts": {
+        "owners": 20,
+        "emailIdentities": 3,
+        "emailOnlyOwners": 2,
+        "bindableOwners": 2
+      },
+      "countsKnown": true,
+      "credentialKind": "email",
+      "devOnly": true,
+      "enrolledOwners": 0,
+      "oldSessionsCopied": false,
+      "runId": "c5df0d7c-f361-4275-9838-feb6d1d92352",
+      "sourceWrites": 0,
+      "status": "DEV_EMAIL_BINDINGS_COMMITTED"
+    },
+    "repeatEqual": true,
+    "privateInputsUnchanged": true,
+    "sourceWrites": 0,
+    "otherOwnersLoggedIn": 0
+  }
+}

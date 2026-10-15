@@ -60,7 +60,7 @@ class StoredSession {
       origin == expectedOrigin &&
       token.isNotEmpty &&
       utf8.encode(token).length <= 4096 &&
-      const {'dev_phone', 'oidc'}.contains(method);
+      const {'dev_phone', 'dev_email', 'oidc'}.contains(method);
 }
 
 abstract interface class SessionVault {
@@ -109,7 +109,7 @@ class SecureSessionVault implements SessionVault {
             data['token'] is String &&
             (data['token'] as String).isNotEmpty &&
             utf8.encode(data['token']).length <= 4096 &&
-            const {'dev_phone', 'oidc'}.contains(data['method'])) {
+            const {'dev_phone', 'dev_email', 'oidc'}.contains(data['method'])) {
           return StoredSession(
             token: data['token'],
             method: data['method'],
@@ -130,7 +130,7 @@ class SecureSessionVault implements SessionVault {
     if (!session.belongsTo(expected) ||
         session.token.isEmpty ||
         utf8.encode(session.token).length > 4096 ||
-        !const {'dev_phone', 'oidc'}.contains(session.method)) {
+        !const {'dev_phone', 'dev_email', 'oidc'}.contains(session.method)) {
       throw const FormatException('登录记录来源不符。');
     }
     final key = keyForOrigin(expected);

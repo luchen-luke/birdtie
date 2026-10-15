@@ -16,6 +16,7 @@ var (
 )
 
 type Request struct {
+	Origin            string                  `json:"origin,omitempty"`
 	ID                string                  `json:"id"`
 	Direction         string                  `json:"direction"`
 	OtherAccountID    string                  `json:"otherAccountId"`
@@ -33,6 +34,9 @@ type Request struct {
 }
 
 type Conversation struct {
+	Kind               string                  `json:"kind,omitempty"`
+	Origin             string                  `json:"origin,omitempty"`
+	CanSend            *bool                   `json:"canSend,omitempty"`
 	ID                 string                  `json:"id"`
 	OtherAccountID     string                  `json:"otherAccountId"`
 	OtherName          string                  `json:"otherName"`
@@ -59,6 +63,11 @@ type Tie struct {
 }
 
 type Message struct {
+	Kind           string         `json:"kind,omitempty"`
+	Origin         string         `json:"origin,omitempty"`
+	Sequence       int64          `json:"sequence,omitempty"`
+	Sticker        *Sticker       `json:"sticker,omitempty"`
+	Unavailable    bool           `json:"unavailable,omitempty"`
 	ID             string         `json:"id"`
 	ConversationID string         `json:"conversationId"`
 	SenderID       string         `json:"senderAccountId"`

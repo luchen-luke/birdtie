@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../workspace/now_ui_tokens.dart';
 import 'moment_publication_controller.dart';
+import 'moment_locations.dart';
 
 class MomentPublicationSheet extends StatefulWidget {
   const MomentPublicationSheet({
@@ -17,6 +19,7 @@ class MomentPublicationSheet extends StatefulWidget {
 class _MomentPublicationSheetState extends State<MomentPublicationSheet> {
   bool _checked = false;
   MomentPublicPreview? _shown;
+  Timer? _expiryTimer;
   @override
   void initState() {
     super.initState();
@@ -29,6 +32,12 @@ class _MomentPublicationSheetState extends State<MomentPublicationSheet> {
   }
 
   @override
+  void dispose() {
+    _expiryTimer?.cancel();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) => AnimatedBuilder(
     animation: widget.controller,
     builder: (context, _) {
@@ -37,6 +46,15 @@ class _MomentPublicationSheetState extends State<MomentPublicationSheet> {
       if (!identical(p, _shown)) {
         _shown = p;
         _checked = false;
+        _expiryTimer?.cancel();
+        if (p != null) {
+          _expiryTimer = Timer(
+            p.expiresAt.difference(DateTime.now().toUtc()),
+            () {
+              if (mounted) setState(() => _checked = false);
+            },
+          );
+        }
       }
       return SafeArea(
         child: Padding(
@@ -64,7 +82,14 @@ class _MomentPublicationSheetState extends State<MomentPublicationSheet> {
                   const SizedBox(height: 16),
                   if (p.title.isNotEmpty) Text(p.title, style: text.placeTitle),
                   if (p.body.isNotEmpty) Text(p.body),
-                  if (p.placeName.isNotEmpty) Text('关联地点：${p.placeName}'),
+                  if (p.locations case final locations?) ...[
+                    for (final location in locations)
+                      Text(
+                        '${location.label} · ${momentLocationPrecisionLabel(location.precision)}',
+                      ),
+                    if (locations.isEmpty) const Text('不公开位置'),
+                  ] else if (p.placeName.isNotEmpty)
+                    Text('关联地点：${p.placeName}'),
                   Text('记录版本：${p.revision}', style: text.metadata),
                   CheckboxListTile(
                     contentPadding: EdgeInsets.zero,

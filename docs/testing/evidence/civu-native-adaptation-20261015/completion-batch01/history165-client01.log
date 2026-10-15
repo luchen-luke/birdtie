@@ -1,0 +1,6 @@
+Flutter assets will be downloaded from https://storage.flutter-io.cn. Make sure you trust this source!
+00:00 +0: loading D:/Project/birdtie/apps/client/test/legacy_social_history_test.dart
+00:00 +0: historical notifications keep separate unread and reject cached destinations
+00:00 +1: historical assistant text retires on identity change and lease expiry
+00:00 +2: late private history response is not accepted after owner switch
+00:00 +3: All tests passed!

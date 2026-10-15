@@ -1,5 +1,58 @@
 # Civu → Birdtie 原生适配与动态规则修订
 
+## 160–166 最新实际交付
+
+本节为最新事实；后续历史章节保留原时点的结果、失败及未完成状态，不代表当前缺口。最新远端API为`social166-20261015-build13`、schema166，Web08已切流到`https://47.110.154.133`，默认TLS验证通过；原1–159迁移摘要不变。APK08编译成功，**尚未安装，完整真机交互／图片权限／设备播放／iOS未验收**，不能以接口或构建结果替代。
+
+## 已实际迁入
+
+- 20个原owner永久映射一一对应，原生83条动态、22份旅程／110条行程项、3个主题地图、189条收藏归属核对通过，原私人草稿没有自动公开，已删除内容保留墓碑。原生目录共1067个城市、5492个地点；新增247个无城市地点保持draft，不猜城市或坐标。
+- 161实际恢复31张原先未适配的图片：9张JPEG、22张HEIC，涉及15条动态、2个owner。连同原135张图片及5段完整视频，**全部171条存续Note媒体关系已原生适配，无遗漏或额外关系**。166张图片派生字节，以及5视频原字节／播放副本／封面、独立聊天图片与缩略图的SHA和归属错误计数均为0。图片原始输入依认证导入事实保全，不能称本次重新散列了原图；AV仍NOT_RUN、隐私UNKNOWN。
+- 162实际提交247个无城市地点、5条剩余收藏、4条多地点关系、71份媒体上下文、43个媒体地点引用、22个私人串文／27个Note成员／5条路线；4个仅含删除内容的串文保留墓碑。**提交回执deferred为空**。原媒体坐标没有CRS，原值保留但不生成地图pin；27是成员数，不是串文数。
+- 163实际接续4条已接受好友、1条待处理好友、21条独立关注、11个会话／23个成员和39条消息（15文字、1图片、6实体、10系统、7贴纸），另保留1条原已接受会话请求。原待处理关系未自动接受，系统消息未伪装成用户文字，导入不制造新消息或通知。
+- 164已接续2个仅邮箱身份的固定码开发登录，email使用独立issuer和credentialKind；不冒充手机号证明或生产邮箱验证，不激活原Agent。
+- 165已保留8个私人AI历史线程／41条消息、110条原通知（其中1条已删除、37条原未读）及2份偏好；109条存续通知以历史项读取，不重发、不触发push，不将AI历史自动交给当前模型。163／164／165均已提交、inspect并重复调用确认原回执不变。
+
+## 当前功能及真实接口验证
+
+新动态沿Now同一输入框，不设标题输入；历史真实标题保留。城市可选，位置为0..50关联集合；位置与正文独立判断公开和地图资格。166接通未收录地点的真实检索与稳定引用，不伪造原生Place或City。当前自托管Pelias索引仅覆盖**GB／IS**，不宣称全球或国内外部检索已完成；中国AMap配置存在不等于本轮已实际接通和验证。
+
+真实默认TLS的HTTPS166流程62项检查全部通过：真实检索两处独立地点，以无标题／无城市动态公开，核对owner和public完整位置sidecar、稳定引用及真实坐标的v6地图点；移除全部位置后正文仍可读，撤回后公开内容／位置不可读，原发布事实保持可GET。仅使用既有合成账号，QA公开内容已撤回，新Session已退出并复验401；该流程UI／真机为NOT_RUN。
+
+跨城市T08追加实证通过：真实检索London的British Museum与Edinburgh Castle，核验原provider名称、GBR、各城市坐标范围和实际距离超过400km；同一无标题／无城市动态同时关联两地并显示两个v6地图点。46项必要检查PASS，QA内容已撤回、Session已退出，原发布事实保持；不重复冒称前62项全部重新运行。见`remote-crosscity166-01/receipt.json`和`checkpoint166-crosscity.json`。
+
+唯一此前已接续原owner的实际读取通过：2会话／2消息、15条旧通知及跨owner拒绝；未读状态保持，2个验证Session均退出。该owner没有原聊天图片或AI历史，相关正向真实owner HTTP读取仍为NOT_RUN_FOR_SELECTED_OWNER；未借其他旧账号身份补齐。数据库聚合与隔离库验证另有证据。
+
+## 407资产范围和保留边界
+
+原407条media_assets中，存续Note使用171个不同资产，均已接续。按明确优先顺序形成的其余236个闭合分区为：删除Note44、Place封面62、其他Place图片13、行政图3、Journey媒体1、其他Note封面URL1、原29表未引用112。用途可能重叠，原始非互斥计数另存回执（75个资产有多用途）；独立聊天图片来自private_message_media，单列而不冒充407内对象。
+
+以上236个不是全部“丢失媒体”：删除项不得复活，其他用途和未引用项的完整像素／许可／产品适配尚未逐资产确认。**不宣称407个资产全部迁入或完整验收**。156／157最初deferred是当时不可变事实，已由后续161／162解决的项不重复列为当前缺口。原29表停止writer后的来源对账为29/29一致、变化0：28表摘要相等，第29表theme_map_entry_sources两端均空；复用既有回执，没有重hash整份备份或再次查询旧库。
+
+## 直接证据路径
+
+以下仓库路径均相对`D:/Project/birdtie/`；work路径相对本任务cwd。没有把私人来源JSON、原媒体、身份或令牌写入这些聚合证据。
+
+- 部署／构建：`docs/testing/evidence/social-remote-migration-20261015/upgrade166-02/receipt.json`、`public-client08/receipt.json`、`final-apk08/receipt.json`（后两目录与前者同父目录）。
+- 实际迁入：`docs/testing/evidence/civu-native-adaptation-20261015/recovery161-apply02/receipt.json`、同父目录`context162-apply01`、`social163-apply01`、`email164-apply01`、`history165-apply01`各`receipt.json`。
+- 多地点HTTPS：`docs/testing/evidence/github-remote-completion-20261015/remote-multilocation166-01/receipt.json`（62/62 PASS，cleanup通过）。
+- 原owner读取：`docs/testing/evidence/civu-native-adaptation-20261015/completion-batch02/receipt.json`。
+- 最后只读聚合：`docs/testing/evidence/civu-native-adaptation-20261015/final-native-reconciliation01/receipt.json`（PASS、20 owner、全部媒体SHA／归属0错误、162无deferred、来源小文件未变、无登录／写库）。
+- 停写来源证明：`docs/testing/evidence/civu-native-adaptation-20261015/completion-batch02/remaining-remote-readonly-receipt02.json`与同目录`remaining-source-empty-check01.json`。
+
+GitHub最终提交与推送SHA记录于本次交付副本；本报告不预先虚构提交SHA。整体全站体验与全部剩余资产的完成状态仍应按上述实际边界报告。
+
+## 合批验证与保留的失败
+
+160／161两项原生直接用例、162／164两项原生直接用例、163及165各自原生用例、166原生用例均有通过回执；相应Flutter与Go直接检查按实际批次记录，不合称一次全仓回归。最终根范围Dart检查0 error／0 warning、300 lint info；API的9个Linux二进制与APK08、Web08合包通过，编译前后及交付时源码摘要相同。没有重复全仓测试。
+
+远端首次166升级遇到同一事务内160回填的deferred trigger阻塞后续ALTER，整体回滚，旧159继续服务。部署器在迁移文件边界执行约束检查，第二次原子升级通过；原1–159共293份SQL摘要不变。161首次导入在22HEIC完整解码前失败，尚未写库；补装固定版本Ubuntu HEVC插件与libde265后31图全部完整解码通过再导入。原135张图片回执不变。新Pelias初次网络和accessLog配置失败已保留，改为独立bridge、合法精简日志格式后真实检索／解析通过；两新容器设置unless-stopped，旧Civu容器和原索引保留。
+
+APK08安装失败的真实原因是ADB设备列表为空。用户已授权合包后直接验收，无需再次询问操作许可；当前等待设备重新连接。Web控制连接也失败，未生成伪造截图。原APK07安装回执不用于冒称APK08安装或本轮真机验收通过。
+
+
+## 以下为159及以前的历史记录
+
 最新实际交付：远端 schema159、22旅程／110行程项及5完整私人视频已迁入；APK07安装、Web07上线。完整新要求仍为PARTIAL，见末节。
 
 日期：2026-10-15（Asia/Shanghai）。本记录接续 `BT-FIX-NOW-UI-001`，整体仍为 IN_PROGRESS／PARTIAL。既有备份迁入、当前独立库部署及 GitHub 提交依据本轮用户明确授权；固定验证码继续为 `123456`。

@@ -1,0 +1,22 @@
+{
+  "sshExitCode": 2,
+  "stderrBytes": 0,
+  "remoteProgramSHA256": "f6c0adcfa9719a9c7b120f3d7339bbcff6f9246a3adc25fd167c3612ac2dcaf4",
+  "priorActivationProgramSHA256": "a442a256749cd9cffb20a1e373e843f4750b20436be836aa64b9fdf8c892d60e",
+  "result": {
+    "status": "REJECTED",
+    "stage": "START_BOUNDED_API",
+    "errorType": "AssertionError",
+    "lastProbe": {
+      "phase": "AUTOCOMPLETE",
+      "errorType": "URLError"
+    },
+    "sourceWrites": 0,
+    "nativeDatabaseWrites": 0,
+    "newServicesStoppedOnFailure": true,
+    "sourceIndexUnchanged": true,
+    "cloneAndConfigPreserved": true,
+    "sourceDataNeverMountedWritable": true,
+    "privateValuesOmitted": true
+  }
+}

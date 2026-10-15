@@ -1,0 +1,18 @@
+[
+  "apps/api/migrations/164_legacy_dev_email_bindings.sql",
+  "apps/api/migrations/164_legacy_dev_email_bindings.down.sql",
+  "apps/api/internal/devauth/email.go",
+  "apps/api/internal/devauth/email_test.go",
+  "apps/api/internal/legacymigration/dev_email.go",
+  "apps/api/internal/legacymigration/dev_email_test.go",
+  "apps/api/internal/postgres/legacy_dev_email_bindings.go",
+  "apps/api/internal/postgres/legacy_dev_email_bindings_native_test.go",
+  "apps/api/internal/postgres/dev_email.go",
+  "apps/api/internal/httpapi/dev_email.go",
+  "apps/api/internal/httpapi/dev_email_test.go",
+  "apps/api/cmd/legacy-import/main.go",
+  "apps/api/cmd/legacy-import/main_test.go",
+  "apps/client/lib/src/auth/birdtie_auth_controller.dart",
+  "apps/client/lib/src/auth/dev_phone_login_sheet.dart",
+  "apps/client/test/dev_phone_auth_controller_test.dart"
+]

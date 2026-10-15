@@ -30,7 +30,7 @@ class LegacyPlaceReference {
       'validUntil',
       'sourceVersion',
     });
-    if (!const {'saved_place', 'theme_map'}.contains(v['kind']) ||
+    if (!const {'saved_place', 'theme_map', 'moment'}.contains(v['kind']) ||
         !humanControlID(v['recordId']) ||
         !humanControlID(v['placeId']) ||
         !humanControlHash(v['sourceVersion']) ||

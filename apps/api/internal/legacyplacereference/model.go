@@ -26,7 +26,7 @@ type Reference struct {
 }
 
 func (r Reference) Valid() bool {
-	return (r.Kind == "saved_place" || r.Kind == "theme_map") && identity.HumanControlUUID(r.RecordID) && identity.HumanControlUUID(r.PlaceID)
+	return (r.Kind == "saved_place" || r.Kind == "theme_map" || r.Kind == "moment") && identity.HumanControlUUID(r.RecordID) && identity.HumanControlUUID(r.PlaceID)
 }
 
 type Summary struct {

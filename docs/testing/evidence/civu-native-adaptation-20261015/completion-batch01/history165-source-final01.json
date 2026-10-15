@@ -1,0 +1,106 @@
+{
+  "status": "EXACT_SCOPE_SOURCE_FROZEN",
+  "generatedAt": "2026-10-15T11:07:25.660118+00:00",
+  "paths": {
+    "apps/api/migrations/165_legacy_social_history.sql": {
+      "sha256": "b4bcd5bf917b3a45bafeee8489bed7a161ad2b945740103fd620fe15f9c9a06d",
+      "bytes": 9659
+    },
+    "apps/api/migrations/165_legacy_social_history.down.sql": {
+      "sha256": "178926b5fd6124a0f560657940ec0c6b1ac966780083c1bbadac31fc137a75e9",
+      "bytes": 1182
+    },
+    "apps/api/internal/legacyhistory/model.go": {
+      "sha256": "cc8113d40c3f238010c727d1809a20a583c45993de56cb1693f7fbbf11ce18b5",
+      "bytes": 4028
+    },
+    "apps/api/internal/legacyhistory/build.go": {
+      "sha256": "f329e8d9066d001963779b74d61011aca1c8d302895dbc016b4b180868b48b25",
+      "bytes": 12271
+    },
+    "apps/api/internal/legacyhistory/build_test.go": {
+      "sha256": "788f7d27e04fcaec4974dfe3c3ffd7c2e464c2d50ee01be1d860251d9a508aea",
+      "bytes": 1982
+    },
+    "apps/api/internal/postgres/legacy_social_history_import.go": {
+      "sha256": "1ce4629eada4d09ef21802028025ff092bf25bf0c59001db40ad198b29a3c995",
+      "bytes": 10827
+    },
+    "apps/api/internal/postgres/legacy_social_history_native_test.go": {
+      "sha256": "0829f3ac460fbcf9a950518f4c5755d60543cbef97e947fbb15ab59f34054852",
+      "bytes": 14416
+    },
+    "apps/api/cmd/legacy-history-import/main.go": {
+      "sha256": "55b7bd0c5fd946b97c8b44bb9d2e0615c347e1fddcfe2078805428a68ea20c88",
+      "bytes": 9150
+    },
+    "apps/api/internal/content/journey_history.go": {
+      "sha256": "845dc6895cdea9c701bfaabda1396478d136f7cc917e1ec0e0863ac9e780589f",
+      "bytes": 2137
+    },
+    "apps/api/internal/postgres/journey_history.go": {
+      "sha256": "5fa92a88de07b60bf0ba84388467a963f0655599c192f98a2517792bd4651f0f",
+      "bytes": 10420
+    },
+    "apps/api/internal/httpapi/journey_history.go": {
+      "sha256": "9716ba4a681ca5bb63aaa310f9a0b0db280759db019e9ed6fdb25e471569ff1e",
+      "bytes": 2387
+    },
+    "apps/api/internal/inbox/model.go": {
+      "sha256": "d1550288909a481d8fc67c076c6c21c8c33a8cdb7d9781f2cab61d53a2a82955",
+      "bytes": 2406
+    },
+    "apps/api/internal/inbox/page.go": {
+      "sha256": "52e5629cca0bc381e618b192dce34949cd7b9d29ad108174973c605f5545fc81",
+      "bytes": 3695
+    },
+    "apps/api/internal/postgres/inbox.go": {
+      "sha256": "f7000daa77248a73d0798d3a5007d784a2cbe0e5f3878168c87fbe08fbea4c82",
+      "bytes": 13800
+    },
+    "apps/api/internal/postgres/inbox_page.go": {
+      "sha256": "3d45e0de0938444075bbe615cf80845a4f81bd85e4f55eeebd06c3afdfa52153",
+      "bytes": 7105
+    },
+    "apps/api/internal/postgres/moment_interaction.go": {
+      "sha256": "0ff86067b19a6c49bf8e89a45b74b6dbd9fa2c0a8c5a94ea11a205d6b3bcce1d",
+      "bytes": 28749
+    },
+    "apps/api/internal/httpapi/inbox_page.go": {
+      "sha256": "f7115c601e02d455687d2b4f11f7deb9aeb984f882d2764b87ecca47f35e1b01",
+      "bytes": 5127
+    },
+    "apps/client/lib/src/content/journey_history_page.dart": {
+      "sha256": "d9a5508556a0fed19404f942a9e6ac37c022b335490df199d1aab3d1a3e6fc74",
+      "bytes": 16242
+    },
+    "apps/client/lib/src/content/personal_collection_page.dart": {
+      "sha256": "8ea899d5b24983c2aaf806a01b61cbf4106ffba29bca686bdaae82a6ce07d434",
+      "bytes": 48317
+    },
+    "apps/client/lib/src/workspace/remote_inbox_source.dart": {
+      "sha256": "5789233963ecbbd5adebad796ca7ab4d545149bf5e72f2941f914427a379e87d",
+      "bytes": 21506
+    },
+    "apps/client/lib/src/workspace/inbox.dart": {
+      "sha256": "7cced9238bcd6776f754d0468da5762746cfab004b0601b87292becb5e59e3a9",
+      "bytes": 53893
+    },
+    "apps/client/lib/src/workspace/notification_policy_controller.dart": {
+      "sha256": "7adaacbd273cd1c1798c5cec19ffaa107573f29c38b5d10c4dcc0ccdf898a3ba",
+      "bytes": 14766
+    },
+    "apps/client/lib/src/workspace/notification_policy_page.dart": {
+      "sha256": "37afa24212dde924e7054040fb8fbe407f9ecca6c3eab838f331fdfbe82f9ed8",
+      "bytes": 18124
+    },
+    "apps/client/test/legacy_social_history_test.dart": {
+      "sha256": "bd2310e0ee92c4643c950cf2b7a06e9379dfebbbb098d71063669abf12a5e1b3",
+      "bytes": 5828
+    },
+    "scripts/extract_civu_social_history.py": {
+      "sha256": "39421b077ca9a86ea1ad6182355026202a482c6b09f00115ac8d9fb401f3c566",
+      "bytes": 7913
+    }
+  }
+}

@@ -34,13 +34,20 @@ func (s *server) listInboxPage(w http.ResponseWriter, r *http.Request) {
 	}
 	in := inbox.PageRequest{View: inbox.NotificationsView, Limit: inbox.DefaultPageLimit}
 	for k, v := range q {
-		if len(v) != 1 || k != "view" && k != "limit" && k != "cursor" && k != "category" && k != "unreadOnly" {
+		if len(v) != 1 || k != "view" && k != "limit" && k != "cursor" && k != "category" && k != "unreadOnly" && k != "origin" {
 			inboxPageFailure(w, inbox.ErrInvalidPage)
 			return
 		}
 		if k == "limit" {
 			in.Limit, err = strconv.Atoi(v[0])
 			if err != nil || in.Limit < 1 || in.Limit > inbox.MaxPageLimit {
+				inboxPageFailure(w, inbox.ErrInvalidPage)
+				return
+			}
+		}
+		if k == "origin" {
+			in.Origin = v[0]
+			if in.Origin != "NATIVE" && in.Origin != "LEGACY_HISTORY" {
 				inboxPageFailure(w, inbox.ErrInvalidPage)
 				return
 			}
@@ -132,7 +139,7 @@ func (s *server) listInboxPage(w http.ResponseWriter, r *http.Request) {
 }
 
 func validInboxPage(page inbox.Page, in inbox.PageRequest, owner string) bool {
-	if len(page.Items) > in.Limit || page.UnreadCount < 0 {
+	if len(page.Items) > in.Limit || page.UnreadCount < 0 || page.HistoricalUnreadCount < 0 {
 		return false
 	}
 	seen := map[string]bool{}
@@ -140,7 +147,7 @@ func validInboxPage(page inbox.Page, in inbox.PageRequest, owner string) bool {
 		if !inbox.ValidPageID(item.ID) || !inbox.ValidPageID(item.ResourceID) || item.ResourceType == "conversation_message" || item.CreatedAt.IsZero() || seen[item.ID] || item.Title == "" {
 			return false
 		}
-		if in.Category != "" && item.Category != in.Category || in.UnreadOnly && item.ReadAt != nil {
+		if (in.Origin == "LEGACY_HISTORY") != (item.Origin == "LEGACY_HISTORY") || in.Category != "" && item.Category != in.Category || in.UnreadOnly && item.ReadAt != nil {
 			return false
 		}
 		for _, id := range []*string{item.TargetActivityID, item.TargetConversationID, item.TargetCommunityID, item.TargetTaskID, item.TargetBusinessID} {
@@ -156,7 +163,7 @@ func validInboxPage(page inbox.Page, in inbox.PageRequest, owner string) bool {
 		}
 		c, err := inbox.DecodePageCursor(*page.NextCursor, owner, in.View)
 		last := page.Items[len(page.Items)-1]
-		if err != nil || c == nil || c.ID != last.ID || !c.Time.Equal(last.CreatedAt) || c.Category != in.Category || c.UnreadOnly != in.UnreadOnly {
+		if err != nil || c == nil || c.ID != last.ID || !c.Time.Equal(last.CreatedAt) || c.Category != in.Category || c.UnreadOnly != in.UnreadOnly || c.Origin != in.Origin {
 			return false
 		}
 	}

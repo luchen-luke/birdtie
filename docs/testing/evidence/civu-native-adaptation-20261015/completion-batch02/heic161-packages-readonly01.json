@@ -1,0 +1,83 @@
+{
+  "sshExitCode": 0,
+  "sshStderrBytes": 0,
+  "remoteProgramSHA256": "6fdad9ee2ecd7fe7ac1f113b1e986f3cff339fc4e2a22126b92d00eb53981ae3",
+  "result": {
+    "status": "HEVC_CANDIDATES_AUDITED_NOT_INSTALLED",
+    "installationCommand": "apt-get install --no-install-recommends libheif-plugin-libde265=1.17.6-1ubuntu4.9",
+    "candidatePackages": [
+      {
+        "package": "libde265-0",
+        "version": "1.0.15-1ubuntu0.2",
+        "debSHA256": "f1e81e7218569d6f8d5b31e52aa94d7a86d64afe7d3297c3ee0afe67ca894b18",
+        "debBytes": 167218,
+        "files": [
+          {
+            "path": "/usr/lib/x86_64-linux-gnu/libde265.so.0.1.8",
+            "kind": "file",
+            "linkTarget": null,
+            "bytes": 358752
+          },
+          {
+            "path": "/usr/share/doc/libde265-0/changelog.Debian.gz",
+            "kind": "file",
+            "linkTarget": null,
+            "bytes": 2711
+          },
+          {
+            "path": "/usr/share/doc/libde265-0/copyright",
+            "kind": "file",
+            "linkTarget": null,
+            "bytes": 7228
+          },
+          {
+            "path": "/usr/lib/x86_64-linux-gnu/libde265.so.0",
+            "kind": "symlink",
+            "linkTarget": "libde265.so.0.1.8",
+            "bytes": 0
+          }
+        ]
+      },
+      {
+        "package": "libheif-plugin-libde265",
+        "version": "1.17.6-1ubuntu4.9",
+        "debSHA256": "4f42418b724153e35fc6d26e0d51867adb298ec03739254be083e74edacf9231",
+        "debBytes": 8170,
+        "files": [
+          {
+            "path": "/usr/lib/x86_64-linux-gnu/libheif/plugins/libheif-libde265.so",
+            "kind": "file",
+            "linkTarget": null,
+            "bytes": 18624
+          },
+          {
+            "path": "/usr/share/doc/libheif-plugin-libde265/copyright",
+            "kind": "file",
+            "linkTarget": null,
+            "bytes": 8636
+          },
+          {
+            "path": "/usr/share/doc/libheif-plugin-libde265/changelog.Debian.gz",
+            "kind": "symlink",
+            "linkTarget": "../libheif-plugin-aomdec/changelog.Debian.gz",
+            "bytes": 0
+          }
+        ]
+      }
+    ],
+    "existingPackagesToUpgrade": 0,
+    "existingCoreBinariesSHA256": {
+      "/usr/bin/heif-convert": "0cd22792b8f42a0027d679207af3d030171b5732c0459a07dc4cb1cf6a53f4de",
+      "/lib/x86_64-linux-gnu/libheif.so.1": "52a1f6dc6df853f411df20574819b4f7b773c827f34c990b963154176c04e620",
+      "/usr/lib/x86_64-linux-gnu/libheif/plugins/libheif-aomdec.so": "470911680a3ede723d478e768adbfdc9eeef13cf205f4308f750c37f7bc3c025",
+      "/usr/lib/x86_64-linux-gnu/libheif/plugins/libheif-aomenc.so": "230c4a35420acde87fdc0c149456a0fea778d4cf304417e4bd168117e81c149b"
+    },
+    "existingCoreHashesUnchanged": true,
+    "expectedInstallCoreHashChanges": 0,
+    "packageChanges": false,
+    "databaseWrites": 0,
+    "sourceWrites": 0,
+    "mediaRead": false,
+    "scratchRemoved": true
+  }
+}

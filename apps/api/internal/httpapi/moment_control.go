@@ -11,6 +11,8 @@ import (
 
 func momentControlFailure(w http.ResponseWriter, e error) {
 	switch {
+	case errors.Is(e, content.ErrMomentLocationsClientRequired):
+		respond(w, 409, map[string]any{"error": map[string]string{"code": "moment_locations_client_required", "message": "请使用支持完整位置集合的编辑器修改这些位置。"}})
 	case errors.Is(e, content.ErrMomentLegacyPhotoReselection):
 		respond(w, 409, map[string]any{"error": map[string]string{"code": "legacy_moment_photo_reselection_required", "message": "这张旧版配图需要重新选择后才能修改公开动态；也可以添加正文并明确移除配图。"}})
 	case errors.Is(e, content.ErrNotFound):
@@ -56,7 +58,7 @@ func (s *server) previewMomentControl(w http.ResponseWriter, r *http.Request) {
 		momentControlFailure(w, e)
 		return
 	}
-	if !humanControlPreviewMatches(v.HumanControlPreview, in.OperationID, in.Action, content.MomentControlDigest(in)) || v.MomentID != in.MomentID || v.ExpectedRevision != in.ExpectedRevision || v.InputSHA256 != content.MomentControlInputHash(in.Input) || content.MomentControlInputHash(v.Input) != v.InputSHA256 || !content.MomentControlHex(v.SourceVersion) || v.PreservedPlaceUnavailable && (in.Action != "UPDATE" || in.Input == nil || in.Input.LocationPrecision == "place") {
+	if !humanControlPreviewMatches(v.HumanControlPreview, in.OperationID, in.Action, content.MomentControlDigest(in)) || v.MomentID != in.MomentID || v.ExpectedRevision != in.ExpectedRevision || v.InputSHA256 != content.MomentControlInputHash(in.Input) || content.MomentControlInputHash(v.Input) != v.InputSHA256 || !content.MomentControlHex(v.SourceVersion) || v.Locations == nil || len(v.Locations) > content.MomentLocationMaxLinks || !content.MomentControlHex(v.LocationsSourceVersion) {
 		respondError(w, 503, "moment_unavailable")
 		return
 	}

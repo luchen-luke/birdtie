@@ -1,0 +1,12 @@
+{
+  "mode": "transfer",
+  "exitCode": 0,
+  "scriptSHA256": "2068b81a591b78c9b80db61f02cc32898736914a48a2d3925464b8d96a82a07c",
+  "result": {
+    "status": "PRIVATE_RECOVERY_TRANSFER_COMPLETE",
+    "files": 33,
+    "bytes": 36251419,
+    "databaseWrites": 0,
+    "sourceWrites": 0
+  }
+}

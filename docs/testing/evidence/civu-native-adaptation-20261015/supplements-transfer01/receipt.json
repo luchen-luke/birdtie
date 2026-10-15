@@ -1,0 +1,14 @@
+{
+  "exitCode": 0,
+  "localSourceStable": true,
+  "remoteProgramSHA256": "35b7d714268b7f52e366a433ce31d48dd874fc2cfaf85302797fe456cd635e46",
+  "result": {
+    "status": "PRIVATE_SUPPLEMENTS_TRANSFERRED",
+    "files": 7,
+    "bytes": 955576,
+    "databaseWrites": 0,
+    "sourceWrites": 0,
+    "fileHashesMatched": true,
+    "privateValuesOmitted": true
+  }
+}

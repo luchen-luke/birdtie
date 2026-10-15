@@ -1,0 +1,5 @@
+ok  	github.com/birdtie/birdtie/apps/api/internal/legacycontext	0.477s
+ok  	github.com/birdtie/birdtie/apps/api/internal/content	0.301s [no tests to run]
+ok  	github.com/birdtie/birdtie/apps/api/internal/postgres	2.235s [no tests to run]
+ok  	github.com/birdtie/birdtie/apps/api/internal/httpapi	4.152s [no tests to run]
+?   	github.com/birdtie/birdtie/apps/api/cmd/legacy-context-import	[no test files]

@@ -40,6 +40,13 @@ func mapProjectionQuery(r *http.Request, private bool) (mp.Query, error) {
 			return q, mp.ErrInvalid
 		}
 	}
+	if fields := r.Header.Values("X-Birdtie-Map-Locations"); len(fields) != 0 {
+		if len(fields) != 1 || (fields[0] != "locations-v1" && fields[0] != "locations-v2") || private || q.Media {
+			return q, mp.ErrInvalid
+		}
+		q.Locations, q.MomentMedia = true, true
+		q.References = fields[0] == "locations-v2"
+	}
 	targets := map[string]*float64{"west": &q.West, "south": &q.South, "east": &q.East, "north": &q.North}
 	for k, target := range targets {
 		values, ok := v[k]
@@ -89,7 +96,7 @@ func (s *server) getOwnMapOpportunityLayer(w http.ResponseWriter, r *http.Reques
 }
 func (s *server) getMapLayers(w http.ResponseWriter, r *http.Request, private bool) {
 	w.Header().Set("Cache-Control", "no-store")
-	w.Header().Set("Vary", "X-Birdtie-Map-Media")
+	w.Header().Set("Vary", "X-Birdtie-Map-Media, X-Birdtie-Map-Locations")
 	if len(r.Header.Values("X-Birdtie-Organization-Workspace")) != 0 {
 		mapProjectionFailure(w, mp.ErrInvalid)
 		return

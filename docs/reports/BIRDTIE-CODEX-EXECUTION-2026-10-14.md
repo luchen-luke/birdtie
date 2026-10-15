@@ -1,5 +1,13 @@
 # Birdtie 执行增量 2026-10-14
 
+## 2026-10-15 接续：160–166已部署，真机验收待设备连接
+
+API已部署`social166-20261015-build13`，独立Birdtie库schema166；Web08已上线。新动态无标题输入，正文或真实媒体即可发布，城市与地图可选；0..50位置关联及真实外部引用沿Now同一输入框，62项真实HTTPS检查通过，包括移除全部位置后正文仍可读。当前外部检索数据仅GB／IS。
+
+Civu存续83动态的171份媒体已全部对齐（166照片＋5完整视频）；22旅程／110行程项、3主题地图、189收藏、22旧串文、旧关系／39消息、8AI历史／41消息及109存续历史通知已原生迁入，20原owner归属核对无误。固定码123456保留，2仅邮箱身份也已绑定；没有新增其他原账号登录或激活Agent。其余封面／行政图／孤立资产的用途适配与完整真机验收仍未完成，不宣称407资产全部原生化。
+
+APK08已合包但安装时ADB设备列表为空；用户已授权直接安装验收，当前待重新连接。失败和此前通过证据均保留，父任务仍IN_PROGRESS。最新完整数量、兼容说明、失败闭环及界限见`BIRDTIE-CIVU-NATIVE-ADAPTATION-2026-10-15.md`首节与`docs/testing/evidence/civu-native-adaptation-20261015/checkpoint166.json`。以下旧版本叙述为历史时点。
+
 执行任务单：`C:\Users\chens\Documents\Codex\2026-10-13\d-project-birdtie-docs-testing-evidence\outputs\BIRDTIE-CODEX-EXECUTION-TASKS-2026-10-14.md`。正式源码为 `D:\Project\birdtie` 当前未提交工作树，启动 HEAD `4637cfb6e7758fc4fa5dd548fad623a8484c4cfb`；没有回滚、reset/clean、覆盖旧提交或更改 `D:\BirdTie`。
 
 本文件是持续执行记录。批次 A 和 B1/C1 已封存内部集成检查点；B2地点照片 API 已编译并接入本机 owned QA，B2/C2 客户端直接检查已完成分批验证，已合包并装入本机preview；组织邀请/位置B3已完成直接检查及API/APK/Web内部编译检查点，媒体140和集合副本141已编译接入本机owned QA，C3/B5身份保护已合包；正在推进142五类二级页控制。唯一队列仍为 `automation/codex_task_queue.json`；启动256项：183 DONE、47 TODO、12 PARTIAL、13 BLOCKED、1 IN_PROGRESS，共73项未完整闭环。父任务 `BT-FIX-NOW-UI-001` 保持 IN_PROGRESS；没有新增替代任务或重开历史 DONE。精确写范围追加于原 lease，启动及每次范围增加保留 source-before 和原队列证据。

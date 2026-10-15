@@ -15,8 +15,10 @@ import (
 const MomentThreadMaxEntries = 20
 
 type MomentThreadItem struct {
-	Input MomentInput                   `json:"input"`
-	Media []momentmedia.AttachmentInput `json:"media"`
+	MomentID         string                        `json:"momentId,omitempty"`
+	ExpectedRevision int64                         `json:"expectedRevision,omitempty"`
+	Input            MomentInput                   `json:"input"`
+	Media            []momentmedia.AttachmentInput `json:"media"`
 }
 
 type MomentThreadInput struct {
@@ -32,6 +34,7 @@ type MomentThreadInput struct {
 }
 
 type MomentThreadPreview struct {
+	Locations [][]MomentLocationResolved `json:"locations"`
 	identity.HumanControlPreview
 	Input         MomentThreadInput        `json:"input"`
 	SourceVersion string                   `json:"sourceVersion"`
@@ -114,6 +117,17 @@ func MomentThreadDigest(in MomentThreadInput) string {
 		}
 		items = append(items, []any{MomentControlInputHash(&item.Input), media})
 	}
+	if in.Action == "PUBLISH" {
+		items = []any{}
+		for _, item := range in.Items {
+			media := []any{}
+			for _, a := range item.Media {
+				media = append(media, []any{a.MediaID, a.MediaVersion, a.Rights.Digest()})
+			}
+			items = append(items, []any{item.MomentID, item.ExpectedRevision, MomentControlInputHash(&item.Input), media})
+		}
+		return MomentControlHash([]any{"moment-thread-existing-v2", in.OperationID, in.Action, in.ThreadID, in.LocalScope, in.Audience, in.ExpectedVersion, items})
+	}
 	return MomentControlHash([]any{"moment-thread-v1", in.OperationID, in.Action, in.ThreadID, in.LocalScope, in.Audience, in.ExpectedVersion, items})
 }
 
@@ -123,13 +137,17 @@ func NormalizeMomentThread(in MomentThreadInput, commit bool) (MomentThreadInput
 		return bad()
 	}
 	switch in.Action {
-	case "CREATE_PUBLISH":
-		if in.ThreadID != "" || in.ExpectedVersion != 0 || !identity.HumanControlUUID(in.LocalScope) || len(in.Items) < 2 || len(in.Items) > MomentThreadMaxEntries {
+	case "CREATE_PUBLISH", "PUBLISH":
+		if !identity.HumanControlUUID(in.LocalScope) || len(in.Items) < 2 || len(in.Items) > MomentThreadMaxEntries || (in.Action == "CREATE_PUBLISH" && (in.ThreadID != "" || in.ExpectedVersion != 0)) || (in.Action == "PUBLISH" && (!identity.HumanControlUUID(in.ThreadID) || in.ExpectedVersion < 1)) {
 			return bad()
 		}
 		seen := map[string]bool{}
+		locationIDs := map[string]bool{}
 		for i := range in.Items {
 			item := &in.Items[i]
+			if in.Action == "CREATE_PUBLISH" && (item.MomentID != "" || item.ExpectedRevision != 0) || in.Action == "PUBLISH" && (!identity.HumanControlUUID(item.MomentID) || item.ExpectedRevision < 1 || item.ExpectedRevision >= MomentControlMaxRevision) {
+				return bad()
+			}
 			control := MomentControlInput{OperationID: in.OperationID, Action: "PUBLISH", MomentID: in.OperationID, ExpectedRevision: 1, Input: &item.Input}
 			if len(item.Media) > 0 {
 				control.Media, control.LocalScope = &item.Media, in.LocalScope
@@ -139,6 +157,14 @@ func NormalizeMomentThread(in MomentThreadInput, commit bool) (MomentThreadInput
 				return bad()
 			}
 			item.Input = *v.Input
+			if item.Input.Locations != nil {
+				for _, location := range *item.Input.Locations {
+					if locationIDs[location.ID] {
+						return bad()
+					}
+					locationIDs[location.ID] = true
+				}
+			}
 			for _, a := range item.Media {
 				// Current expiry belongs to the native source capture. Structural
 				// decoding must still permit recovery of an original successful fact.
@@ -166,7 +192,7 @@ func NormalizeMomentThread(in MomentThreadInput, commit bool) (MomentThreadInput
 }
 
 func threadClosed(raw []byte, required, optional []string) (map[string]json.RawMessage, error) {
-	if len(raw) > 256*1024 || !utf8.Valid(raw) {
+	if len(raw) > 1024*1024 || !utf8.Valid(raw) {
 		return nil, identity.ErrControlInvalid
 	}
 	d := json.NewDecoder(bytes.NewReader(raw))
@@ -221,12 +247,23 @@ func DecodeMomentThread(raw []byte, commit bool) (MomentThreadInput, error) {
 		return in, identity.ErrControlInvalid
 	}
 	for _, item := range items {
-		v, e := threadClosed(item, []string{"input", "media"}, nil)
+		required := []string{"input", "media"}
+		if in.Action == "PUBLISH" {
+			required = append(required, "momentId", "expectedRevision")
+		}
+		v, e := threadClosed(item, required, nil)
 		if e != nil {
 			return in, e
 		}
-		if _, e = threadClosed(v["input"], []string{"cityId", "placeId", "title", "body", "timePrecision", "locationPrecision"}, []string{"occurredAt"}); e != nil {
+		im, ie := threadClosed(v["input"], []string{"cityId", "placeId", "title", "body", "timePrecision", "locationPrecision"}, []string{"occurredAt", "locations"})
+		e = ie
+		if e != nil {
 			return in, e
+		}
+		if loc, ok := im["locations"]; ok {
+			if e = DecodeMomentLocations(loc); e != nil {
+				return in, e
+			}
 		}
 		var media []json.RawMessage
 		if bytes.Equal(v["media"], []byte("null")) || json.Unmarshal(v["media"], &media) != nil {
@@ -259,12 +296,12 @@ func ValidMomentThreadReceipt(r MomentThreadReceipt, op string) bool {
 		if r.ExpectedVersion != 0 {
 			return false
 		}
-	} else if r.Action != "WITHDRAW" || r.ExpectedVersion < 1 {
+	} else if (r.Action != "WITHDRAW" && r.Action != "PUBLISH") || r.ExpectedVersion < 1 {
 		return false
 	}
 	seen := map[string]bool{}
 	for i, member := range r.Members {
-		if !identity.HumanControlUUID(member.MomentID) || seen[member.MomentID] || member.Position != i || member.AppliedRevision < 2 || member.AppliedRevision > MomentControlMaxRevision || member.Media == nil || len(member.Media) > momentmedia.MaxImages || member.MediaSetVersion < 0 || member.MediaSetVersion > momentmedia.MaxVersion || r.Action == "CREATE_PUBLISH" && member.Status != "published" || r.Action == "WITHDRAW" && member.Status != "withdrawn" {
+		if !identity.HumanControlUUID(member.MomentID) || seen[member.MomentID] || member.Position != i || member.AppliedRevision < 2 || member.AppliedRevision > MomentControlMaxRevision || member.Media == nil || len(member.Media) > momentmedia.MaxImages || member.MediaSetVersion < 0 || member.MediaSetVersion > momentmedia.MaxVersion || (r.Action == "CREATE_PUBLISH" || r.Action == "PUBLISH") && member.Status != "published" || r.Action == "WITHDRAW" && member.Status != "withdrawn" {
 			return false
 		}
 		seen[member.MomentID] = true
@@ -278,4 +315,45 @@ func ValidMomentThreadReceipt(r MomentThreadReceipt, op string) bool {
 		}
 	}
 	return r.Members[0].MomentID == r.RootMomentID
+}
+
+// Owned sidecar retains original child identity and private travel metadata.
+// It never contains a cache of child text or grants public geography.
+type OwnedThreadEntryContext struct {
+	Position                 int    `json:"position"`
+	MomentID                 string `json:"momentId"`
+	InboundOrigin            string `json:"inboundOrigin"`
+	InboundMode              string `json:"inboundMode"`
+	DurationMinutes          *int64 `json:"durationMinutes"`
+	EstimatedDurationMinutes *int64 `json:"estimatedDurationMinutes"`
+}
+type OwnedThreadLeg struct {
+	ID              string     `json:"id"`
+	FromMomentID    string     `json:"fromMomentId"`
+	ToMomentID      string     `json:"toMomentId"`
+	FromPosition    int        `json:"fromPosition"`
+	ToPosition      int        `json:"toPosition"`
+	Mode            string     `json:"mode"`
+	FromPlaceID     string     `json:"fromPlaceId"`
+	ToPlaceID       string     `json:"toPlaceId"`
+	SourceCreatedAt *time.Time `json:"sourceCreatedAt"`
+	SourceUpdatedAt *time.Time `json:"sourceUpdatedAt"`
+}
+type OwnedMomentThreadView struct {
+	SchemaVersion string                     `json:"schemaVersion"`
+	ThreadID      string                     `json:"threadId"`
+	RootMomentID  *string                    `json:"rootMomentId"`
+	Audience      string                     `json:"audience"`
+	Status        string                     `json:"status"`
+	Version       int64                      `json:"version"`
+	Members       []MomentThreadPosition     `json:"members"`
+	EntryContexts []OwnedThreadEntryContext  `json:"entryContexts"`
+	Legs          []OwnedThreadLeg           `json:"legs"`
+	SourceVersion string                     `json:"sourceVersion"`
+	ObservedAt    time.Time                  `json:"observedAt"`
+	ValidUntil    time.Time                  `json:"validUntil"`
+	ResponseProof identity.HumanControlProof `json:"-"`
+}
+type OwnedMomentThreadStore interface {
+	ReadOwnedMomentThread(context.Context, [32]byte, identity.Actor, string, bool) (OwnedMomentThreadView, error)
 }

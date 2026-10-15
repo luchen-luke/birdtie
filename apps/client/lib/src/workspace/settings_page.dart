@@ -1006,6 +1006,8 @@ class _SettingsPageState extends State<SettingsPage> {
                 ),
                 if (widget.auth.loginMethod == 'dev_phone')
                   const Text('本地开发账号 · 手机号尚未验证'),
+                if (widget.auth.loginMethod == 'dev_email')
+                  const Text('开发测试账号 · 邮箱尚未验证'),
                 if (organization) const Text('组织工作身份 · 切换到个人身份管理个人设置'),
               ],
             ),

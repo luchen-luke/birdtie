@@ -1,0 +1,13 @@
+BEGIN;
+DO $$BEGIN IF EXISTS(SELECT 1 FROM legacy_dev_email_binding_runs)OR EXISTS(SELECT 1 FROM legacy_dev_email_bindings)OR EXISTS(SELECT 1 FROM sessions WHERE development_credential_kind IS NOT NULL)THEN RAISE EXCEPTION 'email identity history cannot be discarded';END IF;END$$;
+DROP FUNCTION birdtie_legacy_dev_email_contract();
+DROP TABLE legacy_dev_email_bindings;
+DROP FUNCTION birdtie_guard_legacy_dev_email_binding();
+DROP TABLE legacy_dev_email_binding_runs;
+DROP FUNCTION birdtie_legacy_dev_email_counts();
+DROP TABLE dev_email_challenges;
+DROP TRIGGER development_credential_kind_immutable ON sessions;
+DROP FUNCTION birdtie_keep_development_credential_kind();
+ALTER TABLE sessions DROP CONSTRAINT development_credential_kind_shape;
+ALTER TABLE sessions DROP COLUMN development_credential_kind;
+COMMIT;

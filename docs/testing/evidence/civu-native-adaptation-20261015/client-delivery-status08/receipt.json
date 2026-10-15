@@ -1,0 +1,18 @@
+{
+  "apkBuild": "PASS",
+  "apkInstall": "FAILED_DEVICE_NOT_FOUND",
+  "deviceListEmpty": true,
+  "userAuthorizedDeviceOperation": true,
+  "userReconnectQuestionPending": true,
+  "webBuild": "PASS",
+  "webDeployment": "PASS",
+  "browserVisualAcceptance": "BLOCKED_CONTROL_CONNECTION",
+  "browserAttempts": [
+    "In-app browser create/get tab timed out",
+    "Chrome task tab created but debugger unattached for AX and screenshot"
+  ],
+  "screenshotsCaptured": 0,
+  "fullDeviceAcceptance": "NOT_RUN",
+  "normalFont": true,
+  "screenRecording": false
+}

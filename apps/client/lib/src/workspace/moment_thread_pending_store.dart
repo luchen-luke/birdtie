@@ -44,7 +44,11 @@ class MomentThreadPending {
       'stage',
     });
     if (!humanControlID(value['operationId']) ||
-        !const {'CREATE_PUBLISH', 'WITHDRAW'}.contains(value['action']) ||
+        !const {
+          'CREATE_PUBLISH',
+          'PUBLISH',
+          'WITHDRAW',
+        }.contains(value['action']) ||
         !humanControlHash(value['payloadDigest']) ||
         !humanControlHash(value['sourceVersion']) ||
         !const {'PREPARED', 'UNKNOWN', 'RETIRED'}.contains(value['stage'])) {
@@ -65,12 +69,16 @@ class MomentThreadJournalState {
     this.localScope,
     this.entries,
     this.activeIndex,
-    this.pending,
-  );
+    this.pending, {
+    this.threadID = '',
+    this.threadVersion = 0,
+  });
   final String localScope;
   final List<MomentThreadDraftEntry> entries;
   final int activeIndex;
   final MomentThreadPending? pending;
+  final String threadID;
+  final int threadVersion;
   MomentThreadJournalState withPending(
     MomentThreadPending? pending, {
     bool clearDraft = false,
@@ -79,6 +87,8 @@ class MomentThreadJournalState {
     clearDraft ? const [] : entries,
     clearDraft ? 0 : activeIndex,
     pending,
+    threadID: clearDraft ? '' : threadID,
+    threadVersion: clearDraft ? 0 : threadVersion,
   );
   Map<String, Object?> get json => {
     'schema': 'moment-thread-private-journal-v1',
@@ -86,15 +96,17 @@ class MomentThreadJournalState {
     'entries': entries.map((entry) => entry.json).toList(),
     'activeIndex': activeIndex,
     'pending': pending?.json,
+    if (threadID.isNotEmpty) ...{
+      'threadId': threadID,
+      'threadVersion': threadVersion,
+    },
   };
   factory MomentThreadJournalState.decode(Object? raw) {
-    final value = humanControlObject(raw, {
-      'schema',
-      'localScope',
-      'entries',
-      'activeIndex',
-      'pending',
-    });
+    final value = humanControlObject(
+      raw,
+      {'schema', 'localScope', 'entries', 'activeIndex', 'pending'},
+      optional: {'threadId', 'threadVersion'},
+    );
     if (value['schema'] != 'moment-thread-private-journal-v1' ||
         !humanControlID(value['localScope']) ||
         value['entries'] is! List ||
@@ -108,6 +120,15 @@ class MomentThreadJournalState {
     final entries = (value['entries'] as List)
         .map(MomentThreadDraftEntry.decode)
         .toList();
+    if (value.containsKey('threadId') &&
+        (!humanControlID(value['threadId']) ||
+            !humanControlVersion(value['threadVersion'], zero: false) ||
+            entries.any(
+              (e) =>
+                  !humanControlID(e.momentID) ||
+                  !humanControlVersion(e.expectedRevision, zero: false),
+            )))
+      throw const FormatException('原串文私人草稿归属不符');
     if (entries.map((entry) => entry.localID).toSet().length !=
         entries.length) {
       throw const FormatException('私人串文草稿条目重复');
@@ -119,6 +140,8 @@ class MomentThreadJournalState {
       value['pending'] == null
           ? null
           : MomentThreadPending.decode(value['pending']),
+      threadID: value['threadId'] as String? ?? '',
+      threadVersion: value['threadVersion'] as int? ?? 0,
     );
   }
 }

@@ -2,13 +2,16 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"io"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 
+	"github.com/birdtie/birdtie/apps/api/internal/legacyimagerecovery"
 	"github.com/birdtie/birdtie/apps/api/internal/legacymedia"
+	"github.com/birdtie/birdtie/apps/api/internal/postgres"
 )
 
 func TestPrivateBlobAndAggregateOutputGuards(t *testing.T) {
@@ -47,5 +50,18 @@ func TestPrivateBlobAndAggregateOutputGuards(t *testing.T) {
 	}
 	if !strings.Contains(out.String(), "\"mediaImported\":true") || !strings.Contains(out.String(), "\"videosImported\":false") {
 		t.Fatal("partial media status misleading")
+	}
+}
+
+func TestRecoverySummaryAndFlagIsolation(t *testing.T) {
+	var out bytes.Buffer
+	if e := writeRecoverySummary(&out, postgres.LegacyPrivateImageRecoveryResult{Status: "UNKNOWN", Counts: legacyimagerecovery.Counts{Images: 31}}); e != nil || strings.Contains(out.String(), "31") || strings.Contains(out.String(), "\"counts\"") {
+		t.Fatal("unknown recovery claims effects")
+	}
+	if e := run(context.Background(), []string{"--heif-convert", "unexpected"}, func(string) string { return "" }, &out); e == nil {
+		t.Fatal("recovery decoder options silently accepted by original157 mode")
+	}
+	if e := run(context.Background(), []string{"--metadata-recovery", "--apply", "--verify-blobs"}, func(string) string { return "" }, &out); e == nil {
+		t.Fatal("verify mixed with mutation")
 	}
 }

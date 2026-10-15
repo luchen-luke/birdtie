@@ -1,0 +1,25 @@
+Flutter assets will be downloaded from https://storage.flutter-io.cn. Make sure you trust this source!
+00:00 +0: loading D:/Project/birdtie/apps/client/test/external_location_reference_test.dart
+00:00 +0: D:/Project/birdtie/apps/client/test/external_location_reference_test.dart: external selection uses the server digest and a real typed reference without a city
+00:00 +1: D:/Project/birdtie/apps/client/test/external_location_reference_test.dart: v6 retains Moment detail and OSM attribution; old maps cannot reinterpret it as a Place
+00:00 +2: D:/Project/birdtie/apps/client/test/external_location_reference_test.dart: location selection still works when optional City lookup fails
+00:00 +3: D:/Project/birdtie/apps/client/test/external_location_reference_test.dart: location selection still works when optional City lookup fails
+00:00 +4: D:/Project/birdtie/apps/client/test/moment_locations_test.dart: same composer panel changes selected precision and public sidecar retires leased names on expiry and identity change
+00:00 +5: D:/Project/birdtie/apps/client/test/moment_locations_test.dart: map v5 preserves two stable pins and one original Moment detail identity
+00:00 +5 -1: D:/Project/birdtie/apps/client/test/moment_locations_test.dart: map v5 preserves two stable pins and one original Moment detail identity [E]
+  Expected: 'locations-v1'
+    Actual: 'locations-v2'
+     Which: is different.
+            Expected: ... ocations-v1
+              Actual: ... ocations-v2
+                                    ^
+             Differ at offset 11
+  
+  package:matcher                                     expect
+  package:flutter_test/src/widget_tester.dart 473:18  expect
+  test\moment_locations_test.dart 348:7               main.<fn>
+  
+00:00 +5 -1: Some tests failed.
+
+Failing tests:
+  D:/Project/birdtie/apps/client/test/moment_locations_test.dart: map v5 preserves two stable pins and one original Moment detail identity

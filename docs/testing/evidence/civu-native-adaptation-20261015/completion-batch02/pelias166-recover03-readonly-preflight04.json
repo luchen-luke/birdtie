@@ -1,0 +1,16 @@
+{
+  "sshExitCode": 0,
+  "stderrBytes": 0,
+  "remoteProgramSHA256": "f056319b09d197d3da5468d2bd758a3d259e8f170a842b12aad344cc271a8606",
+  "candidateRemoteSHA256": "2f7304f2d8401712408cef0d01a8223936684500a7c0f3e278ff0f3b11ad635d",
+  "result": {
+    "status": "READ_ONLY_REPAIR03_PREFLIGHT_PASS",
+    "sourceFilesHashed": 229,
+    "cloneFilesHashed": 196,
+    "configFilesHashed": 2,
+    "exactContainersLimitsNetworkAndOriginalConfigMatched": true,
+    "sourceWrites": 0,
+    "nativeDatabaseWrites": 0,
+    "serviceMutations": 0
+  }
+}

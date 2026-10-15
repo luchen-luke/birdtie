@@ -353,8 +353,8 @@ func (s *Store) ListRequests(ctx context.Context, ownerID string) ([]connection.
             r.scope,
             CASE WHEN r.state = 'pending' AND r.expires_at <= now()
                  THEN 'expired' ELSE r.state END,
-            COALESCE(cv.id::text, ''), r.expires_at, r.created_at,COALESCE(pb.disposition,''),CASE WHEN pb.disposition='SCREEN' AND r.state='pending' AND r.expires_at>clock_timestamp() THEN 'PENDING_REVIEW' ELSE '' END,
-            birdtie_person_avatar_metadata(other.id,$1::uuid)
+            COALESCE(cv.id::text, ''), COALESCE(r.expires_at,'0001-01-01T00:00:00Z'::timestamptz), r.created_at,COALESCE(pb.disposition,''),CASE WHEN pb.disposition='SCREEN' AND r.state='pending' AND r.expires_at>clock_timestamp() THEN 'PENDING_REVIEW' ELSE '' END,
+            birdtie_person_avatar_metadata(other.id,$1::uuid),CASE WHEN r.legacy_source_id IS NOT NULL THEN 'LEGACY_IMPORT' ELSE '' END
         FROM connection_requests r
         JOIN accounts other ON other.id = CASE WHEN r.sender_account_id = $1
             THEN r.recipient_account_id ELSE r.sender_account_id END
@@ -372,7 +372,7 @@ func (s *Store) ListRequests(ctx context.Context, ownerID string) ([]connection.
 		var item connection.Request
 		if err := rows.Scan(&item.ID, &item.Direction, &item.OtherAccountID,
 			&item.OtherName, &item.CityID, &item.Note, &item.Scope, &item.State,
-			&item.ConversationID, &item.ExpiresAt, &item.CreatedAt, &item.PolicyDisposition, &item.ScreeningStatus, &item.Avatar); err != nil {
+			&item.ConversationID, &item.ExpiresAt, &item.CreatedAt, &item.PolicyDisposition, &item.ScreeningStatus, &item.Avatar, &item.Origin); err != nil {
 			return nil, err
 		}
 		items = append(items, item)
@@ -436,7 +436,7 @@ func decideRequestInTx(ctx context.Context, tx pgx.Tx, actorID, id, action strin
 	var senderID, recipientID, cityID, note, scope, state string
 	var expiresAt, createdAt time.Time
 	err = tx.QueryRow(ctx, `SELECT sender_account_id, recipient_account_id,
-        COALESCE(city_id,''), note, scope, state, expires_at, created_at
+        COALESCE(city_id,''), note, scope, state, COALESCE(expires_at,'0001-01-01T00:00:00Z'::timestamptz), created_at
         FROM connection_requests WHERE id = $1 FOR UPDATE`, id).
 		Scan(&senderID, &recipientID, &cityID, &note, &scope, &state, &expiresAt, &createdAt)
 	if errors.Is(err, pgx.ErrNoRows) {
@@ -444,6 +444,15 @@ func decideRequestInTx(ctx context.Context, tx pgx.Tx, actorID, id, action strin
 	}
 	if err != nil {
 		return connection.Request{}, err
+	}
+	historical := false
+	if expiresAt.IsZero() {
+		if e := tx.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM connection_requests r JOIN legacy_social_import_entities e ON e.id=r.legacy_source_id WHERE r.id=$1 AND r.expires_at IS NULL AND e.kind IN('friendship','message_request') AND e.target_id=r.id AND e.actor_account_id=r.sender_account_id AND e.other_account_id=r.recipient_account_id)`, id).Scan(&historical); e != nil {
+			return connection.Request{}, e
+		}
+		if !historical {
+			return connection.Request{}, connection.ErrConflict
+		}
 	}
 	if (action == "withdraw" && actorID != senderID) ||
 		(action != "withdraw" && actorID != recipientID) {
@@ -465,7 +474,7 @@ func decideRequestInTx(ctx context.Context, tx pgx.Tx, actorID, id, action strin
 	if tx.QueryRow(ctx, `SELECT clock_timestamp()`).Scan(&decisionAt) != nil {
 		return connection.Request{}, mp.ErrUnavailable
 	}
-	if state != "pending" || !expiresAt.After(decisionAt) {
+	if state != "pending" || !historical && !expiresAt.After(decisionAt) {
 		if operation == nil {
 			return connection.Request{}, connection.ErrConflict
 		}
@@ -550,21 +559,26 @@ func decideRequestInTx(ctx context.Context, tx pgx.Tx, actorID, id, action strin
 			return connection.Request{}, err
 		}
 	}
-	if expiresAt.Before(routeFence.until) {
+	if !historical && expiresAt.Before(routeFence.until) {
 		routeFence.until = expiresAt
 	}
 	if err = finishMessageRouteForActor(ctx, tx, routeFence, actorID); err != nil {
 		return connection.Request{}, err
 	}
+	origin := ""
+	if historical {
+		origin = connection.LegacySocialOrigin
+	}
 	return connection.Request{
-		ID: id, CityID: cityID, Note: note, Scope: scope, State: state,
+		Origin: origin,
+		ID:     id, CityID: cityID, Note: note, Scope: scope, State: state,
 		ConversationID: conversationID, ExpiresAt: expiresAt, CreatedAt: createdAt,
 	}, nil
 }
 
 func (s *Store) ListTies(ctx context.Context, ownerID string) ([]connection.Tie, error) {
 	rows, err := s.pool.Query(ctx, `SELECT t.id,other.id,
-        CASE WHEN birdtie_agent_profile_field_allowed(other.id,$1::uuid,'displayName')
+        CASE WHEN other.status='active' AND birdtie_profile_visible_to(other.id,$1::uuid) AND birdtie_agent_profile_field_allowed(other.id,$1::uuid,'displayName')
             THEN COALESCE(NULLIF(p.display_name,''),NULLIF(other.handle,''),'Birdtie 成员')
             ELSE 'Birdtie 成员' END,t.created_at,birdtie_person_avatar_metadata(other.id,$1::uuid)
         FROM person_ties t
@@ -575,7 +589,7 @@ func (s *Store) ListTies(ctx context.Context, ownerID string) ([]connection.Tie,
         JOIN accounts own ON own.id=$1 AND own.account_type='person' AND own.status='active'
         JOIN accounts other ON other.id=CASE WHEN t.person_a_account_id=$1
             THEN t.person_b_account_id ELSE t.person_a_account_id END
-            AND other.account_type='person' AND other.status='active'
+            AND other.account_type='person' AND (other.status='active' OR source_request.legacy_source_id IS NOT NULL)
         LEFT JOIN user_profiles p ON p.account_id=other.id
         WHERE t.status='active' AND (t.person_a_account_id=$1 OR t.person_b_account_id=$1)
           AND NOT EXISTS (SELECT 1 FROM account_blocks b
@@ -676,6 +690,16 @@ func (s *Store) MarkRead(ctx context.Context, actorID, conversationID, throughMe
 		return connection.ReadState{}, err
 	}
 	defer tx.Rollback(ctx)
+	if state, handled, e := legacySocialMarkRead(ctx, tx, actorID, conversationID, throughMessageID); handled {
+		if e != nil {
+			return connection.ReadState{}, e
+		}
+		if e = tx.Commit(ctx); e != nil {
+			return connection.ReadState{}, e
+		}
+		return state, nil
+	}
+
 	if _, err := conversationMember(ctx, tx, actorID, conversationID); err != nil {
 		return connection.ReadState{}, err
 	}

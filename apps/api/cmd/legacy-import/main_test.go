@@ -266,3 +266,17 @@ func TestLegacyDevPhoneCLIPrepareAndProtectedChannel(t *testing.T) {
 		t.Fatal("ambiguous inspect accepted")
 	}
 }
+
+func TestLegacyDevEmailCLIRealmAndUnknownSummary(t *testing.T) {
+	var out bytes.Buffer
+	if e := run(context.Background(), []string{"--dev-phone-bindings", "--dev-email-bindings"}, func(string) string { return "" }, &out); e == nil || out.Len() != 0 {
+		t.Fatal("mixed credential binding modes accepted")
+	}
+	if e := writeDevEmailSummary(&out, postgres.LegacyDevEmailBindingResult{RunID: testRun, Status: "UNKNOWN", Counts: legacymigration.DevEmailCounts{Owners: 2, BindableOwners: 2}}); e != nil {
+		t.Fatal(e)
+	}
+	var v map[string]any
+	if json.Unmarshal(out.Bytes(), &v) != nil || v["countsKnown"] != false || v["counts"] != nil || v["enrolledOwners"] != nil || v["credentialKind"] != "email" || v["devOnly"] != true || v["activated"] != false {
+		t.Fatal("unknown receipt fabricated successful binding or activation")
+	}
+}

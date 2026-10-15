@@ -1,0 +1,447 @@
+{
+  "exitCode": 0,
+  "sqlSHA256": "1f0ceae3019ea758d508a75dd880ab7f6bbacec040d0940ccde67bd6e97c6281",
+  "sourceWrites": 0,
+  "nativeWrites": 0,
+  "stderrBytes": 0,
+  "results": [
+    {
+      "event": "history_schema",
+      "tables": {
+        "ai_journey_messages": [
+          {
+            "name": "id",
+            "type": "uuid",
+            "nullable": "NO"
+          },
+          {
+            "name": "thread_id",
+            "type": "uuid",
+            "nullable": "NO"
+          },
+          {
+            "name": "role",
+            "type": "text",
+            "nullable": "NO"
+          },
+          {
+            "name": "content",
+            "type": "text",
+            "nullable": "NO"
+          },
+          {
+            "name": "created_at",
+            "type": "timestamptz",
+            "nullable": "NO"
+          },
+          {
+            "name": "request_id",
+            "type": "text",
+            "nullable": "NO"
+          }
+        ],
+        "ai_journey_threads": [
+          {
+            "name": "id",
+            "type": "uuid",
+            "nullable": "NO"
+          },
+          {
+            "name": "owner_id",
+            "type": "uuid",
+            "nullable": "NO"
+          },
+          {
+            "name": "journey_id",
+            "type": "uuid",
+            "nullable": "YES"
+          },
+          {
+            "name": "draft_context_id",
+            "type": "uuid",
+            "nullable": "YES"
+          },
+          {
+            "name": "summary",
+            "type": "text",
+            "nullable": "NO"
+          },
+          {
+            "name": "status",
+            "type": "text",
+            "nullable": "NO"
+          },
+          {
+            "name": "context_revision",
+            "type": "int4",
+            "nullable": "NO"
+          },
+          {
+            "name": "created_at",
+            "type": "timestamptz",
+            "nullable": "NO"
+          },
+          {
+            "name": "updated_at",
+            "type": "timestamptz",
+            "nullable": "NO"
+          }
+        ],
+        "notification_settings": [
+          {
+            "name": "user_id",
+            "type": "uuid",
+            "nullable": "NO"
+          },
+          {
+            "name": "settings",
+            "type": "jsonb",
+            "nullable": "NO"
+          },
+          {
+            "name": "version",
+            "type": "int4",
+            "nullable": "NO"
+          },
+          {
+            "name": "updated_at",
+            "type": "timestamptz",
+            "nullable": "NO"
+          }
+        ],
+        "notifications": [
+          {
+            "name": "id",
+            "type": "uuid",
+            "nullable": "NO"
+          },
+          {
+            "name": "recipient_id",
+            "type": "uuid",
+            "nullable": "NO"
+          },
+          {
+            "name": "actor_id",
+            "type": "uuid",
+            "nullable": "YES"
+          },
+          {
+            "name": "type",
+            "type": "text",
+            "nullable": "NO"
+          },
+          {
+            "name": "aggregate_type",
+            "type": "text",
+            "nullable": "NO"
+          },
+          {
+            "name": "aggregate_id",
+            "type": "uuid",
+            "nullable": "YES"
+          },
+          {
+            "name": "event_id",
+            "type": "uuid",
+            "nullable": "YES"
+          },
+          {
+            "name": "payload",
+            "type": "jsonb",
+            "nullable": "NO"
+          },
+          {
+            "name": "read_at",
+            "type": "timestamptz",
+            "nullable": "YES"
+          },
+          {
+            "name": "created_at",
+            "type": "timestamptz",
+            "nullable": "NO"
+          },
+          {
+            "name": "event_type",
+            "type": "text",
+            "nullable": "NO"
+          },
+          {
+            "name": "category",
+            "type": "text",
+            "nullable": "NO"
+          },
+          {
+            "name": "anchor_type",
+            "type": "text",
+            "nullable": "NO"
+          },
+          {
+            "name": "anchor_id",
+            "type": "uuid",
+            "nullable": "YES"
+          },
+          {
+            "name": "seen_at",
+            "type": "timestamptz",
+            "nullable": "YES"
+          },
+          {
+            "name": "payload_schema_version",
+            "type": "int4",
+            "nullable": "NO"
+          },
+          {
+            "name": "inbox_version",
+            "type": "int8",
+            "nullable": "NO"
+          },
+          {
+            "name": "dedupe_key",
+            "type": "text",
+            "nullable": "YES"
+          },
+          {
+            "name": "deleted_at",
+            "type": "timestamptz",
+            "nullable": "YES"
+          }
+        ]
+      }
+    },
+    {
+      "event": "private_ai_history_aggregate",
+      "threads": 8,
+      "threadsWithMessages": 8,
+      "threadOwners": 5,
+      "journeyLinkedThreads": 3,
+      "draftContextThreads": 5,
+      "activeThreads": 8,
+      "nonActiveThreads": 0,
+      "missingThreadOwners": 0,
+      "journeyOwnerDifferentFromThreadOwner": 0,
+      "missingLinkedJourneys": 0,
+      "linkedDeletedJourneys": 2,
+      "messages": 41,
+      "userMessages": 21,
+      "assistantMessages": 20,
+      "otherRoleMessages": 0,
+      "orphanMessages": 0,
+      "messagesWithSourceRequestID": 41,
+      "maxMessageUTF8Bytes": 1954
+    },
+    {
+      "event": "notification_history_aggregate",
+      "total": 110,
+      "recipients": 11,
+      "read": 73,
+      "unread": 37,
+      "seen": 83,
+      "deleted": 1,
+      "liveUnread": 37,
+      "missingRecipients": 0,
+      "missingActors": 0,
+      "nonObjectPayloads": 0,
+      "maxPayloadBytes": 366
+    },
+    {
+      "event": "notification_history_kind_counts",
+      "items": [
+        {
+          "category": "comment",
+          "kind": "note_comment",
+          "target_kind": "note",
+          "total": 8,
+          "deleted": 0,
+          "unread": 2
+        },
+        {
+          "category": "follow",
+          "kind": "follow",
+          "target_kind": "user",
+          "total": 30,
+          "deleted": 0,
+          "unread": 10
+        },
+        {
+          "category": "follow",
+          "kind": "friend_accepted",
+          "target_kind": "friendship",
+          "total": 4,
+          "deleted": 0,
+          "unread": 0
+        },
+        {
+          "category": "follow",
+          "kind": "friend_request",
+          "target_kind": "friendship",
+          "total": 5,
+          "deleted": 0,
+          "unread": 2
+        },
+        {
+          "category": "follow",
+          "kind": "mutual_follow",
+          "target_kind": "user",
+          "total": 18,
+          "deleted": 0,
+          "unread": 5
+        },
+        {
+          "category": "praise_save",
+          "kind": "comment_like",
+          "target_kind": "note",
+          "total": 2,
+          "deleted": 0,
+          "unread": 0
+        },
+        {
+          "category": "praise_save",
+          "kind": "reaction",
+          "target_kind": "journey",
+          "total": 12,
+          "deleted": 0,
+          "unread": 7
+        },
+        {
+          "category": "praise_save",
+          "kind": "reaction",
+          "target_kind": "note",
+          "total": 29,
+          "deleted": 1,
+          "unread": 11
+        },
+        {
+          "category": "system",
+          "kind": "moment_moderation_changed",
+          "target_kind": "moment",
+          "total": 1,
+          "deleted": 0,
+          "unread": 0
+        },
+        {
+          "category": "system",
+          "kind": "moment_share",
+          "target_kind": "note",
+          "total": 1,
+          "deleted": 0,
+          "unread": 0
+        }
+      ]
+    },
+    {
+      "event": "notification_payload_keys",
+      "items": [
+        {
+          "key": "action",
+          "occurrences": 43
+        },
+        {
+          "key": "commentId",
+          "occurrences": 10
+        },
+        {
+          "key": "followerId",
+          "occurrences": 30
+        },
+        {
+          "key": "journeyId",
+          "occurrences": 12
+        },
+        {
+          "key": "noteId",
+          "occurrences": 39
+        },
+        {
+          "key": "reason",
+          "occurrences": 1
+        },
+        {
+          "key": "replyToCommentId",
+          "occurrences": 7
+        },
+        {
+          "key": "requestId",
+          "occurrences": 1
+        },
+        {
+          "key": "targetAvailable",
+          "occurrences": 39
+        },
+        {
+          "key": "targetCoverUrl",
+          "occurrences": 39
+        },
+        {
+          "key": "targetTitle",
+          "occurrences": 39
+        },
+        {
+          "key": "targetType",
+          "occurrences": 39
+        },
+        {
+          "key": "userId",
+          "occurrences": 27
+        }
+      ]
+    },
+    {
+      "event": "notification_preferences_aggregate",
+      "rows": 2,
+      "missingOwners": 0,
+      "nonObjectSettings": 0,
+      "minVersion": 5,
+      "maxVersion": 9
+    },
+    {
+      "event": "notification_preference_keys",
+      "items": [
+        {
+          "key": "chatPush",
+          "value_kind": "boolean",
+          "occurrences": 2
+        },
+        {
+          "key": "commentPush",
+          "value_kind": "boolean",
+          "occurrences": 2
+        },
+        {
+          "key": "followPush",
+          "value_kind": "boolean",
+          "occurrences": 2
+        },
+        {
+          "key": "journeyPush",
+          "value_kind": "boolean",
+          "occurrences": 2
+        },
+        {
+          "key": "praiseSavePush",
+          "value_kind": "boolean",
+          "occurrences": 2
+        },
+        {
+          "key": "previewEnabled",
+          "value_kind": "boolean",
+          "occurrences": 2
+        },
+        {
+          "key": "requestPush",
+          "value_kind": "boolean",
+          "occurrences": 2
+        },
+        {
+          "key": "systemPush",
+          "value_kind": "boolean",
+          "occurrences": 2
+        },
+        {
+          "key": "timezone",
+          "value_kind": "string",
+          "occurrences": 2
+        }
+      ]
+    }
+  ]
+}

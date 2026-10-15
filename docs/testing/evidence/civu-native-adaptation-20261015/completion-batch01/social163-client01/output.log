@@ -1,0 +1,5 @@
+00:00 +0: loading D:/Project/birdtie/apps/client/test/legacy_social_native_test.dart
+00:00 +0: source kinds and sequence preserve empty entity and unknown request expiry
+00:00 +1: existing thread renders original system/sticker history and retires it on owner loss
+00:00 +2: All tests passed!
+Flutter assets will be downloaded from https://storage.flutter-io.cn. Make sure you trust this source!

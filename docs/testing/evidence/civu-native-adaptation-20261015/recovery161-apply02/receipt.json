@@ -1,0 +1,34 @@
+{
+  "mode": "apply",
+  "exitCode": 0,
+  "scriptSHA256": "3e661b8964ba902985236f3a192e955e98908d44cd2b4d37fc6a551c282198d2",
+  "result": {
+    "status": "PRIVATE_RECOVERY_INSPECTED",
+    "result": {
+      "activated": false,
+      "counts": {
+        "images": 31,
+        "jpeg": 9,
+        "heic": 22,
+        "notes": 15,
+        "owners": 2
+      },
+      "countsKnown": true,
+      "deferred": {
+        "deleted_note_relations": 44,
+        "original_matched_relations_unchanged": 140
+      },
+      "mediaImported": true,
+      "protocol": "birdtie-civu-private-image-recovery-v1",
+      "runId": "c5df0d7c-f361-4275-9838-feb6d1d92352",
+      "sourceWrites": 0,
+      "status": "COMMITTED",
+      "videosImported": false
+    },
+    "original157Images": 135,
+    "original157FactUnchanged": true,
+    "sourceInputsUnchanged": true,
+    "sourceWrites": 0,
+    "repeated": true
+  }
+}

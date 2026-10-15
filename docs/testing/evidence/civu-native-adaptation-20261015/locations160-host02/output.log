@@ -1,0 +1,15 @@
+Flutter assets will be downloaded from https://storage.flutter-io.cn. Make sure you trust this source!
+00:00 +0: loading D:/Project/birdtie/apps/client/test/now_moment_intent_test.dart
+00:00 +0: D:/Project/birdtie/apps/client/test/now_moment_intent_test.dart: only an explicit compose instruction extracts the selected text
+00:00 +1: D:/Project/birdtie/apps/client/test/now_creation_entry_test.dart: 动态入口打开原私人编辑器；仅明确保存写 Moment，不发布或查询
+00:01 +2: D:/Project/birdtie/apps/client/test/now_creation_entry_test.dart: 访客或未绑定当前来源不打开私人创建、不请求身份数据
+00:01 +3: D:/Project/birdtie/apps/client/test/now_creation_entry_test.dart: ownerABA 同步退休私人草稿，不能因返回原值复活保存
+00:01 +4: D:/Project/birdtie/apps/client/test/now_creation_entry_test.dart: workspaceABA 同步退休私人草稿，不能因返回原值复活保存
+00:02 +5: D:/Project/birdtie/apps/client/test/now_creation_entry_test.dart: source 同步退休私人草稿，不能因返回原值复活保存
+00:02 +6: D:/Project/birdtie/apps/client/test/now_creation_entry_test.dart: 探索城市切换不会退休无城市动态或添加发布门槛
+00:02 +7: D:/Project/birdtie/apps/client/test/now_creation_entry_test.dart: 来源退休只移除自有草稿 route，不弹出其上另一个页面
+00:02 +8: D:/Project/birdtie/apps/client/test/now_creation_entry_test.dart: 已提交保存晚返回不能关闭另一个页面或恢复旧草稿
+00:03 +9: D:/Project/birdtie/apps/client/test/now_creation_entry_test.dart: 不确定旧保存须读核查并明确再次确认，返回检查不新增草稿
+00:03 +10: D:/Project/birdtie/apps/client/test/now_creation_entry_test.dart: 可选位置只按需读取，取消保留草稿且借用client不关闭连接
+00:04 +11: D:/Project/birdtie/apps/client/test/now_creation_entry_test.dart: 私人草稿预览401走共用认证边界一次，不自动保存
+00:04 +12: All tests passed!

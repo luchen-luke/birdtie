@@ -3,6 +3,8 @@ package postgres
 import (
 	"context"
 	"errors"
+	"fmt"
+	"github.com/birdtie/birdtie/apps/api/internal/identity"
 
 	"github.com/birdtie/birdtie/apps/api/internal/agentoutbox"
 	"github.com/birdtie/birdtie/apps/api/internal/content"
@@ -46,11 +48,25 @@ func (s *Store) CreateMomentDraft(ctx context.Context, authorID string, input co
 	return m, nil
 }
 
-func createMomentDraftInTx(ctx context.Context, tx pgx.Tx, authorID string, input content.MomentInput) (content.Moment, error) {
+func createMomentDraftInTx(ctx context.Context, tx pgx.Tx, authorID string, input content.MomentInput, snapshots ...momentLocationsSnapshot) (content.Moment, error) {
 	input, err := content.NormalizeMomentInput(input)
 	if err != nil {
 		return content.Moment{}, err
 	}
+	var captured momentLocationsSnapshot
+	if len(snapshots) > 0 {
+		captured = snapshots[0]
+	} else {
+		var seed string
+		if err = tx.QueryRow(ctx, `SELECT gen_random_uuid()`).Scan(&seed); err != nil {
+			return content.Moment{}, err
+		}
+		captured, err = captureMomentLocationsInTx(ctx, humanWriteFrame{tx: tx, a: identity.Actor{ID: authorID}, op: seed}, nil, input)
+		if err != nil {
+			return content.Moment{}, err
+		}
+	}
+	input.CityID, input.PlaceID, input.LocationPrecision = momentLocationLegacyFields(captured.Effective)
 	m, err := scanMoment(tx.QueryRow(ctx, `INSERT INTO moments AS m (
         author_account_id, city_id, place_id, title, body, occurred_at,
         time_precision, location_precision
@@ -70,6 +86,9 @@ func createMomentDraftInTx(ctx context.Context, tx pgx.Tx, authorID string, inpu
 		return content.Moment{}, content.ErrConflict
 	}
 	if err != nil {
+		return content.Moment{}, err
+	}
+	if err = applyMomentLocationsInTx(ctx, humanWriteFrame{tx: tx, a: identity.Actor{ID: authorID}}, m.ID, m.Revision, captured); err != nil {
 		return content.Moment{}, err
 	}
 	if err = setMomentContexts(ctx, tx, authorID, m, input); err != nil {
@@ -132,11 +151,25 @@ func (s *Store) UpdateMomentDraft(ctx context.Context, authorID, momentID string
 	return m, nil
 }
 
-func updateMomentDraftInTx(ctx context.Context, tx pgx.Tx, authorID, momentID string, revision int64, input content.MomentInput) (content.Moment, error) {
+func updateMomentDraftInTx(ctx context.Context, tx pgx.Tx, authorID, momentID string, revision int64, input content.MomentInput, snapshots ...momentLocationsSnapshot) (content.Moment, error) {
 	input, err := content.NormalizeMomentInput(input)
 	if err != nil {
 		return content.Moment{}, err
 	}
+	var captured momentLocationsSnapshot
+	if len(snapshots) > 0 {
+		captured = snapshots[0]
+	} else {
+		old, e := getOwnMomentInTx(ctx, tx, authorID, momentID)
+		if e != nil {
+			return content.Moment{}, e
+		}
+		captured, err = captureMomentLocationsInTx(ctx, humanWriteFrame{tx: tx, a: identity.Actor{ID: authorID}, op: fmt.Sprintf("%s:%d", momentID, revision)}, &old, input)
+		if err != nil {
+			return content.Moment{}, err
+		}
+	}
+	input.CityID, input.PlaceID, input.LocationPrecision = momentLocationLegacyFields(captured.Effective)
 	m, err := scanMoment(tx.QueryRow(ctx, `UPDATE moments m
         SET city_id = NULLIF($4, ''), place_id = NULLIF($5, '')::uuid,
             title = $6, body = $7, occurred_at = $8,
@@ -164,6 +197,9 @@ func updateMomentDraftInTx(ctx context.Context, tx pgx.Tx, authorID, momentID st
 		return content.Moment{}, content.ErrConflict
 	}
 	if err != nil {
+		return content.Moment{}, err
+	}
+	if err = applyMomentLocationsInTx(ctx, humanWriteFrame{tx: tx, a: identity.Actor{ID: authorID}}, m.ID, m.Revision, captured); err != nil {
 		return content.Moment{}, err
 	}
 	if err = setMomentContexts(ctx, tx, authorID, m, input); err != nil {

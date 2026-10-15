@@ -42,12 +42,12 @@ func inboxPageRead(ctx context.Context, tx pgx.Tx, owner string, in inbox.PageRe
 		priority, stamp, id = cursor.Priority, cursor.Time, cursor.ID
 	}
 	rows, err := tx.Query(ctx, inboxPageVisibleSQL+`
- SELECT v.*, totals.unread FROM (SELECT count(*) FILTER(WHERE read_at IS NULL) AS unread FROM visible) totals
+ SELECT v.*, totals.unread,totals.historical_unread FROM (SELECT count(*) FILTER(WHERE read_at IS NULL AND origin='NATIVE') AS unread,count(*)FILTER(WHERE read_at IS NULL AND origin='LEGACY_HISTORY')AS historical_unread FROM visible) totals
  LEFT JOIN LATERAL (SELECT * FROM visible
-  WHERE ($7='' OR category=$7) AND (NOT $8::boolean OR read_at IS NULL)
+  WHERE ($7='' OR category=$7) AND (NOT $8::boolean OR read_at IS NULL) AND origin=CASE WHEN $9='' THEN 'NATIVE' ELSE $9 END
   AND (NOT $2::boolean OR (sort_priority,created_at,id)<($3::int,$4::timestamptz,$5::uuid))
   ORDER BY sort_priority DESC,created_at DESC,id DESC LIMIT $6) v ON true
- ORDER BY v.sort_priority DESC,v.created_at DESC,v.id DESC`, owner, hasCursor, priority, stamp, inboxPageNullableID(id), in.Limit+1, in.Category, in.UnreadOnly)
+ ORDER BY v.sort_priority DESC,v.created_at DESC,v.id DESC`, owner, hasCursor, priority, stamp, inboxPageNullableID(id), in.Limit+1, in.Category, in.UnreadOnly, in.Origin)
 	if err != nil {
 		return out, inboxPageNativeFailure(err)
 	}
@@ -61,16 +61,18 @@ func inboxPageRead(ctx context.Context, tx pgx.Tx, owner string, in inbox.PageRe
 		var activity, conversation, semantic, route, community, task, business *string
 		var itemPriority, sortPriority *int
 		var avatar *profileavatar.Metadata
-		if err = rows.Scan(&itemID, &category, &title, &detail, &resourceType, &resourceID, &createdAt, &readAt, &activity, &conversation, &semantic, &route, &itemPriority, &community, &task, &business, &avatar, &sortPriority, &out.UnreadCount); err != nil {
+		var origin, historicalType *string
+		var originalReadAt, originalSeenAt *time.Time
+		if err = rows.Scan(&itemID, &category, &title, &detail, &resourceType, &resourceID, &createdAt, &readAt, &activity, &conversation, &semantic, &route, &itemPriority, &community, &task, &business, &avatar, &origin, &historicalType, &originalReadAt, &originalSeenAt, &sortPriority, &out.UnreadCount, &out.HistoricalUnreadCount); err != nil {
 			return out, inboxPageNativeFailure(err)
 		}
 		if itemID == nil {
 			continue
 		}
-		if category == nil || title == nil || detail == nil || resourceType == nil || resourceID == nil || createdAt == nil || semantic == nil || route == nil || itemPriority == nil || sortPriority == nil {
+		if origin == nil || historicalType == nil || category == nil || title == nil || detail == nil || resourceType == nil || resourceID == nil || createdAt == nil || semantic == nil || route == nil || itemPriority == nil || sortPriority == nil {
 			return out, socialnow.ErrUnavailable
 		}
-		item := inbox.Item{ID: *itemID, Category: *category, Title: *title, Detail: *detail, ResourceType: *resourceType, ResourceID: *resourceID, CreatedAt: createdAt.UTC(), ReadAt: readAt, TargetActivityID: activity, TargetConversationID: conversation, SemanticCategory: *semantic, NotificationRoute: *route, NotificationPriority: *itemPriority, TargetCommunityID: community, TargetTaskID: task, TargetBusinessID: business, ActorAvatar: avatar}
+		item := inbox.Item{Origin: *origin, HistoricalType: *historicalType, OriginalReadAt: originalReadAt, OriginalSeenAt: originalSeenAt, ID: *itemID, Category: *category, Title: *title, Detail: *detail, ResourceType: *resourceType, ResourceID: *resourceID, CreatedAt: createdAt.UTC(), ReadAt: readAt, TargetActivityID: activity, TargetConversationID: conversation, SemanticCategory: *semantic, NotificationRoute: *route, NotificationPriority: *itemPriority, TargetCommunityID: community, TargetTaskID: task, TargetBusinessID: business, ActorAvatar: avatar}
 		if err = projectInboxActorMedia(&item); err != nil {
 			return out, err
 		}
@@ -89,7 +91,7 @@ func inboxPageRead(ctx context.Context, tx pgx.Tx, owner string, in inbox.PageRe
 	if len(out.Items) > in.Limit {
 		out.Items = out.Items[:in.Limit]
 		last := out.Items[len(out.Items)-1]
-		raw, e := inbox.EncodePageCursor(inbox.PageCursor{Version: 1, OwnerID: owner, View: in.View, Priority: lastPriority, Time: last.CreatedAt, ID: last.ID, Category: in.Category, UnreadOnly: in.UnreadOnly})
+		raw, e := inbox.EncodePageCursor(inbox.PageCursor{Version: 1, Origin: in.Origin, OwnerID: owner, View: in.View, Priority: lastPriority, Time: last.CreatedAt, ID: last.ID, Category: in.Category, UnreadOnly: in.UnreadOnly})
 		if e != nil {
 			return out, socialnow.ErrUnavailable
 		}

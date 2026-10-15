@@ -1,0 +1,8 @@
+{"Time":"2026-10-15T18:59:50.2919394+08:00","Action":"start","Package":"github.com/birdtie/birdtie/apps/api/internal/legacyhistory"}
+{"Time":"2026-10-15T18:59:50.6610685+08:00","Action":"run","Package":"github.com/birdtie/birdtie/apps/api/internal/legacyhistory","Test":"TestHistoricalProjectionKeepsThreadOwnerRolesAndOriginalNotificationState"}
+{"Time":"2026-10-15T18:59:50.6616012+08:00","Action":"output","Package":"github.com/birdtie/birdtie/apps/api/internal/legacyhistory","Test":"TestHistoricalProjectionKeepsThreadOwnerRolesAndOriginalNotificationState","Output":"=== RUN   TestHistoricalProjectionKeepsThreadOwnerRolesAndOriginalNotificationState\n"}
+{"Time":"2026-10-15T18:59:50.6616012+08:00","Action":"output","Package":"github.com/birdtie/birdtie/apps/api/internal/legacyhistory","Test":"TestHistoricalProjectionKeepsThreadOwnerRolesAndOriginalNotificationState","Output":"--- PASS: TestHistoricalProjectionKeepsThreadOwnerRolesAndOriginalNotificationState (0.00s)\n"}
+{"Time":"2026-10-15T18:59:50.6616012+08:00","Action":"pass","Package":"github.com/birdtie/birdtie/apps/api/internal/legacyhistory","Test":"TestHistoricalProjectionKeepsThreadOwnerRolesAndOriginalNotificationState","Elapsed":0}
+{"Time":"2026-10-15T18:59:50.6616012+08:00","Action":"output","Package":"github.com/birdtie/birdtie/apps/api/internal/legacyhistory","Output":"PASS\n"}
+{"Time":"2026-10-15T18:59:50.6626347+08:00","Action":"output","Package":"github.com/birdtie/birdtie/apps/api/internal/legacyhistory","Output":"ok  \tgithub.com/birdtie/birdtie/apps/api/internal/legacyhistory\t0.371s\n"}
+{"Time":"2026-10-15T18:59:50.6626347+08:00","Action":"pass","Package":"github.com/birdtie/birdtie/apps/api/internal/legacyhistory","Elapsed":0.371}

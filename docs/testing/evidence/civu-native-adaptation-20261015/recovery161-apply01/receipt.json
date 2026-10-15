@@ -1,0 +1,12 @@
+{
+  "mode": "apply",
+  "exitCode": 1,
+  "scriptSHA256": "3e661b8964ba902985236f3a192e955e98908d44cd2b4d37fc6a551c282198d2",
+  "result": {
+    "status": "FAILED",
+    "stage": "verify",
+    "errorType": "AssertionError",
+    "code": null,
+    "privateValuesOmitted": true
+  }
+}

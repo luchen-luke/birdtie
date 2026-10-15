@@ -1,0 +1,188 @@
+{
+  "sshExitCode": 0,
+  "stderrBytes": 0,
+  "programSHA256": "98b1b4b08f7f8cf080cd5dd43df4af3c96934c98cab0db095e1b112533deaa1b",
+  "result": {
+    "mode": "READ_ONLY",
+    "serviceMutations": 0,
+    "levels": {
+      "WARN": 7,
+      "INFO": 96,
+      "CRITICAL": 1
+    },
+    "components": {
+      "o.e.b.JNANatives": 5,
+      "o.e.n.Node": 11,
+      "o.e.p.PluginsService": 61,
+      "o.e.e.NodeEnvironment": 2,
+      "o.e.x.s.a.s.FileRolesStore": 1,
+      "o.e.i.g.ConfigDatabases": 1,
+      "o.e.i.g.DatabaseNodeService": 1,
+      "o.e.t.NettyAllocator": 1,
+      "o.e.i.r.RecoverySettings": 1,
+      "o.e.d.DiscoveryModule": 1,
+      "o.e.g.DanglingIndicesState": 1,
+      "o.e.x.s.c.f.PersistentCache": 1,
+      "o.e.x.d.l.DeprecationIndexingComponent": 1,
+      "o.e.t.TransportService": 1,
+      "o.e.b.BootstrapChecks": 1,
+      "o.e.c.c.Coordinator": 1,
+      "o.e.c.s.MasterService": 1,
+      "o.e.c.s.ClusterApplierService": 1,
+      "o.e.h.AbstractHttpServerTransport": 1,
+      "o.e.l.LicenseService": 1,
+      "o.e.x.s.s.SecurityStatusChangeListener": 2,
+      "o.e.d.x.s.s.SecurityStatusChangeListener": 1,
+      "o.e.g.GatewayService": 1,
+      "o.e.c.m.MetadataDeleteIndexService": 1,
+      "o.e.c.m.MetadataMappingService": 1,
+      "o.e.c.r.a.AllocationService": 1,
+      "o.e.x.w.WatcherService": 1,
+      "o.e.x.w.WatcherLifeCycleService": 1
+    },
+    "events": [
+      {
+        "component": "o.e.b.JNANatives",
+        "level": "WARN",
+        "timestamp": "2026-10-15T10:42:50,000Z",
+        "terms": [
+          "STATE_FAILURE"
+        ],
+        "states": [],
+        "recoveredIndices": [],
+        "bytesNumbers": [],
+        "oomIsJVMFlagsOnly": false
+      },
+      {
+        "component": "o.e.n.Node",
+        "level": "INFO",
+        "timestamp": "2026-10-15T10:42:51,098Z",
+        "terms": [
+          "STATE_FAILURE"
+        ],
+        "states": [],
+        "recoveredIndices": [],
+        "bytesNumbers": [],
+        "oomIsJVMFlagsOnly": true
+      },
+      {
+        "component": "o.e.t.TransportService",
+        "level": "INFO",
+        "timestamp": "2026-10-15T10:43:09,393Z",
+        "terms": [
+          "TRANSPORT_BOUND"
+        ],
+        "states": [],
+        "recoveredIndices": [],
+        "bytesNumbers": [],
+        "oomIsJVMFlagsOnly": false
+      },
+      {
+        "component": "o.e.c.s.MasterService",
+        "level": "INFO",
+        "timestamp": "2026-10-15T10:43:10,411Z",
+        "terms": [
+          "MASTER_ELECTED"
+        ],
+        "states": [],
+        "recoveredIndices": [],
+        "bytesNumbers": [],
+        "oomIsJVMFlagsOnly": false
+      },
+      {
+        "component": "o.e.c.s.ClusterApplierService",
+        "level": "INFO",
+        "timestamp": "2026-10-15T10:43:10,609Z",
+        "terms": [
+          "MASTER_ELECTED"
+        ],
+        "states": [],
+        "recoveredIndices": [],
+        "bytesNumbers": [],
+        "oomIsJVMFlagsOnly": false
+      },
+      {
+        "component": "o.e.h.AbstractHttpServerTransport",
+        "level": "INFO",
+        "timestamp": "2026-10-15T10:43:10,712Z",
+        "terms": [
+          "HTTP_BOUND"
+        ],
+        "states": [],
+        "recoveredIndices": [],
+        "bytesNumbers": [],
+        "oomIsJVMFlagsOnly": false
+      },
+      {
+        "component": "o.e.n.Node",
+        "level": "INFO",
+        "timestamp": "2026-10-15T10:43:10,714Z",
+        "terms": [
+          "STARTING"
+        ],
+        "states": [],
+        "recoveredIndices": [],
+        "bytesNumbers": [],
+        "oomIsJVMFlagsOnly": false
+      },
+      {
+        "component": "o.e.g.GatewayService",
+        "level": "INFO",
+        "timestamp": "2026-10-15T10:43:11,225Z",
+        "terms": [
+          "RECOVERED",
+          "SHARD_RECOVERY"
+        ],
+        "states": [],
+        "recoveredIndices": [
+          6
+        ],
+        "bytesNumbers": [],
+        "oomIsJVMFlagsOnly": false
+      },
+      {
+        "component": "o.e.c.r.a.AllocationService",
+        "level": "INFO",
+        "timestamp": "2026-10-15T10:43:16,819Z",
+        "terms": [
+          "CLUSTER_HEALTH"
+        ],
+        "states": [
+          "RED",
+          "GREEN"
+        ],
+        "recoveredIndices": [],
+        "bytesNumbers": [],
+        "oomIsJVMFlagsOnly": false
+      },
+      {
+        "component": "o.e.n.Node",
+        "level": "INFO",
+        "timestamp": "2026-10-15T10:44:15,624Z",
+        "terms": [
+          "STARTING"
+        ],
+        "states": [],
+        "recoveredIndices": [],
+        "bytesNumbers": [],
+        "oomIsJVMFlagsOnly": false
+      },
+      {
+        "component": "o.e.n.Node",
+        "level": "INFO",
+        "timestamp": "2026-10-15T10:44:15,643Z",
+        "terms": [
+          "STARTING"
+        ],
+        "states": [],
+        "recoveredIndices": [],
+        "bytesNumbers": [],
+        "oomIsJVMFlagsOnly": false
+      }
+    ],
+    "httpProxyConfigured": false,
+    "loopbackProxyBypassed": false,
+    "memoryLockEnvEnabled": true,
+    "securityEnvEnabled": false
+  }
+}

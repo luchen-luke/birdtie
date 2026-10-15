@@ -1,0 +1,8 @@
+{"Time":"2026-10-15T19:06:31.944538+08:00","Action":"start","Package":"github.com/birdtie/birdtie/apps/api/internal/postgres"}
+{"Time":"2026-10-15T19:06:33.9586658+08:00","Action":"run","Package":"github.com/birdtie/birdtie/apps/api/internal/postgres","Test":"TestLegacySocialHistorySealedSyntheticProjection"}
+{"Time":"2026-10-15T19:06:33.9586658+08:00","Action":"output","Package":"github.com/birdtie/birdtie/apps/api/internal/postgres","Test":"TestLegacySocialHistorySealedSyntheticProjection","Output":"=== RUN   TestLegacySocialHistorySealedSyntheticProjection\n"}
+{"Time":"2026-10-15T19:06:33.9673017+08:00","Action":"output","Package":"github.com/birdtie/birdtie/apps/api/internal/postgres","Test":"TestLegacySocialHistorySealedSyntheticProjection","Output":"--- PASS: TestLegacySocialHistorySealedSyntheticProjection (0.01s)\n"}
+{"Time":"2026-10-15T19:06:33.9673017+08:00","Action":"pass","Package":"github.com/birdtie/birdtie/apps/api/internal/postgres","Test":"TestLegacySocialHistorySealedSyntheticProjection","Elapsed":0.01}
+{"Time":"2026-10-15T19:06:33.9673017+08:00","Action":"output","Package":"github.com/birdtie/birdtie/apps/api/internal/postgres","Output":"PASS\n"}
+{"Time":"2026-10-15T19:06:33.9694401+08:00","Action":"output","Package":"github.com/birdtie/birdtie/apps/api/internal/postgres","Output":"ok  \tgithub.com/birdtie/birdtie/apps/api/internal/postgres\t2.025s\n"}
+{"Time":"2026-10-15T19:06:33.9694401+08:00","Action":"pass","Package":"github.com/birdtie/birdtie/apps/api/internal/postgres","Elapsed":2.025}

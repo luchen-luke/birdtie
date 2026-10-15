@@ -4,6 +4,7 @@ import 'package:birdtie_client/src/content/moment_publication_controller.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'moment_locations_test.dart' show first, second, resolved;
 
 const publicationTestMoment = '11111111-1111-4111-8111-111111111111';
 const publicationTestPlace = '22222222-2222-4222-8222-222222222222';
@@ -24,6 +25,33 @@ Map<String, dynamic> publicationTestPreview() => {
 http.Response publicationTestReply(Map<String, dynamic> d, [int code = 200]) =>
     http.Response.bytes(utf8.encode(jsonEncode({'data': d})), code);
 void main() {
+  test('旧公开入口展示完整多地点并使用最短来源期限', () async {
+    final now = DateTime.now().toUtc();
+    final preview = publicationTestPreview()
+      ..addAll({
+        'placeId': '',
+        'cityId': '',
+        'placeName': '',
+        'title': '',
+        'locations': [resolved(first, 0, now), resolved(second, 1, now)],
+        'locationsSourceVersion': 'b' * 64,
+      });
+    final c = MomentPublicationController(
+      momentID: publicationTestMoment,
+      placeID: '',
+      authorizationHeader: () => 'Bearer synthetic',
+      apiBaseUrl: 'https://test',
+      client: MockClient((_) async => publicationTestReply(preview)),
+    );
+    addTearDown(c.dispose);
+    await c.load();
+    expect(c.preview!.locations!.map((v) => v.input.toJson()).toList(), [
+      first.toJson(),
+      second.toJson(),
+    ]);
+    expect(c.preview!.title, '');
+    expect(c.preview!.expiresAt, now.add(const Duration(seconds: 30)));
+  });
   test('同主体重选目标使旧权威结果显示失效', () async {
     final c = MomentPublicationController(
       momentID: publicationTestMoment,
@@ -259,7 +287,7 @@ void main() {
         case 'revision':
           p['revision'] = 1.5;
         case 'title':
-          p['title'] = '';
+          p['title'] = 'a' * 161;
       }
       final c = MomentPublicationController(
         momentID: publicationTestMoment,

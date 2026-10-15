@@ -1,0 +1,8 @@
+{"stage": "verify", "progress": {"databaseAccessed": false, "expected": 31, "failureStages": {}, "mediaWritten": false, "processed": 5, "status": "VERIFYING_NOT_IMPORTED", "verified": 5}}
+{"stage": "verify", "progress": {"databaseAccessed": false, "expected": 31, "failureStages": {"FULL_HEIC_DECODE": 1}, "mediaWritten": false, "processed": 10, "status": "VERIFYING_NOT_IMPORTED", "verified": 9}}
+{"stage": "verify", "progress": {"databaseAccessed": false, "expected": 31, "failureStages": {"FULL_HEIC_DECODE": 6}, "mediaWritten": false, "processed": 15, "status": "VERIFYING_NOT_IMPORTED", "verified": 9}}
+{"stage": "verify", "progress": {"databaseAccessed": false, "expected": 31, "failureStages": {"FULL_HEIC_DECODE": 11}, "mediaWritten": false, "processed": 20, "status": "VERIFYING_NOT_IMPORTED", "verified": 9}}
+{"stage": "verify", "progress": {"databaseAccessed": false, "expected": 31, "failureStages": {"FULL_HEIC_DECODE": 16}, "mediaWritten": false, "processed": 25, "status": "VERIFYING_NOT_IMPORTED", "verified": 9}}
+{"stage": "verify", "progress": {"databaseAccessed": false, "expected": 31, "failureStages": {"FULL_HEIC_DECODE": 21}, "mediaWritten": false, "processed": 30, "status": "VERIFYING_NOT_IMPORTED", "verified": 9}}
+{"stage": "verify", "progress": {"antivirusScan": "NOT_RUN", "archivesChanged": false, "databaseAccessed": false, "expected": 31, "failed": 22, "failureStages": {"FULL_HEIC_DECODE": 22}, "mediaWritten": false, "privacyRisk": "UNKNOWN", "processed": 31, "status": "VERIFICATION_FAILED_NOT_IMPORTED", "unprocessed": 0, "verified": 9}}
+{"status": "FAILED", "stage": "verify", "errorType": "AssertionError", "code": null, "privateValuesOmitted": true}

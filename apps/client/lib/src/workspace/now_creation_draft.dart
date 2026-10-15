@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
+import '../content/moment_locations.dart';
 
 /// Local creation material. This object carries no approval or server receipt.
 @immutable
@@ -15,6 +16,7 @@ class NowCreationDraft {
     this.placeID = '',
     this.placeName = '',
     this.orderedPlaceIDs = const [],
+    this.locations,
     this.startsAt,
     this.endsAt,
   });
@@ -23,6 +25,7 @@ class NowCreationDraft {
   final String nativeMomentID;
   final DateTime? startsAt, endsAt;
   final List<String> orderedPlaceIDs;
+  final List<MomentLocationInput>? locations;
 
   String get label => switch (kind) {
     'moment' => '动态',
@@ -54,6 +57,7 @@ class NowCreationDraft {
     DateTime? startsAt,
     DateTime? endsAt,
     List<String>? orderedPlaceIDs,
+    List<MomentLocationInput>? locations,
   }) => NowCreationDraft(
     kind: kind,
     nativeMomentID: nativeMomentID ?? this.nativeMomentID,
@@ -68,6 +72,9 @@ class NowCreationDraft {
     orderedPlaceIDs: orderedPlaceIDs == null
         ? this.orderedPlaceIDs
         : List.unmodifiable(orderedPlaceIDs),
+    locations: locations == null
+        ? this.locations
+        : List.unmodifiable(locations),
   );
 
   Map<String, dynamic> toJson() => {
@@ -83,6 +90,8 @@ class NowCreationDraft {
     'startsAt': startsAt?.toUtc().toIso8601String(),
     'endsAt': endsAt?.toUtc().toIso8601String(),
     'orderedPlaceIds': orderedPlaceIDs,
+    if (locations != null)
+      'locations': locations!.map((v) => v.toJson()).toList(),
   };
 
   factory NowCreationDraft.fromJson(Map<String, dynamic> json) {
@@ -99,6 +108,7 @@ class NowCreationDraft {
       'startsAt',
       'endsAt',
       'orderedPlaceIds',
+      if (json.containsKey('locations')) 'locations',
     };
     if (json.length != keys.length ||
         json.keys.toSet().difference(keys).isNotEmpty ||
@@ -135,7 +145,13 @@ class NowCreationDraft {
     }
 
     final nativeID = json['nativeMomentId'] as String? ?? '';
-    if (nativeID.isNotEmpty && (json['kind'] != 'moment' || !RegExp(r'^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$').hasMatch(nativeID))) { throw const FormatException('原动态引用无效'); }
+    if (nativeID.isNotEmpty &&
+        (json['kind'] != 'moment' ||
+            !RegExp(
+              r'^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$',
+            ).hasMatch(nativeID))) {
+      throw const FormatException('原动态引用无效');
+    }
     final places = json['orderedPlaceIds'];
     if (places is! List ||
         places.length > 50 ||
@@ -161,6 +177,9 @@ class NowCreationDraft {
       startsAt: time('startsAt'),
       endsAt: time('endsAt'),
       orderedPlaceIDs: List<String>.unmodifiable(places.cast<String>()),
+      locations: json.containsKey('locations')
+          ? decodeMomentLocationInputs(json['locations'])
+          : null,
     );
   }
 

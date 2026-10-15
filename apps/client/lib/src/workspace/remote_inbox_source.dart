@@ -25,7 +25,11 @@ class InboxItem {
     this.notificationPriority,
     this.actorID,
     this.actorAvatar,
+    this.origin = 'NATIVE',
+    this.historicalType,
   });
+  final String origin;
+  final String? historicalType;
   final String id;
   final String category;
   final String title;
@@ -86,6 +90,7 @@ class InboxItem {
       'business_update',
       'moment_like',
       'moment_comment',
+      'legacy_history',
     ];
     if (!const [
           'needs_attention',
@@ -100,6 +105,22 @@ class InboxItem {
         data['detail'] is! String) {
       throw const FormatException('Unknown notification');
     }
+    final origin = data['origin'] ?? 'NATIVE';
+    if (!const ['NATIVE', 'LEGACY_HISTORY'].contains(origin) ||
+        (origin == 'LEGACY_HISTORY') !=
+            (data['resourceType'] == 'legacy_history') ||
+        origin == 'LEGACY_HISTORY' &&
+            (data['historicalType'] is! String ||
+                [
+                  data['targetActivityId'],
+                  data['targetConversationId'],
+                  data['targetCommunityId'],
+                  data['targetTaskId'],
+                  data['targetBusinessId'],
+                  data['actorAvatar'],
+                  data['actorId'],
+                ].any((v) => v != null)))
+      throw const FormatException('原通知来源不符');
     final route = data['notificationRoute'];
     if (route != null &&
         !const ['NORMAL', 'IMMEDIATE', 'DIGEST'].contains(route)) {
@@ -177,6 +198,8 @@ class InboxItem {
         ? null
         : PersonAvatarMetadata.fromJson(rawAvatar, actor!);
     return InboxItem(
+      origin: origin as String,
+      historicalType: data['historicalType'] as String?,
       id: id(data['id']),
       category: data['category'] as String,
       title: data['title'] as String,
@@ -274,10 +297,11 @@ class InboxNotificationPage {
     required List<InboxItem> items,
     required this.nextCursor,
     required this.unreadCount,
+    this.historicalUnreadCount = 0,
   }) : items = List.unmodifiable(items);
   final List<InboxItem> items;
   final String? nextCursor;
-  final int unreadCount;
+  final int unreadCount, historicalUnreadCount;
 
   factory InboxNotificationPage.fromJson(
     Map<String, dynamic> data, {
@@ -285,10 +309,15 @@ class InboxNotificationPage {
     String? previousCursor,
   }) {
     const fields = {'items', 'nextCursor', 'unreadCount'};
+    final historicalUnread = data['historicalUnreadCount'] ?? 0;
     final rows = data['items'],
         unread = data['unreadCount'],
         cursor = data['nextCursor'];
-    if (data.length != fields.length ||
+    if (data.keys.any(
+          (k) => !{...fields, 'historicalUnreadCount'}.contains(k),
+        ) ||
+        historicalUnread is! int ||
+        historicalUnread < 0 ||
         !fields.every(data.containsKey) ||
         limit < 1 ||
         limit > 50 ||
@@ -323,6 +352,7 @@ class InboxNotificationPage {
       items: items,
       nextCursor: cursor as String?,
       unreadCount: unread,
+      historicalUnreadCount: historicalUnread,
     );
   }
 }
@@ -397,8 +427,11 @@ class RemoteInboxSource {
     String? cursor,
     String category = '',
     bool unreadOnly = false,
+    String origin = 'NATIVE',
   }) async {
-    if (limit < 1 || limit > 50) {
+    if (!const ['NATIVE', 'LEGACY_HISTORY'].contains(origin) ||
+        limit < 1 ||
+        limit > 50) {
       throw const FormatException('Invalid notification limit');
     }
     final position = cursor == null || cursor.isEmpty ? null : cursor;
@@ -412,6 +445,7 @@ class RemoteInboxSource {
           _endpoint('/v1/me/inbox/page').replace(
             queryParameters: {
               'view': 'notifications',
+              if (origin == 'LEGACY_HISTORY') 'origin': origin,
               'limit': '$limit',
               'cursor': ?position,
               if (category.isNotEmpty) 'category': category,
@@ -439,6 +473,7 @@ class RemoteInboxSource {
     );
     if (page.items.any(
       (i) =>
+          i.origin != origin ||
           category.isNotEmpty && i.category != category ||
           unreadOnly && i.readAt != null,
     ))

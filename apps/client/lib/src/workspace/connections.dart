@@ -55,6 +55,7 @@ class ContactRequest {
     required this.conversationId,
     required this.scope,
     this.policyDisposition = '',
+    this.origin = '',
     this.screeningStatus = '',
     this.expiresAt,
     this.createdAt,
@@ -69,6 +70,7 @@ class ContactRequest {
   final String conversationId;
   final String scope;
   final String policyDisposition;
+  final String origin;
   final String screeningStatus;
   final DateTime? expiresAt;
   final DateTime? createdAt;
@@ -92,6 +94,7 @@ class ContactRequest {
     conversationId: json['conversationId'] as String? ?? '',
     scope: json['scope'] as String? ?? 'conversation',
     policyDisposition: json['policyDisposition'] as String? ?? '',
+    origin: json['origin'] as String? ?? '',
     screeningStatus: json['screeningStatus'] as String? ?? '',
     expiresAt: _requestStamp(json['expiresAt']),
     createdAt: _requestStamp(json['createdAt']),
@@ -118,9 +121,12 @@ class ContactRequest {
         r.state == 'pending' &&
             r.policyDisposition == 'SCREEN' &&
             r.screeningStatus != 'PENDING_REVIEW' ||
-        r.expiresAt == null ||
+        (r.expiresAt == null && r.origin != 'LEGACY_IMPORT') ||
         r.createdAt == null ||
-        !r.expiresAt!.isAfter(r.createdAt!) ||
+        r.expiresAt != null && !r.expiresAt!.isAfter(r.createdAt!) ||
+        !const {'', 'LEGACY_IMPORT'}.contains(r.origin) ||
+        r.origin == 'LEGACY_IMPORT' &&
+            (r.expiresAt != null || r.policyDisposition.isNotEmpty) ||
         r.note.length > 1000 ||
         r.otherName.isEmpty ||
         r.otherName.length > 500 ||
@@ -147,6 +153,7 @@ const _requestWireFields = {
   'screeningStatus',
   'createdAt',
   'expiresAt',
+  'origin',
 };
 
 DateTime? _requestStamp(dynamic value) {
@@ -227,6 +234,9 @@ class HumanConversation {
     this.avatar,
     this.unreadCount = 0,
     this.preview = '',
+    this.kind = 'DIRECT',
+    this.origin = '',
+    this.canSend = true,
     this.lastMessageAt,
   });
   final String id;
@@ -235,6 +245,11 @@ class HumanConversation {
   final PersonAvatarMetadata? avatar;
   final int unreadCount;
   final String preview;
+  final String kind;
+  final String origin;
+  final bool canSend;
+  bool get historical => origin == 'LEGACY_IMPORT';
+  bool get personalGroup => kind == 'PERSONAL_GROUP';
   final DateTime? lastMessageAt;
 
   factory HumanConversation.fromJson(Map<String, dynamic> json) =>
@@ -248,6 +263,9 @@ class HumanConversation {
         ),
         unreadCount: json['unreadCount'] as int? ?? 0,
         preview: json['lastMessagePreview'] as String? ?? '',
+        kind: json['kind'] as String? ?? 'DIRECT',
+        origin: json['origin'] as String? ?? '',
+        canSend: json['canSend'] as bool? ?? true,
         lastMessageAt: json['lastMessageAt'] == null
             ? null
             : DateTime.parse(json['lastMessageAt'] as String).toUtc(),
@@ -260,6 +278,12 @@ class HumanMessage {
     required this.senderAccountId,
     required this.body,
     required this.createdAt,
+    this.kind = 'TEXT',
+    this.origin = '',
+    this.sequence,
+    this.stickerPackID,
+    this.stickerID,
+    this.unavailable = false,
     this.entity,
     this.audio,
     this.image,
@@ -268,6 +292,13 @@ class HumanMessage {
   final String senderAccountId;
   final String body;
   final DateTime createdAt;
+  final String kind;
+  final String origin;
+  final int? sequence;
+  final String? stickerPackID;
+  final String? stickerID;
+  final bool unavailable;
+  bool get system => kind == 'SYSTEM';
   final ChatEntityCard? entity;
   final FriendAudioMetadata? audio;
   final FriendImageMetadata? image;
@@ -285,6 +316,14 @@ class HumanMessage {
       id: json['id'] as String,
       senderAccountId: json['senderAccountId'] as String,
       body: json['body'] as String,
+      kind: json['kind'] as String? ?? 'TEXT',
+      origin: json['origin'] as String? ?? '',
+      sequence: json['sequence'] as int?,
+      stickerPackID:
+          (json['sticker'] as Map<String, dynamic>?)?['packId'] as String?,
+      stickerID:
+          (json['sticker'] as Map<String, dynamic>?)?['stickerId'] as String?,
+      unavailable: json['unavailable'] as bool? ?? false,
       createdAt: DateTime.parse(json['createdAt'] as String),
       entity: json['entity'] is Map<String, dynamic>
           ? ChatEntityCard.fromJson(json['entity'] as Map<String, dynamic>)
@@ -467,14 +506,27 @@ HumanConversation _chatPageConversation(dynamic value) {
     'lastMessageAt',
     'lastReadAt',
     'avatar',
+    'kind',
+    'origin',
+    'canSend',
   });
   if (v['id'] is! String ||
       !_validChatPageID(v['id']) ||
       v['otherAccountId'] is! String ||
-      !_validChatPageID(v['otherAccountId']) ||
+      !(v['origin'] == 'LEGACY_IMPORT' &&
+              v['kind'] == 'PERSONAL_GROUP' &&
+              v['otherAccountId'] == '' &&
+              v['canSend'] == false &&
+              v['avatar'] == null) &&
+          !_validChatPageID(v['otherAccountId']) ||
       v['otherName'] is! String ||
       (v['otherName'] as String).isEmpty ||
       (v['otherName'] as String).length > 500 ||
+      !const {null, 'DIRECT', 'PERSONAL_GROUP'}.contains(v['kind']) ||
+      !const {null, 'LEGACY_IMPORT'}.contains(v['origin']) ||
+      v['kind'] == 'PERSONAL_GROUP' && v['origin'] != 'LEGACY_IMPORT' ||
+      v['origin'] == 'LEGACY_IMPORT' && v['canSend'] is! bool ||
+      v['canSend'] != null && v['canSend'] is! bool ||
       v['unreadCount'] is! int ||
       (v['unreadCount'] as int) < 0 ||
       _requestStamp(v['createdAt']) == null ||
@@ -499,18 +551,62 @@ HumanMessage _chatPageMessage(dynamic value, String conversation) {
     'entity',
     'audio',
     'image',
+    'kind',
+    'origin',
+    'sequence',
+    'sticker',
+    'unavailable',
   });
   if (v['id'] is! String ||
       !_validChatPageID(v['id']) ||
       v['conversationId'] != conversation ||
       v['senderAccountId'] is! String ||
       !_validChatPageID(v['senderAccountId']) ||
-      v['speakerKind'] != 'human' ||
+      !(v['speakerKind'] == 'human' ||
+          v['speakerKind'] == 'system' &&
+              v['origin'] == 'LEGACY_IMPORT' &&
+              v['kind'] == 'SYSTEM') ||
       v['body'] is! String ||
       utf8.encode(v['body'] as String).length > 2000 ||
       (v['body'] as String).contains('\u0000') ||
       _requestStamp(v['createdAt']) == null) {
     throw const FormatException('消息来源无法核实');
+  }
+  final kind = v['kind'] ?? 'TEXT';
+  final imported = v['origin'] == 'LEGACY_IMPORT';
+  final unavailable = v['unavailable'] == true;
+  if (!const {'TEXT', 'IMAGE', 'ENTITY', 'SYSTEM', 'STICKER'}.contains(kind) ||
+      !const {null, 'LEGACY_IMPORT'}.contains(v['origin']) ||
+      v['sequence'] != null &&
+          (v['sequence'] is! int || (v['sequence'] as int) < 1) ||
+      imported && v['sequence'] == null ||
+      const {'SYSTEM', 'STICKER'}.contains(kind) && !imported ||
+      v['unavailable'] != null && v['unavailable'] is! bool ||
+      unavailable &&
+          (!imported ||
+              v['body'] != '' ||
+              v['entity'] != null ||
+              v['image'] != null ||
+              v['audio'] != null ||
+              v['sticker'] != null)) {
+    throw const FormatException('历史消息类型不符');
+  }
+  if (!unavailable && kind == 'STICKER') {
+    final sticker = _chatPageObject(v['sticker'], const {
+      'packId',
+      'stickerId',
+    });
+    if (sticker.length != 2 ||
+        sticker['packId'] is! String ||
+        sticker['stickerId'] is! String ||
+        (sticker['packId'] as String).isEmpty ||
+        (sticker['packId'] as String).length > 100 ||
+        (sticker['stickerId'] as String).isEmpty ||
+        (sticker['stickerId'] as String).length > 100 ||
+        v['body'] == '')
+      throw const FormatException('原贴纸来源不符');
+  } else if (v['sticker'] != null) {
+    throw const FormatException('贴纸类型不符');
   }
   if (v['entity'] != null) {
     final entity = _chatPageObject(v['entity'], const {
@@ -535,6 +631,16 @@ HumanMessage _chatPageMessage(dynamic value, String conversation) {
     }
   }
   return HumanMessage.fromJson(v);
+}
+
+bool humanMessageBefore(HumanMessage a, HumanMessage b) {
+  if (a.sequence != null || b.sequence != null) {
+    return a.sequence != null &&
+        b.sequence != null &&
+        a.sequence! < b.sequence!;
+  }
+  return a.createdAt.isBefore(b.createdAt) ||
+      a.createdAt.isAtSameMomentAs(b.createdAt) && a.id.compareTo(b.id) < 0;
 }
 
 class ChatEntityCard {
@@ -1687,10 +1793,7 @@ class ConnectionSource {
     HumanMessage? previous;
     for (final message in items) {
       if (!seen.add(message.id) ||
-          previous != null &&
-              (message.createdAt.isBefore(previous.createdAt) ||
-                  message.createdAt.isAtSameMomentAs(previous.createdAt) &&
-                      message.id.compareTo(previous.id) <= 0)) {
+          previous != null && !humanMessageBefore(previous, message)) {
         throw const FormatException('消息分页顺序不符');
       }
       previous = message;

@@ -99,6 +99,8 @@ class _InboxPanelState extends State<InboxPanel> {
   final _destinationChanges = ValueNotifier<int>(0);
   SocialOperationController? _management;
   String _category = '';
+  bool _historical = false;
+  int _historicalUnread = 0;
   bool _unreadOnly = false;
 
   void _configureManagement() {
@@ -190,6 +192,23 @@ class _InboxPanelState extends State<InboxPanel> {
                       },
               ),
               FilterChip(
+                label: Text(
+                  '原通知${_historicalUnread > 0 ? ' · $_historicalUnread 未读' : ''}',
+                ),
+                selected: _historical,
+                onSelected: controller.busy
+                    ? null
+                    : (value) {
+                        controller.retirePreview();
+                        setState(() {
+                          _historical = value;
+                          _items = const [];
+                          _nextCursor = null;
+                        });
+                        unawaited(_load());
+                      },
+              ),
+              FilterChip(
                 label: const Text('仅未读'),
                 selected: _unreadOnly,
                 onSelected: controller.busy
@@ -205,13 +224,13 @@ class _InboxPanelState extends State<InboxPanel> {
           Wrap(
             children: [
               TextButton(
-                onPressed: controller.canStart
+                onPressed: controller.canStart && !_historical
                     ? () => _manageNotifications('MARK_ALL_READ')
                     : null,
                 child: const Text('全部已读'),
               ),
               TextButton(
-                onPressed: controller.canStart
+                onPressed: controller.canStart && !_historical
                     ? () => _manageNotifications('CLEAR_READ')
                     : null,
                 child: const Text('清理已读'),
@@ -333,6 +352,7 @@ class _InboxPanelState extends State<InboxPanel> {
       _showAll = false;
       _nextCursor = null;
       _serverUnread = null;
+      _historicalUnread = 0;
       _loadingMore = false;
       _moreFailed = false;
       _consumedCursors.clear();
@@ -473,6 +493,7 @@ class _InboxPanelState extends State<InboxPanel> {
               limit: _notificationLimit,
               category: _category,
               unreadOnly: _unreadOnly,
+              origin: _historical ? 'LEGACY_HISTORY' : 'NATIVE',
             )
           : null;
       final items = page?.items ?? await _source.load();
@@ -481,6 +502,7 @@ class _InboxPanelState extends State<InboxPanel> {
         _items = items;
         _nextCursor = page?.nextCursor;
         _serverUnread = page?.unreadCount;
+        _historicalUnread = page?.historicalUnreadCount ?? 0;
         _consumedCursors.clear();
       });
       _reportUnread();
@@ -514,6 +536,7 @@ class _InboxPanelState extends State<InboxPanel> {
         cursor: cursor,
         category: _category,
         unreadOnly: _unreadOnly,
+        origin: _historical ? 'LEGACY_HISTORY' : 'NATIVE',
       );
       if (!_current(serial) || _nextCursor != cursor) return;
       final known = _items.map((item) => item.id).toSet();
@@ -527,6 +550,7 @@ class _InboxPanelState extends State<InboxPanel> {
         _consumedCursors.add(cursor);
         _nextCursor = page.nextCursor;
         _serverUnread = page.unreadCount;
+        _historicalUnread = page.historicalUnreadCount;
       });
       _reportUnread();
     } catch (error) {
@@ -619,6 +643,12 @@ class _InboxPanelState extends State<InboxPanel> {
   Future<void> _open(InboxItem item) async {
     final serial = _serial, current = await _markRead(item);
     if (!mounted || current == null || !_current(serial)) {
+      return;
+    }
+    if (current.origin == 'LEGACY_HISTORY') {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('原通知已保留；关联内容需要从当前详情重新打开。')));
       return;
     }
     if (const {

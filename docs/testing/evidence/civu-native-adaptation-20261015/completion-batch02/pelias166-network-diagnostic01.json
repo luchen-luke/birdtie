@@ -1,0 +1,21 @@
+{
+  "sshExitCode": 0,
+  "stderrBytes": 0,
+  "programSHA256": "434c79d5f22d68323e3a9066c63c78d2380810801a64db59882c79c6ea73c86a",
+  "result": {
+    "mode": "READ_ONLY",
+    "serviceMutations": 0,
+    "containerHostPort19216Configured": true,
+    "networkInternal": true,
+    "networkDriver": "bridge",
+    "networkContainers": 0,
+    "bridgeMode": "default",
+    "dockerDaemonSelectedSettings": {},
+    "natInspectExit": 0,
+    "natRulesFor19216": 0,
+    "securityEnabledEnv": "UNSET",
+    "httpTLSConfiguredEnv": "UNSET",
+    "httpPortEnvIs9200": true,
+    "memoryLockEnabledEnv": "true"
+  }
+}

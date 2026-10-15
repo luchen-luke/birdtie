@@ -1,0 +1,15 @@
+{
+  "exitCode": 0,
+  "remoteScriptSHA256": "cd5657f4c2e3e11b6fffc15700098c73404ff0cc586fde860b415e8f48f4e0f3",
+  "result": {
+    "status": "PERSISTENT_NEW_GEOCODER_READY",
+    "changedContainers": [
+      "birdtie-geocoder166-es",
+      "birdtie-geocoder166-api"
+    ],
+    "restartPolicy": "unless-stopped",
+    "oldServicesChanged": false,
+    "ports": "LOOPBACK_ONLY"
+  },
+  "stderrBytes": 0
+}

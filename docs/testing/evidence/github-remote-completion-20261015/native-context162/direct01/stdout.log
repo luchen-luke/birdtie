@@ -1,0 +1,9 @@
+--- FAIL: TestLegacyContextStablePrivateTypedProjection (0.02s)
+    build_test.go:113: legacy_context_source_invalid
+FAIL
+FAIL	github.com/birdtie/birdtie/apps/api/internal/legacycontext	0.606s
+ok  	github.com/birdtie/birdtie/apps/api/internal/content	0.563s [no tests to run]
+ok  	github.com/birdtie/birdtie/apps/api/internal/postgres	2.551s [no tests to run]
+ok  	github.com/birdtie/birdtie/apps/api/internal/httpapi	4.247s [no tests to run]
+?   	github.com/birdtie/birdtie/apps/api/cmd/legacy-context-import	[no test files]
+FAIL

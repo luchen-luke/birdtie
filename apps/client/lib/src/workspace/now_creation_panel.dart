@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'now_creation_draft.dart';
 import 'now_ui_tokens.dart';
 import 'aberdeen_schedule.dart';
+import 'moment_locations_api.dart';
 
 /// A preview inside Now. All text editing stays in the shared composer.
 class NowCreationPanel extends StatelessWidget {
@@ -31,6 +32,10 @@ class NowCreationPanel extends StatelessWidget {
     this.saveLabel = '保存草稿',
     this.saveEnabled = true,
     this.editingEnabled = true,
+    this.locationLabels = const {},
+    this.onRemoveLocation,
+    this.onSetLocationPrecision,
+    this.onMoveLocation,
   });
 
   final NowCreationDraft draft;
@@ -48,6 +53,10 @@ class NowCreationPanel extends StatelessWidget {
   final Widget? mediaPreview, extraContent;
   final String statusLabel, saveLabel;
   final bool saveEnabled, editingEnabled;
+  final Map<String, String> locationLabels;
+  final ValueChanged<String>? onRemoveLocation;
+  final void Function(String, String)? onSetLocationPrecision;
+  final void Function(int, int)? onMoveLocation;
 
   IconData get _icon => switch (draft.kind) {
     'moment' => Icons.article_outlined,
@@ -207,11 +216,23 @@ class NowCreationPanel extends StatelessWidget {
         ),
         _contextAction(
           icon: Icons.place_outlined,
-          text: _placeLabel,
+          text: draft.kind == 'moment' && draft.locations != null
+              ? '添加位置'
+              : _placeLabel,
           tooltip: '选择关联地点',
           onPressed: busy || !editingEnabled ? null : onChoosePlace,
           tokens: tokens,
         ),
+        if (draft.kind == 'moment' && draft.locations != null)
+          MomentLocationChips(
+            locations: draft.locations!,
+            labels: locationLabels,
+            onRemove: busy || !editingEnabled ? null : onRemoveLocation,
+            onSetPrecision: busy || !editingEnabled
+                ? null
+                : onSetLocationPrecision,
+            onMove: busy || !editingEnabled ? null : onMoveLocation,
+          ),
         if (draft.kind == 'activity')
           _contextAction(
             icon: Icons.schedule_outlined,

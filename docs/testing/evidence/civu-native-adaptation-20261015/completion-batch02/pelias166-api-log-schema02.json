@@ -1,0 +1,157 @@
+{
+  "sshExitCode": 0,
+  "stderrBytes": 0,
+  "remoteProgramSHA256": "2126b4364b9a285605d10de113fee73867371448bb109f6bf8a09e4c975783a0",
+  "result": {
+    "mode": "READ_ONLY",
+    "publicPackage": "pelias/api",
+    "codeMatches": [
+      {
+        "packageFile": "schema.js",
+        "exists": true,
+        "matches": [
+          {
+            "line": 12,
+            "publicCode": [
+              "// * esclient (object - positive integer requestTimeout)",
+              "//",
+              "// optional:",
+              "// * api.accessLog (string)",
+              "// * api.relativeScores (boolean)",
+              "// * api.exposeInternalDebugTools (boolean)",
+              "// * api.localization (flipNumberAndStreetCountries is array of 3 character strings)",
+              "// * api.maxSize (int)"
+            ]
+          },
+          {
+            "line": 24,
+            "publicCode": [
+              "    version: Joi.string(),",
+              "    indexName: Joi.string(),",
+              "    host: Joi.string(),",
+              "    accessLog: Joi.string().allow(''),",
+              "    relativeScores: Joi.boolean(),",
+              "    exposeInternalDebugTools: Joi.boolean(),",
+              "    requestRetries: Joi.number().integer().min(0),",
+              "    customBoosts: Joi.object().keys({"
+            ]
+          }
+        ]
+      },
+      {
+        "packageFile": "app.js",
+        "exists": true,
+        "matches": [
+          {
+            "line": 5,
+            "publicCode": [
+              "",
+              "var peliasConfig = require( 'pelias-config' ).generate(require('./schema'));",
+              "",
+              "if( peliasConfig.api.accessLog ){",
+              "  app.use( require( './middleware/access_log' ).createAccessLogger( peliasConfig.api.accessLog ) );",
+              "}",
+              "",
+              "/** ----------------------- pre-processing-middleware ----------------------- **/"
+            ]
+          },
+          {
+            "line": 6,
+            "publicCode": [
+              "var peliasConfig = require( 'pelias-config' ).generate(require('./schema'));",
+              "",
+              "if( peliasConfig.api.accessLog ){",
+              "  app.use( require( './middleware/access_log' ).createAccessLogger( peliasConfig.api.accessLog ) );",
+              "}",
+              "",
+              "/** ----------------------- pre-processing-middleware ----------------------- **/",
+              ""
+            ]
+          }
+        ]
+      },
+      {
+        "packageFile": "middleware/access_log.js",
+        "exists": true,
+        "matches": [
+          {
+            "line": 8,
+            "publicCode": [
+              "var url = require( 'url' );",
+              "",
+              "var _ = require( 'lodash' );",
+              "var morgan = require( 'morgan' );",
+              "var through = require( 'through2' );",
+              "",
+              "var peliasLogger = require( 'pelias-logger' ).get( 'api' );",
+              "var logging = require( '../helper/logging' );"
+            ]
+          },
+          {
+            "line": 18,
+            "publicCode": [
+              "  if (logging.isDNT(req)) {",
+              "    return '[IP removed]';",
+              "  } else {",
+              "    // from morgan default implementation",
+              "    return req.ip ||",
+              "      req._remoteAddress ||",
+              "      (req.connection && req.connection.remoteAddress) ||",
+              "      undefined;"
+            ]
+          },
+          {
+            "line": 43,
+            "publicCode": [
+              "}",
+              "",
+              "function createAccessLogger( logFormat ){",
+              "  morgan.token('remote-addr', customRemoteAddr);",
+              "  morgan.token('url', customURL);",
+              "",
+              "  return morgan( logFormat, {",
+              "    stream: through( function write( ln, _, next ){"
+            ]
+          },
+          {
+            "line": 44,
+            "publicCode": [
+              "",
+              "function createAccessLogger( logFormat ){",
+              "  morgan.token('remote-addr', customRemoteAddr);",
+              "  morgan.token('url', customURL);",
+              "",
+              "  return morgan( logFormat, {",
+              "    stream: through( function write( ln, _, next ){",
+              "      peliasLogger.info( ln.toString().trim() );"
+            ]
+          },
+          {
+            "line": 46,
+            "publicCode": [
+              "  morgan.token('remote-addr', customRemoteAddr);",
+              "  morgan.token('url', customURL);",
+              "",
+              "  return morgan( logFormat, {",
+              "    stream: through( function write( ln, _, next ){",
+              "      peliasLogger.info( ln.toString().trim() );",
+              "      next();",
+              "    })"
+            ]
+          }
+        ]
+      },
+      {
+        "packageFile": "middleware/accessLog.js",
+        "exists": false
+      },
+      {
+        "packageFile": "config/schema.js",
+        "exists": false
+      }
+    ],
+    "serviceMutations": 0,
+    "sourceWrites": 0,
+    "nativeDatabaseWrites": 0
+  }
+}

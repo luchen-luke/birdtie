@@ -1,0 +1,83 @@
+{
+  "sshExitCode": 0,
+  "stderrBytes": 0,
+  "remoteProgramSHA256": "502b1b58287a996915fbc7117988b7d15b0c6508a6ebef1068a49f2d78a56665",
+  "result": {
+    "mode": "READ_ONLY",
+    "sourceWrites": 0,
+    "nativeDatabaseWrites": 0,
+    "serviceMutations": 0,
+    "containers": {
+      "birdtie-geocoder166-es": {
+        "exists": true,
+        "labelMatches": true,
+        "state": {
+          "Status": "exited",
+          "Running": false,
+          "ExitCode": 143,
+          "OOMKilled": false,
+          "StartedAt": "2026-10-15T10:42:45.221040682Z",
+          "FinishedAt": "2026-10-15T10:44:15.720509573Z"
+        },
+        "memoryBytes": 1073741824,
+        "cpus": 1000000000,
+        "pidsLimit": 256,
+        "cloneWritable": true,
+        "originalIndexMounted": false,
+        "configReadonly": true,
+        "logBytesCaptured": 28579,
+        "unknownSettings": [],
+        "unknownPlugins": [],
+        "exceptionTypes": [],
+        "permissionsFailure": false,
+        "bootstrapFailure": false,
+        "memoryAllocationFailure": true,
+        "unsupportedIndexVersion": false,
+        "elasticsearchVersion": "7.17.27",
+        "imageVersionLabel": "7.17.27"
+      },
+      "birdtie-geocoder166-api": {
+        "exists": false
+      }
+    },
+    "oldPelias": [
+      {
+        "name": "civu_pelias_api",
+        "exists": true,
+        "running": false,
+        "exitCode": 137
+      },
+      {
+        "name": "civu_pelias_elasticsearch",
+        "exists": true,
+        "running": false,
+        "exitCode": 137
+      },
+      {
+        "name": "civu_pelias_placeholder",
+        "exists": true,
+        "running": false,
+        "exitCode": 0
+      },
+      {
+        "name": "civu_pelias_libpostal",
+        "exists": true,
+        "running": false,
+        "exitCode": 0
+      }
+    ],
+    "oldWriter": {
+      "MainPID": "0",
+      "Result": "timeout",
+      "ActiveState": "failed",
+      "SubState": "failed",
+      "UnitFileState": "disabled"
+    },
+    "newAPI": {
+      "httpStatus": 200,
+      "ready": true
+    },
+    "cloneExists": true,
+    "configExists": true
+  }
+}

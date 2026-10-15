@@ -1,0 +1,45 @@
+{
+  "sshExitCode": 0,
+  "sshStderrBytes": 0,
+  "remoteProgramSHA256": "737d5677332e4b039580c03ed66f47dfa4a171492646295c59d4270eaa97b098",
+  "result": {
+    "status": "HEIF_PLUGIN_CONFIGURATION_READONLY",
+    "packages": {
+      "exitCode": 1,
+      "stdout": "libheif-examples\tii \t1.17.6-1ubuntu4.9\nlibheif-plugin-aomdec:amd64\tii \t1.17.6-1ubuntu4.9\nlibheif-plugin-aomenc:amd64\tii \t1.17.6-1ubuntu4.9\nlibheif-plugin-dav1d\tun \t\nlibheif-plugin-ffmpegdec\tun \t\nlibheif-plugin-j2kdec\tun \t\nlibheif-plugin-j2kenc\tun \t\nlibheif-plugin-jpegdec\tun \t\nlibheif-plugin-jpegenc\tun \t\nlibheif-plugin-libde265\tun \t\nlibheif-plugin-rav1e\tun \t\nlibheif-plugin-svtenc\tun \t\nlibheif-plugin-x265\tun \t\nlibheif1:amd64\tii \t1.17.6-1ubuntu4.9\nlibx265-199:amd64\tii \t3.5-2build1\n",
+      "stderrBytes": 49
+    },
+    "pluginFiles": [
+      {
+        "name": "plugins/libheif-aomenc.so",
+        "bytes": 35016,
+        "sha256": "230c4a35420acde87fdc0c149456a0fea778d4cf304417e4bd168117e81c149b"
+      },
+      {
+        "name": "plugins/libheif-aomdec.so",
+        "bytes": 14440,
+        "sha256": "470911680a3ede723d478e768adbfdc9eeef13cf205f4308f750c37f7bc3c025"
+      }
+    ],
+    "converterHelp": {
+      "exitCode": 0,
+      "stdout": "",
+      "stderrBytes": 1425
+    },
+    "candidatePolicy": {
+      "exitCode": 0,
+      "stdout": "libheif-plugin-libde265:\n  Installed: (none)\n  Candidate: 1.17.6-1ubuntu4.9\n  Version table:\n     1.17.6-1ubuntu4.9 500\n        500 http://mirrors.cloud.aliyuncs.com/ubuntu noble-updates/main amd64 Packages\n        500 http://mirrors.cloud.aliyuncs.com/ubuntu noble-security/main amd64 Packages\n     1.17.6-1ubuntu4 500\n        500 http://mirrors.cloud.aliyuncs.com/ubuntu noble/main amd64 Packages\nlibheif-plugin-ffmpegdec:\n  Installed: (none)\n  Candidate: 1.17.6-1ubuntu4.9\n  Version table:\n     1.17.6-1ubuntu4.9 500\n        500 http://mirrors.cloud.aliyuncs.com/ubuntu noble-updates/universe amd64 Packages\n        500 http://mirrors.cloud.aliyuncs.com/ubuntu noble-security/universe amd64 Packages\n     1.17.6-1ubuntu4 500\n        500 http://mirrors.cloud.aliyuncs.com/ubuntu noble/universe amd64 Packages\nlibheif-plugin-aomdec:\n  Installed: 1.17.6-1ubuntu4.9\n  Candidate: 1.17.6-1ubuntu4.9\n  Version table:\n *** 1.17.6-1ubuntu4.9 500\n        500 http://mirrors.cloud.aliyuncs.com/ubuntu noble-updates/main amd64 Packages\n        500 http://mirrors.cloud.aliyuncs.com/ubuntu noble-security/main amd64 Packages\n        100 /var/lib/dpkg/status\n     1.17.6-1ubuntu4 500\n        500 http://mirrors.cloud.aliyuncs.com/ubuntu noble/main amd64 Packages\nlibheif-plugin-dav1d:\n  Installed: (none)\n  Candidate: 1.17.6-1ubuntu4.9\n  Version table:\n     1.17.6-1ubuntu4.9 500\n        500 http://mirrors.cloud.aliyuncs.com/ubuntu noble-updates/universe amd64 Packages\n        500 http://mirrors.cloud.aliyuncs.com/ubuntu noble-security/universe amd64 Packages\n     1.17.6-1ubuntu4 500\n        500 http://mirrors.cloud.aliyuncs.com/ubuntu noble/universe amd64 Packages\n",
+      "stderrBytes": 0
+    },
+    "libheifPackageMetadata": {
+      "exitCode": 0,
+      "stdout": "libc6 (>= 2.38), libgcc-s1 (>= 3.3.1), libsharpyuv0 (>= 1.3.2), libstdc++6 (>= 13.1), zlib1g (>= 1:1.1.4), libheif-plugin-aomdec (= 1.17.6-1ubuntu4.9) | libheif-plugin-dav1d (= 1.17.6-1ubuntu4.9)\nRECOMMENDS=libheif-plugin-aomenc (= 1.17.6-1ubuntu4.9)\nSUGGESTS=libheif-plugin-libde265 (= 1.17.6-1ubuntu4.9), libheif-plugin-x265 (= 1.17.6-1ubuntu4.9), libheif-plugin-ffmpegdec (= 1.17.6-1ubuntu4.9), libheif-plugin-jpegdec (= 1.17.6-1ubuntu4.9), libheif-plugin-jpegenc (= 1.17.6-1ubuntu4.9), libheif-plugin-j2kdec (= 1.17.6-1ubuntu4.9), libheif-plugin-j2kenc (= 1.17.6-1ubuntu4.9), libheif-plugin-rav1e (= 1.17.6-1ubuntu4.9), libheif-plugin-svtenc (= 1.17.6-1ubuntu4.9)\n",
+      "stderrBytes": 0
+    },
+    "pluginPathEnvSet": false,
+    "databaseWrites": 0,
+    "sourceWrites": 0,
+    "packageChanges": false,
+    "mediaRead": false
+  }
+}

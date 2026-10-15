@@ -1,0 +1,15 @@
+{
+  "exitCode": 0,
+  "remoteScriptSHA256": "f0c68149643b66bc0e788d20bbb04ea55f90d68a9a6e5557cd82598421b21283",
+  "result": {
+    "status": "FAILED_DDL_ROLLED_BACK_OLD_API_READY",
+    "schemaBefore": 159,
+    "schemaAfter": 159,
+    "activeRelease": "/opt/birdtie/releases/social159-20261015-build12",
+    "diagnosticExit": 3,
+    "sqlstateDiagnostic": "ERROR:  55006\n",
+    "statementSHA256": "5cda3a09a184c679f054b29b391126384b6c6969fd1e97174ed8acb4f2a07841",
+    "committedDDL": 0
+  },
+  "stderrBytes": 0
+}

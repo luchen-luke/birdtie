@@ -1,0 +1,21 @@
+{
+  "command": [
+    "C:\\Program Files\\Go\\bin\\go.exe",
+    "test",
+    "-mod=readonly",
+    "./internal/mapprojection",
+    "-count=1",
+    "-json"
+  ],
+  "cwd": "D:\\Project\\birdtie\\apps\\api",
+  "started": "2026-10-15T09:47:59.353636+00:00",
+  "exitCode": 0,
+  "sourceBefore": {
+    "apps/api/internal/mapprojection/model.go": "3f46a84b1d56f6b0014f57dbda231d2274b62a8b1754f81493279f32ddfd0097"
+  },
+  "sourceAfter": {
+    "apps/api/internal/mapprojection/model.go": "3f46a84b1d56f6b0014f57dbda231d2274b62a8b1754f81493279f32ddfd0097"
+  },
+  "sourceStable": true,
+  "logSHA256": "f2e37945c628a5557c38998129f553b9a73f221bb94192e5d33a8711669446fe"
+}

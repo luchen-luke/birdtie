@@ -1,0 +1,20 @@
+{
+  "at": "2026-10-15T10:01:00.240459+00:00",
+  "command": [
+    "D:\\DevTools\\flutter\\bin\\flutter.bat",
+    "test",
+    "test/moment_publication_controller_test.dart",
+    "--plain-name",
+    "\u6765\u6e90\u5b57\u6bb5\u3001\u9519\u5730\u70b9\u3001\u5931\u6548\u9884\u89c8\u3001\u672a\u77e5\u54cd\u5e94\u5747\u62d2\u7edd",
+    "--reporter",
+    "expanded"
+  ],
+  "exitCode": 0,
+  "sourceStable": true,
+  "sourceSHA256": {
+    "apps/client/lib/src/content/moment_publication_controller.dart": "9041cfe8f398e67d2d6796ae174c04f869b9070748bc7649c7130458794b8f62",
+    "apps/client/lib/src/content/moment_publication_sheet.dart": "bba9e7bd19becedf11da24e54126725e6e12a40da95afe6a75a243d98fe7aeef",
+    "apps/client/test/moment_publication_controller_test.dart": "89685c6732a1fc1ebd1ca2c52297a8193e0f70c033fef80cc9c9b7458daa793a"
+  },
+  "logSHA256": "615a4f2dd5acdf7310aeaf7b4374030bac21aeee52410aa9704c1118c62eed25"
+}

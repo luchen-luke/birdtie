@@ -22,7 +22,7 @@ func threadBody(w http.ResponseWriter, r *http.Request) ([]byte, bool) {
 		respondError(w, 400, "invalid_moment_thread")
 		return nil, false
 	}
-	raw, e := io.ReadAll(http.MaxBytesReader(w, r.Body, 256*1024))
+	raw, e := io.ReadAll(http.MaxBytesReader(w, r.Body, 1024*1024))
 	if e != nil {
 		respondError(w, 400, "invalid_moment_thread")
 		return nil, false
@@ -53,7 +53,7 @@ func (s *server) previewMomentThread(w http.ResponseWriter, r *http.Request) {
 		momentControlFailure(w, e)
 		return
 	}
-	if !humanControlPreviewMatches(v.HumanControlPreview, in.OperationID, in.Action, content.MomentThreadDigest(in)) || content.MomentThreadDigest(v.Input) != content.MomentThreadDigest(in) || !content.MomentControlHex(v.SourceVersion) || v.Members == nil || v.Materials == nil || in.Action == "CREATE_PUBLISH" && (len(v.Members) != 0 || len(v.Materials) != len(in.Items)) || in.Action == "WITHDRAW" && (len(v.Members) < 2 || len(v.Materials) != 0) {
+	if !humanControlPreviewMatches(v.HumanControlPreview, in.OperationID, in.Action, content.MomentThreadDigest(in)) || content.MomentThreadDigest(v.Input) != content.MomentThreadDigest(in) || !content.MomentControlHex(v.SourceVersion) || v.Members == nil || v.Materials == nil || (in.Action == "CREATE_PUBLISH" || in.Action == "PUBLISH") && (len(v.Members) != 0 || len(v.Materials) != len(in.Items)) || in.Action == "WITHDRAW" && (len(v.Members) < 2 || len(v.Materials) != 0) {
 		respondError(w, 503, "moment_thread_unavailable")
 		return
 	}
@@ -83,7 +83,7 @@ func (s *server) commitMomentThread(w http.ResponseWriter, r *http.Request) {
 		momentControlFailure(w, e)
 		return
 	}
-	if !content.ValidMomentThreadReceipt(v, in.OperationID) || v.Status == "SUCCEEDED" && (v.Action != in.Action || v.PayloadDigest != content.MomentThreadDigest(in) || v.ExpectedVersion != in.ExpectedVersion || in.Action == "WITHDRAW" && v.ThreadID != in.ThreadID) {
+	if !content.ValidMomentThreadReceipt(v, in.OperationID) || v.Status == "SUCCEEDED" && (v.Action != in.Action || v.PayloadDigest != content.MomentThreadDigest(in) || v.ExpectedVersion != in.ExpectedVersion || (in.Action == "WITHDRAW" || in.Action == "PUBLISH") && v.ThreadID != in.ThreadID) {
 		respondError(w, 503, "moment_thread_unavailable")
 		return
 	}
@@ -161,4 +161,34 @@ func (s *server) registerMomentThreadRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("POST /v1/me/moment-threads/operations/{operationID}/stop", func(w http.ResponseWriter, r *http.Request) { s.historyMomentThread(w, r, true) })
 	mux.HandleFunc("GET /v1/moment-threads/{threadID}", func(w http.ResponseWriter, r *http.Request) { s.readMomentThread(w, r, false) })
 	mux.HandleFunc("GET /v1/moments/{momentID}/thread", func(w http.ResponseWriter, r *http.Request) { s.readMomentThread(w, r, true) })
+}
+
+func (s *server) registerOwnedMomentThreadRoutes(mux *http.ServeMux) {
+	mux.HandleFunc("GET /v1/me/moment-threads/{threadID}", func(w http.ResponseWriter, r *http.Request) { s.readOwnedMomentThread(w, r, false) })
+	mux.HandleFunc("GET /v1/me/moments/{momentID}/thread", func(w http.ResponseWriter, r *http.Request) { s.readOwnedMomentThread(w, r, true) })
+}
+func (s *server) readOwnedMomentThread(w http.ResponseWriter, r *http.Request, byMoment bool) {
+	r, a, d, ok := s.humanControlActor(w, r)
+	key := "threadID"
+	if byMoment {
+		key = "momentID"
+	}
+	if !ok || !humanControlPath(w, r, key) || !humanControlNoBody(w, r) {
+		return
+	}
+	p, ok := s.content.(content.OwnedMomentThreadStore)
+	if !ok || p == nil {
+		momentControlFailure(w, content.ErrUnavailable)
+		return
+	}
+	v, e := p.ReadOwnedMomentThread(r.Context(), d, a, r.PathValue(key), byMoment)
+	if e != nil {
+		momentControlFailure(w, e)
+		return
+	}
+	if v.SchemaVersion != "owned-moment-thread-v1" || v.Members == nil || v.EntryContexts == nil || v.Legs == nil || !content.MomentControlHex(v.SourceVersion) {
+		momentControlFailure(w, content.ErrUnavailable)
+		return
+	}
+	s.respondHumanControl(w, r, d, a, map[string]any{"data": v}, v.ResponseProof, true)
 }

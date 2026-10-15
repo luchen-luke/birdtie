@@ -125,7 +125,7 @@ func (s *Store) ListOwnFollows(ctx context.Context, actor string) ([]follow.Reco
 			WHEN f.community_id IS NOT NULL THEN 'COMMUNITY' ELSE 'BUSINESS' END,
 		COALESCE(f.person_account_id,f.organization_id,f.community_id,f.business_id)::text,
 		CASE WHEN f.person_account_id IS NOT NULL THEN
-            CASE WHEN birdtie_agent_profile_field_allowed(person.id,$1::uuid,'displayName')
+            CASE WHEN birdtie_profile_visible_to(person.id,$1::uuid) AND birdtie_agent_profile_field_allowed(person.id,$1::uuid,'displayName')
                 THEN COALESCE(NULLIF(p.display_name,''),NULLIF(person.handle,''),'Birdtie 成员')
                 ELSE 'Birdtie 成员' END
             ELSE COALESCE(o.name,c.name,b.name,'Birdtie 成员') END,
@@ -138,7 +138,8 @@ func (s *Store) ListOwnFollows(ctx context.Context, actor string) ([]follow.Reco
 			AND c.publication_status='published' AND c.visibility='public'
 		LEFT JOIN businesses b ON b.id=f.business_id AND b.status='active' AND b.claim_status='verified'
 		WHERE f.follower_account_id=$1 AND
-		 ((p.account_id IS NOT NULL AND NOT EXISTS(SELECT 1 FROM account_blocks block WHERE
+		 ((f.legacy_source_id IS NOT NULL AND f.person_account_id IS NOT NULL AND NOT EXISTS(SELECT 1 FROM account_blocks block WHERE (block.blocker_account_id=$1 AND block.blocked_account_id=f.person_account_id) OR(block.blocker_account_id=f.person_account_id AND block.blocked_account_id=$1))) OR
+ (p.account_id IS NOT NULL AND NOT EXISTS(SELECT 1 FROM account_blocks block WHERE
 			(block.blocker_account_id=$1 AND block.blocked_account_id=person.id) OR
 			(block.blocker_account_id=person.id AND block.blocked_account_id=$1))) OR
 		  (o.id IS NOT NULL AND EXISTS(SELECT 1 FROM accounts a WHERE a.id=o.account_id AND a.status='active')) OR

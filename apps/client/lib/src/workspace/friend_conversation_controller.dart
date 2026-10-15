@@ -23,7 +23,7 @@ class FriendConversationController extends ChangeNotifier
     with WidgetsBindingObserver {
   FriendConversationController({
     required this.auth,
-    required this.conversation,
+    required HumanConversation conversation,
     this.workspaceChanges,
     this.workspaceID,
     String? apiBaseUrl,
@@ -37,7 +37,8 @@ class FriendConversationController extends ChangeNotifier
     this.imageSourceBinding,
     MomentImagePicker? imagePicker,
     FriendImagePendingStore? imagePendingStore,
-  }) : _audio = audioPort ?? NativeFriendAudioPort(),
+  }) : _conversation = conversation,
+       _audio = audioPort ?? NativeFriendAudioPort(),
        _ownsAudio = audioPort == null,
        _audioStore = audioPendingStore ?? SecureFriendAudioPendingStore(),
        _textStore = messagePendingStore ?? SecureHumanMessagePendingStore() {
@@ -58,7 +59,7 @@ class FriendConversationController extends ChangeNotifier
     _imageBinding = imageSourceBinding?.call();
     _imageStore = imagePendingStore ?? SecureFriendImagePendingStore();
     imageDraft = LocalImageDraftController(
-      isCurrent: () => imageEnabled && current,
+      isCurrent: () => imageEnabled && current && canWriteConversation,
       scope: () => (_identity, _imageEpoch, imageSourceBinding?.call()),
       picker: imagePicker,
     );
@@ -75,7 +76,13 @@ class FriendConversationController extends ChangeNotifier
     WidgetsBinding.instance.addObserver(this);
   }
   final BirdtieAuthController auth;
-  final HumanConversation conversation;
+  HumanConversation _conversation;
+  HumanConversation get conversation => _conversation;
+  bool get canWriteConversation =>
+      !conversation.personalGroup && conversation.canSend;
+  bool get readOnlyHistory => conversation.historical && !canWriteConversation;
+  bool sentByMe(HumanMessage message) =>
+      message.senderAccountId == _identity.$2;
   final Listenable? workspaceChanges;
   final String? Function()? workspaceID;
   final void Function(String expectedAuthorization)? onUnauthorized;
@@ -143,6 +150,7 @@ class FriendConversationController extends ChangeNotifier
       '${elapsed.inMinutes}:${(elapsed.inSeconds % 60).toString().padLeft(2, '0')}';
   bool get canRecord =>
       current &&
+      canWriteConversation &&
       _ready &&
       audioSupported &&
       !sending &&
@@ -166,9 +174,14 @@ class FriendConversationController extends ChangeNotifier
       _identity.$3 == null &&
       chatEntityUUID.hasMatch(_identity.$2!) &&
       chatEntityUUID.hasMatch(conversation.id) &&
-      chatEntityUUID.hasMatch(conversation.otherAccountId);
+      (chatEntityUUID.hasMatch(conversation.otherAccountId) ||
+          conversation.historical &&
+              conversation.personalGroup &&
+              conversation.otherAccountId.isEmpty &&
+              !conversation.canSend);
   bool get canSendText =>
       current &&
+      canWriteConversation &&
       _ready &&
       !sending &&
       !hasPendingTextOrAudio &&
@@ -178,6 +191,7 @@ class FriendConversationController extends ChangeNotifier
       !imageDraft.busy;
   bool get canSendAudio =>
       current &&
+      canWriteConversation &&
       _ready &&
       !sending &&
       !audioActive &&
@@ -354,6 +368,15 @@ class FriendConversationController extends ChangeNotifier
     _notify();
     final owner = _identity.$2!;
     try {
+      if (conversation.historical) {
+        final fresh = await _source.conversation(conversation.id);
+        if (!_valid(serial)) return;
+        if (fresh.kind != conversation.kind ||
+            fresh.otherAccountId != conversation.otherAccountId) {
+          throw const FormatException('历史会话成员已变化');
+        }
+        _conversation = fresh;
+      }
       final ap = await _audioStore.read(_wire.environment, owner);
       if (!_valid(serial)) return;
       final tp = await _textStore.read(_wire.environment, owner);
@@ -404,6 +427,15 @@ class FriendConversationController extends ChangeNotifier
     error = null;
     _notify();
     try {
+      if (conversation.historical) {
+        final fresh = await _source.conversation(conversation.id);
+        if (!_valid(serial) || historyEpoch != _historyEpoch) return;
+        if (fresh.kind != conversation.kind ||
+            fresh.otherAccountId != conversation.otherAccountId) {
+          throw const FormatException('历史会话成员已变化');
+        }
+        _conversation = fresh;
+      }
       final page = await _source.messagesPage(conversation.id);
       if (!_valid(serial) || historyEpoch != _historyEpoch) return;
       _messages = page.items;
@@ -445,9 +477,7 @@ class FriendConversationController extends ChangeNotifier
       // not merge an overlapping or out-of-order response into private history.
       if (page.items.isNotEmpty && _messages.isNotEmpty) {
         final last = page.items.last, first = _messages.first;
-        if (last.createdAt.isAfter(first.createdAt) ||
-            last.createdAt.isAtSameMomentAs(first.createdAt) &&
-                last.id.compareTo(first.id) >= 0 ||
+        if (!humanMessageBefore(last, first) ||
             page.items.any((m) => _messages.any((old) => old.id == m.id))) {
           throw const FormatException('更早消息顺序无法核实');
         }
@@ -523,6 +553,7 @@ class FriendConversationController extends ChangeNotifier
 
   bool get canSelectImage =>
       imageViewCurrent(_imageEpoch) &&
+      canWriteConversation &&
       (isVisible?.call() ?? true) &&
       !sending &&
       !pending &&
@@ -532,6 +563,7 @@ class FriendConversationController extends ChangeNotifier
 
   bool canSendImage(String caption) =>
       imageViewCurrent(_imageEpoch) &&
+      canWriteConversation &&
       (isVisible?.call() ?? true) &&
       !sending &&
       !pending &&
@@ -593,6 +625,7 @@ class FriendConversationController extends ChangeNotifier
   }) =>
       imageEnabled &&
       current &&
+      canWriteConversation &&
       _ready &&
       !sending &&
       !audioActive &&

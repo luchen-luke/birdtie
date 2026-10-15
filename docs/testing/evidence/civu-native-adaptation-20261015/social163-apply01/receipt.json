@@ -1,0 +1,33 @@
+{
+  "exitCode": 0,
+  "version": "163",
+  "mode": "apply",
+  "remoteProgramSHA256": "1bf6addcf67e8a9e5a501e6bae6fab5c93a3e12054b4931a5ca4820f6dbbe63b",
+  "result": {
+    "status": "NATIVE_IMPORT_VERIFIED",
+    "version": "163",
+    "result": {
+      "runId": "c5df0d7c-f361-4275-9838-feb6d1d92352",
+      "status": "SOCIAL_NATIVE_COMMITTED",
+      "counts": {
+        "friendships": 5,
+        "acceptedFriends": 4,
+        "pendingFriends": 1,
+        "follows": 21,
+        "conversations": 11,
+        "members": 23,
+        "messages": 39,
+        "messageRequests": 1,
+        "images": 1
+      },
+      "createdAt": "2026-10-15T19:23:41.768306+08:00",
+      "imageDecode": "FULL_DECODE_REENCODED",
+      "scanner": "NOT_RUN",
+      "privacyRisk": "UNKNOWN"
+    },
+    "repeatEqual": true,
+    "privateInputsUnchanged": true,
+    "sourceWrites": 0,
+    "otherOwnersLoggedIn": 0
+  }
+}

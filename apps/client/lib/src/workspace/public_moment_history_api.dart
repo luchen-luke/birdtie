@@ -106,7 +106,6 @@ class PublicMomentHistoryPageData {
       );
       if (!ids.add(item.id) ||
           item.publishedAt.isAfter(snapshot) ||
-          (query.cityID.isNotEmpty && item.cityID != query.cityID) ||
           item.validUntil == null ||
           item.validUntil!.isBefore(until))
         throw const FormatException('动态列表来源不符');

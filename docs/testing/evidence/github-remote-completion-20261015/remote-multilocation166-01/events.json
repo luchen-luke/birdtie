@@ -1,0 +1,353 @@
+[
+  {
+    "label": "public_https_ready",
+    "method": "GET",
+    "status": 200,
+    "responseBytes": 19,
+    "elapsedMS": 78,
+    "errorCode": null,
+    "transport": null
+  },
+  {
+    "label": "fixed_test_auth_status",
+    "method": "GET",
+    "status": 200,
+    "responseBytes": 26,
+    "elapsedMS": 31,
+    "errorCode": null,
+    "transport": null
+  },
+  {
+    "label": "search_museum",
+    "method": "GET",
+    "status": 200,
+    "responseBytes": 5947,
+    "elapsedMS": 219,
+    "errorCode": null,
+    "transport": null
+  },
+  {
+    "label": "search_bridge",
+    "method": "GET",
+    "status": 200,
+    "responseBytes": 5806,
+    "elapsedMS": 938,
+    "errorCode": null,
+    "transport": null
+  },
+  {
+    "label": "synthetic_code",
+    "method": "POST",
+    "status": 200,
+    "responseBytes": 34,
+    "elapsedMS": 46,
+    "errorCode": null,
+    "transport": null
+  },
+  {
+    "label": "synthetic_verify_once",
+    "method": "POST",
+    "status": 200,
+    "responseBytes": 148,
+    "elapsedMS": 47,
+    "errorCode": null,
+    "transport": null
+  },
+  {
+    "label": "synthetic_current_actor",
+    "method": "GET",
+    "status": 200,
+    "responseBytes": 78,
+    "elapsedMS": 47,
+    "errorCode": null,
+    "transport": null
+  },
+  {
+    "label": "qa_create_preview",
+    "method": "POST",
+    "status": 200,
+    "responseBytes": 2849,
+    "elapsedMS": 47,
+    "errorCode": null,
+    "transport": null
+  },
+  {
+    "label": "qa_create_commit_once",
+    "method": "PUT",
+    "status": 200,
+    "responseBytes": 319,
+    "elapsedMS": 47,
+    "errorCode": null,
+    "transport": null
+  },
+  {
+    "label": "qa_create_original",
+    "method": "GET",
+    "status": 200,
+    "responseBytes": 319,
+    "elapsedMS": 31,
+    "errorCode": null,
+    "transport": null
+  },
+  {
+    "label": "qa_publish_preview",
+    "method": "POST",
+    "status": 200,
+    "responseBytes": 2900,
+    "elapsedMS": 78,
+    "errorCode": null,
+    "transport": null
+  },
+  {
+    "label": "qa_publish_commit_once",
+    "method": "PUT",
+    "status": 200,
+    "responseBytes": 321,
+    "elapsedMS": 63,
+    "errorCode": null,
+    "transport": null
+  },
+  {
+    "label": "qa_publish_original",
+    "method": "GET",
+    "status": 200,
+    "responseBytes": 321,
+    "elapsedMS": 47,
+    "errorCode": null,
+    "transport": null
+  },
+  {
+    "label": "owner_body",
+    "method": "GET",
+    "status": 200,
+    "responseBytes": 449,
+    "elapsedMS": 31,
+    "errorCode": null,
+    "transport": null
+  },
+  {
+    "label": "public_body",
+    "method": "GET",
+    "status": 200,
+    "responseBytes": 476,
+    "elapsedMS": 94,
+    "errorCode": null,
+    "transport": null
+  },
+  {
+    "label": "owner_locations",
+    "method": "GET",
+    "status": 200,
+    "responseBytes": 1900,
+    "elapsedMS": 47,
+    "errorCode": null,
+    "transport": null
+  },
+  {
+    "label": "public_locations",
+    "method": "GET",
+    "status": 200,
+    "responseBytes": 1702,
+    "elapsedMS": 62,
+    "errorCode": null,
+    "transport": null
+  },
+  {
+    "label": "public_exploration_city_catalog",
+    "method": "GET",
+    "status": 200,
+    "responseBytes": 405909,
+    "elapsedMS": 141,
+    "errorCode": null,
+    "transport": null
+  },
+  {
+    "label": "v6_two_reference_pins",
+    "method": "GET",
+    "status": 200,
+    "responseBytes": 1542,
+    "elapsedMS": 140,
+    "errorCode": null,
+    "transport": null
+  },
+  {
+    "label": "qa_remove_locations_preview",
+    "method": "POST",
+    "status": 200,
+    "responseBytes": 975,
+    "elapsedMS": 63,
+    "errorCode": null,
+    "transport": null
+  },
+  {
+    "label": "qa_remove_locations_commit_once",
+    "method": "PUT",
+    "status": 200,
+    "responseBytes": 327,
+    "elapsedMS": 47,
+    "errorCode": null,
+    "transport": null
+  },
+  {
+    "label": "qa_remove_locations_original",
+    "method": "GET",
+    "status": 200,
+    "responseBytes": 327,
+    "elapsedMS": 47,
+    "errorCode": null,
+    "transport": null
+  },
+  {
+    "label": "body_survives_location_removal",
+    "method": "GET",
+    "status": 200,
+    "responseBytes": 476,
+    "elapsedMS": 78,
+    "errorCode": null,
+    "transport": null
+  },
+  {
+    "label": "public_locations_removed",
+    "method": "GET",
+    "status": 200,
+    "responseBytes": 298,
+    "elapsedMS": 62,
+    "errorCode": null,
+    "transport": null
+  },
+  {
+    "label": "owner_locations_removed",
+    "method": "GET",
+    "status": 200,
+    "responseBytes": 298,
+    "elapsedMS": 63,
+    "errorCode": null,
+    "transport": null
+  },
+  {
+    "label": "v6_old_pins_removed",
+    "method": "GET",
+    "status": 200,
+    "responseBytes": 202,
+    "elapsedMS": 62,
+    "errorCode": null,
+    "transport": null
+  },
+  {
+    "label": "publish_original_after_edit",
+    "method": "GET",
+    "status": 200,
+    "responseBytes": 321,
+    "elapsedMS": 47,
+    "errorCode": null,
+    "transport": null
+  },
+  {
+    "label": "qa_final_withdraw_preview",
+    "method": "POST",
+    "status": 200,
+    "responseBytes": 685,
+    "elapsedMS": 47,
+    "errorCode": null,
+    "transport": null
+  },
+  {
+    "label": "qa_final_withdraw_commit_once",
+    "method": "PUT",
+    "status": 200,
+    "responseBytes": 321,
+    "elapsedMS": 47,
+    "errorCode": null,
+    "transport": null
+  },
+  {
+    "label": "qa_final_withdraw_original",
+    "method": "GET",
+    "status": 200,
+    "responseBytes": 321,
+    "elapsedMS": 47,
+    "errorCode": null,
+    "transport": null
+  },
+  {
+    "label": "qa_owner_withdrawn",
+    "method": "GET",
+    "status": 200,
+    "responseBytes": 450,
+    "elapsedMS": 31,
+    "errorCode": null,
+    "transport": null
+  },
+  {
+    "label": "qa_public_after_withdraw",
+    "method": "GET",
+    "status": 404,
+    "responseBytes": 68,
+    "elapsedMS": 62,
+    "errorCode": "not_found",
+    "transport": null
+  },
+  {
+    "label": "qa_sidecar_after_withdraw",
+    "method": "GET",
+    "status": 404,
+    "responseBytes": 31,
+    "elapsedMS": 63,
+    "errorCode": "not_found",
+    "transport": null
+  },
+  {
+    "label": "publish_original_after_withdraw",
+    "method": "GET",
+    "status": 200,
+    "responseBytes": 321,
+    "elapsedMS": 31,
+    "errorCode": null,
+    "transport": null
+  },
+  {
+    "label": "cleanup_owned_current",
+    "method": "GET",
+    "status": 200,
+    "responseBytes": 450,
+    "elapsedMS": 47,
+    "errorCode": null,
+    "transport": null
+  },
+  {
+    "label": "cleanup_withdrawn_current",
+    "method": "GET",
+    "status": 200,
+    "responseBytes": 450,
+    "elapsedMS": 63,
+    "errorCode": null,
+    "transport": null
+  },
+  {
+    "label": "cleanup_qa_public_denied",
+    "method": "GET",
+    "status": 404,
+    "responseBytes": 68,
+    "elapsedMS": 46,
+    "errorCode": "not_found",
+    "transport": null
+  },
+  {
+    "label": "cleanup_new_session_logout",
+    "method": "POST",
+    "status": 204,
+    "responseBytes": 0,
+    "elapsedMS": 63,
+    "errorCode": null,
+    "transport": null
+  },
+  {
+    "label": "cleanup_new_session_revoked",
+    "method": "GET",
+    "status": 401,
+    "responseBytes": 34,
+    "elapsedMS": 47,
+    "errorCode": "unauthorized",
+    "transport": null
+  }
+]

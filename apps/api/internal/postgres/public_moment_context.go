@@ -40,18 +40,17 @@ func publicMomentContextReadSQL(author bool) string {
 		authorBinding = "," + publicMomentAuthorBindingSQL("a")
 	}
 	return `WITH cl AS MATERIALIZED(SELECT clock_timestamp() at)
-SELECT m.id,m.title,m.body,coalesce(p.id::text,''),coalesce(p.name,''),CASE WHEN m.location_precision='none' THEN '' ELSE coalesce(c.id,'') END,CASE WHEN m.location_precision='none' THEN '' ELSE coalesce(c.name,'') END,m.location_precision,m.revision,m.published_at,
- jsonb_build_array(birdtie_moment_public_binding(m.id,$2,cl.at),` + momentMediaReadBindingSQL("m") + `,m.xmin::text,a.xmin::text,p.xmin::text,c.xmin::text,` + retainedPlaceReadBindingSQL("p") + authorBinding + `,
+SELECT m.id,m.title,m.body,CASE WHEN (loc.deadline IS NULL OR loc.deadline>=least(cl.at+interval '60 seconds',` + momentPublishableMediaDeadlineSQL("m") + `,(SELECT least(se.expires_at,se.idle_expires_at)FROM sessions se WHERE se.account_id=$2 AND se.token_sha256=$3))) THEN coalesce(loc.place_id::text,'')ELSE ''END,CASE WHEN (loc.deadline IS NULL OR loc.deadline>=least(cl.at+interval '60 seconds',` + momentPublishableMediaDeadlineSQL("m") + `,(SELECT least(se.expires_at,se.idle_expires_at)FROM sessions se WHERE se.account_id=$2 AND se.token_sha256=$3))) THEN coalesce(loc.place_name,'')ELSE ''END,CASE WHEN (loc.deadline IS NULL OR loc.deadline>=least(cl.at+interval '60 seconds',` + momentPublishableMediaDeadlineSQL("m") + `,(SELECT least(se.expires_at,se.idle_expires_at)FROM sessions se WHERE se.account_id=$2 AND se.token_sha256=$3))) THEN coalesce(loc.city_id,'')ELSE ''END,CASE WHEN (loc.deadline IS NULL OR loc.deadline>=least(cl.at+interval '60 seconds',` + momentPublishableMediaDeadlineSQL("m") + `,(SELECT least(se.expires_at,se.idle_expires_at)FROM sessions se WHERE se.account_id=$2 AND se.token_sha256=$3))) THEN coalesce(loc.city_name,'')ELSE ''END,CASE WHEN (loc.deadline IS NULL OR loc.deadline>=least(cl.at+interval '60 seconds',` + momentPublishableMediaDeadlineSQL("m") + `,(SELECT least(se.expires_at,se.idle_expires_at)FROM sessions se WHERE se.account_id=$2 AND se.token_sha256=$3))) THEN coalesce(loc.precision,'none')ELSE 'none'END,m.revision,m.published_at,
+ jsonb_build_array(birdtie_moment_public_binding(m.id,$2,cl.at),` + momentMediaReadBindingSQL("m") + `,m.xmin::text,a.xmin::text` + authorBinding + `,
  (SELECT viewer.xmin::text FROM accounts viewer WHERE viewer.id=$2),
  (SELECT coalesce(jsonb_agg(jsonb_build_array(ep.owner_account_id,ep.target_account_id,ep.version,ep.xmin::text) ORDER BY ep.owner_account_id,ep.target_account_id),'[]'::jsonb)
  FROM person_block_control_epochs ep WHERE $2::uuid IS NOT NULL AND((ep.owner_account_id=$2 AND ep.target_account_id=a.id) OR(ep.owner_account_id=a.id AND ep.target_account_id=$2))))::text,
  ` + authorColumn + `,cl.at,
- least(cl.at+interval '60 seconds',c.expires_at,pc.expires_at,` + momentPublishableMediaDeadlineSQL("m") + `,CASE WHEN p.id IS NOT NULL THEN ` + currentRetainedPlaceDeadlineSQL("p", "cl.at") + ` END,
- (SELECT least(se.expires_at,se.idle_expires_at) FROM sessions se WHERE se.account_id=$2 AND se.token_sha256=$3)),
- CASE WHEN $5::boolean AND m.location_precision='place' THEN birdtie_public_moment_photo_metadata(m.id,$2,cl.at) ELSE NULL END,
- CASE WHEN $5::boolean AND m.location_precision='place' THEN birdtie_public_moment_photo_proof(m.id,$2) ELSE '' END
+ least(cl.at+interval '60 seconds',` + momentPublishableMediaDeadlineSQL("m") + `,(SELECT least(se.expires_at,se.idle_expires_at)FROM sessions se WHERE se.account_id=$2 AND se.token_sha256=$3)),
+ CASE WHEN $5::boolean AND loc.precision='place' AND (loc.deadline IS NULL OR loc.deadline>=least(cl.at+interval '60 seconds',` + momentPublishableMediaDeadlineSQL("m") + `,(SELECT least(se.expires_at,se.idle_expires_at)FROM sessions se WHERE se.account_id=$2 AND se.token_sha256=$3))) THEN birdtie_public_moment_photo_metadata(m.id,$2,cl.at) ELSE NULL END,
+ CASE WHEN $5::boolean AND loc.precision='place' AND (loc.deadline IS NULL OR loc.deadline>=least(cl.at+interval '60 seconds',` + momentPublishableMediaDeadlineSQL("m") + `,(SELECT least(se.expires_at,se.idle_expires_at)FROM sessions se WHERE se.account_id=$2 AND se.token_sha256=$3))) THEN birdtie_public_moment_photo_proof(m.id,$2) ELSE '' END
 FROM moments m JOIN accounts a ON a.id=m.author_account_id LEFT JOIN cities c ON c.id=m.city_id
-LEFT JOIN places p ON p.id=m.place_id AND(m.city_id IS NULL OR p.city_id=m.city_id) LEFT JOIN cities pc ON pc.id=p.city_id CROSS JOIN cl
+LEFT JOIN places p ON p.id=m.place_id AND(m.city_id IS NULL OR p.city_id=m.city_id) LEFT JOIN cities pc ON pc.id=p.city_id CROSS JOIN cl LEFT JOIN LATERAL birdtie_moment_location_compatibility(m.id,cl.at)loc ON true
 WHERE m.id=$1 AND m.status='published' AND m.visibility='public'
 AND m.author_confirmed_at IS NOT NULL AND m.published_at IS NOT NULL AND m.author_confirmed_at<=m.published_at AND m.published_at<=cl.at
 AND birdtie_moment_public_binding(m.id,$2,cl.at) IS NOT NULL
@@ -137,8 +136,13 @@ func (s *Store) CapturePublicMomentWithContext(ctx context.Context, a content.Pu
 		if e != nil {
 			return e
 		}
-		if fresh.BaseProof != r.BaseProof || fresh.PhotoProof != r.PhotoProof || !r.View.ValidUntil.After(fresh.View.ObservedAt) || fresh.View.ValidUntil.Before(r.View.ValidUntil) {
+		if fresh.BaseProof != r.BaseProof || !r.View.ValidUntil.After(fresh.View.ObservedAt) || fresh.View.ValidUntil.Before(r.View.ValidUntil) {
 			return mp.ErrChanged
+		}
+		retireMomentCompatibilityLocation(&r.View, fresh.View)
+		if fresh.PhotoProof != r.PhotoProof {
+			r.View.Photo = nil
+			r.PhotoProof = fresh.PhotoProof
 		}
 		return nil
 	}); e != nil {
@@ -176,11 +180,14 @@ func (s *Store) FinalizePublicMomentWithContext(ctx context.Context, a content.P
 		}
 		before, next := old.View, fresh.View
 		before.Photo, next.Photo = nil, nil
+		clearMomentCompatibilityLocation(&before)
+		clearMomentCompatibilityLocation(&next)
 		next.ObservedAt, next.ValidUntil = before.ObservedAt, before.ValidUntil
 		if fresh.BaseProof != old.BaseProof || !old.View.ValidUntil.After(fresh.View.ObservedAt) || fresh.View.ValidUntil.Before(old.View.ValidUntil) || !reflect.DeepEqual(before, next) {
 			return mp.ErrChanged
 		}
 		out = old.View
+		retireMomentCompatibilityLocation(&out, fresh.View)
 		if out.Photo != nil {
 			copy := *out.Photo
 			out.Photo = &copy
@@ -199,4 +206,18 @@ func (s *Store) FinalizePublicMomentWithContext(ctx context.Context, a content.P
 		return content.PublicMomentWithContext{}, e
 	}
 	return out, nil
+}
+
+func clearMomentCompatibilityLocation(v *content.PublicMomentWithContext) {
+	v.CityID = ""
+	v.CityName = ""
+	v.PlaceID = ""
+	v.PlaceName = ""
+	v.LocationPrecision = "none"
+	v.Photo = nil
+}
+func retireMomentCompatibilityLocation(v *content.PublicMomentWithContext, fresh content.PublicMomentWithContext) {
+	if v.CityID != fresh.CityID || v.CityName != fresh.CityName || v.PlaceID != fresh.PlaceID || v.PlaceName != fresh.PlaceName || v.LocationPrecision != fresh.LocationPrecision {
+		clearMomentCompatibilityLocation(v)
+	}
 }

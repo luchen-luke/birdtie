@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'moment_thread_api.dart';
 import 'moment_thread_controller.dart';
 import 'moment_thread_pending_store.dart';
+import 'moment_locations_api.dart';
+import '../content/moment_locations.dart';
 
 /// Now owns the only text input. This panel changes its active entry and shows
 /// exact ordered previews, while all publication uses the thread contract.
@@ -16,6 +18,10 @@ class MomentThreadPanel extends StatefulWidget {
     this.onPublished,
     this.entryMaterials,
     this.materialsReady = true,
+    this.locationLabels = const {},
+    this.onAddLocation,
+    this.onSaveActive,
+    this.onOpenActive,
   });
   final MomentThreadController controller;
   final ValueChanged<String> onActiveText;
@@ -23,6 +29,9 @@ class MomentThreadPanel extends StatefulWidget {
   final ValueChanged<MomentThreadReceipt>? onPublished;
   final Widget? entryMaterials;
   final bool materialsReady;
+  final Map<String, String> locationLabels;
+  final VoidCallback? onAddLocation;
+  final VoidCallback? onSaveActive, onOpenActive;
   @override
   State<MomentThreadPanel> createState() => _MomentThreadPanelState();
 }
@@ -105,7 +114,11 @@ class _MomentThreadPanelState extends State<MomentThreadPanel> {
                   ),
               ],
             ),
-            const Text('所有条目共用公开范围。选择一条后，在首页原输入框继续修改。'),
+            Text(
+              c.existingThread
+                  ? '原串文已接续。选择一条后，在首页输入框修改；保存只更新这条原动态。'
+                  : '所有条目共用公开范围。选择一条后，在首页原输入框继续修改。',
+            ),
             if (c.busy) const LinearProgressIndicator(),
             if (c.notice != null)
               Padding(
@@ -128,6 +141,42 @@ class _MomentThreadPanelState extends State<MomentThreadPanel> {
               ),
             if (preview == null && !c.uncertain) ...[
               if (widget.entryMaterials != null) widget.entryMaterials!,
+              if (c.entries.isNotEmpty &&
+                  c.entries[c.activeIndex].locations != null)
+                MomentLocationChips(
+                  locations: c.entries[c.activeIndex].locations!,
+                  labels: widget.locationLabels,
+                  onRemove: c.editable
+                      ? (id) => c.setActiveLocations(
+                          c.entries[c.activeIndex].locations!
+                              .where((v) => v.id != id)
+                              .toList(),
+                        )
+                      : null,
+                  onSetPrecision: c.editable
+                      ? (id, precision) => c.setActiveLocations(
+                          c.entries[c.activeIndex].locations!
+                              .map(
+                                (v) =>
+                                    v.id == id ? v.withPrecision(precision) : v,
+                              )
+                              .toList(),
+                        )
+                      : null,
+                  onMove: c.editable
+                      ? (from, to) {
+                          final list = [...c.entries[c.activeIndex].locations!];
+                          list.insert(to, list.removeAt(from));
+                          c.setActiveLocations(list);
+                        }
+                      : null,
+                ),
+              if (widget.onAddLocation != null)
+                TextButton.icon(
+                  onPressed: c.editable ? widget.onAddLocation : null,
+                  icon: const Icon(Icons.add_location_alt_outlined),
+                  label: const Text('添加位置'),
+                ),
               for (var index = 0; index < c.entries.length; index++)
                 Padding(
                   padding: const EdgeInsets.symmetric(vertical: 4),
@@ -167,21 +216,27 @@ class _MomentThreadPanelState extends State<MomentThreadPanel> {
                       ),
                       IconButton(
                         tooltip: '向前移动第${index + 1}条',
-                        onPressed: c.editable && index > 0
+                        onPressed: c.editable && !c.existingThread && index > 0
                             ? () => _edit(() => c.moveEntry(index, index - 1))
                             : null,
                         icon: const Icon(Icons.arrow_upward, size: 18),
                       ),
                       IconButton(
                         tooltip: '向后移动第${index + 1}条',
-                        onPressed: c.editable && index + 1 < c.entries.length
+                        onPressed:
+                            c.editable &&
+                                !c.existingThread &&
+                                index + 1 < c.entries.length
                             ? () => _edit(() => c.moveEntry(index, index + 1))
                             : null,
                         icon: const Icon(Icons.arrow_downward, size: 18),
                       ),
                       IconButton(
                         tooltip: '删除草稿第${index + 1}条',
-                        onPressed: c.editable && c.entries.length > 2
+                        onPressed:
+                            c.editable &&
+                                !c.existingThread &&
+                                c.entries.length > 2
                             ? () => _edit(() => c.removeEntry(index))
                             : null,
                         icon: const Icon(Icons.remove_circle_outline, size: 18),
@@ -192,12 +247,23 @@ class _MomentThreadPanelState extends State<MomentThreadPanel> {
               Wrap(
                 spacing: 8,
                 children: [
-                  TextButton(
-                    onPressed: c.editable && c.entries.length < 20
-                        ? () => _edit(c.addEntry)
-                        : null,
-                    child: const Text('添加一条'),
-                  ),
+                  if (!c.existingThread)
+                    TextButton(
+                      onPressed: c.editable && c.entries.length < 20
+                          ? () => _edit(c.addEntry)
+                          : null,
+                      child: const Text('添加一条'),
+                    ),
+                  if (c.existingThread && widget.onSaveActive != null)
+                    TextButton(
+                      onPressed: c.editable ? widget.onSaveActive : null,
+                      child: const Text('保存这条'),
+                    ),
+                  if (c.existingThread && widget.onOpenActive != null)
+                    TextButton(
+                      onPressed: c.editable ? widget.onOpenActive : null,
+                      child: const Text('打开这条动态'),
+                    ),
                   FilledButton(
                     onPressed:
                         c.editable &&
@@ -209,6 +275,18 @@ class _MomentThreadPanelState extends State<MomentThreadPanel> {
                   ),
                 ],
               ),
+              if (c.existingThread && c.entries.length == 1)
+                const Text('这串只有一条动态，可以打开后单独发布。'),
+              if (c.ownedSource?.current == true &&
+                  c.ownedSource!.legs.isNotEmpty)
+                for (final leg in c.ownedSource!.legs)
+                  Text(
+                    '原行程：第${leg['fromPosition'] + 1}条 → 第${leg['toPosition'] + 1}条 · ${switch (leg['mode']) {
+                      'driving' => '驾车',
+                      'walking' => '步行',
+                      _ => '原出行方式',
+                    }}',
+                  ),
             ],
             if (!widget.materialsReady && preview == null && !c.uncertain)
               const Text('请先准备各条材料，或移除尚未准备的材料后预览整串。'),
@@ -249,6 +327,14 @@ class _MomentThreadPanelState extends State<MomentThreadPanel> {
                         ),
                         if (preview.input.entries[index].text.trim().isNotEmpty)
                           Text(preview.input.entries[index].text.trim()),
+                        if (preview.locations.isNotEmpty)
+                          if (preview.locations[index].isEmpty)
+                            const Text('不关联位置'),
+                        if (preview.locations.isNotEmpty)
+                          for (final location in preview.locations[index])
+                            Text(
+                              '${location.label} · ${momentLocationPrecisionLabel(location.precision)}',
+                            ),
                         if (preview.materials[index].isNotEmpty)
                           Wrap(
                             spacing: 8,

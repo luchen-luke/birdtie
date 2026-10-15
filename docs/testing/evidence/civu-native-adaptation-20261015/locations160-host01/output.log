@@ -1,0 +1,192 @@
+Flutter assets will be downloaded from https://storage.flutter-io.cn. Make sure you trust this source!
+00:00 +0: loading D:/Project/birdtie/apps/client/test/now_moment_intent_test.dart
+00:00 +0: D:/Project/birdtie/apps/client/test/now_moment_intent_test.dart: only an explicit compose instruction extracts the selected text
+00:03 +1: D:/Project/birdtie/apps/client/test/now_creation_entry_test.dart: 动态入口打开原私人编辑器；仅明确保存写 Moment，不发布或查询
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following TestFailure was thrown running a test:
+Expected: exactly one matching candidate
+  Actual: _TextWidgetFinder:<Found 0 widgets with text "检查私人草稿": []>
+   Which: means none were found but one was expected
+
+When the exception was thrown, this was the stack:
+#4      _CreationFixture.save (file:///D:/Project/birdtie/apps/client/test/now_creation_entry_test.dart:173:5)
+<asynchronous suspension>
+#5      main.<anonymous closure> (file:///D:/Project/birdtie/apps/client/test/now_creation_entry_test.dart:228:5)
+<asynchronous suspension>
+#6      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#7      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1952:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///D:/Project/birdtie/apps/client/test/now_creation_entry_test.dart line 173
+The test description was:
+  动态入口打开原私人编辑器；仅明确保存写 Moment，不发布或查询
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:04 +1 -1: D:/Project/birdtie/apps/client/test/now_creation_entry_test.dart: 动态入口打开原私人编辑器；仅明确保存写 Moment，不发布或查询 [E]
+  Test failed. See exception logs above.
+  The test description was: 动态入口打开原私人编辑器；仅明确保存写 Moment，不发布或查询
+  
+Warning: At least one test in this suite creates an HttpClient. When running a test suite that uses
+TestWidgetsFlutterBinding, all HTTP requests will return status code 400, and no network request
+will actually be made. Any test expecting a real network connection and status code will fail.
+To test code that needs an HttpClient, provide your own HttpClient implementation to the code under
+test, so that your test can consistently provide a testable response to the code under test.
+00:04 +1 -1: D:/Project/birdtie/apps/client/test/now_creation_entry_test.dart: 访客或未绑定当前来源不打开私人创建、不请求身份数据
+00:04 +2 -1: D:/Project/birdtie/apps/client/test/now_creation_entry_test.dart: ownerABA 同步退休私人草稿，不能因返回原值复活保存
+00:05 +3 -1: D:/Project/birdtie/apps/client/test/now_creation_entry_test.dart: workspaceABA 同步退休私人草稿，不能因返回原值复活保存
+00:05 +4 -1: D:/Project/birdtie/apps/client/test/now_creation_entry_test.dart: cityABA 同步退休私人草稿，不能因返回原值复活保存
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following TestFailure was thrown running a test:
+Expected: no matching candidates
+  Actual: _TextWidgetFinder:<Found 1 widget with text "新建动态": [
+            Text("新建动态", debugLabel: (englishLike titleLarge 2021).merge((blackMountainView
+titleLarge).apply), inherit: false, color: Color(alpha: 1.0000, red: 0.1137, green: 0.1059, blue:
+0.1255, colorSpace: ColorSpace.sRGB), family: Roboto, size: 22.0, weight: 400, letterSpacing: 0.0,
+baseline: alphabetic, height: 1.3x, leadingDistribution: even, decoration: Color(alpha: 1.0000, red:
+0.1137, green: 0.1059, blue: 0.1255, colorSpace: ColorSpace.sRGB) TextDecoration.none, dependencies:
+[DefaultSelectionStyle, DefaultTextStyle, MediaQuery]),
+          ]>
+   Which: means one was found but none were expected
+
+When the exception was thrown, this was the stack:
+#4      main.<anonymous closure> (file:///D:/Project/birdtie/apps/client/test/now_creation_entry_test.dart:306:7)
+<asynchronous suspension>
+#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1952:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///D:/Project/birdtie/apps/client/test/now_creation_entry_test.dart line 306
+The test description was:
+  cityABA 同步退休私人草稿，不能因返回原值复活保存
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:05 +4 -2: D:/Project/birdtie/apps/client/test/now_creation_entry_test.dart: cityABA 同步退休私人草稿，不能因返回原值复活保存 [E]
+  Test failed. See exception logs above.
+  The test description was: cityABA 同步退休私人草稿，不能因返回原值复活保存
+  
+00:05 +4 -2: D:/Project/birdtie/apps/client/test/now_creation_entry_test.dart: source 同步退休私人草稿，不能因返回原值复活保存
+00:05 +5 -2: D:/Project/birdtie/apps/client/test/now_creation_entry_test.dart: 来源退休只移除自有草稿 route，不弹出其上另一个页面
+00:05 +6 -2: D:/Project/birdtie/apps/client/test/now_creation_entry_test.dart: 已提交保存晚返回不能关闭另一个页面或恢复旧草稿
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following TestFailure was thrown running a test:
+Expected: exactly one matching candidate
+  Actual: _TextWidgetFinder:<Found 0 widgets with text "检查私人草稿": []>
+   Which: means none were found but one was expected
+
+When the exception was thrown, this was the stack:
+#4      _CreationFixture.save (file:///D:/Project/birdtie/apps/client/test/now_creation_entry_test.dart:173:5)
+<asynchronous suspension>
+#5      main.<anonymous closure> (file:///D:/Project/birdtie/apps/client/test/now_creation_entry_test.dart:339:5)
+<asynchronous suspension>
+#6      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#7      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1952:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///D:/Project/birdtie/apps/client/test/now_creation_entry_test.dart line 173
+The test description was:
+  已提交保存晚返回不能关闭另一个页面或恢复旧草稿
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:06 +6 -3: D:/Project/birdtie/apps/client/test/now_creation_entry_test.dart: 已提交保存晚返回不能关闭另一个页面或恢复旧草稿 [E]
+  Test failed. See exception logs above.
+  The test description was: 已提交保存晚返回不能关闭另一个页面或恢复旧草稿
+  
+00:06 +6 -3: D:/Project/birdtie/apps/client/test/now_creation_entry_test.dart: 不确定旧保存须读核查并明确再次确认，返回检查不新增草稿
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following TestFailure was thrown running a test:
+Expected: exactly one matching candidate
+  Actual: _TextWidgetFinder:<Found 0 widgets with text "检查私人草稿": []>
+   Which: means none were found but one was expected
+
+When the exception was thrown, this was the stack:
+#4      _CreationFixture.save (file:///D:/Project/birdtie/apps/client/test/now_creation_entry_test.dart:173:5)
+<asynchronous suspension>
+#5      main.<anonymous closure> (file:///D:/Project/birdtie/apps/client/test/now_creation_entry_test.dart:363:5)
+<asynchronous suspension>
+#6      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#7      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1952:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///D:/Project/birdtie/apps/client/test/now_creation_entry_test.dart line 173
+The test description was:
+  不确定旧保存须读核查并明确再次确认，返回检查不新增草稿
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:06 +6 -4: D:/Project/birdtie/apps/client/test/now_creation_entry_test.dart: 不确定旧保存须读核查并明确再次确认，返回检查不新增草稿 [E]
+  Test failed. See exception logs above.
+  The test description was: 不确定旧保存须读核查并明确再次确认，返回检查不新增草稿
+  
+00:06 +6 -4: D:/Project/birdtie/apps/client/test/now_creation_entry_test.dart: 社群组织只按需读取，复用指定源和借用client且关闭草稿不关闭连接
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following StateError was thrown running a test:
+Bad state: No element
+
+When the exception was thrown, this was the stack:
+#0      Iterable.single (dart:core/iterable.dart:694:25)
+#1      WidgetController.element (package:flutter_test/src/controller.dart:888:30)
+#2      WidgetController.ensureVisible (package:flutter_test/src/controller.dart:2389:32)
+#3      _CreationFixture.tapSheet (file:///D:/Project/birdtie/apps/client/test/now_creation_entry_test.dart:194:13)
+<asynchronous suspension>
+#4      main.<anonymous closure> (file:///D:/Project/birdtie/apps/client/test/now_creation_entry_test.dart:387:5)
+<asynchronous suspension>
+#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1952:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+The test description was:
+  社群组织只按需读取，复用指定源和借用client且关闭草稿不关闭连接
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:06 +6 -5: D:/Project/birdtie/apps/client/test/now_creation_entry_test.dart: 社群组织只按需读取，复用指定源和借用client且关闭草稿不关闭连接 [E]
+  Test failed. See exception logs above.
+  The test description was: 社群组织只按需读取，复用指定源和借用client且关闭草稿不关闭连接
+  
+00:06 +6 -5: D:/Project/birdtie/apps/client/test/now_creation_entry_test.dart: 按需上下文401走共用认证边界一次，不继续读取组织或自动保存
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following StateError was thrown running a test:
+Bad state: No element
+
+When the exception was thrown, this was the stack:
+#0      Iterable.single (dart:core/iterable.dart:694:25)
+#1      WidgetController.element (package:flutter_test/src/controller.dart:888:30)
+#2      WidgetController.ensureVisible (package:flutter_test/src/controller.dart:2389:32)
+#3      _CreationFixture.tapSheet (file:///D:/Project/birdtie/apps/client/test/now_creation_entry_test.dart:194:13)
+<asynchronous suspension>
+#4      main.<anonymous closure> (file:///D:/Project/birdtie/apps/client/test/now_creation_entry_test.dart:422:5)
+<asynchronous suspension>
+#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1952:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+The test description was:
+  按需上下文401走共用认证边界一次，不继续读取组织或自动保存
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:06 +6 -6: D:/Project/birdtie/apps/client/test/now_creation_entry_test.dart: 按需上下文401走共用认证边界一次，不继续读取组织或自动保存 [E]
+  Test failed. See exception logs above.
+  The test description was: 按需上下文401走共用认证边界一次，不继续读取组织或自动保存
+  
+00:06 +6 -6: Some tests failed.
+
+Failing tests:
+  D:/Project/birdtie/apps/client/test/now_creation_entry_test.dart: cityABA 同步退休私人草稿，不能因返回原值复活保存
+  D:/Project/birdtie/apps/client/test/now_creation_entry_test.dart: 不确定旧保存须读核查并明确再次确认，返回检查不新增草稿
+  D:/Project/birdtie/apps/client/test/now_creation_entry_test.dart: 动态入口打开原私人编辑器；仅明确保存写 Moment，不发布或查询
+  D:/Project/birdtie/apps/client/test/now_creation_entry_test.dart: 已提交保存晚返回不能关闭另一个页面或恢复旧草稿
+  ... and 2 more

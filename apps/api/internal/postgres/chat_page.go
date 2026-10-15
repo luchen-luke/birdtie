@@ -40,7 +40,7 @@ const chatPageVisibleSQL = `WITH visible AS MATERIALIZED (
     SELECT cursor.created_at,cursor.id FROM conversation_messages cursor
     WHERE cursor.id=cms.last_read_message_id))) AS unread_count,
  COALESCE(left(regexp_replace(last.body,E'[\\r\\n]+',' ','g'),80),'') AS preview,
- COALESCE(last.created_at,cv.created_at) AS sort_at,last.created_at AS last_message_at
+ COALESCE(last.created_at,cv.created_at) AS sort_at,last.created_at AS last_message_at,cv.kind,false AS historical,true AS can_send
  FROM conversations cv
  JOIN connection_requests r ON r.id=cv.request_id AND r.state='accepted'
   AND LEAST(r.sender_account_id,r.recipient_account_id)=LEAST(cv.member_a_account_id,cv.member_b_account_id)
@@ -57,11 +57,11 @@ const chatPageVisibleSQL = `WITH visible AS MATERIALIZED (
  LEFT JOIN user_profiles p ON p.account_id=other.id
  LEFT JOIN LATERAL (SELECT m.body,m.created_at FROM conversation_messages m
   WHERE m.conversation_id=cv.id ORDER BY m.created_at DESC,m.id DESC LIMIT 1) last ON true
- WHERE (cv.member_a_account_id=$1 OR cv.member_b_account_id=$1)
+ WHERE cv.legacy_source_id IS NULL AND (cv.member_a_account_id=$1 OR cv.member_b_account_id=$1)
  AND NOT EXISTS (SELECT 1 FROM account_blocks b
   WHERE (b.blocker_account_id=$1 AND b.blocked_account_id=other.id)
    OR (b.blocker_account_id=other.id AND b.blocked_account_id=$1))
-) `
+ UNION ALL ` + legacySocialVisibleSelect + `) `
 
 func chatPageNativeFailure(err error) error {
 	if err == nil || errors.Is(err, identity.ErrUnauthorized) || errors.Is(err, connection.ErrInvalidPage) ||
@@ -100,14 +100,14 @@ func (s *Store) beginChatPage(ctx context.Context, a ea.Access) (pgx.Tx, error) 
 	}
 	// Do not hold Session across projection/resource waits: a revocation that
 	// commits while loading must be observed by the locked final clock check.
-	if err = checkHumanMomentSession(ctx, tx, a.SessionDigest, a.Actor.ID, s.devPhoneEnabled); err != nil {
+	if err = s.chatPageOriginalSession(ctx, tx, a, false); err != nil {
 		return fail(err)
 	}
 	return tx, nil
 }
 
 func (s *Store) finishChatPage(ctx context.Context, tx pgx.Tx, a ea.Access) error {
-	if err := s.lockHumanMomentSession(ctx, tx, a.SessionDigest, a.Actor.ID); err != nil {
+	if err := s.chatPageOriginalSession(ctx, tx, a, true); err != nil {
 		return chatPageNativeFailure(err)
 	}
 	if err := checkHumanMomentSession(ctx, tx, a.SessionDigest, a.Actor.ID, s.devPhoneEnabled); err != nil {
@@ -122,8 +122,18 @@ func (s *Store) finishChatPage(ctx context.Context, tx pgx.Tx, a ea.Access) erro
 func chatPageConversationScan(row pgx.Row) (connection.Conversation, time.Time, error) {
 	var item connection.Conversation
 	var sortAt time.Time
+	var historical, canSend bool
 	err := row.Scan(&item.ID, &item.OtherAccountID, &item.OtherName, &item.CreatedAt,
-		&item.LastReadAt, &item.UnreadCount, &item.LastMessagePreview, &sortAt, &item.Avatar, &item.LastMessageAt)
+		&item.LastReadAt, &item.UnreadCount, &item.LastMessagePreview, &sortAt, &item.Avatar, &item.LastMessageAt, &item.Kind, &historical, &canSend)
+	if historical {
+		item.Origin = connection.LegacySocialOrigin
+		item.CanSend = &canSend
+		if item.Kind == "PERSONAL_GROUP" {
+			item.OtherAccountID = ""
+		}
+	} else {
+		item.Kind = ""
+	}
 	item.CreatedAt, sortAt = item.CreatedAt.UTC(), sortAt.UTC()
 	if item.LastReadAt != nil {
 		v := item.LastReadAt.UTC()
@@ -134,7 +144,7 @@ func chatPageConversationScan(row pgx.Row) (connection.Conversation, time.Time, 
 
 func chatPageConversation(ctx context.Context, tx pgx.Tx, owner, id string) (connection.Conversation, error) {
 	item, _, err := chatPageConversationScan(tx.QueryRow(ctx, chatPageVisibleSQL+`
- SELECT id,other_id,other_name,created_at,last_read_at,unread_count,preview,sort_at,avatar,last_message_at FROM visible WHERE id=$2`, owner, id))
+ SELECT id,other_id,other_name,created_at,last_read_at,unread_count,preview,sort_at,avatar,last_message_at,kind,historical,can_send FROM visible WHERE id=$2`, owner, id))
 	if errors.Is(err, pgx.ErrNoRows) {
 		return connection.Conversation{}, connection.ErrNotFound
 	}
@@ -187,7 +197,7 @@ func (s *Store) ListConversationsPage(ctx context.Context, a ea.Access, in conne
 		beforeTime, beforeID = &cursor.Time, &cursor.ID
 	}
 	rows, err := tx.Query(ctx, chatPageVisibleSQL+`
- SELECT id,other_id,other_name,created_at,last_read_at,unread_count,preview,sort_at,avatar,last_message_at
+ SELECT id,other_id,other_name,created_at,last_read_at,unread_count,preview,sort_at,avatar,last_message_at,kind,historical,can_send
  FROM visible WHERE $2::timestamptz IS NULL OR (sort_at,id)<($2::timestamptz,$3::uuid)
  ORDER BY sort_at DESC,id DESC LIMIT $4`, a.Actor.ID, beforeTime, beforeID, in.Limit+1)
 	if err != nil {
@@ -229,6 +239,17 @@ const chatPageMessagesSQL = `SELECT m.id,m.conversation_id,m.sender_account_id,m
  LEFT JOIN human_conversation_images i ON i.message_id=m.id `
 
 func chatPageMessages(ctx context.Context, tx pgx.Tx, owner, id string, cursor *connection.PageCursor, limit int, exactIDs []string) ([]connection.Message, error) {
+	var historical bool
+	if e := tx.QueryRow(ctx, `SELECT legacy_source_id IS NOT NULL FROM conversations WHERE id=$1`, id).Scan(&historical); e != nil {
+		return nil, connection.ErrNotFound
+	}
+	if historical {
+		return legacySocialMessages(ctx, tx, owner, id, cursor, limit, exactIDs)
+	}
+	if cursor != nil && cursor.Version != 1 {
+		return nil, connection.ErrInvalidPage
+	}
+
 	var beforeTime *time.Time
 	var beforeID *string
 	if cursor != nil {
@@ -317,7 +338,7 @@ func (s *Store) ListMessagesPage(ctx context.Context, a ea.Access, id string, in
 	if len(items) > in.Limit {
 		out.Items = items[:in.Limit]
 		oldest := out.Items[len(out.Items)-1]
-		raw, e := connection.EncodePageCursor(connection.PageCursor{Version: 1, OwnerID: a.Actor.ID, ConversationID: id, Time: oldest.CreatedAt, ID: oldest.ID})
+		raw, e := legacySocialCursor(a.Actor.ID, id, oldest)
 		if e != nil {
 			return connection.MessagePage{}, e
 		}
@@ -344,10 +365,13 @@ func (s *Store) ValidateChatPageResponse(ctx context.Context, a ea.Access, ids [
 		return err
 	}
 	defer tx.Rollback(context.Background())
+	if _, err = tx.Exec(ctx, `LOCK TABLE conversations,conversation_member_states,conversation_messages,user_profiles,account_blocks,person_ties IN SHARE MODE`); err != nil {
+		return chatPageNativeFailure(err)
+	}
 	// Finish the captured Session row wait before resolving sensitive sources.
 	// A source withdrawn while that wait is queued must not retain its old
 	// encoded title/name. Final current-clock validation still runs below.
-	if err = s.lockHumanMomentSession(ctx, tx, a.SessionDigest, a.Actor.ID); err != nil {
+	if err = s.chatPageOriginalSession(ctx, tx, a, true); err != nil {
 		return chatPageNativeFailure(err)
 	}
 	if err = checkHumanMomentSession(ctx, tx, a.SessionDigest, a.Actor.ID, s.devPhoneEnabled); err != nil {
@@ -366,7 +390,7 @@ func (s *Store) ValidateChatPageResponse(ctx context.Context, a ea.Access, ids [
 	}
 	validateName := func(v connection.Conversation) error {
 		now, found := current[v.ID]
-		if !found || now.OtherAccountID != v.OtherAccountID || now.OtherName != v.OtherName || !reflect.DeepEqual(now.Avatar, v.Avatar) {
+		if !found || now.OtherAccountID != v.OtherAccountID || now.OtherName != v.OtherName || now.Kind != v.Kind || now.Origin != v.Origin || !reflect.DeepEqual(now.CanSend, v.CanSend) || !reflect.DeepEqual(now.Avatar, v.Avatar) {
 			return connection.ErrConflict
 		}
 		return nil

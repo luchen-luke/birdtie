@@ -1,0 +1,33 @@
+{
+  "exitCode": 0,
+  "version": "162",
+  "mode": "apply",
+  "remoteProgramSHA256": "1bf6addcf67e8a9e5a501e6bae6fab5c93a3e12054b4931a5ca4820f6dbbe63b",
+  "result": {
+    "status": "NATIVE_IMPORT_VERIFIED",
+    "version": "162",
+    "result": {
+      "runId": "c5df0d7c-f361-4275-9838-feb6d1d92352",
+      "status": "COMMITTED",
+      "counts": {
+        "places": 247,
+        "savedItems": 5,
+        "noteLocations": 4,
+        "mediaContexts": 71,
+        "mediaPlaces": 43,
+        "threads": 22,
+        "members": 27,
+        "legs": 5,
+        "threadTombstones": 4
+      },
+      "countsKnown": true,
+      "activated": false,
+      "sourceWrites": 0,
+      "mediaImported": false
+    },
+    "repeatEqual": true,
+    "privateInputsUnchanged": true,
+    "sourceWrites": 0,
+    "otherOwnersLoggedIn": 0
+  }
+}

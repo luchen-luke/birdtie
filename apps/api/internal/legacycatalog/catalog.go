@@ -481,3 +481,6 @@ func placeUUID(source string) string {
 	id[8] = (id[8] & 0x3f) | 0x80
 	return fmt.Sprintf("%x-%x-%x-%x-%x", id[:4], id[4:6], id[6:8], id[8:10], id[10:])
 }
+
+// StablePlaceTargetID retains the original156 Place identity namespace.
+func StablePlaceTargetID(sourceID string) string { return placeUUID(sourceID) }

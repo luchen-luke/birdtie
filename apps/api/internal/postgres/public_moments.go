@@ -56,10 +56,10 @@ func publicMomentReadSQL(withAuthor bool) string {
 		authorColumn = "," + publicMomentAuthorProfileSQL("a")
 	}
 	return `WITH cl AS MATERIALIZED(SELECT clock_timestamp() at)
-SELECT m.id,m.title,m.body,coalesce(p.id::text,''),coalesce(p.name,''),CASE WHEN m.location_precision='none' THEN '' ELSE coalesce(c.id,'') END,m.revision,m.published_at,
- concat_ws(':',birdtie_moment_public_binding(m.id,$2,cl.at),` + momentMediaReadBindingSQL("m") + `,m.xmin::text,a.xmin::text,p.xmin::text,c.xmin::text,` + retainedPlaceReadBindingSQL("p") + authorBinding + `)` + authorColumn + `
+SELECT m.id,m.title,m.body,coalesce(loc.place_id::text,''),coalesce(loc.place_name,''),coalesce(loc.city_id,''),m.revision,m.published_at,
+ concat_ws(':',birdtie_moment_public_binding(m.id,$2,cl.at),` + momentMediaReadBindingSQL("m") + `,m.xmin::text,a.xmin::text` + authorBinding + `)` + authorColumn + `
 FROM moments m JOIN accounts a ON a.id=m.author_account_id
-LEFT JOIN places p ON p.id=m.place_id AND(m.city_id IS NULL OR p.city_id=m.city_id) LEFT JOIN cities c ON c.id=m.city_id CROSS JOIN cl
+LEFT JOIN places p ON p.id=m.place_id AND(m.city_id IS NULL OR p.city_id=m.city_id) LEFT JOIN cities c ON c.id=m.city_id CROSS JOIN cl LEFT JOIN LATERAL birdtie_moment_location_compatibility(m.id,cl.at)loc ON(loc.deadline IS NULL OR loc.deadline>=cl.at+interval '60 seconds')
 WHERE m.id=$1 AND m.status='published' AND m.visibility='public'
 AND m.author_confirmed_at IS NOT NULL AND m.published_at IS NOT NULL
 AND m.author_confirmed_at<=m.published_at AND m.published_at<=cl.at

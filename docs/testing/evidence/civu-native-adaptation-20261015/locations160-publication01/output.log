@@ -1,0 +1,29 @@
+Flutter assets will be downloaded from https://storage.flutter-io.cn. Make sure you trust this source!
+00:00 +0: loading D:/Project/birdtie/apps/client/test/moment_publication_controller_test.dart
+00:00 +0: D:/Project/birdtie/apps/client/test/moment_publication_controller_test.dart: 旧公开入口展示完整多地点并使用最短来源期限
+00:00 +1: D:/Project/birdtie/apps/client/test/moment_publication_controller_test.dart: 同主体重选目标使旧权威结果显示失效
+00:00 +2: D:/Project/birdtie/apps/client/test/moment_publication_controller_test.dart: 组织工作区即使沿用个人令牌也不读个人预览、状态或写入
+00:00 +3: D:/Project/birdtie/apps/client/test/moment_publication_controller_test.dart: 组织往返后同令牌的迟到个人预览不回流
+00:00 +4: D:/Project/birdtie/apps/client/test/moment_publication_controller_test.dart: 迟到公开提交在组织切换后不报告个人成功或恢复批准
+00:00 +5: D:/Project/birdtie/apps/client/test/moment_publication_controller_test.dart: 提交响应丢失后读取权威状态，不把已公开说成私人草稿
+00:00 +6: D:/Project/birdtie/apps/client/test/moment_publication_controller_test.dart: 只有具体预览和勾选确认才提交原三个字段
+00:00 +7: D:/Project/birdtie/apps/client/test/moment_publication_controller_test.dart: 迟到预览和已观测账号ABA不能恢复旧批准
+00:00 +8: D:/Project/birdtie/apps/client/test/moment_publication_controller_test.dart: 来源字段、错地点、失效预览、未知响应均拒绝
+00:00 +8 -1: D:/Project/birdtie/apps/client/test/moment_publication_controller_test.dart: 来源字段、错地点、失效预览、未知响应均拒绝 [E]
+  Expected: null
+    Actual: <Instance of 'MomentPublicPreview'>
+  title
+  
+  package:matcher                                     expect
+  package:flutter_test/src/widget_tester.dart 473:18  expect
+  test\moment_publication_controller_test.dart 300:7  main.<fn>
+  
+00:00 +8 -1: D:/Project/birdtie/apps/client/test/moment_publication_controller_test.dart: 提交不明不自动重试，旧版本不能再提交
+00:00 +9 -1: D:/Project/birdtie/apps/client/test/moment_publication_controller_test.dart: 撤回先读本人公开版本，再DELETE原revision
+00:00 +10 -1: D:/Project/birdtie/apps/client/test/moment_publication_controller_test.dart: 迟到提交在主体变化后不报告成功
+00:00 +11 -1: D:/Project/birdtie/apps/client/test/moment_publication_sheet_test.dart: 公开确认展示内容和后果，取消不写入，大字小屏无溢出
+00:00 +12 -1: D:/Project/birdtie/apps/client/test/moment_publication_sheet_test.dart: 重新加载具体版本清除勾选批准
+00:00 +13 -1: Some tests failed.
+
+Failing tests:
+  D:/Project/birdtie/apps/client/test/moment_publication_controller_test.dart: 来源字段、错地点、失效预览、未知响应均拒绝

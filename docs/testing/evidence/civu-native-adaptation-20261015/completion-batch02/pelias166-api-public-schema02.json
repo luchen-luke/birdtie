@@ -1,0 +1,38 @@
+{
+  "sshExitCode": 0,
+  "stderrBytes": 0,
+  "remoteProgramSHA256": "4e11a98099e1830417d9b64d6c92f003e43a44e85d74edf0bd4fc9d50b28611d",
+  "result": {
+    "mode": "READ_ONLY",
+    "publicPackage": "pelias-config",
+    "accessLogSchema": [
+      {
+        "packageFile": "pelias-config/config/defaults.json",
+        "line": 37,
+        "publicCode": [
+          "  },",
+          "  \"api\": {",
+          "    \"accessLog\": \"common\",",
+          "    \"host\": \"http://pelias.mapzen.com/\",",
+          "    \"indexName\": \"pelias\",",
+          "    \"version\": \"1.0\","
+        ]
+      },
+      {
+        "packageFile": "pelias-config/test/expected-deep.json",
+        "line": 42,
+        "publicCode": [
+          "  },",
+          "  \"api\": {",
+          "    \"accessLog\": \"common\",",
+          "    \"indexName\": \"pelias\",",
+          "    \"host\": \"http://pelias.mapzen.com/\",",
+          "    \"version\": \"1.0\","
+        ]
+      }
+    ],
+    "serviceMutations": 0,
+    "sourceWrites": 0,
+    "nativeDatabaseWrites": 0
+  }
+}

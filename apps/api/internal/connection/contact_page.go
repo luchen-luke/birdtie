@@ -136,7 +136,7 @@ func ContactFollowRow(f follow.Record) (string, time.Time, bool) {
 	return f.ID, f.CreatedAt, e == nil && n == f.Target && ValidChatPageID(f.Target.ID) && f.ValidMedia()
 }
 func ContactRequestRow(r Request, owner string) (string, time.Time, bool) {
-	valid := ValidChatPageID(r.OtherAccountID) && r.OtherAccountID != owner && (r.Direction == "incoming" || r.Direction == "outgoing") && (r.Scope == "friend" || r.Scope == "conversation") && validContactTime(r.ExpiresAt)
+	valid := ValidChatPageID(r.OtherAccountID) && r.OtherAccountID != owner && (r.Direction == "incoming" || r.Direction == "outgoing") && (r.Scope == "friend" || r.Scope == "conversation") && (validContactTime(r.ExpiresAt) || r.Origin == LegacySocialOrigin && r.ExpiresAt.IsZero())
 	switch r.State {
 	case "pending", "accepted", "declined", "withdrawn", "expired":
 	default:

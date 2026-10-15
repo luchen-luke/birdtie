@@ -1,0 +1,26 @@
+{
+  "sshExitCode": 0,
+  "stderrBytes": 0,
+  "remoteProgramSHA256": "a6f0449d1372974b7055cef7ef5d2be06a8f03e99a9d05564a92dae0a380b7da",
+  "result": {
+    "mode": "READ_ONLY",
+    "validationLines": [
+      {
+        "keys": [
+          "api",
+          "accessLog"
+        ],
+        "reasons": [
+          "must be a string"
+        ],
+        "lineLength": 39,
+        "quotedSafeKeys": [
+          "api.accessLog"
+        ]
+      }
+    ],
+    "serviceMutations": 0,
+    "sourceWrites": 0,
+    "nativeDatabaseWrites": 0
+  }
+}

@@ -68,6 +68,8 @@ func historyPageSQLFromBase(base string) string {
  payload AS MATERIALIZED(SELECT coalesce(jsonb_agg(jsonb_build_object('id',r.id,'title',r.title,'excerpt',r.excerpt,'revision',r.revision,'publishedAt',r.published_at,'authorId',r.author_public_profile->'accountId','authorPublicProfile',r.author_public_profile) ORDER BY r.published_at DESC,r.id DESC),'[]'::jsonb) items FROM page_rows r)
  SELECT clock.at,bound.asof,
  least(coalesce($8::timestamptz,bound.asof+interval '2 minutes'),bound.asof+interval '2 minutes',p.expires_at,c.expires_at,` + currentRetainedPlaceDeadlineSQL("p", "clock.at") + `,
+ (SELECT min(location.deadline) FROM recent r CROSS JOIN LATERAL birdtie_moment_locations_public(r.id,clock.at) location
+   WHERE location.kind='PLACE' AND location.precision='place' AND location.place_id=t.id),
  (SELECT least(expires_at,idle_expires_at) FROM session_source)),
  t.city_id,(SELECT count(*) FROM recent),payload.items,
  jsonb_build_array(p.id,p.xmin::text,c.id,c.xmin::text,` + retainedPlaceReadBindingSQL("p") + `,

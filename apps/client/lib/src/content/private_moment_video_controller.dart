@@ -5,6 +5,7 @@ import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:video_player/video_player.dart';
+import 'moment_media_context_api.dart';
 import 'video_material_player_stub.dart'
     if (dart.library.io) 'video_material_player_io.dart'
     if (dart.library.js_interop) 'video_material_player_web.dart';
@@ -74,6 +75,12 @@ class PrivateMomentVideoController extends ChangeNotifier {
   final Listenable identityChanges;
   final http.Client _client;
   final bool _ownsClient;
+  MomentMediaContextAPI get mediaContextAPI => MomentMediaContextAPI(
+    client: _client,
+    baseUrl: apiBaseUrl,
+    authorizationHeader: authorizationHeader,
+    current: () => current,
+  );
   final String? _token, _owner;
   bool _disposed = false, _retired = false;
   int _epoch = 0;

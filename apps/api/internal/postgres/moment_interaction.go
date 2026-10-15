@@ -517,7 +517,7 @@ func inboxManagementMembers(ctx context.Context, f humanWriteFrame, in content.I
 	if e := f.tx.QueryRow(ctx, `SELECT xmin::text FROM accounts WHERE id=$1 AND account_type='person' AND status='active'`, f.a.ID).Scan(&principal); e != nil {
 		return nil, "", identity.ErrControlChanged
 	}
-	rows, e := f.tx.Query(ctx, `SELECT i.id,i.xmin::text FROM inbox_items i LEFT JOIN native_notification_decisions d ON d.id=i.routing_decision_id WHERE i.recipient_account_id=$1 AND i.resource_type<>'conversation_message' AND `+inboxVisibility+` AND i.created_at<=$2 AND($3='' OR i.category=$3) AND(NOT $4::boolean OR i.read_at IS NULL) AND($5<>'DELETE_ITEM' OR i.id=nullif($6,'')::uuid) AND($5<>'CLEAR_READ' OR(i.read_at IS NOT NULL AND i.read_at<=$2)) AND($5<>'MARK_ALL_READ' OR i.read_at IS NULL) ORDER BY i.id FOR UPDATE OF i`, f.a.ID, cutoff, in.Category, in.UnreadOnly, in.Action, in.ItemID)
+	rows, e := f.tx.Query(ctx, `SELECT i.id,i.xmin::text FROM inbox_items i LEFT JOIN native_notification_decisions d ON d.id=i.routing_decision_id WHERE i.recipient_account_id=$1 AND i.resource_type<>'conversation_message' AND(i.origin='NATIVE' OR $5='DELETE_ITEM') AND `+inboxVisibility+` AND i.created_at<=$2 AND($3='' OR i.category=$3) AND(NOT $4::boolean OR i.read_at IS NULL) AND($5<>'DELETE_ITEM' OR i.id=nullif($6,'')::uuid) AND($5<>'CLEAR_READ' OR(i.read_at IS NOT NULL AND i.read_at<=$2)) AND($5<>'MARK_ALL_READ' OR i.read_at IS NULL) ORDER BY i.id FOR UPDATE OF i`, f.a.ID, cutoff, in.Category, in.UnreadOnly, in.Action, in.ItemID)
 	if e != nil {
 		return nil, "", identity.ErrControlUnavailable
 	}

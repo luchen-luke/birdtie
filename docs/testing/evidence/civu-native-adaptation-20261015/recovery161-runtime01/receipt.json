@@ -1,0 +1,52 @@
+{
+  "exitCode": 0,
+  "scriptSHA256": "bc7c04541ec973d28edb81fa1b14e4b9d3049236d2d88dbfccfbcfcd880ba29a",
+  "result": {
+    "status": "HEIF_CONVERTER_INSTALLED",
+    "packageVersion": "1.17.6-1ubuntu4.9",
+    "binary": "/usr/bin/heif-convert",
+    "binarySHA256": "0cd22792b8f42a0027d679207af3d030171b5732c0459a07dc4cb1cf6a53f4de",
+    "libraries": {
+      "/lib/x86_64-linux-gnu/libheif.so.1": {
+        "sha256": "52a1f6dc6df853f411df20574819b4f7b773c827f34c990b963154176c04e620",
+        "bytes": 789056
+      },
+      "/lib/x86_64-linux-gnu/libjpeg.so.8": {
+        "sha256": "ac09f2cd6f8a3b8e3cb123999ce275f9bcbe31c6cf9e20212c8f297772591d15",
+        "bytes": 534592
+      },
+      "/lib/x86_64-linux-gnu/libpng16.so.16": {
+        "sha256": "89c0c6569a8c00480d451401ad4c0a74942e62dc57f229a970592fdc5adb29e8",
+        "bytes": 223304
+      },
+      "/lib/x86_64-linux-gnu/libstdc++.so.6": {
+        "sha256": "1fd75fe70354a416d75aef22bcae68c47bd25d20e2d0568c30b1a9838cf62f11",
+        "bytes": 2592224
+      },
+      "/lib/x86_64-linux-gnu/libgcc_s.so.1": {
+        "sha256": "d93224d2b0dab4247598be683adca02f5cf00586f99c187579cd7e92058fb7cb",
+        "bytes": 183024
+      },
+      "/lib/x86_64-linux-gnu/libc.so.6": {
+        "sha256": "3a15d66867d83762c7f2f1e37359cb8f6c5743edb369c65285cb0b1c4f7498bf",
+        "bytes": 2129424
+      },
+      "/lib/x86_64-linux-gnu/libsharpyuv.so.0": {
+        "sha256": "b2e62799e5dbd783a0671d53be99f7c6489567a5332a1e8f471e6bb250f294dc",
+        "bytes": 22672
+      },
+      "/lib/x86_64-linux-gnu/libz.so.1": {
+        "sha256": "86200da370f20476a2507e9097a789b5ef97269b4ca8d5e164ad82dab9d99892",
+        "bytes": 113000
+      },
+      "/lib/x86_64-linux-gnu/libm.so.6": {
+        "sha256": "fce00b6f25f459cf4ae0b7fae4257909a1a8a86f9149e7c029a5d617baf1ccd0",
+        "bytes": 952616
+      }
+    },
+    "databaseWrites": 0,
+    "serviceRestarted": false
+  },
+  "stderrBytes": 0,
+  "stderrSHA256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+}

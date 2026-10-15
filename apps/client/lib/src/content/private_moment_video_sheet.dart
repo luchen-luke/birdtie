@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 import '../app/birdtie_app_bar.dart';
 import 'private_moment_video_controller.dart';
+import 'moment_media_context_view.dart';
 
 class PrivateMomentVideoSheet extends StatefulWidget {
   const PrivateMomentVideoSheet({super.key, required this.controller});
@@ -119,6 +120,13 @@ class _PrivateMomentVideoSheetState extends State<PrivateMomentVideoSheet>
                     ? () => unawaited(c.load())
                     : null,
                 child: const Text('重新读取'),
+              ),
+              MomentMediaContextView(
+                api: c.mediaContextAPI,
+                momentID: c.momentID,
+                changes: c,
+                assetKind: 'VIDEO',
+                visibleAssetIDs: () => c.items.map((v) => v.id).toSet(),
               ),
             ],
           ],

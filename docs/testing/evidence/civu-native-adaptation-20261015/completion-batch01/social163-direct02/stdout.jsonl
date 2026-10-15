@@ -1,0 +1,24 @@
+{"Time":"2026-10-15T19:04:03.640446+08:00","Action":"start","Package":"github.com/birdtie/birdtie/apps/api/internal/legacysocial"}
+{"Time":"2026-10-15T19:04:04.101907+08:00","Action":"run","Package":"github.com/birdtie/birdtie/apps/api/internal/legacysocial","Test":"TestLegacySocialBuildProtectedEightTableProjection"}
+{"Time":"2026-10-15T19:04:04.101907+08:00","Action":"output","Package":"github.com/birdtie/birdtie/apps/api/internal/legacysocial","Test":"TestLegacySocialBuildProtectedEightTableProjection","Output":"=== RUN   TestLegacySocialBuildProtectedEightTableProjection\n"}
+{"Time":"2026-10-15T19:04:08.0529705+08:00","Action":"output","Package":"github.com/birdtie/birdtie/apps/api/internal/legacysocial","Test":"TestLegacySocialBuildProtectedEightTableProjection","Output":"--- PASS: TestLegacySocialBuildProtectedEightTableProjection (3.95s)\n"}
+{"Time":"2026-10-15T19:04:08.0529705+08:00","Action":"pass","Package":"github.com/birdtie/birdtie/apps/api/internal/legacysocial","Test":"TestLegacySocialBuildProtectedEightTableProjection","Elapsed":3.95}
+{"Time":"2026-10-15T19:04:08.0529705+08:00","Action":"output","Package":"github.com/birdtie/birdtie/apps/api/internal/legacysocial","Output":"PASS\n"}
+{"Time":"2026-10-15T19:04:08.0640362+08:00","Action":"output","Package":"github.com/birdtie/birdtie/apps/api/internal/legacysocial","Output":"ok  \tgithub.com/birdtie/birdtie/apps/api/internal/legacysocial\t4.424s\n"}
+{"Time":"2026-10-15T19:04:08.0640362+08:00","Action":"pass","Package":"github.com/birdtie/birdtie/apps/api/internal/legacysocial","Elapsed":4.424}
+{"Time":"2026-10-15T19:04:13.2007432+08:00","Action":"start","Package":"github.com/birdtie/birdtie/apps/api/internal/postgres"}
+{"Time":"2026-10-15T19:04:15.5433078+08:00","Action":"run","Package":"github.com/birdtie/birdtie/apps/api/internal/postgres","Test":"TestLegacySocialAuthenticatedProtectedImageDecode"}
+{"Time":"2026-10-15T19:04:15.5433078+08:00","Action":"output","Package":"github.com/birdtie/birdtie/apps/api/internal/postgres","Test":"TestLegacySocialAuthenticatedProtectedImageDecode","Output":"=== RUN   TestLegacySocialAuthenticatedProtectedImageDecode\n"}
+{"Time":"2026-10-15T19:04:16.8235274+08:00","Action":"output","Package":"github.com/birdtie/birdtie/apps/api/internal/postgres","Test":"TestLegacySocialAuthenticatedProtectedImageDecode","Output":"--- PASS: TestLegacySocialAuthenticatedProtectedImageDecode (1.28s)\n"}
+{"Time":"2026-10-15T19:04:16.8235274+08:00","Action":"pass","Package":"github.com/birdtie/birdtie/apps/api/internal/postgres","Test":"TestLegacySocialAuthenticatedProtectedImageDecode","Elapsed":1.28}
+{"Time":"2026-10-15T19:04:16.8235274+08:00","Action":"output","Package":"github.com/birdtie/birdtie/apps/api/internal/postgres","Output":"PASS\n"}
+{"Time":"2026-10-15T19:04:16.8331659+08:00","Action":"output","Package":"github.com/birdtie/birdtie/apps/api/internal/postgres","Output":"ok  \tgithub.com/birdtie/birdtie/apps/api/internal/postgres\t3.632s\n"}
+{"Time":"2026-10-15T19:04:16.8331659+08:00","Action":"pass","Package":"github.com/birdtie/birdtie/apps/api/internal/postgres","Elapsed":3.632}
+{"Time":"2026-10-15T19:04:20.2588988+08:00","Action":"start","Package":"github.com/birdtie/birdtie/apps/api/internal/httpapi"}
+{"Time":"2026-10-15T19:04:20.2588988+08:00","Action":"start","Package":"github.com/birdtie/birdtie/apps/api/cmd/legacy-social-import"}
+{"Time":"2026-10-15T19:04:20.2588988+08:00","Action":"output","Package":"github.com/birdtie/birdtie/apps/api/cmd/legacy-social-import","Output":"?   \tgithub.com/birdtie/birdtie/apps/api/cmd/legacy-social-import\t[no test files]\n"}
+{"Time":"2026-10-15T19:04:20.2588988+08:00","Action":"skip","Package":"github.com/birdtie/birdtie/apps/api/cmd/legacy-social-import","Elapsed":0}
+{"Time":"2026-10-15T19:04:24.4407031+08:00","Action":"output","Package":"github.com/birdtie/birdtie/apps/api/internal/httpapi","Output":"testing: warning: no tests to run\n"}
+{"Time":"2026-10-15T19:04:24.4407031+08:00","Action":"output","Package":"github.com/birdtie/birdtie/apps/api/internal/httpapi","Output":"PASS\n"}
+{"Time":"2026-10-15T19:04:24.442735+08:00","Action":"output","Package":"github.com/birdtie/birdtie/apps/api/internal/httpapi","Output":"ok  \tgithub.com/birdtie/birdtie/apps/api/internal/httpapi\t4.184s [no tests to run]\n"}
+{"Time":"2026-10-15T19:04:24.442735+08:00","Action":"pass","Package":"github.com/birdtie/birdtie/apps/api/internal/httpapi","Elapsed":4.184}

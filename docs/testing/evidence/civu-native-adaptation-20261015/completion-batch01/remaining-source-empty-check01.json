@@ -1,0 +1,16 @@
+{
+  "sshExitCode": 0,
+  "stderrBytes": 0,
+  "stderrSHA256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "result": {
+    "status": "READONLY_EMPTY_TABLE_AND_GEO_CAPACITY_CHECK",
+    "themeMapEntrySourcesSnapshot": 0,
+    "themeMapEntrySourcesStoppedSource": 0,
+    "sameEmptySourceRows": true,
+    "hostPhysicalMemoryBytes": 3669172224,
+    "retainedPeliasBytes": 32088542275,
+    "sourceWrites": 0,
+    "serviceMutations": 0,
+    "privateValuesOmitted": true
+  }
+}

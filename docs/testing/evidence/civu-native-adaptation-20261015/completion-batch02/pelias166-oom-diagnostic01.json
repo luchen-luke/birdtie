@@ -1,0 +1,20 @@
+{
+  "sshExitCode": 0,
+  "stderrBytes": 0,
+  "programSHA256": "f87e8cbe2b8b19f035a412a90546d6183bc20847cbe0df961f458ee1a68c9ba9",
+  "result": {
+    "mode": "READ_ONLY",
+    "serviceMutations": 0,
+    "oomReasons": {
+      "Cannot allocate memory": 1
+    },
+    "stackMethods": [],
+    "jvmHeapValues": [
+      "512m"
+    ],
+    "mlockWarning": true,
+    "stateOOMKilled": false,
+    "memoryLimitBytes": 1073741824,
+    "pidsLimit": 256
+  }
+}

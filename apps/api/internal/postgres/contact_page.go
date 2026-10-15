@@ -21,7 +21,7 @@ var _ connection.ContactPagedStore = (*Store)(nil)
 // These projections preserve the original row shapes, friend source proof,
 // bilateral Block and profile-field policy. LIMIT is applied in SQL after ACLs.
 const contactTiesBaseSQL = `SELECT t.id,other.id,
-        CASE WHEN birdtie_agent_profile_field_allowed(other.id,$1::uuid,'displayName')
+        CASE WHEN other.status='active' AND birdtie_profile_visible_to(other.id,$1::uuid) AND birdtie_agent_profile_field_allowed(other.id,$1::uuid,'displayName')
             THEN COALESCE(NULLIF(p.display_name,''),NULLIF(other.handle,''),'Birdtie 成员')
             ELSE 'Birdtie 成员' END,t.created_at,birdtie_person_avatar_metadata(other.id,$1::uuid)
         FROM person_ties t
@@ -32,7 +32,7 @@ const contactTiesBaseSQL = `SELECT t.id,other.id,
         JOIN accounts own ON own.id=$1 AND own.account_type='person' AND own.status='active'
         JOIN accounts other ON other.id=CASE WHEN t.person_a_account_id=$1
             THEN t.person_b_account_id ELSE t.person_a_account_id END
-            AND other.account_type='person' AND other.status='active'
+            AND other.account_type='person' AND (other.status='active' OR source_request.legacy_source_id IS NOT NULL)
         LEFT JOIN user_profiles p ON p.account_id=other.id
         WHERE t.status='active' AND (t.person_a_account_id=$1 OR t.person_b_account_id=$1)
           AND NOT EXISTS (SELECT 1 FROM account_blocks b
@@ -48,7 +48,7 @@ const contactFollowsBaseSQL = `SELECT f.id,
 			WHEN f.community_id IS NOT NULL THEN 'COMMUNITY' ELSE 'BUSINESS' END,
 		COALESCE(f.person_account_id,f.organization_id,f.community_id,f.business_id)::text,
 		CASE WHEN f.person_account_id IS NOT NULL THEN
-            CASE WHEN birdtie_agent_profile_field_allowed(person.id,$1::uuid,'displayName')
+            CASE WHEN birdtie_profile_visible_to(person.id,$1::uuid) AND birdtie_agent_profile_field_allowed(person.id,$1::uuid,'displayName')
                 THEN COALESCE(NULLIF(p.display_name,''),NULLIF(person.handle,''),'Birdtie 成员')
                 ELSE 'Birdtie 成员' END
             ELSE COALESCE(o.name,c.name,b.name,'Birdtie 成员') END,
@@ -68,7 +68,8 @@ const contactFollowsBaseSQL = `SELECT f.id,
 			AND c.publication_status='published' AND c.visibility='public'
 		LEFT JOIN businesses b ON b.id=f.business_id AND b.status='active' AND b.claim_status='verified'
 		WHERE f.follower_account_id=$1 AND
-		 ((p.account_id IS NOT NULL AND NOT EXISTS(SELECT 1 FROM account_blocks block WHERE
+		 ((f.legacy_source_id IS NOT NULL AND f.person_account_id IS NOT NULL AND NOT EXISTS(SELECT 1 FROM account_blocks block WHERE (block.blocker_account_id=$1 AND block.blocked_account_id=f.person_account_id) OR(block.blocker_account_id=f.person_account_id AND block.blocked_account_id=$1))) OR
+ (p.account_id IS NOT NULL AND NOT EXISTS(SELECT 1 FROM account_blocks block WHERE
 			(block.blocker_account_id=$1 AND block.blocked_account_id=person.id) OR
 			(block.blocker_account_id=person.id AND block.blocked_account_id=$1))) OR
 		  (o.id IS NOT NULL AND EXISTS(SELECT 1 FROM accounts a WHERE a.id=o.account_id AND a.status='active')) OR
@@ -98,8 +99,8 @@ const contactRequestsBaseSQL = `SELECT r.id,
             r.scope,
             CASE WHEN r.state = 'pending' AND r.expires_at <= clock_timestamp()
                  THEN 'expired' ELSE r.state END,
-            COALESCE(cv.id::text, ''), r.expires_at, r.created_at,COALESCE(pb.disposition,''),CASE WHEN pb.disposition='SCREEN' AND r.state='pending' AND r.expires_at>clock_timestamp() THEN 'PENDING_REVIEW' ELSE '' END,
-            birdtie_person_avatar_metadata(other.id,$1::uuid)
+            COALESCE(cv.id::text, ''), COALESCE(r.expires_at,'0001-01-01T00:00:00Z'::timestamptz), r.created_at,COALESCE(pb.disposition,''),CASE WHEN pb.disposition='SCREEN' AND r.state='pending' AND r.expires_at>clock_timestamp() THEN 'PENDING_REVIEW' ELSE '' END,
+            birdtie_person_avatar_metadata(other.id,$1::uuid),CASE WHEN r.legacy_source_id IS NOT NULL THEN 'LEGACY_IMPORT' ELSE '' END
         FROM connection_requests r
         JOIN accounts other ON other.id = CASE WHEN r.sender_account_id = $1
             THEN r.recipient_account_id ELSE r.sender_account_id END
@@ -185,7 +186,7 @@ func followPageSourceBinding(value any) (string, error) {
 }
 func scanContactRequest(r pgx.Row) (connection.Request, error) {
 	var v connection.Request
-	e := r.Scan(&v.ID, &v.Direction, &v.OtherAccountID, &v.OtherName, &v.CityID, &v.Note, &v.Scope, &v.State, &v.ConversationID, &v.ExpiresAt, &v.CreatedAt, &v.PolicyDisposition, &v.ScreeningStatus, &v.Avatar)
+	e := r.Scan(&v.ID, &v.Direction, &v.OtherAccountID, &v.OtherName, &v.CityID, &v.Note, &v.Scope, &v.State, &v.ConversationID, &v.ExpiresAt, &v.CreatedAt, &v.PolicyDisposition, &v.ScreeningStatus, &v.Avatar, &v.Origin)
 	v.CreatedAt = v.CreatedAt.UTC()
 	v.ExpiresAt = v.ExpiresAt.UTC()
 	return v, e
@@ -397,7 +398,7 @@ func (s *Store) ValidateContactPageResponse(ctx context.Context, a ea.Access, ki
 }
 
 const contactRequestCurrentSQL = contactRequestsBaseSQL + `
- AND r.id=$2::uuid AND other.status='active'
+ AND r.id=$2::uuid AND (other.status='active' OR r.legacy_source_id IS NOT NULL)
  AND NOT EXISTS(SELECT 1 FROM account_blocks b WHERE
  (b.blocker_account_id=$1 AND b.blocked_account_id=other.id) OR
  (b.blocker_account_id=other.id AND b.blocked_account_id=$1))`

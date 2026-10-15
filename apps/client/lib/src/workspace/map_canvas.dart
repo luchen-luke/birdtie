@@ -501,7 +501,8 @@ class _MapCanvasState extends State<MapCanvas> {
                       item.title == shownEntity.title &&
                       item.subtitle == shownEntity.subtitle &&
                       item.latitude == shownEntity.latitude &&
-                      item.longitude == shownEntity.longitude,
+                      item.longitude == shownEntity.longitude &&
+                      item.sourceVersion == shownEntity.sourceVersion,
                 );
       if (!visible) return;
       if (authorID != null) {

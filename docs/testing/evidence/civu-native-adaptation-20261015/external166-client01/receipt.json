@@ -1,0 +1,49 @@
+{
+  "command": [
+    "D:\\DevTools\\flutter\\bin\\flutter.bat",
+    "test",
+    "--reporter",
+    "expanded",
+    "test/external_location_reference_test.dart",
+    "test/moment_locations_test.dart"
+  ],
+  "exitCode": 1,
+  "sourceStable": true,
+  "sourceBefore": {
+    "lib/src/content/legacy_moment_materials_panel.dart": "4e24aca8eaaaccbff575a25f1ea83e29ae1a0b7652cb4c20cfe33969e16e5b83",
+    "lib/src/content/moment_media_context_api.dart": "3fc99b1d79fdcde4a90977f590253b2f9a0015db9d63a6d26d422653ab49d606",
+    "lib/src/content/moment_media_context_view.dart": "7a957497cdafabc3d2af409ac56edb14b0fcb53fe86dc9f2ec281b81dfe4f51b",
+    "lib/src/content/moment_locations.dart": "ad6cc7e001fdbd0f504be144c0930c2cbb57f0bcf4f5ecea723ab6a0dcd0fd2d",
+    "lib/src/content/private_moment_media_controller.dart": "534ddfef8187e36e6735c5eae05eab1c9d71b6c8d6673a585ecb10e6932ede3a",
+    "lib/src/content/private_moment_media_sheet.dart": "660c590c5baf588e9d21e3c7e7d20a4f8defa217070e1924a8f1010dddd63b3f",
+    "lib/src/content/private_moment_video_controller.dart": "4527b9e394b2bd2b8ded14c275d9a125cdaf359a90adee5ddf95a21f3505c78a",
+    "lib/src/content/private_moment_video_sheet.dart": "1907266b8ef54028d65082cd590cd7cb7a6159af9beba4aca4b43328754f4bb8",
+    "lib/src/workspace/moment_thread_api.dart": "bc867c7556999340f2925830e3c0d5fb4e13441c3be22542fce8b8f344e5ebff",
+    "lib/src/workspace/moment_thread_controller.dart": "82f3b9fc2cdb92cf83d6606c1f318909af9050593bc9dc27861d4d549f07f3cd",
+    "lib/src/workspace/moment_thread_panel.dart": "e66300000fcdec6329572cd4eefd414c9d7e083c0026c4b4ae8fb2d170ef5ae7",
+    "lib/src/workspace/moment_thread_pending_store.dart": "75c987579ef2e40864c642caefc5044da55cbbb9822391ba81af725df0e1e0c3",
+    "lib/src/workspace/map_workspace.dart": "2d501baac98fdc19bab898de0eb48868372f745076c3650a5ad816c7e561a00b",
+    "lib/src/legacy/legacy_shell.dart": "4d8a6f7196e48f1e0da5d1a5ba695da49fd3fb819b5ed76614e4fba0953a0982",
+    "lib/src/workspace/public_moment_history_api.dart": "8d5a60ad0a615711559f362d8ced6a0729aff29e8c55d388f0199b467a42ad0e",
+    "lib/src/workspace/legacy_place_reference_page.dart": "159534415257822fa363d91f3736da620b5e322066521622d66ceea7ba12bfad"
+  },
+  "sourceAfter": {
+    "lib/src/content/legacy_moment_materials_panel.dart": "4e24aca8eaaaccbff575a25f1ea83e29ae1a0b7652cb4c20cfe33969e16e5b83",
+    "lib/src/content/moment_media_context_api.dart": "3fc99b1d79fdcde4a90977f590253b2f9a0015db9d63a6d26d422653ab49d606",
+    "lib/src/content/moment_media_context_view.dart": "7a957497cdafabc3d2af409ac56edb14b0fcb53fe86dc9f2ec281b81dfe4f51b",
+    "lib/src/content/moment_locations.dart": "ad6cc7e001fdbd0f504be144c0930c2cbb57f0bcf4f5ecea723ab6a0dcd0fd2d",
+    "lib/src/content/private_moment_media_controller.dart": "534ddfef8187e36e6735c5eae05eab1c9d71b6c8d6673a585ecb10e6932ede3a",
+    "lib/src/content/private_moment_media_sheet.dart": "660c590c5baf588e9d21e3c7e7d20a4f8defa217070e1924a8f1010dddd63b3f",
+    "lib/src/content/private_moment_video_controller.dart": "4527b9e394b2bd2b8ded14c275d9a125cdaf359a90adee5ddf95a21f3505c78a",
+    "lib/src/content/private_moment_video_sheet.dart": "1907266b8ef54028d65082cd590cd7cb7a6159af9beba4aca4b43328754f4bb8",
+    "lib/src/workspace/moment_thread_api.dart": "bc867c7556999340f2925830e3c0d5fb4e13441c3be22542fce8b8f344e5ebff",
+    "lib/src/workspace/moment_thread_controller.dart": "82f3b9fc2cdb92cf83d6606c1f318909af9050593bc9dc27861d4d549f07f3cd",
+    "lib/src/workspace/moment_thread_panel.dart": "e66300000fcdec6329572cd4eefd414c9d7e083c0026c4b4ae8fb2d170ef5ae7",
+    "lib/src/workspace/moment_thread_pending_store.dart": "75c987579ef2e40864c642caefc5044da55cbbb9822391ba81af725df0e1e0c3",
+    "lib/src/workspace/map_workspace.dart": "2d501baac98fdc19bab898de0eb48868372f745076c3650a5ad816c7e561a00b",
+    "lib/src/legacy/legacy_shell.dart": "4d8a6f7196e48f1e0da5d1a5ba695da49fd3fb819b5ed76614e4fba0953a0982",
+    "lib/src/workspace/public_moment_history_api.dart": "8d5a60ad0a615711559f362d8ced6a0729aff29e8c55d388f0199b467a42ad0e",
+    "lib/src/workspace/legacy_place_reference_page.dart": "159534415257822fa363d91f3736da620b5e322066521622d66ceea7ba12bfad"
+  },
+  "logSHA256": "4305a24d1077ca3481c240f89d9c84a342344e10673bfa6c4474c419f9dbd293"
+}

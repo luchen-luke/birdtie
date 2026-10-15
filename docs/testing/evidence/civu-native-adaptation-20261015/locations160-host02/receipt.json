@@ -1,0 +1,25 @@
+{
+  "command": [
+    "D:\\DevTools\\flutter\\bin\\flutter.bat",
+    "test",
+    "test/now_moment_intent_test.dart",
+    "test/now_creation_entry_test.dart",
+    "--reporter",
+    "expanded"
+  ],
+  "cwd": "D:\\Project\\birdtie\\apps\\client",
+  "started": "2026-10-15T09:55:43.784297+00:00",
+  "exitCode": 0,
+  "sourceBefore": {
+    "apps/client/lib/src/workspace/map_workspace.dart": "abfbab6dc008d532ba2fb07e1d8f979a9cd195097650c8a9eba75cc7c12f49b7",
+    "apps/client/lib/src/workspace/now_moment_intent.dart": "04363e03979e84d79edc21bd0c5f163a2fe948521f2e9eceb7bf50eae140d6b3",
+    "apps/client/lib/src/legacy/legacy_shell.dart": "8187972b87cdfcef1aa7279537e2d2424f0d56dc1288d6152e75bf1054244e25"
+  },
+  "sourceAfter": {
+    "apps/client/lib/src/workspace/map_workspace.dart": "abfbab6dc008d532ba2fb07e1d8f979a9cd195097650c8a9eba75cc7c12f49b7",
+    "apps/client/lib/src/workspace/now_moment_intent.dart": "04363e03979e84d79edc21bd0c5f163a2fe948521f2e9eceb7bf50eae140d6b3",
+    "apps/client/lib/src/legacy/legacy_shell.dart": "8187972b87cdfcef1aa7279537e2d2424f0d56dc1288d6152e75bf1054244e25"
+  },
+  "sourceStable": true,
+  "logSHA256": "e19bf7bedfc339687137f874dd6a42d157ec558979d27f7a058c8b24a3ee4bc7"
+}

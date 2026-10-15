@@ -5,6 +5,7 @@ import '../workspace/now_ui_tokens.dart';
 import 'moment_image_header.dart';
 import 'moment_image_picker.dart';
 import 'private_moment_media_controller.dart';
+import 'moment_media_context_view.dart';
 
 class PrivateMomentMediaSheet extends StatefulWidget {
   const PrivateMomentMediaSheet({
@@ -428,6 +429,14 @@ class _PrivateMomentMediaSheetState extends State<PrivateMomentMediaSheet> {
                     fit: BoxFit.contain,
                     cacheWidth: 1536,
                   ),
+                MomentMediaContextView(
+                  api: c.mediaContextAPI,
+                  momentID: c.momentID,
+                  expectedRevision: c.momentRevision,
+                  changes: c,
+                  assetKind: 'IMAGE',
+                  visibleAssetIDs: () => c.images.map((v) => v.id).toSet(),
+                ),
                 const SizedBox(height: 12),
                 const Text(
                   '图片无法用于公开发布或 AI 分析。公开或撤回这条记录会移除其私人图片；普通文字编辑不会自动公开图片。',

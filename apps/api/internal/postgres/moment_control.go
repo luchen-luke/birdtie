@@ -111,11 +111,12 @@ type momentControlSource struct {
 	preserved                      bool
 	materials                      MomentMediaMaterialSnapshot
 	carry                          momentMediaCarry
+	locations                      momentLocationsSnapshot
 }
 
 func momentControlOwnedStamp(ctx context.Context, f humanWriteFrame, id string) (string, error) {
 	var raw string
-	e := f.tx.QueryRow(ctx, `SELECT jsonb_build_array(m.xmin::text,(SELECT jsonb_agg(jsonb_build_array(x.activity_id,x.xmin::text) ORDER BY x.activity_id) FROM moment_activity_links x WHERE x.moment_id=m.id),(SELECT jsonb_agg(jsonb_build_array(x.community_id,x.xmin::text)) FROM moment_community_links x WHERE x.moment_id=m.id),(SELECT jsonb_agg(jsonb_build_array(x.organization_id,x.xmin::text)) FROM moment_organization_links x WHERE x.moment_id=m.id),(SELECT jsonb_build_array(image.photo_id,image.version,image.status,image.sha256,image.xmin::text) FROM public_moment_photos image WHERE image.moment_id=m.id))::text FROM moments m WHERE m.id=$1 AND m.author_account_id=$2`, id, f.a.ID).Scan(&raw)
+	e := f.tx.QueryRow(ctx, `SELECT jsonb_build_array(m.xmin::text,(SELECT jsonb_agg(jsonb_build_array(x.activity_id,x.xmin::text) ORDER BY x.activity_id) FROM moment_activity_links x WHERE x.moment_id=m.id),(SELECT jsonb_agg(jsonb_build_array(x.community_id,x.xmin::text)) FROM moment_community_links x WHERE x.moment_id=m.id),(SELECT jsonb_agg(jsonb_build_array(x.organization_id,x.xmin::text)) FROM moment_organization_links x WHERE x.moment_id=m.id),(SELECT jsonb_build_array(image.photo_id,image.version,image.status,image.sha256,image.xmin::text) FROM public_moment_photos image WHERE image.moment_id=m.id),(SELECT jsonb_build_array(version,xmin::text)FROM moment_location_epochs WHERE moment_id=m.id),(SELECT coalesce(jsonb_agg(jsonb_build_array(l.id,l.revision,l.status,l.position,l.xmin::text)ORDER BY l.id),'[]')FROM moment_location_links l WHERE l.moment_id=m.id AND l.status='ACTIVE'))::text FROM moments m WHERE m.id=$1 AND m.author_account_id=$2`, id, f.a.ID).Scan(&raw)
 	if errors.Is(e, pgx.ErrNoRows) {
 		return "", content.ErrNotFound
 	}
@@ -188,60 +189,7 @@ func momentControlExternal(ctx context.Context, f humanWriteFrame, in content.Mo
 	v := in.Input
 	var deadline *time.Time
 	values := []any{principalStamp}
-	if v.CityID == "" {
-		for _, link := range []*string{v.ActivityID, v.CommunityID, v.OrganizationID} {
-			if link != nil && *link != "" {
-				return "", nil, false, identity.ErrControlInvalid
-			}
-		}
-		if in.Action == "UPDATE" && (len(old.ActivityIDs) != 0 && v.ActivityID == nil || old.CommunityID != "" && v.CommunityID == nil || old.OrganizationID != "" && v.OrganizationID == nil) {
-			return "", nil, false, identity.ErrControlChanged
-		}
-		// Unknown location is an owned-data source, not a synthetic City or a
-		// permission to retain external metadata. Target xmin/revision remains
-		// bound by momentControlReadSource; common clock and final gates follow.
-		values = append(values, "optional-city-v1", old.ID, old.AuthorAccountID)
-	} else {
-		var cityStamp string
-		cityQuery := `SELECT xmin::text,expires_at FROM cities WHERE id=$1 AND publication_status='published' AND(expires_at IS NULL OR expires_at>clock_timestamp())`
-		if in.Action == "PUBLISH" || in.Action == "UPDATE_PUBLIC" {
-			// Keep the chosen city's publication and epoch stable through the
-			// effect, original receipt and final Session/expiry gate. A waiting
-			// lock rechecks the current city row before approving any public write.
-			cityQuery += ` FOR SHARE`
-		}
-		e = f.tx.QueryRow(ctx, cityQuery, v.CityID).Scan(&cityStamp, &deadline)
-		if errors.Is(e, pgx.ErrNoRows) {
-			return "", nil, false, identity.ErrControlChanged
-		}
-		if e != nil {
-			return "", nil, false, identity.ErrControlUnavailable
-		}
-		values = append(values, v.CityID, cityStamp)
-	}
 	preserved := false
-	if v.PlaceID != "" {
-		var stamp string
-		var allowed bool
-		var until *time.Time
-		q := `SELECT concat_ws(':',p.xmin::text,pc.xmin::text,` + retainedPlaceReadBindingSQL("p") + `),($2='' OR p.city_id=$2) AND p.publication_status='published' AND(p.expires_at IS NULL OR p.expires_at>clock_timestamp()) AND pc.publication_status='published' AND(pc.expires_at IS NULL OR pc.expires_at>clock_timestamp()) AND ` + currentRetainedPlaceVisibilitySQL("p", "clock_timestamp()") + `,least(pc.expires_at,` + currentRetainedPlaceDeadlineSQL("p", "clock_timestamp()") + `) FROM places p JOIN cities pc ON pc.id=p.city_id WHERE p.id=$1 FOR SHARE OF p,pc`
-		e = f.tx.QueryRow(ctx, q, v.PlaceID, v.CityID).Scan(&stamp, &allowed, &until)
-		if errors.Is(e, pgx.ErrNoRows) {
-			return "", nil, false, identity.ErrControlChanged
-		}
-		if e != nil {
-			return "", nil, false, identity.ErrControlUnavailable
-		}
-		if !allowed {
-			if in.Action != "UPDATE" || old.Status != "draft" || old.Visibility != "private" || old.CityID != v.CityID || old.PlaceID != v.PlaceID || v.LocationPrecision == "place" {
-				return "", nil, false, identity.ErrControlChanged
-			}
-			preserved = true
-		} else {
-			momentControlAddDeadline(&deadline, until)
-		}
-		values = append(values, stamp, allowed)
-	}
 	for _, slot := range []struct {
 		kind string
 		id   *string
@@ -278,7 +226,7 @@ func momentControlExternal(ctx context.Context, f humanWriteFrame, in content.Mo
 	return content.MomentControlHash(values), deadline, preserved, nil
 }
 func (s *Store) momentControlReadSource(ctx context.Context, f humanWriteFrame, in content.MomentControlInput) (momentControlSource, error) {
-	var out momentControlSource
+	out := momentControlSource{locations: momentLocationsSnapshot{Resolved: []content.MomentLocationResolved{}, SourceVersion: content.MomentControlHash([]any{"no-location-input-v1"})}}
 	if in.Action != "CREATE" {
 		// Match attachment writers before locking the parent, including legacy
 		// photo writers, so a public edit cannot deadlock a concurrent replacement.
@@ -319,6 +267,22 @@ func (s *Store) momentControlReadSource(ctx context.Context, f humanWriteFrame, 
 	if e != nil {
 		return out, e
 	}
+	if in.Action != "WITHDRAW" {
+		var current *content.Moment
+		if out.target.ID != "" {
+			current = &out.target
+		}
+		out.locations, e = captureMomentLocationsInTx(ctx, f, current, *in.Input)
+		if e != nil {
+			return out, e
+		}
+		momentControlAddDeadline(&out.deadline, out.locations.ValidUntil)
+		for _, r := range out.locations.Resolved {
+			if !r.Available {
+				out.preserved = true
+			}
+		}
+	}
 	mediaSource := ""
 	access := mm.Access{AccountID: f.a.ID, AccountType: f.a.AccountType, SessionDigest: f.d}
 	if in.Media != nil && len(*in.Media) > 0 {
@@ -358,7 +322,8 @@ func (s *Store) momentControlReadSource(ctx context.Context, f humanWriteFrame, 
 			return out, identity.ErrControlChanged
 		}
 	}
-	out.version = content.MomentControlHash([]any{in.Action, in.MomentID, in.ExpectedRevision, out.targetStamp, out.external, out.preserved, mediaSource})
+
+	out.version = content.MomentControlHash([]any{in.Action, in.MomentID, in.ExpectedRevision, out.targetStamp, out.external, out.preserved, mediaSource, out.locations.SourceVersion})
 	return out, nil
 }
 
@@ -433,7 +398,7 @@ func (s *Store) PreviewMomentControl(ctx context.Context, d [32]byte, a identity
 		return content.MomentControlPreview{}, e
 	}
 	base.ResponseProof = &momentControlProof{s, d, a, f.session, in, src.version, base.ExpiresAt}
-	result := content.MomentControlPreview{HumanControlPreview: base, MomentID: in.MomentID, ExpectedRevision: in.ExpectedRevision, Input: in.Input, InputSHA256: content.MomentControlInputHash(in.Input), SourceVersion: src.version, PreservedPlaceUnavailable: src.preserved, PreservedMedia: src.carry.set}
+	result := content.MomentControlPreview{HumanControlPreview: base, MomentID: in.MomentID, ExpectedRevision: in.ExpectedRevision, Input: in.Input, InputSHA256: content.MomentControlInputHash(in.Input), SourceVersion: src.version, PreservedPlaceUnavailable: src.preserved, PreservedMedia: src.carry.set, Locations: src.locations.Resolved, LocationsSourceVersion: src.locations.SourceVersion}
 	for i, material := range src.materials.Materials {
 		result.Materials = append(result.Materials, content.MomentThreadMaterial{Material: material, ThumbnailBase64: base64.StdEncoding.EncodeToString(src.materials.Thumbnails[i])})
 	}
@@ -475,11 +440,11 @@ func (s *Store) CommitMomentControl(ctx context.Context, d [32]byte, a identity.
 	var m content.Moment
 	switch in.Action {
 	case "CREATE":
-		m, e = createMomentDraftInTx(ctx, f.tx, a.ID, *in.Input)
+		m, e = createMomentDraftInTx(ctx, f.tx, a.ID, *in.Input, src.locations)
 	case "UPDATE":
-		m, e = updateMomentDraftInTx(ctx, f.tx, a.ID, in.MomentID, in.ExpectedRevision, *in.Input)
+		m, e = updateMomentDraftInTx(ctx, f.tx, a.ID, in.MomentID, in.ExpectedRevision, *in.Input, src.locations)
 	case "PUBLISH", "UPDATE_PUBLIC":
-		m, e = applyMomentPublicControl(ctx, f, in)
+		m, e = applyMomentPublicControl(ctx, f, in, src.locations)
 	case "WITHDRAW":
 		e = withdrawMomentInTx(ctx, f.tx, a.ID, in.MomentID, in.ExpectedRevision)
 		if e == nil {
@@ -534,8 +499,13 @@ func (s *Store) CommitMomentControl(ctx context.Context, d [32]byte, a identity.
 		if e != nil {
 			return e
 		}
-		if external != src.external || preserved != src.preserved || deadline != nil && deadline.Before(until) {
+		if external != src.external || preserved || deadline != nil && deadline.Before(until) {
 			return identity.ErrControlChanged
+		}
+		if in.Action != "WITHDRAW" {
+			if e = revalidateMomentLocationsInTx(ctx, f, src.locations, until); e != nil {
+				return e
+			}
 		}
 		if in.Action == "PUBLISH" || in.Action == "UPDATE_PUBLIC" {
 			if e = momentHasPublishableContent(ctx, f.tx, m.ID); e != nil {

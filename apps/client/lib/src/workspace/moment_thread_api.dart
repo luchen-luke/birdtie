@@ -4,6 +4,8 @@ import '../content/moment_control.dart';
 import 'human_causal_control.dart';
 import 'public_moment_media.dart';
 import 'entity_cover.dart';
+import '../content/moment_locations.dart';
+import '../content/private_moment_controller.dart';
 
 class MomentThreadDraftEntry {
   MomentThreadDraftEntry({
@@ -12,33 +14,84 @@ class MomentThreadDraftEntry {
     this.placeID = '',
     this.text = '',
     List<PublicMomentMediaSelection> media = const [],
-  }) : media = List.unmodifiable(media);
+    List<MomentLocationInput>? locations,
+    this.momentID = '',
+    this.expectedRevision = 0,
+    this.originalInput,
+  }) : media = List.unmodifiable(media),
+       locations = locations == null ? null : List.unmodifiable(locations);
   final String localID, cityID, placeID, text;
+  final String momentID;
+  final int expectedRevision;
+  final Map<String, dynamic>? originalInput;
   final List<PublicMomentMediaSelection> media;
+  final List<MomentLocationInput>? locations;
+  factory MomentThreadDraftEntry.owned(
+    PrivateMoment moment, {
+    List<MomentLocationInput>? locations,
+  }) => MomentThreadDraftEntry(
+    localID: moment.id,
+    momentID: moment.id,
+    expectedRevision: moment.revision,
+    cityID: locations == null ? moment.cityID : '',
+    placeID: locations == null ? moment.placeID : '',
+    text: moment.body,
+    locations: locations,
+    originalInput: Map.unmodifiable({
+      'title': moment.title,
+      'body': moment.body,
+      'cityId': moment.cityID,
+      'placeId': moment.placeID,
+      'occurredAt': moment.occurredAt?.toUtc().toIso8601String(),
+      'timePrecision': moment.timePrecision,
+      'locationPrecision': moment.locationPrecision,
+      if (moment.activityIDs.isNotEmpty)
+        'activityId': moment.activityIDs.single,
+      if (moment.communityID.isNotEmpty) 'communityId': moment.communityID,
+      if (moment.organizationID.isNotEmpty)
+        'organizationId': moment.organizationID,
+    }),
+  );
   MomentThreadDraftEntry copy({
     String? cityID,
     String? placeID,
     String? text,
     List<PublicMomentMediaSelection>? media,
+    List<MomentLocationInput>? locations,
+    int? expectedRevision,
   }) => MomentThreadDraftEntry(
     localID: localID,
     cityID: cityID ?? this.cityID,
     placeID: placeID ?? this.placeID,
     text: text ?? this.text,
     media: media ?? this.media,
+    locations: locations ?? this.locations,
+    momentID: momentID,
+    expectedRevision: expectedRevision ?? this.expectedRevision,
+    originalInput: originalInput,
   );
-  String get title => '';
+  String get title => originalInput?['title'] as String? ?? '';
 
   Map<String, Object?> get input => {
-    'cityId': cityID,
-    'placeId': placeID,
+    'cityId': locations == null ? cityID : '',
+    'placeId': locations == null ? placeID : '',
     'title': title,
-    'body': text.trim(),
     'occurredAt': null,
     'timePrecision': 'unknown',
-    'locationPrecision': placeID.isNotEmpty
+    'locationPrecision': locations != null
+        ? 'none'
+        : placeID.isNotEmpty
         ? 'place'
         : (cityID.isEmpty ? 'none' : 'city'),
+    if (originalInput != null) ...originalInput!,
+    'body': text.trim(),
+    if (locations != null) ...{
+      'cityId': '',
+      'placeId': '',
+      'locationPrecision': 'none',
+    },
+    if (locations != null)
+      'locations': locations!.map((v) => v.toJson()).toList(),
   };
   MomentControlInput _controlInput(String localScope) => MomentControlInput(
     operationID: localID,
@@ -50,7 +103,7 @@ class MomentThreadDraftEntry {
     localScope: media.isEmpty ? '' : localScope,
   );
 
-  Map<String, Object?> toItem({String localScope = ''}) {
+  Map<String, Object?> toItem({String localScope = '', bool existing = false}) {
     if (text.trim().isEmpty && media.isEmpty) {
       throw const FormatException('每条动态需要正文或已准备材料');
     }
@@ -65,6 +118,10 @@ class MomentThreadDraftEntry {
       throw const FormatException('串文材料不符或已到期');
     }
     return {
+      if (existing) ...{
+        'momentId': momentID,
+        'expectedRevision': expectedRevision,
+      },
       'input': input,
       'media': media.map((image) => image.toJson()).toList(),
     };
@@ -76,15 +133,20 @@ class MomentThreadDraftEntry {
     'placeId': placeID,
     'text': text,
     'media': media.map((image) => image.toJson()).toList(),
+    if (locations != null)
+      'locations': locations!.map((v) => v.toJson()).toList(),
+    if (momentID.isNotEmpty) ...{
+      'momentId': momentID,
+      'expectedRevision': expectedRevision,
+      'originalInput': originalInput,
+    },
   };
   factory MomentThreadDraftEntry.decode(Object? raw) {
-    final value = humanControlObject(raw, {
-      'localId',
-      'cityId',
-      'placeId',
-      'text',
-      'media',
-    });
+    final value = humanControlObject(
+      raw,
+      {'localId', 'cityId', 'placeId', 'text', 'media'},
+      optional: {'locations', 'momentId', 'expectedRevision', 'originalInput'},
+    );
     if (!humanControlID(value['localId']) ||
         value['cityId'] is! String ||
         utf8.encode(value['cityId']).length > 80 ||
@@ -101,6 +163,14 @@ class MomentThreadDraftEntry {
       cityID: value['cityId'],
       placeID: value['placeId'],
       text: value['text'],
+      momentID: value['momentId'] as String? ?? '',
+      expectedRevision: value['expectedRevision'] as int? ?? 0,
+      originalInput: value['originalInput'] == null
+          ? null
+          : Map<String, dynamic>.from(value['originalInput']),
+      locations: value.containsKey('locations')
+          ? decodeMomentLocationInputs(value['locations'])
+          : null,
       media: (value['media'] as List).map((raw) {
         final media = humanControlObject(raw, {
           'mediaId',
@@ -159,16 +229,24 @@ class MomentThreadInput {
         expectedVersion >= humanControlMaxVersion) {
       throw const FormatException('串文操作不符');
     }
-    if (action == 'CREATE_PUBLISH') {
-      if (threadID.isNotEmpty ||
-          expectedVersion != 0 ||
+    if (action == 'CREATE_PUBLISH' || action == 'PUBLISH') {
+      if ((action == 'CREATE_PUBLISH'
+              ? threadID.isNotEmpty || expectedVersion != 0
+              : !humanControlID(threadID) || expectedVersion < 1) ||
           !humanControlID(localScope) ||
           entries.length < 2 ||
           entries.length > 20) {
         throw const FormatException('请保留2至20条有序内容');
       }
       final seen = <String>{};
+      final memberIDs = <String>{};
       for (final entry in entries) {
+        if (action == 'PUBLISH' &&
+            (!humanControlID(entry.momentID) ||
+                !memberIDs.add(entry.momentID) ||
+                !humanControlVersion(entry.expectedRevision, zero: false))) {
+          throw const FormatException('原串文动态版本不符');
+        }
         entry.toItem(localScope: localScope);
         for (final image in entry.media) {
           if (!seen.add(image.mediaID)) {
@@ -195,7 +273,12 @@ class MomentThreadInput {
       'audience': 'PUBLIC',
       'expectedVersion': expectedVersion,
       'items': entries
-          .map((entry) => entry.toItem(localScope: localScope))
+          .map(
+            (entry) => entry.toItem(
+              localScope: localScope,
+              existing: action == 'PUBLISH',
+            ),
+          )
           .toList(),
     };
   }
@@ -203,7 +286,7 @@ class MomentThreadInput {
   String get digest {
     validate();
     return momentHash([
-      'moment-thread-v1',
+      action == 'PUBLISH' ? 'moment-thread-existing-v2' : 'moment-thread-v1',
       operationID,
       action,
       threadID,
@@ -213,6 +296,10 @@ class MomentThreadInput {
       entries
           .map(
             (entry) => [
+              if (action == 'PUBLISH') ...[
+                entry.momentID,
+                entry.expectedRevision,
+              ],
               entry._controlInput(localScope).inputHash,
               entry.media
                   .map(
@@ -358,7 +445,11 @@ class MomentThreadReceipt {
         value['appliedVersion'] != value['expectedVersion'] + 1 ||
         (value['members'] as List).length < 2 ||
         (value['members'] as List).length > 20 ||
-        !const {'CREATE_PUBLISH', 'WITHDRAW'}.contains(value['action'])) {
+        !const {
+          'CREATE_PUBLISH',
+          'PUBLISH',
+          'WITHDRAW',
+        }.contains(value['action'])) {
       throw const FormatException('原串文结果不符');
     }
     humanControlTime(value['committedAt']);
@@ -378,6 +469,9 @@ class MomentThreadReceipt {
                       entry.media.isEmpty && entry.mediaSetVersion != 0 ||
                       entry.media.isNotEmpty && entry.mediaSetVersion != 1,
                 )) ||
+        value['action'] == 'PUBLISH' &&
+            (value['expectedVersion'] < 1 ||
+                members.any((entry) => entry.status != 'published')) ||
         value['action'] == 'WITHDRAW' &&
             (value['expectedVersion'] < 1 ||
                 members.any((entry) => entry.status != 'withdrawn'))) {
@@ -405,29 +499,39 @@ class MomentThreadPreview {
     this.expiresAt,
     this.members,
     this.materials,
-    this.contexts,
-  );
+    this.contexts, {
+    this.locations = const [],
+  });
   final MomentThreadInput input;
   final String sourceVersion, approval;
   final DateTime expiresAt;
   final List<MomentThreadMember> members;
   final List<List<Map<String, dynamic>>> materials;
   final List<Map<String, dynamic>> contexts;
-  bool get current => expiresAt.isAfter(DateTime.now().toUtc());
+  final List<List<MomentLocationResolved>> locations;
+  bool get current =>
+      expiresAt.isAfter(DateTime.now().toUtc()) &&
+      locations
+          .expand((row) => row)
+          .every((location) => !location.available || location.current);
   factory MomentThreadPreview.decode(Object? raw, MomentThreadInput input) {
-    final value = humanControlObject(raw, {
-      'operationId',
-      'action',
-      'payloadDigest',
-      'observedAt',
-      'expiresAt',
-      'approval',
-      'input',
-      'sourceVersion',
-      'members',
-      'materials',
-      'contexts',
-    });
+    final value = humanControlObject(
+      raw,
+      {
+        'operationId',
+        'action',
+        'payloadDigest',
+        'observedAt',
+        'expiresAt',
+        'approval',
+        'input',
+        'sourceVersion',
+        'members',
+        'materials',
+        'contexts',
+      },
+      optional: {'locations'},
+    );
     final echoed = humanControlObject(value['input'], {
       'operationId',
       'action',
@@ -456,7 +560,7 @@ class MomentThreadPreview {
     for (var i = 0; i < (value['members'] as List).length; i++) {
       members.add(MomentThreadMember.decode(value['members'][i], i));
     }
-    if (input.action == 'CREATE_PUBLISH'
+    if (input.action == 'CREATE_PUBLISH' || input.action == 'PUBLISH'
         ? members.isNotEmpty ||
               (value['materials'] as List).length != input.entries.length
         : members.length < 2 || (value['materials'] as List).isNotEmpty) {
@@ -522,6 +626,30 @@ class MomentThreadPreview {
       }
       materials.add(List.unmodifiable(images));
     }
+    final locations = <List<MomentLocationResolved>>[];
+    final rawLocations = value['locations'];
+    if (rawLocations != null) {
+      if (rawLocations is! List || rawLocations.length != input.entries.length)
+        throw const FormatException('串文位置集合不符');
+      for (var i = 0; i < rawLocations.length; i++) {
+        final row = rawLocations[i];
+        if (row is! List || row.length > momentLocationMaxLinks)
+          throw const FormatException('串文位置集合不符');
+        final resolved = <MomentLocationResolved>[];
+        for (var j = 0; j < row.length; j++)
+          resolved.add(MomentLocationResolved.decode(row[j], j));
+        if (resolved.map((v) => v.id).toSet().length != resolved.length)
+          throw const FormatException('串文位置重复');
+        final requested = input.entries[i].locations;
+        if (requested != null &&
+            jsonEncode(requested.map((v) => v.toJson()).toList()) !=
+                jsonEncode(resolved.map((v) => v.input.toJson()).toList()))
+          throw const FormatException('串文位置批准与选择不符');
+        locations.add(List.unmodifiable(resolved));
+      }
+    } else if (input.entries.any((e) => e.locations != null)) {
+      throw const FormatException('串文位置批准缺失');
+    }
     return MomentThreadPreview(
       input,
       value['sourceVersion'],
@@ -530,6 +658,7 @@ class MomentThreadPreview {
       List.unmodifiable(members),
       List.unmodifiable(materials),
       List.unmodifiable(contexts),
+      locations: List.unmodifiable(locations),
     );
   }
 }
@@ -619,6 +748,158 @@ class MomentThreadView {
 class MomentThreadHTTPFailure implements Exception {
   const MomentThreadHTTPFailure(this.status);
   final int status;
+}
+
+class OwnedMomentThread {
+  const OwnedMomentThread(
+    this.threadID,
+    this.rootMomentID,
+    this.audience,
+    this.status,
+    this.version,
+    this.members,
+    this.entryContexts,
+    this.legs,
+    this.sourceVersion,
+    this.validUntil,
+  );
+  final String threadID, audience, status, sourceVersion;
+  final String? rootMomentID;
+  final int version;
+  final List<Map<String, dynamic>> members, entryContexts, legs;
+  final DateTime validUntil;
+  bool get current => DateTime.now().toUtc().isBefore(validUntil);
+  factory OwnedMomentThread.decode(Object? raw) {
+    final v = humanControlObject(raw, {
+      'schemaVersion',
+      'threadId',
+      'rootMomentId',
+      'audience',
+      'status',
+      'version',
+      'members',
+      'entryContexts',
+      'legs',
+      'sourceVersion',
+      'observedAt',
+      'validUntil',
+    });
+    if (v['schemaVersion'] != 'owned-moment-thread-v1' ||
+        !humanControlID(v['threadId']) ||
+        v['rootMomentId'] != null && !humanControlID(v['rootMomentId']) ||
+        !{'PRIVATE', 'PUBLIC'}.contains(v['audience']) ||
+        !{'draft', 'published', 'withdrawn'}.contains(v['status']) ||
+        !humanControlVersion(v['version'], zero: false) ||
+        !humanControlHash(v['sourceVersion']) ||
+        v['members'] is! List ||
+        (v['members'] as List).isEmpty ||
+        (v['members'] as List).length > 20 ||
+        v['entryContexts'] is! List ||
+        v['legs'] is! List ||
+        (v['legs'] as List).length > 100)
+      throw const FormatException('原串文来源不符');
+    final until = humanControlTime(v['validUntil']),
+        at = humanControlTime(v['observedAt']);
+    humanControlLease(at, until);
+    if (until.difference(at) > const Duration(seconds: 30))
+      throw const FormatException('原串文已变化');
+    final members = <Map<String, dynamic>>[],
+        contexts = <Map<String, dynamic>>[],
+        legs = <Map<String, dynamic>>[],
+        ids = <String>{};
+    for (final raw in v['members'] as List) {
+      final m = humanControlObject(raw, {
+        'position',
+        'momentId',
+        'revision',
+        'status',
+      });
+      if (m['position'] != members.length ||
+          (m['status'] == 'AVAILABLE'
+              ? !humanControlID(m['momentId']) ||
+                    !ids.add(m['momentId']) ||
+                    !humanControlVersion(m['revision'], zero: false)
+              : m['status'] != 'UNAVAILABLE' ||
+                    m['momentId'] != null ||
+                    m['revision'] != 0))
+        throw const FormatException('原串文成员不符');
+      members.add(Map.unmodifiable(m));
+    }
+    if (members.first['momentId'] != v['rootMomentId'])
+      throw const FormatException('原串文顺序不符');
+    for (final raw in v['entryContexts'] as List) {
+      final e = humanControlObject(raw, {
+        'position',
+        'momentId',
+        'inboundOrigin',
+        'inboundMode',
+        'durationMinutes',
+        'estimatedDurationMinutes',
+      });
+      if (e['position'] is! int ||
+          e['position'] < 0 ||
+          e['position'] >= members.length ||
+          members[e['position']]['momentId'] != e['momentId'] ||
+          e['inboundOrigin'] is! String ||
+          e['inboundMode'] is! String ||
+          (e['inboundOrigin'] as String).length > 200 ||
+          (e['inboundMode'] as String).length > 80 ||
+          [
+            e['durationMinutes'],
+            e['estimatedDurationMinutes'],
+          ].any((n) => n != null && (n is! int || n < 0 || n > 525600)))
+        throw const FormatException('原串文行程信息不符');
+      contexts.add(Map.unmodifiable(e));
+    }
+    for (final raw in v['legs'] as List) {
+      final l = humanControlObject(raw, {
+        'id',
+        'fromMomentId',
+        'toMomentId',
+        'fromPosition',
+        'toPosition',
+        'mode',
+        'fromPlaceId',
+        'toPlaceId',
+        'sourceCreatedAt',
+        'sourceUpdatedAt',
+      });
+      if (!humanControlID(l['id']) ||
+          !ids.contains(l['fromMomentId']) ||
+          !ids.contains(l['toMomentId']) ||
+          l['fromPosition'] is! int ||
+          l['toPosition'] is! int ||
+          l['fromPosition'] < 0 ||
+          l['toPosition'] < 0 ||
+          l['fromPosition'] >= members.length ||
+          l['toPosition'] >= members.length ||
+          members[l['fromPosition']]['momentId'] != l['fromMomentId'] ||
+          members[l['toPosition']]['momentId'] != l['toMomentId'] ||
+          l['mode'] is! String ||
+          (l['mode'] as String).length > 80 ||
+          [
+            l['fromPlaceId'],
+            l['toPlaceId'],
+          ].any((id) => id != '' && !humanControlID(id)))
+        throw const FormatException('原串文路线信息不符');
+      for (final k in ['sourceCreatedAt', 'sourceUpdatedAt']) {
+        if (l[k] != null) humanControlTime(l[k]);
+      }
+      legs.add(Map.unmodifiable(l));
+    }
+    return OwnedMomentThread(
+      v['threadId'],
+      v['rootMomentId'],
+      v['audience'],
+      v['status'],
+      v['version'],
+      List.unmodifiable(members),
+      List.unmodifiable(contexts),
+      List.unmodifiable(legs),
+      v['sourceVersion'],
+      until,
+    );
+  }
 }
 
 class MomentThreadAPI {
@@ -731,6 +1012,21 @@ class MomentThreadAPI {
         : value.threadID != id) {
       throw const FormatException('串文查询目标不符');
     }
+    return value;
+  }
+
+  Future<OwnedMomentThread> owned(String id, {bool byMoment = true}) async {
+    if (!humanControlID(id)) throw const FormatException('原串文目标不符');
+    final value = OwnedMomentThread.decode(
+      await request(
+        'GET',
+        byMoment ? '/v1/me/moments/$id/thread' : '/v1/me/moment-threads/$id',
+      ),
+    );
+    if (byMoment
+        ? !value.members.any((v) => v['momentId'] == id)
+        : value.threadID != id)
+      throw const FormatException('原串文目标不符');
     return value;
   }
 }

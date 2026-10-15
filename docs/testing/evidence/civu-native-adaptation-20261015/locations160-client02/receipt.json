@@ -1,0 +1,13 @@
+{
+  "cwd": "D:\\Project\\birdtie\\apps\\client",
+  "command": "D:\\DevTools\\flutter\\bin\\flutter.bat test --no-pub --reporter expanded test/moment_locations_test.dart",
+  "startedAt": "2026-10-15T09:45:47.0770428Z",
+  "finishedAt": "2026-10-15T09:45:50.8386092Z",
+  "exitCode": 0,
+  "formatExitCode": 0,
+  "reason": "Actual 160 preservedPlaceUnavailable wire extension after direct01; new current locations proof required while old preview contract stays strict",
+  "prior": "locations160-client01",
+  "build": "NOT_RUN",
+  "device": "NOT_RUN",
+  "apiNative": "NOT_RUN"
+}

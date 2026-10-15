@@ -25,11 +25,15 @@ import '../content/private_moment_controller.dart';
 import '../content/agent_seed_controller.dart';
 import '../content/moment_image_picker.dart';
 import '../content/moment_control.dart';
+import '../content/moment_locations.dart';
+import 'moment_locations_api.dart';
 import '../content/private_moment_media_controller.dart';
+import '../content/legacy_moment_materials_panel.dart';
 import '../content/personal_collection_controller.dart';
 import '../content/video_material_controller.dart';
 import '../legacy/legacy_shell.dart';
 import 'agent_composer.dart';
+import 'now_moment_intent.dart';
 import 'activity_plans.dart';
 import 'activity_participations.dart';
 import 'activity_detail_sheet.dart';
@@ -267,6 +271,230 @@ class _MapWorkspaceState extends State<MapWorkspace>
     _composerKey.currentState?.fillDraft(c.activeText);
   }
 
+  Future<void> _openOwnedMomentInNow(
+    String momentID, {
+    bool loadThread = true,
+  }) async {
+    if (_creationBusy ||
+        !widget.auth.signedIn ||
+        _organizations.active != null ||
+        _composerDrafts.target.human)
+      return;
+    if (_threadCurrent) {
+      _closeMomentThread();
+      if (_threadCurrent) return;
+    }
+    if (_creationCurrent) _exitCreation();
+    final scope = _creationIdentity,
+        owner = widget.auth.accountID,
+        token = widget.auth.authorizationHeader;
+    bool current() =>
+        mounted &&
+        widget.auth.signedIn &&
+        _creationIdentity == scope &&
+        widget.auth.accountID == owner &&
+        widget.auth.authorizationHeader == token;
+    try {
+      if (loadThread) {
+        final api = MomentThreadAPI(
+          client: widget.moments.borrowedClient,
+          baseUrl: widget.moments.apiBaseUrl,
+          authorizationHeader: () =>
+              current() ? widget.auth.authorizationHeader : null,
+          current: current,
+        );
+        OwnedMomentThread? view;
+        try {
+          view = await api.owned(momentID);
+        } on MomentThreadHTTPFailure catch (e) {
+          if (e.status != 404) rethrow;
+        }
+        if (!current()) return;
+        if (view != null &&
+            view.status == 'draft' &&
+            view.audience == 'PRIVATE' &&
+            view.members.every((member) => member['status'] == 'AVAILABLE')) {
+          final entries = <MomentThreadDraftEntry>[];
+          final locationsAPI = MomentLocationsAPI(
+            client: widget.moments.borrowedClient,
+            apiBaseUrl: widget.moments.apiBaseUrl,
+            authorizationHeader: () =>
+                current() ? widget.auth.authorizationHeader : null,
+            current: current,
+          );
+          try {
+            for (final member in view.members) {
+              final original = await widget.moments.readOwned(
+                member['momentId'],
+                current: current,
+              );
+              if (!current()) return;
+              if (original == null || original.revision != member['revision'])
+                throw StateError('原串文已变化');
+              final locations = await locationsAPI.read(
+                original.id,
+                own: true,
+                expectedRevision: original.revision,
+              );
+              if (!current()) return;
+              entries.add(
+                MomentThreadDraftEntry.owned(
+                  original,
+                  locations: locations.inputs,
+                ),
+              );
+            }
+          } finally {
+            locationsAPI.dispose();
+          }
+          if (!current() || !view.current) return;
+          _beforeThreadInput = _composerDrafts.value;
+          _threadScope = scope;
+          final c = MomentThreadController(
+            api: MomentThreadAPI(
+              client: widget.moments.borrowedClient,
+              baseUrl: widget.moments.apiBaseUrl,
+              authorizationHeader: () =>
+                  _threadCurrent ? widget.auth.authorizationHeader : null,
+              current: () => mounted && _threadCurrent && scope == _threadScope,
+            ),
+            ownerID: owner!,
+          );
+          _momentThread = c;
+          c.addListener(_threadChanged);
+          await c.beginOwned(view, entries, selectedID: momentID);
+          if (!current() || !identical(c, _momentThread)) return;
+          setState(() {
+            _socialExpanded = false;
+            _exploreExpanded = false;
+            _retirePublicPlacePanel();
+          });
+          _composerKey.currentState?.fillDraft(c.activeText);
+          return;
+        }
+      }
+      final moment = await widget.moments.readOwned(momentID, current: current);
+      if (!current()) return;
+      if (moment == null) throw StateError('原动态暂不可读');
+      _syncCreationDraftIdentity();
+      _beforeCreationInput ??= _composerDrafts.value;
+      ++_creationRestoreSerial;
+      setState(() {
+        _creation = NowCreationDraft(
+          kind: 'moment',
+          cityID: moment.cityID,
+          cityName: '',
+          nativeMomentID: moment.id,
+          title: moment.title,
+          body: moment.body,
+          placeID: moment.placeID,
+        );
+        _creationScope = scope;
+        _creationMomentID = moment.id;
+        _creationOwnedRevision = moment.revision;
+        _creationCollapsed = false;
+        _creationTitleEditing = false;
+        _creationError = null;
+        _creationNotice = '已打开原动态，在首页输入框继续修改。';
+        _creationRestorePending = false;
+        _creationUncertain = false;
+        _creationShowingDetail = false;
+        _creationPublished =
+            moment.status == 'published' && moment.visibility == 'public';
+        _creationPublishedRevision = _creationPublished
+            ? moment.revision
+            : null;
+        _socialExpanded = false;
+        _exploreExpanded = false;
+        _retirePublicPlacePanel();
+      });
+      _composerKey.currentState?.fillDraft(moment.body);
+      await _restoreCreationNativeMoment();
+      if (current()) _rememberCreation();
+    } catch (_) {
+      if (current())
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('原动态或串文暂不可读取，请刷新后重试。')));
+    }
+  }
+
+  Future<void> _saveOwnedThreadEntry() async {
+    final c = _momentThread;
+    if (!_threadCurrent ||
+        c == null ||
+        !c.editable ||
+        !c.existingThread ||
+        c.entries.isEmpty)
+      return;
+    final entry = c.entries[c.activeIndex], index = c.activeIndex;
+    bool current() =>
+        mounted &&
+        _threadCurrent &&
+        identical(c, _momentThread) &&
+        c.editable &&
+        c.activeIndex == index &&
+        identical(entry, c.entries[index]);
+    try {
+      final original = await widget.moments.readOwned(
+        entry.momentID,
+        current: current,
+      );
+      if (!current() ||
+          original == null ||
+          original.revision != entry.expectedRevision)
+        return;
+      final preview = await widget.moments.previewUpdate(
+        moment: original,
+        title: entry.title,
+        body: entry.text,
+        placeID: entry.placeID,
+        cityID: entry.cityID,
+        locations: entry.locations,
+        time: original.time,
+        current: current,
+      );
+      if (!current() || preview == null) return;
+      final accepted = await showDialog<bool>(
+        context: context,
+        builder: (dialog) => AlertDialog(
+          title: const Text('保存这条私人动态？'),
+          content: SingleChildScrollView(
+            child: Text(entry.text.isEmpty ? '保存这版位置与材料关联。' : entry.text),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialog, false),
+              child: const Text('返回修改'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialog, true),
+              child: const Text('确认保存'),
+            ),
+          ],
+        ),
+      );
+      if (!current() || accepted != true) return;
+      if (!await widget.moments.commit(preview, current: current) || !current())
+        return;
+      final saved = await widget.moments.readOwned(
+        entry.momentID,
+        current: current,
+      );
+      final view = await c.api.owned(c.ownedThreadID, byMoment: false);
+      if (!current() || saved == null) return;
+      c.savedOwnedEntry(
+        MomentThreadDraftEntry.owned(saved, locations: entry.locations),
+        view,
+      );
+    } catch (_) {
+      if (current())
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('保存结果需要刷新确认，当前草稿已保留。')));
+    }
+  }
+
   void _requestInlineRebuild() {
     if (!mounted) return;
     if (SchedulerBinding.instance.schedulerPhase ==
@@ -306,7 +534,7 @@ class _MapWorkspaceState extends State<MapWorkspace>
           );
       }
       if (t.receipt?.status == 'SUCCEEDED' &&
-          t.receipt?.action == 'CREATE_PUBLISH' &&
+          {'CREATE_PUBLISH', 'PUBLISH'}.contains(t.receipt?.action) &&
           t.receipt?.operationID == _threadStageOperation) {
         for (final entry in _threadStagesForCommit.entries) {
           unawaited(
@@ -465,7 +693,9 @@ class _MapWorkspaceState extends State<MapWorkspace>
       ),
     );
     if (!current() || place == null) return;
-    t!.setActiveContext(cityID: place.cityID, placeID: place.placeID);
+    final location = place.toLocation();
+    if (location == null) return;
+    t!.addActiveLocation(location);
   }
 
   Widget _threadEntryMaterials() {
@@ -474,24 +704,22 @@ class _MapWorkspaceState extends State<MapWorkspace>
     final entry = t.entries[t.activeIndex],
         id = t.entries[t.activeIndex].localID;
     final c = _threadImageController(id);
-    final placeName = widget.city.places
-        .where((p) => p.id == entry.placeID)
-        .firstOrNull
-        ?.name;
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        if (entry.momentID.isNotEmpty)
+          _legacyMaterials(
+            entry.momentID,
+            entry.expectedRevision,
+            thread: true,
+          ),
         TextButton.icon(
           onPressed: t.editable
               ? () => unawaited(_chooseThreadPlace(id))
               : null,
           icon: const Icon(Icons.place_outlined),
-          label: Text(
-            entry.placeID.isEmpty
-                ? (entry.cityID.isEmpty ? '添加位置' : '已选城市 · 修改位置')
-                : placeName ?? '查看或修改位置',
-          ),
+          label: const Text('添加位置'),
         ),
         if (entry.media.isNotEmpty)
           Text('这条已有 ${entry.media.length} 份已准备材料，整体发布预览会显示实际派生图。'),
@@ -550,6 +778,42 @@ class _MapWorkspaceState extends State<MapWorkspace>
     if (mounted) setState(() {});
   }
 
+  Widget _legacyMaterials(String id, int revision, {required bool thread}) {
+    final scope = thread ? _threadScope : _creationScope,
+        owner = widget.auth.accountID;
+    bool current() =>
+        mounted &&
+        widget.auth.accountID == owner &&
+        _organizations.active == null &&
+        (thread
+            ? _threadCurrent &&
+                  scope == _threadScope &&
+                  _momentThread!.entries.isNotEmpty &&
+                  _momentThread!.entries[_momentThread!.activeIndex].momentID ==
+                      id &&
+                  _momentThread!
+                          .entries[_momentThread!.activeIndex]
+                          .expectedRevision ==
+                      revision
+            : _creationCurrent &&
+                  scope == _creationScope &&
+                  _creationMomentID == id &&
+                  !_creationPublished &&
+                  _creationOwnedRevision == revision);
+    return LegacyMomentMaterialsPanel(
+      key: ValueKey(('legacy-materials', id, revision)),
+      momentID: id,
+      revision: revision,
+      authorizationHeader: () =>
+          current() ? widget.auth.authorizationHeader : null,
+      ownerID: () => current() ? widget.auth.accountID : null,
+      sourceCurrent: current,
+      identityChanges: widget.auth,
+      client: widget.moments.borrowedClient,
+      baseUrl: widget.moments.apiBaseUrl,
+    );
+  }
+
   Future<void> _selectCreationImages({
     MomentImageSource source = MomentImageSource.gallery,
   }) async {
@@ -596,6 +860,9 @@ class _MapWorkspaceState extends State<MapWorkspace>
   int _creationRestoreSerial = 0;
   bool _creationRestorePending = false;
   NowCreationDraft? _creation;
+  final _creationLocationLabels = <String, String>{};
+  Timer? _creationLocationLabelTimer;
+  DateTime? _creationLocationLabelDeadline;
   Object? _creationScope;
   bool _creationCollapsed = false, _creationBusy = false;
   bool _creationTitleEditing = false, _creationUncertain = false;
@@ -612,6 +879,7 @@ class _MapWorkspaceState extends State<MapWorkspace>
   PublicMomentPhotoController? _creationPublicPhoto;
   Uint8List? _creationPublicPhotoPixels;
   int? _creationPublishedRevision;
+  int? _creationOwnedRevision;
   bool _creationPhotoPublished = false;
   PersonalCollectionController? _creationCollection;
   final _creationPlaces = <CollectionPlace>[];
@@ -654,6 +922,7 @@ class _MapWorkspaceState extends State<MapWorkspace>
       if (draft.body.isEmpty &&
           draft.title.isEmpty &&
           draft.placeID.isEmpty &&
+          (draft.locations?.isEmpty ?? true) &&
           draft.orderedPlaceIDs.isEmpty &&
           draft.startsAt == null &&
           draft.endsAt == null)
@@ -680,7 +949,8 @@ class _MapWorkspaceState extends State<MapWorkspace>
       _creationRestorePending = false;
       _creationError = _creationDrafts.storageError;
       if (restored != null) {
-        _creation = restored;
+        _creation = _upgradeLocalCreationLocations(restored);
+        _creationOwnedRevision = null;
         _creationMomentID = restored.nativeMomentID.isEmpty
             ? null
             : restored.nativeMomentID;
@@ -714,7 +984,10 @@ class _MapWorkspaceState extends State<MapWorkspace>
         setState(() => _creationError = '原动态暂时无法读取，保留本机文字，请重试保存时核实。');
         return;
       }
+      await _readCreationLocations(moment, current: current);
+      if (!current()) return;
       setState(() {
+        _creationOwnedRevision = moment.revision;
         _creationPublished =
             moment.status == 'published' && moment.visibility == 'public';
         _creationPublishedRevision = _creationPublished
@@ -800,7 +1073,13 @@ class _MapWorkspaceState extends State<MapWorkspace>
     _creationPlaces.clear();
     var draft =
         restored ??
-        NowCreationDraft(kind: kind, cityID: cityID, cityName: cityName);
+        NowCreationDraft(
+          kind: kind,
+          cityID: cityID,
+          cityName: cityName,
+          locations: kind == 'moment' ? const [] : null,
+        );
+    draft = _upgradeLocalCreationLocations(draft);
     if (draft.body.isEmpty && text.trim().isNotEmpty)
       draft = draft.withText(text);
     for (final id in draft.orderedPlaceIDs) {
@@ -815,6 +1094,7 @@ class _MapWorkspaceState extends State<MapWorkspace>
       _creationTitleEditing = false;
       _creationError = _creationNotice = _creationActivityID =
           _creationOperationID = null;
+      _creationOwnedRevision = null;
       _creationMomentID = draft.nativeMomentID.isEmpty
           ? null
           : draft.nativeMomentID;
@@ -832,17 +1112,23 @@ class _MapWorkspaceState extends State<MapWorkspace>
     });
     _composerDrafts.update(TextEditingValue.empty);
     if (_creationRestorePending) {
-      unawaited(
-        _restoreCreationMaterial(cityID, kind, _creationScope, restoreSerial),
+      await _restoreCreationMaterial(
+        cityID,
+        kind,
+        _creationScope,
+        restoreSerial,
       );
     } else {
       _rememberCreation();
-      unawaited(_restoreCreationNativeMoment());
+      await _restoreCreationNativeMoment();
     }
   }
 
   void _exitCreation() {
     if (_creationBusy) return;
+    _creationLocationLabelTimer?.cancel();
+    _creationLocationLabelDeadline = null;
+    _creationLocationLabels.clear();
     if (_creationCurrent) {
       _rememberCreation(includeInput: true);
     }
@@ -862,6 +1148,9 @@ class _MapWorkspaceState extends State<MapWorkspace>
   }
 
   void _clearRetiredCreation() {
+    _creationLocationLabelTimer?.cancel();
+    _creationLocationLabelDeadline = null;
+    _creationLocationLabels.clear();
     ++_creationRestoreSerial;
     _retireCreationApprovals();
     _disposeCreationPublicPhoto();
@@ -873,11 +1162,125 @@ class _MapWorkspaceState extends State<MapWorkspace>
     _creation = null;
     _creationScope = null;
     _creationBusy = _creationUncertain = _creationPublished = false;
+    _creationOwnedRevision = null;
     _creationMomentID = _creationActivityID = null;
     _creationOperationID = null;
     _creationRestorePending = false;
     _beforeCreationInput = null;
     _creationPlaces.clear();
+  }
+
+  NowCreationDraft _upgradeLocalCreationLocations(NowCreationDraft draft) {
+    if (draft.kind != 'moment' ||
+        draft.locations != null ||
+        draft.nativeMomentID.isNotEmpty)
+      return draft;
+    final location = MomentLocationChoice(
+      cityID: draft.cityID,
+      cityName: draft.cityName,
+      placeID: draft.placeID,
+      placeName: draft.placeName,
+    ).toLocation();
+    return draft.copyWith(
+      cityID: '',
+      cityName: '',
+      placeID: '',
+      placeName: '',
+      locations: [if (location != null) location],
+    );
+  }
+
+  void _expireCreationLocationLabels([DateTime? deadline]) {
+    _creationLocationLabelTimer?.cancel();
+    final now = DateTime.now().toUtc();
+    final proposed = deadline ?? now.add(const Duration(seconds: 60));
+    final prior = _creationLocationLabelDeadline;
+    final until = prior != null && prior.isBefore(proposed) ? prior : proposed;
+    _creationLocationLabelDeadline = until;
+    final duration = until.difference(now);
+    _creationLocationLabelTimer = Timer(
+      duration.isNegative ? Duration.zero : duration,
+      () {
+        if (!mounted) return;
+        setState(() {
+          _creationLocationLabels.clear();
+          _creationLocationLabelDeadline = null;
+        });
+      },
+    );
+  }
+
+  Future<void> _readCreationLocations(
+    PrivateMoment moment, {
+    required bool Function() current,
+  }) async {
+    final api = MomentLocationsAPI(
+      authorizationHeader: () => widget.auth.authorizationHeader,
+      current: current,
+      client: widget.moments.borrowedClient,
+      apiBaseUrl: widget.moments.apiBaseUrl,
+    );
+    try {
+      final locations = await api.read(
+        moment.id,
+        own: true,
+        expectedRevision: moment.revision,
+      );
+      if (!current()) return;
+      setState(() {
+        // Keep unsaved explicit selections. Only a legacy nil needs upgrading.
+        if (_creation!.locations == null) {
+          _creation = _creation!.copyWith(
+            locations: locations.inputs,
+            cityID: '',
+            cityName: '',
+            placeID: '',
+            placeName: '',
+          );
+        }
+        _creationLocationLabels.clear();
+        _creationLocationLabelDeadline = null;
+        for (final item in locations.items) {
+          if (item.readable) _creationLocationLabels[item.id] = item.label;
+        }
+      });
+      _expireCreationLocationLabels(locations.validUntil);
+      _rememberCreation();
+    } catch (_) {
+      if (current())
+        setState(() {
+          _creationLocationLabels.clear();
+          _creationError = '位置暂时无法读取，正文和媒体仍保留，请重试。';
+        });
+    } finally {
+      api.dispose();
+    }
+  }
+
+  void _changeCreationLocation(String id, String? precision) {
+    if (!_creationCurrent ||
+        _creationBusy ||
+        _creationUncertain ||
+        _creationMedia?.busy == true ||
+        _creationMedia?.uncertain == true)
+      return;
+    final locations = _creation!.locations;
+    if (locations == null) return;
+    _retireCreationApprovals();
+    setState(() {
+      _creation = _creation!.copyWith(
+        locations: [
+          for (final location in locations)
+            if (location.id != id)
+              location
+            else if (precision != null)
+              location.withPrecision(precision),
+        ],
+      );
+      if (precision == null) _creationLocationLabels.remove(id);
+      _creationNotice = _creationError = null;
+    });
+    _rememberCreation();
   }
 
   void _updateCreation(String text) {
@@ -926,16 +1329,40 @@ class _MapWorkspaceState extends State<MapWorkspace>
           scope != _creationScope ||
           picked == null)
         return;
+      final location = picked.toLocation();
+      if (location == null) return;
+      final locations = _creation!.locations;
+      if (locations == null) {
+        setState(() => _creationError = '原位置尚未读取，请重新打开这条动态后重试。');
+        return;
+      }
+      if (locations.length >= momentLocationMaxLinks) {
+        setState(() => _creationError = '一条动态最多关联 50 处位置。');
+        return;
+      }
+      if (locations.any(
+        (v) =>
+            v.kind == location.kind &&
+            v.cityID == location.cityID &&
+            v.placeID == location.placeID &&
+            v.referenceID == location.referenceID,
+      )) {
+        setState(() => _creationNotice = '已添加这处位置，可在原位置上调整公开范围。');
+        return;
+      }
       _retireCreationApprovals();
       setState(() {
         _creation = _creation!.copyWith(
-          cityID: picked.cityID,
-          cityName: picked.cityName,
-          placeID: picked.placeID,
-          placeName: picked.placeName,
+          cityID: '',
+          cityName: '',
+          placeID: '',
+          placeName: '',
+          locations: [...locations, location],
         );
+        _creationLocationLabels[location.id] = picked.displayLabel;
         _creationError = _creationNotice = null;
       });
+      _expireCreationLocationLabels();
       _rememberCreation();
       return;
     }
@@ -1101,6 +1528,7 @@ class _MapWorkspaceState extends State<MapWorkspace>
         final p = original == null
             ? await widget.moments.previewCreate(
                 cityID: draft.cityID,
+                locations: draft.locations,
                 title: draft.title,
                 body: draft.body,
                 placeID: draft.placeID,
@@ -1108,6 +1536,7 @@ class _MapWorkspaceState extends State<MapWorkspace>
               )
             : await widget.moments.previewUpdate(
                 moment: original,
+                locations: draft.locations,
                 title: draft.title,
                 body: draft.body,
                 placeID: draft.placeID,
@@ -1254,6 +1683,10 @@ class _MapWorkspaceState extends State<MapWorkspace>
                 ? null
                 : widget.moments.operationReceipt?.momentID
           : _creationMomentID;
+      if (saved)
+        _creationOwnedRevision = withdrawal
+            ? null
+            : widget.moments.operationReceipt?.appliedRevision;
       if (saved && publicUpdate)
         _creationPublishedRevision =
             widget.moments.operationReceipt?.appliedRevision;
@@ -1313,7 +1746,8 @@ class _MapWorkspaceState extends State<MapWorkspace>
           ? await widget.moments.previewWithdraw(moment, current: current)
           : await widget.moments.previewPublicUpdate(
               moment: moment,
-              title: draft!.title.trim(),
+              locations: draft!.locations,
+              title: draft.title.trim(),
               body: draft.body.trim(),
               cityID: draft.cityID,
               placeID: draft.placeID,
@@ -1473,6 +1907,7 @@ class _MapWorkspaceState extends State<MapWorkspace>
         return;
       }
       if (m == null ||
+          draft.locations != null ||
           m.cityID != draft.cityID ||
           m.placeID != draft.placeID ||
           m.title != draft.title.trim() ||
@@ -1480,6 +1915,7 @@ class _MapWorkspaceState extends State<MapWorkspace>
         final save = m == null
             ? await c.previewCreate(
                 cityID: draft.cityID,
+                locations: draft.locations,
                 title: draft.title,
                 body: draft.body,
                 placeID: draft.placeID,
@@ -1487,6 +1923,7 @@ class _MapWorkspaceState extends State<MapWorkspace>
               )
             : await c.previewUpdate(
                 moment: m,
+                locations: draft.locations,
                 title: draft.title,
                 body: draft.body,
                 placeID: draft.placeID,
@@ -1549,6 +1986,7 @@ class _MapWorkspaceState extends State<MapWorkspace>
       _creationMediaApprovalSelection = media?.selectionRevision;
       _creationPublishPreview = await c.previewPublish(
         m,
+        locations: draft.locations,
         media: selections,
         localScope: selections == null ? '' : media!.localScope,
         current: current,
@@ -1887,6 +2325,9 @@ class _MapWorkspaceState extends State<MapWorkspace>
       onEditTitle: () => _editCreationText(true),
       onEditBody: () => _editCreationText(false),
       onChoosePlace: () => unawaited(_chooseCreationPlace()),
+      locationLabels: _creationLocationLabels,
+      onRemoveLocation: (id) => _changeCreationLocation(id, null),
+      onSetLocationPrecision: _changeCreationLocation,
       onChooseTime: () => unawaited(_chooseCreationTime()),
       onSave: () => unawaited(_saveCreation()),
       onPublish:
@@ -2013,6 +2454,7 @@ class _MapWorkspaceState extends State<MapWorkspace>
                   kind: 'moment',
                   cityID: draft.cityID,
                   cityName: draft.cityName,
+                  locations: const [],
                 ),
               );
               _composerDrafts.update(TextEditingValue.empty);
@@ -2048,6 +2490,9 @@ class _MapWorkspaceState extends State<MapWorkspace>
                       _rememberCreation();
                     },
             ),
+        if (_creationSavePreview case final preview?)
+          if (widget.moments.previewCurrent(preview))
+            _creationReviewedLocations(preview),
         if (_creationSavePreview != null)
           FilledButton(
             onPressed: _creationBusy
@@ -2055,12 +2500,15 @@ class _MapWorkspaceState extends State<MapWorkspace>
                 : () => unawaited(_confirmCreationSave()),
             child: Text(
               _creationSavePreview!.input.action == 'UPDATE_PUBLIC'
-                  ? '确认公开修改这版文字'
+                  ? '确认公开修改这版动态'
                   : _creationSavePreview!.input.action == 'WITHDRAW'
                   ? '确认撤回这条动态'
-                  : '确认保存这版文字草稿',
+                  : '确认保存这版草稿',
             ),
           ),
+        if (_creationPublishPreview != null &&
+            widget.moments.previewCurrent(_creationPublishPreview!))
+          _creationReviewedLocations(_creationPublishPreview!),
         if (_creationPublishPreview != null &&
             widget.moments.previewCurrent(_creationPublishPreview!))
           Wrap(
@@ -2089,6 +2537,15 @@ class _MapWorkspaceState extends State<MapWorkspace>
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          if (draft.kind == 'moment' &&
+              !_creationPublished &&
+              _creationMomentID != null &&
+              _creationOwnedRevision != null)
+            _legacyMaterials(
+              _creationMomentID!,
+              _creationOwnedRevision!,
+              thread: false,
+            ),
           if (_creationMedia case final media?)
             AbsorbPointer(
               absorbing:
@@ -2160,6 +2617,19 @@ class _MapWorkspaceState extends State<MapWorkspace>
     _pauseComposer();
     setState(() => _creationShowingDetail = !_creationShowingDetail);
   }
+
+  Widget _creationReviewedLocations(MomentControlPreview preview) => Column(
+    mainAxisSize: MainAxisSize.min,
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      if (preview.input.action != 'WITHDRAW' && preview.locations.isEmpty)
+        const Text('这版不关联位置。'),
+      for (final location in preview.locations)
+        Text(
+          '${location.position + 1}. ${location.label} · ${momentLocationPrecisionLabel(location.precision)}',
+        ),
+    ],
+  );
 
   final _localMedia = LocalDraftMediaBridge();
   LocalDraftMediaBinding? _localMediaBinding;
@@ -3575,6 +4045,7 @@ class _MapWorkspaceState extends State<MapWorkspace>
     _creationDrafts.removeListener(_onCreationDraftStorageChange);
     unawaited(_creationDrafts.flush());
     _creationDrafts.dispose();
+    _creationLocationLabelTimer?.cancel();
     _creationImages.dispose();
     _creationMedia?.dispose();
     _retireMomentThread();
@@ -4405,6 +4876,13 @@ class _MapWorkspaceState extends State<MapWorkspace>
       _momentThread!.updateActiveText(query);
       return;
     }
+    final momentBody = _composerDrafts.target.human
+        ? null
+        : explicitMomentDraftBody(query);
+    if (momentBody != null && _organizations.active == null) {
+      unawaited(_beginExplicitMomentDraft(momentBody));
+      return;
+    }
     final localDraft = _composerDrafts.envelope;
     if (query.isNotEmpty &&
         localDraft != null &&
@@ -4473,6 +4951,25 @@ class _MapWorkspaceState extends State<MapWorkspace>
     _socialSelectionSerial++;
     setState(() => _socialExpanded = false);
     unawaited(_submitInSelectedView(query));
+  }
+
+  Future<void> _beginExplicitMomentDraft(String body) async {
+    final identity = _composerDrafts.identity;
+    await _beginCreation('moment');
+    if (!mounted ||
+        !_creationCurrent ||
+        _creation!.kind != 'moment' ||
+        _composerDrafts.identity != identity ||
+        _creationBusy ||
+        _creationUncertain)
+      return;
+    if (_creationMomentID != null) {
+      _composerDrafts.update(TextEditingValue(text: body));
+      setState(() => _creationNotice = '已恢复原动态，新输入保留在输入框中。');
+      return;
+    }
+    _updateCreation(body);
+    setState(() => _creationNotice = '已放入动态草稿，检查后再发布。');
   }
 
   bool _preserveUnfinishedTaskImage([String? query]) {
@@ -7482,6 +7979,10 @@ class _MapWorkspaceState extends State<MapWorkspace>
         organizationWorkspaceID: () => _organizations.active?.id,
         current: currentPersonalSource,
         onOpenSocialNow: () => unawaited(_openSocialNowRoute()),
+        onOpenOwnedMoment: (id) {
+          Navigator.of(context).pop();
+          unawaited(_openOwnedMomentInNow(id));
+        },
       ),
       SidebarDestination.groups => CommunityPage(
         auth: widget.auth,
@@ -8341,6 +8842,18 @@ class _MapWorkspaceState extends State<MapWorkspace>
                                         .currentState
                                         ?.fillDraft(text),
                                     onClose: _closeMomentThread,
+                                    onSaveActive: () =>
+                                        unawaited(_saveOwnedThreadEntry()),
+                                    onOpenActive: () {
+                                      final t = _momentThread!;
+                                      if (t.entries.isNotEmpty)
+                                        unawaited(
+                                          _openOwnedMomentInNow(
+                                            t.entries[t.activeIndex].momentID,
+                                            loadThread: false,
+                                          ),
+                                        );
+                                    },
                                     onPublished: (_) {
                                       if (mounted) {
                                         unawaited(widget.moments.refresh());

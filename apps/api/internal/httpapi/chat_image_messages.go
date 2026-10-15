@@ -136,14 +136,28 @@ func (s *server) readHumanImageMessageContent(w http.ResponseWriter, r *http.Req
 		return
 	}
 	var meta connection.ImageDerivativeMetadata
-	raw, e := p.ReadHumanImageMessageContent(r.Context(), a, r.PathValue("conversationID"), message, variant, func(receipt connection.ImageMessageReceipt, m connection.ImageDerivativeMetadata, b []byte) ([]byte, error) {
-		expected, valid := connection.ImageVariantMetadata(receipt.Image, variant)
-		if receipt.MessageID != message || receipt.ConversationID != r.PathValue("conversationID") || !connection.ValidImageMessageReceipt(receipt, receipt.OwnerID, receipt.ConversationID, receipt.OperationID) || !valid || m != expected || !connection.ValidImageContent(m, b, variant == "thumbnail") || media.ValidateChatImageDerivative(r.Context(), b, m.MIME, m.Width, m.Height) != nil {
-			return nil, connection.ErrConflict
-		}
-		meta = m
-		return append([]byte(nil), b...), nil
-	})
+	var raw []byte
+	var e error
+	imported := false
+	if source, ok := p.(connection.ImportedImageContentStore); ok {
+		raw, imported, e = source.ReadImportedImageMessageContent(r.Context(), a, r.PathValue("conversationID"), message, variant, func(m connection.ImageDerivativeMetadata, b []byte) ([]byte, error) {
+			if !connection.ValidImageContent(m, b, variant == "thumbnail") {
+				return nil, connection.ErrConflict
+			}
+			meta = m
+			return append([]byte(nil), b...), nil
+		})
+	}
+	if !imported && e == nil {
+		raw, e = p.ReadHumanImageMessageContent(r.Context(), a, r.PathValue("conversationID"), message, variant, func(receipt connection.ImageMessageReceipt, m connection.ImageDerivativeMetadata, b []byte) ([]byte, error) {
+			expected, valid := connection.ImageVariantMetadata(receipt.Image, variant)
+			if receipt.MessageID != message || receipt.ConversationID != r.PathValue("conversationID") || !connection.ValidImageMessageReceipt(receipt, receipt.OwnerID, receipt.ConversationID, receipt.OperationID) || !valid || m != expected || !connection.ValidImageContent(m, b, variant == "thumbnail") || media.ValidateChatImageDerivative(r.Context(), b, m.MIME, m.Width, m.Height) != nil {
+				return nil, connection.ErrConflict
+			}
+			meta = m
+			return append([]byte(nil), b...), nil
+		})
+	}
 	if messageOperationError(w, e) {
 		return
 	}

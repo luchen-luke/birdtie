@@ -112,14 +112,11 @@ func momentMediaParentTx(ctx context.Context, tx pgx.Tx, a mm.Access, moment str
 	var p momentMediaParent
 	viewer := momentPhotoViewer(a)
 	e := tx.QueryRow(ctx, `WITH cl AS MATERIALIZED(SELECT clock_timestamp() at)
- SELECT m.author_account_id,m.revision,(jsonb_build_array(m.xmin::text,a.xmin::text,p.xmin::text,c.xmin::text,`+retainedPlaceReadBindingSQL("p")+`) || CASE WHEN m.city_id IS NULL AND p.id IS NOT NULL THEN jsonb_build_array('place-city-v1',pc.xmin::text) ELSE '[]'::jsonb END)::text,
- least(cl.at+interval '60 seconds',c.expires_at,pc.expires_at,CASE WHEN p.id IS NOT NULL THEN `+currentRetainedPlaceDeadlineSQL("p", "cl.at")+` END),cl.at,length(regexp_replace(m.body,'[[:space:]]','','g'))>0
- FROM moments m JOIN accounts a ON a.id=m.author_account_id LEFT JOIN cities c ON c.id=m.city_id
- LEFT JOIN places p ON p.id=m.place_id AND(m.city_id IS NULL OR p.city_id=m.city_id) LEFT JOIN cities pc ON pc.id=p.city_id CROSS JOIN cl
+ SELECT m.author_account_id,m.revision,birdtie_moment_media_parent_raw(m.id),cl.at+interval '60 seconds',cl.at,length(regexp_replace(m.body,'[[:space:]]','','g'))>0
+ FROM moments m JOIN accounts a ON a.id=m.author_account_id CROSS JOIN cl
  WHERE m.id=$1 AND m.status='published' AND m.visibility='public' AND m.revision>=2
  AND m.author_confirmed_at IS NOT NULL AND m.published_at IS NOT NULL AND m.author_confirmed_at<=m.published_at AND m.published_at<=cl.at
- AND a.account_type='person' AND a.status='active' AND(m.city_id IS NULL OR(c.publication_status='published' AND(c.expires_at IS NULL OR c.expires_at>cl.at)))
- AND((m.place_id IS NULL AND m.location_precision IN('none','city')) OR(m.location_precision='place' AND p.id IS NOT NULL AND p.publication_status='published' AND(p.expires_at IS NULL OR p.expires_at>cl.at) AND pc.publication_status='published' AND(pc.expires_at IS NULL OR pc.expires_at>cl.at) AND `+currentRetainedPlaceVisibilitySQL("p", "cl.at")+`))
+ AND a.account_type='person' AND a.status='active'
  AND NOT EXISTS(SELECT 1 FROM account_blocks b WHERE $2::uuid IS NOT NULL AND((b.blocker_account_id=$2 AND b.blocked_account_id=a.id)OR(b.blocker_account_id=a.id AND b.blocked_account_id=$2)))`, moment, viewer).Scan(&p.owner, &p.revision, &p.binding, &p.deadline, &p.observed, &p.hasBody)
 	if errors.Is(e, pgx.ErrNoRows) {
 		return p, mm.ErrNotFound

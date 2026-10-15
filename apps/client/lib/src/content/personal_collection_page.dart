@@ -7,6 +7,7 @@ import '../workspace/now_ui_tokens.dart';
 import '../workspace/legacy_place_reference_page.dart';
 import 'personal_collection_controller.dart';
 import 'journey_detail_editor.dart';
+import 'journey_history_page.dart';
 import 'collection_control.dart';
 import 'collection_publication_controller.dart';
 import 'collection_publication_page.dart';
@@ -924,6 +925,29 @@ class _PersonalCollectionPageState extends State<PersonalCollectionPage> {
       appBar: AppBar(
         title: Text(c.label),
         actions: [
+          if (c.kind == 'journey')
+            IconButton(
+              tooltip: '原对话记录',
+              icon: const Icon(Icons.history),
+              onPressed: !c.current
+                  ? null
+                  : () {
+                      final controller = c, id = c.editing?.id;
+                      Navigator.of(context).push<void>(
+                        MaterialPageRoute(
+                          builder: (_) => JourneyHistoryPage(
+                            client: controller.transport,
+                            apiBaseUrl: controller.apiBaseUrl,
+                            authorizationHeader: controller.authorizationHeader,
+                            ownerID: controller.ownerID,
+                            current: () => controller.current,
+                            identityChanges: controller,
+                            journeyID: id,
+                          ),
+                        ),
+                      );
+                    },
+            ),
           if (_copyPending != null)
             IconButton(
               key: const Key('collection-copy-open-recovery'),

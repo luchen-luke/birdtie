@@ -79,7 +79,7 @@ func ValidateSummary(s Summary) error {
 	}
 	seen := map[string]bool{}
 	for i, m := range s.RecentMoments {
-		if !pp.ValidID(m.ID) || seen[m.ID] || !utf8.ValidString(m.Title) || m.Title == "" || len(m.Title) > 160 || !utf8.ValidString(m.Excerpt) || len([]rune(m.Excerpt)) > 280 || m.Revision < 2 || m.PublishedAt.Before(s.WindowStart) || m.PublishedAt.After(s.CheckedAt) {
+		if !pp.ValidID(m.ID) || seen[m.ID] || !utf8.ValidString(m.Title) || len(m.Title) > 160 || !utf8.ValidString(m.Excerpt) || len([]rune(m.Excerpt)) > 280 || m.Revision < 2 || m.PublishedAt.Before(s.WindowStart) || m.PublishedAt.After(s.CheckedAt) {
 			return ErrInvalid
 		}
 		if i > 0 && s.RecentMoments[i-1].PublishedAt.Before(m.PublishedAt) {

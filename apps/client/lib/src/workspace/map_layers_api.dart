@@ -161,6 +161,9 @@ class TypedMapItem {
     this.placePhoto,
     this.momentPhoto,
     this.recentMoments,
+    this.pinIdentity = '',
+    this.referenceID = '',
+    this.attribution = '',
   });
   final String kind,
       id,
@@ -170,13 +173,16 @@ class TypedMapItem {
       placeID,
       anchorLabel,
       sourceVersion;
+  final String pinIdentity, referenceID, attribution;
   final double latitude, longitude;
   final EntityCoverMetadata? placePhoto;
   final PublicMomentPhotoMetadata? momentPhoto;
   final MapRecentMoments? recentMoments;
-  String get mapID => '${kind.toLowerCase()}:$id';
+  String get mapID =>
+      '${kind.toLowerCase()}:$id${pinIdentity.isEmpty ? '' : ':$pinIdentity'}';
   String get explanation => switch (kind) {
-    'MOMENT' => '本人明确公开的地点情境，不表示当前位置',
+    'MOMENT' =>
+      '本人明确公开的地点情境，不表示当前位置${attribution.isEmpty ? '' : ' · $attribution'}',
     'BUSINESS' => '已核验经营关系的公开场地，不代表交易背书',
     'OPPORTUNITY' => '仅你可见 · 当前公开活动的地点',
     'ORGANIZATION' => '组织明确提交并审核公开的地点',
@@ -217,6 +223,8 @@ class TypedMapItem {
     MapBounds bounds, {
     bool media = false,
     bool momentMedia = false,
+    bool locations = false,
+    bool references = false,
     DateTime? observedAt,
     DateTime? validUntil,
     DateTime? now,
@@ -229,6 +237,10 @@ class TypedMapItem {
       'detailRef',
       'anchor',
       'sourceVersion',
+      if (locations &&
+          raw is Map<String, dynamic> &&
+          raw.containsKey('pinIdentity'))
+        'pinIdentity',
     };
     if (media && raw is Map<String, dynamic>) {
       if (raw.containsKey('placePhoto')) keys.add('placePhoto');
@@ -240,6 +252,10 @@ class TypedMapItem {
       keys.add('momentPhoto');
     final x = _mapObject(raw, keys);
     final kind = _mapText(x['kind'], 20), id = _mapText(x['id'], 80);
+    final pin = locations ? x['pinIdentity'] ?? '' : '';
+    if (pin is! String ||
+        (kind == 'MOMENT' && locations ? !validOnlineID(pin) : pin != ''))
+      throw const FormatException('地图位置关联身份不符');
     if (x.containsKey('momentPhoto') &&
         (!momentMedia ||
             !{'PUBLIC', 'PUBLIC_AUTHOR'}.contains(scope) ||
@@ -278,6 +294,10 @@ class TypedMapItem {
         dr['id'] != id) {
       throw const FormatException('公开地图身份无效');
     }
+    final external =
+        references &&
+        x['anchor'] is Map &&
+        x['anchor']['targetKind'] == 'REFERENCE';
     final a = _mapObject(x['anchor'], {
       'placeId',
       'label',
@@ -285,9 +305,21 @@ class TypedMapItem {
       'precision',
       'latitude',
       'longitude',
+      if (external) ...{'referenceId', 'targetKind', 'attribution'},
     });
-    final place = _mapText(a['placeId'], 36, empty: kind == 'ORGANIZATION');
-    if ((kind == 'ORGANIZATION' ? place.isNotEmpty : !validOnlineID(place)) ||
+    final place = _mapText(
+      a['placeId'],
+      36,
+      empty: kind == 'ORGANIZATION' || external,
+    );
+    if ((external
+            ? kind != 'MOMENT' ||
+                  place.isNotEmpty ||
+                  !validOnlineID(a['referenceId']) ||
+                  a['attribution'] != '© OpenStreetMap contributors · ODbL 1.0'
+            : kind == 'ORGANIZATION'
+            ? place.isNotEmpty
+            : !validOnlineID(place)) ||
         a['coordinateSystem'] != 'wgs84' ||
         a['precision'] != 'point' ||
         a['latitude'] is! num ||
@@ -315,6 +347,9 @@ class TypedMapItem {
       latitude: lat,
       longitude: lon,
       sourceVersion: _mapText(x['sourceVersion'], 180),
+      pinIdentity: pin,
+      referenceID: external ? a['referenceId'] : '',
+      attribution: external ? a['attribution'] : '',
       placePhoto: x['placePhoto'] == null
           ? null
           : _mapPhoto(
@@ -401,7 +436,11 @@ class TypedMapView {
         : 'PUBLIC';
     final observed = onlineStamp(x['observedAt']),
         until = onlineStamp(x['validUntil']);
-    final momentMedia = !private && x['schemaVersion'] == 'typed-map-layers-v4';
+    final references = !private && x['schemaVersion'] == 'typed-map-layers-v6';
+    final locations =
+        !private && (x['schemaVersion'] == 'typed-map-layers-v5' || references);
+    final momentMedia =
+        !private && (x['schemaVersion'] == 'typed-map-layers-v4' || locations);
     final media =
         momentMedia ||
         authorID == null &&
@@ -430,6 +469,8 @@ class TypedMapView {
             bounds,
             media: media,
             momentMedia: momentMedia,
+            locations: locations,
+            references: references,
             observedAt: observed,
             validUntil: until,
             now: now,
@@ -503,6 +544,7 @@ class MapLayersApi {
           headers: {
             'Authorization': ?authorization,
             if (!private) 'X-Birdtie-Map-Media': 'public-moment-photo-v1',
+            if (!private) 'X-Birdtie-Map-Locations': 'locations-v2',
           },
         )
         .timeout(const Duration(seconds: 12));

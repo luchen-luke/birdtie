@@ -1,0 +1,41 @@
+{
+  "sshExitCode": 0,
+  "stderrBytes": 0,
+  "programSHA256": "7fb0ccb3a4aeb79705032297702ce91021a47bf26c5ffa2274f00d7f1268c234",
+  "result": {
+    "mode": "READ_ONLY",
+    "serviceMutations": 0,
+    "diagnosticRows": [
+      {
+        "tags": [
+          "allocation"
+        ],
+        "component": "o.e.b.JNANatives",
+        "eagain": false,
+        "enomem": true,
+        "gcThreadNumbers": [],
+        "stackKiB": [],
+        "knownExceptions": []
+      },
+      {
+        "tags": [
+          "allocation"
+        ],
+        "component": "o.e.n.Node",
+        "eagain": false,
+        "enomem": false,
+        "gcThreadNumbers": [],
+        "stackKiB": [],
+        "knownExceptions": [
+          "OutOfMemoryError"
+        ]
+      }
+    ],
+    "moreDiagnosticRows": 0,
+    "totalLogBytes": 28579,
+    "pidsLimit": 256,
+    "ulimits": [],
+    "hostVisibleCPUs": 2,
+    "memoryAvailableKiB": 2593040
+  }
+}

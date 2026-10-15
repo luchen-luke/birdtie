@@ -52,6 +52,7 @@ type PageCursor struct {
 	ConversationID string    `json:"conversation"`
 	Time           time.Time `json:"time"`
 	ID             string    `json:"id"`
+	Sequence       int64     `json:"sequence,omitempty"`
 }
 
 func ValidChatPageID(id string) bool {
@@ -59,7 +60,7 @@ func ValidChatPageID(id string) bool {
 }
 
 func EncodePageCursor(c PageCursor) (string, error) {
-	if c.Version != 1 || !ValidChatPageID(c.OwnerID) || !ValidChatPageID(c.ID) ||
+	if (c.Version != 1 && c.Version != 2) || c.Version == 1 && c.Sequence != 0 || c.Version == 2 && (c.Sequence < 1 || c.ConversationID == "") || !ValidChatPageID(c.OwnerID) || !ValidChatPageID(c.ID) ||
 		(c.ConversationID != "" && !ValidChatPageID(c.ConversationID)) || c.Time.IsZero() ||
 		c.Time.Year() < 1 || c.Time.Year() > 9999 || c.Time.Location() != time.UTC {
 		return "", ErrInvalidPage

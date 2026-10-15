@@ -17,16 +17,17 @@ var (
 )
 
 type MomentInput struct {
-	CityID            string     `json:"cityId"`
-	PlaceID           string     `json:"placeId"`
-	Title             string     `json:"title"`
-	Body              string     `json:"body"`
-	OccurredAt        *time.Time `json:"occurredAt"`
-	TimePrecision     string     `json:"timePrecision"`
-	LocationPrecision string     `json:"locationPrecision"`
-	ActivityID        *string    `json:"activityId,omitempty"`
-	CommunityID       *string    `json:"communityId,omitempty"`
-	OrganizationID    *string    `json:"organizationId,omitempty"`
+	Locations         *[]MomentLocationInput `json:"locations,omitempty"`
+	CityID            string                 `json:"cityId"`
+	PlaceID           string                 `json:"placeId"`
+	Title             string                 `json:"title"`
+	Body              string                 `json:"body"`
+	OccurredAt        *time.Time             `json:"occurredAt"`
+	TimePrecision     string                 `json:"timePrecision"`
+	LocationPrecision string                 `json:"locationPrecision"`
+	ActivityID        *string                `json:"activityId,omitempty"`
+	CommunityID       *string                `json:"communityId,omitempty"`
+	OrganizationID    *string                `json:"organizationId,omitempty"`
 }
 
 type Moment struct {
@@ -74,6 +75,16 @@ var momentUUID = regexp.MustCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{
 // NormalizeMomentInput preserves the original shape and byte limits. The
 // current database wall clock, not a caller clock, checks the future bound.
 func NormalizeMomentInput(input MomentInput) (MomentInput, error) {
+	if input.Locations != nil {
+		if input.CityID != "" || input.PlaceID != "" || input.LocationPrecision != "none" {
+			return MomentInput{}, ErrInvalid
+		}
+		v, e := NormalizeMomentLocations(*input.Locations)
+		if e != nil {
+			return MomentInput{}, e
+		}
+		input.Locations = &v
+	}
 	input.CityID = strings.TrimSpace(input.CityID)
 	input.Title = strings.TrimSpace(input.Title)
 	input.Body = strings.TrimSpace(input.Body)

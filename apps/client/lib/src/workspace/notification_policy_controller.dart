@@ -192,6 +192,8 @@ class NotificationPolicyController extends ChangeNotifier {
   final http.Client _client;
   final bool _ownsClient;
   final String _base;
+  http.Client get originalPreferencesTransport => _client;
+  String get originalPreferencesApiBaseUrl => _base;
   (String?, String?, String?)? _identity;
   int _generation = 0, _request = 0;
   bool _closed = false;

@@ -1,0 +1,254 @@
+[
+  {
+    "label": "public_https_ready",
+    "method": "GET",
+    "status": 200,
+    "responseBytes": 19,
+    "elapsedMS": 79,
+    "errorCode": null,
+    "transport": null
+  },
+  {
+    "label": "fixed_test_auth_status",
+    "method": "GET",
+    "status": 200,
+    "responseBytes": 26,
+    "elapsedMS": 46,
+    "errorCode": null,
+    "transport": null
+  },
+  {
+    "label": "search_london",
+    "method": "GET",
+    "status": 200,
+    "responseBytes": 5947,
+    "elapsedMS": 172,
+    "errorCode": null,
+    "transport": null
+  },
+  {
+    "label": "search_edinburgh",
+    "method": "GET",
+    "status": 200,
+    "responseBytes": 5864,
+    "elapsedMS": 1485,
+    "errorCode": null,
+    "transport": null
+  },
+  {
+    "label": "synthetic_code",
+    "method": "POST",
+    "status": 200,
+    "responseBytes": 34,
+    "elapsedMS": 31,
+    "errorCode": null,
+    "transport": null
+  },
+  {
+    "label": "synthetic_verify_once",
+    "method": "POST",
+    "status": 200,
+    "responseBytes": 148,
+    "elapsedMS": 62,
+    "errorCode": null,
+    "transport": null
+  },
+  {
+    "label": "synthetic_current_actor",
+    "method": "GET",
+    "status": 200,
+    "responseBytes": 78,
+    "elapsedMS": 47,
+    "errorCode": null,
+    "transport": null
+  },
+  {
+    "label": "crosscity_create_preview",
+    "method": "POST",
+    "status": 200,
+    "responseBytes": 2846,
+    "elapsedMS": 47,
+    "errorCode": null,
+    "transport": null
+  },
+  {
+    "label": "crosscity_create_commit_once",
+    "method": "PUT",
+    "status": 200,
+    "responseBytes": 320,
+    "elapsedMS": 47,
+    "errorCode": null,
+    "transport": null
+  },
+  {
+    "label": "crosscity_create_original",
+    "method": "GET",
+    "status": 200,
+    "responseBytes": 320,
+    "elapsedMS": 47,
+    "errorCode": null,
+    "transport": null
+  },
+  {
+    "label": "crosscity_publish_preview",
+    "method": "POST",
+    "status": 200,
+    "responseBytes": 2897,
+    "elapsedMS": 62,
+    "errorCode": null,
+    "transport": null
+  },
+  {
+    "label": "crosscity_publish_commit_once",
+    "method": "PUT",
+    "status": 200,
+    "responseBytes": 321,
+    "elapsedMS": 47,
+    "errorCode": null,
+    "transport": null
+  },
+  {
+    "label": "crosscity_publish_original",
+    "method": "GET",
+    "status": 200,
+    "responseBytes": 321,
+    "elapsedMS": 47,
+    "errorCode": null,
+    "transport": null
+  },
+  {
+    "label": "one_cityless_public_body",
+    "method": "GET",
+    "status": 200,
+    "responseBytes": 471,
+    "elapsedMS": 47,
+    "errorCode": null,
+    "transport": null
+  },
+  {
+    "label": "owner_crosscity_links",
+    "method": "GET",
+    "status": 200,
+    "responseBytes": 1900,
+    "elapsedMS": 47,
+    "errorCode": null,
+    "transport": null
+  },
+  {
+    "label": "public_crosscity_links",
+    "method": "GET",
+    "status": 200,
+    "responseBytes": 1702,
+    "elapsedMS": 47,
+    "errorCode": null,
+    "transport": null
+  },
+  {
+    "label": "public_exploration_city_catalog",
+    "method": "GET",
+    "status": 200,
+    "responseBytes": 405909,
+    "elapsedMS": 109,
+    "errorCode": null,
+    "transport": null
+  },
+  {
+    "label": "v6_same_moment_two_different_cities",
+    "method": "GET",
+    "status": 200,
+    "responseBytes": 1545,
+    "elapsedMS": 94,
+    "errorCode": null,
+    "transport": null
+  },
+  {
+    "label": "crosscity_withdraw_preview",
+    "method": "POST",
+    "status": 200,
+    "responseBytes": 685,
+    "elapsedMS": 31,
+    "errorCode": null,
+    "transport": null
+  },
+  {
+    "label": "crosscity_withdraw_commit_once",
+    "method": "PUT",
+    "status": 200,
+    "responseBytes": 322,
+    "elapsedMS": 63,
+    "errorCode": null,
+    "transport": null
+  },
+  {
+    "label": "crosscity_withdraw_original",
+    "method": "GET",
+    "status": 200,
+    "responseBytes": 322,
+    "elapsedMS": 31,
+    "errorCode": null,
+    "transport": null
+  },
+  {
+    "label": "crosscity_public_after_withdraw",
+    "method": "GET",
+    "status": 404,
+    "responseBytes": 68,
+    "elapsedMS": 47,
+    "errorCode": "not_found",
+    "transport": null
+  },
+  {
+    "label": "crosscity_publish_original",
+    "method": "GET",
+    "status": 200,
+    "responseBytes": 321,
+    "elapsedMS": 31,
+    "errorCode": null,
+    "transport": null
+  },
+  {
+    "label": "cleanup_owned_current",
+    "method": "GET",
+    "status": 200,
+    "responseBytes": 445,
+    "elapsedMS": 31,
+    "errorCode": null,
+    "transport": null
+  },
+  {
+    "label": "cleanup_withdrawn_current",
+    "method": "GET",
+    "status": 200,
+    "responseBytes": 445,
+    "elapsedMS": 47,
+    "errorCode": null,
+    "transport": null
+  },
+  {
+    "label": "cleanup_qa_public_denied",
+    "method": "GET",
+    "status": 404,
+    "responseBytes": 68,
+    "elapsedMS": 31,
+    "errorCode": "not_found",
+    "transport": null
+  },
+  {
+    "label": "cleanup_new_session_logout",
+    "method": "POST",
+    "status": 204,
+    "responseBytes": 0,
+    "elapsedMS": 47,
+    "errorCode": null,
+    "transport": null
+  },
+  {
+    "label": "cleanup_new_session_revoked",
+    "method": "GET",
+    "status": 401,
+    "responseBytes": 34,
+    "elapsedMS": 31,
+    "errorCode": "unauthorized",
+    "transport": null
+  }
+]

@@ -1,0 +1,515 @@
+{
+  "sshExitCode": 0,
+  "stderrBytes": 0,
+  "stderrSHA256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "remoteScriptSHA256": "d5bfadbc2b08a107f31920a1cec303e99bffa96bf7bca36ac4ec6e8b0e8ff355",
+  "result": {
+    "status": "READONLY_RETAINED_SOURCE_AND_GEO_AUDIT",
+    "selectedTableComparisons": [
+      {
+        "table": "auth_identities",
+        "snapshotRows": 21,
+        "stoppedSourceRows": 21,
+        "sameSelectedRows": false,
+        "snapshotRowsSHA256": "eaa201b7cafd83af802f8381af70e7ade3700960472f513df43904aedb0ff837",
+        "stoppedSourceRowsSHA256": "ae154eceef9288fd7155f7f08509ee96c3cc100440c6fef773141ae8b574ce6d"
+      },
+      {
+        "table": "cities",
+        "snapshotRows": 339,
+        "stoppedSourceRows": 339,
+        "sameSelectedRows": false,
+        "snapshotRowsSHA256": "76b69163a6a91f5cd52cbed8b85cf0d34e4879fe978580be146c0cc45c92fbfe",
+        "stoppedSourceRowsSHA256": "3c945a015d0ca63cdecb1608889b29c2abd7b73f8b1c12f5c612da2887b15711"
+      },
+      {
+        "table": "geo_areas",
+        "snapshotRows": 4330,
+        "stoppedSourceRows": 4330,
+        "sameSelectedRows": false,
+        "snapshotRowsSHA256": "9bbdc646925ea491ec17edf489ea7841a6016edb07b646aaa405be3c54b84dfb",
+        "stoppedSourceRowsSHA256": "a63f1d683d8e103f32a01ed7819def05e064bc72b9728cf41519541e3f232b31"
+      },
+      {
+        "table": "journey_arrangements",
+        "snapshotRows": 181,
+        "stoppedSourceRows": 181,
+        "sameSelectedRows": false,
+        "snapshotRowsSHA256": "9e7f8942cbb5db58fd79c6902fba6e8a786befb8f95e970469ad5e967b048668",
+        "stoppedSourceRowsSHA256": "917e2d128a9984310da332d252867dd370ceacd5653b541f0059eeeacd7a968e"
+      },
+      {
+        "table": "journey_media",
+        "snapshotRows": 1,
+        "stoppedSourceRows": 1,
+        "sameSelectedRows": true,
+        "snapshotRowsSHA256": "bffa924855b0b97a6340216723f97ee35313b4b752f39aed7908b8523db80e37",
+        "stoppedSourceRowsSHA256": "bffa924855b0b97a6340216723f97ee35313b4b752f39aed7908b8523db80e37"
+      },
+      {
+        "table": "journey_members",
+        "snapshotRows": 34,
+        "stoppedSourceRows": 34,
+        "sameSelectedRows": false,
+        "snapshotRowsSHA256": "2e61cb28f1e18e3a0bb0012a9e56e19baa68e11539b7bbbeee3982e744856b26",
+        "stoppedSourceRowsSHA256": "e02aa9ef1b8e500c91e2020c3c9d0eef4b12d8a8081bd6074e0b50f2187f57c4"
+      },
+      {
+        "table": "journey_notes",
+        "snapshotRows": 1,
+        "stoppedSourceRows": 1,
+        "sameSelectedRows": false,
+        "snapshotRowsSHA256": "4c497ec0f795306e724a63cb199ca43371f345d3c8ad453ffb273ca62fb75799",
+        "stoppedSourceRowsSHA256": "a5d343834a175fe31557bc9b253512d023b51100faf102a71124b0ba7646cd54"
+      },
+      {
+        "table": "journey_publication_places",
+        "snapshotRows": 35,
+        "stoppedSourceRows": 35,
+        "sameSelectedRows": true,
+        "snapshotRowsSHA256": "ae65eb5abd5b928a1d61524117b80914984128dc7bab04a92ef3e7dfb0012fc9",
+        "stoppedSourceRowsSHA256": "ae65eb5abd5b928a1d61524117b80914984128dc7bab04a92ef3e7dfb0012fc9"
+      },
+      {
+        "table": "journey_publications",
+        "snapshotRows": 11,
+        "stoppedSourceRows": 11,
+        "sameSelectedRows": false,
+        "snapshotRowsSHA256": "a2d0fc2985ea66466632b0aea1c9643b9d23e733577fadb002f602c36c34b5e1",
+        "stoppedSourceRowsSHA256": "fae9047aa8ecf10495d2a86f2e30e78e8f4e2737e64ef2538ff5e02e4ca02bcb"
+      },
+      {
+        "table": "journey_stops",
+        "snapshotRows": 44,
+        "stoppedSourceRows": 44,
+        "sameSelectedRows": false,
+        "snapshotRowsSHA256": "3049a5f86b87f8f1ceaccd2c57019133a3ddaf253ef0186b066c684c26b669b7",
+        "stoppedSourceRowsSHA256": "50cad8b3fc99502665d9b743b2bd836dbf4ad317a3e20dbccd8654c8d682b006"
+      },
+      {
+        "table": "journeys",
+        "snapshotRows": 34,
+        "stoppedSourceRows": 34,
+        "sameSelectedRows": false,
+        "snapshotRowsSHA256": "8a204dd59a6847416b89d42ef2309087b1c1e1c20e07df502bd3f867642af59e",
+        "stoppedSourceRowsSHA256": "e001e86bc8af6df3d596348632b60b7648b42b288d16f6ddf86af62804f8c89f"
+      },
+      {
+        "table": "media_assets",
+        "snapshotRows": 407,
+        "stoppedSourceRows": 407,
+        "sameSelectedRows": false,
+        "snapshotRowsSHA256": "8d2dfdc139774a8c8bfef42ef22d209f980e6fe4551f436943c9c7f5586cb450",
+        "stoppedSourceRowsSHA256": "deb56a6db4b5e6507865864b48933986951628d7e9c47fbbc387782323edee30"
+      },
+      {
+        "table": "moment_thread_legs",
+        "snapshotRows": 5,
+        "stoppedSourceRows": 5,
+        "sameSelectedRows": false,
+        "snapshotRowsSHA256": "204d4bf768ff1e20b564f3d7fb3357fc80b30c7491519d759dd327bce92fab26",
+        "stoppedSourceRowsSHA256": "dc8fc36f210571bf73af3fdc4d30ad25a79d404b0a01c28578d723b9398718c8"
+      },
+      {
+        "table": "moment_threads",
+        "snapshotRows": 26,
+        "stoppedSourceRows": 26,
+        "sameSelectedRows": false,
+        "snapshotRowsSHA256": "886982375567db6d650c870dd85b9032428fc31b73f7ca66567ef5360b8da741",
+        "stoppedSourceRowsSHA256": "0484e05003ac8cd438a7c79dafc994b7fe89278868378ef82788ae261dc88ad2"
+      },
+      {
+        "table": "note_media",
+        "snapshotRows": 215,
+        "stoppedSourceRows": 215,
+        "sameSelectedRows": true,
+        "snapshotRowsSHA256": "71b3d6d21b1e52f9762edfa25db8f0b8bba53a9843c829baac1f72319a998d50",
+        "stoppedSourceRowsSHA256": "71b3d6d21b1e52f9762edfa25db8f0b8bba53a9843c829baac1f72319a998d50"
+      },
+      {
+        "table": "note_media_locations",
+        "snapshotRows": 94,
+        "stoppedSourceRows": 94,
+        "sameSelectedRows": true,
+        "snapshotRowsSHA256": "635c30fdcfc7288ab0e9cd2637d75122f9129263bd4f1eb886ea1bc41f03a50f",
+        "stoppedSourceRowsSHA256": "635c30fdcfc7288ab0e9cd2637d75122f9129263bd4f1eb886ea1bc41f03a50f"
+      },
+      {
+        "table": "note_places",
+        "snapshotRows": 69,
+        "stoppedSourceRows": 69,
+        "sameSelectedRows": true,
+        "snapshotRowsSHA256": "e8ac260c2130254912ad8109fbbdf71091b33e7d1021045806594b128bdd3079",
+        "stoppedSourceRowsSHA256": "e8ac260c2130254912ad8109fbbdf71091b33e7d1021045806594b128bdd3079"
+      },
+      {
+        "table": "notes",
+        "snapshotRows": 103,
+        "stoppedSourceRows": 103,
+        "sameSelectedRows": false,
+        "snapshotRowsSHA256": "52cd9587da7f24a02a7e2542c29173ee5a1862b92542d87d9a8543c5237e19a2",
+        "stoppedSourceRowsSHA256": "4d0dda7cd940c4529591256462ade8f8b30ca89d870bc1474a51428895f2c6d5"
+      },
+      {
+        "table": "place_area_relations",
+        "snapshotRows": 32,
+        "stoppedSourceRows": 32,
+        "sameSelectedRows": false,
+        "snapshotRowsSHA256": "8a9664056f914da7bc2c2f8e718feee9d846dea2248474b20afa2dd022aa7469",
+        "stoppedSourceRowsSHA256": "47215422787afb85e92808097dc49a52a9caddb37f0d17019b92aefe84edc1d7"
+      },
+      {
+        "table": "place_images",
+        "snapshotRows": 148,
+        "stoppedSourceRows": 148,
+        "sameSelectedRows": false,
+        "snapshotRowsSHA256": "17c42be1d659ecbb72d923f58157282d857981c87df84e20e02884622f6177e7",
+        "stoppedSourceRowsSHA256": "57f95db6055d53196fed0c5adc55577709d1168fb22f280b2bd3f9ca9051a4d1"
+      },
+      {
+        "table": "place_provider_refs",
+        "snapshotRows": 5593,
+        "stoppedSourceRows": 5593,
+        "sameSelectedRows": false,
+        "snapshotRowsSHA256": "0712579df2c195964cb7c5444b64867c831cd9cc0cb0ea779eda3828c18f3218",
+        "stoppedSourceRowsSHA256": "a0090e9a28b1fed56dcc564194404dd49c8aa3ed3f3a844de980d743ae04e900"
+      },
+      {
+        "table": "place_save_sources",
+        "snapshotRows": 57,
+        "stoppedSourceRows": 57,
+        "sameSelectedRows": false,
+        "snapshotRowsSHA256": "a9313fefc3b1f3336cfec6856204bec9c21bb5f3f68286cc6c3bf4ae9cdd6e52",
+        "stoppedSourceRowsSHA256": "8f2153070d618e4208e7ca8f0b18ee9acfcae51dd2417045313cd786f58ab5cb"
+      },
+      {
+        "table": "places",
+        "snapshotRows": 5511,
+        "stoppedSourceRows": 5511,
+        "sameSelectedRows": false,
+        "snapshotRowsSHA256": "9bdbb2eb5c20aa662713bf2c6a35a8ccd3df05cf8344385dcf8aa316535ceeb4",
+        "stoppedSourceRowsSHA256": "3fcd4ff3f283deda1c8bac43cb8f694304917fac9ef48cfcecc11f87dc1bacc3"
+      },
+      {
+        "table": "regions",
+        "snapshotRows": 3,
+        "stoppedSourceRows": 3,
+        "sameSelectedRows": false,
+        "snapshotRowsSHA256": "a1a71c56d5b9aec8cf0455c5a2aa12e6c764304099300f7aa3e5dae5c9444cd7",
+        "stoppedSourceRowsSHA256": "f14be27eeaf2a89d8d7f39ddf73fa91dfefd6f8c0293f7e3b990cb38c45d5e23"
+      },
+      {
+        "table": "theme_map_entries",
+        "snapshotRows": 12,
+        "stoppedSourceRows": 12,
+        "sameSelectedRows": false,
+        "snapshotRowsSHA256": "15a0ac86f127fb2bdf9a81729331731e0fbe95bd3394dcaac1dfccc68c47cd62",
+        "stoppedSourceRowsSHA256": "1ef8fe54dd4d375101e21cc7f4df5f0b4fe4bd5d7a1db531cb0ce6f056ecb3c9"
+      },
+      {
+        "table": "theme_maps",
+        "snapshotRows": 3,
+        "stoppedSourceRows": 3,
+        "sameSelectedRows": false,
+        "snapshotRowsSHA256": "df9e17629efa28fe82d6a6766d949716d201f385cff45e79ca6c8cd376ec3ce8",
+        "stoppedSourceRowsSHA256": "804d7f4d0bd455ba0ac5492d30d423aab294b35c98d33e0118f49a1f00ac563c"
+      },
+      {
+        "table": "user_saved_places",
+        "snapshotRows": 189,
+        "stoppedSourceRows": 189,
+        "sameSelectedRows": false,
+        "snapshotRowsSHA256": "92c6a167cad6c329bda5db5ca3bec31b629f0bb7d7bc4f320336b7880d305889",
+        "stoppedSourceRowsSHA256": "c017894af4a50e7c6dc53224c00f14aa0a72f73ba0d81d8e2ab063a229c30d3d"
+      },
+      {
+        "table": "users",
+        "snapshotRows": 20,
+        "stoppedSourceRows": 20,
+        "sameSelectedRows": false,
+        "snapshotRowsSHA256": "6f7e3d666d30a9f991e076035ef8eb91e70ec3dcf1e8775aead700fc6856517b",
+        "stoppedSourceRowsSHA256": "3c7ac378cb4bdf63609f40ac9702c51c532c1009f08bd6ce4a89eb8cf9a1fe7d"
+      }
+    ],
+    "changedSelectedTables": 23,
+    "oldSocialCounts": {
+      "ai_journey_messages": 41,
+      "conversation_members": 23,
+      "conversations": 11,
+      "follow_requests": 0,
+      "follows": 21,
+      "friendships": 5,
+      "group_join_requests": 0,
+      "message_attachments": 1,
+      "message_reports": 0,
+      "message_requests": 1,
+      "messages": 39,
+      "notification_settings": 2,
+      "notifications": 110,
+      "private_message_media": 1,
+      "user_blocks": 0
+    },
+    "oldSocialColumns": {
+      "follows": [
+        "follower_id",
+        "followee_id",
+        "created_at"
+      ],
+      "messages": [
+        "id",
+        "conversation_id",
+        "sender_id",
+        "seq",
+        "client_message_id",
+        "payload_hash",
+        "type",
+        "text",
+        "entity_type",
+        "entity_id",
+        "context_type",
+        "context_id",
+        "request_id",
+        "recalled_at",
+        "moderated_at",
+        "created_at",
+        "sticker_pack_id",
+        "sticker_id"
+      ],
+      "friendships": [
+        "user_low_id",
+        "user_high_id",
+        "requester_id",
+        "status",
+        "created_at",
+        "updated_at",
+        "responded_at"
+      ],
+      "conversations": [
+        "id",
+        "type",
+        "user_low_id",
+        "user_high_id",
+        "status",
+        "consent_epoch",
+        "last_seq",
+        "last_message_id",
+        "last_message_at",
+        "created_at",
+        "updated_at",
+        "title",
+        "join_policy",
+        "member_limit",
+        "history_for_new_members",
+        "journey_id",
+        "owner_id",
+        "school_label",
+        "invite_token",
+        "archived_at",
+        "show_on_profile"
+      ],
+      "message_requests": [
+        "id",
+        "conversation_id",
+        "epoch",
+        "requester_id",
+        "recipient_id",
+        "status",
+        "first_message_id",
+        "seen_at",
+        "resolved_at",
+        "retry_after",
+        "created_at"
+      ],
+      "group_join_requests": [
+        "conversation_id",
+        "user_id",
+        "status",
+        "created_at"
+      ],
+      "message_attachments": [
+        "message_id",
+        "media_id",
+        "position"
+      ],
+      "conversation_members": [
+        "conversation_id",
+        "user_id",
+        "last_read_seq",
+        "last_delivered_seq",
+        "unread_count",
+        "muted_until",
+        "joined_at",
+        "updated_at",
+        "pinned",
+        "hidden",
+        "marked_unread",
+        "cleared_through_seq",
+        "role",
+        "removed_at"
+      ],
+      "private_message_media": [
+        "id",
+        "owner_id",
+        "conversation_id",
+        "status",
+        "width",
+        "height",
+        "size_bytes",
+        "upload_lease",
+        "upload_until",
+        "storage_key",
+        "created_at",
+        "ready_at",
+        "kind",
+        "duration_ms",
+        "file_name"
+      ]
+    },
+    "oldCivuUnit": {
+      "ActiveState": "failed",
+      "SubState": "failed",
+      "MainPID": "0",
+      "UnitFileState": "disabled"
+    },
+    "retainedGeoServices": [
+      {
+        "name": "civu_pelias_api",
+        "image": "pelias/api:master",
+        "running": false,
+        "status": "exited",
+        "restartPolicy": "unless-stopped",
+        "memoryBytes": 0,
+        "ports": {
+          "4000/tcp": [
+            {
+              "HostIp": "127.0.0.1",
+              "HostPort": "4000"
+            }
+          ]
+        },
+        "mounts": [
+          {
+            "source": "/srv/civu-data/docker/volumes/03c574fc2be8a7a782d0598664bae8a848fd8663b80b6164b0c9b143eb254351/_data",
+            "destination": "/data",
+            "readOnly": false
+          },
+          {
+            "source": "/opt/pelias/docker/projects/civu-europe-mvp/pelias.json",
+            "destination": "/code/pelias.json",
+            "readOnly": true
+          }
+        ]
+      },
+      {
+        "name": "civu_pelias_libpostal",
+        "image": "pelias/libpostal-service",
+        "running": false,
+        "status": "exited",
+        "restartPolicy": "unless-stopped",
+        "memoryBytes": 0,
+        "ports": {
+          "4400/tcp": [
+            {
+              "HostIp": "127.0.0.1",
+              "HostPort": "4400"
+            }
+          ]
+        },
+        "mounts": [
+          {
+            "source": "/srv/civu-data/docker/volumes/1cfaaffc2b5e69bf92ee7f8e51ba15daea03b2f9b2cbef193536c94b94b8036c/_data",
+            "destination": "/data",
+            "readOnly": false
+          }
+        ]
+      },
+      {
+        "name": "civu_pelias_placeholder",
+        "image": "pelias/placeholder:master",
+        "running": false,
+        "status": "exited",
+        "restartPolicy": "unless-stopped",
+        "memoryBytes": 0,
+        "ports": {
+          "4100/tcp": [
+            {
+              "HostIp": "127.0.0.1",
+              "HostPort": "4100"
+            }
+          ]
+        },
+        "mounts": [
+          {
+            "source": "/opt/pelias/docker/projects/civu-europe-mvp/pelias.json",
+            "destination": "/code/pelias.json",
+            "readOnly": true
+          },
+          {
+            "source": "/srv/civu-data/pelias",
+            "destination": "/data",
+            "readOnly": false
+          }
+        ]
+      },
+      {
+        "name": "civu_pelias_elasticsearch",
+        "image": "pelias/elasticsearch:7.17.27",
+        "running": false,
+        "status": "exited",
+        "restartPolicy": "unless-stopped",
+        "memoryBytes": 6442450944,
+        "ports": {
+          "9200/tcp": [
+            {
+              "HostIp": "127.0.0.1",
+              "HostPort": "9200"
+            }
+          ],
+          "9300/tcp": [
+            {
+              "HostIp": "127.0.0.1",
+              "HostPort": "9300"
+            }
+          ]
+        },
+        "mounts": [
+          {
+            "source": "/opt/pelias/docker/projects/civu-europe-mvp/elasticsearch.yml",
+            "destination": "/usr/share/elasticsearch/config/elasticsearch.yml",
+            "readOnly": true
+          },
+          {
+            "source": "/srv/civu-data/pelias/elasticsearch",
+            "destination": "/usr/share/elasticsearch/data",
+            "readOnly": false
+          }
+        ]
+      }
+    ],
+    "retainedGeoConfigs": [
+      {
+        "path": "/opt/pelias/docker/projects/civu-europe-mvp/pelias.json",
+        "sha256": "446543f544b0f3e56fac86a5f6d6103ee8adcefd3fbf78c179f946d60b3dbcd0",
+        "topLevelSections": [
+          "api",
+          "elasticsearch",
+          "esclient",
+          "imports",
+          "logger"
+        ],
+        "apiHost": null,
+        "apiPort": null,
+        "services": {
+          "placeholder": {},
+          "libpostal": {}
+        },
+        "hasApiKey": false
+      }
+    ],
+    "sourceInputUnchanged": true,
+    "sourceWrites": 0,
+    "nativeWrites": 0,
+    "serviceMutations": 0,
+    "privateValuesOmitted": true
+  }
+}

@@ -10,6 +10,10 @@ import (
 var ErrNotFound = errors.New("inbox item not found")
 
 type Item struct {
+	Origin               string                  `json:"origin,omitempty"`
+	HistoricalType       string                  `json:"historicalType,omitempty"`
+	OriginalReadAt       *time.Time              `json:"originalReadAt,omitempty"`
+	OriginalSeenAt       *time.Time              `json:"originalSeenAt,omitempty"`
 	ID                   string                  `json:"id"`
 	Category             string                  `json:"category"`
 	Title                string                  `json:"title"`

@@ -1,0 +1,11 @@
+{
+  "cwd": "D:\\Project\\birdtie\\apps\\client",
+  "command": "D:\\DevTools\\flutter\\bin\\flutter.bat test --no-pub --reporter expanded test/moment_locations_test.dart",
+  "startedAt": "2026-10-15T09:41:55.3376825Z",
+  "finishedAt": "2026-10-15T09:41:59.2508364Z",
+  "exitCode": 0,
+  "formatExitCode": 0,
+  "build": "NOT_RUN",
+  "device": "NOT_RUN",
+  "apiNative": "NOT_RUN"
+}

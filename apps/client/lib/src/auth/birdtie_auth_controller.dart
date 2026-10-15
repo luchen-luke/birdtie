@@ -59,6 +59,7 @@ class BirdtieAuthController extends ChangeNotifier {
   bool _closed = false;
   bool _providerConfigured = false;
   bool _devPhoneConfigured = false;
+  bool _devEmailConfigured = false;
   bool _configurationChecked = false;
   bool _sessionRestoring = false;
   Future<void>? _initialization;
@@ -124,6 +125,8 @@ class BirdtieAuthController extends ChangeNotifier {
       _providerConfigured;
   bool get devPhoneAvailable =>
       !kReleaseMode && _apiBase.isNotEmpty && _devPhoneConfigured;
+  bool get devEmailAvailable =>
+      !kReleaseMode && _apiBase.isNotEmpty && _devEmailConfigured;
   bool get configurationChecked => _configurationChecked;
   // Display state only. It is neither a Session nor permission to read data.
   bool get sessionRestoring => _sessionRestoring;
@@ -235,6 +238,19 @@ class BirdtieAuthController extends ChangeNotifier {
     } catch (_) {
       _devPhoneConfigured = false;
     }
+    try {
+      final response = await _client
+          .get(_endpoint('/v1/auth/dev-email/status'))
+          .timeout(const Duration(seconds: 10));
+      if (response.statusCode == 200) {
+        final data =
+            (jsonDecode(response.body) as Map<String, dynamic>)['data']
+                as Map<String, dynamic>;
+        _devEmailConfigured = data['enabled'] == true;
+      }
+    } catch (_) {
+      _devEmailConfigured = false;
+    }
     if (browser.browserAuthAvailable || _nativeGateway != null) {
       try {
         final response = await _client
@@ -337,6 +353,106 @@ class BirdtieAuthController extends ChangeNotifier {
       issuedToken = token;
       if (!current()) throw StateError('login entry retired');
       await _acceptSession(token, method: 'dev_phone', isCurrent: current);
+      return true;
+    } catch (_) {
+      if (issuedToken != null) await _discardIssuedToken(issuedToken);
+      if (current()) _error = '登录未完成，请稍后重试。';
+      return false;
+    } finally {
+      _finishAttempt(attempt);
+    }
+  }
+
+  Future<bool> requestDevEmailCode(
+    String email, {
+    bool Function()? isCurrent,
+  }) async {
+    if (!devEmailAvailable ||
+        _busy ||
+        signedIn ||
+        sessionRestoring ||
+        (isCurrent != null && !isCurrent()))
+      return false;
+    final attempt = _beginAttempt();
+    if (attempt == null) return false;
+    bool current() =>
+        _ownsAttempt(attempt) && (isCurrent == null || isCurrent());
+    try {
+      if (!current()) return false;
+      final response = await _client
+          .post(
+            _endpoint('/v1/auth/dev-email/code'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({'email': email.trim()}),
+          )
+          .timeout(const Duration(seconds: 10));
+      if (!current()) return false;
+      if (response.statusCode == 429) {
+        _error = '请求过于频繁，请稍后再试。';
+        return false;
+      }
+      if (response.statusCode != 200) {
+        _error = '请输入有效邮箱地址。';
+        return false;
+      }
+      return true;
+    } catch (_) {
+      if (current()) _error = '无法获取测试验证码，请检查登录服务。';
+      return false;
+    } finally {
+      _finishAttempt(attempt);
+    }
+  }
+
+  Future<bool> verifyDevEmailCode(
+    String email,
+    String code, {
+    bool Function()? isCurrent,
+  }) async {
+    if (!devEmailAvailable ||
+        _busy ||
+        signedIn ||
+        sessionRestoring ||
+        (isCurrent != null && !isCurrent()))
+      return false;
+    final attempt = _beginAttempt();
+    if (attempt == null) return false;
+    bool current() =>
+        _ownsAttempt(attempt) && (isCurrent == null || isCurrent());
+    String? issuedToken;
+    try {
+      if (!current()) return false;
+      final response = await _client
+          .post(
+            _endpoint('/v1/auth/dev-email/verify'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({'email': email.trim(), 'code': code.trim()}),
+          )
+          .timeout(const Duration(seconds: 10));
+      if (response.statusCode != 200 && !current()) return false;
+      if (response.statusCode == 429) {
+        _error = '尝试次数过多，请稍后重新获取测试验证码。';
+        return false;
+      }
+      if (response.statusCode != 200) {
+        _error = response.statusCode == 403
+            ? '该邮箱暂不可接续旧账号，请检查原登录邮箱。'
+            : '测试验证码无效、已过期或尚未获取。';
+        return false;
+      }
+      final data =
+          (jsonDecode(response.body) as Map<String, dynamic>)['data']
+              as Map<String, dynamic>;
+      final token = data['accessToken'];
+      if (token is! String || token.isEmpty) {
+        throw const FormatException('session missing');
+      }
+      issuedToken = token;
+      if (data['credentialKind'] != 'email') {
+        throw const FormatException('email session kind missing');
+      }
+      if (!current()) throw StateError('login entry retired');
+      await _acceptSession(token, method: 'dev_email', isCurrent: current);
       return true;
     } catch (_) {
       if (issuedToken != null) await _discardIssuedToken(issuedToken);

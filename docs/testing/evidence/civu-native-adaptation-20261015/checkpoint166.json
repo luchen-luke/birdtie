@@ -1,0 +1,140 @@
+{
+  "at": "2026-10-15T11:42:57.550337+00:00",
+  "kind": "NATIVE160_166_ACTUAL_DEPLOYMENT_AND_RECONCILIATION",
+  "origin": "https://47.110.154.133",
+  "apiRelease": "/opt/birdtie/releases/social166-20261015-build13",
+  "apiSHA256": "3a508f54f01a5715fbf7d29922041935c6a5e7a379958709d1dd1947150cdf69",
+  "webRelease": "/opt/birdtie/web/releases/public-20261015-final-web08",
+  "webManifestSHA256": "4ba479369816e6e016d5992c1fcf5c5d87be00cff818f7a6a47401c9036267d0",
+  "apkSHA256": "827e746792f6bf0a705a65d6bccfa8a2a3310f8a143a69ebd3e41061fab6b150",
+  "installed": false,
+  "apkInstall": "FAILED_DEVICE_NOT_FOUND",
+  "fullDeviceAcceptance": "NOT_RUN",
+  "deviceOperationAuthorized": true,
+  "schema": 166,
+  "originalSQLMigrationsUnchanged": 159,
+  "originalSQLFilesUnchanged": 293,
+  "sourceWrites": 0,
+  "importedAgentsActivated": 0,
+  "newOwnerEnrolled": false,
+  "nativeCounts": {
+    "cities": 1067,
+    "places": 5492,
+    "moments": 83,
+    "themeMaps": 3,
+    "savedPlaces": 189,
+    "journeys": 22,
+    "journeyEntries": 110,
+    "privatePhotos": 166,
+    "privateVideos": 5,
+    "privateThreads": 22,
+    "threadMembers": 27,
+    "friendships": 5,
+    "follows": 21,
+    "conversations": 11,
+    "chatMessages": 39,
+    "chatImages": 1,
+    "aiHistoryThreads": 8,
+    "aiHistoryMessages": 41,
+    "historicalNotifications": 109
+  },
+  "finalAggregate": "final-native-reconciliation01/receipt.json",
+  "finalAggregateSHA256": "bcdad8bd09fa0622f89d50c02edc1e1672cd704bfc4d5a665f7b25c499f428cf",
+  "eligiblePersonalCoverageComplete": true,
+  "liveNoteMediaCoverage": "171_OF_171",
+  "context162Deferred": {},
+  "assetScope": {
+    "sourceAssets": 407,
+    "liveNoteRelations": 171,
+    "deletedNoteRelations": 44,
+    "overlappingDistinctAssetPurposes": {
+      "LIVE_NOTE": 171,
+      "DELETED_NOTE": 44,
+      "PLACE_COVER": 93,
+      "OTHER_PLACE_IMAGE": 55,
+      "PLACE_PREVIEW": 0,
+      "GEO_ARTWORK": 3,
+      "JOURNEY_MEDIA": 1,
+      "NOTE_COVER_URL": 4,
+      "JOURNEY_COVER_URL": 0,
+      "THEME_COVER_URL": 0,
+      "PROFILE_URL": 0
+    },
+    "multiPurposeAssets": 75,
+    "disjointPartitionInListedPrecedence": {
+      "LIVE_NOTE": 171,
+      "DELETED_NOTE": 44,
+      "PLACE_COVER": 62,
+      "OTHER_PLACE_IMAGE": 13,
+      "PLACE_PREVIEW": 0,
+      "GEO_ARTWORK": 3,
+      "JOURNEY_MEDIA": 1,
+      "NOTE_COVER_URL": 1,
+      "JOURNEY_COVER_URL": 0,
+      "THEME_COVER_URL": 0,
+      "PROFILE_URL": 0,
+      "NO_REFERENCE_IN_ORIGINAL_29_TABLES": 112
+    },
+    "partitionClosesToSourceAssets": true,
+    "referencedDistinctAssets": 295,
+    "ownerMetadata": {
+      "knownOriginalOwner": 404,
+      "nullOwner": 3,
+      "otherOwner": 0
+    },
+    "statusMetadata": {
+      "ready": 386,
+      "pending": 21
+    },
+    "chatImageSourceIsIndependentPrivateMessageMedia": true,
+    "chatImageMembershipIn407": "NOT_ASSUMED",
+    "sourcePixelRead": "NOT_RUN",
+    "permissionInferredFromReferences": false,
+    "nativeNoteAttachmentFacts": 171,
+    "nativeDistinctOriginalNoteAssets": 171,
+    "liveNotePairsWithoutNativeAttachment": 0,
+    "nativeAttachmentPairsOutsideLiveSource": 0,
+    "originalAssetsNotInNativeNoteAttachmentFacts": 236,
+    "remainingAssetMeaning": "OTHER_USES_OR_UNASSESSED_NOT_AUTOMATICALLY_MISSING",
+    "all407AssetsDecodedOrAdapted": "NOT_CLAIMED"
+  },
+  "sourceStopDelta": {
+    "mode": "EXISTING_RECEIPTS_REUSED_NO_OLD_DATABASE_QUERY",
+    "receipts": [
+      "remaining-remote-readonly-receipt02.json",
+      "remaining-source-empty-check01.json"
+    ],
+    "originalTablesChecked": 29,
+    "changedOriginalTables": 0,
+    "empty29thTableConfirmed": true,
+    "oldCivuUnitStateAtPriorObservation": {
+      "ActiveState": "failed",
+      "SubState": "failed",
+      "MainPID": "0",
+      "UnitFileState": "disabled"
+    },
+    "freshOldServiceCheck": "NOT_RUN",
+    "fullEncryptedBackupRehash": "NOT_RUN_PREVIOUS_AUTHENTICATION_PROOF_REUSED"
+  },
+  "externalLocationProvider": {
+    "status": "READY",
+    "coverage": [
+      "GB",
+      "IS"
+    ],
+    "restartPolicy": "unless-stopped",
+    "oldSourceUnchanged": true
+  },
+  "multiLocationHTTPS": {
+    "status": "PASS",
+    "checks": 62,
+    "receipt": "docs/testing/evidence/github-remote-completion-20261015/remote-multilocation166-01/receipt.json",
+    "sha256": "93228775c53b6278fd08abbff17acc8044583e6f7d1c56b6f49f9cb1b1427451"
+  },
+  "sourceFramesMatchBuilds": true,
+  "fullMigration": "PARTIAL_OTHER_ASSET_USES_UNASSESSED",
+  "fullNewMomentSpecification": "PARTIAL_DEVICE_ACCEPTANCE_PENDING",
+  "fullSiteAccepted": false,
+  "normalFont": true,
+  "screenRecording": false
+}

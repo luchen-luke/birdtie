@@ -1,0 +1,78 @@
+{
+  "kind": "EXACT_SCOPE_SOURCE_FROZEN",
+  "generatedAt": "2026-10-15T10:35:33.180393+00:00",
+  "paths": {
+    "apps/api/migrations/164_legacy_dev_email_bindings.sql": {
+      "sha256": "50d211ec2c65eb2a8b801a946d7bf9ac561a2ce74865902f965ff8f14ad84de9",
+      "bytes": 7405
+    },
+    "apps/api/migrations/164_legacy_dev_email_bindings.down.sql": {
+      "sha256": "da74dad7120cec3a9028d626c55945f400159a9c274e27998e770a696c296130",
+      "bytes": 827
+    },
+    "apps/api/internal/devauth/email.go": {
+      "sha256": "97b0384838379d907810384dbd7245b1a075c047a45599bb4fe9b8e07b31cab2",
+      "bytes": 1080
+    },
+    "apps/api/internal/devauth/email_test.go": {
+      "sha256": "a9dcd3add60720891f6f1fb04cf1ff2fdae22b819954746616770a3ace8468b7",
+      "bytes": 706
+    },
+    "apps/api/internal/legacymigration/dev_email.go": {
+      "sha256": "564bad7e16d3e177abfaf2ba510304fc9238473198e44f72ec8a3dd9c456b8d1",
+      "bytes": 4684
+    },
+    "apps/api/internal/legacymigration/dev_email_test.go": {
+      "sha256": "a3c19d3aef3fd697b197499486fe02454c2d8392e495fa97a5f0d1b521d2e8f0",
+      "bytes": 1964
+    },
+    "apps/api/internal/postgres/legacy_dev_email_bindings.go": {
+      "sha256": "04cca61aca6919b95d6d9a63b545d3954275b5e650d6a4b35bf302ab0b92def6",
+      "bytes": 12936
+    },
+    "apps/api/internal/postgres/legacy_dev_email_bindings_native_test.go": {
+      "sha256": "98dc7b465151f316e0bd13584f466530c83fef373915071b7b1df8faa8941e1a",
+      "bytes": 12373
+    },
+    "apps/api/internal/postgres/dev_email.go": {
+      "sha256": "9fff5a2d940701fe142ac35474408cb6d9445f86dc81a3935341cb47a6afe2f7",
+      "bytes": 4804
+    },
+    "apps/api/internal/httpapi/dev_email.go": {
+      "sha256": "814d6ee0290d76e70ae79f01d53fd462efac4c00f383053009436a7c4ffbbe70",
+      "bytes": 3510
+    },
+    "apps/api/internal/httpapi/dev_email_test.go": {
+      "sha256": "433818fea4f01be49ce5a1fcdde84b92892bbac9f297d7737c6a3a4369e09243",
+      "bytes": 2262
+    },
+    "apps/api/cmd/legacy-import/main.go": {
+      "sha256": "791ab7d9e20df29e1048f86c2823e10d2a735cc19cb6c2713eec4db15b5e1264",
+      "bytes": 14935
+    },
+    "apps/api/cmd/legacy-import/main_test.go": {
+      "sha256": "6b971954bbb542d6ea43385cc465365b485ca57d01054a08131cd3c15ecb3781",
+      "bytes": 13883
+    },
+    "apps/client/lib/src/auth/birdtie_auth_controller.dart": {
+      "sha256": "5a1103ed852ab8ccd065bcff4fb653e71f884e171c6b1c920e6cc6e07d2be442",
+      "bytes": 30926
+    },
+    "apps/client/lib/src/auth/dev_phone_login_sheet.dart": {
+      "sha256": "1ad6ec072c878d9bbba6db274f919fb1e0ddb0fd2d22ffe240344e5575b9735f",
+      "bytes": 7546
+    },
+    "apps/client/test/dev_phone_auth_controller_test.dart": {
+      "sha256": "b02daae1f3a20d84227fee86a17be4676d30c2534a6dfaf68af017aac2a31722",
+      "bytes": 9618
+    },
+    "apps/client/lib/src/auth/session_vault.dart": {
+      "sha256": "c3816a8f567fa8977327c9fb3bcebeb3601e027e12a35f5b7e4507a9cad7ded4",
+      "bytes": 5283
+    },
+    "apps/client/lib/src/workspace/settings_page.dart": {
+      "sha256": "f44cca309c528a628c26c2652f004f2364bee32f1c41585b0cc3bbdd6bb32283",
+      "bytes": 43207
+    }
+  }
+}

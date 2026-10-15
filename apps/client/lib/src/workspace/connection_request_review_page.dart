@@ -146,7 +146,11 @@ class _ReviewState extends State<ConnectionRequestReviewPage> {
               const SizedBox(height: 8),
               Text(r.scope == 'friend' ? '好友申请' : '联系申请'),
               if (r.note.isNotEmpty) Text(r.note),
-              Text('有效期至 ${supplierDate(r.expiresAt!)}'),
+              Text(
+                r.expiresAt == null
+                    ? '原申请未记录有效期'
+                    : '有效期至 ${supplierDate(r.expiresAt!)}',
+              ),
               const SizedBox(height: 16),
               Text(_consequence(r, action)),
               if (r.pendingReview) const Text('等待审核'),
@@ -227,7 +231,11 @@ class _ReviewState extends State<ConnectionRequestReviewPage> {
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     child: Text(r.note),
                   ),
-                Text('有效期至 ${supplierDate(r.expiresAt!)}'),
+                Text(
+                  r.expiresAt == null
+                      ? '原申请未记录有效期'
+                      : '有效期至 ${supplierDate(r.expiresAt!)}',
+                ),
                 const SizedBox(height: 20),
                 if (r.direction == 'incoming') ...[
                   FilledButton(

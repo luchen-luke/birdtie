@@ -1,0 +1,315 @@
+{
+  "status": "PASS",
+  "remoteScriptSHA256": "7b8f06ca238b5fc7d1608d182a0fb0420b7307664cd1248fbd3545d62ea696d6",
+  "reusedSourceProofs": {
+    "mode": "EXISTING_RECEIPTS_REUSED_NO_OLD_DATABASE_QUERY",
+    "receipts": [
+      "remaining-remote-readonly-receipt02.json",
+      "remaining-source-empty-check01.json"
+    ],
+    "originalTablesChecked": 29,
+    "changedOriginalTables": 0,
+    "empty29thTableConfirmed": true,
+    "oldCivuUnitStateAtPriorObservation": {
+      "ActiveState": "failed",
+      "SubState": "failed",
+      "MainPID": "0",
+      "UnitFileState": "disabled"
+    },
+    "freshOldServiceCheck": "NOT_RUN",
+    "fullEncryptedBackupRehash": "NOT_RUN_PREVIOUS_AUTHENTICATION_PROOF_REUSED"
+  },
+  "privateValuesPersisted": false,
+  "exitCode": 0,
+  "stderrPresent": false,
+  "result": {
+    "status": "PASS",
+    "sourceWrites": 0,
+    "nativeWrites": 0,
+    "logins": 0,
+    "sessionsCreated": 0,
+    "serviceMutations": 0,
+    "privateValuesOmitted": true,
+    "backupArchiveRead": false,
+    "runs": {
+      "email164": {
+        "counts": {
+          "owners": 20,
+          "bindableOwners": 2,
+          "emailIdentities": 3,
+          "emailOnlyOwners": 2
+        },
+        "protocol": "birdtie-legacy-dev-email-binding-v1"
+      },
+      "images157": {
+        "counts": {
+          "notes": 52,
+          "images": 135,
+          "owners": 8
+        },
+        "protocol": "birdtie-civu-private-images-v1",
+        "originalDeferred": {
+          "deleted_note_relations": 44,
+          "private_videos_not_adapted": 5,
+          "unmatched_live_note_relations": 31
+        }
+      },
+      "images161": {
+        "counts": {
+          "heic": 22,
+          "jpeg": 9,
+          "notes": 15,
+          "images": 31,
+          "owners": 2
+        },
+        "deferred": {
+          "deleted_note_relations": 44,
+          "original_matched_relations_unchanged": 140
+        },
+        "protocol": "birdtie-civu-private-image-recovery-v1"
+      },
+      "native156": {
+        "counts": {
+          "cities": 1067,
+          "places": 5245,
+          "moments": 83,
+          "journeys": 0,
+          "themeMaps": 3,
+          "cityAliases": 4623,
+          "savedPlaces": 184,
+          "mergedPlaceAliases": 19
+        },
+        "protocol": "birdtie-civu-native-adaptation-v1",
+        "originalDeferred": {
+          "personal.city_unresolved": 28,
+          "personal.saved_place_unmapped": 5,
+          "personal.legacy_media_unavailable": 83,
+          "personal.source_deleted_tombstone": 32,
+          "catalog.geo_areas_unresolved_merges": 1,
+          "personal.legacy_thread_archive_only": 27,
+          "catalog.places_without_city_ancestor": 247,
+          "catalog.place_coordinates_conflicting": 8,
+          "personal.legacy_media_locations_archive_only": 37,
+          "personal.legacy_moment_metadata_archive_only": 83,
+          "personal.legacy_multiple_places_archive_only": 2,
+          "personal.legacy_unmapped_places_archive_only": 5,
+          "personal.legacy_saved_attribution_archive_only": 52,
+          "catalog.place_coordinates_without_explicit_wgs84": 4222,
+          "personal.legacy_recorded_date_range_archive_only": 28,
+          "personal.legacy_journey_stops_require_schedule_model": 21,
+          "personal.legacy_journey_arrangement_requires_schedule_model": 1
+        }
+      },
+      "social163": {
+        "counts": {
+          "images": 1,
+          "follows": 21,
+          "members": 23,
+          "messages": 39,
+          "friendships": 5,
+          "conversations": 11,
+          "pendingFriends": 1,
+          "acceptedFriends": 4,
+          "messageRequests": 1
+        },
+        "protocol": "birdtie-civu-social-source-v1"
+      },
+      "videos159": {
+        "counts": {
+          "notes": 5,
+          "owners": 2,
+          "videos": 5
+        },
+        "protocol": "birdtie-civu-private-videos-v1"
+      },
+      "archive149": {
+        "counts": {
+          "journeys": 34,
+          "themeMaps": 3,
+          "savedPlaces": 189,
+          "journeyTombstones": 12,
+          "themeMapTombstones": 0
+        },
+        "protocol": "birdtie-civu-personal-archive-v1"
+      },
+      "history165": {
+        "counts": {
+          "threads": 8,
+          "messages": 41,
+          "preferences": 2,
+          "notifications": 110,
+          "historicalUnread": 37,
+          "deletedNotifications": 1
+        },
+        "protocol": "birdtie-civu-social-history-source-v1"
+      },
+      "contexts162": {
+        "counts": {
+          "legs": 5,
+          "places": 247,
+          "members": 27,
+          "threads": 22,
+          "savedItems": 5,
+          "mediaPlaces": 43,
+          "mediaContexts": 71,
+          "noteLocations": 4,
+          "threadTombstones": 4
+        },
+        "deferred": {},
+        "protocol": "birdtie-legacy-native-context-v1"
+      },
+      "journeys158": {
+        "counts": {
+          "notes": 1,
+          "stops": 24,
+          "entries": 110,
+          "journeys": 22,
+          "tombstones": 12,
+          "arrangements": 85,
+          "unmappedCities": 0,
+          "unmappedPlaces": 0
+        },
+        "protocol": "birdtie-legacy-journey-details-v1"
+      }
+    },
+    "images": {
+      "facts": 166,
+      "currentReady": 166,
+      "canonicalBytes": 219608087,
+      "currentDeleted": 0,
+      "sourceInputBytes": 349571927,
+      "invalidBindingsOrBytes": 0
+    },
+    "schema": 166,
+    "social": {
+      "typedMessages": {
+        "TEXT": 15,
+        "IMAGE": 1,
+        "ENTITY": 6,
+        "SYSTEM": 10,
+        "STICKER": 7
+      },
+      "invalidFactOwners": 0,
+      "fabricatedSystemSpeakers": 0
+    },
+    "videos": {
+      "facts": 5,
+      "currentReady": 5,
+      "canonicalBytes": 73401246,
+      "currentDeleted": 0,
+      "sourceInputBytes": 88823138,
+      "invalidBindingsOrBytes": 0
+    },
+    "history": {
+      "originalUnread": 37,
+      "historicalInboxes": 109,
+      "invalidFactOwners": 0,
+      "unsafeNotificationRouting": 0
+    },
+    "contexts": {
+      "actualLegs": 5,
+      "actualMembers": 27,
+      "actualMediaPlaces": 43,
+      "actualMediaContexts": 71,
+      "actualPrivateThreads": 22,
+      "unsafeUnknownCRSPins": 0
+    },
+    "chatImages": {
+      "facts": 1,
+      "invalidBindingsOrBytes": 0
+    },
+    "currentPrivate": {
+      "moments": 83,
+      "journeys": 22,
+      "themeMaps": 3
+    },
+    "importedAgentsActivated": 0,
+    "personalTargetOwnerErrors": 0,
+    "supplementOriginalOwnerSetsMatch": {
+      "social": true,
+      "history": true
+    },
+    "ownerReconciliation": {
+      "ownersChecked": 20,
+      "mappingOneToOne": true,
+      "wrongOwnerCount": 0,
+      "originalNoteArchivesAndTombstonesMatch": true,
+      "missingNativePersonalByKind": {},
+      "unexpectedNativePersonalByKind": {},
+      "attachmentsExactOriginalOwner": true,
+      "eligiblePersonalCoverageComplete": true
+    },
+    "sourceAssetScope": {
+      "sourceAssets": 407,
+      "liveNoteRelations": 171,
+      "deletedNoteRelations": 44,
+      "overlappingDistinctAssetPurposes": {
+        "LIVE_NOTE": 171,
+        "DELETED_NOTE": 44,
+        "PLACE_COVER": 93,
+        "OTHER_PLACE_IMAGE": 55,
+        "PLACE_PREVIEW": 0,
+        "GEO_ARTWORK": 3,
+        "JOURNEY_MEDIA": 1,
+        "NOTE_COVER_URL": 4,
+        "JOURNEY_COVER_URL": 0,
+        "THEME_COVER_URL": 0,
+        "PROFILE_URL": 0
+      },
+      "multiPurposeAssets": 75,
+      "disjointPartitionInListedPrecedence": {
+        "LIVE_NOTE": 171,
+        "DELETED_NOTE": 44,
+        "PLACE_COVER": 62,
+        "OTHER_PLACE_IMAGE": 13,
+        "PLACE_PREVIEW": 0,
+        "GEO_ARTWORK": 3,
+        "JOURNEY_MEDIA": 1,
+        "NOTE_COVER_URL": 1,
+        "JOURNEY_COVER_URL": 0,
+        "THEME_COVER_URL": 0,
+        "PROFILE_URL": 0,
+        "NO_REFERENCE_IN_ORIGINAL_29_TABLES": 112
+      },
+      "partitionClosesToSourceAssets": true,
+      "referencedDistinctAssets": 295,
+      "ownerMetadata": {
+        "knownOriginalOwner": 404,
+        "nullOwner": 3,
+        "otherOwner": 0
+      },
+      "statusMetadata": {
+        "ready": 386,
+        "pending": 21
+      },
+      "chatImageSourceIsIndependentPrivateMessageMedia": true,
+      "chatImageMembershipIn407": "NOT_ASSUMED",
+      "sourcePixelRead": "NOT_RUN",
+      "permissionInferredFromReferences": false,
+      "nativeNoteAttachmentFacts": 171,
+      "nativeDistinctOriginalNoteAssets": 171,
+      "liveNotePairsWithoutNativeAttachment": 0,
+      "nativeAttachmentPairsOutsideLiveSource": 0,
+      "originalAssetsNotInNativeNoteAttachmentFacts": 236,
+      "remainingAssetMeaning": "OTHER_USES_OR_UNASSESSED_NOT_AUTOMATICALLY_MISSING",
+      "all407AssetsDecodedOrAdapted": "NOT_CLAIMED"
+    },
+    "mediaInterpretation": {
+      "originalImageInputs": "AUTHENTICATED_IMPORT_FACT_NOT_REHASHED_OR_STORED_AS_NATIVE_ORIGINAL",
+      "canonicalImageBytes": "REHASHED_IN_NATIVE_READONLY_SNAPSHOT",
+      "originalVideoAndCanonicalAndPoster": "REHASHED_IN_NATIVE_READONLY_SNAPSHOT",
+      "chatCanonicalAndThumbnail": "REHASHED_IN_NATIVE_READONLY_SNAPSHOT",
+      "antivirusScan": "NOT_RUN",
+      "privacyRisk": "UNKNOWN",
+      "newCodecDecode": "NOT_RUN",
+      "fullDeviceAcceptance": "NOT_RUN"
+    },
+    "context162DeferredActuallyRead": true,
+    "initial156And157DeferredAreHistoricalNotCurrentUnresolved": true,
+    "integrityChecksPassed": true,
+    "missingImportRuns": [],
+    "fullMigrationComplete": false,
+    "completionMeaning": "AGGREGATE_FACTS_ONLY_REMAINING_SCOPES_EXPLICIT",
+    "originalSmallSourceFilesUnchanged": true
+  }
+}

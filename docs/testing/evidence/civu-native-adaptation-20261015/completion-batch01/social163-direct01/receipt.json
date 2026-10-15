@@ -1,0 +1,25 @@
+{
+  "command": [
+    "C:/Program Files/Go/bin/go.exe",
+    "test",
+    "-mod=readonly",
+    "./internal/legacysocial",
+    "./internal/postgres",
+    "./internal/httpapi",
+    "./cmd/legacy-social-import",
+    "-count=1",
+    "-json",
+    "-run",
+    "^TestLegacySocial(BuildProtectedEightTableProjection|AuthenticatedProtectedImageDecode)$"
+  ],
+  "cwd": "D:\\Project\\birdtie\\apps\\api",
+  "exitCode": 1,
+  "events": {
+    "pass": 1,
+    "fail": 0,
+    "skip": 0
+  },
+  "elapsedSeconds": 5.073,
+  "source": "protected original29 + sealed social8 + exact authenticated image03, no row values retained",
+  "databaseAccess": false
+}

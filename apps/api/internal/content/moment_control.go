@@ -32,6 +32,8 @@ type MomentControlInput struct {
 	Media            *[]momentmedia.AttachmentInput `json:"media,omitempty"`
 }
 type MomentControlPreview struct {
+	Locations              []MomentLocationResolved `json:"locations"`
+	LocationsSourceVersion string                   `json:"locationsSourceVersion"`
 	identity.HumanControlPreview
 	MomentID                  string                 `json:"momentId,omitempty"`
 	ExpectedRevision          int64                  `json:"expectedRevision"`
@@ -73,7 +75,21 @@ func MomentControlInputHash(in *MomentInput) string {
 	if in.OccurredAt != nil {
 		at = in.OccurredAt.UTC().Format(time.RFC3339Nano)
 	}
-	return MomentControlHash([]any{"moment-input-v1", b64(in.CityID), in.PlaceID, b64(in.Title), b64(in.Body), at, in.TimePrecision, in.LocationPrecision, in.ActivityID, in.CommunityID, in.OrganizationID})
+	values := []any{"moment-input-v1", b64(in.CityID), in.PlaceID, b64(in.Title), b64(in.Body), at, in.TimePrecision, in.LocationPrecision, in.ActivityID, in.CommunityID, in.OrganizationID}
+	if in.Locations != nil {
+		ordered := []any{}
+		schema := "moment-locations-v1"
+		for _, v := range *in.Locations {
+			tuple := []any{v.ID, v.Kind, b64(v.CityID), v.PlaceID, v.Precision}
+			if v.Kind == "REFERENCE" {
+				schema = "moment-locations-v2"
+				tuple = append(tuple, v.ReferenceID)
+			}
+			ordered = append(ordered, tuple)
+		}
+		values = append(values, schema, ordered)
+	}
+	return MomentControlHash(values)
 }
 func MomentControlDigest(in MomentControlInput) string {
 	values := []any{"human-moment-control-v1", in.OperationID, in.Action, in.MomentID, in.ExpectedRevision, MomentControlInputHash(in.Input)}
@@ -241,8 +257,15 @@ func DecodeMomentControl(raw []byte, commit bool) (MomentControlInput, error) {
 		if in.Action == "WITHDRAW" {
 			return in, identity.ErrControlInvalid
 		}
-		if _, e = momentControlClosed(v, []string{"cityId", "placeId", "title", "body", "timePrecision", "locationPrecision"}, []string{"occurredAt", "activityId", "communityId", "organizationId"}, "occurredAt"); e != nil {
+		im, ie := momentControlClosed(v, []string{"cityId", "placeId", "title", "body", "timePrecision", "locationPrecision"}, []string{"occurredAt", "activityId", "communityId", "organizationId", "locations"}, "occurredAt")
+		e = ie
+		if e != nil {
 			return in, e
+		}
+		if loc, ok := im["locations"]; ok {
+			if e = DecodeMomentLocations(loc); e != nil {
+				return in, e
+			}
 		}
 	}
 	if rawMedia, ok := m["media"]; ok {

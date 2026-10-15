@@ -1,0 +1,19 @@
+{
+  "at": "2026-10-15T10:40:17.901073+00:00",
+  "command": [
+    "C:/Program Files/Go/bin/go.exe",
+    "test",
+    "-mod=readonly",
+    "./internal/legacycontext",
+    "./internal/content",
+    "./internal/postgres",
+    "./internal/httpapi",
+    "./cmd/legacy-context-import",
+    "-run",
+    "^TestLegacyContextStablePrivateTypedProjection$",
+    "-count=1"
+  ],
+  "cwd": "D:\\Project\\birdtie\\apps\\api",
+  "exitCode": 0,
+  "coverage": "One pure synthetic context builder test; content/postgres/httpapi/CLI compile only. Includes162 native chain compilation, not execution. No remote/DB writes."
+}

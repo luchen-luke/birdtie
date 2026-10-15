@@ -1,0 +1,32 @@
+{
+  "exitCode": 0,
+  "version": "165",
+  "mode": "apply",
+  "remoteProgramSHA256": "1bf6addcf67e8a9e5a501e6bae6fab5c93a3e12054b4931a5ca4820f6dbbe63b",
+  "result": {
+    "status": "NATIVE_IMPORT_VERIFIED",
+    "version": "165",
+    "result": {
+      "agentActivated": false,
+      "counts": {
+        "threads": 8,
+        "messages": 41,
+        "notifications": 110,
+        "deletedNotifications": 1,
+        "historicalUnread": 37,
+        "preferences": 2
+      },
+      "countsKnown": true,
+      "modelCalls": 0,
+      "newNotificationEffects": 0,
+      "pushEffects": 0,
+      "runId": "c5df0d7c-f361-4275-9838-feb6d1d92352",
+      "sourceWrites": 0,
+      "status": "COMMITTED"
+    },
+    "repeatEqual": true,
+    "privateInputsUnchanged": true,
+    "sourceWrites": 0,
+    "otherOwnersLoggedIn": 0
+  }
+}

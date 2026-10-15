@@ -118,7 +118,7 @@ func (s *server) listConversationsPage(w http.ResponseWriter, r *http.Request) {
 	}
 	seen := make(map[string]bool, len(page.Items))
 	for _, item := range page.Items {
-		if !connection.ValidChatPageID(item.ID) || !connection.ValidChatPageID(item.OtherAccountID) || item.OtherAccountID == a.Actor.ID || seen[item.ID] || item.UnreadCount < 0 {
+		if !connection.ValidChatPageID(item.ID) || !connection.ValidConversationPeer(item, a.Actor.ID) || seen[item.ID] || item.UnreadCount < 0 {
 			chatPageFailure(w, mp.ErrUnavailable)
 			return
 		}
@@ -164,7 +164,7 @@ func (s *server) listMessagesPage(w http.ResponseWriter, r *http.Request) {
 	seen := make(map[string]bool, len(page.Items))
 	for i, item := range page.Items {
 		if !connection.ValidChatPageID(item.ID) || item.ConversationID != id || !connection.ValidChatPageID(item.SenderID) || item.CreatedAt.IsZero() || seen[item.ID] ||
-			i > 0 && (item.CreatedAt.Before(page.Items[i-1].CreatedAt) || item.CreatedAt.Equal(page.Items[i-1].CreatedAt) && item.ID <= page.Items[i-1].ID) {
+			i > 0 && !connection.MessageBefore(page.Items[i-1], item) {
 			chatPageFailure(w, mp.ErrUnavailable)
 			return
 		}
@@ -188,7 +188,7 @@ func (s *server) getConversationCurrent(w http.ResponseWriter, r *http.Request) 
 		chatPageFailure(w, err)
 		return
 	}
-	if item.ID != id || !connection.ValidChatPageID(item.OtherAccountID) || item.OtherAccountID == a.Actor.ID || item.UnreadCount < 0 {
+	if item.ID != id || !connection.ValidConversationPeer(item, a.Actor.ID) || item.UnreadCount < 0 {
 		chatPageFailure(w, mp.ErrUnavailable)
 		return
 	}

@@ -5,7 +5,7 @@ import '../content/moment_control.dart';
 import 'human_causal_control.dart';
 import 'moment_thread_api.dart';
 
-const momentThreadJournalMaxBytes = 16 * 1024;
+const momentThreadJournalMaxBytes = 1024 * 1024;
 
 class MomentThreadPending {
   const MomentThreadPending(
@@ -48,6 +48,7 @@ class MomentThreadPending {
           'CREATE_PUBLISH',
           'PUBLISH',
           'WITHDRAW',
+          'EDIT',
         }.contains(value['action']) ||
         !humanControlHash(value['payloadDigest']) ||
         !humanControlHash(value['sourceVersion']) ||
@@ -72,6 +73,9 @@ class MomentThreadJournalState {
     this.pending, {
     this.threadID = '',
     this.threadVersion = 0,
+    this.baseMomentID = '',
+    this.removedItems = const [],
+    this.removedEntries = const [],
   });
   final String localScope;
   final List<MomentThreadDraftEntry> entries;
@@ -79,6 +83,9 @@ class MomentThreadJournalState {
   final MomentThreadPending? pending;
   final String threadID;
   final int threadVersion;
+  final String baseMomentID;
+  final List<Map<String, Object>> removedItems;
+  final List<MomentThreadDraftEntry> removedEntries;
   MomentThreadJournalState withPending(
     MomentThreadPending? pending, {
     bool clearDraft = false,
@@ -89,6 +96,9 @@ class MomentThreadJournalState {
     pending,
     threadID: clearDraft ? '' : threadID,
     threadVersion: clearDraft ? 0 : threadVersion,
+    baseMomentID: clearDraft ? '' : baseMomentID,
+    removedItems: clearDraft ? const [] : removedItems,
+    removedEntries: clearDraft ? const [] : removedEntries,
   );
   Map<String, Object?> get json => {
     'schema': 'moment-thread-private-journal-v1',
@@ -100,12 +110,22 @@ class MomentThreadJournalState {
       'threadId': threadID,
       'threadVersion': threadVersion,
     },
+    if (baseMomentID.isNotEmpty) 'baseMomentId': baseMomentID,
+    if (removedItems.isNotEmpty) 'removedItems': removedItems,
+    if (removedEntries.isNotEmpty)
+      'removedEntries': removedEntries.map((v) => v.json).toList(),
   };
   factory MomentThreadJournalState.decode(Object? raw) {
     final value = humanControlObject(
       raw,
       {'schema', 'localScope', 'entries', 'activeIndex', 'pending'},
-      optional: {'threadId', 'threadVersion'},
+      optional: {
+        'threadId',
+        'threadVersion',
+        'baseMomentId',
+        'removedItems',
+        'removedEntries',
+      },
     );
     if (value['schema'] != 'moment-thread-private-journal-v1' ||
         !humanControlID(value['localScope']) ||
@@ -125,10 +145,50 @@ class MomentThreadJournalState {
             !humanControlVersion(value['threadVersion'], zero: false) ||
             entries.any(
               (e) =>
-                  !humanControlID(e.momentID) ||
-                  !humanControlVersion(e.expectedRevision, zero: false),
+                  e.momentID.isNotEmpty &&
+                  (!humanControlID(e.momentID) ||
+                      !humanControlVersion(e.expectedRevision, zero: false)),
             )))
       throw const FormatException('原串文私人草稿归属不符');
+    final base = value['baseMomentId'] ?? '';
+    final removed = value['removedItems'] ?? const [];
+    if (base is! String ||
+        base.isNotEmpty && !humanControlID(base) ||
+        removed is! List ||
+        removed.length > 20) {
+      throw const FormatException('原动态恢复目标无效');
+    }
+    final removals = <Map<String, Object>>[];
+    final removedIDs = <String>{};
+    for (final raw in removed) {
+      final item = humanControlObject(raw, {'momentId', 'expectedRevision'});
+      if (!humanControlID(item['momentId']) ||
+          !humanControlVersion(item['expectedRevision'], zero: false) ||
+          !removedIDs.add(item['momentId']) ||
+          entries.any((e) => e.momentID == item['momentId']))
+        throw const FormatException('原动态移除恢复记录无效');
+      removals.add({
+        'momentId': item['momentId'] as String,
+        'expectedRevision': item['expectedRevision'] as int,
+      });
+    }
+    final summaries = value['removedEntries'] ?? const [];
+    if (summaries is! List || summaries.length > 20)
+      throw const FormatException('待移除动态摘要无效');
+    final removedEntries = summaries
+        .map(MomentThreadDraftEntry.decode)
+        .toList();
+    if (removedEntries.any(
+          (entry) => !removals.any(
+            (v) =>
+                v['momentId'] == entry.momentID &&
+                v['expectedRevision'] == entry.expectedRevision,
+          ),
+        ) ||
+        removedEntries.map((v) => v.momentID).toSet().length !=
+            removedEntries.length) {
+      throw const FormatException('待移除动态摘要归属无效');
+    }
     if (entries.map((entry) => entry.localID).toSet().length !=
         entries.length) {
       throw const FormatException('私人串文草稿条目重复');
@@ -142,6 +202,9 @@ class MomentThreadJournalState {
           : MomentThreadPending.decode(value['pending']),
       threadID: value['threadId'] as String? ?? '',
       threadVersion: value['threadVersion'] as int? ?? 0,
+      baseMomentID: base,
+      removedItems: List.unmodifiable(removals),
+      removedEntries: List.unmodifiable(removedEntries),
     );
   }
 }
@@ -196,7 +259,7 @@ class MomentThreadJournal {
   Future<void> _save(String key, MomentThreadJournalState state) async {
     final raw = jsonEncode(state.json);
     if (utf8.encode(raw).length > momentThreadJournalMaxBytes) {
-      throw const FormatException('草稿超过本机16KiB保存限额，当前输入仍保留');
+      throw const FormatException('草稿超过本机1MiB保存限额，当前输入仍保留');
     }
     await (_writeValue?.call(key, raw) ?? _storage.write(key: key, value: raw));
     final checked = await _load(key);
@@ -264,6 +327,7 @@ class MomentThreadJournal {
     String origin,
     MomentThreadPending expected, {
     bool clearDraft = false,
+    MomentThreadJournalState? replacement,
   }) {
     final key = _key(owner, origin);
     return _serial(key, () async {
@@ -273,7 +337,11 @@ class MomentThreadJournal {
           !current.pending!.same(expected)) {
         throw StateError('原串文存储记录已变化');
       }
-      await _save(key, current.withPending(null, clearDraft: clearDraft));
+      await _save(
+        key,
+        replacement?.withPending(null) ??
+            current.withPending(null, clearDraft: clearDraft),
+      );
     });
   }
 

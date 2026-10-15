@@ -1,0 +1,9 @@
+{
+  "cwd": "C:\\Users\\chens\\Documents\\Codex\\2026-10-15\\d-project-birdtie-docs-reports-birdtie-2",
+  "command": "STRICT_SSH_ROOT_TEMPORARY_SETUP_THEN_ECS_USER_TWO_LINUX_TESTS",
+  "selector": "^(TestPublicMomentVideoSynthetic640x360|TestPublicMomentVideoRSSBudgetStillEnforced)$",
+  "fixtureInput": "EXACT_SELF_GENERATED_FIXTURE_STDIN",
+  "remoteScriptSHA256": "44272aefc4bb140d8bc200540d6acd79ca0297ff58a10afbff0f6151b1c46d98",
+  "databaseAccess": false,
+  "serviceChanges": false
+}

@@ -16,6 +16,7 @@ import '../content/moment_control.dart';
 import 'package:flutter/scheduler.dart';
 import '../content/private_moment_media_controller.dart';
 import '../content/private_moment_media_sheet.dart';
+import '../content/private_reference_media_view.dart';
 import '../content/private_moment_video_controller.dart';
 import '../content/private_moment_video_sheet.dart';
 import '../content/moment_time_choice.dart';
@@ -29,7 +30,7 @@ import '../workspace/public_moment_photo_controller.dart';
 import '../workspace/public_moment_photo_editor.dart';
 import '../workspace/public_moment_photo_pending_store.dart';
 import '../workspace/public_moment_page.dart';
-import '../workspace/public_moment_control_page.dart';
+import '../workspace/now_moment_editor_host.dart';
 
 Future<void> _showPublicMomentPhotoEditor(
   BuildContext context, {
@@ -92,6 +93,7 @@ Future<void> _showPublicMomentPhotoEditor(
       controller: controller,
       momentTitle: title,
       momentTitleRevision: titleRevision,
+      recoveryOnly: true,
     ),
   );
   unawaited(route.completed.whenComplete(release));
@@ -309,6 +311,7 @@ Future<bool?> showPrivateMomentDraft(
         to: navigator.context,
       ),
       builder: (_) => _MomentDraftSheet(
+        existing: null,
         cityID: '',
         cityName: '',
         moments: moments,
@@ -861,7 +864,7 @@ class _MomentDraftSheet extends StatefulWidget {
     required this.places,
     required this.activities,
     required this.auth,
-    this.existing,
+    required this.existing,
     this.client,
     this.apiBaseUrl,
     this.workspaceChanges,
@@ -1489,8 +1492,25 @@ class _MomentDraftSheetState extends State<_MomentDraftSheet> {
       await Navigator.push(
         context,
         MaterialPageRoute<void>(
-          builder: (_) =>
-              PrivateMomentMediaSheet(controller: c, momentTitle: m.title),
+          builder: (_) => PrivateMomentMediaSheet(
+            controller: c,
+            momentTitle: m.title,
+            originalCover: PrivateReferenceMediaView(
+              key: ValueKey('moment-original-cover-${m.id}-${m.revision}'),
+              targetType: 'MOMENT',
+              targetID: m.id,
+              authorizationHeader: c.authorizationHeader,
+              ownerID: c.ownerID,
+              sourceCurrent: () => _imageSourceCurrent,
+              identityChanges: Listenable.merge([
+                widget.auth,
+                widget.moments,
+                widget.workspaceChanges,
+              ]),
+              apiBaseUrl: c.mediaContextAPI.baseUrl,
+              client: c.mediaContextAPI.client,
+            ),
+          ),
         ),
       );
     } finally {
@@ -1793,76 +1813,57 @@ class _MyBirdtiePage extends StatelessWidget {
   }
 
   Future<void> _createMoment(BuildContext context) async {
-    await showPrivateMomentDraft(
-      context,
-      auth: auth,
-      city: city,
-      moments: moments,
-      client: client,
-      apiBaseUrl: apiBaseUrl,
-      workspaceChanges: workspaceChanges,
-      organizationWorkspaceID: organizationWorkspaceID,
-    );
+    await _openMomentInNow(context);
   }
 
-  Future<void> _editMoment(BuildContext context, PrivateMoment moment) async {
-    if (onOpenOwnedMoment != null) {
-      onOpenOwnedMoment!(moment.id);
-      return;
+  Future<void> _openMomentInNow(
+    BuildContext context, {
+    PrivateMoment? moment,
+  }) async {
+    final capability = NowMomentEditorScope.maybeOf(context);
+    final owner = auth.accountID, token = auth.authorizationHeader;
+    final base = moments.apiBaseUrl, epoch = moments.identityEpoch;
+    bool live() =>
+        context.mounted &&
+        auth.signedIn &&
+        auth.accountID == owner &&
+        auth.authorizationHeader == token &&
+        moments.identityEpoch == epoch &&
+        moments.apiBaseUrl == base &&
+        organizationWorkspaceID?.call() == null &&
+        current?.call() != false;
+    if (capability == null || owner == null || token == null || !live()) return;
+    if (moment != null && moment.authorAccountID != owner) return;
+    final request = moment == null
+        ? NowMomentEditorRequest.create(
+            ownerID: owner,
+            authorizationHeader: token,
+            apiBaseUrl: base,
+            sourceCurrent: live,
+          )
+        : NowMomentEditorRequest(
+            momentID: moment.id,
+            ownerID: owner,
+            authorizationHeader: token,
+            apiBaseUrl: base,
+            sourceCurrent: live,
+          );
+    final opened = await capability.open(request);
+    if (!context.mounted) return;
+    if (!opened && live()) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('当前身份、来源或草稿状态已变化，请回到 Now 重新打开。')),
+      );
     }
-    final cityNames = city.cities
-        .where((item) => item.id == moment.cityID)
-        .map((item) => item.name);
-    await showModalBottomSheet<bool>(
-      context: context,
-      isScrollControlled: true,
-      showDragHandle: true,
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      builder: (context) => _MomentDraftSheet(
-        cityID: moment.cityID,
-        cityName: moment.cityID.isEmpty
-            ? ''
-            : cityNames.isEmpty
-            ? '城市名称暂不可用'
-            : cityNames.first,
-        moments: moments,
-        places: moment.cityID.isEmpty ? const [] : city.places,
-        activities: moment.cityID.isEmpty ? const [] : city.activities,
-        auth: auth,
-        existing: moment,
-        client: client,
-        apiBaseUrl: apiBaseUrl,
-        workspaceChanges: workspaceChanges,
-        organizationWorkspaceID: organizationWorkspaceID,
-        current: current,
-      ),
-    );
   }
+
+  Future<void> _editMoment(BuildContext context, PrivateMoment moment) =>
+      _openMomentInNow(context, moment: moment);
 
   Future<void> _managePublicMoment(
     BuildContext context,
     PrivateMoment moment,
-  ) async {
-    if (onOpenOwnedMoment != null) { onOpenOwnedMoment!(moment.id); return; }
-    final owner = auth.accountID;
-    bool valid() =>
-        current?.call() != false &&
-        auth.accountID == owner &&
-        auth.signedIn &&
-        organizationWorkspaceID?.call() == null;
-    if (!valid() || moment.authorAccountID != owner) return;
-    final result = await Navigator.of(context).push<String>(
-      MaterialPageRoute(
-        builder: (_) => PublicMomentControlPage(
-          moments: moments,
-          momentID: moment.id,
-          current: valid,
-          identityChanges: Listenable.merge([auth, workspaceChanges]),
-        ),
-      ),
-    );
-    if (valid() && result != null) await moments.refresh(current: valid);
-  }
+  ) => _openMomentInNow(context, moment: moment);
 
   Future<void> _viewPublicMoment(
     BuildContext context,
@@ -1976,7 +1977,9 @@ class _MyBirdtiePage extends StatelessWidget {
               children: [
                 const Expanded(child: _SectionLabel('我的动态与草稿')),
                 TextButton(
-                  onPressed: () => _createMoment(context),
+                  onPressed: NowMomentEditorScope.maybeOf(context) == null
+                      ? null
+                      : () => _createMoment(context),
                   child: const Text('新建草稿'),
                 ),
                 TextButton(
@@ -1985,6 +1988,8 @@ class _MyBirdtiePage extends StatelessWidget {
                 ),
               ],
             ),
+            if (NowMomentEditorScope.maybeOf(context) == null)
+              const Text('请回到 Now 首页新建或编辑动态。'),
             const SizedBox(height: 8),
             if (moments.historyEnabled)
               DropdownButton<String>(
@@ -2059,7 +2064,9 @@ class _MyBirdtiePage extends StatelessWidget {
                   ),
                 if (moment.isEditableDraft)
                   TextButton(
-                    onPressed: moments.saving
+                    onPressed:
+                        moments.saving ||
+                            NowMomentEditorScope.maybeOf(context) == null
                         ? null
                         : () => _editMoment(context, moment),
                     child: const Text('编辑或撤回'),
@@ -2076,22 +2083,17 @@ class _MyBirdtiePage extends StatelessWidget {
                         child: const Text('查看动态'),
                       ),
                       TextButton(
-                        onPressed: moments.saving
+                        onPressed:
+                            moments.saving ||
+                                NowMomentEditorScope.maybeOf(context) == null
                             ? null
                             : () => _managePublicMoment(context, moment),
                         child: const Text('修改或删除'),
                       ),
                       TextButton(
-                        onPressed: () => _showPublicMomentPhotoEditor(
-                          context,
-                          auth: auth,
-                          moments: moments,
-                          momentID: moment.id,
-                          title: moment.title,
-                          titleRevision: moment.revision,
-                          workspaceChanges: workspaceChanges,
-                          workspaceID: organizationWorkspaceID,
-                        ),
+                        onPressed: NowMomentEditorScope.maybeOf(context) == null
+                            ? null
+                            : () => _openMomentInNow(context, moment: moment),
                         child: const Text('管理本人公开图片'),
                       ),
                     ],

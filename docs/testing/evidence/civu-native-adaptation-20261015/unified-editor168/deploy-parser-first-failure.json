@@ -1,0 +1,7 @@
+{
+  "status": "FAIL_BEFORE_REMOTE_EXECUTION",
+  "command": "work/upgrade_native168_17.py",
+  "failure": "argparse target choices stopped at 167 although migration name and upper guard already supported 168",
+  "remoteRequests": 0,
+  "resolution": "Extended both parser ranges through 168; retried same upgrade168-01 because no evidence directory or remote work was created"
+}

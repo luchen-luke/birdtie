@@ -1,0 +1,13 @@
+Analyzing 4 items...                                            
+
+   info - Statements in an if should be enclosed in a block. Try wrapping the statement in a block - lib\src\workspace\public_moment_page.dart:200:15 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block. Try wrapping the statement in a block - lib\src\workspace\public_moment_page.dart:244:7 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block. Try wrapping the statement in a block - lib\src\workspace\public_moment_page.dart:263:13 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block. Try wrapping the statement in a block - lib\src\workspace\public_moment_page.dart:271:9 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block. Try wrapping the statement in a block - lib\src\workspace\public_moment_page.dart:285:7 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block. Try wrapping the statement in a block - lib\src\workspace\public_moment_page.dart:458:23 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block. Try wrapping the statement in a block - lib\src\workspace\public_moment_page.dart:646:11 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block. Try wrapping the statement in a block - lib\src\workspace\public_moment_page.dart:653:9 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block. Try wrapping the statement in a block - lib\src\workspace\public_moment_page.dart:667:7 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block. Try wrapping the statement in a block - lib\src\workspace\public_moment_page.dart:669:7 - curly_braces_in_flow_control_structures
+

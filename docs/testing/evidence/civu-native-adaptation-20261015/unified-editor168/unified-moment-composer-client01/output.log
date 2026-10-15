@@ -1,0 +1,34 @@
+Flutter assets will be downloaded from https://storage.flutter-io.cn. Make sure you trust this source!
+00:00 +0: loading D:/Project/birdtie/apps/client/test/unified_moment_composer_test.dart
+00:00 +0: one composer starts with one body, adds explicitly and keeps optional titles, locations and display identity independent
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following StateError was thrown running a test:
+Bad state: No element
+
+When the exception was thrown, this was the stack:
+#0      Iterable.single (dart:core/iterable.dart:694:25)
+#1      WidgetController.element (package:flutter_test/src/controller.dart:888:30)
+#2      WidgetController.ensureVisible (package:flutter_test/src/controller.dart:2389:32)
+#3      main.<anonymous closure> (file:///D:/Project/birdtie/apps/client/test/unified_moment_composer_test.dart:148:20)
+<asynchronous suspension>
+#4      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#5      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1952:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+The test description was:
+  one composer starts with one body, adds explicitly and keeps optional titles, locations and
+  display identity independent
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:00 +0 -1: one composer starts with one body, adds explicitly and keeps optional titles, locations and display identity independent [E]
+  Test failed. See exception logs above.
+  The test description was: one composer starts with one body, adds explicitly and keeps optional titles, locations and display identity independent
+  
+00:00 +0 -1: six realistic UTF8 bodies restore beyond 16KiB while unresolved image and video operations remain blockers without saved rights or bytes
+00:00 +1 -1: owned EDIT binds original IDs, removal summary and mixed staged media then restores unknown using the original GET without another PUT
+00:00 +2 -1: Some tests failed.
+
+Failing tests:
+  D:/Project/birdtie/apps/client/test/unified_moment_composer_test.dart: one composer starts with one body, adds explicitly and keeps optional titles, locations and display identity independent

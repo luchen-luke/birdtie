@@ -1,0 +1,130 @@
+{
+  "status": "SAFE_SYNTHETIC_READBACK_EVIDENCE_ARCHIVED",
+  "archivedAt": "2026-10-15T17:51:39.044675+00:00",
+  "scope": "EXACT_QA03_THREAD_EDITOR_REORDER_SINGLE_REMOVE_WHOLE_WITHDRAW_READBACK",
+  "rootMomentId": "96e29d12-2a35-47e3-aeb3-75a8425542f5",
+  "threadId": "8ca660be-f15f-4bad-acc9-87d9a1f25036",
+  "readbacks": [
+    {
+      "readback": "03",
+      "threadVersion": 4,
+      "threadStatus": "published",
+      "receipt": "device19-thread-readback03/receipt.json",
+      "helper": "helpers/readback_device19_owned03_executed.py",
+      "helperSHA256": "d8e9c41849aa9dafabbf4c8f1129ed5b6d5935d4b804afc5055201a687b3054d",
+      "started": "2026-10-15T17:41:40.564366+00:00",
+      "completed": "2026-10-15T17:41:42.001738+00:00",
+      "ownSessionLogout204": true,
+      "ownSessionRejected401": true,
+      "actualCommand": [
+        "C:\\Users\\chens\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\python.exe",
+        "work/readback_device19_owned.py",
+        "--execute",
+        "--name",
+        "device19-thread-readback03",
+        "--expect-state",
+        "published",
+        "--expect-reordered-three"
+      ],
+      "cwd": "C:\\Users\\chens\\Documents\\Codex\\2026-10-15\\d-project-birdtie-docs-reports-birdtie-2",
+      "exitCode": 0
+    },
+    {
+      "readback": "04",
+      "threadVersion": 5,
+      "threadStatus": "published",
+      "receipt": "device19-thread-readback04/receipt.json",
+      "helper": "helpers/readback_device19_owned04_executed.py",
+      "helperSHA256": "9c5630f10d152c77c04d574ce8cd84e9bdfbd220dfbaedf49413a15008365b51",
+      "started": "2026-10-15T17:44:19.625849+00:00",
+      "completed": "2026-10-15T17:44:21.061071+00:00",
+      "ownSessionLogout204": true,
+      "ownSessionRejected401": true,
+      "actualCommand": [
+        "C:\\Users\\chens\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\python.exe",
+        "work/readback_device19_owned.py",
+        "--execute",
+        "--name",
+        "device19-thread-readback04",
+        "--expect-state",
+        "published",
+        "--expect-retired-original"
+      ],
+      "cwd": "C:\\Users\\chens\\Documents\\Codex\\2026-10-15\\d-project-birdtie-docs-reports-birdtie-2",
+      "exitCode": 0
+    },
+    {
+      "readback": "05",
+      "threadVersion": 6,
+      "threadStatus": "withdrawn",
+      "receipt": "device19-thread-readback05/receipt.json",
+      "helper": "helpers/readback_device19_owned05_executed.py",
+      "helperSHA256": "b0d46ccbf6be4b18e100c99deb039098fb6da5dcbf6a6202da37e46be0ec400f",
+      "started": "2026-10-15T17:50:28.492574+00:00",
+      "completed": "2026-10-15T17:50:29.961597+00:00",
+      "ownSessionLogout204": true,
+      "ownSessionRejected401": true,
+      "actualCommand": [
+        "C:\\Users\\chens\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\python.exe",
+        "work/readback_device19_owned.py",
+        "--execute",
+        "--name",
+        "device19-thread-readback05",
+        "--expect-state",
+        "withdrawn"
+      ],
+      "cwd": "C:\\Users\\chens\\Documents\\Codex\\2026-10-15\\d-project-birdtie-docs-reports-birdtie-2",
+      "exitCode": 0
+    }
+  ],
+  "files": {
+    "device19-thread-readback03/receipt.json": {
+      "sha256": "18cb2c76ab08df3b7375e23c9ce3b0ac1ccd988eb1b1378daaca8b72330663f0",
+      "bytes": 12106
+    },
+    "helpers/readback_device19_owned03_executed.py": {
+      "sha256": "d8e9c41849aa9dafabbf4c8f1129ed5b6d5935d4b804afc5055201a687b3054d",
+      "bytes": 20253
+    },
+    "device19-thread-readback04/receipt.json": {
+      "sha256": "943abdbb4f5d6c2df770ed14dc99445ed26cf54741fdd52a61ad06bf14ecb500",
+      "bytes": 11752
+    },
+    "helpers/readback_device19_owned04_executed.py": {
+      "sha256": "9c5630f10d152c77c04d574ce8cd84e9bdfbd220dfbaedf49413a15008365b51",
+      "bytes": 21407
+    },
+    "device19-thread-readback05/receipt.json": {
+      "sha256": "66e550ffc7e2835bad1056797dee9b61a232547f6586114caff4d672273cd2cf",
+      "bytes": 10308
+    },
+    "helpers/readback_device19_owned05_executed.py": {
+      "sha256": "b0d46ccbf6be4b18e100c99deb039098fb6da5dcbf6a6202da37e46be0ec400f",
+      "bytes": 24203
+    },
+    "README.md": {
+      "sha256": "0d27913a7e9fbff1cf9ff720a2ba2242396020c06d39ff9fc47620ac1071ccd8",
+      "bytes": 3115
+    }
+  },
+  "notRun": {
+    "otherAuthenticatedQAUser": "NOT_RUN_ONLY_QA03_SESSION_AUTHORIZED",
+    "importedOwnerData": "NOT_RUN_AND_NOT_ACCESSED",
+    "activeMediaByteHashAndPlayback": "NOT_RUN_METADATA_ONLY_ZERO_MEDIA_BYTES",
+    "physicalServerByteErasure": "NOT_RUN_HTTP_ACCESS_RETIREMENT_ONLY",
+    "mapFeedProfileSharePropagation": "NOT_RUN_IN_THIS_READBACK",
+    "immutableOperationReceiptRecovery": "NOT_RUN_OPERATION_IDS_NOT_SELECTED",
+    "deviceActionsByReader": "NOT_RUN_ROOT_DEVICE_EVIDENCE_SEPARATE",
+    "fullSiteAcceptance": "NOT_CLAIMED"
+  },
+  "credentialPatternFindings": 0,
+  "privateJSONFieldFindings": 0,
+  "exactExecutedHelpersMatchReceipts": true,
+  "contentWrites": 0,
+  "previewsCreated": 0,
+  "mediaBytesRead": 0,
+  "otherOwnersSelected": 0,
+  "newHTTPOrRemoteReadsDuringArchival": 0,
+  "previousArchiveOverwritten": false,
+  "sharedReportsOrQueueChanged": false
+}

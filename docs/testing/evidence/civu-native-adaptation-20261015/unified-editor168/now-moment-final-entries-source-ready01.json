@@ -1,0 +1,79 @@
+{
+  "at": "2026-10-15T16:52:15.181779+00:00",
+  "status": "SOURCE_FROZEN_SCOPED_ANALYSIS_AND_SINGLE_COMPOUND_PASS",
+  "source": {
+    "apps/client/lib/src/legacy/legacy_shell.dart": "02b28e2e5eb9ab42cfdd27863e3781c03c43a1d1024d46e3f1367de5838d2201",
+    "apps/client/lib/src/workspace/place_detail_sheet.dart": "1a6d58ee8fa2f1a18b9a8c1868394b29294669aa05c18f8b356a74f55eb84074",
+    "apps/client/lib/src/workspace/public_moment_photo_editor.dart": "a2d53311a0a015e51b36431c3283857f6b5239fa3b0a6329ec0e4e0309c52c12",
+    "apps/client/test/now_moment_editor_host_test.dart": "a1061638011347c695fb64864a71291089d955110e25f38c8b9bc07eb071c336"
+  },
+  "checks": {
+    "analysis": {
+      "command": [
+        "D:\\DevTools\\flutter\\bin\\cache\\dart-sdk\\bin\\dart.exe",
+        "D:\\DevTools\\flutter\\bin\\cache\\flutter_tools.snapshot",
+        "analyze",
+        "--no-pub",
+        "--no-fatal-infos",
+        "lib/src/legacy/legacy_shell.dart",
+        "lib/src/workspace/place_detail_sheet.dart",
+        "lib/src/workspace/public_moment_photo_editor.dart",
+        "test/now_moment_editor_host_test.dart"
+      ],
+      "cwd": "D:\\Project\\birdtie\\apps\\client",
+      "exitCode": 0
+    },
+    "direct": {
+      "command": [
+        "D:\\DevTools\\flutter\\bin\\cache\\dart-sdk\\bin\\dart.exe",
+        "D:\\DevTools\\flutter\\bin\\cache\\flutter_tools.snapshot",
+        "test",
+        "--no-pub",
+        "--reporter=json",
+        "test/now_moment_editor_host_test.dart"
+      ],
+      "cwd": "D:\\Project\\birdtie\\apps\\client",
+      "exitCode": 0
+    }
+  },
+  "directTests": [
+    {
+      "name": "所有详情与本人列表编辑回原Now且旧图片仅核实原操作",
+      "result": "success",
+      "skipped": false
+    }
+  ],
+  "evidence": "work/now-moment-final-entries02",
+  "evidenceSHA256": {
+    "analysis.stderr.log": "d192a1e004ba26219d1dd7ffb5f75fb798239f2576f9ab14c88ebd325ab40485",
+    "analysis.stdout.log": "eade253f5e6db430abb7bd0a0e225eaf737797bf8f002dec3919616adcaf9c7f",
+    "direct.stderr.log": "643ca00db20d5d5e516ab56f1a206d4f12359acd0366a351fc253923a09e2e5a",
+    "direct.stdout.log": "10a47af352dcf4049671d02507daf2a5f3b9989231a0464d9df73ca408985766",
+    "legacy-constructions.stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "legacy-constructions.stdout.log": "e4576dfbda77f52f6381f4908d93f642033fabf6d4c222cbdc46df1f95c8f68e",
+    "receipt.json": "b812db4c9795df58e252a0fc22ab0685c8c2be757d0876b17a81343e4425f49e",
+    "writer-and-new-entry-methods.stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "writer-and-new-entry-methods.stdout.log": "5543ab841bcad0a0041db8e677fc4bf3d6a1dc760aedbe2aa35857662c900fca"
+  },
+  "failedFirstRunPreserved": "work/now-moment-final-entries01",
+  "audit": "work/now-moment-final-entry-audit01.md",
+  "auditSHA256": "b83f70c0c8a1518c58227940b00fd50e3abd007784a6ba0ce2fab8fbd1a25d1a",
+  "backendReady03All9PathsUnchanged": true,
+  "hostAppAndPublicDetailUnchanged": {
+    "apps/client/lib/src/app/birdtie_app.dart": "78852161e8e6dd2def17cefd1c6c74fc51fbb25a722c3b7184dd0bf0697395e2",
+    "apps/client/lib/src/workspace/now_moment_editor_host.dart": "50d68b5589d69c31dc160da50f9b21f2b4a24ef293ffc4f9207945857dd08424",
+    "apps/client/lib/src/workspace/public_moment_page.dart": "e4287d5b22b5002e28c73c7aac66fc49e05981105d3aa068ab86c3f963c4caaa"
+  },
+  "otherWorkerScope": "social_scope owns map material readiness; map_workspace not modified in this batch",
+  "notRun": [
+    "Full test suite",
+    "Flutter build",
+    "Server deployment",
+    "Phone operation"
+  ],
+  "coverage": [
+    "3 actual public-detail actions and 4 actual no-callback profile actions plus 2 place actions hand back to exact original Now element with original IDs and zero publication writes.",
+    "Missing Now scope disables all edit actions; owner/token/origin/workspace/busy/source and pending owner ABA are rejected.",
+    "Actual profile recovery route recoveryOnly true: original operation GET 404 then explicit STOP succeeds/clears journal; current save/delete capability never exposes new writer; preview and PUT counts zero."
+  ]
+}

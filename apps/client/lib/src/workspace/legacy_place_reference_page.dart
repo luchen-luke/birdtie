@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 
 import 'human_causal_control.dart';
 import 'now_ui_tokens.dart';
+import '../content/private_reference_media_view.dart';
 
 /// A short, owner-bound read receipt. It is never public Place authority.
 class LegacyPlaceReference {
@@ -67,6 +68,7 @@ class LegacyPlaceReferencePage extends StatefulWidget {
     required this.apiBaseUrl,
     required this.client,
     this.identityChanges,
+    this.ownerID,
   });
   final LegacyPlaceReference reference;
   final String? Function() authorizationHeader;
@@ -74,6 +76,7 @@ class LegacyPlaceReferencePage extends StatefulWidget {
   final String apiBaseUrl;
   final http.Client client;
   final Listenable? identityChanges;
+  final String? Function()? ownerID;
   @override
   State<LegacyPlaceReferencePage> createState() =>
       _LegacyPlaceReferencePageState();
@@ -227,6 +230,19 @@ class _LegacyPlaceReferencePageState extends State<LegacyPlaceReferencePage>
                 const SizedBox(height: 16),
                 Text(detail['summary'] as String, style: tokens.body),
               ],
+              PrivateReferenceMediaView(
+                key: ValueKey(
+                  'place-original-images-${widget.reference.placeID}-${(detail['reference'] as Map)['sourceVersion']}',
+                ),
+                targetType: 'PLACE',
+                targetID: widget.reference.placeID,
+                authorizationHeader: widget.authorizationHeader,
+                ownerID: widget.ownerID,
+                sourceCurrent: () => _current && identical(_detail, detail),
+                apiBaseUrl: widget.apiBaseUrl,
+                client: widget.client,
+                identityChanges: widget.identityChanges,
+              ),
             ],
             if (_error != null)
               Padding(

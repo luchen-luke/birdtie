@@ -1,0 +1,23 @@
+{
+  "at": "2026-10-15T16:04:21.248880+00:00",
+  "command": [
+    "D:\\DevTools\\flutter\\bin\\flutter.bat",
+    "test",
+    "test/private_moment_optional_context_test.dart",
+    "--reporter",
+    "expanded"
+  ],
+  "cwd": "D:\\Project\\birdtie\\apps\\client",
+  "exitCode": 0,
+  "sourceBefore": {
+    "apps/client/lib/src/content/private_moment_controller.dart": "275b2334ac2b981ae58bf8088d1fbe90a80c4dd1df803a26598610bb7f7b8337",
+    "apps/client/lib/src/workspace/moment_thread_api.dart": "eb8ce856c42a7fdcfee514c4294638307e4bfb84358d4282b94e458710399b42",
+    "apps/client/test/private_moment_optional_context_test.dart": "4751d6407ae5d291e7a43d108ca5bcc49cf88131ea468ef5d5f26afb618b77ae"
+  },
+  "sourceAfter": {
+    "apps/client/lib/src/content/private_moment_controller.dart": "275b2334ac2b981ae58bf8088d1fbe90a80c4dd1df803a26598610bb7f7b8337",
+    "apps/client/lib/src/workspace/moment_thread_api.dart": "eb8ce856c42a7fdcfee514c4294638307e4bfb84358d4282b94e458710399b42",
+    "apps/client/test/private_moment_optional_context_test.dart": "4751d6407ae5d291e7a43d108ca5bcc49cf88131ea468ef5d5f26afb618b77ae"
+  },
+  "sourceStable": true
+}

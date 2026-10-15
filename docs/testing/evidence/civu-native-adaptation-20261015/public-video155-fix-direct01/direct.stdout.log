@@ -1,0 +1,5 @@
+=== RUN   TestPublicMomentVideoRSSBudgetStillEnforced
+--- PASS: TestPublicMomentVideoRSSBudgetStillEnforced (0.13s)
+=== RUN   TestPublicMomentVideoSynthetic640x360
+--- PASS: TestPublicMomentVideoSynthetic640x360 (0.71s)
+PASS

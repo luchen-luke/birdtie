@@ -1,0 +1,43 @@
+{
+  "source": "actual tool results, supplementary execution record only",
+  "originalStdoutNotSeparatelyRecorded": true,
+  "runs": [
+    {
+      "command": [
+        "go",
+        "test",
+        "./internal/legacyreferencemedia",
+        "./internal/media",
+        "./cmd/legacy-media-import",
+        "-run",
+        "TestReferenceImagePurposeNamespacesAndPrivateProjection|TestLegacyReferencePNGKeepsFrameAndStripsTrailingMetadata|TestReferenceMediaModeCannotMixOrAdvertiseUnknownEffects",
+        "-count=1"
+      ],
+      "cwd": "$REPO/apps/api",
+      "exitCode": 0,
+      "testNames": [
+        "TestReferenceImagePurposeNamespacesAndPrivateProjection",
+        "TestLegacyReferencePNGKeepsFrameAndStripsTrailingMetadata",
+        "TestReferenceMediaModeCannotMixOrAdvertiseUnknownEffects"
+      ]
+    },
+    {
+      "command": [
+        "go",
+        "test",
+        "./internal/postgres",
+        "-run",
+        "^TestReferenceMediaSyntheticSourceKeepsIndependentPurposes$",
+        "-count=1"
+      ],
+      "cwd": "$REPO/apps/api",
+      "exitCode": 0,
+      "testNames": [
+        "TestReferenceMediaSyntheticSourceKeepsIndependentPurposes"
+      ]
+    }
+  ],
+  "newTestsExecutedForThisRecord": false,
+  "stdoutReconstructed": false,
+  "sourceStabilityNotIndependentlyCapturedForTheseRuns": true
+}

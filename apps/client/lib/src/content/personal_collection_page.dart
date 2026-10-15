@@ -15,6 +15,7 @@ import 'collection_publication_pending_store.dart';
 import 'collection_copy_controller.dart';
 import 'collection_copy_pending_store.dart';
 import 'collection_copy_page.dart';
+import 'private_reference_media_view.dart';
 
 /// Ordinary creation uses the same saved object as subsequent reads and edits.
 /// The caller owns this controller so returning to Now preserves a local draft.
@@ -539,6 +540,7 @@ class _PersonalCollectionPageState extends State<PersonalCollectionPage> {
           apiBaseUrl: source.apiBaseUrl,
           client: source.transport,
           identityChanges: source.identityChanges,
+          ownerID: source.ownerID,
         ),
       ),
     );
@@ -1053,6 +1055,7 @@ class _PersonalCollectionPageState extends State<PersonalCollectionPage> {
   );
   Widget _editor(NowUiTokens tokens) {
     final source = c, epoch = _pageEpoch;
+    final record = source.editing;
     return ListView(
       padding: const EdgeInsets.all(16),
       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
@@ -1071,6 +1074,31 @@ class _PersonalCollectionPageState extends State<PersonalCollectionPage> {
           style: tokens.metadata,
         ),
         const SizedBox(height: 20),
+        if (c.kind == 'journey' &&
+            c.editing != null &&
+            c.editing!.visibility == 'private' &&
+            c.editing!.status == 'draft')
+          PrivateReferenceMediaView(
+            key: ValueKey(
+              'journey-original-images-${c.editing!.id}-${c.editing!.revision}',
+            ),
+            targetType: 'JOURNEY',
+            targetID: c.editing!.id,
+            authorizationHeader: source.authorizationHeader,
+            ownerID: source.ownerID,
+            sourceCurrent: () =>
+                identical(c, source) &&
+                source.current &&
+                source.editing?.id == record?.id &&
+                source.editing?.revision == record?.revision &&
+                source.editing?.visibility == 'private',
+            apiBaseUrl: source.apiBaseUrl,
+            client: source.transport,
+            identityChanges: Listenable.merge([
+              source,
+              if (source.identityChanges != null) source.identityChanges!,
+            ]),
+          ),
         TextField(
           key: const Key('collection-title'),
           controller: _title,

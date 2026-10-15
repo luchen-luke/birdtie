@@ -1,0 +1,14 @@
+{
+  "scope": [
+    "apps/api/internal/momentmedia/video_process_unix.go",
+    "apps/api/internal/momentmedia/video_test.go",
+    "apps/api/internal/momentmedia/video_process_unix_test.go"
+  ],
+  "before": {
+    "apps/api/internal/momentmedia/video_process_unix.go": "6bedf90e3dc5155480b343bb8b5dd7a69359d9a2bf2a4b79189a36f0acf96dde",
+    "apps/api/internal/momentmedia/video_test.go": "2bf2fefa94508e1c3cca86746a369dbf9c4ab6c779e75bcbf60d3cb8106b4475",
+    "apps/api/internal/momentmedia/video_process_unix_test.go": null
+  },
+  "basis": "ROOT_APPROVED_AS1024_FULL_CODEC_PASS_SYNTHETIC_FIXTURE",
+  "sourceChangesStarted": false
+}

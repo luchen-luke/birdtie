@@ -1,0 +1,17 @@
+{
+  "status": "PASS",
+  "remoteScriptSHA256": "63fa702136452d72e33ed5f2ed660ba09915f7d78f281038dfcc0624f4d46297",
+  "privateValuesPersisted": false,
+  "phoneInCommandLine": false,
+  "screenshots": false,
+  "logins": 0,
+  "codeRequests": 0,
+  "sourceWrites": 0,
+  "databaseDirectWrites": 0,
+  "samePreviouslyClaimedOwner": true,
+  "phoneEnteredInFocusedField": true,
+  "foregroundAppMatched": true,
+  "credentialsPassedOnlyInRAM": true,
+  "loginExecuted": false,
+  "codeRequested": false
+}

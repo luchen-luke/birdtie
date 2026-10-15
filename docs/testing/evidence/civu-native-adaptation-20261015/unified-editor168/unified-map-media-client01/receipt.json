@@ -1,0 +1,26 @@
+{
+  "at": "2026-10-15T15:17:18.778315+00:00",
+  "command": [
+    "D:/DevTools/flutter/bin/flutter.bat",
+    "test",
+    "test/map_media_controller_test.dart",
+    "--plain-name",
+    "v5 and v6 compound Moment pins read the first current 152 thumbnail while pin binding, lease and auth retire independently",
+    "--reporter",
+    "expanded"
+  ],
+  "cwd": "D:\\Project\\birdtie\\apps\\client",
+  "exitCode": 0,
+  "effectiveExitCode": 0,
+  "sourceStable": true,
+  "sourceSHA256": {
+    "apps/client/lib/src/workspace/map_entities.dart": "144dc7fae498677ace2a6b2ea7932a40f3548b17d308e4b6f9c51d23a4aaf0c6",
+    "apps/client/lib/src/workspace/map_layers_api.dart": "a7838da091671a3270316a455f51e64f12da2aae4ce2b4a50826edc45b2d532b",
+    "apps/client/lib/src/workspace/map_media_controller.dart": "58b5e9e6d854e3f105accc294d19d3b927cb00ecc3f33965929805870c218a5f",
+    "apps/client/test/map_media_controller_test.dart": "c4d83250b2effdc3bb3228077452098ad8bcb97760d18e78807eb68329e68d79"
+  },
+  "diagnostics": null,
+  "logSHA256": "6de3174f1b7d4be7ffeab855af31362f3f90e54b342a0c716feaa06327a8951d",
+  "deviceRun": false,
+  "privateSourceRead": false
+}

@@ -1,0 +1,22 @@
+{
+  "schema": "birdtie-unified-composer-client-frame-v1",
+  "at": "2026-10-15T16:06:15.262640+00:00",
+  "status": "PRODUCT_SOURCE_FROZEN_LAST_WITHDRAW_DIRECT_PENDING",
+  "files": {
+    "apps/client/lib/src/workspace/map_workspace.dart": "aaee3533e7b1033a4f847462ee5db8d4b8f5fd78286857ec9568e24c883856ca",
+    "apps/client/lib/src/workspace/agent_composer.dart": "1cd3d633f04a960d077de9a1c8f59e35ce34e4b4b80e1e762c274090e7178134",
+    "apps/client/lib/src/workspace/moment_thread_api.dart": "eb8ce856c42a7fdcfee514c4294638307e4bfb84358d4282b94e458710399b42",
+    "apps/client/lib/src/workspace/moment_thread_controller.dart": "b2d5872144869b1736b03dd6b1a3430ec4040b8763883043833e3c3c1a31b6c2",
+    "apps/client/lib/src/workspace/moment_thread_panel.dart": "11235b08e413794e45f12e8f12fcdc52d9be4a013782828538337d93ced940a6",
+    "apps/client/lib/src/workspace/moment_thread_pending_store.dart": "487b13a9fb7797b653a06a10918fb1c19f01006242df3f7b3170a4fb2421dd18",
+    "apps/client/lib/src/workspace/now_creation_draft_state.dart": "cdc593dcce048e98f2e84fa1f7dfb67c81770b39ad1564dcaf0479f0be0134bc",
+    "apps/client/test/moment_thread_test.dart": "e160e8057fb68f70f9eda4899c72499ceb7c7a21388f264bead6b4327cae802a"
+  },
+  "sourceFrameSHA256": "a6b80362847b2cb8a45091047ab7f68e986ad5651da4d26f949fe690a01005ca",
+  "analysis": "work/unified-composer-analysis06/receipt.json",
+  "analysisErrors": 0,
+  "analysisWarnings": 0,
+  "sharedReportsChanged": false,
+  "buildRun": false,
+  "deviceRun": false
+}

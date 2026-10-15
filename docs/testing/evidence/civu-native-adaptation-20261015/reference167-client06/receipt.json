@@ -1,0 +1,21 @@
+{
+  "command": [
+    "flutter",
+    "test",
+    "test/private_reference_media_test.dart",
+    "--reporter",
+    "expanded"
+  ],
+  "cwd": "$REPO/apps/client",
+  "exitCode": 0,
+  "originalReceiptSHA256": "de4856db23a0cf860245ce07c916bb6f0aaa3797b54b21f4a2302b13370529a6",
+  "originalStdoutSHA256": "6585dcdf73db321dce8d90ac3e74caab81eccca69ba2836acb77f6ce52fa52a2",
+  "projection": "CLOSED_SANITIZED_FIELDS_ONLY",
+  "privateValuesOmitted": true,
+  "tests": {
+    "pass": 2,
+    "fail": 0,
+    "skip": 0
+  },
+  "coverage": "Session RAM current image and exact original delete recovery; DTO and secure journal owner/origin isolation"
+}

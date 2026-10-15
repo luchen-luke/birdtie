@@ -1,0 +1,8 @@
+{"Time":"2026-10-15T23:55:32.921746+08:00","Action":"start","Package":"github.com/birdtie/birdtie/apps/api/internal/content"}
+{"Time":"2026-10-15T23:55:33.3545312+08:00","Action":"run","Package":"github.com/birdtie/birdtie/apps/api/internal/content","Test":"TestMomentThreadEditingClosedSinglePreserveAndOriginalDigest"}
+{"Time":"2026-10-15T23:55:33.3545312+08:00","Action":"output","Package":"github.com/birdtie/birdtie/apps/api/internal/content","Test":"TestMomentThreadEditingClosedSinglePreserveAndOriginalDigest","Output":"=== RUN   TestMomentThreadEditingClosedSinglePreserveAndOriginalDigest\n"}
+{"Time":"2026-10-15T23:55:33.3550382+08:00","Action":"output","Package":"github.com/birdtie/birdtie/apps/api/internal/content","Test":"TestMomentThreadEditingClosedSinglePreserveAndOriginalDigest","Output":"--- PASS: TestMomentThreadEditingClosedSinglePreserveAndOriginalDigest (0.00s)\n"}
+{"Time":"2026-10-15T23:55:33.3550382+08:00","Action":"pass","Package":"github.com/birdtie/birdtie/apps/api/internal/content","Test":"TestMomentThreadEditingClosedSinglePreserveAndOriginalDigest","Elapsed":0}
+{"Time":"2026-10-15T23:55:33.3550382+08:00","Action":"output","Package":"github.com/birdtie/birdtie/apps/api/internal/content","Output":"PASS\n"}
+{"Time":"2026-10-15T23:55:33.3560694+08:00","Action":"output","Package":"github.com/birdtie/birdtie/apps/api/internal/content","Output":"ok  \tgithub.com/birdtie/birdtie/apps/api/internal/content\t0.434s\n"}
+{"Time":"2026-10-15T23:55:33.3560694+08:00","Action":"pass","Package":"github.com/birdtie/birdtie/apps/api/internal/content","Elapsed":0.434}

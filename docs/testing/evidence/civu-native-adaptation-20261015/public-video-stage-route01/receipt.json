@@ -1,0 +1,28 @@
+{
+  "command": [
+    "C:/Program Files/Go/bin/go.exe",
+    "test",
+    "./internal/httpapi",
+    "-run",
+    "^TestPublicMomentVideoHTTPRegisteredStageContentSelectors$",
+    "-count=1",
+    "-v"
+  ],
+  "cwd": "D:\\Project\\birdtie\\apps\\api",
+  "startedUTC": "2026-10-15T14:05:20.480866+00:00",
+  "exitCode": 0,
+  "sourceBeforeDirect": {
+    "apps/api/internal/httpapi/moment_media_video.go": "ed16e69071f15d1bc4bf47d7b45bbf424a00292536880e3b380d3497113cd397",
+    "apps/api/internal/httpapi/moment_media_video_test.go": "5e26ea86d2c8bd61b1274a8c1ee744d7365ef9983cd03e5939dad8a82938e5af"
+  },
+  "sourceAfterDirect": {
+    "apps/api/internal/httpapi/moment_media_video.go": "ed16e69071f15d1bc4bf47d7b45bbf424a00292536880e3b380d3497113cd397",
+    "apps/api/internal/httpapi/moment_media_video_test.go": "5e26ea86d2c8bd61b1274a8c1ee744d7365ef9983cd03e5939dad8a82938e5af"
+  },
+  "sourceStable": true,
+  "scope": "One registered HTTP stage-content route regression: canonical media ID/numeric version/variant selection, original owner Session frame forwarded, correct byte envelope, malformed selectors rejected and native changed-source failure returns no pixels. This is a wiring test using synthetic byte envelopes, not codec/native/device authorization proof.",
+  "codecTestsRun": false,
+  "nativeTestsRun": false,
+  "deviceRetest": "NOT_RUN_BY_WORKER",
+  "databaseWrites": 0
+}

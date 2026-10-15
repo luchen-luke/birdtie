@@ -1,0 +1,33 @@
+{
+  "at": "2026-10-15T12:37:47.705471+00:00",
+  "status": "PASS_TEXT_AND_MULTILOCATION_ONLY",
+  "apk": "final-apk08",
+  "apkSHA256": "827e746792f6bf0a705a65d6bccfa8a2a3310f8a143a69ebd3e41061fab6b150",
+  "testAccount": "ALREADY_PROVED_SYNTHETIC03",
+  "normalFontScale": 1.0,
+  "recording": false,
+  "checks": {
+    "fixedCodeUILogin": true,
+    "emptyContentBlocked": true,
+    "optionalTitleNoField": true,
+    "noLocationTextPublish": true,
+    "coldRelaunchReadback": true,
+    "profileEditReopensNowSameComposer": true,
+    "sameMomentLondonEdinburgh": true,
+    "removeAllLocationsBodyReadable": true,
+    "expiredConfirmationRetainedDraftAndRequiredFreshCheck": true,
+    "textPublicCleanupWithdrawn": true,
+    "threeSelfGeneratedImagesHomePreview": true
+  },
+  "mediaPublish": "FAILED_BEFORE_DISPATCH_DURABLE_JOURNAL_MEDIA_DIGEST_INCOMPATIBLE_FIX_IN_PROGRESS",
+  "screenshotsSHA256": {
+    "apk08-text-published": "24b24dd3462c1cfc43af9a406e0559c500f082381426ff96f66ee7f1b724cfef",
+    "apk08-crosscity-read": "4f44b22b5a20393d4ca8becf02c42994a88930abedd30692f1ef4240e94abe3e",
+    "apk08-location-removed-readable": "6b910413ad70127db920cc5ee6cdd882d7ce504371f9f1c9dea2875af63c6e2d",
+    "apk08-multi-preview01": "9bd5c6918bf2ac3ea8bcdeb1944df62077a0d0dc8dde28abf1bf9ced04e74f2f"
+  },
+  "screenshotLocation": "USER_DELIVERABLE_OUTPUTS_SCREENSHOTS_ONLY",
+  "rawDeviceUITrace": "NOT_COMMITTED_CONTAINS_PRIVATE_GALLERY_LABELS",
+  "privateOriginalAccountUsed": false,
+  "wholeProductAcceptance": false
+}

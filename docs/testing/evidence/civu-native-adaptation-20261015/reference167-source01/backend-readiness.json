@@ -1,0 +1,36 @@
+{
+  "status": "SOURCE_READY",
+  "at": "2026-10-15T12:12:30.063769+00:00",
+  "workerFiles": 15,
+  "sourceFrameSHA256": "130b1df019a700bdd5ad5dc2beec479951fb95bf857c0c7519058e4954657583",
+  "sourceFrame": "reference167-source-final01.json",
+  "oldSQLBaselineFilesUnchanged": 307,
+  "native": {
+    "evidence": "reference167-native01",
+    "tests": {
+      "pass": 1,
+      "fail": 0,
+      "skip": 0
+    },
+    "sourceStable": true,
+    "assignedParentSourceStable": true,
+    "parentIdentityStable": true
+  },
+  "protectedPurePrepare": "reference167-prepare01",
+  "directChecksPassed": [
+    "TestReferenceImagePurposeNamespacesAndPrivateProjection",
+    "TestLegacyReferencePNGKeepsFrameAndStripsTrailingMetadata",
+    "TestReferenceMediaModeCannotMixOrAdvertiseUnknownEffects",
+    "TestReferenceMediaSyntheticSourceKeepsIndependentPurposes",
+    "TestReferenceMediaProtectedPrepare"
+  ],
+  "compileFirstFailure": "reference167-compile-firstfail01.json",
+  "extractorSyntax": "PASS_AST_ONLY_NOT_EXECUTED",
+  "diffCheck": "PASS",
+  "remoteImport": "NOT_RUN_BY_WORKER",
+  "remoteConfigurationChanged": false,
+  "realOwnerLogins": 0,
+  "newMediaPixelsRead": false,
+  "privacyRisk": "UNKNOWN",
+  "antivirusScan": "NOT_RUN"
+}

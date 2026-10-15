@@ -1,0 +1,46 @@
+{
+  "status": "PASS_CURRENT_PREVIOUS_COMMIT_GEOGRAPHIC_SCOPE_ONLY",
+  "derivedAt": "2026-10-15T17:21:57.892095+00:00",
+  "sourceReceipt": "work\\device19-thread-readback02\\receipt.json",
+  "sourceReceiptSHA256": "36529e0e7ee7a151488203adaa48cb186fe01953217b928b60535f6577412ed2",
+  "originalFAILPreserved": true,
+  "newHTTPRequests": 0,
+  "newSessions": 0,
+  "threadVersion": 3,
+  "pendingNewEditAndReorderVerified": false,
+  "newEditOrderResult": "FAIL_ORIGINAL_STATE_RETAINED",
+  "actualCoordinatesFromReadback02": true,
+  "geographicReferences": [
+    {
+      "momentId": "4ef5b105-9152-4a8c-98e0-b445b1153ef8",
+      "referenceId": "72c612f6-8126-53f3-86ed-3ba369868e9c",
+      "exactSourceName": "Listasafn Reykjavíkur",
+      "countryCode": "ISL",
+      "coordinateSystem": "wgs84",
+      "latitude": 64.149065,
+      "longitude": -21.940444,
+      "verifiedArea": "REYKJAVIK",
+      "ownerPublicAnchorMatch": true,
+      "ownerAvailable": true,
+      "cityId": "",
+      "placeId": ""
+    },
+    {
+      "momentId": "fbcdd365-b5af-4b1c-b4e7-d83b696cb538",
+      "referenceId": "4d6213b2-83a3-53cc-be77-8bc1b61a92de",
+      "exactSourceName": "Apsley House",
+      "countryCode": "GBR",
+      "coordinateSystem": "wgs84",
+      "latitude": 51.503474,
+      "longitude": -0.151636,
+      "verifiedArea": "LONDON",
+      "ownerPublicAnchorMatch": true,
+      "ownerAvailable": true,
+      "cityId": "",
+      "placeId": ""
+    }
+  ],
+  "twoDisjointAreasVerified": true,
+  "cityIDsFabricated": false,
+  "notEvidenceOfSubmitSuccess": true
+}

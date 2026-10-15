@@ -1,0 +1,40 @@
+Analyzing 4 items...                                            
+
+   info - Statements in an if should be enclosed in a block. Try wrapping the statement in a block - lib\src\legacy\legacy_shell.dart:230:7 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block. Try wrapping the statement in a block - lib\src\legacy\legacy_shell.dart:232:7 - curly_braces_in_flow_control_structures
+   info - Don't use 'BuildContext's across async gaps. Try rewriting the code to not use the 'BuildContext', or guard the use with a 'mounted' check - lib\src\legacy\legacy_shell.dart:303:36 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps. Try rewriting the code to not use the 'BuildContext', or guard the use with a 'mounted' check - lib\src\legacy\legacy_shell.dart:307:33 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps. Try rewriting the code to not use the 'BuildContext', or guard the use with a 'mounted' check - lib\src\legacy\legacy_shell.dart:308:46 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps. Try rewriting the code to not use the 'BuildContext', or guard the use with a 'mounted' check - lib\src\legacy\legacy_shell.dart:310:9 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps. Try rewriting the code to not use the 'BuildContext', or guard the use with a 'mounted' check - lib\src\legacy\legacy_shell.dart:311:9 - use_build_context_synchronously
+   info - Statements in an if should be enclosed in a block. Try wrapping the statement in a block - lib\src\legacy\legacy_shell.dart:381:7 - curly_braces_in_flow_control_structures
+warning - A value for optional parameter 'existing' isn't ever given. Try removing the unused parameter - lib\src\legacy\legacy_shell.dart:866:10 - unused_element_parameter
+   info - Statements in an if should be enclosed in a block. Try wrapping the statement in a block - lib\src\legacy\legacy_shell.dart:1001:13 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block. Try wrapping the statement in a block - lib\src\legacy\legacy_shell.dart:1017:7 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block. Try wrapping the statement in a block - lib\src\legacy\legacy_shell.dart:1047:7 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block. Try wrapping the statement in a block - lib\src\legacy\legacy_shell.dart:1063:11 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block. Try wrapping the statement in a block - lib\src\legacy\legacy_shell.dart:1073:7 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block. Try wrapping the statement in a block - lib\src\legacy\legacy_shell.dart:1445:7 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block. Try wrapping the statement in a block - lib\src\legacy\legacy_shell.dart:2003:21 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block. Try wrapping the statement in a block - lib\src\legacy\legacy_shell.dart:2330:41 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block. Try wrapping the statement in a block - lib\src\legacy\legacy_shell.dart:2340:31 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block. Try wrapping the statement in a block - lib\src\workspace\place_detail_sheet.dart:275:7 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block. Try wrapping the statement in a block - lib\src\workspace\place_detail_sheet.dart:423:9 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block. Try wrapping the statement in a block - lib\src\workspace\place_detail_sheet.dart:465:7 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block. Try wrapping the statement in a block - lib\src\workspace\place_detail_sheet.dart:479:7 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block. Try wrapping the statement in a block - lib\src\workspace\place_detail_sheet.dart:607:7 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block. Try wrapping the statement in a block - lib\src\workspace\place_detail_sheet.dart:1132:55 - curly_braces_in_flow_control_structures
+   info - Statements in a for should be enclosed in a block. Try wrapping the statement in a block - lib\src\workspace\public_moment_photo_editor.dart:52:55 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block. Try wrapping the statement in a block - lib\src\workspace\public_moment_photo_editor.dart:67:7 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block. Try wrapping the statement in a block - lib\src\workspace\public_moment_photo_editor.dart:95:7 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block. Try wrapping the statement in a block - lib\src\workspace\public_moment_photo_editor.dart:133:9 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block. Try wrapping the statement in a block - lib\src\workspace\public_moment_photo_editor.dart:138:9 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block. Try wrapping the statement in a block - lib\src\workspace\public_moment_photo_editor.dart:172:7 - curly_braces_in_flow_control_structures
+   info - Unnecessary use of multiple underscores. Try using '_' - lib\src\workspace\public_moment_photo_editor.dart:222:43 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores. Try using '_' - lib\src\workspace\public_moment_photo_editor.dart:222:47 - unnecessary_underscores
+   info - Statements in an if should be enclosed in a block. Try wrapping the statement in a block - lib\src\workspace\public_moment_photo_editor.dart:287:7 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block. Try wrapping the statement in a block - lib\src\workspace\public_moment_photo_editor.dart:297:7 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block. Try wrapping the statement in a block - lib\src\workspace\public_moment_photo_editor.dart:328:7 - curly_braces_in_flow_control_structures
+   info - Unnecessary use of multiple underscores. Try using '_' - lib\src\workspace\public_moment_photo_editor.dart:423:35 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores. Try using '_' - lib\src\workspace\public_moment_photo_editor.dart:423:39 - unnecessary_underscores
+

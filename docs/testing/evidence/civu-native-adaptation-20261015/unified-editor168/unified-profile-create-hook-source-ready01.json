@@ -1,0 +1,31 @@
+{
+  "schema": "birdtie-unified-profile-create-hook-source-v1",
+  "status": "SOURCE_READY",
+  "at": "2026-10-15T16:25:52.478224+00:00",
+  "files": {
+    "apps/client/lib/src/workspace/map_workspace.dart": "128a2edfb13c88f3400af46a73ee57f6216dc94e2422f029ea09afb356e07c5b"
+  },
+  "previousUnifiedComposerFrame": "604ddb24b4d6f76e7a5b5602888a5f83409beb7e2413fe772fcca7a393741c40",
+  "previousMapSHA256": "aaee3533e7b1033a4f847462ee5db8d4b8f5fd78286857ec9568e24c883856ca",
+  "entrypoint": "NowMomentEditorHost.onCreate -> _beginMomentThread(sourceCurrent: current)",
+  "behavior": {
+    "newDefaultEntries": 1,
+    "existingDraft": "PRESERVE_AND_EXPLICITLY_NOTICE_RESUME",
+    "pendingUnknown": "EXISTING_CANOPEN_AND_ORIGINAL_LEDGER_GUARDS",
+    "sourceCurrent": "ENTRY_AND_ALL_AWAIT_BOUNDARIES",
+    "automaticCommit": false
+  },
+  "analysis": {
+    "receipt": "work/unified-profile-create-hook-analysis01/receipt.json",
+    "exitCode": 0,
+    "errors": 0,
+    "warnings": 0,
+    "infos": 156
+  },
+  "relatedRouteTest": "work/profile-host01 (owned by thread_withdraw_fix; actual legacy two controls handback PASS)",
+  "newTestsRunByThisWorker": false,
+  "buildRun": false,
+  "deviceRun": false,
+  "oldFramesPreserved": true,
+  "sourceFrameSHA256": "42d0ed90fd77e5792b6ba9a31ed3eb01b10b54e462fc3c013b490e33fe8c8c70"
+}

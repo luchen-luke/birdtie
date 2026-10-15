@@ -1,0 +1,21 @@
+{
+  "command": [
+    "D:/DevTools/flutter/bin/dart.bat",
+    "analyze",
+    "lib/src/workspace/saved_items.dart",
+    "test/saved_page_test.dart"
+  ],
+  "cwd": "D:\\Project\\birdtie\\apps\\client",
+  "startedUTC": "2026-10-15T12:53:25.538151+00:00",
+  "exitCode": 0,
+  "sourceBefore": {
+    "lib/src/workspace/saved_items.dart": "c4d64b7e59e8273e8f4d123eef284da8f6772749968ebaa8feaace16aa06dbbf",
+    "test/saved_page_test.dart": "c32801ae511f4bedb24e9d67391e321cf054def89396c599871eab5313673113"
+  },
+  "sourceAfter": {
+    "lib/src/workspace/saved_items.dart": "c4d64b7e59e8273e8f4d123eef284da8f6772749968ebaa8feaace16aa06dbbf",
+    "test/saved_page_test.dart": "c32801ae511f4bedb24e9d67391e321cf054def89396c599871eab5313673113"
+  },
+  "sourceStable": true,
+  "scope": "One composite direct regression: queryless URI hasQuery=false, cursor URI intact, failed next-page retry refreshes first page; no build/device/remote action."
+}

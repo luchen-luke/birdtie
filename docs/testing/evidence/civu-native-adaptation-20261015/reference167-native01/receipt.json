@@ -1,0 +1,27 @@
+{
+  "exitCode": 0,
+  "tests": {
+    "pass": 1,
+    "fail": 0,
+    "skip": 0
+  },
+  "sourceStable": true,
+  "command": [
+    "go",
+    "test",
+    "-mod=readonly",
+    "./internal/postgres",
+    "-count=1",
+    "-json",
+    "-run",
+    "^Test(LegacyReferenceMediaNativeOwnedPurposesDeletionAndRepeat)$"
+  ],
+  "cwd": "$WORK/reference167-native01/api",
+  "originalReceiptSHA256": "31879ad97686ef90c2149ce5a451f5a3f2f32cbd94dd976bffee8849bd063173",
+  "originalStdoutSHA256": "8bf16ee404c28ef9ab18366fa8383c8c17794f674850aa72df01397e04726823",
+  "projection": "CLOSED_SANITIZED_FIELDS_ONLY",
+  "privateValuesOmitted": true,
+  "parentIdentityStable": true,
+  "assignedParentSourceStable": true,
+  "execution": "ACTUAL_ISOLATED_NATIVE_CHILD_WITH_HTTPAPI_NEW_NOT_REMOTE_DEPLOYMENT"
+}

@@ -1,0 +1,5 @@
+{
+  "cwd": "D:/Project/birdtie/apps/client",
+  "command": "dart analyze [7 scoped unified composer files]",
+  "exitCode": 3
+}

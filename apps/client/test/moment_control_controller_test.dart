@@ -3,11 +3,17 @@ import 'dart:convert';
 import 'package:birdtie_client/src/content/private_moment_controller.dart';
 import 'package:birdtie_client/src/content/moment_control.dart';
 import 'package:birdtie_client/src/content/moment_control_pending_store.dart';
+import 'package:birdtie_client/src/workspace/public_moment_media.dart';
+import 'package:crypto/crypto.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'moment_control_test.dart';
+import 'moment_control_pending_store_test.dart'
+    show verifyDurableMediaPendingVariants;
+import 'entity_cover_test.dart' show coverJPEG, coverRights;
 
 http.Response mcJSON(Object? data, [int status = 200]) =>
     http.Response.bytes(utf8.encode(jsonEncode({'data': data})), status);
@@ -186,6 +192,155 @@ class FailedReadbackStore extends MemoryMomentControlPendingStore {
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  test(
+    'durable media publish/update preserves nil empty order and recovers UNKNOWN without resend',
+    () async {
+      FlutterSecureStorage.setMockInitialValues({});
+      final rights = coverRights();
+      final selections = [
+        PublicMomentMediaSelection(
+          '44000000-0000-4000-8000-000000000003',
+          1,
+          rights,
+        ),
+        PublicMomentMediaSelection(
+          '44000000-0000-4000-8000-000000000001',
+          2,
+          rights,
+        ),
+        PublicMomentMediaSelection(
+          '44000000-0000-4000-8000-000000000002',
+          1,
+          rights,
+        ),
+      ];
+      await verifyDurableMediaPendingVariants(selections);
+      const store = SecureMomentControlPendingStore();
+      var puts = 0, gets = 0, missing = true;
+      MomentControlInput? original;
+      Map<String, Object?> record = mcRecord();
+      final bytes = coverJPEG();
+      final client = MockClient((request) async {
+        expect(request.headers['Authorization'], 'Bearer synthetic-media');
+        if (request.url.path == '/v1/me')
+          return mcJSON({'id': mcOwner, 'accountType': 'person'});
+        if (request.url.path == '/v1/me/moments' && request.method == 'GET')
+          return mcJSON([record]);
+        if (request.url.path == '/v1/me/moment-controls/previews') {
+          final raw = jsonDecode(request.body) as Map<String, dynamic>;
+          expect(raw['media'], selections.map((v) => v.toJson()).toList());
+          original = MomentControlInput(
+            operationID: raw['operationId'],
+            action: raw['action'],
+            momentID: raw['momentId'],
+            expectedRevision: raw['expectedRevision'],
+            input: Map<String, Object?>.from(raw['input']),
+            media: selections,
+            localScope: mcOp,
+          );
+          final at = DateTime.now().toUtc();
+          return mcJSON({
+            ...mcPreview(original!),
+            'materials': [
+              for (final selection in selections)
+                {
+                  'material': {
+                    'mediaId': selection.mediaID,
+                    'mediaVersion': selection.version,
+                    'localScope': mcOp,
+                    'displaySha256': sha256.convert(bytes).toString(),
+                    'displayBytes': bytes.length,
+                    'width': 320,
+                    'height': 180,
+                    'thumbnailSha256': sha256.convert(bytes).toString(),
+                    'thumbnailBytes': bytes.length,
+                    'validationKind': publicMomentMediaValidation,
+                    'validationStatus': 'VALIDATED',
+                    'antivirusScan': 'NOT_RUN',
+                    'privacyRisk': 'UNKNOWN',
+                    'preparedAt': at.toIso8601String(),
+                    'retainUntil': at
+                        .add(const Duration(minutes: 10))
+                        .toIso8601String(),
+                  },
+                  'thumbnailBase64': base64Encode(bytes),
+                },
+            ],
+          });
+        }
+        if (request.url.path ==
+            '/v1/me/moment-controls/operations/${original?.operationID}') {
+          if (request.method == 'PUT') {
+            puts++;
+            final pending = (await store.read(
+              'https://isolated.invalid',
+              mcOwner,
+            )).single;
+            expect(pending.stage, 'UNKNOWN');
+            expect(pending.payloadDigest, original!.digest);
+            expect(
+              pending.mediaSelectors!.map((v) => v.mediaID).toList(),
+              selections.map((v) => v.mediaID).toList(),
+            );
+            record = {
+              ...record,
+              'visibility': 'public',
+              'status': 'published',
+              'revision': 2,
+            };
+            throw http.ClientException('synthetic response lost after commit');
+          }
+          expect(request.method, 'GET');
+          gets++;
+          return missing ? mcJSON(null, 404) : mcJSON(mcReceipt(original!));
+        }
+        throw StateError('Unexpected media-publication fixture request');
+      });
+      PrivateMomentController makeController() => PrivateMomentController(
+        authorizationHeader: () => 'Bearer synthetic-media',
+        ownerID: () => mcOwner,
+        client: client,
+        apiBaseUrl: 'https://isolated.invalid',
+        pendingStore: store,
+      );
+      final first = makeController();
+      PrivateMomentController? restored;
+      try {
+        await first.refresh();
+        final preview = await first.previewPublish(
+          first.moments.single,
+          media: selections,
+          localScope: mcOp,
+        );
+        expect(preview, isNotNull);
+        expect(preview!.materials.length, 3);
+        expect(await first.commit(preview), isFalse);
+        expect(
+          puts,
+          1,
+        ); // The durable preparation must no longer block the PUT.
+        first.dispose();
+        restored = makeController();
+        await restored.loadOperations();
+        final pending = restored.pendingOperations.single;
+        expect(pending.stage, 'UNKNOWN');
+        await restored.recoverOperation(pending);
+        expect(gets, 1);
+        expect(puts, 1);
+        expect(restored.pendingOperations, hasLength(1));
+        missing = false;
+        await restored.recoverOperation(pending);
+        expect(gets, 2);
+        expect(puts, 1);
+        expect(restored.operationReceipt!.succeeded, isTrue);
+        expect(await store.read('https://isolated.invalid', mcOwner), isEmpty);
+      } finally {
+        if (restored == null) first.dispose();
+        restored?.dispose();
+        client.close();
+      }
+    },
+  );
   test(
     'renewal observed first by an editor getter still refreshes the authoritative owned version',
     () async {

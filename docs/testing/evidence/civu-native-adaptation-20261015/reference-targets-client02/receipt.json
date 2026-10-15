@@ -1,0 +1,28 @@
+{
+  "command": [
+    "D:/DevTools/flutter/bin/flutter.bat",
+    "test",
+    "test/private_reference_targets_test.dart",
+    "--reporter",
+    "expanded"
+  ],
+  "cwd": "D:\\Project\\birdtie\\apps\\client",
+  "startedUTC": "2026-10-15T13:28:25.919288+00:00",
+  "exitCode": 1,
+  "sourceBefore": {
+    "lib/src/content/private_reference_targets_page.dart": "528f4d2967b1daed287a458f976c7aec8772e627e7fe022e5903431ef66f19bd",
+    "lib/src/content/legacy_archive_page.dart": "eda1bb034871c10fc2cec405fdca54bea85e871afde1a24c008234a7f5cfa97c",
+    "lib/src/workspace/saved_items.dart": "7f5844c01869a20c935fcee1c9df48fdb0aa1375d24b7ebc6461257613c2c90b",
+    "test/private_reference_targets_test.dart": "f4355fb9c28ef9dc3effcabd5889a8a32a13f2244c57d4284555ae32d1333d4b",
+    "test/saved_page_test.dart": "b8dd17bfc71873bb07dd008c3dbd4ef00ecdf8ba790bff2628d72d458c5e66a5"
+  },
+  "sourceAfter": {
+    "lib/src/content/private_reference_targets_page.dart": "528f4d2967b1daed287a458f976c7aec8772e627e7fe022e5903431ef66f19bd",
+    "lib/src/content/legacy_archive_page.dart": "eda1bb034871c10fc2cec405fdca54bea85e871afde1a24c008234a7f5cfa97c",
+    "lib/src/workspace/saved_items.dart": "7f5844c01869a20c935fcee1c9df48fdb0aa1375d24b7ebc6461257613c2c90b",
+    "test/private_reference_targets_test.dart": "f4355fb9c28ef9dc3effcabd5889a8a32a13f2244c57d4284555ae32d1333d4b",
+    "test/saved_page_test.dart": "b8dd17bfc71873bb07dd008c3dbd4ef00ecdf8ba790bff2628d72d458c5e66a5"
+  },
+  "sourceStable": true,
+  "scope": "One composite native-client widget regression: original entry, typed target paging, fresh private image metadata, return refresh, owner retirement, Saved lease expiry and explicit first-page GET. No build or device/remote action."
+}

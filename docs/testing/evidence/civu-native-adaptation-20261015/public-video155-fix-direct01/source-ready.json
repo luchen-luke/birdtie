@@ -1,0 +1,33 @@
+{
+  "status": "SOURCE_READY",
+  "productChange": "LINUX_PUBLIC_VIDEO_AS512_TO_AS1024_ONLY",
+  "rssBoundMiB": 256,
+  "cpuSeconds": 60,
+  "outputLimitsUnchanged": true,
+  "existingPhysicalRSSMonitorUnchanged": true,
+  "scope": [
+    "apps/api/internal/momentmedia/video_process_unix.go",
+    "apps/api/internal/momentmedia/video_test.go",
+    "apps/api/internal/momentmedia/video_process_unix_test.go"
+  ],
+  "sourceSHA256": {
+    "apps/api/internal/momentmedia/video_process_unix.go": "883bea0acea05ac7fbf85dfc57978425377b0dd266c718c068ccc5fd93922a9f",
+    "apps/api/internal/momentmedia/video_test.go": "d4598d03375e3be779bc5bbbec68844268ad6f4c6c49ab3df2655f6c75577678",
+    "apps/api/internal/momentmedia/video_process_unix_test.go": "6c3fbc278325d521f527eddc163a0f0023cc76b91c485101db871c40eccb8a1a"
+  },
+  "packageFiles": 8,
+  "packageSourceStable": true,
+  "apiWholeSourceStabilityClaimed": false,
+  "directReceipt": "receipt.json",
+  "directPassed": 2,
+  "directFailed": 0,
+  "directSkipped": 0,
+  "actualGoNormalizerAndJPEGThumbnailStageValidation": true,
+  "actualLinuxRSSBudgetRejection": true,
+  "databaseWrites": 0,
+  "httpWrites": 0,
+  "serviceChanges": 0,
+  "deployed": false,
+  "deviceRetest": "NOT_RUN_FOR_FIXED_SOURCE",
+  "priorFailureEvidencePreserved": true
+}

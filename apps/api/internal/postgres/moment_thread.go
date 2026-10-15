@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"sort"
 	"time"
 
 	"github.com/birdtie/birdtie/apps/api/internal/content"
@@ -92,6 +93,7 @@ type momentThreadSource struct {
 	contexts  []content.MomentThreadContext
 	locations []momentLocationsSnapshot
 	externals []string
+	edit      *momentThreadEditSnapshot
 }
 
 func threadAccess(f humanWriteFrame) momentmedia.Access {
@@ -189,6 +191,18 @@ func threadOwnedMembers(ctx context.Context, f humanWriteFrame, thread string, v
 }
 
 func (s *Store) momentThreadSource(ctx context.Context, f humanWriteFrame, in content.MomentThreadInput) (momentThreadSource, error) {
+	if in.Action == "EDIT" {
+		return s.captureMomentThreadEdit(ctx, f, in)
+	}
+	if in.Action == "WITHDRAW" {
+		var edited bool
+		if e := f.tx.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM moment_thread_edit_states WHERE thread_id=$1)`, in.ThreadID).Scan(&edited); e != nil {
+			return momentThreadSource{}, identity.ErrControlUnavailable
+		}
+		if edited {
+			return s.captureMomentThreadEdit(ctx, f, in)
+		}
+	}
 	out := momentThreadSource{members: []content.MomentThreadMember{}, moments: []content.Moment{}, materials: [][]content.MomentThreadMaterial{}, contexts: []content.MomentThreadContext{}}
 	var principal string
 	e := f.tx.QueryRow(ctx, `SELECT xmin::text FROM accounts WHERE id=$1 AND account_type='person' AND status='active'`, f.a.ID).Scan(&principal)
@@ -229,7 +243,7 @@ func (s *Store) momentThreadSource(ctx context.Context, f humanWriteFrame, in co
 		return out, identity.ErrControlUnavailable
 	}
 	var recent int
-	e = f.tx.QueryRow(ctx, `SELECT count(*) FROM moment_thread_operations WHERE actor_account_id=$1 AND operation_id<>$2 AND status='SUCCEEDED' AND receipt->>'action' IN('CREATE_PUBLISH','PUBLISH') AND committed_at>clock_timestamp()-interval '1 minute'`, f.a.ID, in.OperationID).Scan(&recent)
+	e = f.tx.QueryRow(ctx, `SELECT count(*) FROM moment_thread_operations WHERE actor_account_id=$1 AND operation_id<>$2 AND status='SUCCEEDED' AND receipt->>'action' IN('CREATE_PUBLISH','PUBLISH','EDIT') AND committed_at>clock_timestamp()-interval '1 minute'`, f.a.ID, in.OperationID).Scan(&recent)
 	if e != nil {
 		return out, identity.ErrControlUnavailable
 	}
@@ -397,10 +411,18 @@ func (s *Store) PreviewMomentThread(ctx context.Context, d [32]byte, a identity.
 	for _, loc := range src.locations {
 		locations = append(locations, loc.Resolved)
 	}
-	if in.Action == "PUBLISH" {
+	if in.Action == "PUBLISH" || in.Action == "EDIT" {
 		src.members = []content.MomentThreadMember{}
 	}
-	return content.MomentThreadPreview{HumanControlPreview: base, Input: in, SourceVersion: src.version, Members: src.members, Materials: src.materials, Contexts: src.contexts, Locations: locations}, nil
+	result := content.MomentThreadPreview{HumanControlPreview: base, Input: in, SourceVersion: src.version, Members: src.members, Materials: src.materials, Contexts: src.contexts, Locations: locations}
+	if in.Action == "EDIT" {
+		preserved := []*momentmedia.Set{}
+		for _, carry := range src.edit.carries {
+			preserved = append(preserved, carry.set)
+		}
+		result.PreservedMedia = &preserved
+	}
+	return result, nil
 }
 
 func threadEffectStamp(ctx context.Context, f humanWriteFrame, thread string) (string, error) {
@@ -444,6 +466,9 @@ func (s *Store) CommitMomentThread(ctx context.Context, d [32]byte, a identity.A
 	until, e := s.humanWriteApprove(ctx, f, in.ThreadID, in.Action, digest, src.version, in.Approval, src.deadline)
 	if e != nil {
 		return content.MomentThreadReceipt{}, e
+	}
+	if src.edit != nil {
+		return s.commitEditedThreadInTx(ctx, f, in, src, digest, until)
 	}
 	r := content.MomentThreadReceipt{SchemaVersion: "moment-thread-operation-v1", OperationID: in.OperationID, Status: "SUCCEEDED", Action: in.Action, ThreadID: in.ThreadID, Audience: "PUBLIC", ExpectedVersion: in.ExpectedVersion, AppliedVersion: in.ExpectedVersion + 1, PayloadDigest: digest, Members: []content.MomentThreadMember{}}
 	if in.Action == "CREATE_PUBLISH" || in.Action == "PUBLISH" {
@@ -626,14 +651,15 @@ func (s *Store) ReadMomentThread(ctx context.Context, access content.PublicMomen
 		selector = `EXISTS(SELECT 1 FROM moment_thread_members x WHERE x.thread_id=t.id AND x.moment_id=$1)`
 	}
 	var owner, root, status, stamp, ownerStamp string
-	e = tx.QueryRow(ctx, `SELECT t.id,t.author_account_id,t.root_moment_id,t.version,t.status,t.xmin::text,a.xmin::text FROM moment_threads t JOIN accounts a ON a.id=t.author_account_id AND a.status='active' WHERE `+selector, id).Scan(&view.ThreadID, &owner, &root, &view.Version, &status, &stamp, &ownerStamp)
+	var edited bool
+	e = tx.QueryRow(ctx, `SELECT t.id,t.author_account_id,t.root_moment_id,t.version,t.status,jsonb_build_array(t.xmin::text,e.xmin::text,e.version)::text,a.xmin::text,e.thread_id IS NOT NULL FROM moment_threads t JOIN accounts a ON a.id=t.author_account_id AND a.status='active' LEFT JOIN moment_thread_edit_states e ON e.thread_id=t.id WHERE `+selector, id).Scan(&view.ThreadID, &owner, &root, &view.Version, &status, &stamp, &ownerStamp, &edited)
 	if errors.Is(e, pgx.ErrNoRows) {
 		return view, content.ErrNotFound
 	}
 	if e != nil {
 		return view, identity.ErrControlUnavailable
 	}
-	rows, e := tx.Query(ctx, `SELECT x.position,x.moment_id,m.revision,m.status,birdtie_moment_public_binding(m.id,NULLIF($2,'')::uuid,clock_timestamp()),m.xmin::text FROM moment_thread_members x JOIN moments m ON m.id=x.moment_id WHERE x.thread_id=$1 ORDER BY x.position`, view.ThreadID, access.Actor.ID)
+	rows, e := tx.Query(ctx, `SELECT CASE WHEN $3 THEN d.display_position ELSE x.position END,x.moment_id,m.revision,m.status,birdtie_moment_public_binding(m.id,NULLIF($2,'')::uuid,clock_timestamp()),jsonb_build_array(m.xmin::text,d.xmin::text,d.version)::text FROM moment_thread_members x JOIN moments m ON m.id=x.moment_id LEFT JOIN moment_thread_display_members d ON d.thread_id=x.thread_id AND d.moment_id=x.moment_id WHERE x.thread_id=$1 AND(NOT $3 OR d.display_position IS NOT NULL) ORDER BY 1`, view.ThreadID, access.Actor.ID, edited)
 	if e != nil {
 		return view, identity.ErrControlUnavailable
 	}
@@ -652,7 +678,7 @@ func (s *Store) ReadMomentThread(ctx context.Context, access content.PublicMomen
 		if binding != nil {
 			entry.MomentID, entry.Revision, entry.Status = &moment, revision, "AVAILABLE"
 			available++
-			if position == 0 {
+			if moment == root {
 				view.RootMomentID = &moment
 			}
 		}
@@ -663,7 +689,11 @@ func (s *Store) ReadMomentThread(ctx context.Context, access content.PublicMomen
 		e = rows.Err()
 	}
 	rows.Close()
-	if e != nil || len(view.Members) < 2 {
+	minimum := 2
+	if edited {
+		minimum = 1
+	}
+	if e != nil || len(view.Members) < minimum || len(view.Members) > content.MomentThreadMaxEntries {
 		return view, identity.ErrControlUnavailable
 	}
 	if available == 0 && access.Actor.ID != owner {
@@ -694,6 +724,9 @@ func (s *Store) ReadMomentThread(ctx context.Context, access content.PublicMomen
 		view.ValidUntil = *expiry
 	}
 	view.SchemaVersion, view.Audience = "moment-thread-view-v1", "PUBLIC"
+	if edited {
+		view.SchemaVersion = "moment-thread-view-v2"
+	}
 	view.SourceVersion = content.MomentControlHash(values)
 	view.CanWithdraw = access.Actor.ID == owner && status == "published"
 	if frame != nil {
@@ -715,7 +748,8 @@ func ownedThreadTx(ctx context.Context, f humanWriteFrame, id string, byMoment b
 		selector = "EXISTS(SELECT 1 FROM moment_thread_members member WHERE member.thread_id=t.id AND member.moment_id=$1)"
 	}
 	var root, stamp string
-	e := f.tx.QueryRow(ctx, `SELECT t.id,t.root_moment_id,t.audience,t.status,t.version,jsonb_build_array(t.xmin::text,origin.xmin::text)::text,clock_timestamp() FROM moment_threads t LEFT JOIN legacy_native_context_entities origin ON origin.kind='thread' AND origin.target_id=t.id AND origin.owner_account_id=t.author_account_id WHERE `+selector+` AND t.author_account_id=$2 AND(t.audience='PUBLIC' OR origin.target_id IS NOT NULL)`, id, f.a.ID).Scan(&v.ThreadID, &root, &v.Audience, &v.Status, &v.Version, &stamp, &v.ObservedAt)
+	var edited bool
+	e := f.tx.QueryRow(ctx, `SELECT t.id,t.root_moment_id,t.audience,t.status,t.version,jsonb_build_array(t.xmin::text,origin.xmin::text,es.xmin::text,es.version)::text,clock_timestamp(),es.thread_id IS NOT NULL FROM moment_threads t LEFT JOIN moment_thread_edit_states es ON es.thread_id=t.id LEFT JOIN legacy_native_context_entities origin ON origin.kind='thread' AND origin.target_id=t.id AND origin.owner_account_id=t.author_account_id WHERE `+selector+` AND t.author_account_id=$2 AND(t.audience='PUBLIC' OR origin.target_id IS NOT NULL)`, id, f.a.ID).Scan(&v.ThreadID, &root, &v.Audience, &v.Status, &v.Version, &stamp, &v.ObservedAt, &edited)
 	if errors.Is(e, pgx.ErrNoRows) {
 		return v, content.ErrNotFound
 	}
@@ -729,7 +763,13 @@ func ownedThreadTx(ctx context.Context, f humanWriteFrame, id string, byMoment b
 	}
 	proof := []any{stamp}
 	readable := map[string]bool{}
-	rows, e := f.tx.Query(ctx, `SELECT x.position,m.id,m.revision,m.status,m.xmin::text,x.xmin::text FROM moment_thread_members x JOIN moments m ON m.id=x.moment_id AND m.author_account_id=$2 WHERE x.thread_id=$1 ORDER BY x.position LIMIT 21`, v.ThreadID, f.a.ID)
+	if edited {
+		v.SchemaVersion = "owned-moment-thread-v2"
+		v.RootMomentID = &root
+		retired := []content.MomentThreadPosition{}
+		v.RetiredMembers = &retired
+	}
+	rows, e := f.tx.Query(ctx, `SELECT CASE WHEN $3 THEN d.display_position ELSE x.position END,m.id,m.revision,m.status,m.xmin::text,jsonb_build_array(x.xmin::text,d.xmin::text,d.version)::text FROM moment_thread_members x JOIN moments m ON m.id=x.moment_id AND m.author_account_id=$2 LEFT JOIN moment_thread_display_members d ON d.thread_id=x.thread_id AND d.moment_id=x.moment_id WHERE x.thread_id=$1 AND(NOT $3 OR d.display_position IS NOT NULL) ORDER BY 1 LIMIT 21`, v.ThreadID, f.a.ID, edited)
 	if e != nil {
 		return v, content.ErrUnavailable
 	}
@@ -762,6 +802,31 @@ func ownedThreadTx(ctx context.Context, f humanWriteFrame, id string, byMoment b
 	}
 	for i, m := range v.Members {
 		if m.Position != i {
+			return v, content.ErrUnavailable
+		}
+	}
+	if edited {
+		rows, e = f.tx.Query(ctx, `SELECT x.position,m.id,m.revision,m.xmin::text,d.xmin::text,d.version FROM moment_thread_display_members d JOIN moment_thread_members x ON x.thread_id=d.thread_id AND x.moment_id=d.moment_id JOIN moments m ON m.id=d.moment_id AND m.author_account_id=$2 WHERE d.thread_id=$1 AND(d.display_position IS NULL OR m.status='withdrawn') ORDER BY x.position`, v.ThreadID, f.a.ID)
+		if e != nil {
+			return v, content.ErrUnavailable
+		}
+		for rows.Next() {
+			var p content.MomentThreadPosition
+			var id, ms, ds string
+			var version int64
+			if e = rows.Scan(&p.Position, &id, &p.Revision, &ms, &ds, &version); e != nil {
+				break
+			}
+			p.MomentID = &id
+			p.Status = "RETIRED"
+			*v.RetiredMembers = append(*v.RetiredMembers, p)
+			proof = append(proof, []any{p, ms, ds, version})
+		}
+		if e == nil {
+			e = rows.Err()
+		}
+		rows.Close()
+		if e != nil {
 			return v, content.ErrUnavailable
 		}
 	}
@@ -872,4 +937,552 @@ func (s *Store) readOwnedThread(ctx context.Context, d [32]byte, a identity.Acto
 }
 func (s *Store) ReadOwnedMomentThread(ctx context.Context, d [32]byte, a identity.Actor, id string, byMoment bool) (content.OwnedMomentThreadView, error) {
 	return s.readOwnedThread(ctx, d, a, id, byMoment, nil)
+}
+
+type momentThreadEditSnapshot struct {
+	root         string
+	edited       bool
+	all          []content.MomentThreadMember // immutable historical order
+	current      map[string]content.Moment
+	display      map[string]int // -1 is retired
+	carries      []momentMediaCarry
+	mediaSources []string
+}
+
+// All current children are locked and bound, including retired identities. A
+// supplied display order cannot silently omit another current child.
+func (s *Store) captureMomentThreadEdit(ctx context.Context, f humanWriteFrame, in content.MomentThreadInput) (momentThreadSource, error) {
+	x := &momentThreadEditSnapshot{all: []content.MomentThreadMember{}, current: map[string]content.Moment{}, display: map[string]int{}}
+	out := momentThreadSource{edit: x, members: []content.MomentThreadMember{}, moments: []content.Moment{}, materials: [][]content.MomentThreadMaterial{}, contexts: []content.MomentThreadContext{}}
+	var principal string
+	if e := f.tx.QueryRow(ctx, `SELECT xmin::text FROM accounts WHERE id=$1 AND account_type='person' AND status='active'`, f.a.ID).Scan(&principal); e != nil {
+		return out, identity.ErrControlChanged
+	}
+	values := []any{"moment-thread-edit-source-v1", principal}
+	if in.ThreadID != "" {
+		var version int64
+		var status, audience, stamp string
+		e := f.tx.QueryRow(ctx, `SELECT t.root_moment_id,t.version,t.status,t.audience,jsonb_build_array(t.xmin::text,e.xmin::text,e.version,e.operation_id)::text,e.thread_id IS NOT NULL FROM moment_threads t LEFT JOIN moment_thread_edit_states e ON e.thread_id=t.id WHERE t.id=$1 AND t.author_account_id=$2 FOR UPDATE OF t`, in.ThreadID, f.a.ID).Scan(&x.root, &version, &status, &audience, &stamp, &x.edited)
+		if errors.Is(e, pgx.ErrNoRows) {
+			return out, content.ErrNotFound
+		}
+		if e != nil {
+			return out, identity.ErrControlUnavailable
+		}
+		if version != in.ExpectedVersion || in.Action == "WITHDRAW" && (status != "published" || audience != "PUBLIC") {
+			return out, identity.ErrControlChanged
+		}
+		values = append(values, stamp)
+		rows, e := f.tx.Query(ctx, `SELECT m.moment_id,m.position,CASE WHEN e.thread_id IS NULL THEN m.position ELSE coalesce(d.display_position,-1) END,coalesce(jsonb_build_array(d.xmin::text,d.version,d.display_position)::text,'') FROM moment_thread_members m LEFT JOIN moment_thread_edit_states e ON e.thread_id=m.thread_id LEFT JOIN moment_thread_display_members d ON d.thread_id=m.thread_id AND d.moment_id=m.moment_id WHERE m.thread_id=$1 ORDER BY m.position`, in.ThreadID)
+		if e != nil {
+			return out, identity.ErrControlUnavailable
+		}
+		for rows.Next() {
+			m := content.MomentThreadMember{Media: []momentmedia.StageSelector{}}
+			var display int
+			var ds string
+			if e = rows.Scan(&m.MomentID, &m.Position, &display, &ds); e != nil {
+				break
+			}
+			x.all = append(x.all, m)
+			x.display[m.MomentID] = display
+			values = append(values, []any{m.MomentID, m.Position, display, ds})
+		}
+		if e == nil {
+			e = rows.Err()
+		}
+		rows.Close()
+		if e != nil || len(x.all) < 1 {
+			return out, identity.ErrControlUnavailable
+		}
+	} else if in.BaseMomentID != nil && *in.BaseMomentID != "" {
+		x.root = *in.BaseMomentID
+		x.all = append(x.all, content.MomentThreadMember{MomentID: x.root, Position: 0, Media: []momentmedia.StageSelector{}})
+		x.display[x.root] = 0
+	}
+	ids := []string{}
+	for _, m := range x.all {
+		ids = append(ids, m.MomentID)
+	}
+	sort.Strings(ids)
+	for _, id := range ids {
+		if _, e := f.tx.Exec(ctx, `SELECT pg_advisory_xact_lock(hashtextextended($1,152))`, "moment-media:"+id); e != nil {
+			return out, identity.ErrControlUnavailable
+		}
+	}
+	for _, id := range ids {
+		var locked string
+		if e := f.tx.QueryRow(ctx, `SELECT id FROM moments WHERE id=$1 AND author_account_id=$2 FOR UPDATE`, id, f.a.ID).Scan(&locked); e != nil {
+			return out, identity.ErrControlChanged
+		}
+	}
+	if in.ThreadID == "" && x.root != "" {
+		var bound bool
+		if e := f.tx.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM moment_thread_members WHERE moment_id=$1)`, x.root).Scan(&bound); e != nil {
+			return out, identity.ErrControlUnavailable
+		}
+		if bound {
+			return out, identity.ErrControlChanged
+		}
+	}
+	for i := range x.all {
+		m, e := getOwnMomentInTx(ctx, f.tx, f.a.ID, x.all[i].MomentID)
+		if e != nil {
+			return out, e
+		}
+		owned, e := momentControlOwnedStamp(ctx, f, m.ID)
+		if e != nil {
+			return out, e
+		}
+		var ms string
+		if e = f.tx.QueryRow(ctx, `SELECT coalesce((SELECT version FROM public_moment_media_sets WHERE moment_id=$1),0),coalesce((SELECT jsonb_build_array(xmin::text,version,status)::text FROM public_moment_media_sets WHERE moment_id=$1),'')`, m.ID).Scan(&x.all[i].MediaSetVersion, &ms); e != nil {
+			return out, identity.ErrControlUnavailable
+		}
+		x.all[i].Status = m.Status
+		x.all[i].AppliedRevision = m.Revision
+		x.current[m.ID] = m
+		if !x.edited && m.Status == "withdrawn" {
+			x.display[m.ID] = -1
+		}
+		out.moments = append(out.moments, m)
+		values = append(values, []any{m.ID, owned, ms})
+	}
+	if in.Action == "WITHDRAW" {
+		for _, m := range x.all {
+			if pos := x.display[m.MomentID]; pos >= 0 {
+				m.Position = pos
+				out.members = append(out.members, m)
+			}
+		}
+		sort.Slice(out.members, func(i, j int) bool { return out.members[i].Position < out.members[j].Position })
+		out.version = content.MomentControlHash(values)
+		return out, nil
+	}
+	selected := map[string]bool{}
+	removed := map[string]bool{}
+	for _, item := range in.Items {
+		if item.MomentID == "" {
+			if !threadOriginalContexts(content.Moment{}, item.Input) {
+				return out, identity.ErrControlChanged
+			}
+			continue
+		}
+		m, ok := x.current[item.MomentID]
+		if !ok || m.Revision != item.ExpectedRevision || (*item.Restore) != (m.Status == "withdrawn") || item.Media == nil && (m.Status != "published" || m.Visibility != "public") {
+			return out, identity.ErrControlChanged
+		}
+		if m.Status != "published" && m.Status != "draft" && m.Status != "withdrawn" {
+			return out, identity.ErrControlChanged
+		}
+		if !threadOriginalContexts(m, item.Input) {
+			return out, identity.ErrControlChanged
+		}
+		selected[m.ID] = true
+	}
+	for _, item := range *in.RemovedItems {
+		m, ok := x.current[item.MomentID]
+		if !ok || m.Revision != item.ExpectedRevision || x.display[m.ID] < 0 {
+			return out, identity.ErrControlChanged
+		}
+		removed[m.ID] = true
+	}
+	for _, m := range x.all {
+		// A separately withdrawn entry is unavailable in the editor. Omitting
+		// its display slot retires that slot without rewriting or restoring it.
+		if x.display[m.MomentID] >= 0 && x.current[m.MomentID].Status != "withdrawn" && !selected[m.MomentID] && !removed[m.MomentID] {
+			return out, identity.ErrControlChanged
+		}
+	}
+	// One quota admission per concrete compound action, including single entry.
+	if _, e := f.tx.Exec(ctx, `SELECT pg_advisory_xact_lock(hashtextextended($1,153))`, f.a.ID+":MOMENT_THREAD_QUOTA"); e != nil {
+		return out, identity.ErrControlUnavailable
+	}
+	var recent int
+	if e := f.tx.QueryRow(ctx, `SELECT count(*) FROM moment_thread_operations WHERE actor_account_id=$1 AND operation_id<>$2 AND status='SUCCEEDED' AND receipt->>'action' IN('CREATE_PUBLISH','PUBLISH','EDIT') AND committed_at>clock_timestamp()-interval '1 minute'`, f.a.ID, in.OperationID).Scan(&recent); e != nil {
+		return out, identity.ErrControlUnavailable
+	}
+	if recent >= 10 {
+		return out, identity.ErrControlChanged
+	}
+	lockItems := append([]content.MomentThreadItem{}, in.Items...)
+	for i, item := range lockItems {
+		if item.Input.Locations == nil && item.MomentID != "" {
+			m := x.current[item.MomentID]
+			if item.Input.CityID == m.CityID && item.Input.PlaceID == m.PlaceID && item.Input.LocationPrecision == m.LocationPrecision {
+				rows, e := readMomentLocationRows(ctx, f.tx, m.ID)
+				if e != nil {
+					return out, e
+				}
+				links := []content.MomentLocationInput{}
+				for _, r := range rows {
+					if r.status == "ACTIVE" {
+						links = append(links, r.input)
+					}
+				}
+				lockItems[i].Input.Locations = &links
+			}
+		}
+	}
+	if e := threadLockSelectors(ctx, f, lockItems); e != nil {
+		return out, e
+	}
+	mediaIDs := []string{}
+	for _, item := range in.Items {
+		for _, m := range item.Media {
+			mediaIDs = append(mediaIDs, m.MediaID)
+		}
+	}
+	if len(mediaIDs) > 0 {
+		if e := s.LockMomentMediaMaterialsInTx(ctx, f.tx, threadAccess(f), mediaIDs); e != nil {
+			return out, e
+		}
+	}
+	for position, item := range in.Items {
+		var current *content.Moment
+		var existing content.Moment
+		if item.MomentID != "" {
+			existing = x.current[item.MomentID]
+			current = &existing
+		}
+		mi := content.MomentControlInput{OperationID: in.OperationID, Action: "UPDATE_PUBLIC", MomentID: item.MomentID, ExpectedRevision: item.ExpectedRevision, Input: &item.Input}
+		stamp, until, _, e := momentControlExternal(ctx, f, mi, existing, true)
+		if e != nil {
+			return out, e
+		}
+		out.externals = append(out.externals, stamp)
+		values = append(values, stamp)
+		momentControlAddDeadline(&out.deadline, until)
+		lf := f
+		lf.op = fmt.Sprintf("%s:%d", f.op, position)
+		loc, e := captureMomentLocationsInTx(ctx, lf, current, item.Input)
+		if e != nil {
+			return out, e
+		}
+		out.locations = append(out.locations, loc)
+		values = append(values, loc.SourceVersion)
+		momentControlAddDeadline(&out.deadline, loc.ValidUntil)
+		c := content.MomentThreadContext{CityID: item.Input.CityID, PlaceID: item.Input.PlaceID}
+		if c.CityID != "" {
+			if e = f.tx.QueryRow(ctx, `SELECT name FROM cities WHERE id=$1`, c.CityID).Scan(&c.CityName); e != nil {
+				return out, identity.ErrControlUnavailable
+			}
+		}
+		if c.PlaceID != "" {
+			if e = f.tx.QueryRow(ctx, `SELECT name FROM places WHERE id=$1`, c.PlaceID).Scan(&c.PlaceName); e != nil {
+				return out, identity.ErrControlUnavailable
+			}
+		}
+		out.contexts = append(out.contexts, c)
+		materials := []content.MomentThreadMaterial{}
+		carry := momentMediaCarry{}
+		mediaSource := ""
+		if item.Media == nil {
+			carry, e = s.captureMomentMediaCarry(ctx, f.tx, threadAccess(f), item.MomentID)
+			if e != nil {
+				return out, e
+			}
+			var ready bool
+			if e = f.tx.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM public_moment_media_sets WHERE moment_id=$1 AND status='READY')`, item.MomentID).Scan(&ready); e != nil {
+				return out, identity.ErrControlUnavailable
+			}
+			if ready && carry.set == nil {
+				return out, identity.ErrControlChanged
+			}
+			if carry.set != nil {
+				values = append(values, carry.set.SourceVersion)
+				momentControlAddDeadline(&out.deadline, &carry.set.ValidUntil)
+			}
+		}
+		if len(item.Media) > 0 {
+			snapshot, e := s.CaptureMomentMediaMaterialsInTx(ctx, f.tx, threadAccess(f), item.Media)
+			if e != nil {
+				return out, e
+			}
+			if len(snapshot.Materials) != len(item.Media) || len(snapshot.Thumbnails) != len(item.Media) {
+				return out, identity.ErrControlUnavailable
+			}
+			for i, m := range snapshot.Materials {
+				if m.LocalScope != in.LocalScope {
+					return out, identity.ErrControlChanged
+				}
+				materials = append(materials, content.MomentThreadMaterial{Material: m, ThumbnailBase64: base64.StdEncoding.EncodeToString(snapshot.Thumbnails[i])})
+			}
+			mediaSource = snapshot.SourceVersion
+			values = append(values, mediaSource)
+			momentControlAddDeadline(&out.deadline, &snapshot.ValidUntil)
+		}
+		if !content.HasMomentBody(item.Input.Body) && len(item.Media) == 0 && len(carry.materials) == 0 {
+			return out, identity.ErrControlInvalid
+		}
+		x.carries = append(x.carries, carry)
+		x.mediaSources = append(x.mediaSources, mediaSource)
+		out.materials = append(out.materials, materials)
+	}
+	out.version = content.MomentControlHash(values)
+	return out, nil
+}
+
+func threadOriginalContexts(m content.Moment, in content.MomentInput) bool {
+	value := func(v *string) string {
+		if v == nil {
+			return ""
+		}
+		return *v
+	}
+	activity := ""
+	if len(m.ActivityIDs) > 1 {
+		return false
+	}
+	if len(m.ActivityIDs) == 1 {
+		activity = m.ActivityIDs[0]
+	}
+	return activity == value(in.ActivityID) && m.CommunityID == value(in.CommunityID) && m.OrganizationID == value(in.OrganizationID)
+}
+
+func applyThreadEditedMoment(ctx context.Context, f humanWriteFrame, old content.Moment, input content.MomentInput, locations momentLocationsSnapshot) (content.Moment, error) {
+	city, place, precision := momentLocationLegacyFields(locations.Effective)
+	var id string
+	e := f.tx.QueryRow(ctx, `WITH stamp AS MATERIALIZED(SELECT clock_timestamp() at) UPDATE moments m SET title=$4,body=$5,occurred_at=$6,time_precision=$7,city_id=NULLIF($8,''),place_id=NULLIF($9,'')::uuid,location_precision=$10,visibility='public',status='published',author_confirmed_at=CASE WHEN m.status='published' THEN m.author_confirmed_at ELSE stamp.at END,published_at=CASE WHEN m.status='published' THEN m.published_at ELSE stamp.at END,updated_at=stamp.at,revision=revision+1 FROM stamp WHERE m.id=$1 AND m.author_account_id=$2 AND m.revision=$3 AND m.status IN('draft','published','withdrawn') RETURNING m.id`, old.ID, f.a.ID, old.Revision, input.Title, input.Body, input.OccurredAt, input.TimePrecision, city, place, precision).Scan(&id)
+	if errors.Is(e, pgx.ErrNoRows) {
+		return content.Moment{}, identity.ErrControlChanged
+	}
+	if e != nil {
+		return content.Moment{}, identity.ErrControlUnavailable
+	}
+	if e = applyMomentLocationsInTx(ctx, f, id, old.Revision+1, locations); e != nil {
+		return content.Moment{}, e
+	}
+	if _, e = f.tx.Exec(ctx, `INSERT INTO audit_events(actor_account_id,action,resource_type,resource_id,decision,purpose)VALUES($1,'EDIT','moment',$2,'allowed','explicit_public_content')`, f.a.ID, id); e != nil {
+		return content.Moment{}, identity.ErrControlUnavailable
+	}
+	return getOwnMomentInTx(ctx, f.tx, f.a.ID, id)
+}
+
+func threadCurrentMember(ctx context.Context, f humanWriteFrame, id string, position int) (content.MomentThreadMember, error) {
+	m, e := getOwnMomentInTx(ctx, f.tx, f.a.ID, id)
+	if e != nil {
+		return content.MomentThreadMember{}, e
+	}
+	r := content.MomentThreadMember{MomentID: id, Position: position, Status: m.Status, AppliedRevision: m.Revision, Media: []momentmedia.StageSelector{}}
+	if e = f.tx.QueryRow(ctx, `SELECT coalesce((SELECT version FROM public_moment_media_sets WHERE moment_id=$1),0)`, id).Scan(&r.MediaSetVersion); e != nil {
+		return r, identity.ErrControlUnavailable
+	}
+	return r, nil
+}
+
+func editedThreadEffectStamp(ctx context.Context, f humanWriteFrame, id string) (string, error) {
+	base, e := threadEffectStamp(ctx, f, id)
+	if e != nil {
+		return "", e
+	}
+	var raw string
+	e = f.tx.QueryRow(ctx, `SELECT jsonb_build_array(e.xmin::text,e.version,e.operation_id,(SELECT jsonb_agg(jsonb_build_array(d.moment_id,d.display_position,d.version,d.xmin::text) ORDER BY d.moment_id) FROM moment_thread_display_members d WHERE d.thread_id=e.thread_id),(SELECT coalesce(jsonb_agg(jsonb_build_array(a.moment_id,a.set_version,a.position,a.media_id,a.media_version,a.xmin::text,a.retention_until) ORDER BY a.moment_id,a.set_version,a.position),'[]'::jsonb) FROM public_moment_media_attachments a JOIN moment_thread_members m ON m.moment_id=a.moment_id WHERE m.thread_id=e.thread_id))::text FROM moment_thread_edit_states e WHERE e.thread_id=$1`, id).Scan(&raw)
+	if e != nil {
+		return "", identity.ErrControlUnavailable
+	}
+	return content.MomentControlHash([]any{base, raw}), nil
+}
+
+// The original operation lock, session frame and concrete approval stay in the
+// same transaction as all child changes, current display and the receipt.
+func (s *Store) commitEditedThreadInTx(ctx context.Context, f humanWriteFrame, in content.MomentThreadInput, src momentThreadSource, digest string, until time.Time) (content.MomentThreadReceipt, error) {
+	x := src.edit
+	removed := []content.MomentThreadMember{}
+	r := content.MomentThreadReceipt{SchemaVersion: "moment-thread-operation-v2", OperationID: in.OperationID, Status: "SUCCEEDED", Action: in.Action, ThreadID: in.ThreadID, RootMomentID: x.root, Audience: "PUBLIC", ExpectedVersion: in.ExpectedVersion, AppliedVersion: in.ExpectedVersion + 1, PayloadDigest: digest, Members: []content.MomentThreadMember{}, RemovedMembers: &removed}
+	newIDs := []string{}
+	active := map[string]int{}
+	if in.Action == "EDIT" {
+		for position, item := range in.Items {
+			m := x.current[item.MomentID]
+			var e error
+			if item.MomentID == "" {
+				m, e = createMomentDraftInTx(ctx, f.tx, f.a.ID, item.Input, src.locations[position])
+				if e != nil {
+					return r, humanMomentFailure(e)
+				}
+				newIDs = append(newIDs, m.ID)
+			}
+			m, e = applyThreadEditedMoment(ctx, f, m, item.Input, src.locations[position])
+			if e != nil {
+				return r, e
+			}
+			var version int64
+			if e = f.tx.QueryRow(ctx, `SELECT coalesce((SELECT version FROM public_moment_media_sets WHERE moment_id=$1),0)`, m.ID).Scan(&version); e != nil {
+				return r, identity.ErrControlUnavailable
+			}
+			var set *momentmedia.Set
+			if len(item.Media) > 0 {
+				v, e := s.AttachMomentMediaInTx(ctx, f.tx, threadAccess(f), m.ID, m.Revision, version, item.Media)
+				if e != nil {
+					return r, e
+				}
+				set = &v
+			} else if item.Media == nil && len(x.carries[position].materials) > 0 {
+				v, e := s.applyMomentMediaCarry(ctx, f.tx, threadAccess(f), m.ID, m.Revision, version, x.carries[position])
+				if e != nil {
+					return r, e
+				}
+				set = &v
+			}
+			if e = momentHasPublishableContent(ctx, f.tx, m.ID); e != nil {
+				return r, e
+			}
+			member, e := threadCurrentMember(ctx, f, m.ID, position)
+			if e != nil {
+				return r, e
+			}
+			if set != nil {
+				for _, a := range set.Attachments {
+					member.Media = append(member.Media, momentmedia.StageSelector{MediaID: a.MediaID, Version: a.MediaVersion})
+				}
+			}
+			r.Members = append(r.Members, member)
+			active[m.ID] = position
+			if r.RootMomentID == "" {
+				r.RootMomentID = m.ID
+			}
+		}
+		for _, remove := range *in.RemovedItems {
+			m := x.current[remove.MomentID]
+			if m.Status != "withdrawn" {
+				if e := withdrawMomentInTx(ctx, f.tx, f.a.ID, m.ID, m.Revision); e != nil {
+					return r, humanMomentFailure(e)
+				}
+			}
+			position := -1
+			for _, old := range x.all {
+				if old.MomentID == m.ID {
+					position = old.Position
+					break
+				}
+			}
+			member, e := threadCurrentMember(ctx, f, m.ID, position)
+			if e != nil {
+				return r, e
+			}
+			removed = append(removed, member)
+		}
+	} else {
+		for _, m := range src.moments {
+			if m.Status != "withdrawn" {
+				if e := withdrawMomentInTx(ctx, f.tx, f.a.ID, m.ID, m.Revision); e != nil {
+					return r, humanMomentFailure(e)
+				}
+			}
+		}
+		for _, old := range src.members {
+			member, e := threadCurrentMember(ctx, f, old.MomentID, old.Position)
+			if e != nil {
+				return r, e
+			}
+			r.Members = append(r.Members, member)
+			active[member.MomentID] = member.Position
+		}
+	}
+	r.RemovedMembers = &removed
+	if in.ThreadID == "" {
+		if e := f.tx.QueryRow(ctx, `INSERT INTO moment_threads(author_account_id,root_moment_id,audience,status)VALUES($1,$2,'PUBLIC','published')RETURNING id`, f.a.ID, r.RootMomentID).Scan(&r.ThreadID); e != nil {
+			return r, identity.ErrControlUnavailable
+		}
+	}
+	if _, e := f.tx.Exec(ctx, `INSERT INTO moment_thread_edit_states(thread_id,version,operation_id)VALUES($1,$2,$3)ON CONFLICT(thread_id)DO UPDATE SET version=EXCLUDED.version,operation_id=EXCLUDED.operation_id`, r.ThreadID, r.AppliedVersion, in.OperationID); e != nil {
+		return r, identity.ErrControlUnavailable
+	}
+	if in.ThreadID != "" {
+		status := "published"
+		if in.Action == "WITHDRAW" {
+			status = "withdrawn"
+		}
+		tag, e := f.tx.Exec(ctx, `UPDATE moment_threads SET audience='PUBLIC',status=$4,version=version+1,updated_at=clock_timestamp() WHERE id=$1 AND author_account_id=$2 AND version=$3`, r.ThreadID, f.a.ID, in.ExpectedVersion, status)
+		if e != nil || tag.RowsAffected() != 1 {
+			return r, identity.ErrControlChanged
+		}
+	}
+	all := append([]content.MomentThreadMember{}, x.all...)
+	if in.ThreadID == "" && x.root != "" {
+		if _, e := f.tx.Exec(ctx, `INSERT INTO moment_thread_members(thread_id,moment_id,position)VALUES($1,$2,0)`, r.ThreadID, x.root); e != nil {
+			return r, identity.ErrControlUnavailable
+		}
+	}
+	for _, id := range newIDs {
+		position := len(all)
+		if _, e := f.tx.Exec(ctx, `INSERT INTO moment_thread_members(thread_id,moment_id,position)VALUES($1,$2,$3)`, r.ThreadID, id, position); e != nil {
+			return r, identity.ErrControlUnavailable
+		}
+		all = append(all, content.MomentThreadMember{MomentID: id, Position: position})
+	}
+	for _, member := range all {
+		var position *int
+		if p, ok := active[member.MomentID]; ok {
+			value := p
+			position = &value
+		}
+		if _, e := f.tx.Exec(ctx, `INSERT INTO moment_thread_display_members(thread_id,moment_id,display_position,version)VALUES($1,$2,$3,$4)ON CONFLICT(thread_id,moment_id)DO UPDATE SET display_position=EXCLUDED.display_position,version=EXCLUDED.version`, r.ThreadID, member.MomentID, position, r.AppliedVersion); e != nil {
+			return r, identity.ErrControlUnavailable
+		}
+	}
+	var at time.Time
+	if e := f.tx.QueryRow(ctx, `SELECT clock_timestamp()`).Scan(&at); e != nil {
+		return r, identity.ErrControlUnavailable
+	}
+	at = at.UTC()
+	r.CommittedAt = &at
+	if !content.ValidMomentThreadReceipt(r, in.OperationID) {
+		return r, identity.ErrControlUnavailable
+	}
+	raw, _ := json.Marshal(r)
+	b, _ := hex.DecodeString(digest)
+	if _, e := f.tx.Exec(ctx, `INSERT INTO moment_thread_operations(actor_account_id,operation_id,status,thread_id,payload_sha256,receipt,committed_at)VALUES($1,$2,'SUCCEEDED',$3,$4,$5,$6)`, f.a.ID, in.OperationID, r.ThreadID, b, raw, at); e != nil {
+		return r, identity.ErrControlUnavailable
+	}
+	effect, e := editedThreadEffectStamp(ctx, f, r.ThreadID)
+	if e != nil {
+		return r, e
+	}
+	if e = s.humanWriteFinish(ctx, f, humanWriteGateDeadline(ctx, f, until, func() error {
+		fresh, e := editedThreadEffectStamp(ctx, f, r.ThreadID)
+		if e != nil {
+			return e
+		}
+		if fresh != effect {
+			return identity.ErrControlChanged
+		}
+		for i, item := range in.Items {
+			if e = revalidateMomentLocationsInTx(ctx, f, src.locations[i], until); e != nil {
+				return e
+			}
+			stamp, deadline, _, e := momentControlExternal(ctx, f, content.MomentControlInput{OperationID: in.OperationID, Action: "UPDATE_PUBLIC", MomentID: item.MomentID, ExpectedRevision: item.ExpectedRevision, Input: &item.Input}, x.current[item.MomentID], true)
+			if e != nil {
+				return e
+			}
+			if stamp != src.externals[i] || deadline != nil && deadline.Before(until) {
+				return identity.ErrControlChanged
+			}
+			if len(item.Media) > 0 {
+				snapshot, e := s.CaptureMomentMediaMaterialsInTx(ctx, f.tx, threadAccess(f), item.Media)
+				if e != nil {
+					return e
+				}
+				if snapshot.SourceVersion != x.mediaSources[i] || snapshot.ValidUntil.Before(until) {
+					return identity.ErrControlChanged
+				}
+			}
+			if e = momentHasPublishableContent(ctx, f.tx, r.Members[i].MomentID); e != nil {
+				return e
+			}
+			if len(r.Members[i].Media) > 0 {
+				set, e := s.mediaSetTx(ctx, f.tx, threadAccess(f), r.Members[i].MomentID, true)
+				if e != nil {
+					return e
+				}
+				if set.Status != "READY" || set.ValidUntil.Before(until) || len(set.Attachments) != len(r.Members[i].Media) {
+					return identity.ErrControlChanged
+				}
+			}
+		}
+		return nil
+	})); e != nil {
+		return content.MomentThreadReceipt{}, e
+	}
+	return r, nil
 }

@@ -1,0 +1,32 @@
+{
+  "exitCode": 0,
+  "remoteScriptSHA256": "ad00708bebe3e848548d9ae54faa09a6bb1cf8fd94bc337017714aaa6e9c5825",
+  "helperSHA256": "26da8b031617ac9dc79d021568c00bd9ee90a960e3f3e54bcd7056aceaa1a6a4",
+  "stderrPresent": false,
+  "status": "READ_ONLY_COMPLETE",
+  "result": {
+    "status": "READ_ONLY_WINDOW_CLASSIFIED",
+    "windowSinceUTC": "2026-10-15T17:16:25Z",
+    "windowUntilUTC": "2026-10-15T17:17:10Z",
+    "journal": {
+      "exitCode": 0,
+      "stderrPresent": false
+    },
+    "apiMessagesInWindow": 6,
+    "apiErrorCounts": {},
+    "sqlStates": {},
+    "canonicalConstraintNames": [],
+    "canonicalGoFrames": [],
+    "threadDirectMentionMessages": 0,
+    "gateway": {
+      "exitCode": 0,
+      "stderrPresent": false
+    },
+    "gatewayThreadCandidateEvents": [],
+    "gatewayEventAccountAttribution": "NOT_AVAILABLE_AUTH_HEADERS_NOT_READ",
+    "rawMessagesSaved": false,
+    "credentialHeadersRead": false,
+    "databaseAccess": false,
+    "serviceMutations": 0
+  }
+}

@@ -1,0 +1,15 @@
+# Successful QA03 unified editor readbacks after API19/schema169 repair
+
+These are three bounded HTTPS metadata readbacks of the fixed synthetic QA03 thread, following the root agent's separately recorded APK19 confirmations. This archive does not contain device screenshots or claim a complete site acceptance. The previous failures and diagnostics in `../qa03-readbacks19-01` remain unchanged.
+
+| Readback | UTC observation | Thread state | Verified result |
+| --- | --- | --- | --- |
+| 03 | 17:41:40–42 | version 4, published | Display order text → video → original image. Exact edited London body, all three original Moment IDs, original image/video stable media IDs, two independently selected reference locations and real owner/anonymous current projections match. |
+| 04 | 17:44:19–21 | version 5, published | Display order text → video; original image is RETIRED at original history position 0, withdrawn/private, revision 6. Anonymous image detail/thread/locations/media all return 404. Current public thread rootMomentId is null; owner history still retains the original root identity. The two survivors keep their original IDs, current text, locations and video media ID. |
+| 05 | 17:50:28–29 | version 6, withdrawn | Current display projection retains two UNAVAILABLE slots with null IDs/revision0; owner retired projection retains the exact original three IDs. Image revision6, video/text revision5, all withdrawn/private. Anonymous thread and each child's detail/thread/locations/media return404. Five actual former-public image/video display/thumbnail/video links also return404; the reader consumes no media bytes even on an unexpected successful response. |
+
+The London reference is Apsley House (GBR; 51.503474,-0.151636), the Reykjavik reference is Listasafn Reykjavíkur (ISL; 64.149065,-21.940444). Owner and anonymous sidecars match; both use canonical `wgs84`. These are reference Places with empty native cityId/placeId, not invented native city links. Source names, country codes and disjoint geographic areas are checked against the actual returned anchors.
+
+Each readback created only its own fixed synthetic QA03 session in RAM and verified logout204 followed by /v1/me401. The phone session was untouched. No imported owner, other QA account, content publication/update/withdraw operation or preview was used. No new Moment or media was created. The three exact IDs remain the original published members; the removed/root identities are retained as owner history and are absent from anonymous reads.
+
+Boundary: successful media byte/hash checks or playback, physical server byte erasure, other authenticated users, map/feed/profile/share propagation, original operation receipt recovery, device actions and full-site acceptance were not run by these readers. HTTP404 proves public access retirement, not physical storage erasure. Root device/release/native evidence remains separate. The archive contains only reviewed JSON, this Markdown index and the exact executed Python helper versions; no credentials, approval tokens, raw device logs, images or video.

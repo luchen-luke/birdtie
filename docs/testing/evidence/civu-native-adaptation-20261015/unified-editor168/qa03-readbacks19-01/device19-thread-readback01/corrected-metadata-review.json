@@ -1,0 +1,212 @@
+{
+  "status": "PASS_RECORDED_METADATA_SCOPE_ONLY",
+  "derivedAt": "2026-10-15T17:11:51.837291+00:00",
+  "originalReceipt": "work\\device19-thread-readback01\\receipt.json",
+  "originalReceiptSHA256": "f462ea80a02c11b824b64f086500d2e09293309756c7354dacb3d9804bff3d8a",
+  "originalFAILPreserved": true,
+  "originalFailureCode": "MIXED_MEMBER_CITY_MISMATCH",
+  "failureCause": "HELPER_ASSUMED_REFERENCE_POI_NAME_CONTAINS_CITY_NAME",
+  "threadId": "8ca660be-f15f-4bad-acc9-87d9a1f25036",
+  "threadVersion": 3,
+  "threadStatus": "published",
+  "currentDisplayMembers": [
+    {
+      "position": 0,
+      "momentId": "4ef5b105-9152-4a8c-98e0-b445b1153ef8",
+      "revision": 2,
+      "status": "AVAILABLE"
+    },
+    {
+      "position": 1,
+      "momentId": "96e29d12-2a35-47e3-aeb3-75a8425542f5",
+      "revision": 4,
+      "status": "AVAILABLE"
+    },
+    {
+      "position": 2,
+      "momentId": "fbcdd365-b5af-4b1c-b4e7-d83b696cb538",
+      "revision": 2,
+      "status": "AVAILABLE"
+    }
+  ],
+  "retiredMembers": [],
+  "originalMomentRetained": true,
+  "members": [
+    {
+      "momentId": "4ef5b105-9152-4a8c-98e0-b445b1153ef8",
+      "revision": 2,
+      "status": "published",
+      "visibility": "public",
+      "originalMoment": false,
+      "displayPosition": 0,
+      "retiredOriginalPosition": null,
+      "body": {
+        "utf8Bytes": 28,
+        "characters": 28,
+        "sha256": "30e53bad5c83acceb5470264a502de3b7b01e59fb04077c906b92ee1b9194b9a",
+        "safeQAContent": "Birdtie device18 video third"
+      },
+      "title": {
+        "utf8Bytes": 0,
+        "characters": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "safeQAContent": ""
+      },
+      "anonymousDetailStatus": 200,
+      "locations": [
+        {
+          "id": "50b4f2bd-afba-4ecf-8444-45ae378a0a84",
+          "kind": "REFERENCE",
+          "precision": "place",
+          "cityId": "",
+          "cityName": "",
+          "placeId": "",
+          "placeName": "",
+          "referenceId": "72c612f6-8126-53f3-86ed-3ba369868e9c",
+          "referenceName": "Listasafn Reykjavíkur"
+        }
+      ],
+      "ownerLocations": [
+        {
+          "id": "50b4f2bd-afba-4ecf-8444-45ae378a0a84",
+          "kind": "REFERENCE",
+          "precision": "place",
+          "cityId": "",
+          "cityName": "",
+          "placeId": "",
+          "placeName": "",
+          "referenceId": "72c612f6-8126-53f3-86ed-3ba369868e9c",
+          "referenceName": "Listasafn Reykjavíkur",
+          "available": true
+        }
+      ],
+      "media": {
+        "schemaVersion": "public-moment-media-set-v2",
+        "status": "READY",
+        "setVersion": 1,
+        "count": 1,
+        "items": [
+          {
+            "position": 0,
+            "kind": "VIDEO",
+            "mediaId": "8ce663ad-61ea-4946-a1b8-685f7b4d6f93",
+            "mediaVersion": 1
+          }
+        ]
+      }
+    },
+    {
+      "momentId": "96e29d12-2a35-47e3-aeb3-75a8425542f5",
+      "revision": 4,
+      "status": "published",
+      "visibility": "public",
+      "originalMoment": true,
+      "displayPosition": 1,
+      "retiredOriginalPosition": null,
+      "body": {
+        "utf8Bytes": 0,
+        "characters": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "safeQAContent": ""
+      },
+      "title": {
+        "utf8Bytes": 0,
+        "characters": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "safeQAContent": ""
+      },
+      "anonymousDetailStatus": 200,
+      "locations": [],
+      "ownerLocations": [],
+      "media": {
+        "schemaVersion": "public-moment-media-set-v1",
+        "status": "READY",
+        "setVersion": 3,
+        "count": 1,
+        "items": [
+          {
+            "position": 0,
+            "kind": "IMAGE",
+            "mediaId": "bc7f1cc5-de5f-4837-8d4c-a3930e1d90cd",
+            "mediaVersion": 1
+          }
+        ]
+      }
+    },
+    {
+      "momentId": "fbcdd365-b5af-4b1c-b4e7-d83b696cb538",
+      "revision": 2,
+      "status": "published",
+      "visibility": "public",
+      "originalMoment": false,
+      "displayPosition": 2,
+      "retiredOriginalPosition": null,
+      "body": {
+        "utf8Bytes": 38,
+        "characters": 38,
+        "sha256": "e0dd5087ac3d1a626091e073138bbefbccd77050391c96a512cbfd63e62d950c",
+        "safeQAContent": "Birdtie device17 second entry restored"
+      },
+      "title": {
+        "utf8Bytes": 0,
+        "characters": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "safeQAContent": ""
+      },
+      "anonymousDetailStatus": 200,
+      "locations": [
+        {
+          "id": "a508e362-16eb-44ad-96ba-32fbe0b902fe",
+          "kind": "REFERENCE",
+          "precision": "place",
+          "cityId": "",
+          "cityName": "",
+          "placeId": "",
+          "placeName": "",
+          "referenceId": "4d6213b2-83a3-53cc-be77-8bc1b61a92de",
+          "referenceName": "Apsley House"
+        }
+      ],
+      "ownerLocations": [
+        {
+          "id": "a508e362-16eb-44ad-96ba-32fbe0b902fe",
+          "kind": "REFERENCE",
+          "precision": "place",
+          "cityId": "",
+          "cityName": "",
+          "placeId": "",
+          "placeName": "",
+          "referenceId": "4d6213b2-83a3-53cc-be77-8bc1b61a92de",
+          "referenceName": "Apsley House",
+          "available": true
+        }
+      ],
+      "media": {
+        "schemaVersion": "public-moment-media-set-v1",
+        "status": "EMPTY",
+        "setVersion": 0,
+        "count": 0,
+        "items": []
+      }
+    }
+  ],
+  "cityIDsFabricated": false,
+  "actualAnchorCoordinatesPersistedInOriginalReceipt": false,
+  "crossCityCoordinateVerification": "NOT_RECORDED_CANNOT_DERIVE_AFTER_RESPONSE_DISCARDED",
+  "exactSelectedSourceNames": [
+    "Listasafn Reykjavíkur",
+    "Apsley House"
+  ],
+  "sourceNamesAreNotIndependentCoordinateEvidence": true,
+  "ownerAndAnonymousCurrentReads": "PASS_RECORDED",
+  "anonymousOwnRoutesRejected401": true,
+  "ownSessionLogout204": true,
+  "ownSessionRejected401": true,
+  "contentWrites": 0,
+  "previewsCreated": 0,
+  "mediaBytesRead": 0,
+  "legacyOwnersAccessed": 0,
+  "newHTTPRequests": 0,
+  "newSessionsCreated": 0,
+  "otherQAAccountBoundary": "NOT_RUN_ONLY_QA03_AUTHORIZED"
+}

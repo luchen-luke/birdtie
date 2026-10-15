@@ -74,11 +74,16 @@ func (s *server) prepareMomentMediaVideo(w http.ResponseWriter, r *http.Request)
 }
 func (s *server) getMomentVideoStageContent(w http.ResponseWriter, r *http.Request) {
 	r, a, d, ok := s.humanControlActor(w, r)
-	if !ok || !mediaShape(w, r, "mediaID", "mediaVersion", "variant") || !humanControlNoBody(w, r) {
+	if !ok || !mediaShape(w, r, "mediaID") || !humanControlNoBody(w, r) {
 		return
 	}
 	n, e := strconv.ParseInt(r.PathValue("mediaVersion"), 10, 64)
-	if e != nil || strconv.FormatInt(n, 10) != r.PathValue("mediaVersion") {
+	if e != nil || n != 1 || strconv.FormatInt(n, 10) != r.PathValue("mediaVersion") {
+		momentMediaFailure(w, mm.ErrInvalid)
+		return
+	}
+	variant := r.PathValue("variant")
+	if variant != "display" && variant != "thumbnail" && variant != "video" {
 		momentMediaFailure(w, mm.ErrInvalid)
 		return
 	}
@@ -86,7 +91,6 @@ func (s *server) getMomentVideoStageContent(w http.ResponseWriter, r *http.Reque
 	if !ok {
 		return
 	}
-	variant := r.PathValue("variant")
 	mime := "image/jpeg"
 	ctx, release, e := mm.TryVideoWork(r.Context())
 	if e != nil {

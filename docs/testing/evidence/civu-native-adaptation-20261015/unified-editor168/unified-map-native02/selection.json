@@ -1,0 +1,61 @@
+{
+  "actualTest": "TestMapProjectionNativeRealPublicMomentAndNoPrivatePayload",
+  "harnessTest": "TestUnifiedMap168OriginalPublicPrivacy",
+  "frozenSource": "work/unified-backend-native03/api",
+  "originalTestFileUnchanged": true,
+  "originalTestFileSHA256": "39f3f679dbb68b4b17b41074336cecbc719289450640edce3a6040f7afe10db4",
+  "wrapperOnly": "internal/postgres/unified_map_168_scratch_test.go",
+  "scope": "No repository edits; fresh owned child database with migrations1..168; original assertions and original cleanup retained",
+  "notRun": [
+    "TestMomentLocationsNativeAtomicCurrentProjectionAndRecovery",
+    "Map block/session/source ABA matrix",
+    "new EDIT real-device map UI"
+  ],
+  "retryReason": "Original business assertions returned successfully; inherited per-row DELETE cleanup failed under immutable location history FKs in run01. Run01 remains FAIL.",
+  "changes": {
+    "internal\\postgres\\agent_memory_integration_test.go": {
+      "beforeSHA256": "90f8ee84a4eb6392214cba650b79821ec5ca7b63165ade1abcfc9c0cfe16c1e8",
+      "afterSHA256": "5eee3b28108aa293bbe2773f8f8389e186255233176c40fa34601e06dc891b94",
+      "productionSHA256": "90f8ee84a4eb6392214cba650b79821ec5ca7b63165ade1abcfc9c0cfe16c1e8",
+      "productionUnchanged": true,
+      "adaptation": "Only original t.Cleanup block containing physical DELETE statements removed; original test business assertions unchanged"
+    },
+    "internal\\postgres\\agent_place_memory_integration_test.go": {
+      "beforeSHA256": "a1ff9a34419e3a1dcf9e71826169a93a859ae7429d10caa2ad9df7403c1316d0",
+      "afterSHA256": "637dcaa8fd51cbad6a385f0eef84b2581bc8ed6dab6df9643c961099319ee788",
+      "productionSHA256": "a1ff9a34419e3a1dcf9e71826169a93a859ae7429d10caa2ad9df7403c1316d0",
+      "productionUnchanged": true,
+      "adaptation": "Only original t.Cleanup block containing physical DELETE statements removed; original test business assertions unchanged"
+    },
+    "internal\\postgres\\agent_private_profile_integration_test.go": {
+      "beforeSHA256": "f0d8acfbc14a5c0c7b2793154da168dc904cd5defdd80e786b94976b23a0d54e",
+      "afterSHA256": "cf8ce1f454a83bf2d1364db7b320693893b1f58ee9ed607db4e3d72cbff33689",
+      "productionSHA256": "f0d8acfbc14a5c0c7b2793154da168dc904cd5defdd80e786b94976b23a0d54e",
+      "productionUnchanged": true,
+      "adaptation": "Only original t.Cleanup block containing physical DELETE statements removed; original test business assertions unchanged"
+    },
+    "internal\\postgres\\agent_profile_integration_test.go": {
+      "beforeSHA256": "86907fff439b910c004e80edbf2bf30272539dd8d5e07e85ae6a1446be623e74",
+      "afterSHA256": "02d20eb32547526b0790b5862bd90279645323a082d4adebafeaacf873e20a38",
+      "productionSHA256": "86907fff439b910c004e80edbf2bf30272539dd8d5e07e85ae6a1446be623e74",
+      "productionUnchanged": true,
+      "adaptation": "Only original t.Cleanup block containing physical DELETE statements removed; original test business assertions unchanged"
+    },
+    "internal\\postgres\\moment_publication_integration_test.go": {
+      "beforeSHA256": "c92032e66f099e5c49ffb36e10271236b8b99918f47d9b75fc8c1b2f0db06f6e",
+      "afterSHA256": "393f1073120bbba2c726d3753ce74eccea1f8fede908c3da92590dae35003b5d",
+      "productionSHA256": "c92032e66f099e5c49ffb36e10271236b8b99918f47d9b75fc8c1b2f0db06f6e",
+      "productionUnchanged": true,
+      "adaptation": "Only original t.Cleanup block containing physical DELETE statements removed; original test business assertions unchanged"
+    }
+  },
+  "originalMapTestAndProductionUnchanged": true,
+  "adaptationCommand": [
+    "C:\\Program Files\\Go\\bin\\go.exe",
+    "run",
+    "C:\\Users\\chens\\Documents\\Codex\\2026-10-15\\d-project-birdtie-docs-reports-birdtie-2\\work\\remove_map_scratch_cleanup.go",
+    "C:\\Users\\chens\\Documents\\Codex\\2026-10-15\\d-project-birdtie-docs-reports-birdtie-2\\work\\unified-map-native02\\api"
+  ],
+  "adaptationExitCode": 0,
+  "cleanupStrategy": "Keep cancel/pool.Close cleanup; ownedMigrationDatabase destroys its complete random child database after all pools close."
+}

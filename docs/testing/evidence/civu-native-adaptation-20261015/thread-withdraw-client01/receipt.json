@@ -1,0 +1,24 @@
+{
+  "command": [
+    "D:/DevTools/flutter/bin/flutter.bat",
+    "test",
+    "test/moment_thread_test.dart",
+    "--plain-name",
+    "整串撤回批准经公开详情能力及祖先重建仍提交一次且身份变化退休",
+    "--reporter",
+    "expanded"
+  ],
+  "cwd": "D:\\Project\\birdtie\\apps\\client",
+  "startedUTC": "2026-10-15T13:35:32.957178+00:00",
+  "exitCode": 0,
+  "sourceBefore": {
+    "lib/src/workspace/public_moment_page.dart": "bb9a4d49ed9fb67ae5f9d062e851e88fc9941ca308c4e1990411c642ac6f1454",
+    "test/moment_thread_test.dart": "b502f4b1983ea6a1f0c94306e75d0c08cf90da687f714b235494b38083560465"
+  },
+  "sourceAfter": {
+    "lib/src/workspace/public_moment_page.dart": "bb9a4d49ed9fb67ae5f9d062e851e88fc9941ca308c4e1990411c642ac6f1454",
+    "test/moment_thread_test.dart": "b502f4b1983ea6a1f0c94306e75d0c08cf90da687f714b235494b38083560465"
+  },
+  "sourceStable": true,
+  "scope": "One composite actual PublicMomentPage widget regression: retained approval across capability and ancestor rebuild, one WITHDRAW PUT, authoritative result, identity retirement; no device/remote action."
+}

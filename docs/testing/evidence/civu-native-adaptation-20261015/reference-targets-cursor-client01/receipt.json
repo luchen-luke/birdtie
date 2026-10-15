@@ -1,0 +1,22 @@
+{
+  "command": [
+    "D:/DevTools/flutter/bin/flutter.bat",
+    "test",
+    "test/private_reference_targets_test.dart",
+    "--reporter",
+    "expanded"
+  ],
+  "cwd": "D:\\Project\\birdtie\\apps\\client",
+  "startedUTC": "2026-10-15T13:44:06.132596+00:00",
+  "exitCode": 1,
+  "sourceBefore": {
+    "lib/src/content/private_reference_targets_page.dart": "8e18b33166cdb5aa0930548ff625217fe2fd8a3e37eeb63bef02411f60ea02f1",
+    "test/private_reference_targets_test.dart": "e9ca85959a23b6933548ed20e736f4f4414c398a5ac26f8bdb7faebb64d1eaa3"
+  },
+  "sourceAfter": {
+    "lib/src/content/private_reference_targets_page.dart": "8e18b33166cdb5aa0930548ff625217fe2fd8a3e37eeb63bef02411f60ea02f1",
+    "test/private_reference_targets_test.dart": "e9ca85959a23b6933548ed20e736f4f4414c398a5ac26f8bdb7faebb64d1eaa3"
+  },
+  "sourceStable": true,
+  "scope": "Corrected sealed two-segment base64url cursor composite regression; no API/native rerun: original entry, typed target paging, fresh private image metadata, return refresh, owner retirement, Saved lease expiry and explicit first-page GET. No build or device/remote action."
+}

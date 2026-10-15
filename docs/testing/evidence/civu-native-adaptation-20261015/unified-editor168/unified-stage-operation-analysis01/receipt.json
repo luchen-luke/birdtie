@@ -1,0 +1,5 @@
+{
+  "command": "dart analyze lib/src/workspace/map_workspace.dart lib/src/workspace/moment_thread_controller.dart",
+  "cwd": "D:/Project/birdtie/apps/client",
+  "exitCode": 0
+}

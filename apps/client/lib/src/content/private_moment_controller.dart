@@ -83,12 +83,9 @@ class PrivateMoment {
         communityID = json['communityId'] as String? ?? '',
         organizationID = json['organizationId'] as String? ?? '';
     if (cityID.isEmpty &&
-        ((placeID.isEmpty
-                ? locationPrecision != 'none'
-                : locationPrecision != 'place') ||
-            activityIDs.isNotEmpty ||
-            communityID.isNotEmpty ||
-            organizationID.isNotEmpty)) {
+        (placeID.isEmpty
+            ? locationPrecision != 'none'
+            : locationPrecision != 'place')) {
       throw const FormatException('动态位置关联不符');
     }
     return PrivateMoment(

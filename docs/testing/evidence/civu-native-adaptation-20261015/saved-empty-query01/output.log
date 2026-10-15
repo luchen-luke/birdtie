@@ -1,0 +1,32 @@
+00:00 +0: loading D:/Project/birdtie/apps/client/test/saved_page_test.dart
+00:00 +0: 收藏空查询无尾问号且次页失败重试读取首批
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following StateError was thrown running a test:
+Bad state: No element
+
+When the exception was thrown, this was the stack:
+#0      Iterable.single (dart:core/iterable.dart:694:25)
+#1      WidgetController.element (package:flutter_test/src/controller.dart:888:30)
+#2      WidgetController.ensureVisible (package:flutter_test/src/controller.dart:2389:32)
+#3      _tap (file:///D:/Project/birdtie/apps/client/test/saved_page_test.dart:25:11)
+#4      main.<anonymous closure> (file:///D:/Project/birdtie/apps/client/test/saved_page_test.dart:105:11)
+<asynchronous suspension>
+#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1952:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+The test description was:
+  收藏空查询无尾问号且次页失败重试读取首批
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:00 +0 -1: 收藏空查询无尾问号且次页失败重试读取首批 [E]
+  Test failed. See exception logs above.
+  The test description was: 收藏空查询无尾问号且次页失败重试读取首批
+  
+00:00 +0 -1: Some tests failed.
+
+Failing tests:
+  D:/Project/birdtie/apps/client/test/saved_page_test.dart: 收藏空查询无尾问号且次页失败重试读取首批
+Flutter assets will be downloaded from https://storage.flutter-io.cn. Make sure you trust this source!

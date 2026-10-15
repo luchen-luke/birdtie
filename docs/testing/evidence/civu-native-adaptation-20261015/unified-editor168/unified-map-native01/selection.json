@@ -1,0 +1,14 @@
+{
+  "actualTest": "TestMapProjectionNativeRealPublicMomentAndNoPrivatePayload",
+  "harnessTest": "TestUnifiedMap168OriginalPublicPrivacy",
+  "frozenSource": "work/unified-backend-native03/api",
+  "originalTestFileUnchanged": true,
+  "originalTestFileSHA256": "39f3f679dbb68b4b17b41074336cecbc719289450640edce3a6040f7afe10db4",
+  "wrapperOnly": "internal/postgres/unified_map_168_scratch_test.go",
+  "scope": "No repository edits; fresh owned child database with migrations1..168; original assertions and original cleanup retained",
+  "notRun": [
+    "TestMomentLocationsNativeAtomicCurrentProjectionAndRecovery",
+    "Map block/session/source ABA matrix",
+    "new EDIT real-device map UI"
+  ]
+}

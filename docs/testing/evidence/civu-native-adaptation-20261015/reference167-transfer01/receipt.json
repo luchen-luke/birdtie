@@ -1,0 +1,28 @@
+{
+  "status": "PRIVATE_REFERENCE167_TRANSFER_ACCEPTED",
+  "exitCode": 0,
+  "helperSHA256": "594f9f4a3418ad4839879eb8e6aef2d3056147a664a190a6eeb67abba3abdcc2",
+  "remoteScriptSHA256": "7e02410acaae3957ae8ccd024dd44c79c25681d3425e511fcf7c427e7ec8ef5e",
+  "result": {
+    "status": "PRIVATE_REFERENCE167_TRANSFER_COMPLETE",
+    "selectedAssets": 80,
+    "privateImages": 77,
+    "systemArtworkArchives": 3,
+    "blobFiles": 80,
+    "files": 82,
+    "bytes": 83410116,
+    "directoryMode": "0700",
+    "fileMode": "0600",
+    "sourceAuthenticated": true,
+    "filesVerified": true,
+    "sourceInputsUnchanged": true,
+    "sourceWrites": 0,
+    "databaseWrites": 0,
+    "mediaPublication": false,
+    "privateValuesOmitted": true
+  },
+  "sourceWrites": 0,
+  "databaseWrites": 0,
+  "importExecuted": false,
+  "privateValuesOmitted": true
+}

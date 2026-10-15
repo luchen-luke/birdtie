@@ -1,0 +1,8 @@
+{"Action":"start","Package":"github.com/birdtie/birdtie/apps/api/internal/postgres"}
+{"Action":"run","Package":"github.com/birdtie/birdtie/apps/api/internal/postgres","Test":"TestLegacyReferenceMediaNativeOwnedPurposesDeletionAndRepeat"}
+{"Action":"output","Package":"github.com/birdtie/birdtie/apps/api/internal/postgres","Test":"TestLegacyReferenceMediaNativeOwnedPurposesDeletionAndRepeat","Output":"=== RUN   TestLegacyReferenceMediaNativeOwnedPurposesDeletionAndRepeat\n"}
+{"Action":"output","Package":"github.com/birdtie/birdtie/apps/api/internal/postgres","Test":"TestLegacyReferenceMediaNativeOwnedPurposesDeletionAndRepeat","Output":"--- PASS: TestLegacyReferenceMediaNativeOwnedPurposesDeletionAndRepeat (2.95s)\n"}
+{"Action":"pass","Package":"github.com/birdtie/birdtie/apps/api/internal/postgres","Test":"TestLegacyReferenceMediaNativeOwnedPurposesDeletionAndRepeat","Elapsed":2.95}
+{"Action":"output","Package":"github.com/birdtie/birdtie/apps/api/internal/postgres","Output":"PASS\n"}
+{"Action":"output","Package":"github.com/birdtie/birdtie/apps/api/internal/postgres","Output":"ok  \tgithub.com/birdtie/birdtie/apps/api/internal/postgres\t5.094s\n"}
+{"Action":"pass","Package":"github.com/birdtie/birdtie/apps/api/internal/postgres","Elapsed":5.094}

@@ -34,6 +34,7 @@ import '../content/video_material_controller.dart';
 import '../legacy/legacy_shell.dart';
 import 'agent_composer.dart';
 import 'now_moment_intent.dart';
+import 'now_moment_editor_host.dart';
 import 'activity_plans.dart';
 import 'activity_participations.dart';
 import 'activity_detail_sheet.dart';
@@ -216,6 +217,9 @@ class _MapWorkspaceState extends State<MapWorkspace>
   int? _creationMediaApprovalSelection;
   MomentThreadController? _momentThread;
   final _threadImages = <String, PublicMomentMediaController>{};
+  final _threadMediaLoads = <String, Future<void>>{};
+  bool _threadMediaFinalizing = false;
+  bool _threadShowingDetail = false;
   final _threadStagesForCommit = <PublicMomentMediaController, List<String>>{};
   String? _threadStageOperation;
   String? _threadActiveEntry;
@@ -229,19 +233,113 @@ class _MapWorkspaceState extends State<MapWorkspace>
       _organizations.active == null &&
       !_composerDrafts.target.human;
 
-  Future<void> _beginMomentThread() async {
-    if (_creationBusy) return;
+  Future<void> _beginMomentThread({bool Function()? sourceCurrent}) async {
+    if (sourceCurrent?.call() == false || _creationBusy) return;
     if (!widget.auth.signedIn) await _signInHere();
     if (!mounted ||
+        sourceCurrent?.call() == false ||
         !widget.auth.signedIn ||
         _composerDrafts.target.human ||
         _organizations.active != null)
       return;
-    if (_threadCurrent) return;
-    if (_creationCurrent) _exitCreation();
+    if (_threadCurrent) {
+      if (sourceCurrent != null) {
+        setState(() {
+          _momentThread!.notice = '已保留并打开当前动态草稿；可以继续编辑或再接一条。';
+        });
+        _composerKey.currentState?.fillDraft(_momentThread!.activeText);
+      }
+      return;
+    }
+    if (_creationCurrent &&
+        (_creationUncertain || _creationMedia?.uncertain == true)) {
+      setState(() => _creationError = '请先核实上次操作；原文字和媒体仍保留。');
+      return;
+    }
+    // An old single-Moment CREATE with a lost response must be resolved through
+    // its original ledger before a new unified writer can create another ID.
+    final openingIdentity = _creationIdentity;
+    await widget.moments.loadOperations();
+    if (!mounted ||
+        sourceCurrent?.call() == false ||
+        openingIdentity != _creationIdentity)
+      return;
+    if (!widget.moments.canStartOperation) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('请先到“我的动态与草稿”核实原操作；当前文字和材料仍保留。')),
+      );
+      return;
+    }
+    final previousMoment = _creationCurrent && _creation!.kind == 'moment';
+    if (_creationCurrent && !previousMoment) _exitCreation();
+    _syncCreationDraftIdentity();
+    final originalInput = previousMoment
+        ? (_beforeCreationInput ?? _composerDrafts.value)
+        : _composerDrafts.value;
+    final incoming = _composerDrafts.value.text;
+    final legacy = previousMoment
+        ? _creation
+        : (incoming.trim().isEmpty
+              ? await _creationDrafts.restore('', 'moment')
+              : null);
+    final oldMedia = previousMoment ? _creationMedia : null;
+    final oldNativeID = legacy?.nativeMomentID.isNotEmpty == true
+        ? legacy!.nativeMomentID
+        : previousMoment
+        ? _creationMomentID
+        : null;
+    final identity = openingIdentity;
+    bool openingCurrent() =>
+        mounted &&
+        sourceCurrent?.call() != false &&
+        widget.auth.signedIn &&
+        identity == _creationIdentity &&
+        !_composerDrafts.target.human &&
+        _organizations.active == null;
+    if (!openingCurrent()) return;
+    PrivateMoment? original;
+    if (oldNativeID != null && oldNativeID.isNotEmpty) {
+      original = await widget.moments.readOwned(
+        oldNativeID,
+        current: openingCurrent,
+      );
+      if (!openingCurrent()) return;
+      if (original == null) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('原动态暂不可读取，草稿与材料仍保留。')));
+        return;
+      }
+    }
+    final entry = original == null
+        ? MomentThreadDraftEntry(
+            localID: newMomentOperationID(),
+            cityID: legacy?.cityID ?? '',
+            placeID: legacy?.placeID ?? '',
+            text: previousMoment && !_creationTitleEditing
+                ? incoming
+                : legacy?.body ?? incoming,
+            title: previousMoment && _creationTitleEditing
+                ? incoming
+                : legacy?.title ?? '',
+            locations: legacy == null ? const [] : legacy.locations,
+            materialJournalEntryID: oldMedia?.journalEntryID,
+          )
+        : MomentThreadDraftEntry.owned(
+            original,
+            locations: legacy?.locations,
+          ).copy(
+            text: previousMoment && !_creationTitleEditing
+                ? incoming
+                : legacy?.body ?? original.body,
+            title: previousMoment && _creationTitleEditing
+                ? incoming
+                : legacy?.title ?? original.title,
+            materialJournalEntryID: oldMedia?.journalEntryID ?? '',
+          );
     _retireMomentThread();
     final scope = _creationIdentity;
-    _beforeThreadInput = _composerDrafts.value;
+    _beforeThreadInput = originalInput;
     _threadScope = scope;
     final c = MomentThreadController(
       api: MomentThreadAPI(
@@ -255,14 +353,93 @@ class _MapWorkspaceState extends State<MapWorkspace>
     );
     _momentThread = c;
     c.addListener(_threadChanged);
-    await c.begin(cityID: '', initialText: _composerDrafts.value.text);
-    if (mounted && _threadCurrent && identical(c, _momentThread)) {
-      for (final entry in c.entries) {
-        await _threadImageController(entry.localID).load();
-        if (!mounted || !_threadCurrent || !identical(c, _momentThread)) return;
+    await c.begin(
+      initialEntry: entry,
+      materialScope:
+          oldMedia?.localScope ??
+          (oldNativeID?.isNotEmpty == true ? oldNativeID : null),
+    );
+    if (!openingCurrent() || !_threadCurrent || !identical(c, _momentThread)) {
+      return;
+    }
+    if (previousMoment &&
+        c.entries.isNotEmpty &&
+        c.entries.first.localID != entry.localID) {
+      _retireMomentThread();
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('还有另一份动态草稿待处理；当前文字和媒体保留。')));
+      return;
+    }
+    if (mounted &&
+        _threadCurrent &&
+        identical(c, _momentThread) &&
+        c.entries.isNotEmpty &&
+        c.entries.first.localID == entry.localID) {
+      final materials = _threadImageController(entry.localID);
+      await _loadThreadMedia(entry.localID);
+      if (!openingCurrent() ||
+          !_threadCurrent ||
+          !identical(c, _momentThread)) {
+        return;
+      }
+      if (oldMedia != null &&
+          oldMedia.pending.isEmpty &&
+          materials.images.isEmpty &&
+          oldMedia.localScope == materials.localScope &&
+          oldMedia.journalEntryID == materials.journalEntryID) {
+        oldMedia.copyDraftTo(materials);
+      }
+      if (_creationImages.images.isNotEmpty)
+        materials.addSelectedBytes(_creationImages.images);
+      if (_imageDraft?.current == true && _imageDraft?.localBytes != null) {
+        final count = materials.images.length;
+        materials.addSelectedBytes([_imageDraft!.localBytes!]);
+        if (materials.images.length > count) _imageDraft!.removeLocal();
+      }
+      if (_taskImages?.current == true && _taskImages?.localBytes != null) {
+        final count = materials.images.length;
+        materials.addSelectedBytes([_taskImages!.localBytes!]);
+        if (materials.images.length > count) _taskImages!.removeLocal();
+      }
+      _takeSelectedVideo(materials);
+      _rememberThreadMaterialReferences(
+        entry.localID,
+        materials,
+        keepMissing: true,
+      );
+      if (previousMoment) {
+        ++_creationRestoreSerial;
+        _retireCreationApprovals();
+        _disposeCreationPublicPhoto();
+        oldMedia?.dispose();
+        _creationMedia = null;
+        _creationImages.clear();
+        _creation = null;
+        _creationScope = null;
+        _beforeCreationInput = null;
+      }
+      if (legacy != null && await c.flushDraft() && openingCurrent()) {
+        await _creationDrafts.completeMomentHandoff(legacy);
       }
     }
-    if (!mounted || !_threadCurrent || !identical(c, _momentThread)) return;
+    if (openingCurrent() && _threadCurrent && identical(c, _momentThread)) {
+      for (final entry in c.entries) {
+        await _loadThreadMedia(entry.localID);
+        if (!openingCurrent() ||
+            !_threadCurrent ||
+            !identical(c, _momentThread)) {
+          return;
+        }
+      }
+    }
+    if (!openingCurrent() || !_threadCurrent || !identical(c, _momentThread)) {
+      return;
+    }
+    if (sourceCurrent != null &&
+        c.entries.firstOrNull?.localID != entry.localID) {
+      c.notice ??= '已恢复上次动态草稿；当前内容保留，可以继续编辑或再接一条。';
+    }
     setState(() {
       _socialExpanded = false;
       _exploreExpanded = false;
@@ -274,8 +451,10 @@ class _MapWorkspaceState extends State<MapWorkspace>
   Future<void> _openOwnedMomentInNow(
     String momentID, {
     bool loadThread = true,
+    bool Function()? sourceCurrent,
   }) async {
-    if (_creationBusy ||
+    if (sourceCurrent?.call() == false ||
+        _creationBusy ||
         !widget.auth.signedIn ||
         _organizations.active != null ||
         _composerDrafts.target.human)
@@ -290,6 +469,7 @@ class _MapWorkspaceState extends State<MapWorkspace>
         token = widget.auth.authorizationHeader;
     bool current() =>
         mounted &&
+        sourceCurrent?.call() != false &&
         widget.auth.signedIn &&
         _creationIdentity == scope &&
         widget.auth.accountID == owner &&
@@ -310,10 +490,7 @@ class _MapWorkspaceState extends State<MapWorkspace>
           if (e.status != 404) rethrow;
         }
         if (!current()) return;
-        if (view != null &&
-            view.status == 'draft' &&
-            view.audience == 'PRIVATE' &&
-            view.members.every((member) => member['status'] == 'AVAILABLE')) {
+        if (view != null) {
           final entries = <MomentThreadDraftEntry>[];
           final locationsAPI = MomentLocationsAPI(
             client: widget.moments.borrowedClient,
@@ -324,6 +501,7 @@ class _MapWorkspaceState extends State<MapWorkspace>
           );
           try {
             for (final member in view.members) {
+              if (member['status'] != 'AVAILABLE') continue;
               final original = await widget.moments.readOwned(
                 member['momentId'],
                 current: current,
@@ -344,6 +522,27 @@ class _MapWorkspaceState extends State<MapWorkspace>
                 ),
               );
             }
+            if (entries.isEmpty) {
+              final retired = view.retiredMembers
+                  .where((member) => member['momentId'] == momentID)
+                  .firstOrNull;
+              if (retired == null) throw StateError('原动态暂不可读');
+              final original = await widget.moments.readOwned(
+                momentID,
+                current: current,
+              );
+              if (!current()) return;
+              if (original == null ||
+                  original.status != 'withdrawn' ||
+                  original.revision != retired['revision']) {
+                throw StateError('原动态已变化');
+              }
+              // Reading a withdrawn item does not republish its old locations
+              // or media. The editor requires a separate explicit restore.
+              entries.add(
+                MomentThreadDraftEntry.owned(original, locations: const []),
+              );
+            }
           } finally {
             locationsAPI.dispose();
           }
@@ -362,7 +561,11 @@ class _MapWorkspaceState extends State<MapWorkspace>
           );
           _momentThread = c;
           c.addListener(_threadChanged);
-          await c.beginOwned(view, entries, selectedID: momentID);
+          final accepted = await c.beginOwned(
+            view,
+            entries,
+            selectedID: momentID,
+          );
           if (!current() || !identical(c, _momentThread)) return;
           setState(() {
             _socialExpanded = false;
@@ -370,47 +573,55 @@ class _MapWorkspaceState extends State<MapWorkspace>
             _retirePublicPlacePanel();
           });
           _composerKey.currentState?.fillDraft(c.activeText);
+          if (!accepted) c.notice ??= '已保留上次草稿，请先核实其原操作或检查原版本。';
           return;
         }
       }
       final moment = await widget.moments.readOwned(momentID, current: current);
       if (!current()) return;
       if (moment == null) throw StateError('原动态暂不可读');
-      _syncCreationDraftIdentity();
-      _beforeCreationInput ??= _composerDrafts.value;
-      ++_creationRestoreSerial;
+      final locationsAPI = MomentLocationsAPI(
+        client: widget.moments.borrowedClient,
+        apiBaseUrl: widget.moments.apiBaseUrl,
+        authorizationHeader: () =>
+            current() ? widget.auth.authorizationHeader : null,
+        current: current,
+      );
+      final locations = await locationsAPI.read(
+        moment.id,
+        own: true,
+        expectedRevision: moment.revision,
+      );
+      locationsAPI.dispose();
+      if (!current()) return;
+      _beforeThreadInput = _composerDrafts.value;
+      _threadScope = scope;
+      final c = MomentThreadController(
+        api: MomentThreadAPI(
+          client: widget.moments.borrowedClient,
+          baseUrl: widget.moments.apiBaseUrl,
+          authorizationHeader: () =>
+              _threadCurrent ? widget.auth.authorizationHeader : null,
+          current: () => mounted && _threadCurrent && scope == _threadScope,
+        ),
+        ownerID: owner!,
+      );
+      _momentThread = c;
+      c.addListener(_threadChanged);
+      await c.begin(
+        initialEntry: MomentThreadDraftEntry.owned(
+          moment,
+          locations: locations.inputs,
+        ).copy(materialJournalEntryID: ''),
+        materialScope: moment.id,
+      );
+      if (!current() || !identical(c, _momentThread)) return;
       setState(() {
-        _creation = NowCreationDraft(
-          kind: 'moment',
-          cityID: moment.cityID,
-          cityName: '',
-          nativeMomentID: moment.id,
-          title: moment.title,
-          body: moment.body,
-          placeID: moment.placeID,
-        );
-        _creationScope = scope;
-        _creationMomentID = moment.id;
-        _creationOwnedRevision = moment.revision;
-        _creationCollapsed = false;
-        _creationTitleEditing = false;
-        _creationError = null;
-        _creationNotice = '已打开原动态，在首页输入框继续修改。';
-        _creationRestorePending = false;
-        _creationUncertain = false;
-        _creationShowingDetail = false;
-        _creationPublished =
-            moment.status == 'published' && moment.visibility == 'public';
-        _creationPublishedRevision = _creationPublished
-            ? moment.revision
-            : null;
         _socialExpanded = false;
         _exploreExpanded = false;
         _retirePublicPlacePanel();
       });
-      _composerKey.currentState?.fillDraft(moment.body);
-      await _restoreCreationNativeMoment();
-      if (current()) _rememberCreation();
+      _composerKey.currentState?.fillDraft(c.activeText);
     } catch (_) {
       if (current())
         ScaffoldMessenger.of(
@@ -419,79 +630,89 @@ class _MapWorkspaceState extends State<MapWorkspace>
     }
   }
 
-  Future<void> _saveOwnedThreadEntry() async {
-    final c = _momentThread;
-    if (!_threadCurrent ||
-        c == null ||
-        !c.editable ||
-        !c.existingThread ||
-        c.entries.isEmpty)
-      return;
-    final entry = c.entries[c.activeIndex], index = c.activeIndex;
+  Future<void> _restoreRetiredThreadEntry(String id) async {
+    final t = _momentThread, epoch = _threadEntrySerial;
+    if (!_threadCurrent || t == null || !t.editable) return;
     bool current() =>
         mounted &&
         _threadCurrent &&
-        identical(c, _momentThread) &&
-        c.editable &&
-        c.activeIndex == index &&
-        identical(entry, c.entries[index]);
+        identical(t, _momentThread) &&
+        t.editable &&
+        epoch == _threadEntrySerial;
     try {
-      final original = await widget.moments.readOwned(
+      final original = await widget.moments.readOwned(id, current: current);
+      if (!current() || original == null || original.status != 'withdrawn') {
+        return;
+      }
+      t.restoreEntry(
+        MomentThreadDraftEntry.owned(original, locations: const []),
+      );
+      _composerKey.currentState?.fillDraft(t.activeText);
+    } catch (_) {
+      if (current()) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('暂时无法读取原内容，请重试。')));
+      }
+    }
+  }
+
+  Future<void> _removeThreadEntry(int index) async {
+    final t = _momentThread;
+    if (!_threadCurrent ||
+        t == null ||
+        !t.editable ||
+        index < 0 ||
+        index >= t.entries.length ||
+        t.entries.length <= 1)
+      return;
+    final entry = t.entries[index], serial = _threadEntrySerial;
+    bool current() =>
+        mounted &&
+        _threadCurrent &&
+        identical(t, _momentThread) &&
+        t.editable &&
+        serial == _threadEntrySerial &&
+        t.entries.length > index &&
+        identical(t.entries[index], entry);
+    if (entry.momentID.isEmpty) {
+      t.removeEntry(index);
+      _composerKey.currentState?.fillDraft(t.activeText);
+      return;
+    }
+    try {
+      final source = await widget.moments.readOwned(
         entry.momentID,
         current: current,
       );
       if (!current() ||
-          original == null ||
-          original.revision != entry.expectedRevision)
+          source == null ||
+          source.revision != entry.expectedRevision)
         return;
-      final preview = await widget.moments.previewUpdate(
-        moment: original,
-        title: entry.title,
-        body: entry.text,
-        placeID: entry.placeID,
-        cityID: entry.cityID,
-        locations: entry.locations,
-        time: original.time,
-        current: current,
+      var summary = '';
+      if (source.status == 'published') {
+        final set = await _threadImageController(
+          entry.localID,
+        ).api.ownSet(source.id, source.revision);
+        if (!current()) return;
+        summary = set.attachments.isEmpty
+            ? '没有公开媒体'
+            : set.attachments.singleOrNull?.isVideo == true
+            ? '1 段公开视频（将一并撤回）'
+            : '${set.attachments.length} 张公开图片（将一并撤回）';
+      }
+      t.removeEntry(
+        index,
+        summary: MomentThreadDraftEntry.owned(
+          source,
+        ).copy(mediaSummary: summary),
       );
-      if (!current() || preview == null) return;
-      final accepted = await showDialog<bool>(
-        context: context,
-        builder: (dialog) => AlertDialog(
-          title: const Text('保存这条私人动态？'),
-          content: SingleChildScrollView(
-            child: Text(entry.text.isEmpty ? '保存这版位置与材料关联。' : entry.text),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialog, false),
-              child: const Text('返回修改'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.pop(dialog, true),
-              child: const Text('确认保存'),
-            ),
-          ],
-        ),
-      );
-      if (!current() || accepted != true) return;
-      if (!await widget.moments.commit(preview, current: current) || !current())
-        return;
-      final saved = await widget.moments.readOwned(
-        entry.momentID,
-        current: current,
-      );
-      final view = await c.api.owned(c.ownedThreadID, byMoment: false);
-      if (!current() || saved == null) return;
-      c.savedOwnedEntry(
-        MomentThreadDraftEntry.owned(saved, locations: entry.locations),
-        view,
-      );
+      _composerKey.currentState?.fillDraft(t.activeText);
     } catch (_) {
       if (current())
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(const SnackBar(content: Text('保存结果需要刷新确认，当前草稿已保留。')));
+        ).showSnackBar(const SnackBar(content: Text('暂时无法核实这条内容，未移除，请重试。')));
     }
   }
 
@@ -515,11 +736,12 @@ class _MapWorkspaceState extends State<MapWorkspace>
     if (_threadActiveEntry != entry) {
       _threadActiveEntry = entry;
       ++_threadEntrySerial;
+      _threadShowingDetail = false;
     }
     if (t != null) {
       for (final entry in t.entries) {
         if (!_threadImages.containsKey(entry.localID)) {
-          unawaited(_threadImageController(entry.localID).load());
+          unawaited(_loadThreadMedia(entry.localID));
         }
       }
       final operation = t.pending?.operationID;
@@ -534,22 +756,80 @@ class _MapWorkspaceState extends State<MapWorkspace>
           );
       }
       if (t.receipt?.status == 'SUCCEEDED' &&
-          {'CREATE_PUBLISH', 'PUBLISH'}.contains(t.receipt?.action) &&
+          {'CREATE_PUBLISH', 'PUBLISH', 'EDIT'}.contains(t.receipt?.action) &&
           t.receipt?.operationID == _threadStageOperation) {
-        for (final entry in _threadStagesForCommit.entries) {
-          unawaited(
-            entry.key.releaseStagedAfterPublication(operationIDs: entry.value),
-          );
-        }
-        _threadStagesForCommit.clear();
+        final staged = Map.of(_threadStagesForCommit);
         _threadStageOperation = null;
+        _threadStagesForCommit.clear();
+        unawaited(_finishThreadMaterials(t, staged));
       }
       final live = t.entries.map((e) => e.localID).toSet();
       for (final id
-          in _threadImages.keys.where((id) => !live.contains(id)).toList())
+          in _threadImages.keys.where((id) => !live.contains(id)).toList()) {
         _threadImages.remove(id)?.dispose();
+        _threadMediaLoads.remove(id);
+      }
     }
     _requestInlineRebuild();
+  }
+
+  Future<void> _loadThreadMedia(String entryID) => _threadMediaLoads
+      .putIfAbsent(entryID, () => _threadImageController(entryID).load());
+
+  Future<void> _finishThreadMaterials(
+    MomentThreadController t,
+    Map<PublicMomentMediaController, List<String>> staged,
+  ) async {
+    _threadMediaFinalizing = true;
+    try {
+      for (final entry in staged.entries) {
+        await entry.key.releaseStagedAfterPublication(
+          operationIDs: entry.value,
+        );
+      }
+      if (!mounted || !_threadCurrent || !identical(t, _momentThread)) return;
+      for (final controller in _threadImages.values) controller.dispose();
+      _threadImages.clear();
+      _threadMediaLoads.clear();
+    } catch (_) {
+      if (mounted && _threadCurrent && identical(t, _momentThread)) {
+        t.notice = '公开已完成；本机材料记录尚未清理，请保留当前草稿后重新打开。';
+      }
+    } finally {
+      if (mounted && _threadCurrent && identical(t, _momentThread)) {
+        _threadMediaFinalizing = false;
+        _threadChanged();
+      }
+    }
+  }
+
+  void _rememberThreadMaterialReferences(
+    String entryID,
+    PublicMomentMediaController c, {
+    bool keepMissing = false,
+    Set<String> previouslyAvailable = const {},
+  }) {
+    final t = _momentThread;
+    if (!_threadCurrent || t == null || !t.editable) return;
+    final entry = t.entries.where((v) => v.localID == entryID).firstOrNull;
+    if (entry == null) return;
+    final refs = [
+      for (final image in c.images)
+        MomentDraftMaterialReference(
+          image.operationID,
+          image.stage?.isVideo == true || image.mime == 'video/mp4'
+              ? 'VIDEO'
+              : 'IMAGE',
+        ),
+    ];
+    if (keepMissing) {
+      for (final old in entry.materialReferences) {
+        if (!previouslyAvailable.contains(old.operationID) &&
+            !refs.any((v) => v.operationID == old.operationID))
+          refs.add(old);
+      }
+    }
+    t.rememberEntryMaterials(entryID, refs);
   }
 
   PublicMomentMediaController _threadImageController(String entryID) {
@@ -569,7 +849,9 @@ class _MapWorkspaceState extends State<MapWorkspace>
         expectedMomentRevision: 0,
         materialOnly: true,
         localScopeOverride: t.localScope,
-        journalEntryID: entryID,
+        journalEntryID: t.entries
+            .firstWhere((v) => v.localID == entryID)
+            .journalEntryID,
         ownerID: () => current() ? widget.auth.accountID : null,
         authorizationHeader: () =>
             current() ? widget.auth.authorizationHeader : null,
@@ -579,15 +861,30 @@ class _MapWorkspaceState extends State<MapWorkspace>
         apiBaseUrl: widget.moments.apiBaseUrl,
       );
       var selection = c.selectionRevision;
+      var known = c.images.map((v) => v.operationID).toSet();
       c.addListener(() {
         if (!mounted || !_threadCurrent || !identical(t, _momentThread)) return;
-        if (selection != c.selectionRevision) {
+        final operations = c.images.map((v) => v.operationID).toSet();
+        final operationChanged =
+            operations.length != known.length ||
+            operations.any((id) => !known.contains(id));
+        // A STOPPED stage can rotate its operation ID while retaining the same
+        // selected file. Its replacement must reach the durable draft even
+        // though no add/remove/reorder changed selectionRevision.
+        if (selection != c.selectionRevision || operationChanged) {
           selection = c.selectionRevision;
           if (t.editable &&
               t.entries.isNotEmpty &&
               t.entries[t.activeIndex].localID == entryID)
             t.setActiveMedia(const []);
+          _rememberThreadMaterialReferences(
+            entryID,
+            c,
+            keepMissing: true,
+            previouslyAvailable: known,
+          );
         }
+        if (c.journalReady && !c.busy) known = operations;
         _requestInlineRebuild();
       });
       return c;
@@ -596,12 +893,17 @@ class _MapWorkspaceState extends State<MapWorkspace>
 
   bool get _threadMaterialsReady {
     final t = _momentThread;
-    if (t == null) return false;
+    if (t == null || _threadMediaFinalizing) return false;
     for (final entry in t.entries) {
+      if (entry.hasConflictingMaterialReferences) return false;
       final c = _threadImages[entry.localID];
       if (c == null || !c.journalReady || c.hasUnresolvedStagedMaterials)
         return false;
       if (c.busy || c.uncertain) return false;
+      if (entry.materialReferences.any(
+        (ref) => !c.images.any((image) => image.operationID == ref.operationID),
+      ))
+        return false;
       if (c.images.isEmpty) continue;
       if (c.images.any(
         (p) => p.stage?.current != true || p.rights?.valid != true,
@@ -704,10 +1006,64 @@ class _MapWorkspaceState extends State<MapWorkspace>
     final entry = t.entries[t.activeIndex],
         id = t.entries[t.activeIndex].localID;
     final c = _threadImageController(id);
+    final missing = c.journalReady && !c.busy
+        ? entry.materialReferences
+              .where(
+                (ref) => !c.images.any((p) => p.operationID == ref.operationID),
+              )
+              .toList()
+        : const <MomentDraftMaterialReference>[];
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        if (_threadShowingDetail &&
+            entry.momentID.isNotEmpty &&
+            entry.originalStatus == 'published')
+          SizedBox(
+            height: 320,
+            child: PublicMomentPage(
+              key: ValueKey((
+                'unified-moment-detail',
+                entry.momentID,
+                entry.expectedRevision,
+              )),
+              momentID: entry.momentID,
+              embedded: true,
+              showManagement: false,
+              authorizationHeader: () =>
+                  _threadCurrent ? widget.auth.authorizationHeader : null,
+              ownerID: () => _threadCurrent ? widget.auth.accountID : null,
+              workspaceID: () => _organizations.active?.id,
+              identityChanges: _activeIntentChanges,
+              client: widget.moments.borrowedClient,
+              apiBaseUrl: widget.moments.apiBaseUrl,
+            ),
+          ),
+        if (entry.preserveMedia) const Text('原公开媒体将保留；只有明确移除或选择新材料才会替换。'),
+        if (entry.preserveMedia)
+          TextButton(
+            onPressed: t.editable ? () => t.setActiveMedia(const []) : null,
+            child: const Text('移除原公开媒体'),
+          ),
+        for (final ref in missing)
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: Icon(
+              ref.kind == 'VIDEO'
+                  ? Icons.videocam_outlined
+                  : Icons.image_outlined,
+            ),
+            title: Text(ref.kind == 'VIDEO' ? '上次未完成的视频' : '上次未完成的图片'),
+            subtitle: const Text('本机原文件未保留，请移除这项后重新选择；不会忽略它发布。'),
+            trailing: IconButton(
+              tooltip: '移除未完成材料',
+              onPressed: t.editable
+                  ? () => t.removeMissingMaterial(id, ref.operationID)
+                  : null,
+              icon: const Icon(Icons.close),
+            ),
+          ),
         if (entry.momentID.isNotEmpty)
           _legacyMaterials(
             entry.momentID,
@@ -742,8 +1098,10 @@ class _MapWorkspaceState extends State<MapWorkspace>
                   identical(t, _momentThread) &&
                   t.editable &&
                   t.entries[t.activeIndex].localID == id &&
-                  c.current)
+                  c.current) {
                 t.setActiveMedia(materials);
+                _rememberThreadMaterialReferences(id, c, keepMissing: true);
+              }
             },
           ),
         ),
@@ -757,6 +1115,8 @@ class _MapWorkspaceState extends State<MapWorkspace>
     _momentThread?.dispose();
     for (final c in _threadImages.values) c.dispose();
     _threadImages.clear();
+    _threadMediaLoads.clear();
+    _threadMediaFinalizing = false;
     _threadStagesForCommit.clear();
     _threadStageOperation = null;
     _threadActiveEntry = null;
@@ -767,9 +1127,9 @@ class _MapWorkspaceState extends State<MapWorkspace>
 
   void _closeMomentThread() {
     if (_threadCurrent && _momentThread?.unsavedDraft == true) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('这份串文还未保存到本机，请缩短内容或等待保存完成后关闭。')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('这份动态还未保存到本机，请等待保存完成后关闭。')));
       return;
     }
     _retireMomentThread();
@@ -853,8 +1213,12 @@ class _MapWorkspaceState extends State<MapWorkspace>
   }
 
   Future<void> _beginPhotoMoment() async {
-    await _beginCreation('moment');
-    if (mounted && _creationCurrent) await _selectCreationImages();
+    await _beginMomentThread();
+    if (mounted && _threadCurrent && _momentThread!.entries.isNotEmpty) {
+      await _selectThreadImages(
+        _momentThread!.entries[_momentThread!.activeIndex].localID,
+      );
+    }
   }
 
   int _creationRestoreSerial = 0;
@@ -1026,6 +1390,10 @@ class _MapWorkspaceState extends State<MapWorkspace>
   }
 
   Future<void> _beginCreation(String kind) async {
+    if (kind == 'moment') {
+      await _beginMomentThread();
+      return;
+    }
     if (_creation != null && !_creationCurrent) _clearRetiredCreation();
     if (_composerDrafts.target.human || _creationBusy) return;
     if (!widget.auth.signedIn) await _signInHere();
@@ -4957,19 +5325,12 @@ class _MapWorkspaceState extends State<MapWorkspace>
     final identity = _composerDrafts.identity;
     await _beginCreation('moment');
     if (!mounted ||
-        !_creationCurrent ||
-        _creation!.kind != 'moment' ||
+        !_threadCurrent ||
         _composerDrafts.identity != identity ||
-        _creationBusy ||
-        _creationUncertain)
+        !_momentThread!.editable)
       return;
-    if (_creationMomentID != null) {
-      _composerDrafts.update(TextEditingValue(text: body));
-      setState(() => _creationNotice = '已恢复原动态，新输入保留在输入框中。');
-      return;
-    }
-    _updateCreation(body);
-    setState(() => _creationNotice = '已放入动态草稿，检查后再发布。');
+    _momentThread!.updateActiveText(body);
+    _composerKey.currentState?.fillDraft(body);
   }
 
   bool _preserveUnfinishedTaskImage([String? query]) {
@@ -7522,6 +7883,7 @@ class _MapWorkspaceState extends State<MapWorkspace>
           builder: (_) => LegacyPlaceReferencePage(
             reference: legacy,
             authorizationHeader: saved.authorizationHeader,
+            ownerID: () => auth.accountID,
             sourceCurrent: () => current() && _organizations.active == null,
             identityChanges: changes,
             apiBaseUrl: saved.followApiBaseUrl,
@@ -8161,16 +8523,40 @@ class _MapWorkspaceState extends State<MapWorkspace>
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => NowMomentEditorHost(
+    identityChanges: _activeIntentChanges,
+    ownerID: () => widget.auth.accountID,
+    authorizationHeader: () => widget.auth.authorizationHeader,
+    apiBaseUrl: () => widget.moments.apiBaseUrl,
+    workspaceID: () => _organizations.active?.id,
+    canOpen: () =>
+        mounted &&
+        !_creationBusy &&
+        widget.auth.signedIn &&
+        _organizations.active == null &&
+        !_composerDrafts.target.human &&
+        (!_threadCurrent || _momentThread!.editable),
+    onOpen: (id, current) => _openOwnedMomentInNow(id, sourceCurrent: current),
+    onCreate: (current) => _beginMomentThread(sourceCurrent: current),
+    child: _buildWorkspaceRoute(context),
+  );
+
+  Widget _buildWorkspaceRoute(BuildContext context) {
     _syncSystemPush();
     // Subscribe to the existing route; returning never reopens or submits.
     _workspace.updateReplyRefreshVisibility();
     _layers.updateRefreshVisibility();
     return PopScope(
-      canPop: !_socialExpanded,
+      canPop: !_socialExpanded && !_threadCurrent && !_creationCurrent,
       onPopInvokedWithResult: (didPop, _) {
         if (!didPop) {
-          if (_composerDrafts.target.human)
+          if (MediaQuery.viewInsetsOf(context).bottom > 0) {
+            FocusManager.instance.primaryFocus?.unfocus();
+          } else if (_threadCurrent) {
+            _closeMomentThread();
+          } else if (_creationCurrent) {
+            _exitCreation();
+          } else if (_composerDrafts.target.human)
             _exitFriendConversation();
           else
             _closeSocial();
@@ -8842,20 +9228,38 @@ class _MapWorkspaceState extends State<MapWorkspace>
                                         .currentState
                                         ?.fillDraft(text),
                                     onClose: _closeMomentThread,
-                                    onSaveActive: () =>
-                                        unawaited(_saveOwnedThreadEntry()),
+                                    preservedMediaBuilder: (index, set) =>
+                                        PublicMomentMediaGallery(
+                                          set: set,
+                                          api: _threadImageController(
+                                            _momentThread!
+                                                .entries[index]
+                                                .localID,
+                                          ).api,
+                                          current: () =>
+                                              _threadCurrent &&
+                                              _momentThread!
+                                                      .previewValue
+                                                      ?.current ==
+                                                  true,
+                                        ),
+                                    onRestoreRetired: (id) => unawaited(
+                                      _restoreRetiredThreadEntry(id),
+                                    ),
+                                    onRemoveEntry: (index) =>
+                                        unawaited(_removeThreadEntry(index)),
                                     onOpenActive: () {
-                                      final t = _momentThread!;
-                                      if (t.entries.isNotEmpty)
-                                        unawaited(
-                                          _openOwnedMomentInNow(
-                                            t.entries[t.activeIndex].momentID,
-                                            loadThread: false,
-                                          ),
-                                        );
+                                      setState(
+                                        () => _threadShowingDetail =
+                                            !_threadShowingDetail,
+                                      );
                                     },
                                     onPublished: (_) {
                                       if (mounted) {
+                                        _mapMedia.retire();
+                                        _threadShowingDetail =
+                                            _momentThread?.receipt?.action !=
+                                            'WITHDRAW';
                                         unawaited(widget.moments.refresh());
                                         if (_layers.cityID != null &&
                                             _layers.bounds != null)
@@ -8890,12 +9294,16 @@ class _MapWorkspaceState extends State<MapWorkspace>
                               },
                               workspace: _workspace,
                               creationLabel: hasThread
-                                  ? '串文'
+                                  ? '动态'
                                   : hasCreation
                                   ? _creation!.label
                                   : null,
                               creationInputHint: hasThread
-                                  ? '写第 ${_momentThread!.activeIndex + 1} 条串文'
+                                  ? (_momentThread!.activeField == 'title'
+                                        ? '标题（选填），可以留空'
+                                        : _momentThread!.entries.length == 1
+                                        ? '写下这条动态的内容…'
+                                        : '写第 ${_momentThread!.activeIndex + 1} 条动态…')
                                   : hasCreation
                                   ? (_creationTitleEditing
                                         ? '输入新的${_creation!.label}名称'
@@ -8914,7 +9322,11 @@ class _MapWorkspaceState extends State<MapWorkspace>
                                             _creationMedia?.busy == true ||
                                             _creationMedia?.uncertain == true),
                               maxDraftBytes: hasCreation || hasThread
-                                  ? 5000
+                                  ? (hasThread &&
+                                            _momentThread!.activeField ==
+                                                'title'
+                                        ? 160
+                                        : 5000)
                                   : 240,
                               videoPreview: _creationVideoPreview(),
                               videoStatus: _videoMaterials?.current == true

@@ -1,0 +1,62 @@
+{
+  "at": "2026-10-15T17:34:54.682912+00:00",
+  "status": "SOURCE_READY",
+  "scope": {
+    "apps/api/migrations/169_public_moment_video_carry.sql": "1b22ec6b390835fdca4ec560d251e418ea35c8855dfa1a4917d74d9d4d483f09",
+    "apps/api/migrations/169_public_moment_video_carry.down.sql": "642a2cb72bdb968ce1aa14ade37bebd764d4497f6dea790554e82d509f165715",
+    "apps/api/internal/postgres/moment_video_carry_native_test.go": "e228cfe2d24dfcf09243f73420e09b04a611e34d28272a1921f91d30acb0f5ec"
+  },
+  "schema": 169,
+  "marker": "public.birdtie_public_moment_video_carry_contract()='public-moment-video-carry-v1'",
+  "productionBusinessGoOrClientChanged": false,
+  "oldMigrations1Through168Unchanged": true,
+  "oldMigrationFileCount": 311,
+  "nativeTest": "TestPublicMomentVideoCarryNativeExpiredPurgedAndBoundaries",
+  "nativeResult": {
+    "directory": "work/unified-video-carry-native04",
+    "exitCode": 0,
+    "pass": 1,
+    "fail": 0,
+    "skip": 0,
+    "testElapsedSeconds": 3.74
+  },
+  "failureEvidence": [
+    {
+      "directory": "work/unified-video-carry-native01",
+      "schema": 168,
+      "result": "FAIL at expired-stage EDIT commit, source revision unchanged and operation absent; expected old regression reproduction"
+    },
+    {
+      "directory": "work/unified-video-carry-native02",
+      "schema": 169,
+      "result": "FAIL fresh publication, new SQL alias conflict"
+    },
+    {
+      "directory": "work/unified-video-carry-native03",
+      "schema": 169,
+      "result": "FAIL diagnostic scratch only; exact SQLSTATE42702 old.moment_id ambiguous; production Go unchanged"
+    }
+  ],
+  "covered": [
+    "Real FFmpeg canonical video stage + fresh EDIT publication + registered HTTP byte route",
+    "Expired original stage still permits exact current owned video carry during reorder/body EDIT",
+    "Purged original stage and canonical stage still permit exact current owned video carry",
+    "Original Moment ID, like/comment association retained",
+    "Original receipt immutable and same operation replay does not duplicate",
+    "Old URL denied after new revision",
+    "Expired upload cannot authorize new publication",
+    "Cross-owner and cross-Moment carry rejected",
+    "Changed video bytes and extended rights retention rejected",
+    "Previously retired and historical source cannot resurrect",
+    "NULL no-op and explicit full-xid proof mutation rejected",
+    "Full 64-bit retired transaction proof generated only by live-byte retirement"
+  ],
+  "notRun": [
+    "Production deployment",
+    "Phone retry against migrated169",
+    "Full Go/Flutter suites",
+    "Existing public images or video codec matrix",
+    "Migration169 down execution"
+  ],
+  "fix": "Add169 only: fresh stage branch retained; carry sameMoment immediate revision/set, exact immutable digests/metadata/rights-retention, same transaction retirement via full xid8 proof; no historical backfill; restore155 guard before down removes proof column."
+}

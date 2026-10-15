@@ -1,0 +1,31 @@
+{
+  "status": "SOURCE_READY",
+  "atUTC": "2026-10-15T12:39:50.858402+00:00",
+  "files": {
+    "apps/client/lib/src/content/moment_control_pending_store.dart": "aed337c2dfe67e65f0d0340247e694dc4572730f98c981a90537951c6fc8b8b6",
+    "apps/client/test/moment_control_pending_store_test.dart": "cf410521c45db2d2c1dbbff9de319cee1f220556e641ae6c49fe9b9e222c8f7d",
+    "apps/client/test/moment_control_controller_test.dart": "73865d92acfd5ce70bd92cee299e460a37ed3ea0cf4a7d57fe13b39a5ae5427d"
+  },
+  "frameSHA256": "c56a34114a800e7eb5547770cef85f412185cc151f4e45d6011e8559eebcf966",
+  "rootCause": "Media-appended control digest rejected by old durable6tuple reconstruction before any PUT or durable write.",
+  "fix": "Optional closed ordered media selectors and localScope reconstruct exact approved digest; nil oldJSON unchanged; explicit empty separate; no bytes fullrights approval or token.",
+  "test": "work/moment-media-journal01/receipt.json",
+  "testsPassed": 1,
+  "testsSkipped": 0,
+  "analysis": "work/moment-media-journal-analysis01/receipt.json",
+  "analysisErrors": 0,
+  "analysisWarnings": 0,
+  "old167FramesUnchanged": [
+    "work/reference167-client-source-ready.json",
+    "work/reference167-client-source-ready02.json",
+    "work/reference167-source-ready01.json",
+    "work/reference167-source-final01.json"
+  ],
+  "productBackendOrHostChanged": false,
+  "notRun": [
+    "APK10/Web10 build",
+    "real device media publication",
+    "remote effects"
+  ],
+  "recovery": "No invalid durable control record was written by the old first-write validator. Preserve draft and original stage selectors. Original10minute stage deadlines still apply; expired stages require reselect and fresh human rights review."
+}

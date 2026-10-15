@@ -1,0 +1,12 @@
+apps/client/lib\src\legacy\legacy_shell.dart:35:Future<void> _showPublicMomentPhotoEditor(
+apps/client/lib\src\legacy\legacy_shell.dart:92:    builder: (_) => PublicMomentPhotoEditor(
+apps/client/lib\src\legacy\legacy_shell.dart:242:              await _showPublicMomentPhotoEditor(
+apps/client/lib\src\legacy\legacy_shell.dart:261:Future<bool?> showPrivateMomentDraft(
+apps/client/lib\src\legacy\legacy_shell.dart:313:      builder: (_) => _MomentDraftSheet(
+apps/client/lib\src\legacy\legacy_shell.dart:860:  const _MomentDraftSheet({
+apps/client/lib\src\content\moment_publication_controller.dart:29:  MomentPublicationController({
+apps/client/lib\src\content\moment_publication_sheet.dart:8:  const MomentPublicationSheet({
+apps/client/lib\src\workspace\map_workspace.dart:2965:            PublicMomentPhotoEditor(
+apps/client/lib\src\workspace\now_private_moment_image_page.dart:15:  const NowPrivateMomentImagePage({
+apps/client/lib\src\workspace\public_moment_control_page.dart:11:  const PublicMomentControlPage({
+apps/client/lib\src\workspace\public_moment_photo_editor.dart:14:  const PublicMomentPhotoEditor({

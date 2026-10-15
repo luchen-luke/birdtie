@@ -1,0 +1,27 @@
+{
+  "status": "PASS",
+  "sshExitCode": 0,
+  "sshStderrPresent": false,
+  "elapsedSeconds": 16.094,
+  "packageSourceStable": true,
+  "apiWholeSourceStabilityClaimed": false,
+  "remoteScriptSHA256": "44272aefc4bb140d8bc200540d6acd79ca0297ff58a10afbff0f6151b1c46d98",
+  "binarySHA256": "96a83a7917fc2dfadea641088aa751d82322a314067fa317f7224d67c8e4b0c4",
+  "result": {
+    "status": "PASS",
+    "databaseWrites": 0,
+    "httpWrites": 0,
+    "sessionsCreated": 0,
+    "serviceChanges": 0,
+    "sourceOwnerReads": 0,
+    "syntheticFixtureOnly": true,
+    "exitCode": 0,
+    "passed": 2,
+    "failed": 0,
+    "skipped": 0,
+    "testTemporarySourceCreated": true,
+    "actualGoNormalizer": true,
+    "physicalRSSGuardRegression": true,
+    "temporaryArtifactsRemoved": true
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "at": "2026-10-15T16:06:59.978348+00:00",
+  "source": {
+    "lib/src/app/birdtie_app.dart": "78852161e8e6dd2def17cefd1c6c74fc51fbb25a722c3b7184dd0bf0697395e2",
+    "lib/src/workspace/now_moment_editor_host.dart": "fe89778bbd8a6431be2409672564847aa2e119d91441f5c39a7bab0fa1286f36",
+    "lib/src/workspace/public_moment_page.dart": "e4287d5b22b5002e28c73c7aac66fc49e05981105d3aa068ab86c3f963c4caaa",
+    "test/now_moment_editor_host_test.dart": "024c8eba1f6438aaaa5ad4340455aeda03de49d11aa5a4b563241e162dfcddce"
+  },
+  "sourceStable": true,
+  "checks": {
+    "analysis": {
+      "command": [
+        "D:\\DevTools\\flutter\\bin\\cache\\dart-sdk\\bin\\dart.exe",
+        "D:\\DevTools\\flutter\\bin\\cache\\flutter_tools.snapshot",
+        "analyze",
+        "--no-pub",
+        "--no-fatal-infos",
+        "lib/src/app/birdtie_app.dart",
+        "lib/src/workspace/now_moment_editor_host.dart",
+        "lib/src/workspace/public_moment_page.dart",
+        "test/now_moment_editor_host_test.dart"
+      ],
+      "cwd": "D:\\Project\\birdtie\\apps\\client",
+      "exitCode": 0
+    },
+    "direct": {
+      "command": [
+        "D:\\DevTools\\flutter\\bin\\cache\\dart-sdk\\bin\\dart.exe",
+        "D:\\DevTools\\flutter\\bin\\cache\\flutter_tools.snapshot",
+        "test",
+        "--no-pub",
+        "--reporter=json",
+        "test/now_moment_editor_host_test.dart"
+      ],
+      "cwd": "D:\\Project\\birdtie\\apps\\client",
+      "exitCode": 0
+    }
+  }
+}

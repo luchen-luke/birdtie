@@ -1,0 +1,16 @@
+{
+  "status": "PASS_DIRECT_TEST_AND_TARGETED_ANALYSIS",
+  "sourceSHA256": {
+    "apps/client/lib/src/workspace/map_entities.dart": "144dc7fae498677ace2a6b2ea7932a40f3548b17d308e4b6f9c51d23a4aaf0c6",
+    "apps/client/lib/src/workspace/map_layers_api.dart": "a7838da091671a3270316a455f51e64f12da2aae4ce2b4a50826edc45b2d532b",
+    "apps/client/lib/src/workspace/map_media_controller.dart": "58b5e9e6d854e3f105accc294d19d3b927cb00ecc3f33965929805870c218a5f",
+    "apps/client/test/map_media_controller_test.dart": "c4d83250b2effdc3bb3228077452098ad8bcb97760d18e78807eb68329e68d79"
+  },
+  "test": "unified-map-media-client01/receipt.json",
+  "analysis": "unified-map-media-analysis01/receipt.json",
+  "patchSHA256": "8404333e790f939ef3a20a5cdf947db136d5a4c912c679a3071f8688e12b7278",
+  "initialPostApplyByteAssertion": "FAILED_GIT_LINE_ENDING_CONVERSION",
+  "normalizedCandidateTextComparison": "ALL_FOUR_FILES_MATCHED_BEFORE_FORMAT",
+  "actualDevice": "NOT_RUN_NEW_BUILD",
+  "productionDeploy": false
+}

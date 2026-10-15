@@ -1,0 +1,46 @@
+{
+  "status": "SOURCE_READY",
+  "atUTC": "2026-10-15T12:03:46.884737+00:00",
+  "files": {
+    "apps/client/lib/src/content/private_reference_media_view.dart": "b14f09f99263f3240bd7b391720500aba9f978315eeebf00504f7cd036db9cfd",
+    "apps/client/lib/src/workspace/legacy_place_reference_page.dart": "7229527000914e52190dd0b4568c8dc7fdcdb977bede2e0723af77fa61bb6721",
+    "apps/client/lib/src/content/personal_collection_page.dart": "5104fa58da8a0fd0d3b97ec447ebaf32b9ceb82d4548f1f3e0d1a65caa5ae1ae",
+    "apps/client/lib/src/workspace/now_private_moment_image_page.dart": "c17a3a758c9550a242a48986edd14863ab5cdd8e90d0e7e96d757755a6d378f9",
+    "apps/client/lib/src/content/private_moment_media_sheet.dart": "95423f32f822c22ce0f94e8814ad89d19801e9d3d757da5ada1cf64be8715ab4",
+    "apps/client/test/private_reference_media_test.dart": "e190552fccf9f4d0f9f4f40ccf75f661b18bba566a661990e021a0d5a790fcbb"
+  },
+  "frameSHA256": "93f75f7b19dfec90c1e8e035d8534f278029266a6c8039d149e1495ff6b58d57",
+  "validation": {
+    "direct": "work/reference167-client06/receipt.json",
+    "testsPassed": 2,
+    "testsSkipped": 0,
+    "analysis": "work/reference167-analysis02/receipt.json",
+    "analysisErrors": 0,
+    "analysisWarnings": 0,
+    "impeccableDetector": [],
+    "detectorTargets": [
+      "apps/client/lib/src/content/private_reference_media_view.dart",
+      "apps/client/lib/src/workspace/legacy_place_reference_page.dart",
+      "apps/client/lib/src/content/personal_collection_page.dart",
+      "apps/client/lib/src/workspace/now_private_moment_image_page.dart",
+      "apps/client/lib/src/content/private_moment_media_sheet.dart"
+    ]
+  },
+  "firstFailuresRetained": [
+    "work/reference167-client01",
+    "work/reference167-client02",
+    "work/reference167-client03",
+    "work/reference167-client04",
+    "work/reference167-analysis01"
+  ],
+  "wire": "work/reference167-wire.md",
+  "scope": "Session-owned short leased reference images and exact purpose deletion only",
+  "notRun": [
+    "API HTTP real-source acceptance",
+    "device/reference image rendering",
+    "APK/Web build",
+    "deployment"
+  ],
+  "sourceMediaPersistedOnClient": false,
+  "approvalOrTokenInDeleteJournal": false
+}

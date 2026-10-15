@@ -1,0 +1,16 @@
+{
+  "at": "2026-10-15T17:30:47.706674+00:00",
+  "localHead": "1bbf0613b513001447f326225c944c1a1fbd8e8f",
+  "localClean": true,
+  "remoteHeads": [
+    "1bbf0613b513001447f326225c944c1a1fbd8e8f\tHEAD",
+    "1bbf0613b513001447f326225c944c1a1fbd8e8f\trefs/heads/master"
+  ],
+  "specifiedFilesSHA256": {
+    "lib/src/screens/publish_moment_screen.dart": "5d0e4beb98c635aaa6c68b59ed627318bbb5dccfd9c792fc40982ff53261621b",
+    "lib/src/models/moment_publish_draft.dart": "bb9e76ce5bef1614a8fe6e193cdd4e5c6b7017f5d1fe726aea5eb00b8c808773"
+  },
+  "sourceWrites": 0,
+  "runtimeAcceptance": "NOT_RUN",
+  "scope": "Local/GitHub source identity recheck only"
+}

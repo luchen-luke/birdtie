@@ -1,0 +1,19 @@
+{
+  "exitCode": 1,
+  "source": "Exact earlier tool compile result, before fixture repair; no DB ran",
+  "command": [
+    "go",
+    "test",
+    "./internal/postgres",
+    "./internal/httpapi",
+    "-run",
+    "^TestReferenceMediaSyntheticSourceKeepsIndependentPurposes$",
+    "-count=1"
+  ],
+  "diagnostics": [
+    "unused net/http import in new native fixture",
+    "identity.NewToken returns3values; new fixture initially used2",
+    "httpapi.New requires original full dependency signature; new fixture initially used3arguments"
+  ],
+  "resolution": "Only new test fixture corrected. Same synthetic pure Build then passed; no production authentication weakened."
+}

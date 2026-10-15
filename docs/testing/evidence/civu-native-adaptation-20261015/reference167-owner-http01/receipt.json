@@ -1,0 +1,81 @@
+{
+  "status": "PASS",
+  "remoteScriptSHA256": "d2c8fc5da0da6910a13896bab3ee0a9d769a399855af2017f23f85289a7a8421",
+  "privateValuesPersisted": false,
+  "exitCode": 0,
+  "stderrPresent": false,
+  "result": {
+    "status": "PASS",
+    "devOnly": true,
+    "productionIdentityVerified": false,
+    "productionPhoneVerification": false,
+    "fixedCodeUsed": true,
+    "sourceWrites": 0,
+    "databaseDirectWrites": 0,
+    "remoteConfigurationChanged": false,
+    "agentActivationRequested": false,
+    "oldSessionAccepted": false,
+    "messagesSent": 0,
+    "privateValuesPersisted": false,
+    "allCreatedSessionsLoggedOut": true,
+    "execution": "ROOT_REVIEWED_CANDIDATE_ONLY",
+    "startedAtUTC": "2026-10-15T12:42:43Z",
+    "realOwnerWrites": "LOGIN_LOGOUT_ONLY",
+    "contentWrites": 0,
+    "otherOriginalOwnerLogins": 0,
+    "full167ReconciliationRepeated": false,
+    "mediaRead": "PASS",
+    "selectedOwnerNativeActiveReferenceRelations": {
+      "PLACE": 23,
+      "JOURNEY": 0,
+      "MOMENT": 0
+    },
+    "relationCountsScope": "NATIVE_ACTIVE_PURPOSE_RELATIONS_NOT_CURRENT_HTTP_READABILITY",
+    "selectedOwnerNativeTargets": {
+      "PLACE": 19,
+      "JOURNEY": 0,
+      "MOMENT": 0
+    },
+    "selectedOwnerReusedReferenceRelations": 0,
+    "sourceOwnerBoundariesMatched": true,
+    "selectedTargets": {
+      "PLACE": {
+        "candidateTargetsExamined": 2,
+        "positiveTargets": 2
+      },
+      "JOURNEY": {
+        "candidateTargetsExamined": 0,
+        "positiveTargets": 0
+      },
+      "MOMENT": {
+        "candidateTargetsExamined": 0,
+        "positiveTargets": 0
+      }
+    },
+    "contentReadsByPurpose": {
+      "PLACE": 2,
+      "JOURNEY": 0,
+      "MOMENT": 0
+    },
+    "purposeCoverage": {
+      "PLACE": "PASS",
+      "JOURNEY": "NOT_RUN_FOR_SELECTED_OWNER",
+      "MOMENT": "NOT_RUN_FOR_SELECTED_OWNER"
+    },
+    "exactContentReads": 2,
+    "exactContentBytes": 3259708,
+    "sampledSourceReviewStates": {
+      "approved": 2
+    },
+    "anonymousPrivateContentDenied": 2,
+    "ownerIsolationProbes": 2,
+    "importedReferenceStateUnchanged": true,
+    "ownerEnrollmentUnchanged": true,
+    "allImportedAgentsRemainSuspended": true,
+    "defaultTLSValidated": true,
+    "createdSessions": 1,
+    "sessionCleanupSemantics": "REVOKED_AND_REJECTED_401_AUTH_AUDIT_ROW_RETAINED",
+    "originalInputsUnchanged": true,
+    "completedAtUTC": "2026-10-15T12:42:44Z"
+  }
+}

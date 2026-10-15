@@ -10,25 +10,28 @@ import '../city/public_city_controller.dart';
 import '../city/exploration_city_store.dart';
 import '../content/private_moment_controller.dart';
 import '../workspace/map_workspace.dart';
+import '../workspace/now_moment_editor_host.dart';
 import 'birdtie_surfaces.dart';
 
 class BirdtieApp extends StatelessWidget {
   const BirdtieApp({super.key});
 
   @override
-  Widget build(BuildContext context) => MaterialApp(
-    title: 'Birdtie',
-    debugShowCheckedModeBanner: false,
-    locale: const Locale('zh', 'CN'),
-    supportedLocales: const [Locale('zh', 'CN')],
-    localizationsDelegates: const [
-      GlobalMaterialLocalizations.delegate,
-      GlobalWidgetsLocalizations.delegate,
-      GlobalCupertinoLocalizations.delegate,
-    ],
-    theme: birdtieTheme(Brightness.light),
-    darkTheme: birdtieTheme(Brightness.dark),
-    home: const BirdtieShell(),
+  Widget build(BuildContext context) => NowMomentEditorScope(
+    child: MaterialApp(
+      title: 'Birdtie',
+      debugShowCheckedModeBanner: false,
+      locale: const Locale('zh', 'CN'),
+      supportedLocales: const [Locale('zh', 'CN')],
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      theme: birdtieTheme(Brightness.light),
+      darkTheme: birdtieTheme(Brightness.dark),
+      home: const BirdtieShell(),
+    ),
   );
 }
 

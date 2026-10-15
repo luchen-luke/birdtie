@@ -1,0 +1,21 @@
+Analyzing 3 items...                                            
+
+   info - Statements in an if should be enclosed in a block. Try wrapping the statement in a block - lib\src\legacy\legacy_shell.dart:230:7 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block. Try wrapping the statement in a block - lib\src\legacy\legacy_shell.dart:232:7 - curly_braces_in_flow_control_structures
+   info - Don't use 'BuildContext's across async gaps. Try rewriting the code to not use the 'BuildContext', or guard the use with a 'mounted' check - lib\src\legacy\legacy_shell.dart:303:36 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps. Try rewriting the code to not use the 'BuildContext', or guard the use with a 'mounted' check - lib\src\legacy\legacy_shell.dart:307:33 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps. Try rewriting the code to not use the 'BuildContext', or guard the use with a 'mounted' check - lib\src\legacy\legacy_shell.dart:308:46 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps. Try rewriting the code to not use the 'BuildContext', or guard the use with a 'mounted' check - lib\src\legacy\legacy_shell.dart:310:9 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps. Try rewriting the code to not use the 'BuildContext', or guard the use with a 'mounted' check - lib\src\legacy\legacy_shell.dart:311:9 - use_build_context_synchronously
+   info - Statements in an if should be enclosed in a block. Try wrapping the statement in a block - lib\src\legacy\legacy_shell.dart:381:7 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block. Try wrapping the statement in a block - lib\src\legacy\legacy_shell.dart:1001:13 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block. Try wrapping the statement in a block - lib\src\legacy\legacy_shell.dart:1017:7 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block. Try wrapping the statement in a block - lib\src\legacy\legacy_shell.dart:1047:7 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block. Try wrapping the statement in a block - lib\src\legacy\legacy_shell.dart:1063:11 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block. Try wrapping the statement in a block - lib\src\legacy\legacy_shell.dart:1073:7 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block. Try wrapping the statement in a block - lib\src\legacy\legacy_shell.dart:1445:7 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block. Try wrapping the statement in a block - lib\src\legacy\legacy_shell.dart:2057:21 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block. Try wrapping the statement in a block - lib\src\legacy\legacy_shell.dart:2380:41 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block. Try wrapping the statement in a block - lib\src\legacy\legacy_shell.dart:2390:31 - curly_braces_in_flow_control_structures
+   info - Use an initializing formal to assign a parameter to a field. Try using an initialing formal ('this.momentID') to initialize the field - lib\src\workspace\now_moment_editor_host.dart:14:8 - prefer_initializing_formals
+

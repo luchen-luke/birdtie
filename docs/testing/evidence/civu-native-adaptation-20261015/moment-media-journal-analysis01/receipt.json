@@ -1,0 +1,24 @@
+{
+  "command": [
+    "D:/DevTools/flutter/bin/dart.bat",
+    "analyze",
+    "lib/src/content/moment_control_pending_store.dart",
+    "test/moment_control_pending_store_test.dart",
+    "test/moment_control_controller_test.dart"
+  ],
+  "cwd": "D:\\Project\\birdtie\\apps\\client",
+  "startedUTC": "2026-10-15T12:38:08.139247+00:00",
+  "exitCode": 0,
+  "sourceBefore": {
+    "lib/src/content/moment_control_pending_store.dart": "aed337c2dfe67e65f0d0340247e694dc4572730f98c981a90537951c6fc8b8b6",
+    "test/moment_control_pending_store_test.dart": "cf410521c45db2d2c1dbbff9de319cee1f220556e641ae6c49fe9b9e222c8f7d",
+    "test/moment_control_controller_test.dart": "73865d92acfd5ce70bd92cee299e460a37ed3ea0cf4a7d57fe13b39a5ae5427d"
+  },
+  "sourceAfter": {
+    "lib/src/content/moment_control_pending_store.dart": "aed337c2dfe67e65f0d0340247e694dc4572730f98c981a90537951c6fc8b8b6",
+    "test/moment_control_pending_store_test.dart": "cf410521c45db2d2c1dbbff9de319cee1f220556e641ae6c49fe9b9e222c8f7d",
+    "test/moment_control_controller_test.dart": "73865d92acfd5ce70bd92cee299e460a37ed3ea0cf4a7d57fe13b39a5ae5427d"
+  },
+  "sourceStable": true,
+  "scope": "single direct regression for durable atomic media journal; no build/device/remote action"
+}

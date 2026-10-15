@@ -9,8 +9,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../city/public_city_controller.dart';
 import '../config/birdtie_environment.dart';
-import '../content/moment_publication_controller.dart';
-import '../content/moment_publication_sheet.dart';
+import 'now_moment_editor_host.dart';
 import 'connections.dart';
 import 'support_page.dart';
 import 'human_causal_operation_controller.dart';
@@ -89,7 +88,6 @@ class _PlaceDetailSheetState extends State<PlaceDetailSheet> {
   bool _connectionRetired = false;
   late PlaceHistoryController _history;
   late VerifiedBookingController _booking;
-  MomentPublicationController? _publicationController;
   int _ownMomentRequest = 0;
   int _identityEpoch = 0;
   final _reportSource = HumanCausalSourceSerial();
@@ -239,7 +237,6 @@ class _PlaceDetailSheetState extends State<PlaceDetailSheet> {
       _identityEpoch++;
       _ownMomentRequest++;
       _workspaceChanges?.removeListener(_identityChanged);
-      _publicationController?.invalidate(deferNotification: true);
       _history.invalidate(notify: false);
       _booking.invalidate(notify: false);
       _place = null;
@@ -255,7 +252,6 @@ class _PlaceDetailSheetState extends State<PlaceDetailSheet> {
       _identityEpoch++;
       _privateEntryChanges.value++;
       _ownMomentRequest++;
-      _publicationController?.invalidate(deferNotification: true);
       _history.dispose();
       _booking.dispose();
       _createHistory();
@@ -283,7 +279,6 @@ class _PlaceDetailSheetState extends State<PlaceDetailSheet> {
     _identityEpoch++;
     _privateEntryChanges.value++;
     _ownMomentRequest++;
-    _publicationController?.invalidate(deferNotification: true);
     _history.invalidate(notify: rebuild);
     _booking.invalidate(notify: rebuild);
     _ownMoments = const [];
@@ -596,51 +591,40 @@ class _PlaceDetailSheetState extends State<PlaceDetailSheet> {
     }
   }
 
-  Future<void> _publication(Map<String, dynamic> moment) async {
-    if (_connectionRetired) return;
+  Future<void> _openMomentInNow(Map<String, dynamic> moment) async {
     final frame = _frame();
-    final target = widget.placeID;
-    final token = widget.authorizationHeader();
-    final id = moment['id'];
-    if (token == null ||
+    final capability = NowMomentEditorScope.maybeOf(context);
+    final id = moment['id'], owner = frame.owner, token = frame.token;
+    if (!_current(frame) ||
+        capability == null ||
+        owner == null ||
+        token == null ||
         frame.workspace != null ||
         token != _momentsToken ||
         id is! String ||
         moment['revision'] is! int ||
-        moment['placeId'] != widget.placeID) {
+        moment['placeId'] != frame.place)
       return;
-    }
-    final withdrawal =
-        moment['status'] == 'published' && moment['visibility'] == 'public';
-    final controller = MomentPublicationController(
-      momentID: id,
-      placeID: widget.placeID,
-      authorizationHeader: () => widget.authorizationHeader(),
-      organizationWorkspaceID: () => widget.organizationWorkspaceID?.call(),
-      client: _client,
-      apiBaseUrl: widget.apiBaseUrl,
+    final request = _ownMomentRequest;
+    bool current() =>
+        _current(frame) &&
+        request == _ownMomentRequest &&
+        _momentsToken == token &&
+        _ownMoments.contains(moment);
+    final opened = await capability.open(
+      NowMomentEditorRequest(
+        momentID: id,
+        ownerID: owner,
+        authorizationHeader: token,
+        apiBaseUrl: _base,
+        sourceCurrent: current,
+      ),
     );
-    _publicationController = controller;
-    try {
-      await showModalBottomSheet<bool>(
-        context: context,
-        isScrollControlled: true,
-        useSafeArea: true,
-        builder: (_) => MomentPublicationSheet(
-          controller: controller,
-          withdrawal: withdrawal,
-        ),
+    if (!mounted) return;
+    if (!opened && current()) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('当前身份、来源或草稿状态已变化，请回到 Now 重新打开。')),
       );
-      if (_current(frame) &&
-          widget.authorizationHeader() == token &&
-          widget.placeID == target) {
-        await Future.wait([_loadOwnMoments(token), _history.refresh()]);
-      }
-    } finally {
-      if (identical(_publicationController, controller)) {
-        _publicationController = null;
-      }
-      controller.dispose();
     }
   }
 
@@ -1289,6 +1273,9 @@ class _PlaceDetailSheetState extends State<PlaceDetailSheet> {
                   const SizedBox(height: 16),
                   Text('我关联这里的记录', style: tokens.placeTitle),
                   Text('私人草稿仅自己可见，不会随地点分享。明确公开的记录可撤回。', style: tokens.metadata),
+                  if (NowMomentEditorScope.maybeOf(context) == null ||
+                      widget.ownerID?.call() == null)
+                    Text('请回到 Now 首页编辑或撤回动态。', style: tokens.metadata),
                   if (!ownMomentVisible)
                     Text('登录状态已变化，请重新打开地点。', style: tokens.body),
                   if (ownMomentVisible && !_ownMomentsAvailable)
@@ -1340,11 +1327,16 @@ class _PlaceDetailSheetState extends State<PlaceDetailSheet> {
                                         moment['visibility'] == 'public'))
                             ? TextButton(
                                 style: textActionStyle,
-                                onPressed: () => _publication(moment),
+                                onPressed:
+                                    NowMomentEditorScope.maybeOf(context) ==
+                                            null ||
+                                        widget.ownerID?.call() == null
+                                    ? null
+                                    : () => _openMomentInNow(moment),
                                 child: Text(
                                   moment['status'] == 'published'
-                                      ? '撤回公开'
-                                      : '查看公开预览',
+                                      ? '修改或撤回'
+                                      : '编辑并检查公开',
                                 ),
                               )
                             : null,

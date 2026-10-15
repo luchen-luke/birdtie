@@ -1,4 +1,10 @@
+import 'dart:async';
 import 'dart:convert';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:birdtie_client/src/workspace/public_moment_page.dart';
+import 'package:birdtie_client/src/workspace/moment_interaction.dart';
+import 'public_moment_api_test.dart' show publicMomentV3Data;
+import 'entity_cover_test.dart' show coverSettle;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -34,7 +40,13 @@ Map<String, Object?> preview(
 ) {
   final requested = MomentThreadInput(
     operationID: input['operationId'],
-    action: 'CREATE_PUBLISH',
+    action: input['action'],
+    threadID: input['threadId'],
+    baseMomentID: input['baseMomentId'] as String? ?? '',
+    expectedVersion: input['expectedVersion'],
+    removedItems: (input['removedItems'] as List? ?? const [])
+        .map((v) => Map<String, Object>.from(v))
+        .toList(),
     localScope: input['localScope'],
     entries: c.entries,
   );
@@ -51,11 +63,15 @@ Map<String, Object?> preview(
     'sourceVersion': source,
     'members': [],
     'materials': [for (final _ in c.entries) []],
+    if (requested.action == 'EDIT')
+      'preservedMedia': [for (final _ in c.entries) null],
+    if (c.entries.any((entry) => entry.locations != null))
+      'locations': [for (final _ in c.entries) []],
     'contexts': [
       for (final entry in c.entries)
         {
           'cityId': entry.cityID,
-          'cityName': '阿伯丁',
+          'cityName': entry.cityID.isEmpty ? '' : '阿伯丁',
           'placeId': entry.placeID,
           'placeName': '',
         },
@@ -64,7 +80,9 @@ Map<String, Object?> preview(
 }
 
 Map<String, Object?> receipt(MomentThreadPending original) => {
-  'schemaVersion': 'moment-thread-operation-v1',
+  'schemaVersion': original.action == 'EDIT'
+      ? 'moment-thread-operation-v2'
+      : 'moment-thread-operation-v1',
   'operationId': original.operationID,
   'status': 'SUCCEEDED',
   'action': original.action,
@@ -74,6 +92,7 @@ Map<String, Object?> receipt(MomentThreadPending original) => {
   'expectedVersion': 0,
   'appliedVersion': 1,
   'payloadDigest': original.digest,
+  if (original.action == 'EDIT') 'removedMembers': [],
   'members': [
     for (var i = 0; i < 2; i++)
       {
@@ -89,6 +108,298 @@ Map<String, Object?> receipt(MomentThreadPending original) => {
 };
 
 void main() {
+  testWidgets('整串撤回批准经公开详情能力及祖先重建仍提交一次且身份变化退休', (t) async {
+    FlutterSecureStorage.setMockInitialValues({});
+    final capability = Completer<http.Response>();
+    final identity = ValueNotifier(owner);
+    var puts = 0, threadReads = 0;
+    late StateSetter rebuild;
+    List<Map<String, Object?>> members(String status, int revision) => [
+      for (var i = 0; i < 2; i++)
+        {
+          'momentId': i == 0 ? firstID : secondID,
+          'status': status,
+          'position': i,
+          'appliedRevision': revision,
+          'mediaSetVersion': 0,
+          'media': [],
+        },
+    ];
+    final client = MockClient((request) async {
+      final path = request.url.path;
+      if (path.endsWith('/public-photo')) return capability.future;
+      if (path == '/v1/moments/$firstID') {
+        return response({...publicMomentV3Data(photo: false), 'id': firstID});
+      }
+      if (path == '/v1/moments/$firstID/thread' ||
+          path == '/v1/moment-threads/$threadID') {
+        threadReads++;
+        return response({
+          'schemaVersion': 'moment-thread-view-v1',
+          'threadId': threadID,
+          'rootMomentId': firstID,
+          'audience': 'PUBLIC',
+          'version': 1,
+          'canWithdraw': true,
+          'sourceVersion': source,
+          'observedAt': momentUTC(DateTime.now().toUtc()),
+          'validUntil': momentUTC(
+            DateTime.now().toUtc().add(const Duration(seconds: 30)),
+          ),
+          'members': [
+            for (var i = 0; i < 2; i++)
+              {
+                'position': i,
+                'momentId': i == 0 ? firstID : secondID,
+                'revision': 2,
+                'status': 'AVAILABLE',
+              },
+          ],
+        });
+      }
+      if (path == '/v1/me/moment-threads/previews' || request.method == 'PUT') {
+        final raw = jsonDecode(request.body) as Map<String, dynamic>;
+        final input = MomentThreadInput(
+          operationID: raw['operationId'],
+          action: raw['action'],
+          threadID: raw['threadId'],
+          expectedVersion: raw['expectedVersion'],
+        );
+        expect(raw['localScope'], '');
+        expect(raw['items'], isEmpty);
+        if (request.method == 'PUT') {
+          puts++;
+          expect(raw['sourceVersion'], source);
+          expect(raw['approval'], 'hw1.synthetic-withdraw');
+          return response({
+            'schemaVersion': 'moment-thread-operation-v1',
+            'operationId': input.operationID,
+            'status': 'SUCCEEDED',
+            'action': 'WITHDRAW',
+            'threadId': threadID,
+            'rootMomentId': firstID,
+            'audience': 'PUBLIC',
+            'expectedVersion': 1,
+            'appliedVersion': 2,
+            'payloadDigest': input.digest,
+            'members': members('withdrawn', 3),
+            'committedAt': momentUTC(DateTime.now().toUtc()),
+          });
+        }
+        return response({
+          'operationId': input.operationID,
+          'action': 'WITHDRAW',
+          'payloadDigest': input.digest,
+          'observedAt': momentUTC(DateTime.now().toUtc()),
+          'expiresAt': momentUTC(
+            DateTime.now().toUtc().add(const Duration(seconds: 30)),
+          ),
+          'approval': 'hw1.synthetic-withdraw',
+          'input': raw,
+          'sourceVersion': source,
+          'members': members('published', 2),
+          'materials': [],
+          'contexts': [],
+          'locations': [],
+        });
+      }
+      return http.Response('{}', 404);
+    });
+    await t.pumpWidget(
+      MaterialApp(
+        home: StatefulBuilder(
+          builder: (context, setState) {
+            rebuild = setState;
+            return PublicMomentPage(
+              momentID: firstID,
+              authorizationHeader: () => 'Bearer synthetic',
+              ownerID: () => identity.value,
+              identityChanges: identity,
+              client: client,
+              apiBaseUrl: 'https://birdtie.example',
+            );
+          },
+        ),
+      ),
+    );
+    await coverSettle(t);
+    final api = t
+        .widget<MomentThreadSidecar>(find.byType(MomentThreadSidecar))
+        .api;
+    await t.ensureVisible(find.text('预览撤回整串'));
+    await t.tap(find.text('预览撤回整串'));
+    await coverSettle(t);
+    expect(find.text('确认撤回整串'), findsOneWidget);
+    final control = t
+        .widget<MomentThreadPanel>(find.byType(MomentThreadPanel))
+        .controller;
+    final approved = control.previewValue;
+    final readsBefore = threadReads;
+    capability.complete(http.Response('{}', 404));
+    await coverSettle(t);
+    rebuild(() {});
+    await coverSettle(t);
+    expect(
+      identical(
+        t.widget<MomentThreadSidecar>(find.byType(MomentThreadSidecar)).api,
+        api,
+      ),
+      true,
+    );
+    expect(
+      identical(
+        t.widget<MomentThreadPanel>(find.byType(MomentThreadPanel)).controller,
+        control,
+      ),
+      true,
+    );
+    expect(identical(control.previewValue, approved), true);
+    expect(control.uncertain, false);
+    expect(threadReads, readsBefore);
+    await t.ensureVisible(find.text('确认撤回整串'));
+    await t.tap(find.text('确认撤回整串'));
+    await coverSettle(t);
+    expect(puts, 1);
+    expect(find.text('整串已撤回，不再公开显示。'), findsOneWidget);
+    expect(find.text('中文公开正文'), findsNothing);
+    expect(find.byType(MomentThreadSidecar), findsNothing);
+    expect(find.byType(MomentInteractionPanel), findsNothing);
+    expect(find.byType(Image), findsNothing);
+    expect(find.byType(RawImage), findsNothing);
+    expect(api.current(), false);
+    expect(control.current, false);
+    expect((await control.journal.load(owner, api.origin))?.pending, isNull);
+    identity.value = secondID;
+    await coverSettle(t);
+    expect(api.current(), false);
+    expect(puts, 1);
+    await t.pumpWidget(const SizedBox());
+    identity.dispose();
+    client.close();
+  });
+
+  test('真实Go字段顺序的无位置串文预览保留批准摘要并拒绝内容篡改', () async {
+    final values = <String, String>{};
+    var previews = 0, puts = 0;
+    late MomentThreadController controller;
+    Map<String, dynamic>? returned;
+    final client = MockClient((request) async {
+      if (request.method == 'PUT') puts++;
+      expect(request.method, 'POST');
+      expect(request.url.path, '/v1/me/moment-threads/previews');
+      previews++;
+      final submitted = jsonDecode(request.body) as Map<String, dynamic>;
+      final items = submitted['items'] as List;
+      expect(
+        (items[0]['input'] as Map)['body'],
+        'QA-device11-thread-first-20261015',
+      );
+      expect(
+        (items[1]['input'] as Map)['body'],
+        'QA-device11-thread-second-20261015',
+      );
+      final wire = preview(controller, submitted);
+      wire['input'] = {
+        'operationId': submitted['operationId'],
+        'action': submitted['action'],
+        'threadId': submitted['threadId'],
+        'localScope': submitted['localScope'],
+        'audience': submitted['audience'],
+        'expectedVersion': submitted['expectedVersion'],
+        'baseMomentId': submitted['baseMomentId'],
+        'removedItems': submitted['removedItems'],
+        'items': [
+          for (final item in items)
+            {
+              'momentId': item['momentId'],
+              'expectedRevision': item['expectedRevision'],
+              'restore': item['restore'],
+              // Match Go's MomentInput struct order, including explicit [].
+              'input': {
+                'locations': item['input']['locations'],
+                'cityId': item['input']['cityId'],
+                'placeId': item['input']['placeId'],
+                'title': item['input']['title'],
+                'body': item['input']['body'],
+                'occurredAt': item['input']['occurredAt'],
+                'timePrecision': item['input']['timePrecision'],
+                'locationPrecision': item['input']['locationPrecision'],
+              },
+              'media': item['media'],
+            },
+        ],
+      };
+      wire['contexts'] = [
+        for (final _ in items)
+          {'cityId': '', 'cityName': '', 'placeId': '', 'placeName': ''},
+      ];
+      wire['locations'] = [for (final _ in items) []];
+      returned = jsonDecode(jsonEncode(wire)) as Map<String, dynamic>;
+      return response(wire);
+    });
+    final api = MomentThreadAPI(
+      client: client,
+      baseUrl: 'https://birdtie.example',
+      authorizationHeader: () => 'Bearer synthetic',
+      current: () => true,
+    );
+    final store = journal(values);
+    controller = MomentThreadController(
+      api: api,
+      ownerID: owner,
+      journal: store,
+    );
+    await controller.begin(initialText: 'QA-device11-thread-first-20261015\n');
+    controller.addEntry();
+    controller.selectEntry(1);
+    controller.updateActiveText('QA-device11-thread-second-20261015\n');
+    await controller.preview();
+    final approved = controller.previewValue;
+    expect(approved, isNotNull, reason: controller.notice);
+    expect(controller.entries.first.text.endsWith('\n'), true);
+    expect(
+      approved!.input.entries.every((entry) => entry.cityID.isEmpty),
+      true,
+    );
+    expect(
+      approved.input.entries.every((entry) => entry.locations!.isEmpty),
+      true,
+    );
+    expect(returned!['payloadDigest'], approved.input.digest);
+    expect(
+      momentHash(returned!['input']),
+      isNot(momentHash(approved.input.toJson())),
+    );
+    expect((await store.load(owner, api.origin))!.pending!.stage, 'PREPARED');
+
+    Map<String, dynamic> changed() =>
+        jsonDecode(jsonEncode(returned)) as Map<String, dynamic>;
+    final changedBody = changed();
+    changedBody['input']['items'][0]['input']['body'] = '另一版正文';
+    final changedOrder = changed();
+    changedOrder['input']['items'] = (changedOrder['input']['items'] as List)
+        .reversed
+        .toList();
+    final omittedLocations = changed();
+    (omittedLocations['input']['items'][0]['input'] as Map).remove('locations');
+    final extraField = changed();
+    extraField['input']['items'][0]['input']['unapprovedField'] = true;
+    for (final tampered in [
+      changedBody,
+      changedOrder,
+      omittedLocations,
+      extraField,
+    ]) {
+      expect(
+        () => MomentThreadPreview.decode(tampered, approved.input),
+        throwsFormatException,
+      );
+    }
+    expect(previews, 1);
+    expect(puts, 0);
+    controller.dispose();
+    client.close();
+  });
   test('optional thread keeps a selected Place without a compulsory City', () {
     final place = MomentThreadDraftEntry(
       localID: firstID,
@@ -290,6 +601,7 @@ void main() {
         journal: journal(values),
       );
       await c.begin(cityID: 'aberdeen-gb', initialText: '第一条正文');
+      c.addEntry();
       c.selectEntry(1);
       c.updateActiveText('第二条独立正文');
       c.selectEntry(0);
@@ -360,6 +672,7 @@ void main() {
       );
       c = MomentThreadController(api: api, ownerID: owner, journal: store);
       await c.begin(cityID: 'aberdeen-gb', initialText: '第一条');
+      c.addEntry();
       c.selectEntry(1);
       c.updateActiveText('第二条');
       await c.preview();
@@ -390,7 +703,11 @@ void main() {
         firstID,
         secondID,
       ]);
-      expect(restored.entries, isEmpty);
+      expect(restored.entries.map((entry) => entry.momentID), [
+        firstID,
+        secondID,
+      ]);
+      expect(restored.entries.every((entry) => entry.preserveMedia), isTrue);
       expect((await store.load(owner, api.origin))!.pending, isNull);
       restored.dispose();
     },
@@ -416,18 +733,15 @@ void main() {
         journal: journal(values),
       );
       await c.begin(cityID: 'aberdeen-gb');
-      for (var i = 0; i < 20; i++) {
-        if (i >= c.entries.length) {
-          c.addEntry();
-        }
-        c.selectEntry(i);
-        c.updateActiveText(List.filled(1000, 'x').join());
-      }
-      await c.preview();
+      c.updateActiveText(
+        List.filled(momentThreadJournalMaxBytes + 1, 'x').join(),
+      );
+      await c.saveLocal();
       expect(requests, 0);
-      expect(c.entries.length, 20);
-      expect(c.activeText.length, 1000);
-      expect(c.notice, contains('16KiB'));
+      expect(c.entries.length, 1);
+      expect(c.activeText.length, momentThreadJournalMaxBytes + 1);
+      expect(c.unsavedDraft, isTrue);
+      expect(c.notice, contains('尚未保存到本机'));
       c.dispose();
       var valid = true, puts = 0;
       late MomentThreadController other;
@@ -448,6 +762,7 @@ void main() {
         journal: journal(<String, String>{}),
       );
       await other.begin(cityID: 'aberdeen-gb', initialText: '第一条');
+      other.addEntry();
       other.selectEntry(1);
       other.updateActiveText('第二条');
       await other.preview();

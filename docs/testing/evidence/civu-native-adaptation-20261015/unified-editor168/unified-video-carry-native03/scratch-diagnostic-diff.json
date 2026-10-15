@@ -1,0 +1,7 @@
+{
+  "path": "C:\\Users\\chens\\Documents\\Codex\\2026-10-15\\d-project-birdtie-docs-reports-birdtie-2\\work\\unified-video-carry-native03\\api\\internal\\postgres\\moment_media.go",
+  "productionUnchanged": true,
+  "before": "79abb2856f64f27a16da79ee9ea76c6eb7f9f5e546c4733b3c1032c3e5129e14",
+  "after": "4fcc9162fd7bf136808c9da7c4a983fdf9fec1b79081196c66aa017969eb5776",
+  "change": "Only print pg error string on video INSERT failure; no values or bytes; scratch only"
+}

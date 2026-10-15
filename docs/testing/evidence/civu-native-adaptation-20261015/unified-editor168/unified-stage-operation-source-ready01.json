@@ -1,0 +1,45 @@
+{
+  "schema": "birdtie-unified-stage-operation-fix-source-v1",
+  "at": "2026-10-15T16:59:40.972383+00:00",
+  "status": "SOURCE_READY",
+  "files": {
+    "apps/client/lib/src/workspace/map_workspace.dart": "11c715a13e948863d4ea98ca4105c9832d3e7d1471ebfbf984ca542823549102",
+    "apps/client/lib/src/workspace/moment_thread_controller.dart": "2b5c147dfbe2581742587b786b686d6ada0db829470e6091101a0946dc47be42",
+    "apps/client/lib/src/workspace/moment_thread_api.dart": "f8aa8f40e9b5a805cd672b0011731f54c30504cdac1492f089cd7e88a70731de",
+    "apps/client/test/unified_moment_composer_test.dart": "cb48b6caa1589afc550341530ba93f1abd1d00d5e5216a10f85f2b340783ad9c"
+  },
+  "sourceFrameSHA256": "f7f384b3425d93fa01497d77ea10970784cfd33f3d927892f950a2fb294934d9",
+  "rootCause": "STOPPED replacement rotates operationID without selectionRevision; host journal watched selection only",
+  "implementation": [
+    "Host synchronizes actual operation-ID changes using only previously selected IDs as replacements; genuine missing references remain",
+    "Successful preparation callback persists current operation selectors",
+    "Private draft reader preserves bounded historical conflicts up to 18 unique selectors without discarding text, titles, locations or stable Moment IDs",
+    "Conflicting recovery selectors cannot enter EDIT approval; new writes reject invalid media groups until explicit removal"
+  ],
+  "direct": {
+    "path": "work/unified-moment-composer-stop05/receipt.json",
+    "exitCode": 0,
+    "passed": 1,
+    "sourceStable": true,
+    "actualNowHost": true,
+    "actualVideoCodecRun": false,
+    "fixtureTimeoutsPreserved": [
+      "work/unified-moment-composer-stop01",
+      "work/unified-moment-composer-stop02",
+      "work/unified-moment-composer-stop03",
+      "work/unified-moment-composer-stop04"
+    ]
+  },
+  "analysis": {
+    "path": "work/unified-stage-operation-analysis03/receipt.json",
+    "exitCode": 0,
+    "errors": 0,
+    "warnings": 0
+  },
+  "oldAPK18Recovery": "Keep every conflicting selector; explicitly remove stopped or unneeded placeholders, re-confirm stage use rights, prepare current material. No automatic equivalence guess or upload replay. Original stage deadline remains unchanged.",
+  "serverChanges": false,
+  "buildRunByWorker": false,
+  "deviceRunByWorker": false,
+  "sharedQueueOrReportsChanged": false,
+  "olderSourceFramesPreserved": true
+}

@@ -1,0 +1,61 @@
+{
+  "at": "2026-10-15T17:26:11.945572+00:00",
+  "status": "IN_PROGRESS_REAL_PUBLISHED_VIDEO_CARRY_DEFECT",
+  "schema": 168,
+  "apiRelease": "/opt/birdtie/releases/social168-20261015-build18",
+  "webRelease": "/opt/birdtie/web/releases/public-20261015-final-web19",
+  "webManifestSHA256": "75681093f618f62360d9b85f13167eea03c1e3fcaaf7d1e6c5ad73367e6d93ef",
+  "apkSHA256": "89bfeaf52fdbd754468e8009ff22708558ed49ba901a8449faf99519f48f8f3a",
+  "installed": true,
+  "clientSourceStable": true,
+  "actualDevice": [
+    "APK19 old three entries/body/explicit locations/order preserved after upgrade",
+    "Expired video and unresolved old reference explicitly removed; other content preserved",
+    "APK19 network interruption creates UNKNOWN; original GET absent; explicit STOP; same chosen material replacement succeeds; three-entry preview enabled",
+    "Three mixed entries explicitly published; original image Moment ID and media ID retained; original image body/title/location empty",
+    "Actual Now embedded published video play button becomes pause; changing self-generated frames visually inspected"
+  ],
+  "publishedThreadVersion": 3,
+  "publishedOrder": [
+    "4ef5b105-9152-4a8c-98e0-b445b1153ef8",
+    "96e29d12-2a35-47e3-aeb3-75a8425542f5",
+    "fbcdd365-b5af-4b1c-b4e7-d83b696cb538"
+  ],
+  "failure": "Later preserve-video EDIT and reorder did not commit after canonical source stage expired. Exact source stage expired 48.374 seconds before confirmation; actual public payload still valid; deployed155 guard requires current stage. No SQL exception text captured. Original operation GET absent; draft preserved, no new operation auto-submitted. New169 migration under repair, NOT_DEPLOYED.",
+  "evidence": "qa03-readbacks19-01/archive-receipt.json",
+  "sourceWritesToCivu": 0,
+  "fullDeviceAcceptance": "NOT_COMPLETE",
+  "remaining": [
+    "Deploy minimal169 carry fix after targeted regression",
+    "Retry original preserved edit after explicit STOP/new approval",
+    "Read back published sort/edit then single-item removal and whole withdrawal",
+    "Clean only QA fixtures; final GitHub commit/push"
+  ],
+  "screenshots": [
+    {
+      "localFilename": "apk19-failed-video-retry-ready01.png",
+      "sha256": "d5414aaa479bc2949943b0738b96db518f7f3d4b4225d4a04bc2f40b7a7bbb5f",
+      "mediaInGit": false
+    },
+    {
+      "localFilename": "apk19-mixed-three-preview01-top.png",
+      "sha256": "6a1b7745db0c19ea756667efb9ec8a2398ca05268878d17344641a82a84a11e1",
+      "mediaInGit": false
+    },
+    {
+      "localFilename": "apk19-mixed-three-preview01.png",
+      "sha256": "b8bbb18b5a6fb25b76829ec32f652bc4092dbaaac4d139b62ea5096dcbc0f080",
+      "mediaInGit": false
+    },
+    {
+      "localFilename": "apk19-now-video-playing04.png",
+      "sha256": "904ef8621c40ca9d7d3d5be7444f00534c2492f70ffd9fa260c732285d8f7256",
+      "mediaInGit": false
+    },
+    {
+      "localFilename": "apk19-edit-sort-uncommitted01.png",
+      "sha256": "0a01b174ad44b3166152be0de291c0c22ac32e863ebda024a5bb4ebb78e2f333",
+      "mediaInGit": false
+    }
+  ]
+}

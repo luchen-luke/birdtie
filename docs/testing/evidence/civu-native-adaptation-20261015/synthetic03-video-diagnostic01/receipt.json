@@ -1,0 +1,92 @@
+{
+  "status": "PASS",
+  "remoteScriptSHA256": "c7a4e97b0a23f6102cdbb5f5b7d5c6708d51f418460c8b1e8976dabd7756974a",
+  "privateValuesPersisted": false,
+  "exitCode": 0,
+  "stderrPresent": false,
+  "result": {
+    "status": "PASS",
+    "syntheticOwnerOnly": true,
+    "databaseWrites": 0,
+    "sourceWrites": 0,
+    "httpWrites": 0,
+    "sessionsCreated": 0,
+    "serviceChanges": 0,
+    "privateValuesPersisted": false,
+    "fixturePersistentWrites": 0,
+    "codecScope": "SOURCE_PROBE_AND_FULL_DECODE_NOT_FULL_CANONICAL_NORMALIZER",
+    "nativeSyntheticState": {
+      "guard": true,
+      "schema": 167,
+      "ownerCount": 1,
+      "videoReceipts": [],
+      "operationCounts": {
+        "SUCCEEDED": 15
+      },
+      "currentVideoMaterials": 0,
+      "originalOwnerCollision": false
+    },
+    "runtimeConfig": {
+      "enabled": true,
+      "ffmpegExact": true,
+      "ffprobeExact": true,
+      "prlimitExact": true,
+      "tempRootExact": true
+    },
+    "service": {
+      "active": true,
+      "expectedUser": true,
+      "memoryMaxBytes": 805306368,
+      "privateTmp": true,
+      "api14Release": true,
+      "binaryMatchesManifest": true
+    },
+    "serviceLogs": {
+      "boundedEntries": 200,
+      "classCounts": {},
+      "rawMessagesPersisted": false
+    },
+    "ffprobeRuntime": {
+      "exitCode": 0,
+      "version": "6.1.1-3ubuntu5",
+      "stderrClasses": []
+    },
+    "sourceProbe": {
+      "exitCode": 0,
+      "elapsedMilliseconds": 41,
+      "peakRSSKiB": 34020,
+      "rssExceeded": false,
+      "monitorFailure": false,
+      "timedOut": false,
+      "stdoutBytes": 4310,
+      "stderrBytes": 0,
+      "stderrClasses": [],
+      "addressSpaceMiB": 512,
+      "rssBoundMiB": 256
+    },
+    "sourceProbeShape": {
+      "videoStreams": 1,
+      "audioStreams": 1,
+      "durationMilliseconds": 4000,
+      "dimensionsWithinProductionBounds": true,
+      "durationWithinProductionBounds": true
+    },
+    "sourceFullDecode": {
+      "exitCode": 0,
+      "elapsedMilliseconds": 81,
+      "peakRSSKiB": 57932,
+      "rssExceeded": false,
+      "monitorFailure": false,
+      "timedOut": false,
+      "stdoutBytes": 0,
+      "stderrBytes": 0,
+      "stderrClasses": [],
+      "addressSpaceMiB": 512,
+      "rssBoundMiB": 256
+    },
+    "diagnosticCompleted": true,
+    "fixtureHashMatched": true,
+    "sourceOwnerReads": 0,
+    "productionConfigurationChanged": false
+  }
+}

@@ -24,10 +24,15 @@ class MomentThreadController extends ChangeNotifier {
   String localScope = '';
   String ownedThreadID = '';
   int ownedThreadVersion = 0;
+  String baseMomentID = '';
+  final List<Map<String, Object>> removedItems = [];
+  final List<MomentThreadDraftEntry> removedEntries = [];
+  String activeField = 'body';
   OwnedMomentThread? ownedSource;
   bool get existingThread => ownedThreadID.isNotEmpty;
   bool busy = false, _retired = false, _disposed = false;
   bool unsavedDraft = false;
+  bool _restoreFailed = false;
   int _draftWriteGeneration = 0;
   int _epoch = 0;
   String? notice;
@@ -47,7 +52,11 @@ class MomentThreadController extends ChangeNotifier {
   bool get uncertain => pending != null && previewValue == null;
   bool get editable =>
       current && !busy && pending == null && previewValue == null;
-  String get activeText => _entries.isEmpty ? '' : _entries[activeIndex].text;
+  String get activeText => _entries.isEmpty
+      ? ''
+      : activeField == 'title'
+      ? _entries[activeIndex].title
+      : _entries[activeIndex].text;
   MomentThreadJournalState get _state => MomentThreadJournalState(
     localScope,
     entries.map((entry) => entry.copy(media: const [])).toList(),
@@ -55,6 +64,9 @@ class MomentThreadController extends ChangeNotifier {
     pending,
     threadID: ownedThreadID,
     threadVersion: ownedThreadVersion,
+    baseMomentID: baseMomentID,
+    removedItems: List.unmodifiable(removedItems),
+    removedEntries: removedEntries.map((v) => v.copy(media: const [])).toList(),
   );
   bool _same(int epoch) => current && epoch == _epoch;
   void _notify() {
@@ -76,31 +88,34 @@ class MomentThreadController extends ChangeNotifier {
     String cityID = '',
     String placeID = '',
     String initialText = '',
+    MomentThreadDraftEntry? initialEntry,
+    String? materialScope,
   }) async {
     if (!current || busy || pending != null) {
       return;
     }
     final restored = await restore();
-    if (!current || restored || uncertain) {
+    if (!current || restored || uncertain || _restoreFailed) {
       return;
     }
-    localScope = newMomentOperationID();
+    ownedThreadID = '';
+    ownedThreadVersion = 0;
+    ownedSource = null;
+    removedItems.clear();
+    removedEntries.clear();
+    localScope = materialScope ?? newMomentOperationID();
     _entries = [
-      MomentThreadDraftEntry(
-        localID: newMomentOperationID(),
-        cityID: cityID,
-        placeID: placeID,
-        text: initialText,
-        locations: cityID.isEmpty && placeID.isEmpty ? const [] : null,
-      ),
-      MomentThreadDraftEntry(
-        localID: newMomentOperationID(),
-        cityID: cityID,
-        placeID: placeID,
-        locations: cityID.isEmpty && placeID.isEmpty ? const [] : null,
-      ),
+      initialEntry ??
+          MomentThreadDraftEntry(
+            localID: newMomentOperationID(),
+            cityID: cityID,
+            placeID: placeID,
+            text: initialText,
+            locations: cityID.isEmpty && placeID.isEmpty ? const [] : null,
+          ),
     ];
     activeIndex = 0;
+    baseMomentID = _entries.first.momentID;
     _saveDraft();
     _notify();
   }
@@ -110,33 +125,52 @@ class MomentThreadController extends ChangeNotifier {
     List<MomentThreadDraftEntry> entries, {
     String? selectedID,
   }) async {
-    if (!current ||
-        busy ||
-        pending != null ||
-        !view.current ||
-        entries.length != view.members.length ||
-        entries.isEmpty)
+    if (!current || busy || pending != null || !view.current || entries.isEmpty)
       return false;
-    for (var i = 0; i < entries.length; i++) {
-      if (entries[i].momentID != view.members[i]['momentId'] ||
-          entries[i].expectedRevision != view.members[i]['revision'])
+    final available = view.members
+        .where((member) => member['status'] == 'AVAILABLE')
+        .toList();
+    if (available.isEmpty) {
+      if (entries.length != 1 ||
+          entries.single.originalStatus != 'withdrawn' ||
+          !view.retiredMembers.any(
+            (member) =>
+                member['momentId'] == entries.single.momentID &&
+                member['revision'] == entries.single.expectedRevision,
+          )) {
         return false;
+      }
+    } else {
+      if (entries.length != available.length) return false;
+      for (var i = 0; i < entries.length; i++) {
+        if (entries[i].momentID != available[i]['momentId'] ||
+            entries[i].expectedRevision != available[i]['revision']) {
+          return false;
+        }
+      }
     }
     final restored = await restore();
-    if (!current || pending != null) return false;
+    if (!current || pending != null || _restoreFailed) return false;
     if (restored && _entries.isNotEmpty && ownedThreadID != view.threadID) {
       notice = '另一个串文草稿已恢复，请先处理后再打开原串文。';
       _notify();
       return false;
     }
     if (restored && ownedThreadID == view.threadID) {
-      if (_entries.length != entries.length ||
-          List.generate(
-            entries.length,
-            (i) =>
-                _entries[i].momentID != entries[i].momentID ||
-                _entries[i].expectedRevision != entries[i].expectedRevision,
-          ).any((v) => v)) {
+      if (ownedThreadVersion != view.version ||
+          entries.any(
+            (source) =>
+                !_entries.any(
+                  (local) =>
+                      local.momentID == source.momentID &&
+                      local.expectedRevision == source.expectedRevision,
+                ) &&
+                !removedItems.any(
+                  (v) =>
+                      v['momentId'] == source.momentID &&
+                      v['expectedRevision'] == source.expectedRevision,
+                ),
+          )) {
         notice = '原动态已变化，本机文字保留；请先核对当前动态。';
         _notify();
         return false;
@@ -146,6 +180,7 @@ class MomentThreadController extends ChangeNotifier {
       localScope = newMomentOperationID();
     }
     ownedThreadID = view.threadID;
+    baseMomentID = '';
     ownedThreadVersion = view.version;
     _bindOwnedSource(view);
     final selected = _entries.indexWhere((e) => e.momentID == selectedID);
@@ -183,6 +218,7 @@ class MomentThreadController extends ChangeNotifier {
       return false;
     }
     final epoch = _epoch;
+    _restoreFailed = false;
     busy = true;
     _notify();
     try {
@@ -194,6 +230,13 @@ class MomentThreadController extends ChangeNotifier {
         localScope = state.localScope;
         ownedThreadID = state.threadID;
         ownedThreadVersion = state.threadVersion;
+        baseMomentID = state.baseMomentID;
+        removedItems
+          ..clear()
+          ..addAll(state.removedItems);
+        removedEntries
+          ..clear()
+          ..addAll(state.removedEntries);
         // Media is reconstructed by its original stage operations. A private
         // journal cannot restore a use-rights declaration or publication grant.
         _entries = state.entries
@@ -208,6 +251,7 @@ class MomentThreadController extends ChangeNotifier {
       }
     } catch (_) {
       if (_same(epoch)) {
+        _restoreFailed = true;
         notice = '本机私人草稿暂不可读取，请重试。';
       }
     } finally {
@@ -235,19 +279,82 @@ class MomentThreadController extends ChangeNotifier {
         }
       } catch (_) {
         if (_same(epoch)) {
-          notice = '本机草稿未能保存或超过16KiB；当前输入仍保留。';
+          notice = '本机草稿未能保存或超过1MiB；当前输入仍保留。';
           _notify();
         }
       }
     });
   }
 
+  Future<bool> flushDraft() async {
+    await _saving;
+    return current && !unsavedDraft;
+  }
+
+  Future<void> saveLocal() async {
+    if (!editable) return;
+    _saveDraft();
+    await _saving;
+    if (!current) return;
+    notice = unsavedDraft ? '尚未保存到本机，文字仍保留，请稍后重试。' : '本机草稿已保存，尚未公开新改动。';
+    _notify();
+  }
+
+  void approveRestoreActive() {
+    if (!editable || _entries.isEmpty) return;
+    final entry = _entries[activeIndex];
+    if (entry.originalStatus != 'withdrawn') return;
+    _entries[activeIndex] = entry.copy(
+      restore: true,
+      preserveMedia: false,
+      locations: entry.locations,
+    );
+    _saveDraft();
+    _notify();
+  }
+
+  void restoreEntry(MomentThreadDraftEntry entry) {
+    if (!editable ||
+        entries.length >= 20 ||
+        entry.momentID.isEmpty ||
+        _entries.any((v) => v.momentID == entry.momentID))
+      return;
+    removedItems.removeWhere((v) => v['momentId'] == entry.momentID);
+    removedEntries.removeWhere((v) => v.momentID == entry.momentID);
+    _entries.add(
+      entry.copy(
+        restore: true,
+        preserveMedia: false,
+        media: const [],
+        materialReferences: const [],
+      ),
+    );
+    activeIndex = _entries.length - 1;
+    _saveDraft();
+    _notify();
+  }
+
   void updateActiveText(String text) {
     if (!editable || _entries.isEmpty) {
       return;
     }
-    _entries[activeIndex] = _entries[activeIndex].copy(text: text);
+    _entries[activeIndex] = activeField == 'title'
+        ? _entries[activeIndex].copy(title: text)
+        : _entries[activeIndex].copy(text: text);
     notice = null;
+    _saveDraft();
+    _notify();
+  }
+
+  void selectField(String field) {
+    if (!editable || !const {'body', 'title'}.contains(field)) return;
+    activeField = field;
+    _notify();
+  }
+
+  void updateActiveTitle(String title) {
+    if (!editable || _entries.isEmpty) return;
+    _entries[activeIndex] = _entries[activeIndex].copy(title: title);
     _saveDraft();
     _notify();
   }
@@ -268,9 +375,55 @@ class MomentThreadController extends ChangeNotifier {
     if (!editable || _entries.isEmpty) {
       return;
     }
-    _entries[activeIndex] = _entries[activeIndex].copy(media: media);
+    _entries[activeIndex] = _entries[activeIndex].copy(
+      media: media,
+      preserveMedia: false,
+    );
     _saveDraft();
     _notify();
+  }
+
+  void rememberEntryMaterials(
+    String entryID,
+    List<MomentDraftMaterialReference> references,
+  ) {
+    if (!editable) return;
+    final index = _entries.indexWhere((v) => v.localID == entryID);
+    if (index < 0) return;
+    if (references.length > 9 ||
+        references.map((v) => v.operationID).toSet().length !=
+            references.length ||
+        references.any(
+          (v) =>
+              !humanControlID(v.operationID) ||
+              !const {'IMAGE', 'VIDEO'}.contains(v.kind),
+        ) ||
+        references.any((v) => v.kind == 'VIDEO') && references.length != 1) {
+      // A recovered, unidentified placeholder is not evidence that it is the
+      // same file as a new stage. Keep the last valid journal until the user
+      // explicitly removes that placeholder; never write an invalid bundle.
+      notice = '还有未完成材料，请先明确移除后再准备新材料；原草稿仍保留。';
+      _notify();
+      return;
+    }
+    final old = _entries[index];
+    if (jsonEncode(old.materialReferences.map((v) => v.json).toList()) ==
+        jsonEncode(references.map((v) => v.json).toList()))
+      return;
+    _entries[index] = old.copy(materialReferences: references);
+    _saveDraft();
+    _notify();
+  }
+
+  void removeMissingMaterial(String entryID, String operationID) {
+    final entry = _entries.where((v) => v.localID == entryID).firstOrNull;
+    if (entry == null) return;
+    rememberEntryMaterials(
+      entryID,
+      entry.materialReferences
+          .where((v) => v.operationID != operationID)
+          .toList(),
+    );
   }
 
   void setActiveLocations(List<MomentLocationInput> locations) {
@@ -322,16 +475,14 @@ class MomentThreadController extends ChangeNotifier {
   void selectEntry(int index) {
     if (editable && index >= 0 && index < _entries.length) {
       activeIndex = index;
+      activeField = 'body';
       _saveDraft();
       _notify();
     }
   }
 
   void addEntry() {
-    if (!editable ||
-        existingThread ||
-        _entries.length >= 20 ||
-        _entries.isEmpty) {
+    if (!editable || _entries.length >= 20 || _entries.isEmpty) {
       return;
     }
     _entries.add(
@@ -342,21 +493,29 @@ class MomentThreadController extends ChangeNotifier {
       ),
     );
     activeIndex = _entries.length - 1;
+    activeField = 'body';
     _saveDraft();
     _notify();
   }
 
-  void removeEntry(int index) {
+  void removeEntry(int index, {MomentThreadDraftEntry? summary}) {
     if (!editable ||
-        existingThread ||
-        _entries.length <= 2 ||
+        _entries.length <= 1 ||
         index < 0 ||
         index >= _entries.length) {
       return;
     }
     final selected = _entries[activeIndex].localID;
-    _entries.removeAt(index);
+    final removed = _entries.removeAt(index);
+    if (removed.momentID.isNotEmpty) {
+      removedItems.add({
+        'momentId': removed.momentID,
+        'expectedRevision': removed.expectedRevision,
+      });
+      removedEntries.add((summary ?? removed).copy(media: const []));
+    }
     activeIndex = _entries.indexWhere((entry) => entry.localID == selected);
+    activeField = 'body';
     if (activeIndex < 0) {
       activeIndex = index < _entries.length ? index : _entries.length - 1;
     }
@@ -366,7 +525,6 @@ class MomentThreadController extends ChangeNotifier {
 
   void moveEntry(int from, int to) {
     if (!editable ||
-        existingThread ||
         from < 0 ||
         from >= _entries.length ||
         to < 0 ||
@@ -386,11 +544,24 @@ class MomentThreadController extends ChangeNotifier {
     if (!editable) {
       return;
     }
+    if (removedItems.any(
+      (removed) => !removedEntries.any(
+        (entry) =>
+            entry.momentID == removed['momentId'] &&
+            entry.expectedRevision == removed['expectedRevision'],
+      ),
+    )) {
+      notice = '待移除内容需要重新读取具体摘要；本次尚未提交。';
+      _notify();
+      return;
+    }
     await _preview(
       MomentThreadInput(
         operationID: newMomentOperationID(),
-        action: existingThread ? 'PUBLISH' : 'CREATE_PUBLISH',
+        action: 'EDIT',
         threadID: ownedThreadID,
+        baseMomentID: baseMomentID,
+        removedItems: removedItems,
         expectedVersion: ownedThreadVersion,
         localScope: localScope,
         entries: entries,
@@ -446,7 +617,7 @@ class MomentThreadController extends ChangeNotifier {
       input.validate();
       if (utf8.encode(jsonEncode(_state.json)).length >
           momentThreadJournalMaxBytes - 500) {
-        throw const FormatException('草稿超出本机16KiB保存限额');
+        throw const FormatException('草稿超出本机1MiB保存限额');
       }
       await _saving;
       if (!_same(epoch)) {
@@ -607,10 +778,65 @@ class MomentThreadController extends ChangeNotifier {
     MomentThreadReceipt result,
     int epoch,
   ) async {
+    List<MomentThreadDraftEntry>? edited;
+    MomentThreadJournalState? replacement;
+    if (result.status == 'SUCCEEDED' && result.action == 'EDIT') {
+      if (result.members.length != _entries.length)
+        throw StateError('原动态结果条数不符');
+      edited = List.generate(_entries.length, (i) {
+        final entry = _entries[i], member = result.members[i];
+        if (entry.momentID.isNotEmpty && entry.momentID != member.momentID) {
+          throw StateError('原动态结果身份不符');
+        }
+        return entry.copy(
+          momentID: member.momentID,
+          expectedRevision: member.revision,
+          originalStatus: 'published',
+          preserveMedia: true,
+          restore: false,
+          media: const [],
+          materialReferences: const [],
+        );
+      });
+      replacement = MomentThreadJournalState(
+        localScope,
+        edited,
+        activeIndex,
+        null,
+        threadID: result.threadID,
+        threadVersion: result.appliedVersion,
+      );
+    } else if (result.status == 'SUCCEEDED' && result.action == 'WITHDRAW') {
+      final withdrawn = {
+        for (final member in result.members) member.momentID: member,
+      };
+      edited = _entries.map((entry) {
+        final member = withdrawn[entry.momentID];
+        return member == null
+            ? entry
+            : entry.copy(
+                expectedRevision: member.revision,
+                originalStatus: 'withdrawn',
+                preserveMedia: false,
+                locations: const [],
+                media: const [],
+                restore: false,
+              );
+      }).toList();
+      replacement = MomentThreadJournalState(
+        localScope,
+        edited,
+        activeIndex,
+        null,
+        threadID: result.threadID,
+        threadVersion: result.appliedVersion,
+      );
+    }
     await journal.finish(
       ownerID,
       origin,
       record,
+      replacement: replacement,
       clearDraft:
           result.status == 'SUCCEEDED' &&
           {'CREATE_PUBLISH', 'PUBLISH'}.contains(result.action),
@@ -624,6 +850,15 @@ class MomentThreadController extends ChangeNotifier {
     previewValue = null;
     _approvalAuthorization = null;
     _lease?.cancel();
+    if (edited != null) {
+      _entries = edited;
+      ownedThreadID = result.threadID;
+      ownedThreadVersion = result.appliedVersion;
+      baseMomentID = '';
+      removedItems.clear();
+      removedEntries.clear();
+      ownedSource = null;
+    }
     if (result.status == 'SUCCEEDED' &&
         {'CREATE_PUBLISH', 'PUBLISH'}.contains(result.action)) {
       _entries = [];
@@ -636,6 +871,10 @@ class MomentThreadController extends ChangeNotifier {
         ? '原串文操作已停止；草稿仍保留。'
         : result.action == 'WITHDRAW'
         ? '整串已撤回，每条原位置仍保留。'
+        : result.action == 'EDIT'
+        ? (result.members.length == 1
+              ? '这条动态已发布，可以继续修改或再接一条。'
+              : '全部动态已一次保存，可以继续修改或再接一条。')
         : '整串已一次发布。';
   }
 

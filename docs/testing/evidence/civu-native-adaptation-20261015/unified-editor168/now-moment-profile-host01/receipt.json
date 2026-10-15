@@ -1,0 +1,37 @@
+{
+  "at": "2026-10-15T16:22:52.194425+00:00",
+  "source": {
+    "lib/src/legacy/legacy_shell.dart": "b786cf26d99b77168e68d733d82fc503a79b1e71f7cc29590ba1c1d7eae8c4dc",
+    "lib/src/workspace/now_moment_editor_host.dart": "50d68b5589d69c31dc160da50f9b21f2b4a24ef293ffc4f9207945857dd08424",
+    "test/now_moment_editor_host_test.dart": "c244a4ff85164ca29afae8187281b3d1e38a14f607254b4a1bbf587919a525dd"
+  },
+  "sourceStable": true,
+  "checks": {
+    "analysis": {
+      "command": [
+        "D:\\DevTools\\flutter\\bin\\cache\\dart-sdk\\bin\\dart.exe",
+        "D:\\DevTools\\flutter\\bin\\cache\\flutter_tools.snapshot",
+        "analyze",
+        "--no-pub",
+        "--no-fatal-infos",
+        "lib/src/legacy/legacy_shell.dart",
+        "lib/src/workspace/now_moment_editor_host.dart",
+        "test/now_moment_editor_host_test.dart"
+      ],
+      "cwd": "D:\\Project\\birdtie\\apps\\client",
+      "exitCode": 0
+    },
+    "direct": {
+      "command": [
+        "D:\\DevTools\\flutter\\bin\\cache\\dart-sdk\\bin\\dart.exe",
+        "D:\\DevTools\\flutter\\bin\\cache\\flutter_tools.snapshot",
+        "test",
+        "--no-pub",
+        "--reporter=json",
+        "test/now_moment_editor_host_test.dart"
+      ],
+      "cwd": "D:\\Project\\birdtie\\apps\\client",
+      "exitCode": 0
+    }
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "status": "SOURCE_READY",
+  "atUTC": "2026-10-15T13:09:57.152946+00:00",
+  "files": {
+    "apps/client/lib/src/workspace/moment_thread_api.dart": "74955a6f0485a061962abac7abd174547be64fd71f7f5a7a2fb5e140d8d310bf",
+    "apps/client/test/moment_thread_test.dart": "569146c4c70863cd0e61e77618072e8bd16fcea584cb7cda3b1d6913edc6d447"
+  },
+  "frameSHA256": "78f6cbdc43f48407f64a38450b5809ac760deee296a38ef809b96f91caa041e2",
+  "rootCause": "MomentThreadPreview compared SHA256(jsonEncode(map)) for echoed input. Go struct field order differs from Dart map insertion order, so unchanged approved content was rejected.",
+  "actualDeviceFailureReportedByCoordinator": "APK11 two nonempty text entries with no location; preview reported concrete approval version mismatch.",
+  "fix": "Closed echoed metadata and ordered item/material validation. Reuse MomentControlInput.inputHash and media rights digest, ignoring JSON object key order while retaining body, source selectors, nil/empty locations, ordered members/media, rights/version, operation and expected-version equality.",
+  "test": "work/moment-thread-echo01/receipt.json",
+  "testsPassed": 1,
+  "testsSkipped": 0,
+  "coverage": [
+    "Actual Go struct JSON order",
+    "Trailing newline normalized on wire while RAM draft retained",
+    "Two text entries with explicit empty locations",
+    "Original PREPARED journal remains concrete",
+    "Body mutation, item reorder, omitted locations and extra field rejected",
+    "One preview and zero publication PUT"
+  ],
+  "analysis": "work/moment-thread-echo-analysis01/receipt.json",
+  "analysisErrors": 0,
+  "analysisWarnings": 0,
+  "analysisInfo": 13,
+  "backendAtomicTransactionChanged": false,
+  "journalFormatOrRecoveryChanged": false,
+  "notRun": [
+    "APK/Web build",
+    "device thread publication acceptance",
+    "remote writes"
+  ],
+  "scope": [
+    "apps/client/lib/src/workspace/moment_thread_api.dart",
+    "apps/client/test/moment_thread_test.dart"
+  ]
+}

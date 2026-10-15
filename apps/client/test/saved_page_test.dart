@@ -55,7 +55,157 @@ Future<void> _mount(
   await t.pumpAndSettle();
 }
 
+/// Shared by the one related target-entry/expiry composite regression.
+Future<void> exerciseSavedPrivateReferenceExpiry(WidgetTester tester) async {
+  var reads = 0;
+  final client = MockClient((request) async {
+    expect(request.url.path, '/v1/me/saved/page');
+    expect(request.url.hasQuery, false);
+    reads++;
+    final now = DateTime.now().toUtc();
+    return _json({
+      'items': [
+        {
+          ...savedTestRow(
+            savedNoteID,
+            'place',
+            savedTargetID,
+            available: false,
+            title: '本人地点资料名称',
+          ),
+          'legacyReference': {
+            'kind': 'saved_place',
+            'recordId': savedNoteID,
+            'placeId': savedTargetID,
+            'observedAt': now.toIso8601String(),
+            'validUntil': now
+                .add(
+                  reads == 1
+                      ? const Duration(milliseconds: 250)
+                      : const Duration(seconds: 30),
+                )
+                .toIso8601String(),
+            'sourceVersion': 'a' * 64,
+          },
+        },
+      ],
+      'nextCursor': null,
+    });
+  });
+  final saved = SavedController(
+    authorizationHeader: () => 'Bearer saved-local',
+    client: client,
+    apiBaseUrl: 'https://saved.test',
+  );
+  await tester.pumpWidget(
+    MaterialApp(
+      home: Scaffold(body: SavedPage(saved: saved)),
+    ),
+  );
+  await tester.pump();
+  await tester.pump();
+  expect(find.text('本人地点资料名称'), findsOneWidget);
+  await tester.runAsync(
+    () => Future<void>.delayed(const Duration(milliseconds: 300)),
+  );
+  await tester.pump(const Duration(milliseconds: 300));
+  expect(find.text('本人地点资料名称'), findsNothing);
+  expect(find.text('地点资料已到期'), findsOneWidget);
+  expect(find.text('该内容已不可见，你可以保留备注或取消收藏。'), findsNothing);
+  expect(find.text('重新读取收藏'), findsOneWidget);
+  await tester.tap(find.text('重新读取收藏'));
+  await tester.pump();
+  await tester.pump();
+  expect(reads, 2);
+  expect(find.text('本人地点资料名称'), findsOneWidget);
+  expect(find.text('地点资料已到期'), findsNothing);
+  await tester.pumpWidget(const SizedBox());
+  saved.dispose();
+  client.close();
+}
+
 void main() {
+  testWidgets('收藏空查询无尾问号且次页失败重试读取首批', (t) async {
+    _phone(t);
+    var firstPageReads = 0, nextPageReads = 0;
+    final requests = <http.Request>[];
+    List<Map<String, Object>> rows(String title) => List.generate(
+      20,
+      (i) => savedTestRow(
+        '10000000-0000-4000-8000-${(i + 10).toString().padLeft(12, '0')}',
+        'place',
+        savedTargetID,
+        title: '$title $i',
+      ),
+    );
+    final client = MockClient((request) async {
+      requests.add(request);
+      expect(request.method, 'GET');
+      if (request.url.path == '/v1/me/saved') {
+        expect(request.url.hasQuery, false);
+        return _json(rows('原兼容列表'));
+      }
+      expect(request.url.path, '/v1/me/saved/page');
+      if (request.url.queryParameters.containsKey('cursor')) {
+        nextPageReads++;
+        expect(request.url.hasQuery, true);
+        expect(request.url.queryParameters, {'cursor': savedNoteID});
+        return _json(null, 503);
+      }
+      expect(request.url.hasQuery, false);
+      firstPageReads++;
+      return _json({
+        'items': rows(firstPageReads == 1 ? '已加载的收藏' : '刷新后的收藏'),
+        'nextCursor': savedNoteID,
+      });
+    });
+    final c = SavedController(
+      authorizationHeader: () => 'Bearer A',
+      client: client,
+      apiBaseUrl: 'https://saved.test',
+    );
+    await c.load();
+    expect(c.failed, false);
+    expect(c.items, hasLength(20));
+    await _mount(t, c);
+    expect(firstPageReads, 1);
+    expect(c.items.first.title, '已加载的收藏 0');
+
+    final listScrollable = find
+        .descendant(
+          of: find.byType(ListView),
+          matching: find.byType(Scrollable),
+        )
+        .first;
+    await t.scrollUntilVisible(
+      find.text('继续读取收藏'),
+      500,
+      scrollable: listScrollable,
+    );
+    await _tap(t, find.text('继续读取收藏'));
+    expect(c.failed, true);
+    expect(c.hasMore, true);
+    expect(c.items.first.title, '已加载的收藏 0');
+    expect(nextPageReads, 1);
+    await t.scrollUntilVisible(
+      find.text('加载失败，请重试。'),
+      -500,
+      scrollable: listScrollable,
+    );
+    expect(find.text('加载失败，请重试。'), findsOneWidget);
+
+    await _tap(t, find.text('重试读取'));
+    expect(c.failed, false);
+    expect(firstPageReads, 2);
+    expect(nextPageReads, 1);
+    expect(requests.last.url.hasQuery, false);
+    expect(c.items, hasLength(20));
+    expect(c.items.first.title, '刷新后的收藏 0');
+    expect(t.takeException(), isNull);
+    await t.pumpWidget(const SizedBox());
+    c.dispose();
+    client.close();
+  });
   for (final round in [1, 2]) {
     testWidgets('顺序widget zone $round 默认SecureStore真实收藏route可读写，不保留已完成串行tail', (
       t,

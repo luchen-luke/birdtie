@@ -216,6 +216,10 @@ class TypedMapItem {
     momentPhoto: momentPhoto,
     recentMoments: recentMoments,
     sourceVersion: sourceVersion,
+    momentID: kind == 'MOMENT' ? id : '',
+    momentRevision: kind == 'MOMENT'
+        ? int.tryParse(sourceVersion.split(':').first) ?? 0
+        : 0,
   );
   factory TypedMapItem.decode(
     dynamic raw,

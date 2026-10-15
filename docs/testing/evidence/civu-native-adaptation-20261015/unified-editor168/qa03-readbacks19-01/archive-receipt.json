@@ -1,0 +1,70 @@
+{
+  "status": "SAFE_SYNTHETIC_EVIDENCE_ARCHIVED_NOT_FINAL_ACCEPTANCE",
+  "archivedAt": "2026-10-15T17:23:03.800608+00:00",
+  "files": {
+    "device19-thread-readback01/receipt.json": {
+      "source": "work\\device19-thread-readback01\\receipt.json",
+      "sha256": "f462ea80a02c11b824b64f086500d2e09293309756c7354dacb3d9804bff3d8a",
+      "bytes": 9954
+    },
+    "device19-thread-readback01/corrected-metadata-review.json": {
+      "source": "work\\device19-thread-readback01\\corrected-metadata-review.json",
+      "sha256": "74870d457e91227fec41999a7a7f0bd19781b4e40abbf76bbee2c8c9ecc964a6",
+      "bytes": 6563
+    },
+    "device19-thread-readback02/receipt.json": {
+      "source": "work\\device19-thread-readback02\\receipt.json",
+      "sha256": "36529e0e7ee7a151488203adaa48cb186fe01953217b928b60535f6577412ed2",
+      "bytes": 11925
+    },
+    "device19-thread-readback02/current-geography-review.json": {
+      "source": "work\\device19-thread-readback02\\current-geography-review.json",
+      "sha256": "4d5dd4eef3b98fb478886cfe4723c4f1044c7a37ea7300ed5793bd079cc087ca",
+      "bytes": 1591
+    },
+    "device19-thread-window-diagnostic01/receipt.json": {
+      "source": "work\\device19-thread-window-diagnostic01\\receipt.json",
+      "sha256": "a7986092559dbe5cac7913e6541a562927961ad04098b9b48c562896d975e871",
+      "bytes": 1013
+    },
+    "device19-video-carry-diagnostic01/receipt.json": {
+      "source": "work\\device19-video-carry-diagnostic01\\receipt.json",
+      "sha256": "f928b6b7853a5a32494dd803c321c88515be95e9d92e0ffa808338069cbc4376",
+      "bytes": 1564
+    },
+    "helpers/readback_device19_owned01_executed.py": {
+      "source": "work\\readback_device19_owned01_executed.py",
+      "sha256": "8a85f5835b81cc8474832396cbaedb72dadebd9b69535dd060003c8cdbc04ad8",
+      "bytes": 16832
+    },
+    "helpers/readback_device19_owned02_executed.py": {
+      "source": "work\\readback_device19_owned02_executed.py",
+      "sha256": "b5a0721a8479f018876ef50015d5e0488f026b34df7fec044b4df3270985a052",
+      "bytes": 20250
+    },
+    "helpers/diagnose_device19_thread_window.py": {
+      "source": "work\\diagnose_device19_thread_window.py",
+      "sha256": "26da8b031617ac9dc79d021568c00bd9ee90a960e3f3e54bcd7056aceaa1a6a4",
+      "bytes": 4012
+    },
+    "helpers/diagnose_device19_video_carry.py": {
+      "source": "work\\diagnose_device19_video_carry.py",
+      "sha256": "35c076079e7b4d73ff6dd22c3bbbfec497c35d7472ed39a4257402c79f6ef1f3",
+      "bytes": 5990
+    },
+    "README.md": {
+      "sha256": "6157b17424dac3906688502762f5e96a2f582b682ea73aa258e80c70918a9103",
+      "bytes": 3029
+    }
+  },
+  "exactExecutedHelpersMatchReceipts": true,
+  "originalFailuresPreserved": true,
+  "credentialPatternFindings": 0,
+  "privateJSONFieldFindings": 0,
+  "mediaFiles": 0,
+  "rawDeviceLogsCopied": 0,
+  "otherOwnersSelected": 0,
+  "contentWrites": 0,
+  "newHTTPOrRemoteReadsDuringArchival": 0,
+  "sharedReportsOrQueueChanged": false
+}

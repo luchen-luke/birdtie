@@ -1,0 +1,26 @@
+{
+  "at": "2026-10-15T15:55:33.377751+00:00",
+  "command": [
+    "C:\\Program Files\\Go\\bin\\go.exe",
+    "test",
+    "-mod=readonly",
+    "-json",
+    "./internal/content",
+    "-run",
+    "^TestMomentThreadEditingClosedSinglePreserveAndOriginalDigest$",
+    "-count=1"
+  ],
+  "cwd": "C:\\Users\\chens\\Documents\\Codex\\2026-10-15\\d-project-birdtie-docs-reports-birdtie-2\\work\\unified-backend-native04\\api",
+  "exitCode": 0,
+  "tests": {
+    "pass": 1,
+    "fail": 0,
+    "skip": 0
+  },
+  "source": {
+    "apps/api/internal/content/moment_thread.go": "761b010655768fe99920902ece0ad3484b738a2494839d0eff197f0803401e7f",
+    "apps/api/internal/content/moment_thread_test.go": "4567c9195a073c86adba3021b992371b25d98d2b2dd47e0909cf2e573a40bcb3"
+  },
+  "sourceStable": true,
+  "scope": "One EDIT context normalization / old contract compatibility test; same complete API snapshot as native04"
+}

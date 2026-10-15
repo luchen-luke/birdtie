@@ -1,0 +1,10 @@
+{
+  "remoteScriptSHA256": "331dea31aa0e6bb11c3447e46dc3cff8de02d67a21573875d9300507bfdc275a",
+  "result": {
+    "status": "PASS",
+    "savedPositionsOneBased": [],
+    "sourceWrites": 0,
+    "databaseWrites": 0,
+    "sessionsCreated": 0
+  }
+}

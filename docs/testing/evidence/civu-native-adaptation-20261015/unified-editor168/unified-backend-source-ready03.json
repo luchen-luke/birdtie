@@ -1,0 +1,91 @@
+{
+  "at": "2026-10-15T15:56:15.874716+00:00",
+  "status": "SOURCE_FROZEN_DIRECT_NATIVE_PASS",
+  "source": {
+    "apps/api/internal/content/moment_thread.go": "761b010655768fe99920902ece0ad3484b738a2494839d0eff197f0803401e7f",
+    "apps/api/internal/content/moment_thread_test.go": "4567c9195a073c86adba3021b992371b25d98d2b2dd47e0909cf2e573a40bcb3",
+    "apps/api/internal/httpapi/moment_thread.go": "ffbc1b7db22b6c09770bb75e893ad3e2c5931889f8bb7f74e78226fa495157b8",
+    "apps/api/internal/httpapi/moment_thread_test.go": "2ce4929fd20466522b636b40285f66054c86da39b039f9fb8478bfc608a83b14",
+    "apps/api/internal/postgres/moment_thread.go": "01388e6c853c2df13fdfda2cdd719df5f5057b29bbe988a54ce7b8cabf301914",
+    "apps/api/internal/postgres/moment_thread_editing_native_test.go": "07f762b0f396f6d43dc8b8e576aefbca3e1ca6b5f5d1ed63abe171cd37e91f13",
+    "apps/api/migrations/168_moment_thread_editing.sql": "198b0ff685c432b4eb24118b1fd7a9775a7a83daaf9de34870ab0b5b94ea2e3f",
+    "apps/api/migrations/168_moment_thread_editing.down.sql": "4fa4c806dd2f9fb5e205d9d144c1a9c1dc3c3534081922007e46e325f19a7a5f",
+    "apps/api/internal/postgres/moment_control.go": "062194a657701b7de22b33aa411e5f2f7f34a9e1e33f3022622e0e4197ed84a8"
+  },
+  "testedSnapshot": "work/unified-backend-native04/api",
+  "snapshotMatchesRepository": true,
+  "baseFrames": [
+    "work/unified-backend-source-ready01.json",
+    "work/unified-backend-source-ready02.json"
+  ],
+  "legacyMigrations1to167Unchanged": true,
+  "sql168Unchanged": true,
+  "httpContractUnchanged": true,
+  "checks": {
+    "unified-backend-native04": {
+      "receiptSHA256": "b10a2d82dace21d223a1a632decc31ac9398069d6c1c3f0688ddcf75d1c0be94",
+      "stdoutSHA256": "a2d5962635535726ef7bdfb0d30c3dee20d674bf0656a3ded61bfd330fd6d961",
+      "command": [
+        "C:\\Program Files\\Go\\bin\\go.exe",
+        "test",
+        "-mod=readonly",
+        "./internal/postgres",
+        "-count=1",
+        "-json",
+        "-run",
+        "^TestMomentThreadEditingNativeSingleUpgradeOrderedRetirementAndRecovery$"
+      ],
+      "cwd": "C:\\Users\\chens\\Documents\\Codex\\2026-10-15\\d-project-birdtie-docs-reports-birdtie-2\\work\\unified-backend-native04\\api",
+      "exitCode": 0,
+      "tests": {
+        "pass": 1,
+        "fail": 0,
+        "skip": 0
+      },
+      "sourceStable": true
+    },
+    "unified-backend-direct03": {
+      "receiptSHA256": "25b92256480f7309d2a0284c005bfc4d88cb74bde1b735d0fe7e8faf4b7de81f",
+      "stdoutSHA256": "913744a405a472566ad6571eae69b3af78a1e7a05525eee565c726ffaf8f77ba",
+      "command": [
+        "C:\\Program Files\\Go\\bin\\go.exe",
+        "test",
+        "-mod=readonly",
+        "-json",
+        "./internal/content",
+        "-run",
+        "^TestMomentThreadEditingClosedSinglePreserveAndOriginalDigest$",
+        "-count=1"
+      ],
+      "cwd": "C:\\Users\\chens\\Documents\\Codex\\2026-10-15\\d-project-birdtie-docs-reports-birdtie-2\\work\\unified-backend-native04\\api",
+      "exitCode": 0,
+      "tests": {
+        "pass": 1,
+        "fail": 0,
+        "skip": 0
+      },
+      "sourceStable": true
+    }
+  },
+  "changes": [
+    "EDIT independently validates optional geography and exact original association UUIDs; current permission checks remain in capture and final gate. All legacy helper calls default to their previous city gate.",
+    "EDIT may omit only already-withdrawn display slots. Complete history remains source-bound; omitted withdrawn Moments are not rewritten or restored."
+  ],
+  "nativeAssertionsAdded": [
+    "Ordinary WITHDRAW of current member then remaining EDIT+append succeeds without removedItems for withdrawn slot.",
+    "Withdrawn original revision/status unchanged, display becomes retired, public body and by-member thread lookup still reject.",
+    "Prior thread operation receipt remains byte-identical.",
+    "Real original organization association with zero city/empty locations passes actual EDIT commit preserving Moment ID and relationship.",
+    "Organization membership revoked after preview rejects commit and keeps original draft private at same revision; fresh approval after restored membership succeeds."
+  ],
+  "preservedEvidence": [
+    "unified-backend-native01 failure retained",
+    "unified-backend-native02/03 and direct02/context01 retained",
+    "unified-map-native01 cleanup failure and scratch-adapted native02 pass retained"
+  ],
+  "notRun": [
+    "Remote HTTPS deployment and phone/Web integration for final source; root owns delivery.",
+    "No repeated full test suite or other association permission matrix."
+  ],
+  "preparationNote": "First snapshot preparation stopped before tests because optional seeds directory is absent. Corrected scratch copier to copy only existing directories; dev-seeds included. No business failure hidden."
+}

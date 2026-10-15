@@ -149,6 +149,8 @@ class MapEntity {
     this.recentMoments,
     this.mediaPixels,
     this.sourceVersion = '',
+    this.momentID = '',
+    this.momentRevision = 0,
   });
   final String id;
   final MapEntityKind kind;
@@ -164,6 +166,41 @@ class MapEntity {
   final MapRecentMoments? recentMoments;
   final MapMediaPixels? mediaPixels;
   final String sourceVersion;
+  // The native Moment selector is separate from a pin's compound map ID.
+  final String momentID;
+  final int momentRevision;
+
+  /// A typed selector never weakens the complete pin/source binding. Legacy
+  /// callers may still supply exactly moment:UUID plus a canonical revision.
+  ({String id, int revision})? get publicMediaIdentity {
+    if (kind != MapEntityKind.moment) return null;
+    final path = id.split(':'), source = sourceVersion.split(':');
+    if ((path.length != 2 && path.length != 3) ||
+        path.first != 'moment' ||
+        !entityCoverID(path[1]))
+      return null;
+    final revision = int.tryParse(source.first);
+    if (revision == null ||
+        revision < 2 ||
+        revision > entityCoverMaxVersion ||
+        revision.toString() != source.first)
+      return null;
+    final typed = momentID.isNotEmpty || momentRevision != 0;
+    if (typed && (momentID != path[1] || momentRevision != revision)) {
+      return null;
+    }
+    if (path.length == 2) {
+      if (source.length != 1) return null;
+    } else if (!typed ||
+        !entityCoverID(path[2]) ||
+        source.length != 3 ||
+        source[1] != path[2] ||
+        !RegExp(r'^[0-9a-f]{64}$').hasMatch(source[2])) {
+      return null;
+    }
+    return (id: path[1], revision: revision);
+  }
+
   // Immutable fingerprints make a removal visible even when the old live
   // pixel guard already became false before a provider's didUpdateWidget.
   String get decorationKey =>
@@ -194,6 +231,8 @@ class MapEntity {
         : null,
     mediaPixels: pixels,
     sourceVersion: sourceVersion,
+    momentID: momentID,
+    momentRevision: momentRevision,
   );
   bool get isCluster => kind == MapEntityKind.cluster || memberIDs.length > 1;
   bool get hasMapAnchor =>
@@ -228,6 +267,8 @@ class MapEntity {
     recentMoments: recentMoments,
     mediaPixels: mediaPixels,
     sourceVersion: sourceVersion,
+    momentID: momentID,
+    momentRevision: momentRevision,
   );
 }
 

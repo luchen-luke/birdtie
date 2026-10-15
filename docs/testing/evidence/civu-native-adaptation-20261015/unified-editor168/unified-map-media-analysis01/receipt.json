@@ -1,0 +1,31 @@
+{
+  "at": "2026-10-15T15:17:41.809288+00:00",
+  "command": [
+    "D:/DevTools/flutter/bin/dart.bat",
+    "analyze",
+    "--format",
+    "machine",
+    "lib/src/workspace/map_entities.dart",
+    "lib/src/workspace/map_layers_api.dart",
+    "lib/src/workspace/map_media_controller.dart",
+    "test/map_media_controller_test.dart"
+  ],
+  "cwd": "D:\\Project\\birdtie\\apps\\client",
+  "exitCode": 0,
+  "effectiveExitCode": 0,
+  "sourceStable": true,
+  "sourceSHA256": {
+    "apps/client/lib/src/workspace/map_entities.dart": "144dc7fae498677ace2a6b2ea7932a40f3548b17d308e4b6f9c51d23a4aaf0c6",
+    "apps/client/lib/src/workspace/map_layers_api.dart": "a7838da091671a3270316a455f51e64f12da2aae4ce2b4a50826edc45b2d532b",
+    "apps/client/lib/src/workspace/map_media_controller.dart": "58b5e9e6d854e3f105accc294d19d3b927cb00ecc3f33965929805870c218a5f",
+    "apps/client/test/map_media_controller_test.dart": "c4d83250b2effdc3bb3228077452098ad8bcb97760d18e78807eb68329e68d79"
+  },
+  "diagnostics": {
+    "ERROR": 0,
+    "WARNING": 0,
+    "INFO": 16
+  },
+  "logSHA256": "bb0f703e39eee10c91cadf83822b03407d80d036ab35886de6106630b8cebb0b",
+  "deviceRun": false,
+  "privateSourceRead": false
+}

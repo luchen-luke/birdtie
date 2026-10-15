@@ -115,7 +115,7 @@ elif mode=='start':
 elif mode=='upgrade':
  settings=json.loads(STATE.read_text());assert settings['database']==DB
  target=payload['targetMigrations'];prior_count=payload['expectedMigrations']
- assert 148 <= prior_count <= target <= 166
+ assert 148 <= prior_count <= target <= 169
  current=json.loads(sql('postgres',"SELECT json_build_object('oid',oid::bigint,'owner',pg_get_userbyid(datdba),'marker',shobj_description(oid,'pg_database')) FROM pg_database WHERE datname='"+DB+"';",True))
  assert current=={'oid':settings['oid'],'owner':ROLE,'marker':settings['marker']}
  release=ROOT/'releases'/payload['release'];archive=release/'release.tar'
@@ -141,7 +141,9 @@ elif mode=='upgrade':
   filename,digest1=row.split('|');assert manifest['migrations/'+filename]['sha256']==digest1
  for p in (release/'bin').iterdir():os.chmod(p,0o755)
  migration_names={149:'migrations/149_legacy_personal_archives.sql',150:'migrations/150_city_public_moments.sql',151:'migrations/151_moment_interactions.sql',152:'migrations/152_public_moment_media_sets.sql',153:'migrations/153_moment_threads.sql',154:'migrations/154_legacy_dev_phone_bindings.sql',155:'migrations/155_public_moment_videos.sql',156:'migrations/156_legacy_native_adaptation.sql',157:'migrations/157_legacy_private_media.sql',158:'migrations/158_journey_native_details.sql',159:'migrations/159_legacy_private_videos.sql'}
- migration_names.update({160:'migrations/160_moment_location_links.sql',161:'migrations/161_legacy_private_image_recovery.sql',162:'migrations/162_legacy_native_contexts.sql',163:'migrations/163_legacy_social_native.sql',164:'migrations/164_legacy_dev_email_bindings.sql',165:'migrations/165_legacy_social_history.sql',166:'migrations/166_external_location_references.sql'})
+ migration_names.update({160:'migrations/160_moment_location_links.sql',161:'migrations/161_legacy_private_image_recovery.sql',162:'migrations/162_legacy_native_contexts.sql',163:'migrations/163_legacy_social_native.sql',164:'migrations/164_legacy_dev_email_bindings.sql',165:'migrations/165_legacy_social_history.sql',166:'migrations/166_external_location_references.sql',167:'migrations/167_legacy_reference_media.sql'})
+ migration_names[168]='migrations/168_moment_thread_editing.sql'
+ migration_names[169]='migrations/169_public_moment_video_carry.sql'
  assert all(int(Path(n).name.split('_')[0])<=target for n in manifest if n.startswith('migrations/'))
  assert len([n for n in manifest if n.startswith('migrations/')])==target
  bodies=[]
@@ -247,7 +249,7 @@ else:raise RuntimeError('unknown stage')
 '''
 
 def main():
- p=argparse.ArgumentParser();p.add_argument('mode',choices=['prepare','private-input','apply','start','upgrade','personal-apply','dev-phone-apply','native-apply']);p.add_argument('--name',choices=['source.json','manifest.json']);p.add_argument('--evidence-name',required=True);p.add_argument('--build-name',default='build02');p.add_argument('--reuse-staged',action='store_true',help='Reuse only an exact fully hash-verified staged archive after a rolled-back upgrade');p.add_argument('--target-migrations',type=int,choices=list(range(149,167)),default=149);p.add_argument('--expected-migrations',type=int,choices=list(range(148,167)),default=148);a=p.parse_args()
+ p=argparse.ArgumentParser();p.add_argument('mode',choices=['prepare','private-input','apply','start','upgrade','personal-apply','dev-phone-apply','native-apply']);p.add_argument('--name',choices=['source.json','manifest.json']);p.add_argument('--evidence-name',required=True);p.add_argument('--build-name',default='build02');p.add_argument('--reuse-staged',action='store_true',help='Reuse only an exact fully hash-verified staged archive after a rolled-back upgrade');p.add_argument('--target-migrations',type=int,choices=list(range(149,170)),default=149);p.add_argument('--expected-migrations',type=int,choices=list(range(148,170)),default=148);a=p.parse_args()
  assert re.fullmatch(r'[a-z0-9-]+',a.evidence_name)
  out=ROOT/'docs/testing/evidence/social-remote-migration-20261015'/a.evidence_name;out.mkdir(parents=True,exist_ok=False)
  assert not a.reuse_staged or a.mode=='upgrade'

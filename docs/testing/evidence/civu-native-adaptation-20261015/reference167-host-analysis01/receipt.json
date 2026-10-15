@@ -1,0 +1,20 @@
+{
+  "command": [
+    "dart",
+    "analyze",
+    "lib/src/workspace/map_workspace.dart",
+    "lib/src/legacy/legacy_shell.dart",
+    "lib/src/content/moment_media_context_view.dart",
+    "lib/src/content/private_moment_video_sheet.dart",
+    "lib/src/content/legacy_moment_materials_panel.dart"
+  ],
+  "cwd": "$REPO/apps/client",
+  "exitCode": 0,
+  "originalReceiptSHA256": "cfbb7e35c119f438cef391a5205b556e0c91a5fcdcd52712e552cc575ff2da40",
+  "originalStdoutSHA256": "b3023a40863e4632613684fc776a964b992b873fc5e5893a6a7bfe8ff7113a3a",
+  "projection": "CLOSED_SANITIZED_FIELDS_ONLY",
+  "privateValuesOmitted": true,
+  "errors": 0,
+  "warnings": 0,
+  "info": 177
+}

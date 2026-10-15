@@ -1,0 +1,74 @@
+{
+  "at": "2026-10-15T16:07:51.938670+00:00",
+  "status": "SOURCE_FROZEN_SCOPED_ANALYSIS_AND_DIRECT_PASS",
+  "source": {
+    "apps/client/lib/src/app/birdtie_app.dart": "78852161e8e6dd2def17cefd1c6c74fc51fbb25a722c3b7184dd0bf0697395e2",
+    "apps/client/lib/src/workspace/now_moment_editor_host.dart": "fe89778bbd8a6431be2409672564847aa2e119d91441f5c39a7bab0fa1286f36",
+    "apps/client/lib/src/workspace/public_moment_page.dart": "e4287d5b22b5002e28c73c7aac66fc49e05981105d3aa068ab86c3f963c4caaa",
+    "apps/client/test/now_moment_editor_host_test.dart": "024c8eba1f6438aaaa5ad4340455aeda03de49d11aa5a4b563241e162dfcddce"
+  },
+  "checks": {
+    "analysis": {
+      "command": [
+        "D:\\DevTools\\flutter\\bin\\cache\\dart-sdk\\bin\\dart.exe",
+        "D:\\DevTools\\flutter\\bin\\cache\\flutter_tools.snapshot",
+        "analyze",
+        "--no-pub",
+        "--no-fatal-infos",
+        "lib/src/app/birdtie_app.dart",
+        "lib/src/workspace/now_moment_editor_host.dart",
+        "lib/src/workspace/public_moment_page.dart",
+        "test/now_moment_editor_host_test.dart"
+      ],
+      "cwd": "D:\\Project\\birdtie\\apps\\client",
+      "exitCode": 0
+    },
+    "direct": {
+      "command": [
+        "D:\\DevTools\\flutter\\bin\\cache\\dart-sdk\\bin\\dart.exe",
+        "D:\\DevTools\\flutter\\bin\\cache\\flutter_tools.snapshot",
+        "test",
+        "--no-pub",
+        "--reporter=json",
+        "test/now_moment_editor_host_test.dart"
+      ],
+      "cwd": "D:\\Project\\birdtie\\apps\\client",
+      "exitCode": 0
+    }
+  },
+  "directTests": [
+    {
+      "name": "公开详情所有编辑入口回原Now且身份来源变化不接续也不发布",
+      "result": "success",
+      "skipped": false
+    }
+  ],
+  "evidence": "work/now-moment-editor-host02",
+  "receiptSHA256": "9775c560c7ae297fd007b7b96e3f4c1fddcea52fac8db654a1a7a516657d8038",
+  "backendReady03All9PathsUnchanged": true,
+  "mapWorkspaceHookSHA256": "aaee3533e7b1033a4f847462ee5db8d4b8f5fd78286857ec9568e24c883856ca",
+  "mapWorkspaceOwner": "social_scope; read-only hash recorded for integration",
+  "coverage": [
+    "Actual public detail body/multi-media/legacy-photo edit buttons return through two stacked routes to the exact original Now element and preserve composer text.",
+    "Owner, authorization token, API origin, organization role, and stale source reject handoff before navigation.",
+    "Owner switch-and-return during pending Now load invalidates transferred request.",
+    "Every HTTP request in the compound is GET; no preview or publication occurs by opening the editor.",
+    "Absent scope disables the editing entry with explicit Now instruction and no legacy editor fallback."
+  ],
+  "preserved": [
+    "Cached public media API lifetime and current read ACL",
+    "Whole-thread withdrawal feedback and stale-body removal",
+    "Original MaterialApp and existing Now route/state; no static global or new route"
+  ],
+  "uxRules": [
+    "UX-CHECK-03",
+    "UX-CHECK-08",
+    "UX-CHECK-09",
+    "UX-CHECK-10"
+  ],
+  "priorFailure": "host01 direct compound passed, scoped analyze failed only 2 warnings (unused legacy editor import and redundant non-null assertion); corrected, host02 analyze/direct pass. Existing nonfatal curly-brace info retained.",
+  "notRun": [
+    "Flutter build, phone verification and deployment belong to root.",
+    "No full Flutter suite or unrelated analysis."
+  ]
+}

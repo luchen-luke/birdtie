@@ -1,0 +1,32 @@
+{
+  "at": "2026-10-15T16:44:37.959625+00:00",
+  "status": "IN_PROGRESS_REAL_DEVICE_DEFECT_PRESERVED",
+  "schema": 168,
+  "apiRelease": "/opt/birdtie/releases/social168-20261015-build18",
+  "webRelease": "/opt/birdtie/web/releases/public-20261015-final-web18",
+  "webManifestSHA256": "372adaa26e858f5094dea528ed5e1e49530ff29fce8183831721838440665a20",
+  "apkSHA256": "46a7b3bc1da58855ad9d98776c9b57f2609ba8efe3cc23540c06b7db439c6c66",
+  "installed": true,
+  "sourceWritesToCivu": 0,
+  "actualDevice": [
+    "APK17 pure text no title/location explicit publish",
+    "APK17 original Moment edit to pure image with no title/body/location; actual pixels",
+    "APK18 install restores two-entry draft and second body",
+    "APK18 video offline stage UNKNOWN retains material; GET original then STOP and retry yields actual ready video poster",
+    "APK18 per-entry explicit London/Reykjavik place choices; Now Aberdeen persists"
+  ],
+  "failures": [
+    "First offline image attempt restored network while still pending; completed successfully, NOT evidence of upload failure",
+    "First pure-media preview generic failure; same draft retry preview/commit later succeeded; root cause not determined",
+    "Approval expired while preview inspected; original GET absent then explicit STOP; no automatic retry",
+    "Stopped video stage operation ID rotated without material-reference reconciliation; ready video still blocks whole preview"
+  ],
+  "remaining": [
+    "Fix stopped-operation reference reconciliation without dropping truly missing materials",
+    "Converge all reachable profile/place historical editor entry points",
+    "Final mixed three-entry commit, public reorder/delete, inline video, final readback and cleanup",
+    "Final GitHub commit/push"
+  ],
+  "fullDeviceAcceptance": "NOT_COMPLETE",
+  "sourceCurrentlyMatchesInstalledAPK": false
+}

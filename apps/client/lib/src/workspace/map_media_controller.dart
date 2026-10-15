@@ -146,9 +146,7 @@ class MapMediaController extends ChangeNotifier {
           e.kind != MapEntityKind.moment ||
           e.precision != 'point' ||
           !e.hasMapAnchor ||
-          !e.id.startsWith('moment:') ||
-          !entityCoverID(e.id.substring(7)) ||
-          (int.tryParse(e.sourceVersion) ?? 0) < 2)
+          e.publicMediaIdentity == null)
         continue;
       final key = _setKey(e);
       _desiredSets.add(key);
@@ -232,11 +230,14 @@ class MapMediaController extends ChangeNotifier {
   String _setKey(MapEntity entity) =>
       '$_epoch:${entity.id}:${entity.sourceVersion}';
   _MapSourcePhoto? _photoFor(MapEntity entity) {
-    final set = _mediaSets[_setKey(entity)];
+    final set = _mediaSets[_setKey(entity)],
+        target = entity.publicMediaIdentity;
     if (entity.kind == MapEntityKind.moment &&
+        target != null &&
         set?.status == 'READY' &&
         set!.current &&
-        set.momentRevision.toString() == entity.sourceVersion &&
+        set.momentID == target.id &&
+        set.momentRevision == target.revision &&
         set.attachments.isNotEmpty) {
       return _MapSourcePhoto(media: set.attachments.first, mediaSet: set);
     }
@@ -257,9 +258,11 @@ class MapMediaController extends ChangeNotifier {
       current: current,
     );
     try {
+      final target = entity.publicMediaIdentity;
+      if (target == null) return;
       final set = await api.publicSet(
-        entity.id.substring(7),
-        expectedRevision: int.parse(entity.sourceVersion),
+        target.id,
+        expectedRevision: target.revision,
       );
       if (current() && set.current) _mediaSets[key] = set;
     } catch (_) {
@@ -539,7 +542,10 @@ class _MapSourcePhoto {
     if (e.kind == MapEntityKind.moment &&
         e.placePhoto == null &&
         e.momentPhoto != null &&
-        e.id == 'moment:${e.momentPhoto!.momentID}')
+        (e.id == 'moment:${e.momentPhoto!.momentID}' ||
+            e.publicMediaIdentity?.id == e.momentPhoto!.momentID &&
+                e.publicMediaIdentity?.revision ==
+                    e.momentPhoto!.momentRevision))
       return _MapSourcePhoto(moment: e.momentPhoto);
     return null;
   }

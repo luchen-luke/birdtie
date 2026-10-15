@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import '../app/birdtie_app_bar.dart';
 import 'legacy_archive_api.dart';
 import 'legacy_personal_archive_page.dart';
+import 'private_reference_targets_page.dart';
 
 /// A personal historical reader. It has no native content or media writer.
 class LegacyArchivePage extends StatefulWidget {
@@ -362,6 +363,26 @@ class _LegacyArchivePageState extends State<LegacyArchivePage> {
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
               children: [
                 const Text('仅本人可见的历史材料，不会自动成为当前地点、动态、记忆或公开内容。'),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton(
+                    onPressed: _bound
+                        ? () => Navigator.of(context).push<void>(
+                            MaterialPageRoute(
+                              builder: (_) => PrivateReferenceTargetsPage(
+                                authorizationHeader: widget.authorizationHeader,
+                                ownerID: widget.ownerID,
+                                sourceCurrent: () => _bound,
+                                identityChanges: widget.identityChanges,
+                                client: widget.client,
+                                apiBaseUrl: widget.apiBaseUrl,
+                              ),
+                            ),
+                          )
+                        : null,
+                    child: const Text('我的旧地点图片'),
+                  ),
+                ),
                 Align(
                   alignment: Alignment.centerLeft,
                   child: TextButton(

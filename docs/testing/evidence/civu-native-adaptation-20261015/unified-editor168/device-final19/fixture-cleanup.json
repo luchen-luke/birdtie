@@ -1,0 +1,33 @@
+{
+  "at": "2026-10-15T17:51:49.768716+00:00",
+  "kind": "EXACT_SELF_GENERATED_FIXTURE_CLEANUP",
+  "files": [
+    {
+      "file": "/sdcard/Pictures/Birdtie-QA-device08-20261015/BirdtieQA08-1.jpg",
+      "sha256": "1a1b9d27cdad6068ab3c9f0d85ac5156cd6bbd6c1bb60ce37361e9ae3cbc138b",
+      "checked": true,
+      "absentAfter": true
+    },
+    {
+      "file": "/sdcard/Pictures/Birdtie-QA-device08-20261015/BirdtieQA08-2.jpg",
+      "sha256": "72b04cbd64c2762c9cb50bb3fb5e957d8fd43c6ba6ebfa553b8399ebbfd76ef9",
+      "checked": true,
+      "absentAfter": true
+    },
+    {
+      "file": "/sdcard/Pictures/Birdtie-QA-device08-20261015/BirdtieQA08-3.jpg",
+      "sha256": "7958a8a736a910e3bf407574c52c41613f209526fb8033ad70fa6d11e1072206",
+      "checked": true,
+      "absentAfter": true
+    },
+    {
+      "file": "/sdcard/Pictures/Birdtie-QA-device08-20261015/BirdtieQA08-video.mp4",
+      "sha256": "63b3c39807ccd6547ecdf6749eab1eff36660d3d9a460d691785a5e0dffa05fb",
+      "checked": true,
+      "absentAfter": true
+    }
+  ],
+  "otherGalleryFilesTouched": false,
+  "recordingsMade": false,
+  "status": "PASS_4_EXACT_SYNTHETIC_FILES_REMOVED"
+}

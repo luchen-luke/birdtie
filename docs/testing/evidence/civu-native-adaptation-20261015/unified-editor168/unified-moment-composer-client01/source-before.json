@@ -1,0 +1,12 @@
+{
+  "apps/client/test/unified_moment_composer_test.dart": "c2d2e309fbed6f91ff9ca87c11edcd4c7038103cc1b0f21d1f4eb691f47a5294",
+  "apps/client/lib/src/workspace/moment_thread_api.dart": "eb8ce856c42a7fdcfee514c4294638307e4bfb84358d4282b94e458710399b42",
+  "apps/client/lib/src/workspace/moment_thread_controller.dart": "d67b23037f8dde5057c381e39376264accd27039349644aed7abbcd9e02078c4",
+  "apps/client/lib/src/workspace/moment_thread_panel.dart": "11235b08e413794e45f12e8f12fcdc52d9be4a013782828538337d93ced940a6",
+  "apps/client/lib/src/workspace/moment_thread_pending_store.dart": "487b13a9fb7797b653a06a10918fb1c19f01006242df3f7b3170a4fb2421dd18",
+  "apps/client/lib/src/content/moment_control.dart": "ea1ad46a1437b111f87b449140f131171a76a25f0f0f2866f2ee63d4ade725c9",
+  "apps/client/lib/src/content/moment_locations.dart": "ad6cc7e001fdbd0f504be144c0930c2cbb57f0bcf4f5ecea723ab6a0dcd0fd2d",
+  "apps/client/lib/src/workspace/moment_locations_api.dart": "6cea79bdfa09ab35f8e9d0db041b12f9c27e566adfeaef9395a5da20f4a50ce5",
+  "apps/client/lib/src/workspace/public_moment_media.dart": "d7d380496067c0892223b3c4842cc16fff47624a1f684047bb24f6e0683637ce",
+  "apps/client/lib/src/workspace/entity_cover.dart": "1f901c55b1bfa0893a9b1a327a470225be2bbd980e42da9a6f4a583eafe7f2b1"
+}

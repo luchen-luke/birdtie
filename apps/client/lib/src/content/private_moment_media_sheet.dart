@@ -12,9 +12,11 @@ class PrivateMomentMediaSheet extends StatefulWidget {
     super.key,
     required this.controller,
     required this.momentTitle,
+    this.originalCover,
   });
   final PrivateMomentMediaController controller;
   final String momentTitle;
+  final Widget? originalCover;
   @override
   State<PrivateMomentMediaSheet> createState() =>
       _PrivateMomentMediaSheetState();
@@ -242,6 +244,7 @@ class _PrivateMomentMediaSheetState extends State<PrivateMomentMediaSheet> {
                 const SizedBox(height: 16),
                 Text(c.error!, key: const ValueKey('private-image-retired')),
               ] else ...[
+                if (widget.originalCover != null) widget.originalCover!,
                 const SizedBox(height: 12),
                 if (c.error != null)
                   Text(
@@ -431,6 +434,7 @@ class _PrivateMomentMediaSheetState extends State<PrivateMomentMediaSheet> {
                   ),
                 MomentMediaContextView(
                   api: c.mediaContextAPI,
+                  ownerID: c.ownerID,
                   momentID: c.momentID,
                   expectedRevision: c.momentRevision,
                   changes: c,

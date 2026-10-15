@@ -6,6 +6,7 @@ import 'moment_thread_controller.dart';
 import 'moment_thread_pending_store.dart';
 import 'moment_locations_api.dart';
 import '../content/moment_locations.dart';
+import 'public_moment_media.dart';
 
 /// Now owns the only text input. This panel changes its active entry and shows
 /// exact ordered previews, while all publication uses the thread contract.
@@ -22,6 +23,9 @@ class MomentThreadPanel extends StatefulWidget {
     this.onAddLocation,
     this.onSaveActive,
     this.onOpenActive,
+    this.preservedMediaBuilder,
+    this.onRestoreRetired,
+    this.onRemoveEntry,
   });
   final MomentThreadController controller;
   final ValueChanged<String> onActiveText;
@@ -32,6 +36,9 @@ class MomentThreadPanel extends StatefulWidget {
   final Map<String, String> locationLabels;
   final VoidCallback? onAddLocation;
   final VoidCallback? onSaveActive, onOpenActive;
+  final Widget Function(int, PublicMomentMediaSet)? preservedMediaBuilder;
+  final ValueChanged<String>? onRestoreRetired;
+  final ValueChanged<int>? onRemoveEntry;
   @override
   State<MomentThreadPanel> createState() => _MomentThreadPanelState();
 }
@@ -100,13 +107,13 @@ class _MomentThreadPanelState extends State<MomentThreadPanel> {
               children: [
                 const Expanded(
                   child: Text(
-                    '串文',
+                    '动态',
                     style: TextStyle(fontWeight: FontWeight.w600),
                   ),
                 ),
                 if (widget.onClose != null)
                   IconButton(
-                    tooltip: '收起串文草稿',
+                    tooltip: '收起动态草稿',
                     onPressed: c.busy || c.unsavedDraft && c.pending == null
                         ? null
                         : widget.onClose,
@@ -116,8 +123,8 @@ class _MomentThreadPanelState extends State<MomentThreadPanel> {
             ),
             Text(
               c.existingThread
-                  ? '原串文已接续。选择一条后，在首页输入框修改；保存只更新这条原动态。'
-                  : '所有条目共用公开范围。选择一条后，在首页原输入框继续修改。',
+                  ? '正在修改原动态。选择内容后，在下方输入框编辑；还可以再接一条。'
+                  : '在下方输入框编辑。需要继续时，再接一条。',
             ),
             if (c.busy) const LinearProgressIndicator(),
             if (c.notice != null)
@@ -140,6 +147,25 @@ class _MomentThreadPanelState extends State<MomentThreadPanel> {
                 ],
               ),
             if (preview == null && !c.uncertain) ...[
+              Wrap(
+                spacing: 8,
+                children: [
+                  ChoiceChip(
+                    label: const Text('正文'),
+                    selected: c.activeField == 'body',
+                    onSelected: c.editable
+                        ? (_) => _edit(() => c.selectField('body'))
+                        : null,
+                  ),
+                  ChoiceChip(
+                    label: const Text('标题（选填）'),
+                    selected: c.activeField == 'title',
+                    onSelected: c.editable
+                        ? (_) => _edit(() => c.selectField('title'))
+                        : null,
+                  ),
+                ],
+              ),
               if (widget.entryMaterials != null) widget.entryMaterials!,
               if (c.entries.isNotEmpty &&
                   c.entries[c.activeIndex].locations != null)
@@ -198,6 +224,8 @@ class _MomentThreadPanelState extends State<MomentThreadPanel> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
+                              if (c.entries[index].title.isNotEmpty)
+                                Text(c.entries[index].title),
                               Text(
                                 '第${index + 1}条${index == c.activeIndex ? ' · 正在编辑' : ''}',
                               ),
@@ -216,28 +244,29 @@ class _MomentThreadPanelState extends State<MomentThreadPanel> {
                       ),
                       IconButton(
                         tooltip: '向前移动第${index + 1}条',
-                        onPressed: c.editable && !c.existingThread && index > 0
+                        onPressed: c.editable && index > 0
                             ? () => _edit(() => c.moveEntry(index, index - 1))
                             : null,
                         icon: const Icon(Icons.arrow_upward, size: 18),
                       ),
                       IconButton(
                         tooltip: '向后移动第${index + 1}条',
-                        onPressed:
-                            c.editable &&
-                                !c.existingThread &&
-                                index + 1 < c.entries.length
+                        onPressed: c.editable && index + 1 < c.entries.length
                             ? () => _edit(() => c.moveEntry(index, index + 1))
                             : null,
                         icon: const Icon(Icons.arrow_downward, size: 18),
                       ),
                       IconButton(
-                        tooltip: '删除草稿第${index + 1}条',
-                        onPressed:
-                            c.editable &&
-                                !c.existingThread &&
-                                c.entries.length > 2
-                            ? () => _edit(() => c.removeEntry(index))
+                        tooltip: c.entries[index].momentID.isEmpty
+                            ? '删除第${index + 1}条草稿'
+                            : '移除第${index + 1}条（确认后撤回）',
+                        onPressed: c.editable && c.entries.length > 1
+                            ? () {
+                                if (widget.onRemoveEntry != null)
+                                  widget.onRemoveEntry!(index);
+                                else
+                                  _edit(() => c.removeEntry(index));
+                              }
                             : null,
                         icon: const Icon(Icons.remove_circle_outline, size: 18),
                       ),
@@ -247,36 +276,59 @@ class _MomentThreadPanelState extends State<MomentThreadPanel> {
               Wrap(
                 spacing: 8,
                 children: [
-                  if (!c.existingThread)
-                    TextButton(
-                      onPressed: c.editable && c.entries.length < 20
-                          ? () => _edit(c.addEntry)
-                          : null,
-                      child: const Text('添加一条'),
-                    ),
-                  if (c.existingThread && widget.onSaveActive != null)
-                    TextButton(
-                      onPressed: c.editable ? widget.onSaveActive : null,
-                      child: const Text('保存这条'),
-                    ),
-                  if (c.existingThread && widget.onOpenActive != null)
+                  TextButton(
+                    onPressed: c.editable && c.entries.length < 20
+                        ? () => _edit(c.addEntry)
+                        : null,
+                    child: const Text('再接一条'),
+                  ),
+                  TextButton(
+                    onPressed: c.editable ? c.saveLocal : null,
+                    child: const Text('保存本机草稿'),
+                  ),
+                  if (c.entries.any((v) => v.momentID.isNotEmpty) &&
+                      widget.onOpenActive != null)
                     TextButton(
                       onPressed: c.editable ? widget.onOpenActive : null,
-                      child: const Text('打开这条动态'),
+                      child: const Text('查看当前内容'),
                     ),
                   FilledButton(
                     onPressed:
                         c.editable &&
                             widget.materialsReady &&
-                            c.entries.length >= 2
+                            c.entries.isNotEmpty
                         ? () => c.preview()
                         : null,
-                    child: const Text('预览整串'),
+                    child: Text(c.entries.length == 1 ? '检查公开发布' : '检查全部动态'),
                   ),
                 ],
               ),
-              if (c.existingThread && c.entries.length == 1)
-                const Text('这串只有一条动态，可以打开后单独发布。'),
+              if (c.removedItems.isNotEmpty)
+                Text('确认后将撤回已移除的 ${c.removedItems.length} 条原动态；其原身份和互动链接保留。'),
+              if (c.entries.isNotEmpty &&
+                  c.entries[c.activeIndex].originalStatus == 'withdrawn' &&
+                  !c.entries[c.activeIndex].restore)
+                TextButton(
+                  onPressed: c.editable ? c.approveRestoreActive : null,
+                  child: const Text('重新发布这条内容'),
+                ),
+              if (c.ownedThreadID.isNotEmpty &&
+                  c.entries.any((v) => v.originalStatus == 'published'))
+                TextButton(
+                  onPressed: c.editable
+                      ? () => c.previewWithdraw(c.ownedThreadID)
+                      : null,
+                  child: Text(c.entries.length == 1 ? '撤回这条动态' : '撤回全部动态'),
+                ),
+              if (widget.onRestoreRetired != null &&
+                  c.ownedSource?.current == true)
+                for (final old in c.ownedSource!.retiredMembers)
+                  TextButton(
+                    onPressed: c.editable
+                        ? () => widget.onRestoreRetired!(old['momentId'])
+                        : null,
+                    child: Text('恢复已移除的第 ${old['position'] + 1} 条内容'),
+                  ),
               if (c.ownedSource?.current == true &&
                   c.ownedSource!.legs.isNotEmpty)
                 for (final leg in c.ownedSource!.legs)
@@ -289,7 +341,7 @@ class _MomentThreadPanelState extends State<MomentThreadPanel> {
                   ),
             ],
             if (!widget.materialsReady && preview == null && !c.uncertain)
-              const Text('请先准备各条材料，或移除尚未准备的材料后预览整串。'),
+              const Text('请先准备好各条媒体，或明确移除未完成的材料后再检查。'),
             if (preview != null) ...[
               Text(
                 preview.input.action == 'WITHDRAW'
@@ -297,6 +349,27 @@ class _MomentThreadPanelState extends State<MomentThreadPanel> {
                     : '将一次公开以下${preview.input.entries.length}条内容',
                 style: const TextStyle(fontWeight: FontWeight.w600),
               ),
+              if (preview.input.action == 'EDIT' &&
+                  c.removedEntries.isNotEmpty) ...[
+                const Text(
+                  '确认后将撤回以下原动态：',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
+                for (final removed in c.removedEntries)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 6),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (removed.title.isNotEmpty) Text(removed.title),
+                        if (removed.text.isNotEmpty) Text(removed.text),
+                        if (removed.mediaSummary.isNotEmpty)
+                          Text(removed.mediaSummary),
+                        const Text('原互动与详情链接保留，内容将不再公开。'),
+                      ],
+                    ),
+                  ),
+              ],
               if (preview.input.action == 'WITHDRAW') ...[
                 const Text('已单独撤回的条目保持原状态和位置，其余条目将全部撤回。单条后续修改会使这次批准失效。'),
                 for (final member in preview.members)
@@ -314,6 +387,11 @@ class _MomentThreadPanelState extends State<MomentThreadPanel> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        if (preview.input.entries[index].title.isNotEmpty)
+                          Text(
+                            preview.input.entries[index].title,
+                            style: const TextStyle(fontWeight: FontWeight.w600),
+                          ),
                         Text(
                           [
                             '第${index + 1}条',
@@ -350,6 +428,13 @@ class _MomentThreadPanelState extends State<MomentThreadPanel> {
                                 ),
                             ],
                           ),
+                        if (preview.preservedMedia.length > index &&
+                            preview.preservedMedia[index] != null)
+                          widget.preservedMediaBuilder?.call(
+                                index,
+                                preview.preservedMedia[index]!,
+                              ) ??
+                              const Text('保留当前已公开媒体'),
                       ],
                     ),
                   ),
@@ -363,7 +448,11 @@ class _MomentThreadPanelState extends State<MomentThreadPanel> {
                   FilledButton(
                     onPressed: c.busy || !preview.current ? null : c.confirm,
                     child: Text(
-                      preview.input.action == 'WITHDRAW' ? '确认撤回整串' : '确认公开整串',
+                      preview.input.action == 'WITHDRAW'
+                          ? '确认撤回整串'
+                          : preview.input.entries.length == 1
+                          ? '确认公开这条动态'
+                          : '确认公开全部动态',
                     ),
                   ),
                 ],
@@ -382,12 +471,14 @@ class MomentThreadSidecar extends StatefulWidget {
     required this.api,
     required this.momentID,
     required this.onOpenMoment,
+    this.onWithdrawn,
     this.ownerID,
     this.journal,
   });
   final MomentThreadAPI api;
   final String momentID;
   final ValueChanged<String> onOpenMoment;
+  final VoidCallback? onWithdrawn;
   final String? ownerID;
   final MomentThreadJournal? journal;
   @override
@@ -463,6 +554,20 @@ class _MomentThreadSidecarState extends State<MomentThreadSidecar> {
     }
   }
 
+  void _resolved(MomentThreadReceipt result) {
+    if (!mounted) return;
+    if (result.status == 'SUCCEEDED' && result.action == 'WITHDRAW') {
+      _lease?.cancel();
+      setState(() {
+        _view = null;
+        _notice = '整串已撤回，不再公开显示。';
+      });
+      widget.onWithdrawn?.call();
+      return;
+    }
+    unawaited(_load());
+  }
+
   @override
   void dispose() {
     _epoch++;
@@ -479,7 +584,11 @@ class _MomentThreadSidecarState extends State<MomentThreadSidecar> {
     }
     if (view == null || !view.current) {
       if (_control?.uncertain == true) {
-        return MomentThreadPanel(controller: _control!, onActiveText: (_) {});
+        return MomentThreadPanel(
+          controller: _control!,
+          onActiveText: (_) {},
+          onPublished: _resolved,
+        );
       }
       return _notice == null
           ? const SizedBox.shrink()
@@ -495,7 +604,8 @@ class _MomentThreadSidecarState extends State<MomentThreadSidecar> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('同一串文', style: TextStyle(fontWeight: FontWeight.w600)),
+        if (view.members.length > 1)
+          const Text('同一串文', style: TextStyle(fontWeight: FontWeight.w600)),
         Wrap(
           spacing: 8,
           children: [
@@ -515,6 +625,8 @@ class _MomentThreadSidecarState extends State<MomentThreadSidecar> {
                 child: Text(
                   member['momentId'] == null
                       ? '第${member['position'] + 1}条 · 暂不可见'
+                      : view.members.length == 1
+                      ? '当前动态'
                       : '第${member['position'] + 1}条${member['momentId'] == widget.momentID ? ' · 当前' : ''}',
                 ),
               ),
@@ -525,7 +637,7 @@ class _MomentThreadSidecarState extends State<MomentThreadSidecar> {
             onPressed: _control!.busy || _control!.pending != null
                 ? null
                 : () => _control!.previewWithdraw(view.threadID),
-            child: const Text('预览撤回整串'),
+            child: Text(view.members.length == 1 ? '预览撤回这条动态' : '预览撤回整串'),
           ),
           ListenableBuilder(
             listenable: _control!,
@@ -536,7 +648,7 @@ class _MomentThreadSidecarState extends State<MomentThreadSidecar> {
                 ? MomentThreadPanel(
                     controller: _control!,
                     onActiveText: (_) {},
-                    onPublished: (_) => _load(),
+                    onPublished: _resolved,
                   )
                 : const SizedBox.shrink(),
           ),

@@ -1,0 +1,17 @@
+{
+  "apps/api/migrations/167_legacy_reference_media.sql": "987d8e1e68a096f843b18ba903f057c163bf45a042f112c22ca56f50acf22a2e",
+  "apps/api/migrations/167_legacy_reference_media.down.sql": "ab4ff0e36f5a768502abca50bcde106cfbb8afc48ed348a39434861b8ea95719",
+  "apps/api/internal/legacyreferencemedia/model.go": "ceefb8137d6d451487bdb10757fe3db14c12b2e9accd40f5054d6c12dfa517de",
+  "apps/api/internal/legacyreferencemedia/build.go": "eb55c8d977c63ac58ceaf8628e55c6e68815b05260c957b5107e38ccdf09b7fb",
+  "apps/api/internal/legacyreferencemedia/build_test.go": "730734de6be3a92c1ae4dd2ac282d4714019a6565753014d8bad18abe8c20970",
+  "apps/api/internal/postgres/legacy_reference_media_import.go": "29ee76e055d27d2a2b99169967f6c134bba782fda8d980190f8ab1bb95c04144",
+  "apps/api/internal/postgres/legacy_reference_media_native_test.go": "7e589002f7fbde6036e4e36425cad3fb790a4460054aa2e68419a95c66618263",
+  "apps/api/internal/postgres/private_reference_media.go": "e00cafe4adfc3e2c386aca868f88b896322d6f44f0fe7ce35a80bce0ee0ea392",
+  "apps/api/internal/content/private_reference_media.go": "b32136a7b7e00ca440b18b0998fc27ac8e3892e271556ca5dee0ec9c5e9c5341",
+  "apps/api/internal/httpapi/private_reference_media.go": "737fe538a7b230b9db8283d0186bfaa6765abc2aa6b4201e32f58fbbef81d8b8",
+  "apps/api/cmd/legacy-media-import/main.go": "1a6e66bcb588267b50a6612104276b6f9b09aa02c62bb04db29c06a5ef70e5f8",
+  "apps/api/cmd/legacy-media-import/main_test.go": "06d3c5bb53771c346561dbb14a11c97bafb452c96162c7904b727b0fbafadca0",
+  "apps/api/internal/media/image_derivative.go": "56f0d707e7621a2f95e5e2a59b1b0a1843df17fad1af7f6447735a9f4e7abd32",
+  "apps/api/internal/media/legacy_reference_image_test.go": "f511301d07c39b8c890262fc92d1c1b0ff48ee8afc4e328159df46a0eda1b43e",
+  "scripts/extract_civu_reference_media.py": "7a9eb7ee0750f8c6c72f36f10ad0f04b4edf28d33fc2156bb09915c23d6ae2cf"
+}

@@ -1,0 +1,9 @@
+{
+  "status": "FAILED_LOCAL_RECEIPT_WRITE",
+  "failureType": "NameError",
+  "remoteQueryCompleted": true,
+  "databaseWrites": 0,
+  "sourceWrites": 0,
+  "sessionsCreated": 0,
+  "repair": "import pathlib.Path and repeat bounded read-only selector"
+}

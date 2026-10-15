@@ -1,0 +1,44 @@
+{
+  "exitCode": 0,
+  "tests": {
+    "pass": 1,
+    "fail": 0,
+    "skip": 0
+  },
+  "sourceStable": true,
+  "command": [
+    "go",
+    "test",
+    "./internal/legacyreferencemedia",
+    "-run",
+    "^TestReferenceMediaProtectedPrepare$",
+    "-count=1",
+    "-json"
+  ],
+  "cwd": "$REPO/apps/api",
+  "originalReceiptSHA256": "2827d16262b99eeca419f74b1d4a6ee2c295fa9e5754ebd5a68998b5724a6edd",
+  "originalStdoutSHA256": "8d80f866a31578fda65b1696d836925612545146f7546d683bb5209dcacaf46d",
+  "projection": "CLOSED_SANITIZED_FIELDS_ONLY",
+  "privateValuesOmitted": true,
+  "databaseAccessed": false,
+  "sourceWrites": 0,
+  "mediaPixelRead": false,
+  "execution": "REAL_SEALED_METADATA_PREPARE_ONLY",
+  "counts": {
+    "privateImages": 77,
+    "reusedImages": 55,
+    "placeImages": 75,
+    "placeCovers": 62,
+    "placeGalleryImages": 13,
+    "placeRelations": 148,
+    "reusedPlaceReferences": 58,
+    "placeTombstones": 18,
+    "journeyMedia": 1,
+    "momentCovers": 4,
+    "rejectedPlaceImages": 3,
+    "systemArtworkArchives": 3,
+    "relationTombstones": 20,
+    "archivedDeletedNoteAssets": 44,
+    "archivedUnreferencedAssets": 112
+  }
+}

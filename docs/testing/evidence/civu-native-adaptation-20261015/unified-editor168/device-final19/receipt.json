@@ -1,0 +1,149 @@
+{
+  "at": "2026-10-15T17:55:44.123314+00:00",
+  "status": "PASS_REQUESTED_UNIFIED_EDITOR_SCOPE",
+  "fullSiteAcceptance": false,
+  "finalInstalledAPK_SHA256": "89bfeaf52fdbd754468e8009ff22708558ed49ba901a8449faf99519f48f8f3a",
+  "apiRelease": "/opt/birdtie/releases/social169-20261015-build19",
+  "schema": 169,
+  "webRelease": "/opt/birdtie/web/releases/public-20261015-final-web19",
+  "checks": [
+    {
+      "case": "ordinary_and_thread_same_editor",
+      "result": "PASS_TARGETED_UI_AND_DEVICE",
+      "evidence": "default one, explicit add, same original Now body; no automatic public request"
+    },
+    {
+      "case": "single_text_without_title_or_location",
+      "result": "PASS_DEVICE_APK17",
+      "evidence": "device-checkpoint03.json; original Moment ID later retained through image and thread"
+    },
+    {
+      "case": "single_media_without_title_body_or_location",
+      "result": "PASS_DEVICE_APK17_AND_API169_READBACK03",
+      "evidence": "original image ID 96e29...; body/title empty, locations empty, same image mediaID"
+    },
+    {
+      "case": "mixed_three_and_published_append",
+      "result": "PASS_DEVICE_APK19",
+      "evidence": "text/image/video explicitly confirmed; original image ID retained"
+    },
+    {
+      "case": "independent_cross_city_locations",
+      "result": "PASS_DEVICE_AND_ACTUAL_READBACK03",
+      "evidence": "London Apsley House and Reykjavik Listasafn; Now browsing Aberdeen; image has no location"
+    },
+    {
+      "case": "published_edit_and_reorder_preserve_ids",
+      "result": "PASS_DEVICE_APK19_API169",
+      "evidence": "readback03 thread version4, same original three IDs and image/video media IDs"
+    },
+    {
+      "case": "single_removal",
+      "result": "PASS_DEVICE_APK19_API169",
+      "evidence": "readback04 version5; only image retired, other two still published"
+    },
+    {
+      "case": "whole_withdraw",
+      "result": "PASS_DEVICE_APK19_API169",
+      "evidence": "readback05 version6; all original three withdrawn/private, anonymous endpoints and five old URLs 404"
+    },
+    {
+      "case": "draft_restore_and_upload_failure_retry",
+      "result": "PASS_DEVICE_APK18_19_AND_TARGETED_TEST",
+      "evidence": "restored ordered three-entry draft; device-stage-failure03 UNKNOWN->GET404->explicit STOP->new stage READY->one successful group"
+    },
+    {
+      "case": "now_video_play",
+      "result": "PASS_DEVICE_APK19",
+      "evidence": "apk19-now-video-playing04.png; self-generated four-second video actually playing"
+    },
+    {
+      "case": "return_now_preserves_map_and_editor",
+      "result": "PASS_DEVICE_APK19",
+      "evidence": "before/after close screenshots same map geometry; reopened original edited London body and two entries; exact camera equality not instrumented"
+    },
+    {
+      "case": "current_permissions_and_map_privacy",
+      "result": "PASS_TARGETED_NATIVE_COMPONENT_AND_LIVE_API",
+      "evidence": "map-native02/map-media-client01; owner and role final gates; live anonymous withdrawn detail/locations/media all404; complete phone propagation NOT_RUN"
+    }
+  ],
+  "notRun": [
+    "NOT_RUN: full-repository Go/Flutter suites and full-site acceptance; only necessary affected tests were executed.",
+    "NOT_RUN: iOS, other devices, global search and China AMap external-search acceptance.",
+    "NOT_RUN: all legacy owners and all 407 assets individually in UI; selected old owner has no positive Journey/Moment cover samples.",
+    "NOT_RUN: AV scanning, schema169 down execution, physical deletion of withdrawn media bytes.",
+    "NOT_RUN_ON_APK19: fresh single-text/single-image creation was exercised on APK17; single-entry multiple locations and multiple images on prior APK08/10. Final19 covers continued existing IDs, mixed media, recovery and editing.",
+    "NOT_RUN: complete live map/feed/profile/share propagation matrix on final phone; targeted map-native/privacy and map-media component tests passed. Anonymous detail/thread/location/media retirement was verified on live API169.",
+    "NOT_RUN: Civu runtime/build/tests; Civu comparison is read-only source evidence."
+  ],
+  "recordingsMade": false,
+  "fontScale": "normal",
+  "onlySyntheticQA03UsedInFinalDeviceSession": true,
+  "phoneLeftAt": "Birdtie Now; synthetic QA03 session remains signed in",
+  "allHelperReadbackSessionsLoggedOut": true,
+  "qaPublishedContentWithdrawn": true,
+  "fourSelfGeneratedGalleryFixturesRemoved": true,
+  "readbackIndexSHA256": "f1157de083543fe793f72581f307d3b9e2faacd5cd014be6163a3aa03968b9c3",
+  "safeUIReceiptSHA256": "5e5fda6c64f185d99e6240a64720c7eff3eaa87fb5715e69358e51225c2ff27f",
+  "screenshots": {
+    "apk19-failed-video-retry-ready01.png": {
+      "sha256": "d5414aaa479bc2949943b0738b96db518f7f3d4b4225d4a04bc2f40b7a7bbb5f",
+      "caption": "断网视频原操作核实、明确停止后重新准备完成；失败材料没有静默消失。"
+    },
+    "apk19-mixed-three-preview01-top.png": {
+      "sha256": "6a1b7745db0c19ea756667efb9ec8a2398ca05268878d17344641a82a84a11e1",
+      "caption": "三条混合内容的发布预览；最终需要明确确认。"
+    },
+    "apk19-mixed-three-preview01.png": {
+      "sha256": "b8bbb18b5a6fb25b76829ec32f652bc4092dbaaac4d139b62ea5096dcbc0f080",
+      "caption": "三条混合内容最终确认入口。"
+    },
+    "apk19-now-video-playing04.png": {
+      "sha256": "904ef8621c40ca9d7d3d5be7444f00534c2492f70ffd9fa260c732285d8f7256",
+      "caption": "Now 面板内真实视频播放，暂停按钮与变化的测试帧可见；不是仅海报。"
+    },
+    "apk19-api169-edit-sort02-top.png": {
+      "sha256": "7e87bcb54a7145a0449717ba95bb047904d75f86572543913882cbc040098dfd",
+      "caption": "API169 修复后已发布内容编辑和重排预览。"
+    },
+    "apk19-api169-edit-sort02.png": {
+      "sha256": "14f2f69daa1b7fb9707ada12c4ed07a79dff1f6d35a6aa070a8a69c1f4303768",
+      "caption": "同一次编辑的最终确认。"
+    },
+    "apk19-published-sort-same-ids01.png": {
+      "sha256": "93190ec7baca7f51a460582c808001e97aa95ae45dcca648ac4d85671d36a958",
+      "caption": "修改及排序保存成功；原 ID 由 readback03 核对。"
+    },
+    "apk19-single-removal-distinct01.png": {
+      "sha256": "71935d97d91588ba1e2ac68b4ed01d00606ae485e14eca28f96f6bb745e2dcda",
+      "caption": "单条移除与撤回全部是两个明确操作。"
+    },
+    "apk19-api169-single-removal01.png": {
+      "sha256": "128290da1c7cf54f1523490442656f555844be0692ab1556dddc743412a63bdb",
+      "caption": "单条移除确认，readback04 证实仅原图被撤回。"
+    },
+    "apk19-now-panel-before-close01.png": {
+      "sha256": "c9d59c91abcdaa837d5058361b8bf1c05e0a580a0002341729956e91acd17b26",
+      "caption": "收起前；可见地图背景和当前正文。位置租约到期时去除位置并提示重读。"
+    },
+    "apk19-now-map-after-close01.png": {
+      "sha256": "ee1de04a50d6894652ebe3df5def774f3ce6bac0d8e22d34660524280732759a",
+      "caption": "收起后同一 Aberdeen 地图视野；重新打开后原正文和两个条目保留，见安全 UI 事件。"
+    },
+    "apk19-whole-withdraw-confirm01.png": {
+      "sha256": "ac0064448d6cf221db7e7226417cd6d0d7707a0deb38024d5c9749595c2c0952",
+      "caption": "整串撤回预览明确说明当前两条及已撤回条目的不同处理。"
+    },
+    "apk19-whole-withdraw-success01.png": {
+      "sha256": "d3981ab908ba8ed4bb6df0a0a82cde384eda8caec3ab77e917586d3e363fd560",
+      "caption": "整串已撤回的手机成功状态，readback05 核对匿名读取均拒绝。"
+    },
+    "apk19-final-now01.png": {
+      "sha256": "4d46e81ebf1490fd68041195684bde388c59c50131c0c2ccf8cf3e935ad02cc3",
+      "caption": "验收结束留在 Now 首页。"
+    }
+  },
+  "screenshotsAndMediaInGit": false,
+  "historicalResultsNotReclassified": true
+}

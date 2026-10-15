@@ -1,0 +1,555 @@
+[
+  {
+    "family": "moment-controls",
+    "input": {
+      "operationId": "cec4fe5a-6f5b-4285-a4b6-70f0352c9d77",
+      "action": "CREATE",
+      "expectedRevision": 0,
+      "input": {
+        "cityId": "",
+        "placeId": "",
+        "title": "",
+        "body": "QA-unified168-original-unified168-http01",
+        "occurredAt": null,
+        "timePrecision": "unknown",
+        "locationPrecision": "none",
+        "locations": []
+      }
+    },
+    "status": "SUCCEEDED",
+    "receipt": {
+      "operationId": "cec4fe5a-6f5b-4285-a4b6-70f0352c9d77",
+      "status": "SUCCEEDED",
+      "appliedRevision": 1,
+      "action": "CREATE",
+      "momentId": "3b5940db-d5c2-49fe-b73f-0e48d926164b",
+      "expectedRevision": 0,
+      "payloadDigest": "fd2f72a2d3a567068709533440ea9df9804eab28a99b228f619438864dfd1b9e",
+      "committedAt": "2026-10-15T15:28:18.29246Z"
+    }
+  },
+  {
+    "family": "moment-controls",
+    "input": {
+      "operationId": "9fcd4745-2d89-40ea-8e6a-0febd6e675c4",
+      "action": "PUBLISH",
+      "momentId": "3b5940db-d5c2-49fe-b73f-0e48d926164b",
+      "expectedRevision": 1,
+      "input": {
+        "cityId": "",
+        "placeId": "",
+        "title": "",
+        "body": "QA-unified168-original-unified168-http01",
+        "occurredAt": null,
+        "timePrecision": "unknown",
+        "locationPrecision": "none",
+        "locations": []
+      }
+    },
+    "status": "SUCCEEDED",
+    "receipt": {
+      "operationId": "9fcd4745-2d89-40ea-8e6a-0febd6e675c4",
+      "status": "SUCCEEDED",
+      "appliedRevision": 2,
+      "action": "PUBLISH",
+      "momentId": "3b5940db-d5c2-49fe-b73f-0e48d926164b",
+      "expectedRevision": 1,
+      "payloadDigest": "60104b9184bcd1b309a2b49b4e3ffcb4dd9b32864cbf803fb26e43886aba89c3",
+      "committedAt": "2026-10-15T15:28:18.684259Z"
+    }
+  },
+  {
+    "family": "moment-interactions",
+    "input": {
+      "operationId": "973a7eb7-1f55-403e-8812-f5bc29872a6d",
+      "action": "LIKE",
+      "momentId": "3b5940db-d5c2-49fe-b73f-0e48d926164b",
+      "expectedMomentRevision": 2,
+      "expectedLikeVersion": 0,
+      "commentId": "",
+      "body": ""
+    },
+    "status": "SUCCEEDED",
+    "receipt": {
+      "operationId": "973a7eb7-1f55-403e-8812-f5bc29872a6d",
+      "status": "SUCCEEDED",
+      "action": "LIKE",
+      "momentId": "3b5940db-d5c2-49fe-b73f-0e48d926164b",
+      "appliedVersion": 1,
+      "payloadDigest": "3bb3267241b23bdde45998db8e354e3168b3ecc37b574cc66b13b9a052eafc7c",
+      "committedAt": "2026-10-15T15:28:19.391925Z"
+    }
+  },
+  {
+    "family": "moment-interactions",
+    "input": {
+      "operationId": "6fc58ffb-9a2d-4a2e-b0e8-74a1f19a3ec6",
+      "action": "COMMENT",
+      "momentId": "3b5940db-d5c2-49fe-b73f-0e48d926164b",
+      "expectedMomentRevision": 2,
+      "expectedLikeVersion": 1,
+      "commentId": "",
+      "body": "QA-unified168-self-comment"
+    },
+    "status": "SUCCEEDED",
+    "receipt": {
+      "operationId": "6fc58ffb-9a2d-4a2e-b0e8-74a1f19a3ec6",
+      "status": "SUCCEEDED",
+      "action": "COMMENT",
+      "momentId": "3b5940db-d5c2-49fe-b73f-0e48d926164b",
+      "commentId": "c83e3f91-993e-4f9f-b0bf-eff1a3d3d76d",
+      "appliedVersion": 1,
+      "payloadDigest": "c76fc44a8040dba0ec00c904b0589c153f0e1137d0c6ce99aa66b00b6f449d90",
+      "committedAt": "2026-10-15T15:28:19.961798Z"
+    }
+  },
+  {
+    "family": "moment-threads",
+    "input": {
+      "operationId": "95f3fc35-f8f5-46d4-9c0a-c2a2f9f1f079",
+      "action": "EDIT",
+      "threadId": "",
+      "baseMomentId": "3b5940db-d5c2-49fe-b73f-0e48d926164b",
+      "localScope": "29525133-b2a1-4348-8cec-5033ab02ed5c",
+      "audience": "PUBLIC",
+      "expectedVersion": 0,
+      "items": [
+        {
+          "momentId": "3b5940db-d5c2-49fe-b73f-0e48d926164b",
+          "expectedRevision": 2,
+          "restore": false,
+          "input": {
+            "cityId": "",
+            "placeId": "",
+            "title": "",
+            "body": "QA-unified168-edited-unified168-http01",
+            "occurredAt": null,
+            "timePrecision": "unknown",
+            "locationPrecision": "none",
+            "locations": [
+              {
+                "id": "117cd5f8-16cc-43e6-8b0f-5ddfd0fd9cb0",
+                "kind": "CITY",
+                "cityId": "aberdeen-gb",
+                "placeId": "",
+                "precision": "city"
+              }
+            ]
+          },
+          "media": null
+        },
+        {
+          "momentId": "",
+          "expectedRevision": 0,
+          "restore": false,
+          "input": {
+            "cityId": "",
+            "placeId": "",
+            "title": "",
+            "body": "QA-unified168-added-unified168-http01",
+            "occurredAt": null,
+            "timePrecision": "unknown",
+            "locationPrecision": "none",
+            "locations": [
+              {
+                "id": "cdb85eb9-3727-4ca1-ad3f-906fa6ca3358",
+                "kind": "CITY",
+                "cityId": "civu-geo-322091f7-339c-42bc-98a6-cc10d3c4b143",
+                "placeId": "",
+                "precision": "city"
+              }
+            ]
+          },
+          "media": []
+        },
+        {
+          "momentId": "",
+          "expectedRevision": 0,
+          "restore": false,
+          "input": {
+            "cityId": "",
+            "placeId": "",
+            "title": "",
+            "body": "QA-unified168-third-unified168-http01",
+            "occurredAt": null,
+            "timePrecision": "unknown",
+            "locationPrecision": "none",
+            "locations": []
+          },
+          "media": []
+        }
+      ],
+      "removedItems": []
+    },
+    "status": "SUCCEEDED",
+    "receipt": {
+      "schemaVersion": "moment-thread-operation-v2",
+      "operationId": "95f3fc35-f8f5-46d4-9c0a-c2a2f9f1f079",
+      "status": "SUCCEEDED",
+      "action": "EDIT",
+      "threadId": "3e4599c3-87d2-470d-9ab6-97a3d5dbc646",
+      "rootMomentId": "3b5940db-d5c2-49fe-b73f-0e48d926164b",
+      "audience": "PUBLIC",
+      "expectedVersion": 0,
+      "appliedVersion": 1,
+      "payloadDigest": "0d06ecebf247188e58fff767e97b7827289b5bbf5e187dce2a4d054db8563402",
+      "members": [
+        {
+          "momentId": "3b5940db-d5c2-49fe-b73f-0e48d926164b",
+          "status": "published",
+          "position": 0,
+          "appliedRevision": 3,
+          "mediaSetVersion": 0,
+          "media": []
+        },
+        {
+          "momentId": "0633b383-d069-433c-b468-72c8a076220f",
+          "status": "published",
+          "position": 1,
+          "appliedRevision": 2,
+          "mediaSetVersion": 0,
+          "media": []
+        },
+        {
+          "momentId": "99f96dc5-307c-415d-bbd8-1f3f980bb3e1",
+          "status": "published",
+          "position": 2,
+          "appliedRevision": 2,
+          "mediaSetVersion": 0,
+          "media": []
+        }
+      ],
+      "removedMembers": [],
+      "committedAt": "2026-10-15T15:28:20.398236Z"
+    }
+  },
+  {
+    "family": "moment-threads",
+    "input": {
+      "operationId": "54cebaa8-0d5d-4807-a43c-b4b919eda8b6",
+      "action": "EDIT",
+      "threadId": "3e4599c3-87d2-470d-9ab6-97a3d5dbc646",
+      "baseMomentId": "",
+      "localScope": "32b56b08-279f-4362-9bc4-2ad2299aaf97",
+      "audience": "PUBLIC",
+      "expectedVersion": 1,
+      "items": [
+        {
+          "momentId": "99f96dc5-307c-415d-bbd8-1f3f980bb3e1",
+          "expectedRevision": 2,
+          "restore": false,
+          "input": {
+            "cityId": "",
+            "placeId": "",
+            "title": "",
+            "body": "QA-unified168-third-unified168-http01",
+            "occurredAt": null,
+            "timePrecision": "unknown",
+            "locationPrecision": "none",
+            "locations": []
+          },
+          "media": null
+        },
+        {
+          "momentId": "3b5940db-d5c2-49fe-b73f-0e48d926164b",
+          "expectedRevision": 3,
+          "restore": false,
+          "input": {
+            "cityId": "",
+            "placeId": "",
+            "title": "",
+            "body": "QA-unified168-edited-unified168-http01",
+            "occurredAt": null,
+            "timePrecision": "unknown",
+            "locationPrecision": "none",
+            "locations": [
+              {
+                "id": "117cd5f8-16cc-43e6-8b0f-5ddfd0fd9cb0",
+                "kind": "CITY",
+                "cityId": "aberdeen-gb",
+                "placeId": "",
+                "precision": "city"
+              }
+            ]
+          },
+          "media": null
+        },
+        {
+          "momentId": "0633b383-d069-433c-b468-72c8a076220f",
+          "expectedRevision": 2,
+          "restore": false,
+          "input": {
+            "cityId": "",
+            "placeId": "",
+            "title": "",
+            "body": "QA-unified168-added-unified168-http01",
+            "occurredAt": null,
+            "timePrecision": "unknown",
+            "locationPrecision": "none",
+            "locations": [
+              {
+                "id": "cdb85eb9-3727-4ca1-ad3f-906fa6ca3358",
+                "kind": "CITY",
+                "cityId": "civu-geo-322091f7-339c-42bc-98a6-cc10d3c4b143",
+                "placeId": "",
+                "precision": "city"
+              }
+            ]
+          },
+          "media": null
+        }
+      ],
+      "removedItems": []
+    },
+    "status": "SUCCEEDED",
+    "receipt": {
+      "schemaVersion": "moment-thread-operation-v2",
+      "operationId": "54cebaa8-0d5d-4807-a43c-b4b919eda8b6",
+      "status": "SUCCEEDED",
+      "action": "EDIT",
+      "threadId": "3e4599c3-87d2-470d-9ab6-97a3d5dbc646",
+      "rootMomentId": "3b5940db-d5c2-49fe-b73f-0e48d926164b",
+      "audience": "PUBLIC",
+      "expectedVersion": 1,
+      "appliedVersion": 2,
+      "payloadDigest": "dd6104b2e8386763b61ca47ddcd97277aee548343bd12ba366e4da5e359ae1f0",
+      "members": [
+        {
+          "momentId": "99f96dc5-307c-415d-bbd8-1f3f980bb3e1",
+          "status": "published",
+          "position": 0,
+          "appliedRevision": 3,
+          "mediaSetVersion": 0,
+          "media": []
+        },
+        {
+          "momentId": "3b5940db-d5c2-49fe-b73f-0e48d926164b",
+          "status": "published",
+          "position": 1,
+          "appliedRevision": 4,
+          "mediaSetVersion": 0,
+          "media": []
+        },
+        {
+          "momentId": "0633b383-d069-433c-b468-72c8a076220f",
+          "status": "published",
+          "position": 2,
+          "appliedRevision": 3,
+          "mediaSetVersion": 0,
+          "media": []
+        }
+      ],
+      "removedMembers": [],
+      "committedAt": "2026-10-15T15:28:21.005293Z"
+    }
+  },
+  {
+    "family": "moment-threads",
+    "input": {
+      "operationId": "ea9d451f-5e00-4ccd-8923-3b1fa5106b46",
+      "action": "EDIT",
+      "threadId": "3e4599c3-87d2-470d-9ab6-97a3d5dbc646",
+      "baseMomentId": "",
+      "localScope": "46e25285-efc6-4975-a42a-ede3480f64ac",
+      "audience": "PUBLIC",
+      "expectedVersion": 2,
+      "items": [
+        {
+          "momentId": "99f96dc5-307c-415d-bbd8-1f3f980bb3e1",
+          "expectedRevision": 3,
+          "restore": false,
+          "input": {
+            "cityId": "",
+            "placeId": "",
+            "title": "",
+            "body": "QA-unified168-third-unified168-http01",
+            "occurredAt": null,
+            "timePrecision": "unknown",
+            "locationPrecision": "none",
+            "locations": []
+          },
+          "media": null
+        },
+        {
+          "momentId": "0633b383-d069-433c-b468-72c8a076220f",
+          "expectedRevision": 3,
+          "restore": false,
+          "input": {
+            "cityId": "",
+            "placeId": "",
+            "title": "",
+            "body": "QA-unified168-added-unified168-http01",
+            "occurredAt": null,
+            "timePrecision": "unknown",
+            "locationPrecision": "none",
+            "locations": [
+              {
+                "id": "cdb85eb9-3727-4ca1-ad3f-906fa6ca3358",
+                "kind": "CITY",
+                "cityId": "civu-geo-322091f7-339c-42bc-98a6-cc10d3c4b143",
+                "placeId": "",
+                "precision": "city"
+              }
+            ]
+          },
+          "media": null
+        }
+      ],
+      "removedItems": [
+        {
+          "momentId": "3b5940db-d5c2-49fe-b73f-0e48d926164b",
+          "expectedRevision": 4
+        }
+      ]
+    },
+    "status": "SUCCEEDED",
+    "receipt": {
+      "schemaVersion": "moment-thread-operation-v2",
+      "operationId": "ea9d451f-5e00-4ccd-8923-3b1fa5106b46",
+      "status": "SUCCEEDED",
+      "action": "EDIT",
+      "threadId": "3e4599c3-87d2-470d-9ab6-97a3d5dbc646",
+      "rootMomentId": "3b5940db-d5c2-49fe-b73f-0e48d926164b",
+      "audience": "PUBLIC",
+      "expectedVersion": 2,
+      "appliedVersion": 3,
+      "payloadDigest": "1e621bc0921dff549cb336704071a03b3cb42293503635a4e6403a86e3e84bbf",
+      "members": [
+        {
+          "momentId": "99f96dc5-307c-415d-bbd8-1f3f980bb3e1",
+          "status": "published",
+          "position": 0,
+          "appliedRevision": 4,
+          "mediaSetVersion": 0,
+          "media": []
+        },
+        {
+          "momentId": "0633b383-d069-433c-b468-72c8a076220f",
+          "status": "published",
+          "position": 1,
+          "appliedRevision": 4,
+          "mediaSetVersion": 0,
+          "media": []
+        }
+      ],
+      "removedMembers": [
+        {
+          "momentId": "3b5940db-d5c2-49fe-b73f-0e48d926164b",
+          "status": "withdrawn",
+          "position": 0,
+          "appliedRevision": 5,
+          "mediaSetVersion": 0,
+          "media": []
+        }
+      ],
+      "committedAt": "2026-10-15T15:28:21.398187Z"
+    }
+  },
+  {
+    "family": "moment-threads",
+    "input": {
+      "operationId": "47952359-82ef-4455-b168-2a4c6f6a05d2",
+      "action": "EDIT",
+      "threadId": "3e4599c3-87d2-470d-9ab6-97a3d5dbc646",
+      "baseMomentId": "",
+      "localScope": "e23bd760-f856-41b2-b55d-618425b42aa5",
+      "audience": "PUBLIC",
+      "expectedVersion": 3,
+      "items": [
+        {
+          "momentId": "99f96dc5-307c-415d-bbd8-1f3f980bb3e1",
+          "expectedRevision": 4,
+          "restore": false,
+          "input": {
+            "cityId": "",
+            "placeId": "",
+            "title": "",
+            "body": "QA-unified168-third-unified168-http01",
+            "occurredAt": null,
+            "timePrecision": "unknown",
+            "locationPrecision": "none",
+            "locations": []
+          },
+          "media": null
+        }
+      ],
+      "removedItems": [
+        {
+          "momentId": "0633b383-d069-433c-b468-72c8a076220f",
+          "expectedRevision": 4
+        }
+      ]
+    },
+    "status": "SUCCEEDED",
+    "receipt": {
+      "schemaVersion": "moment-thread-operation-v2",
+      "operationId": "47952359-82ef-4455-b168-2a4c6f6a05d2",
+      "status": "SUCCEEDED",
+      "action": "EDIT",
+      "threadId": "3e4599c3-87d2-470d-9ab6-97a3d5dbc646",
+      "rootMomentId": "3b5940db-d5c2-49fe-b73f-0e48d926164b",
+      "audience": "PUBLIC",
+      "expectedVersion": 3,
+      "appliedVersion": 4,
+      "payloadDigest": "2bd0ee4574fdde025b1fc3fc3f4411053b5d80e18d57ed04078f0fa368e3e667",
+      "members": [
+        {
+          "momentId": "99f96dc5-307c-415d-bbd8-1f3f980bb3e1",
+          "status": "published",
+          "position": 0,
+          "appliedRevision": 5,
+          "mediaSetVersion": 0,
+          "media": []
+        }
+      ],
+      "removedMembers": [
+        {
+          "momentId": "0633b383-d069-433c-b468-72c8a076220f",
+          "status": "withdrawn",
+          "position": 1,
+          "appliedRevision": 5,
+          "mediaSetVersion": 0,
+          "media": []
+        }
+      ],
+      "committedAt": "2026-10-15T15:28:21.90382Z"
+    }
+  },
+  {
+    "family": "moment-threads",
+    "input": {
+      "operationId": "1a579a82-fc0d-4db9-a999-3ddce5da252e",
+      "action": "WITHDRAW",
+      "threadId": "3e4599c3-87d2-470d-9ab6-97a3d5dbc646",
+      "localScope": "",
+      "audience": "PUBLIC",
+      "expectedVersion": 4,
+      "items": []
+    },
+    "status": "SUCCEEDED",
+    "receipt": {
+      "schemaVersion": "moment-thread-operation-v2",
+      "operationId": "1a579a82-fc0d-4db9-a999-3ddce5da252e",
+      "status": "SUCCEEDED",
+      "action": "WITHDRAW",
+      "threadId": "3e4599c3-87d2-470d-9ab6-97a3d5dbc646",
+      "rootMomentId": "3b5940db-d5c2-49fe-b73f-0e48d926164b",
+      "audience": "PUBLIC",
+      "expectedVersion": 4,
+      "appliedVersion": 5,
+      "payloadDigest": "679750c1b1d6b0bee8a4915eb90d6f7f16aa019c36ca7344b5177c7600c475eb",
+      "members": [
+        {
+          "momentId": "99f96dc5-307c-415d-bbd8-1f3f980bb3e1",
+          "status": "withdrawn",
+          "position": 0,
+          "appliedRevision": 6,
+          "mediaSetVersion": 0,
+          "media": []
+        }
+      ],
+      "removedMembers": [],
+      "committedAt": "2026-10-15T15:28:22.554983Z"
+    }
+  }
+]

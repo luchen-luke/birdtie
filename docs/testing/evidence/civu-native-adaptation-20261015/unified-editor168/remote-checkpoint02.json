@@ -1,0 +1,12 @@
+{
+  "at": "2026-10-15T16:05:10.316024+00:00",
+  "status": "FINAL_BACKEND_DEPLOYED_CLIENT_ROUTE_HANDOFF_IN_PROGRESS",
+  "apiRelease": "/opt/birdtie/releases/social168-20261015-build18",
+  "schema": 168,
+  "appliedMigrationsThisRefresh": 0,
+  "apiSHA256": "6cf328dfae115eda143c5eb783b152171637f5fab3b7f128bf18719f610590dc",
+  "finalBackendSourceFrame": "unified-backend-source-ready03.json",
+  "newAPK": "NOT_BUILT",
+  "newDeviceAcceptance": "NOT_RUN",
+  "sourceWrites": 0
+}

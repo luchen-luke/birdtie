@@ -21,6 +21,7 @@ class PublicMomentPhotoEditor extends StatefulWidget {
     this.ownsController = true,
     this.initialImage,
     this.allowImageSelection = true,
+    this.recoveryOnly = false,
     this.onPrepared,
     this.onResolved,
   });
@@ -28,7 +29,7 @@ class PublicMomentPhotoEditor extends StatefulWidget {
   final String momentTitle;
   final int? momentTitleRevision;
   final Future<Uint8List?> Function()? picker;
-  final bool embedded, ownsController, allowImageSelection;
+  final bool embedded, ownsController, allowImageSelection, recoveryOnly;
   final Uint8List? initialImage;
   final ValueChanged<PublicMomentPhotoPreview>? onPrepared;
   final void Function(PublicMomentPhotoPending, PublicMomentPhotoReceipt)?
@@ -58,7 +59,11 @@ class _PublicMomentPhotoEditorState extends State<PublicMomentPhotoEditor> {
   Future<void> _initialize() async {
     final c = widget.controller, bytes = widget.initialImage;
     await c.load();
-    if (!mounted || widget.controller != c || !c.canStart || bytes == null)
+    if (!mounted ||
+        widget.recoveryOnly ||
+        widget.controller != c ||
+        !c.canStart ||
+        bytes == null)
       return;
     if (widget.momentTitleRevision != null &&
         c.state?.momentRevision != widget.momentTitleRevision) {
@@ -113,13 +118,18 @@ class _PublicMomentPhotoEditorState extends State<PublicMomentPhotoEditor> {
   }
 
   Future<void> _pick() async {
+    if (widget.recoveryOnly) return;
     final c = widget.controller, valid = c.capture();
     if (!c.canStart || c.state?.canSave != true) return;
     try {
       final bytes =
           await (widget.picker?.call() ??
               MomentImagePicker().select().then((v) => v?.bytes));
-      if (!mounted || widget.controller != c || !valid() || bytes == null)
+      if (!mounted ||
+          widget.recoveryOnly ||
+          widget.controller != c ||
+          !valid() ||
+          bytes == null)
         return;
       c.select(bytes);
       setState(() => _localError = null);
@@ -144,7 +154,7 @@ class _PublicMomentPhotoEditorState extends State<PublicMomentPhotoEditor> {
   }
 
   Future<void> _prepare(String action) async {
-    if (!mounted) return;
+    if (!mounted || widget.recoveryOnly) return;
     final c = widget.controller;
     if (action == 'SAVE' &&
         widget.initialImage != null &&
@@ -158,13 +168,18 @@ class _PublicMomentPhotoEditorState extends State<PublicMomentPhotoEditor> {
       return;
     }
     final p = await c.prepare(action: action, rights: rights);
-    if (!mounted || widget.controller != c || p == null) return;
+    if (!mounted || widget.recoveryOnly || widget.controller != c || p == null)
+      return;
     widget.onPrepared?.call(p);
     final epoch = c.epoch;
     var open = true, painted = action == 'DELETE';
     final frame = ValueNotifier<bool>(painted);
     bool current() =>
-        open && mounted && widget.controller == c && c.previewCurrent(p, epoch);
+        open &&
+        mounted &&
+        !widget.recoveryOnly &&
+        widget.controller == c &&
+        c.previewCurrent(p, epoch);
     final timer = Timer.periodic(const Duration(milliseconds: 100), (timer) {
       if (!current()) {
         timer.cancel();
@@ -386,7 +401,8 @@ class _PublicMomentPhotoEditorState extends State<PublicMomentPhotoEditor> {
                 ],
               ),
           ],
-          if (c.state?.canSave == true) ...[
+          if (widget.recoveryOnly) const Text('这里只核实原图片操作；修改图片请返回 Now。'),
+          if (!widget.recoveryOnly && c.state?.canSave == true) ...[
             Text(
               widget.allowImageSelection
                   ? '请本人重新选择一张本机图片。私人动态附件不会自动用于公开。'
@@ -469,7 +485,7 @@ class _PublicMomentPhotoEditorState extends State<PublicMomentPhotoEditor> {
               ),
             ],
           ],
-          if (c.state?.canDelete == true)
+          if (!widget.recoveryOnly && c.state?.canDelete == true)
             TextButton(
               onPressed: c.canStart ? () => _prepare('DELETE') : null,
               child: const Text('检查移除当前公开图片'),

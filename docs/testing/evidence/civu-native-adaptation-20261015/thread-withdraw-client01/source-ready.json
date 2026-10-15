@@ -1,0 +1,46 @@
+{
+  "status": "SOURCE_READY",
+  "at": "2026-10-15T13:37:13.307092+00:00",
+  "files": {
+    "apps/client/lib/src/workspace/public_moment_page.dart": "bb9a4d49ed9fb67ae5f9d062e851e88fc9941ca308c4e1990411c642ac6f1454",
+    "apps/client/test/moment_thread_test.dart": "b502f4b1983ea6a1f0c94306e75d0c08cf90da687f714b235494b38083560465"
+  },
+  "cause": "PublicMomentPage build recreated MomentThreadAPI; MomentThreadSidecar API-identity reset disposed controller and retired RAM approval before the original WITHDRAW PUT, leaving durable PREPARED/RETIRED state and remote operation404.",
+  "fix": "Bind one MomentThreadAPI to the accepted parent read epoch, identity and target. Normal capability/ancestor rebuilds retain the exact original approval; new loads, identities, targets and transports retire it.",
+  "uxChecks": [
+    "UX-CHECK-04",
+    "UX-CHECK-07",
+    "UX-CHECK-08",
+    "UX-CHECK-09",
+    "UX-CHECK-10",
+    "UX-CHECK-12"
+  ],
+  "direct": {
+    "path": "work/thread-withdraw-client01/receipt.json",
+    "pass": 1,
+    "fail": 0,
+    "skip": 0
+  },
+  "analysis": {
+    "path": "work/thread-withdraw-analysis01/receipt.json",
+    "exitCode": 0,
+    "errors": 0,
+    "warnings": 0,
+    "info": 17
+  },
+  "backendDiagnostic": {
+    "existingNative": "work/thread-withdraw-native01/receipt.json",
+    "existingNativeCounts": {
+      "pass": 1,
+      "fail": 0,
+      "skip": 0
+    },
+    "exactHTTPDiagnostic": "work/thread-withdraw-http01/receipt.json",
+    "exactHTTPResult": "FAIL in final fixture expectation only: owner-authenticated withdrawn thread read expected404 but valid owner tombstone response200; preceding CREATE_PUBLISH preview+commit, WITHDRAW preview+commit and original-operation GET all200 and SUCCEEDED. Do not claim wholecasePASS.",
+    "backendProductionModified": false,
+    "SQLModified": false,
+    "parentIdentityStable": true
+  },
+  "device": "ROOT_PENDING_NEXT_COMBINED_APK",
+  "remoteWrites": 0
+}

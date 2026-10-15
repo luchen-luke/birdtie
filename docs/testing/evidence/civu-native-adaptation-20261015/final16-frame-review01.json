@@ -1,0 +1,72 @@
+{
+  "status": "PASS",
+  "observedAtUTC": "2026-10-15T14:37:23Z",
+  "scope": "LOCAL_EXISTING_BUILD_DEPLOY_RECEIPTS_AND_CURRENT_SOURCE_ONLY",
+  "httpRequests": 0,
+  "databaseAccess": 0,
+  "testsRun": 0,
+  "sourceWrites": 0,
+  "freshRemoteStateRead": false,
+  "checks": {
+    "api16SourceFrame": true,
+    "web16SourceFrame": true,
+    "apk16SourceFrame": true,
+    "allAPIJobsExitZero": true,
+    "apiSchemaTarget167": true,
+    "api16DeploymentReceiptReady": true,
+    "api16PackageHashMatches": true,
+    "api16BuiltBinaryMatchesManifest": true,
+    "web16BuildExitZero": true,
+    "web16OriginMatches": true,
+    "web16LocalArtifactsMatchReceipt": true,
+    "apk16BuildExitZero": true,
+    "apk16OriginMatches": true,
+    "apk16LocalArtifactsMatchReceipt": true,
+    "web16PublishedManifestMatchesBuild": true,
+    "apk16AndWeb16SameSourceFrame": true,
+    "original307SQLUnchanged": true
+  },
+  "sourceFrames": {
+    "api16": {
+      "sourceFiles": 1998,
+      "sourceStable": true,
+      "beforeEqualsAfter": true,
+      "currentSourceMatchesBuild": true,
+      "mismatches": []
+    },
+    "web16": {
+      "sourceFiles": 953,
+      "sourceStable": true,
+      "beforeEqualsAfter": true,
+      "currentSourceMatchesBuild": true,
+      "mismatches": []
+    },
+    "apk16": {
+      "sourceFiles": 953,
+      "sourceStable": true,
+      "beforeEqualsAfter": true,
+      "currentSourceMatchesBuild": true,
+      "mismatches": []
+    }
+  },
+  "originalSQL": {
+    "versions": "1..166",
+    "baselineFileCount": 307,
+    "currentFileCount": 307,
+    "changedFiles": [],
+    "inventoryUnchanged": true
+  },
+  "apiReleaseFromExistingReceipt": "/opt/birdtie/releases/social167-20261015-build16",
+  "apiBinarySHA256": "4c11e5505619bc25ff8668c1b7aa0bd8764d5bf577b92ef31d8ac30567373a95",
+  "webReleaseFromExistingReceipt": "/opt/birdtie/web/releases/public-20261015-final-web16",
+  "webManifestSHA256": "a2efbeeef926c59569b399a46060ea41f7042b6f29dd480589c13f29acbb6948",
+  "apkSHA256": "b48438bebb8decfe08ab86e6423f7253c17a9d9de437067ff550482cfb5c14c4",
+  "deviceInstallationOrUIAcceptance": "NOT_REVIEWED_NOT_INFERRED_FROM_BUILD",
+  "receiptFiles": {
+    "docs/testing/evidence/social-remote-migration-20261015/build16/receipt.json": "ef56910af092700fa6f55b31cc760024bb39fc0b3c5affc2779faaac6078ec45",
+    "docs/testing/evidence/social-remote-migration-20261015/upgrade167-05/receipt.json": "ecfd8fc26efb4c56e91687032d170527a5dbed002fab523e6da1b646f0691a91",
+    "docs/testing/evidence/social-remote-migration-20261015/final-web16/receipt.json": "bc4f8e862a3880ae470c876dc34badae0d3378cdaf2d7872152cf3a007fb8080",
+    "docs/testing/evidence/social-remote-migration-20261015/public-client16/receipt.json": "f5f106bb68e529aa92559393edc2263203d5eeccc07752ac65d2da2d6bf574e4",
+    "docs/testing/evidence/social-remote-migration-20261015/final-apk16/receipt.json": "abfdac030176f31e136f728d502835a623712d27ec7abe8a021421058793e15c"
+  }
+}

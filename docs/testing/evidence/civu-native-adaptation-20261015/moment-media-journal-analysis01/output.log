@@ -1,0 +1,14 @@
+Analyzing moment_control_pending_store.dart, moment_control_pending_store_test.dart, moment_control_controller_test.dart...
+
+   info - lib\src\content\moment_control_pending_store.dart:164:7 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - lib\src\content\moment_control_pending_store.dart:226:5 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - lib\src\content\moment_control_pending_store.dart:237:7 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - lib\src\content\moment_control_pending_store.dart:262:13 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - test\moment_control_controller_test.dart:60:7 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - test\moment_control_controller_test.dart:128:13 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - test\moment_control_controller_test.dart:130:13 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - test\moment_control_controller_test.dart:226:11 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - test\moment_control_controller_test.dart:228:11 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - test\moment_control_pending_store_test.dart:150:5 - Statements in a for should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+
+10 issues found.

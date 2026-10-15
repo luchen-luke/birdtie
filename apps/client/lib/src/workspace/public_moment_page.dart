@@ -5,23 +5,16 @@ import 'connections.dart';
 import 'human_causal_operation_controller.dart';
 import 'public_moment_api.dart';
 import 'public_moment_photo.dart';
-import 'public_moment_photo_controller.dart';
-import 'public_moment_photo_editor.dart';
 import 'human_causal_control.dart';
 import 'supplier_profile_api.dart';
 import 'now_ui_tokens.dart';
 import '../app/birdtie_app_bar.dart';
-import '../content/private_moment_controller.dart';
-import 'public_moment_control_page.dart';
 import 'moment_interaction.dart';
 import 'public_moment_media.dart';
-import 'public_moment_media_controller.dart';
-import 'public_moment_media_editor.dart';
-import '../content/moment_image_picker.dart';
-import '../content/video_material_picker.dart';
 import 'moment_thread_api.dart';
 import 'moment_thread_panel.dart';
 import 'moment_locations_api.dart';
+import 'now_moment_editor_host.dart';
 
 /// One current, explicitly public human publication. It is not attendance evidence.
 class PublicMomentPage extends StatefulWidget {
@@ -75,12 +68,14 @@ class _PublicMomentPageState extends State<PublicMomentPage> {
     client: widget.client,
   );
   PublicMoment? _moment;
+  MomentThreadAPI? _threadAPI;
+  PublicMomentMediaSetAPI? _mediaAPI;
+  bool _wholeThreadWithdrawn = false;
   String? _error;
   int _epoch = 0;
   Timer? _leaseTimer, _photoCapabilityTimer;
   bool _canManagePhoto = false;
   bool _canManageMoment = false;
-  PublicMomentMediaController? _mediaEditor;
   late (String?, String?, String?) _identity;
   (String?, String?, String?) get _current => (
     widget.authorizationHeader(),
@@ -143,8 +138,10 @@ class _PublicMomentPageState extends State<PublicMomentPage> {
     final epoch = ++_epoch, identity = _current, id = widget.momentID;
     _leaseTimer?.cancel();
     _photoCapabilityTimer?.cancel();
-    _mediaEditor?.dispose();
-    _mediaEditor = null;
+    _threadAPI = null;
+    _mediaAPI?.dispose();
+    _mediaAPI = null;
+    _wholeThreadWithdrawn = false;
     setState(() {
       _moment = null;
       _error = null;
@@ -160,6 +157,35 @@ class _PublicMomentPageState extends State<PublicMomentPage> {
           epoch == _epoch &&
           identity == _current &&
           id == widget.momentID) {
+        // Retain the exact transport and identity binding for this read. Normal
+        // capability/ancestor rebuilds must not retire a prepared thread action.
+        // A new load, identity, target or transport invalidates this API epoch.
+        _threadAPI = MomentThreadAPI(
+          client: _api.borrowedClient,
+          baseUrl: _api.baseUrl,
+          authorizationHeader: () => widget.authorizationHeader(),
+          current: () =>
+              mounted &&
+              epoch == _epoch &&
+              identity == _current &&
+              id == widget.momentID &&
+              _moment?.current == true,
+        );
+        // Media playback belongs to the same captured read, not to a build.
+        // Recreating this API on a capability/ancestor rebuild would retire the
+        // active video handle and restart its poster request.
+        _mediaAPI = PublicMomentMediaSetAPI(
+          client: _api.borrowedClient,
+          apiBaseUrl: _api.baseUrl,
+          authorizationHeader: () => widget.authorizationHeader(),
+          current: () =>
+              mounted &&
+              epoch == _epoch &&
+              identity == _current &&
+              id == widget.momentID &&
+              _moment?.revision == value.revision &&
+              _moment?.current == true,
+        );
         setState(() => _moment = value);
         if (value.validUntil case final expiry?) {
           if (!value.current) {
@@ -192,94 +218,12 @@ class _PublicMomentPageState extends State<PublicMomentPage> {
   void dispose() {
     _leaseTimer?.cancel();
     _photoCapabilityTimer?.cancel();
-    _mediaEditor?.dispose();
+    _mediaAPI?.dispose();
     _shareSource.dispose();
     ++_epoch;
     widget.identityChanges?.removeListener(_changed);
     _api.dispose();
     super.dispose();
-  }
-
-  Future<void> _editMedia() async {
-    if (!widget.showManagement || !_canManageMoment || _moment?.current != true)
-      return;
-    final epoch = _epoch, identity = _current, moment = _moment!;
-    bool current() =>
-        mounted &&
-        epoch == _epoch &&
-        identity == _current &&
-        _moment?.current == true &&
-        _moment?.revision == moment.revision;
-    _mediaEditor?.dispose();
-    final c = PublicMomentMediaController(
-      momentID: widget.momentID,
-      expectedMomentRevision: moment.revision,
-      localScopeOverride: widget.momentID,
-      ownerID: () => current() ? widget.ownerID?.call() : null,
-      authorizationHeader: () =>
-          current() ? widget.authorizationHeader() : null,
-      sourceCurrent: current,
-      boundaryChanges: _shareSource,
-      client: _api.borrowedClient,
-      apiBaseUrl: _api.baseUrl,
-    );
-    setState(() => _mediaEditor = c);
-  }
-
-  Future<void> _selectMedia() async {
-    final c = _mediaEditor;
-    if (c == null || !c.canEdit || c.images.length >= 9) return;
-    List<MomentImageSelection> selections = const [];
-    try {
-      selections = await MomentImagePicker().selectMany(
-        limit: 9 - c.images.length,
-      );
-      if (mounted && identical(c, _mediaEditor) && c.canEdit)
-        c.addSelectedBytes(selections.map((p) => p.bytes).toList());
-    } catch (_) {
-      if (mounted && identical(c, _mediaEditor))
-        setState(() => _error = '图片选择暂不可用，请重试。');
-    } finally {
-      for (final image in selections)
-        image.bytes.fillRange(0, image.bytes.length, 0);
-    }
-  }
-
-  Future<void> _selectVideo() async {
-    final c = _mediaEditor;
-    if (c == null || !c.canEdit) return;
-    VideoMaterialSelection? selected;
-    try {
-      selected = await VideoMaterialPicker().selectSource(
-        VideoMaterialSource.gallery,
-      );
-      if (!mounted ||
-          !identical(c, _mediaEditor) ||
-          !c.canEdit ||
-          selected == null)
-        return;
-      final video = PublicMomentVideoSelection(
-        bytes: selected.bytes,
-        durationMS: selected.durationMS,
-        width: selected.preview.width,
-        height: selected.preview.height,
-      );
-      try {
-        c.addSelectedVideo(video);
-      } finally {
-        video.bytes.fillRange(0, video.bytes.length, 0);
-      }
-    } catch (_) {
-      if (mounted && identical(c, _mediaEditor))
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('视频选取暂不可用，请重新选择。')));
-    } finally {
-      if (selected != null) {
-        selected.bytes.fillRange(0, selected.bytes.length, 0);
-        await selected.dispose();
-      }
-    }
   }
 
   PublicMomentPhotoAPI _photoAPI({bool Function()? current}) =>
@@ -331,84 +275,49 @@ class _PublicMomentPageState extends State<PublicMomentPage> {
     }
   }
 
-  Future<void> _managePhoto(int expectedGeneration) async {
-    if (!mounted ||
-        expectedGeneration != _shareSource.generation ||
-        !_canManagePhoto ||
-        widget.workspaceID?.call() != null)
-      return;
-    final generation = _shareSource.generation,
-        id = widget.momentID,
-        client = _api.borrowedClient,
-        base = _api.baseUrl;
-    final c = PublicMomentPhotoController(
-      momentID: id,
-      api: _photoAPI(),
-      ownerID: widget.ownerID,
-      workspaceID: widget.workspaceID,
-      identityChanges: _shareSource,
-      sourceKey: () => _shareSource.generation,
-      sourceCurrent: () =>
-          mounted &&
-          generation == _shareSource.generation &&
-          widget.momentID == id &&
-          client == _api.borrowedClient &&
-          base == _api.baseUrl,
-    );
-    final route = MaterialPageRoute<void>(
-      builder: (_) => PublicMomentPhotoEditor(
-        controller: c,
-        momentTitle: _moment?.title ?? '',
-        momentTitleRevision: _moment?.revision,
-      ),
-    );
-    unawaited(route.completed.whenComplete(c.dispose));
-    try {
-      await Navigator.of(context, rootNavigator: true).push(route);
-    } finally {
-      c.dispose();
-      if (mounted && generation == _shareSource.generation) unawaited(_load());
-    }
-  }
-
   Future<void> _manageMoment(int generation) async {
     if (!mounted ||
         generation != _shareSource.generation ||
         !_canManageMoment ||
-        widget.workspaceID?.call() != null)
+        !widget.showManagement ||
+        widget.workspaceID?.call() != null ||
+        _moment?.current != true)
       return;
+    final capability = NowMomentEditorScope.maybeOf(context);
+    final owner = widget.ownerID?.call(), token = widget.authorizationHeader();
+    if (capability == null || owner == null || token == null) return;
     final id = widget.momentID,
         client = _api.borrowedClient,
-        base = _api.baseUrl;
+        base = _api.baseUrl,
+        epoch = _epoch,
+        identity = _current,
+        revision = _moment!.revision;
     bool current() =>
         mounted &&
         generation == _shareSource.generation &&
+        epoch == _epoch &&
+        identity == _current &&
+        _canManageMoment &&
+        _moment?.current == true &&
+        _moment?.revision == revision &&
         widget.momentID == id &&
         client == _api.borrowedClient &&
         base == _api.baseUrl &&
         widget.workspaceID?.call() == null;
-    final c = PrivateMomentController(
-      authorizationHeader: () =>
-          current() ? widget.authorizationHeader() : null,
-      ownerID: () => current() ? widget.ownerID?.call() : null,
-      identityChanges: _shareSource,
-      client: client,
-      apiBaseUrl: base,
+    final opened = await capability.open(
+      NowMomentEditorRequest(
+        momentID: id,
+        ownerID: owner,
+        authorizationHeader: token,
+        apiBaseUrl: base,
+        sourceCurrent: current,
+      ),
     );
-    try {
-      final result = await Navigator.of(context).push<String>(
-        MaterialPageRoute(
-          builder: (_) => PublicMomentControlPage(
-            moments: c,
-            momentID: id,
-            current: current,
-            identityChanges: _shareSource,
-          ),
-        ),
+    if (!mounted) return;
+    if (!opened && current()) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('当前身份、来源或草稿状态已变化，请回到 Now 重新打开。')),
       );
-      if (current() && result != null) await _load();
-    } finally {
-      c.dispose();
     }
   }
 
@@ -425,6 +334,24 @@ class _PublicMomentPageState extends State<PublicMomentPage> {
     );
   }
 
+  void _threadWithdrawn(MomentThreadAPI source) {
+    if (!mounted || !identical(source, _threadAPI) || !source.current()) return;
+    ++_epoch;
+    _leaseTimer?.cancel();
+    _photoCapabilityTimer?.cancel();
+    _threadAPI = null;
+    _mediaAPI?.dispose();
+    _mediaAPI = null;
+    setState(() {
+      _moment = null;
+      _error = null;
+      _canManagePhoto = false;
+      _canManageMoment = false;
+      _wholeThreadWithdrawn = true;
+    });
+    _shareSource.observe((widget.momentID, _epoch, 'withdrawn'));
+  }
+
   void _openAuthor() {
     if (_identity != _current) {
       _changed();
@@ -439,6 +366,19 @@ class _PublicMomentPageState extends State<PublicMomentPage> {
   Widget _body(BuildContext context) {
     final tokens = NowUiTokens.of(context);
     final generation = _shareSource.generation;
+    final threadAPI = _threadAPI;
+    final editor = NowMomentEditorScope.maybeOf(context);
+    if (_wholeThreadWithdrawn) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Semantics(
+            liveRegion: true,
+            child: Text('整串已撤回，不再公开显示。', style: tokens.body),
+          ),
+        ),
+      );
+    }
     final actionStyle = TextButton.styleFrom(
       minimumSize: const Size(48, 48),
       textStyle: tokens.action,
@@ -503,48 +443,39 @@ class _PublicMomentPageState extends State<PublicMomentPage> {
                   key: ValueKey((widget.momentID, _moment!.revision, _epoch)),
                   momentID: widget.momentID,
                   revision: _moment!.revision,
-                  api: PublicMomentMediaSetAPI(
-                    client: _api.borrowedClient,
-                    apiBaseUrl: _api.baseUrl,
-                    authorizationHeader: widget.authorizationHeader,
-                    current: () =>
-                        mounted &&
-                        _identity == _current &&
-                        _moment?.current == true,
-                  ),
+                  api: _mediaAPI!,
                 ),
                 MomentThreadSidecar(
                   key: ValueKey(('moment-thread', widget.momentID, _epoch)),
                   momentID: widget.momentID,
-                  api: MomentThreadAPI(
-                    client: _api.borrowedClient,
-                    baseUrl: _api.baseUrl,
-                    authorizationHeader: widget.authorizationHeader,
-                    current: () =>
-                        mounted &&
-                        _identity == _current &&
-                        _moment?.current == true,
-                  ),
+                  api: threadAPI!,
+                  onWithdrawn: () => _threadWithdrawn(threadAPI),
                   ownerID: widget.showManagement
                       ? widget.ownerID?.call()
                       : null,
-                  onOpenMoment: (id) {
-                    if (id != widget.momentID && _moment?.current == true)
-                      Navigator.of(context).push(
-                        MaterialPageRoute<void>(
-                          builder: (_) => PublicMomentPage(
-                            momentID: id,
-                            authorizationHeader: widget.authorizationHeader,
-                            ownerID: widget.ownerID,
-                            workspaceID: widget.workspaceID,
-                            identityChanges: widget.identityChanges,
-                            apiBaseUrl: widget.apiBaseUrl,
-                            client: widget.client,
-                            onOpenPlace: widget.onOpenPlace,
-                            onOpenAuthor: widget.onOpenAuthor,
-                          ),
+                  onOpenMoment: (id) async {
+                    if (id == widget.momentID || _moment?.current != true)
+                      return;
+                    await Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => PublicMomentPage(
+                          momentID: id,
+                          authorizationHeader: widget.authorizationHeader,
+                          ownerID: widget.ownerID,
+                          workspaceID: widget.workspaceID,
+                          identityChanges: widget.identityChanges,
+                          apiBaseUrl: widget.apiBaseUrl,
+                          client: widget.client,
+                          onOpenPlace: widget.onOpenPlace,
+                          onOpenAuthor: widget.onOpenAuthor,
                         ),
-                      );
+                      ),
+                    );
+                    // Another member's page may have withdrawn the whole thread.
+                    // Retire this page's old publication before reading it again.
+                    if (mounted && identical(_threadAPI, threadAPI)) {
+                      await _load();
+                    }
                   },
                 ),
                 if (_moment!.title.isNotEmpty) ...[
@@ -594,35 +525,33 @@ class _PublicMomentPageState extends State<PublicMomentPage> {
                 if (_canManageMoment && widget.showManagement)
                   TextButton.icon(
                     style: actionStyle,
-                    onPressed: () => _manageMoment(generation),
+                    onPressed: editor == null
+                        ? null
+                        : () => _manageMoment(generation),
                     icon: const Icon(Icons.edit_outlined),
                     label: const Text('修改或删除这条动态'),
                   ),
                 if (_canManageMoment && widget.showManagement)
                   TextButton.icon(
                     style: actionStyle,
-                    onPressed: _editMedia,
+                    onPressed: editor == null
+                        ? null
+                        : () => _manageMoment(generation),
                     icon: const Icon(Icons.photo_library_outlined),
                     label: const Text('管理本人图片或视频'),
-                  ),
-                if (_mediaEditor case final media?)
-                  PublicMomentMediaEditor(
-                    key: ObjectKey(media),
-                    controller: media,
-                    embedded: true,
-                    ownsController: false,
-                    onChooseImages: () => unawaited(_selectMedia()),
-                    onChooseVideo: () => unawaited(_selectVideo()),
-                    onResolved: () => unawaited(_load()),
                   ),
                 if (_canManagePhoto &&
                     widget.showManagement &&
                     _moment!.placeID.isNotEmpty)
                   TextButton.icon(
-                    onPressed: () => _managePhoto(generation),
+                    onPressed: editor == null
+                        ? null
+                        : () => _manageMoment(generation),
                     icon: const Icon(Icons.photo_outlined),
                     label: const Text('管理本人公开图片'),
                   ),
+                if (_canManageMoment && widget.showManagement && editor == null)
+                  Text('请回到 Now 首页编辑这条动态。', style: tokens.metadata),
                 if (widget.workspaceID?.call() == null)
                   TextButton.icon(
                     style: actionStyle,

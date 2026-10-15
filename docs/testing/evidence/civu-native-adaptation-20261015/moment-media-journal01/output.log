@@ -1,0 +1,10 @@
+
+┌─────────────────────────────────────────────────────────┐
+│ A new version of Flutter is available!                  │
+│                                                         │
+│ To update to the latest version, run "flutter upgrade". │
+└─────────────────────────────────────────────────────────┘
+00:00 +0: loading D:/Project/birdtie/apps/client/test/moment_control_controller_test.dart
+00:00 +0: durable media publish/update preserves nil empty order and recovers UNKNOWN without resend
+00:00 +1: All tests passed!
+Flutter assets will be downloaded from https://storage.flutter-io.cn. Make sure you trust this source!

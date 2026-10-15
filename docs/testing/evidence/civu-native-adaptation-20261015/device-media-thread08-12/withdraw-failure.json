@@ -1,0 +1,14 @@
+{
+  "status": "FAILED_ACTUAL_DEVICE",
+  "apk": "final-apk12",
+  "scope": "SYNTHETIC03_TWO_ENTRY_THREAD_WITHDRAW",
+  "publishedAndBothRead": true,
+  "previewSucceeded": true,
+  "freshConfirmInSameScript": true,
+  "originalOperationGET": "NOT_FOUND_UNKNOWN_RETAINED",
+  "automaticResend": false,
+  "firstUnknownExplicitlyStoppedBeforeNewPreview": true,
+  "secondFreshOperationAlsoUnknown": true,
+  "realOwnerWrites": 0,
+  "fixPending": true
+}

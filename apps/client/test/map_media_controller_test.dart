@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
@@ -11,7 +12,10 @@ import 'package:birdtie_client/src/workspace/place_photo.dart';
 import 'package:birdtie_client/src/workspace/map_entities.dart';
 import 'package:birdtie_client/src/workspace/map_media_controller.dart';
 import 'package:birdtie_client/src/workspace/public_moment_photo.dart';
+import 'package:birdtie_client/src/workspace/map_layers_api.dart';
+import 'package:birdtie_client/src/workspace/public_moment_media.dart';
 import 'entity_cover_test.dart' show coverJPEG;
+import 'map_layers_api_test.dart' as map_fixture;
 
 const mapMediaOwner = '12345678-1234-1234-1234-123456789abc';
 MapEntity mediaEntity(int n, {DateTime? until, String? digest}) {
@@ -523,6 +527,231 @@ void main() {
       expect(c.decorate(source.first).mediaPixels, isNull);
       c.dispose();
       await t.pump();
+    },
+  );
+
+  testWidgets(
+    'v5 and v6 compound Moment pins read the first current 152 thumbnail while pin binding, lease and auth retire independently',
+    (t) async {
+      final bytes = (await t.runAsync(
+        () => File('test/fixtures/map-media/isolation-a.jpg').readAsBytes(),
+      ))!;
+      const moment = '22345678-1234-1234-1234-000000000001',
+          pinA = '32345678-1234-1234-1234-000000000001',
+          pinB = '32345678-1234-1234-1234-000000000002',
+          mediaA = '42345678-1234-1234-1234-000000000001',
+          mediaB = '42345678-1234-1234-1234-000000000002';
+      final at = DateTime.now().toUtc(),
+          until = at.add(const Duration(seconds: 45));
+      var now = at;
+      final sha = sha256.convert(bytes).toString();
+      Map<String, dynamic> rawPin(
+        String pin,
+        String binding, {
+        bool external = false,
+      }) => {
+        ...map_fixture.mapTestItem('MOMENT'),
+        'id': moment,
+        'entityRef': {'type': 'MOMENT', 'id': moment},
+        'detailRef': {'type': 'MOMENT', 'id': moment},
+        'pinIdentity': pin,
+        'sourceVersion': '3:$pin:$binding',
+        if (external)
+          'anchor': {
+            'placeId': '',
+            'label': 'Synthetic external reference',
+            'coordinateSystem': 'wgs84',
+            'precision': 'point',
+            'latitude': 57.2,
+            'longitude': -2.1,
+            'referenceId': map_fixture.mapTestPlace,
+            'targetKind': 'REFERENCE',
+            'attribution': '© OpenStreetMap contributors · ODbL 1.0',
+          },
+      };
+      List<MapEntity> decode(int version, {String binding = 'a'}) =>
+          TypedMapView.decode(
+            {
+              ...map_fixture.mapTestView(observedAt: at.toIso8601String()),
+              'schemaVersion': 'typed-map-layers-v$version',
+              'items': [
+                rawPin(pinA, binding * 64),
+                rawPin(pinB, 'b' * 64, external: version == 6),
+              ],
+            },
+            'owned-city',
+            map_fixture.mapTestBounds,
+            false,
+            now: at,
+          ).items.map((x) => x.entity).toList();
+      final v5 = decode(5), pins = decode(6);
+      expect(v5.map((x) => x.publicMediaIdentity?.id), everyElement(moment));
+      expect(pins.map((x) => x.publicMediaIdentity?.revision), everyElement(3));
+      expect(pins.map((x) => x.id).toSet(), hasLength(2));
+      expect(
+        pins.first
+            .withAnchorMetadata(
+              placeID: map_fixture.mapTestPlace,
+              precision: 'point',
+            )
+            .publicMediaIdentity,
+        pins.first.publicMediaIdentity,
+      );
+      expect(
+        pins.first.withMediaPixels(null).publicMediaIdentity,
+        pins.first.publicMediaIdentity,
+      );
+      final reads = <String>[];
+      final thumb = momentMediaPath(moment, 3, 1, mediaA, 1, 'thumbnail');
+      final client = MockClient((request) async {
+        reads.add(request.url.path);
+        expect(request.headers['Authorization'], 'Bearer isolated');
+        if (request.url.path == '/v1/moments/$moment/public-media') {
+          return http.Response(
+            jsonEncode({
+              'data': {
+                'schemaVersion': 'public-moment-media-set-v1',
+                'momentId': moment,
+                'momentRevision': 3,
+                'setVersion': 1,
+                'status': 'READY',
+                'sourceVersion': 'c' * 64,
+                'observedAt': at.toIso8601String(),
+                'validUntil': until.toIso8601String(),
+                'canReplace': false,
+                'canDelete': false,
+                'attachments': [
+                  for (final pair in [(mediaA, 0), (mediaB, 1)])
+                    {
+                      'mediaId': pair.$1,
+                      'mediaVersion': 1,
+                      'position': pair.$2,
+                      'width': 320,
+                      'height': 180,
+                      'displayBytes': bytes.length,
+                      'displaySha256': sha,
+                      'thumbnailBytes': bytes.length,
+                      'thumbnailSha256': sha,
+                      'displayPath': momentMediaPath(
+                        moment,
+                        3,
+                        1,
+                        pair.$1,
+                        1,
+                        'display',
+                      ),
+                      'thumbnailPath': momentMediaPath(
+                        moment,
+                        3,
+                        1,
+                        pair.$1,
+                        1,
+                        'thumbnail',
+                      ),
+                      'rightsDigest': 'd' * 64,
+                      'attribution': 'Synthetic geometry only',
+                      'validationKind': publicMomentMediaValidation,
+                      'validationStatus': 'VALIDATED',
+                      'antivirusScan': 'NOT_RUN',
+                      'privacyRisk': 'UNKNOWN',
+                      'expiresAt': until.toIso8601String(),
+                    },
+                ],
+              },
+            }),
+            200,
+            headers: {'content-type': 'application/json'},
+          );
+        }
+        expect(request.url.path, thumb);
+        return http.Response.bytes(
+          bytes,
+          200,
+          headers: {'content-type': 'image/jpeg'},
+        );
+      });
+      final controller = MapMediaController(
+        client: client,
+        apiBaseUrl: 'https://unit.invalid',
+        now: () => now,
+      );
+      syncMedia(controller, pins);
+      await mediaWait(t, () => controller.inFlight == 0 && reads.length == 2);
+      syncMedia(controller, pins);
+      await mediaWait(
+        t,
+        () => pins.every((p) => controller.decorate(p).mediaPixels != null),
+      );
+      final oldA = controller.decorate(pins[0]).mediaPixels!,
+          oldB = controller.decorate(pins[1]).mediaPixels!;
+      expect(oldA.key, isNot(oldB.key));
+      expect(reads.where((p) => p == thumb), hasLength(2));
+      expect(reads.where((p) => p.contains(mediaB)), isEmpty);
+      expectFixtureCenter(
+        (await t.runAsync(() => decodedCenter(oldA.image)))!,
+        [34, 118, 85],
+      );
+      final changed = decode(6, binding: 'e');
+      syncMedia(controller, changed);
+      expect(oldA.current(), isFalse);
+      expect(controller.decorate(changed.first).mediaPixels, isNull);
+      expect(controller.decorate(changed.last).mediaPixels?.key, oldB.key);
+      await mediaWait(t, () => controller.inFlight == 0);
+      syncMedia(controller, changed);
+      await mediaWait(
+        t,
+        () => controller.decorate(changed.first).mediaPixels != null,
+      );
+      now = until.add(const Duration(milliseconds: 1));
+      expect(controller.decorate(changed.first).mediaPixels, isNull);
+      expect(controller.decorate(changed.last).mediaPixels, isNull);
+      syncMedia(controller, [], owner: null, token: null, generation: 2);
+      expect(oldB.current(), isFalse);
+
+      // A supplied typed selector cannot bypass a missing/mismatched pin,
+      // source digest, revision or native ID. No request is issued for these.
+      final before = reads.length;
+      MapEntity forged(
+        String id,
+        String source, {
+        String native = moment,
+        int revision = 3,
+      }) => MapEntity(
+        id: id,
+        kind: MapEntityKind.moment,
+        title: '',
+        subtitle: '',
+        latitude: 57.2,
+        longitude: -2.1,
+        momentID: native,
+        momentRevision: revision,
+        sourceVersion: source,
+      );
+      final malformed = [
+        forged('moment:$moment:$pinA', '3:$pinB:${'a' * 64}'),
+        forged('moment:$moment:$pinA', '3:$pinA:invalid'),
+        forged('moment:$moment:$pinA', '3:$pinA:${'a' * 64}', native: mediaA),
+        forged('moment:$moment:$pinA', '3:$pinA:${'a' * 64}', revision: 4),
+        forged('moment:$moment', '3:$pinA:${'a' * 64}'),
+        forged('moment:$moment', '03'),
+      ];
+      expect(malformed.map((p) => p.publicMediaIdentity), everyElement(isNull));
+      syncMedia(controller, malformed, generation: 3);
+      await t.pump();
+      expect(reads.length, before);
+      const legacy = MapEntity(
+        id: 'moment:$moment',
+        kind: MapEntityKind.moment,
+        title: '',
+        subtitle: '',
+        latitude: 57.2,
+        longitude: -2.1,
+        sourceVersion: '3',
+      );
+      expect(legacy.publicMediaIdentity, (id: moment, revision: 3));
+      controller.dispose();
+      await t.pump();
+      client.close();
     },
   );
 }

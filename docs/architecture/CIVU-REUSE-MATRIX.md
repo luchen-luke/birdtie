@@ -213,3 +213,24 @@ Birdtie 当前工作树核对：144 UPDATE 只允许私人草稿，公开撤回�
 
 
 2026-10-15 原生160–166实际接续：复用仅限经保全源的数据语义与用户授权迁入，Birdtie自有位置集合、外部稳定引用、legacycontext／legacysocial／legacyhistory与固定码email模型已实际运行。全部171条存续Note媒体归原owner，原135图事实不改；31图恢复的HEIC以固定Ubuntu插件完整解码。247无城市Place保持draft、原未知CRS仅作私人历史，原社交关系与typed消息保持事实、旧AI／通知／偏好保持惰性。原Civu不作为在线运行库，不复制旧Session、不激活Agent或自动公开。独立Pelias复用既有GB／IS索引副本，来源WGS84及OSM归属显式传递；原索引、容器与原库保留。软件仍采用此前Civu provider容器的固定摘要和既有许可配置，未引入未核实新数据集。实际导入、未决236其他用途资产与手机离线界限详见适配报告160–166节及checkpoint166；不把29/29停写一致性和本次native聚合当全407像素适配或真机通过。
+
+
+## 2026-10-15 统一动态条目编辑器来源复核
+
+本次只读 `D:/Program/Civu/Civu-client`，本地与 GitHub master 同为 `1bbf0613b513001447f326225c944c1a1fbd8e8f`，工作树干净，compare identical/ahead0/behind0；指定两文件摘要前后不变。源码审计与真实调用链归档于 `docs/testing/evidence/civu-native-adaptation-20261015/civu-unified-editor-source-audit01.md`。这不是 Civu 运行验收。
+
+| 来源能力 | Birdtie 对应与处理 |
+| --- | --- |
+| `publish_moment_screen.dart` 的 `_MomentComposerEntry`、`_entries`、默认一条、`_addEntryAfter`、`_removeEntry`、`_reorderEntries` 和稳定对象 key | 复用状态组织和交互语义；在现 `moment_thread_api/controller/panel` 中实现 1..20 条，Now 原 `AgentComposer` 绑定活动条目。不复制 Civu screen、Riverpod、GoRouter 或全局仓库。 |
+| `editMomentId`、`initialThreadItems`、`threadId/threadPosition` | 沿 Birdtie 本人当前读取、原 Moment ID/revision/thread version 接续；Civu extras/缓存不作为权限证明，历史位置不能覆盖。 |
+| `MomentPublishDraft.entries/effectiveEntries` | 借鉴旧单条草稿兼容为首条；适配现 origin/owner 的持久草稿和稳定材料 scope。旧未知 operation 必须先核实，不擦除或重发。 |
+| `createNoteThread` → `/v1/note-threads` 同事务新建 | 继续 Birdtie 原 preview/commit/GET/STOP family，新增明确统一编辑合同。旧 Civu 每次生成新幂等键、媒体前置和私人 raw 文件复制不能照搬。 |
+| Civu 已发布编辑逐条 PATCH，另 PUT legs；编辑模式禁增删排序且不保存编辑草稿 | **不能直接复用为完成能力。** Birdtie 新增168事务、当前展示顺序、明确删除、原 ID 保留和恢复逻辑。串文不自动生成旅程／路线。 |
+| Civu 媒体上传、owner 校验 | 只参考流程；使用 Birdtie stage/rights/current source/Session 与逐条多位置合同，关联地点不扩大可见性。 |
+
+根与子仓未找到覆盖业务源码的明确 LICENSE/COPYING/NOTICE，故本轮不直接复制业务代码。实现为 Birdtie 原有组件和原生领域合同增量，不迁入旧 auth、Session、schema、全局依赖或隐式公开权限。新要求的产品规范见 `docs/product/BIRDTIE-NOW-UNIFIED-MOMENT-EDITOR-2026-10-15.md`；实施与验收仍进行中，旧 APK16 不算新编辑器验收。
+
+
+## 2026-10-16 统一编辑器最终接续
+
+前节为来源复核与实施前状态。现已完成Now统一条目编辑、默认一条/显式追加、原ID编辑与原子排序删除、每条独立跨城地点、持久草稿和未知上传恢复。原个人/地点/详情入口返回同一Now编辑器；无普通/串文类型选择页。新增169处理已发布视频暂存过期后的合法原副本沿用，原1–168共311SQL保持。API19/schema169、Web/APK19已实际部署安装；手机三条混合发布、修改排序、单条删除、整串撤回及服务器版本4/5/6核对通过。Civu本地/GitHub再次只读核对仍同SHA，未改旧项目/库。源码与运行、迁移与UI样本分开，完整报告 `docs/reports/BIRDTIE-NOW-UNIFIED-MOMENT-EDITOR-2026-10-15.md`，未执行边界与历史失败保留。父任务更广的全站要求不因此自动关闭。

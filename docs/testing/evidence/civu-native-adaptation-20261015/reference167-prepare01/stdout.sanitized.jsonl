@@ -1,0 +1,8 @@
+{"Action":"start","Package":"github.com/birdtie/birdtie/apps/api/internal/legacyreferencemedia"}
+{"Action":"run","Package":"github.com/birdtie/birdtie/apps/api/internal/legacyreferencemedia","Test":"TestReferenceMediaProtectedPrepare"}
+{"Action":"output","Package":"github.com/birdtie/birdtie/apps/api/internal/legacyreferencemedia","Test":"TestReferenceMediaProtectedPrepare","Output":"=== RUN   TestReferenceMediaProtectedPrepare\n"}
+{"Action":"output","Package":"github.com/birdtie/birdtie/apps/api/internal/legacyreferencemedia","Test":"TestReferenceMediaProtectedPrepare","Output":"--- PASS: TestReferenceMediaProtectedPrepare (1.97s)\n"}
+{"Action":"pass","Package":"github.com/birdtie/birdtie/apps/api/internal/legacyreferencemedia","Test":"TestReferenceMediaProtectedPrepare","Elapsed":1.97}
+{"Action":"output","Package":"github.com/birdtie/birdtie/apps/api/internal/legacyreferencemedia","Output":"PASS\n"}
+{"Action":"output","Package":"github.com/birdtie/birdtie/apps/api/internal/legacyreferencemedia","Output":"ok  \tgithub.com/birdtie/birdtie/apps/api/internal/legacyreferencemedia\t2.483s\n"}
+{"Action":"pass","Package":"github.com/birdtie/birdtie/apps/api/internal/legacyreferencemedia","Elapsed":2.483}

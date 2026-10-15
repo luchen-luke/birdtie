@@ -1,5 +1,8 @@
 import 'dart:async';
+import 'package:crypto/crypto.dart';
 import 'package:birdtie_client/src/workspace/public_moment_page.dart';
+import 'package:birdtie_client/src/workspace/public_moment_media.dart';
+import 'package:birdtie_client/src/workspace/public_moment_video.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -8,11 +11,166 @@ import 'package:http/testing.dart';
 import 'public_moment_api_test.dart';
 import 'public_moment_photo_test.dart'
     show photoMetadata, photoDecodeVisible, photoMoment, photoOwner, photoState;
-import 'entity_cover_test.dart' show coverJPEG, coverSettle;
+import 'entity_cover_test.dart' show coverJPEG, coverSettle, coverWire;
 import 'package:birdtie_client/src/workspace/public_moment_photo.dart';
 import 'entity_share_pending_store_test.dart' show shareTarget;
 
 void main() {
+  testWidgets(
+    'public video API survives ordinary parent rebuilds and retires on identity change',
+    (t) async {
+      final identity = ValueNotifier('Bearer synthetic-video-A');
+      final capability = Completer<http.Response>();
+      final poster = coverJPEG();
+      final posterHash = sha256.convert(poster).toString();
+      var setReads = 0, posterReads = 0;
+      final client = MockClient((request) async {
+        final path = request.url.path;
+        if (path.endsWith('/public-photo')) return capability.future;
+        if (path.endsWith('/display')) {
+          posterReads++;
+          return http.Response.bytes(
+            poster,
+            200,
+            headers: {'content-type': 'image/jpeg'},
+          );
+        }
+        if (path.endsWith('/public-media')) {
+          setReads++;
+          final at = DateTime.now().toUtc();
+          final until = at.add(const Duration(seconds: 30));
+          return coverWire({
+            'schemaVersion': 'public-moment-media-set-v2',
+            'momentId': shareTarget,
+            'momentRevision': 2,
+            'setVersion': 1,
+            'status': 'READY',
+            'attachments': [
+              {
+                'schemaVersion': 'public-moment-media-attachment-v2',
+                'kind': 'VIDEO',
+                'purpose': publicMomentVideoPurpose,
+                'mediaId': photoOwner,
+                'mediaVersion': 1,
+                'position': 0,
+                'width': 320,
+                'height': 180,
+                'displayBytes': poster.length,
+                'displaySha256': posterHash,
+                'thumbnailBytes': poster.length,
+                'thumbnailSha256': posterHash,
+                'displayPath': momentMediaPath(
+                  shareTarget,
+                  2,
+                  1,
+                  photoOwner,
+                  1,
+                  'display',
+                ),
+                'thumbnailPath': momentMediaPath(
+                  shareTarget,
+                  2,
+                  1,
+                  photoOwner,
+                  1,
+                  'thumbnail',
+                ),
+                'rightsDigest': 'b' * 64,
+                'attribution': '',
+                'validationKind': publicMomentVideoValidation,
+                'validationStatus': 'VALIDATED',
+                'antivirusScan': 'NOT_RUN',
+                'privacyRisk': 'UNKNOWN',
+                'expiresAt': until.toIso8601String(),
+                'video': {
+                  'mimeType': 'video/mp4',
+                  'durationMs': 4000,
+                  'codecVideo': 'h264',
+                  'codecAudio': 'aac',
+                  'pixelFormat': 'yuv420p',
+                  'videoSha256': 'c' * 64,
+                  'videoBytes': 24,
+                  'videoPath': momentMediaPath(
+                    shareTarget,
+                    2,
+                    1,
+                    photoOwner,
+                    1,
+                    'video',
+                  ),
+                },
+              },
+            ],
+            'sourceVersion': 'a' * 64,
+            'observedAt': at.toIso8601String(),
+            'validUntil': until.toIso8601String(),
+            'canReplace': false,
+            'canDelete': false,
+          });
+        }
+        if (path == '/v1/moments/$shareTarget') {
+          return momentReply(publicMomentV3Data(photo: false));
+        }
+        return http.Response('{}', 404);
+      });
+      late StateSetter rebuild;
+      await t.pumpWidget(
+        MaterialApp(
+          home: StatefulBuilder(
+            builder: (context, setState) {
+              rebuild = setState;
+              return PublicMomentPage(
+                momentID: shareTarget,
+                authorizationHeader: () => identity.value,
+                ownerID: () => photoOwner,
+                identityChanges: identity,
+                client: client,
+                apiBaseUrl: 'https://api.example',
+                embedded: true,
+              );
+            },
+          ),
+        ),
+      );
+      await coverSettle(t);
+      final playerFinder = find.byType(PublicMomentVideoPlayer);
+      expect(playerFinder, findsOneWidget);
+      final firstPlayer = t.widget<PublicMomentVideoPlayer>(playerFinder);
+      final firstState = t.state(playerFinder);
+      final firstAPI = firstPlayer.api;
+      expect(firstAPI.current(), isTrue);
+      expect(setReads, 1);
+      expect(posterReads, 1);
+
+      // The late management capability causes a real parent setState. Then an
+      // ordinary Now ancestor rebuild delivers fresh callbacks to the same page.
+      capability.complete(http.Response('{}', 404));
+      await coverSettle(t);
+      rebuild(() {});
+      await coverSettle(t);
+      expect(
+        t.widget<PublicMomentVideoPlayer>(playerFinder).api,
+        same(firstAPI),
+      );
+      expect(t.state(playerFinder), same(firstState));
+      expect(setReads, 1);
+      expect(posterReads, 1);
+      expect(find.text('正在读取视频海报…'), findsNothing);
+
+      identity.value = 'Bearer synthetic-video-B';
+      expect(firstAPI.current(), isFalse);
+      await coverSettle(t);
+      final replacement = t.widget<PublicMomentVideoPlayer>(playerFinder).api;
+      expect(identical(replacement, firstAPI), isFalse);
+      expect(replacement.current(), isTrue);
+      expect(setReads, 2);
+      expect(posterReads, 2);
+      await t.pumpWidget(const SizedBox.shrink());
+      expect(replacement.current(), isFalse);
+      identity.dispose();
+      client.close();
+    },
+  );
   testWidgets(
     'public hidden author remains independent from actual owner photo control and captured actor ABA',
     (t) async {

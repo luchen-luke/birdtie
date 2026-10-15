@@ -1,0 +1,47 @@
+{
+  "status": "SOURCE_READY",
+  "atUTC": "2026-10-15T13:45:41.930542+00:00",
+  "files": {
+    "apps/client/lib/src/content/private_reference_targets_page.dart": "1389242f9e865e33b6cb64f6d170cbd6e02f5bfd2126926b80b7210889766d63",
+    "apps/client/test/private_reference_targets_test.dart": "e9ca85959a23b6933548ed20e736f4f4414c398a5ac26f8bdb7faebb64d1eaa3"
+  },
+  "frameSHA256": "c1f87879a8b7347c4761f346a648e215a6ac646d8f77db5c1eb47d0826c63766",
+  "fix": "Match existing Go encodeJourneyHistoryCursor: exactly one dot between two nonempty canonical unpadded base64url segments, whole token at most4096 chars. Cursor remains opaque; server alone validates signature and original Session/source/deadline.",
+  "testFixtureCorrection": "Previous targets_next mock did not represent the real backend cursor. Replaced it with the actual Go struct payload/base64url plus32byte signature/base64url shape; first20 + next1 now runs through that real wire shape and forwards the identical opaque cursor.",
+  "invalidStructuresRejected": [
+    "No dot",
+    "Empty segment",
+    "Extra dot or segment",
+    "Padding",
+    "Non URL-safe character",
+    "Noncanonical or undecodable raw base64url",
+    "Over4096"
+  ],
+  "client": "work/reference-targets-cursor-client02/receipt.json",
+  "clientCompositePassed": 1,
+  "clientTestsSkipped": 0,
+  "analysis": "work/reference-targets-cursor-analysis02/receipt.json",
+  "analysisErrors": 0,
+  "analysisWarnings": 0,
+  "analysisInfo": 2,
+  "failurePreserved": "work/reference-targets-cursor-client01",
+  "failureCause": "Dart base64Url decoder requires normalize to restore omitted padding, unlike Go RawURLEncoding. Added normalize, then round-trip comparison to retain canonical unpadded validation.",
+  "previousFramesPreserved": [
+    "work/reference-targets-source-ready01.json"
+  ],
+  "inheritedFrozenFiles": {
+    "apps/api/internal/content/private_reference_media.go": "3276dbe6e95454e53a6e73264217fae1adc041b0e27d7d9e7cf10d930bfd9e9a",
+    "apps/api/internal/postgres/private_reference_media.go": "d9a35bf3489a11483a9e721bc5599ea8904f3af5b4ebf59434ac5ee5fa4c533f",
+    "apps/api/internal/httpapi/private_reference_media.go": "b7a4f30dc0a96cc5de8a07d2f60f32ec1d4a18904d8cfc89db437e48467e69e5",
+    "apps/api/internal/postgres/private_reference_targets_native_test.go": "2760ffc11e13499f36273d7f7c51e60455a573a20d915a2aee8d0dc6f7a7bdb0",
+    "apps/client/lib/src/content/legacy_archive_page.dart": "eda1bb034871c10fc2cec405fdca54bea85e871afde1a24c008234a7f5cfa97c",
+    "apps/client/lib/src/workspace/saved_items.dart": "7f5844c01869a20c935fcee1c9df48fdb0aa1375d24b7ebc6461257613c2c90b",
+    "apps/client/test/saved_page_test.dart": "b8dd17bfc71873bb07dd008c3dbd4ef00ecdf8ba790bff2628d72d458c5e66a5"
+  },
+  "apiChanged": false,
+  "nativeTestsRerun": false,
+  "notRun": [
+    "APK14/Web14 builds",
+    "Device acceptance"
+  ]
+}

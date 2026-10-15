@@ -5,6 +5,40 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../workspace/human_causal_control.dart';
 import 'moment_control.dart';
 
+/// Enough to reconstruct the sealed media tuple, never a reusable approval.
+class MomentControlMediaSelector {
+  const MomentControlMediaSelector({
+    required this.mediaID,
+    required this.version,
+    required this.rightsDigest,
+  });
+  final String mediaID, rightsDigest;
+  final int version;
+  List<Object> get digestTuple => [mediaID, version, rightsDigest];
+  Map<String, Object> toJson() => {
+    'mediaId': mediaID,
+    'mediaVersion': version,
+    'rightsDigest': rightsDigest,
+  };
+  factory MomentControlMediaSelector.fromJson(Object? raw) {
+    final m = humanControlObject(raw, {
+      'mediaId',
+      'mediaVersion',
+      'rightsDigest',
+    });
+    if (!humanControlID(m['mediaId']) ||
+        !humanControlVersion(m['mediaVersion'], zero: false) ||
+        !humanControlHash(m['rightsDigest'])) {
+      throw const FormatException('动态原材料恢复选择器不符');
+    }
+    return MomentControlMediaSelector(
+      mediaID: m['mediaId'],
+      version: m['mediaVersion'],
+      rightsDigest: m['rightsDigest'],
+    );
+  }
+}
+
 class MomentControlPending {
   const MomentControlPending({
     required this.operationID,
@@ -15,6 +49,8 @@ class MomentControlPending {
     required this.payloadDigest,
     required this.sourceVersion,
     required this.stage,
+    this.mediaSelectors,
+    this.localScope = '',
   });
   final String operationID,
       action,
@@ -24,6 +60,8 @@ class MomentControlPending {
       sourceVersion,
       stage;
   final int expectedRevision;
+  final List<MomentControlMediaSelector>? mediaSelectors;
+  final String localScope;
   factory MomentControlPending.preview(MomentControlPreview p) =>
       MomentControlPending(
         operationID: p.input.operationID,
@@ -34,6 +72,18 @@ class MomentControlPending {
         payloadDigest: p.input.digest,
         sourceVersion: p.sourceVersion,
         stage: 'PREPARED',
+        mediaSelectors: p.input.media == null
+            ? null
+            : List.unmodifiable(
+                p.input.media!.map(
+                  (selection) => MomentControlMediaSelector(
+                    mediaID: selection.mediaID,
+                    version: selection.version,
+                    rightsDigest: selection.rights.digest,
+                  ),
+                ),
+              ),
+        localScope: p.input.localScope,
       );
   MomentControlPending get unknown => MomentControlPending(
     operationID: operationID,
@@ -44,6 +94,8 @@ class MomentControlPending {
     payloadDigest: payloadDigest,
     sourceVersion: sourceVersion,
     stage: 'UNKNOWN',
+    mediaSelectors: mediaSelectors,
+    localScope: localScope,
   );
   bool same(MomentControlPending p) =>
       operationID == p.operationID &&
@@ -52,7 +104,10 @@ class MomentControlPending {
       expectedRevision == p.expectedRevision &&
       inputHash == p.inputHash &&
       payloadDigest == p.payloadDigest &&
-      sourceVersion == p.sourceVersion;
+      sourceVersion == p.sourceVersion &&
+      localScope == p.localScope &&
+      jsonEncode(mediaSelectors?.map((v) => v.toJson()).toList()) ==
+          jsonEncode(p.mediaSelectors?.map((v) => v.toJson()).toList());
   Map<String, Object> toJson() => {
     'schema': 'moment-control-v1',
     'operationId': operationID,
@@ -63,19 +118,27 @@ class MomentControlPending {
     'payloadDigest': payloadDigest,
     'sourceVersion': sourceVersion,
     'stage': stage,
+    if (mediaSelectors != null) ...{
+      'mediaSelectors': mediaSelectors!.map((v) => v.toJson()).toList(),
+      'localScope': localScope,
+    },
   };
   factory MomentControlPending.fromJson(Object? raw) {
-    final m = humanControlObject(raw, {
-      'schema',
-      'operationId',
-      'action',
-      'momentId',
-      'expectedRevision',
-      'inputSha256',
-      'payloadDigest',
-      'sourceVersion',
-      'stage',
-    });
+    final m = humanControlObject(
+      raw,
+      {
+        'schema',
+        'operationId',
+        'action',
+        'momentId',
+        'expectedRevision',
+        'inputSha256',
+        'payloadDigest',
+        'sourceVersion',
+        'stage',
+      },
+      optional: {'mediaSelectors', 'localScope'},
+    );
     final action = m['action'];
     if (m['schema'] != 'moment-control-v1' ||
         !humanControlID(m['operationId']) ||
@@ -99,6 +162,27 @@ class MomentControlPending {
         const {'UPDATE', 'PUBLISH', 'UPDATE_PUBLIC'}.contains(action) &&
             m['expectedRevision'] >= momentControlMaxRevision)
       throw const FormatException('动态恢复选择器不符');
+    List<MomentControlMediaSelector>? selectors;
+    final hasMedia = m.containsKey('mediaSelectors');
+    if (hasMedia != m.containsKey('localScope')) {
+      throw const FormatException('动态原材料恢复范围不符');
+    }
+    if (hasMedia) {
+      final media = m['mediaSelectors'], scope = m['localScope'];
+      if (!const {'PUBLISH', 'UPDATE_PUBLIC'}.contains(action) ||
+          media is! List ||
+          media.length > 9 ||
+          scope is! String ||
+          (media.isEmpty ? scope.isNotEmpty : !humanControlID(scope))) {
+        throw const FormatException('动态原材料恢复范围不符');
+      }
+      selectors = List.unmodifiable(
+        media.map(MomentControlMediaSelector.fromJson),
+      );
+      if (selectors.map((v) => v.mediaID).toSet().length != selectors.length) {
+        throw const FormatException('动态原材料恢复标识重复');
+      }
+    }
     final digest = momentHash([
       'human-moment-control-v1',
       m['operationId'],
@@ -106,6 +190,11 @@ class MomentControlPending {
       m['momentId'],
       m['expectedRevision'],
       m['inputSha256'],
+      if (selectors != null) ...[
+        'moment-media-v1',
+        m['localScope'],
+        selectors.map((v) => v.digestTuple).toList(),
+      ],
     ]);
     if (digest != m['payloadDigest']) throw const FormatException('动态恢复摘要不符');
     return MomentControlPending(
@@ -117,6 +206,8 @@ class MomentControlPending {
       payloadDigest: m['payloadDigest'],
       sourceVersion: m['sourceVersion'],
       stage: m['stage'],
+      mediaSelectors: selectors,
+      localScope: hasMedia ? m['localScope'] : '',
     );
   }
 }

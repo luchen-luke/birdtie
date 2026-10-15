@@ -155,12 +155,16 @@ const nativeDatabaseProbeSQL = `WITH required(table_name,column_name,type_name) 
           WHERE public.birdtie_public_moment_media_contract() IS DISTINCT FROM 'public-moment-media-v1')
  || ARRAY(SELECT 'moment_thread.contract'
           WHERE public.birdtie_moment_thread_contract() IS DISTINCT FROM 'moment-thread-v1')
+ || ARRAY(SELECT 'moment_thread_editing.contract'
+          WHERE public.birdtie_moment_thread_editing_contract() IS DISTINCT FROM 'moment-thread-editing-v1')
  || ARRAY(SELECT 'legacy_dev_phone.contract'
           WHERE public.birdtie_legacy_dev_phone_contract() IS DISTINCT FROM 'legacy-dev-phone-binding-v1')
  || ARRAY(SELECT 'legacy_dev_email.contract'
           WHERE public.birdtie_legacy_dev_email_contract() IS DISTINCT FROM 'legacy-dev-email-binding-v1')
  || ARRAY(SELECT 'public_moment_video.contract'
           WHERE public.birdtie_public_moment_video_contract() IS DISTINCT FROM 'public-moment-video-v2')
+ || ARRAY(SELECT 'public_moment_video_carry.contract'
+          WHERE public.birdtie_public_moment_video_carry_contract() IS DISTINCT FROM 'public-moment-video-carry-v1')
  || ARRAY(SELECT 'optional_moment_content.contract'
           WHERE public.birdtie_optional_moment_content_contract() IS DISTINCT FROM 'moment-optional-content-v1')
  || ARRAY(SELECT 'journey_details.contract' WHERE public.birdtie_journey_details_contract() IS DISTINCT FROM 'journey-native-details-v1')
@@ -169,6 +173,7 @@ const nativeDatabaseProbeSQL = `WITH required(table_name,column_name,type_name) 
  || ARRAY(SELECT 'legacy_social.contract' WHERE public.birdtie_legacy_social_contract() IS DISTINCT FROM 'legacy-social-native-v1')
  || ARRAY(SELECT 'legacy_history.contract' WHERE public.birdtie_legacy_history_contract() IS DISTINCT FROM 'legacy-social-history-v1')
  || ARRAY(SELECT 'external_location.contract' WHERE public.birdtie_external_location_contract() IS DISTINCT FROM 'external-location-reference-v1')
+ || ARRAY(SELECT 'legacy_reference_media.contract' WHERE public.birdtie_legacy_reference_media_contract() IS DISTINCT FROM 'legacy-reference-media-v1')
  || ARRAY(SELECT 'legacy_private_image_recovery.contract' WHERE public.birdtie_legacy_private_image_recovery_contract() IS DISTINCT FROM 'legacy-private-image-recovery-v1')`
 
 func newNativeDatabasePinger(ctx context.Context, database nativeDatabaseReader, expectedName string) (*nativeDatabasePinger, error) {

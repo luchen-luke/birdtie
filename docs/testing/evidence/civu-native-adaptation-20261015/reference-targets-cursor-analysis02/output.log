@@ -1,0 +1,6 @@
+Analyzing private_reference_targets_page.dart, private_reference_targets_test.dart...
+
+   info - lib\src\content\private_reference_targets_page.dart:243:21 - Use the null-aware marker '?' rather than a null check via an 'if'. Try using '?'. - use_null_aware_elements
+   info - test\private_reference_targets_test.dart:84:9 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+
+2 issues found.

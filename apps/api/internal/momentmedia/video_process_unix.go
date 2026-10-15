@@ -30,7 +30,9 @@ func videoPlatformCommand(ctx context.Context, v *FFmpegVideoNormalizer, program
 	if validateVideoPlatform(v) != nil {
 		return nil, func() {}, ErrUnavailable
 	}
-	limits := []string{"--as=536870912", "--rss=268435456", "--cpu=60", "--nofile=64", "--fsize=23068672", "--", program}
+	// FFmpeg/x264 reserves more virtual address space than its resident memory.
+	// The separate resident-memory guard remains 256 MiB.
+	limits := []string{"--as=1073741824", "--rss=268435456", "--cpu=60", "--nofile=64", "--fsize=23068672", "--", program}
 	cmd := exec.CommandContext(ctx, v.PrlimitPath, append(limits, args...)...)
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setsid: true}
 	cmd.Cancel = func() error {

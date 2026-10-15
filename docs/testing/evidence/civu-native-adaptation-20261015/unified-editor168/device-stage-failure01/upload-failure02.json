@@ -1,0 +1,198 @@
+{
+  "started": "2026-10-15T16:35:17.457953+00:00",
+  "originalNetworkEnabled": {
+    "wifi": "1",
+    "data": "0"
+  },
+  "scope": "SELF_GENERATED_QA_VIDEO_BEFORE_STAGE_REQUEST",
+  "events": [
+    [
+      {
+        "label": "Powered by Mapbox",
+        "bounds": "[341,348][409,416]",
+        "enabled": "true",
+        "editable": false
+      },
+      {
+        "label": "打开侧边栏",
+        "bounds": "[26,150][182,306]",
+        "enabled": "true",
+        "editable": false
+      },
+      {
+        "label": "Aberdeen",
+        "bounds": "[195,150][528,306]",
+        "enabled": "true",
+        "editable": false
+      },
+      {
+        "label": "联系",
+        "bounds": "[869,150][1025,306]",
+        "enabled": "true",
+        "editable": false
+      },
+      {
+        "label": "朝北, 地图朝北",
+        "bounds": "[52,332][208,488]",
+        "enabled": "true",
+        "editable": false
+      },
+      {
+        "label": "通知",
+        "bounds": "[1038,150][1194,306]",
+        "enabled": "true",
+        "editable": false
+      },
+      {
+        "label": "本机视频材料已选择，准备后会显示规范视频的实际海报。",
+        "bounds": "[39,592][1181,638]",
+        "enabled": "true",
+        "editable": false
+      },
+      {
+        "label": "这是我拥有使用权的材料",
+        "bounds": "[39,638][1181,794]",
+        "enabled": "false",
+        "editable": false
+      },
+      {
+        "label": "这份材料已有公开使用许可",
+        "bounds": "[39,794][1181,950]",
+        "enabled": "false",
+        "editable": false
+      },
+      {
+        "label": "添加图片",
+        "bounds": "[39,976][1181,1132]",
+        "enabled": "false",
+        "editable": false
+      },
+      {
+        "label": "添加一段视频",
+        "bounds": "[39,1132][1181,1288]",
+        "enabled": "false",
+        "editable": false
+      },
+      {
+        "label": "原图片准备结果待核实，请先读取原操作。",
+        "bounds": "[39,1288][1181,1359]",
+        "enabled": "true",
+        "editable": false
+      },
+      {
+        "label": "准备这条材料，随动态一起确认",
+        "bounds": "[39,1359][1181,1515]",
+        "enabled": "false",
+        "editable": false
+      },
+      {
+        "label": "读取原材料操作结果",
+        "bounds": "[39,1515][526,1671]",
+        "enabled": "true",
+        "editable": false
+      },
+      {
+        "label": "停止原材料操作",
+        "bounds": "[526,1515][923,1671]",
+        "enabled": "true",
+        "editable": false
+      },
+      {
+        "label": "重试读取材料资料",
+        "bounds": "[39,1671][1181,1827]",
+        "enabled": "true",
+        "editable": false
+      },
+      {
+        "label": "第1条\n待输入内容",
+        "bounds": "[39,1840][713,2029]",
+        "enabled": "true",
+        "editable": false
+      },
+      {
+        "label": "向前移动第1条",
+        "bounds": "[713,1840][869,1996]",
+        "enabled": "false",
+        "editable": false
+      },
+      {
+        "label": "向后移动第1条",
+        "bounds": "[869,1840][1025,1996]",
+        "enabled": "true",
+        "editable": false
+      },
+      {
+        "label": "移除第1条（确认后撤回）",
+        "bounds": "[1025,1840][1181,1996]",
+        "enabled": "true",
+        "editable": false
+      },
+      {
+        "label": "第2条\nBirdtie device17 second entry restored",
+        "bounds": "[39,2055][713,2175]",
+        "enabled": "true",
+        "editable": false
+      },
+      {
+        "label": "向前移动第2条",
+        "bounds": "[713,2055][869,2175]",
+        "enabled": "true",
+        "editable": false
+      },
+      {
+        "label": "向后移动第2条",
+        "bounds": "[869,2055][1025,2175]",
+        "enabled": "true",
+        "editable": false
+      },
+      {
+        "label": "删除第2条草稿",
+        "bounds": "[1025,2055][1181,2175]",
+        "enabled": "true",
+        "editable": false
+      },
+      {
+        "label": "创建动态",
+        "bounds": "[52,2175][413,2331]",
+        "enabled": "true",
+        "editable": false
+      },
+      {
+        "label": "退出创建",
+        "bounds": "[271,2175][427,2331]",
+        "enabled": "true",
+        "editable": false
+      },
+      {
+        "label": "Birdtie device18 video third",
+        "bounds": "[221,2357][843,2565]",
+        "enabled": "true",
+        "editable": true
+      },
+      {
+        "label": "添加材料",
+        "bounds": "[65,2383][221,2539]",
+        "enabled": "true",
+        "editable": false
+      },
+      {
+        "label": "语音输入",
+        "bounds": "[843,2383][999,2539]",
+        "enabled": "true",
+        "editable": false
+      },
+      {
+        "label": "更新草稿",
+        "bounds": "[999,2383][1155,2539]",
+        "enabled": "true",
+        "editable": false
+      }
+    ]
+  ],
+  "restoredNetworkEnabled": {
+    "wifi": "1",
+    "data": "0"
+  },
+  "networkRestored": true,
+  "completed": "2026-10-15T16:35:24.441376+00:00"
+}

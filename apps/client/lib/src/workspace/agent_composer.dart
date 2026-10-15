@@ -1232,16 +1232,12 @@ class AgentComposerState extends State<AgentComposer> {
                           '草稿引用与材料',
                           widget.onDraftContext,
                         ),
-                        (Icons.edit_outlined, '动态', widget.onCreateMoment),
                         (
-                          Icons.photo_library_outlined,
-                          '多图动态',
-                          widget.onCreatePhotoMoment,
-                        ),
-                        (
-                          Icons.view_agenda_outlined,
-                          '串文',
-                          widget.onCreateThread,
+                          Icons.edit_outlined,
+                          '动态',
+                          widget.onCreateMoment ??
+                              widget.onCreatePhotoMoment ??
+                              widget.onCreateThread,
                         ),
                         (Icons.event_outlined, '活动', widget.onCreateActivity),
                         (Icons.route_outlined, '旅程', widget.onCreateJourney),

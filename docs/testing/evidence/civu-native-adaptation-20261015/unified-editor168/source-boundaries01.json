@@ -1,0 +1,13 @@
+{
+  "at": "2026-10-15T15:37:37.971041+00:00",
+  "status": "PASS",
+  "originalSQL1to167Unchanged": 309,
+  "civuClientLocalHEAD": "1bbf0613b513001447f326225c944c1a1fbd8e8f",
+  "civuClientGitHubMaster": "1bbf0613b513001447f326225c944c1a1fbd8e8f",
+  "civuClientClean": true,
+  "civuReferenceHashesUnchanged": {
+    "lib/src/screens/publish_moment_screen.dart": "5d0e4beb98c635aaa6c68b59ed627318bbb5dccfd9c792fc40982ff53261621b",
+    "lib/src/models/moment_publish_draft.dart": "bb9e76ce5bef1614a8fe6e193cdd4e5c6b7017f5d1fe726aea5eb00b8c808773"
+  },
+  "civuRuntimeAcceptance": "NOT_RUN_READ_ONLY_REFERENCE"
+}

@@ -1,0 +1,26 @@
+{
+  "status": "SOURCE_READY",
+  "frozenAtUTC": "2026-10-15T14:25:53.801085+00:00",
+  "sourceSHA256": {
+    "apps/client/lib/src/workspace/public_moment_page.dart": "337b78e18cd26fa82a7df4daa3cbe8abea8960e3ea454a7f2f9aca124ef16cfd",
+    "apps/client/test/public_moment_page_test.dart": "450f08ebc50af21c09c1881644f0339d9dc113f210f2dedc0db96680ba8a69cc"
+  },
+  "productChange": "Keep one captured media API per successful public Moment read epoch. Normal parent/capability rebuilds retain its identity; fresh read, owner/Session/workspace/transport/target change, whole-thread withdrawal or dispose retire the old context.",
+  "priorParentWholeThreadPatchSHA256": "dc57ea27665ef66c9d4096d2f6c5155d488a4ea52f144faa68b9ea459a3a807c",
+  "priorParentPatchPreservedExactByInMemoryReverseHash": true,
+  "directReceipt": "public-video-api-lifetime-client02/receipt.json",
+  "directOutput": "public-video-api-lifetime-client02/output.log",
+  "directPassed": 1,
+  "directFailed": 0,
+  "directSkipped": 0,
+  "analysisReceipt": "public-video-api-lifetime-analysis01/receipt.json",
+  "analysisErrors": 0,
+  "analysisWarnings": 0,
+  "analysisStyleInfo": 17,
+  "sourceStable": true,
+  "firstFailedFixturePreserved": "public-video-api-lifetime-client01",
+  "firstFailureCause": "The synthetic media-set response omitted application/json. The strict existing API correctly rejected it. Only that fixture envelope was corrected before client02.",
+  "nativePlayback": "NOT_RUN_BY_WORKER",
+  "codecOrAPITestsRepeated": false,
+  "buildOrDeployByWorker": false
+}

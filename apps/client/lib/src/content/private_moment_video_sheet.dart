@@ -123,6 +123,7 @@ class _PrivateMomentVideoSheetState extends State<PrivateMomentVideoSheet>
               ),
               MomentMediaContextView(
                 api: c.mediaContextAPI,
+                ownerID: c.ownerID,
                 momentID: c.momentID,
                 changes: c,
                 assetKind: 'VIDEO',

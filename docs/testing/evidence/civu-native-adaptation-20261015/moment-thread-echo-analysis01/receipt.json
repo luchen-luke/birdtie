@@ -1,0 +1,21 @@
+{
+  "command": [
+    "D:/DevTools/flutter/bin/dart.bat",
+    "analyze",
+    "lib/src/workspace/moment_thread_api.dart",
+    "test/moment_thread_test.dart"
+  ],
+  "cwd": "D:\\Project\\birdtie\\apps\\client",
+  "startedUTC": "2026-10-15T13:09:33.105448+00:00",
+  "exitCode": 0,
+  "sourceBefore": {
+    "lib/src/workspace/moment_thread_api.dart": "74955a6f0485a061962abac7abd174547be64fd71f7f5a7a2fb5e140d8d310bf",
+    "test/moment_thread_test.dart": "569146c4c70863cd0e61e77618072e8bd16fcea584cb7cda3b1d6913edc6d447"
+  },
+  "sourceAfter": {
+    "lib/src/workspace/moment_thread_api.dart": "74955a6f0485a061962abac7abd174547be64fd71f7f5a7a2fb5e140d8d310bf",
+    "test/moment_thread_test.dart": "569146c4c70863cd0e61e77618072e8bd16fcea584cb7cda3b1d6913edc6d447"
+  },
+  "sourceStable": true,
+  "scope": "One composite direct regression for real Go struct JSON field order, newline normalization, explicit empty locations, original PREPARED journal, tamper rejection; no build/device/remote action."
+}

@@ -1,0 +1,10 @@
+{"Time":"2026-10-15T23:37:39.3623779+08:00","Action":"start","Package":"github.com/birdtie/birdtie/apps/api/internal/postgres"}
+{"Time":"2026-10-15T23:37:41.452633+08:00","Action":"run","Package":"github.com/birdtie/birdtie/apps/api/internal/postgres","Test":"TestUnifiedMap168OriginalPublicPrivacy"}
+{"Time":"2026-10-15T23:37:41.452633+08:00","Action":"output","Package":"github.com/birdtie/birdtie/apps/api/internal/postgres","Test":"TestUnifiedMap168OriginalPublicPrivacy","Output":"=== RUN   TestUnifiedMap168OriginalPublicPrivacy\n"}
+{"Time":"2026-10-15T23:37:43.8673394+08:00","Action":"output","Package":"github.com/birdtie/birdtie/apps/api/internal/postgres","Test":"TestUnifiedMap168OriginalPublicPrivacy","Output":"    unified_map_168_scratch_test.go:6: migration roundtrip uses independently owned database birdtie_owned_migration_1b35dca63544a057340b0cb2 with 168 actual migrations\n"}
+{"Time":"2026-10-15T23:37:44.0492025+08:00","Action":"output","Package":"github.com/birdtie/birdtie/apps/api/internal/postgres","Test":"TestUnifiedMap168OriginalPublicPrivacy","Output":"    unified_map_168_scratch_test.go:8: Original selected map assertions returned; inherited cleanup remains pending\n"}
+{"Time":"2026-10-15T23:37:44.0696996+08:00","Action":"output","Package":"github.com/birdtie/birdtie/apps/api/internal/postgres","Test":"TestUnifiedMap168OriginalPublicPrivacy","Output":"--- PASS: TestUnifiedMap168OriginalPublicPrivacy (2.62s)\n"}
+{"Time":"2026-10-15T23:37:44.0696996+08:00","Action":"pass","Package":"github.com/birdtie/birdtie/apps/api/internal/postgres","Test":"TestUnifiedMap168OriginalPublicPrivacy","Elapsed":2.62}
+{"Time":"2026-10-15T23:37:44.0696996+08:00","Action":"output","Package":"github.com/birdtie/birdtie/apps/api/internal/postgres","Output":"PASS\n"}
+{"Time":"2026-10-15T23:37:44.0730327+08:00","Action":"output","Package":"github.com/birdtie/birdtie/apps/api/internal/postgres","Output":"ok  \tgithub.com/birdtie/birdtie/apps/api/internal/postgres\t4.711s\n"}
+{"Time":"2026-10-15T23:37:44.0730327+08:00","Action":"pass","Package":"github.com/birdtie/birdtie/apps/api/internal/postgres","Elapsed":4.711}

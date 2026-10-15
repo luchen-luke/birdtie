@@ -1,0 +1,146 @@
+{
+  "status": "PASS_RECORDED_PREVIOUS_BATCH_ANDROID_SCOPE",
+  "recordType": "PREVIOUS_167_MILESTONE_BOUNDED_ANDROID_OBSERVATIONS",
+  "assembledAtUTC": "2026-10-15T14:58:03Z",
+  "apkVersionLabel": "APK16",
+  "apkSHA256": "b48438bebb8decfe08ab86e6423f7253c17a9d9de437067ff550482cfb5c14c4",
+  "installedAPKHashMatched": true,
+  "installationProof": {
+    "path": "D:\\Project\\birdtie\\docs\\testing\\evidence\\civu-native-adaptation-20261015\\device-install14\\receipt.json",
+    "sha256": "c726ceede94aafdfd0bb5da3abf7f0406845c4cfeb0f03f403836ecadd4b25ce"
+  },
+  "buildProof": {
+    "path": "D:\\Project\\birdtie\\docs\\testing\\evidence\\social-remote-migration-20261015\\final-apk16\\receipt.json",
+    "sha256": "abfdac030176f31e136f728d502835a623712d27ec7abe8a021421058793e15c",
+    "sourceStableAtBuild": true
+  },
+  "frameReview": {
+    "path": "C:\\Users\\chens\\Documents\\Codex\\2026-10-15\\d-project-birdtie-docs-reports-birdtie-2\\work\\final16-frame-review01.json",
+    "sha256": "60c4f57009e8bc62212c1527a5ea37dedf2d5a1e468ca15f400663e1ad9ff0b2",
+    "status": "PASS",
+    "observedAtUTC": "2026-10-15T14:37:23Z",
+    "meaning": "LOCAL_BUILD_DEPLOY_RECEIPTS_AND_SOURCE_AT_REVIEW_TIME_NOT_CURRENT_NEW_EDITOR_SOURCE"
+  },
+  "deviceObservationAuthority": "ROOT_AGENT_ACTUAL_CONNECTED_ANDROID_DEVICE_OBSERVATIONS_EXPLICITLY_REPORTED_TO_THIS_WORKER",
+  "thisWorkerPerformedPhoneActions": false,
+  "actualAPK16": {
+    "publicVideoFullDetailPlayback": {
+      "status": "PASS",
+      "fixture": "SELF_GENERATED_SYNTHETIC03_FOUR_SECOND_MP4",
+      "inputBytes": 285815,
+      "observedPlaybackPositionMilliseconds": 2250,
+      "evidence": "C:\\Users\\chens\\Documents\\Codex\\2026-10-15\\d-project-birdtie-docs-reports-birdtie-2\\work\\device160\\apk16-public-video-playing01.png",
+      "evidenceSHA256": "8ecc50223981b23e364b449360e46a0664e9437604bb93c73f6561c22590a24b",
+      "scope": "FULL_DETAIL_PAGE_ONLY"
+    },
+    "wholeThreadWithdrawal": {
+      "status": "PASS",
+      "fixture": "EXACT_QA_DEVICE15_TWO_CHILD_SYNTHETIC03_THREAD",
+      "evidence": "C:\\Users\\chens\\Documents\\Codex\\2026-10-15\\d-project-birdtie-docs-reports-birdtie-2\\work\\device160\\apk16-thread-withdrawn02.png",
+      "evidenceSHA256": "46a89f485ea11c304878c861e5b5536c90d6b6201fc38597a1fec2511a189618",
+      "databaseReadback": "PASS",
+      "committedAtUTC": "2026-10-15T14:37:11.666537Z",
+      "bothChildrenWithdrawnAndPrivate": true,
+      "threadWithdrawn": true,
+      "immutableReceiptMatchesCurrentMembers": true,
+      "sameDatabaseTransactionForChildrenThreadReceipt": true,
+      "publicationRetestedOnAPK16": "NOT_CLAIMED"
+    },
+    "emptyBodyVideoWithdrawal": {
+      "status": "PASS",
+      "rootObservedUI": "这条公开动态已撤回，本机文字草稿仍保留",
+      "databaseReadback": "PASS",
+      "selectedCreatedAtUTC": "2026-10-15T14:15:39.215771Z",
+      "committedAtUTC": "2026-10-15T14:55:09.868910Z",
+      "originalSelfGeneratedFixtureDigestMatched": true,
+      "currentStatus": "withdrawn",
+      "currentVisibility": "private",
+      "publicMediaSetStatus": "DELETED",
+      "publishedMP4PosterAndThumbnailBytesRetired": true,
+      "immutableReceiptMatchesCurrentRevision": true,
+      "sameDatabaseTransaction": true
+    },
+    "nowInlineVideoPlayback": {
+      "status": "NOT_RUN",
+      "fullDetailPlaybackMustNotBeReportedAsInlinePlayback": true
+    }
+  },
+  "inheritedAPK14Only": {
+    "claimedOriginalOwnerPrivateImagePixels": {
+      "status": "PASS",
+      "validatedOn": "APK14",
+      "repeatedOnAPK16": false,
+      "evidenceAuthority": "ROOT_DEVICE_OBSERVATION",
+      "temporaryPrivateScreenshotDeleted": true,
+      "privateScreenshotCopied": false
+    },
+    "claimedOriginalOwnerSavedTTLAndReload": {
+      "status": "PASS",
+      "validatedOn": "APK14",
+      "repeatedOnAPK16": false,
+      "evidenceAuthority": "ROOT_DEVICE_OBSERVATION"
+    },
+    "originalOwnerJourneyOrMomentReferenceCoverPositiveSamples": {
+      "status": "NOT_RUN_FOR_SELECTED_OWNER",
+      "reason": "SELECTED_OWNER_HAS_NO_SUCH_PURPOSE_SAMPLES",
+      "otherOriginalOwnersLoggedInForCoverage": 0
+    }
+  },
+  "readOnlyDatabaseReadback": {
+    "path": "C:\\Users\\chens\\Documents\\Codex\\2026-10-15\\d-project-birdtie-docs-reports-birdtie-2\\work\\device15-both-readback01\\receipt.json",
+    "sha256": "359c00faa8ac1845a41034768047400e67a45761eaba2426f4fc3e1cc2ace41f",
+    "status": "PASS",
+    "remoteScriptSHA256": "77b7e259aec75733b776789667db3eb969bc60757690ccdb02094dbc59237983",
+    "httpRequests": 0,
+    "logins": 0,
+    "sessionsCreated": 0,
+    "databaseWrites": 0,
+    "sourceWrites": 0,
+    "newOperations": 0,
+    "privateValuesPersisted": false
+  },
+  "safeScreenshotReferences": [
+    {
+      "path": "C:\\Users\\chens\\Documents\\Codex\\2026-10-15\\d-project-birdtie-docs-reports-birdtie-2\\work\\device160\\apk16-public-video-playing01.png",
+      "sha256": "8ecc50223981b23e364b449360e46a0664e9437604bb93c73f6561c22590a24b",
+      "purpose": "SYNTHETIC_PUBLIC_VIDEO_FULL_DETAIL_PLAYBACK_AT_2250MS",
+      "copied": false,
+      "containsOriginalOwnerImage": false
+    },
+    {
+      "path": "C:\\Users\\chens\\Documents\\Codex\\2026-10-15\\d-project-birdtie-docs-reports-birdtie-2\\work\\device160\\apk16-thread-withdrawn02.png",
+      "sha256": "46a89f485ea11c304878c861e5b5536c90d6b6201fc38597a1fec2511a189618",
+      "purpose": "SYNTHETIC_WHOLE_THREAD_WITHDRAWAL_SUCCESS",
+      "copied": false,
+      "containsOriginalOwnerImage": false
+    }
+  ],
+  "privacy": {
+    "rawDevice08Or09UIEventsRead": false,
+    "rawGalleryOrPrivateUIEventsCopied": false,
+    "originalOwnerImagePixelsReadByThisAssembler": false,
+    "originalOwnerPrivateScreenshotsCopied": false,
+    "tokensPhonesApprovalsOrPrivateBodiesPersisted": false,
+    "syntheticScreenshotsReadForHashOnly": true
+  },
+  "acceptanceBoundaries": {
+    "fullSiteAcceptance": false,
+    "allHistoricalAndroidScenariosRerunOnAPK16": false,
+    "iOSAcceptance": "NOT_RUN",
+    "productionIdentityVerification": "NOT_CLAIMED",
+    "newUnifiedMomentAndThreadEditorTask": "IN_PROGRESS",
+    "newUnifiedEditorAcceptance": "NOT_RUN",
+    "previousBatchQAMustNotBeUsedAsNewEditorAcceptance": true,
+    "allParentTaskRequirementsComplete": false
+  },
+  "assemblyEffects": {
+    "productSourceWrites": 0,
+    "reportOrQueueWrites": 0,
+    "builds": 0,
+    "phoneActions": 0,
+    "httpRequests": 0,
+    "newLogins": 0,
+    "remoteMutations": 0,
+    "newScreenshots": 0
+  }
+}

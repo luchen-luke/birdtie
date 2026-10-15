@@ -1,0 +1,12 @@
+{
+  "at": "2026-10-15T15:30:37.365457+00:00",
+  "status": "BACKEND_DEPLOYED_CLIENT_IN_PROGRESS",
+  "apiRelease": "/opt/birdtie/releases/social168-20261015-build17",
+  "schema": 168,
+  "apiSHA256": "f8b17b1c09fdfc20632c3c8163064c089af808b3d6f34fcb969d821137565e9d",
+  "httpsCompound": "PASS",
+  "newAPK": "NOT_BUILT",
+  "newDeviceAcceptance": "NOT_RUN",
+  "installedPreviousAPK": "final-apk16",
+  "oldSourceWrites": 0
+}

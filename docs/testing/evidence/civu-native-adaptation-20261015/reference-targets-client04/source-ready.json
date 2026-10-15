@@ -1,0 +1,76 @@
+{
+  "status": "SOURCE_READY",
+  "atUTC": "2026-10-15T13:34:12.415566+00:00",
+  "files": {
+    "apps/api/internal/content/private_reference_media.go": "3276dbe6e95454e53a6e73264217fae1adc041b0e27d7d9e7cf10d930bfd9e9a",
+    "apps/api/internal/postgres/private_reference_media.go": "d9a35bf3489a11483a9e721bc5599ea8904f3af5b4ebf59434ac5ee5fa4c533f",
+    "apps/api/internal/httpapi/private_reference_media.go": "b7a4f30dc0a96cc5de8a07d2f60f32ec1d4a18904d8cfc89db437e48467e69e5",
+    "apps/api/internal/postgres/private_reference_targets_native_test.go": "2760ffc11e13499f36273d7f7c51e60455a573a20d915a2aee8d0dc6f7a7bdb0",
+    "apps/client/lib/src/content/private_reference_targets_page.dart": "659af31a0d0934f7a81ac432f75c08b64389b1a585c3d73445e08aae2f9245e1",
+    "apps/client/lib/src/content/legacy_archive_page.dart": "eda1bb034871c10fc2cec405fdca54bea85e871afde1a24c008234a7f5cfa97c",
+    "apps/client/lib/src/workspace/saved_items.dart": "7f5844c01869a20c935fcee1c9df48fdb0aa1375d24b7ebc6461257613c2c90b",
+    "apps/client/test/private_reference_targets_test.dart": "b9bac170705b47482e42824d6a07e1c8ca8218b9f9423809dc4a603f58dddc2b",
+    "apps/client/test/saved_page_test.dart": "b8dd17bfc71873bb07dd008c3dbd4ef00ecdf8ba790bff2628d72d458c5e66a5"
+  },
+  "frameSHA256": "0a8a68a671adb68e7a1ac03223fe4d28c82bc09ebdd44937e5c311e476a5904d",
+  "route": "GET /v1/me/reference-image-targets?targetType=PLACE[&cursor]",
+  "schema": "owned-reference-image-targets-v1",
+  "scope": "Current original image contributions only; no claim of created-Place ownership, no public Place or fabricated Saved item. Original 167 image content/deletion and journal remain authoritative.",
+  "wire": [
+    "schemaVersion",
+    "targetType",
+    "items[{targetId,name,imageCount}]",
+    "observedAt",
+    "validUntil",
+    "sourceVersion",
+    "nextCursor"
+  ],
+  "lease": "At most 30 seconds, original Session/owner/source-bound cursor retains deadline; target selector is not image authority. Opened image fetches original authenticated metadata again; return refreshes target list.",
+  "savedFix": "Expired private Place summaries hide labels and expose explicit first-page GET with expiration wording, preserving notes and true-unavailable behavior.",
+  "native": "work/reference-targets-native02/receipt.json",
+  "nativeTestsPassed": 1,
+  "nativeTestsSkipped": 0,
+  "client": "work/reference-targets-client04/receipt.json",
+  "clientCompositePassed": 1,
+  "clientTestsSkipped": 0,
+  "analysis": "work/reference-targets-analysis02/receipt.json",
+  "analysisErrors": 0,
+  "analysisWarnings": 0,
+  "analysisInfo": 61,
+  "failuresPreserved": [
+    "work/reference-targets-native01",
+    "work/reference-targets-client01",
+    "work/reference-targets-client02"
+  ],
+  "failureDetails": [
+    "Synthetic fixture independent clock_timestamp calls violated idle<=absolute Session expiry; fixed fixture absolute2h/idle1h only.",
+    "Streamed mock body required bounded real IO yields, without advancing fake 30-second lease.",
+    "Nested route BackButtons required binding the actual image-detail Scaffold."
+  ],
+  "nativeCoverage": [
+    "Registered httpapi.New route",
+    "20+1 current target paging",
+    "Anonymous401",
+    "Different owner zero targets",
+    "Existing private image metadata gate",
+    "Delete one independent purpose and retire old cursor",
+    "Original delete operation GET",
+    "Revoked Session401"
+  ],
+  "clientCoverage": [
+    "Existing Civu archive entry",
+    "20+1 typed target pages",
+    "No image request until explicit target open",
+    "Reuse PrivateReferenceMediaView with authenticated original metadata",
+    "Return refresh and owner retirement",
+    "Saved short lease expires, hides labels and explicit unfiltered first-page GET restores them"
+  ],
+  "schemaMigrationChanged": false,
+  "sourceDataOrPrivatePixelsUsed": false,
+  "notRun": [
+    "API15/APK13/Web13 builds",
+    "Deployment",
+    "Real owner target route",
+    "Device visual acceptance"
+  ]
+}

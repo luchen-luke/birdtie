@@ -5,6 +5,7 @@ import 'package:video_player/video_player.dart';
 import 'moment_media_context_view.dart';
 import 'private_moment_media_controller.dart';
 import 'private_moment_video_controller.dart';
+import 'private_reference_media_view.dart';
 
 /// Existing owner materials stay in the Now panel. Only an explicit click
 /// fetches pixels or starts a player; the shared composer handles new material.
@@ -133,17 +134,31 @@ class _LegacyMomentMaterialsPanelState extends State<LegacyMomentMaterialsPanel>
     builder: (context, _) {
       if (!widget.sourceCurrent() || images.retired || !videos.current)
         return const SizedBox.shrink();
+      final originalCover = PrivateReferenceMediaView(
+        key: ValueKey(
+          'moment-original-cover-${widget.momentID}-${widget.revision}',
+        ),
+        targetType: 'MOMENT',
+        targetID: widget.momentID,
+        authorizationHeader: widget.authorizationHeader,
+        ownerID: widget.ownerID,
+        sourceCurrent: widget.sourceCurrent,
+        identityChanges: widget.identityChanges,
+        apiBaseUrl: widget.baseUrl,
+        client: widget.client,
+      );
       final count = images.images.length + videos.items.length;
       if (count == 0 &&
           images.loaded &&
           !videos.loading &&
           images.error == null &&
           videos.error == null)
-        return const SizedBox.shrink();
+        return originalCover;
       return ExpansionTile(
         tilePadding: EdgeInsets.zero,
         title: Text('原有私人材料${count == 0 ? '' : ' · $count'}'),
         children: [
+          originalCover,
           if (images.busy || videos.loading || videos.busy)
             const LinearProgressIndicator(),
           if (images.error != null) Text(images.error!),
@@ -174,6 +189,7 @@ class _LegacyMomentMaterialsPanelState extends State<LegacyMomentMaterialsPanel>
           if (images.images.isNotEmpty)
             MomentMediaContextView(
               api: images.mediaContextAPI,
+              ownerID: widget.ownerID,
               momentID: widget.momentID,
               expectedRevision: widget.revision,
               changes: images,
@@ -221,6 +237,7 @@ class _LegacyMomentMaterialsPanelState extends State<LegacyMomentMaterialsPanel>
           if (videos.items.isNotEmpty)
             MomentMediaContextView(
               api: videos.mediaContextAPI,
+              ownerID: widget.ownerID,
               momentID: widget.momentID,
               expectedRevision: widget.revision,
               changes: videos,

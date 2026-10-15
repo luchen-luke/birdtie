@@ -1,0 +1,21 @@
+{
+  "command": [
+    "dart",
+    "analyze",
+    "lib/src/content/private_reference_media_view.dart",
+    "lib/src/workspace/legacy_place_reference_page.dart",
+    "lib/src/content/personal_collection_page.dart",
+    "lib/src/workspace/now_private_moment_image_page.dart",
+    "lib/src/content/private_moment_media_sheet.dart",
+    "test/private_reference_media_test.dart"
+  ],
+  "cwd": "$REPO/apps/client",
+  "exitCode": 0,
+  "originalReceiptSHA256": "98d610191ab0f66cd727ea700d17b1268d560b9f9401357ba45e7384bbee1b17",
+  "originalStdoutSHA256": "230eccc1392eb9ade7c831ad0a9a58be36b7366c1217c973adf152022e2b1b41",
+  "projection": "CLOSED_SANITIZED_FIELDS_ONLY",
+  "privateValuesOmitted": true,
+  "errors": 0,
+  "warnings": 0,
+  "info": 48
+}

@@ -1,0 +1,28 @@
+{
+  "status": "PASS",
+  "started": "2026-10-15T15:28:18.093413+00:00",
+  "origin": "https://47.110.154.133",
+  "scope": "SYNTHETIC_OWNED_HTTP_CHAIN",
+  "civuIdentitiesUsed": 0,
+  "sourceWrites": 0,
+  "deviceEvidence": false,
+  "cleanup": [
+    "RETIRED_OR_PRIVATE",
+    "RETIRED_OR_PRIVATE",
+    "RETIRED_OR_PRIVATE"
+  ],
+  "sessionsRevoked": [
+    true,
+    true
+  ],
+  "completed": "2026-10-15T15:28:24.007196+00:00",
+  "events": [
+    "STANDALONE_PURE_TEXT_WITHOUT_TITLE_OR_LOCATION_PUBLISHED",
+    "STABLE_ORIGINAL_ID_COMMENT_LIKE_AND_LINK_WITH_ATOMIC_CROSS_CITY_APPEND",
+    "PUBLISHED_REORDER_SINGLE_DELETE_HIDDEN_ROOT_AND_ONE_REMAINING_CURRENT_READ",
+    "ONE_MEMBER_WHOLE_WITHDRAW_AND_OLD_IMMUTABLE_OPERATION_RECOVERY"
+  ],
+  "newMediaUpload": "NOT_RUN_IN_THIS_HTTP_CHAIN",
+  "mapPrivacy": "NOT_RUN_IN_THIS_HTTP_CHAIN",
+  "helperSHA256": "07b56b8a4f3e884baa8edf5f10a47e27740a05171e2e7a5afcf7ecff5fbcc02f"
+}

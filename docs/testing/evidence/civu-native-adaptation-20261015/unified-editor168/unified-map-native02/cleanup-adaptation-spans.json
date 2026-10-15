@@ -1,0 +1,37 @@
+[
+  {
+    "file": "agent_memory_integration_test.go",
+    "function": "agentMemoryTestFixture",
+    "startByte": 1000,
+    "endByte": 1555,
+    "removed": "t.Cleanup(func() {\n\t\tctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)\n\t\tdefer cancel()\n\t\tif _, err := b.pool.Exec(ctx, `DELETE FROM agent_profiles WHERE owner_id=ANY($1::uuid[])`, b.accounts); err != nil {\n\t\t\tt.Errorf(\"owned Memory parent cascade cleanup failed: %v\", err)\n\t\t}\n\t\tvar count int\n\t\tif err := b.pool.QueryRow(ctx, `SELECT count(*) FROM agent_memories WHERE owner_id=ANY($1::uuid[])`, b.accounts).Scan(\u0026count); err != nil || count != 0 {\n\t\t\tt.Errorf(\"owned Memory cascade residue: count=%d error=%v\", count, err)\n\t\t}\n\t})"
+  },
+  {
+    "file": "agent_place_memory_integration_test.go",
+    "function": "placeMemoryNativeFixture",
+    "startByte": 2092,
+    "endByte": 2777,
+    "removed": "t.Cleanup(func() {\n\t\tctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)\n\t\tdefer cancel()\n\t\tfor _, q := range []string{\n\t\t\t`DELETE FROM audit_events WHERE actor_account_id=ANY($1::uuid[])`,\n\t\t\t`DELETE FROM saved_items WHERE owner_account_id=ANY($1::uuid[])`,\n\t\t\t`DELETE FROM moments WHERE author_account_id=ANY($1::uuid[])`,\n\t\t\t`DELETE FROM activities WHERE created_by_account_id=ANY($1::uuid[])`,\n\t\t\t`DELETE FROM places WHERE maintainer_account_id=ANY($1::uuid[])`,\n\t\t\t`DELETE FROM cities WHERE maintainer_account_id=ANY($1::uuid[])`,\n\t\t} {\n\t\t\tif _, e := b.pool.Exec(ctx, q, b.accounts); e != nil {\n\t\t\t\tt.Error(\"owned Place source cleanup failed\", e)\n\t\t\t}\n\t\t}\n\t})"
+  },
+  {
+    "file": "agent_private_profile_integration_test.go",
+    "function": "agentPrivateTestFixture",
+    "startByte": 1175,
+    "endByte": 1842,
+    "removed": "t.Cleanup(func() {\n\t\tcleanupCtx, cancel := context.WithTimeout(context.Background(), 15*time.Second)\n\t\tdefer cancel()\n\t\tfor _, statement := range []string{\n\t\t\t`DELETE FROM sessions WHERE account_id=ANY($1::uuid[])`,\n\t\t\t`DELETE FROM consent_grants WHERE owner_account_id=ANY($1::uuid[]) OR recipient_account_id=ANY($1::uuid[])`,\n\t\t\t`DELETE FROM account_blocks WHERE blocker_account_id=ANY($1::uuid[]) OR blocked_account_id=ANY($1::uuid[])`,\n\t\t\t`DELETE FROM audit_events WHERE actor_account_id=ANY($1::uuid[])`,\n\t\t} {\n\t\t\tif _, err := b.pool.Exec(cleanupCtx, statement, b.accounts); err != nil {\n\t\t\t\tt.Errorf(\"owned private-profile cleanup failed: %v\", err)\n\t\t\t}\n\t\t}\n\t})"
+  },
+  {
+    "file": "agent_profile_integration_test.go",
+    "function": "agentProfileTestFixture",
+    "startByte": 1780,
+    "endByte": 3026,
+    "removed": "t.Cleanup(func() {\n\t\tcleanupCtx, cleanupCancel := context.WithTimeout(context.Background(), 15*time.Second)\n\t\tdefer cleanupCancel()\n\t\tfor _, statement := range []string{\n\t\t\t`DELETE FROM agent_profiles WHERE owner_id=ANY($1::uuid[])`,\n\t\t\t`DELETE FROM agents WHERE principal_account_id=ANY($1::uuid[])`,\n\t\t\t`DELETE FROM organization_memberships WHERE organization_id IN\n\t\t\t\t(SELECT id FROM organizations WHERE account_id=ANY($1::uuid[]))`,\n\t\t\t`DELETE FROM organizations WHERE account_id=ANY($1::uuid[])`,\n\t\t\t`DELETE FROM user_profiles WHERE account_id=ANY($1::uuid[])`,\n\t\t\t`DELETE FROM accounts WHERE id=ANY($1::uuid[])`,\n\t\t} {\n\t\t\tif _, cleanupErr := pool.Exec(cleanupCtx, statement, f.accounts); cleanupErr != nil {\n\t\t\t\tt.Errorf(\"owned Agent Profile cleanup failed: %v\", cleanupErr)\n\t\t\t}\n\t\t}\n\t\tvar remaining int\n\t\tif cleanupErr := pool.QueryRow(cleanupCtx, `SELECT\n\t\t\t(SELECT count(*) FROM accounts WHERE id=ANY($1::uuid[])) +\n\t\t\t(SELECT count(*) FROM agent_profiles WHERE owner_id=ANY($1::uuid[])) +\n\t\t\t(SELECT count(*) FROM agents WHERE principal_account_id=ANY($1::uuid[]))`, f.accounts).Scan(\u0026remaining); cleanupErr != nil || remaining != 0 {\n\t\t\tt.Errorf(\"owned Agent Profile fixture residue: count=%d error=%v\", remaining, cleanupErr)\n\t\t}\n\t})"
+  },
+  {
+    "file": "moment_publication_integration_test.go",
+    "function": "momentPublicationOrdinary",
+    "startByte": 605,
+    "endByte": 1048,
+    "removed": "t.Cleanup(func() {\n\t\tfor _, q := range []string{`DELETE FROM account_blocks WHERE blocker_account_id=$1 OR blocked_account_id=$1`, `DELETE FROM audit_events WHERE actor_account_id=$1`, `DELETE FROM moments WHERE author_account_id=$1`, `DELETE FROM sessions WHERE account_id=$1`, `DELETE FROM accounts WHERE id=$1`} {\n\t\t\tif _, e := b.pool.Exec(context.Background(), q, id); e != nil {\n\t\t\t\tt.Error(\"ordinary publication cleanup\", e)\n\t\t\t}\n\t\t}\n\t})"
+  }
+]

@@ -1,0 +1,33 @@
+{
+  "status": "PARTIAL_VIDEO_PUBLISH_PENDING",
+  "device": "ANDROID_CONNECTED_NORMAL_FONT",
+  "fontScale": 1.0,
+  "screenRecording": false,
+  "sourceAccount": "PREEXISTING_SYNTHETIC03",
+  "originalOwnerContentWrites": 0,
+  "checks": {
+    "apk10_threeImagesBlankBodyTitleLocationPublished": "PASS",
+    "apk10_orderBlueGreenOrangeReadInline": "PASS",
+    "apk10_threeImagesWithdrawn": "PASS",
+    "apk10_videoLocalNowPreviewPlay": "PASS",
+    "apk10_videoPrepare": "FAILED_X264_AS512_ALLOCATION",
+    "apk11_savedFirstPageOriginalClaimedOwner": "PASS",
+    "apk11_savedNextPageOriginalClaimedOwner": "PASS",
+    "apk11_originalPrivatePlaceDetailsRead": 3,
+    "apk11_threadPreview": "FAILED_JSON_OBJECT_KEY_ORDER",
+    "apk12_threadOriginalDraftRestored": "PASS",
+    "apk12_threadTwoEntriesPublishedAtomically": "PASS",
+    "apk12_threadBothPublicItemsReadAndNavigate": "PASS"
+  },
+  "screenshots": {
+    "apk10-pure-three-images-published01.png": "426ffeb0a49c0d286de4f7e2f7f109a2f307689916a54eb5606be3ab7c99fce1",
+    "apk10-video-local-preview01.png": "ff08fc40c4c0a57be197875a448ac5b736c41cb42a44daa617248a5c50c441fc",
+    "apk12-thread-published01.png": "5291691e91389f3a93f53181d0413dbf74f838f1dc2fa300a9ab84cd2edcee2a"
+  },
+  "knownFixesPendingFinalDevice": [
+    "public_video_virtual_address_limit",
+    "saved_expiry_reload",
+    "owned_legacy_place_image_entry"
+  ],
+  "rawUIOrPrivatePixelsCommitted": false
+}

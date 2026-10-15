@@ -1,0 +1,19 @@
+Flutter assets will be downloaded from https://storage.flutter-io.cn. Make sure you trust this source!
+00:00 +0: loading D:/Project/birdtie/apps/client/test/unified_moment_composer_test.dart
+00:00 +0: actual Now replaces a STOPPED video operation reference without clearing another entry missing material and restores the replacement journal
+STOP recovery fixture: save cold journal
+STOP recovery fixture: mount Now
+STOP recovery fixture: open draft
+STOP recovery fixture: draft restored
+STOP recovery fixture: prepare unknown
+STOP recovery fixture: original GET unresolved
+STOP recovery fixture: stopped original
+STOP recovery fixture: operation rotated
+STOP recovery fixture: replacement ready
+STOP recovery fixture: flush replacement journal
+STOP recovery fixture: close draft
+STOP recovery fixture: unmount Now
+STOP recovery fixture: remount Now
+STOP recovery fixture: reopen draft
+STOP recovery fixture: replacement journal restored
+00:01 +1: All tests passed!

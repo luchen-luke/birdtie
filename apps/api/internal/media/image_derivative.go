@@ -43,6 +43,12 @@ func (*LocalImageDerivativeBuilder) BuildLegacyPrivateJPEG(ctx context.Context, 
 	return buildImageDerivative(ctx, src, "image/jpeg", 16*1024*1024, 48*1024*1024, true)
 }
 
+// BuildLegacyPrivateImage is an offline authenticated JPEG/PNG preservation
+// codec. It keeps the full frame and does not enlarge ordinary upload limits.
+func (*LocalImageDerivativeBuilder) BuildLegacyPrivateImage(ctx context.Context, src io.Reader, mime string) (io.ReadCloser, string, error) {
+	return buildImageDerivative(ctx, src, mime, 16*1024*1024, 48*1024*1024, true)
+}
+
 type imageDerivativeFailure struct {
 	stage string
 	cause error

@@ -1,0 +1,23 @@
+{
+  "at": "2026-10-15T17:25:23.157975+00:00",
+  "command": [
+    "C:\\Program Files\\Go\\bin\\go.exe",
+    "test",
+    ".",
+    "-run",
+    "^TestNativeStartupRejectsLegacyIncompleteAndUnavailableSchemas$",
+    "-count=1",
+    "-json"
+  ],
+  "cwd": "D:\\Project\\birdtie\\apps\\api",
+  "exitCode": 0,
+  "sourceBefore": {
+    "apps\\api\\native_database_startup.go": "2b2cb244c64cd45787611eab893f44ad70e8503a6948dd3b204237d9a577458d",
+    "apps\\api\\native_database_startup_test.go": "49bed7124b1d5fd3fcb9ef66f8191726137c765ecd8e71e71275c4a49d25cbff"
+  },
+  "sourceAfter": {
+    "apps\\api\\native_database_startup.go": "2b2cb244c64cd45787611eab893f44ad70e8503a6948dd3b204237d9a577458d",
+    "apps\\api\\native_database_startup_test.go": "49bed7124b1d5fd3fcb9ef66f8191726137c765ecd8e71e71275c4a49d25cbff"
+  },
+  "sourceStable": true
+}

@@ -1,0 +1,35 @@
+{
+  "at": "2026-10-15T15:38:16.200847+00:00",
+  "status": "PASS_1_WITH_SCRATCH_FIXTURE_CLEANUP_ADAPTATION",
+  "originalSelectedTest": "TestMapProjectionNativeRealPublicMomentAndNoPrivatePayload",
+  "executedHarness": "TestUnifiedMap168OriginalPublicPrivacy",
+  "schema": 168,
+  "production8PathFrameUnchanged": true,
+  "productionFrame": "work/unified-backend-source-ready01.json",
+  "originalMapBusinessAssertionsUnchanged": true,
+  "adaptation": "AST removed exactly5 DELETE-based cleanup callbacks in scratch helpers; retains pool.Close/cancel and ownedMigrationDatabase full child teardown. No original test assertions, source implementation or production files changed.",
+  "covered": [
+    "Unpublished private draft not projected into public map despite real public Place anchor",
+    "Explicit publication becomes visible to ordinary reader",
+    "Current native map receipt revalidation succeeds",
+    "Serialized map projection does not include body canary, occurredAt, authorAccountId/authorUUID, token_sha256, xmin, Proof/Seal, rightsNote, profile or IntentID",
+    "Tampered map receipt rejected",
+    "After original human withdrawal current map no longer contains Moment"
+  ],
+  "notRun": [
+    "Map block/session/source ABA matrix",
+    "Dedicated multi-location cross-city and location-source-revocation compound",
+    "Public image/video bytes via map",
+    "New EDIT transaction combined with live map UI",
+    "Remote HTTPS and real-device map integration"
+  ],
+  "priorFailurePreserved": "work/unified-map-native01: original assertions returned, historical per-row DELETE cleanup failed under moment_location_links FK and descendant FKs; overall remains FAIL1",
+  "evidence": {
+    "selection.json": "385327bb1166ba74b0ad540d7502240137d23c1ab0cfa68c81a400a5c705d86c",
+    "cleanup-adaptation.diff": "1cc782aee45270d40c4cd9c49bc6d51ba3615eca0b1555556e72ec9edd390005",
+    "cleanup-adaptation-spans.json": "0d694af0b49385fa4e72e35ec80de50ad2771e9d96cdc406b1bac1365ad74123",
+    "receipt.json": "7dd558ddd0e52b41eec0407ec10e2dc48faabad622890ba5854227e9f0ddf760",
+    "stdout.jsonl": "63ac6d503e55aa0f0195ca68a9a1a6b32fb622a77199398c84e023f78f323db8",
+    "stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  }
+}

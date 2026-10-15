@@ -1,0 +1,5 @@
+{
+  "command": "dart analyze [3 scoped stage-operation fix products]",
+  "cwd": "D:/Project/birdtie/apps/client",
+  "exitCode": 0
+}

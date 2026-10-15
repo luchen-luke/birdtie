@@ -1,0 +1,32 @@
+00:00 +0: loading D:/Project/birdtie/apps/client/test/public_moment_page_test.dart
+00:00 +0: public video API survives ordinary parent rebuilds and retires on identity change
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following TestFailure was thrown running a test:
+Expected: exactly one matching candidate
+  Actual: _TypeWidgetFinder:<Found 0 widgets with type "PublicMomentVideoPlayer": []>
+   Which: means none were found but one was expected
+
+When the exception was thrown, this was the stack:
+#4      main.<anonymous closure> (file:///D:/Project/birdtie/apps/client/test/public_moment_page_test.dart:137:7)
+<asynchronous suspension>
+#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1952:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///D:/Project/birdtie/apps/client/test/public_moment_page_test.dart line 137
+The test description was:
+  public video API survives ordinary parent rebuilds and retires on identity change
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:00 +0 -1: public video API survives ordinary parent rebuilds and retires on identity change [E]
+  Test failed. See exception logs above.
+  The test description was: public video API survives ordinary parent rebuilds and retires on identity change
+  
+00:00 +0 -1: Some tests failed.
+
+Failing tests:
+  D:/Project/birdtie/apps/client/test/public_moment_page_test.dart: public video API survives ordinary parent rebuilds and retires on identity change
+Flutter assets will be downloaded from https://storage.flutter-io.cn. Make sure you trust this source!

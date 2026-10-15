@@ -452,6 +452,7 @@ func New(catalog foundation.PublicCatalog, access identity.AccessStore, seed cit
 	s.registerLocationSearchRoutes(mux)
 	s.registerJourneyHistoryRoutes(mux)
 	s.registerMomentMediaContextRoutes(mux)
+	s.registerReferenceImageRoutes(mux)
 	s.registerInboxManagementRoutes(mux)
 	mux.HandleFunc("POST /v1/cities/{cityID}/places/{placeID}/profile-candidates", s.submitPlaceProfileCandidate)
 	mux.HandleFunc("GET /v1/cities/{cityID}/place-profile-candidates", s.listPlaceProfileCandidates)

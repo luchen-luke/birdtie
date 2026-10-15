@@ -1,0 +1,51 @@
+{
+  "schema": "birdtie-unified-composer-client-frame-v1",
+  "at": "2026-10-15T16:08:52.877052+00:00",
+  "status": "SOURCE_READY",
+  "files": {
+    "apps/client/lib/src/workspace/map_workspace.dart": "aaee3533e7b1033a4f847462ee5db8d4b8f5fd78286857ec9568e24c883856ca",
+    "apps/client/lib/src/workspace/agent_composer.dart": "1cd3d633f04a960d077de9a1c8f59e35ce34e4b4b80e1e762c274090e7178134",
+    "apps/client/lib/src/workspace/moment_thread_api.dart": "eb8ce856c42a7fdcfee514c4294638307e4bfb84358d4282b94e458710399b42",
+    "apps/client/lib/src/workspace/moment_thread_controller.dart": "b2d5872144869b1736b03dd6b1a3430ec4040b8763883043833e3c3c1a31b6c2",
+    "apps/client/lib/src/workspace/moment_thread_panel.dart": "11235b08e413794e45f12e8f12fcdc52d9be4a013782828538337d93ced940a6",
+    "apps/client/lib/src/workspace/moment_thread_pending_store.dart": "487b13a9fb7797b653a06a10918fb1c19f01006242df3f7b3170a4fb2421dd18",
+    "apps/client/lib/src/workspace/now_creation_draft_state.dart": "cdc593dcce048e98f2e84fa1f7dfb67c81770b39ad1564dcaf0479f0be0134bc",
+    "apps/client/test/moment_thread_test.dart": "e160e8057fb68f70f9eda4899c72499ceb7c7a21388f264bead6b4327cae802a",
+    "apps/client/test/unified_moment_composer_test.dart": "b68377a48b6505068e06dc696ed17f97505404e18a7b36c06e2e79c5a13d2813"
+  },
+  "sourceFrameSHA256": "604ddb24b4d6f76e7a5b5602888a5f83409beb7e2413fe772fcca7a393741c40",
+  "productFrameUnchangedFromFinal01": true,
+  "analysis": {
+    "receipt": "work/unified-composer-analysis07/receipt.json",
+    "exitCode": 0,
+    "errors": 0,
+    "warnings": 0,
+    "infos": 194
+  },
+  "directEvidence": [
+    {
+      "path": "work/unified-moment-composer-client01",
+      "result": "2PASS_1_OLD_TOOLTIP_FIXTURE_FAIL_PRESERVED"
+    },
+    {
+      "path": "work/unified-moment-composer-client02",
+      "result": "FIRST_COMPOSITE_ONLY_PASS_AFTER_FINDER_FIX"
+    },
+    {
+      "path": "work/unified-moment-composer-client03",
+      "result": "THIRD_COMPOSITE_ONLY_PASS_AFTER_WITHDRAW_RECEIPT_EXTENSION"
+    }
+  ],
+  "coverage": [
+    "default_one_explicit_append_body_title_independent_clear_locations_reorder_remove",
+    "six_3000_UTF8_byte_entry_recovery_above_16KiB_no_approval_raw_rights",
+    "EDIT_stable_ID_context_zero_city_IMAGE_VIDEO_actual_JPEG_preview_removed_summary_UNKNOWN_original_GET_without_PUT_replay",
+    "whole_withdraw_current_revision_atomic_journal_update_unpublished_entry_and_video_operation_placeholder_retained"
+  ],
+  "hostBridgeEvidence": "work/now-moment-editor-host-source-ready01.json",
+  "oldThreadFixturesAdaptedNotRerun": true,
+  "wholeRepositoryTestsRun": false,
+  "buildRunByWorker": false,
+  "deviceRunByWorker": false,
+  "sharedQueueOrReportsChanged": false
+}

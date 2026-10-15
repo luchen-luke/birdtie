@@ -416,16 +416,20 @@ class SavedController extends ChangeNotifier {
     pageChanged = false;
     notifyListeners();
     try {
+      final endpoint = _endpoint(
+        pageMode ? '/v1/me/saved/page' : '/v1/me/saved',
+      );
+      final parameters = <String, String>{
+        if (cursor != null) 'cursor': cursor,
+        if (pageMode && query.isNotEmpty) 'q': query,
+        if (pageMode && queryKind != null) 'kind': queryKind!,
+        if (pageMode && queryCity != null) 'cityId': queryCity!,
+      };
       final response = await _client
           .get(
-            _endpoint(pageMode ? '/v1/me/saved/page' : '/v1/me/saved').replace(
-              queryParameters: {
-                if (cursor != null) 'cursor': cursor,
-                if (pageMode && query.isNotEmpty) 'q': query,
-                if (pageMode && queryKind != null) 'kind': queryKind!,
-                if (pageMode && queryCity != null) 'cityId': queryCity!,
-              },
-            ),
+            parameters.isEmpty
+                ? endpoint
+                : endpoint.replace(queryParameters: parameters),
             headers: _headers(),
           )
           .timeout(const Duration(seconds: 12));
@@ -1243,6 +1247,10 @@ class _SavedPageState extends State<SavedPage> {
           .where((i) => i.isNotEmpty)
           .toSet();
       if (_city != null) cities.add(_city!);
+      final expiredReferences = saved.items.any(
+        (item) =>
+            item.legacyReference != null && !item.legacyReference!.current,
+      );
       String cityLabel(String id) {
         for (final item in saved.items) {
           if (item.cityId == id && item.cityName.isNotEmpty)
@@ -1390,6 +1398,19 @@ class _SavedPageState extends State<SavedPage> {
                 ],
               ),
             if (saved.loading) const LinearProgressIndicator(),
+            if (expiredReferences) ...[
+              const Text('这批地点资料已到期，重新读取后可查看当前资料。'),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton.icon(
+                  onPressed: saved.loading
+                      ? null
+                      : () => saved.load(paged: true),
+                  icon: const Icon(Icons.refresh),
+                  label: const Text('重新读取收藏'),
+                ),
+              ),
+            ],
             if (saved.failed) ...[
               Text(saved.pageChanged ? '收藏已更新，请刷新。' : '加载失败，请重试。'),
               Align(
@@ -1397,7 +1418,7 @@ class _SavedPageState extends State<SavedPage> {
                 child: TextButton(
                   onPressed: saved.loading
                       ? null
-                      : () => saved.load(more: saved.hasMore, paged: true),
+                      : () => saved.load(paged: true),
                   child: Text(saved.pageChanged ? '重新读取收藏' : '重试读取'),
                 ),
               ),
@@ -1430,7 +1451,11 @@ class _SavedPageState extends State<SavedPage> {
                     : null,
                 leading: _leading(item),
                 title: Text(
-                  item.readable ? item.title : '内容暂不可用',
+                  item.readable
+                      ? item.title
+                      : item.legacyReference != null
+                      ? '地点资料已到期'
+                      : '内容暂不可用',
                   style: tokens.placeTitle,
                 ),
                 subtitle: Column(
@@ -1439,7 +1464,9 @@ class _SavedPageState extends State<SavedPage> {
                     if (widget.onAddToCollection != null &&
                         item.kind == 'place')
                       Checkbox(
-                        semanticLabel: '选择${item.title}加入集合',
+                        semanticLabel: item.readable
+                            ? '选择${item.title}加入集合'
+                            : '当前地点资料不可选择',
                         value: _selected.contains(item.id),
                         onChanged: item.available && !saved.loading
                             ? (v) => setState(() {
@@ -1465,6 +1492,8 @@ class _SavedPageState extends State<SavedPage> {
                               if (item.legacyReference != null) '仅本人可见',
                               if (item.summary.isNotEmpty) item.summary,
                             ].join(' · ')
+                          : item.legacyReference != null
+                          ? '重新读取收藏后可查看当前资料。'
                           : '该内容已不可见，你可以保留备注或取消收藏。',
                       style: tokens.listSubtitle,
                     ),

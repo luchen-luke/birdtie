@@ -1,0 +1,100 @@
+{
+  "schema": "birdtie-unified-stage-operation-evidence-archive-v1",
+  "at": "2026-10-15T17:00:38.388853+00:00",
+  "sourceReadyFrameSHA256": "f7f384b3425d93fa01497d77ea10970784cfd33f3d927892f950a2fb294934d9",
+  "source": "cwd/work bounded named folders only",
+  "files": [
+    {
+      "path": "unified-stage-operation-analysis01/output.log",
+      "sha256": "6e347d1f126deeb9a2e987c8da7f0b42cbd4a92723d25d7e5fe81124a750eab3",
+      "bytes": 30808
+    },
+    {
+      "path": "unified-stage-operation-analysis01/receipt.json",
+      "sha256": "ccec40cd2ca6af55c88a1c8f11030f4f0c24df8053b7743183898533b1f1b077",
+      "bytes": 182
+    },
+    {
+      "path": "unified-stage-operation-analysis02/output.log",
+      "sha256": "cd9ff1f7ef6fb1bd419cb4f73e11da1964bcdbefe0d93a94e9598c5b75a00927",
+      "bytes": 34287
+    },
+    {
+      "path": "unified-stage-operation-analysis02/receipt.json",
+      "sha256": "01c22f1de5abeb7f16193acddc59811fbf2e22c1b8a5bbd84f6e5b9db185e3e1",
+      "bytes": 137
+    },
+    {
+      "path": "unified-stage-operation-analysis03/output.log",
+      "sha256": "58a3e2cd680dd1fbafd7def8bd019f2e9856a0e80d6844d7cdcceb123c81f644",
+      "bytes": 34273
+    },
+    {
+      "path": "unified-stage-operation-analysis03/receipt.json",
+      "sha256": "690a41fe5ca7caeaa6d6bdd517bbf4fd7b71372326aaa945c1ca635ce3ac6c31",
+      "bytes": 157
+    },
+    {
+      "path": "unified-moment-composer-stop01/output.log",
+      "sha256": "d883d0c68b6a5b08866942d11b54806f7e0bf3586445c38550e4a821619c2e9a",
+      "bytes": 342
+    },
+    {
+      "path": "unified-moment-composer-stop01/receipt.json",
+      "sha256": "75abe0e56e7cb4bdb0d4c70bab461a569fa8d89e93593659569d10740c26e7c8",
+      "bytes": 5800
+    },
+    {
+      "path": "unified-moment-composer-stop02/output.log",
+      "sha256": "4962b5e748cfd51bc5252ec475e8b78d4d6e1892ac3c8263dc31cebf0a750560",
+      "bytes": 574
+    },
+    {
+      "path": "unified-moment-composer-stop02/receipt.json",
+      "sha256": "7115c2147f7e502670017f3f6bc080c31bb5511d2bfc497cb7f84910fccca72f",
+      "bytes": 5819
+    },
+    {
+      "path": "unified-moment-composer-stop03/output.log",
+      "sha256": "b8407f54cd325d8120081126bd2d9db4c5aa3f0b3b9e9f4555b43ed4bf93bb9b",
+      "bytes": 696
+    },
+    {
+      "path": "unified-moment-composer-stop03/receipt.json",
+      "sha256": "89a640bbdd354424d0a3cc6a946dd4a5d9560836031d777bb6a86ec5a5f757d4",
+      "bytes": 5819
+    },
+    {
+      "path": "unified-moment-composer-stop04/output.log",
+      "sha256": "7e1a695a808d5e4531534cd47563a38cdc876ba504f0777d2f04c59c92ab77f3",
+      "bytes": 488
+    },
+    {
+      "path": "unified-moment-composer-stop04/receipt.json",
+      "sha256": "c364daf61f6e42965163770f3472d5de9ce1b5e606ca52ed461183bed1643c1a",
+      "bytes": 5819
+    },
+    {
+      "path": "unified-moment-composer-stop05/output.log",
+      "sha256": "1a97e4523bde6954a5bdf98265470fd7c315b9b4e8ec41ae3ac917f1556becfe",
+      "bytes": 966
+    },
+    {
+      "path": "unified-moment-composer-stop05/receipt.json",
+      "sha256": "0be588ebe564476f5e72e56593e070a9f5297f70a008fdf15bcaa84aa1cbd315",
+      "bytes": 5791
+    },
+    {
+      "path": "unified-stage-operation-source-ready01.json",
+      "sha256": "87f2e63981547dfd9a16a72b5a7ac174f289cc5b28c848f5e82deac42c8eecea",
+      "bytes": 2437
+    }
+  ],
+  "textOnly": true,
+  "deviceGalleryLogsCopied": false,
+  "privateDataCopied": false,
+  "mediaOrCacheCopied": false,
+  "testsRerunForArchiving": false,
+  "productChangedForArchiving": false,
+  "sharedQueueReportsChanged": false
+}

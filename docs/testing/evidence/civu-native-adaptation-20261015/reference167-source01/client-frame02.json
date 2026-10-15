@@ -1,0 +1,67 @@
+{
+  "status": "SOURCE_READY",
+  "atUTC": "2026-10-15T12:09:36.600331+00:00",
+  "files": {
+    "apps/client/lib/src/content/private_reference_media_view.dart": "b14f09f99263f3240bd7b391720500aba9f978315eeebf00504f7cd036db9cfd",
+    "apps/client/lib/src/workspace/legacy_place_reference_page.dart": "7229527000914e52190dd0b4568c8dc7fdcdb977bede2e0723af77fa61bb6721",
+    "apps/client/lib/src/content/personal_collection_page.dart": "5104fa58da8a0fd0d3b97ec447ebaf32b9ceb82d4548f1f3e0d1a65caa5ae1ae",
+    "apps/client/lib/src/workspace/now_private_moment_image_page.dart": "c17a3a758c9550a242a48986edd14863ab5cdd8e90d0e7e96d757755a6d378f9",
+    "apps/client/lib/src/content/private_moment_media_sheet.dart": "e6f317eea96458628d499451115068238e9f5648e18f237d482fa6f5278accd8",
+    "apps/client/test/private_reference_media_test.dart": "e190552fccf9f4d0f9f4f40ccf75f661b18bba566a661990e021a0d5a790fcbb",
+    "apps/client/lib/src/workspace/map_workspace.dart": "ccfc465d602e0814dc71696dce6fa61a23eec1b8c138eeb3b93af8d35f2b07cf",
+    "apps/client/lib/src/legacy/legacy_shell.dart": "a765a8ac43c60e443c0fc42317b0449ddbbe37159bced71110bd7972b6d54c97",
+    "apps/client/lib/src/content/moment_media_context_view.dart": "bcc1179b1d3511079f49e978ec8b5fe0a3225eb3bb11e11330549a230e23fc4d",
+    "apps/client/lib/src/content/private_moment_video_sheet.dart": "81c44e8df8ad28d1b71de478d8660fd5a690b6b8e4057a4d98e78f53b007b71c",
+    "apps/client/lib/src/content/legacy_moment_materials_panel.dart": "2da13587d1fc049aa90c2e27ddd979bf1fccfd3364f7b82f79a0e2125b7947db"
+  },
+  "frameSHA256": "d664aca5aec98b21ba341c49727fb074032e24241d9ef280304a00e7a3d58cd2",
+  "previousFrameRetained": "work/reference167-client-source-ready.json",
+  "previousFrameSHA256": "93f75f7b19dfec90c1e8e035d8534f278029266a6c8039d149e1495ff6b58d57",
+  "validation": {
+    "direct": "work/reference167-client06/receipt.json",
+    "testsPassed": 2,
+    "testsSkipped": 0,
+    "analysis": "work/reference167-analysis02/receipt.json",
+    "analysisErrors": 0,
+    "analysisWarnings": 0,
+    "impeccableDetector": [],
+    "detectorTargets": [
+      "apps/client/lib/src/content/private_reference_media_view.dart",
+      "apps/client/lib/src/workspace/legacy_place_reference_page.dart",
+      "apps/client/lib/src/content/personal_collection_page.dart",
+      "apps/client/lib/src/workspace/now_private_moment_image_page.dart",
+      "apps/client/lib/src/content/private_moment_media_sheet.dart"
+    ],
+    "hostAnalysis": "work/reference167-host-analysis01/receipt.json",
+    "hostErrors": 0,
+    "hostWarnings": 0,
+    "newTestsRepeatedAfterMechanicalHosts": false,
+    "diffWhitespaceWithNativeCRLF": "PASS"
+  },
+  "firstFailuresRetained": [
+    "work/reference167-client01",
+    "work/reference167-client02",
+    "work/reference167-client03",
+    "work/reference167-client04",
+    "work/reference167-analysis01"
+  ],
+  "wire": "work/reference167-wire.md",
+  "scope": "167 original6 files plus5 registered host owner/cover connections",
+  "selfReview": {
+    "allLegacyPlacePageCallersOwnerBound": true,
+    "allMomentContextViewCallersOwnerPassed": true,
+    "nowExistingMaterialsCoverReachable": true,
+    "coverOnlyMomentNotHiddenByEmptyAttachmentList": true,
+    "emptyReferenceListLeavesNoHeading": true,
+    "noNewPublishOrCopyOrAnonymousImagePath": true,
+    "noOtherHostLogicChanged": true
+  },
+  "notRun": [
+    "API HTTP real-source acceptance",
+    "device/reference image rendering",
+    "APK/Web build",
+    "deployment"
+  ],
+  "sourceMediaPersistedOnClient": false,
+  "approvalOrTokenInDeleteJournal": false
+}

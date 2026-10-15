@@ -1,0 +1,39 @@
+{
+  "status": "FIRST_FAILURES_RETAINED",
+  "records": [
+    {
+      "source": "reference167-client01",
+      "exitCode": 1,
+      "originalReceiptSHA256": "15756096941f01c8e76758bf32acc192ae195ea2f620322752c6200303fab9ee",
+      "originalStdoutSHA256": "fe2b87cc87dd47ca98db98f5e65d2332f31ee9ee51cbaaf9cb94edc18f5ae72a"
+    },
+    {
+      "source": "reference167-client02",
+      "exitCode": 1,
+      "originalReceiptSHA256": "d10312c404de897751d5805ad2d4255293b2dd5565244a768db6c02d5416f628",
+      "originalStdoutSHA256": "a15344c470d0fd2df1bf841d94fde5f0d345883dceb73b7fe6f16dcec2577da1"
+    },
+    {
+      "source": "reference167-client03",
+      "exitCode": 1,
+      "originalReceiptSHA256": "fd0246c956b2925be987ff0998fa390b444d79776b0e23d1619c858e065d7723",
+      "originalStdoutSHA256": "57b63ca5b9b8c8d40b496c30aaa20e636e76c13fc64cd98e86b188bebf611a30"
+    },
+    {
+      "source": "reference167-client04",
+      "exitCode": 1,
+      "originalReceiptSHA256": "c89aea85202c2428c658d7936a4508ddd0785f52829f564623760535f9eaa2a4",
+      "originalStdoutSHA256": "fc570c86f448f227cd912b04ebfdea0d7fcc3854eddd6cfcd0619662e405d6e4"
+    },
+    {
+      "source": "reference167-analysis01",
+      "exitCode": 2,
+      "originalReceiptSHA256": "a5d982828b911de006469fc0d125cda1ed83cbab54fd55c6adfb1f3ee0157db8",
+      "originalStdoutSHA256": "5e2ca2d1787c59ecd40ddc8c1648e26b2224b3fa6b498d832860b01629956b88"
+    }
+  ],
+  "clientResolution": "FakeAsync advanced the30second lease before real image IO completed; explicit bounded IO phase yields preserve all original assertions. No timeout extension.",
+  "analysisResolution": "Two unnecessary non-null assertions removed; final0errors0warnings.",
+  "privateValuesOmitted": true,
+  "rawDiagnosticsRetainedOnlyLocally": true
+}

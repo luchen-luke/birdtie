@@ -1,0 +1,16 @@
+Analyzing 4 items...                                            
+
+warning - Unused import: 'public_moment_media_editor.dart'. Try removing the import directive - lib\src\workspace\public_moment_page.dart:14:8 - unused_import
+   info - Statements in an if should be enclosed in a block. Try wrapping the statement in a block - lib\src\workspace\public_moment_page.dart:201:15 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block. Try wrapping the statement in a block - lib\src\workspace\public_moment_page.dart:245:7 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block. Try wrapping the statement in a block - lib\src\workspace\public_moment_page.dart:264:13 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block. Try wrapping the statement in a block - lib\src\workspace\public_moment_page.dart:272:9 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block. Try wrapping the statement in a block - lib\src\workspace\public_moment_page.dart:286:7 - curly_braces_in_flow_control_structures
+   info - Don't use 'BuildContext's across async gaps. Try rewriting the code to not use the 'BuildContext', or guard the use with a 'mounted' check - lib\src\workspace\public_moment_page.dart:318:28 - use_build_context_synchronously
+   info - Statements in an if should be enclosed in a block. Try wrapping the statement in a block - lib\src\workspace\public_moment_page.dart:458:23 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block. Try wrapping the statement in a block - lib\src\workspace\public_moment_page.dart:646:11 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block. Try wrapping the statement in a block - lib\src\workspace\public_moment_page.dart:653:9 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block. Try wrapping the statement in a block - lib\src\workspace\public_moment_page.dart:667:7 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block. Try wrapping the statement in a block - lib\src\workspace\public_moment_page.dart:669:7 - curly_braces_in_flow_control_structures
+warning - The '!' will have no effect because the receiver can't be null. Try removing the '!' operator - test\now_moment_editor_host_test.dart:174:12 - unnecessary_non_null_assertion
+

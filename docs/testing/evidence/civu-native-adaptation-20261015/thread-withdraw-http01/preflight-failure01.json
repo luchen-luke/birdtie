@@ -1,0 +1,5 @@
+{
+  "result": "FAILED_BEFORE_TEST",
+  "reason": "diagnostic runner renamed parent hash scope to snapshot-only test; corrected parent frame to existing original native test",
+  "databaseMutated": false
+}

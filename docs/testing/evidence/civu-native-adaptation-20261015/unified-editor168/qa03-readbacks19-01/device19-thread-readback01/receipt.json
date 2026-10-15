@@ -1,0 +1,377 @@
+{
+  "status": "FAIL",
+  "started": "2026-10-15T17:09:07.662907+00:00",
+  "origin": "https://47.110.154.133",
+  "syntheticAccount": "SYNTHETIC_QA03_ONLY",
+  "legacyOwnersAccessed": 0,
+  "contentWrites": 0,
+  "previewsCreated": 0,
+  "mediaBytesRead": 0,
+  "phoneSessionMutated": false,
+  "otherQAAccountLogin": false,
+  "otherQAAccountBoundary": "NOT_RUN_ONLY_QA03_SESSION_AUTHORIZED",
+  "ownSessionLogout204": true,
+  "ownSessionRejected401": true,
+  "rootMomentId": "96e29d12-2a35-47e3-aeb3-75a8425542f5",
+  "threadId": "8ca660be-f15f-4bad-acc9-87d9a1f25036",
+  "expectedState": "published",
+  "members": [
+    {
+      "momentId": "4ef5b105-9152-4a8c-98e0-b445b1153ef8",
+      "revision": 2,
+      "status": "published",
+      "visibility": "public",
+      "originalMoment": false,
+      "displayPosition": 0,
+      "retiredOriginalPosition": null,
+      "body": {
+        "utf8Bytes": 28,
+        "characters": 28,
+        "sha256": "30e53bad5c83acceb5470264a502de3b7b01e59fb04077c906b92ee1b9194b9a",
+        "safeQAContent": "Birdtie device18 video third"
+      },
+      "title": {
+        "utf8Bytes": 0,
+        "characters": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "safeQAContent": ""
+      },
+      "anonymousDetailStatus": 200,
+      "locations": [
+        {
+          "id": "50b4f2bd-afba-4ecf-8444-45ae378a0a84",
+          "kind": "REFERENCE",
+          "precision": "place",
+          "cityId": "",
+          "cityName": "",
+          "placeId": "",
+          "placeName": "",
+          "referenceId": "72c612f6-8126-53f3-86ed-3ba369868e9c",
+          "referenceName": "Listasafn Reykjavíkur"
+        }
+      ],
+      "ownerLocations": [
+        {
+          "id": "50b4f2bd-afba-4ecf-8444-45ae378a0a84",
+          "kind": "REFERENCE",
+          "precision": "place",
+          "cityId": "",
+          "cityName": "",
+          "placeId": "",
+          "placeName": "",
+          "referenceId": "72c612f6-8126-53f3-86ed-3ba369868e9c",
+          "referenceName": "Listasafn Reykjavíkur",
+          "available": true
+        }
+      ],
+      "media": {
+        "schemaVersion": "public-moment-media-set-v2",
+        "status": "READY",
+        "setVersion": 1,
+        "count": 1,
+        "items": [
+          {
+            "position": 0,
+            "kind": "VIDEO",
+            "mediaId": "8ce663ad-61ea-4946-a1b8-685f7b4d6f93",
+            "mediaVersion": 1
+          }
+        ]
+      }
+    },
+    {
+      "momentId": "96e29d12-2a35-47e3-aeb3-75a8425542f5",
+      "revision": 4,
+      "status": "published",
+      "visibility": "public",
+      "originalMoment": true,
+      "displayPosition": 1,
+      "retiredOriginalPosition": null,
+      "body": {
+        "utf8Bytes": 0,
+        "characters": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "safeQAContent": ""
+      },
+      "title": {
+        "utf8Bytes": 0,
+        "characters": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "safeQAContent": ""
+      },
+      "anonymousDetailStatus": 200,
+      "locations": [],
+      "ownerLocations": [],
+      "media": {
+        "schemaVersion": "public-moment-media-set-v1",
+        "status": "READY",
+        "setVersion": 3,
+        "count": 1,
+        "items": [
+          {
+            "position": 0,
+            "kind": "IMAGE",
+            "mediaId": "bc7f1cc5-de5f-4837-8d4c-a3930e1d90cd",
+            "mediaVersion": 1
+          }
+        ]
+      }
+    },
+    {
+      "momentId": "fbcdd365-b5af-4b1c-b4e7-d83b696cb538",
+      "revision": 2,
+      "status": "published",
+      "visibility": "public",
+      "originalMoment": false,
+      "displayPosition": 2,
+      "retiredOriginalPosition": null,
+      "body": {
+        "utf8Bytes": 38,
+        "characters": 38,
+        "sha256": "e0dd5087ac3d1a626091e073138bbefbccd77050391c96a512cbfd63e62d950c",
+        "safeQAContent": "Birdtie device17 second entry restored"
+      },
+      "title": {
+        "utf8Bytes": 0,
+        "characters": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "safeQAContent": ""
+      },
+      "anonymousDetailStatus": 200,
+      "locations": [
+        {
+          "id": "a508e362-16eb-44ad-96ba-32fbe0b902fe",
+          "kind": "REFERENCE",
+          "precision": "place",
+          "cityId": "",
+          "cityName": "",
+          "placeId": "",
+          "placeName": "",
+          "referenceId": "4d6213b2-83a3-53cc-be77-8bc1b61a92de",
+          "referenceName": "Apsley House"
+        }
+      ],
+      "ownerLocations": [
+        {
+          "id": "a508e362-16eb-44ad-96ba-32fbe0b902fe",
+          "kind": "REFERENCE",
+          "precision": "place",
+          "cityId": "",
+          "cityName": "",
+          "placeId": "",
+          "placeName": "",
+          "referenceId": "4d6213b2-83a3-53cc-be77-8bc1b61a92de",
+          "referenceName": "Apsley House",
+          "available": true
+        }
+      ],
+      "media": {
+        "schemaVersion": "public-moment-media-set-v1",
+        "status": "EMPTY",
+        "setVersion": 0,
+        "count": 0,
+        "items": []
+      }
+    }
+  ],
+  "ownSessionCreated": true,
+  "threadVersion": 3,
+  "threadStatus": "published",
+  "currentDisplayMembers": [
+    {
+      "position": 0,
+      "momentId": "4ef5b105-9152-4a8c-98e0-b445b1153ef8",
+      "revision": 2,
+      "status": "AVAILABLE"
+    },
+    {
+      "position": 1,
+      "momentId": "96e29d12-2a35-47e3-aeb3-75a8425542f5",
+      "revision": 4,
+      "status": "AVAILABLE"
+    },
+    {
+      "position": 2,
+      "momentId": "fbcdd365-b5af-4b1c-b4e7-d83b696cb538",
+      "revision": 2,
+      "status": "AVAILABLE"
+    }
+  ],
+  "retiredMembers": [],
+  "originalMomentRetained": true,
+  "anonymousThreadStatus": 200,
+  "failureType": "RuntimeError",
+  "failureCode": "MIXED_MEMBER_CITY_MISMATCH",
+  "completed": "2026-10-15T17:09:09.090125+00:00",
+  "events": [
+    {
+      "label": "fixed-development-challenge",
+      "method": "POST",
+      "status": 200,
+      "machineCode": null
+    },
+    {
+      "label": "fixed-development-login",
+      "method": "POST",
+      "status": 200,
+      "machineCode": null
+    },
+    {
+      "label": "current-synthetic-person",
+      "method": "GET",
+      "status": 200,
+      "machineCode": null
+    },
+    {
+      "label": "exact-own-original-moment",
+      "method": "GET",
+      "status": 200,
+      "machineCode": null
+    },
+    {
+      "label": "exact-own-thread",
+      "method": "GET",
+      "status": 200,
+      "machineCode": null
+    },
+    {
+      "label": "anonymous-thread",
+      "method": "GET",
+      "status": 200,
+      "machineCode": null
+    },
+    {
+      "label": "anonymous-owned-thread-boundary",
+      "method": "GET",
+      "status": 401,
+      "machineCode": "unauthorized"
+    },
+    {
+      "label": "own-member-0",
+      "method": "GET",
+      "status": 200,
+      "machineCode": null
+    },
+    {
+      "label": "anonymous-member-0",
+      "method": "GET",
+      "status": 200,
+      "machineCode": null
+    },
+    {
+      "label": "anonymous-owner-member-boundary-0",
+      "method": "GET",
+      "status": 401,
+      "machineCode": "unauthorized"
+    },
+    {
+      "label": "anonymous-locations-0",
+      "method": "GET",
+      "status": 200,
+      "machineCode": null
+    },
+    {
+      "label": "anonymous-media-0",
+      "method": "GET",
+      "status": 200,
+      "machineCode": null
+    },
+    {
+      "label": "owner-locations-0",
+      "method": "GET",
+      "status": 200,
+      "machineCode": null
+    },
+    {
+      "label": "own-member-1",
+      "method": "GET",
+      "status": 200,
+      "machineCode": null
+    },
+    {
+      "label": "anonymous-member-1",
+      "method": "GET",
+      "status": 200,
+      "machineCode": null
+    },
+    {
+      "label": "anonymous-owner-member-boundary-1",
+      "method": "GET",
+      "status": 401,
+      "machineCode": "unauthorized"
+    },
+    {
+      "label": "anonymous-locations-1",
+      "method": "GET",
+      "status": 200,
+      "machineCode": null
+    },
+    {
+      "label": "anonymous-media-1",
+      "method": "GET",
+      "status": 200,
+      "machineCode": null
+    },
+    {
+      "label": "owner-locations-1",
+      "method": "GET",
+      "status": 200,
+      "machineCode": null
+    },
+    {
+      "label": "own-member-2",
+      "method": "GET",
+      "status": 200,
+      "machineCode": null
+    },
+    {
+      "label": "anonymous-member-2",
+      "method": "GET",
+      "status": 200,
+      "machineCode": null
+    },
+    {
+      "label": "anonymous-owner-member-boundary-2",
+      "method": "GET",
+      "status": 401,
+      "machineCode": "unauthorized"
+    },
+    {
+      "label": "anonymous-locations-2",
+      "method": "GET",
+      "status": 200,
+      "machineCode": null
+    },
+    {
+      "label": "anonymous-media-2",
+      "method": "GET",
+      "status": 200,
+      "machineCode": null
+    },
+    {
+      "label": "owner-locations-2",
+      "method": "GET",
+      "status": 200,
+      "machineCode": null
+    },
+    {
+      "label": "owned-thread-final-same-generation",
+      "method": "GET",
+      "status": 200,
+      "machineCode": null
+    },
+    {
+      "label": "logout-only-helper-session",
+      "method": "POST",
+      "status": 204,
+      "machineCode": null
+    },
+    {
+      "label": "rejected-revoked-helper-session",
+      "method": "GET",
+      "status": 401,
+      "machineCode": "unauthorized"
+    }
+  ],
+  "helperSHA256": "8a85f5835b81cc8474832396cbaedb72dadebd9b69535dd060003c8cdbc04ad8"
+}

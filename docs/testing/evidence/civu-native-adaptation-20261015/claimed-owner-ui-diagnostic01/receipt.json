@@ -1,0 +1,332 @@
+{
+  "status": "PASS",
+  "remoteScriptSHA256": "d0c6aa67edad7f8a9465b77e6173f447548d117e7ebf780074293e268a78815e",
+  "privateValuesPersisted": false,
+  "exitCode": 0,
+  "stderrPresent": false,
+  "result": {
+    "status": "PASS",
+    "devOnly": true,
+    "productionIdentityVerified": false,
+    "productionPhoneVerification": false,
+    "fixedCodeUsed": true,
+    "sourceWrites": 0,
+    "databaseDirectWrites": 0,
+    "remoteConfigurationChanged": false,
+    "agentActivationRequested": false,
+    "oldSessionAccepted": false,
+    "messagesSent": 0,
+    "privateValuesPersisted": false,
+    "allCreatedSessionsLoggedOut": true,
+    "diagnosticCompleted": true,
+    "startedAtUTC": "2026-10-15T12:50:06Z",
+    "contentWrites": 0,
+    "realOwnerWrites": "LOGIN_LOGOUT_ONLY",
+    "otherOriginalOwnerLogins": 0,
+    "originalMediaHashRechecks": 0,
+    "nativeOwnSavedCount": 33,
+    "ownAgentStatusCounts": {
+      "suspended": 1
+    },
+    "observations": [
+      {
+        "httpStatus": 200,
+        "jsonDecoded": true,
+        "responseBytes": 13314,
+        "elapsedMilliseconds": 235,
+        "schema": "ABSENT",
+        "explicitEmptyQuery": false,
+        "machineCode": null,
+        "knownEnvelopeKeys": [
+          "data"
+        ],
+        "unknownEnvelopeKeyCount": 0,
+        "dataType": "OBJECT",
+        "knownDataKeys": [
+          "items",
+          "nextCursor"
+        ],
+        "unknownDataKeyCount": 0,
+        "itemCount": 20,
+        "route": "SAVED_PAGE",
+        "basicAndLegacyShapePassed": true,
+        "fullDartParserExecuted": false,
+        "shapeFailures": {},
+        "rowKinds": {
+          "place": 20
+        },
+        "availableRows": 0,
+        "legacyReferenceRows": 20,
+        "currentLegacyReferenceRows": 20,
+        "expiredLegacyReferenceRows": 0,
+        "unavailableRowsWithoutPrivateReference": 0,
+        "minLegacyLeaseSeconds": 30.0,
+        "maxLegacyLeaseSeconds": 30.0,
+        "minLegacyRemainingSeconds": 29.77
+      },
+      {
+        "httpStatus": 400,
+        "jsonDecoded": true,
+        "responseBytes": 40,
+        "elapsedMilliseconds": 5,
+        "schema": "ABSENT",
+        "explicitEmptyQuery": true,
+        "machineCode": "invalid_saved_page",
+        "knownEnvelopeKeys": [
+          "error"
+        ],
+        "unknownEnvelopeKeyCount": 0,
+        "dataType": "NULL",
+        "route": "SAVED_PAGE_EXPLICIT_EMPTY_QUERY"
+      },
+      {
+        "httpStatus": 200,
+        "jsonDecoded": true,
+        "responseBytes": 21826,
+        "elapsedMilliseconds": 120,
+        "schema": "ABSENT",
+        "explicitEmptyQuery": false,
+        "machineCode": null,
+        "knownEnvelopeKeys": [
+          "data"
+        ],
+        "unknownEnvelopeKeyCount": 0,
+        "dataType": "ARRAY",
+        "itemCount": 33,
+        "route": "SAVED_LEGACY_LIST",
+        "basicAndLegacyShapePassed": true,
+        "fullDartParserExecuted": false,
+        "shapeFailures": {},
+        "rowKinds": {
+          "place": 33
+        },
+        "availableRows": 0,
+        "legacyReferenceRows": 33,
+        "currentLegacyReferenceRows": 33,
+        "expiredLegacyReferenceRows": 0,
+        "unavailableRowsWithoutPrivateReference": 0,
+        "minLegacyLeaseSeconds": 30.0,
+        "maxLegacyLeaseSeconds": 30.0,
+        "minLegacyRemainingSeconds": 29.901
+      },
+      {
+        "httpStatus": 200,
+        "jsonDecoded": true,
+        "responseBytes": 13852,
+        "elapsedMilliseconds": 231,
+        "schema": "ABSENT",
+        "explicitEmptyQuery": false,
+        "machineCode": null,
+        "knownEnvelopeKeys": [
+          "data"
+        ],
+        "unknownEnvelopeKeyCount": 0,
+        "dataType": "OBJECT",
+        "knownDataKeys": [
+          "items",
+          "nextCursor"
+        ],
+        "unknownDataKeyCount": 0,
+        "itemCount": 20,
+        "route": "SAVED_PAGE_PLACE_FILTER",
+        "basicAndLegacyShapePassed": true,
+        "fullDartParserExecuted": false,
+        "shapeFailures": {},
+        "rowKinds": {
+          "place": 20
+        },
+        "availableRows": 0,
+        "legacyReferenceRows": 20,
+        "currentLegacyReferenceRows": 20,
+        "expiredLegacyReferenceRows": 0,
+        "unavailableRowsWithoutPrivateReference": 0,
+        "minLegacyLeaseSeconds": 30.0,
+        "maxLegacyLeaseSeconds": 30.0,
+        "minLegacyRemainingSeconds": 29.774
+      },
+      {
+        "httpStatus": 403,
+        "jsonDecoded": true,
+        "responseBytes": 39,
+        "elapsedMilliseconds": 5,
+        "schema": "ABSENT",
+        "explicitEmptyQuery": false,
+        "machineCode": "agent_unavailable",
+        "knownEnvelopeKeys": [
+          "error"
+        ],
+        "unknownEnvelopeKeyCount": 0,
+        "dataType": "NULL",
+        "route": "SIDEBAR_AGENT_TASKS"
+      },
+      {
+        "httpStatus": 200,
+        "jsonDecoded": true,
+        "responseBytes": 634,
+        "elapsedMilliseconds": 37,
+        "schema": "ABSENT",
+        "explicitEmptyQuery": false,
+        "machineCode": null,
+        "knownEnvelopeKeys": [
+          "data"
+        ],
+        "unknownEnvelopeKeyCount": 0,
+        "dataType": "OBJECT",
+        "knownDataKeys": [
+          "items",
+          "nextCursor"
+        ],
+        "unknownDataKeyCount": 1,
+        "itemCount": 2,
+        "route": "HUMAN_CHAT_PAGE_CONTROL"
+      },
+      {
+        "httpStatus": 200,
+        "jsonDecoded": true,
+        "responseBytes": 683,
+        "elapsedMilliseconds": 23,
+        "schema": "ABSENT",
+        "explicitEmptyQuery": false,
+        "machineCode": null,
+        "knownEnvelopeKeys": [
+          "data"
+        ],
+        "unknownEnvelopeKeyCount": 0,
+        "dataType": "OBJECT",
+        "knownDataKeys": [
+          "cityId",
+          "cityName",
+          "id",
+          "kind",
+          "summary"
+        ],
+        "unknownDataKeyCount": 7,
+        "route": "OWN_SAVED_TARGET",
+        "basicAndLegacyShapePassed": true,
+        "fullDartParserExecuted": false,
+        "shapeFailures": {},
+        "rowKinds": {
+          "place": 1
+        },
+        "availableRows": 0,
+        "legacyReferenceRows": 1,
+        "currentLegacyReferenceRows": 1,
+        "expiredLegacyReferenceRows": 0,
+        "unavailableRowsWithoutPrivateReference": 0,
+        "minLegacyLeaseSeconds": 30.0,
+        "maxLegacyLeaseSeconds": 30.0,
+        "minLegacyRemainingSeconds": 29.998
+      },
+      {
+        "httpStatus": 200,
+        "jsonDecoded": true,
+        "responseBytes": 626,
+        "elapsedMilliseconds": 57,
+        "schema": "owned-legacy-place-reference-v1",
+        "explicitEmptyQuery": false,
+        "machineCode": null,
+        "knownEnvelopeKeys": [
+          "data"
+        ],
+        "unknownEnvelopeKeyCount": 0,
+        "dataType": "OBJECT",
+        "knownDataKeys": [
+          "addressLabel",
+          "categoryCode",
+          "cityId",
+          "cityName",
+          "coordinateSystem",
+          "locationPrecision",
+          "name",
+          "reference",
+          "schemaVersion",
+          "summary"
+        ],
+        "unknownDataKeyCount": 0,
+        "route": "OWN_PRIVATE_PLACE_REFERENCE",
+        "referenceShapePassed": true,
+        "referenceCurrent": true,
+        "referenceShapeFailures": [],
+        "referenceLeaseSeconds": 30.0,
+        "referenceIdentityMatched": true
+      },
+      {
+        "httpStatus": 200,
+        "jsonDecoded": true,
+        "responseBytes": 671,
+        "elapsedMilliseconds": 20,
+        "schema": "ABSENT",
+        "explicitEmptyQuery": false,
+        "machineCode": null,
+        "knownEnvelopeKeys": [
+          "data"
+        ],
+        "unknownEnvelopeKeyCount": 0,
+        "dataType": "OBJECT",
+        "knownDataKeys": [
+          "cityId",
+          "cityName",
+          "id",
+          "kind",
+          "summary"
+        ],
+        "unknownDataKeyCount": 7,
+        "route": "OWN_SAVED_TARGET",
+        "basicAndLegacyShapePassed": true,
+        "fullDartParserExecuted": false,
+        "shapeFailures": {},
+        "rowKinds": {
+          "place": 1
+        },
+        "availableRows": 0,
+        "legacyReferenceRows": 1,
+        "currentLegacyReferenceRows": 1,
+        "expiredLegacyReferenceRows": 0,
+        "unavailableRowsWithoutPrivateReference": 0,
+        "minLegacyLeaseSeconds": 30.0,
+        "maxLegacyLeaseSeconds": 30.0,
+        "minLegacyRemainingSeconds": 29.999
+      },
+      {
+        "httpStatus": 200,
+        "jsonDecoded": true,
+        "responseBytes": 675,
+        "elapsedMilliseconds": 70,
+        "schema": "owned-legacy-place-reference-v1",
+        "explicitEmptyQuery": false,
+        "machineCode": null,
+        "knownEnvelopeKeys": [
+          "data"
+        ],
+        "unknownEnvelopeKeyCount": 0,
+        "dataType": "OBJECT",
+        "knownDataKeys": [
+          "addressLabel",
+          "categoryCode",
+          "cityId",
+          "cityName",
+          "coordinateSystem",
+          "latitude",
+          "locationPrecision",
+          "longitude",
+          "name",
+          "reference",
+          "schemaVersion",
+          "summary"
+        ],
+        "unknownDataKeyCount": 0,
+        "route": "OWN_PRIVATE_PLACE_REFERENCE",
+        "referenceShapePassed": true,
+        "referenceCurrent": true,
+        "referenceShapeFailures": [],
+        "referenceLeaseSeconds": 30.0,
+        "referenceIdentityMatched": true
+      }
+    ],
+    "importedOwnerAndMembershipStateUnchanged": true,
+    "defaultTLSValidated": true,
+    "createdSessions": 1,
+    "originalInputsUnchanged": true,
+    "completedAtUTC": "2026-10-15T12:50:07Z"
+  }
+}

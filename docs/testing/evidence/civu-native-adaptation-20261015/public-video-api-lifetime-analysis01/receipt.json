@@ -1,0 +1,24 @@
+{
+  "command": [
+    "D:/DevTools/flutter/bin/dart.bat",
+    "analyze",
+    "lib/src/workspace/public_moment_page.dart",
+    "test/public_moment_page_test.dart"
+  ],
+  "cwd": "D:\\Project\\birdtie\\apps\\client",
+  "startedUTC": "2026-10-15T14:25:25.771963+00:00",
+  "exitCode": 0,
+  "sourceBefore": {
+    "lib/src/workspace/public_moment_page.dart": "337b78e18cd26fa82a7df4daa3cbe8abea8960e3ea454a7f2f9aca124ef16cfd",
+    "test/public_moment_page_test.dart": "450f08ebc50af21c09c1881644f0339d9dc113f210f2dedc0db96680ba8a69cc"
+  },
+  "sourceAfter": {
+    "lib/src/workspace/public_moment_page.dart": "337b78e18cd26fa82a7df4daa3cbe8abea8960e3ea454a7f2f9aca124ef16cfd",
+    "test/public_moment_page_test.dart": "450f08ebc50af21c09c1881644f0339d9dc113f210f2dedc0db96680ba8a69cc"
+  },
+  "sourceStable": true,
+  "scope": "Scoped analysis of two files",
+  "nativePlayback": "NOT_RUN_BY_WORKER",
+  "apiOrCodecTestsRun": false,
+  "buildsRun": false
+}

@@ -1,0 +1,24 @@
+{
+  "command": [
+    "D:/DevTools/flutter/bin/flutter.bat",
+    "test",
+    "test/saved_page_test.dart",
+    "--plain-name",
+    "收藏空查询无尾问号且次页失败重试读取首批",
+    "--reporter",
+    "expanded"
+  ],
+  "cwd": "D:\\Project\\birdtie\\apps\\client",
+  "startedUTC": "2026-10-15T12:53:09.643711+00:00",
+  "exitCode": 0,
+  "sourceBefore": {
+    "lib/src/workspace/saved_items.dart": "c4d64b7e59e8273e8f4d123eef284da8f6772749968ebaa8feaace16aa06dbbf",
+    "test/saved_page_test.dart": "3daa08f696d359d1871978481af5e8a71d3f9fc8b48178f1d95ac83829c940d8"
+  },
+  "sourceAfter": {
+    "lib/src/workspace/saved_items.dart": "c4d64b7e59e8273e8f4d123eef284da8f6772749968ebaa8feaace16aa06dbbf",
+    "test/saved_page_test.dart": "3daa08f696d359d1871978481af5e8a71d3f9fc8b48178f1d95ac83829c940d8"
+  },
+  "sourceStable": true,
+  "scope": "One composite direct regression: queryless URI hasQuery=false, cursor URI intact, failed next-page retry refreshes first page; no build/device/remote action."
+}

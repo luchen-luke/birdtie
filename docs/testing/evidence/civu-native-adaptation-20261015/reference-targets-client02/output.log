@@ -1,0 +1,49 @@
+00:00 +0: loading D:/Project/birdtie/apps/client/test/private_reference_targets_test.dart
+00:00 +0: 旧地点原图入口本人分页独立读取与返回刷新，换身份清空且收藏过期可重读
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following TestFailure was thrown running a test:
+Expected: exactly one matching candidate
+  Actual: _WidgetPredicateWidgetFinder:<Found 2 widgets with widget matching predicate: [
+            RawTooltip-[LabeledGlobalKey<RawTooltipState>#bb437]("Back", hover delay:
+0:00:00.000000, touch delay: 0:00:01.500000, dismiss delay: 0:00:00.100000, triggerMode:
+TooltipTriggerMode.longPress, enableFeedback: true, positionDelegate: Closure:
+(TooltipPositionContext) => Offset from Function '_getDefaultPositionDelegate@912220820':., state:
+RawTooltipState#19bdc(ticker inactive)),
+            RawTooltip-[LabeledGlobalKey<RawTooltipState>#e8d9b]("Back", hover delay:
+0:00:00.000000, touch delay: 0:00:01.500000, dismiss delay: 0:00:00.100000, triggerMode:
+TooltipTriggerMode.longPress, enableFeedback: true, positionDelegate: Closure:
+(TooltipPositionContext) => Offset from Function '_getDefaultPositionDelegate@912220820':., state:
+RawTooltipState#22d64),
+          ]>
+   Which: is too many
+One back button expected on screen
+
+When the exception was thrown, this was the stack:
+#0      fail (package:matcher/src/expect/expect.dart:187:31)
+#1      _expect (package:matcher/src/expect/expect.dart:182:3)
+#2      expect (package:matcher/src/expect/expect.dart:65:3)
+#3      expectSync (package:flutter_test/src/widget_tester.dart:486:18)
+#4      WidgetTester.pageBack.<anonymous closure> (package:flutter_test/src/widget_tester.dart:1177:7)
+#7      TestAsyncUtils.guard (package:flutter_test/src/test_async_utils.dart:74:41)
+#8      WidgetTester.pageBack (package:flutter_test/src/widget_tester.dart:1171:27)
+#9      main.<anonymous closure> (file:///D:/Project/birdtie/apps/client/test/private_reference_targets_test.dart:171:18)
+<asynchronous suspension>
+#10     testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#11     TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1952:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided 3 frames from dart:async and package:stack_trace)
+
+The test description was:
+  旧地点原图入口本人分页独立读取与返回刷新，换身份清空且收藏过期可重读
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:01 +0 -1: 旧地点原图入口本人分页独立读取与返回刷新，换身份清空且收藏过期可重读 [E]
+  Test failed. See exception logs above.
+  The test description was: 旧地点原图入口本人分页独立读取与返回刷新，换身份清空且收藏过期可重读
+  
+00:01 +0 -1: Some tests failed.
+
+Failing tests:
+  D:/Project/birdtie/apps/client/test/private_reference_targets_test.dart: 旧地点原图入口本人分页独立读取与返回刷新，换身份清空且收藏过期可重读
+Flutter assets will be downloaded from https://storage.flutter-io.cn. Make sure you trust this source!

@@ -134,7 +134,10 @@ func momentControlAddDeadline(out **time.Time, v *time.Time) {
 
 // Only newly selected links use current external reader permission. Omitted
 // links are the person's existing selectors, not renewed external metadata.
-func momentControlLink(ctx context.Context, f humanWriteFrame, kind, id, city string) (string, *time.Time, error) {
+func momentControlLink(ctx context.Context, f humanWriteFrame, kind, id, city string, independentContextCity ...bool) (string, *time.Time, error) {
+	// EDIT checks exact original associations before using this option. Their
+	// current authority remains mandatory when geography is independently edited.
+	independentCity := len(independentContextCity) > 0 && independentContextCity[0]
 	var q string
 	switch kind {
 	case "activity":
@@ -150,18 +153,18 @@ func momentControlLink(ctx context.Context, f humanWriteFrame, kind, id, city st
  (SELECT jsonb_agg(jsonb_build_array(r.business_id,r.xmin::text) ORDER BY r.business_id) FROM business_venue_relations r WHERE r.place_id=a.place_id))::text,
  least(a.expires_at,(SELECT min(v.expires_at) FROM venues v WHERE v.place_id IN(a.place_id,a.venue_place_id)),(SELECT min(c.expires_at) FROM communities c WHERE c.id=ao.community_id))
  FROM activities a JOIN activity_organizers ao ON ao.activity_id=a.id JOIN accounts host ON host.id=a.host_account_id AND host.status='active'
- WHERE a.id=$1 AND a.city_id=$3 AND a.publication_status='published' AND (a.expires_at IS NULL OR a.expires_at>clock_timestamp()) AND birdtie_activity_visible_to(a.id,$2)
+ WHERE a.id=$1 AND ($4 OR a.city_id=$3) AND a.publication_status='published' AND (a.expires_at IS NULL OR a.expires_at>clock_timestamp()) AND birdtie_activity_visible_to(a.id,$2)
  AND NOT EXISTS(SELECT 1 FROM account_blocks b WHERE (b.blocker_account_id=$2 AND b.blocked_account_id=a.host_account_id) OR(b.blocker_account_id=a.host_account_id AND b.blocked_account_id=$2))`
 	case "community":
-		q = `SELECT jsonb_build_array(c.xmin::text,m.xmin::text,ac.xmin::text)::text,c.expires_at FROM communities c JOIN community_memberships m ON m.community_id=c.id AND m.user_account_id=$2 AND m.status='active' JOIN accounts ac ON ac.id=c.owner_account_id AND ac.status='active' WHERE c.id=$1 AND(c.city_id IS NULL OR c.city_id=$3) AND c.lifecycle_status='active' AND c.publication_status='published' AND(c.expires_at IS NULL OR c.expires_at>clock_timestamp())`
+		q = `SELECT jsonb_build_array(c.xmin::text,m.xmin::text,ac.xmin::text)::text,c.expires_at FROM communities c JOIN community_memberships m ON m.community_id=c.id AND m.user_account_id=$2 AND m.status='active' JOIN accounts ac ON ac.id=c.owner_account_id AND ac.status='active' WHERE c.id=$1 AND(c.city_id IS NULL OR c.city_id=$3 OR $4) AND c.lifecycle_status='active' AND c.publication_status='published' AND(c.expires_at IS NULL OR c.expires_at>clock_timestamp())`
 	case "organization":
-		q = `SELECT jsonb_build_array(o.xmin::text,m.xmin::text,ac.xmin::text)::text,NULL::timestamptz FROM organizations o JOIN organization_memberships m ON m.organization_id=o.id AND m.user_account_id=$2 AND m.status='active' JOIN accounts ac ON ac.id=o.account_id AND ac.status='active' WHERE o.id=$1 AND o.status='active' AND $3::text<>''`
+		q = `SELECT jsonb_build_array(o.xmin::text,m.xmin::text,ac.xmin::text)::text,NULL::timestamptz FROM organizations o JOIN organization_memberships m ON m.organization_id=o.id AND m.user_account_id=$2 AND m.status='active' JOIN accounts ac ON ac.id=o.account_id AND ac.status='active' WHERE o.id=$1 AND o.status='active' AND ($3::text<>'' OR $4)`
 	default:
 		return "", nil, identity.ErrControlInvalid
 	}
 	var raw string
 	var until *time.Time
-	e := f.tx.QueryRow(ctx, q, id, f.a.ID, city).Scan(&raw, &until)
+	e := f.tx.QueryRow(ctx, q, id, f.a.ID, city, independentCity).Scan(&raw, &until)
 	if errors.Is(e, pgx.ErrNoRows) {
 		return "", nil, identity.ErrControlChanged
 	}
@@ -170,7 +173,7 @@ func momentControlLink(ctx context.Context, f humanWriteFrame, kind, id, city st
 	}
 	return identity.HumanControlTextHash(raw), until, nil
 }
-func momentControlExternal(ctx context.Context, f humanWriteFrame, in content.MomentControlInput, old content.Moment) (string, *time.Time, bool, error) {
+func momentControlExternal(ctx context.Context, f humanWriteFrame, in content.MomentControlInput, old content.Moment, independentContextCity ...bool) (string, *time.Time, bool, error) {
 	// Bind the concrete approval to the original eligible person row. An
 	// account status ABA changes xmin even when the Session generation stays
 	// unchanged. Session idle renewal and optional Agent metadata are not source
@@ -195,7 +198,7 @@ func momentControlExternal(ctx context.Context, f humanWriteFrame, in content.Mo
 		id   *string
 	}{{"activity", v.ActivityID}, {"community", v.CommunityID}, {"organization", v.OrganizationID}} {
 		if slot.id != nil && *slot.id != "" {
-			stamp, until, e := momentControlLink(ctx, f, slot.kind, *slot.id, v.CityID)
+			stamp, until, e := momentControlLink(ctx, f, slot.kind, *slot.id, v.CityID, independentContextCity...)
 			if e != nil {
 				return "", nil, false, e
 			}

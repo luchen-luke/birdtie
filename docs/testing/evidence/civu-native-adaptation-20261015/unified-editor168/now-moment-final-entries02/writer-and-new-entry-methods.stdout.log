@@ -1,0 +1,36 @@
+apps/client/lib\src\legacy\legacy_shell.dart:1264:        ? await widget.moments.previewCreate(
+apps/client/lib\src\legacy\legacy_shell.dart:1276:        : await widget.moments.previewUpdate(
+apps/client/lib\src\legacy\legacy_shell.dart:1314:    final p = await widget.moments.previewWithdraw(existing, current: source);
+apps/client/lib\src\content\moment_control.dart:585:  MomentControlAPI({
+apps/client/lib\src\content\private_moment_controller.dart:191:  late final _controlAPI = MomentControlAPI(
+apps/client/lib\src\content\private_moment_controller.dart:838:  Future<MomentControlPreview?> previewCreate({
+apps/client/lib\src\content\private_moment_controller.dart:868:  Future<MomentControlPreview?> previewUpdate({
+apps/client/lib\src\content\private_moment_controller.dart:907:  Future<MomentControlPreview?> previewWithdraw(
+apps/client/lib\src\content\private_moment_controller.dart:924:  Future<MomentControlPreview?> previewPublish(
+apps/client/lib\src\content\private_moment_controller.dart:962:  Future<MomentControlPreview?> previewPublicUpdate({
+apps/client/lib\src\workspace\map_workspace.dart:236:  Future<void> _beginMomentThread({bool Function()? sourceCurrent}) async {
+apps/client/lib\src\workspace\map_workspace.dart:451:  Future<void> _openOwnedMomentInNow(
+apps/client/lib\src\workspace\map_workspace.dart:1089:          child: PublicMomentMediaEditor(
+apps/client/lib\src\workspace\map_workspace.dart:1216:    await _beginMomentThread();
+apps/client/lib\src\workspace\map_workspace.dart:1394:      await _beginMomentThread();
+apps/client/lib\src\workspace\map_workspace.dart:1861:      await _previewPublishedCreationChange();
+apps/client/lib\src\workspace\map_workspace.dart:1897:            ? await widget.moments.previewCreate(
+apps/client/lib\src\workspace\map_workspace.dart:1905:            : await widget.moments.previewUpdate(
+apps/client/lib\src\workspace\map_workspace.dart:2092:  Future<void> _previewPublishedCreationChange({bool withdraw = false}) async {
+apps/client/lib\src\workspace\map_workspace.dart:2114:          ? await widget.moments.previewWithdraw(moment, current: current)
+apps/client/lib\src\workspace\map_workspace.dart:2115:          : await widget.moments.previewPublicUpdate(
+apps/client/lib\src\workspace\map_workspace.dart:2284:            ? await c.previewCreate(
+apps/client/lib\src\workspace\map_workspace.dart:2292:            : await c.previewUpdate(
+apps/client/lib\src\workspace\map_workspace.dart:2355:      _creationPublishPreview = await c.previewPublish(
+apps/client/lib\src\workspace\map_workspace.dart:2812:                    _previewPublishedCreationChange(withdraw: true),
+apps/client/lib\src\workspace\map_workspace.dart:2923:              child: PublicMomentMediaEditor(
+apps/client/lib\src\workspace\map_workspace.dart:8346:          unawaited(_openOwnedMomentInNow(id));
+apps/client/lib\src\workspace\map_workspace.dart:8539:    onOpen: (id, current) => _openOwnedMomentInNow(id, sourceCurrent: current),
+apps/client/lib\src\workspace\map_workspace.dart:8540:    onCreate: (current) => _beginMomentThread(sourceCurrent: current),
+apps/client/lib\src\workspace\map_workspace.dart:9423:                                  ? () => unawaited(_beginMomentThread())
+apps/client/lib\src\workspace\moment_thread_controller.dart:572:  Future<void> previewWithdraw(String threadID) async {
+apps/client/lib\src\workspace\moment_thread_panel.dart:319:                      ? () => c.previewWithdraw(c.ownedThreadID)
+apps/client/lib\src\workspace\moment_thread_panel.dart:639:                : () => _control!.previewWithdraw(view.threadID),
+apps/client/lib\src\workspace\public_moment_control_page.dart:121:        _ownedPreview = await c.previewWithdraw(m, current: () => _current);
+apps/client/lib\src\workspace\public_moment_control_page.dart:123:        _ownedPreview = await c.previewPublicUpdate(
+apps/client/lib\src\workspace\public_moment_media_editor.dart:11:  const PublicMomentMediaEditor({

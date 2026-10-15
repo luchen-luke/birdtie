@@ -1,0 +1,41 @@
+{
+  "status": "SOURCE_READY",
+  "atUTC": "2026-10-15T12:54:05.107996+00:00",
+  "files": {
+    "apps/client/lib/src/workspace/saved_items.dart": "c4d64b7e59e8273e8f4d123eef284da8f6772749968ebaa8feaace16aa06dbbf",
+    "apps/client/test/saved_page_test.dart": "c32801ae511f4bedb24e9d67391e321cf054def89396c599871eab5313673113"
+  },
+  "frameSHA256": "4b892e7a092f873f0ba5f0e076c13bd2c9c7166adeea3739904b14b246fed291",
+  "rootCauseReceipt": "work/claimed-owner-ui-diagnostic01/receipt.json",
+  "fix": "Omit query entirely for unfiltered first/legacy Saved list; retain nonempty cursor/filter query. Failed-read retry refreshes first page rather than continuing an old cursor.",
+  "tests": "work/saved-empty-query03/receipt.json",
+  "testsPassed": 1,
+  "testsSkipped": 0,
+  "analysis": "work/saved-empty-query-analysis01/receipt.json",
+  "analysisErrors": 0,
+  "analysisWarnings": 0,
+  "analysisInfo": 37,
+  "afterTestDartFormat": {
+    "onlyChangedTestFragment": "Expanded descendant named arguments over multiple lines",
+    "reversingExactFormattingFragmentMatchesPassedTestSHA256": true,
+    "productSourceMatchesPassedTestSHA256": true
+  },
+  "firstFailuresPreserved": [
+    "work/saved-empty-query01",
+    "work/saved-empty-query02"
+  ],
+  "firstFailuresCause": [
+    "Lazy ListView had not generated bottom paging button; fixed real scrollUntilVisible",
+    "Multiple scrollables required exact Saved ListView Scrollable binding"
+  ],
+  "notRun": [
+    "APK11/Web11 build",
+    "device Saved page acceptance",
+    "remote changes"
+  ],
+  "agentActivationChanged": false,
+  "scope": [
+    "apps/client/lib/src/workspace/saved_items.dart",
+    "apps/client/test/saved_page_test.dart"
+  ]
+}

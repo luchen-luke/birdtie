@@ -1,0 +1,198 @@
+{
+  "started": "2026-10-15T16:22:04.692646+00:00",
+  "originalNetworkEnabled": {
+    "wifi": "1",
+    "data": "0"
+  },
+  "scope": "SELF_GENERATED_QA_IMAGE_BEFORE_STAGE_REQUEST",
+  "events": [
+    [
+      {
+        "label": "Powered by Mapbox",
+        "bounds": "[341,348][409,416]",
+        "enabled": "true",
+        "editable": false
+      },
+      {
+        "label": "打开侧边栏",
+        "bounds": "[26,150][182,306]",
+        "enabled": "true",
+        "editable": false
+      },
+      {
+        "label": "Aberdeen",
+        "bounds": "[195,150][528,306]",
+        "enabled": "true",
+        "editable": false
+      },
+      {
+        "label": "联系",
+        "bounds": "[869,150][1025,306]",
+        "enabled": "true",
+        "editable": false
+      },
+      {
+        "label": "朝北, 地图朝北",
+        "bounds": "[52,332][208,488]",
+        "enabled": "true",
+        "editable": false
+      },
+      {
+        "label": "通知",
+        "bounds": "[1038,150][1194,306]",
+        "enabled": "true",
+        "editable": false
+      },
+      {
+        "label": "本机选择的图片 1",
+        "bounds": "[39,592][1181,621]",
+        "enabled": "true",
+        "editable": false
+      },
+      {
+        "label": "这是我拥有使用权的材料",
+        "bounds": "[39,621][1181,777]",
+        "enabled": "false",
+        "editable": false
+      },
+      {
+        "label": "这份材料已有公开使用许可",
+        "bounds": "[39,777][1181,933]",
+        "enabled": "false",
+        "editable": false
+      },
+      {
+        "label": "添加图片",
+        "bounds": "[39,959][1181,1115]",
+        "enabled": "false",
+        "editable": false
+      },
+      {
+        "label": "添加一段视频",
+        "bounds": "[39,1115][1181,1271]",
+        "enabled": "false",
+        "editable": false
+      },
+      {
+        "label": "正在处理当前图片集合",
+        "bounds": "[39,1271][1181,1284]",
+        "enabled": "true",
+        "editable": false
+      },
+      {
+        "label": "准备这条材料，随动态一起确认",
+        "bounds": "[39,1284][1181,1440]",
+        "enabled": "false",
+        "editable": false
+      },
+      {
+        "label": "读取原材料操作结果",
+        "bounds": "[39,1440][526,1596]",
+        "enabled": "false",
+        "editable": false
+      },
+      {
+        "label": "停止原材料操作",
+        "bounds": "[526,1440][923,1596]",
+        "enabled": "false",
+        "editable": false
+      },
+      {
+        "label": "第1条 · 正在编辑\n待输入内容",
+        "bounds": "[39,1609][713,1797]",
+        "enabled": "true",
+        "editable": false
+      },
+      {
+        "label": "向前移动第1条",
+        "bounds": "[713,1609][869,1765]",
+        "enabled": "false",
+        "editable": false
+      },
+      {
+        "label": "向后移动第1条",
+        "bounds": "[869,1609][1025,1765]",
+        "enabled": "false",
+        "editable": false
+      },
+      {
+        "label": "移除第1条（确认后撤回）",
+        "bounds": "[1025,1609][1181,1765]",
+        "enabled": "false",
+        "editable": false
+      },
+      {
+        "label": "再接一条",
+        "bounds": "[39,1810][299,1966]",
+        "enabled": "true",
+        "editable": false
+      },
+      {
+        "label": "保存本机草稿",
+        "bounds": "[325,1810][676,1966]",
+        "enabled": "true",
+        "editable": false
+      },
+      {
+        "label": "查看当前内容",
+        "bounds": "[702,1810][1053,1966]",
+        "enabled": "true",
+        "editable": false
+      },
+      {
+        "label": "检查公开发布",
+        "bounds": "[39,1966][468,2122]",
+        "enabled": "false",
+        "editable": false
+      },
+      {
+        "label": "撤回这条动态",
+        "bounds": "[39,2122][390,2201]",
+        "enabled": "true",
+        "editable": false
+      },
+      {
+        "label": "创建动态",
+        "bounds": "[52,2201][413,2357]",
+        "enabled": "true",
+        "editable": false
+      },
+      {
+        "label": "退出创建",
+        "bounds": "[271,2201][427,2357]",
+        "enabled": "true",
+        "editable": false
+      },
+      {
+        "label": "<input>",
+        "bounds": "[221,2409][843,2539]",
+        "enabled": "true",
+        "editable": true
+      },
+      {
+        "label": "添加材料",
+        "bounds": "[65,2396][221,2552]",
+        "enabled": "true",
+        "editable": false
+      },
+      {
+        "label": "语音输入",
+        "bounds": "[843,2396][999,2552]",
+        "enabled": "true",
+        "editable": false
+      },
+      {
+        "label": "更新草稿",
+        "bounds": "[999,2396][1155,2552]",
+        "enabled": "false",
+        "editable": false
+      }
+    ]
+  ],
+  "restoredNetworkEnabled": {
+    "wifi": "1",
+    "data": "0"
+  },
+  "networkRestored": true,
+  "completed": "2026-10-15T16:22:11.606100+00:00"
+}

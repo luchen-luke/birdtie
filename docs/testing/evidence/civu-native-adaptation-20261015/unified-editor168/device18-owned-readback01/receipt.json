@@ -1,0 +1,108 @@
+{
+  "status": "PASS",
+  "started": "2026-10-15T16:35:13.219782+00:00",
+  "origin": "https://47.110.154.133",
+  "syntheticAccount": "SYNTHETIC_QA03_ONLY",
+  "legacyOwnersAccessed": 0,
+  "contentWrites": 0,
+  "previewsCreated": 0,
+  "mediaBytesRead": 0,
+  "ownSessionCreated": true,
+  "ownSessionLogout204": true,
+  "ownSessionRejected401": true,
+  "phoneSessionMutated": false,
+  "ownPublishedCount": 1,
+  "selectionBasis": "ONLY_CURRENT_PUBLIC_EMPTY_BODY_TITLE_PUBLISHED_1617_UTC_ONE_IMAGE_NO_LOCATIONS",
+  "originalBodyDirectMatch": "NOT_AVAILABLE_CURRENT_BODY_ALREADY_EMPTY",
+  "momentId": "96e29d12-2a35-47e3-aeb3-75a8425542f5",
+  "momentRevision": 3,
+  "statusObserved": "published",
+  "visibilityObserved": "public",
+  "publishedAt": "2026-10-15T16:17:02.836405Z",
+  "bodyBytes": 0,
+  "titleBytes": 0,
+  "publicMediaCount": 1,
+  "publicVideoCount": 0,
+  "mediaSetVersion": 1,
+  "locationCount": 0,
+  "threadId": "8ca660be-f15f-4bad-acc9-87d9a1f25036",
+  "threadVersion": 2,
+  "currentThreadMemberCount": 1,
+  "syntheticMedia": [
+    {
+      "mediaId": "bc7f1cc5-de5f-4837-8d4c-a3930e1d90cd",
+      "mediaVersion": 1,
+      "position": 0
+    }
+  ],
+  "completed": "2026-10-15T16:35:13.777704+00:00",
+  "events": [
+    {
+      "label": "fixed-development-challenge",
+      "method": "POST",
+      "status": 200,
+      "machineCode": null
+    },
+    {
+      "label": "fixed-development-login",
+      "method": "POST",
+      "status": 200,
+      "machineCode": null
+    },
+    {
+      "label": "current-synthetic-person",
+      "method": "GET",
+      "status": 200,
+      "machineCode": null
+    },
+    {
+      "label": "own-published-page-1",
+      "method": "GET",
+      "status": 200,
+      "machineCode": null
+    },
+    {
+      "label": "exact-own-moment",
+      "method": "GET",
+      "status": 200,
+      "machineCode": null
+    },
+    {
+      "label": "exact-public-detail",
+      "method": "GET",
+      "status": 200,
+      "machineCode": null
+    },
+    {
+      "label": "current-public-media-metadata",
+      "method": "GET",
+      "status": 200,
+      "machineCode": null
+    },
+    {
+      "label": "current-public-location-sidecar",
+      "method": "GET",
+      "status": 200,
+      "machineCode": null
+    },
+    {
+      "label": "current-public-thread-sidecar",
+      "method": "GET",
+      "status": 200,
+      "machineCode": null
+    },
+    {
+      "label": "logout-this-helper-session",
+      "method": "POST",
+      "status": 204,
+      "machineCode": null
+    },
+    {
+      "label": "reject-this-revoked-session",
+      "method": "GET",
+      "status": 401,
+      "machineCode": "unauthorized"
+    }
+  ],
+  "helperSHA256": "c6ecfac5c126672c124cd06737a31202ccbf5fde4f60916e0e9c1deef7e4c185"
+}

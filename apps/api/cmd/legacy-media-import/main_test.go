@@ -65,3 +65,15 @@ func TestRecoverySummaryAndFlagIsolation(t *testing.T) {
 		t.Fatal("verify mixed with mutation")
 	}
 }
+
+func TestReferenceMediaModeCannotMixOrAdvertiseUnknownEffects(t *testing.T) {
+	for _, args := range [][]string{{"--reference-media", "--metadata-recovery"}, {"--reference-media", "--heif-convert", "ignored"}, {"--reference-media", "--apply", "--verify-blobs"}} {
+		if run(context.Background(), args, func(string) string { return "" }, io.Discard) == nil {
+			t.Fatal("mixed reference mode accepted")
+		}
+	}
+	var b bytes.Buffer
+	if writeReferenceSummary(&b, postgres.LegacyReferenceMediaResult{Status: "UNKNOWN"}) != nil || strings.Contains(b.String(), "\"counts\"") {
+		t.Fatal("unknown claims counts")
+	}
+}

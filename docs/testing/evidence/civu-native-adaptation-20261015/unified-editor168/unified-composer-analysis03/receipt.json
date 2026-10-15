@@ -1,0 +1,5 @@
+{
+  "command": "dart analyze [7 unified product files + 2 direct test files]",
+  "cwd": "D:/Project/birdtie/apps/client",
+  "exitCode": 0
+}

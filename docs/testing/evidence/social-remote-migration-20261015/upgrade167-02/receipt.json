@@ -1,0 +1,10 @@
+{
+  "mode": "upgrade",
+  "exit_code": 1,
+  "host": "ecs-user@47.110.154.133",
+  "strict_host_key_checking": true,
+  "remoteScriptSHA256": "8ba0a51a09d4cdb3f93d842724b01b9cafa5e80981924f506f24880ffc3fa4db",
+  "stdoutSHA256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderrSHA256": "eefbb1a34bba7398f4d0550126e5741c8a9557cc9e0caabab061c1cf7a27dd59",
+  "public_routing_changed": false
+}

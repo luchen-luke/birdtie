@@ -1,0 +1,24 @@
+{
+  "exitCode": 0,
+  "deltaBytes": 25835520,
+  "remoteScriptSHA256": "191278de8af9969aabbca357500437ffd6b26aa2b78aa6835e1ffd33465a2089",
+  "result": {
+    "status": "CLIENT17_PUBLIC_READY",
+    "origin": "https://47.110.154.133",
+    "webRelease": "/opt/birdtie/web/releases/public-20261015-final-web17",
+    "newManifestSHA": "85bbc2f450a45a5f80ff54d2db4755510239b080dd522a4152428b0bd42d664a",
+    "changedFiles": [
+      ".last_build_id",
+      "flutter_bootstrap.js",
+      "main.dart.js"
+    ],
+    "unchangedAssetsReused": 39,
+    "apiRestarted": false,
+    "databaseMigrationsApplied": 0,
+    "previousGatewayPreserved": "birdtie-caddy-client16",
+    "currentGateway": "birdtie-caddy",
+    "tlsDefaultValidation": true,
+    "configUnchanged": true,
+    "oldCivuAssetsDeleted": false
+  }
+}

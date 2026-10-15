@@ -1,0 +1,42 @@
+{
+  "status": "SOURCE_READY",
+  "at": "2026-10-15T13:59:15.381596+00:00",
+  "files": {
+    "apps/client/lib/src/workspace/public_moment_page.dart": "dc57ea27665ef66c9d4096d2f6c5155d488a4ea52f144faa68b9ea459a3a807c",
+    "apps/client/lib/src/workspace/moment_thread_panel.dart": "9dbb60c958ee0e7c8657dfc89a4685caf0f3e52fd6a89f9cf425c5b3285d6e47",
+    "apps/client/test/moment_thread_test.dart": "805201a0db40fd0f399df5a0cfd3b724698f74916a97b6480936f2c4d0c79ff2"
+  },
+  "trigger": "APK14 whole WITHDRAW committed successfully; child sidecar reread removed itself but PublicMomentPage retained original publication body and interaction controls until lease expiry.",
+  "fix": [
+    "Successful WITHDRAW or successful original-operation recovery notifies parent through MomentThreadSidecar.onWithdrawn.",
+    "Parent immediately clears public body, media, capability state and action source; retires original API and timers; shows explicit live-region result: 整串已撤回，不再公开显示。",
+    "Returning from another thread member route retires and rereads the original public page, so an offscreen member cannot keep the prior publication."
+  ],
+  "nowInline": "Same PublicMomentPage _body retirement used for embedded mode. Current Now creation inline host has showManagement:false and does not offer whole-thread withdrawal. Separate Now MomentThreadPanel already displays authoritative receipt and refreshes moments/layers; no additional file changed.",
+  "uxChecks": [
+    "UX-CHECK-04",
+    "UX-CHECK-07",
+    "UX-CHECK-08",
+    "UX-CHECK-09",
+    "UX-CHECK-10",
+    "UX-CHECK-12"
+  ],
+  "direct": {
+    "path": "work/thread-withdraw-feedback01/receipt.json",
+    "pass": 1,
+    "fail": 0,
+    "skip": 0,
+    "coverage": "Actual PublicMomentPage preserved approval across capability/ancestor rebuild; exactly one original WITHDRAW PUT; authoritative success immediately removes body, image widgets, thread sidecar and MomentInteractionPanel; shows result; exact prior API/controller retired; durable pending cleared; identity change sends no writes."
+  },
+  "analysis": {
+    "path": "work/thread-withdraw-feedback-analysis01/receipt.json",
+    "exitCode": 0,
+    "errors": 0,
+    "warnings": 0,
+    "info": 17
+  },
+  "backendProductionModified": false,
+  "SQLModified": false,
+  "device": "ROOT_PENDING_APK15",
+  "remoteWrites": 0
+}

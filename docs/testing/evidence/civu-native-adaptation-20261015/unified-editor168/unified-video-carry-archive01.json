@@ -1,0 +1,83 @@
+{
+  "files": [
+    {
+      "path": "docs/testing/evidence/civu-native-adaptation-20261015/unified-editor168/unified-video-carry-native01/receipt.json",
+      "bytes": 508600,
+      "sha256": "99030eb9f33d3e61796b8bb76afcc359667912f8152753f2f859569542ac17a3"
+    },
+    {
+      "path": "docs/testing/evidence/civu-native-adaptation-20261015/unified-editor168/unified-video-carry-native01/stdout.jsonl",
+      "bytes": 2650,
+      "sha256": "4460eee76ce5812482c25d6eb1ce24452b3038fce0c53e7bf6569ee09fb693d5"
+    },
+    {
+      "path": "docs/testing/evidence/civu-native-adaptation-20261015/unified-editor168/unified-video-carry-native01/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/testing/evidence/civu-native-adaptation-20261015/unified-editor168/unified-video-carry-native02/receipt.json",
+      "bytes": 509094,
+      "sha256": "fd02c770644adcdbdc8176ba3ffcaaef7af09e9f242cd520c455730a261b3eb6"
+    },
+    {
+      "path": "docs/testing/evidence/civu-native-adaptation-20261015/unified-editor168/unified-video-carry-native02/stdout.jsonl",
+      "bytes": 2286,
+      "sha256": "eb9d172831cbe4de8d7bdd8da7b1ae0d11a9fc0dd208d9731138a719aeb4e844"
+    },
+    {
+      "path": "docs/testing/evidence/civu-native-adaptation-20261015/unified-editor168/unified-video-carry-native02/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/testing/evidence/civu-native-adaptation-20261015/unified-editor168/unified-video-carry-native03/receipt.json",
+      "bytes": 509094,
+      "sha256": "86393029bdf656934c710a42d9cc72bc4ffc9d50ad756d3eb12973621c2aefbe"
+    },
+    {
+      "path": "docs/testing/evidence/civu-native-adaptation-20261015/unified-editor168/unified-video-carry-native03/stdout.jsonl",
+      "bytes": 2596,
+      "sha256": "ce42714869170d53618064870be4260f0cac912932d49292e05c82a32424c735"
+    },
+    {
+      "path": "docs/testing/evidence/civu-native-adaptation-20261015/unified-editor168/unified-video-carry-native03/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/testing/evidence/civu-native-adaptation-20261015/unified-editor168/unified-video-carry-native03/scratch-diagnostic-diff.json",
+      "bytes": 478,
+      "sha256": "354951ad4a67a42fc8ab581fac4910546fa8508d63f87fb6c4e559381f5ddce2"
+    },
+    {
+      "path": "docs/testing/evidence/civu-native-adaptation-20261015/unified-editor168/unified-video-carry-native04/receipt.json",
+      "bytes": 509094,
+      "sha256": "2613032aca9991c6402112bbdf60d5cb90ae3f390e586b67f54b8f3f5e8b135e"
+    },
+    {
+      "path": "docs/testing/evidence/civu-native-adaptation-20261015/unified-editor168/unified-video-carry-native04/stdout.jsonl",
+      "bytes": 4920,
+      "sha256": "52df7d8e0895af209df8691ff16c934e4c95f5c24e2e3cfb5d25dddd94986285"
+    },
+    {
+      "path": "docs/testing/evidence/civu-native-adaptation-20261015/unified-editor168/unified-video-carry-native04/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/testing/evidence/civu-native-adaptation-20261015/unified-editor168/unified-video-carry-source-ready01.json",
+      "bytes": 3010,
+      "sha256": "ea481bc50daaacdcb5c01af926f4f428bfd791d349ad6e42791bc3276179ce2f"
+    }
+  ],
+  "copied": "Only text receipts, JSONL logs, empty stderr and scratch insertion description; no API snapshots, DB dump, media bytes, credentials or operation inputs",
+  "finalProductPathsStillFrozen": true,
+  "notRun": [
+    "Production deployment",
+    "Phone retry against migrated169",
+    "Full Go/Flutter suites",
+    "Existing public images or video codec matrix",
+    "Migration169 down execution"
+  ]
+}

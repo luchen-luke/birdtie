@@ -1,0 +1,426 @@
+{
+  "status": "PASS_METADATA_READBACK",
+  "started": "2026-10-15T17:44:19.625849+00:00",
+  "origin": "https://47.110.154.133",
+  "syntheticAccount": "SYNTHETIC_QA03_ONLY",
+  "legacyOwnersAccessed": 0,
+  "contentWrites": 0,
+  "previewsCreated": 0,
+  "mediaBytesRead": 0,
+  "phoneSessionMutated": false,
+  "otherQAAccountLogin": false,
+  "otherQAAccountBoundary": "NOT_RUN_ONLY_QA03_SESSION_AUTHORIZED",
+  "ownSessionLogout204": true,
+  "ownSessionRejected401": true,
+  "rootMomentId": "96e29d12-2a35-47e3-aeb3-75a8425542f5",
+  "threadId": "8ca660be-f15f-4bad-acc9-87d9a1f25036",
+  "expectedState": "published",
+  "members": [
+    {
+      "momentId": "fbcdd365-b5af-4b1c-b4e7-d83b696cb538",
+      "revision": 4,
+      "status": "published",
+      "visibility": "public",
+      "originalMoment": false,
+      "displayPosition": 0,
+      "retiredOriginalPosition": null,
+      "body": {
+        "utf8Bytes": 36,
+        "characters": 36,
+        "sha256": "c94b6404a480339ee63067bead5c8d3dc9c3691e53b84dcf74bab914ee054733",
+        "safeQAContent": "Birdtie device19 edited London entry"
+      },
+      "title": {
+        "utf8Bytes": 0,
+        "characters": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "safeQAContent": ""
+      },
+      "anonymousDetailStatus": 200,
+      "locations": [
+        {
+          "id": "a508e362-16eb-44ad-96ba-32fbe0b902fe",
+          "kind": "REFERENCE",
+          "precision": "place",
+          "cityId": "",
+          "cityName": "",
+          "placeId": "",
+          "placeName": "",
+          "referenceId": "4d6213b2-83a3-53cc-be77-8bc1b61a92de",
+          "referenceName": "Apsley House",
+          "countryCode": "GBR",
+          "region": "Greater London",
+          "anchor": {
+            "targetKind": "REFERENCE",
+            "coordinateSystem": "wgs84",
+            "latitude": 51.503474,
+            "longitude": -0.151636,
+            "precision": "point",
+            "referenceId": "4d6213b2-83a3-53cc-be77-8bc1b61a92de",
+            "placeId": ""
+          }
+        }
+      ],
+      "ownerLocations": [
+        {
+          "id": "a508e362-16eb-44ad-96ba-32fbe0b902fe",
+          "kind": "REFERENCE",
+          "precision": "place",
+          "cityId": "",
+          "cityName": "",
+          "placeId": "",
+          "placeName": "",
+          "referenceId": "4d6213b2-83a3-53cc-be77-8bc1b61a92de",
+          "referenceName": "Apsley House",
+          "available": true,
+          "countryCode": "GBR",
+          "region": "Greater London",
+          "anchor": {
+            "targetKind": "REFERENCE",
+            "coordinateSystem": "wgs84",
+            "latitude": 51.503474,
+            "longitude": -0.151636,
+            "precision": "point",
+            "referenceId": "4d6213b2-83a3-53cc-be77-8bc1b61a92de",
+            "placeId": ""
+          }
+        }
+      ],
+      "media": {
+        "schemaVersion": "public-moment-media-set-v1",
+        "status": "EMPTY",
+        "setVersion": 0,
+        "count": 0,
+        "items": []
+      },
+      "verifiedGeographicArea": "LONDON",
+      "countryExplicitlyReported": true
+    },
+    {
+      "momentId": "4ef5b105-9152-4a8c-98e0-b445b1153ef8",
+      "revision": 4,
+      "status": "published",
+      "visibility": "public",
+      "originalMoment": false,
+      "displayPosition": 1,
+      "retiredOriginalPosition": null,
+      "body": {
+        "utf8Bytes": 28,
+        "characters": 28,
+        "sha256": "30e53bad5c83acceb5470264a502de3b7b01e59fb04077c906b92ee1b9194b9a",
+        "safeQAContent": "Birdtie device18 video third"
+      },
+      "title": {
+        "utf8Bytes": 0,
+        "characters": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "safeQAContent": ""
+      },
+      "anonymousDetailStatus": 200,
+      "locations": [
+        {
+          "id": "50b4f2bd-afba-4ecf-8444-45ae378a0a84",
+          "kind": "REFERENCE",
+          "precision": "place",
+          "cityId": "",
+          "cityName": "",
+          "placeId": "",
+          "placeName": "",
+          "referenceId": "72c612f6-8126-53f3-86ed-3ba369868e9c",
+          "referenceName": "Listasafn Reykjavíkur",
+          "countryCode": "ISL",
+          "region": "Reykjavík",
+          "anchor": {
+            "targetKind": "REFERENCE",
+            "coordinateSystem": "wgs84",
+            "latitude": 64.149065,
+            "longitude": -21.940444,
+            "precision": "point",
+            "referenceId": "72c612f6-8126-53f3-86ed-3ba369868e9c",
+            "placeId": ""
+          }
+        }
+      ],
+      "ownerLocations": [
+        {
+          "id": "50b4f2bd-afba-4ecf-8444-45ae378a0a84",
+          "kind": "REFERENCE",
+          "precision": "place",
+          "cityId": "",
+          "cityName": "",
+          "placeId": "",
+          "placeName": "",
+          "referenceId": "72c612f6-8126-53f3-86ed-3ba369868e9c",
+          "referenceName": "Listasafn Reykjavíkur",
+          "available": true,
+          "countryCode": "ISL",
+          "region": "Reykjavík",
+          "anchor": {
+            "targetKind": "REFERENCE",
+            "coordinateSystem": "wgs84",
+            "latitude": 64.149065,
+            "longitude": -21.940444,
+            "precision": "point",
+            "referenceId": "72c612f6-8126-53f3-86ed-3ba369868e9c",
+            "placeId": ""
+          }
+        }
+      ],
+      "media": {
+        "schemaVersion": "public-moment-media-set-v2",
+        "status": "READY",
+        "setVersion": 5,
+        "count": 1,
+        "items": [
+          {
+            "position": 0,
+            "kind": "VIDEO",
+            "mediaId": "8ce663ad-61ea-4946-a1b8-685f7b4d6f93",
+            "mediaVersion": 1
+          }
+        ]
+      },
+      "verifiedGeographicArea": "REYKJAVIK",
+      "countryExplicitlyReported": true
+    },
+    {
+      "momentId": "96e29d12-2a35-47e3-aeb3-75a8425542f5",
+      "revision": 6,
+      "status": "withdrawn",
+      "visibility": "private",
+      "originalMoment": true,
+      "displayPosition": null,
+      "retiredOriginalPosition": 0,
+      "body": {
+        "utf8Bytes": 0,
+        "characters": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "safeQAContent": ""
+      },
+      "title": {
+        "utf8Bytes": 0,
+        "characters": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "safeQAContent": ""
+      },
+      "anonymousDetailStatus": 404,
+      "locations": null,
+      "media": null,
+      "retiredPublicBodyLocationsMediaUnavailable": true
+    }
+  ],
+  "ownSessionCreated": true,
+  "threadVersion": 5,
+  "threadStatus": "published",
+  "currentDisplayMembers": [
+    {
+      "position": 0,
+      "momentId": "fbcdd365-b5af-4b1c-b4e7-d83b696cb538",
+      "revision": 4,
+      "status": "AVAILABLE"
+    },
+    {
+      "position": 1,
+      "momentId": "4ef5b105-9152-4a8c-98e0-b445b1153ef8",
+      "revision": 4,
+      "status": "AVAILABLE"
+    }
+  ],
+  "retiredMembers": [
+    {
+      "position": 0,
+      "momentId": "96e29d12-2a35-47e3-aeb3-75a8425542f5",
+      "revision": 6,
+      "status": "RETIRED"
+    }
+  ],
+  "originalMomentRetained": true,
+  "anonymousThreadStatus": 200,
+  "exactMixedThreeVerified": false,
+  "exactReorderedThreeVerified": false,
+  "exactRetiredOriginalVerified": true,
+  "completed": "2026-10-15T17:44:21.061071+00:00",
+  "events": [
+    {
+      "label": "fixed-development-challenge",
+      "method": "POST",
+      "status": 200,
+      "machineCode": null
+    },
+    {
+      "label": "fixed-development-login",
+      "method": "POST",
+      "status": 200,
+      "machineCode": null
+    },
+    {
+      "label": "current-synthetic-person",
+      "method": "GET",
+      "status": 200,
+      "machineCode": null
+    },
+    {
+      "label": "exact-own-original-moment",
+      "method": "GET",
+      "status": 200,
+      "machineCode": null
+    },
+    {
+      "label": "exact-own-thread",
+      "method": "GET",
+      "status": 200,
+      "machineCode": null
+    },
+    {
+      "label": "anonymous-thread",
+      "method": "GET",
+      "status": 200,
+      "machineCode": null
+    },
+    {
+      "label": "anonymous-owned-thread-boundary",
+      "method": "GET",
+      "status": 401,
+      "machineCode": "unauthorized"
+    },
+    {
+      "label": "own-member-0",
+      "method": "GET",
+      "status": 200,
+      "machineCode": null
+    },
+    {
+      "label": "anonymous-member-0",
+      "method": "GET",
+      "status": 200,
+      "machineCode": null
+    },
+    {
+      "label": "anonymous-member-thread-0",
+      "method": "GET",
+      "status": 200,
+      "machineCode": null
+    },
+    {
+      "label": "anonymous-owner-member-boundary-0",
+      "method": "GET",
+      "status": 401,
+      "machineCode": "unauthorized"
+    },
+    {
+      "label": "anonymous-locations-0",
+      "method": "GET",
+      "status": 200,
+      "machineCode": null
+    },
+    {
+      "label": "anonymous-media-0",
+      "method": "GET",
+      "status": 200,
+      "machineCode": null
+    },
+    {
+      "label": "owner-locations-0",
+      "method": "GET",
+      "status": 200,
+      "machineCode": null
+    },
+    {
+      "label": "own-member-1",
+      "method": "GET",
+      "status": 200,
+      "machineCode": null
+    },
+    {
+      "label": "anonymous-member-1",
+      "method": "GET",
+      "status": 200,
+      "machineCode": null
+    },
+    {
+      "label": "anonymous-member-thread-1",
+      "method": "GET",
+      "status": 200,
+      "machineCode": null
+    },
+    {
+      "label": "anonymous-owner-member-boundary-1",
+      "method": "GET",
+      "status": 401,
+      "machineCode": "unauthorized"
+    },
+    {
+      "label": "anonymous-locations-1",
+      "method": "GET",
+      "status": 200,
+      "machineCode": null
+    },
+    {
+      "label": "anonymous-media-1",
+      "method": "GET",
+      "status": 200,
+      "machineCode": null
+    },
+    {
+      "label": "owner-locations-1",
+      "method": "GET",
+      "status": 200,
+      "machineCode": null
+    },
+    {
+      "label": "own-member-2",
+      "method": "GET",
+      "status": 200,
+      "machineCode": null
+    },
+    {
+      "label": "anonymous-member-2",
+      "method": "GET",
+      "status": 404,
+      "machineCode": "not_found"
+    },
+    {
+      "label": "anonymous-member-thread-2",
+      "method": "GET",
+      "status": 404,
+      "machineCode": "not_found"
+    },
+    {
+      "label": "anonymous-owner-member-boundary-2",
+      "method": "GET",
+      "status": 401,
+      "machineCode": "unauthorized"
+    },
+    {
+      "label": "anonymous-locations-2",
+      "method": "GET",
+      "status": 404,
+      "machineCode": "not_found"
+    },
+    {
+      "label": "anonymous-media-2",
+      "method": "GET",
+      "status": 404,
+      "machineCode": "moment_media_not_found"
+    },
+    {
+      "label": "owned-thread-final-same-generation",
+      "method": "GET",
+      "status": 200,
+      "machineCode": null
+    },
+    {
+      "label": "logout-only-helper-session",
+      "method": "POST",
+      "status": 204,
+      "machineCode": null
+    },
+    {
+      "label": "rejected-revoked-helper-session",
+      "method": "GET",
+      "status": 401,
+      "machineCode": "unauthorized"
+    }
+  ],
+  "helperSHA256": "9c5630f10d152c77c04d574ce8cd84e9bdfbd220dfbaedf49413a15008365b51"
+}

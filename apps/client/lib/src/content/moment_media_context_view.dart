@@ -13,10 +13,12 @@ class MomentMediaContextView extends StatefulWidget {
     required this.assetKind,
     required this.visibleAssetIDs,
     this.expectedRevision,
+    this.ownerID,
   });
   final MomentMediaContextAPI api;
   final String momentID, assetKind;
   final int? expectedRevision;
+  final String? Function()? ownerID;
   final Listenable changes;
   final Set<String> Function() visibleAssetIDs;
   @override
@@ -130,6 +132,7 @@ class _MomentMediaContextViewState extends State<MomentMediaContextView>
         builder: (_) => LegacyPlaceReferencePage(
           reference: reference,
           authorizationHeader: widget.api.authorizationHeader,
+          ownerID: widget.ownerID,
           sourceCurrent: () =>
               _current && identical(value, _value) && value.current,
           apiBaseUrl: widget.api.baseUrl,

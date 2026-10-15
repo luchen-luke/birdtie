@@ -1,0 +1,127 @@
+--- frozen/internal\postgres\agent_memory_integration_test.go
++++ scratch/internal\postgres\agent_memory_integration_test.go
+@@ -31,17 +31,8 @@
+ 	if err := b.pool.QueryRow(b.ctx, `SELECT to_regclass('public.agent_memories') IS NOT NULL`).Scan(&installed); err != nil || !installed {
+ 		t.Fatal("Agent Memory integration requires migration 056")
+ 	}
+-	t.Cleanup(func() {
+-		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+-		defer cancel()
+-		if _, err := b.pool.Exec(ctx, `DELETE FROM agent_profiles WHERE owner_id=ANY($1::uuid[])`, b.accounts); err != nil {
+-			t.Errorf("owned Memory parent cascade cleanup failed: %v", err)
+-		}
+-		var count int
+-		if err := b.pool.QueryRow(ctx, `SELECT count(*) FROM agent_memories WHERE owner_id=ANY($1::uuid[])`, b.accounts).Scan(&count); err != nil || count != 0 {
+-			t.Errorf("owned Memory cascade residue: count=%d error=%v", count, err)
+-		}
+-	})
++	// Scratch only: ownedMigrationDatabase drops the whole random child;
++	// retain production history guards instead of physically deleting fixture rows.
+ 	return f
+ }
+ 
+--- frozen/internal\postgres\agent_place_memory_integration_test.go
++++ scratch/internal\postgres\agent_place_memory_integration_test.go
+@@ -45,22 +45,8 @@
+ 			t.Fatal(e)
+ 		}
+ 	}
+-	t.Cleanup(func() {
+-		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+-		defer cancel()
+-		for _, q := range []string{
+-			`DELETE FROM audit_events WHERE actor_account_id=ANY($1::uuid[])`,
+-			`DELETE FROM saved_items WHERE owner_account_id=ANY($1::uuid[])`,
+-			`DELETE FROM moments WHERE author_account_id=ANY($1::uuid[])`,
+-			`DELETE FROM activities WHERE created_by_account_id=ANY($1::uuid[])`,
+-			`DELETE FROM places WHERE maintainer_account_id=ANY($1::uuid[])`,
+-			`DELETE FROM cities WHERE maintainer_account_id=ANY($1::uuid[])`,
+-		} {
+-			if _, e := b.pool.Exec(ctx, q, b.accounts); e != nil {
+-				t.Error("owned Place source cleanup failed", e)
+-			}
+-		}
+-	})
++	// Scratch only: ownedMigrationDatabase drops the whole random child;
++	// retain production history guards instead of physically deleting fixture rows.
+ 	return f
+ }
+ func (f *placeMemoryFixture) moment(t *testing.T) content.Moment {
+--- frozen/internal\postgres\agent_private_profile_integration_test.go
++++ scratch/internal\postgres\agent_private_profile_integration_test.go
+@@ -35,20 +35,8 @@
+ 	// This cleanup runs before the inherited foundation cleanup. Sessions,
+ 	// grants and blocks belong only to this fixture's random accounts. Private
+ 	// contents are then removed by the metadata FK cascade, not an unsafe delete.
+-	t.Cleanup(func() {
+-		cleanupCtx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+-		defer cancel()
+-		for _, statement := range []string{
+-			`DELETE FROM sessions WHERE account_id=ANY($1::uuid[])`,
+-			`DELETE FROM consent_grants WHERE owner_account_id=ANY($1::uuid[]) OR recipient_account_id=ANY($1::uuid[])`,
+-			`DELETE FROM account_blocks WHERE blocker_account_id=ANY($1::uuid[]) OR blocked_account_id=ANY($1::uuid[])`,
+-			`DELETE FROM audit_events WHERE actor_account_id=ANY($1::uuid[])`,
+-		} {
+-			if _, err := b.pool.Exec(cleanupCtx, statement, b.accounts); err != nil {
+-				t.Errorf("owned private-profile cleanup failed: %v", err)
+-			}
+-		}
+-	})
++	// Scratch only: ownedMigrationDatabase drops the whole random child;
++	// retain production history guards instead of physically deleting fixture rows.
+ 	for _, item := range []struct {
+ 		principal actorref.PrincipalRef
+ 		access    *agentprofile.PrivateAccess
+--- frozen/internal\postgres\agent_profile_integration_test.go
++++ scratch/internal\postgres\agent_profile_integration_test.go
+@@ -54,30 +54,8 @@
+ 	f := &agentProfileFixture{t: t, ctx: ctx, pool: pool, store: New(pool, false), accounts: []string{}}
+ 	// Every account/Agent/Organization below is exclusively owned by this test.
+ 	// Cleanup is ordered by FK and fails on errors; no shared seed is sampled.
+-	t.Cleanup(func() {
+-		cleanupCtx, cleanupCancel := context.WithTimeout(context.Background(), 15*time.Second)
+-		defer cleanupCancel()
+-		for _, statement := range []string{
+-			`DELETE FROM agent_profiles WHERE owner_id=ANY($1::uuid[])`,
+-			`DELETE FROM agents WHERE principal_account_id=ANY($1::uuid[])`,
+-			`DELETE FROM organization_memberships WHERE organization_id IN
+-				(SELECT id FROM organizations WHERE account_id=ANY($1::uuid[]))`,
+-			`DELETE FROM organizations WHERE account_id=ANY($1::uuid[])`,
+-			`DELETE FROM user_profiles WHERE account_id=ANY($1::uuid[])`,
+-			`DELETE FROM accounts WHERE id=ANY($1::uuid[])`,
+-		} {
+-			if _, cleanupErr := pool.Exec(cleanupCtx, statement, f.accounts); cleanupErr != nil {
+-				t.Errorf("owned Agent Profile cleanup failed: %v", cleanupErr)
+-			}
+-		}
+-		var remaining int
+-		if cleanupErr := pool.QueryRow(cleanupCtx, `SELECT
+-			(SELECT count(*) FROM accounts WHERE id=ANY($1::uuid[])) +
+-			(SELECT count(*) FROM agent_profiles WHERE owner_id=ANY($1::uuid[])) +
+-			(SELECT count(*) FROM agents WHERE principal_account_id=ANY($1::uuid[]))`, f.accounts).Scan(&remaining); cleanupErr != nil || remaining != 0 {
+-			t.Errorf("owned Agent Profile fixture residue: count=%d error=%v", remaining, cleanupErr)
+-		}
+-	})
++	// Scratch only: ownedMigrationDatabase drops the whole random child;
++	// retain production history guards instead of physically deleting fixture rows.
+ 	for _, item := range []struct {
+ 		kind string
+ 		ref  *actorref.PrincipalRef
+--- frozen/internal\postgres\moment_publication_integration_test.go
++++ scratch/internal\postgres\moment_publication_integration_test.go
+@@ -26,13 +26,8 @@
+ 	if e != nil {
+ 		t.Fatal(e)
+ 	}
+-	t.Cleanup(func() {
+-		for _, q := range []string{`DELETE FROM account_blocks WHERE blocker_account_id=$1 OR blocked_account_id=$1`, `DELETE FROM audit_events WHERE actor_account_id=$1`, `DELETE FROM moments WHERE author_account_id=$1`, `DELETE FROM sessions WHERE account_id=$1`, `DELETE FROM accounts WHERE id=$1`} {
+-			if _, e := b.pool.Exec(context.Background(), q, id); e != nil {
+-				t.Error("ordinary publication cleanup", e)
+-			}
+-		}
+-	})
++	// Scratch only: ownedMigrationDatabase drops the whole random child;
++	// retain production history guards instead of physically deleting fixture rows.
+ 	b.exec(`INSERT INTO accounts(id,account_type,handle,status) VALUES($1,'person',$2,'active')`, id, "moment-public-"+strings.ReplaceAll(id, "-", ""))
+ 	b.exec(`INSERT INTO sessions(account_id,token_sha256,authentication_method,expires_at,idle_expires_at) VALUES($1,$2,'test',clock_timestamp()+interval '1 hour',clock_timestamp()+interval '30 minutes')`, id, digest[:])
+ 	return momentPublicationNativeActor{identity.Actor{ID: id, AccountType: "person"}, digest}

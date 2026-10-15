@@ -5,6 +5,7 @@ import '../auth/birdtie_auth_controller.dart';
 import '../content/private_moment_controller.dart';
 import '../content/private_moment_media_controller.dart';
 import '../content/private_moment_media_sheet.dart';
+import '../content/private_reference_media_view.dart';
 import 'notification_destination_router.dart';
 import 'now_ui_tokens.dart';
 
@@ -147,6 +148,19 @@ class _ImageEntryState extends State<NowPrivateMomentImagePage> {
             builder: (_) => PrivateMomentMediaSheet(
               controller: c,
               momentTitle: value.title,
+              originalCover: PrivateReferenceMediaView(
+                key: ValueKey(
+                  'moment-original-cover-${value.id}-${value.revision}',
+                ),
+                targetType: 'MOMENT',
+                targetID: value.id,
+                authorizationHeader: () => widget.auth.authorizationHeader,
+                ownerID: () => widget.auth.accountID,
+                sourceCurrent: () => _version(value),
+                identityChanges: Listenable.merge([_changes, _moments]),
+                apiBaseUrl: widget.moments.apiBaseUrl,
+                client: widget.moments.borrowedClient,
+              ),
             ),
           ),
         ),
@@ -159,7 +173,8 @@ class _ImageEntryState extends State<NowPrivateMomentImagePage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: birdtieAppBar(context,
+    appBar: birdtieAppBar(
+      context,
       title: Text('选择私人记录', style: NowUiTokens.of(context).pageTitle),
       leading: IconButton(
         tooltip: '关闭选择私人记录',

@@ -1,0 +1,71 @@
+{
+  "at": "2026-10-15T16:26:31.382698+00:00",
+  "status": "SOURCE_FROZEN_SCOPED_ANALYSIS_AND_DIRECT_PASS",
+  "source": {
+    "apps/client/lib/src/legacy/legacy_shell.dart": "b786cf26d99b77168e68d733d82fc503a79b1e71f7cc29590ba1c1d7eae8c4dc",
+    "apps/client/lib/src/workspace/now_moment_editor_host.dart": "50d68b5589d69c31dc160da50f9b21f2b4a24ef293ffc4f9207945857dd08424",
+    "apps/client/test/now_moment_editor_host_test.dart": "c244a4ff85164ca29afae8187281b3d1e38a14f607254b4a1bbf587919a525dd"
+  },
+  "checks": {
+    "analysis": {
+      "command": [
+        "D:\\DevTools\\flutter\\bin\\cache\\dart-sdk\\bin\\dart.exe",
+        "D:\\DevTools\\flutter\\bin\\cache\\flutter_tools.snapshot",
+        "analyze",
+        "--no-pub",
+        "--no-fatal-infos",
+        "lib/src/legacy/legacy_shell.dart",
+        "lib/src/workspace/now_moment_editor_host.dart",
+        "test/now_moment_editor_host_test.dart"
+      ],
+      "cwd": "D:\\Project\\birdtie\\apps\\client",
+      "exitCode": 0
+    },
+    "direct": {
+      "command": [
+        "D:\\DevTools\\flutter\\bin\\cache\\dart-sdk\\bin\\dart.exe",
+        "D:\\DevTools\\flutter\\bin\\cache\\flutter_tools.snapshot",
+        "test",
+        "--no-pub",
+        "--reporter=json",
+        "test/now_moment_editor_host_test.dart"
+      ],
+      "cwd": "D:\\Project\\birdtie\\apps\\client",
+      "exitCode": 0
+    }
+  },
+  "directTests": [
+    {
+      "name": "公开详情及本人列表新建编辑回原Now且身份来源变化不接续也不发布",
+      "result": "success",
+      "skipped": false
+    }
+  ],
+  "evidence": "work/now-moment-profile-host01",
+  "receiptSHA256": "4c024e7ecd431bec1be9dab25b5459ff3adca7637e83d9cc2bc85d5bda16a9fa",
+  "backendReady03All9PathsUnchanged": true,
+  "appAndPublicDetailUnchanged": {
+    "apps/client/lib/src/app/birdtie_app.dart": "78852161e8e6dd2def17cefd1c6c74fc51fbb25a722c3b7184dd0bf0697395e2",
+    "apps/client/lib/src/workspace/public_moment_page.dart": "e4287d5b22b5002e28c73c7aac66fc49e05981105d3aa068ab86c3f963c4caaa"
+  },
+  "mapWorkspaceOwner": "social_scope",
+  "mapHookEvidence": "work\\unified-profile-create-hook-source-ready01.json",
+  "mapHookEvidenceSHA256": "83d7fee098407f8fc0d5083c815d5d5b63f03e8cea458c31a53654cfbe6eb433",
+  "mapWorkspaceSHA256": "128a2edfb13c88f3400af46a73ee57f6216dc94e2422f029ea09afb356e07c5b",
+  "coverage": [
+    "Actual LegacyProfilePage New draft invokes explicit create handoff; existing public photo management invokes existing-ID handoff. Both return to exact original Now element and preserve surrounding composer state.",
+    "All existing public detail edit entries still pass the compound.",
+    "Current owner/token/origin/role/source and host busy refusal protect navigation; pending owner ABA invalidates handoff.",
+    "No non-GET network requests occur when opening the editor.",
+    "Without a scope new/profile-photo controls are disabled with clear Now instruction."
+  ],
+  "preserved": [
+    "Old CREATE operation recovery and original public-photo recovery widgets/functions remain; no backend contract change.",
+    "Original Now scope/navigation, cached public media API lifetime and whole-thread withdrawal feedback."
+  ],
+  "notRun": [
+    "Full legacy fixture suite not rerun; fixtures expecting an old New draft editor without Now scope are obsolete for this requested production entry behavior.",
+    "Old pending operation recovery was not rerun; its code paths were retained.",
+    "Final build, phone and deployment belong to root."
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "at": "2026-10-15T15:45:43.115167+00:00",
+  "status": "SOURCE_FROZEN_DIRECT_PASS",
+  "source": {
+    "apps/api/internal/content/moment_thread.go": "761b010655768fe99920902ece0ad3484b738a2494839d0eff197f0803401e7f",
+    "apps/api/internal/content/moment_thread_test.go": "4567c9195a073c86adba3021b992371b25d98d2b2dd47e0909cf2e573a40bcb3"
+  },
+  "baseFrame": "work/unified-backend-source-ready01.json",
+  "baseFrameSHA256": "5f04957ebcf4af51efe4c8b5b05ec7edef4cbc6570b0b6394fed31917010e111",
+  "evidence": "work/unified-backend-context01",
+  "receiptSHA256": "e53b284c805aa156792a650882eb2d6225348db54ffdb1c10724f21bfec15863",
+  "other6FrozenPathsUnchanged": true,
+  "sql168Unchanged": true,
+  "contractChange": "EDIT-only context UUID normalization independent of optional City; PostgreSQL original-context equality and current authority gates unchanged."
+}

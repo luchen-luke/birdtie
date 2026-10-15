@@ -53,7 +53,7 @@ func (s *server) previewMomentThread(w http.ResponseWriter, r *http.Request) {
 		momentControlFailure(w, e)
 		return
 	}
-	if !humanControlPreviewMatches(v.HumanControlPreview, in.OperationID, in.Action, content.MomentThreadDigest(in)) || content.MomentThreadDigest(v.Input) != content.MomentThreadDigest(in) || !content.MomentControlHex(v.SourceVersion) || v.Members == nil || v.Materials == nil || (in.Action == "CREATE_PUBLISH" || in.Action == "PUBLISH") && (len(v.Members) != 0 || len(v.Materials) != len(in.Items)) || in.Action == "WITHDRAW" && (len(v.Members) < 2 || len(v.Materials) != 0) {
+	if !humanControlPreviewMatches(v.HumanControlPreview, in.OperationID, in.Action, content.MomentThreadDigest(in)) || content.MomentThreadDigest(v.Input) != content.MomentThreadDigest(in) || !content.MomentControlHex(v.SourceVersion) || v.Members == nil || v.Materials == nil || (in.Action == "CREATE_PUBLISH" || in.Action == "PUBLISH" || in.Action == "EDIT") && (len(v.Members) != 0 || len(v.Materials) != len(in.Items)) || in.Action == "EDIT" && (v.PreservedMedia == nil || len(*v.PreservedMedia) != len(in.Items) || len(v.Locations) != len(in.Items) || len(v.Contexts) != len(in.Items)) || in.Action == "WITHDRAW" && (len(v.Members) < 1 || len(v.Materials) != 0) {
 		respondError(w, 503, "moment_thread_unavailable")
 		return
 	}
@@ -83,7 +83,7 @@ func (s *server) commitMomentThread(w http.ResponseWriter, r *http.Request) {
 		momentControlFailure(w, e)
 		return
 	}
-	if !content.ValidMomentThreadReceipt(v, in.OperationID) || v.Status == "SUCCEEDED" && (v.Action != in.Action || v.PayloadDigest != content.MomentThreadDigest(in) || v.ExpectedVersion != in.ExpectedVersion || (in.Action == "WITHDRAW" || in.Action == "PUBLISH") && v.ThreadID != in.ThreadID) {
+	if !content.ValidMomentThreadReceipt(v, in.OperationID) || v.Status == "SUCCEEDED" && (v.Action != in.Action || v.PayloadDigest != content.MomentThreadDigest(in) || v.ExpectedVersion != in.ExpectedVersion || in.ThreadID != "" && v.ThreadID != in.ThreadID || in.Action == "EDIT" && v.SchemaVersion != "moment-thread-operation-v2") {
 		respondError(w, 503, "moment_thread_unavailable")
 		return
 	}
@@ -136,7 +136,7 @@ func (s *server) readMomentThread(w http.ResponseWriter, r *http.Request, byMome
 		momentControlFailure(w, e)
 		return
 	}
-	if v.SchemaVersion != "moment-thread-view-v1" || !content.MomentControlHex(v.SourceVersion) || v.ResponseProof == nil || len(v.Members) < 2 || len(v.Members) > content.MomentThreadMaxEntries {
+	if (v.SchemaVersion != "moment-thread-view-v1" && v.SchemaVersion != "moment-thread-view-v2") || !content.MomentControlHex(v.SourceVersion) || v.ResponseProof == nil || len(v.Members) < 1 || v.SchemaVersion == "moment-thread-view-v1" && len(v.Members) < 2 || len(v.Members) > content.MomentThreadMaxEntries {
 		respondError(w, 503, "moment_thread_unavailable")
 		return
 	}
@@ -186,7 +186,7 @@ func (s *server) readOwnedMomentThread(w http.ResponseWriter, r *http.Request, b
 		momentControlFailure(w, e)
 		return
 	}
-	if v.SchemaVersion != "owned-moment-thread-v1" || v.Members == nil || v.EntryContexts == nil || v.Legs == nil || !content.MomentControlHex(v.SourceVersion) {
+	if (v.SchemaVersion != "owned-moment-thread-v1" && v.SchemaVersion != "owned-moment-thread-v2") || v.SchemaVersion == "owned-moment-thread-v2" && (v.RetiredMembers == nil || *v.RetiredMembers == nil) || v.Members == nil || v.EntryContexts == nil || v.Legs == nil || !content.MomentControlHex(v.SourceVersion) {
 		momentControlFailure(w, content.ErrUnavailable)
 		return
 	}

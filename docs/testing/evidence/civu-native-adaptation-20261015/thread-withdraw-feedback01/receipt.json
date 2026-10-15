@@ -1,0 +1,26 @@
+{
+  "command": [
+    "D:/DevTools/flutter/bin/flutter.bat",
+    "test",
+    "test/moment_thread_test.dart",
+    "--plain-name",
+    "整串撤回批准经公开详情能力及祖先重建仍提交一次且身份变化退休",
+    "--reporter",
+    "expanded"
+  ],
+  "cwd": "D:\\Project\\birdtie\\apps\\client",
+  "startedUTC": "2026-10-15T13:58:20.113100+00:00",
+  "exitCode": 0,
+  "sourceBefore": {
+    "lib/src/workspace/public_moment_page.dart": "dc57ea27665ef66c9d4096d2f6c5155d488a4ea52f144faa68b9ea459a3a807c",
+    "lib/src/workspace/moment_thread_panel.dart": "9dbb60c958ee0e7c8657dfc89a4685caf0f3e52fd6a89f9cf425c5b3285d6e47",
+    "test/moment_thread_test.dart": "805201a0db40fd0f399df5a0cfd3b724698f74916a97b6480936f2c4d0c79ff2"
+  },
+  "sourceAfter": {
+    "lib/src/workspace/public_moment_page.dart": "dc57ea27665ef66c9d4096d2f6c5155d488a4ea52f144faa68b9ea459a3a807c",
+    "lib/src/workspace/moment_thread_panel.dart": "9dbb60c958ee0e7c8657dfc89a4685caf0f3e52fd6a89f9cf425c5b3285d6e47",
+    "test/moment_thread_test.dart": "805201a0db40fd0f399df5a0cfd3b724698f74916a97b6480936f2c4d0c79ff2"
+  },
+  "sourceStable": true,
+  "scope": "One composite actual PublicMomentPage widget regression: retained approval across capability and ancestor rebuild, one WITHDRAW PUT, authoritative result, identity retirement, immediate parent publication/body/media/interaction retirement and visible successful withdrawal; no device/remote action."
+}

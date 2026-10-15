@@ -1,0 +1,24 @@
+{
+  "files": {
+    "backend-final01/source-ready.json": "42a3c4426fcd67aa3eab01ec8bd5e7b4088425385f0e93be4c56eac2fa1c6461",
+    "backend-native01/receipt.json": "c3faff2e8fb5bc9885eea5b5524687af727cf85074e795789f7fce363c1a9194",
+    "backend-native01/stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "backend-native01/stdout.jsonl": "d67495039ae99674a9c43db240543fbc8ec70a47a1f2e1372548657cfbf44279",
+    "backend-native02/receipt.json": "8764489cf27d6b5b685e6195437fcbb4d6aea251da253bc0866d9568d7ea5ed6",
+    "backend-native02/stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "backend-native02/stdout.jsonl": "1c326f07a5ca2447fd56d304a4bc6869d38676e51818a8280554f44efb88e03f",
+    "backend-native03/receipt.json": "7ecfe7757746a69b879a40756832d3c4103dd881f212790ad0a4524379997a52",
+    "backend-native03/stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "backend-native03/stdout.jsonl": "bea57387498b83f6606a9c62e7bc66a57a86fd54476d755305b043f471890dfd",
+    "backend-native04/receipt.json": "6f3bb61d5322952d8908bae2252beec66362f97eafe76ed5ce20b4185a616314",
+    "backend-native04/stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "backend-native04/stdout.jsonl": "f197b96a54d0d7448fbd3392c52b4dad99970e3d5ec8e365c2abb1ea50a6489e",
+    "backend-native05/actual-runner.py": "04eb2dcbc24ae9db40f279295f86e90946c35db0ef4ebad765f862ae1027e510",
+    "backend-native05/receipt.json": "189d1ef0fdeacf627702d7c2e7f3c9173ca8cdf23792e2b336ff92624965ca1b",
+    "backend-native05/stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "backend-native05/stdout.jsonl": "d941b50d864eecaf07457b5232e54d643dc008ec1a87e9429b39f3d2226ad2bc",
+    "backend-unit01/receipt.json": "25bc6f253b75da15cd850288e36a0028e2b60f81dbff997011ac5d8ea644201e",
+    "backend-unit01/stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "backend-unit01/stdout.jsonl": "cb0bd4138c07a925d442c1f58ace30d195e637758c151de2298971ffe25f39e5"
+  }
+}

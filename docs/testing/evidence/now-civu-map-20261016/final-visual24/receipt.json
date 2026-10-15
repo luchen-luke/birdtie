@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "created_at": "2026-10-15T20:58:54.4792820Z",
+  "worker": "/root/map_photo_diagnosis",
+  "task": "APK24 final bounded screenshot visual review",
+  "result": "VISUAL_PASS",
+  "scope": [
+    "Photo/category/name/moment-count visibility",
+    "Chooser and expanded-panel place consistency",
+    "Body and media readability",
+    "Obvious visual blocking issues"
+  ],
+  "screenshots": [
+    {
+      "file": "C:\\Users\\chens\\Documents\\Codex\\2026-10-15\\d-project-birdtie-docs-reports-birdtie-2\\work\\device170\\map24-live01.png",
+      "sha256": "73f4e49add9f3825fb3e3ad064ebaa0d2128f52b136298b0dd1544c16f43b701",
+      "width": 1220,
+      "height": 2656,
+      "observation": "Now Aberdeen map visibly populated with photo markers, category icons, names and moment counts; university, Causeway View and The Tippling House examples are visible."
+    },
+    {
+      "file": "C:\\Users\\chens\\Documents\\Codex\\2026-10-15\\d-project-birdtie-docs-reports-birdtie-2\\work\\device170\\map24-place-choice01.png",
+      "sha256": "95ff28ec00a68553b36aa7f8f59f5bb17b9d1286e11c8bee3a78c633c393ba2f",
+      "width": 1220,
+      "height": 2656,
+      "observation": "Causeway View is the first chooser result, with the matching building photo and one-moment count; background map and close control remain visible."
+    },
+    {
+      "file": "C:\\Users\\chens\\Documents\\Codex\\2026-10-15\\d-project-birdtie-docs-reports-birdtie-2\\work\\device170\\map24-causeway-expanded01.png",
+      "sha256": "ab7ba302b97b43b1332981bb141af4c8a246d76f595d55e08ef660401c9aad61",
+      "width": 1220,
+      "height": 2656,
+      "observation": "Causeway View expanded panel shows matching place cover/name and one-moment count, readable original-public-record text, a night-sky photograph and 1 / 4 page indicator; close and Now input remain visible."
+    },
+    {
+      "file": "C:\\Users\\chens\\Documents\\Codex\\2026-10-15\\d-project-birdtie-docs-reports-birdtie-2\\work\\device170\\map24-causeway-media02.png",
+      "sha256": "ae845c11cb18d635ee901938cb9dacd5847c8031b440f2418deb4d3f5868ce09",
+      "width": 1220,
+      "height": 2656,
+      "observation": "Same Causeway View panel shows a distinct night-sky photograph and 2 / 4 page indicator with readable text; close and Now input remain visible."
+    }
+  ],
+  "conclusion": "The reviewed APK24 screenshots show a populated Now map and readable Causeway View content/media. No obvious visual blocker was observed within this bounded review.",
+  "behavioral_evidence": {
+    "owner": "/root",
+    "root_report": "Actual device map tap, Causeway selection, one expansion, and media paging 1 / 4 to 2 / 4 were performed by root.",
+    "independently_verified_by_worker": false,
+    "limitation": "Static screenshots establish rendered states only; gesture correctness, timing, expansion behavior and paging behavior require root action evidence."
+  },
+  "not_run": [
+    "Device interaction by this worker",
+    "Tests during this review",
+    "API or database verification during this review",
+    "Permission or privacy behavior verification during this review",
+    "Full publication workflow verification during this review"
+  ],
+  "source_changed": false,
+  "device_operated": false,
+  "frozen_after_receipt": true
+}

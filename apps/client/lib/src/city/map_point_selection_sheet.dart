@@ -12,6 +12,7 @@ Future<MapEntity?> showCurrentMapPointChoices({
   required Object? Function() currentScope,
   ValueChanged<({Object token, bool visible})>? onVisibilityChanged,
 }) async {
+  if (!context.mounted || ModalRoute.of(context)?.isCurrent != true) return null;
   final scope = currentScope(), token = Object();
   var visible = false;
   void report(bool next) {
@@ -22,6 +23,12 @@ Future<MapEntity?> showCurrentMapPointChoices({
 
   if (currentCandidates().isEmpty) return null;
   try {
+    // Transfer visibility before push can rebuild the underlying Now route.
+    // The modal's own route observer still revokes it when covered or stale.
+    report(true);
+    if (!context.mounted ||
+        ModalRoute.of(context)?.isCurrent != true ||
+        currentScope() != scope) return null;
     final selected = await showModalBottomSheet<MapEntity>(
       context: context,
       isScrollControlled: true,

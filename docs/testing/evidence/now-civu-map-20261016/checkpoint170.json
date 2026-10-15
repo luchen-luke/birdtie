@@ -1,0 +1,37 @@
+{
+  "at": "2026-10-15T21:06:16.747209+00:00",
+  "kind": "NOW_CIVU_MAP_AND_READER_SCOPE_DELIVERED",
+  "schema": 170,
+  "apiRelease": "/opt/birdtie/releases/social170-20261015-build23",
+  "webRelease": "/opt/birdtie/web/releases/public-20261015-final-web24",
+  "webManifestSHA256": "64e3eae00bdae9d80032e96e5d26497c8b92e9eb87e78f4dae76668663eb5b10",
+  "apkSHA256": "aeae427da6d87038794f79016a2defd0a60335ef3c8efd7b05d09338fe6f2257",
+  "deviceReceipt": "device-final24/receipt.json",
+  "deviceReceiptSHA256": "14202327a209a64357965bb7571c53d242410fe205b4910a3c0c269912942482",
+  "status": "PASS_NOW_MAP_AND_READER_SCOPE",
+  "sourceWrites": 0,
+  "fullSiteAccepted": false,
+  "coordinateProvenPlaces": 3724,
+  "coordinateUnprovenPlaces": 1768,
+  "originalPublicMoments": 83,
+  "aberdeenSurroundingBounds": [
+    -3,
+    56,
+    -1,
+    58
+  ],
+  "aberdeenSurroundingVisiblePlaces": 384,
+  "verificationBoundaries": [
+    "Full repository regression",
+    "iOS actual device",
+    "Web complete interactive flow",
+    "All legacy cities and all owners",
+    "Complete new publication/video flow on APK24 (APK19 historical evidence remains separate)",
+    "Actual phone offline login-configuration retry",
+    "Device logout/revocation during current reader; real API and native tests cover current permission boundaries",
+    "Nonempty composer draft/device rotation during this map run; targeted Now tests cover retention",
+    "City/layer modal first-frame race remains a static-only separate concern",
+    "All four Causeway images individually; first and second were viewed"
+  ],
+  "currentWorktreeMatchesInstalledBuild": true
+}

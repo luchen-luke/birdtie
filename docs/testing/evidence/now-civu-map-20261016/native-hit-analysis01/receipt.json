@@ -1,0 +1,20 @@
+{
+  "command": [
+    "D:/DevTools/flutter/bin/cache/dart-sdk/bin/dart.exe",
+    "analyze",
+    "D:\\Project\\birdtie\\apps\\client\\lib\\src\\city\\native_city_map_io.dart",
+    "D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_display_policy.dart",
+    "D:\\Project\\birdtie\\apps\\client\\test\\now_v2_native_map_display_test.dart",
+    "D:\\Project\\birdtie\\apps\\client\\test\\now_v2_map_display_policy_test.dart"
+  ],
+  "cwd": "D:\\Project\\birdtie\\apps\\client",
+  "exitCode": 0,
+  "elapsedSeconds": 2.312,
+  "sourceSHA256": {
+    "apps/client/lib/src/city/native_city_map_io.dart": "b81645bd13c0fd9d3e2063a0fe52b21df97f80e9807e83db32d357dd9292b174",
+    "apps/client/lib/src/workspace/map_display_policy.dart": "7738f281991b7b8e8add5240a1eee568f998e4b557052327fe34048f2b22fcc4",
+    "apps/client/test/now_v2_native_map_display_test.dart": "fe98ef6928c58f7d556b4b867a567c06186b8ffa56fb8b603afcb65ef9c926d9",
+    "apps/client/test/now_v2_map_display_policy_test.dart": "10d1e0cf936bdf4a72dcc1f6951773d25000b4ed05d52f3bbdc1388bdff348a7"
+  },
+  "scope": "Only two new actual-touch tests / four assigned files; real NativeCityMapView with fake SDK transport; no device, remote or publication"
+}

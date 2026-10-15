@@ -1,0 +1,13 @@
+{
+  "status": "PASS_STATIC_REVIEW_ONLY",
+  "reviewer": "map_read_review",
+  "runtimeExecutedByReviewer": false,
+  "resolved": [
+    "Original note-place relations restored through immutable provenance; foreign native public branch requires current place precision",
+    "City status, expiry and epoch revoke position proof while legal independent body remains",
+    "Borrowed collection grant/block/ABA restore existing authority gate and retire proof",
+    "Independent image/public media set/attachment/video changes retire sourceVersion"
+  ],
+  "remainingProvenBlockers": [],
+  "productionCountsPerformanceMedia": "NOT_RUN_BY_REVIEWER"
+}

@@ -1,0 +1,65 @@
+{
+  "scope": "Only synthetic test/analyze text receipts/logs and owned source frame; no media bytes, real data, secrets or remote artifacts",
+  "entries": [
+    {
+      "path": "owned-map-source-ready01.json",
+      "sha256": "ddd529e755cef2569f087dd1f662269ec38bab8e147fab8fb0bfaea1438b35b5"
+    },
+    {
+      "path": "owned-map-direct01\\receipt.json",
+      "sha256": "ee9450f03ccf94307d783282a5f0dce457cfebc2a625a3e322275dc5529f9965"
+    },
+    {
+      "path": "owned-map-direct01\\log.txt",
+      "sha256": "fb9990ea4509ac7aa12cfd38998ec1588cd2c329c4df5119b22109329238ce20"
+    },
+    {
+      "path": "owned-map-direct02\\receipt.json",
+      "sha256": "042febcf91c4054f47da2ef2a55b2d55e0265890d68e912dadfb6a610dfcec22"
+    },
+    {
+      "path": "owned-map-direct02\\log.txt",
+      "sha256": "ee60218b549e08fa36caefba819c5871aae577bcabe2f092cb2e1a751f7508df"
+    },
+    {
+      "path": "owned-map-direct03\\receipt.json",
+      "sha256": "6d6e0f0110812fde47375f8414783f2909b1ad00c40fa456c4c34906be8cf795"
+    },
+    {
+      "path": "owned-map-direct03\\log.txt",
+      "sha256": "fe7357bcf8264778fc047fd1fbb86b43f57515de0e85e7054e36303e149aa5ac"
+    },
+    {
+      "path": "owned-map-direct04\\receipt.json",
+      "sha256": "af162835c9e0ef75a395526a0f0f5b562a449f59494ea071d262b839ce85a3c8"
+    },
+    {
+      "path": "owned-map-direct04\\log.txt",
+      "sha256": "bb4c338500c59b81be4a59776f0d47e5957c83b7892c476e3f415643e5133f82"
+    },
+    {
+      "path": "owned-map-direct05\\receipt.json",
+      "sha256": "dfe3e50635c4e58645f07aaf53278c815992f874f951dea867061ac09a69136e"
+    },
+    {
+      "path": "owned-map-direct05\\log.txt",
+      "sha256": "d2f3893c4351ca7f97e5535b5be9440946f6e603f38a79373b163fd8719bd4c8"
+    },
+    {
+      "path": "owned-map-analysis01\\receipt.json",
+      "sha256": "6aa4b7649e7dafbb4ddfc3e0d82310d0c395b8c02ebbe9aca68ae86251c78a96"
+    },
+    {
+      "path": "owned-map-analysis01\\log.txt",
+      "sha256": "95f6cb6328f7a4ed63d7da094a7aacadd9d9a395762409d5db91ffcdb7364a37"
+    },
+    {
+      "path": "owned-map-analysis02\\receipt.json",
+      "sha256": "f999c587863f7b20824416f85be042ca3b11f80119ed1d562ebcff91925722e3"
+    },
+    {
+      "path": "owned-map-analysis02\\log.txt",
+      "sha256": "eeaad89cabad7f91bfd8e7b180bc7bec00adf9afc63c2ab2ea96372ebf165a9a"
+    }
+  ]
+}

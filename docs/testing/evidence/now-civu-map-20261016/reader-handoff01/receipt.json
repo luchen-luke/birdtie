@@ -1,0 +1,30 @@
+{
+  "started": "2026-10-15T20:22:40.711461+00:00",
+  "finished": "2026-10-15T20:22:44.841925+00:00",
+  "command": [
+    "D:/DevTools/flutter/bin/cache/dart-sdk/bin/dart.exe",
+    "D:/DevTools/flutter/bin/cache/flutter_tools.snapshot",
+    "test",
+    "--no-pub",
+    "--reporter",
+    "expanded",
+    "test/now_map_reader_handoff_test.dart"
+  ],
+  "cwd": "D:\\Project\\birdtie\\apps\\client",
+  "exitCode": 1,
+  "effectiveExitCode": 1,
+  "diagnostics": null,
+  "sourceBefore": {
+    "apps/client/lib/src/city/map_point_selection_sheet.dart": "8a4e7e3dd48a16323e7f2d95bef23817c497e15e21cd9ceda2c1a22230f85fd5",
+    "apps/client/lib/src/city/map_cluster_members_sheet.dart": "0271796c896347be37327621260811a748a060c0a5742f3e498c815ced55d2a2",
+    "apps/client/test/now_map_reader_handoff_test.dart": "0cafa0ed93ebc700bd9f00fcc7202ca0ca98ecf35cbe5377ead000dd1a852005"
+  },
+  "sourceAfter": {
+    "apps/client/lib/src/city/map_point_selection_sheet.dart": "8a4e7e3dd48a16323e7f2d95bef23817c497e15e21cd9ceda2c1a22230f85fd5",
+    "apps/client/lib/src/city/map_cluster_members_sheet.dart": "0271796c896347be37327621260811a748a060c0a5742f3e498c815ced55d2a2",
+    "apps/client/test/now_map_reader_handoff_test.dart": "0cafa0ed93ebc700bd9f00fcc7202ca0ca98ecf35cbe5377ead000dd1a852005"
+  },
+  "sourceStable": true,
+  "logSHA256": "87d0b7ad35b58a23b10105cf6a74652d0e3eceb41141e6c9dcf9cd4e2a08afb5",
+  "scope": "Actual MapWorkspace/OwnedMapController, synthetic authorized HTTP source, modal route handoff and revocation; no device/remote/production data"
+}

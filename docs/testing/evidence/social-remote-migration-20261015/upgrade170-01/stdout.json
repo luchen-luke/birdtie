@@ -1,0 +1,1 @@
+{"stage": "UPGRADED_READY", "migrations": 170, "appliedMigrations": 1, "originalMigrationsUnchanged": 169, "release": "/opt/birdtie/releases/social170-20261015-build21", "previousRelease": "/opt/birdtie/releases/social169-20261015-build19", "publicRoutingChanged": false, "oldAssetsDeleted": false}

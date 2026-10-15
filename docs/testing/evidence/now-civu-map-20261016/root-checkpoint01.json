@@ -1,0 +1,8 @@
+{
+  "parentCommit": "aff23f4b7b0e9288d1c2123dd6c81111551b7d4d",
+  "status": "IN_PROGRESS",
+  "beforeImageSHA256": "c5362ceaddabe883d3ba16e048d5fde956c0632e7147fa11e4aaf007f3e7c13f",
+  "sourceAudit": "work/aberdeen-own-map-audit01/receipt.json",
+  "newRuntimeAcceptance": "NOT_RUN",
+  "priorEvidenceReusedAsNew": false
+}

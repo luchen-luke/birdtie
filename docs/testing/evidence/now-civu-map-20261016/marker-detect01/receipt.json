@@ -1,0 +1,15 @@
+{
+  "at": "2026-10-15T18:21:36.646065+00:00",
+  "command": [
+    "C:/Users/chens/.codex/skills/impeccable/scripts/impeccable.cmd",
+    "detect",
+    "--json",
+    "apps/client/lib/src/workspace/map_marker_widget.dart",
+    "apps/client/lib/src/workspace/map_marker_visual.dart"
+  ],
+  "cwd": "D:\\Project\\birdtie",
+  "exitCode": 0,
+  "elapsedSeconds": 0.055,
+  "kind": "NARROW_MECHANICAL_DESIGN_SCAN",
+  "runtimeVerified": false
+}

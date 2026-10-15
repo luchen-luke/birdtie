@@ -63,6 +63,7 @@ class BirdtieAuthController extends ChangeNotifier {
   bool _configurationChecked = false;
   bool _sessionRestoring = false;
   Future<void>? _initialization;
+  Future<void>? _configurationRead;
   bool _nativeCallbackHandling = false;
   String? _loginMethod;
   int _authAttempt = 0;
@@ -128,6 +129,7 @@ class BirdtieAuthController extends ChangeNotifier {
   bool get devEmailAvailable =>
       !kReleaseMode && _apiBase.isNotEmpty && _devEmailConfigured;
   bool get configurationChecked => _configurationChecked;
+  bool get configurationChecking => _configurationRead != null;
   // Display state only. It is neither a Session nor permission to read data.
   bool get sessionRestoring => _sessionRestoring;
   bool get signedIn => _accessToken != null;
@@ -220,15 +222,52 @@ class BirdtieAuthController extends ChangeNotifier {
       _notify();
     }
     if (_closed) return;
+    await refreshLoginConfiguration();
+  }
+
+  /// Re-read public login availability after a transient connection failure.
+  /// This never reads saved credentials again or requests/verifies a code.
+  /// Concurrent gestures share one read; initialize remains a one-time restore.
+  Future<void> refreshLoginConfiguration() {
+    if (_closed || _sessionRestoring || _busy) return Future<void>.value();
+    final existing = _configurationRead;
+    if (existing != null) return existing;
+    final completion = Completer<void>();
+    _configurationRead = completion.future;
+    unawaited(
+      _readLoginConfiguration().then(
+        completion.complete,
+        onError: completion.completeError,
+      ),
+    );
+    return completion.future;
+  }
+
+  Future<void> _readLoginConfiguration() async {
+    _configurationChecked = false;
+    _notify();
+    try {
+      await _loadLoginConfiguration();
+    } finally {
+      _configurationRead = null;
+      if (!_closed) {
+        _configurationChecked = true;
+        _notify();
+      }
+    }
+  }
+
+  Future<void> _loadLoginConfiguration() async {
+    if (_closed) return;
     if (_apiBase.isEmpty) {
-      _configurationChecked = true;
-      _notify();
       return;
     }
     try {
       final dev = await _client
           .get(_endpoint('/v1/auth/dev-phone/status'))
           .timeout(const Duration(seconds: 10));
+      if (_closed) return;
+      _devPhoneConfigured = false;
       if (dev.statusCode == 200) {
         final data =
             (jsonDecode(dev.body) as Map<String, dynamic>)['data']
@@ -236,12 +275,15 @@ class BirdtieAuthController extends ChangeNotifier {
         _devPhoneConfigured = data['enabled'] == true;
       }
     } catch (_) {
+      if (_closed) return;
       _devPhoneConfigured = false;
     }
     try {
       final response = await _client
           .get(_endpoint('/v1/auth/dev-email/status'))
           .timeout(const Duration(seconds: 10));
+      if (_closed) return;
+      _devEmailConfigured = false;
       if (response.statusCode == 200) {
         final data =
             (jsonDecode(response.body) as Map<String, dynamic>)['data']
@@ -249,6 +291,7 @@ class BirdtieAuthController extends ChangeNotifier {
         _devEmailConfigured = data['enabled'] == true;
       }
     } catch (_) {
+      if (_closed) return;
       _devEmailConfigured = false;
     }
     if (browser.browserAuthAvailable || _nativeGateway != null) {
@@ -256,17 +299,18 @@ class BirdtieAuthController extends ChangeNotifier {
         final response = await _client
             .get(_endpoint('/v1/auth/oidc/status'))
             .timeout(const Duration(seconds: 10));
+        if (_closed) return;
+        _providerConfigured = false;
         if (response.statusCode == 200) {
           final payload = jsonDecode(response.body) as Map<String, dynamic>;
           final data = payload['data'] as Map<String, dynamic>;
           _providerConfigured = data['configured'] == true;
         }
       } catch (_) {
+        if (_closed) return;
         _providerConfigured = false;
       }
     }
-    _configurationChecked = true;
-    _notify();
   }
 
   Future<bool> requestDevPhoneCode(

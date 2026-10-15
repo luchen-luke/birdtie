@@ -1,0 +1,42 @@
+{
+  "exitCode": 0,
+  "remoteScriptSHA256": "10948bae39a2f14e7a0e94bffaa7bdc0389d48ab8a0655db2fcca307cbf53920",
+  "stderrPresent": false,
+  "status": "PASS",
+  "result": {
+    "status": "PASS",
+    "devOnly": true,
+    "productionIdentityVerified": false,
+    "productionPhoneVerification": false,
+    "fixedCodeUsed": true,
+    "sourceWrites": 0,
+    "databaseDirectWrites": 0,
+    "remoteConfigurationChanged": false,
+    "agentActivationRequested": false,
+    "oldSessionAccepted": false,
+    "messagesSent": 0,
+    "privateValuesPersisted": false,
+    "allCreatedSessionsLoggedOut": true,
+    "schema": 170,
+    "contentWrites": 0,
+    "otherOriginalOwnerLogins": 0,
+    "aberdeenVisiblePlaces": 384,
+    "aberdeenVisibleMomentPlaceLinks": 8,
+    "aberdeenPlacesWithMoments": 6,
+    "aberdeenPlaceCovers": 6,
+    "mapReadMilliseconds": 6567,
+    "sourceScopes": {
+      "CIVU_PUBLIC_CATALOG": 384,
+      "CIVU_PUBLIC_MOMENT": 6,
+      "SELF_PRIVATE": 1,
+      "BIRDTIE_PUBLIC_MOMENT": 0
+    },
+    "momentReadersChecked": 2,
+    "originalPublicReadersChecked": 2,
+    "mediaObjectsHashVerified": 4,
+    "mediaBytesHashVerified": 4549593,
+    "anonymousMapAndDetailDenied": true,
+    "sourceUnchanged": true,
+    "loggedOutMediaDenied": true
+  }
+}

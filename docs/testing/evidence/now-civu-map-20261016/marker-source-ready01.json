@@ -1,0 +1,66 @@
+{
+  "at": "2026-10-15T18:23:00.794926+00:00",
+  "status": "SOURCE_READY",
+  "source": {
+    "apps/client/lib/src/workspace/map_marker_visual.dart": "6afbc03e76f2627f210bb6aba7941a102575ecd161a53726036c8c182b8d1106",
+    "apps/client/lib/src/workspace/map_marker_bitmap.dart": "d4940c021bcf26d571fe72c1547e4e5f90f41a287af02645cdad980d02f0ae64",
+    "apps/client/lib/src/workspace/map_marker_widget.dart": "3efea97a4886825d80d3ec8b1df6a2b5716e85017546c12354f450e99eed081f",
+    "apps/client/lib/src/workspace/map_entities.dart": "fd7df5fbc3e2a88615d7b8ba0aa890a9b590981a3d028e27f078d7dc14e6f257",
+    "apps/client/lib/src/city/native_city_map_io.dart": "3ad180c085395dc37f2732f824e2a85c7d0694ebc6f0efda4fbb9844e2446b7f",
+    "apps/client/test/map_marker_bitmap_test.dart": "c222e748c9cee2726a06fd7ff17363e3d04ff96f562230ca4def8aedc2eda97d"
+  },
+  "sourceStableAcrossDirectAndAnalysis": true,
+  "direct": {
+    "commandReceipt": "marker-client01/receipt.json",
+    "pass": 1,
+    "fail": 0,
+    "skip": 0
+  },
+  "analysis": {
+    "receipt": "marker-analysis01/receipt.json",
+    "errors": 0,
+    "warnings": 0,
+    "info": 8
+  },
+  "mechanicalDesignScan": {
+    "receipt": "marker-detect01/receipt.json",
+    "exitCode": 0,
+    "findings": 0
+  },
+  "diffCheck": {
+    "command": [
+      "git",
+      "-c",
+      "core.whitespace=cr-at-eol",
+      "diff",
+      "--check",
+      "--",
+      "apps/client/lib/src/workspace/map_marker_visual.dart",
+      "apps/client/lib/src/workspace/map_marker_bitmap.dart",
+      "apps/client/lib/src/workspace/map_marker_widget.dart",
+      "apps/client/lib/src/workspace/map_entities.dart",
+      "apps/client/lib/src/city/native_city_map_io.dart",
+      "apps/client/test/map_marker_bitmap_test.dart"
+    ],
+    "exitCode": 0,
+    "firstDefaultCRLFPolicyFailure": "marker-source-proof-firstcheck01.json"
+  },
+  "mapEntitiesOnlyRenderDelegation": true,
+  "noDTOOrAuthOrProviderChanged": true,
+  "originalHitTargetDP": 48,
+  "pointCanvasSizeDP": 96,
+  "pointDiametersUnchanged": [
+    28,
+    36,
+    16
+  ],
+  "civuSourceCopied": false,
+  "sourceReview": "cwd/work/civu-map-presentation-audit01.md",
+  "notRun": [
+    "Full existing bitmap tests or all Flutter tests",
+    "Civu runtime",
+    "Build/install/deploy",
+    "Native Mapbox/real device visual and interaction acceptance",
+    "New backend/private map source permissions (other worker)"
+  ]
+}

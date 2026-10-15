@@ -512,6 +512,7 @@ func New(catalog foundation.PublicCatalog, access identity.AccessStore, seed cit
 	mux.HandleFunc("GET /v1/me/saved/page", s.listSavedPage)
 	mux.HandleFunc("GET /v1/me/saved/target/{kind}/{targetID}", s.getSavedTarget)
 	s.registerSavedNoteRoutes(mux)
+	s.RegisterMapContentRoutes(mux)
 	s.registerLegacyPlaceReferenceRoutes(mux)
 	s.registerPrivateMomentVideoRoutes(mux)
 	mux.HandleFunc("POST /v1/me/reports", s.createIncidentReport)

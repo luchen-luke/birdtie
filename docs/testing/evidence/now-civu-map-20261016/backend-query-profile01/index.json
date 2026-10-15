@@ -1,0 +1,25 @@
+{
+  "safeAggregateOnly": true,
+  "rawPlansOrFilterLiteralsPersisted": false,
+  "privateContentOrMediaFiles": 0,
+  "newLogins": 0,
+  "databaseWrites": 0,
+  "files": {
+    "actual-local-helper.py": {
+      "sha256": "ef016bbdeb52195ba0a05e0dbfbbb1e0c6c0156c0d7b6512bd41feaa0ed17f9f",
+      "bytes": 6938
+    },
+    "exact-source-queries.json": {
+      "sha256": "5c5856a456417bb9ec6270148fc367a5a045c039a9d5159281850fe19241ed05",
+      "bytes": 50066
+    },
+    "query_source.go": {
+      "sha256": "8cdc2766fb084143183ad2aa948cd975b79c59ffb6c8c46f99831ae784692139",
+      "bytes": 23887
+    },
+    "receipt.json": {
+      "sha256": "c7e93a9865a453e9dcc49631b611a4eb727e210e4770f6b2b4d15087c679a3a9",
+      "bytes": 30407
+    }
+  }
+}

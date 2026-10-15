@@ -1,16 +1,203 @@
 import 'dart:typed_data';
 import 'dart:convert';
 import 'dart:ui' as ui;
-import 'package:flutter/painting.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:birdtie_client/src/workspace/map_entities.dart';
 import 'package:birdtie_client/src/workspace/map_marker_bitmap.dart';
+import 'package:birdtie_client/src/workspace/map_marker_visual.dart';
+import 'package:birdtie_client/src/workspace/map_marker_widget.dart';
 import 'map_media_rendering_test.dart' show mapFixtureImage;
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  testWidgets(
+    'visible all-time totals and exact category survive decoration and expire independently',
+    (tester) async {
+      final now = DateTime.now().toUtc();
+      final count = MapRecentMoments.visible(
+        count: 7,
+        checkedAt: now,
+        validUntil: now.add(const Duration(seconds: 30)),
+        sourceVersion: 'a' * 64,
+      );
+      final entity = MapEntity(
+        id: 'owned-map:qa',
+        kind: MapEntityKind.place,
+        title: '有分类的地点',
+        subtitle: '',
+        latitude: 1,
+        longitude: 1,
+        categoryCode: 'museum',
+        recentMoments: count,
+      );
+      expect(entity.withMediaPixels(null).categoryCode, 'museum');
+      expect(
+        entity
+            .withAnchorMetadata(placeID: 'qa', precision: 'point')
+            .categoryCode,
+        'museum',
+      );
+      expect(count.labelAt(now), '7条动态');
+      expect(count.labelAt(now.add(const Duration(seconds: 31))), isNull);
+      expect(count.sourceKey, contains('visible:'));
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Center(
+            child: IndividualMapMarker(
+              entity: entity,
+              selected: false,
+              showLabel: true,
+              onTap: () {},
+            ),
+          ),
+        ),
+      );
+      expect(find.byIcon(Icons.museum_outlined), findsOneWidget);
+      expect(find.text('7条动态'), findsNWidgets(2));
+      expect(find.textContaining('近30天'), findsNothing);
+      await tester.runAsync(() async {
+        final font = FontLoader('MaterialIcons')
+          ..addFont(rootBundle.load('fonts/MaterialIcons-Regular.otf'));
+        await font.load();
+        final museum = await MapMarkerBitmap.render(
+          kind: MapEntityKind.place,
+          selected: false,
+          categoryCode: 'museum',
+        );
+        final cafe = await MapMarkerBitmap.render(
+          kind: MapEntityKind.place,
+          selected: false,
+          categoryCode: 'cafe',
+        );
+        expect(museum, isNot(orderedEquals(cafe)));
+        expect(
+          identical(
+            museum,
+            await MapMarkerBitmap.render(
+              kind: MapEntityKind.place,
+              selected: false,
+              categoryCode: 'museum',
+            ),
+          ),
+          isTrue,
+        );
+      });
+      expect(MapMarkerVisual.placeIcon('unknown-type'), Icons.place_outlined);
+      await tester.pumpWidget(const SizedBox.shrink());
+    },
+  );
+  testWidgets(
+    'compact photo marker keeps right name count and 48dp target while retired pixels disappear',
+    (tester) async {
+      late ui.Image image;
+      late Uint8List normal, selected;
+      await tester.runAsync(() async {
+        image = await mapFixtureImage();
+        normal = await MapMarkerBitmap.render(
+          kind: MapEntityKind.place,
+          selected: false,
+          photo: image,
+        );
+        selected = await MapMarkerBitmap.render(
+          kind: MapEntityKind.place,
+          selected: true,
+          photo: image,
+        );
+        final normalPixels = await _pixels(normal);
+        final selectedPixels = await _pixels(selected);
+        expect(normalPixels.bounds(220).width, closeTo(28, 2.1));
+        expect(selectedPixels.bounds(220).width, closeTo(36, 2.1));
+        final whiteRim = (48 * selectedPixels.width + 33) * 4;
+        expect(selectedPixels.bytes.sublist(whiteRim, whiteRim + 4), [
+          255,
+          255,
+          255,
+          255,
+        ]);
+      });
+      var current = true, taps = 0;
+      final now = DateTime.now().toUtc();
+      final pixels = MapMediaPixels(
+        key: 'current-approved-pixels',
+        image: image,
+        normalPNG: normal,
+        selectedPNG: selected,
+        devicePixelRatio: 1,
+        current: () => current,
+      );
+      MapRecentMoments count(DateTime until) => MapRecentMoments(
+        count: 4,
+        checkedAt: now,
+        windowStart: now.subtract(const Duration(days: 30)),
+        validUntil: until,
+      );
+      Widget marker(MapRecentMoments recent) => MaterialApp(
+        home: Scaffold(
+          body: Center(
+            child: IndividualMapMarker(
+              entity: MapEntity(
+                id: 'place:qa-place',
+                kind: MapEntityKind.place,
+                title: '有真实封面的地点 · North Harbour',
+                subtitle: '当前可见地点',
+                latitude: 30,
+                longitude: 120,
+                mediaPixels: pixels,
+                recentMoments: recent,
+              ),
+              selected: true,
+              showLabel: true,
+              onTap: () => taps++,
+            ),
+          ),
+        ),
+      );
+      try {
+        await tester.pumpWidget(
+          marker(count(now.add(const Duration(seconds: 30)))),
+        );
+        const target = ValueKey('individual-map-target:place:qa-place');
+        const caption = ValueKey('individual-map-caption:place:qa-place');
+        expect(tester.getSize(find.byKey(target)), const Size(48, 48));
+        expect(find.byType(CompactMapPointMarker), findsOneWidget);
+        expect(
+          find.byKey(const ValueKey('map-place-photo:place:qa-place')),
+          findsOneWidget,
+        );
+        expect(
+          tester.getRect(find.byKey(caption)).left,
+          greaterThan(tester.getCenter(find.byKey(target)).dx + 18),
+        );
+        expect(find.text('近30天 · 4条动态'), findsNWidgets(2));
+        expect(
+          MapMarkerVisual.nativeLabelOffset(selected: true, dense: false),
+          [21 / 12, 0],
+        );
+        await tester.tap(find.byKey(target));
+        expect(taps, 1);
+
+        current = false;
+        await tester.pumpWidget(
+          marker(count(now.subtract(const Duration(seconds: 1)))),
+        );
+        expect(
+          find.byKey(const ValueKey('map-place-photo:place:qa-place')),
+          findsNothing,
+        );
+        expect(find.byIcon(Icons.place_outlined), findsOneWidget);
+        expect(find.text('近30天 · 4条动态'), findsNothing);
+        expect(find.byKey(caption), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      } finally {
+        await tester.pumpWidget(const SizedBox.shrink());
+        image.dispose();
+      }
+    },
+  );
   test(
-    'public Moment actual JPEG uses square crop without record overlay and dense fallback remains16',
+    'public Moment actual JPEG uses square crop without record overlay and dense fallback remains6',
     () async {
       final image = await mapFixtureImage();
       try {
@@ -50,7 +237,7 @@ void main() {
           isNot(record.bytes.sublist(center, center + 4)),
         );
         expect(square.bounds(220).width, closeTo(28, 2.1));
-        expect(dense.bounds(220).width, closeTo(16, 2.1));
+        expect(dense.bounds(220).width, closeTo(6, 2.1));
         expect(dense.colorCount([135, 104, 60]), greaterThan(0));
       } finally {
         image.dispose();
@@ -122,10 +309,10 @@ void main() {
         unique.add(base64Encode(bytes));
         images.add(bytes);
         final pixels = await _pixels(bytes);
-        // Brown opaque interior beside the white category glyph, at this actual
-        // display slot. A transparent image or the first cached slot cannot pass.
-        final x = ((48 + 5) * 3.25).floor();
-        final y = ((48 + 1) * 3.25).floor();
+        // Dense marks retain a small opaque center at the original anchor.
+        // A transparent image or an off-anchor cached slot cannot pass.
+        final x = (48 * 3.25).floor();
+        final y = (48 * 3.25).floor();
         final index = (y * pixels.width + x) * 4;
         expect(pixels.bytes.sublist(index, index + 4), [0x87, 0x68, 0x3c, 255]);
       }
@@ -153,7 +340,7 @@ void main() {
         '${kind.name} actual opaque glyph has readable density at DPR $ratio',
         () async {
           for (final state in [
-            (false, true, 16.0),
+            (false, true, 6.0),
             (false, false, 28.0),
             (true, true, 36.0),
           ]) {
@@ -170,14 +357,21 @@ void main() {
             // Actual painted alpha bounds, not merely a nonempty transparent PNG.
             expect(opaque.width, closeTo(state.$3 * ratio, 2.1));
             expect(opaque.height, closeTo(state.$3 * ratio, 2.1));
+            final small = state.$2 && !state.$1;
             final color = kind == MapEntityKind.place
-                ? [0x19, 0x3b, 0x32]
+                ? small
+                      ? [0x67, 0x87, 0x79]
+                      : [0x19, 0x3b, 0x32]
                 : [0x87, 0x68, 0x3c];
-            expect(pixels.colorCount(color), greaterThan(35 * ratio * ratio));
             expect(
-              pixels.colorCount([255, 255, 255]),
-              greaterThan(15 * ratio * ratio),
+              pixels.colorCount(color),
+              greaterThan((small ? 6 : 35) * ratio * ratio),
             );
+            if (!small)
+              expect(
+                pixels.colorCount([255, 255, 255]),
+                greaterThan(15 * ratio * ratio),
+              );
           }
         },
       );
@@ -282,18 +476,20 @@ void main() {
           final diameter = state.$1
               ? 36.0
               : state.$2
-              ? 16.0
+              ? 6.0
               : 28.0;
           expect(before.bounds(220).width, closeTo(diameter * ratio, 2.1));
           expect(after.bounds(220).width, closeTo(diameter * ratio, 2.1));
           expect(after.bounds(220).height, closeTo(diameter * ratio, 2.1));
           expect(
-            before.colorCount([0x19, 0x3b, 0x32]),
-            greaterThan(35 * ratio * ratio),
+            before.colorCount(
+              state.$2 && !state.$1 ? [0x67, 0x87, 0x79] : [0x19, 0x3b, 0x32],
+            ),
+            greaterThan((state.$2 && !state.$1 ? 6 : 35) * ratio * ratio),
           );
           expect(
             after.colorCount([0x87, 0x68, 0x3c]),
-            greaterThan(35 * ratio * ratio),
+            greaterThan(6 * ratio * ratio),
           );
         }
         // Former cardinal slots have no connector and the glyph occupies its

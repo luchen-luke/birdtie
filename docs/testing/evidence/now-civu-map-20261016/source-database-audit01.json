@@ -1,0 +1,112 @@
+{
+  "exitCode": 0,
+  "remoteScriptSHA256": "cf9529bb6fb0116d5133a5563bb96c6fc608ef7c0001ba4dbcea3f41fa53b583",
+  "helperSHA256": "292dfba1d663ddd5b81168587f549fc1ce122233ad395b3062c2a736742bd023",
+  "stderrPresent": false,
+  "status": "READ_ONLY_COMPLETE",
+  "result": {
+    "status": "READ_ONLY_AGGREGATES",
+    "observed": {
+      "schema": 169,
+      "aberdeenCity": {
+        "id": "aberdeen-gb",
+        "provider": "mapbox",
+        "contentStatus": "building",
+        "citySourceMapped": true,
+        "publicationStatus": "published",
+        "mapCenterConfigured": true
+      },
+      "databaseGuard": true,
+      "mediaContexts": {
+        "total": 71,
+        "mapEnabled": 0,
+        "knownNativeCRS": 0,
+        "originalMapEnabled": 49,
+        "numericSourceCoordinates": 49
+      },
+      "importedPlaces": {
+        "draft": 5492,
+        "total": 5492,
+        "nullCity": 247,
+        "published": 0,
+        "wgs84Point": 1015,
+        "noNativeCoordinates": 4477
+      },
+      "importedMoments": {
+        "total": 83,
+        "nullCity": 30,
+        "aberdeenCity": 11,
+        "privateDraft": 83,
+        "publishedPublic": 0,
+        "directPlaceLinks": 43
+      },
+      "claimedOwnerCount": 1,
+      "nativeImportCounts": {
+        "cities": 1067,
+        "places": 5245,
+        "moments": 83,
+        "journeys": 0,
+        "themeMaps": 3,
+        "cityAliases": 4623,
+        "savedPlaces": 184,
+        "mergedPlaceAliases": 19
+      },
+      "contextImportCounts": {
+        "legs": 5,
+        "places": 247,
+        "members": 27,
+        "threads": 22,
+        "savedItems": 5,
+        "mediaPlaces": 43,
+        "mediaContexts": 71,
+        "noteLocations": 4,
+        "threadTombstones": 4
+      },
+      "nativeImportDeferred": {
+        "personal.city_unresolved": 28,
+        "personal.saved_place_unmapped": 5,
+        "personal.legacy_media_unavailable": 83,
+        "personal.source_deleted_tombstone": 32,
+        "catalog.geo_areas_unresolved_merges": 1,
+        "personal.legacy_thread_archive_only": 27,
+        "catalog.places_without_city_ancestor": 247,
+        "catalog.place_coordinates_conflicting": 8,
+        "personal.legacy_media_locations_archive_only": 37,
+        "personal.legacy_moment_metadata_archive_only": 83,
+        "personal.legacy_multiple_places_archive_only": 2,
+        "personal.legacy_unmapped_places_archive_only": 5,
+        "personal.legacy_saved_attribution_archive_only": 52,
+        "catalog.place_coordinates_without_explicit_wgs84": 4222,
+        "personal.legacy_recorded_date_range_archive_only": 28,
+        "personal.legacy_journey_stops_require_schedule_model": 21,
+        "personal.legacy_journey_arrangement_requires_schedule_model": 1
+      },
+      "aberdeenImportedPlaces": {
+        "draft": 366,
+        "total": 366,
+        "published": 0,
+        "wgs84Point": 3,
+        "publicMapStructuralEligible": 0
+      },
+      "aberdeenAllNativePlaces": {
+        "point": 3,
+        "total": 366,
+        "published": 0
+      },
+      "claimedOwnerNativeMoments": 16,
+      "claimedOwnerPlaceReferences": 52,
+      "aberdeenCurrentPublicMoments": 0,
+      "claimedOwnerAberdeenNativeMoments": 0,
+      "importedMomentActivePlaceRelations": 47,
+      "claimedOwnerAberdeenPlaceReferences": 1,
+      "importedMomentMapKnownPointRelations": 33,
+      "claimedOwnerAberdeenKnownPointReferences": 1,
+      "deploymentReleaseMatchesCurrentCheckpoint": true,
+      "apiBinaryMatchesCurrentCheckpoint": true
+    },
+    "databaseWrites": 0,
+    "sourceWrites": 0,
+    "logins": 0,
+    "privateContentOutput": false
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "started": "2026-10-15T20:10:24.885920+00:00",
+  "finished": "2026-10-15T20:10:31.187704+00:00",
+  "command": [
+    "D:/DevTools/flutter/bin/cache/dart-sdk/bin/dart.exe",
+    "D:/DevTools/flutter/bin/cache/flutter_tools.snapshot",
+    "test",
+    "--no-pub",
+    "--reporter",
+    "expanded",
+    "test/auth_configuration_recovery_test.dart",
+    "test/auth_restore_and_access_test.dart",
+    "--name",
+    "failed login configuration explicitly recovers|restoration is visible, credential stays private"
+  ],
+  "cwd": "D:\\Project\\birdtie\\apps\\client",
+  "exitCode": 0,
+  "effectiveExitCode": 0,
+  "diagnostics": null,
+  "sourceBefore": {
+    "apps/client/lib/src/auth/birdtie_auth_controller.dart": "1fec50b1fab5b4ebb6443e0556c139f705be9af4cea4b43495f69d5b99e79cae",
+    "apps/client/lib/src/auth/birdtie_login_sheet.dart": "13107fb61c7c0f88f7d358e26e7147cf63c6865df3718ee80e43654b4ad8791f",
+    "apps/client/test/auth_configuration_recovery_test.dart": "ba8d20a0d0fc26e1a1a64eef9927bcefd737edf39bad0b80553965d1f46e0787"
+  },
+  "sourceAfter": {
+    "apps/client/lib/src/auth/birdtie_auth_controller.dart": "1fec50b1fab5b4ebb6443e0556c139f705be9af4cea4b43495f69d5b99e79cae",
+    "apps/client/lib/src/auth/birdtie_login_sheet.dart": "13107fb61c7c0f88f7d358e26e7147cf63c6865df3718ee80e43654b4ad8791f",
+    "apps/client/test/auth_configuration_recovery_test.dart": "ba8d20a0d0fc26e1a1a64eef9927bcefd737edf39bad0b80553965d1f46e0787"
+  },
+  "sourceStable": true,
+  "logSHA256": "015cce31458563c86a61836c70747a0ff8108104fa293926b9b0322bd013b08b",
+  "scope": "Synthetic direct login recovery and original initialize reentry; no remote/device/build, no saved credential access outside synthetic MemorySessionVault"
+}

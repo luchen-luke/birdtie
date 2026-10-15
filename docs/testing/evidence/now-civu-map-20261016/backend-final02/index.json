@@ -1,0 +1,51 @@
+{
+  "at": "2026-10-15T19:03:54.567263+00:00",
+  "safeArtifactsOnly": true,
+  "privateSourceFiles": 0,
+  "mediaFiles": 0,
+  "tokenFiles": 0,
+  "files": {
+    "backend-native06/receipt.json": {
+      "sha256": "b040660aea016a5d9097dfdedd8103514756bbb62ac848727e847e4117657f71",
+      "bytes": 489944
+    },
+    "backend-native06/stdout.jsonl": {
+      "sha256": "35a3e6a8a89bb964623ada6c21b1a6d587cc2766c37641cffec06b45db955fb7",
+      "bytes": 2259
+    },
+    "backend-native06/stderr.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "backend-native07/receipt.json": {
+      "sha256": "cae9240a9716ae0290f0ffcd139cbc417d0e73b034587d29616478320a9a1bb1",
+      "bytes": 489944
+    },
+    "backend-native07/stdout.jsonl": {
+      "sha256": "7cdb1e61fc23032417eacd08f751037571d0f4380e2ee13922880f693709f56c",
+      "bytes": 2260
+    },
+    "backend-native07/stderr.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "backend-native07/actual-runner.py": {
+      "sha256": "04eb2dcbc24ae9db40f279295f86e90946c35db0ef4ebad765f862ae1027e510",
+      "bytes": 4730
+    },
+    "backend-final02/source-ready.json": {
+      "sha256": "61c89e8159934406672821c5d05c0f053dcf2da6abf3ec59c0a8d7bb6305e25f",
+      "bytes": 6442
+    }
+  },
+  "priorFailureAndHistoricalSuccessArchivesRetained": [
+    "backend-unit01",
+    "backend-native01",
+    "backend-native02",
+    "backend-native03",
+    "backend-native04",
+    "backend-native05",
+    "backend-native06",
+    "backend-native07"
+  ]
+}

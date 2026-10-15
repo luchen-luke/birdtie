@@ -1,0 +1,41 @@
+{
+  "at": "2026-10-15T19:24:01.960811+00:00",
+  "safeArtifactsOnly": true,
+  "mediaFiles": 0,
+  "privateSourceFiles": 0,
+  "tokenFiles": 0,
+  "files": {
+    "backend-perf-native01/receipt.json": {
+      "sha256": "6b69ffb3d36ab0e33e825550845a089fe93fcc4bce4336d7b302fdcc071cd816",
+      "bytes": 489949
+    },
+    "backend-perf-native01/stdout.jsonl": {
+      "sha256": "283383b3e0927ed3b89752977a9363899fc211e3477fa8f6094050c985c293f9",
+      "bytes": 2257
+    },
+    "backend-perf-native01/stderr.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "backend-perf-native02/receipt.json": {
+      "sha256": "512770795171e85948709036993550403ef6f649c8a5b26c91c80505c9bd8a48",
+      "bytes": 489949
+    },
+    "backend-perf-native02/stdout.jsonl": {
+      "sha256": "38d3dc9c8a0a8d98310ac1a413bd5efab2b06e50d8b6269d850d80c0b2ec842c",
+      "bytes": 2258
+    },
+    "backend-perf-native02/stderr.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "backend-perf-native02/actual-runner.py": {
+      "sha256": "04eb2dcbc24ae9db40f279295f86e90946c35db0ef4ebad765f862ae1027e510",
+      "bytes": 4730
+    },
+    "backend-perf-final01/source-ready.json": {
+      "sha256": "7366cf2bcabb47fbdc2c642a221cb38b40fe7d2b518048247a151163f8eb4943",
+      "bytes": 4702
+    }
+  }
+}

@@ -28,6 +28,60 @@ MapEntity point(
 
 void main() {
   test(
+    'actual touch uses 48dp point targets and nearest-first current candidates',
+    () {
+      final target = point('place:z-target');
+      final neighbour = point('moment:a-neighbour', kind: MapEntityKind.moment);
+      final distant = point('place:a-wrong');
+      final cluster = point(
+        'cluster:original',
+        kind: MapEntityKind.cluster,
+        precision: 'area',
+      );
+      final source = [distant, neighbour, target, cluster];
+      final before = source
+          .map((e) => (e.id, e.latitude, e.longitude, e.precision))
+          .toList();
+      final positions = {
+        target.id: const Offset(160, 365),
+        neighbour.id: const Offset(180, 370),
+        distant.id: const Offset(160, 306.5),
+        cluster.id: const Offset(330, 330),
+      };
+      List<MapEntity> at(Offset position) => MapDisplayPolicy.hitTargetsAt(
+        entities: source,
+        positions: positions,
+        touchPosition: position,
+        nonPointHitRects: {
+          cluster.id: const Rect.fromLTRB(294, 246, 366, 354),
+          // Point objects must ignore a provider's large transparent canvas.
+          distant.id: const Rect.fromLTWH(100, 250, 200, 200),
+        },
+      );
+      expect(at(const Offset(160, 365)).map((e) => e.id), [
+        target.id,
+        neighbour.id,
+      ]);
+      expect(at(const Offset(160, 425)), isEmpty);
+      expect(at(const Offset(136, 365)).map((e) => e.id), [target.id]);
+      expect(at(const Offset(135.9, 365)), isEmpty);
+      expect(at(const Offset(330, 281)).single, same(cluster));
+      expect(at(const Offset(double.nan, 365)), isEmpty);
+      positions[distant.id] = const Offset(double.infinity, 0);
+      expect(at(const Offset(160, 365)).map((e) => e.id), [
+        target.id,
+        neighbour.id,
+      ]);
+      expect(
+        source
+            .map((e) => (e.id, e.latitude, e.longitude, e.precision))
+            .toList(),
+        before,
+      );
+    },
+  );
+
+  test(
     'six labels prioritize selected and task without omitting authorized points',
     () {
       final source = [

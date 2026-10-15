@@ -68,6 +68,9 @@ import 'map_entities.dart';
 import 'agent_entity_result_router.dart';
 import 'map_layers_api.dart';
 import 'map_layers_controller.dart';
+import 'owned_map_api.dart';
+import 'owned_map_controller.dart';
+import 'now_map_content_panel.dart';
 import 'map_layer_controls.dart';
 import 'now_public_place_panel.dart';
 import 'active_social_intent_card.dart';
@@ -739,6 +742,13 @@ class _MapWorkspaceState extends State<MapWorkspace>
       _threadShowingDetail = false;
     }
     if (t != null) {
+      final mapReceipt = t.receipt;
+      if (mapReceipt?.status == 'SUCCEEDED' &&
+          mapReceipt!.operationID != _mapContentLastThreadOperation) {
+        _mapContentLastThreadOperation = mapReceipt.operationID;
+        _mapContent.retire();
+        unawaited(_mapContent.refresh());
+      }
       for (final entry in t.entries) {
         if (!_threadImages.containsKey(entry.localID)) {
           unawaited(_loadThreadMedia(entry.localID));
@@ -2416,6 +2426,8 @@ class _MapWorkspaceState extends State<MapWorkspace>
         _creationPublishedRevision = c.operationReceipt?.appliedRevision;
     });
     if (saved) {
+      _mapContent.retire();
+      unawaited(_mapContent.refresh());
       _syncCreationMedia();
       if (_layers.cityID != null && _layers.bounds != null)
         unawaited(_layers.load(_layers.cityID!, _layers.bounds!));
@@ -3215,6 +3227,8 @@ class _MapWorkspaceState extends State<MapWorkspace>
   late final MapCanvas _mapCanvas;
   late final MapLayersController _layers;
   late final MapMediaController _mapMedia;
+  late final OwnedMapController _mapContent;
+  String? _mapContentLastThreadOperation;
   Widget? _publicPlacePanel;
   bool _publicPlacePreview = false, _socialExpanded = false;
   bool _humanConversationExpanded = false;
@@ -3324,6 +3338,7 @@ class _MapWorkspaceState extends State<MapWorkspace>
       _mapReaderOverlays.remove(change.token);
     }
     _layers.updateRefreshVisibility();
+    _mapContent.updateRefreshVisibility();
   }
 
   bool _selectingCity = false;
@@ -3352,6 +3367,8 @@ class _MapWorkspaceState extends State<MapWorkspace>
       return;
     _mapMedia.retire();
     _layers.requestMediaRefresh();
+    _mapContent.retire();
+    unawaited(_mapContent.refresh());
   }
 
   void _onPublicMomentPhotoChange() {
@@ -3367,6 +3384,8 @@ class _MapWorkspaceState extends State<MapWorkspace>
         change.origin != origin)
       return;
     _layers.requestMediaRefresh();
+    _mapContent.retire();
+    unawaited(_mapContent.refresh());
   }
 
   @override
@@ -3481,6 +3500,24 @@ class _MapWorkspaceState extends State<MapWorkspace>
               )) &&
           WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed,
     );
+    _mapContent = OwnedMapController(
+      client: _authenticatedTransport(widget.seedClient),
+      apiBaseUrl: () => widget.seedApiBaseUrl ?? BirdtieEnvironment.apiBaseUrl,
+      ownerID: () => widget.auth.accountID,
+      authorizationHeader: () => widget.auth.authorizationHeader,
+      organizationWorkspaceID: () => _organizations.active?.id,
+      identityChanges: _seedEntryChanges,
+      refreshAllowed: () =>
+          mounted &&
+          (ModalRoute.of(context)?.isCurrent == true ||
+              (_cityPickerOpen &&
+                  _cityPickerVisible &&
+                  _cityPickerCurrent?.call() == true) ||
+              _mapReaderOverlays.values.any(
+                (lease) => lease == _mapReaderBinding,
+              )) &&
+          WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed,
+    );
     _composerDrafts.observeOwner(widget.auth.accountID);
     _socialSource = NowSocialEdgeSource(
       widget.connectionSource ?? _connections,
@@ -3507,6 +3544,7 @@ class _MapWorkspaceState extends State<MapWorkspace>
       discovery: _discovery,
       layers: _layers,
       media: _mapMedia,
+      mapContent: _mapContent,
       mediaOwnerID: () => widget.auth.accountID,
       mediaAuthorizationHeader: () => widget.auth.authorizationHeader,
       mediaWorkspaceID: () => _organizations.active?.id,
@@ -3517,6 +3555,11 @@ class _MapWorkspaceState extends State<MapWorkspace>
       contentRect: _mapContentRect,
       focusRevision: _mapFocusRevision,
       onEntityPicked: (id) {
+        final content = _mapContent.find(id);
+        if (content != null && _collectionProjection.value == null) {
+          _openMapContentPanel(content);
+          return;
+        }
         final collection = _collectionProjection.value;
         final savedMap = _savedMapSource;
         if (savedMap != null &&
@@ -3943,6 +3986,7 @@ class _MapWorkspaceState extends State<MapWorkspace>
       // Person and workspace changes retire the projection even if an opaque
       // session string happens to stay equal. Returning to A cannot revive it.
       _layers.retire();
+      _mapContent.retire();
       _retireSeedEntry();
     }
   }
@@ -4009,6 +4053,9 @@ class _MapWorkspaceState extends State<MapWorkspace>
       _submittedChoice = null;
       _online.removeListener(_syncTaskImages);
       _online.dispose();
+      _mapContent.replaceTransport(
+        client: _authenticatedTransport(widget.seedClient),
+      );
       _mapMedia.replaceTransport(
         client: _authenticatedTransport(widget.seedClient),
         apiBaseUrl: widget.seedApiBaseUrl ?? BirdtieEnvironment.apiBaseUrl,
@@ -4288,6 +4335,7 @@ class _MapWorkspaceState extends State<MapWorkspace>
     _seedCheckedAuthorization = null;
     ++_authSerial;
     _layers.retire();
+    _mapContent.retire();
     _closeConfirmation();
     // This invalidates pending Agent turns synchronously. MapCanvas and its
     // viewport remain the same objects; only the previous account is cleared.
@@ -4304,6 +4352,7 @@ class _MapWorkspaceState extends State<MapWorkspace>
     if (cityID != null && bounds != null) {
       unawaited(_discovery.load(cityID, bounds));
       unawaited(_layers.load(cityID, bounds));
+      _syncMapContent(cityID, bounds);
     } else if (cityID != null && _mapState.mapError != null) {
       unawaited(_discovery.loadCityActivities(cityID));
     }
@@ -4481,6 +4530,7 @@ class _MapWorkspaceState extends State<MapWorkspace>
     _connections.dispose();
     _organizations.dispose();
     _discovery.dispose();
+    _mapContent.dispose();
     _layers.dispose();
     _mapMedia.dispose();
     _mapState.dispose();
@@ -4503,6 +4553,7 @@ class _MapWorkspaceState extends State<MapWorkspace>
     ++_workspaceSerial;
     _mapMedia.retire();
     _layers.retire();
+    _mapContent.retire();
     if (_clearingAccount || !widget.auth.signedIn) return;
     _clearAccountWorkspace();
     unawaited(_workspace.loadRecent());
@@ -4542,6 +4593,7 @@ class _MapWorkspaceState extends State<MapWorkspace>
     _lastCityID = cityID;
     _mapMedia.retire();
     _layers.retire();
+    _mapContent.retire(clearQuery: true);
     _mapState.reset();
     _discovery.clear();
   }
@@ -4964,6 +5016,7 @@ class _MapWorkspaceState extends State<MapWorkspace>
     _cityPickerVisible = false;
     _cityPickerCurrent = current;
     _layers.updateRefreshVisibility();
+    _mapContent.updateRefreshVisibility();
     if (widget.city.cities.isEmpty) unawaited(reload());
     try {
       if (!mounted || !current()) return;
@@ -4980,6 +5033,7 @@ class _MapWorkspaceState extends State<MapWorkspace>
             }
             _cityPickerVisible = visible && current();
             _layers.updateRefreshVisibility();
+            _mapContent.updateRefreshVisibility();
           },
           child: _NowCityPicker(
             city: widget.city,
@@ -4995,6 +5049,7 @@ class _MapWorkspaceState extends State<MapWorkspace>
       _cityPickerVisible = false;
       _cityPickerCurrent = null;
       _layers.updateRefreshVisibility();
+      _mapContent.updateRefreshVisibility();
     }
     if (!mounted || !current()) return;
     if (selected != null) {
@@ -5010,12 +5065,21 @@ class _MapWorkspaceState extends State<MapWorkspace>
     }
   }
 
+  void _syncMapContent(String cityID, MapBounds bounds) {
+    _mapContent.sync(
+      cityID: cityID,
+      bounds: bounds,
+      devicePixelRatio: MediaQuery.devicePixelRatioOf(context),
+    );
+  }
+
   void _initialViewport(MapBounds bounds) {
     _mapState.initializeViewport(bounds);
     final cityID = widget.city.selectedCity?.id;
     if (cityID != null) {
       unawaited(_discovery.load(cityID, bounds));
       unawaited(_layers.load(cityID, bounds));
+      _syncMapContent(cityID, bounds);
     }
   }
 
@@ -5568,6 +5632,10 @@ class _MapWorkspaceState extends State<MapWorkspace>
     var epoch = _layers.epoch;
     final identity = _currentSeedIdentity;
     final author = _layers.authorID;
+    if (author == null) {
+      _syncMapContent(cityID, bounds);
+      unawaited(_mapContent.refresh());
+    }
     final kinds = author == null ? Set.of(_layers.visible) : const {'MOMENT'};
     bool scopeCurrent() =>
         mounted &&
@@ -5638,6 +5706,39 @@ class _MapWorkspaceState extends State<MapWorkspace>
       : _workspace.presentedResult;
 
   List<MapEntity> _visibleEntities() {
+    final base = _baseVisibleEntities();
+    if (_collectionProjection.value != null ||
+        _layers.authorID != null ||
+        _mapContent.cityID != widget.city.selectedCity?.id)
+      return base;
+    final area = _workspace.areaOperation;
+    final areaCurrent =
+        area?.read?.current == true &&
+        area?.cityID == widget.city.selectedCity?.id;
+    final resultCity = _workspace.queryContextType == 'ONLINE'
+        ? _workspace.mapBackgroundCityID
+        : _workspace.task?.cityID;
+    if (!areaCurrent &&
+        _mapProjectionResult?.projectionItems != null &&
+        resultCity == widget.city.selectedCity?.id)
+      return base;
+    final content = _mapContent.entities
+        .where(
+          (e) =>
+              _layers.visible.contains('PLACE') ||
+              (_layers.visible.contains('MOMENT') &&
+                  (_mapContent.find(e.id)?.momentCount ?? 0) > 0),
+        )
+        .toList();
+    final places = content.map((e) => e.placeID).toSet();
+    return [
+      for (final e in base)
+        if (e.kind != MapEntityKind.place || !places.contains(e.placeID)) e,
+      ...content,
+    ];
+  }
+
+  List<MapEntity> _baseVisibleEntities() {
     if (_layers.authorID != null) {
       return _layers.authorCityID == widget.city.selectedCity?.id
           ? _layers.items.map((i) => i.entity).toList(growable: false)
@@ -5721,6 +5822,11 @@ class _MapWorkspaceState extends State<MapWorkspace>
   }
 
   void _openEntityDetails(MapEntity entity) {
+    final content = _mapContent.find(entity.id);
+    if (content != null && _visibleEntities().any((e) => e.id == entity.id)) {
+      _openMapContentPanel(content);
+      return;
+    }
     final result = _mapProjectionResult;
     if (result != null && _workspace.canUseExternalPlaces(result)) {
       final candidates = result.onlinePlaceSearch!.places.where(
@@ -6671,6 +6777,57 @@ class _MapWorkspaceState extends State<MapWorkspace>
     _publicPlacePanelSource = null;
     _publicPlacePanelMapVisible = false;
     if (leaveAuthor) _layers.leaveAuthor();
+  }
+
+  void _openMapContentPanel(OwnedMapPin pin) {
+    if (_friendConversation?.audioActive == true ||
+        !_mapContent.sourceCurrent(pin))
+      return;
+    final epoch = _mapContent.epoch, identity = _currentSeedIdentity;
+    final city = widget.city.selectedCity?.id, source = Object();
+    bool current() =>
+        mounted &&
+        epoch == _mapContent.epoch &&
+        identity == _currentSeedIdentity &&
+        city == widget.city.selectedCity?.id &&
+        _mapContent.find(pin.mapID)?.sourceVersion == pin.sourceVersion &&
+        identical(_publicPlacePanelSource, source);
+    _pauseComposer();
+    if (_composerDrafts.target.human) _exitFriendConversation();
+    ++_previewSelectionSerial;
+    _previewObservedSelection = pin.mapID;
+    setState(() {
+      _retirePublicPlacePanel();
+      _socialExpanded = false;
+      _publicPlacePanelSource = source;
+      _publicPlaceMapID = pin.mapID;
+      _publicPlacePreview = true;
+      _publicPlacePanel = NowMapContentPanel(
+        // Preview and expanded reader have different parents in the Now stack.
+        key: GlobalObjectKey(source),
+        controller: _mapContent,
+        pin: pin,
+        current: current,
+        changes: Listenable.merge([
+          _mapContent,
+          _seedEntryChanges,
+          widget.city,
+        ]),
+        onClose: () {
+          if (!mounted || !identical(_publicPlacePanelSource, source)) return;
+          setState(() => _retirePublicPlacePanel());
+          _workspace.selectEntity(null, preserveViewport: true);
+        },
+        onExpand: () {
+          if (current()) setState(() => _publicPlacePreview = false);
+        },
+        onEdit: (momentID, readable) {
+          if (current() && readable()) {
+            unawaited(_openOwnedMomentInNow(momentID, sourceCurrent: readable));
+          }
+        },
+      );
+    });
   }
 
   void _openPublicPlacePanel(
@@ -8496,6 +8653,7 @@ class _MapWorkspaceState extends State<MapWorkspace>
     }
     _workspace.updateReplyRefreshVisibility();
     _layers.updateRefreshVisibility();
+    _mapContent.updateRefreshVisibility();
   }
 
   void _onTypedDraftRestore() {
@@ -8546,6 +8704,7 @@ class _MapWorkspaceState extends State<MapWorkspace>
     // Subscribe to the existing route; returning never reopens or submits.
     _workspace.updateReplyRefreshVisibility();
     _layers.updateRefreshVisibility();
+    _mapContent.updateRefreshVisibility();
     return PopScope(
       canPop: !_socialExpanded && !_threadCurrent && !_creationCurrent,
       onPopInvokedWithResult: (didPop, _) {

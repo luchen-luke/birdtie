@@ -118,7 +118,6 @@ class _NativeCityMapViewState extends State<NativeCityMapView> {
       ValueNotifier<List<({MapEntity entity, Offset point})>>([]);
   int _readerEpoch = 0;
   PointAnnotationManager? _markers;
-  Cancelable? _markerTapSubscription;
   final Map<String, PointAnnotation> _annotations = {};
   final Map<String, String> _annotationFingerprints = {};
   Future<void> _markerUpdates = Future<void>.value();
@@ -620,7 +619,6 @@ class _NativeCityMapViewState extends State<NativeCityMapView> {
     _bearing.dispose();
     _cameraSettleTimer?.cancel();
     _mapRetryTimer?.cancel();
-    _markerTapSubscription?.cancel();
     super.dispose();
   }
 
@@ -691,12 +689,9 @@ class _NativeCityMapViewState extends State<NativeCityMapView> {
     await _markers!.setIconAllowOverlap(true);
     // A colliding label must not hide the object's independently drawn icon.
     await _markers!.setTextOptional(true);
-    _markerTapSubscription ??= _markers!.tapEvents(
-      onTap: (annotation) async {
-        final entityId = annotation.customData?['entityId'];
-        if (entityId is String) await _selectMapPoint(entityId);
-      },
-    );
+    // With no annotation tap sink, the native SDK forwards the recognized tap
+    // to MapWidget.onTapListener. Its real touch position avoids transparent
+    // bitmap bounds choosing an unrelated annotation before our hit test.
     await _refreshMarkers();
     final retryCamera = _retryCamera;
     _retryCamera = null;
@@ -840,16 +835,19 @@ class _NativeCityMapViewState extends State<NativeCityMapView> {
   }
 
   bool _pointChoiceOpen = false;
-  Future<void> _selectMapPoint(String tappedID) async {
+  Future<void> _selectMapPoint(
+    String? tappedID, {
+    Offset? touchPosition,
+  }) async {
     final map = _map;
     if (!mounted || map == null || _pointChoiceOpen) return;
     final rendered = _renderedEntities
         .where((e) => e.id == tappedID)
         .firstOrNull;
-    if (rendered == null) return;
+    if (touchPosition == null && rendered == null) return;
     // Preserve genuinely source-provided privacy-group behavior. The display
     // policy never creates new cluster identities from PLACE/MOMENT objects.
-    if (rendered.isCluster) {
+    if (touchPosition == null && rendered!.isCluster) {
       await _openClusterMembers(rendered);
       return;
     }
@@ -866,7 +864,8 @@ class _NativeCityMapViewState extends State<NativeCityMapView> {
       final originals = _currentPointSource()
           .where((e) => shown.contains((e.id, e.kind)))
           .toList();
-      if (!originals.any((e) => e.id == tappedID)) return;
+      if (touchPosition == null && !originals.any((e) => e.id == tappedID))
+        return;
       final pixels = await map.pixelsForCoordinates([
         for (final entity in originals)
           Point(coordinates: Position(entity.longitude, entity.latitude)),
@@ -878,29 +877,46 @@ class _NativeCityMapViewState extends State<NativeCityMapView> {
             originals[i].id: Offset(pixel.x, pixel.y),
       };
       final positions = rawPositions;
-      final hits = MapDisplayPolicy.overlappingHitTargets(
-        entities: originals,
-        positions: positions,
-        tappedID: tappedID,
-      );
-      // Native SDK hit testing may return any image at the shared anchor.
-      // Always retain every authorized exact-anchor sibling in the chooser.
-      final tapped = originals.firstWhere((entity) => entity.id == tappedID);
+      final hits = touchPosition == null
+          ? MapDisplayPolicy.overlappingHitTargets(
+              entities: originals,
+              positions: positions,
+              tappedID: tappedID!,
+            )
+          : MapDisplayPolicy.hitTargetsAt(
+              entities: originals,
+              positions: positions,
+              touchPosition: touchPosition,
+              nonPointHitRects: _nonPointHitRects(originals, positions),
+            );
+      // Semantic ID actions retain their same-anchor siblings. Physical taps
+      // use only their actual 48 dp targets, without a second ID-centered halo.
+      final tapped = originals
+          .where((entity) => entity.id == tappedID)
+          .firstOrNull;
       bool preciseRecord(MapEntity entity) =>
           entity.precision == 'point' &&
           {MapEntityKind.place, MapEntityKind.moment}.contains(entity.kind);
       final identities = {
         ...hits.map((entity) => (entity.id, entity.kind)),
-        if (preciseRecord(tapped))
+        if (touchPosition == null && tapped != null && preciseRecord(tapped))
           for (final entity in originals)
             if (preciseRecord(entity) &&
                 entity.latitude == tapped.latitude &&
                 entity.longitude == tapped.longitude)
               (entity.id, entity.kind),
       };
-      List<MapEntity> freshHits() => _currentPointSource()
-          .where((e) => identities.contains((e.id, e.kind)))
-          .toList();
+      final rank = {for (var i = 0; i < hits.length; i++) hits[i].id: i};
+      List<MapEntity> freshHits() {
+        final fresh = _currentPointSource()
+            .where((e) => identities.contains((e.id, e.kind)))
+            .toList();
+        if (touchPosition != null) {
+          fresh.sort((a, b) => rank[a.id]!.compareTo(rank[b.id]!));
+        }
+        return fresh;
+      }
+
       final fresh = freshHits();
       if (fresh.isEmpty || !current()) return;
       final selected = fresh.length == 1
@@ -912,13 +928,55 @@ class _NativeCityMapViewState extends State<NativeCityMapView> {
               currentScope: _pointReaderScope,
               onVisibilityChanged: widget.onMapReaderVisibilityChanged,
             );
-      if (selected != null && current()) _dispatchCurrentPoint(selected);
+      if (selected != null && current()) {
+        if (selected.isCluster) {
+          await _openClusterMembers(selected);
+        } else {
+          _dispatchCurrentPoint(selected);
+        }
+      }
     } catch (_) {
       if (mounted)
         debugPrint('Birdtie current map-point selection unavailable.');
     } finally {
       _pointChoiceOpen = false;
     }
+  }
+
+  Map<String, Rect> _nonPointHitRects(
+    List<MapEntity> entities,
+    Map<String, Offset> positions,
+  ) {
+    final rects = <String, Rect>{};
+    for (final entity in entities) {
+      if (entity.precision == 'point' &&
+          {MapEntityKind.place, MapEntityKind.moment}.contains(entity.kind))
+        continue;
+      final point = positions[entity.id], annotation = _annotations[entity.id];
+      final bytes = annotation?.image;
+      if (point == null ||
+          bytes == null ||
+          bytes.length < 24 ||
+          bytes[0] != 137 ||
+          bytes[1] != 80 ||
+          bytes[2] != 78 ||
+          bytes[3] != 71)
+        continue;
+      // These are our generated PNGs already sent to this native annotation.
+      // Their BOTTOM anchor is a paint bound, never a new geographic coordinate.
+      final data = bytes.buffer.asByteData(bytes.offsetInBytes, bytes.length);
+      final width = data.getUint32(16), height = data.getUint32(20);
+      if (width == 0 || height == 0 || width > 4096 || height > 4096) continue;
+      final scale = (annotation!.iconSize ?? 1) / _bitmapPixelRatio;
+      if (!scale.isFinite || scale <= 0) continue;
+      rects[entity.id] = Rect.fromLTWH(
+        point.dx - width * scale / 2,
+        point.dy - height * scale,
+        width * scale,
+        height * scale,
+      ).expandToInclude(Rect.fromCenter(center: point, width: 48, height: 48));
+    }
+    return rects;
   }
 
   List<MapEntity> _currentClusterMembers(MapEntity cluster) {
@@ -1038,6 +1096,7 @@ class _NativeCityMapViewState extends State<NativeCityMapView> {
           previous.recentMoments != null &&
           !previous.recentMoments!.currentAt(DateTime.now().toUtc())) {
         existing.textField = previous.title;
+        existing.iconImage = null;
         await markers.update(existing);
         _annotationFingerprints.remove(previous.id);
         if (!current()) return;
@@ -1051,9 +1110,11 @@ class _NativeCityMapViewState extends State<NativeCityMapView> {
           kind: previous.kind,
           selected: previous.id == widget.selectedEntityId,
           devicePixelRatio: ratio,
+          categoryCode: previous.categoryCode,
         );
         if (!current()) return;
         existing.image = fallback;
+        existing.iconImage = null;
         existing.textField = previous.title;
         await markers.update(existing);
         _annotationFingerprints.remove(previous.id);
@@ -1110,6 +1171,9 @@ class _NativeCityMapViewState extends State<NativeCityMapView> {
     );
     final specs = <String, PointAnnotationOptions>{};
     for (final entity in plan.entities) {
+      final compactPoint =
+          {MapEntityKind.place, MapEntityKind.moment}.contains(entity.kind) &&
+          entity.precision == 'point';
       final bytes =
           entity.mediaPixels?.png(
             selected: entity.id == widget.selectedEntityId,
@@ -1123,6 +1187,7 @@ class _NativeCityMapViewState extends State<NativeCityMapView> {
             approximate: entity.precision == 'area',
             dense: plan.denseIDs.contains(entity.id),
             devicePixelRatio: ratio,
+            categoryCode: entity.categoryCode,
           );
       if (!current()) return;
       specs[entity.id] = PointAnnotationOptions(
@@ -1158,11 +1223,22 @@ class _NativeCityMapViewState extends State<NativeCityMapView> {
                       ),
                     ))
             : '',
-        textSize: 14,
-        textMaxWidth: 10.28,
-        textOffset: [0, 0.6],
-        textAnchor: TextAnchor.TOP,
-        textColor: const Color(0xFF193B32).toARGB32(),
+        textSize: compactPoint ? MapMarkerVisual.labelFontSize : 14,
+        textMaxWidth: compactPoint
+            ? MapMarkerVisual.labelWidth / MapMarkerVisual.labelFontSize
+            : 10.28,
+        textOffset: compactPoint
+            ? MapMarkerVisual.nativeLabelOffset(
+                selected: entity.id == widget.selectedEntityId,
+                dense: plan.denseIDs.contains(entity.id),
+              )
+            : [0, 0.6],
+        textAnchor: compactPoint ? TextAnchor.LEFT : TextAnchor.TOP,
+        textColor:
+            (compactPoint
+                    ? MapMarkerVisual.labelColor
+                    : const Color(0xFF193B32))
+                .toARGB32(),
         textHaloColor: Colors.white.toARGB32(),
         textHaloWidth: 2,
       );
@@ -1187,11 +1263,15 @@ class _NativeCityMapViewState extends State<NativeCityMapView> {
       final annotation = _annotations[id];
       if (annotation == null) {
         final created = await markers.create(option);
+        // Android returns its generated sprite name. Sending that name back
+        // after a replacement bitmap would overwrite the new image again.
+        created.iconImage = null;
         _annotations[id] = created;
         _annotationFingerprints[id] = fingerprint;
       } else if (_annotationFingerprints[id] != fingerprint) {
         annotation.geometry = option.geometry;
         annotation.image = option.image;
+        annotation.iconImage = null;
         annotation.iconAnchor = option.iconAnchor;
         annotation.iconSize = option.iconSize;
         annotation.symbolSortKey = option.symbolSortKey;
@@ -1283,32 +1363,44 @@ class _NativeCityMapViewState extends State<NativeCityMapView> {
                 onMapLoadedListener: (_) => _onMapLoaded(),
                 onCameraChangeListener: _onCameraChanged,
                 onMapIdleListener: _onMapIdle,
-                onTapListener: coordinateCallback == null
-                    ? null
-                    : (gesture) {
-                        final latitude = gesture.point.coordinates.lat
-                            .toDouble();
-                        final longitude = gesture.point.coordinates.lng
-                            .toDouble();
-                        if (mounted &&
-                            _coordinateMapLoaded &&
-                            _styleReady &&
-                            _mapFailure.failure == null &&
-                            coordinateScope == _pointReaderScope() &&
-                            identical(
-                              coordinateCallback,
-                              widget.onCoordinateSelected,
-                            ) &&
-                            (widget.coordinateSourceCurrent?.call() ?? true) &&
-                            latitude.isFinite &&
-                            longitude.isFinite &&
-                            latitude >= -90 &&
-                            latitude <= 90 &&
-                            longitude >= -180 &&
-                            longitude <= 180) {
-                          coordinateCallback(latitude, longitude);
-                        }
-                      },
+                onTapListener: (gesture) {
+                  if (coordinateCallback == null) {
+                    if (_styleReady &&
+                        _mapFailure.failure == null &&
+                        gesture.gestureState == GestureState.ended) {
+                      unawaited(
+                        _selectMapPoint(
+                          null,
+                          touchPosition: Offset(
+                            gesture.touchPosition.x,
+                            gesture.touchPosition.y,
+                          ),
+                        ),
+                      );
+                    }
+                    return;
+                  }
+                  final latitude = gesture.point.coordinates.lat.toDouble();
+                  final longitude = gesture.point.coordinates.lng.toDouble();
+                  if (mounted &&
+                      _coordinateMapLoaded &&
+                      _styleReady &&
+                      _mapFailure.failure == null &&
+                      coordinateScope == _pointReaderScope() &&
+                      identical(
+                        coordinateCallback,
+                        widget.onCoordinateSelected,
+                      ) &&
+                      (widget.coordinateSourceCurrent?.call() ?? true) &&
+                      latitude.isFinite &&
+                      longitude.isFinite &&
+                      latitude >= -90 &&
+                      latitude <= 90 &&
+                      longitude >= -180 &&
+                      longitude <= 180) {
+                    coordinateCallback(latitude, longitude);
+                  }
+                },
               ),
             ),
             ValueListenableBuilder<List<({MapEntity entity, Offset point})>>(

@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 
 import '../app/birdtie_app_bar.dart';
 import '../auth/birdtie_auth_controller.dart';
+import '../auth/birdtie_login_sheet.dart';
 import '../city/public_city_controller.dart';
 import '../content/private_moment_controller.dart';
 import '../content/legacy_archive_page.dart';
@@ -952,6 +953,38 @@ class _SettingsPageState extends State<SettingsPage> {
     },
   );
 
+  void _signIn() {
+    final route = ModalRoute.of(context);
+    if (route?.isCurrent != true ||
+        widget.organizationWorkspaceID?.call() != null)
+      return;
+    final auth = widget.auth, client = _client, base = _apiBase;
+    final epoch = _entryEpoch;
+    final workspace = widget.organizationWorkspaceID;
+    final changes = widget.workspaceChanges;
+    bool current() =>
+        mounted &&
+        route!.isActive &&
+        ModalRoute.of(context) == route &&
+        auth == widget.auth &&
+        client == _client &&
+        base == _apiBase &&
+        epoch == _entryEpoch &&
+        workspace == widget.organizationWorkspaceID &&
+        changes == widget.workspaceChanges &&
+        widget.organizationWorkspaceID?.call() == null;
+    // The method sheet temporarily covers this route. Keep its active origin
+    // bound, while identity/workspace/source changes retire this entry forever.
+    unawaited(
+      showBirdtieLoginSheet(
+        context,
+        auth,
+        isCurrent: current,
+        entryChanges: _entryChanges,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_apiBase.isEmpty || !widget.auth.signedIn) {
@@ -969,9 +1002,20 @@ class _SettingsPageState extends State<SettingsPage> {
             ListTile(
               leading: const Icon(Icons.login),
               title: const Text('登录 Birdtie'),
-              subtitle: widget.auth.available ? null : const Text('登录服务暂不可用'),
-              onTap: widget.auth.available && !widget.auth.busy
-                  ? widget.auth.signIn
+              subtitle: widget.organizationWorkspaceID?.call() != null
+                  ? const Text('切回个人身份后登录')
+                  : widget.auth.available || widget.auth.devPhoneAvailable
+                  ? null
+                  : Text(
+                      widget.auth.configurationChecking
+                          ? '正在检查登录服务…'
+                          : '登录服务暂不可用，点此重新检查',
+                    ),
+              onTap:
+                  !widget.auth.busy &&
+                      !widget.auth.sessionRestoring &&
+                      widget.organizationWorkspaceID?.call() == null
+                  ? _signIn
                   : null,
             ),
           _voiceInputEntry(),

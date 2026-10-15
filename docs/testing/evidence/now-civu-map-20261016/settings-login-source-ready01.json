@@ -1,0 +1,65 @@
+{
+  "at": "2026-10-15T20:24:05.757684+00:00",
+  "status": "SOURCE_READY",
+  "source": {
+    "apps/client/lib/src/workspace/settings_page.dart": "698bca8fe9e85bb3e6aa57625e5153cdfc5001df3e750d7b7bef0393a59b22a2",
+    "apps/client/test/settings_login_recovery_test.dart": "9b13a8978c2236f60452849d71775c28f3949c8fddb90abce73b4c0dc3e29640"
+  },
+  "reusedDependencies": {
+    "apps/client/lib/src/auth/birdtie_auth_controller.dart": "1fec50b1fab5b4ebb6443e0556c139f705be9af4cea4b43495f69d5b99e79cae",
+    "apps/client/lib/src/auth/birdtie_login_sheet.dart": "13107fb61c7c0f88f7d358e26e7147cf63c6865df3718ee80e43654b4ad8791f",
+    "apps/client/lib/src/auth/dev_phone_login_sheet.dart": "1ad6ec072c878d9bbba6db274f919fb1e0ddb0fd2d22ffe240344e5575b9735f"
+  },
+  "changes": [
+    "Settings login row opens the existing Birdtie method sheet even when the initial public configuration read failed.",
+    "Availability subtitle uses the OIDC and fixed-code phone methods exposed by that sheet.",
+    "Opening requires the current Settings route and personal workspace; ongoing sheet binds the active originating route, auth/controller, client/origin and entry epoch; workspace/source ABA retires it.",
+    "No automatic login, verification-code request, message, content write, or retry of a domain operation."
+  ],
+  "test": {
+    "path": "settings-login01/retry02-receipt.json",
+    "status": "PASS",
+    "passed": 1,
+    "elapsedSeconds": 4.016,
+    "coverage": [
+      "Actual Settings login row opens unavailable-method sheet after failed initialize.",
+      "Explicit retry restores fixed-code method without re-reading saved session or authenticating.",
+      "Method selection opens existing phone form; cancel leaves unsigned and dispatches no POST.",
+      "Workspace A-to-B-to-A invalidates the open sheet permanently.",
+      "Retained entry callback cannot open authentication from a covered Settings route."
+    ]
+  },
+  "preservedFailure": {
+    "path": "settings-login01/receipt.json",
+    "exitCode": 1,
+    "reason": "Test initially expected the verification-code field before the user requested a code; corrected assertion to the real phone form and request button, without changing production authentication."
+  },
+  "analysis": {
+    "path": "settings-login-analysis01/receipt.json",
+    "exitCode": 0,
+    "errors": 0,
+    "warnings": 0,
+    "info": 1,
+    "note": "curly_braces_in_flow_control_structures in the new early return; no type or flow errors."
+  },
+  "applicableUX": [
+    "UX-CHECK-04",
+    "UX-CHECK-06",
+    "UX-CHECK-10",
+    "UX-CHECK-16"
+  ],
+  "notRun": [
+    "APK/Web build or installation by this worker",
+    "Physical device login configuration recovery through Settings",
+    "Live authentication, remote requests or database writes",
+    "Full Flutter suite or full analysis"
+  ],
+  "evidence": {
+    "settings-login01/log.txt": "2f406ebb56e663b5c855d21e57cff576d71c9c270b66d0d14259cc9c2a8b2bcf",
+    "settings-login01/receipt.json": "f0ff858ce1ccb36c1d1e483a1c7d9afc6bac94f0965b3a9082414813fe81d672",
+    "settings-login01/retry02-log.txt": "bd820222141f4564388ba5d950d12da35ae7e4bf58123e3b2d3a9c0168e2ce96",
+    "settings-login01/retry02-receipt.json": "ce0a58b9c8cb7135ffb849198888609fd1210156565bd10aec5d0179793a6d8e",
+    "settings-login-analysis01/log.txt": "d51ea9c0343b6ca667e2053fc882cc68716630351ef91ed8c5bbc4d099ba82ab",
+    "settings-login-analysis01/receipt.json": "6ab082e2366cddc6cb3c8f28f82a3b2478cb3c630371952965c938359105d1d4"
+  }
+}

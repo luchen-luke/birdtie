@@ -1,0 +1,16 @@
+{
+  "command": [
+    "D:/DevTools/flutter/bin/cache/dart-sdk/bin/dart.exe",
+    "analyze",
+    "D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\settings_page.dart",
+    "D:\\Project\\birdtie\\apps\\client\\test\\settings_login_recovery_test.dart"
+  ],
+  "cwd": "D:\\Project\\birdtie\\apps\\client",
+  "exitCode": 0,
+  "elapsedSeconds": 15.36,
+  "sourceSHA256": {
+    "apps/client/lib/src/workspace/settings_page.dart": "698bca8fe9e85bb3e6aa57625e5153cdfc5001df3e750d7b7bef0393a59b22a2",
+    "apps/client/test/settings_login_recovery_test.dart": "9b13a8978c2236f60452849d71775c28f3949c8fddb90abce73b4c0dc3e29640"
+  },
+  "scope": "Only two assigned Settings source/test files; synthetic HTTP; no remote/device/authentication or publication"
+}

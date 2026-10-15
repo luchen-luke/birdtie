@@ -15,6 +15,7 @@ typedef _MarkerKey = (
   double,
   double,
   double,
+  String,
 );
 
 class MapMarkerBitmap {
@@ -45,13 +46,18 @@ class MapMarkerBitmap {
     bool dense,
     double ratio,
     ui.Image? photo,
+    String categoryCode,
   ) async {
     const anchor = Offset(pointCanvasSize / 2, pointCanvasSize / 2);
     const center = anchor;
     final pale = dense && !selected;
     final diameter = MapMarkerVisual.diameter(selected: selected, dense: pale);
     final moment = kind == MapEntityKind.moment;
-    final color = moment ? const Color(0xFF87683C) : const Color(0xFF193B32);
+    final color = moment
+        ? MapMarkerVisual.momentColor
+        : pale
+        ? MapMarkerVisual.densePlaceColor
+        : MapMarkerVisual.placeColor;
     final recorder = ui.PictureRecorder(), canvas = Canvas(recorder);
     canvas.scale(ratio);
     final rect = Rect.fromCenter(
@@ -78,7 +84,7 @@ class MapMarkerBitmap {
       canvas.restore();
     }
     {
-      // The shared 28/36/16 diameter is the outside edge, as in the Flutter
+      // The shared 28/36/6 diameter is the outside edge, as in the Flutter
       // marker. Clip the centered stroke inward so native pixels do not grow.
       canvas.save();
       canvas.clipPath(shape);
@@ -87,13 +93,40 @@ class MapMarkerBitmap {
         Paint()
           ..color = selected ? MapMarkerVisual.placeColor : Colors.white
           ..style = PaintingStyle.stroke
-          ..strokeWidth = selected ? 4 : 3,
+          ..strokeWidth = selected
+              ? 4
+              : pale
+              ? 1.5
+              : 3,
       );
+      if (selected && !pale && photo != null) {
+        // Keep a small white separation between the selected rim and real
+        // pixels. This is presentation only; the original image is untouched.
+        final inner = rect.deflate(3);
+        final innerShape = Path();
+        if (moment) {
+          innerShape.addRRect(
+            RRect.fromRectAndRadius(inner, const Radius.circular(2)),
+          );
+        } else {
+          innerShape.addOval(inner);
+        }
+        canvas.drawPath(
+          innerShape,
+          Paint()
+            ..color = Colors.white
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 2,
+        );
+      }
       final glyph = Paint()
         ..color = Colors.white
         ..style = PaintingStyle.stroke
         ..strokeWidth = selected ? 1.8 : 1.4;
-      if (moment && (photo == null || pale)) {
+      if (pale) {
+        // A dense point marks its true location without adding a second ring
+        // or unreadable glyph. Full content markers keep photos and labels.
+      } else if (moment && photo == null) {
         final halfWidth = selected
             ? 7.0
             : pale
@@ -112,6 +145,26 @@ class MapMarkerBitmap {
             Paint()..color = Colors.white,
           );
         }
+      } else if (!moment && photo == null && !pale) {
+        final icon = MapMarkerVisual.placeIcon(categoryCode);
+        final painter = TextPainter(
+          text: TextSpan(
+            text: String.fromCharCode(icon.codePoint),
+            style: TextStyle(
+              fontFamily: icon.fontFamily,
+              package: icon.fontPackage,
+              color: Colors.white,
+              fontSize: selected ? 18 : 14,
+              height: 1,
+            ),
+          ),
+          textDirection: TextDirection.ltr,
+        )..layout();
+        painter.paint(
+          canvas,
+          center - Offset(painter.width / 2, painter.height / 2),
+        );
+        painter.dispose();
       } else if (photo == null || pale) {
         canvas.drawCircle(
           center,
@@ -147,6 +200,7 @@ class MapMarkerBitmap {
     double devicePixelRatio = 1,
     Offset visualOffset = Offset.zero,
     ui.Image? photo,
+    String categoryCode = '',
   }) async {
     final individual =
         !approximate &&
@@ -165,6 +219,7 @@ class MapMarkerBitmap {
       ratio,
       offset.dx,
       offset.dy,
+      categoryCode,
     );
     final cached = photo == null ? _cache.remove(key) : null;
     if (cached != null) {
@@ -173,7 +228,14 @@ class MapMarkerBitmap {
     }
 
     if (individual) {
-      final bytes = await _individualPoint(kind, selected, dense, ratio, photo);
+      final bytes = await _individualPoint(
+        kind,
+        selected,
+        dense,
+        ratio,
+        photo,
+        categoryCode,
+      );
       if (photo == null) _remember(key, bytes);
       return bytes;
     }

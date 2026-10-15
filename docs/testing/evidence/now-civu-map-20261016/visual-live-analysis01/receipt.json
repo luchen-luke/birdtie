@@ -1,0 +1,43 @@
+{
+  "started": "2026-10-15T19:18:08.646906+00:00",
+  "finished": "2026-10-15T19:18:11.053780+00:00",
+  "command": [
+    "D:/DevTools/flutter/bin/cache/dart-sdk/bin/dart.exe",
+    "analyze",
+    "--format",
+    "machine",
+    "lib/src/workspace/map_marker_visual.dart",
+    "lib/src/workspace/map_marker_bitmap.dart",
+    "lib/src/workspace/map_marker_widget.dart",
+    "lib/src/workspace/now_map_content_panel.dart",
+    "test/map_marker_bitmap_test.dart",
+    "test/now_map_content_test.dart"
+  ],
+  "exitCode": 0,
+  "effectiveExitCode": 0,
+  "diagnostics": {
+    "ERROR": 0,
+    "WARNING": 0,
+    "INFO": 11
+  },
+  "sourceBefore": {
+    "apps/client/lib/src/workspace/map_marker_visual.dart": "dbb7fee4188449038a8774dfd6f7f53640557498f6d6364575e3ae5aced73260",
+    "apps/client/lib/src/workspace/map_marker_bitmap.dart": "d0bccaec5b574bd892a03e2d55297e5ffb6dd509552fa35e3b47677c6b2f8383",
+    "apps/client/lib/src/workspace/map_marker_widget.dart": "a6fe309c839e03592996ea34a6c58cbd215534e91d7c4e64d370e07a4ae21c9a",
+    "apps/client/lib/src/workspace/now_map_content_panel.dart": "11cf879436771d050b8a19432105d9bfef7644ad6758a254b4ffd02b07558554",
+    "apps/client/test/map_marker_bitmap_test.dart": "faa5e714a112bff5a7ff57e0f11c5f6fd338be371eee87c643583e15089d3cc0",
+    "apps/client/test/now_map_content_test.dart": "0dbccfdafdfdf7f1616a4e3ac1fe54efdef486544af333fdd78405ce1da26f25"
+  },
+  "sourceAfter": {
+    "apps/client/lib/src/workspace/map_marker_visual.dart": "dbb7fee4188449038a8774dfd6f7f53640557498f6d6364575e3ae5aced73260",
+    "apps/client/lib/src/workspace/map_marker_bitmap.dart": "d0bccaec5b574bd892a03e2d55297e5ffb6dd509552fa35e3b47677c6b2f8383",
+    "apps/client/lib/src/workspace/map_marker_widget.dart": "a6fe309c839e03592996ea34a6c58cbd215534e91d7c4e64d370e07a4ae21c9a",
+    "apps/client/lib/src/workspace/now_map_content_panel.dart": "11cf879436771d050b8a19432105d9bfef7644ad6758a254b4ffd02b07558554",
+    "apps/client/test/map_marker_bitmap_test.dart": "faa5e714a112bff5a7ff57e0f11c5f6fd338be371eee87c643583e15089d3cc0",
+    "apps/client/test/now_map_content_test.dart": "0dbccfdafdfdf7f1616a4e3ac1fe54efdef486544af333fdd78405ce1da26f25"
+  },
+  "sourceStable": true,
+  "logSHA256": "43fcd4a09a21c2ff49291b494729dacbf1545a939d5cb6087996f67c11893d1d",
+  "runtimeType": "SCOPED_STATIC_ANALYSIS",
+  "deviceVerification": false
+}

@@ -1,0 +1,33 @@
+{
+  "status": "PASS",
+  "remoteScriptSHA256": "812368309467818bd14372b8a151ea27555d8916d7362b81bef21ce7f8ae2e98",
+  "exitCode": 0,
+  "stderrPresent": false,
+  "result": {
+    "status": "PASS",
+    "cleanup": {
+      "createdAtUTC": "2026-10-15T19:30:22.128489Z",
+      "expiresAtUTC": "2026-10-16T03:30:22.128489Z",
+      "databaseGuard": true,
+      "targetRevoked": true,
+      "generationAfter": 2,
+      "updatedSessions": 1,
+      "generationBefore": 1,
+      "strictUniqueTarget": true,
+      "firstClaimedOwnerPinMatched": true,
+      "otherOwnerSessionTerminalStatesUnchanged": true,
+      "transactionCommitted": true
+    },
+    "readback": {
+      "revokedCount": 1,
+      "generation2Count": 1,
+      "matchingSessionCount": 1
+    },
+    "maximumSessionWrites": 1,
+    "newLogins": 0,
+    "httpCalls": 0,
+    "phoneSessionWrites": 0,
+    "ownerOrSessionIDsPersisted": false,
+    "tokensReadOrWritten": 0
+  }
+}

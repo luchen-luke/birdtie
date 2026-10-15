@@ -9,6 +9,7 @@ import 'map_entities.dart';
 import 'map_layers_controller.dart';
 import 'map_layers_api.dart';
 import 'map_media_controller.dart';
+import 'owned_map_controller.dart';
 import 'now_discovery_controller.dart';
 
 /// Owns a stable map subtree. Input and overlay changes do not rebuild it.
@@ -37,6 +38,7 @@ class MapCanvas extends StatefulWidget {
     required this.onMapUnavailable,
     this.layers,
     this.media,
+    this.mapContent,
     this.mediaOwnerID,
     this.mediaAuthorizationHeader,
     this.mediaWorkspaceID,
@@ -57,6 +59,7 @@ class MapCanvas extends StatefulWidget {
   final NowDiscoveryController discovery;
   final MapLayersController? layers;
   final MapMediaController? media;
+  final OwnedMapController? mapContent;
   final String? Function()? mediaOwnerID,
       mediaAuthorizationHeader,
       mediaWorkspaceID;
@@ -92,6 +95,7 @@ class _MapCanvasState extends State<MapCanvas> {
     widget.discovery.addListener(_refreshProjection);
     widget.layers?.addListener(_refreshProjection);
     widget.media?.addListener(_refreshProjection);
+    widget.mapContent?.addListener(_refreshProjection);
     widget.personalCollection?.addListener(_refreshProjection);
     widget.ornamentTop?.addListener(_refreshOrnaments);
     widget.contentRect?.addListener(_refreshOrnaments);
@@ -131,6 +135,10 @@ class _MapCanvasState extends State<MapCanvas> {
       oldWidget.media?.removeListener(_refreshProjection);
       widget.media?.addListener(_refreshProjection);
     }
+    if (oldWidget.mapContent != widget.mapContent) {
+      oldWidget.mapContent?.removeListener(_refreshProjection);
+      widget.mapContent?.addListener(_refreshProjection);
+    }
     if (oldWidget.personalCollection != widget.personalCollection) {
       oldWidget.personalCollection?.removeListener(_refreshProjection);
       widget.personalCollection?.addListener(_refreshProjection);
@@ -157,6 +165,7 @@ class _MapCanvasState extends State<MapCanvas> {
     widget.discovery.removeListener(_refreshProjection);
     widget.layers?.removeListener(_refreshProjection);
     widget.media?.removeListener(_refreshProjection);
+    widget.mapContent?.removeListener(_refreshProjection);
     widget.personalCollection?.removeListener(_refreshProjection);
     widget.ornamentTop?.removeListener(_refreshOrnaments);
     widget.contentRect?.removeListener(_refreshOrnaments);
@@ -186,7 +195,49 @@ class _MapCanvasState extends State<MapCanvas> {
       ? 'idle'
       : widget.workspace.task?.id ?? 'idle';
 
-  List<MapEntity> _entities() => widget.personalCollection?.value != null
+  bool get _showsMapContent {
+    if (widget.personalCollection?.value != null ||
+        widget.layers?.authorID != null ||
+        widget.city.selectedCity?.id != widget.mapContent?.cityID)
+      return false;
+    if (widget.workspace.areaOperation?.read?.current == true &&
+        widget.workspace.areaOperation?.cityID == widget.city.selectedCity?.id)
+      return true;
+    final resultCity = widget.workspace.queryContextType == 'ONLINE'
+        ? _cityTaskCityID
+        : widget.workspace.task?.cityID;
+    return !(_mapResult?.projectionItems != null &&
+        resultCity == widget.city.selectedCity?.id);
+  }
+
+  List<MapEntity> _entities() {
+    final base = _baseEntities();
+    if (!_showsMapContent) return base;
+    final content =
+        widget.mapContent?.entities
+            .where(
+              (entity) =>
+                  widget.layers == null ||
+                  widget.layers!.visible.contains('PLACE') ||
+                  (widget.layers!.visible.contains('MOMENT') &&
+                      (widget.mapContent?.find(entity.id)?.momentCount ?? 0) >
+                          0),
+            )
+            .toList() ??
+        const <MapEntity>[];
+    final places = content.map((e) => e.placeID).whereType<String>().toSet();
+    // These pixels have their own session-bound reader. Passing them through
+    // the public-media decorator would erase or misattribute that authority.
+    return [
+      for (final entity in base)
+        if (entity.kind != MapEntityKind.place ||
+            !places.contains(entity.placeID))
+          entity,
+      ...content,
+    ];
+  }
+
+  List<MapEntity> _baseEntities() => widget.personalCollection?.value != null
       ? widget.personalCollection!.value!.current &&
                 widget.personalCollection!.value!.cityID ==
                     widget.city.selectedCity?.id
@@ -341,8 +392,9 @@ class _MapCanvasState extends State<MapCanvas> {
       'collection:${widget.personalCollection?.value?.id}:${widget.personalCollection?.value?.current}',
       'author:${widget.layers?.epoch}:${widget.layers?.authorID}:${widget.layers?.authorView?.validUntil}',
       'media:${widget.media?.revision}',
+      'content:${widget.mapContent?.epoch}:${widget.mapContent?.current}:${widget.mapContent?.loading}:${widget.mapContent?.error}:${widget.mapContent?.view?.truncated}',
       for (final entity in _entities())
-        '${entity.id}:${entity.kind}:${entity.title}:${entity.subtitle}:${entity.latitude}:${entity.longitude}:${entity.placeID}:${entity.precision}:${entity.decorationKey}',
+        '${entity.id}:${entity.kind}:${entity.title}:${entity.subtitle}:${entity.latitude}:${entity.longitude}:${entity.placeID}:${entity.precision}:${entity.sourceVersion}:${entity.decorationKey}',
       for (final place in _places())
         '${place.id}:${place.name}:${place.location.latitude}:${place.location.longitude}',
     ].join('|');
@@ -430,6 +482,8 @@ class _MapCanvasState extends State<MapCanvas> {
     final authorID = authorLayers?.authorID;
     final authorView = authorLayers?.authorView;
     final personalCollection = widget.personalCollection?.value;
+    final mapContent = widget.mapContent;
+    final contentEpoch = mapContent?.epoch;
     void selectMapEntity(
       String id, {
       MapEntity? shownEntity,
@@ -449,6 +503,24 @@ class _MapCanvasState extends State<MapCanvas> {
                   e.latitude == shownEntity.latitude &&
                   e.longitude == shownEntity.longitude,
             ))
+          return;
+        workspace.selectEntity(id, preserveViewport: true);
+        widget.onEntityPicked?.call(id);
+        return;
+      }
+      final contentPin = mapContent?.find(id);
+      if (contentPin != null) {
+        if (!_showsMapContent ||
+            !identical(mapContent, widget.mapContent) ||
+            contentEpoch != mapContent!.epoch ||
+            !identical(workspace, selectionWorkspace) ||
+            selectionEpoch != workspace.taskEpoch ||
+            selectedCity?.id != widget.city.selectedCity?.id ||
+            shownEntity == null ||
+            shownEntity.sourceVersion != contentPin.sourceVersion ||
+            shownEntity.latitude != contentPin.latitude ||
+            shownEntity.longitude != contentPin.longitude ||
+            !mapContent.sourceCurrent(contentPin))
           return;
         workspace.selectEntity(id, preserveViewport: true);
         widget.onEntityPicked?.call(id);
@@ -536,6 +608,16 @@ class _MapCanvasState extends State<MapCanvas> {
       }
     }
 
+    final contentMessage = !_showsMapContent
+        ? null
+        : widget.mapContent?.error ??
+              (widget.mapContent?.loading == true && _entities().isEmpty
+                  ? '正在读取地点与动态…'
+                  : widget.mapContent?.view?.truncated == true
+                  ? '当前范围地点较多，请放大地图继续查看。'
+                  : widget.mapContent?.current == true && _entities().isEmpty
+                  ? '这个范围内暂无可见地点或动态。'
+                  : null);
     return Stack(
       children: [
         Positioned.fill(
@@ -580,6 +662,7 @@ class _MapCanvasState extends State<MapCanvas> {
               widget.discovery,
               widget.layers,
               widget.media,
+              widget.mapContent,
               widget.personalCollection,
             ]),
             currentReaderScope: () => (
@@ -589,6 +672,10 @@ class _MapCanvasState extends State<MapCanvas> {
               widget.layers?.bounds,
               widget.layers?.authorID,
               widget.layers?.authorBounds,
+              widget.mapContent,
+              widget.mapContent?.epoch,
+              widget.mapContent?.cityID,
+              widget.mapContent?.view?.sourceVersion,
               widget.city.selectedCity?.id,
               widget.workspace.taskEpoch,
               widget.workspace.task?.id,
@@ -611,6 +698,38 @@ class _MapCanvasState extends State<MapCanvas> {
             ],
           ),
         ),
+        if (contentMessage != null)
+          Positioned(
+            top: (widget.contentRect?.value?.top ?? 150) + 8,
+            left: 16,
+            right: 16,
+            child: Align(
+              alignment: Alignment.topCenter,
+              child: Material(
+                color: Theme.of(
+                  context,
+                ).colorScheme.surface.withValues(alpha: .94),
+                borderRadius: BorderRadius.circular(12),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 4,
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Flexible(child: Text(contentMessage)),
+                      if (widget.mapContent?.error != null)
+                        TextButton(
+                          onPressed: () => widget.mapContent?.refresh(),
+                          child: const Text('重试'),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
         AnimatedBuilder(
           animation: widget.workspace,
           builder: (context, _) {

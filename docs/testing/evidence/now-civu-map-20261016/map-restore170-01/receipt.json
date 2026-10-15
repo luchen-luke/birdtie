@@ -1,0 +1,32 @@
+{
+  "exitCode": 0,
+  "mode": "apply",
+  "remoteProgramSHA256": "802ede87827fa6307b108b88cf566d70c97ad11b2e73692fbe1afeee27d4236a",
+  "result": {
+    "status": "VERIFIED",
+    "schema": 170,
+    "result": {
+      "runId": "c5df0d7c-f361-4275-9838-feb6d1d92352",
+      "status": "COMMITTED",
+      "counts": {
+        "places": 5492,
+        "publicPlaces": 5492,
+        "coordinatePlaces": 3724,
+        "publicMoments": 83
+      },
+      "deferred": {
+        "coordinates_unproven": 1768,
+        "merged_place": 19
+      },
+      "countsKnown": true,
+      "activated": false,
+      "sourceWrites": 0,
+      "mediaImported": false
+    },
+    "privateInputsUnchanged": true,
+    "sourceWrites": 0,
+    "sessionChanges": 0,
+    "nativeContentPublicationWrites": 0
+  },
+  "stderrPresent": false
+}

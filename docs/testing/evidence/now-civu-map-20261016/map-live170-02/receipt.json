@@ -1,0 +1,39 @@
+{
+  "exitCode": 1,
+  "remoteScriptSHA256": "10948bae39a2f14e7a0e94bffaa7bdc0389d48ab8a0655db2fcca307cbf53920",
+  "stderrPresent": false,
+  "status": "FAIL",
+  "result": {
+    "status": "FAIL",
+    "devOnly": true,
+    "productionIdentityVerified": false,
+    "productionPhoneVerification": false,
+    "fixedCodeUsed": true,
+    "sourceWrites": 0,
+    "databaseDirectWrites": 0,
+    "remoteConfigurationChanged": false,
+    "agentActivationRequested": false,
+    "oldSessionAccepted": false,
+    "messagesSent": 0,
+    "privateValuesPersisted": false,
+    "allCreatedSessionsLoggedOut": false,
+    "schema": 170,
+    "contentWrites": 0,
+    "otherOriginalOwnerLogins": 0,
+    "aberdeenVisiblePlaces": 384,
+    "aberdeenVisibleMomentPlaceLinks": 8,
+    "aberdeenPlacesWithMoments": 6,
+    "aberdeenPlaceCovers": 6,
+    "mapReadMilliseconds": 18724,
+    "sourceScopes": {
+      "CIVU_PUBLIC_CATALOG": 384,
+      "CIVU_PUBLIC_MOMENT": 6,
+      "SELF_PRIVATE": 1,
+      "BIRDTIE_PUBLIC_MOMENT": 0
+    },
+    "stage": "PLACE_AND_MOMENT_READ",
+    "errorType": "URLError",
+    "code": "CONTROLLED_READ_FAILED",
+    "loggedOutMediaDenied": false
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "status": "FAIL_SINGLE_TAP_READER_EXPANSION",
+  "apkSHA256": "f0d685315c904dda107ef9a45adc1f811e214c3fd33b381129f13d25a826907a",
+  "passed": [
+    "Actual Causeway View screen center picked correct first nearby candidate",
+    "Chooser remained open and selected actual Causeway View",
+    "Now preview contained original authorized moment and image"
+  ],
+  "failed": "First 查看动态 action enlarged the parent layout, but ValueKey state remounted and returned to compact. A second tap expanded content, which is diagnostic evidence rather than a passing one-action result.",
+  "cause": "Preview and expanded panel have different parents; ValueKey cannot preserve State across them.",
+  "contentWrites": 0,
+  "sourceWrites": 0,
+  "screenshots": {
+    "map23-live01.png": "4d76c5d9e506893836b6fdb7c303b6007bb5a5de7bb61760ca3a0ac47512636f",
+    "map23-place-choice01.png": "1e7eac3834a17a1d2ce82ed91a973e28ee661f03036ec606feb37f08410fa750",
+    "map23-causeway-preview01.png": "f3d8c4fa8d599b0916288398505dbcfc9ba6c1e6d42cb98af7b74e6473fdf68f",
+    "map23-causeway-expanded01.png": "47ff4d3b0b7040ef031de49f5fe3eef89ae90aff5184b6bb99e3436657049ccd",
+    "map23-causeway-second-expand01.png": "83b8f0fb25012bba10e8336d39d70df0239824d17e96a6f3b950e8106b6566dd"
+  },
+  "screenshotsStoredLocallyOutsideGit": true,
+  "finalAcceptance": "NOT_PASS_REQUIRES_FIX_AND_REBUILD"
+}

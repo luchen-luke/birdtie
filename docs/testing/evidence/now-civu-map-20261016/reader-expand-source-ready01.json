@@ -1,0 +1,62 @@
+{
+  "at": "2026-10-15T20:49:35.081011+00:00",
+  "status": "SOURCE_READY",
+  "source": {
+    "apps/client/lib/src/workspace/map_workspace.dart": "636a2791d1d8dddf263d369644a68e9b6188cff83ffb79bb719cf0930d92f08a",
+    "apps/client/test/now_map_content_integration_test.dart": "f751250c90c2cb5df3457dae6e5bdd7414f82ffbaef08048f384beefc9079726"
+  },
+  "rootCause": "The Now preview uses a SingleChildScrollView parent while expanded content uses a FocusTraversalGroup parent. ValueKey(source) could not reparent the same panel state; expansion disposed the original and recreated _expanded=false.",
+  "change": "Use GlobalObjectKey(source) for NowMapContentPanel. The preview and expanded branches are mutually exclusive; source is a fresh Object per open. Existing source retirement and close behavior are retained.",
+  "productDeltaVerified": "Exactly one ValueKey-to-GlobalObjectKey replacement plus one comment; reverting those bytes matches the pre-fix source hash.",
+  "test": {
+    "directory": "reader-expand01/green",
+    "result": "PASS 1",
+    "scope": "Actual MapWorkspace and real owned-map controller/strict API decoder; synthetic authorized JSON and JPEG fixture."
+  },
+  "coverage": [
+    "Actual map entity selection opens compact preview.",
+    "Clicking 查看动态 retains the exact panel State.",
+    "返回地图 replaces compact close label and expansion action disappears.",
+    "Body changes maxLines 3 to null; media pager changes height 96 to 240 and renders an Image widget from verified JPEG bytes.",
+    "Expansion does not restart map/page reads; owned epoch stays current.",
+    "Map element, viewport bounds, and original composer state remain stable.",
+    "Returning closes the panel and retains the current map; no writes or Agent task."
+  ],
+  "beforeFix": {
+    "directory": "reader-expand01/red2",
+    "result": "FAIL: original panel State defunct and replaced after actual expand click",
+    "sameFinalTestSource": true
+  },
+  "preservedFixtureFailure": {
+    "directory": "reader-expand01/red",
+    "explanation": "pumpAndSettle advanced synthetic lease timers while the mock image stream still awaited real asynchronous draining; corrected fixture scheduling before genuine RED/FIX comparison."
+  },
+  "analysis": {
+    "directory": "reader-expand01/analysis",
+    "ERROR": 0,
+    "WARNING": 0,
+    "INFO": 157,
+    "scope": "Only the two changed files. No errors or warnings; existing workspace lint infos remain."
+  },
+  "applicableUX": [
+    "UX-CHECK-04",
+    "UX-CHECK-06",
+    "UX-CHECK-10",
+    "UX-CHECK-12",
+    "UX-CHECK-16"
+  ],
+  "notRun": [
+    "APK build or installation by worker",
+    "Physical-device expansion after this change",
+    "Remote/production reads or writes by worker",
+    "Full test or analysis suite"
+  ],
+  "evidence": {
+    "reader-expand01/red2/receipt.json": "93ef1a3c6b67b7a1573b50aff82fce04fea9c59e9566a2635ffdce2f08abb1bf",
+    "reader-expand01/red2/output.log": "3a16aca2b89c956f3e4642f71a3ed5db18cbd9ddbcc6001ab0f9f5775d275e7c",
+    "reader-expand01/green/receipt.json": "60b29bb4246743f135d0709e13eb1e699a69207cf1a5efc441fa5896409b5273",
+    "reader-expand01/green/output.log": "194ba70966c8284b2674430bcea0a3975be9ef47df2247d131e40c238480a392",
+    "reader-expand01/analysis/receipt.json": "450061938232034f74b1e5fe28b7acfcab986e3d14047e997e5c4c24da5654eb",
+    "reader-expand01/analysis/output.log": "a670495c569a5edcd6287b20e82ce5cb5e7049ba99527128ca72491b94067e15"
+  }
+}

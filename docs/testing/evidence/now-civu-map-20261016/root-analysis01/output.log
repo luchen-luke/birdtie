@@ -1,0 +1,167 @@
+ERROR|COMPILE_TIME_ERROR|DUPLICATE_DEFINITION|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|757|13|9|The name 'operation' is already defined.
+ERROR|COMPILE_TIME_ERROR|INVALID_ASSIGNMENT|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|761|33|9|A value of type 'MomentThreadReceipt' can't be assigned to a variable of type 'String?'.
+WARNING|STATIC_WARNING|UNUSED_LOCAL_VARIABLE|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|757|13|9|The value of the local variable 'operation' isn't used.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_canvas.dart|202|7|13|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_canvas.dart|205|7|12|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_canvas.dart|506|11|7|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_canvas.dart|524|11|7|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_display_policy.dart|96|9|9|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_display_policy.dart|152|9|9|Statements in an if should be enclosed in a block.
+INFO|HINT|UNNECESSARY_IMPORT|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|11|8|31|The import of 'package:flutter/gestures.dart' is unnecessary because all of the used elements are also provided by the import of 'package:flutter/material.dart'.
+INFO|HINT|UNNECESSARY_IMPORT|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|12|8|32|The import of 'package:flutter/rendering.dart' is unnecessary because all of the used elements are also provided by the import of 'package:flutter/material.dart'.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|162|7|39|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|247|7|7|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|269|7|7|Statements in an if should be enclosed in a block.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|312|11|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|373|9|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|397|9|51|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|464|7|7|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|514|17|27|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|630|9|120|Statements in an if should be enclosed in a block.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|631|11|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|657|11|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|671|7|7|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|694|9|7|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|716|9|120|Statements in an if should be enclosed in a block.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|717|11|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|UNRELATED_TYPE_EQUALITY_CHECKS|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|759|22|2|The type of the right operand ('String?') isn't a subtype or a supertype of the left operand ('MomentThreadReceipt').
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|801|54|21|Statements in a for should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|839|11|14|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|889|13|27|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|911|9|13|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|916|9|13|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|921|9|13|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|932|9|13|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|950|7|7|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|963|9|7|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|977|9|114|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|982|9|48|Statements in a for should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|1126|43|12|Statements in a for should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|1195|7|7|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|1220|7|102|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|1303|9|7|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|1321|7|7|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|1335|13|63|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|1411|7|7|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|1462|7|29|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|1466|9|63|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|1555|7|13|Statements in an if should be enclosed in a block.
+INFO|LINT|USE_NULL_AWARE_ELEMENTS|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|1567|19|2|Use the null-aware marker '?' rather than a null check via an 'if'.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|1629|9|124|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|1644|7|7|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|1709|9|7|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|1791|7|7|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|1809|9|30|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|1835|9|12|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|1842|9|12|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|1851|7|7|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|1854|7|7|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|1925|11|323|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|1937|13|57|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|1975|13|128|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|1982|13|263|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|1990|13|143|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|2002|13|63|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|2025|13|17|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|2027|46|18|Statements in a for should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|2030|11|205|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|2065|9|120|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|2069|9|91|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|2108|7|7|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|2110|7|44|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|2140|9|272|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|2152|9|38|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|2173|7|317|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|2187|7|7|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|2254|7|44|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|2382|9|38|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|2426|9|65|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|2433|9|58|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|2443|7|7|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|2446|7|7|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|2484|7|7|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|2508|7|7|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|2522|9|58|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|2525|9|51|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|2528|9|48|Statements in a for should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|2552|7|7|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|2611|9|7|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|2744|17|1663|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|2754|23|52|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|2758|23|53|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|2787|17|170|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|2954|23|58|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|2996|7|7|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|3367|7|7|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|3385|7|7|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|3575|13|35|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|3741|7|7|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|3790|7|7|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|3800|7|7|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|3882|9|12|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|3898|7|7|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|3918|7|31|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|4019|7|18|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|4172|7|7|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|4181|7|278|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|4185|11|63|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|4240|45|12|Statements in a for should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|4314|7|29|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|4390|9|290|Statements in an if should be enclosed in a block.
+INFO|LINT|USE_NULL_AWARE_ELEMENTS|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|4661|9|2|Use the null-aware marker '?' rather than a null check via an 'if'.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|4858|7|7|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|5292|9|47|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|5334|9|7|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|5395|7|7|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|5408|7|13|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|5591|7|7|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|5657|13|50|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|5713|7|12|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|5724|7|12|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|5926|7|7|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|5948|7|7|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|5992|13|13|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|6015|9|119|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|6211|7|7|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|6220|7|7|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|6325|23|50|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|6329|23|37|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|6355|7|7|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|6430|15|13|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|6462|7|7|Statements in an if should be enclosed in a block.
+INFO|LINT|UNNECESSARY_UNDERSCORES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|6596|22|2|Unnecessary use of multiple underscores.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|6607|27|34|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|6627|7|7|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|6785|7|7|Statements in an if should be enclosed in a block.
+INFO|LINT|PREFER_FUNCTION_DECLARATIONS_OVER_VARIABLES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|7110|30|63|Use a function declaration rather than a variable assignment to bind a function to a name.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|7220|7|7|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|7352|7|7|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|7417|7|7|Statements in an if should be enclosed in a block.
+INFO|LINT|PREFER_FUNCTION_DECLARATIONS_OVER_VARIABLES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|7426|30|46|Use a function declaration rather than a variable assignment to bind a function to a name.
+INFO|LINT|PREFER_FUNCTION_DECLARATIONS_OVER_VARIABLES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|7427|30|30|Use a function declaration rather than a variable assignment to bind a function to a name.
+INFO|LINT|PREFER_FUNCTION_DECLARATIONS_OVER_VARIABLES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|7428|30|46|Use a function declaration rather than a variable assignment to bind a function to a name.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|7554|7|7|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|7608|7|7|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|7621|9|7|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|7632|9|114|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|8083|7|7|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|8114|7|7|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|8158|7|7|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|8223|13|7|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|8231|13|7|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|8250|13|7|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|8317|9|31|Statements in an if should be enclosed in a block.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|8319|43|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|8332|19|39|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|8402|11|51|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|8413|7|7|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|8641|11|17|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|8718|13|26|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|8720|13|15|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|8941|17|32|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|8953|23|15|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|9031|31|7|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|9424|43|291|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|9508|35|44|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|9870|9|27|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_workspace.dart|9942|11|11|Statements in an if should be enclosed in a block.

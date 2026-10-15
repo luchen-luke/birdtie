@@ -1,0 +1,21 @@
+{
+  "safeAggregateOnly": true,
+  "files": {
+    "actual-audit-helper.py": {
+      "sha256": "05af15fc2aa74082fd607e6e27bd5533832f48fe901397ddaf5c6b0b495cd7d6",
+      "bytes": 4205
+    },
+    "actual-cleanup-helper.py": {
+      "sha256": "8f9e06c281881c1471aad2fd70741ed8cdc53f1bbd2982793bf3742685d14c28",
+      "bytes": 6316
+    },
+    "audit-before.json": {
+      "sha256": "9105fcdb320b39b7e7be23caf389c29a43088f1ceb49009898e866cef46e8c64",
+      "bytes": 1990
+    },
+    "receipt.json": {
+      "sha256": "af754129f0f6a531182d45a33ed4555d7342717e62f085e281249122118fafd6",
+      "bytes": 954
+    }
+  }
+}

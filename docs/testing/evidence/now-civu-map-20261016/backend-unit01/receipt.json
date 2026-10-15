@@ -1,0 +1,46 @@
+{
+  "at": "2026-10-15T18:33:53.130316+00:00",
+  "command": [
+    "C:\\Program Files\\Go\\bin\\go.exe",
+    "test",
+    "-mod=readonly",
+    "./internal/legacymap",
+    "./internal/content",
+    "./internal/httpapi",
+    "./internal/postgres",
+    "./cmd/legacy-map-restore",
+    "-count=1",
+    "-json",
+    "-run",
+    "^(TestCoordinateProofRequiresExactOriginAndRejectsConflict|TestMapContentBoundsAndSourceScopeAreClosed|TestMapContentQueryRejectsDuplicateOrganizationAndUnknown)$"
+  ],
+  "cwd": "D:\\Project\\birdtie\\apps\\api",
+  "exitCode": 0,
+  "sourceBefore": {
+    "apps\\api\\internal\\legacymap\\build.go": "4620e102891bae4f2a8898957fefb2c9da0bd624013fbb2048396645530f534a",
+    "apps\\api\\internal\\legacymap\\build_test.go": "6604acdf408850ccd3f92d9080e5721d89713a614bc4f3979711af8c1de3601d",
+    "apps\\api\\internal\\legacymap\\model.go": "5defd13a19f207e0589d39c48f813354f64b5ee07f857e767ca26a93f8f370c7",
+    "apps\\api\\cmd\\legacy-map-restore\\main.go": "e26950f32f6bdd486757c06fa1efa2fa655e103b3e284e71d7f814522e6b99d3",
+    "apps\\api\\internal\\content\\map_content.go": "586c23d734de93255674bc71b2b6b1abca481ca607626ba0334076b1536d5fd6",
+    "apps\\api\\internal\\content\\map_content_test.go": "fce9b3d6552c8fe601448312f0a17e3c11054c94cfcdff5e55c56ff71a7cf037",
+    "apps\\api\\internal\\postgres\\legacy_map_restore.go": "0bd79bac6c87f5f7d498a7c0c821cf6c6bf2da87a76e801ee8a0861c9d2fbdef",
+    "apps\\api\\internal\\postgres\\map_content.go": "f79f97c77198507898eb705da6df29a1a2610f73596f9de970d9983df18fa89c",
+    "apps\\api\\internal\\postgres\\map_content_media.go": "d0d09d5fc0c48e8fcedba40aca3365b00594ce05607b6baafd67c47400215af7",
+    "apps\\api\\internal\\httpapi\\map_content.go": "db1b4fd95664bc244d314af458658f8326f7d8560dabe964e3bd18fe15598191",
+    "apps\\api\\internal\\httpapi\\map_content_test.go": "d38812be70896a0299967d67d42c3ea3ee66f3ece033e74d302e98b54769c497"
+  },
+  "sourceAfter": {
+    "apps\\api\\internal\\legacymap\\build.go": "4620e102891bae4f2a8898957fefb2c9da0bd624013fbb2048396645530f534a",
+    "apps\\api\\internal\\legacymap\\build_test.go": "6604acdf408850ccd3f92d9080e5721d89713a614bc4f3979711af8c1de3601d",
+    "apps\\api\\internal\\legacymap\\model.go": "5defd13a19f207e0589d39c48f813354f64b5ee07f857e767ca26a93f8f370c7",
+    "apps\\api\\cmd\\legacy-map-restore\\main.go": "e26950f32f6bdd486757c06fa1efa2fa655e103b3e284e71d7f814522e6b99d3",
+    "apps\\api\\internal\\content\\map_content.go": "586c23d734de93255674bc71b2b6b1abca481ca607626ba0334076b1536d5fd6",
+    "apps\\api\\internal\\content\\map_content_test.go": "fce9b3d6552c8fe601448312f0a17e3c11054c94cfcdff5e55c56ff71a7cf037",
+    "apps\\api\\internal\\postgres\\legacy_map_restore.go": "0bd79bac6c87f5f7d498a7c0c821cf6c6bf2da87a76e801ee8a0861c9d2fbdef",
+    "apps\\api\\internal\\postgres\\map_content.go": "f79f97c77198507898eb705da6df29a1a2610f73596f9de970d9983df18fa89c",
+    "apps\\api\\internal\\postgres\\map_content_media.go": "d0d09d5fc0c48e8fcedba40aca3365b00594ce05607b6baafd67c47400215af7",
+    "apps\\api\\internal\\httpapi\\map_content.go": "db1b4fd95664bc244d314af458658f8326f7d8560dabe964e3bd18fe15598191",
+    "apps\\api\\internal\\httpapi\\map_content_test.go": "d38812be70896a0299967d67d42c3ea3ee66f3ece033e74d302e98b54769c497"
+  },
+  "sourceStable": true
+}

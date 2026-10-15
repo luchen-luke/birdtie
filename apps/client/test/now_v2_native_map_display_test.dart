@@ -20,6 +20,136 @@ import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart' hide Size;
 // PUBLIC capture is an offline replay; no device paint or real network proof.
 void main() {
   testWidgets(
+    'actual touch native selection ignores distant transparent canvases and retains semantic and source-cluster actions',
+    (t) async {
+      MapEntity row(
+        String id,
+        double longitude, {
+        MapEntityKind kind = MapEntityKind.place,
+        List<String> members = const [],
+      }) => MapEntity(
+        id: id,
+        kind: kind,
+        title: id,
+        subtitle: '合成当前来源',
+        latitude: 57.145,
+        longitude: longitude,
+        memberIDs: members,
+        precision: kind == MapEntityKind.cluster ? 'area' : 'point',
+      );
+      final target = row('place:z-target', -2.1);
+      final near = row('moment:a-near', -2.099, kind: MapEntityKind.moment);
+      final wrong = row('place:a-wrong', -2.098);
+      final first = row('place:member-one', -2.097);
+      final second = row('place:member-two', -2.096);
+      final cluster = row(
+        'cluster:original',
+        -2.095,
+        kind: MapEntityKind.cluster,
+        members: [first.id, second.id],
+      );
+      final source = [wrong, near, target, first, second, cluster];
+      final map = _Map();
+      final positions = {
+        target.id: const Offset(160, 365),
+        near.id: const Offset(180, 370),
+        wrong.id: const Offset(160, 306.5),
+        first.id: const Offset(40, 520),
+        second.id: const Offset(390, 520),
+        cluster.id: const Offset(330, 330),
+      };
+      for (final entity in source) {
+        final p = positions[entity.id]!;
+        map.positions['${entity.longitude}:${entity.latitude}'] =
+            ScreenCoordinate(x: p.dx, y: p.dy);
+      }
+      MapEntity? selected;
+      await _mount(t, map, source, onSelected: (e) => selected = e);
+      await mediaWait(t, () => map.points.created.length == source.length);
+      // The adapter must not subscribe to SDK image-box selections: that sink
+      // consumes the actual map tap before touchPosition can reach Flutter.
+      expect(map.points.onTap, isNull);
+      _tapAt(t, positions[target.id]!);
+      await t.pumpAndSettle();
+      final chooser = find.byKey(const Key('current-map-point-choices'));
+      final list = t.widget<ListView>(
+        find.descendant(of: chooser, matching: find.byType(ListView)),
+      );
+      final rows = (list.childrenDelegate as SliverChildListDelegate).children
+          .cast<ListTile>()
+          .toList();
+      expect(rows.map((r) => r.key), [
+        ValueKey('map-point-choice:${target.id}'),
+        ValueKey('map-point-choice:${near.id}'),
+      ]);
+      expect(
+        find.byKey(ValueKey('map-point-choice:${wrong.id}')),
+        findsNothing,
+      );
+      await t.tap(find.byKey(ValueKey('map-point-choice:${target.id}')));
+      await t.pumpAndSettle();
+      expect(selected?.id, target.id);
+      selected = null;
+      _tapAt(t, const Offset(160, 425));
+      await t.pumpAndSettle();
+      expect(chooser, findsNothing);
+      expect(selected, isNull);
+
+      // Accessibility still identifies a real object directly.
+      t
+          .widget<Semantics>(
+            find.byKey(ValueKey('native-map-point-semantics:${wrong.id}')),
+          )
+          .properties
+          .onTap!();
+      await t.pumpAndSettle();
+      expect(selected?.id, wrong.id);
+      selected = null;
+
+      // A genuine source cluster retains its original BOTTOM-painted canvas,
+      // even where its visible graphic lies above a point's 48 dp target.
+      _tapAt(t, const Offset(330, 281));
+      await t.pumpAndSettle();
+      final members = find.byKey(const Key('current-map-cluster-members'));
+      expect(members, findsOneWidget);
+      expect(
+        find.byKey(ValueKey('current-map-member:${first.id}')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(ValueKey('current-map-member:${second.id}')),
+        findsOneWidget,
+      );
+      Navigator.of(t.element(members)).pop();
+      await t.pumpAndSettle();
+      expect(selected, isNull);
+      for (final entity in source) {
+        final annotation = map.points.created[entity.id]!;
+        expect(annotation.geometry.coordinates.lng, entity.longitude);
+        expect(annotation.geometry.coordinates.lat, entity.latitude);
+      }
+      expect(map.points.created.length, source.length);
+
+      // A tap awaiting a screen projection cannot select a retired source.
+      final gate = Completer<List<ScreenCoordinate?>>();
+      map.projectionGate = gate;
+      _tapAt(t, positions[target.id]!);
+      await t.pump();
+      await _update(t, map, const [], onSelected: (e) => selected = e);
+      map.projectionGate = null;
+      gate.complete([
+        for (final e in source) map.positions['${e.longitude}:${e.latitude}'],
+      ]);
+      await t.pumpAndSettle();
+      expect(selected, isNull);
+      expect(chooser, findsNothing);
+      expect(t.takeException(), isNull);
+      await t.pumpWidget(const SizedBox());
+    },
+    variant: TargetPlatformVariant.only(TargetPlatform.android),
+  );
+
+  testWidgets(
     'Map1 native retires same-point pixels before held camera, without camera reset',
     (t) async {
       final image = (await t.runAsync(mapFixtureImage))!;
@@ -147,7 +277,7 @@ void main() {
         expect(map.points.created[moment.id]!.image, orderedEquals(expected));
         expect(map.points.created[moment.id]!.geometry.coordinates.lng, -2.1);
       }
-      map.points.onTap!(_annotation(map.points.created[moments.first.id]!));
+      _tapMarker(t, map, map.points.created[moments.first.id]!);
       await t.pumpAndSettle();
       final sheet = find.byKey(const Key('current-map-point-choices'));
       final list = t.widget<ListView>(
@@ -198,7 +328,7 @@ void main() {
       final map = _Map();
       MapEntity? chosen;
       await _mount(t, map, source, onSelected: (e) => chosen = e);
-      map.points.onTap!(_annotation(map.points.created['moment:0']!));
+      _tapMarker(t, map, map.points.created['moment:0']!);
       await t.pumpAndSettle();
       final choices = find.byKey(const Key('current-map-point-choices'));
       expect(choices, findsOneWidget);
@@ -363,7 +493,7 @@ void main() {
       expect(marker.geometry.coordinates.lat, moment.latitude);
       expect(marker.iconAnchor, IconAnchor.CENTER);
       expect(marker.iconSize, 1);
-      map.points.onTap!(_annotation(marker));
+      _tapMarker(t, map, marker);
       // Await both the async SDK projection and the sheet's entrance animation
       // before a physical hit test. The first frame can start that animation.
       await t.pumpAndSettle();
@@ -720,7 +850,25 @@ PointAnnotation _annotation(PointAnnotationOptions option) => PointAnnotation(
   customData: option.customData,
   textField: option.textField,
   image: option.image,
+  iconAnchor: option.iconAnchor,
+  iconSize: option.iconSize,
 );
+
+void _tapAt(WidgetTester t, Offset position) {
+  t.widget<MapWidget>(find.byType(MapWidget)).onTapListener!(
+    MapContentGestureContext(
+      touchPosition: ScreenCoordinate(x: position.dx, y: position.dy),
+      point: Point(coordinates: Position(-2.1, 57.145)),
+      gestureState: GestureState.ended,
+    ),
+  );
+}
+
+void _tapMarker(WidgetTester t, _Map map, PointAnnotationOptions option) {
+  final coordinate = option.geometry.coordinates;
+  final position = map.positions['${coordinate.lng}:${coordinate.lat}'];
+  _tapAt(t, Offset(position?.x ?? 100, position?.y ?? 200));
+}
 
 class _Cancel extends Fake implements Cancelable {
   @override
@@ -785,6 +933,7 @@ class _Map extends Fake implements MapboxMap {
   final northAnimationDurations = <int?>[];
   int projectionCalls = 0;
   Completer<CameraState>? cameraGate;
+  Completer<List<ScreenCoordinate?>>? projectionGate;
   @override
   AnnotationManager get annotations => _Annotations(points);
   @override
@@ -804,6 +953,7 @@ class _Map extends Fake implements MapboxMap {
     List<Point> coordinates,
   ) async {
     projectionCalls++;
+    if (projectionGate != null) return projectionGate!.future;
     return [
       for (final point in coordinates)
         positions['${point.coordinates.lng}:${point.coordinates.lat}'] ??

@@ -1,0 +1,95 @@
+{
+  "at": "2026-10-15T21:05:41.926876+00:00",
+  "status": "PASS_NOW_MAP_AND_READER_SCOPE",
+  "apkSHA256": "aeae427da6d87038794f79016a2defd0a60335ef3c8efd7b05d09338fe6f2257",
+  "package": "app.civu.civu_mobile.birdtiepreview",
+  "displayPixels": [
+    1220,
+    2656
+  ],
+  "recording": false,
+  "normalTextScale": true,
+  "interactionStartedAt": "2026-10-15T20:54:13.662233+00:00",
+  "interactionCompletedAt": "2026-10-15T21:04:06.810626+00:00",
+  "scope": [
+    "Live authenticated Now map shows University of Aberdeen, Causeway View and The Tippling House photographs, names and actual moment counts",
+    "Actual physical Causeway photo center selects Causeway first among genuine nearby 48dp candidates",
+    "One 查看动态 action opens full reader, verified 返回地图 appears and expand action disappears",
+    "Actual horizontal gesture displays image 2/4 after image 1/4",
+    "Same image 2/4 remains readable across a period longer than 30 seconds",
+    "Close returns to same visible Aberdeen landmarks and point screen positions with original empty composer",
+    "Actual Tippling photo center selects Tippling first; expanded panel and vertical scroll render all three legacy moment entries and real text/media",
+    "Final state is Now map, no reading panel or error"
+  ],
+  "readerObservationGapSeconds": 84.199,
+  "contentWrites": 0,
+  "mediaUploads": 0,
+  "finalPublicationActions": 0,
+  "originalCivuWrites": 0,
+  "newDeviceLogins": 0,
+  "identityNote": "Existing restored local fixed-code development session; no claim of production phone identity verification.",
+  "viewportEvidence": "Same landmark and semantic object bounds before/after; no map drag or camera command performed. No SDK numeric camera dump.",
+  "screenshots": {
+    "map24-causeway-expanded01.png": {
+      "sha256": "ab7ba302b97b43b1332981bb141af4c8a246d76f595d55e08ef660401c9aad61",
+      "capturedAtUTC": "2026-10-15T20:55:45.392177+00:00"
+    },
+    "map24-causeway-media02.png": {
+      "sha256": "ae845c11cb18d635ee901938cb9dacd5847c8031b440f2418deb4d3f5868ce09",
+      "capturedAtUTC": "2026-10-15T20:56:25.792301+00:00"
+    },
+    "map24-causeway-preview01.png": {
+      "sha256": "fddc3b08003e8ef83efa40080529f1bb6421db499791835f6387a83b06231eb6",
+      "capturedAtUTC": "2026-10-15T20:55:20.197474+00:00"
+    },
+    "map24-final-now01.png": {
+      "sha256": "7745da74b42cb92689a783abd44040eccc6c6da91ffa2bd86d99a509d1a38744",
+      "capturedAtUTC": "2026-10-15T21:04:07.797788+00:00"
+    },
+    "map24-live01.png": {
+      "sha256": "73f4e49add9f3825fb3e3ad064ebaa0d2128f52b136298b0dd1544c16f43b701",
+      "capturedAtUTC": "2026-10-15T20:54:14.721353+00:00"
+    },
+    "map24-place-choice01.png": {
+      "sha256": "95ff28ec00a68553b36aa7f8f59f5bb17b9d1286e11c8bee3a78c633c393ba2f",
+      "capturedAtUTC": "2026-10-15T20:54:43.650995+00:00"
+    },
+    "map24-reader-renew01.png": {
+      "sha256": "972dc9dededc75662c157f59522af7e722d2884c33b99a21f6945193c14ad6fb",
+      "capturedAtUTC": "2026-10-15T20:57:49.991683+00:00"
+    },
+    "map24-return01.png": {
+      "sha256": "7aba1cb3b233cf9cabf0292318b4189ebad8f46d7eca986923c4d7c7cb254964",
+      "capturedAtUTC": "2026-10-15T20:59:15.734921+00:00"
+    },
+    "map24-tippling-choice01.png": {
+      "sha256": "860f328b5216d1835f0543a758b3a6c90156292f06a904ee14207de335827b99",
+      "capturedAtUTC": "2026-10-15T21:00:08.043876+00:00"
+    },
+    "map24-tippling-expanded01.png": {
+      "sha256": "d66c08495374b70b634b1b6c3831d5e538fa6d058512105b81f418274a56d184",
+      "capturedAtUTC": "2026-10-15T21:01:46.307657+00:00"
+    },
+    "map24-tippling-scrolled01.png": {
+      "sha256": "4dd7aac315a0cc5366f78975d232230448a03e8141cbc467676375c714a66aae",
+      "capturedAtUTC": "2026-10-15T21:02:49.923282+00:00"
+    }
+  },
+  "uiEventLogSHA256": "ae0c7f0132b63ea3888f736b6c177d1c00f4aaf2e9368e8edc9cf2059a56e124",
+  "independentVisualReceipt": "final-visual24/receipt.json",
+  "independentVisualReceiptSHA256": "425730fd86a40e9a2dc9753c6b9ccf72ccec58a584d9f1d15aae989eef8073d9",
+  "notRun": [
+    "Full repository regression",
+    "iOS actual device",
+    "Web complete interactive flow",
+    "All legacy cities and all owners",
+    "Complete new publication/video flow on APK24 (APK19 historical evidence remains separate)",
+    "Actual phone offline login-configuration retry",
+    "Device logout/revocation during current reader; real API and native tests cover current permission boundaries",
+    "Nonempty composer draft/device rotation during this map run; targeted Now tests cover retention",
+    "City/layer modal first-frame race remains a static-only separate concern",
+    "All four Causeway images individually; first and second were viewed"
+  ],
+  "rawScreenshotsCommittedToGit": false,
+  "failureHistoryPreserved": "device-regressions23/receipt.json"
+}

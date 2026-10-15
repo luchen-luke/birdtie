@@ -1,0 +1,5 @@
+Flutter assets will be downloaded from https://storage.flutter-io.cn. Make sure you trust this source!
+00:00 +0: loading D:/Project/birdtie/apps/client/test/auth_configuration_recovery_test.dart
+00:00 +0: D:/Project/birdtie/apps/client/test/auth_configuration_recovery_test.dart: failed login configuration explicitly recovers without restoring or authenticating again
+00:03 +1: D:/Project/birdtie/apps/client/test/auth_restore_and_access_test.dart: restoration is visible, credential stays private, initialize reentry shares one operation
+00:03 +2: All tests passed!

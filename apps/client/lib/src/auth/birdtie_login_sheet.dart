@@ -124,10 +124,24 @@ class _BirdtieLoginSheetState extends State<BirdtieLoginSheet> {
                   child: const Text('手机号测试登录'),
                 ),
               ],
-              if (!auth.available && !auth.devPhoneAvailable)
+              if (!auth.available && !auth.devPhoneAvailable) ...[
                 Text(
                   auth.configurationChecked ? '登录服务暂不可用，请稍后再试。' : '正在检查登录服务…',
                 ),
+                if (auth.configurationChecked || auth.configurationChecking)
+                  TextButton(
+                    onPressed: auth.configurationChecking || auth.busy
+                        ? null
+                        : () {
+                            if (current &&
+                                !auth.signedIn &&
+                                !auth.sessionRestoring) {
+                              auth.refreshLoginConfiguration();
+                            }
+                          },
+                    child: Text(auth.configurationChecking ? '正在检查…' : '重新检查'),
+                  ),
+              ],
             ],
             const SizedBox(height: 8),
             TextButton(onPressed: _close, child: const Text('返回')),

@@ -1,0 +1,484 @@
+import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
+import 'dart:typed_data';
+
+import 'package:birdtie_client/src/workspace/map_entities.dart';
+import 'package:birdtie_client/src/workspace/owned_map_api.dart';
+import 'package:birdtie_client/src/workspace/owned_map_controller.dart';
+import 'package:crypto/crypto.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
+
+String _id(int n) => '17000000-0000-4000-8000-${n.toString().padLeft(12, '0')}';
+String _hash(String v) => sha256.convert(utf8.encode(v)).toString();
+
+void main() {
+  testWidgets(
+    'personal map grants keep source leases, page all moments, verify pixels, and retire identity ABA',
+    (t) async {
+      final jpeg = File(
+        'test/fixtures/map-media/isolation-a.jpg',
+      ).readAsBytesSync();
+      final digest = sha256.convert(jpeg).toString();
+      final identity = ValueNotifier(0);
+      var now = DateTime.now().toUtc();
+      var owner = _id(9001), origin = 'https://owned-map.test';
+      String? organization;
+      var allowed = true, corrupt = false, source = _hash('first-source');
+      const bounds = MapBounds(west: -2.3, south: 57, east: -1.9, north: 57.4);
+      final calls = <http.Request>[];
+      Completer<http.Response>? delayed;
+      bool delayNextMap = false;
+      DateTime? pageUntil;
+      Map<String, Object?> lease() => {
+        'observedAt': now.toIso8601String(),
+        'validUntil': now.add(const Duration(seconds: 30)).toIso8601String(),
+      };
+      String scope(int n) => n == 2 ? 'SELF_PRIVATE' : 'CIVU_PUBLIC_MOMENT';
+      Map<String, Object?> selector(int n) => {
+        'id': _id(n),
+        'revision': 1,
+        'visibilitySource': scope(n),
+        'detailPath': '/v1/me/map-content/moments/${_id(n)}',
+      };
+      Map<String, Object?> media(int n) => {
+        'kind': 'IMAGE',
+        'id': _id(8001),
+        'revision': 1,
+        'mimeType': 'image/jpeg',
+        'width': 320,
+        'height': 180,
+        'byteCount': jpeg.length,
+        'sha256': digest,
+        'sourceVersion': source,
+        'contentPath':
+            '/v1/me/map-content/moments/${_id(n)}/media/${_id(8001)}/content?sourceVersion=$source',
+        'durationMs': null,
+        'videoCodec': null,
+        'audioCodec': null,
+        'poster': null,
+      };
+      Map<String, Object?> detail(int n) => {
+        'schemaVersion': 'map-content-moment-v1',
+        'viewerAccountId': owner,
+        'id': _id(n),
+        'revision': 1,
+        'visibilitySource': scope(n),
+        'canEdit': n == 2,
+        'status': 'draft',
+        'visibility': 'private',
+        'title': '',
+        'body': '  原文 $n\n',
+        'createdAt': '2026-01-01T00:00:00Z',
+        'locations': [
+          {'placeId': _id(5000), 'name': '合成地点', 'anchor': null},
+        ],
+        'media': n == 21 ? [media(n)] : [],
+        'sourceVersion': _hash('detail-$n'),
+        ...lease(),
+      };
+      Map<String, Object?> cover() => {
+        'kind': 'REFERENCE_IMAGE',
+        'id': _id(8001),
+        'revision': 1,
+        'visibilitySource': 'CIVU_PUBLIC_CATALOG',
+        'mimeType': 'image/jpeg',
+        'width': 320,
+        'height': 180,
+        'byteCount': jpeg.length,
+        'sha256': digest,
+        'sourceVersion': source,
+        'contentPath':
+            '/v1/me/map-content/places/${_id(5000)}/images/${_id(8001)}/content?sourceVersion=$source',
+      };
+      Map<String, Object?> pin(int n) => {
+        'placeId': _id(5000 + n),
+        'name': '合成地点 $n',
+        'categoryCode': 'culture.museum',
+        'cityId': null,
+        'anchor': {
+          'coordinateSystem': 'wgs84',
+          'precision': 'point',
+          'latitude': 57.2,
+          'longitude': -2.1,
+        },
+        'visibilitySources': n == 0
+            ? ['CIVU_PUBLIC_CATALOG', 'CIVU_PUBLIC_MOMENT', 'SELF_PRIVATE']
+            : ['CIVU_PUBLIC_CATALOG'],
+        'sourceVersion': source,
+        'momentCount': n == 0 ? 21 : 0,
+        'moments': n == 0 ? List.generate(20, (i) => selector(i + 1)) : [],
+        'momentsTruncated': n == 0,
+        'cover': n == 0 ? cover() : null,
+      };
+      http.Response json(Object value) => http.Response(
+        jsonEncode({'data': value}),
+        200,
+        headers: {
+          'content-type': 'application/json',
+          'cache-control': 'no-store',
+        },
+      );
+      final client = MockClient((request) async {
+        calls.add(request);
+        expectSync(request.method, 'GET');
+        expectSync(request.url.origin, origin);
+        expectSync(request.headers['Authorization'], 'Bearer isolated-fixture');
+        expectSync(request.followRedirects, isFalse);
+        if (request.url.path == '/v1/me/map-content') {
+          final response = json({
+            'schemaVersion': 'map-content-v1',
+            'scope': 'MAP_CONTENT',
+            'viewerAccountId': owner,
+            'cityId': 'aberdeen',
+            'bounds': bounds.toJson(),
+            'sourceVersion': source,
+            'pins': List.generate(366, pin),
+            'truncated': false,
+            ...lease(),
+          });
+          if (delayNextMap) {
+            delayNextMap = false;
+            final wait = delayed!;
+            await wait.future;
+          }
+          return response;
+        }
+        if (request.url.path ==
+            '/v1/me/map-content/places/${_id(5000)}/moments') {
+          final last = request.url.queryParameters['cursor'] == 'page-two';
+          expectSync(
+            request.url.queryParameters.keys,
+            last ? ['cursor'] : isEmpty,
+          );
+          if (!last) pageUntil = now.add(const Duration(seconds: 30));
+          final items = last
+              ? [detail(21)]
+              : List.generate(20, (i) => detail(i + 1));
+          // A cursor keeps its original deadline. The server clamps each
+          // returned detail to that page deadline, even on a later request.
+          for (final item in items) {
+            item['validUntil'] = pageUntil!.toIso8601String();
+          }
+          return json({
+            'schemaVersion': 'map-content-place-moments-v1',
+            'viewerAccountId': owner,
+            'placeId': _id(5000),
+            'items': items,
+            'nextCursor': last ? null : 'page-two',
+            'sourceVersion': _hash('page-source'),
+            ...lease(),
+            'validUntil': pageUntil!.toIso8601String(),
+          });
+        }
+        if (request.url.path.endsWith('/content')) {
+          final bytes = Uint8List.fromList(jpeg);
+          if (corrupt) bytes[100] ^= 1;
+          return http.Response.bytes(
+            bytes,
+            200,
+            headers: {
+              'content-type': 'image/jpeg',
+              'cache-control': 'no-store',
+              'x-content-type-options': 'nosniff',
+              'content-length': bytes.length.toString(),
+            },
+          );
+        }
+        final number = int.parse(
+          request.url.path.split('/').last.split('-').last,
+        );
+        return json(detail(number));
+      });
+      final controller = OwnedMapController(
+        client: client,
+        apiBaseUrl: () => origin,
+        ownerID: () => owner,
+        authorizationHeader: () => 'Bearer isolated-fixture',
+        organizationWorkspaceID: () => organization,
+        identityChanges: identity,
+        refreshAllowed: () => allowed,
+        now: () => now,
+      );
+      Future<void> drain(bool Function() done) async {
+        for (var i = 0; i < 100 && !done(); i++) {
+          await t.runAsync(
+            () => Future<void>.delayed(const Duration(milliseconds: 20)),
+          );
+          await t.pump();
+        }
+        expect(
+          done(),
+          isTrue,
+          reason:
+              'items=${controller.items.length}, current=${controller.current}, error=${controller.error}, requests=${calls.map((r) => r.url.path).join(",")}',
+        );
+      }
+
+      final wire = OwnedMapAPI(client: client, apiBaseUrl: () => origin);
+      final probe = await t.runAsync(
+        () => wire.read(
+          cityID: 'aberdeen',
+          bounds: bounds,
+          ownerID: owner,
+          authorization: 'Bearer isolated-fixture',
+          origin: origin,
+          current: () => true,
+          now: () => now,
+        ),
+      );
+      expect(probe!.items, hasLength(366));
+      final verified = await t.runAsync(
+        () => wire.content(
+          probe.items.first.cover!,
+          authorization: 'Bearer isolated-fixture',
+          origin: origin,
+          current: () => true,
+        ),
+      );
+      expect(verified!.length, jpeg.length);
+      verified.fillRange(0, verified.length, 0);
+      wire.dispose();
+      controller.sync(cityID: 'aberdeen', bounds: bounds);
+      await drain(
+        () =>
+            controller.entities.length == 366 &&
+            controller.entities.first.mediaPixels != null,
+      );
+      final initial = controller.items.first,
+          pixels = controller.entities.first.mediaPixels!;
+      expect(initial.cityID, isNull);
+      expect(
+        initial.visibilitySources,
+        containsAll(['CIVU_PUBLIC_CATALOG', 'SELF_PRIVATE']),
+      );
+      expect(controller.entities.first.memberIDs, isEmpty);
+      expect(controller.entities.first.categoryCode, 'culture.museum');
+      expect(controller.entities.first.recentMoments!.labelAt(now), '21条动态');
+      expect(pixels.current(), isTrue);
+      expect(pixels.image.width, 320);
+      expect(pixels.image.height, 180);
+      expect(pixels.normalPNG, isNotEmpty);
+      expect(pixels.selectedPNG, isNotEmpty);
+      final raw = await t.runAsync(() => pixels.image.toByteData());
+      expect(raw, isNotNull); // Actual canonical JPEG was decoded and painted.
+
+      // The deployed authorized map request took more than six seconds. A
+      // renewal must start early enough to survive that latency without
+      // extending the old permission deadline or clearing the selected pin.
+      delayed = Completer<http.Response>();
+      delayNextMap = true;
+      final oldUntil = controller.view!.validUntil;
+      final renewEpoch = controller.epoch;
+      now = now.add(const Duration(seconds: 15));
+      await t.pump(const Duration(seconds: 15));
+      await t.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 10)),
+      );
+      expect(controller.loading, isTrue);
+      expect(delayNextMap, isFalse);
+      now = now.add(const Duration(seconds: 7));
+      await t.pump(const Duration(seconds: 7));
+      expect(controller.sourceCurrent(initial), isTrue);
+      delayed.complete(http.Response('', 200));
+      await drain(() => !controller.loading);
+      expect(controller.epoch, renewEpoch);
+      expect(controller.view!.validUntil.isAfter(oldUntil), isTrue);
+      now = now.add(const Duration(seconds: 9));
+      await t.pump(const Duration(seconds: 9));
+      expect(now.isAfter(oldUntil), isTrue);
+      expect(controller.sourceCurrent(initial), isTrue);
+      expect(pixels.current(), isTrue);
+
+      // The native reader can return up to 200 independently verified media
+      // objects. This is separate from the editor's entry count of 20.
+      Map<String, Object?> mediaAt(int index) => {
+        ...media(21),
+        'id': _id(8001 + index),
+        'contentPath':
+            '/v1/me/map-content/moments/${_id(21)}/media/${_id(8001 + index)}/content?sourceVersion=$source',
+      };
+      final maximumMedia = {
+        ...detail(21),
+        'media': List.generate(200, mediaAt),
+      };
+      expect(
+        OwnedMapMomentDetail.decode(
+          maximumMedia,
+          ownerID: owner,
+          now: now,
+        ).media,
+        hasLength(200),
+      );
+      expect(
+        () => OwnedMapMomentDetail.decode(
+          {...maximumMedia, 'media': List.generate(201, mediaAt)},
+          ownerID: owner,
+          now: now,
+        ),
+        throwsFormatException,
+      );
+
+      final page = await t.runAsync(() => controller.readPlaceMoments(initial));
+      expect(page!.items, hasLength(20));
+      expect(page.items.first.canEdit, isFalse);
+      expect(page.items.first.visibility, 'private');
+      expect(page.items.first.visibilitySource, 'CIVU_PUBLIC_MOMENT');
+      expect(page.items[1].canEdit, isTrue);
+      expect(page.items.first.body, '  原文 1\n');
+      now = now.add(const Duration(seconds: 1));
+      final next = await t.runAsync(
+        () => controller.readPlaceMoments(initial, cursor: page.nextCursor),
+      );
+      final beyond = next!.items.single;
+      expect(beyond.id, _id(21));
+      expect(next.nextCursor, isNull);
+      expect(next.validUntil, page.validUntil);
+      expect(beyond.validUntil, page.validUntil);
+      expect(controller.momentCurrent(beyond.selector), isTrue);
+      final reread = await t.runAsync(
+        () => controller.readMoment(beyond.selector),
+      );
+      expect(controller.detailCurrent(reread!), isTrue);
+      final bytes = await t.runAsync(
+        () => controller.momentContent(reread, reread.media.single),
+      );
+      expect(sha256.convert(bytes!).toString(), digest);
+      bytes.fillRange(0, bytes.length, 0);
+      await t.runAsync(
+        () => expectLater(
+          controller.readPlaceMoments(initial, cursor: 'unissued'),
+          throwsFormatException,
+        ),
+      );
+      corrupt = true;
+      await t.runAsync(
+        () => expectLater(
+          controller.coverContent(initial.cover!, current: () => true),
+          throwsFormatException,
+        ),
+      );
+      corrupt = false;
+
+      now = now.add(const Duration(seconds: 5));
+      await t.runAsync(controller.refresh);
+      expect(identical(initial, controller.items.first), isFalse);
+      expect(controller.sourceCurrent(initial), isTrue);
+      expect(pixels.current(), isTrue);
+      expect(controller.detailCurrent(reread), isTrue);
+      source = _hash('changed-source');
+      await t.runAsync(controller.refresh);
+      expect(controller.sourceCurrent(initial), isFalse);
+      expect(controller.detailCurrent(reread), isFalse);
+      expect(pixels.current(), isFalse);
+      await drain(() => controller.entities.first.mediaPixels != null);
+      final beforeABA = controller.items.first,
+          beforeABAPixels = controller.entities.first.mediaPixels!;
+      final oldEpoch = controller.epoch;
+      delayed = Completer<http.Response>();
+      delayNextMap = true;
+      final pending = controller.refresh();
+      await t.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 10)),
+      );
+      owner = _id(9002);
+      organization = _id(9999);
+      identity.value++;
+      expect(controller.items, isEmpty);
+      expect(beforeABAPixels.current(), isFalse);
+      delayed.complete(http.Response('', 200));
+      await t.runAsync(() => pending);
+      expect(controller.items, isEmpty);
+      owner = _id(9001);
+      organization = null;
+      identity.value++;
+      await drain(() => controller.current);
+      expect(controller.epoch, greaterThan(oldEpoch));
+      expect(controller.sourceCurrent(beforeABA), isFalse);
+      final preTransport = controller.items.first;
+      controller.replaceTransport(client: client);
+      expect(controller.items, isEmpty);
+      controller.sync(cityID: 'aberdeen', bounds: bounds);
+      await drain(() => controller.current);
+      expect(controller.sourceCurrent(preTransport), isFalse);
+      final preOrigin = controller.items.first;
+      origin = 'https://new-owned-map.test';
+      expect(controller.items, isEmpty);
+      identity.value++;
+      await drain(() => controller.current);
+      expect(controller.sourceCurrent(preOrigin), isFalse);
+      controller.updateRefreshVisibility();
+      final beforeHidden = controller.items.first;
+      allowed = false;
+      controller.updateRefreshVisibility();
+      expect(controller.items, isEmpty);
+      now = now.add(const Duration(seconds: 31));
+      await t.pump(const Duration(seconds: 31));
+      final beforeReturn = calls
+          .where((r) => r.url.path == '/v1/me/map-content')
+          .length;
+      allowed = true;
+      controller.updateRefreshVisibility();
+      await drain(() => controller.current);
+      expect(controller.cityID, 'aberdeen');
+      expect(controller.sourceCurrent(beforeHidden), isFalse);
+      expect(
+        calls.where((r) => r.url.path == '/v1/me/map-content').length,
+        beforeReturn + 1,
+      );
+      controller.updateRefreshVisibility();
+      controller.updateRefreshVisibility();
+      await t.pump();
+      expect(
+        calls.where((r) => r.url.path == '/v1/me/map-content').length,
+        beforeReturn + 1,
+      );
+      final expires = controller.items.first;
+      delayed = Completer<http.Response>();
+      delayNextMap = true;
+      now = now.add(const Duration(seconds: 15));
+      await t.pump(const Duration(seconds: 15));
+      await t.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 10)),
+      );
+      expect(controller.loading, isTrue);
+      now = now.add(const Duration(seconds: 16));
+      await t.pump(const Duration(seconds: 16));
+      expect(controller.current, isFalse);
+      expect(controller.entities, isEmpty);
+      expect(controller.sourceCurrent(expires), isFalse);
+      expect(controller.error, contains('已到期'));
+      delayed.complete(http.Response('', 200));
+      await t.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 10)),
+      );
+      expect(controller.entities, isEmpty);
+      controller.retire(clearQuery: true);
+      allowed = false;
+      controller.updateRefreshVisibility();
+      allowed = true;
+      controller.updateRefreshVisibility();
+      expect(controller.cityID, isNull);
+      await t.pump();
+      expect(
+        calls.where((r) => r.url.path == '/v1/me/map-content').length,
+        beforeReturn + 2,
+      );
+      expect(
+        calls.every(
+          (r) =>
+              r.method == 'GET' && r.url.path.startsWith('/v1/me/map-content'),
+        ),
+        isTrue,
+      );
+      allowed = false;
+      controller.dispose();
+      identity.dispose();
+      client.close();
+      await t.pump();
+    },
+  );
+}

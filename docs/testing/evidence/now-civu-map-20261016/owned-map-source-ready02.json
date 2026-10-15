@@ -1,0 +1,83 @@
+{
+  "at": "2026-10-15T18:43:11.682829+00:00",
+  "status": "SOURCE_READY",
+  "source": {
+    "apps/client/lib/src/workspace/owned_map_api.dart": "adedb87981204f9c3439ea2098d09d44bbfe1d8db6195f142987ae4f9de78fbc",
+    "apps/client/lib/src/workspace/owned_map_controller.dart": "c50c6e59ad335b1136f251e38b04c39dc8fa461de1b5e9d37dde863e2d06cd58",
+    "apps/client/lib/src/workspace/owned_map_media_controller.dart": "abbcef6fd539864286d06f5144d7b46ffb79753fd4dbbcf27cdecd7bfd66dd5f",
+    "apps/client/test/owned_map_test.dart": "bc3295d0b28a50296346edd38cfc94bf101e9d57c93b6bb619191c266c6b9955"
+  },
+  "test": {
+    "path": "work/owned-map-direct06",
+    "result": "PASS 1",
+    "name": "personal map grants keep source leases, page all moments, verify pixels, and retire identity ABA",
+    "sameCompositeAdditionalAssertions": [
+      "Hidden route retires immediately; return after31sec reads chosen area exactly once",
+      "Repeated visible builds do not retrigger HTTP",
+      "Explicit city clearQuery retirement prevents old-city re-read on route return"
+    ]
+  },
+  "analysis": {
+    "path": "work/owned-map-analysis03",
+    "scope": "Changed controller+test only",
+    "exitCode": 0,
+    "errors": 0,
+    "warnings": 0,
+    "info": 8,
+    "unchangedAPIAndMediaAnalysis": "owned-map-analysis02"
+  },
+  "coverage": [
+    "366 distinct synthetic WGS pins with nullable city, complete total and preserved source grants",
+    "Original-public detail retains native draft/private state and readonly canEdit=false; self canEdit independent",
+    "20+1 place pagination with issued cursor, full detail and original authored whitespace, detail21 independent grant/renew",
+    "Canonical real JPEG fixture hash/header/dimensions read; actual Flutter image decode and both native marker rasters",
+    "Tampered image bytes and unissued cursor rejected; all captured requests are dedicated map-content GETs, no Agent/write",
+    "Same pin/source renewal retains selection/verified pixels; changed source invalidates old pin/detail/pixels",
+    "Late original actor read retired through organization/owner switch and ABA, transport replacement, origin change, 30sec deadline",
+    "Route-hidden retirement and >30s return restores exactly one current area read; no build retry loop; clearQuery prevents stale city restoration"
+  ],
+  "failuresPreserved": {
+    "owned-map-direct01": "FAIL: first asynchronous pixel wait; subsequently diagnosed fixture guard conflict",
+    "owned-map-direct02": "FAIL: metadata verified but asynchronous pixel wait; diagnostic added",
+    "owned-map-direct03": "FAIL: direct byte validation passed but pixel wait; diagnostic added",
+    "owned-map-direct04": "FAIL: test callback used guarded expect while pump active; changed callback assertions to expectSync, removed temporary debug assertion",
+    "owned-map-analysis01": "exit2: test had one unnecessary non-null assertion warning; fixed only test, plus INFO retained"
+  },
+  "notRun": [
+    "This worker did not build APK/Web/API, deploy, touch phone or remote",
+    "Real Civu map+source-grant database/HTTPS verification belongs to backend/root",
+    "Real video playback/transcode, native provider lifecycle and offline performance not tested by this compound",
+    "Full Flutter suite and full analysis not run"
+  ],
+  "interfaces": [
+    "OwnedMapController sync/current/entities/find/epoch/cityID/sourceCurrent/retire/replaceTransport",
+    "readPlaceMoments(pin,cursor), readMoment(detail.selector), momentCurrent/detailCurrent, guarded momentContent and coverContent",
+    "Pin source stable across lease refresh but cannot cross identity epoch; page/detail grants have independent deadlines and current source binding",
+    "updateRefreshVisibility(): transition-only route hook; retire(clearQuery:true) on selected city change waits for new bounds"
+  ],
+  "evidence": {
+    "owned-map-direct01\\receipt.json": "ee9450f03ccf94307d783282a5f0dce457cfebc2a625a3e322275dc5529f9965",
+    "owned-map-direct01\\log.txt": "fb9990ea4509ac7aa12cfd38998ec1588cd2c329c4df5119b22109329238ce20",
+    "owned-map-direct02\\receipt.json": "042febcf91c4054f47da2ef2a55b2d55e0265890d68e912dadfb6a610dfcec22",
+    "owned-map-direct02\\log.txt": "ee60218b549e08fa36caefba819c5871aae577bcabe2f092cb2e1a751f7508df",
+    "owned-map-direct03\\receipt.json": "6d6e0f0110812fde47375f8414783f2909b1ad00c40fa456c4c34906be8cf795",
+    "owned-map-direct03\\log.txt": "fe7357bcf8264778fc047fd1fbb86b43f57515de0e85e7054e36303e149aa5ac",
+    "owned-map-direct04\\receipt.json": "af162835c9e0ef75a395526a0f0f5b562a449f59494ea071d262b839ce85a3c8",
+    "owned-map-direct04\\log.txt": "bb4c338500c59b81be4a59776f0d47e5957c83b7892c476e3f415643e5133f82",
+    "owned-map-direct05\\receipt.json": "dfe3e50635c4e58645f07aaf53278c815992f874f951dea867061ac09a69136e",
+    "owned-map-direct05\\log.txt": "d2f3893c4351ca7f97e5535b5be9440946f6e603f38a79373b163fd8719bd4c8",
+    "owned-map-analysis01\\receipt.json": "6aa4b7649e7dafbb4ddfc3e0d82310d0c395b8c02ebbe9aca68ae86251c78a96",
+    "owned-map-analysis01\\log.txt": "95f6cb6328f7a4ed63d7da094a7aacadd9d9a395762409d5db91ffcdb7364a37",
+    "owned-map-analysis02\\receipt.json": "f999c587863f7b20824416f85be042ca3b11f80119ed1d562ebcff91925722e3",
+    "owned-map-analysis02\\log.txt": "eeaad89cabad7f91bfd8e7b180bc7bec00adf9afc63c2ab2ea96372ebf165a9a",
+    "owned-map-direct06/receipt.json": "da39dd8155e2ac80eaab00c8cbf7c461c4446cea3e4d517b98827ccc1773e41b",
+    "owned-map-direct06/log.txt": "d2f3893c4351ca7f97e5535b5be9440946f6e603f38a79373b163fd8719bd4c8",
+    "owned-map-analysis03/receipt.json": "04b5dc71c8e61bd6fdf7c3d72176070dc5a79befdeafa31b5c13df814a41ea9b",
+    "owned-map-analysis03/log.txt": "57076d8e6ae328a66c65c99ebcaa62ebbf873a74cac2e8a2a2a8690258ac570c"
+  },
+  "previousFrame": {
+    "path": "C:\\Users\\chens\\Documents\\Codex\\2026-10-15\\d-project-birdtie-docs-reports-birdtie-2\\work\\owned-map-source-ready01.json",
+    "sha256": "ddd529e755cef2569f087dd1f662269ec38bab8e147fab8fb0bfaea1438b35b5",
+    "status": "preserved; superseded only by actual route-return correction"
+  }
+}

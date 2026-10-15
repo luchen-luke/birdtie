@@ -1,0 +1,11 @@
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\auth\\birdtie_auth_controller.dart|325|7|13|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\auth\\birdtie_auth_controller.dart|367|7|13|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\auth\\birdtie_auth_controller.dart|419|7|13|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\auth\\birdtie_auth_controller.dart|461|7|13|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\auth\\birdtie_auth_controller.dart|516|7|7|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\auth\\birdtie_auth_controller.dart|625|13|33|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\auth\\birdtie_auth_controller.dart|634|13|12|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\auth\\birdtie_auth_controller.dart|915|7|13|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\auth\\birdtie_login_sheet.dart|22|5|7|Statements in an if should be enclosed in a block.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|D:\\Project\\birdtie\\apps\\client\\lib\\src\\auth\\birdtie_login_sheet.dart|40|9|16|Don't use 'BuildContext's across async gaps.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\test\\auth_configuration_recovery_test.dart|45|11|20|Statements in an if should be enclosed in a block.

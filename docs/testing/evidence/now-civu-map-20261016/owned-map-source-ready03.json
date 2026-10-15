@@ -1,0 +1,60 @@
+{
+  "at": "2026-10-15T19:16:57.885599+00:00",
+  "status": "SOURCE_READY",
+  "source": {
+    "apps/client/lib/src/workspace/owned_map_api.dart": "81b371ed4273dbe2bebbbaeb5d9549e39b9e3715fc8e98595c735bafe64e8248",
+    "apps/client/lib/src/workspace/owned_map_controller.dart": "572b5325c56ac521ac1ed00ce3dab65325de3509fb12af1a9375bccef177d318",
+    "apps/client/lib/src/workspace/owned_map_media_controller.dart": "abbcef6fd539864286d06f5144d7b46ffb79753fd4dbbcf27cdecd7bfd66dd5f",
+    "apps/client/test/owned_map_test.dart": "76f145b532e0b89095c8a8ddb134bd020e5b26c26fe45fd1208eac1aa75c2a33"
+  },
+  "previousFrame": {
+    "path": "owned-map-source-ready02.json",
+    "sha256": "aec519c372a0749204d2ef89b38f771a63cde31a9a61e72b5c1903819c622c89",
+    "preserved": true
+  },
+  "changes": [
+    "Renew metadata halfway through the remaining lease instead of only five seconds before expiry; retain exact original expiry retirement.",
+    "Align moment detail media count with native map-content contract: at most 200 media objects, independent of composer entry count.",
+    "No transport deadline, media current-source guard, content limit, permission boundary or media decoding changes."
+  ],
+  "test": {
+    "path": "owned-map-direct07",
+    "result": "PASS 1",
+    "elapsedSeconds": 3.412,
+    "scope": "Existing direct composite extended for the actually observed live renewal failure; synthetic HTTP and canonical JPEG only"
+  },
+  "coverageAdded": [
+    "Seven-second delayed renewal starts at half lease, succeeds before original expiry, keeps same selected source and verified pixels after that old deadline.",
+    "A renewal held beyond the original deadline still clears entities and rejects the late result; permission is not extended.",
+    "Native maximum of 200 unique media selectors decodes; 201 is rejected.",
+    "Second page requested later retains cursor deadline and child detail deadlines match the page; current detail grants remain valid."
+  ],
+  "analysis": {
+    "path": "owned-map-analysis04",
+    "scope": "Four owned-map source/test files only",
+    "exitCode": 0,
+    "errors": 0,
+    "warnings": 0,
+    "info": 22
+  },
+  "backendCoordination": "remote_audit owns clipping all page Items.ValidUntil to final page deadline, including cursor and shortest-item expiry.",
+  "applicableUX": [
+    "UX-CHECK-04",
+    "UX-CHECK-06",
+    "UX-CHECK-10",
+    "UX-CHECK-12",
+    "UX-CHECK-16"
+  ],
+  "notRun": [
+    "APK/Web builds and installation by this worker",
+    "Live remote requests or database writes by this worker",
+    "Physical-device renewal and image rendering after this correction",
+    "Whole Flutter suite and whole analysis"
+  ],
+  "evidence": {
+    "owned-map-direct07/receipt.json": "7761084ed76917dd48c59a813e57371ea6f29ebd6089fb43fb8e4903c431c1a8",
+    "owned-map-direct07/log.txt": "d2f3893c4351ca7f97e5535b5be9440946f6e603f38a79373b163fd8719bd4c8",
+    "owned-map-analysis04/receipt.json": "5090469b8e84d2d16f8342cfa1fa8bd7e2fcd62febff58809bcff2e1ef3a1d81",
+    "owned-map-analysis04/log.txt": "e37fcc7b3f39e7477817afce94c94d9819f848cb5949877edbc3febe9b1db2cc"
+  }
+}

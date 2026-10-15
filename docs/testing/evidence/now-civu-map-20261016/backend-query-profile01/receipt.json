@@ -1,0 +1,961 @@
+{
+  "exitCode": 0,
+  "remoteScriptSHA256": "cbf5ae2b66c29d0daed4e89949ef8af6c52c68d94f9be5f85af69fe0413b3d89",
+  "stderrPresent": false,
+  "status": "PASS",
+  "result": {
+    "status": "PASS",
+    "targetGuard": true,
+    "schema": 170,
+    "visibleMomentIDsCount": 83,
+    "viewportPlaceIDsCount": 384,
+    "sourceReads": 0,
+    "databaseWrites": 0,
+    "httpCalls": 0,
+    "logins": 0,
+    "queries": [
+      {
+        "stage": "PLACES",
+        "mode": "DEFAULT",
+        "wallMs": 2278,
+        "planningMs": 10.105,
+        "executionMs": 2190.842,
+        "jit": {
+          "Functions": 180,
+          "Options": {
+            "Inlining": true,
+            "Optimization": true,
+            "Expressions": true,
+            "Deforming": true
+          },
+          "Timing": {
+            "Generation": 29.21,
+            "Inlining": 121.626,
+            "Optimization": 1146.143,
+            "Emission": 724.534,
+            "Total": 2021.514
+          }
+        },
+        "slowNodes": [
+          {
+            "Node Type": "Limit",
+            "Actual Total Time": 2126.884,
+            "Actual Rows": 5492,
+            "Actual Loops": 1,
+            "Shared Hit Blocks": 92666,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          {
+            "Node Type": "Nested Loop",
+            "Actual Total Time": 144.61,
+            "Actual Rows": 5492,
+            "Actual Loops": 1,
+            "Shared Hit Blocks": 92666,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          {
+            "Node Type": "Nested Loop",
+            "Actual Total Time": 27.877,
+            "Actual Rows": 5492,
+            "Actual Loops": 1,
+            "Shared Hit Blocks": 32992,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          {
+            "Node Type": "Nested Loop",
+            "Actual Total Time": 23.318,
+            "Actual Rows": 5492,
+            "Actual Loops": 1,
+            "Shared Hit Blocks": 22008,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          {
+            "Node Type": "Merge Join",
+            "Actual Total Time": 19.279,
+            "Actual Rows": 5492,
+            "Actual Loops": 1,
+            "Shared Hit Blocks": 11024,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          {
+            "Node Type": "Index Scan",
+            "Relation Name": "places",
+            "Index Name": "places_id_city_unique",
+            "Actual Total Time": 14.615,
+            "Actual Rows": 5492,
+            "Actual Loops": 1,
+            "Shared Hit Blocks": 5530,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          {
+            "Node Type": "Index Scan",
+            "Relation Name": "cities",
+            "Index Name": "cities_pkey",
+            "Actual Total Time": 0.002,
+            "Actual Rows": 1,
+            "Actual Loops": 5492,
+            "Shared Hit Blocks": 15735,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          {
+            "Node Type": "Aggregate",
+            "Actual Total Time": 0.002,
+            "Actual Rows": 1,
+            "Actual Loops": 5492,
+            "Shared Hit Blocks": 32955,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          {
+            "Node Type": "Aggregate",
+            "Actual Total Time": 0.002,
+            "Actual Rows": 1,
+            "Actual Loops": 5492,
+            "Shared Hit Blocks": 10984,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          {
+            "Node Type": "Nested Loop",
+            "Actual Total Time": 0.001,
+            "Actual Rows": 0,
+            "Actual Loops": 5492,
+            "Shared Hit Blocks": 32955,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          {
+            "Node Type": "Index Scan",
+            "Relation Name": "place_field_evidence",
+            "Index Name": "place_field_current_lookup",
+            "Actual Total Time": 0.001,
+            "Actual Rows": 0,
+            "Actual Loops": 5492,
+            "Shared Hit Blocks": 32955,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          {
+            "Node Type": "Sort",
+            "Actual Total Time": 0.001,
+            "Actual Rows": 0,
+            "Actual Loops": 5492,
+            "Shared Hit Blocks": 10984,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          }
+        ]
+      },
+      {
+        "stage": "PLACES",
+        "mode": "JIT_OFF",
+        "wallMs": 177,
+        "planningMs": 3.514,
+        "executionMs": 136.746,
+        "jit": {},
+        "slowNodes": [
+          {
+            "Node Type": "Limit",
+            "Actual Total Time": 135.892,
+            "Actual Rows": 5492,
+            "Actual Loops": 1,
+            "Shared Hit Blocks": 92666,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          {
+            "Node Type": "Nested Loop",
+            "Actual Total Time": 135.413,
+            "Actual Rows": 5492,
+            "Actual Loops": 1,
+            "Shared Hit Blocks": 92666,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          {
+            "Node Type": "Nested Loop",
+            "Actual Total Time": 17.83,
+            "Actual Rows": 5492,
+            "Actual Loops": 1,
+            "Shared Hit Blocks": 32992,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          {
+            "Node Type": "Nested Loop",
+            "Actual Total Time": 12.985,
+            "Actual Rows": 5492,
+            "Actual Loops": 1,
+            "Shared Hit Blocks": 22008,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          {
+            "Node Type": "Index Scan",
+            "Relation Name": "cities",
+            "Index Name": "cities_pkey",
+            "Actual Total Time": 0.002,
+            "Actual Rows": 1,
+            "Actual Loops": 5492,
+            "Shared Hit Blocks": 15735,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          {
+            "Node Type": "Aggregate",
+            "Actual Total Time": 0.002,
+            "Actual Rows": 1,
+            "Actual Loops": 5492,
+            "Shared Hit Blocks": 32955,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          {
+            "Node Type": "Nested Loop",
+            "Actual Total Time": 0.002,
+            "Actual Rows": 0,
+            "Actual Loops": 5492,
+            "Shared Hit Blocks": 32955,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          {
+            "Node Type": "Aggregate",
+            "Actual Total Time": 0.002,
+            "Actual Rows": 1,
+            "Actual Loops": 5492,
+            "Shared Hit Blocks": 10984,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          {
+            "Node Type": "Merge Join",
+            "Actual Total Time": 8.592,
+            "Actual Rows": 5492,
+            "Actual Loops": 1,
+            "Shared Hit Blocks": 11024,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          {
+            "Node Type": "Index Scan",
+            "Relation Name": "legacy_import_runs",
+            "Index Name": "legacy_import_runs_pkey",
+            "Actual Total Time": 0.001,
+            "Actual Rows": 1,
+            "Actual Loops": 5492,
+            "Shared Hit Blocks": 10984,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          {
+            "Node Type": "Index Scan",
+            "Relation Name": "place_field_evidence",
+            "Index Name": "place_field_current_lookup",
+            "Actual Total Time": 0.001,
+            "Actual Rows": 0,
+            "Actual Loops": 5492,
+            "Shared Hit Blocks": 32955,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          {
+            "Node Type": "Sort",
+            "Actual Total Time": 0.001,
+            "Actual Rows": 0,
+            "Actual Loops": 5492,
+            "Shared Hit Blocks": 10984,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          }
+        ]
+      },
+      {
+        "stage": "MOMENTS",
+        "mode": "DEFAULT",
+        "wallMs": 39,
+        "planningMs": 3.63,
+        "executionMs": 3.517,
+        "jit": {},
+        "slowNodes": [
+          {
+            "Node Type": "Limit",
+            "Actual Total Time": 3.247,
+            "Actual Rows": 83,
+            "Actual Loops": 1,
+            "Shared Hit Blocks": 2676,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          {
+            "Node Type": "Sort",
+            "Actual Total Time": 3.236,
+            "Actual Rows": 83,
+            "Actual Loops": 1,
+            "Shared Hit Blocks": 2676,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          {
+            "Node Type": "CTE Scan",
+            "Actual Total Time": 3.157,
+            "Actual Rows": 83,
+            "Actual Loops": 1,
+            "Shared Hit Blocks": 2670,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          {
+            "Node Type": "Nested Loop",
+            "Actual Total Time": 3.027,
+            "Actual Rows": 86,
+            "Actual Loops": 1,
+            "Shared Hit Blocks": 2670,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          {
+            "Node Type": "Nested Loop",
+            "Actual Total Time": 1.347,
+            "Actual Rows": 86,
+            "Actual Loops": 1,
+            "Shared Hit Blocks": 1721,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          {
+            "Node Type": "Nested Loop",
+            "Actual Total Time": 1.265,
+            "Actual Rows": 86,
+            "Actual Loops": 1,
+            "Shared Hit Blocks": 1555,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          {
+            "Node Type": "Nested Loop",
+            "Actual Total Time": 1.18,
+            "Actual Rows": 86,
+            "Actual Loops": 1,
+            "Shared Hit Blocks": 1389,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          {
+            "Node Type": "Nested Loop",
+            "Actual Total Time": 1.045,
+            "Actual Rows": 86,
+            "Actual Loops": 1,
+            "Shared Hit Blocks": 1223,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          {
+            "Node Type": "Aggregate",
+            "Actual Total Time": 0.007,
+            "Actual Rows": 1,
+            "Actual Loops": 86,
+            "Shared Hit Blocks": 172,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          {
+            "Node Type": "Index Scan",
+            "Relation Name": "legacy_note_archives",
+            "Index Name": "legacy_note_archive_owner_page",
+            "Actual Total Time": 0.006,
+            "Actual Rows": 1,
+            "Actual Loops": 86,
+            "Shared Hit Blocks": 880,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          {
+            "Node Type": "Sort",
+            "Actual Total Time": 0.006,
+            "Actual Rows": 1,
+            "Actual Loops": 86,
+            "Shared Hit Blocks": 172,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          {
+            "Node Type": "Nested Loop",
+            "Actual Total Time": 0.459,
+            "Actual Rows": 86,
+            "Actual Loops": 1,
+            "Shared Hit Blocks": 343,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          }
+        ]
+      },
+      {
+        "stage": "LINKS",
+        "mode": "DEFAULT",
+        "wallMs": 37,
+        "planningMs": 4.2,
+        "executionMs": 2.654,
+        "jit": {},
+        "slowNodes": [
+          {
+            "Node Type": "Unique",
+            "Actual Total Time": 2.41,
+            "Actual Rows": 70,
+            "Actual Loops": 1,
+            "Shared Hit Blocks": 790,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          {
+            "Node Type": "Sort",
+            "Actual Total Time": 2.395,
+            "Actual Rows": 90,
+            "Actual Loops": 1,
+            "Shared Hit Blocks": 790,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          {
+            "Node Type": "Result",
+            "Actual Total Time": 2.31,
+            "Actual Rows": 90,
+            "Actual Loops": 1,
+            "Shared Hit Blocks": 782,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          {
+            "Node Type": "Append",
+            "Actual Total Time": 2.282,
+            "Actual Rows": 90,
+            "Actual Loops": 1,
+            "Shared Hit Blocks": 782,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          {
+            "Node Type": "Nested Loop",
+            "Actual Total Time": 1.304,
+            "Actual Rows": 47,
+            "Actual Loops": 1,
+            "Shared Hit Blocks": 185,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          {
+            "Node Type": "Materialize",
+            "Actual Total Time": 0.023,
+            "Actual Rows": 47,
+            "Actual Loops": 47,
+            "Shared Hit Blocks": 183,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          {
+            "Node Type": "Nested Loop",
+            "Actual Total Time": 1.0,
+            "Actual Rows": 47,
+            "Actual Loops": 1,
+            "Shared Hit Blocks": 183,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          {
+            "Node Type": "Hash Join",
+            "Actual Total Time": 0.969,
+            "Actual Rows": 43,
+            "Actual Loops": 1,
+            "Shared Hit Blocks": 597,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          {
+            "Node Type": "Hash Join",
+            "Actual Total Time": 0.728,
+            "Actual Rows": 47,
+            "Actual Loops": 1,
+            "Shared Hit Blocks": 42,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          {
+            "Node Type": "Nested Loop",
+            "Actual Total Time": 0.012,
+            "Actual Rows": 1,
+            "Actual Loops": 43,
+            "Shared Hit Blocks": 576,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          {
+            "Node Type": "Merge Join",
+            "Actual Total Time": 0.435,
+            "Actual Rows": 83,
+            "Actual Loops": 1,
+            "Shared Hit Blocks": 34,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          {
+            "Node Type": "Nested Loop",
+            "Actual Total Time": 0.01,
+            "Actual Rows": 1,
+            "Actual Loops": 43,
+            "Shared Hit Blocks": 447,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          }
+        ]
+      },
+      {
+        "stage": "OWN_RELATIONS",
+        "mode": "DEFAULT",
+        "wallMs": 59,
+        "planningMs": 15.947,
+        "executionMs": 2.874,
+        "jit": {},
+        "slowNodes": [
+          {
+            "Node Type": "Limit",
+            "Actual Total Time": 0.718,
+            "Actual Rows": 94,
+            "Actual Loops": 1,
+            "Shared Hit Blocks": 245,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          {
+            "Node Type": "Sort",
+            "Actual Total Time": 0.711,
+            "Actual Rows": 94,
+            "Actual Loops": 1,
+            "Shared Hit Blocks": 245,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          {
+            "Node Type": "Append",
+            "Actual Total Time": 0.637,
+            "Actual Rows": 94,
+            "Actual Loops": 1,
+            "Shared Hit Blocks": 242,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          {
+            "Node Type": "Hash Join",
+            "Actual Total Time": 0.271,
+            "Actual Rows": 23,
+            "Actual Loops": 1,
+            "Shared Hit Blocks": 66,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          {
+            "Node Type": "Hash Join",
+            "Actual Total Time": 0.193,
+            "Actual Rows": 29,
+            "Actual Loops": 1,
+            "Shared Hit Blocks": 133,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          {
+            "Node Type": "Nested Loop",
+            "Actual Total Time": 0.19,
+            "Actual Rows": 23,
+            "Actual Loops": 1,
+            "Shared Hit Blocks": 62,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          {
+            "Node Type": "Nested Loop",
+            "Actual Total Time": 0.143,
+            "Actual Rows": 23,
+            "Actual Loops": 1,
+            "Shared Hit Blocks": 56,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          {
+            "Node Type": "Nested Loop",
+            "Actual Total Time": 0.132,
+            "Actual Rows": 23,
+            "Actual Loops": 1,
+            "Shared Hit Blocks": 56,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          {
+            "Node Type": "Hash Join",
+            "Actual Total Time": 0.11,
+            "Actual Rows": 9,
+            "Actual Loops": 1,
+            "Shared Hit Blocks": 41,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          {
+            "Node Type": "Hash Join",
+            "Actual Total Time": 0.083,
+            "Actual Rows": 23,
+            "Actual Loops": 1,
+            "Shared Hit Blocks": 10,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          {
+            "Node Type": "Seq Scan",
+            "Relation Name": "saved_items",
+            "Actual Total Time": 0.054,
+            "Actual Rows": 33,
+            "Actual Loops": 1,
+            "Shared Hit Blocks": 2,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          {
+            "Node Type": "Index Scan",
+            "Relation Name": "private_reference_image_materials",
+            "Index Name": "private_reference_image_materials_pkey",
+            "Actual Total Time": 0.002,
+            "Actual Rows": 1,
+            "Actual Loops": 23,
+            "Shared Hit Blocks": 46,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          }
+        ]
+      },
+      {
+        "stage": "MEDIA_FACTS",
+        "mode": "DEFAULT",
+        "wallMs": 36,
+        "planningMs": 2.601,
+        "executionMs": 2.931,
+        "jit": {},
+        "slowNodes": [
+          {
+            "Node Type": "Aggregate",
+            "Actual Total Time": 2.662,
+            "Actual Rows": 1,
+            "Actual Loops": 1,
+            "Shared Hit Blocks": 1100,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          {
+            "Node Type": "Sort",
+            "Actual Total Time": 2.077,
+            "Actual Rows": 298,
+            "Actual Loops": 1,
+            "Shared Hit Blocks": 1100,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          {
+            "Node Type": "Append",
+            "Actual Total Time": 1.825,
+            "Actual Rows": 298,
+            "Actual Loops": 1,
+            "Shared Hit Blocks": 1097,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          {
+            "Node Type": "Subquery Scan",
+            "Actual Total Time": 1.193,
+            "Actual Rows": 127,
+            "Actual Loops": 1,
+            "Shared Hit Blocks": 1062,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          {
+            "Node Type": "Hash Join",
+            "Actual Total Time": 1.179,
+            "Actual Rows": 127,
+            "Actual Loops": 1,
+            "Shared Hit Blocks": 1062,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          {
+            "Node Type": "Subquery Scan",
+            "Actual Total Time": 0.468,
+            "Actual Rows": 166,
+            "Actual Loops": 1,
+            "Shared Hit Blocks": 17,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          {
+            "Node Type": "Hash Join",
+            "Actual Total Time": 0.451,
+            "Actual Rows": 166,
+            "Actual Loops": 1,
+            "Shared Hit Blocks": 17,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          {
+            "Node Type": "Hash Join",
+            "Actual Total Time": 0.365,
+            "Actual Rows": 127,
+            "Actual Loops": 1,
+            "Shared Hit Blocks": 37,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          {
+            "Node Type": "Nested Loop",
+            "Actual Total Time": 0.275,
+            "Actual Rows": 127,
+            "Actual Loops": 1,
+            "Shared Hit Blocks": 26,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          {
+            "Node Type": "Aggregate",
+            "Actual Total Time": 0.002,
+            "Actual Rows": 1,
+            "Actual Loops": 127,
+            "Shared Hit Blocks": 511,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          {
+            "Node Type": "Sort",
+            "Actual Total Time": 0.002,
+            "Actual Rows": 0,
+            "Actual Loops": 127,
+            "Shared Hit Blocks": 511,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          {
+            "Node Type": "Hash Join",
+            "Actual Total Time": 0.203,
+            "Actual Rows": 127,
+            "Actual Loops": 1,
+            "Shared Hit Blocks": 14,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          }
+        ]
+      },
+      {
+        "stage": "REFERENCES",
+        "mode": "DEFAULT",
+        "wallMs": 83,
+        "planningMs": 43.099,
+        "executionMs": 4.949,
+        "jit": {},
+        "slowNodes": [
+          {
+            "Node Type": "Sort",
+            "Actual Total Time": 4.452,
+            "Actual Rows": 13,
+            "Actual Loops": 1,
+            "Shared Hit Blocks": 6427,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          {
+            "Node Type": "CTE Scan",
+            "Actual Total Time": 4.398,
+            "Actual Rows": 13,
+            "Actual Loops": 1,
+            "Shared Hit Blocks": 6421,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          {
+            "Node Type": "WindowAgg",
+            "Actual Total Time": 4.379,
+            "Actual Rows": 13,
+            "Actual Loops": 1,
+            "Shared Hit Blocks": 6421,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          {
+            "Node Type": "Sort",
+            "Actual Total Time": 4.262,
+            "Actual Rows": 13,
+            "Actual Loops": 1,
+            "Shared Hit Blocks": 6421,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          {
+            "Node Type": "Nested Loop",
+            "Actual Total Time": 4.214,
+            "Actual Rows": 13,
+            "Actual Loops": 1,
+            "Shared Hit Blocks": 6413,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          {
+            "Node Type": "Nested Loop",
+            "Actual Total Time": 4.169,
+            "Actual Rows": 13,
+            "Actual Loops": 1,
+            "Shared Hit Blocks": 6361,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          {
+            "Node Type": "Nested Loop",
+            "Actual Total Time": 4.13,
+            "Actual Rows": 13,
+            "Actual Loops": 1,
+            "Shared Hit Blocks": 6353,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          {
+            "Node Type": "Nested Loop",
+            "Actual Total Time": 4.106,
+            "Actual Rows": 13,
+            "Actual Loops": 1,
+            "Shared Hit Blocks": 6345,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          {
+            "Node Type": "Nested Loop",
+            "Actual Total Time": 4.067,
+            "Actual Rows": 13,
+            "Actual Loops": 1,
+            "Shared Hit Blocks": 6337,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          {
+            "Node Type": "Nested Loop",
+            "Actual Total Time": 3.984,
+            "Actual Rows": 13,
+            "Actual Loops": 1,
+            "Shared Hit Blocks": 6298,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          {
+            "Node Type": "Nested Loop",
+            "Actual Total Time": 3.9,
+            "Actual Rows": 13,
+            "Actual Loops": 1,
+            "Shared Hit Blocks": 6259,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          {
+            "Node Type": "Nested Loop",
+            "Actual Total Time": 3.757,
+            "Actual Rows": 13,
+            "Actual Loops": 1,
+            "Shared Hit Blocks": 6199,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          }
+        ]
+      }
+    ]
+  }
+}

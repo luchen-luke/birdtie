@@ -115,7 +115,7 @@ elif mode=='start':
 elif mode=='upgrade':
  settings=json.loads(STATE.read_text());assert settings['database']==DB
  target=payload['targetMigrations'];prior_count=payload['expectedMigrations']
- assert 148 <= prior_count <= target <= 169
+ assert 148 <= prior_count <= target <= 170
  current=json.loads(sql('postgres',"SELECT json_build_object('oid',oid::bigint,'owner',pg_get_userbyid(datdba),'marker',shobj_description(oid,'pg_database')) FROM pg_database WHERE datname='"+DB+"';",True))
  assert current=={'oid':settings['oid'],'owner':ROLE,'marker':settings['marker']}
  release=ROOT/'releases'/payload['release'];archive=release/'release.tar'
@@ -127,10 +127,10 @@ elif mode=='upgrade':
   data=sys.stdin.buffer.read();assert hashlib.sha256(data).hexdigest()==payload['releaseSHA256']
   assert not release.exists();release.mkdir(mode=0o755);archive.write_bytes(data)
  with tarfile.open(archive)as t:
-  manifest=json.load(t.extractfile('manifest.json'));assert len(manifest)==target+(9 if target>=165 else 8 if target>=163 else 7 if target>=162 else 6 if target>=159 else 5 if target>=157 else 4 if target>=156 else 3)
+  manifest=json.load(t.extractfile('manifest.json'));assert len(manifest)==target+(10 if target>=170 else 9 if target>=165 else 8 if target>=163 else 7 if target>=162 else 6 if target>=159 else 5 if target>=157 else 4 if target>=156 else 3)
   assert sorted(m.name for m in t.getmembers())==sorted(list(manifest)+['manifest.json'])
   for m in t.getmembers():
-   assert m.isfile() and re.fullmatch(r'(manifest\.json|bin/birdtie-(api|legacy-import|legacy-personal-import|legacy-native-import|legacy-media-import|legacy-video-import|legacy-context-import|legacy-social-import|legacy-history-import)|migrations/[0-9]{3}_[a-z0-9_]+\.sql)',m.name)
+   assert m.isfile() and re.fullmatch(r'(manifest\.json|bin/birdtie-(api|legacy-import|legacy-personal-import|legacy-native-import|legacy-media-import|legacy-video-import|legacy-context-import|legacy-social-import|legacy-history-import|legacy-map-restore)|migrations/[0-9]{3}_[a-z0-9_]+\.sql)',m.name)
    raw=t.extractfile(m).read();p=release/m.name
    if payload.get('reuseStaged'):assert p.is_file() and not p.is_symlink() and p.read_bytes()==raw
    else:p.parent.mkdir(parents=True,exist_ok=True);p.write_bytes(raw)
@@ -144,6 +144,7 @@ elif mode=='upgrade':
  migration_names.update({160:'migrations/160_moment_location_links.sql',161:'migrations/161_legacy_private_image_recovery.sql',162:'migrations/162_legacy_native_contexts.sql',163:'migrations/163_legacy_social_native.sql',164:'migrations/164_legacy_dev_email_bindings.sql',165:'migrations/165_legacy_social_history.sql',166:'migrations/166_external_location_references.sql',167:'migrations/167_legacy_reference_media.sql'})
  migration_names[168]='migrations/168_moment_thread_editing.sql'
  migration_names[169]='migrations/169_public_moment_video_carry.sql'
+ migration_names[170]='migrations/170_legacy_map_visibility.sql'
  assert all(int(Path(n).name.split('_')[0])<=target for n in manifest if n.startswith('migrations/'))
  assert len([n for n in manifest if n.startswith('migrations/')])==target
  bodies=[]
@@ -249,7 +250,7 @@ else:raise RuntimeError('unknown stage')
 '''
 
 def main():
- p=argparse.ArgumentParser();p.add_argument('mode',choices=['prepare','private-input','apply','start','upgrade','personal-apply','dev-phone-apply','native-apply']);p.add_argument('--name',choices=['source.json','manifest.json']);p.add_argument('--evidence-name',required=True);p.add_argument('--build-name',default='build02');p.add_argument('--reuse-staged',action='store_true',help='Reuse only an exact fully hash-verified staged archive after a rolled-back upgrade');p.add_argument('--target-migrations',type=int,choices=list(range(149,170)),default=149);p.add_argument('--expected-migrations',type=int,choices=list(range(148,170)),default=148);a=p.parse_args()
+ p=argparse.ArgumentParser();p.add_argument('mode',choices=['prepare','private-input','apply','start','upgrade','personal-apply','dev-phone-apply','native-apply']);p.add_argument('--name',choices=['source.json','manifest.json']);p.add_argument('--evidence-name',required=True);p.add_argument('--build-name',default='build02');p.add_argument('--reuse-staged',action='store_true',help='Reuse only an exact fully hash-verified staged archive after a rolled-back upgrade');p.add_argument('--target-migrations',type=int,choices=list(range(149,171)),default=149);p.add_argument('--expected-migrations',type=int,choices=list(range(148,171)),default=148);a=p.parse_args()
  assert re.fullmatch(r'[a-z0-9-]+',a.evidence_name)
  out=ROOT/'docs/testing/evidence/social-remote-migration-20261015'/a.evidence_name;out.mkdir(parents=True,exist_ok=False)
  assert not a.reuse_staged or a.mode=='upgrade'

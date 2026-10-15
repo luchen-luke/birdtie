@@ -1,0 +1,25 @@
+{
+  "previous": "owned-map-archive01.json",
+  "entries": [
+    {
+      "path": "owned-map-source-ready02.json",
+      "sha256": "aec519c372a0749204d2ef89b38f771a63cde31a9a61e72b5c1903819c622c89"
+    },
+    {
+      "path": "owned-map-direct06\\receipt.json",
+      "sha256": "da39dd8155e2ac80eaab00c8cbf7c461c4446cea3e4d517b98827ccc1773e41b"
+    },
+    {
+      "path": "owned-map-direct06\\log.txt",
+      "sha256": "d2f3893c4351ca7f97e5535b5be9440946f6e603f38a79373b163fd8719bd4c8"
+    },
+    {
+      "path": "owned-map-analysis03\\receipt.json",
+      "sha256": "04b5dc71c8e61bd6fdf7c3d72176070dc5a79befdeafa31b5c13df814a41ea9b"
+    },
+    {
+      "path": "owned-map-analysis03\\log.txt",
+      "sha256": "57076d8e6ae328a66c65c99ebcaa62ebbf873a74cac2e8a2a2a8690258ac570c"
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+Flutter assets will be downloaded from https://storage.flutter-io.cn. Make sure you trust this source!
+00:00 +0: loading D:/Project/birdtie/apps/client/test/now_map_content_integration_test.dart
+00:00 +0: Now preview expands retained content into full text and media
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following StateError was thrown running a test:
+Bad state: No element
+
+When the exception was thrown, this was the stack:
+#0      Iterable.single (dart:core/iterable.dart:694:25)
+#1      WidgetController.widget (package:flutter_test/src/controller.dart:828:30)
+#2      main.<anonymous closure> (file:///D:/Project/birdtie/apps/client/test/now_map_content_integration_test.dart:290:16)
+<asynchronous suspension>
+#3      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#4      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1952:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+The test description was:
+  Now preview expands retained content into full text and media
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:01 +0 -1: Now preview expands retained content into full text and media [E]
+  Test failed. See exception logs above.
+  The test description was: Now preview expands retained content into full text and media
+  
+Warning: At least one test in this suite creates an HttpClient. When running a test suite that uses
+TestWidgetsFlutterBinding, all HTTP requests will return status code 400, and no network request
+will actually be made. Any test expecting a real network connection and status code will fail.
+To test code that needs an HttpClient, provide your own HttpClient implementation to the code under
+test, so that your test can consistently provide a testable response to the code under test.
+00:01 +0 -1: Some tests failed.
+
+Failing tests:
+  D:/Project/birdtie/apps/client/test/now_map_content_integration_test.dart: Now preview expands retained content into full text and media

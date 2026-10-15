@@ -1,0 +1,87 @@
+Flutter assets will be downloaded from https://storage.flutter-io.cn. Make sure you trust this source!
+00:00 +0: loading D:/Project/birdtie/apps/client/test/map_marker_bitmap_test.dart
+00:00 +0: visible all-time totals and exact category survive decoration and expire independently
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following TestFailure was thrown while running async test code:
+Expected: not equals [
+            137,
+            80,
+            78,
+            71,
+            13,
+            10,
+            26,
+            10,
+            0,
+            0,
+            0,
+            13,
+            73,
+            72,
+            68,
+            82,
+            0,
+            0,
+            0,
+            96,
+            0,
+            0,
+            0,
+            96,
+            ...
+          ] ordered
+  Actual: [
+            137,
+            80,
+            78,
+            71,
+            13,
+            10,
+            26,
+            10,
+            0,
+            0,
+            0,
+            13,
+            73,
+            72,
+            68,
+            82,
+            0,
+            0,
+            0,
+            96,
+            0,
+            0,
+            0,
+            96,
+            ...
+          ]
+
+When the exception was thrown, this was the stack:
+#0      fail (package:matcher/src/expect/expect.dart:187:31)
+#1      _expect (package:matcher/src/expect/expect.dart:182:3)
+#2      expect (package:matcher/src/expect/expect.dart:65:3)
+#3      expect (package:flutter_test/src/widget_tester.dart:473:18)
+#4      main.<anonymous closure>.<anonymous closure> (file:///D:/Project/birdtie/apps/client/test/map_marker_bitmap_test.dart:70:9)
+<asynchronous suspension>
+<asynchronous suspension>
+#6      main.<anonymous closure> (file:///D:/Project/birdtie/apps/client/test/map_marker_bitmap_test.dart:59:7)
+<asynchronous suspension>
+#7      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#8      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1952:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided 2 frames from dart:async and package:stack_trace)
+
+The exception was caught asynchronously.
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:00 +0 -1: visible all-time totals and exact category survive decoration and expire independently [E]
+  Test failed. See exception logs above.
+  The test description was: visible all-time totals and exact category survive decoration and expire independently
+  
+00:00 +0 -1: Some tests failed.
+
+Failing tests:
+  D:/Project/birdtie/apps/client/test/map_marker_bitmap_test.dart: visible all-time totals and exact category survive decoration and expire independently

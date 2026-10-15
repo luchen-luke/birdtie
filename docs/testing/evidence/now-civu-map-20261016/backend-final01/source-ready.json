@@ -1,0 +1,75 @@
+{
+  "at": "2026-10-15T18:49:45.023459+00:00",
+  "status": "SOURCE_READY_FINAL_FOR_BUILD21",
+  "schema": 170,
+  "marker": "birdtie_legacy_map_visibility_contract()='map-content-v1'",
+  "sourceScope": {
+    "apps/api/internal/legacymap/build.go": "4620e102891bae4f2a8898957fefb2c9da0bd624013fbb2048396645530f534a",
+    "apps/api/internal/legacymap/build_test.go": "6604acdf408850ccd3f92d9080e5721d89713a614bc4f3979711af8c1de3601d",
+    "apps/api/internal/legacymap/model.go": "5defd13a19f207e0589d39c48f813354f64b5ee07f857e767ca26a93f8f370c7",
+    "apps/api/cmd/legacy-map-restore/main.go": "e26950f32f6bdd486757c06fa1efa2fa655e103b3e284e71d7f814522e6b99d3",
+    "apps/api/internal/content/map_content.go": "586c23d734de93255674bc71b2b6b1abca481ca607626ba0334076b1536d5fd6",
+    "apps/api/internal/content/map_content_test.go": "fce9b3d6552c8fe601448312f0a17e3c11054c94cfcdff5e55c56ff71a7cf037",
+    "apps/api/internal/httpapi/map_content.go": "db1b4fd95664bc244d314af458658f8326f7d8560dabe964e3bd18fe15598191",
+    "apps/api/internal/httpapi/map_content_test.go": "d38812be70896a0299967d67d42c3ea3ee66f3ece033e74d302e98b54769c497",
+    "apps/api/internal/postgres/map_content.go": "3da28175ec487ba824f539bfb252aa9303372fd92a6506465f7da9fe5c375390",
+    "apps/api/internal/postgres/map_content_media.go": "780c925d4401aea259f1b849090a258d6371041cd90cd98f9b3ca58e371e6eee",
+    "apps/api/internal/postgres/map_content_native_test.go": "02c23da8faad23f86214072152a6510145b4a3b30071f9be2f8b50d33dfa8e54",
+    "apps/api/internal/postgres/legacy_map_restore.go": "3d1e461218d62980c8db3faa7f5da0cbe18ca868b2d8b10161c67f951513b763",
+    "apps/api/migrations/170_legacy_map_visibility.sql": "09d74703e6f5f17c8d1728521af0d2e0c9cc05fcb0191b4ed6f3bbe023c68c22",
+    "apps/api/migrations/170_legacy_map_visibility.down.sql": "7d17894bf949037c40021062926454157a17b114e3c95a9fe0d9837026fc28ee"
+  },
+  "sourceFiles": 14,
+  "sourceFrameSHA256": "b58d27139260313efb263e911b68a6c66d87a53e158662727eae3caa02385afc",
+  "oldSQL1Through169Files": 313,
+  "oldSQL1Through169RawSHAUnchanged": true,
+  "oldSQLMismatches": [],
+  "historicalUnit": {
+    "directory": "backend-unit01",
+    "pass": 3,
+    "fail": 0,
+    "sourceStable": true
+  },
+  "finalNative": {
+    "directory": "backend-native05",
+    "pass": 1,
+    "fail": 0,
+    "skip": 0,
+    "sourceStable": true,
+    "parentIdentityStable": true,
+    "assignedParentSourceStable": true,
+    "actualMapReadMilliseconds": 153
+  },
+  "archivedHistory": [
+    "backend-unit01",
+    "backend-native01",
+    "backend-native02",
+    "backend-native03",
+    "backend-native04",
+    "backend-native05"
+  ],
+  "boundaries": {
+    "productionMapRead": "NOT_RUN",
+    "production363PinPerformance": "NOT_RUN",
+    "remoteApply": "ROOT_OWNED_NOT_RUN_BY_WORKER",
+    "HTTPAfterDeployment": "ROOT_OWNED_NOT_RUN_BY_WORKER",
+    "APKAndWebAndPhone": "ROOT_OWNED_NOT_RUN_BY_WORKER",
+    "sourceDatabaseWrites": 0,
+    "sourceCivuRepositoryWrites": 0,
+    "publicationOrAccountActivationByImporter": false,
+    "originalMediaRawBytesPublished": false,
+    "antivirusClaim": "NOT_RUN_UNCHANGED"
+  },
+  "finalReview": [
+    "Source PUBLIC grant joins immutable146 archive + exact156 lineage +170 source frame; native modified/withdrawn/revised/blocked retires it.",
+    "Initial quarantined author/source Place distinguished by original same-import xmin; a later native suspension/edit cannot inherit old public status.",
+    "SELF_PRIVATE requires current viewer Moment/Saved/ThemeMap/Journey/image-owner association; foreign original-private Note denied in actual PG.",
+    "WGS coordinate proof is explicit stored WGS or canonical OSM identity with historical4438472 promotion provenance; unknown CRS remains unlocated.",
+    "Place pins group stable native Place IDs by viewport, not nullable legacy city; count/first20/all-page path explicit; truncated500 is explicit.",
+    "Native152 media retains existing rights/current-set gate; private imported JPEG/MP4 uses separate exact source/owner read grant and canonical bytes only.",
+    "Independent private image/video/public set/attachment/reference-link/media-asset/blocks mutations are included in metadata-only snapshot source facts.",
+    "Binary source selectors bind viewer+current Session/source; length/hash checked and current proof revalidated at output; raw originals and private URLs never served.",
+    "Reference cover requires original approved rights/source note grant or exact current owner; contributor block/status and current material/backing retained state gate both discovery and bytes.",
+    "Native05 covers real independent private-image deletion while parent revision remains1, old full-page proof and old media selector rejected."
+  ]
+}

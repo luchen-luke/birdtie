@@ -1,0 +1,11 @@
+INFO|LINT|USE_NULL_AWARE_ELEMENTS|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\map_marker_widget.dart|50|9|2|Use the null-aware marker '?' rather than a null check via an 'if'.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\now_map_content_panel.dart|118|7|32|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\now_map_content_panel.dart|157|11|32|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\now_map_content_panel.dart|195|11|38|Statements in an if should be enclosed in a block.
+INFO|LINT|UNNECESSARY_BRACE_IN_STRING_INTERPS|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\now_map_content_panel.dart|265|50|9|Unnecessary braces in a string interpolation.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\now_map_content_panel.dart|342|29|1280|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\now_map_content_panel.dart|744|7|20|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\now_map_content_panel.dart|848|19|105|Statements in an if should be enclosed in a block.
+INFO|HINT|UNNECESSARY_IMPORT|D:\\Project\\birdtie\\apps\\client\\test\\map_marker_bitmap_test.dart|1|8|17|The import of 'dart:typed_data' is unnecessary because all of the used elements are also provided by the import of 'package:flutter/services.dart'.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\test\\map_marker_bitmap_test.dart|371|15|128|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\test\\map_marker_bitmap_test.dart|598|9|8|Statements in an if should be enclosed in a block.

@@ -116,6 +116,44 @@ class MapDisplayPolicy {
       if (labels.length >= MapMarkerVisual.labelBudget) break;
       labels.add(entity.id);
     }
+    // Civu content is useful at the opening city zoom too. Keep a small,
+    // collision-aware set of real photo/story points legible among catalog
+    // points. Density changes presentation only, never source coordinates.
+    final content = ordered
+        .where((e) => e.id.startsWith('owned-map:'))
+        .toList();
+    int contentRank(MapEntity e) =>
+        (e.recentMoments?.labelAt(DateTime.now().toUtc()) != null ? 4 : 0) +
+        (e.mediaPixels?.current() == true ? 2 : 0);
+    content.sort((a, b) {
+      final rank = contentRank(b).compareTo(contentRank(a));
+      return rank != 0 ? rank : a.id.compareTo(b.id);
+    });
+    Rect labelRect(MapEntity e) {
+      final p = positions[e.id]!;
+      return Rect.fromLTWH(
+        p.dx - 18,
+        p.dy - 18,
+        36 + MapMarkerVisual.labelWidth + MapMarkerVisual.labelGap,
+        40,
+      );
+    }
+
+    final occupied = [
+      for (final e in ordered)
+        if (labels.contains(e.id)) labelRect(e),
+    ];
+    for (final entity in content) {
+      if (labels.length >= MapMarkerVisual.labelBudget) break;
+      if (labels.contains(entity.id)) continue;
+      final rect = labelRect(entity);
+      if (occupied.any((other) => other.overlaps(rect.inflate(4)))) continue;
+      if (contentRect != null && !contentRect.contains(positions[entity.id]!))
+        continue;
+      labels.add(entity.id);
+      occupied.add(rect);
+      if (contentRank(entity) > 0) dense.remove(entity.id);
+    }
     if (zoom >= 16) {
       for (final entity in ordered) {
         if (labels.length >= MapMarkerVisual.labelBudget) break;
@@ -188,6 +226,46 @@ class MapDisplayPolicy {
       }
     }
     return unique.values.toList()..sort((a, b) => a.id.compareTo(b.id));
+  }
+
+  /// A physical tap belongs to its screen position, not to an SDK annotation's
+  /// transparent bitmap canvas. Keep 48 dp point targets and nearest-first order.
+  static List<MapEntity> hitTargetsAt({
+    required List<MapEntity> entities,
+    required Map<String, Offset> positions,
+    required Offset touchPosition,
+    Map<String, Rect> nonPointHitRects = const {},
+  }) {
+    if (!touchPosition.dx.isFinite || !touchPosition.dy.isFinite)
+      return const [];
+    final unique = <String, MapEntity>{};
+    for (final entity in entities) {
+      final point = positions[entity.id];
+      if (!entity.hasMapAnchor ||
+          point == null ||
+          !point.dx.isFinite ||
+          !point.dy.isFinite)
+        continue;
+      final compactPoint =
+          entity.precision == 'point' &&
+          {MapEntityKind.place, MapEntityKind.moment}.contains(entity.kind);
+      final rect =
+          (!compactPoint ? nonPointHitRects[entity.id] : null) ??
+          Rect.fromCenter(center: point, width: 48, height: 48);
+      if (rect.isFinite &&
+          !rect.isEmpty &&
+          touchPosition.dx >= rect.left &&
+          touchPosition.dx <= rect.right &&
+          touchPosition.dy >= rect.top &&
+          touchPosition.dy <= rect.bottom) {
+        unique.putIfAbsent(entity.id, () => entity);
+      }
+    }
+    return unique.values.toList()..sort((a, b) {
+      final distance = (positions[a.id]! - touchPosition).distanceSquared
+          .compareTo((positions[b.id]! - touchPosition).distanceSquared);
+      return distance != 0 ? distance : a.id.compareTo(b.id);
+    });
   }
 
   static String countLabel(Iterable<MapEntity> entities) {

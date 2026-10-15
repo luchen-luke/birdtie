@@ -1,0 +1,26 @@
+{
+  "status": "DIAGNOSED",
+  "installedAPK": "final-apk21",
+  "liveAPI": "build23/schema170",
+  "phoneSameApplicationUIDCurlPublicStatus": 200,
+  "desktopDartTLSReadiness": 200,
+  "deviceDartHttpCompleted200": 66,
+  "deviceDartMediaCompleted200": 12,
+  "deviceDartPinsCompleted200": 41,
+  "deviceHttpErrors": 0,
+  "privateHeadersQueriesBodiesPersisted": false,
+  "httpProfilingDisabledAndCleared": true,
+  "successfulDecodedPhotoEntries": 6,
+  "nativeWidgetEntities": 368,
+  "nativeWidgetWithPhotoPixels": 6,
+  "bitmapDprEqualsNativeDpr": true,
+  "sampledNativeAnnotationsWithReturnedSpriteName": 6,
+  "initialTransientNetworkFailureExactCause": "NOT_DETERMINED",
+  "confirmedDefects": [
+    "Startup login status failures have no explicit recheck path",
+    "Android annotation update applies old generated iconImage after new bitmap, overwriting replacement photo",
+    "Point chooser pushes route before post-frame visibility handoff; Now retires current map scope first"
+  ],
+  "logSHA256": "cccc90f083cdf6f8b5f1c72e29cba2a75a65e33c5e7ecf2e25fcd936152578d1",
+  "phoneMapEndToEndAcceptance": "NOT_PASSED_YET"
+}

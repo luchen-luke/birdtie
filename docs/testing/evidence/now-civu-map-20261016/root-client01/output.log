@@ -1,0 +1,5 @@
+Flutter assets will be downloaded from https://storage.flutter-io.cn. Make sure you trust this source!
+00:00 +0: loading D:/Project/birdtie/apps/client/test/now_map_content_integration_test.dart
+00:00 +0: Now map content is selectable in place, retains map, and stale readers cannot revive it
+00:00 +1: opening zoom keeps real content legible without moving or dropping dense places
+00:00 +2: All tests passed!

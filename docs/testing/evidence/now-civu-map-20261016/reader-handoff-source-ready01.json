@@ -1,0 +1,70 @@
+{
+  "at": "2026-10-15T20:25:04.179866+00:00",
+  "status": "SOURCE_READY",
+  "source": {
+    "apps/client/lib/src/city/map_point_selection_sheet.dart": "ce0839b34f3486a017f37bb633cf646dcb186967b3842e426b4798a569ea85a2",
+    "apps/client/lib/src/city/map_cluster_members_sheet.dart": "b53d1ea67d1bf61fcdf935db93d823c1c3c40ee5d2228f832f2fcc5561963201",
+    "apps/client/test/now_map_reader_handoff_test.dart": "aaed87273d83e58404bea57b646c10ac186685827f6b6ab146e2c355cf6e0749"
+  },
+  "rootCause": "Pushing the chooser covered Now before the modal post-frame visibility report. Now retired the owned map, changing the reader scope epoch, which then closed the chooser.",
+  "changes": [
+    "Reject launches from unmounted or covered source routes.",
+    "Synchronously transfer reader visibility before pushing point chooser or cluster members modal.",
+    "Recheck the source after the synchronous callback; retain existing route visibility observer and finally cleanup for coverage, close, stale scope and errors."
+  ],
+  "test": {
+    "directory": "reader-handoff02/green",
+    "result": "PASS 1",
+    "scope": "One composite widget using actual MapWorkspace, OwnedMapController, strict decoder and authenticated transport with synthetic HTTP fixtures."
+  },
+  "coverage": [
+    "Point and cluster modal open retains current owned read, epoch and request count.",
+    "Selection returns the original stable item ID, with same Now map element, viewport model and composer state.",
+    "Foreign route coverage clears owned map and old chooser; stale row cannot select or pop foreign route.",
+    "Covered Now cannot acquire another reader; returning re-reads current data.",
+    "Identity sign-out clears owned read and removes reader.",
+    "No non-GET or Agent task request."
+  ],
+  "beforeFix": {
+    "directory": "reader-handoff02/red3",
+    "result": "FAIL as expected: opening the reader makes owned.current false",
+    "sameFinalTestSource": true
+  },
+  "preservedFixtureFailures": {
+    "directories": [
+      "reader-handoff01",
+      "reader-handoff02/red",
+      "reader-handoff02/red2"
+    ],
+    "explanation": "Initial synthetic response lacked required response headers and fixture needed explicit asynchronous stream draining; these failures are preserved and are not counted as product failures."
+  },
+  "analysis": {
+    "directory": "reader-handoff-analysis01",
+    "ERROR": 0,
+    "WARNING": 0,
+    "INFO": 2,
+    "scope": "Only three changed files; 2 INFO are braces style."
+  },
+  "applicableUX": [
+    "UX-CHECK-07",
+    "UX-CHECK-09",
+    "UX-CHECK-10",
+    "UX-CHECK-12",
+    "UX-CHECK-16"
+  ],
+  "knownSeparateIssue": "City picker and map-layer controls in map_workspace.dart have a similar late handoff; observed by source review only, not modified in this narrow chooser batch.",
+  "notRun": [
+    "APK build/installation by this worker",
+    "Physical native marker hit or chooser verification after this change",
+    "Remote API or real account operation by this worker",
+    "Full test suite or full analysis"
+  ],
+  "evidence": {
+    "reader-handoff02/green/receipt.json": "61e6f0fbbcf86ad3fd0b24f2f70b4550da44b18bb78bc5e1a5ca2272f537dbc2",
+    "reader-handoff02/green/output.log": "512b7f6ba636bc7fb1ab40aa09cb8402d11257e9f9246f432bf8e37821a16ac8",
+    "reader-handoff02/red3/receipt.json": "b17311a444ce0758fdb39f0a6b9302149e4bdf3aba96d1b540d61e1fa47cf8cc",
+    "reader-handoff02/red3/output.log": "5d3466849e19104060361da10bd5b04cc7fded2633da18b754ad173bb1d3b56f",
+    "reader-handoff-analysis01/receipt.json": "11bea239dee2fb194972fb314b4b43dbdfe3dcece208f3b484676418e9d19497",
+    "reader-handoff-analysis01/output.log": "f8d48a0781b93fe07dcaa19e26f303b7bda81e90bdb126d26c0d9f2afa443149"
+  }
+}

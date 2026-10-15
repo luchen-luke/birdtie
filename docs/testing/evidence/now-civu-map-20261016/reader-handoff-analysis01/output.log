@@ -1,0 +1,2 @@
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\city\\map_cluster_members_sheet.dart|37|34|12|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\city\\map_point_selection_sheet.dart|31|34|12|Statements in an if should be enclosed in a block.

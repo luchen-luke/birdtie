@@ -1,0 +1,19 @@
+{
+  "command": [
+    "D:/DevTools/flutter/bin/cache/dart-sdk/bin/dart.exe",
+    "D:/DevTools/flutter/bin/cache/flutter_tools.snapshot",
+    "test",
+    "test/settings_login_recovery_test.dart",
+    "--no-pub",
+    "--reporter",
+    "expanded"
+  ],
+  "cwd": "D:\\Project\\birdtie\\apps\\client",
+  "exitCode": 1,
+  "elapsedSeconds": 4.14,
+  "sourceSHA256": {
+    "apps/client/lib/src/workspace/settings_page.dart": "698bca8fe9e85bb3e6aa57625e5153cdfc5001df3e750d7b7bef0393a59b22a2",
+    "apps/client/test/settings_login_recovery_test.dart": "6bfa3665480671b5fd033fca0db4bd971c632dc96a83f71d080a10d286197d90"
+  },
+  "scope": "One Settings composite widget; synthetic HTTP only, no remote/device/login or publication"
+}

@@ -1,0 +1,4 @@
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|D:\\Project\\birdtie\\apps\\client\\lib\\src\\city\\native_city_map_io.dart|909|15|16|Don't use 'BuildContext's across async gaps.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\city\\native_city_map_io.dart|918|9|63|Statements in an if should be enclosed in a block.
+INFO|LINT|USE_NULL_AWARE_ELEMENTS|D:\\Project\\birdtie\\apps\\client\\lib\\src\\city\\native_city_map_io.dart|945|9|2|Use the null-aware marker '?' rather than a null check via an 'if'.
+INFO|HINT|DEPRECATED_MEMBER_USE|D:\\Project\\birdtie\\apps\\client\\lib\\src\\city\\native_city_map_io.dart|1308|17|13|'onTapListener' is deprecated and shouldn't be used. Use [MapboxMap.addInteraction] instead.

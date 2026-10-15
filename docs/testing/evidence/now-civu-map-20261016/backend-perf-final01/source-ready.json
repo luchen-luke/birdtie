@@ -1,0 +1,77 @@
+{
+  "at": "2026-10-15T19:24:01.960811+00:00",
+  "status": "SOURCE_READY_API22_MAP_PERFORMANCE01",
+  "schema": 170,
+  "newDDLFiles": 0,
+  "marker": "birdtie_legacy_map_visibility_contract()='map-content-v1'",
+  "sourceScope": {
+    "apps/api/internal/legacymap/build.go": "4620e102891bae4f2a8898957fefb2c9da0bd624013fbb2048396645530f534a",
+    "apps/api/internal/legacymap/build_test.go": "6604acdf408850ccd3f92d9080e5721d89713a614bc4f3979711af8c1de3601d",
+    "apps/api/internal/legacymap/model.go": "5defd13a19f207e0589d39c48f813354f64b5ee07f857e767ca26a93f8f370c7",
+    "apps/api/cmd/legacy-map-restore/main.go": "e26950f32f6bdd486757c06fa1efa2fa655e103b3e284e71d7f814522e6b99d3",
+    "apps/api/internal/content/map_content.go": "586c23d734de93255674bc71b2b6b1abca481ca607626ba0334076b1536d5fd6",
+    "apps/api/internal/content/map_content_test.go": "fce9b3d6552c8fe601448312f0a17e3c11054c94cfcdff5e55c56ff71a7cf037",
+    "apps/api/internal/httpapi/map_content.go": "db1b4fd95664bc244d314af458658f8326f7d8560dabe964e3bd18fe15598191",
+    "apps/api/internal/httpapi/map_content_test.go": "d38812be70896a0299967d67d42c3ea3ee66f3ece033e74d302e98b54769c497",
+    "apps/api/internal/postgres/map_content.go": "2ab1611b5a746c0824161bf278def09d17cfd0eeb7d3c1120f9e27e25bbc28f0",
+    "apps/api/internal/postgres/map_content_media.go": "3193d31e52e784ec5ccbcf4cc56024ae978c0012615e4bcf53db98a4ef3aace2",
+    "apps/api/internal/postgres/map_content_native_test.go": "0f8bcd76159e49229ed19243392e278c702455f134fd24b234f8d9ce5487ef19",
+    "apps/api/internal/postgres/legacy_map_restore.go": "3d1e461218d62980c8db3faa7f5da0cbe18ca868b2d8b10161c67f951513b763",
+    "apps/api/migrations/170_legacy_map_visibility.sql": "09d74703e6f5f17c8d1728521af0d2e0c9cc05fcb0191b4ed6f3bbe023c68c22",
+    "apps/api/migrations/170_legacy_map_visibility.down.sql": "7d17894bf949037c40021062926454157a17b114e3c95a9fe0d9837026fc28ee"
+  },
+  "sourceFiles": 14,
+  "sourceFrameSHA256": "15dba9e74f477c727e732626255e9577804cfb1a0898ed0dac635d71e2dcde4f",
+  "sourceFrameHashAlgorithm": "SHA256(UTF8 compact JSON sourceScope sorted by key)",
+  "changedSinceBuild21Frame": [
+    "apps/api/internal/postgres/map_content.go",
+    "apps/api/internal/postgres/map_content_media.go",
+    "apps/api/internal/postgres/map_content_native_test.go"
+  ],
+  "oldSQL1Through170Files": 315,
+  "oldSQL1Through170RawSHAUnchanged": true,
+  "directNative": {
+    "directory": "backend-perf-native02",
+    "pass": 1,
+    "fail": 0,
+    "skip": 0,
+    "exitCode": 0,
+    "sourceStable": true,
+    "assignedParentSourceStable": true,
+    "parentIdentityStable": true,
+    "elapsedSeconds": 4.02,
+    "actualSynthetic3PinMapReadMilliseconds": 94,
+    "newAssertions": [
+      "Shortened cursor lease caps all returned nested items",
+      "Metadata-only output proof succeeds for exact current asset and fails after independent imported-image deletion"
+    ]
+  },
+  "changes": [
+    "Load reference-image metadata for the selected bounded pin IDs in one ANY(uuid[]) query, retaining all original source/rights/owner/block/backing gates and deterministic per-place cover order.",
+    "Memoize both empty and populated reference/material lists only inside one request snapshot; each current read and output proof still rebuilds authority, source and lease.",
+    "Reuse Moment media metadata for different pins of the same Moment in that snapshot.",
+    "Binary output proof resolves the same current exact source selector plus MIME/SHA and final Session/source/deadline gate without refetching already verified large bytea.",
+    "After cursor and all item lease reductions, cap every Place-page item to the final page expiry."
+  ],
+  "boundaries": {
+    "production384PinPerformanceAfterFix": "NOT_RUN",
+    "productionPhotoVisibilityAfterFix": "NOT_RUN",
+    "newProductionLoginOrDataReadsByWorker": 0,
+    "productionContentOrMigrationWritesByWorker": 0,
+    "APKWebDeployAndPhone": "ROOT_OWNED_NOT_RUN_BY_WORKER",
+    "noCrossRequestPermissionCache": true,
+    "leaseLimitSeconds": 30
+  },
+  "independentStaticReview": {
+    "status": "PASSED_NO_REMAINING_CONFIRMED_BLOCKER",
+    "finding": "Batch initially counted raw candidates before rights filtering, reducing original per-place capacity.",
+    "fix": "SQL retains only the same ordered first1001 candidates per place; original scope and image validity filters run before the1000 accepted-image limit.",
+    "firstNativePreserved": "backend-perf-native01",
+    "currentSQLRevalidated": "backend-perf-native02"
+  },
+  "previousEvidencePreserved": [
+    "backend-final02",
+    "backend-native01..07",
+    "backend-unit01"
+  ]
+}

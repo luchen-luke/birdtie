@@ -1,0 +1,30 @@
+{
+  "started": "2026-10-15T20:48:35.676842+00:00",
+  "finished": "2026-10-15T20:48:39.697201+00:00",
+  "command": [
+    "D:/DevTools/flutter/bin/cache/dart-sdk/bin/dart.exe",
+    "D:/DevTools/flutter/bin/cache/flutter_tools.snapshot",
+    "test",
+    "--no-pub",
+    "--reporter",
+    "expanded",
+    "test/now_map_content_integration_test.dart",
+    "--plain-name",
+    "Now preview expands retained content into full text and media"
+  ],
+  "cwd": "D:\\Project\\birdtie\\apps\\client",
+  "exitCode": 1,
+  "effectiveExitCode": 1,
+  "diagnostics": null,
+  "sourceBefore": {
+    "apps/client/lib/src/workspace/map_workspace.dart": "f029929467ecdd47a93c6dc5fb6f8669e429460a0ce95e63728a43ead5dee0e9",
+    "apps/client/test/now_map_content_integration_test.dart": "f751250c90c2cb5df3457dae6e5bdd7414f82ffbaef08048f384beefc9079726"
+  },
+  "sourceAfter": {
+    "apps/client/lib/src/workspace/map_workspace.dart": "f029929467ecdd47a93c6dc5fb6f8669e429460a0ce95e63728a43ead5dee0e9",
+    "apps/client/test/now_map_content_integration_test.dart": "f751250c90c2cb5df3457dae6e5bdd7414f82ffbaef08048f384beefc9079726"
+  },
+  "sourceStable": true,
+  "logSHA256": "3a16aca2b89c956f3e4642f71a3ed5db18cbd9ddbcc6001ab0f9f5775d275e7c",
+  "scope": "Actual MapWorkspace preview to expanded reader; synthetic authorized JSON/JPEG through real controller/decoder. No device/remote/production data."
+}

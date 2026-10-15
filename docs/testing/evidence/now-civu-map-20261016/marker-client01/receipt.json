@@ -1,0 +1,36 @@
+{
+  "at": "2026-10-15T18:19:57.574716+00:00",
+  "command": [
+    "D:/DevTools/flutter/bin/flutter.bat",
+    "test",
+    "test/map_marker_bitmap_test.dart",
+    "--plain-name",
+    "compact photo marker keeps right name count and 48dp target while retired pixels disappear"
+  ],
+  "cwd": "D:\\Project\\birdtie\\apps\\client",
+  "exitCode": 0,
+  "elapsedSeconds": 23.974,
+  "sourceBefore": {
+    "apps/client/lib/src/workspace/map_marker_visual.dart": "6afbc03e76f2627f210bb6aba7941a102575ecd161a53726036c8c182b8d1106",
+    "apps/client/lib/src/workspace/map_marker_bitmap.dart": "d4940c021bcf26d571fe72c1547e4e5f90f41a287af02645cdad980d02f0ae64",
+    "apps/client/lib/src/workspace/map_marker_widget.dart": "3efea97a4886825d80d3ec8b1df6a2b5716e85017546c12354f450e99eed081f",
+    "apps/client/lib/src/workspace/map_entities.dart": "fd7df5fbc3e2a88615d7b8ba0aa890a9b590981a3d028e27f078d7dc14e6f257",
+    "apps/client/lib/src/city/native_city_map_io.dart": "3ad180c085395dc37f2732f824e2a85c7d0694ebc6f0efda4fbb9844e2446b7f",
+    "apps/client/test/map_marker_bitmap_test.dart": "c222e748c9cee2726a06fd7ff17363e3d04ff96f562230ca4def8aedc2eda97d"
+  },
+  "sourceAfter": {
+    "apps/client/lib/src/workspace/map_marker_visual.dart": "6afbc03e76f2627f210bb6aba7941a102575ecd161a53726036c8c182b8d1106",
+    "apps/client/lib/src/workspace/map_marker_bitmap.dart": "d4940c021bcf26d571fe72c1547e4e5f90f41a287af02645cdad980d02f0ae64",
+    "apps/client/lib/src/workspace/map_marker_widget.dart": "3efea97a4886825d80d3ec8b1df6a2b5716e85017546c12354f450e99eed081f",
+    "apps/client/lib/src/workspace/map_entities.dart": "fd7df5fbc3e2a88615d7b8ba0aa890a9b590981a3d028e27f078d7dc14e6f257",
+    "apps/client/lib/src/city/native_city_map_io.dart": "3ad180c085395dc37f2732f824e2a85c7d0694ebc6f0efda4fbb9844e2446b7f",
+    "apps/client/test/map_marker_bitmap_test.dart": "c222e748c9cee2726a06fd7ff17363e3d04ff96f562230ca4def8aedc2eda97d"
+  },
+  "sourceStable": true,
+  "notRun": [
+    "Full Go/Flutter suites",
+    "Device/native-map runtime",
+    "Build/install/deploy",
+    "Civu runtime"
+  ]
+}

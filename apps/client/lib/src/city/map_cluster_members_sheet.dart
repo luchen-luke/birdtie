@@ -17,6 +17,7 @@ Future<MapEntity?> showCurrentMapClusterMembers({
   required Object? Function() currentScope,
   ValueChanged<({Object token, bool visible})>? onVisibilityChanged,
 }) async {
+  if (!context.mounted || ModalRoute.of(context)?.isCurrent != true) return null;
   final scope = currentScope();
   final token = Object();
   var visible = false;
@@ -28,6 +29,12 @@ Future<MapEntity?> showCurrentMapClusterMembers({
 
   if (currentMembers().isEmpty) return null;
   try {
+    // Transfer visibility before push can rebuild the underlying Now route.
+    // The modal's own route observer still revokes it when covered or stale.
+    reportVisibility(true);
+    if (!context.mounted ||
+        ModalRoute.of(context)?.isCurrent != true ||
+        currentScope() != scope) return null;
     final selected = await showModalBottomSheet<MapEntity>(
       context: context,
       isScrollControlled: true,

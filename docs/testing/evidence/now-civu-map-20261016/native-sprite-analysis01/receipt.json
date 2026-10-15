@@ -1,0 +1,19 @@
+{
+  "command": [
+    "D:/DevTools/flutter/bin/cache/dart-sdk/bin/dart.exe",
+    "analyze",
+    "--format",
+    "machine",
+    "lib/src/city/native_city_map_io.dart"
+  ],
+  "exitCode": 0,
+  "diagnostics": {
+    "ERROR": 0,
+    "WARNING": 0,
+    "INFO": 4
+  },
+  "sourceStable": true,
+  "sourceSHA256": "42f0b649fc67fef6e6e515fab10b93e34c9fea37c62c728b44998402c15db21e",
+  "runtimeAcceptance": "NOT_RUN",
+  "change": "Clear SDK-generated iconImage before bitmap updates and on create return; keep IDs, coordinates and permissions"
+}

@@ -1,0 +1,107 @@
+Flutter assets will be downloaded from https://storage.flutter-io.cn. Make sure you trust this source!
+00:00 +0: loading D:/Project/birdtie/apps/client/test/map_marker_bitmap_test.dart
+00:00 +0: D:/Project/birdtie/apps/client/test/map_marker_bitmap_test.dart: visible all-time totals and exact category survive decoration and expire independently
+00:00 +1: D:/Project/birdtie/apps/client/test/now_map_content_test.dart: Now compact expands in place pages renew without scroll reset and retires private content
+00:00 +2: D:/Project/birdtie/apps/client/test/now_map_content_test.dart: Now compact expands in place pages renew without scroll reset and retires private content
+00:00 +3: D:/Project/birdtie/apps/client/test/now_map_content_test.dart: Now compact expands in place pages renew without scroll reset and retires private content
+00:00 +4: D:/Project/birdtie/apps/client/test/now_map_content_test.dart: Now compact expands in place pages renew without scroll reset and retires private content
+00:00 +4 -1: D:/Project/birdtie/apps/client/test/now_map_content_test.dart: Now compact expands in place pages renew without scroll reset and retires private content
+00:00 +4 -1: D:/Project/birdtie/apps/client/test/map_marker_bitmap_test.dart: all eight retired slots paint the same opaque square at the true anchor [E]
+  Expected: [135, 104, 60, 255]
+    Actual: [0, 0, 0, 0]
+     Which: at location [0] is <0> instead of <135>
+  
+  package:matcher                                     expect
+  package:flutter_test/src/widget_tester.dart 473:18  expect
+  test\map_marker_bitmap_test.dart 317:9              main.<fn>
+  
+00:00 +4 -2: D:/Project/birdtie/apps/client/test/now_map_content_test.dart: Now compact expands in place pages renew without scroll reset and retires private content
+00:00 +4 -2: D:/Project/birdtie/apps/client/test/map_marker_bitmap_test.dart: place actual opaque glyph has readable density at DPR 1.0 [E]
+  Expected: a value greater than <35.0>
+    Actual: <0>
+     Which: is not a value greater than <35.0>
+  
+  package:matcher                                     expect
+  package:flutter_test/src/widget_tester.dart 473:18  expect
+  test\map_marker_bitmap_test.dart 363:13             main.<fn>
+  
+00:00 +4 -3: D:/Project/birdtie/apps/client/test/now_map_content_test.dart: Now compact expands in place pages renew without scroll reset and retires private content
+00:00 +4 -3: D:/Project/birdtie/apps/client/test/map_marker_bitmap_test.dart: moment actual opaque glyph has readable density at DPR 1.0 [E]
+  Expected: a value greater than <35.0>
+    Actual: <16>
+     Which: is not a value greater than <35.0>
+  
+  package:matcher                                     expect
+  package:flutter_test/src/widget_tester.dart 473:18  expect
+  test\map_marker_bitmap_test.dart 363:13             main.<fn>
+  
+00:00 +4 -4: D:/Project/birdtie/apps/client/test/now_map_content_test.dart: Now compact expands in place pages renew without scroll reset and retires private content
+00:00 +4 -4: D:/Project/birdtie/apps/client/test/map_marker_bitmap_test.dart: place actual opaque glyph has readable density at DPR 2.0 [E]
+  Expected: a value greater than <140.0>
+    Actual: <0>
+     Which: is not a value greater than <140.0>
+  
+  package:matcher                                     expect
+  package:flutter_test/src/widget_tester.dart 473:18  expect
+  test\map_marker_bitmap_test.dart 363:13             main.<fn>
+  
+00:00 +4 -5: D:/Project/birdtie/apps/client/test/now_map_content_test.dart: Now compact expands in place pages renew without scroll reset and retires private content
+00:00 +4 -5: D:/Project/birdtie/apps/client/test/map_marker_bitmap_test.dart: moment actual opaque glyph has readable density at DPR 2.0 [E]
+  Expected: a value greater than <140.0>
+    Actual: <62>
+     Which: is not a value greater than <140.0>
+  
+  package:matcher                                     expect
+  package:flutter_test/src/widget_tester.dart 473:18  expect
+  test\map_marker_bitmap_test.dart 363:13             main.<fn>
+  
+00:00 +4 -6: D:/Project/birdtie/apps/client/test/now_map_content_test.dart: Now compact expands in place pages renew without scroll reset and retires private content
+00:00 +4 -6: D:/Project/birdtie/apps/client/test/map_marker_bitmap_test.dart: place actual opaque glyph has readable density at DPR 3.25 [E]
+  Expected: a value greater than <369.6875>
+    Actual: <0>
+     Which: is not a value greater than <369.6875>
+  
+  package:matcher                                     expect
+  package:flutter_test/src/widget_tester.dart 473:18  expect
+  test\map_marker_bitmap_test.dart 363:13             main.<fn>
+  
+00:00 +4 -7: D:/Project/birdtie/apps/client/test/now_map_content_test.dart: Now compact expands in place pages renew without scroll reset and retires private content
+00:00 +4 -7: D:/Project/birdtie/apps/client/test/map_marker_bitmap_test.dart: moment actual opaque glyph has readable density at DPR 3.25 [E]
+  Expected: a value greater than <369.6875>
+    Actual: <184>
+     Which: is not a value greater than <369.6875>
+  
+  package:matcher                                     expect
+  package:flutter_test/src/widget_tester.dart 473:18  expect
+  test\map_marker_bitmap_test.dart 363:13             main.<fn>
+  
+00:00 +5 -7: D:/Project/birdtie/apps/client/test/now_map_content_test.dart: Now compact expands in place pages renew without scroll reset and retires private content
+00:00 +5 -8: D:/Project/birdtie/apps/client/test/now_map_content_test.dart: Now compact expands in place pages renew without scroll reset and retires private content
+00:00 +5 -8: D:/Project/birdtie/apps/client/test/map_marker_bitmap_test.dart: coincident opaque shapes stay within the real anchor at DPR 1.0 [E]
+  Expected: a value greater than <35.0>
+    Actual: <0>
+     Which: is not a value greater than <35.0>
+  
+  package:matcher                                     expect
+  package:flutter_test/src/widget_tester.dart 473:18  expect
+  test\map_marker_bitmap_test.dart 477:11             main.<fn>
+  
+00:00 +5 -9: D:/Project/birdtie/apps/client/test/now_map_content_test.dart: Now compact expands in place pages renew without scroll reset and retires private content
+00:00 +5 -9: D:/Project/birdtie/apps/client/test/map_marker_bitmap_test.dart: coincident opaque shapes stay within the real anchor at DPR 3.25 [E]
+  Expected: a value greater than <369.6875>
+    Actual: <0>
+     Which: is not a value greater than <369.6875>
+  
+  package:matcher                                     expect
+  package:flutter_test/src/widget_tester.dart 473:18  expect
+  test\map_marker_bitmap_test.dart 477:11             main.<fn>
+  
+00:00 +6 -9: D:/Project/birdtie/apps/client/test/now_map_content_test.dart: Now compact expands in place pages renew without scroll reset and retires private content
+00:00 +7 -9: Some tests failed.
+
+Failing tests:
+  D:/Project/birdtie/apps/client/test/map_marker_bitmap_test.dart: all eight retired slots paint the same opaque square at the true anchor
+  D:/Project/birdtie/apps/client/test/map_marker_bitmap_test.dart: coincident opaque shapes stay within the real anchor at DPR 1.0
+  D:/Project/birdtie/apps/client/test/map_marker_bitmap_test.dart: coincident opaque shapes stay within the real anchor at DPR 3.25
+  D:/Project/birdtie/apps/client/test/map_marker_bitmap_test.dart: moment actual opaque glyph has readable density at DPR 1.0
+  ... and 5 more

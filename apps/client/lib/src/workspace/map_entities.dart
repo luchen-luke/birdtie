@@ -4,6 +4,7 @@ import 'package:latlong2/latlong.dart';
 
 import 'map_display_policy.dart';
 import 'map_marker_visual.dart';
+import 'map_marker_widget.dart';
 import 'entity_cover.dart';
 import 'public_moment_photo.dart';
 
@@ -151,6 +152,7 @@ class MapEntity {
     this.sourceVersion = '',
     this.momentID = '',
     this.momentRevision = 0,
+    this.categoryCode = '',
   });
   final String id;
   final MapEntityKind kind;
@@ -166,6 +168,7 @@ class MapEntity {
   final MapRecentMoments? recentMoments;
   final MapMediaPixels? mediaPixels;
   final String sourceVersion;
+  final String categoryCode;
   // The native Moment selector is separate from a pin's compound map ID.
   final String momentID;
   final int momentRevision;
@@ -204,7 +207,7 @@ class MapEntity {
   // Immutable fingerprints make a removal visible even when the old live
   // pixel guard already became false before a provider's didUpdateWidget.
   String get decorationKey =>
-      '${mediaPixels?.key ?? ''}:${recentMoments?.sourceKey ?? ''}';
+      '$categoryCode:${mediaPixels?.key ?? ''}:${recentMoments?.sourceKey ?? ''}';
   MapEntity withMediaPixels(
     MapMediaPixels? pixels, {
     DateTime? now,
@@ -233,6 +236,7 @@ class MapEntity {
     sourceVersion: sourceVersion,
     momentID: momentID,
     momentRevision: momentRevision,
+    categoryCode: categoryCode,
   );
   bool get isCluster => kind == MapEntityKind.cluster || memberIDs.length > 1;
   bool get hasMapAnchor =>
@@ -269,6 +273,7 @@ class MapEntity {
     sourceVersion: sourceVersion,
     momentID: momentID,
     momentRevision: momentRevision,
+    categoryCode: categoryCode,
   );
 }
 
@@ -419,117 +424,21 @@ class IndividualMapMarker extends StatelessWidget {
   final MapEntity entity;
   final bool selected, dense, showLabel;
   final VoidCallback onTap;
+
   @override
-  Widget build(BuildContext context) {
-    final moment = entity.kind == MapEntityKind.moment;
-    final pale = dense && !selected;
-    final size = MapMarkerVisual.diameter(selected: selected, dense: pale);
-    final pixels = !pale && entity.mediaPixels?.current() == true
-        ? entity.mediaPixels
-        : null;
-    final recent = !moment
-        ? entity.recentMoments?.labelAt(DateTime.now().toUtc())
-        : null;
-    final color = moment ? const Color(0xFF87683C) : const Color(0xFF193B32);
-    return Semantics(
-      button: true,
-      selected: selected,
-      label: '${moment ? '动态' : '地点'} · ${entity.title} · ${entity.subtitle}',
-      excludeSemantics: true,
-      onTap: onTap,
-      child: SizedBox(
-        width: 48,
-        height: 48,
-        child: Stack(
-          clipBehavior: Clip.none,
-          children: [
-            IconButton(
-              key: ValueKey('individual-map-target:${entity.id}'),
-              tooltip: entity.title.isEmpty && moment ? '查看动态' : entity.title,
-              constraints: const BoxConstraints.tightFor(width: 48, height: 48),
-              padding: EdgeInsets.zero,
-              onPressed: onTap,
-              icon: Container(
-                key: ValueKey('individual-map-shape:${entity.id}'),
-                width: size,
-                height: size,
-                decoration: BoxDecoration(
-                  shape: moment ? BoxShape.rectangle : BoxShape.circle,
-                  borderRadius: moment
-                      ? BorderRadius.circular(
-                          MapMarkerVisual.radius(dense: pale),
-                        )
-                      : null,
-                  color: color,
-                  border: Border.all(
-                    color: selected ? MapMarkerVisual.placeColor : Colors.white,
-                    width: selected ? 2 : 1.5,
-                  ),
-                ),
-                child: pixels != null
-                    ? ClipRRect(
-                        borderRadius: BorderRadius.circular(moment ? 4 : 999),
-                        child: RawImage(
-                          key: ValueKey(
-                            '${moment ? 'map-moment-photo' : 'map-place-photo'}:${entity.id}',
-                          ),
-                          image: pixels.image,
-                          fit: BoxFit.cover,
-                        ),
-                      )
-                    : Icon(
-                        moment ? Icons.notes_outlined : Icons.place_outlined,
-                        color: Colors.white,
-                        size: selected
-                            ? 18
-                            : pale
-                            ? 10
-                            : 14,
-                      ),
-              ),
-            ),
-            if (showLabel &&
-                !pale &&
-                (entity.title.isNotEmpty || recent != null))
-              Positioned(
-                top: 46,
-                left: -48,
-                width: MapMarkerVisual.labelWidth,
-                child: IgnorePointer(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (entity.title.isNotEmpty)
-                        Text(
-                          entity.title,
-                          maxLines: selected ? 2 : 1,
-                          overflow: TextOverflow.ellipsis,
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            fontSize: MapMarkerVisual.labelFontSize,
-                            color: Color(0xFF193B32),
-                          ),
-                        ),
-                      if (recent != null)
-                        Text(
-                          recent,
-                          key: ValueKey('map-place-recent:${entity.id}'),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: Color(0xFF193B32),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => CompactMapPointMarker(
+    id: entity.id,
+    title: entity.title,
+    subtitle: entity.subtitle,
+    moment: entity.kind == MapEntityKind.moment,
+    selected: selected,
+    onTap: onTap,
+    dense: dense,
+    showLabel: showLabel,
+    mediaPixels: entity.mediaPixels,
+    recentMoments: entity.recentMoments,
+    categoryCode: entity.categoryCode,
+  );
 }
 
 class CompactMapMarker extends StatelessWidget {

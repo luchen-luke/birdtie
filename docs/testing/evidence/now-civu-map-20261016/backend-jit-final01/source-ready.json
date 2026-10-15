@@ -1,0 +1,75 @@
+{
+  "at": "2026-10-15T19:43:02.580097+00:00",
+  "status": "SOURCE_READY_API23_TRANSACTION_LOCAL_JIT01",
+  "schema": 170,
+  "newDDLFiles": 0,
+  "marker": "birdtie_legacy_map_visibility_contract()='map-content-v1'",
+  "sourceScope": {
+    "apps/api/internal/legacymap/build.go": "4620e102891bae4f2a8898957fefb2c9da0bd624013fbb2048396645530f534a",
+    "apps/api/internal/legacymap/build_test.go": "6604acdf408850ccd3f92d9080e5721d89713a614bc4f3979711af8c1de3601d",
+    "apps/api/internal/legacymap/model.go": "5defd13a19f207e0589d39c48f813354f64b5ee07f857e767ca26a93f8f370c7",
+    "apps/api/cmd/legacy-map-restore/main.go": "e26950f32f6bdd486757c06fa1efa2fa655e103b3e284e71d7f814522e6b99d3",
+    "apps/api/internal/content/map_content.go": "586c23d734de93255674bc71b2b6b1abca481ca607626ba0334076b1536d5fd6",
+    "apps/api/internal/content/map_content_test.go": "fce9b3d6552c8fe601448312f0a17e3c11054c94cfcdff5e55c56ff71a7cf037",
+    "apps/api/internal/httpapi/map_content.go": "db1b4fd95664bc244d314af458658f8326f7d8560dabe964e3bd18fe15598191",
+    "apps/api/internal/httpapi/map_content_test.go": "d38812be70896a0299967d67d42c3ea3ee66f3ece033e74d302e98b54769c497",
+    "apps/api/internal/postgres/map_content.go": "e0b6685abc3e678749880fc50bebc878182e7d9321feef88e452b95cd4d9b5c9",
+    "apps/api/internal/postgres/map_content_media.go": "3193d31e52e784ec5ccbcf4cc56024ae978c0012615e4bcf53db98a4ef3aace2",
+    "apps/api/internal/postgres/map_content_native_test.go": "307bb2445a2a9b44bdc5fb3e87432cb65cc47d01ac075c01c75ab1e4344b96aa",
+    "apps/api/internal/postgres/legacy_map_restore.go": "3d1e461218d62980c8db3faa7f5da0cbe18ca868b2d8b10161c67f951513b763",
+    "apps/api/migrations/170_legacy_map_visibility.sql": "09d74703e6f5f17c8d1728521af0d2e0c9cc05fcb0191b4ed6f3bbe023c68c22",
+    "apps/api/migrations/170_legacy_map_visibility.down.sql": "7d17894bf949037c40021062926454157a17b114e3c95a9fe0d9837026fc28ee"
+  },
+  "sourceFiles": 14,
+  "sourceFrameSHA256": "a69cc011e11d4500e096a07c45c8a5442acb3fb7ed88483489ec21bbabc94103",
+  "sourceFrameHashAlgorithm": "SHA256(UTF8 compact JSON sourceScope sorted by key)",
+  "changedSinceAPI22": [
+    "apps/api/internal/postgres/map_content.go",
+    "apps/api/internal/postgres/map_content_native_test.go"
+  ],
+  "oldSQL1Through170Files": 315,
+  "oldSQL1Through170RawSHAUnchanged": true,
+  "change": "Each beginMapContent transaction uses SET LOCAL jit=off; rollback on failure. No global DB settings, predicates, proof or lease changes.",
+  "evidenceOfCause": {
+    "directory": "backend-query-profile01",
+    "databaseGuard": true,
+    "readonly": true,
+    "newLogins": 0,
+    "databaseWrites": 0,
+    "placeRowsBothModes": 5492,
+    "sharedHitBlocksBothModes": 92666,
+    "defaultExecutionMs": 2190.842,
+    "defaultJITMs": 2021.514,
+    "transactionLocalJITOffExecutionMs": 136.746
+  },
+  "native": {
+    "directory": "backend-jit-native01",
+    "tests": {
+      "pass": 1,
+      "fail": 0,
+      "skip": 0
+    },
+    "exitCode": 0,
+    "sourceStable": true,
+    "assignedParentSourceStable": true,
+    "parentIdentityStable": true,
+    "elapsedSeconds": 4.03,
+    "synthetic3PinReadMilliseconds": 101,
+    "newAssertion": "SHOW jit is off inside the actual map reader transaction; existing current authority/media/revocation/cursor chain remains covered."
+  },
+  "review": "Parent requested this exact measured one-setting fix; no extra static review delegated.",
+  "boundaries": {
+    "productionHTTPAfterAPI23": "NOT_RUN",
+    "phoneAfterAPI23": "NOT_RUN",
+    "sourceCivuWrites": 0,
+    "productionContentWrites": 0,
+    "accountLoginsByWorker": 0
+  },
+  "priorEvidenceRetained": [
+    "backend-final02",
+    "backend-perf-final01",
+    "backend-perf-native01",
+    "backend-perf-native02",
+    "backend-query-profile01"
+  ]
+}

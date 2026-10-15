@@ -1,0 +1,20 @@
+{
+  "command": [
+    "D:\\DevTools\\flutter\\bin\\cache\\dart-sdk\\bin\\dart.exe",
+    "analyze",
+    "D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\owned_map_api.dart",
+    "D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\owned_map_controller.dart",
+    "D:\\Project\\birdtie\\apps\\client\\lib\\src\\workspace\\owned_map_media_controller.dart",
+    "D:\\Project\\birdtie\\apps\\client\\test\\owned_map_test.dart"
+  ],
+  "cwd": "D:\\Project\\birdtie\\apps\\client",
+  "exitCode": 0,
+  "elapsedSeconds": 11.219,
+  "sourceSHA256": {
+    "apps/client/lib/src/workspace/owned_map_api.dart": "81b371ed4273dbe2bebbbaeb5d9549e39b9e3715fc8e98595c735bafe64e8248",
+    "apps/client/lib/src/workspace/owned_map_controller.dart": "572b5325c56ac521ac1ed00ce3dab65325de3509fb12af1a9375bccef177d318",
+    "apps/client/lib/src/workspace/owned_map_media_controller.dart": "abbcef6fd539864286d06f5144d7b46ffb79753fd4dbbcf27cdecd7bfd66dd5f",
+    "apps/client/test/owned_map_test.dart": "76f145b532e0b89095c8a8ddb134bd020e5b26c26fe45fd1208eac1aa75c2a33"
+  },
+  "scope": "isolated synthetic HTTP and canonical JPEG fixture; no remote calls, no publication, no build/device"
+}

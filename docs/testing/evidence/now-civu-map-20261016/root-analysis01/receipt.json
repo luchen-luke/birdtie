@@ -1,0 +1,37 @@
+{
+  "started": "2026-10-15T18:47:17.025260+00:00",
+  "finished": "2026-10-15T18:47:33.307412+00:00",
+  "command": [
+    "D:/DevTools/flutter/bin/cache/dart-sdk/bin/dart.exe",
+    "analyze",
+    "--format",
+    "machine",
+    "lib/src/workspace/map_canvas.dart",
+    "lib/src/workspace/map_workspace.dart",
+    "lib/src/workspace/map_display_policy.dart",
+    "test/now_map_content_integration_test.dart"
+  ],
+  "exitCode": 3,
+  "effectiveExitCode": 3,
+  "diagnostics": {
+    "ERROR": 2,
+    "WARNING": 1,
+    "INFO": 164
+  },
+  "sourceBefore": {
+    "apps/client/lib/src/workspace/map_canvas.dart": "fc0c686b81e98876aa0c883be9f0920f0af43fe6e317447b6b3c06dbe27cfb89",
+    "apps/client/lib/src/workspace/map_workspace.dart": "4d9de16943d4e7e81c9e07c40d9c375cc624c9f70c98ef2116b055d9617920cb",
+    "apps/client/lib/src/workspace/map_display_policy.dart": "f901e0bf4af9e69b7f65f6c74e101140a838bbad931ffa25ff17d3536c3e10e7",
+    "apps/client/test/now_map_content_integration_test.dart": "c3afa7cbdb3e527997666660fb4febcd8cddabb8091804e75157c0451aada7b9"
+  },
+  "sourceAfter": {
+    "apps/client/lib/src/workspace/map_canvas.dart": "fc0c686b81e98876aa0c883be9f0920f0af43fe6e317447b6b3c06dbe27cfb89",
+    "apps/client/lib/src/workspace/map_workspace.dart": "4d9de16943d4e7e81c9e07c40d9c375cc624c9f70c98ef2116b055d9617920cb",
+    "apps/client/lib/src/workspace/map_display_policy.dart": "f901e0bf4af9e69b7f65f6c74e101140a838bbad931ffa25ff17d3536c3e10e7",
+    "apps/client/test/now_map_content_integration_test.dart": "c3afa7cbdb3e527997666660fb4febcd8cddabb8091804e75157c0451aada7b9"
+  },
+  "sourceStable": true,
+  "logSHA256": "bbf4c2f0d1c43afe207e8d54a29beb145bf0ba76307f2017dfbb3cd3f995f93c",
+  "runtimeType": "SCOPED_STATIC_ANALYSIS",
+  "deviceVerification": false
+}

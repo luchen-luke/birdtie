@@ -1,0 +1,39 @@
+{
+  "at": "2026-10-15T18:43:05.687965+00:00",
+  "command": [
+    "D:/DevTools/flutter/bin/flutter.bat",
+    "test",
+    "test/now_map_content_test.dart"
+  ],
+  "cwd": "D:\\Project\\birdtie\\apps\\client",
+  "exitCode": 1,
+  "elapsedSeconds": 3.47,
+  "sourceBefore": {
+    "apps/client/lib/src/workspace/map_marker_visual.dart": "3deef4c600cf4e38aa2e101161920b1f2c3d85213fcb8f1feea28a90fc3a9cdb",
+    "apps/client/lib/src/workspace/map_marker_bitmap.dart": "683dcbc7d951fc144630f49b6fac7dfc9a53ff8d6a21e8aca088a413b6b4ceba",
+    "apps/client/lib/src/workspace/map_marker_widget.dart": "b06ef320b913a4000e1cab7f45c942e3fcf443b838c3b618cf43d2f163ed3f69",
+    "apps/client/lib/src/workspace/map_entities.dart": "67fbd30362c2478f8181441e3241d156afacf8a1187bdd3456f9b2571498d0d9",
+    "apps/client/lib/src/city/native_city_map_io.dart": "d759d017fc7c009effc0faf6cd775e49ac68bf8dfb37fd263b622e88038ca686",
+    "apps/client/test/map_marker_bitmap_test.dart": "8ad963d6e03c528dfa60480dd13f9c4fbc9e6e0803da09fb244c2b3b4a8e200b",
+    "apps/client/lib/src/workspace/now_map_content_panel.dart": "12b5eb2e1cdadfb1d3abab245216c1c49109fca63e003905adcc21cfec889968",
+    "apps/client/test/now_map_content_test.dart": "81c0a37e59bf133e8ad10cbe481ea88c663884b89be5dc3c8205861fcde7c3cd"
+  },
+  "sourceAfter": {
+    "apps/client/lib/src/workspace/map_marker_visual.dart": "3deef4c600cf4e38aa2e101161920b1f2c3d85213fcb8f1feea28a90fc3a9cdb",
+    "apps/client/lib/src/workspace/map_marker_bitmap.dart": "683dcbc7d951fc144630f49b6fac7dfc9a53ff8d6a21e8aca088a413b6b4ceba",
+    "apps/client/lib/src/workspace/map_marker_widget.dart": "b06ef320b913a4000e1cab7f45c942e3fcf443b838c3b618cf43d2f163ed3f69",
+    "apps/client/lib/src/workspace/map_entities.dart": "67fbd30362c2478f8181441e3241d156afacf8a1187bdd3456f9b2571498d0d9",
+    "apps/client/lib/src/city/native_city_map_io.dart": "d759d017fc7c009effc0faf6cd775e49ac68bf8dfb37fd263b622e88038ca686",
+    "apps/client/test/map_marker_bitmap_test.dart": "8ad963d6e03c528dfa60480dd13f9c4fbc9e6e0803da09fb244c2b3b4a8e200b",
+    "apps/client/lib/src/workspace/now_map_content_panel.dart": "12b5eb2e1cdadfb1d3abab245216c1c49109fca63e003905adcc21cfec889968",
+    "apps/client/test/now_map_content_test.dart": "81c0a37e59bf133e8ad10cbe481ea88c663884b89be5dc3c8205861fcde7c3cd"
+  },
+  "sourceStable": true,
+  "notRun": [
+    "Previous already-passed marker photo case",
+    "Full Go/Flutter suites",
+    "Device/native-map runtime",
+    "Build/install/deploy",
+    "Civu runtime"
+  ]
+}

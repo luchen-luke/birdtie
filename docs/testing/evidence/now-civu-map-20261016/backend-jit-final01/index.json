@@ -1,0 +1,29 @@
+{
+  "at": "2026-10-15T19:43:02.580097+00:00",
+  "safeArtifactsOnly": true,
+  "privateSourceFiles": 0,
+  "mediaFiles": 0,
+  "tokenFiles": 0,
+  "files": {
+    "backend-jit-native01/receipt.json": {
+      "sha256": "0c40da9572c7fbcc98bf1a5bb0d77e2df735898ba5345c9be4d73b38a9982959",
+      "bytes": 489948
+    },
+    "backend-jit-native01/stdout.jsonl": {
+      "sha256": "c04707d3891edd53289cc5096f22b28af3f03d1045b43b6265633eb24c84d663",
+      "bytes": 2259
+    },
+    "backend-jit-native01/stderr.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "backend-jit-native01/actual-runner.py": {
+      "sha256": "04eb2dcbc24ae9db40f279295f86e90946c35db0ef4ebad765f862ae1027e510",
+      "bytes": 4730
+    },
+    "backend-jit-final01/source-ready.json": {
+      "sha256": "22719bf9e5eaa7a9d737fa724007dd0e81962b2abed7c550986f31df78d6f641",
+      "bytes": 3851
+    }
+  }
+}

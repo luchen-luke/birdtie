@@ -1,0 +1,21 @@
+{
+  "at": "2026-10-15T18:23:00.760742+00:00",
+  "kind": "REPORTED_TOOL_RESULT",
+  "command": [
+    "git",
+    "diff",
+    "--check",
+    "--",
+    "apps/client/lib/src/workspace/map_marker_visual.dart",
+    "apps/client/lib/src/workspace/map_marker_bitmap.dart",
+    "apps/client/lib/src/workspace/map_marker_widget.dart",
+    "apps/client/lib/src/workspace/map_entities.dart",
+    "apps/client/lib/src/city/native_city_map_io.dart",
+    "apps/client/test/map_marker_bitmap_test.dart"
+  ],
+  "cwd": "D:\\Project\\birdtie",
+  "exitCode": 1,
+  "reason": "Default Git whitespace policy treated existing CRLF line endings as trailing whitespace; final proof first attempt stopped before writing. No source was changed.",
+  "originalStdout": "Only truncated tool output retained in conversation; not reconstructed",
+  "testOrAnalysisFailure": false
+}

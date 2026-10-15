@@ -1,0 +1,61 @@
+{
+  "status": "PASS",
+  "exitCode": 0,
+  "remoteScriptSHA256": "a3241730b4370a790ba427db6ea926910dcf28b1686d59dcf2bf18ec42949741",
+  "stderrPresent": false,
+  "localEvidenceBoundaries": {
+    "mapLive01": {
+      "directoryCreatedUTC": "2026-10-15T19:07:23.770008+00:00",
+      "receiptWrittenUTC": "2026-10-15T19:08:18.753019+00:00"
+    },
+    "mapLive02": {
+      "directoryCreatedUTC": "2026-10-15T19:30:21.324601+00:00",
+      "receiptWrittenUTC": "2026-10-15T19:31:25.113867+00:00"
+    },
+    "mapLive03": {
+      "directoryCreatedUTC": "2026-10-15T19:35:42.765198+00:00",
+      "receiptWrittenUTC": "2026-10-15T19:36:37.063164+00:00"
+    },
+    "api22Upgrade170_02": {
+      "directoryCreatedUTC": "2026-10-15T19:25:56.427562+00:00",
+      "receiptWrittenUTC": "2026-10-15T19:28:58.505894+00:00"
+    },
+    "web21GatewaySwitch": {
+      "directoryCreatedUTC": "2026-10-15T19:30:31.579775+00:00",
+      "receiptWrittenUTC": "2026-10-15T19:31:34.205486+00:00"
+    }
+  },
+  "audit": {
+    "status": "PASS",
+    "databaseGuard": true,
+    "sameOriginalClaimedOwnerGuard": true,
+    "schema": 170,
+    "window": {
+      "directoryCreatedUTC": "2026-10-15T19:30:21.324601+00:00",
+      "receiptWrittenUTC": "2026-10-15T19:31:25.113867+00:00"
+    },
+    "result": {
+      "rows": [
+        {
+          "revoked": false,
+          "createdAt": "2026-10-16T03:30:22.128489+08:00",
+          "expiresAt": "2026-10-16T11:30:22.128489+08:00",
+          "idleExpiresAt": "2026-10-16T04:01:18.182554+08:00",
+          "currentlyValid": true,
+          "authenticationMethod": "dev_phone",
+          "authorizationGeneration": 1
+        }
+      ],
+      "notRevokedCount": 1,
+      "currentlyValidCount": 1,
+      "sessionsCreatedInWindow": 1
+    },
+    "readOnly": true,
+    "databaseWrites": 0,
+    "httpCalls": 0,
+    "newLogins": 0,
+    "sessionIDsOrOwnerIDsPersisted": false,
+    "tokensRead": 0,
+    "phoneSessionsChanged": 0
+  }
+}

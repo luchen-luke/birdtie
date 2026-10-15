@@ -1,0 +1,32 @@
+{"Time":"2026-10-16T02:33:30.595182+08:00","Action":"start","Package":"github.com/birdtie/birdtie/apps/api/internal/legacymap"}
+{"Time":"2026-10-16T02:33:30.6107421+08:00","Action":"start","Package":"github.com/birdtie/birdtie/apps/api/internal/content"}
+{"Time":"2026-10-16T02:33:31.0675984+08:00","Action":"run","Package":"github.com/birdtie/birdtie/apps/api/internal/legacymap","Test":"TestCoordinateProofRequiresExactOriginAndRejectsConflict"}
+{"Time":"2026-10-16T02:33:31.0675984+08:00","Action":"output","Package":"github.com/birdtie/birdtie/apps/api/internal/legacymap","Test":"TestCoordinateProofRequiresExactOriginAndRejectsConflict","Output":"=== RUN   TestCoordinateProofRequiresExactOriginAndRejectsConflict\n"}
+{"Time":"2026-10-16T02:33:31.0675984+08:00","Action":"output","Package":"github.com/birdtie/birdtie/apps/api/internal/legacymap","Test":"TestCoordinateProofRequiresExactOriginAndRejectsConflict","Output":"--- PASS: TestCoordinateProofRequiresExactOriginAndRejectsConflict (0.00s)\n"}
+{"Time":"2026-10-16T02:33:31.0675984+08:00","Action":"pass","Package":"github.com/birdtie/birdtie/apps/api/internal/legacymap","Test":"TestCoordinateProofRequiresExactOriginAndRejectsConflict","Elapsed":0}
+{"Time":"2026-10-16T02:33:31.0675984+08:00","Action":"output","Package":"github.com/birdtie/birdtie/apps/api/internal/legacymap","Output":"PASS\n"}
+{"Time":"2026-10-16T02:33:31.0686233+08:00","Action":"output","Package":"github.com/birdtie/birdtie/apps/api/internal/legacymap","Output":"ok  \tgithub.com/birdtie/birdtie/apps/api/internal/legacymap\t0.473s\n"}
+{"Time":"2026-10-16T02:33:31.0686233+08:00","Action":"pass","Package":"github.com/birdtie/birdtie/apps/api/internal/legacymap","Elapsed":0.473}
+{"Time":"2026-10-16T02:33:31.1539307+08:00","Action":"run","Package":"github.com/birdtie/birdtie/apps/api/internal/content","Test":"TestMapContentBoundsAndSourceScopeAreClosed"}
+{"Time":"2026-10-16T02:33:31.1539307+08:00","Action":"output","Package":"github.com/birdtie/birdtie/apps/api/internal/content","Test":"TestMapContentBoundsAndSourceScopeAreClosed","Output":"=== RUN   TestMapContentBoundsAndSourceScopeAreClosed\n"}
+{"Time":"2026-10-16T02:33:31.1539307+08:00","Action":"output","Package":"github.com/birdtie/birdtie/apps/api/internal/content","Test":"TestMapContentBoundsAndSourceScopeAreClosed","Output":"--- PASS: TestMapContentBoundsAndSourceScopeAreClosed (0.00s)\n"}
+{"Time":"2026-10-16T02:33:31.1539307+08:00","Action":"pass","Package":"github.com/birdtie/birdtie/apps/api/internal/content","Test":"TestMapContentBoundsAndSourceScopeAreClosed","Elapsed":0}
+{"Time":"2026-10-16T02:33:31.1539307+08:00","Action":"output","Package":"github.com/birdtie/birdtie/apps/api/internal/content","Output":"PASS\n"}
+{"Time":"2026-10-16T02:33:31.1550307+08:00","Action":"output","Package":"github.com/birdtie/birdtie/apps/api/internal/content","Output":"ok  \tgithub.com/birdtie/birdtie/apps/api/internal/content\t0.544s\n"}
+{"Time":"2026-10-16T02:33:31.1550307+08:00","Action":"pass","Package":"github.com/birdtie/birdtie/apps/api/internal/content","Elapsed":0.544}
+{"Time":"2026-10-16T02:33:48.5228903+08:00","Action":"start","Package":"github.com/birdtie/birdtie/apps/api/internal/httpapi"}
+{"Time":"2026-10-16T02:33:48.5228903+08:00","Action":"start","Package":"github.com/birdtie/birdtie/apps/api/internal/postgres"}
+{"Time":"2026-10-16T02:33:48.5228903+08:00","Action":"start","Package":"github.com/birdtie/birdtie/apps/api/cmd/legacy-map-restore"}
+{"Time":"2026-10-16T02:33:48.5228903+08:00","Action":"output","Package":"github.com/birdtie/birdtie/apps/api/cmd/legacy-map-restore","Output":"?   \tgithub.com/birdtie/birdtie/apps/api/cmd/legacy-map-restore\t[no test files]\n"}
+{"Time":"2026-10-16T02:33:48.5228903+08:00","Action":"skip","Package":"github.com/birdtie/birdtie/apps/api/cmd/legacy-map-restore","Elapsed":0}
+{"Time":"2026-10-16T02:33:49.9313072+08:00","Action":"output","Package":"github.com/birdtie/birdtie/apps/api/internal/postgres","Output":"testing: warning: no tests to run\n"}
+{"Time":"2026-10-16T02:33:49.9313072+08:00","Action":"output","Package":"github.com/birdtie/birdtie/apps/api/internal/postgres","Output":"PASS\n"}
+{"Time":"2026-10-16T02:33:49.9333366+08:00","Action":"output","Package":"github.com/birdtie/birdtie/apps/api/internal/postgres","Output":"ok  \tgithub.com/birdtie/birdtie/apps/api/internal/postgres\t1.410s [no tests to run]\n"}
+{"Time":"2026-10-16T02:33:49.9333366+08:00","Action":"pass","Package":"github.com/birdtie/birdtie/apps/api/internal/postgres","Elapsed":1.41}
+{"Time":"2026-10-16T02:33:53.0398632+08:00","Action":"run","Package":"github.com/birdtie/birdtie/apps/api/internal/httpapi","Test":"TestMapContentQueryRejectsDuplicateOrganizationAndUnknown"}
+{"Time":"2026-10-16T02:33:53.0398632+08:00","Action":"output","Package":"github.com/birdtie/birdtie/apps/api/internal/httpapi","Test":"TestMapContentQueryRejectsDuplicateOrganizationAndUnknown","Output":"=== RUN   TestMapContentQueryRejectsDuplicateOrganizationAndUnknown\n"}
+{"Time":"2026-10-16T02:33:53.0398632+08:00","Action":"output","Package":"github.com/birdtie/birdtie/apps/api/internal/httpapi","Test":"TestMapContentQueryRejectsDuplicateOrganizationAndUnknown","Output":"--- PASS: TestMapContentQueryRejectsDuplicateOrganizationAndUnknown (0.00s)\n"}
+{"Time":"2026-10-16T02:33:53.0398632+08:00","Action":"pass","Package":"github.com/birdtie/birdtie/apps/api/internal/httpapi","Test":"TestMapContentQueryRejectsDuplicateOrganizationAndUnknown","Elapsed":0}
+{"Time":"2026-10-16T02:33:53.0398632+08:00","Action":"output","Package":"github.com/birdtie/birdtie/apps/api/internal/httpapi","Output":"PASS\n"}
+{"Time":"2026-10-16T02:33:53.0418924+08:00","Action":"output","Package":"github.com/birdtie/birdtie/apps/api/internal/httpapi","Output":"ok  \tgithub.com/birdtie/birdtie/apps/api/internal/httpapi\t4.519s\n"}
+{"Time":"2026-10-16T02:33:53.0418924+08:00","Action":"pass","Package":"github.com/birdtie/birdtie/apps/api/internal/httpapi","Elapsed":4.519}

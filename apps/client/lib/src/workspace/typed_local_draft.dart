@@ -273,7 +273,18 @@ class TypedLocalDraft {
         value.attachments.length)
       throw const FormatException('附件记录不能重复');
     if (!const {'route', 'external_plan'}.contains(value.kind) &&
-        value.slotID != 'primary')
+        value.slotID != 'primary' &&
+        !(const {
+              'moment',
+              'activity',
+              'journey',
+              'theme_map',
+            }.contains(value.kind) &&
+            value.workspaceID == null &&
+            value.taskID == null &&
+            value.references.isEmpty &&
+            value.attachments.isEmpty &&
+            RegExp(r'^now-creation:[a-f0-9]{64}$').hasMatch(value.slotID)))
       throw const FormatException('草稿入口标识不符');
     return value;
   }

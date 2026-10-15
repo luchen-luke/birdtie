@@ -44,9 +44,10 @@ func inboxPageRead(ctx context.Context, tx pgx.Tx, owner string, in inbox.PageRe
 	rows, err := tx.Query(ctx, inboxPageVisibleSQL+`
  SELECT v.*, totals.unread FROM (SELECT count(*) FILTER(WHERE read_at IS NULL) AS unread FROM visible) totals
  LEFT JOIN LATERAL (SELECT * FROM visible
-  WHERE NOT $2::boolean OR (sort_priority,created_at,id)<($3::int,$4::timestamptz,$5::uuid)
+  WHERE ($7='' OR category=$7) AND (NOT $8::boolean OR read_at IS NULL)
+  AND (NOT $2::boolean OR (sort_priority,created_at,id)<($3::int,$4::timestamptz,$5::uuid))
   ORDER BY sort_priority DESC,created_at DESC,id DESC LIMIT $6) v ON true
- ORDER BY v.sort_priority DESC,v.created_at DESC,v.id DESC`, owner, hasCursor, priority, stamp, inboxPageNullableID(id), in.Limit+1)
+ ORDER BY v.sort_priority DESC,v.created_at DESC,v.id DESC`, owner, hasCursor, priority, stamp, inboxPageNullableID(id), in.Limit+1, in.Category, in.UnreadOnly)
 	if err != nil {
 		return out, inboxPageNativeFailure(err)
 	}
@@ -88,7 +89,7 @@ func inboxPageRead(ctx context.Context, tx pgx.Tx, owner string, in inbox.PageRe
 	if len(out.Items) > in.Limit {
 		out.Items = out.Items[:in.Limit]
 		last := out.Items[len(out.Items)-1]
-		raw, e := inbox.EncodePageCursor(inbox.PageCursor{Version: 1, OwnerID: owner, View: in.View, Priority: lastPriority, Time: last.CreatedAt, ID: last.ID})
+		raw, e := inbox.EncodePageCursor(inbox.PageCursor{Version: 1, OwnerID: owner, View: in.View, Priority: lastPriority, Time: last.CreatedAt, ID: last.ID, Category: in.Category, UnreadOnly: in.UnreadOnly})
 		if e != nil {
 			return out, socialnow.ErrUnavailable
 		}

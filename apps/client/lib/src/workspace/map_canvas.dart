@@ -287,6 +287,8 @@ class _MapCanvasState extends State<MapCanvas> {
       sourceGeneration: (
         layers,
         layers?.epoch,
+        layers?.publicView,
+        layers?.authorView,
         layers?.authorID,
         area,
         widget.workspace.taskEpoch,

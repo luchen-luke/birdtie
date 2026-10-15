@@ -61,8 +61,10 @@ class MomentControlInput {
     final d = input;
     if (d == null) return true;
     if (const {'PUBLISH', 'UPDATE_PUBLIC'}.contains(action) &&
-        (d['placeId'] == '' ||
-            d['locationPrecision'] != 'place' ||
+        (!((d['placeId'] == '' && d['locationPrecision'] == 'city') ||
+                (d['placeId'] is String &&
+                    (d['placeId'] as String).isNotEmpty &&
+                    d['locationPrecision'] == 'place')) ||
             const [
               'activityId',
               'communityId',

@@ -22,6 +22,8 @@ var pageUUID = regexp.MustCompile(`^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]
 type PageRequest struct {
 	View, Cursor string
 	Limit        int
+	Category     string
+	UnreadOnly   bool
 }
 type Page struct {
 	Items       []Item  `json:"items"`
@@ -37,12 +39,18 @@ type PagedStore interface {
 
 // The closed hint only locates a row. It never supplies current authorization.
 type PageCursor struct {
-	Version  int       `json:"v"`
-	OwnerID  string    `json:"owner"`
-	View     string    `json:"view"`
-	Priority int       `json:"priority"`
-	Time     time.Time `json:"time"`
-	ID       string    `json:"id"`
+	Version    int       `json:"v"`
+	OwnerID    string    `json:"owner"`
+	View       string    `json:"view"`
+	Priority   int       `json:"priority"`
+	Time       time.Time `json:"time"`
+	ID         string    `json:"id"`
+	Category   string    `json:"category,omitempty"`
+	UnreadOnly bool      `json:"unreadOnly,omitempty"`
+}
+
+func ValidCategory(v string) bool {
+	return v == "" || v == "needs_attention" || v == "messages" || v == "requests" || v == "agent_updates" || v == "updates"
 }
 
 func ValidPageID(id string) bool {
@@ -51,7 +59,7 @@ func ValidPageID(id string) bool {
 func ValidPagePriority(p int) bool { return p == 0 || p == 10 || p == 50 || p == 100 }
 
 func EncodePageCursor(c PageCursor) (string, error) {
-	if c.Version != 1 || !ValidPageID(c.OwnerID) || !ValidPageID(c.ID) || c.View != NotificationsView || !ValidPagePriority(c.Priority) || c.Time.IsZero() || c.Time.Year() < 1 || c.Time.Year() > 9999 || c.Time.Location() != time.UTC {
+	if c.Version != 1 || !ValidCategory(c.Category) || !ValidPageID(c.OwnerID) || !ValidPageID(c.ID) || c.View != NotificationsView || !ValidPagePriority(c.Priority) || c.Time.IsZero() || c.Time.Year() < 1 || c.Time.Year() > 9999 || c.Time.Location() != time.UTC {
 		return "", ErrInvalidPage
 	}
 	b, e := json.Marshal(c)
@@ -90,9 +98,12 @@ func NormalizePage(in PageRequest, owner string) (PageRequest, *PageCursor, erro
 	if in.Limit == 0 {
 		in.Limit = DefaultPageLimit
 	}
-	if in.Limit < 1 || in.Limit > MaxPageLimit {
+	if in.Limit < 1 || in.Limit > MaxPageLimit || !ValidCategory(in.Category) {
 		return in, nil, ErrInvalidPage
 	}
 	c, e := DecodePageCursor(in.Cursor, owner, in.View)
+	if e == nil && c != nil && (c.Category != in.Category || c.UnreadOnly != in.UnreadOnly) {
+		return in, nil, ErrInvalidPage
+	}
 	return in, c, e
 }

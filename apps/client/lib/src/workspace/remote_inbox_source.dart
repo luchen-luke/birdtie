@@ -84,6 +84,8 @@ class InboxItem {
       'opportunity_available',
       'business_claim_review',
       'business_update',
+      'moment_like',
+      'moment_comment',
     ];
     if (!const [
           'needs_attention',
@@ -393,6 +395,8 @@ class RemoteInboxSource {
   Future<InboxNotificationPage> loadNotificationsPage({
     int limit = 20,
     String? cursor,
+    String category = '',
+    bool unreadOnly = false,
   }) async {
     if (limit < 1 || limit > 50) {
       throw const FormatException('Invalid notification limit');
@@ -410,6 +414,8 @@ class RemoteInboxSource {
               'view': 'notifications',
               'limit': '$limit',
               'cursor': ?position,
+              if (category.isNotEmpty) 'category': category,
+              if (unreadOnly) 'unreadOnly': 'true',
             },
           ),
           headers: {'Authorization': bearer},
@@ -431,8 +437,49 @@ class RemoteInboxSource {
       limit: limit,
       previousCursor: position,
     );
+    if (page.items.any(
+      (i) =>
+          category.isNotEmpty && i.category != category ||
+          unreadOnly && i.readAt != null,
+    ))
+      throw const FormatException('通知筛选结果不符');
     _checkIdentity(bearer, version);
     return page;
+  }
+
+  Future<({String momentID, String? commentID})> momentTarget(
+    String itemID,
+  ) async {
+    if (!RegExp(r'^[0-9a-f-]{36}$').hasMatch(itemID))
+      throw const FormatException('通知标识不符');
+    final bearer = _headers()['Authorization']!, version = identityVersion;
+    final response = await _client
+        .get(
+          _endpoint('/v1/me/inbox/$itemID/moment-target'),
+          headers: {'Authorization': bearer},
+        )
+        .timeout(const Duration(seconds: 10));
+    _checkIdentity(bearer, version);
+    if (response.statusCode != 200) throw InboxReadFailure(response.statusCode);
+    final root = jsonDecode(utf8.decode(response.bodyBytes));
+    final data = root is Map<String, dynamic> ? root['data'] : null;
+    if (data is! Map<String, dynamic> ||
+        data.length != 2 ||
+        !data.containsKey('momentId') ||
+        !data.containsKey('commentId'))
+      throw const FormatException('动态通知目标不符');
+    bool valid(Object? id) =>
+        id is String &&
+        RegExp(
+          r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',
+        ).hasMatch(id);
+    if (!valid(data['momentId']) ||
+        data['commentId'] != null && !valid(data['commentId']))
+      throw const FormatException('动态通知目标不符');
+    return (
+      momentID: data['momentId'] as String,
+      commentID: data['commentId'] as String?,
+    );
   }
 
   Future<List<InboxItem>> load() async {

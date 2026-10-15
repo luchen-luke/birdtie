@@ -6,13 +6,16 @@ import (
 	"time"
 
 	"github.com/birdtie/birdtie/apps/api/internal/foundation"
+	"github.com/birdtie/birdtie/apps/api/internal/momentmedia"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"sync/atomic"
 )
 
 type Store struct {
 	pool            *pgxpool.Pool
 	devPhoneEnabled bool
+	momentVideo     atomic.Pointer[momentmedia.FFmpegVideoNormalizer]
 }
 
 func New(pool *pgxpool.Pool, devPhoneEnabled bool) *Store {

@@ -46,7 +46,15 @@ func publicMomentFailure(w http.ResponseWriter, err error) {
 
 func (s *server) getPublicMoment(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "no-store")
-	w.Header().Set("Vary", "X-Birdtie-Public-Moment-Media")
+	w.Header().Set("Vary", "X-Birdtie-Public-Moment-Media, X-Birdtie-Public-Moment-Context")
+	cityContext := false
+	if fields := r.Header.Values("X-Birdtie-Public-Moment-Context"); len(fields) != 0 {
+		if len(fields) != 1 || fields[0] != "city-v1" {
+			publicMomentFailure(w, content.ErrInvalid)
+			return
+		}
+		cityContext = true
+	}
 	media := false
 	if fields := r.Header.Values("X-Birdtie-Public-Moment-Media"); len(fields) != 0 {
 		if len(fields) != 1 || fields[0] != "photo-v1" {
@@ -81,6 +89,10 @@ func (s *server) getPublicMoment(w http.ResponseWriter, r *http.Request) {
 		access = content.PublicMomentAccess{Actor: actor, SessionDigest: digest}
 	}
 	id := r.PathValue("momentID")
+	if cityContext {
+		s.respondPublicMomentWithContext(w, r, access, id, withAuthor, media)
+		return
+	}
 	if media {
 		s.respondPublicMomentWithPhoto(w, r, access, id, withAuthor)
 		return
@@ -143,6 +155,72 @@ func (s *server) getPublicMoment(w http.ResponseWriter, r *http.Request) {
 	}
 	encoded, err := json.Marshal(map[string]any{"data": current})
 	if err != nil || !bytes.Equal(initialWire, encoded) {
+		publicMomentFailure(w, content.ErrUnavailable)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	_, _ = w.Write(append(encoded, '\n'))
+}
+
+func (s *server) respondPublicMomentWithContext(w http.ResponseWriter, r *http.Request, access content.PublicMomentAccess, id string, withAuthor, media bool) {
+	store, ok := s.catalog.(content.PublicMomentWithContextStore)
+	if !ok {
+		publicMomentFailure(w, content.ErrUnavailable)
+		return
+	}
+	receipt, err := store.CapturePublicMomentWithContext(r.Context(), access, id, withAuthor, media)
+	if err != nil {
+		publicMomentFailure(w, err)
+		return
+	}
+	if receipt.IncludeAuthor != withAuthor || receipt.IncludePhoto != media || content.ValidatePublicMomentWithContext(receipt.View, id) != nil || (!withAuthor && (receipt.View.AuthorID != nil || receipt.View.AuthorPublicProfile != nil)) || (!media && receipt.View.Photo != nil) {
+		publicMomentFailure(w, content.ErrUnavailable)
+		return
+	}
+	if p := receipt.View.Photo; p != nil {
+		copy := *p
+		receipt.View.Photo = &copy
+	}
+	if p := receipt.View.AuthorID; p != nil {
+		copy := *p
+		receipt.View.AuthorID = &copy
+	}
+	if p := receipt.View.AuthorPublicProfile; p != nil {
+		copy := *p
+		receipt.View.AuthorPublicProfile = &copy
+	}
+	if access.Actor.ID != "" {
+		actor, digest, e := s.actor(r, true)
+		if e != nil {
+			publicMomentFailure(w, e)
+			return
+		}
+		if actor.ID != access.Actor.ID || actor.AccountType != access.Actor.AccountType || digest != access.SessionDigest {
+			publicMomentFailure(w, content.ErrUnavailable)
+			return
+		}
+	}
+	current, err := store.FinalizePublicMomentWithContext(r.Context(), access, receipt)
+	if err != nil {
+		publicMomentFailure(w, err)
+		return
+	}
+	if content.ValidatePublicMomentWithContext(current, id) != nil || r.Context().Err() != nil || !current.ValidUntil.After(time.Now().UTC()) || (!withAuthor && (current.AuthorID != nil || current.AuthorPublicProfile != nil)) || (!media && current.Photo != nil) {
+		publicMomentFailure(w, content.ErrUnavailable)
+		return
+	}
+	before, after := receipt.View, current
+	before.Photo, after.Photo = nil, nil
+	if !reflect.DeepEqual(before, after) || current.Photo != nil && (receipt.View.Photo == nil || *current.Photo != *receipt.View.Photo) {
+		publicMomentFailure(w, content.ErrUnavailable)
+		return
+	}
+	if current.Photo != nil && !current.Photo.ExpiresAt.After(time.Now().UTC()) {
+		current.Photo = nil
+	}
+	encoded, err := json.Marshal(map[string]any{"data": current})
+	if err != nil {
 		publicMomentFailure(w, content.ErrUnavailable)
 		return
 	}

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:typed_data';
 import 'package:birdtie_client/src/content/video_material_controller.dart';
 import 'package:birdtie_client/src/content/video_material_picker.dart';
 import 'package:birdtie_client/src/content/video_material_pending_store.dart';
@@ -87,6 +88,60 @@ VideoMaterialController videoController(
   uploadClient: upload,
 );
 void main() {
+  test('Now本机视频在同账号续期保留，换账号清空且不调用私有接口', () async {
+    var owner = videoOwner, token = 'Bearer first';
+    var requests = 0;
+    final changes = ChangeNotifier();
+    final preview = FakeVideoPreview();
+    final picker = FakeVideoPicker()
+      ..next = VideoMaterialSelection(
+        bytes: syntheticVideoBytes(),
+        preview: preview,
+      );
+    final client = MockClient((request) async {
+      ++requests;
+      throw StateError('本机选材不应请求私有视频服务');
+    });
+    final c = VideoMaterialController(
+      authorizationHeader: () => token,
+      ownerID: () => owner,
+      sourceCurrent: () => true,
+      identityChanges: changes,
+      localSelectionOnly: true,
+      client: client,
+      picker: picker,
+      apiBaseUrl: 'https://api.invalid',
+      pendingStore: MemoryVideoMaterialPendingStore(),
+    );
+    try {
+      await c.initialize();
+      await c.select();
+      final selected = c.selection!;
+      final original = Uint8List.fromList(selected.bytes);
+      token = 'Bearer renewed';
+      changes.notifyListeners();
+      expect(c.current, isTrue);
+      expect(c.selection, same(selected));
+      expect(c.selection!.bytes, original);
+      expect(preview.closed, isFalse);
+      expect(c.canSave, isFalse);
+      expect(await c.save(), isFalse);
+      await c.load();
+      expect(requests, 0);
+      owner = videoID;
+      changes.notifyListeners();
+      await Future<void>.value();
+      expect(c.current, isFalse);
+      expect(c.selection, isNull);
+      expect(selected.bytes.every((byte) => byte == 0), isTrue);
+      expect(preview.closed, isTrue);
+      expect(requests, 0);
+    } finally {
+      c.dispose();
+      client.close();
+      changes.dispose();
+    }
+  });
   test('拒绝私有读取后退休原批准并清空旧账号内容', () async {
     var revoked = false;
     final client = MockClient(

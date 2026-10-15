@@ -80,28 +80,42 @@ func (s *Store) VerifyDevPhoneChallenge(ctx context.Context, phoneDigest [32]byt
         JOIN accounts a ON a.id = ai.account_id
         WHERE ai.issuer = $1 AND ai.subject = $2 FOR UPDATE OF ai, a`,
 		devPhoneIssuer, subject).Scan(&accountID, &status)
-	if errors.Is(err, pgx.ErrNoRows) {
-		err = tx.QueryRow(ctx, `INSERT INTO accounts (id, account_type)
+	missingIdentity := errors.Is(err, pgx.ErrNoRows)
+	if err != nil && !missingIdentity {
+		return err
+	}
+	nativeOwner := accountID
+	if missingIdentity {
+		nativeOwner = ""
+	}
+	mappedOwner, firstEnrollment, err := s.legacyDevPhoneOwner(ctx, tx, phoneDigest, nativeOwner)
+	if err != nil {
+		return err
+	}
+	if missingIdentity {
+		if mappedOwner != "" {
+			accountID = mappedOwner
+		} else {
+			err = tx.QueryRow(ctx, `INSERT INTO accounts (id, account_type)
             VALUES (gen_random_uuid(), 'person') RETURNING id`).Scan(&accountID)
-		if err != nil {
-			return err
-		}
-		if _, err := tx.Exec(ctx, `INSERT INTO agents (agent_type, principal_account_id)
+			if err != nil {
+				return err
+			}
+			if _, err := tx.Exec(ctx, `INSERT INTO agents (agent_type, principal_account_id)
             VALUES ('personal', $1) ON CONFLICT (agent_type, principal_account_id) DO NOTHING`, accountID); err != nil {
-			return err
-		}
-		if _, err := tx.Exec(ctx, `INSERT INTO user_profiles
+				return err
+			}
+			if _, err := tx.Exec(ctx, `INSERT INTO user_profiles
             (account_id, display_name, visibility)
             VALUES ($1, 'Birdtie 测试用户', 'private')`, accountID); err != nil {
-			return err
+				return err
+			}
 		}
 		if _, err := tx.Exec(ctx, `INSERT INTO account_auth_identities
             (issuer, subject, account_id, verified_at)
             VALUES ($1, $2, $3, now())`, devPhoneIssuer, subject, accountID); err != nil {
 			return err
 		}
-	} else if err != nil {
-		return err
 	} else if status != "active" {
 		return identity.ErrUnauthorized
 	}
@@ -113,6 +127,11 @@ func (s *Store) VerifyDevPhoneChallenge(ctx context.Context, phoneDigest [32]byt
 		accountID, sessionDigest[:]).Scan(&sessionID)
 	if err != nil {
 		return err
+	}
+	if firstEnrollment {
+		if err = s.finishLegacyDevPhoneEnrollment(ctx, tx, phoneDigest, accountID, sessionID); err != nil {
+			return err
+		}
 	}
 	if _, err := tx.Exec(ctx, `INSERT INTO audit_events
         (actor_account_id, action, resource_type, resource_id, decision, purpose)

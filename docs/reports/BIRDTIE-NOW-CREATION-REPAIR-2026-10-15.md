@@ -65,3 +65,15 @@ APK/Web编译、本轮真机安装、真实图片与视频选择/权限/播放�
 - `apps/client/test/now_media_recovery_test.dart` SHA-256 `7e4f22cd701f330e1645de1a7bc6e03e106e445793687c346a33e73e61096c95`
 
 本聊天至此无运行中的 Flutter 测试/构建，主源码仍与 SOURCE_READY 表一致；未进一步变更 live 队列、共享总报告或原执行根的文件。首跑两次失败证据保留。
+
+## 2026-10-15 后续实装与远端接续（早期缺口保留为历史）
+
+公网唯一入口已成为 `https://47.110.154.133`，当前 API 为 `social155-20261015-build05`／原生155；Web02与Android APK02均指向该来源。APK SHA-256 `53b79dc5813c9ad1bd64274043e16d7b55f86056dd5c6606a08568f31b5f6b0c`，API SHA-256 `d4f81a65f0059328baabbbec587e9d7af40ca600d45948378b2b54ad0caa0e3a`。原 Civu app/data 保留，预览包已安装。采用用户指定固定验证码 `123456`，18个旧手机号绑定原owner；真实旧账号两次登录与16Note／11Journey／2ThemeMap读取通过，首次接续1人、Agent仍暂停、两个会话均退出。
+
+新代码补齐城市动态、本人／作者完整历史、城市／关注／好友PUBLIC筛选、点赞评论与通知管理、有序九图或一视频、2–20条同事务串文；Now沿用原输入框和首页面板，包含已发布查看／正文修改／撤回，结构化本机草稿和媒体续期隔离。普通社交沿原Connection／Follow／聊天／143分享领域；没有复刻Civu ACL或启模型／付费provider。最后真实远端检查补发现并修复“城市动态分享仍强制Place”的查询差额，隔离PG一项与API05好友／聊天／分享有限流程均PASS。
+
+实际Web完成单图动态发布／详情／编辑／撤回；Web02关闭草稿PASS。最终APK02真实竖屏Now创建／固定登录恢复／单一输入框／图片入口启用／关闭／退出PASS，原旋转恢复、字号1.0。服务器实际九图／视频Linux转码／两条原子串文流程在未变的相应模块源码帧通过；不冒称整站或手机全部媒体触摸验收。图库权限、手机播放器／发布、好友聊天分享双角色UI、辅助技术、iOS和后台系统推送仍未运行。正常字号、不录屏、中英混合语音延期继续有效。
+
+旧Civu writer已停且禁用（failed/timeout、MainPID0、8080拒绝）；四Pelias和旧网关停止，旧库／媒体／容器／配置保留。停服务90秒SIGTERM超时记录及第一次状态断言失败保留。完整旧数据适配仍PARTIAL：20永久owner映射、103Note／34Journey／3ThemeMap／189SavedPlace私人档案已提交；5511Place／339城市合法当前映射、407旧媒体的72差额及扫描／权利、旧关系／消息／组织和2个仅邮箱账号未全接续。私人档案不等于当前可编辑／公开对象；停写后最终增量核对尚未完成。原Activity／Collection创建原事实等历史差额和发布门槛不因这批关闭。
+
+详细事实及首失败保留见 [当前GitHub、远端与迁移记录](../reports/BIRDTIE-GITHUB-REMOTE-MIGRATION-2026-10-15.md)。本轮源码、测试、迁移、部署脚本与报告一起提交原GitHub分支；全量检查点位于 `docs/testing/evidence/social-remote-migration-20261015/checkpoint-final.json`。保留原256项、历史状态与父项IN_PROGRESS；Closed Pilot／Consumer Beta仍NO。

@@ -134,6 +134,39 @@ class PrivateMomentController extends ChangeNotifier {
       _closed = false,
       _creationUncertain = false;
   int _epoch = 0, _request = 0, _logicalEpoch = 0;
+  bool _historyEnabled = false;
+  List<PrivateMoment> _historyRows = const [];
+  String? _historyLoadedToken, _historyLoadedOwner, _historyError;
+  bool _historyLoading = false;
+  int? _historyReadStatus;
+  int _historyRequest = 0;
+  String _historyStatus = 'active';
+  String? _historyNext;
+  DateTime? _historySnapshot, _historyUntil;
+  Timer? _historyTimer;
+  final List<String> _historyRefreshCursors = [];
+  bool get historyEnabled => _historyEnabled;
+  bool get historyLoading => _historyLoading;
+  String? get historyError => _historyError;
+  List<PrivateMoment> get historyMoments {
+    _syncActor();
+    return _ownerReady &&
+            _historyLoadedToken == _actor &&
+            _historyLoadedOwner == _owner &&
+            _historyUntil?.isAfter(DateTime.now().toUtc()) == true
+        ? _historyRows
+        : const [];
+  }
+
+  String get historyStatus => _historyStatus;
+  bool get canLoadMoreHistory {
+    _syncActor();
+    return _historyEnabled &&
+        !_historyLoading &&
+        _historyNext != null &&
+        _historyUntil?.isAfter(DateTime.now().toUtc()) == true;
+  }
+
   int get logicalIdentityEpoch {
     _syncActor();
     return _logicalEpoch;
@@ -217,6 +250,15 @@ class PrivateMomentController extends ChangeNotifier {
       _loadedToken = null;
       _loadedOwner = null;
       _moments = const [];
+      _historyRows = const [];
+      _historyLoadedToken = _historyLoadedOwner = _historyError = null;
+      _historyLoading = false;
+      _historyReadStatus = null;
+      _historyRequest++;
+      _historyTimer?.cancel();
+      _historyNext = null;
+      _historySnapshot = _historyUntil = null;
+      _historyRefreshCursors.clear();
       _loading = false;
       _saving = false;
       _error = null;
@@ -306,13 +348,17 @@ class PrivateMomentController extends ChangeNotifier {
   }
 
   bool _ownsVersion(PrivateMoment moment) =>
-      _loadedToken == _actor &&
-      _loadedOwner == _owner &&
       _ownerReady &&
       (ownerID == null || moment.authorAccountID == _owner) &&
-      _moments.any(
-        (item) => item.id == moment.id && item.revision == moment.revision,
-      );
+      ((_loadedToken == _actor &&
+              _loadedOwner == _owner &&
+              _moments.any(
+                (item) =>
+                    item.id == moment.id && item.revision == moment.revision,
+              )) ||
+          historyMoments.any(
+            (item) => item.id == moment.id && item.revision == moment.revision,
+          ));
 
   Future<void> refresh({bool Function()? current}) async {
     if (_closed || current?.call() == false) return;
@@ -399,6 +445,297 @@ class PrivateMomentController extends ChangeNotifier {
     } finally {
       if (_current(token, epoch) && request == _request) {
         _loading = false;
+        _notify();
+      }
+    }
+    if (_historyEnabled && _current(token, epoch) && request == _request) {
+      unawaited(refreshHistory(current: current));
+    }
+  }
+
+  Future<void> refreshHistory({bool Function()? current}) =>
+      _readHistory(append: false, current: current);
+
+  Future<void> enableHistory({bool Function()? current}) async {
+    if (_closed || current?.call() == false) return;
+    if (_historyEnabled) {
+      if (_historyUntil?.isAfter(DateTime.now().toUtc()) != true)
+        await refreshHistory(current: current);
+      return;
+    }
+    _historyEnabled = true;
+    _historyRows = const [];
+    _historyLoadedToken = _historyLoadedOwner = null;
+    _historyRequest++;
+    await refreshHistory(current: current);
+  }
+
+  Future<void> setHistoryStatus(
+    String status, {
+    bool Function()? current,
+  }) async {
+    if (!{'active', 'draft', 'published'}.contains(status) ||
+        current?.call() == false ||
+        _closed ||
+        status == _historyStatus)
+      return;
+    _historyStatus = status;
+    _historyEnabled = true;
+    _historyRequest++;
+    _historyTimer?.cancel();
+    _historyRows = const [];
+    _historyNext = null;
+    _historyUntil = _historySnapshot = null;
+    _historyRefreshCursors.clear();
+    _historyLoading = false;
+    await _readHistory(append: false, current: current);
+  }
+
+  Future<void> loadMoreHistory({bool Function()? current}) =>
+      _readHistory(append: true, current: current);
+
+  Future<
+    ({
+      List<PrivateMoment> items,
+      DateTime snapshot,
+      DateTime until,
+      String? next,
+      String refresh,
+    })
+  >
+  _historyPage(
+    String token,
+    String? owner,
+    String status,
+    String? cursor,
+  ) async {
+    final response = await _client
+        .get(
+          _endpoint('/v1/me/moments/history').replace(
+            queryParameters: {
+              'status': status,
+              if (cursor != null) 'cursor': cursor,
+            },
+          ),
+          headers: {'Authorization': token},
+        )
+        .timeout(const Duration(seconds: 12));
+    if (response.statusCode != 200)
+      throw _OwnerHistoryReadFailure(response.statusCode);
+    final envelope = jsonDecode(utf8.decode(response.bodyBytes));
+    if (envelope is! Map<String, dynamic> ||
+        envelope.length != 1 ||
+        envelope['data'] is! Map<String, dynamic>)
+      throw const FormatException('本人历史响应不符');
+    final page = envelope['data'] as Map<String, dynamic>;
+    const keys = {
+      'schemaVersion',
+      'status',
+      'items',
+      'observedAt',
+      'snapshotAt',
+      'validUntil',
+      'nextCursor',
+      'refreshCursor',
+    };
+    if (page.length != keys.length ||
+        page.keys.toSet().difference(keys).isNotEmpty ||
+        page['schemaVersion'] != 'owner-moment-history-v1' ||
+        page['status'] != status ||
+        page['items'] is! List ||
+        page['refreshCursor'] is! String ||
+        (page['refreshCursor'] as String).isEmpty ||
+        (page['refreshCursor'] as String).length > 4096)
+      throw const FormatException('本人历史格式不符');
+    final snapshot = humanControlTime(page['snapshotAt']),
+        observed = humanControlTime(page['observedAt']),
+        until = humanControlTime(page['validUntil']);
+    if (snapshot.isAfter(observed) ||
+        observed.isAfter(
+          DateTime.now().toUtc().add(const Duration(seconds: 2)),
+        ) ||
+        !until.isAfter(observed) ||
+        until.difference(observed) > const Duration(minutes: 1) ||
+        !until.isAfter(DateTime.now().toUtc()))
+      throw const FormatException('本人历史已过期');
+    final next = page['nextCursor'];
+    if (next != null && (next is! String || next.isEmpty || next.length > 4096))
+      throw const FormatException('本人历史分页不符');
+    final items = <PrivateMoment>[], ids = <String>{};
+    for (final row in page['items'] as List) {
+      if (row is! Map<String, dynamic>) throw const FormatException('本人历史条目不符');
+      final moment = PrivateMoment.fromJson(row);
+      _checkAuthor(moment, owner);
+      if (!humanControlID(moment.id) ||
+          !ids.add(moment.id) ||
+          !{'draft', 'published'}.contains(moment.status) ||
+          status != 'active' && moment.status != status ||
+          moment.createdAt == null ||
+          moment.createdAt!.isAfter(snapshot) ||
+          moment.updatedAt == null)
+        throw const FormatException('本人历史来源不符');
+      if (items.isNotEmpty &&
+          (moment.createdAt!.isAfter(items.last.createdAt!) ||
+              moment.createdAt == items.last.createdAt &&
+                  moment.id.compareTo(items.last.id) >= 0))
+        throw const FormatException('本人历史顺序不符');
+      items.add(moment);
+    }
+    if (items.length > 20 || next != null && items.length != 20)
+      throw const FormatException('本人历史页数不符');
+    return (
+      items: List<PrivateMoment>.unmodifiable(items),
+      snapshot: snapshot,
+      until: until,
+      next: next as String?,
+      refresh: page['refreshCursor'] as String,
+    );
+  }
+
+  Future<void> _readHistory({
+    required bool append,
+    bool Function()? current,
+  }) async {
+    if (_closed ||
+        current?.call() == false ||
+        append && (_historyLoading || _historyNext == null))
+      return;
+    final token = _syncActor(),
+        owner = _owner,
+        epoch = _epoch,
+        status = _historyStatus,
+        cursor = append ? _historyNext : null,
+        request = ++_historyRequest;
+    if (token == null || !_ownerReady || _apiBase.isEmpty) return;
+    bool valid() =>
+        _current(token, epoch) &&
+        request == _historyRequest &&
+        current?.call() != false &&
+        status == _historyStatus;
+    if (!_pendingReady) await loadOperations();
+    if (!valid()) return;
+    _historyLoading = true;
+    _historyError = null;
+    _historyReadStatus = null;
+    if (!append && _historyUntil?.isAfter(DateTime.now().toUtc()) != true) {
+      _historyTimer?.cancel();
+      _historyRows = const [];
+      _historyNext = null;
+      _historySnapshot = _historyUntil = null;
+      _historyRefreshCursors.clear();
+    }
+    _notify();
+    try {
+      final page = await _historyPage(token, owner, status, cursor);
+      if (!valid()) return;
+      if (!append) {
+        _historyRows = const [];
+        _historyRefreshCursors.clear();
+      }
+      if (append &&
+          (page.snapshot != _historySnapshot ||
+              page.items.any((m) => _historyRows.any((old) => old.id == m.id))))
+        throw const FormatException('本人历史快照已变化');
+      if (append &&
+          _historyRows.isNotEmpty &&
+          page.items.isNotEmpty &&
+          (page.items.first.createdAt!.isAfter(_historyRows.last.createdAt!) ||
+              page.items.first.createdAt == _historyRows.last.createdAt &&
+                  page.items.first.id.compareTo(_historyRows.last.id) >= 0))
+        throw const FormatException('本人历史顺序已变化');
+      _historyReadStatus = 200;
+      _historyLoadedToken = token;
+      _historyLoadedOwner = owner;
+      _historySnapshot = page.snapshot;
+      _historyNext = page.next;
+      _historyRefreshCursors.add(page.refresh);
+      _historyUntil =
+          append && _historyUntil != null && _historyUntil!.isBefore(page.until)
+          ? _historyUntil
+          : page.until;
+      _historyRows = List.unmodifiable([..._historyRows, ...page.items]);
+      _scheduleHistoryLease();
+    } catch (e) {
+      if (!valid()) return;
+      _historyReadStatus = e is _OwnerHistoryReadFailure ? e.status : null;
+      if (_historyReadStatus == 401 ||
+          _historyReadStatus == 403 ||
+          _historyReadStatus == 404 ||
+          _historyReadStatus == 409 ||
+          e is FormatException) {
+        _historyRows = const [];
+        _historyNext = null;
+        _historyRefreshCursors.clear();
+        _historyTimer?.cancel();
+      }
+      _historyError = switch (_historyReadStatus) {
+        401 => '登录已失效，请重新登录。',
+        409 => '本人动态已更新，请刷新列表。',
+        _ => '本人动态暂不可读取，请重试。',
+      };
+    } finally {
+      if (valid()) {
+        _historyLoading = false;
+        _notify();
+      }
+    }
+  }
+
+  void _scheduleHistoryLease() {
+    _historyTimer?.cancel();
+    final until = _historyUntil;
+    if (until == null) return;
+    final wait = until.difference(DateTime.now().toUtc());
+    _historyTimer = Timer(
+      wait.isNegative ? Duration.zero : wait,
+      () => unawaited(_revalidateHistory()),
+    );
+  }
+
+  Future<void> _revalidateHistory() async {
+    if (_closed) return;
+    final token = _syncActor(),
+        epoch = _epoch,
+        owner = _owner,
+        status = _historyStatus;
+    if (token == null || _historyLoading || _historyRefreshCursors.isEmpty)
+      return;
+    final cursors = List<String>.of(_historyRefreshCursors),
+        request = ++_historyRequest;
+    bool valid() =>
+        _current(token, epoch) &&
+        request == _historyRequest &&
+        status == _historyStatus;
+    _historyLoading = true;
+    _notify();
+    try {
+      final items = <PrivateMoment>[];
+      DateTime? until;
+      for (final cursor in cursors) {
+        final page = await _historyPage(token, owner, status, cursor);
+        if (!valid()) return;
+        if (page.snapshot != _historySnapshot)
+          throw const FormatException('本人历史快照已变化');
+        items.addAll(page.items);
+        until = until == null || page.until.isBefore(until)
+            ? page.until
+            : until;
+      }
+      if (!valid()) return;
+      _historyRows = List.unmodifiable(items);
+      _historyUntil = until;
+      _historyError = null;
+      _scheduleHistoryLease();
+    } catch (_) {
+      if (valid()) {
+        _historyRows = const [];
+        _historyNext = null;
+        _historyRefreshCursors.clear();
+        _historyError = '本人动态已更新，请刷新列表。';
+      }
+    } finally {
+      if (valid()) {
+        _historyLoading = false;
         _notify();
       }
     }
@@ -563,8 +900,8 @@ class PrivateMomentController extends ChangeNotifier {
     _syncActor();
     if (!moment.isEditableDraft ||
         !_ownsVersion(moment) ||
-        moment.placeID.isEmpty ||
-        moment.locationPrecision != 'place')
+        !((moment.placeID.isEmpty && moment.locationPrecision == 'city') ||
+            (moment.placeID.isNotEmpty && moment.locationPrecision == 'place')))
       return null;
     return _prepare(
       MomentControlInput(
@@ -984,6 +1321,7 @@ class PrivateMomentController extends ChangeNotifier {
     if (_closed) return;
     _closed = true;
     _previewTimer?.cancel();
+    _historyTimer?.cancel();
     operationPreview = null;
     identityChanges?.removeListener(_onIdentityChanged);
     _epoch++;
@@ -991,4 +1329,9 @@ class PrivateMomentController extends ChangeNotifier {
     if (_ownsClient) _client.close();
     super.dispose();
   }
+}
+
+class _OwnerHistoryReadFailure implements Exception {
+  const _OwnerHistoryReadFailure(this.status);
+  final int status;
 }

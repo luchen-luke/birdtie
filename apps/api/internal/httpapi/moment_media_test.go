@@ -3,14 +3,14 @@ package httpapi
 import (
 	"context"
 	"encoding/json"
+	"github.com/birdtie/birdtie/apps/api/internal/content"
+	"github.com/birdtie/birdtie/apps/api/internal/identity"
+	"github.com/birdtie/birdtie/apps/api/internal/media"
+	mm "github.com/birdtie/birdtie/apps/api/internal/momentmedia"
 	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
-
-	"github.com/birdtie/birdtie/apps/api/internal/content"
-	"github.com/birdtie/birdtie/apps/api/internal/identity"
-	"github.com/birdtie/birdtie/apps/api/internal/media"
 )
 
 const imageMomentID = "11111111-1111-4111-8111-111111111111"
@@ -193,5 +193,64 @@ func TestPrivateMomentImageHTTPAuthorityAndFinalRead(t *testing.T) {
 		if rw.Code == 200 {
 			t.Fatal("read failure masqueraded as empty success")
 		}
+	}
+}
+
+func TestMomentMediaHTTPClosedWireAndBodyBounds(t *testing.T) {
+	for _, raw := range []string{`{"operationId":"11111111-1111-4111-8111-111111111111","localScope":"11111111-1111-4111-8111-111111111111","contentType":"image/jpeg","contentBase64":"","approved":true}`, `{} {}`, strings.Repeat(" ", 65)} {
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest("PUT", "/", strings.NewReader(raw))
+		r.Header.Set("Content-Type", "application/json")
+		var in mm.StageInput
+		if mediaJSONBody(w, r, &in, 64) {
+			t.Fatal("unbounded or unknown request accepted")
+		}
+		if w.Code != 400 {
+			t.Fatal("failure status", w.Code)
+		}
+	}
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest("PUT", "/", strings.NewReader(`{}`))
+	var in mm.Input
+	if mediaJSONBody(w, r, &in, 64) || w.Code != 415 {
+		t.Fatal("missing canonical JSON accepted")
+	}
+}
+
+type mediaHTTPBoundarySpy struct {
+	humanMomentLegacySpy
+	mm.Store
+	calls int
+}
+
+func (s *mediaHTTPBoundarySpy) PrepareMomentMedia(context.Context, mm.Access, mm.StageInput) (mm.StageReceipt, error) {
+	s.calls++
+	return mm.StageReceipt{}, mm.ErrUnavailable
+}
+func (s *mediaHTTPBoundarySpy) PreviewMomentMedia(context.Context, mm.Access, string, mm.Input) (mm.Preview, error) {
+	s.calls++
+	return mm.Preview{Images: make([]mm.PreviewImage, 1)}, nil
+}
+
+func TestMomentMediaHTTPSelectorsAndPreviewCardinality(t *testing.T) {
+	spy := &mediaHTTPBoundarySpy{}
+	body := `{"operationId":"` + imageMomentID + `","localScope":"` + imageMomentID + `","contentType":"image/png","contentBase64":""}`
+	rw, _ := imageHTTPCall(t, spy, "PUT", "/v1/me/moment-media-materials/operations/"+imageOperationID, body, "")
+	if rw.Code != 400 || spy.calls != 0 {
+		t.Fatal("mismatched operation selector accepted", rw.Code)
+	}
+	rw, _ = imageHTTPCall(t, spy, "GET", "/v1/moments/not-a-uuid/public-media", "", "")
+	if rw.Code != 400 || spy.calls != 0 {
+		t.Fatal("invalid public moment selector accepted", rw.Code)
+	}
+	body = `{"operationId":"` + imageOperationID + `","action":"DELETE","expectedMomentRevision":2,"expectedSetVersion":1,"attachments":[]}`
+	rw, _ = imageHTTPCall(t, spy, "POST", "/v1/me/moments/"+imageMomentID+"/public-media/previews", body, "")
+	if rw.Code != 503 || spy.calls != 1 {
+		t.Fatal("unmatched response cardinality returned success", rw.Code)
+	}
+	var absent *mediaHTTPBoundarySpy
+	rw, _ = imageHTTPCall(t, absent, "GET", "/v1/me/moments/"+imageMomentID+"/public-media", "", "")
+	if rw.Code != 503 {
+		t.Fatal("typed nil native media gateway returned success", rw.Code)
 	}
 }

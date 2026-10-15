@@ -184,7 +184,14 @@ func momentControlExternal(ctx context.Context, f humanWriteFrame, in content.Mo
 	v := in.Input
 	var cityStamp string
 	var deadline *time.Time
-	e = f.tx.QueryRow(ctx, `SELECT xmin::text,expires_at FROM cities WHERE id=$1 AND publication_status='published' AND(expires_at IS NULL OR expires_at>clock_timestamp())`, v.CityID).Scan(&cityStamp, &deadline)
+	cityQuery := `SELECT xmin::text,expires_at FROM cities WHERE id=$1 AND publication_status='published' AND(expires_at IS NULL OR expires_at>clock_timestamp())`
+	if in.Action == "PUBLISH" || in.Action == "UPDATE_PUBLIC" {
+		// Keep the chosen city's publication and epoch stable through the
+		// effect, original receipt and final Session/expiry gate. A waiting
+		// lock rechecks the current city row before approving any public write.
+		cityQuery += ` FOR SHARE`
+	}
+	e = f.tx.QueryRow(ctx, cityQuery, v.CityID).Scan(&cityStamp, &deadline)
 	if errors.Is(e, pgx.ErrNoRows) {
 		return "", nil, false, identity.ErrControlChanged
 	}

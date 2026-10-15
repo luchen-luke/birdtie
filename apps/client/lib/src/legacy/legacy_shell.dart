@@ -328,7 +328,7 @@ Future<bool?> showPrivateMomentDraft(
 }
 
 // Existing City and private Moment surfaces remain available from the V2 sidebar.
-class LegacyProfilePage extends StatelessWidget {
+class LegacyProfilePage extends StatefulWidget {
   const LegacyProfilePage({
     super.key,
     required this.auth,
@@ -353,16 +353,38 @@ class LegacyProfilePage extends StatelessWidget {
   final VoidCallback? onOpenSocialNow;
 
   @override
+  State<LegacyProfilePage> createState() => _LegacyProfilePageState();
+}
+
+class _LegacyProfilePageState extends State<LegacyProfilePage> {
+  bool _current() =>
+      mounted &&
+      widget.current?.call() != false &&
+      widget.organizationWorkspaceID?.call() == null;
+  @override
+  void initState() {
+    super.initState();
+    unawaited(widget.moments.enableHistory(current: _current));
+  }
+
+  @override
+  void didUpdateWidget(LegacyProfilePage old) {
+    super.didUpdateWidget(old);
+    if (old.moments != widget.moments)
+      unawaited(widget.moments.enableHistory(current: _current));
+  }
+
+  @override
   Widget build(BuildContext context) => _MyBirdtiePage(
-    auth: auth,
-    moments: moments,
-    city: city,
-    client: client,
-    apiBaseUrl: apiBaseUrl,
-    workspaceChanges: workspaceChanges,
-    organizationWorkspaceID: organizationWorkspaceID,
-    current: current,
-    onOpenSocialNow: onOpenSocialNow,
+    auth: widget.auth,
+    moments: widget.moments,
+    city: widget.city,
+    client: widget.client,
+    apiBaseUrl: widget.apiBaseUrl,
+    workspaceChanges: widget.workspaceChanges,
+    organizationWorkspaceID: widget.organizationWorkspaceID,
+    current: _current,
+    onOpenSocialNow: widget.onOpenSocialNow,
   );
 }
 
@@ -1263,14 +1285,7 @@ class _MomentDraftSheetState extends State<_MomentDraftSheet> {
         m.visibility != 'private' ||
         m.status != 'draft')
       return false;
-    return widget.moments.moments.any(
-      (row) =>
-          row.id == m.id &&
-          row.authorAccountID == _draftOwner &&
-          row.revision == m.revision &&
-          row.visibility == 'private' &&
-          row.status == 'draft',
-    );
+    return widget.moments.currentOwnedVersion(m);
   }
 
   Future<void> _managePrivateImage() async {
@@ -1542,6 +1557,16 @@ class _MyBirdtiePage extends StatelessWidget {
   final bool Function()? current;
   final VoidCallback? onOpenSocialNow;
 
+  List<PrivateMoment> get _records =>
+      moments.historyEnabled ? moments.historyMoments : moments.moments;
+  bool get _recordsLoading =>
+      moments.historyEnabled ? moments.historyLoading : moments.loading;
+  String? get _recordsError =>
+      moments.historyEnabled ? moments.historyError : moments.error;
+  Future<void> _refreshRecords() => moments.historyEnabled
+      ? moments.refreshHistory(current: current)
+      : moments.refresh(current: current);
+
   Future<void> _openDevPhoneLogin(BuildContext context) async {
     await showModalBottomSheet<void>(
       context: context,
@@ -1730,12 +1755,27 @@ class _MyBirdtiePage extends StatelessWidget {
                   child: const Text('新建草稿'),
                 ),
                 TextButton(
-                  onPressed: moments.loading ? null : moments.refresh,
+                  onPressed: _recordsLoading ? null : _refreshRecords,
                   child: const Text('刷新'),
                 ),
               ],
             ),
             const SizedBox(height: 8),
+            if (moments.historyEnabled)
+              DropdownButton<String>(
+                value: moments.historyStatus,
+                items: const [
+                  DropdownMenuItem(value: 'active', child: Text('全部动态与草稿')),
+                  DropdownMenuItem(value: 'draft', child: Text('草稿')),
+                  DropdownMenuItem(value: 'published', child: Text('已发布')),
+                ],
+                onChanged: (value) {
+                  if (value != null && current?.call() != false)
+                    unawaited(
+                      moments.setHistoryStatus(value, current: current),
+                    );
+                },
+              ),
             _MomentOperationRecovery(moments: moments),
             _PublicMomentPhotoRecovery(
               auth: auth,
@@ -1743,19 +1783,19 @@ class _MyBirdtiePage extends StatelessWidget {
               workspaceChanges: workspaceChanges,
               workspaceID: organizationWorkspaceID,
             ),
-            if (moments.loading && moments.moments.isEmpty)
+            if (_recordsLoading && _records.isEmpty)
               Text('正在读取我的动态与草稿…', style: Theme.of(context).textTheme.bodySmall)
-            else if (moments.error != null)
+            else if (_recordsError != null)
               Text(
-                moments.error!,
+                _recordsError!,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: Theme.of(context).colorScheme.error,
                 ),
               )
-            else if (moments.moments.isEmpty)
+            else if (_records.isEmpty)
               Text('还没有动态或草稿。', style: Theme.of(context).textTheme.bodySmall)
             else
-              for (final moment in moments.moments) ...[
+              for (final moment in _records) ...[
                 const Divider(height: 22),
                 Text(
                   moment.title,
@@ -1827,6 +1867,15 @@ class _MyBirdtiePage extends StatelessWidget {
                     ],
                   ),
               ],
+            if (moments.canLoadMoreHistory)
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton(
+                  onPressed: () =>
+                      unawaited(moments.loadMoreHistory(current: current)),
+                  child: const Text('查看更早的动态与草稿'),
+                ),
+              ),
             const SizedBox(height: 28),
           ],
           const _SectionLabel('资料与身份'),

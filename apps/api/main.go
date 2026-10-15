@@ -6,7 +6,6 @@ import (
 	"log"
 	"net"
 	"net/http"
-	"net/url"
 	"os"
 	"os/signal"
 	"strings"
@@ -16,8 +15,10 @@ import (
 	"github.com/birdtie/birdtie/apps/api/internal/agentcognitive"
 	"github.com/birdtie/birdtie/apps/api/internal/agentfeature"
 	"github.com/birdtie/birdtie/apps/api/internal/agenttool"
+	"github.com/birdtie/birdtie/apps/api/internal/devauth"
 	"github.com/birdtie/birdtie/apps/api/internal/httpapi"
 	"github.com/birdtie/birdtie/apps/api/internal/media"
+	"github.com/birdtie/birdtie/apps/api/internal/momentmedia"
 	"github.com/birdtie/birdtie/apps/api/internal/oidcauth"
 	"github.com/birdtie/birdtie/apps/api/internal/postgres"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -75,25 +76,34 @@ func main() {
 	if devSetting != "" && devSetting != "0" && !strings.EqualFold(devSetting, "false") && !devPhoneEnabled {
 		log.Fatal("BIRDTIE_DEV_PHONE_AUTH must be true or false")
 	}
-	if devPhoneEnabled {
-		host, _, err := net.SplitHostPort(address)
-		if err != nil || !isLoopbackHost(host) ||
-			!isLoopbackHost(pool.Config().ConnConfig.Host) {
-			log.Fatal("development phone auth requires loopback API and database hosts")
-		}
-		for _, origin := range allowedOrigins {
-			origin = strings.TrimSpace(origin)
-			if origin == "" {
-				continue
-			}
-			parsed, err := url.Parse(origin)
-			if err != nil || !isLoopbackHost(parsed.Hostname()) ||
-				(parsed.Scheme != "http" && parsed.Scheme != "https") {
-				log.Fatal("development phone auth requires loopback browser origins")
-			}
-		}
+	publicTestOrigin := os.Getenv("BIRDTIE_DEV_PHONE_PUBLIC_TEST_ORIGIN")
+	if err := devauth.ValidateTestChannel(devauth.TestChannel{
+		Enabled: devPhoneEnabled, APIAddress: address, DatabaseHost: pool.Config().ConnConfig.Host,
+		AllowedOrigins: allowedOrigins, PublicTestOrigin: publicTestOrigin,
+	}); err != nil {
+		log.Fatal("固定码测试登录通道配置无效")
+	}
+	if publicTestOrigin != "" {
+		log.Print("固定码公网测试登录已启用；未进行短信或生产手机号所有权验证")
 	}
 	store := postgres.New(pool, devPhoneEnabled)
+	publicVideoSetting := strings.TrimSpace(os.Getenv("BIRDTIE_PUBLIC_MOMENT_VIDEO_ENABLED"))
+	publicVideoEnabled := publicVideoSetting == "1" || strings.EqualFold(publicVideoSetting, "true")
+	if publicVideoSetting != "" && publicVideoSetting != "0" && !strings.EqualFold(publicVideoSetting, "false") && !publicVideoEnabled {
+		log.Fatal("public Moment video configuration invalid")
+	}
+	if publicVideoEnabled {
+		codec := &momentmedia.FFmpegVideoNormalizer{
+			FFmpegPath:  os.Getenv("BIRDTIE_PUBLIC_MOMENT_VIDEO_FFMPEG_PATH"),
+			FFprobePath: os.Getenv("BIRDTIE_PUBLIC_MOMENT_VIDEO_FFPROBE_PATH"),
+			PrlimitPath: os.Getenv("BIRDTIE_PUBLIC_MOMENT_VIDEO_PRLIMIT_PATH"),
+			TempRoot:    os.Getenv("BIRDTIE_PUBLIC_MOMENT_VIDEO_TEMP_ROOT"),
+		}
+		if err := store.ConfigureMomentMediaVideo(codec); err != nil {
+			log.Fatal("public Moment video runtime unavailable")
+		}
+	}
+
 	videoRuntime, err := media.VideoRuntimeFromEnvironment(os.Getenv)
 	if err != nil {
 		log.Fatal("视频材料配置不完整或未通过可信边界检查")

@@ -994,13 +994,14 @@ func chatEntityQuery(kind string) string {
               OR (block.blocker_account_id=a.id AND block.blocked_account_id=$2))`
 	case "moment":
 		query = `SELECT m.title FROM moments m JOIN accounts a ON a.id=m.author_account_id
-            JOIN places p ON p.id=m.place_id AND p.city_id=m.city_id JOIN cities c ON c.id=p.city_id
+            JOIN cities c ON c.id=m.city_id LEFT JOIN places p ON p.id=m.place_id AND p.city_id=m.city_id
 		    WHERE m.id=$1 AND m.status='published' AND m.visibility='public' AND a.status='active' AND a.account_type='person'
-            AND m.location_precision='place' AND m.author_confirmed_at IS NOT NULL AND m.published_at IS NOT NULL
+            AND m.author_confirmed_at IS NOT NULL AND m.published_at IS NOT NULL
             AND m.author_confirmed_at<=m.published_at AND m.published_at<=clock_timestamp()
-            AND p.publication_status='published' AND c.publication_status='published'
-            AND (p.expires_at IS NULL OR p.expires_at>clock_timestamp()) AND (c.expires_at IS NULL OR c.expires_at>clock_timestamp())
-            AND ` + currentRetainedPlaceVisibilitySQL("p", "clock_timestamp()") + `
+            AND c.publication_status='published' AND (c.expires_at IS NULL OR c.expires_at>clock_timestamp())
+            AND((m.place_id IS NULL AND m.location_precision='city') OR(m.location_precision='place' AND p.id IS NOT NULL
+              AND p.publication_status='published' AND (p.expires_at IS NULL OR p.expires_at>clock_timestamp())
+              AND ` + currentRetainedPlaceVisibilitySQL("p", "clock_timestamp()") + `))
             AND NOT EXISTS(SELECT 1 FROM account_blocks b WHERE (b.blocker_account_id=$2 AND b.blocked_account_id=a.id)
               OR (b.blocker_account_id=a.id AND b.blocked_account_id=$2))`
 	default:

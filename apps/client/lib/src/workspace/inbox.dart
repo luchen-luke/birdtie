@@ -23,6 +23,9 @@ import 'business_claim_notification_page.dart';
 import 'public_business_page.dart';
 import 'person_avatar.dart';
 import 'inbox_review_result_page.dart';
+import 'moment_interaction.dart';
+import 'public_moment_page.dart';
+import '../content/moment_control.dart' show newMomentOperationID;
 
 class InboxPanel extends StatefulWidget {
   const InboxPanel({
@@ -94,6 +97,135 @@ class _InboxPanelState extends State<InboxPanel> {
   int _serial = 0;
   int _identityEpoch = 0;
   final _destinationChanges = ValueNotifier<int>(0);
+  SocialOperationController? _management;
+  String _category = '';
+  bool _unreadOnly = false;
+
+  void _configureManagement() {
+    _management?.dispose();
+    final source = _source, version = source.identityVersion;
+    _management = SocialOperationController(
+      api: SocialOperationAPI(
+        client: source.followClient,
+        baseUrl: source.followApiBaseUrl,
+        authorizationHeader: () => widget.auth.authorizationHeader,
+        current: () =>
+            mounted &&
+            _personal &&
+            _sourceCurrent &&
+            identical(source, _source) &&
+            version == source.identityVersion,
+      ),
+      family: 'INBOX_MANAGEMENT',
+      ownerID: () => widget.auth.accountID,
+      identityChanges: Listenable.merge([
+        widget.auth,
+        widget.workspaceChanges,
+        _destinationChanges,
+      ]),
+    );
+    unawaited(_management!.restore());
+  }
+
+  Future<void> _manageNotifications(String action, {InboxItem? item}) async {
+    final controller = _management, serial = _serial;
+    if (controller == null || !controller.canStart || !_current(serial)) return;
+    final title = switch (action) {
+      'MARK_ALL_READ' => '全部标为已读',
+      'CLEAR_READ' => '清理已读通知',
+      _ => '删除这条通知',
+    };
+    final result = await controller.run(
+      context,
+      {
+        'operationId': newMomentOperationID(),
+        'action': action,
+        'itemId': item?.id ?? '',
+        'category': _category,
+        'unreadOnly': action == 'CLEAR_READ' ? false : _unreadOnly,
+      },
+      title,
+      action == 'DELETE_ITEM'
+          ? '只删除这条通知记录，关联动态、申请和会话会保留。'
+          : '只处理当前分类的通知快照，关联内容会保留。',
+      contentCurrent: () => _current(serial),
+    );
+    if (result != null && _current(serial)) await _load();
+  }
+
+  Widget _notificationManagement() {
+    final controller = _management;
+    if (controller == null ||
+        !_personal ||
+        widget.previewLimit != null && !_showAll)
+      return const SizedBox.shrink();
+    return AnimatedBuilder(
+      animation: controller,
+      builder: (_, _) => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Wrap(
+            spacing: 8,
+            children: [
+              DropdownButton<String>(
+                value: _category,
+                items: const [
+                  DropdownMenuItem(value: '', child: Text('全部分类')),
+                  DropdownMenuItem(
+                    value: 'needs_attention',
+                    child: Text('需要处理'),
+                  ),
+                  DropdownMenuItem(value: 'requests', child: Text('申请')),
+                  DropdownMenuItem(value: 'messages', child: Text('消息')),
+                  DropdownMenuItem(value: 'agent_updates', child: Text('助理动态')),
+                  DropdownMenuItem(value: 'updates', child: Text('其他动态')),
+                ],
+                onChanged: controller.busy
+                    ? null
+                    : (value) {
+                        if (value == null) return;
+                        controller.retirePreview();
+                        setState(() => _category = value);
+                        unawaited(_load());
+                      },
+              ),
+              FilterChip(
+                label: const Text('仅未读'),
+                selected: _unreadOnly,
+                onSelected: controller.busy
+                    ? null
+                    : (value) {
+                        controller.retirePreview();
+                        setState(() => _unreadOnly = value);
+                        unawaited(_load());
+                      },
+              ),
+            ],
+          ),
+          Wrap(
+            children: [
+              TextButton(
+                onPressed: controller.canStart
+                    ? () => _manageNotifications('MARK_ALL_READ')
+                    : null,
+                child: const Text('全部已读'),
+              ),
+              TextButton(
+                onPressed: controller.canStart
+                    ? () => _manageNotifications('CLEAR_READ')
+                    : null,
+                child: const Text('清理已读'),
+              ),
+            ],
+          ),
+          SocialOperationRecovery(
+            controller: controller,
+            onResolved: () => unawaited(_load()),
+          ),
+        ],
+      ),
+    );
+  }
 
   void _notifyDestinationChanges({bool dispose = false}) {
     void notify() {
@@ -121,6 +253,7 @@ class _InboxPanelState extends State<InboxPanel> {
         );
     _sourceIdentity = _source.identityVersion;
     _identity = _currentIdentity;
+    _configureManagement();
     widget.auth.addListener(_onAuthChanged);
     widget.workspaceChanges?.addListener(_onAuthChanged);
     widget.refreshChanges?.addListener(_refreshFromPush);
@@ -205,6 +338,7 @@ class _InboxPanelState extends State<InboxPanel> {
       _consumedCursors.clear();
     });
     _invalidateUnread();
+    _configureManagement();
     if (_personal && _configured) {
       unawaited(_load());
     }
@@ -335,7 +469,11 @@ class _InboxPanelState extends State<InboxPanel> {
     });
     try {
       final page = widget.notificationsOnly
-          ? await _source.loadNotificationsPage(limit: _notificationLimit)
+          ? await _source.loadNotificationsPage(
+              limit: _notificationLimit,
+              category: _category,
+              unreadOnly: _unreadOnly,
+            )
           : null;
       final items = page?.items ?? await _source.load();
       if (!_current(serial)) return;
@@ -374,6 +512,8 @@ class _InboxPanelState extends State<InboxPanel> {
       final page = await _source.loadNotificationsPage(
         limit: 20,
         cursor: cursor,
+        category: _category,
+        unreadOnly: _unreadOnly,
       );
       if (!_current(serial) || _nextCursor != cursor) return;
       final known = _items.map((item) => item.id).toSet();
@@ -482,6 +622,56 @@ class _InboxPanelState extends State<InboxPanel> {
       return;
     }
     if (const {
+      'moment_like',
+      'moment_comment',
+    }.contains(current.resourceType)) {
+      final source = _source,
+          version = source.identityVersion,
+          identity = _identityEpoch;
+      bool valid() =>
+          _current(serial) &&
+          identical(source, _source) &&
+          version == source.identityVersion &&
+          identity == _identityEpoch;
+      try {
+        final target = await source.momentTarget(current.id);
+        if (current.resourceType == 'moment_comment' &&
+                target.commentID == null ||
+            current.resourceType == 'moment_like' && target.commentID != null)
+          throw const FormatException('动态通知类型与目标不符');
+        if (!mounted || !valid()) return;
+        final changes = Listenable.merge([
+          widget.auth,
+          widget.workspaceChanges,
+          _destinationChanges,
+        ]);
+        final route = MaterialPageRoute<void>(
+          builder: (_) => NotificationDestinationBoundary(
+            identityChanges: changes,
+            current: valid,
+            builder: (_) => PublicMomentPage(
+              momentID: target.momentID,
+              commentID: target.commentID,
+              authorizationHeader: () =>
+                  valid() ? widget.auth.authorizationHeader : null,
+              ownerID: () => valid() ? widget.auth.accountID : null,
+              workspaceID: widget.organizationWorkspaceID,
+              identityChanges: changes,
+              client: source.followClient,
+              apiBaseUrl: source.followApiBaseUrl,
+            ),
+          ),
+        );
+        _child = route;
+        await Navigator.of(context).push(route);
+        if (_child == route) _child = null;
+      } catch (_) {
+        if (mounted && valid())
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('这条动态或评论已失效，请刷新通知。')));
+      }
+    } else if (const {
       'activity_candidate',
       'place_candidate',
     }.contains(current.resourceType)) {
@@ -686,6 +876,7 @@ class _InboxPanelState extends State<InboxPanel> {
 
   @override
   void dispose() {
+    _management?.dispose();
     ++_serial;
     ++_identityEpoch;
     _notifyDestinationChanges(dispose: true);
@@ -759,7 +950,11 @@ class _InboxPanelState extends State<InboxPanel> {
 
   Iterable<InboxItem> get _visibleItems => widget.notificationsOnly
       ? _items.where((item) => item.resourceType != 'conversation_message')
-      : _items;
+      : _items.where(
+          (item) =>
+              (_category.isEmpty || item.category == _category) &&
+              (!_unreadOnly || item.readAt == null),
+        );
 
   void _reportUnread() {
     if (widget.notificationsOnly) {
@@ -910,6 +1105,7 @@ class _InboxPanelState extends State<InboxPanel> {
           controller: _scroll,
           physics: const AlwaysScrollableScrollPhysics(),
           children: [
+            _notificationManagement(),
             if (!widget.notificationsOnly)
               SocialInboxSection(
                 auth: widget.auth,
@@ -939,6 +1135,7 @@ class _InboxPanelState extends State<InboxPanel> {
         shrinkWrap: widget.embedded && widget.notificationsOnly,
         controller: _scroll,
         children: [
+          _notificationManagement(),
           if (widget.notificationsOnly && _loading)
             const LinearProgressIndicator(),
           if (widget.notificationsOnly && _failed) ...[
@@ -981,20 +1178,30 @@ class _InboxPanelState extends State<InboxPanel> {
                     maxLines: widget.embedded ? 1 : null,
                     overflow: widget.embedded ? TextOverflow.ellipsis : null,
                   ),
-                  trailing:
-                      item.targetActivityID != null ||
-                          item.targetConversationID != null ||
-                          item.targetCommunityID != null ||
-                          item.targetTaskID != null ||
-                          item.targetBusinessID != null
-                      ? const Icon(Icons.chevron_right)
-                      : item.readAt == null
-                      ? const Icon(
-                          Icons.circle,
-                          size: 8,
-                          color: Color(0xFF497966),
-                        )
-                      : null,
+                  trailing: widget.previewLimit != null && !_showAll
+                      ? item.readAt == null
+                            ? const Icon(
+                                Icons.circle,
+                                size: 8,
+                                color: Color(0xFF497966),
+                              )
+                            : const Icon(Icons.chevron_right)
+                      : PopupMenuButton<String>(
+                          tooltip: '通知操作',
+                          onSelected: (value) {
+                            if (value == 'delete')
+                              unawaited(
+                                _manageNotifications('DELETE_ITEM', item: item),
+                              );
+                          },
+                          itemBuilder: (_) => [
+                            PopupMenuItem(
+                              value: 'delete',
+                              enabled: _management?.canStart == true,
+                              child: const Text('删除通知'),
+                            ),
+                          ],
+                        ),
                 ),
               const Divider(height: 20),
             ],

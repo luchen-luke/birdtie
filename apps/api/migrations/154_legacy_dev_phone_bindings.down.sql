@@ -1,0 +1,4 @@
+DROP FUNCTION birdtie_legacy_dev_phone_contract();
+DROP TRIGGER legacy_dev_phone_binding_guard ON legacy_dev_phone_bindings;
+DROP FUNCTION birdtie_guard_legacy_dev_phone_binding();
+DROP TABLE legacy_dev_phone_bindings;

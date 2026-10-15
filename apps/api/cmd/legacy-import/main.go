@@ -18,6 +18,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/birdtie/birdtie/apps/api/internal/devauth"
 	"github.com/birdtie/birdtie/apps/api/internal/legacymigration"
 	"github.com/birdtie/birdtie/apps/api/internal/postgres"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -159,6 +160,48 @@ func writeSummary(out io.Writer, runID, status string, counts postgres.LegacyMig
 	return nil
 }
 
+func writeDevPhoneSummary(out io.Writer, result postgres.LegacyDevPhoneBindingResult) error {
+	known := result.Status == "DEV_PHONE_BINDINGS_PREPARED" || result.Status == "DEV_PHONE_BINDINGS_COMMITTED"
+	var counts *legacymigration.DevPhoneCounts
+	var enrolled *int64
+	if known {
+		counts, enrolled = &result.Counts, &result.EnrolledOwners
+	}
+	summary := struct {
+		RunID             string                          `json:"runId"`
+		Status            string                          `json:"status"`
+		Counts            *legacymigration.DevPhoneCounts `json:"counts,omitempty"`
+		CountsKnown       bool                            `json:"countsKnown"`
+		EnrolledOwners    *int64                          `json:"enrolledOwners,omitempty"`
+		DevOnly           bool                            `json:"devOnly"`
+		Activated         bool                            `json:"activated"`
+		AgentActivated    bool                            `json:"agentActivated"`
+		OldSessionsCopied bool                            `json:"oldSessionsCopied"`
+		SourceWrites      int                             `json:"sourceWrites"`
+	}{RunID: result.RunID, Status: result.Status, Counts: counts, CountsKnown: known, EnrolledOwners: enrolled, DevOnly: true}
+	if json.NewEncoder(out).Encode(summary) != nil {
+		return postgres.ErrLegacyMigrationUnavailable
+	}
+	return nil
+}
+
+func devPhoneBindingChannel(config *pgxpool.Config, getenv func(string) string) bool {
+	setting := strings.TrimSpace(getenv("BIRDTIE_DEV_PHONE_AUTH"))
+	if config == nil || (setting != "1" && !strings.EqualFold(setting, "true")) {
+		return false
+	}
+	address := getenv("BIRDTIE_API_ADDR")
+	if address == "" {
+		address = "127.0.0.1:8080"
+	}
+	return devauth.ValidateTestChannel(devauth.TestChannel{
+		Enabled: true, APIAddress: address, DatabaseHost: config.ConnConfig.Host,
+		AllowedOrigins:          strings.Split(getenv("BIRDTIE_ALLOWED_ORIGINS"), ","),
+		PublicTestOrigin:        getenv("BIRDTIE_DEV_PHONE_PUBLIC_TEST_ORIGIN"),
+		AllowUnixDatabaseSocket: true,
+	}) == nil
+}
+
 func run(ctx context.Context, args []string, getenv func(string) string, out io.Writer) error {
 	flags := flag.NewFlagSet("legacy-import", flag.ContinueOnError)
 	flags.SetOutput(io.Discard)
@@ -168,6 +211,7 @@ func run(ctx context.Context, args []string, getenv func(string) string, out io.
 	apply := flags.Bool("apply", false, "apply the original run once to an exact native target")
 	inspect := flags.String("inspect-run", "", "inspect only an original run's immutable facts")
 	validate := flags.Bool("validate", false, "prepare without database access (default)")
+	devBindings := flags.Bool("dev-phone-bindings", false, "prepare/apply exact preserved phone digests for protected fixed-code test login")
 	database := flags.String("database", "", "exact native database name")
 	databaseOID := flags.Int64("database-oid", 0, "exact native database OID")
 	owner := flags.String("database-owner", "", "exact native database owner role")
@@ -175,7 +219,7 @@ func run(ctx context.Context, args []string, getenv func(string) string, out io.
 	sourceOID := flags.Int64("source-database-oid", 0, "forbidden source database OID in this cluster")
 	deadline := flags.Duration("deadline", 90*time.Second, "bounded operation deadline")
 	if flags.Parse(args) != nil || flags.NArg() != 0 || ctx == nil || ctx.Err() != nil || *deadline < time.Second || *deadline > 2*time.Minute ||
-		*apply && (*inspect != "" || *validate) || *inspect != "" && (*runID != "" || *source != "" || *manifest != "" || *validate) {
+		*apply && (*inspect != "" || *validate) || *inspect != "" && (*runID != "" || *source != "" || *manifest != "" || *validate || *devBindings) {
 		return errArguments
 	}
 	target := postgres.LegacyMigrationTargetIdentity{DatabaseName: *database, DatabaseOID: *databaseOID, Owner: *owner,
@@ -203,6 +247,13 @@ func run(ctx context.Context, args []string, getenv func(string) string, out io.
 			return postgres.ErrLegacyMigrationInvalid
 		}
 		if !*apply {
+			if *devBindings {
+				bindingPlan, e := legacymigration.BuildDevPhonePlan(*runID, sourceRaw, manifestRaw)
+				if e != nil {
+					return postgres.ErrLegacyMigrationInvalid
+				}
+				return writeDevPhoneSummary(out, postgres.LegacyDevPhoneBindingResult{RunID: *runID, Status: "DEV_PHONE_BINDINGS_PREPARED", Counts: bindingPlan.Counts})
+			}
 			counts := postgres.LegacyMigrationCounts{Owners: int64(len(plan.Owners)), Notes: int64(len(plan.Notes))}
 			for _, note := range plan.Notes {
 				if note.Deleted {
@@ -221,6 +272,9 @@ func run(ctx context.Context, args []string, getenv func(string) string, out io.
 	if err != nil {
 		return err
 	}
+	if *devBindings && !devPhoneBindingChannel(config, getenv) {
+		return errConfiguration
+	}
 	ctx, cancel := context.WithTimeout(ctx, *deadline)
 	defer cancel()
 	pool, err := pgxpool.NewWithConfig(ctx, config)
@@ -231,6 +285,15 @@ func run(ctx context.Context, args []string, getenv func(string) string, out io.
 	importer, err := postgres.NewLegacyMigrationImporter(pool, target)
 	if err != nil {
 		return err
+	}
+	if *devBindings {
+		result, e := importer.ApplyDevPhoneBindings(ctx, *runID, sourceRaw, manifestRaw)
+		if e == nil || errors.Is(e, postgres.ErrLegacyMigrationUnknown) || errors.Is(e, postgres.ErrLegacyMigrationNotFound) {
+			if outputError := writeDevPhoneSummary(out, result); outputError != nil {
+				return outputError
+			}
+		}
+		return e
 	}
 	var result postgres.LegacyMigrationResult
 	if *inspect != "" {

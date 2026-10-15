@@ -10,6 +10,7 @@ import 'map_entities.dart';
 import 'map_marker_bitmap.dart';
 import 'map_marker_visual.dart';
 import 'public_moment_photo.dart';
+import 'public_moment_media.dart';
 
 typedef MapMediaDecode = Future<ui.Image> Function(Uint8List bytes);
 
@@ -39,6 +40,10 @@ class MapMediaController extends ChangeNotifier {
   final int maxItems, maxBytes;
   final _entries = <String, _MapMediaEntry>{};
   final _queue = <String>[];
+  final _mediaSets = <String, PublicMomentMediaSet>{};
+  final _setQueue = <(String, MapEntity)>[];
+  final _setAttempted = <String>{};
+  Set<String> _desiredSets = {};
   final _photoClocks = <String, _MapAnnotationClock>{};
   final _countClocks = <String, _MapAnnotationClock>{};
   Map<String, String> _currentKeys = const {};
@@ -92,12 +97,22 @@ class MapMediaController extends ChangeNotifier {
     required double devicePixelRatio,
   }) {
     if (_closed) return;
-    final namespace = (baseUrl, ownerID, workspaceID, cityID, sourceGeneration);
+    final namespace = (
+      baseUrl,
+      ownerID,
+      workspaceID,
+      authorization,
+      cityID,
+      sourceGeneration,
+    );
     if (_namespace != namespace) {
       _namespace = namespace;
       ++_epoch;
       _photoClocks.clear();
       _countClocks.clear();
+      _mediaSets.clear();
+      _setQueue.clear();
+      _setAttempted.clear();
       for (final entry in _entries.values.toList()) {
         _retire(entry);
       }
@@ -124,8 +139,25 @@ class MapMediaController extends ChangeNotifier {
     // Signed-in pixels require a separately known current person namespace.
     final mayRead =
         authorization == null || (ownerID != null && entityCoverID(ownerID));
+    _desiredSets = {};
     for (final e in _source) {
-      final p = _MapSourcePhoto.of(e);
+      if (_desiredSets.length >= maxItems) break;
+      if (!mayRead ||
+          e.kind != MapEntityKind.moment ||
+          e.precision != 'point' ||
+          !e.hasMapAnchor ||
+          !e.id.startsWith('moment:') ||
+          !entityCoverID(e.id.substring(7)) ||
+          (int.tryParse(e.sourceVersion) ?? 0) < 2)
+        continue;
+      final key = _setKey(e);
+      _desiredSets.add(key);
+      if (_setAttempted.add(key)) _setQueue.add((key, e));
+    }
+    _mediaSets.removeWhere((key, _) => !_desiredSets.contains(key));
+    _setQueue.removeWhere((pair) => !_desiredSets.contains(pair.$1));
+    for (final e in _source) {
+      final p = _photoFor(e);
       if (!mayRead || e.precision != 'point' || !e.hasMapAnchor || p == null)
         continue;
       final key =
@@ -197,9 +229,52 @@ class MapMediaController extends ChangeNotifier {
       !entry.clock.expired &&
       entry.photo.expiresAt.isAfter(_now());
 
+  String _setKey(MapEntity entity) =>
+      '$_epoch:${entity.id}:${entity.sourceVersion}';
+  _MapSourcePhoto? _photoFor(MapEntity entity) {
+    final set = _mediaSets[_setKey(entity)];
+    if (entity.kind == MapEntityKind.moment &&
+        set?.status == 'READY' &&
+        set!.current &&
+        set.momentRevision.toString() == entity.sourceVersion &&
+        set.attachments.isNotEmpty) {
+      return _MapSourcePhoto(media: set.attachments.first, mediaSet: set);
+    }
+    return _MapSourcePhoto.of(entity);
+  }
+
+  Future<void> _readSet(String key, MapEntity entity, int epoch) async {
+    final token = _authorization;
+    bool current() =>
+        !_closed &&
+        epoch == _epoch &&
+        _desiredSets.contains(key) &&
+        token == _authorization;
+    final api = PublicMomentMediaSetAPI(
+      client: _client,
+      apiBaseUrl: baseUrl,
+      authorizationHeader: () => _authorization,
+      current: current,
+    );
+    try {
+      final set = await api.publicSet(
+        entity.id.substring(7),
+        expectedRevision: int.parse(entity.sourceVersion),
+      );
+      if (current() && set.current) _mediaSets[key] = set;
+    } catch (_) {
+      // One attempt per real map-source frame; the authorized point remains.
+    } finally {
+      api.dispose();
+      --_inFlight;
+      _notify();
+      _drain();
+    }
+  }
+
   MapEntity decorate(MapEntity entity) {
     final entry = _entries[_currentKeys[entity.id]];
-    final source = _MapSourcePhoto.of(entity);
+    final source = _photoFor(entity);
     final matches =
         entry != null &&
         source != null &&
@@ -218,6 +293,12 @@ class MapMediaController extends ChangeNotifier {
   }
 
   void _drain() {
+    while (!_closed && _inFlight < 3 && _setQueue.isNotEmpty) {
+      final pair = _setQueue.removeAt(0);
+      if (!_desiredSets.contains(pair.$1)) continue;
+      ++_inFlight;
+      unawaited(_readSet(pair.$1, pair.$2, _epoch));
+    }
     while (!_closed && _inFlight < 3 && _queue.isNotEmpty) {
       final entry = _entries[_queue.removeAt(0)];
       if (entry == null || !_current(entry) || entry.running || entry.finished)
@@ -232,7 +313,14 @@ class MapMediaController extends ChangeNotifier {
     ui.Image? image;
     try {
       final token = _authorization;
-      final bytes = entry.photo.moment != null
+      final bytes = entry.photo.media != null
+          ? await PublicMomentMediaSetAPI(
+              client: _client,
+              apiBaseUrl: baseUrl,
+              authorizationHeader: () => _authorization,
+              current: () => _current(entry) && _authorization == token,
+            ).content(entry.photo.media!, thumbnail: true)
+          : entry.photo.moment != null
           ? await PublicMomentPhotoAPI(
               client: _client,
               baseUrl: baseUrl,
@@ -301,7 +389,7 @@ class MapMediaController extends ChangeNotifier {
     Duration? remaining;
     for (final e in _source) {
       for (final pair in [
-        (_MapSourcePhoto.of(e)?.expiresAt, _entries[_currentKeys[e.id]]?.clock),
+        (_photoFor(e)?.expiresAt, _entries[_currentKeys[e.id]]?.clock),
         (
           e.recentMoments?.validUntil,
           _countClocks['${e.id}:${e.recentMoments?.sourceKey}'],
@@ -377,6 +465,10 @@ class MapMediaController extends ChangeNotifier {
     _countClocks.clear();
     _photoClocks.clear();
     _queue.clear();
+    _mediaSets.clear();
+    _setQueue.clear();
+    _setAttempted.clear();
+    _desiredSets = {};
     for (final entry in _entries.values.toList()) {
       _retire(entry);
     }
@@ -432,9 +524,11 @@ class _MapMediaEntry {
 /// The two real content readers keep their independent closed wire contracts.
 /// This transient union shares only map memory/lease budgets and pixel work.
 class _MapSourcePhoto {
-  const _MapSourcePhoto({this.cover, this.moment});
+  const _MapSourcePhoto({this.cover, this.moment, this.media, this.mediaSet});
   final EntityCoverMetadata? cover;
   final PublicMomentPhotoMetadata? moment;
+  final PublicMomentMediaAttachment? media;
+  final PublicMomentMediaSet? mediaSet;
   static _MapSourcePhoto? of(MapEntity e) {
     if (e.kind == MapEntityKind.place &&
         e.momentPhoto == null &&
@@ -450,12 +544,20 @@ class _MapSourcePhoto {
     return null;
   }
 
-  DateTime get expiresAt => moment?.expiresAt ?? cover!.expiresAt;
-  int get byteCount => moment?.byteCount ?? cover!.byteCount;
-  String get identity => moment != null
+  DateTime get expiresAt =>
+      mediaSet?.validUntil ?? moment?.expiresAt ?? cover!.expiresAt;
+  int get byteCount =>
+      media?.thumbnailBytes ?? moment?.byteCount ?? cover!.byteCount;
+  String get identity => media != null
+      ? '${mediaSet!.momentRevision}:${mediaSet!.setVersion}:${mediaSet!.sourceVersion}:${media!.mediaID}:${media!.mediaVersion}:${media!.thumbnailSHA}'
+      : moment != null
       ? '${moment!.momentRevision}:${moment!.photoID}:${moment!.version}:${moment!.digest}'
       : '${cover!.ref.type}:${cover!.ref.id}:${cover!.version}:${cover!.digest}';
-  bool sameSource(_MapSourcePhoto other) => moment != null
+  bool sameSource(_MapSourcePhoto other) => media != null
+      ? other.media != null &&
+            identity == other.identity &&
+            expiresAt == other.expiresAt
+      : moment != null
       ? other.moment != null && moment!.sameSource(other.moment!)
       : other.cover != null && cover!.sameSource(other.cover!);
 }

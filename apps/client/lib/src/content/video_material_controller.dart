@@ -161,6 +161,7 @@ class VideoMaterialController extends ChangeNotifier {
     required this.ownerID,
     required this.sourceCurrent,
     required this.identityChanges,
+    this.localSelectionOnly = false,
     http.Client? client,
     String? apiBaseUrl,
     VideoMaterialPicker? picker,
@@ -179,6 +180,7 @@ class VideoMaterialController extends ChangeNotifier {
   }
   final String? Function() authorizationHeader, ownerID;
   final bool Function() sourceCurrent;
+  final bool localSelectionOnly;
   final Listenable identityChanges;
   final String _base;
   final http.Client _client;
@@ -209,6 +211,7 @@ class VideoMaterialController extends ChangeNotifier {
   bool get canSelect =>
       current && !selecting && !uploading && !uncertain && _picker.supported;
   bool get canSave =>
+      !localSelectionOnly &&
       current &&
       selection != null &&
       !selecting &&
@@ -224,6 +227,31 @@ class VideoMaterialController extends ChangeNotifier {
       selection == null ? null : uploadedBytes / selection!.bytes.length;
   void _sync() {
     if (_closed || _retired) return;
+    // A Now selection has no private upload approval or executable journal.
+    // Renewal retires in-flight reads/pickers while retaining this owner's
+    // selected bytes and local preview until the material realm changes.
+    final nextToken = authorizationHeader();
+    if (localSelectionOnly &&
+        _owner != null &&
+        ownerID() == _owner &&
+        sourceCurrent() &&
+        _token != null &&
+        nextToken != null &&
+        nextToken != _token &&
+        _pending == null &&
+        active == null &&
+        !uploading) {
+      _token = nextToken;
+      ++_epoch;
+      ++_selectSerial;
+      ++_reads;
+      _previewExpiry?.cancel();
+      selecting = loading = uncertain = false;
+      capabilities = null;
+      items = const [];
+      pendingOperations = const [];
+      error = null;
+    }
     if (_token == null ||
         _owner == null ||
         !videoMaterialUUID.hasMatch(_owner!) ||
@@ -238,7 +266,8 @@ class VideoMaterialController extends ChangeNotifier {
       selecting = loading = uploading = uncertain = false;
       final old = selection;
       selection = null;
-      if (old != null) unawaited(old.dispose().catchError((Object _) {}));
+      if (old != null)
+        unawaited(_disposeSelection(old).catchError((Object _) {}));
       items = const [];
       pendingOperations = const [];
       active = null;
@@ -247,6 +276,13 @@ class VideoMaterialController extends ChangeNotifier {
       if (_ownsUpload) _uploadClient.close();
       error = '账号或来源已变化，请返回后重新选择视频。';
     }
+  }
+
+  Future<void> _disposeSelection(VideoMaterialSelection selected) async {
+    if (localSelectionOnly) {
+      selected.bytes.fillRange(0, selected.bytes.length, 0);
+    }
+    await selected.dispose();
   }
 
   void _observe() {
@@ -287,7 +323,7 @@ class VideoMaterialController extends ChangeNotifier {
   }
 
   Future<void> initialize() async {
-    if (!current) return;
+    if (!current || localSelectionOnly) return;
     final e = _epoch;
     try {
       final lost = _picker.discardLostSelection();
@@ -325,7 +361,7 @@ class VideoMaterialController extends ChangeNotifier {
     try {
       next = await _picker.selectSource(source);
       if (!_valid(e) || serial != _selectSerial) {
-        if (next != null) await next.dispose();
+        if (next != null) await _disposeSelection(next);
         return;
       }
       if (next == null) return;
@@ -347,11 +383,11 @@ class VideoMaterialController extends ChangeNotifier {
       _storedPreviewID = null;
       selection = next;
       next = null;
-      if (old != null) await old.dispose();
+      if (old != null) await _disposeSelection(old);
       if (_pending == null) active = null;
       uploadedBytes = 0;
     } catch (failure) {
-      if (next != null) await next.dispose();
+      if (next != null) await _disposeSelection(next);
       if (_valid(e) && serial == _selectSerial)
         error = failure is FormatException
             ? failure.message.toString()
@@ -373,7 +409,7 @@ class VideoMaterialController extends ChangeNotifier {
     selection = null;
     selecting = false;
     uploadedBytes = 0;
-    if (old != null) await old.dispose();
+    if (old != null) await _disposeSelection(old);
     _notify();
   }
 
@@ -547,7 +583,7 @@ class VideoMaterialController extends ChangeNotifier {
       _storedPreviewID = null;
       final old = selection;
       selection = null;
-      if (old != null) await old.dispose();
+      if (old != null) await _disposeSelection(old);
       if (!_valid(epoch)) return;
     }
     items = List.unmodifiable([v, ...items.where((r) => r.id != v.id)]);
@@ -587,7 +623,7 @@ class VideoMaterialController extends ChangeNotifier {
           _previewExpiry?.cancel();
           _storedPreviewID = null;
           active = null;
-          if (old != null) await old.dispose();
+          if (old != null) await _disposeSelection(old);
           if (!_valid(e)) return;
         }
         _pending = pending;
@@ -628,6 +664,7 @@ class VideoMaterialController extends ChangeNotifier {
   }
 
   Future<void> load({bool more = false}) async {
+    if (localSelectionOnly) return;
     if (!current || loading || (more && nextCursor == null)) return;
     final e = _epoch, serial = ++_reads;
     loading = true;
@@ -764,12 +801,12 @@ class VideoMaterialController extends ChangeNotifier {
     try {
       next = await _picker.openPrivateBytes(bytes);
       if (!_valid(e)) {
-        await next.dispose();
+        await _disposeSelection(next);
         return false;
       }
       final old = selection;
       if (!v.retainUntil.isAfter(DateTime.now().toUtc())) {
-        await next.dispose();
+        await _disposeSelection(next);
         next = null;
         return false;
       }
@@ -791,10 +828,10 @@ class VideoMaterialController extends ChangeNotifier {
           _notify();
         },
       );
-      if (old != null) await old.dispose();
+      if (old != null) await _disposeSelection(old);
       return true;
     } catch (_) {
-      if (next != null) await next.dispose();
+      if (next != null) await _disposeSelection(next);
       if (_valid(e)) error = '无法播放当前本人视频，请重新核实。';
       return false;
     } finally {
@@ -832,7 +869,8 @@ class VideoMaterialController extends ChangeNotifier {
     identityChanges.removeListener(_observe);
     final old = selection;
     selection = null;
-    if (old != null) unawaited(old.dispose().catchError((Object _) {}));
+    if (old != null)
+      unawaited(_disposeSelection(old).catchError((Object _) {}));
     if (_ownsClient) _client.close();
     if (_ownsUpload) _uploadClient.close();
     super.dispose();

@@ -61,6 +61,44 @@ func share143Counts(t *testing.T, g *share143Fixture) (int, int, int, int) {
 	}
 	return cv, msg, notices, history
 }
+
+func TestEntityShareControlNativeCityMomentAndCurrentWithdrawal(t *testing.T) {
+	g := share143Native(t, true)
+	f := g.f
+	moment := f.id(t)
+	f.exec(t, `WITH n AS(SELECT clock_timestamp() at)INSERT INTO moments(id,author_account_id,city_id,place_id,title,body,location_precision,status,visibility,author_confirmed_at,published_at)SELECT $1,$2,'aberdeen-gb',NULL,'合成城市动态分享','正文不进入分享回执','city','published','public',at,at FROM n`, moment, f.actor.ID)
+	target := connection.EntityShareRecipient{Type: "CONVERSATION", ID: g.conversation}
+	in := share143Approve(t, g, target, share143Input(t, g, "moment", moment))
+	receipt, err := f.store.CommitEntityShareControl(f.ctx, g.access(), target, in)
+	if err != nil || receipt.Status != "SUCCEEDED" || receipt.Entity == nil || receipt.Entity.ID != moment {
+		t.Fatal("city Moment share", receipt, err)
+	}
+	original, err := f.store.ReadEntityShareControlOperation(f.ctx, g.access(), target, in.OperationID)
+	if err != nil || humanWriteHashJSON(original) != humanWriteHashJSON(receipt) {
+		t.Fatal("original city share fact", err)
+	}
+	messages, err := f.store.ListMessages(f.ctx, g.peer, g.conversation)
+	if err != nil || len(messages) != 1 || messages[0].Entity == nil || !messages[0].Entity.Available || messages[0].Entity.ID != moment || messages[0].Entity.Title != "合成城市动态分享" {
+		t.Fatal("recipient current city card", messages, err)
+	}
+	f.exec(t, `UPDATE moments SET status='withdrawn',visibility='private',revision=revision+1 WHERE id=$1`, moment)
+	messages, err = f.store.ListMessages(f.ctx, g.peer, g.conversation)
+	if err != nil || len(messages) != 1 || messages[0].Entity == nil || messages[0].Entity.Available || messages[0].Entity.ID != "" || messages[0].Entity.Title != "" {
+		t.Fatal("withdrawn city card retained snapshot", messages, err)
+	}
+	if _, err = f.store.PreviewEntityShareControl(f.ctx, g.access(), target, share143Input(t, g, "moment", moment)); !errors.Is(err, connection.ErrNotFound) {
+		t.Fatal("withdrawn city Moment shared again", err)
+	}
+	original, err = f.store.ReadEntityShareControlOperation(f.ctx, g.access(), target, in.OperationID)
+	if err != nil || humanWriteHashJSON(original) != humanWriteHashJSON(receipt) {
+		t.Fatal("withdrawal changed original share fact", err)
+	}
+	_, messageCount, _, historyCount := share143Counts(t, g)
+	if messageCount != 1 || historyCount != 1 {
+		t.Fatal("denial created another share", messageCount, historyCount)
+	}
+}
+
 func TestEntityShareControlNativeSevenKindsAndPreviewNoConversation(t *testing.T) {
 	g := share143Native(t, false)
 	f := g.f

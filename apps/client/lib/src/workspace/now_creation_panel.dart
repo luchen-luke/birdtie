@@ -28,6 +28,7 @@ class NowCreationPanel extends StatelessWidget {
     this.mediaPreview,
     this.extraContent,
     this.statusLabel = '本地草稿 · 仅自己可见',
+    this.saveLabel = '保存草稿',
     this.saveEnabled = true,
     this.editingEnabled = true,
   });
@@ -45,7 +46,7 @@ class NowCreationPanel extends StatelessWidget {
   final VoidCallback? onPublish, onRecover;
   final List<Widget> extraActions;
   final Widget? mediaPreview, extraContent;
-  final String statusLabel;
+  final String statusLabel, saveLabel;
   final bool saveEnabled, editingEnabled;
 
   IconData get _icon => switch (draft.kind) {
@@ -246,7 +247,7 @@ class NowCreationPanel extends StatelessWidget {
                 textStyle: tokens.action,
               ),
               onPressed: busy || !saveEnabled ? null : onSave,
-              child: const Text('保存草稿'),
+              child: Text(saveLabel),
             ),
             if (onPublish != null)
               TextButton(

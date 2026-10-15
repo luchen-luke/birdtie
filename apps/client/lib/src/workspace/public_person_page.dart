@@ -29,6 +29,7 @@ class PublicPersonPage extends StatefulWidget {
     this.embedded = false,
     this.onOpenOwnProfile,
     this.onOpenPublicMoments,
+    this.onOpenPublicMomentHistory,
   });
 
   final String accountID;
@@ -41,6 +42,7 @@ class PublicPersonPage extends StatefulWidget {
   final bool embedded;
   final Future<void> Function()? onOpenOwnProfile;
   final Future<void> Function()? onOpenPublicMoments;
+  final Future<void> Function()? onOpenPublicMomentHistory;
 
   @override
   State<PublicPersonPage> createState() => _PublicPersonPageState();
@@ -138,7 +140,11 @@ class _PublicPersonPageState extends State<PublicPersonPage> {
   void didUpdateWidget(PublicPersonPage old) {
     super.didUpdateWidget(old);
     _observeShareSource();
-    if (!identical(old.onOpenPublicMoments, widget.onOpenPublicMoments)) {
+    if (!identical(old.onOpenPublicMoments, widget.onOpenPublicMoments) ||
+        !identical(
+          old.onOpenPublicMomentHistory,
+          widget.onOpenPublicMomentHistory,
+        )) {
       ++_publicNavigationEpoch;
     }
     final transportChanged =
@@ -361,8 +367,10 @@ class _PublicPersonPageState extends State<PublicPersonPage> {
     };
   }
 
-  Future<void> Function()? _publicMomentsAction() {
-    final open = widget.onOpenPublicMoments;
+  Future<void> Function()? _publicMomentsAction({bool history = false}) {
+    final open = history
+        ? widget.onOpenPublicMomentHistory
+        : widget.onOpenPublicMoments;
     if (open == null || !_publicMomentsSource) return null;
     final epoch = _epoch,
         navigationEpoch = _publicNavigationEpoch,
@@ -380,7 +388,12 @@ class _PublicPersonPageState extends State<PublicPersonPage> {
         identical(auth, widget.auth) &&
         identical(client, _client) &&
         base == _base &&
-        identical(open, widget.onOpenPublicMoments) &&
+        identical(
+          open,
+          history
+              ? widget.onOpenPublicMomentHistory
+              : widget.onOpenPublicMoments,
+        ) &&
         _publicMomentsSource;
     return () async {
       if (!current() || _openingMomentsEpoch == epoch) return;
@@ -389,7 +402,11 @@ class _PublicPersonPageState extends State<PublicPersonPage> {
         await open();
       } catch (_) {
         if (current()) {
-          setState(() => _error = '当前范围的公开动态暂不可访问，请重新打开。');
+          setState(
+            () => _error = history
+                ? '作者的公开动态暂不可访问，请重新打开。'
+                : '当前范围的公开动态暂不可访问，请重新打开。',
+          );
         }
       } finally {
         if (mounted && _openingMomentsEpoch == epoch) {
@@ -470,6 +487,16 @@ class _PublicPersonPageState extends State<PublicPersonPage> {
                   style: textActionStyle,
                   icon: const Icon(Icons.map_outlined),
                   label: const Text('当前范围的公开动态'),
+                ),
+              if (_publicMomentsSource &&
+                  widget.onOpenPublicMomentHistory != null)
+                TextButton.icon(
+                  onPressed: _openingMomentsEpoch == _epoch
+                      ? null
+                      : _publicMomentsAction(history: true),
+                  style: textActionStyle,
+                  icon: const Icon(Icons.article_outlined),
+                  label: const Text('查看全部公开动态'),
                 ),
               if (_profileCurrent &&
                   _ownProfile &&

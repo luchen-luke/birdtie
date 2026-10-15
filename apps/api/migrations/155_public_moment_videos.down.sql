@@ -1,0 +1,11 @@
+BEGIN;
+DROP FUNCTION birdtie_public_moment_video_contract();
+DROP TRIGGER public_media_typed_kind ON public_moment_media_attachments;
+DROP FUNCTION birdtie_check_video_collection_kind();
+DROP TRIGGER public_video_bytes_retire ON public_moment_media_attachments;
+DROP FUNCTION birdtie_retire_public_video_payload();
+DROP TABLE public_moment_media_video_payloads;
+DROP FUNCTION birdtie_guard_public_video_payload();
+DROP TABLE moment_media_video_materials;
+DROP FUNCTION birdtie_guard_canonical_video_material();
+COMMIT;

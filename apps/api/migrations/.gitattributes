@@ -1,0 +1,2 @@
+# Applied migration checksums must survive checkout byte-for-byte.
+*.sql -text

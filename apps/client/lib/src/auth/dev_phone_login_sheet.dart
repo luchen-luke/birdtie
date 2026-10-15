@@ -84,12 +84,12 @@ class _DevPhoneLoginSheetState extends State<DevPhoneLoginSheet> {
                 ),
               ] else ...[
                 Text(
-                  '本地测试登录',
+                  '开发测试登录',
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  '此模式只连接本机 Birdtie API，不发送短信，也不验证手机号所有权。',
+                  '固定验证码仅用于开发账号，不发送短信，也不验证手机号所有权。',
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
                 const SizedBox(height: 22),

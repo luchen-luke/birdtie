@@ -124,7 +124,8 @@ func NormalizeMomentControl(in MomentControlInput, commit bool) (MomentControlIn
 			return bad()
 		}
 		in.Input = &v
-		if (in.Action == "UPDATE_PUBLIC" || in.Action == "PUBLISH") && (v.PlaceID == "" || v.LocationPrecision != "place" || v.ActivityID != nil || v.CommunityID != nil || v.OrganizationID != nil) {
+		publicContext := v.PlaceID == "" && v.LocationPrecision == "city" || v.PlaceID != "" && v.LocationPrecision == "place"
+		if (in.Action == "UPDATE_PUBLIC" || in.Action == "PUBLISH") && (!publicContext || v.ActivityID != nil || v.CommunityID != nil || v.OrganizationID != nil) {
 			return bad()
 		}
 	}

@@ -441,6 +441,12 @@ func New(catalog foundation.PublicCatalog, access identity.AccessStore, seed cit
 	mux.HandleFunc("GET /v1/me/conversations/{conversationID}/entity-shares/{operationID}", s.getHumanEntityShare)
 	s.registerEntityShareControlRoutes(mux)
 	s.registerMomentControlRoutes(mux)
+	s.registerMomentHistoryRoutes(mux)
+	s.registerMomentInteractionRoutes(mux)
+	s.registerMomentMediaRoutes(mux)
+	s.registerMomentMediaVideoRoutes(mux)
+	s.registerMomentThreadRoutes(mux)
+	s.registerInboxManagementRoutes(mux)
 	mux.HandleFunc("POST /v1/cities/{cityID}/places/{placeID}/profile-candidates", s.submitPlaceProfileCandidate)
 	mux.HandleFunc("GET /v1/cities/{cityID}/place-profile-candidates", s.listPlaceProfileCandidates)
 	mux.HandleFunc("POST /v1/place-profile-candidates/{candidateID}/review", s.reviewPlaceProfileCandidate)
@@ -958,7 +964,7 @@ func cors(next http.Handler, allowedOrigins []string) http.Handler {
 			if allowed[origin] {
 				w.Header().Set("Access-Control-Allow-Origin", origin)
 				w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-				w.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type, X-Request-ID, X-Birdtie-Entry-Source, X-Birdtie-Map-Media, X-Birdtie-Public-Moment-Media")
+				w.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type, X-Request-ID, X-Birdtie-Entry-Source, X-Birdtie-Map-Media, X-Birdtie-Public-Moment-Media, X-Birdtie-Public-Moment-Context, X-Birdtie-Public-Media-Context")
 				w.Header().Set("Access-Control-Expose-Headers", "X-Request-ID")
 			} else if r.Method == http.MethodOptions {
 				respondError(w, http.StatusForbidden, "origin_not_allowed")

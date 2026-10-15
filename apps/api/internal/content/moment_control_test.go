@@ -11,14 +11,18 @@ import (
 const momentControlTestOp = "11111111-1111-4111-8111-111111111111"
 const momentControlTestID = "22222222-2222-4222-8222-222222222222"
 
-func TestMomentPublicControlRequiresConcretePlaceAndPreservedContext(t *testing.T) {
+func TestMomentPublicControlRequiresExplicitCityOrPlaceAndPreservedContext(t *testing.T) {
 	for _, action := range []string{"PUBLISH", "UPDATE_PUBLIC"} {
 		in := momentControlTestInput()
 		in.Action = action
 		in.MomentID = momentControlTestID
 		in.ExpectedRevision = 2
+		if _, err := NormalizeMomentControl(in, false); err != nil {
+			t.Fatal("explicit city-only public action rejected", action, err)
+		}
+		in.Input.LocationPrecision = "none"
 		if _, err := NormalizeMomentControl(in, false); err == nil {
-			t.Fatal("city-only public action accepted", action)
+			t.Fatal("public action without explicit location precision accepted", action)
 		}
 		in.Input.PlaceID = momentControlTestID
 		in.Input.LocationPrecision = "place"

@@ -6,7 +6,7 @@
 
 此次远端受控接入/升级仍不代表Closed Pilot或Consumer Beta放行。费用下单、不可恢复释放旧盘需具体报价及回滚核验后由用户明确批准；不删除旧数据/备份，不继承旧Session或把历史公开媒体扩大到新受众。先冻结本机C6/C5合包，再按该交接顺序实施原身份/稳定映射、Linux部署与实际远端核验。
 
-日期：2026-10-08（Asia/Shanghai）  
+日期：2026-10-08（Asia/Shanghai）
 状态：本地审计与安全脚本准备完成；生产数据保全、隔离恢复与迁移演练未执行。
 
 ## 执行边界
@@ -77,3 +77,13 @@ scripts/backup_civu_postgres.sh
 
 
 2026-10-15接续事实：先前「未有extractor」为历史时间点。scripts/extract_civu_hangzhou.py已对受限隔离源实际READ ONLY抽取固定29表/396列；原备份、dpapi与真实JSON留CurrentUser受限仓外。媒体AES-GCM全流核验/严格media+storage_key匹配已实际运行，407selectors中335仅integrity候选，均NOT_SCANNED/RIGHTS_NOT_REVIEWED，未抽出明文媒体、导入或公开。当前原生146导入CLI真实输入prepare为20 owners、83 live notes、20 tombstones，尚未真实native apply/身份激活。旧元数据和公开标记不授新权限，未知CRS/rights保留deferred；原哈希/备份不可删除。详细证据见batch-c/checkpoint-legacy-owner-archive146及hangzhou-media-matcher/real-stream01。
+
+2026-10-15 当前远端接续：20 个永久 owner 映射及 103 条旧动态档案已在独立杭州 Birdtie 库实际 COMMITTED；83 条现存、20 条删除墓碑。149 升级成功后，34 个旅程（12 条墓碑）、3 个主题地图和 189 条地点收藏也已提交为私人旧档案，原 operation 重读一致，源写入 0。账号仍暂停且 UNCLAIMED，旧 Session 未复制；当前 Journey、ThemeMap、SavedItems、合法 Place 和媒体未据此自动创建或公开。实际远端 API ready，公网切流仍未完成。见 `docs/testing/evidence/social-remote-migration-20261015/remote-archive01`、`remote-upgrade149-02`、`remote-personal-apply149-01` 和 [本次交付记录](../reports/BIRDTIE-GITHUB-REMOTE-MIGRATION-2026-10-15.md)。以上新事实接续前文当时的未导入状态，完整数据适配仍未结束。
+
+## 2026-10-15 最新真实迁移与停写检查点
+
+此前NOT_RUN／暂停／公网未切为记录当时状态。当前原生155库已有20永久owner、103Note、34Journey（12墓碑）、3ThemeMap、189SavedPlace私人档案；154提交18唯一手机号的原owner不可变绑定，用户指定固定验证码123456。真实旧用户两次登录同owner并读取本人档案和详情，首次接续Person1、Agent激活0、旧Session复制0，两个新会话已退出。
+
+公网入口https://47.110.154.133已切Birdtie Web02／API05。旧Civu API writer禁用、PID0、8080拒绝，四Pelias和旧网关停止；90秒停服务超时failed状态与失败记录保留，旧数据／媒体／配置／容器未删除。停止旧writer并不等于原抽取后的最终增量已经核对。
+
+仍未完成完整业务适配：2仅邮箱身份没有当前手机号桥；5511Place／339城市、未知CRS与live_only权利未猜测；407媒体335只完整性匹配、72差额、全部旧媒体未正式导入；旧关系／聊天／通知／组织未全覆盖选定29表业务模型。私人旧档案不能计为当前Journey／ThemeMap／SavedItems／公开Moment，历史public不授新公开权利。备份和受限源保留，后续依据真实来源条件增量转换。详见 [最新交付记录](../reports/BIRDTIE-GITHUB-REMOTE-MIGRATION-2026-10-15.md)。

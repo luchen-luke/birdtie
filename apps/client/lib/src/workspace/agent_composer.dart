@@ -65,12 +65,15 @@ class AgentComposer extends StatefulWidget {
     this.draftValue,
     this.onDraftChanged,
     this.submitBusy = false,
+    this.inputReadOnly = false,
     this.humanMode = false,
     this.friendConversation,
     this.imageUpload,
     this.needsLogin = false,
     this.onSignIn,
     this.onCreateMoment,
+    this.onCreatePhotoMoment,
+    this.onCreateThread,
     this.onCreateActivity,
     this.onCreateJourney,
     this.onCreateThemeMap,
@@ -120,7 +123,7 @@ class AgentComposer extends StatefulWidget {
   final Object? draftIdentity;
   final TextEditingValue? draftValue;
   final ValueChanged<TextEditingValue>? onDraftChanged;
-  final bool submitBusy, humanMode;
+  final bool submitBusy, humanMode, inputReadOnly;
   final FriendConversationController? friendConversation;
   final TaskImageController? imageUpload;
   final bool needsLogin;
@@ -131,6 +134,8 @@ class AgentComposer extends StatefulWidget {
   final Widget? videoPreview;
   final String? videoStatus;
   final VoidCallback? onCreateMoment,
+      onCreatePhotoMoment,
+      onCreateThread,
       onCreateActivity,
       onCreateJourney,
       onCreateThemeMap,
@@ -1204,6 +1209,8 @@ class AgentComposerState extends State<AgentComposer> {
                         onTap: () => choose(sheetContext, widget.onTaskImage),
                       ),
                     if (widget.onCreateMoment != null ||
+                        widget.onCreatePhotoMoment != null ||
+                        widget.onCreateThread != null ||
                         widget.onDraftContext != null ||
                         widget.onCreateActivity != null ||
                         widget.onCreateJourney != null ||
@@ -1226,6 +1233,16 @@ class AgentComposerState extends State<AgentComposer> {
                           widget.onDraftContext,
                         ),
                         (Icons.edit_outlined, '动态', widget.onCreateMoment),
+                        (
+                          Icons.photo_library_outlined,
+                          '多图动态',
+                          widget.onCreatePhotoMoment,
+                        ),
+                        (
+                          Icons.view_agenda_outlined,
+                          '串文',
+                          widget.onCreateThread,
+                        ),
                         (Icons.event_outlined, '活动', widget.onCreateActivity),
                         (Icons.route_outlined, '旅程', widget.onCreateJourney),
                         (Icons.map_outlined, '主题地图', widget.onCreateThemeMap),
@@ -1585,6 +1602,9 @@ class AgentComposerState extends State<AgentComposer> {
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),
+                                onPressed: widget.submitBusy
+                                    ? null
+                                    : _focus.requestFocus,
                                 onDeleted: widget.submitBusy
                                     ? null
                                     : widget.onExitCreation,
@@ -1831,6 +1851,7 @@ class AgentComposerState extends State<AgentComposer> {
                                 minLines: 1,
                                 maxLines: 4,
                                 enabled: !widget.needsLogin,
+                                readOnly: widget.inputReadOnly,
                                 onTap: resumeEditing,
                                 textInputAction: TextInputAction.send,
                                 // The default completion clears composing

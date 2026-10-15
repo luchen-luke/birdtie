@@ -1,0 +1,11 @@
+BEGIN;
+DROP FUNCTION birdtie_moment_thread_contract();
+DROP TABLE moment_thread_operations;
+DROP FUNCTION birdtie_guard_moment_thread_operation();
+DROP TABLE moment_thread_members;
+DROP TRIGGER moment_thread_root_shape ON moment_threads;
+DROP FUNCTION birdtie_check_moment_thread_shape();
+DROP FUNCTION birdtie_guard_moment_thread_member();
+DROP TABLE moment_threads;
+DROP FUNCTION birdtie_guard_moment_thread();
+COMMIT;

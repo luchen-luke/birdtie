@@ -1,0 +1,26 @@
+BEGIN;
+DO $$ BEGIN
+ IF EXISTS(SELECT 1 FROM moment_interaction_operations) OR EXISTS(SELECT 1 FROM inbox_management_operations) OR EXISTS(SELECT 1 FROM moment_comments) OR EXISTS(SELECT 1 FROM moment_likes) THEN RAISE EXCEPTION 'interaction and Inbox original facts cannot be discarded';END IF;
+END $$;
+DROP FUNCTION birdtie_moment_interaction_contract();
+DROP FUNCTION birdtie_native_notification_source(text,uuid,uuid);
+ALTER FUNCTION birdtie_native_notification_source_v150(text,uuid,uuid) RENAME TO birdtie_native_notification_source;
+DROP FUNCTION birdtie_native_moment_interaction_source(uuid,uuid);
+ALTER TABLE native_notification_decisions DROP CONSTRAINT native_notification_moment_source_check;
+ALTER TABLE native_notification_decisions DROP CONSTRAINT native_notification_decisions_check;
+ALTER TABLE native_notification_decisions DROP CONSTRAINT native_notification_decisions_check1;
+ALTER TABLE native_notification_decisions DROP COLUMN moment_interaction_event_id;
+ALTER TABLE native_notification_decisions ADD CONSTRAINT native_notification_decisions_check CHECK(num_nonnulls(activity_id,activity_candidate_id,place_candidate_id,message_id,connection_request_id,community_message_id,activity_message_id,organization_membership_id,agent_task_id,business_claim_id,business_public_update_id)=1);
+ALTER TABLE native_notification_decisions ADD CONSTRAINT native_notification_decisions_check1 CHECK(source_id=COALESCE(activity_id,activity_candidate_id,place_candidate_id,message_id,connection_request_id,community_message_id,activity_message_id,organization_membership_id,agent_task_id,business_claim_id,business_public_update_id));
+ALTER TABLE native_notification_decisions DROP CONSTRAINT native_notification_decisions_kind_check;
+ALTER TABLE native_notification_decisions ADD CONSTRAINT native_notification_decisions_kind_check CHECK(kind IN('activity_reminder','activity_change','activity_cancelled','activity_review','place_review','direct_message','connection_request','connection_decision','community_message','activity_message','organization_invitation','organization_membership_change','agent_task_completed','agent_task_failed','opportunity_available','business_claim_review','business_update'));
+ALTER TABLE inbox_items DROP CONSTRAINT inbox_items_resource_type_check;
+ALTER TABLE inbox_items ADD CONSTRAINT inbox_items_resource_type_check CHECK(resource_type IN('place_candidate','activity_candidate','community','connection_request','conversation_message','activity_change','activity_cancelled','activity_reminder','community_message','activity_message','organization_membership','agent_task','opportunity_available','business_claim_review','business_update'));
+DROP FUNCTION birdtie_moment_public_binding(uuid,uuid,timestamptz);
+DROP TABLE inbox_management_operations;
+DROP TABLE moment_interaction_operations;
+DROP FUNCTION birdtie_guard_inbox_management_operation();
+DROP FUNCTION birdtie_guard_moment_interaction_operation();
+DROP TABLE moment_comments;
+DROP TABLE moment_likes;
+COMMIT;

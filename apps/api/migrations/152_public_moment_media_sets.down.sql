@@ -1,0 +1,12 @@
+DROP TRIGGER IF EXISTS public_moment_media_retire ON moments;
+DROP TRIGGER IF EXISTS legacy_photo_retires_media_set ON public_moment_photos;
+DROP FUNCTION IF EXISTS birdtie_legacy_photo_retires_media_set();
+DROP FUNCTION IF EXISTS birdtie_public_moment_media_contract();
+DROP FUNCTION IF EXISTS birdtie_retire_moment_media_sets();
+DROP FUNCTION IF EXISTS birdtie_purge_moment_media_materials(integer);
+DROP TABLE IF EXISTS public_moment_media_operations;
+DROP TABLE IF EXISTS public_moment_media_attachments;
+DROP TABLE IF EXISTS public_moment_media_sets;
+DROP TABLE IF EXISTS moment_media_prepare_operations;
+DROP TABLE IF EXISTS moment_media_materials;
+DROP FUNCTION IF EXISTS birdtie_guard_moment_media_receipt();

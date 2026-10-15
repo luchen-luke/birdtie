@@ -49,6 +49,8 @@ class PublicMoment {
     required this.placeID,
     required this.placeName,
     required this.cityID,
+    this.cityName = '',
+    this.locationPrecision = 'place',
     required this.revision,
     required this.publishedAt,
     this.authorPublicProfile,
@@ -56,7 +58,14 @@ class PublicMoment {
     this.validUntil,
     this.photo,
   });
-  final String id, title, body, placeID, placeName, cityID;
+  final String id,
+      title,
+      body,
+      placeID,
+      placeName,
+      cityID,
+      cityName,
+      locationPrecision;
   final int revision;
   final DateTime publishedAt;
   final PublicMomentAuthorProfile? authorPublicProfile;
@@ -73,7 +82,8 @@ class PublicMoment {
     String expectedID, {
     bool includePublicAuthor = false,
   }) {
-    final media = d['schemaVersion'] == 'public-moment-v3';
+    final cityContext = d['schemaVersion'] == 'public-moment-v4';
+    final media = d['schemaVersion'] == 'public-moment-v3' || cityContext;
     final keys = {
       'schemaVersion',
       'id',
@@ -86,11 +96,14 @@ class PublicMoment {
       'publishedAt',
       if (includePublicAuthor || media) ...{'authorId', 'authorPublicProfile'},
       if (media) ...{'observedAt', 'validUntil', 'photo'},
+      if (cityContext) ...{'cityName', 'locationPrecision'},
     };
     if (d.length != keys.length ||
         d.keys.toSet().difference(keys).isNotEmpty ||
         d['schemaVersion'] !=
-            (media
+            (cityContext
+                ? 'public-moment-v4'
+                : media
                 ? 'public-moment-v3'
                 : includePublicAuthor
                 ? 'public-moment-v2'
@@ -98,11 +111,24 @@ class PublicMoment {
         d['id'] != expectedID ||
         !uuid.hasMatch(expectedID) ||
         d['placeId'] is! String ||
-        !uuid.hasMatch(d['placeId']) ||
+        (!cityContext && !uuid.hasMatch(d['placeId'])) ||
         d['revision'] is! int ||
         d['revision'] < 2 ||
         (media && !humanControlVersion(d['revision'], zero: false))) {
       throw const FormatException('公开动态格式不符');
+    }
+    final cityOnly = cityContext && d['locationPrecision'] == 'city';
+    if (cityContext &&
+        (d['cityName'] is! String ||
+            (d['cityName'] as String).trim().isEmpty ||
+            utf8.encode(d['cityName'] as String).length > 640 ||
+            (cityOnly
+                ? d['placeId'] != '' ||
+                      d['placeName'] != '' ||
+                      d['photo'] != null
+                : d['locationPrecision'] != 'place' ||
+                      !uuid.hasMatch(d['placeId'] as String)))) {
+      throw const FormatException('公开动态城市或地点不符');
     }
     for (final entry in {
       'title': 160,
@@ -112,7 +138,9 @@ class PublicMoment {
     }.entries) {
       final value = d[entry.key];
       if (value is! String ||
-          (entry.key != 'body' && value.trim().isEmpty) ||
+          (entry.key != 'body' &&
+              !(cityOnly && entry.key == 'placeName') &&
+              value.trim().isEmpty) ||
           utf8.encode(value).length > entry.value) {
         throw const FormatException('公开动态字段不符');
       }
@@ -156,6 +184,10 @@ class PublicMoment {
       placeID: d['placeId'],
       placeName: d['placeName'],
       cityID: d['cityId'],
+      cityName: cityContext ? d['cityName'] as String : '',
+      locationPrecision: cityContext
+          ? d['locationPrecision'] as String
+          : 'place',
       revision: d['revision'],
       publishedAt: publishedAt,
       authorPublicProfile: includePublicAuthor
@@ -199,6 +231,7 @@ class PublicMomentApi {
           headers: {
             'Authorization': ?token,
             'X-Birdtie-Public-Moment-Media': 'photo-v1',
+            'X-Birdtie-Public-Moment-Context': 'city-v1',
           },
         )
         .timeout(const Duration(seconds: 12));

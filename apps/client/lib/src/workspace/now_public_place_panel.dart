@@ -30,6 +30,7 @@ class NowPublicPlacePanel extends StatefulWidget {
     this.onOpenOwnProfile,
     this.authorLayers,
     this.onOpenAuthorScope,
+    this.onOpenAuthorHistory,
     this.onLeaveAuthorScope,
     this.onAuthorMapVisible,
     this.onSelectAuthorMoment,
@@ -51,6 +52,7 @@ class NowPublicPlacePanel extends StatefulWidget {
   final Future<void> Function()? onOpenOwnProfile;
   final MapLayersController? authorLayers;
   final Future<bool> Function(String)? onOpenAuthorScope;
+  final Future<void> Function(String)? onOpenAuthorHistory;
   final VoidCallback? onLeaveAuthorScope;
   final ValueChanged<bool>? onAuthorMapVisible;
   final ValueChanged<TypedMapItem>? onSelectAuthorMoment;
@@ -529,6 +531,12 @@ class _NowPublicPlacePanelState extends State<NowPublicPlacePanel> {
                   _authorNotice != null
               ? null
               : _publicMomentsNavigation,
+          onOpenPublicMomentHistory: widget.onOpenAuthorHistory == null
+              ? null
+              : () async {
+                  if (!widget.current() || widget.workspaceID() != null) return;
+                  await widget.onOpenAuthorHistory!(frame.id);
+                },
           apiBaseUrl: widget.apiBaseUrl,
           client: widget.client,
         ),

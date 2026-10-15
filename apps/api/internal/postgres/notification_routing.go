@@ -202,6 +202,8 @@ func routeNativeNotification(ctx context.Context, tx pgx.Tx, kind agentnotificat
 		sourceColumn = "business_claim_id"
 	case agentnotification.KindBusinessUpdate:
 		sourceColumn = "business_public_update_id"
+	case agentnotification.KindMomentLike, agentnotification.KindMomentComment:
+		sourceColumn = "moment_interaction_event_id"
 	default:
 		return false, agentnotification.ErrUnavailable
 	}
@@ -221,7 +223,9 @@ func routeNativeNotification(ctx context.Context, tx pgx.Tx, kind agentnotificat
 	if errors.Is(err, pgx.ErrNoRows) {
 		// No current source or an already handled logical native event. Neither
 		// case is authorization to replay cached content or re-ping a receiver.
-		if kind == agentnotification.KindBusinessUpdate { return false, agentnotification.ErrUnavailable }
+		if kind == agentnotification.KindBusinessUpdate {
+			return false, agentnotification.ErrUnavailable
+		}
 		return false, nil
 	}
 	if err != nil {
@@ -281,6 +285,8 @@ func deliverNativeNotificationDecision(ctx context.Context, tx pgx.Tx, decisionI
 		}
 	case agentnotification.KindConnectionRequest, agentnotification.KindConnectionDecision:
 		resourceType, resourceID = "connection_request", sourceID
+	case agentnotification.KindMomentLike, agentnotification.KindMomentComment:
+		resourceID = sourceID
 	case agentnotification.KindDirectMessage:
 		resourceType, resourceID = "conversation_message", sourceID
 		if err = tx.QueryRow(ctx, `SELECT conversation_id FROM conversation_messages WHERE id=$1`, sourceID).Scan(&targetConversation); err != nil {

@@ -204,3 +204,65 @@ func TestLegacyCLIUnknownAndMissingRunDoNotReportZeroEffects(t *testing.T) {
 		}
 	}
 }
+
+func TestLegacyDevPhoneCLIPrepareAndProtectedChannel(t *testing.T) {
+	base := t.TempDir()
+	repo, private := filepath.Join(base, "repo"), filepath.Join(base, "private")
+	if os.MkdirAll(repo, 0700) != nil || os.MkdirAll(private, 0700) != nil {
+		t.Fatal("owned input fixture")
+	}
+	source, manifest := cliSyntheticInputs(t, private)
+	var out bytes.Buffer
+	e := run(context.Background(), []string{"--dev-phone-bindings", "--run-id", testRun, "--source", source, "--manifest", manifest}, func(key string) string {
+		if key == "BIRDTIE_REPOSITORY_ROOT" {
+			return repo
+		}
+		t.Fatal("prepare touched database or runtime configuration")
+		return ""
+	}, &out)
+	var summary map[string]any
+	if e != nil || json.Unmarshal(out.Bytes(), &summary) != nil || summary["status"] != "DEV_PHONE_BINDINGS_PREPARED" || summary["countsKnown"] != true || summary["devOnly"] != true || summary["activated"] != false || summary["agentActivated"] != false || summary["oldSessionsCopied"] != false || strings.Contains(out.String(), private) {
+		t.Fatal("safe prepare summary", e)
+	}
+	config, e := legacyImportConfig("postgres://birdtie@127.0.0.1:1/birdtie_owned_legacy_test?sslmode=disable", testTarget(), func(string) string { return "" })
+	if e != nil {
+		t.Fatal("config fixture")
+	}
+	settings := map[string]string{"BIRDTIE_DEV_PHONE_AUTH": "1", "BIRDTIE_API_ADDR": "127.0.0.1:18114", "BIRDTIE_ALLOWED_ORIGINS": "http://localhost:7357"}
+	getenv := func(key string) string { return settings[key] }
+	if !devPhoneBindingChannel(config, getenv) {
+		t.Fatal("protected current fixed-code channel rejected")
+	}
+	settings["BIRDTIE_ALLOWED_ORIGINS"] = "http://localhost:7357,https://47.110.154.133"
+	if devPhoneBindingChannel(config, getenv) {
+		t.Fatal("importer public channel opened without explicit opt-in")
+	}
+	settings["BIRDTIE_DEV_PHONE_PUBLIC_TEST_ORIGIN"] = "https://47.110.154.133"
+	if !devPhoneBindingChannel(config, getenv) {
+		t.Fatal("importer rejected exact authorized public test channel")
+	}
+	settings["BIRDTIE_DEV_PHONE_PUBLIC_TEST_ORIGIN"] = "https://outside.invalid"
+	if devPhoneBindingChannel(config, getenv) {
+		t.Fatal("importer accepted alternate public test URL")
+	}
+	delete(settings, "BIRDTIE_DEV_PHONE_PUBLIC_TEST_ORIGIN")
+	settings["BIRDTIE_ALLOWED_ORIGINS"] = "http://localhost:7357"
+	for key, value := range map[string]string{"BIRDTIE_DEV_PHONE_AUTH": "0", "BIRDTIE_API_ADDR": "0.0.0.0:18114", "BIRDTIE_ALLOWED_ORIGINS": "https://outside.invalid"} {
+		old := settings[key]
+		settings[key] = value
+		if devPhoneBindingChannel(config, getenv) {
+			t.Fatal("unprotected fixed-code channel accepted")
+		}
+		settings[key] = old
+	}
+	out.Reset()
+	if writeDevPhoneSummary(&out, postgres.LegacyDevPhoneBindingResult{RunID: testRun, Status: "UNKNOWN"}) != nil || json.Unmarshal(out.Bytes(), &summary) != nil {
+		t.Fatal("unknown output")
+	}
+	if strings.Contains(out.String(), "\"counts\"") || strings.Contains(out.String(), "\"enrolledOwners\"") {
+		t.Fatal("unknown result invented zero committed effects")
+	}
+	if run(context.Background(), []string{"--dev-phone-bindings", "--inspect-run", testRun}, func(string) string { return "" }, &bytes.Buffer{}) == nil {
+		t.Fatal("ambiguous inspect accepted")
+	}
+}

@@ -23,6 +23,8 @@ const (
 	KindBusinessClaimReview          Kind = "business_claim_review"
 	// Original explicit public publication only; Business Agent runtime remains unavailable.
 	KindBusinessUpdate Kind = "business_update"
+	KindMomentLike     Kind = "moment_like"
+	KindMomentComment  Kind = "moment_comment"
 )
 
 type Descriptor struct {
@@ -78,6 +80,10 @@ func LookupKind(kind Kind) (Descriptor, error) {
 		d.Category, d.Title, d.Detail = CategoryBusiness, "商家经营权审核状态已更新", "请在商家工作台查看当前审核状态。经营权核验不代表交易背书。"
 	case KindBusinessUpdate:
 		d.Category, d.Title, d.Detail = CategoryBusiness, "关注的商家公开资料已更新", "请查看当前公开资料。资料更新不代表可预订或已开启智能体。"
+	case KindMomentLike:
+		d.Category, d.Title, d.Detail = CategorySocial, "动态收到点赞", "有人赞了你的动态，请查看当前可见内容。"
+	case KindMomentComment:
+		d.Category, d.Title, d.Detail = CategorySocial, "动态收到评论", "有人评论了你的动态，请查看当前可见评论。"
 	default:
 		return Descriptor{}, ErrInvalid
 	}

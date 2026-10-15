@@ -54,6 +54,28 @@ class MomentImagePicker {
 
   // Keep this gallery signature for existing callers and injected fixtures.
   Future<MomentImageSelection?> select() => _selectImage(ImageSource.gallery);
+
+  /// One explicit multi-selection, read with the same bounded file checks.
+  /// No lost-selection recovery is used across an identity change.
+  Future<List<MomentImageSelection>> selectMany({int limit = 9}) async {
+    if (limit < 1 || limit > 9) throw const FormatException('最多选择 9 张图片');
+    try {
+      final chosen = await _picker.pickMultiImage(
+        limit: limit,
+        requestFullMetadata: false,
+      );
+      if (chosen.length > limit) throw const FormatException('最多选择 9 张图片');
+      final result = <MomentImageSelection>[];
+      for (final file in chosen) {
+        final selection = await _read(file);
+        if (selection != null) result.add(selection);
+      }
+      return result;
+    } on PlatformException {
+      throw const FormatException('无法打开照片，请检查权限后重试。');
+    }
+  }
+
   Future<MomentImageSelection?> selectSource(MomentImageSource source) async {
     if (source == MomentImageSource.gallery) return select();
     if (!supportsSource(source))

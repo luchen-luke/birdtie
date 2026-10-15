@@ -135,7 +135,19 @@ const nativeDatabaseProbeSQL = `WITH required(table_name,column_name,type_name) 
        LEFT JOIN pg_catalog.pg_proc f ON f.oid=t.tgfoid
        WHERE t.oid IS NULL OR t.tgenabled<>'O' OR f.proname<>r.function_name OR f.pronamespace<>n.oid
         OR t.tgdeferrable<>r.deferred OR t.tginitdeferred<>r.deferred
-       ORDER BY r.table_name,r.trigger_name)`
+       ORDER BY r.table_name,r.trigger_name)
+ || ARRAY(SELECT 'city_public_moment.contract'
+          WHERE public.birdtie_city_public_moment_contract() IS DISTINCT FROM 'city-public-moment-v1')
+ || ARRAY(SELECT 'moment_interaction.contract'
+          WHERE public.birdtie_moment_interaction_contract() IS DISTINCT FROM 'moment-interaction-v1')
+ || ARRAY(SELECT 'public_moment_media.contract'
+          WHERE public.birdtie_public_moment_media_contract() IS DISTINCT FROM 'public-moment-media-v1')
+ || ARRAY(SELECT 'moment_thread.contract'
+          WHERE public.birdtie_moment_thread_contract() IS DISTINCT FROM 'moment-thread-v1')
+ || ARRAY(SELECT 'legacy_dev_phone.contract'
+          WHERE public.birdtie_legacy_dev_phone_contract() IS DISTINCT FROM 'legacy-dev-phone-binding-v1')
+ || ARRAY(SELECT 'public_moment_video.contract'
+          WHERE public.birdtie_public_moment_video_contract() IS DISTINCT FROM 'public-moment-video-v2')`
 
 func newNativeDatabasePinger(ctx context.Context, database nativeDatabaseReader, expectedName string) (*nativeDatabasePinger, error) {
 	if database == nil || !allowedNativeDatabaseName(expectedName) {

@@ -49,6 +49,7 @@ Future<({BirdtieAuthController auth, MemorySessionVault vault})> _auth({
     vault.session = const StoredSession(
       token: 'synthetic-initial',
       method: 'dev_phone',
+      origin: _base,
     );
   }
   final auth = BirdtieAuthController(

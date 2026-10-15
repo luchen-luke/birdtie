@@ -26,11 +26,12 @@ type CollectionEntry struct {
 	LegacyReference    *lpr.Summary `json:"legacyReference,omitempty"`
 }
 type CollectionInput struct {
-	Kind    string            `json:"kind"`
-	CityID  string            `json:"cityId"`
-	Title   string            `json:"title"`
-	Summary string            `json:"summary"`
-	Entries []CollectionEntry `json:"entries"`
+	Kind           string            `json:"kind"`
+	CityID         string            `json:"cityId"`
+	Title          string            `json:"title"`
+	Summary        string            `json:"summary"`
+	Entries        []CollectionEntry `json:"entries"`
+	JourneyDetails *JourneyDetails   `json:"journeyDetails,omitempty"`
 }
 type CollectionCreate struct {
 	CollectionInput
@@ -71,6 +72,18 @@ func NormalizeCollectionInput(in CollectionInput) (CollectionInput, error) {
 	in.CityID = strings.TrimSpace(in.CityID)
 	in.Title = strings.TrimSpace(in.Title)
 	in.Summary = strings.TrimSpace(in.Summary)
+	if in.JourneyDetails != nil {
+		if in.Kind != "journey" || len(in.Entries) != 0 || len(in.CityID) > 80 || !journeyText(in.CityID, 80) || !journeyText(in.Title, 160) || !journeyText(in.Summary, 5000) {
+			return CollectionInput{}, ErrInvalid
+		}
+		d, e := NormalizeJourneyDetails(*in.JourneyDetails)
+		if e != nil {
+			return CollectionInput{}, e
+		}
+		in.JourneyDetails = &d
+		in.Entries = []CollectionEntry{}
+		return in, nil
+	}
 	if !ValidCollectionKind(in.Kind) || len(in.CityID) < 1 || len(in.CityID) > 80 || !utf8.ValidString(in.Title) || len(in.Title) < 1 || len(in.Title) > 160 || !utf8.ValidString(in.Summary) || len(in.Summary) > 5000 || len(in.Entries) < 1 || len(in.Entries) > 50 {
 		return CollectionInput{}, ErrInvalid
 	}

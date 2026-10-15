@@ -1,0 +1,101 @@
+{
+  "command": "strict SSH read-only build11 verify-blobs plus /proc memory sampling; no DB configuration",
+  "exitCode": 0,
+  "remoteScriptSHA256": "b2628df2e3a6e54a07c2ef1e09d951a2f753639f4b37b66a6d24360280c1ae98",
+  "result": {
+    "status": "READONLY_REAL5_RSS_DIAGNOSED",
+    "exitCode": 1,
+    "elapsedSeconds": 168.46,
+    "binarySHA256": "5bf7de0eb4aeb3dc735193bb98f5386900c8512c631fbfc205dd0df657b92c23",
+    "verification": [
+      {
+        "failed": 0,
+        "failureStages": {},
+        "passed": 1,
+        "processed": 1,
+        "status": "VERIFY_PROGRESS"
+      },
+      {
+        "failed": 1,
+        "failureStages": {
+          "CANONICAL_AUDIO_PACKETS": 1
+        },
+        "passed": 1,
+        "processed": 2,
+        "status": "VERIFY_PROGRESS"
+      },
+      {
+        "failed": 2,
+        "failureStages": {
+          "CANONICAL_AUDIO_PACKETS": 1,
+          "SOURCE_PROBE_MEMORY_BOUND_EXIT_-1": 1
+        },
+        "passed": 1,
+        "processed": 3,
+        "status": "VERIFY_PROGRESS"
+      },
+      {
+        "failed": 3,
+        "failureStages": {
+          "CANONICAL_AUDIO_PACKETS": 1,
+          "SOURCE_FULL_DECODE_MEMORY_BOUND_EXIT_-1": 1,
+          "SOURCE_PROBE_MEMORY_BOUND_EXIT_-1": 1
+        },
+        "passed": 1,
+        "processed": 4,
+        "status": "VERIFY_PROGRESS"
+      },
+      {
+        "failed": 3,
+        "failureStages": {
+          "CANONICAL_AUDIO_PACKETS": 1,
+          "SOURCE_FULL_DECODE_MEMORY_BOUND_EXIT_-1": 1,
+          "SOURCE_PROBE_MEMORY_BOUND_EXIT_-1": 1
+        },
+        "passed": 2,
+        "processed": 5,
+        "status": "VERIFY_PROGRESS"
+      },
+      {
+        "antivirusScan": "NOT_RUN",
+        "databaseWrites": 0,
+        "failed": 3,
+        "failureStages": {
+          "CANONICAL_AUDIO_PACKETS": 1,
+          "SOURCE_FULL_DECODE_MEMORY_BOUND_EXIT_-1": 1,
+          "SOURCE_PROBE_MEMORY_BOUND_EXIT_-1": 1
+        },
+        "passed": 2,
+        "publicationRights": "NOT_AUTHORIZED",
+        "status": "VERIFIED_NOT_IMPORTED",
+        "total": 5
+      }
+    ],
+    "processMemory": {
+      "sampledCodecChildren": 26,
+      "sampleCounts": {
+        "samples": 34685,
+        "missingVmRSS": 19,
+        "sampleDisappeared": 26
+      },
+      "maxima": {
+        "statusRSSKiB": 135380,
+        "statmRSSBytes": 138629120
+      },
+      "missingVmRSS": {
+        "state_R_PF_EXITING_True_statm_zero": 17,
+        "state_Z_PF_EXITING_True_statm_zero": 2
+      },
+      "pageSize": 4096
+    },
+    "stderrControlledCode": "legacy_private_video_input_rejected",
+    "stderrBytes": 36,
+    "stderrSHA256": "13573f20b4c1e5b178636232d11632f3113b3be862121a7f71de78438dad4537",
+    "originalFilesVerified": 7,
+    "originalFilesUnchanged": true,
+    "databaseConfigurationSupplied": false,
+    "databaseWrites": 0,
+    "sourceWrites": 0,
+    "privateValuesOmitted": true
+  }
+}

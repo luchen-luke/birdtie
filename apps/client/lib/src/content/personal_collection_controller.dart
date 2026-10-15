@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 
 import '../config/birdtie_environment.dart';
 import 'collection_control.dart';
+import 'journey_detail.dart';
 import 'collection_control_pending_store.dart';
 import '../workspace/legacy_place_reference_page.dart';
 
@@ -150,6 +151,7 @@ class PersonalCollectionRetainedLocalDraft {
     required this.title,
     required this.summary,
     required List<PersonalCollectionEntry> entries,
+    this.journeyDetails,
     this.editingID,
     this.editingRevision,
     Map<String, dynamic>? unknownPayload,
@@ -189,6 +191,7 @@ class PersonalCollectionRetainedLocalDraft {
            : _freezeCollectionInput(unknownPayload);
   final String ownerID, kind, cityID, apiBaseUrl, title, summary;
   final List<PersonalCollectionEntry> entries;
+  final JourneyDetails? journeyDetails;
   final String? editingID, pendingID;
   final int? editingRevision, pendingRevision;
   final Map<String, dynamic>? unknownPayload;
@@ -221,11 +224,13 @@ class PersonalCollection {
     required this.status,
     this.visibility = 'private',
     this.privatePlaceCopyRestricted = false,
+    this.journeyDetails,
   });
   final String id, ownerID, kind, cityID, title, summary, status, visibility;
   final int revision;
   final bool privatePlaceCopyRestricted;
   final List<PersonalCollectionEntry> entries;
+  final JourneyDetails? journeyDetails;
   bool get hasPrivateLegacyReferences =>
       entries.any((e) => e.legacyReference != null);
   factory PersonalCollection.fromJson(Map<String, dynamic> p) {
@@ -235,6 +240,15 @@ class PersonalCollection {
     final id = p['id'] as String, owner = p['ownerAccountId'] as String;
     final kind = p['kind'] as String, status = p['status'] as String;
     final revision = p['revision'] as int;
+    final details = p['journeyDetails'] == null
+        ? null
+        : JourneyDetails.decode(p['journeyDetails']);
+    if (details != null &&
+        (kind != 'journey' ||
+            entries.isNotEmpty ||
+            status != 'draft' && status != 'withdrawn' ||
+            p['visibility'] != 'private'))
+      throw const FormatException('invalid journey details boundary');
     if (!_collectionUUID.hasMatch(id) ||
         !_collectionUUID.hasMatch(owner) ||
         !const ['journey', 'theme_map'].contains(kind) ||
@@ -269,6 +283,7 @@ class PersonalCollection {
       title: p['title'] as String,
       summary: p['summary'] as String,
       entries: List.unmodifiable(entries),
+      journeyDetails: details,
       revision: revision,
       status: status,
       visibility: p['visibility'] as String,
@@ -311,6 +326,7 @@ class PersonalCollectionController extends ChangeNotifier {
     _owner = ownerID();
     title = initialText.length <= 80 ? initialText : '';
     summary = initialText.length > 80 ? initialText : '';
+    if (kind == 'journey') draftJourneyDetails = JourneyDetails.empty();
     if (retainedLocalDraft != null) _restoreLocalDraft(retainedLocalDraft);
     identityChanges?.addListener(_onBoundary);
   }
@@ -375,6 +391,15 @@ class PersonalCollectionController extends ChangeNotifier {
       draftEntries.any((e) => e.legacyReference != null);
   String title = '', summary = '';
   List<PersonalCollectionEntry> draftEntries = const [];
+  JourneyDetails? draftJourneyDetails;
+  void setJourneyDetails(JourneyDetails value) {
+    if (!editable || kind != 'journey' || draftEntries.isNotEmpty) return;
+    _controlEdited();
+    draftJourneyDetails = value;
+    _retainLocalDraft();
+    _notify();
+  }
+
   Map<String, dynamic>? _pending;
   String? _pendingID;
   int? _pendingRevision;
@@ -421,6 +446,7 @@ class PersonalCollectionController extends ChangeNotifier {
         title: original.title,
         summary: original.summary,
         entries: original.entries,
+        journeyDetails: original.journeyDetails,
         editingID: original.editingID,
         editingRevision: original.editingRevision,
         unknownPayload: original.unknownPayload,
@@ -464,6 +490,7 @@ class PersonalCollectionController extends ChangeNotifier {
         title: d.title,
         summary: d.summary,
         entries: d.entries,
+        journeyDetails: d.journeyDetails,
         editingID: d.editingID,
         editingRevision: d.editingRevision,
         unknownPayload: d.unknownPayload,
@@ -548,6 +575,7 @@ class PersonalCollectionController extends ChangeNotifier {
       title: title,
       summary: summary,
       entries: draftEntries,
+      journeyDetails: draftJourneyDetails,
       editingID: editing?.id,
       editingRevision: editing?.revision,
       unknownPayload: (_pending != null && (uncertain || saving))
@@ -586,6 +614,7 @@ class PersonalCollectionController extends ChangeNotifier {
     title = draft.title;
     summary = draft.summary;
     draftEntries = draft.entries;
+    draftJourneyDetails = draft.journeyDetails;
     _publicationPending = draft.publicationPending;
     if (draft.copyLocalDrafts.values.any((d) => !d.valid) ||
         draft.copyLocalDrafts.entries.any((e) => e.key != e.value.key)) {
@@ -637,7 +666,8 @@ class PersonalCollectionController extends ChangeNotifier {
       current &&
       !_editingNeedsRevalidation &&
       !controlBlocked &&
-      !hasPrivateLegacyReferences;
+      !hasPrivateLegacyReferences &&
+      draftJourneyDetails == null;
   bool get canSwitchDraft =>
       current &&
       !saving &&
@@ -647,10 +677,14 @@ class PersonalCollectionController extends ChangeNotifier {
       !_publicationRecoveryFailed;
   String get label => kind == 'journey' ? '旅程' : '主题地图';
   bool get hasDraft =>
-      title.isNotEmpty || summary.isNotEmpty || draftEntries.isNotEmpty;
+      title.isNotEmpty ||
+      summary.isNotEmpty ||
+      draftEntries.isNotEmpty ||
+      draftJourneyDetails != null;
   bool get dirty => editing == null
       ? hasDraft
-      : title != editing!.title ||
+      : draftJourneyDetails?.digest != editing!.journeyDetails?.digest ||
+            title != editing!.title ||
             summary != editing!.summary ||
             jsonEncode(draftEntries.map((e) => e.toInput()).toList()) !=
                 jsonEncode(editing!.entries.map((e) => e.toInput()).toList());
@@ -674,6 +708,7 @@ class PersonalCollectionController extends ChangeNotifier {
       items = const [];
       places = const [];
       draftEntries = const [];
+      draftJourneyDetails = null;
       title = summary = '';
       editing = null;
       _pending = null;
@@ -807,6 +842,15 @@ class PersonalCollectionController extends ChangeNotifier {
         draftEntries.length >= 50 ||
         draftEntries.any((e) => e.placeID == p.id))
       return;
+    final details = draftJourneyDetails;
+    if (details != null) {
+      if (editing != null || details.digest != JourneyDetails.empty().digest) {
+        error = '请在行程安排中修改地点，当前详细安排会保留。';
+        _notify();
+        return;
+      }
+      draftJourneyDetails = null;
+    }
     _controlEdited();
     draftEntries = List.unmodifiable([
       ...draftEntries,
@@ -854,6 +898,7 @@ class PersonalCollectionController extends ChangeNotifier {
     editing = null;
     title = summary = '';
     draftEntries = const [];
+    draftJourneyDetails = kind == 'journey' ? JourneyDetails.empty() : null;
     _pending = null;
     _pendingID = null;
     _editingNeedsRevalidation = false;
@@ -869,6 +914,7 @@ class PersonalCollectionController extends ChangeNotifier {
     title = v.title;
     summary = v.summary;
     draftEntries = v.entries;
+    draftJourneyDetails = v.journeyDetails;
     _pending = null;
     _pendingID = null;
     _pendingDelete = false;
@@ -1049,9 +1095,11 @@ class PersonalCollectionController extends ChangeNotifier {
       final original = editing;
       final retainedUnavailableIDs = _retainedPrivatePlaceIDs(original);
       if (utf8.encode(title.trim()).length > 160 ||
-          title.trim().isEmpty ||
+          draftJourneyDetails == null && title.trim().isEmpty ||
           utf8.encode(summary.trim()).length > 5000 ||
-          draftEntries.isEmpty ||
+          (draftJourneyDetails == null
+              ? draftEntries.isEmpty
+              : draftEntries.isNotEmpty) ||
           draftEntries.length > 50 ||
           draftEntries.any(
             (e) =>
@@ -1071,6 +1119,8 @@ class PersonalCollectionController extends ChangeNotifier {
         'title': title.trim(),
         'summary': summary.trim(),
         'entries': draftEntries.map((e) => e.toInput()).toList(),
+        if (draftJourneyDetails != null)
+          'journeyDetails': draftJourneyDetails!.toInput(),
         if (editing == null) 'operationId': _uuid(),
         if (editing != null) 'revision': editing!.revision,
       };
@@ -1206,6 +1256,7 @@ class PersonalCollectionController extends ChangeNotifier {
           editing = null;
           title = summary = '';
           draftEntries = const [];
+          draftJourneyDetails = null;
           _restoredUnknown = false;
           _editingNeedsRevalidation = false;
           return true;
@@ -1220,6 +1271,8 @@ class PersonalCollectionController extends ChangeNotifier {
         'title': v.title,
         'summary': v.summary,
         'entries': v.entries.map((e) => e.toInput()).toList(),
+        if (v.journeyDetails != null)
+          'journeyDetails': v.journeyDetails!.toInput(),
       };
       final target = expected == null
           ? null
@@ -1325,6 +1378,8 @@ class PersonalCollectionController extends ChangeNotifier {
                 'title': title,
                 'summary': summary,
                 'entries': draftEntries.map((e) => e.toInput()).toList(),
+                if (draftJourneyDetails != null)
+                  'journeyDetails': draftJourneyDetails!.toInput(),
               })
             : null,
       );
@@ -1547,6 +1602,7 @@ class PersonalCollectionController extends ChangeNotifier {
         editing = null;
         title = summary = '';
         draftEntries = const [];
+        draftJourneyDetails = null;
         _editingNeedsRevalidation = false;
       }
       error = '已核实移除完成。';

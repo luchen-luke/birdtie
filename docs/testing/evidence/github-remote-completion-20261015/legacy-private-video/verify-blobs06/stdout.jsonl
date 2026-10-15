@@ -1,0 +1,6 @@
+{"failed":1,"failureStages":{"CANONICAL_ENCODE_INVALID_ARGUMENT_EXIT_4294967274":1},"passed":0,"processed":1,"status":"VERIFY_PROGRESS"}
+{"failed":2,"failureStages":{"CANONICAL_ENCODE_INVALID_ARGUMENT_EXIT_4294967274":2},"passed":0,"processed":2,"status":"VERIFY_PROGRESS"}
+{"failed":3,"failureStages":{"CANONICAL_ENCODE_INVALID_ARGUMENT_EXIT_4294967274":3},"passed":0,"processed":3,"status":"VERIFY_PROGRESS"}
+{"failed":4,"failureStages":{"CANONICAL_ENCODE_INVALID_ARGUMENT_EXIT_4294967274":4},"passed":0,"processed":4,"status":"VERIFY_PROGRESS"}
+{"failed":5,"failureStages":{"CANONICAL_ENCODE_INVALID_ARGUMENT_EXIT_4294967274":5},"passed":0,"processed":5,"status":"VERIFY_PROGRESS"}
+{"antivirusScan":"NOT_RUN","databaseWrites":0,"failed":5,"failureStages":{"CANONICAL_ENCODE_INVALID_ARGUMENT_EXIT_4294967274":5},"passed":0,"publicationRights":"NOT_AUTHORIZED","status":"VERIFIED_NOT_IMPORTED","total":5}

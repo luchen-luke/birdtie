@@ -166,6 +166,9 @@ func (s *Store) mutateCollectionPublication(ctx context.Context, d [32]byte, a i
 	if v.Revision != revision {
 		return content.PersonalCollection{}, content.ErrConflict
 	}
+	if v.JourneyDetails != nil {
+		return content.PersonalCollection{}, content.ErrConflict
+	}
 	var source *content.CollectionInput
 	if action == "PUBLISH" {
 		if v.Status != "draft" || v.Visibility != "private" || len(entries) != len(v.Entries) {

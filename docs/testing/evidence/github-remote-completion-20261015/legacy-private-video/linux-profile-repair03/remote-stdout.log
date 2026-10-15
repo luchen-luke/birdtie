@@ -1,0 +1,25 @@
+=== RUN   TestPrivateVideoLinuxStatmBoundaryAndNormalExit
+=== RUN   TestPrivateVideoLinuxStatmBoundaryAndNormalExit/exit_mm_zero
+=== RUN   TestPrivateVideoLinuxStatmBoundaryAndNormalExit/exact512MiB
+=== RUN   TestPrivateVideoLinuxStatmBoundaryAndNormalExit/onePageOver
+=== RUN   TestPrivateVideoLinuxStatmBoundaryAndNormalExit/largePageExact
+=== RUN   TestPrivateVideoLinuxStatmBoundaryAndNormalExit/largePageOver
+=== RUN   TestPrivateVideoLinuxStatmBoundaryAndNormalExit/overflowCounter
+=== RUN   TestPrivateVideoLinuxStatmBoundaryAndNormalExit/invalidCounter
+=== RUN   TestPrivateVideoLinuxStatmBoundaryAndNormalExit/corruptOtherField
+=== RUN   TestPrivateVideoLinuxStatmBoundaryAndNormalExit/missing
+=== RUN   TestPrivateVideoLinuxStatmBoundaryAndNormalExit/missingField
+=== RUN   TestPrivateVideoLinuxStatmBoundaryAndNormalExit/invalidPageSize
+--- PASS: TestPrivateVideoLinuxStatmBoundaryAndNormalExit (0.12s)
+    --- PASS: TestPrivateVideoLinuxStatmBoundaryAndNormalExit/exit_mm_zero (0.00s)
+    --- PASS: TestPrivateVideoLinuxStatmBoundaryAndNormalExit/exact512MiB (0.00s)
+    --- PASS: TestPrivateVideoLinuxStatmBoundaryAndNormalExit/onePageOver (0.00s)
+    --- PASS: TestPrivateVideoLinuxStatmBoundaryAndNormalExit/largePageExact (0.00s)
+    --- PASS: TestPrivateVideoLinuxStatmBoundaryAndNormalExit/largePageOver (0.00s)
+    --- PASS: TestPrivateVideoLinuxStatmBoundaryAndNormalExit/overflowCounter (0.00s)
+    --- PASS: TestPrivateVideoLinuxStatmBoundaryAndNormalExit/invalidCounter (0.00s)
+    --- PASS: TestPrivateVideoLinuxStatmBoundaryAndNormalExit/corruptOtherField (0.00s)
+    --- PASS: TestPrivateVideoLinuxStatmBoundaryAndNormalExit/missing (0.00s)
+    --- PASS: TestPrivateVideoLinuxStatmBoundaryAndNormalExit/missingField (0.00s)
+    --- PASS: TestPrivateVideoLinuxStatmBoundaryAndNormalExit/invalidPageSize (0.00s)
+PASS

@@ -1,0 +1,62 @@
+{
+  "status": "LINUX_STATM_REPAIR_FINAL_SOURCE_READY_REMOTE_REAL5_PENDING",
+  "recordedAt": "2026-10-15T09:07:28.317709+00:00",
+  "sourceFreeze": "source-freeze06.json",
+  "scopeSourceStillMatchesFreeze03": false,
+  "scopeFiles": 17,
+  "localRealVideoVerification": {
+    "receipt": "verify-blobs10/receipt.json",
+    "exitCode": 0,
+    "files": 5,
+    "passed": 5,
+    "failed": 0,
+    "codecSourceStable": true,
+    "privateOriginalHashesUnchanged": true,
+    "databaseWrites": 0
+  },
+  "nativeVerification": {
+    "executedBy": "root",
+    "receipt": "docs/testing/evidence/civu-native-adaptation-20261015/native10-video/receipt.json",
+    "test": "TestLegacyPrivateVideoNativeCompleteOwnerReadAtomicRetryAndRetirement",
+    "passed": 1,
+    "skipped": 0,
+    "sourceStableReportedByRoot": true
+  },
+  "fidelity": "Exact authenticated originals retained privately; H264 compatible playback uses CRF23 with VBV3500k/7000k, same whole frame count and cadence, source-fraction timebase, expected rotation-baked dimensions, full timeline and exact ordered AAC packet payload/count proof. No scale/crop/fixed-fps/trim/file truncation. JPEG poster is reencoded without source metadata.",
+  "limits": "Migration only: input/content64MiB,duration120s; ordinary125/155 new-upload limits unchanged.",
+  "antivirusScan": "NOT_RUN",
+  "remoteFFmpeg6_1Real5Verification": "PENDING_ROOT_BUILD12_REFRESH159_04",
+  "remoteApply159": "NOT_EXECUTED_BY_THIS_WORKER_ROOT_WAITING_FULL5_PASS",
+  "privateMediaBytesSavedToRepository": false,
+  "historicalFailuresPreserved": [
+    "verify-blobs01",
+    "verify-blobs02",
+    "verify-blobs03",
+    "verify-blobs04",
+    "verify-blobs05",
+    "verify-blobs06",
+    "verify-blobs07",
+    "verify-blobs08",
+    "verify-blobs09",
+    "docs/testing/evidence/civu-native-adaptation-20261015/native08-journey-video",
+    "docs/testing/evidence/civu-native-adaptation-20261015/native09-video",
+    "remote-verify01",
+    "remote-verify02",
+    "docs/testing/evidence/civu-native-adaptation-20261015/private-video-apply02"
+  ],
+  "privateOriginalSourceFilesModified": false,
+  "scopeSourceStillMatchesFreeze04": false,
+  "linuxRepairOnlyFiles": [
+    "apps/api/internal/legacyvideo/normalize.go",
+    "apps/api/internal/legacyvideo/process_unix.go"
+  ],
+  "linuxRepairDirectTest": "linux-profile-repair01/receipt.json",
+  "localReal5AndNativeTests": "Historical Windows actual5/native10 PASS preserved; final statm frame has actual Linux targeted regression PASS. Root must run deployed build12 full real5 before apply; Windows5/Journey not repeated.",
+  "scopeSourceStillMatchesFreeze05": false,
+  "linuxMonitorFinalRepair": "Use strict7 unsigned numeric fields in /proc/PID/statm; compare resident pages against same512MiB with runtime page size,division prevents overflow. Zero resident is a real measurement after exit_mm. ENOENT/ESRCH read errors are harmless only when kill(pid,0) also confirms ESRCH; all permissions/parse/unavailable accounting errors fail closed.",
+  "linuxMonitorDirectCompile": "linux-profile-repair02/receipt.json",
+  "scopeSourceStillMatchesFreeze06": true,
+  "linuxMonitorDirectRegression": "linux-profile-repair03/receipt.json",
+  "linuxActualExitRaceEvidence": "remote-verify02/receipt.json",
+  "linuxAudioDiagnostic": "Canonical audioProof errors retain original cause; COUNT/PAYLOAD only on actual packet-count/hash mismatch. No comparison relaxed. Prior generic CANONICAL_AUDIO_PACKETS failure does not prove real audio mismatch."
+}

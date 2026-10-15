@@ -1,0 +1,12 @@
+{
+  "mode": "transfer",
+  "exitCode": 0,
+  "remoteScriptSHA256": "d1094e2c33e35205e1f40333a3272e8c5b53602a6aae6a9c995214581860d637",
+  "result": {
+    "status": "PRIVATE_VIDEO_TRANSFER_COMPLETE",
+    "files": 7,
+    "bytes": 89031568,
+    "sourceWrites": 0,
+    "databaseWrites": 0
+  }
+}

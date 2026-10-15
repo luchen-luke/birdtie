@@ -1,0 +1,7 @@
+Flutter assets will be downloaded from https://storage.flutter-io.cn. Make sure you trust this source!
+00:00 +0: loading D:/Project/birdtie/apps/client/test/journey_detail_test.dart
+00:00 +0: D:/Project/birdtie/apps/client/test/journey_detail_test.dart: Journey Unicode schedule matches real Go 158 and 147 digests
+00:00 +1: D:/Project/birdtie/apps/client/test/journey_detail_test.dart: No-city Journey save and draft recovery preserve all detail material
+00:00 +2: D:/Project/birdtie/apps/client/test/private_moment_video_test.dart: Full-length private video read verifies bytes and rejects late Session response
+00:00 +3: D:/Project/birdtie/apps/client/test/private_moment_video_test.dart: Unknown video delete blocks repeat and recovers by reading current list
+00:00 +4: All tests passed!

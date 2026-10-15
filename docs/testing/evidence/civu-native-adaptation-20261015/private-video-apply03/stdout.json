@@ -1,0 +1,8 @@
+{"stage": "verify_remote_codec", "progress": {"failed": 0, "failureStages": {}, "passed": 1, "processed": 1, "status": "VERIFY_PROGRESS"}}
+{"stage": "verify_remote_codec", "progress": {"failed": 0, "failureStages": {}, "passed": 2, "processed": 2, "status": "VERIFY_PROGRESS"}}
+{"stage": "verify_remote_codec", "progress": {"failed": 0, "failureStages": {}, "passed": 3, "processed": 3, "status": "VERIFY_PROGRESS"}}
+{"stage": "verify_remote_codec", "progress": {"failed": 0, "failureStages": {}, "passed": 4, "processed": 4, "status": "VERIFY_PROGRESS"}}
+{"stage": "verify_remote_codec", "progress": {"failed": 0, "failureStages": {}, "passed": 5, "processed": 5, "status": "VERIFY_PROGRESS"}}
+{"stage": "verify_remote_codec", "progress": {"antivirusScan": "NOT_RUN", "databaseWrites": 0, "failed": 0, "failureStages": {}, "passed": 5, "publicationRights": "NOT_AUTHORIZED", "status": "VERIFIED_NOT_IMPORTED", "total": 5}}
+{"stage": "apply_started", "databaseWrites": "PENDING_ATOMIC_RESULT"}
+{"status": "PRIVATE_VIDEO_COMMITTED", "originalInputUnchanged": true, "result": {"runId": "c5df0d7c-f361-4275-9838-feb6d1d92352", "status": "COMMITTED", "counts": {"videos": 5, "notes": 5, "owners": 2}, "countsKnown": true, "activated": false, "sourceWrites": 0, "mediaImported": true, "videosImported": true}, "sourceWrites": 0, "originalFactInspected": true, "repeatChecked": true, "remoteCodecVerification": {"antivirusScan": "NOT_RUN", "databaseWrites": 0, "failed": 0, "failureStages": {}, "passed": 5, "publicationRights": "NOT_AUTHORIZED", "status": "VERIFIED_NOT_IMPORTED", "total": 5}}

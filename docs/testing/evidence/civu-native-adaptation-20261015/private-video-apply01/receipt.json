@@ -1,0 +1,12 @@
+{
+  "mode": "apply",
+  "exitCode": 1,
+  "remoteScriptSHA256": "5cc1cc757d4c54812a977360cec09b292beaa359448d1503749feb8a55eb5122",
+  "result": {
+    "status": "FAILED",
+    "stage": "verify_remote_codec",
+    "errorType": "RuntimeError",
+    "controlledCode": "legacy_private_video_input_rejected",
+    "privateValuesOmitted": true
+  }
+}

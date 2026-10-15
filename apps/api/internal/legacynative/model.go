@@ -13,6 +13,10 @@ import (
 
 const Protocol = "birdtie-civu-native-drafts-v1"
 
+// StableTargetID exposes the original target namespace without changing any
+// 156 projection or original receipt. Incremental adapters reuse its identity.
+func StableTargetID(kind, owner, key string) string { return stableTarget(kind, owner, key) }
+
 var ErrInvalid = errors.New("legacy_native_projection_invalid")
 
 type Counts struct {

@@ -1,0 +1,12 @@
+{
+  "exitCode": 0,
+  "elapsedSeconds": 0.121,
+  "binarySHA256": "e332e1d12497e10ad3744c4a900ce8f19e9cb1728447591ef5e3650f3c4a23e6",
+  "stdout": "=== RUN   TestPrivateVideoLinuxStatmBoundaryAndNormalExit\n=== RUN   TestPrivateVideoLinuxStatmBoundaryAndNormalExit/exit_mm_zero\n=== RUN   TestPrivateVideoLinuxStatmBoundaryAndNormalExit/exact512MiB\n=== RUN   TestPrivateVideoLinuxStatmBoundaryAndNormalExit/onePageOver\n=== RUN   TestPrivateVideoLinuxStatmBoundaryAndNormalExit/largePageExact\n=== RUN   TestPrivateVideoLinuxStatmBoundaryAndNormalExit/largePageOver\n=== RUN   TestPrivateVideoLinuxStatmBoundaryAndNormalExit/overflowCounter\n=== RUN   TestPrivateVideoLinuxStatmBoundaryAndNormalExit/invalidCounter\n=== RUN   TestPrivateVideoLinuxStatmBoundaryAndNormalExit/corruptOtherField\n=== RUN   TestPrivateVideoLinuxStatmBoundaryAndNormalExit/missing\n=== RUN   TestPrivateVideoLinuxStatmBoundaryAndNormalExit/missingField\n=== RUN   TestPrivateVideoLinuxStatmBoundaryAndNormalExit/invalidPageSize\n--- PASS: TestPrivateVideoLinuxStatmBoundaryAndNormalExit (0.12s)\n    --- PASS: TestPrivateVideoLinuxStatmBoundaryAndNormalExit/exit_mm_zero (0.00s)\n    --- PASS: TestPrivateVideoLinuxStatmBoundaryAndNormalExit/exact512MiB (0.00s)\n    --- PASS: TestPrivateVideoLinuxStatmBoundaryAndNormalExit/onePageOver (0.00s)\n    --- PASS: TestPrivateVideoLinuxStatmBoundaryAndNormalExit/largePageExact (0.00s)\n    --- PASS: TestPrivateVideoLinuxStatmBoundaryAndNormalExit/largePageOver (0.00s)\n    --- PASS: TestPrivateVideoLinuxStatmBoundaryAndNormalExit/overflowCounter (0.00s)\n    --- PASS: TestPrivateVideoLinuxStatmBoundaryAndNormalExit/invalidCounter (0.00s)\n    --- PASS: TestPrivateVideoLinuxStatmBoundaryAndNormalExit/corruptOtherField (0.00s)\n    --- PASS: TestPrivateVideoLinuxStatmBoundaryAndNormalExit/missing (0.00s)\n    --- PASS: TestPrivateVideoLinuxStatmBoundaryAndNormalExit/missingField (0.00s)\n    --- PASS: TestPrivateVideoLinuxStatmBoundaryAndNormalExit/invalidPageSize (0.00s)\nPASS\n",
+  "stderrBytes": 0,
+  "stderrSHA256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "databaseWrites": 0,
+  "serviceChanges": 0,
+  "privateMediaRead": false,
+  "temporaryBinaryAndDirectoryRemoved": true
+}

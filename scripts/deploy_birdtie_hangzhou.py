@@ -115,17 +115,17 @@ elif mode=='start':
 elif mode=='upgrade':
  settings=json.loads(STATE.read_text());assert settings['database']==DB
  target=payload['targetMigrations'];prior_count=payload['expectedMigrations']
- assert 148 <= prior_count <= target <= 157
+ assert 148 <= prior_count <= target <= 159
  current=json.loads(sql('postgres',"SELECT json_build_object('oid',oid::bigint,'owner',pg_get_userbyid(datdba),'marker',shobj_description(oid,'pg_database')) FROM pg_database WHERE datname='"+DB+"';",True))
  assert current=={'oid':settings['oid'],'owner':ROLE,'marker':settings['marker']}
  data=sys.stdin.buffer.read();assert hashlib.sha256(data).hexdigest()==payload['releaseSHA256']
  release=ROOT/'releases'/payload['release'];assert not release.exists();release.mkdir(mode=0o755)
  archive=release/'release.tar';archive.write_bytes(data)
  with tarfile.open(archive)as t:
-  manifest=json.load(t.extractfile('manifest.json'));assert len(manifest)==target+(5 if target>=157 else 4 if target>=156 else 3)
+  manifest=json.load(t.extractfile('manifest.json'));assert len(manifest)==target+(6 if target>=159 else 5 if target>=157 else 4 if target>=156 else 3)
   assert sorted(m.name for m in t.getmembers())==sorted(list(manifest)+['manifest.json'])
   for m in t.getmembers():
-   assert m.isfile() and re.fullmatch(r'(manifest\.json|bin/birdtie-(api|legacy-import|legacy-personal-import|legacy-native-import|legacy-media-import)|migrations/[0-9]{3}_[a-z0-9_]+\.sql)',m.name)
+   assert m.isfile() and re.fullmatch(r'(manifest\.json|bin/birdtie-(api|legacy-import|legacy-personal-import|legacy-native-import|legacy-media-import|legacy-video-import)|migrations/[0-9]{3}_[a-z0-9_]+\.sql)',m.name)
    raw=t.extractfile(m).read();p=release/m.name;p.parent.mkdir(parents=True,exist_ok=True);p.write_bytes(raw)
    if m.name in manifest:assert len(raw)==manifest[m.name]['bytes'] and hashlib.sha256(raw).hexdigest()==manifest[m.name]['sha256']
  prior=sql(DB,'SELECT filename,sha256 FROM birdtie_schema_migrations ORDER BY version;').decode().strip().splitlines()
@@ -133,7 +133,7 @@ elif mode=='upgrade':
  for row in prior:
   filename,digest1=row.split('|');assert manifest['migrations/'+filename]['sha256']==digest1
  for p in (release/'bin').iterdir():os.chmod(p,0o755)
- migration_names={149:'migrations/149_legacy_personal_archives.sql',150:'migrations/150_city_public_moments.sql',151:'migrations/151_moment_interactions.sql',152:'migrations/152_public_moment_media_sets.sql',153:'migrations/153_moment_threads.sql',154:'migrations/154_legacy_dev_phone_bindings.sql',155:'migrations/155_public_moment_videos.sql',156:'migrations/156_legacy_native_adaptation.sql',157:'migrations/157_legacy_private_media.sql'}
+ migration_names={149:'migrations/149_legacy_personal_archives.sql',150:'migrations/150_city_public_moments.sql',151:'migrations/151_moment_interactions.sql',152:'migrations/152_public_moment_media_sets.sql',153:'migrations/153_moment_threads.sql',154:'migrations/154_legacy_dev_phone_bindings.sql',155:'migrations/155_public_moment_videos.sql',156:'migrations/156_legacy_native_adaptation.sql',157:'migrations/157_legacy_private_media.sql',158:'migrations/158_journey_native_details.sql',159:'migrations/159_legacy_private_videos.sql'}
  assert all(int(Path(n).name.split('_')[0])<=target for n in manifest if n.startswith('migrations/'))
  assert len([n for n in manifest if n.startswith('migrations/')])==target
  bodies=[]
@@ -230,7 +230,7 @@ else:raise RuntimeError('unknown stage')
 '''
 
 def main():
- p=argparse.ArgumentParser();p.add_argument('mode',choices=['prepare','private-input','apply','start','upgrade','personal-apply','dev-phone-apply','native-apply']);p.add_argument('--name',choices=['source.json','manifest.json']);p.add_argument('--evidence-name',required=True);p.add_argument('--build-name',default='build02');p.add_argument('--target-migrations',type=int,choices=[149,150,151,152,153,154,155,156,157],default=149);p.add_argument('--expected-migrations',type=int,choices=[148,149,150,151,152,153,154,155,156,157],default=148);a=p.parse_args()
+ p=argparse.ArgumentParser();p.add_argument('mode',choices=['prepare','private-input','apply','start','upgrade','personal-apply','dev-phone-apply','native-apply']);p.add_argument('--name',choices=['source.json','manifest.json']);p.add_argument('--evidence-name',required=True);p.add_argument('--build-name',default='build02');p.add_argument('--target-migrations',type=int,choices=[149,150,151,152,153,154,155,156,157,158,159],default=149);p.add_argument('--expected-migrations',type=int,choices=[148,149,150,151,152,153,154,155,156,157,158,159],default=148);a=p.parse_args()
  assert re.fullmatch(r'[a-z0-9-]+',a.evidence_name)
  out=ROOT/'docs/testing/evidence/social-remote-migration-20261015'/a.evidence_name;out.mkdir(parents=True,exist_ok=False)
  payload={'mode':a.mode};raw=b''

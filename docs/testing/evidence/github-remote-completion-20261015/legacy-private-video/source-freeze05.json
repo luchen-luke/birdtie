@@ -1,0 +1,43 @@
+{
+  "status": "SOURCE_READY_FINAL_LINUX_MONITOR_FAIL_CLOSED",
+  "recordedAt": "2026-10-15T08:55:43.405014+00:00",
+  "scope": {
+    "apps/api/internal/legacyvideo/model.go": "f4fd7e3ce38381fc2cd4b84d36dbdbd18c87b3a566004f619cc1decdacda337e",
+    "apps/api/internal/legacyvideo/model_test.go": "5f2154ab2fbf3a6eb14671a0a68a489984544a5957cf598e999f42fb2bb2c9bb",
+    "apps/api/internal/legacyvideo/normalize.go": "e546219b94b1974d5830efda08dd561be075433583f9a579ec3671b4a5581b9b",
+    "apps/api/internal/legacyvideo/normalize_test.go": "83a20350d6af1514d79cc6076f11893f68f090dd9625eb7b5d2e654815eda5a4",
+    "apps/api/internal/legacyvideo/process_unix.go": "65c6000265d8216aa2592f16f05e81ef1c4fcfc6795ab99255f46d236dbfbf67",
+    "apps/api/internal/legacyvideo/process_windows.go": "ceb3a201a3ab109d88916d211974d7279307b82cb0053c3af23c7147b6abc4e2",
+    "apps/api/internal/media/private_moment_video.go": "816ead3a50fb5e4544027f9de2c27d584add1cd347c3e9c7c38f95a93a3dc4d6",
+    "apps/api/internal/postgres/legacy_private_video_import.go": "4fb91f2a539e90c1eddb075ce0c5326dd9fa8b6628f36523e860624dd2866917",
+    "apps/api/internal/postgres/legacy_private_video_import_native_test.go": "6eeab1bf3cd342e2ad1d04afef2c55e728f2124b7d7e4700c2ae5f3b21307fca",
+    "apps/api/internal/postgres/human_moment_videos.go": "7c296dc320210d77e9ff19d6c94d8522cd861aa374e1b8342d7ffee83317e446",
+    "apps/api/internal/httpapi/private_moment_videos.go": "3aaaf855b0bbe6656b9700a6f1118207d6f1ce3228c9654c3833a0f4b3ec8e05",
+    "apps/api/internal/httpapi/private_moment_videos_test.go": "381e56775da2d81c74f9d97f9a12b529b67e81be276a6047e32bb7498eeb773d",
+    "apps/api/cmd/legacy-video-import/main.go": "4ba7af05fe196df04457d0f4795f380e533ce0f1b98986f5ae7f4016097a2460",
+    "apps/api/cmd/legacy-video-import/main_test.go": "d9c9c860d8822c5957f4a6b03eb845c8b765d2ca207862c5c9fa92708b45d180",
+    "apps/api/migrations/159_legacy_private_videos.sql": "344e2038395a7db78ac1ab03dfeba274d93e0272f7e677827954a7ae68d59eac",
+    "apps/api/migrations/159_legacy_private_videos.down.sql": "e192404a9e9d4108e7bf127ca3593f6ff89e668e72ac8f8c74cd2a484afc473a"
+  },
+  "scopeFiles": 16,
+  "previousFrame": "source-freeze04.json",
+  "changedSinceFreeze04": [
+    "apps/api/internal/legacyvideo/process_unix.go"
+  ],
+  "repair": "Missing /proc status is benign only for ENOENT plus kill(pid,0)==ESRCH. Live or permission-denied process and unavailable accounting fail closed. No other product changes.",
+  "monitorAudit": [
+    "AS hard1GiB; actual VmRSS threshold512MiB checked every25ms, parse/unit/missing active accounting errors fail closed.",
+    "Dead/reaped child may have no VmRSS; missing process confirmed ESRCH.",
+    "One cmd.Wait goroutine per started process; abort kills process/group or Job and joins done; cleanup sync.Once and ticker.Stop.",
+    "CPU180s, bounded output, complete timeline and context timeout preserved."
+  ],
+  "directVerification": "linux-profile-repair02/receipt.json: Linux amd64 package cross-compile exit0; no runtime tests claimed.",
+  "remoteFFmpeg6_1Real5Verification": "PENDING_ROOT_BUILD11_REFRESH159_03",
+  "historicalVerification": "Windows actual5 verify-blobs10 and native10-video PASS preserved as prior-frame evidence, not repeated.",
+  "originalSourceFilesModified": false,
+  "privateMediaBytesSavedToRepository": false,
+  "ordinaryNewUploadLimitsChanged": false,
+  "deployedDDLChanged": false,
+  "deploymentExecutedByThisWorker": false,
+  "databaseWrites": 0
+}

@@ -1,0 +1,3 @@
+# github.com/birdtie/birdtie/apps/api/cmd/legacy-video-import
+cmd\legacy-video-import\main.go:19:2: "runtime/debug" imported and not used
+cmd\legacy-video-import\main.go:225:13: undefined: publicSummary

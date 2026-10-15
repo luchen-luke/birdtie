@@ -58,6 +58,9 @@ type nativeDatabasePinger struct {
 // checks the native schema required by this package, not a migration ledger or
 // a claim that all product migrations, data, ACLs or media have been accepted.
 const nativeDatabaseProbeSQL = `WITH required(table_name,column_name,type_name) AS (VALUES
+ ('journeys','detail_schema','text'),('journey_itinerary_entries','material','jsonb'),
+ ('legacy_journey_adaptations','target_id','uuid'),('private_moment_videos','content','bytea'),
+ ('private_moment_videos','original','bytea'),('legacy_private_video_import_items','video_id','uuid'),
  ('legacy_private_media_import_items','image_id','uuid'),('legacy_private_media_import_items','owner_account_id','uuid'),
  ('legacy_private_media_import_items','moment_id','uuid'),('legacy_private_media_import_items','source_input_sha256','text'),
  ('legacy_private_media_import_items','source_input_bytes','bigint'),
@@ -152,7 +155,9 @@ const nativeDatabaseProbeSQL = `WITH required(table_name,column_name,type_name) 
  || ARRAY(SELECT 'public_moment_video.contract'
           WHERE public.birdtie_public_moment_video_contract() IS DISTINCT FROM 'public-moment-video-v2')
  || ARRAY(SELECT 'optional_moment_content.contract'
-          WHERE public.birdtie_optional_moment_content_contract() IS DISTINCT FROM 'moment-optional-content-v1')`
+          WHERE public.birdtie_optional_moment_content_contract() IS DISTINCT FROM 'moment-optional-content-v1')
+ || ARRAY(SELECT 'journey_details.contract' WHERE public.birdtie_journey_details_contract() IS DISTINCT FROM 'journey-native-details-v1')
+ || ARRAY(SELECT 'legacy_private_video.contract' WHERE public.birdtie_legacy_private_video_contract() IS DISTINCT FROM 'private-moment-video-v1')`
 
 func newNativeDatabasePinger(ctx context.Context, database nativeDatabaseReader, expectedName string) (*nativeDatabasePinger, error) {
 	if database == nil || !allowedNativeDatabaseName(expectedName) {

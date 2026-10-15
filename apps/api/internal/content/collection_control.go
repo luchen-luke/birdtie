@@ -28,11 +28,12 @@ type CollectionControlEntry struct {
 	LocationVisibility string `json:"locationVisibility"`
 }
 type CollectionControlBody struct {
-	Kind    string                   `json:"kind"`
-	CityID  string                   `json:"cityId"`
-	Title   string                   `json:"title"`
-	Summary string                   `json:"summary"`
-	Entries []CollectionControlEntry `json:"entries"`
+	Kind           string                   `json:"kind"`
+	CityID         string                   `json:"cityId"`
+	Title          string                   `json:"title"`
+	Summary        string                   `json:"summary"`
+	Entries        []CollectionControlEntry `json:"entries"`
+	JourneyDetails *JourneyDetails          `json:"journeyDetails,omitempty"`
 }
 type CollectionControlInput struct {
 	SchemaVersion    string                 `json:"schemaVersion"`
@@ -81,7 +82,7 @@ func (b CollectionControlBody) CollectionInput() CollectionInput {
 	for i, e := range b.Entries {
 		entries[i] = CollectionEntry{PlaceID: e.PlaceID, Note: e.Note, LocationVisibility: e.LocationVisibility}
 	}
-	return CollectionInput{Kind: b.Kind, CityID: b.CityID, Title: b.Title, Summary: b.Summary, Entries: entries}
+	return CollectionInput{Kind: b.Kind, CityID: b.CityID, Title: b.Title, Summary: b.Summary, Entries: entries, JourneyDetails: b.JourneyDetails}
 }
 func normalizeCollectionControlBody(b CollectionControlBody) (CollectionControlBody, error) {
 	// City IDs may be stable slugs, not Context UUIDs. Text is inert material.
@@ -104,7 +105,7 @@ func normalizeCollectionControlBody(b CollectionControlBody) (CollectionControlB
 	if e != nil {
 		return CollectionControlBody{}, e
 	}
-	out := CollectionControlBody{Kind: in.Kind, CityID: in.CityID, Title: in.Title, Summary: in.Summary, Entries: make([]CollectionControlEntry, len(in.Entries))}
+	out := CollectionControlBody{Kind: in.Kind, CityID: in.CityID, Title: in.Title, Summary: in.Summary, Entries: make([]CollectionControlEntry, len(in.Entries)), JourneyDetails: in.JourneyDetails}
 	for i, e := range in.Entries {
 		out.Entries[i] = CollectionControlEntry{PlaceID: e.PlaceID, Note: e.Note, LocationVisibility: e.LocationVisibility}
 	}
@@ -162,6 +163,9 @@ func CollectionControlDigest(in CollectionControlInput) string {
 			entries[i] = []any{e.PlaceID, base64.RawURLEncoding.EncodeToString([]byte(e.Note)), e.LocationVisibility}
 		}
 		body = []any{b.Kind, base64.RawURLEncoding.EncodeToString([]byte(b.CityID)), base64.RawURLEncoding.EncodeToString([]byte(b.Title)), base64.RawURLEncoding.EncodeToString([]byte(b.Summary)), entries}
+		if b.JourneyDetails != nil {
+			body = append(body.([]any), []any{JourneyDetailsSchema, JourneyDetailsDigest(b.JourneyDetails)})
+		}
 	}
 	raw, _ := json.Marshal([]any{CollectionControlSchemaVersion, in.Action, in.Kind, in.CollectionID, in.ExpectedRevision, body})
 	sum := sha256.Sum256(raw)
@@ -271,12 +275,12 @@ func decodeCollectionControl(raw []byte, submission bool) (CollectionControlSubm
 		if !ok {
 			return in, ErrInvalid
 		}
-		m, e := collectionControlObject(body, []string{"kind", "cityId", "title", "summary", "entries"})
+		m, e := collectionControlObject(body, []string{"kind", "cityId", "title", "summary", "entries"}, "journeyDetails")
 		if e != nil {
 			return in, e
 		}
 		var entries []json.RawMessage
-		if json.Unmarshal(m["entries"], &entries) != nil || len(entries) < 1 || len(entries) > 50 {
+		if json.Unmarshal(m["entries"], &entries) != nil || (len(entries) < 1 && m["journeyDetails"] == nil) || len(entries) > 50 {
 			return in, ErrInvalid
 		}
 		for _, entry := range entries {

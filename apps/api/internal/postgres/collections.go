@@ -36,12 +36,22 @@ func collectionReadTx(ctx context.Context, tx pgx.Tx, owner, kind, id string, lo
 	}
 	v := content.PersonalCollection{}
 	v.Kind = kind
-	e = tx.QueryRow(ctx, `SELECT id,owner_account_id,city_id,title,summary,visibility,status,revision,created_at,updated_at,EXISTS(SELECT 1 FROM personal_collection_copy_borrowed_places borrowed WHERE borrowed.destination_kind='`+kind+`' AND borrowed.destination_id=$1) FROM `+table+` WHERE id=$1 AND owner_account_id=$2`+suffix, id, owner).Scan(&v.ID, &v.OwnerID, &v.CityID, &v.Title, &v.Summary, &v.Visibility, &v.Status, &v.Revision, &v.CreatedAt, &v.UpdatedAt, &v.PrivatePlaceCopyRestricted)
+	e = tx.QueryRow(ctx, `SELECT id,owner_account_id,coalesce(city_id,''),title,summary,visibility,status,revision,created_at,updated_at,EXISTS(SELECT 1 FROM personal_collection_copy_borrowed_places borrowed WHERE borrowed.destination_kind='`+kind+`' AND borrowed.destination_id=$1) FROM `+table+` WHERE id=$1 AND owner_account_id=$2`+suffix, id, owner).Scan(&v.ID, &v.OwnerID, &v.CityID, &v.Title, &v.Summary, &v.Visibility, &v.Status, &v.Revision, &v.CreatedAt, &v.UpdatedAt, &v.PrivatePlaceCopyRestricted)
 	if errors.Is(e, pgx.ErrNoRows) {
 		return v, content.ErrNotFound
 	}
 	if e != nil {
 		return v, content.ErrUnavailable
+	}
+	if kind == "journey" {
+		v.JourneyDetails, e = readJourneyDetailsTx(ctx, tx, owner, id)
+		if e != nil {
+			return v, e
+		}
+		if v.JourneyDetails != nil {
+			v.Entries = []content.CollectionEntry{}
+			return v, nil
+		}
 	}
 	locked, e := tx.Query(ctx, `SELECT p.id FROM places p JOIN `+entries+` e ON e.place_id=p.id AND e.city_id=p.city_id WHERE e.`+key+`=$1 ORDER BY p.id FOR SHARE OF p`, id)
 	if e != nil {
@@ -231,15 +241,28 @@ func (s *Store) CreateHumanCollection(ctx context.Context, d [32]byte, a identit
 	if !errors.Is(e, pgx.ErrNoRows) {
 		return content.PersonalCollection{}, content.ErrUnavailable
 	}
-	if e = collectionSourcesTx(ctx, tx, in); e != nil {
-		return content.PersonalCollection{}, e
+	if handled, _, _, err := journeyDetailsAuthorityTx(ctx, tx, a.ID, "", in); err != nil {
+		return content.PersonalCollection{}, err
+	} else if !handled {
+		if e = collectionSourcesTx(ctx, tx, in); e != nil {
+			return content.PersonalCollection{}, e
+		}
 	}
 	table, _, _, _ := collectionTables(in.Kind)
-	e = tx.QueryRow(ctx, `INSERT INTO `+table+`(owner_account_id,city_id,title,summary) VALUES($1,$2,$3,$4) RETURNING id`, a.ID, in.CityID, in.Title, in.Summary).Scan(&id)
+	if in.JourneyDetails != nil {
+		e = tx.QueryRow(ctx, `INSERT INTO journeys(owner_account_id,city_id,title,summary,detail_schema)VALUES($1,NULLIF($2,''),$3,$4,$5)RETURNING id`, a.ID, in.CityID, in.Title, in.Summary, content.JourneyDetailsSchema).Scan(&id)
+	} else {
+		e = tx.QueryRow(ctx, `INSERT INTO `+table+`(owner_account_id,city_id,title,summary) VALUES($1,$2,$3,$4) RETURNING id`, a.ID, in.CityID, in.Title, in.Summary).Scan(&id)
+	}
 	if e != nil {
 		return content.PersonalCollection{}, content.ErrUnavailable
 	}
-	if e = collectionEntriesTx(ctx, tx, id, in); e != nil {
+	if in.JourneyDetails != nil {
+		e = writeJourneyDetailsTx(ctx, tx, id, *in.JourneyDetails)
+	} else {
+		e = collectionEntriesTx(ctx, tx, id, in)
+	}
+	if e != nil {
 		return content.PersonalCollection{}, e
 	}
 	if _, e = tx.Exec(ctx, `INSERT INTO personal_collection_operations(owner_account_id,operation_id,kind,target_id,input_sha256) VALUES($1,$2,$3,$4,$5)`, a.ID, p.OperationID, in.Kind, id, digest[:]); e != nil {
@@ -401,12 +424,30 @@ func updateHumanCollectionTx(ctx context.Context, tx pgx.Tx, owner, id string, r
 	}
 	table, _, _, _ := collectionTables(in.Kind)
 	var oldCity string
-	e = tx.QueryRow(ctx, `SELECT city_id FROM `+table+` WHERE id=$1 AND owner_account_id=$2 AND revision=$3 AND status='draft' AND visibility='private' FOR UPDATE`, id, owner, revision).Scan(&oldCity)
+	e = tx.QueryRow(ctx, `SELECT coalesce(city_id,'') FROM `+table+` WHERE id=$1 AND owner_account_id=$2 AND revision=$3 AND status='draft' AND visibility='private' FOR UPDATE`, id, owner, revision).Scan(&oldCity)
 	if errors.Is(e, pgx.ErrNoRows) {
 		return 0, content.ErrConflict
 	}
 	if e != nil {
 		return 0, content.ErrUnavailable
+	}
+	if handled, _, _, err := journeyDetailsAuthorityTx(ctx, tx, owner, id, in); handled || err != nil {
+		if err != nil {
+			return 0, err
+		}
+		if in.JourneyDetails == nil {
+			return 0, content.ErrConflict
+		}
+		if e = writeJourneyDetailsTx(ctx, tx, id, *in.JourneyDetails); e != nil {
+			return 0, e
+		}
+		if _, e = tx.Exec(ctx, `UPDATE journeys SET city_id=NULLIF($2,''),title=$3,summary=$4,revision=revision+1,updated_at=clock_timestamp() WHERE id=$1`, id, in.CityID, in.Title, in.Summary); e != nil {
+			return 0, content.ErrUnavailable
+		}
+		if e = collectionAuditTx(ctx, tx, owner, in.Kind, id, "update_draft"); e != nil {
+			return 0, e
+		}
+		return revision + 1, nil
 	}
 	// A saved collection has a stable city; changing exploration scope creates
 	// a separate draft instead of silently moving an approved resource.

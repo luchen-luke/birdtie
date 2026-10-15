@@ -1,0 +1,36 @@
+{
+  "command": [
+    "D:\\DevTools\\flutter\\bin\\flutter.bat",
+    "test",
+    "test/journey_detail_test.dart",
+    "test/private_moment_video_test.dart",
+    "--reporter",
+    "expanded"
+  ],
+  "exitCode": 0,
+  "sourceStable": true,
+  "sourceBefore": {
+    "apps\\client\\lib\\src\\content\\journey_detail.dart": "59953e4d6c314efd8d9c58dfc35da1b3d427164918a909950d11f82e59104b8b",
+    "apps\\client\\lib\\src\\content\\journey_detail_editor.dart": "5742ae2ade3ee17ef4ae865b284b844a3ddaed3f7fcd5a7954772da5d172284b",
+    "apps\\client\\lib\\src\\content\\private_moment_video_controller.dart": "77775f6bd4e9f0cb96dd20fc3d2bd6a4e66960098df4e8ae2b25697a1f4712a5",
+    "apps\\client\\lib\\src\\content\\private_moment_video_sheet.dart": "dc6c4e88c19e113ffbdd7c487c08a2fe897ec279f5237a9c008c9af282d98240",
+    "apps\\client\\lib\\src\\content\\collection_control.dart": "96402bfef3d4fd5a330158bf94046ee1bd51683c8ac8a202fdc5deaaf8e257ab",
+    "apps\\client\\lib\\src\\content\\personal_collection_controller.dart": "46d73549b0de0d567bdc04eecf5aa62e7638a9ff159a6b5ce96f446c930ce2e3",
+    "apps\\client\\lib\\src\\content\\personal_collection_page.dart": "932a96d7f853c14a7648e1450b77ba632f6216bb93ea9288193a70ccd2cd2958",
+    "apps\\client\\lib\\src\\legacy\\legacy_shell.dart": "f919ce6a6b1c2aff7f920b88f3e84ab435062a6bb66305dc539b71763ca8b591",
+    "apps\\client\\test\\journey_detail_test.dart": "ffc426118cf1881c7a02a220db012881caa70da123856b59b11cde92018e6dd1",
+    "apps\\client\\test\\private_moment_video_test.dart": "b578490f4fa0510383bc1521817e5c0a65b845e6c5f8af1b9a4afa057619a5ea"
+  },
+  "sourceAfter": {
+    "apps\\client\\lib\\src\\content\\journey_detail.dart": "59953e4d6c314efd8d9c58dfc35da1b3d427164918a909950d11f82e59104b8b",
+    "apps\\client\\lib\\src\\content\\journey_detail_editor.dart": "5742ae2ade3ee17ef4ae865b284b844a3ddaed3f7fcd5a7954772da5d172284b",
+    "apps\\client\\lib\\src\\content\\private_moment_video_controller.dart": "77775f6bd4e9f0cb96dd20fc3d2bd6a4e66960098df4e8ae2b25697a1f4712a5",
+    "apps\\client\\lib\\src\\content\\private_moment_video_sheet.dart": "dc6c4e88c19e113ffbdd7c487c08a2fe897ec279f5237a9c008c9af282d98240",
+    "apps\\client\\lib\\src\\content\\collection_control.dart": "96402bfef3d4fd5a330158bf94046ee1bd51683c8ac8a202fdc5deaaf8e257ab",
+    "apps\\client\\lib\\src\\content\\personal_collection_controller.dart": "46d73549b0de0d567bdc04eecf5aa62e7638a9ff159a6b5ce96f446c930ce2e3",
+    "apps\\client\\lib\\src\\content\\personal_collection_page.dart": "932a96d7f853c14a7648e1450b77ba632f6216bb93ea9288193a70ccd2cd2958",
+    "apps\\client\\lib\\src\\legacy\\legacy_shell.dart": "f919ce6a6b1c2aff7f920b88f3e84ab435062a6bb66305dc539b71763ca8b591",
+    "apps\\client\\test\\journey_detail_test.dart": "ffc426118cf1881c7a02a220db012881caa70da123856b59b11cde92018e6dd1",
+    "apps\\client\\test\\private_moment_video_test.dart": "b578490f4fa0510383bc1521817e5c0a65b845e6c5f8af1b9a4afa057619a5ea"
+  }
+}

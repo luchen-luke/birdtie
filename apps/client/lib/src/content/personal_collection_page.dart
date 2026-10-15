@@ -6,6 +6,7 @@ import 'package:flutter/scheduler.dart';
 import '../workspace/now_ui_tokens.dart';
 import '../workspace/legacy_place_reference_page.dart';
 import 'personal_collection_controller.dart';
+import 'journey_detail_editor.dart';
 import 'collection_control.dart';
 import 'collection_publication_controller.dart';
 import 'collection_publication_page.dart';
@@ -177,6 +178,7 @@ class _PersonalCollectionPageState extends State<PersonalCollectionPage> {
         c.controlBlocked ||
         c.editing == null)
       return;
+    if (c.draftJourneyDetails != null) return;
     if (c.hasPrivateLegacyReferences && c.publicationPending == null) return;
     if (c.editing!.privatePlaceCopyRestricted &&
         c.editing!.status == 'draft' &&
@@ -487,7 +489,9 @@ class _PersonalCollectionPageState extends State<PersonalCollectionPage> {
       final route = MaterialPageRoute<void>(
         builder: (_) => PersonalCollectionPage(
           controller: editor,
-          cityName: widget.cityNames[record.cityID] ?? '城市名称暂不可读',
+          cityName: record.cityID.isEmpty
+              ? ''
+              : widget.cityNames[record.cityID] ?? '城市名称暂不可读',
           cityNames: widget.cityNames,
           copyPendingStore: _copyStore,
         ),
@@ -730,10 +734,24 @@ class _PersonalCollectionPageState extends State<PersonalCollectionPage> {
                           if (body.summary.isNotEmpty) Text(body.summary),
                           const SizedBox(height: 12),
                           Text(
-                            '将保存以下 ' +
-                                body.entries.length.toString() +
-                                ' 个地点的顺序和本人备注：',
+                            body.journeyDetails == null
+                                ? '将保存以下 ${body.entries.length} 个地点的顺序和本人备注：'
+                                : '将保存以下 ${body.journeyDetails!.itinerary.length} 项安排：',
                           ),
+                          if (body.journeyDetails != null) ...[
+                            Text(
+                              '旅程日期：${body.journeyDetails!.startDate} ${body.journeyDetails!.endDate} ${body.journeyDetails!.dateLabel}',
+                            ),
+                            if (body.journeyDetails!.days > 0)
+                              Text('${body.journeyDetails!.days} 天'),
+                            for (final row in body.journeyDetails!.itinerary)
+                              Text(
+                                JourneyDetailEditor.reviewText(
+                                  row,
+                                  body.journeyDetails!,
+                                ),
+                              ),
+                          ],
                           for (var i = 0; i < body.entries.length; i++)
                             Text(
                               '地点 ' +
@@ -971,9 +989,9 @@ class _PersonalCollectionPageState extends State<PersonalCollectionPage> {
       for (final v in c.items)
         ListTile(
           contentPadding: EdgeInsets.zero,
-          title: Text(v.title),
+          title: Text(v.title.isEmpty ? '未命名${c.label}' : v.title),
           subtitle: Text(
-            '${v.status == 'published' ? '已公开 · ' : '本人草稿 · '}${v.entries.length} 个地点${v.summary.isEmpty ? '' : '\n${v.summary}'}',
+            '${v.status == 'published' ? '已公开 · ' : '本人草稿 · '}${v.journeyDetails == null ? '${v.entries.length} 个地点' : '${v.journeyDetails!.itinerary.length} 项安排'}${v.summary.isEmpty ? '' : '\n${v.summary}'}',
           ),
           trailing: const Icon(Icons.chevron_right),
           onTap: !c.saving && !_openingSaved
@@ -1016,12 +1034,16 @@ class _PersonalCollectionPageState extends State<PersonalCollectionPage> {
       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
       children: [
         Text(
-          c.editing == null ? '创建${c.label}' : c.editing!.title,
+          c.editing == null
+              ? '创建${c.label}'
+              : c.editing!.title.isEmpty
+              ? '未命名${c.label}'
+              : c.editing!.title,
           style: tokens.sheetTitle,
         ),
         const SizedBox(height: 8),
         Text(
-          '${widget.cityName} · ${c.editing?.status == 'published' ? '已公开，撤回公开后可修改' : '仅自己可见'}',
+          '${widget.cityName.isEmpty ? '' : '${widget.cityName} · '}${c.editing?.status == 'published' ? '已公开，撤回公开后可修改' : '仅自己可见'}',
           style: tokens.metadata,
         ),
         const SizedBox(height: 20),
@@ -1049,25 +1071,35 @@ class _PersonalCollectionPageState extends State<PersonalCollectionPage> {
           ],
         ),
         const SizedBox(height: 16),
-        Text(
-          c.kind == 'journey' ? '按顺序安排地点' : '选择地图中的地点',
-          style: tokens.placeTitle,
-        ),
-        const SizedBox(height: 8),
-        if (c.draftEntries.isEmpty) const Text('添加现有地点，再保存这份草稿。'),
-        for (var index = 0; index < c.draftEntries.length; index++)
-          _entry(index),
-        const SizedBox(height: 8),
-        Align(
-          alignment: Alignment.centerLeft,
-          child: OutlinedButton.icon(
-            onPressed: c.editable && c.draftEntries.length < 50
-                ? _choosePlace
-                : null,
-            icon: const Icon(Icons.add_location_alt_outlined),
-            label: const Text('添加地点'),
+        if (c.draftJourneyDetails != null)
+          JourneyDetailEditor(
+            value: c.draftJourneyDetails!,
+            changes: c,
+            current: () =>
+                identical(c, source) && source.editable && epoch == _pageEpoch,
+            onChanged: c.setJourneyDetails,
+          )
+        else ...[
+          Text(
+            c.kind == 'journey' ? '按顺序安排地点' : '选择地图中的地点',
+            style: tokens.placeTitle,
           ),
-        ),
+          const SizedBox(height: 8),
+          if (c.draftEntries.isEmpty) const Text('添加现有地点，再保存这份草稿。'),
+          for (var index = 0; index < c.draftEntries.length; index++)
+            _entry(index),
+          const SizedBox(height: 8),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: OutlinedButton.icon(
+              onPressed: c.editable && c.draftEntries.length < 50
+                  ? _choosePlace
+                  : null,
+              icon: const Icon(Icons.add_location_alt_outlined),
+              label: const Text('添加地点'),
+            ),
+          ),
+        ],
         const SizedBox(height: 24),
         if (c.error != null) _error(),
         if (c.saving) const LinearProgressIndicator(),
@@ -1131,6 +1163,7 @@ class _PersonalCollectionPageState extends State<PersonalCollectionPage> {
             if (c.editing != null &&
                 !c.uncertain &&
                 !c.hasPrivateLegacyReferences &&
+                c.draftJourneyDetails == null &&
                 widget.onViewMap != null)
               OutlinedButton.icon(
                 onPressed: !c.saving
@@ -1139,7 +1172,9 @@ class _PersonalCollectionPageState extends State<PersonalCollectionPage> {
                 icon: const Icon(Icons.map_outlined),
                 label: const Text('在地图查看'),
               ),
-            if (c.editing != null && !c.uncertain)
+            if (c.editing != null &&
+                !c.uncertain &&
+                c.draftJourneyDetails == null)
               OutlinedButton.icon(
                 key: const Key('collection-publication'),
                 onPressed:

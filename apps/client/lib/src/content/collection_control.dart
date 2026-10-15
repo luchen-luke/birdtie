@@ -6,6 +6,7 @@ import 'dart:typed_data';
 import 'package:crypto/crypto.dart';
 import 'package:http/http.dart' as http;
 import '../auth/session_vault.dart';
+import 'journey_detail.dart';
 
 const collectionControlSchema = 'human-personal-collection-control-v1';
 const collectionControlMaxRevision = 9000000000000000;
@@ -115,9 +116,11 @@ class CollectionControlBody {
     this.title,
     this.summary,
     this.entries,
+    this.journeyDetails,
   );
   final String kind, cityID, title, summary;
   final List<CollectionControlEntry> entries;
+  final JourneyDetails? journeyDetails;
   factory CollectionControlBody.normalize(Object? raw, {bool strict = false}) {
     final m = collectionControlObject(raw, {
       'kind',
@@ -125,10 +128,15 @@ class CollectionControlBody {
       'title',
       'summary',
       'entries',
+      if (raw is Map && raw.containsKey('journeyDetails')) 'journeyDetails',
     });
+    final details = m.containsKey('journeyDetails')
+        ? JourneyDetails.decode(m['journeyDetails'], input: true)
+        : null;
+    if (details != null && m['kind'] != 'journey') _bad();
     if (!collectionControlKind(m['kind']) || m['entries'] is! List) _bad();
-    final city = _text(m['cityId'], 1, 80),
-        title = _text(m['title'], 1, 160),
+    final city = _text(m['cityId'], details == null ? 1 : 0, 80),
+        title = _text(m['title'], details == null ? 1 : 0, 160),
         summary = _text(m['summary'], 0, 5000);
     if (city.contains(RegExp(r'[\r\n\t]'))) _bad();
     if (strict &&
@@ -137,7 +145,7 @@ class CollectionControlBody {
     final entries = (m['entries'] as List)
         .map((v) => CollectionControlEntry.normalize(v, strict: strict))
         .toList();
-    if (entries.isEmpty ||
+    if ((details == null ? entries.isEmpty : entries.isNotEmpty) ||
         entries.length > 50 ||
         entries.map((e) => e.placeID).toSet().length != entries.length)
       _bad();
@@ -147,6 +155,7 @@ class CollectionControlBody {
       title,
       summary,
       List.unmodifiable(entries),
+      details,
     );
   }
   Map<String, Object> toJson() => {
@@ -155,6 +164,7 @@ class CollectionControlBody {
     'title': title,
     'summary': summary,
     'entries': entries.map((e) => e.toJson()).toList(growable: false),
+    if (journeyDetails != null) 'journeyDetails': journeyDetails!.toInput(),
   };
   List<Object> get tuple => [
     kind,
@@ -162,6 +172,7 @@ class CollectionControlBody {
     _b64(title),
     _b64(summary),
     entries.map((e) => e.tuple).toList(growable: false),
+    if (journeyDetails != null) [journeyDetailsSchema, journeyDetails!.digest],
   ];
 }
 

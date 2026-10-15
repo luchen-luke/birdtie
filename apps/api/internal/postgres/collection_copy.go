@@ -565,6 +565,17 @@ func (s *Store) attachCollectionCopyReadProof(ctx context.Context, d [32]byte, a
 	if valid {
 		frozen := *v
 		frozen.Entries = append(v.Entries[:0:0], v.Entries...)
+		if v.JourneyDetails != nil {
+			raw, e := json.Marshal(v.JourneyDetails)
+			if e != nil {
+				return
+			}
+			var copy content.JourneyDetails
+			if json.Unmarshal(raw, &copy) != nil {
+				return
+			}
+			frozen.JourneyDetails = &copy
+		}
 		v.ResponseProof = &collectionPrivateCopyProof{s, d, a, f, frozen, collectionPrivateCopyWire(frozen)}
 	}
 }

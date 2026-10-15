@@ -1,0 +1,36 @@
+{
+  "mode": "apply",
+  "exitCode": 0,
+  "remoteScriptSHA256": "725a482456af7ecdc6e5a0e789bf9abba4e6c985b0f81aad397d0631dd35062c",
+  "result": {
+    "status": "PRIVATE_VIDEO_COMMITTED",
+    "originalInputUnchanged": true,
+    "result": {
+      "runId": "c5df0d7c-f361-4275-9838-feb6d1d92352",
+      "status": "COMMITTED",
+      "counts": {
+        "videos": 5,
+        "notes": 5,
+        "owners": 2
+      },
+      "countsKnown": true,
+      "activated": false,
+      "sourceWrites": 0,
+      "mediaImported": true,
+      "videosImported": true
+    },
+    "sourceWrites": 0,
+    "originalFactInspected": true,
+    "repeatChecked": true,
+    "remoteCodecVerification": {
+      "antivirusScan": "NOT_RUN",
+      "databaseWrites": 0,
+      "failed": 0,
+      "failureStages": {},
+      "passed": 5,
+      "publicationRights": "NOT_AUTHORIZED",
+      "status": "VERIFIED_NOT_IMPORTED",
+      "total": 5
+    }
+  }
+}

@@ -13,6 +13,8 @@ import '../content/moment_control.dart';
 import 'package:flutter/scheduler.dart';
 import '../content/private_moment_media_controller.dart';
 import '../content/private_moment_media_sheet.dart';
+import '../content/private_moment_video_controller.dart';
+import '../content/private_moment_video_sheet.dart';
 import '../content/moment_time_choice.dart';
 import '../content/moment_context_choice.dart';
 import '../content/public_intent_section.dart';
@@ -1301,6 +1303,32 @@ class _MomentDraftSheetState extends State<_MomentDraftSheet> {
     return widget.moments.currentOwnedVersion(m);
   }
 
+  Future<void> _managePrivateVideo() async {
+    if (!_imageSourceCurrent) return;
+    final controller = PrivateMomentVideoController(
+      momentID: widget.existing!.id,
+      authorizationHeader: () => widget.auth.authorizationHeader,
+      ownerID: () => widget.auth.accountID,
+      sourceCurrent: () => _imageSourceCurrent,
+      identityChanges: Listenable.merge([
+        widget.auth,
+        widget.moments,
+        widget.workspaceChanges,
+      ]),
+      apiBaseUrl: widget.apiBaseUrl ?? BirdtieEnvironment.apiBaseUrl,
+      client: widget.client,
+    );
+    try {
+      final route = MaterialPageRoute<void>(
+        builder: (_) => PrivateMomentVideoSheet(controller: controller),
+      );
+      await Navigator.of(context).push(route);
+      await route.completed;
+    } finally {
+      controller.dispose();
+    }
+  }
+
   Future<void> _managePrivateImage() async {
     if (!_imageSourceCurrent) return;
     final m = widget.existing!;
@@ -1387,7 +1415,12 @@ class _MomentDraftSheetState extends State<_MomentDraftSheet> {
                   icon: const Icon(Icons.photo_outlined),
                   label: const Text('管理私人图片'),
                 ),
-                const Text('图片只用于这条已保存的私人记录；公开或撤回记录会移除图片。'),
+                OutlinedButton.icon(
+                  onPressed: widget.moments.saving ? null : _managePrivateVideo,
+                  icon: const Icon(Icons.video_library_outlined),
+                  label: const Text('管理私人视频'),
+                ),
+                const Text('媒体仅用于这条私人记录；公开或撤回记录会移除私人媒体。'),
                 const SizedBox(height: 12),
               ],
               if (widget.existing?.title.isNotEmpty == true)

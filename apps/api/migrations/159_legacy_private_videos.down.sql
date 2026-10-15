@@ -1,0 +1,11 @@
+BEGIN;
+DROP TRIGGER IF EXISTS private_video_moment_retire ON moments;
+DROP FUNCTION IF EXISTS birdtie_private_video_moment_retire();
+DROP TABLE IF EXISTS legacy_private_video_import_items;
+DROP TABLE IF EXISTS private_moment_videos;
+DROP TABLE IF EXISTS legacy_private_video_import_runs;
+DROP FUNCTION IF EXISTS birdtie_legacy_private_video_binding();
+DROP FUNCTION IF EXISTS birdtie_keep_private_video_identity();
+DROP FUNCTION IF EXISTS birdtie_legacy_private_video_counts();
+DROP FUNCTION IF EXISTS birdtie_legacy_private_video_contract();
+COMMIT;

@@ -1,0 +1,48 @@
+{
+  "status": "SOURCE_READY",
+  "exactScopeCount": 20,
+  "testCommand": "go test ./internal/content ./internal/legacyjourney ./internal/postgres ./cmd/legacy-native-import -run ^(TestJourneyDetailsUnicodeOrderAndOriginalControlDigest|TestJourneyBuildRequiresVerifiedWholeSource|TestJourneyDetailsVerifiedSyntheticProjection|TestJourneyDetailsCLIEmitsAggregateFacts)$ -count=1",
+  "exitCode": 0,
+  "directTestsPassed": 4,
+  "nativeFunction": "TestJourneyDetailsNativeOwnedImportEditAndNoResurrection",
+  "nativeStatus": "NOT_RUN_PARENT_BATCH",
+  "realPrepare": {
+    "status": "PREPARED_NOT_IMPORTED",
+    "runId": "c5df0d7c-f361-4275-9838-feb6d1d92352",
+    "counts": {
+      "journeys": 22,
+      "entries": 110,
+      "stops": 24,
+      "arrangements": 85,
+      "notes": 1,
+      "tombstones": 12,
+      "unmappedPlaces": 0,
+      "unmappedCities": 0
+    },
+    "activated": false,
+    "sourceWrites": 0,
+    "mediaImported": false
+  },
+  "sources": {
+    "apps/api/migrations/158_journey_native_details.sql": "57d631deb4adce1a64bff25c279f825df98382645ac91b79b1203a1b438c7fde",
+    "apps/api/migrations/158_journey_native_details.down.sql": "96644f9896c06a274081beaa5a90197a81f7782c329a8a5083b0f6d35653aeec",
+    "apps/api/internal/content/journey_detail.go": "863662c93eed29c69122e32e4cb8cbaf23c15939f8dbfb21ac82f8e739de3219",
+    "apps/api/internal/content/journey_detail_test.go": "ba570bffc08362041cff947d25f2488b7311a43ee8c140175513d912cd47d102",
+    "apps/api/internal/content/collection.go": "9f1fa3be393b1eb5c7bea537a62d5c6e39eb4c709dc4cbd5fa685a6d924d7f72",
+    "apps/api/internal/content/collection_control.go": "1e2e4f4398b20f2af9e4257da9c530a05b1d81f1f3beae344baaa01b0d071caf",
+    "apps/api/internal/postgres/journey_details.go": "a7fcfdca86a5c135f1697e949d68bee274e82598d675c6844698b4479510df2a",
+    "apps/api/internal/postgres/journey_details_native_test.go": "cc866dde88802d967af9bfe50bba51f6eb8ffd9173aaec745af7d9da6fea30fe",
+    "apps/api/internal/postgres/collections.go": "f0ddca9c1cadec0aacd6d05ef0ccf67dca5305b4605724c2ab5b599f43c5bc69",
+    "apps/api/internal/postgres/collection_control.go": "ec262fdeb1fb2ae5cff9d0b618061fe8fe1231f5c6873141d73c421b9f514034",
+    "apps/api/internal/postgres/collection_copy.go": "02fa299e64ea58476f7abfd41ef7bd01a4de0674dd58388a7950f0a298cfd137",
+    "apps/api/internal/postgres/collection_append.go": "b2b5d5da64f7c18ee59b91d8c207de94851a83cd6af3b48160f85577976a94d6",
+    "apps/api/internal/postgres/collection_publication.go": "2c8cbcb36081a199f6c4a34c6010b244efbf52aea9b2dcbc1e8e7285f47f65bb",
+    "apps/api/internal/postgres/legacy_journey_adaptation.go": "916c76c2bbb2ed6aaf6bb0d2f134049438fb017cadf7f59c3362ee4a27774ad6",
+    "apps/api/internal/legacyjourney/model.go": "28d5b4a920171369433d658fc8520d07a6bbcd414943923b504ebb6dc24ebe6f",
+    "apps/api/internal/legacyjourney/build.go": "7851e9674d8bbd25198b65661435ebbd266c8ab56817120e0af9c230fb1ed179",
+    "apps/api/internal/legacyjourney/build_test.go": "973e7a24e9c337f135e6dc57e5411e03f5694094a8f961e318c2be19716d8cc4",
+    "apps/api/internal/legacynative/model.go": "dda7ddc920ec83d0e83df7bb43ac6786785a8c9850c1f7b0e7a29018f769309d",
+    "apps/api/cmd/legacy-native-import/main.go": "71020eb500b4cc265eb39122511cca2a41dad8c3fbe0ee56a1230d4f9728c4a6",
+    "apps/api/cmd/legacy-native-import/main_test.go": "9c0a628ae7b904eeec6b2f0a55a54b404d8f959d552ecabd75d94aef196e3d87"
+  }
+}

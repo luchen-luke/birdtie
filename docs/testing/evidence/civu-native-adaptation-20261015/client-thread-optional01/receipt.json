@@ -1,0 +1,15 @@
+{
+  "cwd": "D:\\Project\\birdtie\\apps\\client",
+  "command": "D:\\DevTools\\flutter\\bin\\flutter.bat test --no-pub --reporter expanded test/moment_thread_test.dart",
+  "startedAt": "2026-10-15T08:37:28.1297022Z",
+  "finishedAt": "2026-10-15T08:37:31.3165446Z",
+  "exitCode": 0,
+  "formatExitCode": 0,
+  "scope": [
+    "lib/src/workspace/moment_thread_api.dart",
+    "test/moment_thread_test.dart"
+  ],
+  "build": "NOT_RUN",
+  "device": "NOT_RUN",
+  "api": "NOT_RUN"
+}

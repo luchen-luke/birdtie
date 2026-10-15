@@ -103,6 +103,13 @@ func (s *Store) AppendHumanCollectionPlaces(ctx context.Context, d [32]byte, a i
 		return empty, content.ErrUnavailable
 	}
 	table, _, _, _ := collectionTables(kind)
+	if kind == "journey" {
+		if rich, e := journeyRichTx(ctx, tx, a.ID, id); e != nil {
+			return empty, e
+		} else if rich {
+			return empty, content.ErrConflict
+		}
+	}
 	var city string
 	e = tx.QueryRow(ctx, `SELECT city_id FROM `+table+` WHERE id=$1 AND owner_account_id=$2 AND revision=$3 AND status='draft' AND visibility='private' FOR UPDATE`, id, a.ID, in.ExpectedRevision).Scan(&city)
 	if errors.Is(e, pgx.ErrNoRows) {

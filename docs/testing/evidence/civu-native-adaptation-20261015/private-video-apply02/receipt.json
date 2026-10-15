@@ -1,0 +1,12 @@
+{
+  "mode": "apply",
+  "exitCode": 1,
+  "remoteScriptSHA256": "940dc3520cb6d95e81c33fad89e50d48f84412e5c1528d75cf0eba24a146972f",
+  "result": {
+    "status": "FAILED",
+    "stage": "verify_remote_codec",
+    "errorType": "RuntimeError",
+    "controlledCode": "CONTROLLED_COMMAND_FAILED",
+    "privateValuesOmitted": true
+  }
+}

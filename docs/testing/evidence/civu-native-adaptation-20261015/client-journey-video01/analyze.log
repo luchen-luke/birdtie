@@ -1,0 +1,125 @@
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\collection_control.dart|28|5|7|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\collection_control.dart|34|5|7|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\collection_control.dart|37|5|7|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\collection_control.dart|50|5|7|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\collection_control.dart|56|5|7|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\collection_control.dart|62|5|7|Statements in an if should be enclosed in a block.
+INFO|LINT|PREFER_INTERPOLATION_TO_COMPOSE_STRINGS|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\collection_control.dart|72|10|30|Use interpolation to compose strings and values.
+INFO|LINT|PREFER_INTERPOLATION_TO_COMPOSE_STRINGS|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\collection_control.dart|74|7|31|Use interpolation to compose strings and values.
+INFO|LINT|PREFER_INTERPOLATION_TO_COMPOSE_STRINGS|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\collection_control.dart|76|7|32|Use interpolation to compose strings and values.
+INFO|LINT|PREFER_INTERPOLATION_TO_COMPOSE_STRINGS|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\collection_control.dart|78|7|32|Use interpolation to compose strings and values.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\collection_control.dart|100|7|7|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\collection_control.dart|144|7|7|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\collection_control.dart|151|7|7|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\collection_control.dart|259|7|7|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\collection_control.dart|276|7|7|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\collection_control.dart|282|7|7|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\collection_control.dart|288|7|7|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\collection_control.dart|339|7|7|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\collection_control.dart|355|7|7|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\collection_control.dart|378|60|4|Statements in a while should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\collection_control.dart|389|9|54|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\collection_control.dart|441|64|4|Statements in a while should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\collection_control.dart|473|7|42|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\collection_control.dart|489|9|42|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\collection_control.dart|494|7|42|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\collection_control.dart|496|7|52|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\collection_control.dart|499|7|7|Statements in an if should be enclosed in a block.
+INFO|LINT|PREFER_INTERPOLATION_TO_COMPOSE_STRINGS|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\collection_control.dart|524|7|88|Use interpolation to compose strings and values.
+INFO|LINT|PREFER_INTERPOLATION_TO_COMPOSE_STRINGS|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\collection_control.dart|544|7|74|Use interpolation to compose strings and values.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\journey_detail.dart|79|7|41|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\journey_detail.dart|97|7|41|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\journey_detail.dart|184|7|41|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\journey_detail.dart|205|7|41|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\journey_detail_editor.dart|124|38|12|Statements in a for should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\journey_detail_editor.dart|346|38|12|Statements in a for should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\journey_detail_editor.dart|388|7|94|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\personal_collection_controller.dart|128|7|56|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\personal_collection_controller.dart|206|5|164|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\personal_collection_controller.dart|251|7|64|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\personal_collection_controller.dart|262|7|58|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\personal_collection_controller.dart|277|7|63|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\personal_collection_controller.dart|319|7|32|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\personal_collection_controller.dart|516|7|7|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\personal_collection_controller.dart|531|7|7|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\personal_collection_controller.dart|569|7|12|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\personal_collection_controller.dart|809|7|57|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\personal_collection_controller.dart|820|7|16|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\personal_collection_controller.dart|844|7|7|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\personal_collection_controller.dart|868|7|7|Statements in an if should be enclosed in a block.
+INFO|LINT|USE_NULL_AWARE_ELEMENTS|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\personal_collection_controller.dart|929|37|2|Use the null-aware marker '?' rather than a null check via an 'if'.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\personal_collection_controller.dart|943|13|30|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\personal_collection_controller.dart|952|9|30|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\personal_collection_controller.dart|963|9|36|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\personal_collection_controller.dart|992|11|30|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\personal_collection_controller.dart|1017|7|13|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\personal_collection_controller.dart|1031|9|57|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\personal_collection_controller.dart|1033|9|30|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\personal_collection_controller.dart|1076|7|13|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\personal_collection_controller.dart|1083|7|13|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\personal_collection_controller.dart|1141|9|30|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\personal_collection_controller.dart|1344|7|12|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\personal_collection_controller.dart|1346|7|12|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\personal_collection_controller.dart|1434|9|27|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\personal_collection_controller.dart|1442|9|28|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\personal_collection_controller.dart|1448|9|28|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\personal_collection_controller.dart|1485|7|13|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\personal_collection_controller.dart|1496|11|13|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\personal_collection_controller.dart|1524|7|13|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\personal_collection_controller.dart|1526|7|32|Statements in an if should be enclosed in a block.
+INFO|LINT|PREFER_INTERPOLATION_TO_COMPOSE_STRINGS|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\personal_collection_controller.dart|1605|21|12|Use interpolation to compose strings and values.
+INFO|LINT|PREFER_INTERPOLATION_TO_COMPOSE_STRINGS|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\personal_collection_controller.dart|1605|36|20|Use interpolation to compose strings and values.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\personal_collection_controller.dart|1612|9|30|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\personal_collection_controller.dart|1660|7|13|Statements in an if should be enclosed in a block.
+INFO|LINT|PREFER_INTERPOLATION_TO_COMPOSE_STRINGS|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\personal_collection_controller.dart|1666|18|19|Use interpolation to compose strings and values.
+INFO|LINT|PREFER_INTERPOLATION_TO_COMPOSE_STRINGS|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\personal_collection_controller.dart|1666|40|27|Use interpolation to compose strings and values.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\personal_collection_controller.dart|1674|9|13|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\personal_collection_page.dart|128|7|135|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\personal_collection_page.dart|133|7|141|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\personal_collection_page.dart|180|7|7|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\personal_collection_page.dart|186|7|7|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\personal_collection_page.dart|252|7|7|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\personal_collection_page.dart|278|15|29|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\personal_collection_page.dart|308|9|94|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\personal_collection_page.dart|314|9|42|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\personal_collection_page.dart|326|7|7|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\personal_collection_page.dart|331|7|7|Statements in an if should be enclosed in a block.
+INFO|LINT|USE_NULL_AWARE_ELEMENTS|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\personal_collection_page.dart|338|7|2|Use the null-aware marker '?' rather than a null check via an 'if'.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\personal_collection_page.dart|368|9|12|Statements in an if should be enclosed in a block.
+INFO|LINT|PREFER_NULL_AWARE_OPERATORS|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\personal_collection_page.dart|380|27|35|Use the null-aware operator '?.' rather than an explicit 'null' comparison.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\personal_collection_page.dart|400|7|7|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\personal_collection_page.dart|484|11|133|Statements in an if should be enclosed in a block.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\personal_collection_page.dart|484|32|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\personal_collection_page.dart|502|26|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\personal_collection_page.dart|507|9|38|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\personal_collection_page.dart|521|7|7|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\personal_collection_page.dart|671|9|25|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\personal_collection_page.dart|684|7|7|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\personal_collection_page.dart|695|7|7|Statements in an if should be enclosed in a block.
+INFO|LINT|PREFER_INTERPOLATION_TO_COMPOSE_STRINGS|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\personal_collection_page.dart|727|27|51|Use interpolation to compose strings and values.
+INFO|LINT|PREFER_INTERPOLATION_TO_COMPOSE_STRINGS|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\personal_collection_page.dart|757|31|61|Use interpolation to compose strings and values.
+INFO|LINT|PREFER_INTERPOLATION_TO_COMPOSE_STRINGS|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\personal_collection_page.dart|759|35|290|Use interpolation to compose strings and values.
+INFO|LINT|PREFER_INTERPOLATION_TO_COMPOSE_STRINGS|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\personal_collection_page.dart|767|41|28|Use interpolation to compose strings and values.
+INFO|LINT|PREFER_INTERPOLATION_TO_COMPOSE_STRINGS|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\personal_collection_page.dart|855|25|72|Use interpolation to compose strings and values.
+INFO|LINT|PREFER_INTERPOLATION_TO_COMPOSE_STRINGS|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\personal_collection_page.dart|864|25|45|Use interpolation to compose strings and values.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\personal_collection_page.dart|869|33|380|Statements in an if should be enclosed in a block.
+INFO|LINT|PREFER_INTERPOLATION_TO_COMPOSE_STRINGS|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\personal_collection_page.dart|889|27|42|Use interpolation to compose strings and values.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\personal_collection_page.dart|894|35|123|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\personal_collection_page.dart|1147|27|7|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\private_moment_video_controller.dart|140|9|30|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\private_moment_video_controller.dart|160|7|12|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\private_moment_video_controller.dart|180|7|12|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\private_moment_video_controller.dart|241|9|30|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\content\\private_moment_video_sheet.dart|61|7|23|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\legacy\\legacy_shell.dart|225|7|31|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\legacy\\legacy_shell.dart|227|7|74|Statements in an if should be enclosed in a block.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|D:\\Project\\birdtie\\apps\\client\\lib\\src\\legacy\\legacy_shell.dart|298|36|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|D:\\Project\\birdtie\\apps\\client\\lib\\src\\legacy\\legacy_shell.dart|302|33|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|D:\\Project\\birdtie\\apps\\client\\lib\\src\\legacy\\legacy_shell.dart|303|46|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|D:\\Project\\birdtie\\apps\\client\\lib\\src\\legacy\\legacy_shell.dart|305|9|13|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|D:\\Project\\birdtie\\apps\\client\\lib\\src\\legacy\\legacy_shell.dart|306|9|21|Don't use 'BuildContext's across async gaps.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\legacy\\legacy_shell.dart|374|7|59|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\legacy\\legacy_shell.dart|1302|7|13|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\legacy\\legacy_shell.dart|1833|21|108|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\legacy\\legacy_shell.dart|2163|41|23|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\Project\\birdtie\\apps\\client\\lib\\src\\legacy\\legacy_shell.dart|2173|31|46|Statements in an if should be enclosed in a block.

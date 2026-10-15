@@ -103,7 +103,7 @@ func collectionControlLegacy(in content.CollectionControlInput) content.Collecti
 		return content.CollectionInput{}
 	}
 	p := in.Input
-	out := content.CollectionInput{Kind: p.Kind, CityID: p.CityID, Title: p.Title, Summary: p.Summary, Entries: []content.CollectionEntry{}}
+	out := content.CollectionInput{Kind: p.Kind, CityID: p.CityID, Title: p.Title, Summary: p.Summary, Entries: []content.CollectionEntry{}, JourneyDetails: p.JourneyDetails}
 	for _, entry := range p.Entries {
 		out.Entries = append(out.Entries, content.CollectionEntry{PlaceID: entry.PlaceID, Note: entry.Note, LocationVisibility: entry.LocationVisibility})
 	}
@@ -118,8 +118,12 @@ func collectionControlTarget(ctx context.Context, tx pgx.Tx, owner string, in co
 		return "", e
 	}
 	var before string
+	details := ""
+	if in.Kind == "journey" {
+		details = `,(SELECT coalesce(jsonb_agg(jsonb_build_array(it.xmin::text,it.entry_id,it.material) ORDER BY it.sequence_no),'[]'::jsonb) FROM journey_itinerary_entries it WHERE it.journey_id=t.id)`
+	}
 	query := `SELECT jsonb_build_array(t.xmin::text,t.id,t.revision,t.status,t.visibility,
- (SELECT coalesce(jsonb_agg(jsonb_build_array(e.xmin::text,e.sequence_no,e.place_id,e.note,e.location_visibility) ORDER BY e.sequence_no),'[]'::jsonb) FROM ` + entries + ` e WHERE e.` + key + `=t.id))::text
+ (SELECT coalesce(jsonb_agg(jsonb_build_array(e.xmin::text,e.sequence_no,e.place_id,e.note,e.location_visibility) ORDER BY e.sequence_no),'[]'::jsonb) FROM ` + entries + ` e WHERE e.` + key + `=t.id)` + details + `)::text
  FROM ` + table + ` t WHERE t.id=$1 AND t.owner_account_id=$2 AND t.revision=$3 AND t.status='draft' AND t.visibility='private'`
 	if e = tx.QueryRow(ctx, query, in.CollectionID, owner, in.ExpectedRevision).Scan(&before); errors.Is(e, pgx.ErrNoRows) {
 		return "", content.ErrConflict
@@ -144,6 +148,9 @@ func collectionControlAuthority(ctx context.Context, tx pgx.Tx, owner string, in
 		return "withdraw-owned-private", nil, nil
 	}
 	p := collectionControlLegacy(in)
+	if handled, authority, deadline, e := journeyDetailsAuthorityTx(ctx, tx, owner, in.CollectionID, p); handled || e != nil {
+		return authority, deadline, e
+	}
 	if handled, authority, deadline, e := legacyCollectionRetainedAuthorityTx(ctx, tx, owner, in.CollectionID, p); handled || e != nil {
 		return authority, deadline, e
 	}

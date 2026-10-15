@@ -1,0 +1,29 @@
+{
+  "exitCode": 0,
+  "remoteScriptSHA256": "c06cfda4000ba0d3d2f4b85fb6e244d5f811ea3ea7daaae53296a0fe2428bb85",
+  "result": {
+    "status": "NATIVE_JOURNEYS_COMMITTED",
+    "result": {
+      "runId": "c5df0d7c-f361-4275-9838-feb6d1d92352",
+      "status": "COMMITTED",
+      "counts": {
+        "journeys": 22,
+        "entries": 110,
+        "stops": 24,
+        "arrangements": 85,
+        "notes": 1,
+        "tombstones": 12,
+        "unmappedPlaces": 0,
+        "unmappedCities": 0
+      },
+      "countsKnown": true,
+      "activated": false,
+      "sourceWrites": 0,
+      "mediaImported": false
+    },
+    "sourceWrites": 0,
+    "originalInputUnchanged": true,
+    "originalFactInspected": true,
+    "repeatChecked": true
+  }
+}

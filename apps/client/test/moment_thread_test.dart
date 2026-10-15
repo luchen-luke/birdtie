@@ -89,6 +89,129 @@ Map<String, Object?> receipt(MomentThreadPending original) => {
 };
 
 void main() {
+  test('optional thread keeps a selected Place without a compulsory City', () {
+    final place = MomentThreadDraftEntry(
+      localID: firstID,
+      cityID: '',
+      placeID: owner,
+      text: '作者选择的地点，与探索城市无关',
+    );
+    final input = MomentThreadInput(
+      operationID: secondID,
+      action: 'CREATE_PUBLISH',
+      localScope: threadID,
+      entries: [
+        place,
+        MomentThreadDraftEntry(localID: secondID, cityID: '', text: '无位置的第二条'),
+      ],
+    );
+    final items = input.toJson()['items'] as List;
+    expect(items.first['input'], {
+      'cityId': '',
+      'placeId': owner,
+      'title': '',
+      'body': place.text,
+      'occurredAt': null,
+      'timePrecision': 'unknown',
+      'locationPrecision': 'place',
+    });
+    expect(items.last['input']['locationPrecision'], 'none');
+    final restored = MomentThreadDraftEntry.decode(place.json);
+    expect(restored.toItem()['input'], items.first['input']);
+    expect(input.digest, matches(RegExp(r'^[0-9a-f]{64}$')));
+  });
+
+  test(
+    'optional thread seals a media-only entry in its actual shared scope',
+    () {
+      final rights = EntityCoverRights(
+        basis: 'OWNED',
+        attribution: '',
+        licenseReference: '',
+        canRetain: true,
+        canPublish: true,
+        retentionUntil: DateTime.now().toUtc().add(const Duration(days: 1)),
+      );
+      final media = PublicMomentMediaSelection(owner, 1, rights);
+      final entry = MomentThreadDraftEntry(
+        localID: firstID,
+        cityID: '',
+        media: [media],
+      );
+      final second = MomentThreadDraftEntry(
+        localID: secondID,
+        cityID: '',
+        text: '第二条正文',
+      );
+      final input = MomentThreadInput(
+        operationID: secondID,
+        action: 'CREATE_PUBLISH',
+        localScope: threadID,
+        entries: [entry, second],
+      );
+      final wire = input.toJson();
+      final item = (wire['items'] as List).first;
+      expect(wire['localScope'], threadID);
+      expect(item['input']['title'], '');
+      expect(item['input']['body'], '');
+      expect(item['input']['cityId'], '');
+      expect(item['input']['locationPrecision'], 'none');
+      expect(item['media'], [media.toJson()]);
+      final sealed = MomentControlInput(
+        operationID: firstID,
+        action: 'PUBLISH',
+        momentID: firstID,
+        expectedRevision: 1,
+        input: entry.input,
+        media: [media],
+        localScope: threadID,
+      );
+      final secondInput = MomentControlInput(
+        operationID: secondID,
+        action: 'PUBLISH',
+        momentID: secondID,
+        expectedRevision: 1,
+        input: second.input,
+      );
+      expect(
+        input.digest,
+        momentHash([
+          'moment-thread-v1',
+          secondID,
+          'CREATE_PUBLISH',
+          '',
+          threadID,
+          'PUBLIC',
+          0,
+          [
+            [
+              sealed.inputHash,
+              [
+                [owner, 1, rights.digest],
+              ],
+            ],
+            [secondInput.inputHash, []],
+          ],
+        ]),
+      );
+      expect(() => entry.toItem(), throwsFormatException);
+      expect(
+        () => entry.copy(media: const []).toItem(localScope: threadID),
+        throwsFormatException,
+      );
+      final changed = MomentThreadInput(
+        operationID: input.operationID,
+        action: input.action,
+        localScope: input.localScope,
+        entries: [
+          entry.copy(media: [PublicMomentMediaSelection(owner, 2, rights)]),
+          second,
+        ],
+      );
+      expect(changed.digest, isNot(input.digest));
+    },
+  );
+
   test(
     'thread restore clears legacy rights and saves only derived media-free draft',
     () async {

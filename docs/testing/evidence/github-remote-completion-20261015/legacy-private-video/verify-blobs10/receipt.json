@@ -1,0 +1,25 @@
+{
+  "command": "go run ./cmd/legacy-video-import --verify-blobs --run-id <original-run> --source <protected-source> --manifest <protected-manifest> --matched <authenticated-matcher> --authenticated-seal <original-seal> --authenticated-seal-sha256 <pinned-original> --blob-directory <restricted-videos> --ffmpeg <absolute-ffmpeg> --ffprobe <absolute-ffprobe> --deadline 15m",
+  "cwd": "D:\\Project\\birdtie\\apps\\api",
+  "exitCode": 0,
+  "elapsedSeconds": 87.95,
+  "sourceBefore": {
+    "apps/api/internal/legacyvideo/model.go": "f4fd7e3ce38381fc2cd4b84d36dbdbd18c87b3a566004f619cc1decdacda337e",
+    "apps/api/internal/legacyvideo/normalize.go": "e91fdd4f7a534cf0bf48cc55dbf0ad01148273d62e3bea7a5ce1ef183fbcfb5e",
+    "apps/api/internal/legacyvideo/process_unix.go": "e64564bc6cfa4410510461140f5237a5019d62368404bd46174cc6fcb66f106f",
+    "apps/api/internal/legacyvideo/process_windows.go": "ceb3a201a3ab109d88916d211974d7279307b82cb0053c3af23c7147b6abc4e2",
+    "apps/api/cmd/legacy-video-import/main.go": "4ba7af05fe196df04457d0f4795f380e533ce0f1b98986f5ae7f4016097a2460"
+  },
+  "sourceAfter": {
+    "apps/api/internal/legacyvideo/model.go": "f4fd7e3ce38381fc2cd4b84d36dbdbd18c87b3a566004f619cc1decdacda337e",
+    "apps/api/internal/legacyvideo/normalize.go": "e91fdd4f7a534cf0bf48cc55dbf0ad01148273d62e3bea7a5ce1ef183fbcfb5e",
+    "apps/api/internal/legacyvideo/process_unix.go": "e64564bc6cfa4410510461140f5237a5019d62368404bd46174cc6fcb66f106f",
+    "apps/api/internal/legacyvideo/process_windows.go": "ceb3a201a3ab109d88916d211974d7279307b82cb0053c3af23c7147b6abc4e2",
+    "apps/api/cmd/legacy-video-import/main.go": "4ba7af05fe196df04457d0f4795f380e533ce0f1b98986f5ae7f4016097a2460"
+  },
+  "codecSourceStable": true,
+  "privateOriginalFiles": 5,
+  "privateOriginalHashesUnchanged": true,
+  "databaseAccess": false,
+  "databaseWrites": 0
+}

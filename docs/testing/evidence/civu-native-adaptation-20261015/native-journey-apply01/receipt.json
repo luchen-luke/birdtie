@@ -1,0 +1,11 @@
+{
+  "exitCode": 1,
+  "remoteScriptSHA256": "a56a533f35b43531523a94e097b45a3d225fa80830d53264e46a8773d789b17d",
+  "result": {
+    "status": "FAILED",
+    "stage": "validate",
+    "errorType": "RuntimeError",
+    "controlledCode": "legacy_import_private_input_rejected",
+    "privateValuesOmitted": true
+  }
+}

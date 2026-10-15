@@ -36,21 +36,25 @@ class MomentThreadDraftEntry {
     'body': text.trim(),
     'occurredAt': null,
     'timePrecision': 'unknown',
-    'locationPrecision': cityID.isEmpty
-        ? 'none'
-        : (placeID.isEmpty ? 'city' : 'place'),
+    'locationPrecision': placeID.isNotEmpty
+        ? 'place'
+        : (cityID.isEmpty ? 'none' : 'city'),
   };
-  Map<String, Object?> toItem() {
+  MomentControlInput _controlInput(String localScope) => MomentControlInput(
+    operationID: localID,
+    action: 'PUBLISH',
+    momentID: localID,
+    expectedRevision: 1,
+    input: input,
+    media: media.isEmpty ? null : media,
+    localScope: media.isEmpty ? '' : localScope,
+  );
+
+  Map<String, Object?> toItem({String localScope = ''}) {
     if (text.trim().isEmpty && media.isEmpty) {
       throw const FormatException('每条动态需要正文或已准备材料');
     }
-    MomentControlInput(
-      operationID: localID,
-      action: 'PUBLISH',
-      momentID: localID,
-      expectedRevision: 1,
-      input: input,
-    );
+    _controlInput(localScope);
     if (media.length > 9 ||
         media.any(
           (image) =>
@@ -165,7 +169,7 @@ class MomentThreadInput {
       }
       final seen = <String>{};
       for (final entry in entries) {
-        entry.toItem();
+        entry.toItem(localScope: localScope);
         for (final image in entry.media) {
           if (!seen.add(image.mediaID)) {
             throw const FormatException('同一材料不能重复分配到多条');
@@ -190,7 +194,9 @@ class MomentThreadInput {
       'localScope': localScope,
       'audience': 'PUBLIC',
       'expectedVersion': expectedVersion,
-      'items': entries.map((entry) => entry.toItem()).toList(),
+      'items': entries
+          .map((entry) => entry.toItem(localScope: localScope))
+          .toList(),
     };
   }
 
@@ -207,13 +213,7 @@ class MomentThreadInput {
       entries
           .map(
             (entry) => [
-              MomentControlInput(
-                operationID: entry.localID,
-                action: 'PUBLISH',
-                momentID: entry.localID,
-                expectedRevision: 1,
-                input: entry.input,
-              ).inputHash,
+              entry._controlInput(localScope).inputHash,
               entry.media
                   .map(
                     (image) => [

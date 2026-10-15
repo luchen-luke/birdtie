@@ -1,0 +1,26 @@
+{
+  "command": [
+    "C:\\Program Files\\Go\\bin\\go.exe",
+    "test",
+    "./internal/legacyvideo",
+    "-run",
+    "^TestPrivateVideoFullTimelineAndClosedContainerLimits$",
+    "-count=1"
+  ],
+  "cwd": "D:\\Project\\birdtie\\apps\\api",
+  "exitCode": 0,
+  "elapsedSeconds": 1.06,
+  "sourceBefore": {
+    "apps/api/internal/legacyvideo/normalize.go": "e546219b94b1974d5830efda08dd561be075433583f9a579ec3671b4a5581b9b",
+    "apps/api/internal/legacyvideo/process_unix.go": "7fbc8730a0741a8d5bd51eb8b96c57b685ced525e421942ef3a5121c344d2ce3"
+  },
+  "sourceAfter": {
+    "apps/api/internal/legacyvideo/normalize.go": "e546219b94b1974d5830efda08dd561be075433583f9a579ec3671b4a5581b9b",
+    "apps/api/internal/legacyvideo/process_unix.go": "7fbc8730a0741a8d5bd51eb8b96c57b685ced525e421942ef3a5121c344d2ce3"
+  },
+  "sourceStable": true,
+  "coverage": "Direct complete-timeline/probe/packet-progress contract parser and RAM retirement; Windows compile of common runner; not a Linux RSS runtime test. Root will Linux cross-build and run remote actual5.",
+  "windowsReal5Repeated": false,
+  "journeyRepeated": false,
+  "deployedDDLChanged": false
+}

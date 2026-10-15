@@ -1,0 +1,6 @@
+{"failed":0,"failureStages":{},"passed":1,"processed":1,"status":"VERIFY_PROGRESS"}
+{"failed":0,"failureStages":{},"passed":2,"processed":2,"status":"VERIFY_PROGRESS"}
+{"failed":0,"failureStages":{},"passed":3,"processed":3,"status":"VERIFY_PROGRESS"}
+{"failed":0,"failureStages":{},"passed":4,"processed":4,"status":"VERIFY_PROGRESS"}
+{"failed":1,"failureStages":{"CANONICAL_ENCODE_OUTPUT_BOUND_EXIT_-1":1},"passed":4,"processed":5,"status":"VERIFY_PROGRESS"}
+{"antivirusScan":"NOT_RUN","databaseWrites":0,"failed":1,"failureStages":{"CANONICAL_ENCODE_OUTPUT_BOUND_EXIT_-1":1},"passed":4,"publicationRights":"NOT_AUTHORIZED","status":"VERIFIED_NOT_IMPORTED","total":5}

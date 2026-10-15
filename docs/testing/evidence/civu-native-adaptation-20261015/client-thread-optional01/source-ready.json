@@ -1,0 +1,24 @@
+{
+  "status": "SOURCE_READY",
+  "frozenAt": "2026-10-15T08:37:41.2841390Z",
+  "files": [
+    {
+      "path": "apps/client/lib/src/workspace/moment_thread_api.dart",
+      "sha256": "ca89dd69ff9a5cba946cadb8c2b158322de1e508cdf2281b59f6d63d75ab0eb9"
+    },
+    {
+      "path": "apps/client/test/moment_thread_test.dart",
+      "sha256": "12f8d40f0aa35041aec92b87c039c821f2dc79977ce2a62a803f7536401a3287"
+    }
+  ],
+  "test": "client-thread-optional01/output.log",
+  "exitCode": 0,
+  "passed": 6,
+  "failed": 0,
+  "skipped": 0,
+  "diffCheckExitCode": 0,
+  "publicPreview": "unchanged",
+  "multiLocationModel": "NOT_IMPLEMENTED",
+  "build": "NOT_RUN",
+  "device": "NOT_RUN"
+}

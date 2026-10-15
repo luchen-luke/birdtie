@@ -171,6 +171,7 @@ func run(ctx context.Context, args []string, getenv func(string) string, out io.
 	apply := flags.Bool("apply", false, "apply the original run once to an exact native target")
 	inspect := flags.String("inspect-run", "", "inspect only an original run's immutable facts")
 	validate := flags.Bool("validate", false, "prepare without database access (default)")
+	journeyDetails := flags.Bool("journey-details", false, "incremental native Journey schedules from the original preserved run")
 	database := flags.String("database", "", "exact native database name")
 	databaseOID := flags.Int64("database-oid", 0, "exact native database OID")
 	owner := flags.String("database-owner", "", "exact native database owner role")
@@ -201,13 +202,23 @@ func run(ctx context.Context, args []string, getenv func(string) string, out io.
 		if manifestRaw, err = readPrivateInput(*manifest, repository); err != nil {
 			return err
 		}
-		plan, err := postgres.PrepareLegacyNativeAdaptation(*runID, sourceRaw, manifestRaw)
-		if err != nil {
-			return postgres.ErrLegacyMigrationInvalid
-		}
-		if !*apply {
-			counts := plan.Counts
-			return writeSummary(out, *runID, "PREPARED_NOT_IMPORTED", counts, plan.Deferred)
+		if *journeyDetails {
+			plan, e := postgres.PrepareLegacyJourneyDetails(*runID, sourceRaw, manifestRaw)
+			if e != nil {
+				return postgres.ErrLegacyMigrationInvalid
+			}
+			if !*apply {
+				return writeJourneySummary(out, plan)
+			}
+		} else {
+			plan, err := postgres.PrepareLegacyNativeAdaptation(*runID, sourceRaw, manifestRaw)
+			if err != nil {
+				return postgres.ErrLegacyMigrationInvalid
+			}
+			if !*apply {
+				counts := plan.Counts
+				return writeSummary(out, *runID, "PREPARED_NOT_IMPORTED", counts, plan.Deferred)
+			}
 		}
 	}
 	if !legacymigration.ValidRunID(*runID) || postgres.ValidateLegacyMigrationTarget(target) != nil {
@@ -228,6 +239,18 @@ func run(ctx context.Context, args []string, getenv func(string) string, out io.
 	if err != nil {
 		return err
 	}
+	if *journeyDetails {
+		var result postgres.LegacyJourneyDetailsResult
+		if *inspect != "" {
+			result, err = importer.InspectJourneyDetails(ctx, *runID)
+		} else {
+			result, err = importer.ApplyJourneyDetails(ctx, *runID, sourceRaw, manifestRaw)
+		}
+		if err != nil {
+			return err
+		}
+		return writeJourneySummary(out, result)
+	}
 	var result postgres.LegacyNativeAdaptationResult
 	if *inspect != "" {
 		result, err = importer.InspectNativeAdaptation(ctx, *runID)
@@ -243,6 +266,18 @@ func run(ctx context.Context, args []string, getenv func(string) string, out io.
 		return err
 	}
 	return writeSummary(out, result.RunID, result.Status, result.Counts, result.Deferred)
+}
+
+func writeJourneySummary(out io.Writer, v postgres.LegacyJourneyDetailsResult) error {
+	return json.NewEncoder(out).Encode(struct {
+		RunID         string `json:"runId"`
+		Status        string `json:"status"`
+		Counts        any    `json:"counts"`
+		CountsKnown   bool   `json:"countsKnown"`
+		Activated     bool   `json:"activated"`
+		SourceWrites  int    `json:"sourceWrites"`
+		MediaImported bool   `json:"mediaImported"`
+	}{RunID: v.RunID, Status: v.Status, Counts: v.Counts, CountsKnown: true})
 }
 
 func main() {

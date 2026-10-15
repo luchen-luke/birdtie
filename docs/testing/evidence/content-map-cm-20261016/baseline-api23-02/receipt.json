@@ -1,0 +1,113 @@
+{
+  "exitCode": 0,
+  "result": {
+    "status": "PASS_BASELINE_ONLY",
+    "devOnly": true,
+    "productionIdentityVerified": false,
+    "productionPhoneVerification": false,
+    "fixedCodeUsed": true,
+    "sourceWrites": 0,
+    "databaseDirectWrites": 0,
+    "remoteConfigurationChanged": false,
+    "agentActivationRequested": false,
+    "oldSessionAccepted": false,
+    "messagesSent": 0,
+    "privateValuesPersisted": false,
+    "allCreatedSessionsLoggedOut": true,
+    "schema": 170,
+    "contentWrites": 0,
+    "apiRelease": "/opt/birdtie/releases/social170-20261015-build23",
+    "measurements": [
+      {
+        "scenario": "wide",
+        "runs": [
+          {
+            "elapsedMs": 624.51,
+            "responseJSONBytes": 166459,
+            "markers": 384,
+            "withContent": 6,
+            "covers": 6,
+            "advertisedCoverBytes": 6333201
+          },
+          {
+            "elapsedMs": 619.662,
+            "responseJSONBytes": 166461,
+            "markers": 384,
+            "withContent": 6,
+            "covers": 6,
+            "advertisedCoverBytes": 6333201
+          },
+          {
+            "elapsedMs": 619.37,
+            "responseJSONBytes": 166459,
+            "markers": 384,
+            "withContent": 6,
+            "covers": 6,
+            "advertisedCoverBytes": 6333201
+          }
+        ]
+      },
+      {
+        "scenario": "phone",
+        "runs": [
+          {
+            "elapsedMs": 618.942,
+            "responseJSONBytes": 132194,
+            "markers": 304,
+            "withContent": 6,
+            "covers": 6,
+            "advertisedCoverBytes": 6333201
+          },
+          {
+            "elapsedMs": 615.569,
+            "responseJSONBytes": 132194,
+            "markers": 304,
+            "withContent": 6,
+            "covers": 6,
+            "advertisedCoverBytes": 6333201
+          },
+          {
+            "elapsedMs": 616.089,
+            "responseJSONBytes": 132194,
+            "markers": 304,
+            "withContent": 6,
+            "covers": 6,
+            "advertisedCoverBytes": 6333201
+          }
+        ]
+      },
+      {
+        "scenario": "adjacent",
+        "runs": [
+          {
+            "elapsedMs": 758.961,
+            "responseJSONBytes": 133498,
+            "markers": 307,
+            "withContent": 6,
+            "covers": 6,
+            "advertisedCoverBytes": 6333201
+          },
+          {
+            "elapsedMs": 844.256,
+            "responseJSONBytes": 133498,
+            "markers": 307,
+            "withContent": 6,
+            "covers": 6,
+            "advertisedCoverBytes": 6333201
+          },
+          {
+            "elapsedMs": 614.851,
+            "responseJSONBytes": 133498,
+            "markers": 307,
+            "withContent": 6,
+            "covers": 6,
+            "advertisedCoverBytes": 6333201
+          }
+        ]
+      }
+    ],
+    "originalBackupUnchanged": true
+  },
+  "remoteScriptSHA256": "e5888ba4d981e314a7d3df341968f57219e2c7720ac2f2e7e8f9315757d2dbaf",
+  "privateDataLogged": false
+}

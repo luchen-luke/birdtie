@@ -1,0 +1,215 @@
+{
+  "status": "PASS",
+  "startedAtUTC": "2026-10-15T22:47:58.017472+00:00",
+  "remoteScriptSHA256": "e283823b4433e2587aec9b187c2fc62cfdbfaad1797d87f90bacc1ff3c9464fa",
+  "privateDataLogged": false,
+  "exitCode": 0,
+  "stderrPresent": false,
+  "result": {
+    "status": "PASS",
+    "devOnly": true,
+    "productionIdentityVerified": false,
+    "productionPhoneVerification": false,
+    "fixedCodeUsed": true,
+    "sourceWrites": 0,
+    "databaseDirectWrites": 0,
+    "remoteConfigurationChanged": false,
+    "agentActivationRequested": false,
+    "oldSessionAccepted": false,
+    "messagesSent": 0,
+    "privateValuesPersisted": false,
+    "allCreatedSessionsLoggedOut": true,
+    "schema": 171,
+    "apiBuild": 26,
+    "contentWrites": 0,
+    "measurements": [
+      {
+        "scenario": "wide",
+        "runs": [
+          {
+            "elapsedMs": 143.888,
+            "responseJSONBytes": 4005,
+            "httpResponseBytes": 4094,
+            "markers": 2,
+            "withContent": 2,
+            "totalContentCount": 9,
+            "totalAnchorCount": 7,
+            "covers": 0,
+            "advertisedCoverBytes": 0,
+            "kindCounts": {
+              "PLACE_CONTENT": 0,
+              "MOMENT_ANCHOR": 0,
+              "CLUSTER": 2
+            }
+          },
+          {
+            "elapsedMs": 131.556,
+            "responseJSONBytes": 4001,
+            "httpResponseBytes": 4090,
+            "markers": 2,
+            "withContent": 2,
+            "totalContentCount": 9,
+            "totalAnchorCount": 7,
+            "covers": 0,
+            "advertisedCoverBytes": 0,
+            "kindCounts": {
+              "PLACE_CONTENT": 0,
+              "MOMENT_ANCHOR": 0,
+              "CLUSTER": 2
+            }
+          },
+          {
+            "elapsedMs": 133.117,
+            "responseJSONBytes": 4005,
+            "httpResponseBytes": 4094,
+            "markers": 2,
+            "withContent": 2,
+            "totalContentCount": 9,
+            "totalAnchorCount": 7,
+            "covers": 0,
+            "advertisedCoverBytes": 0,
+            "kindCounts": {
+              "PLACE_CONTENT": 0,
+              "MOMENT_ANCHOR": 0,
+              "CLUSTER": 2
+            }
+          }
+        ]
+      },
+      {
+        "scenario": "phone",
+        "runs": [
+          {
+            "elapsedMs": 121.704,
+            "responseJSONBytes": 4041,
+            "httpResponseBytes": 4130,
+            "markers": 2,
+            "withContent": 2,
+            "totalContentCount": 9,
+            "totalAnchorCount": 7,
+            "covers": 0,
+            "advertisedCoverBytes": 0,
+            "kindCounts": {
+              "PLACE_CONTENT": 0,
+              "MOMENT_ANCHOR": 0,
+              "CLUSTER": 2
+            }
+          },
+          {
+            "elapsedMs": 122.477,
+            "responseJSONBytes": 4041,
+            "httpResponseBytes": 4130,
+            "markers": 2,
+            "withContent": 2,
+            "totalContentCount": 9,
+            "totalAnchorCount": 7,
+            "covers": 0,
+            "advertisedCoverBytes": 0,
+            "kindCounts": {
+              "PLACE_CONTENT": 0,
+              "MOMENT_ANCHOR": 0,
+              "CLUSTER": 2
+            }
+          },
+          {
+            "elapsedMs": 121.283,
+            "responseJSONBytes": 4041,
+            "httpResponseBytes": 4130,
+            "markers": 2,
+            "withContent": 2,
+            "totalContentCount": 9,
+            "totalAnchorCount": 7,
+            "covers": 0,
+            "advertisedCoverBytes": 0,
+            "kindCounts": {
+              "PLACE_CONTENT": 0,
+              "MOMENT_ANCHOR": 0,
+              "CLUSTER": 2
+            }
+          }
+        ]
+      },
+      {
+        "scenario": "adjacent",
+        "runs": [
+          {
+            "elapsedMs": 120.785,
+            "responseJSONBytes": 4041,
+            "httpResponseBytes": 4130,
+            "markers": 2,
+            "withContent": 2,
+            "totalContentCount": 9,
+            "totalAnchorCount": 7,
+            "covers": 0,
+            "advertisedCoverBytes": 0,
+            "kindCounts": {
+              "PLACE_CONTENT": 0,
+              "MOMENT_ANCHOR": 0,
+              "CLUSTER": 2
+            }
+          },
+          {
+            "elapsedMs": 121.307,
+            "responseJSONBytes": 4041,
+            "httpResponseBytes": 4130,
+            "markers": 2,
+            "withContent": 2,
+            "totalContentCount": 9,
+            "totalAnchorCount": 7,
+            "covers": 0,
+            "advertisedCoverBytes": 0,
+            "kindCounts": {
+              "PLACE_CONTENT": 0,
+              "MOMENT_ANCHOR": 0,
+              "CLUSTER": 2
+            }
+          },
+          {
+            "elapsedMs": 123.288,
+            "responseJSONBytes": 4041,
+            "httpResponseBytes": 4130,
+            "markers": 2,
+            "withContent": 2,
+            "totalContentCount": 9,
+            "totalAnchorCount": 7,
+            "covers": 0,
+            "advertisedCoverBytes": 0,
+            "kindCounts": {
+              "PLACE_CONTENT": 0,
+              "MOMENT_ANCHOR": 0,
+              "CLUSTER": 2
+            }
+          }
+        ]
+      }
+    ],
+    "world": {
+      "elapsedMs": 594.676,
+      "responseJSONBytes": 7928,
+      "httpResponseBytes": 8007,
+      "markers": 2,
+      "withContent": 2,
+      "totalContentCount": 43,
+      "totalAnchorCount": 55,
+      "covers": 0,
+      "advertisedCoverBytes": 0,
+      "kindCounts": {
+        "PLACE_CONTENT": 0,
+        "MOMENT_ANCHOR": 0,
+        "CLUSTER": 2
+      }
+    },
+    "worldClusterMarkers": 2,
+    "clusterMemberPagesRead": 2,
+    "migratedAnchorsObserved": 16,
+    "migratedMediaAnchorsVerified": 1,
+    "exactEntryVerified": true,
+    "anchorSpecificMediaVerified": true,
+    "markerMediaSHA256Verified": true,
+    "markerBytesVerified": 2855,
+    "anonymousMapEntryMarkerDenied": true,
+    "protectedSourceUnchanged": true,
+    "loggedOutMapEntryMarkerDenied": true
+  },
+  "completedAtUTC": "2026-10-15T22:48:06.206229+00:00"
+}

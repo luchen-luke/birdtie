@@ -1,0 +1,37 @@
+Flutter assets will be downloaded from https://storage.flutter-io.cn. Make sure you trust this source!
+00:00 +0: loading D:/Project/birdtie/apps/client/test/content_map_panel_test.dart
+00:00 +0: same leaf restores after viewport and selected budget changes; permission retirement cannot revive it
+00:00 +1: cluster continuation renews the bounded current window after thirty seconds instead of returning to page one
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following TestFailure was thrown running a test:
+Expected: true
+  Actual: <false>
+
+When the exception was thrown, this was the stack:
+#4      drain (file:///D:/Project/birdtie/apps/client/test/content_map_controller_test.dart:230:3)
+<asynchronous suspension>
+#5      main.<anonymous closure> (file:///D:/Project/birdtie/apps/client/test/content_map_panel_test.dart:166:9)
+<asynchronous suspension>
+#6      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#7      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1952:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///D:/Project/birdtie/apps/client/test/content_map_controller_test.dart line 230
+The test description was:
+  cluster continuation renews the bounded current window after thirty seconds instead of returning
+  to page one
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:03 +1 -1: cluster continuation renews the bounded current window after thirty seconds instead of returning to page one [E]
+  Test failed. See exception logs above.
+  The test description was: cluster continuation renews the bounded current window after thirty seconds instead of returning to page one
+  
+00:03 +1 -1: actual cluster panel pages, opens exact anchor detail, returns to loaded group and retires permission
+00:03 +2 -1: parent renewal cannot extend child grant; expiry clears names during failure and retry restores loaded exact selection
+00:03 +3 -1: Some tests failed.
+
+Failing tests:
+  D:/Project/birdtie/apps/client/test/content_map_panel_test.dart: cluster continuation renews the bounded current window after thirty seconds instead of returning to page one

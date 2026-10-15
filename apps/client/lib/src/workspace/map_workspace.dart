@@ -3554,6 +3554,7 @@ class _MapWorkspaceState extends State<MapWorkspace>
       ornamentTop: _ornamentTop,
       contentRect: _mapContentRect,
       focusRevision: _mapFocusRevision,
+      onContentOverlap: _openMapContentOverlap,
       onEntityPicked: (id) {
         final content = _mapContent.find(id);
         if (content != null && _collectionProjection.value == null) {
@@ -5069,6 +5070,7 @@ class _MapWorkspaceState extends State<MapWorkspace>
     _mapContent.sync(
       cityID: cityID,
       bounds: bounds,
+      zoom: _mapState.zoom,
       devicePixelRatio: MediaQuery.devicePixelRatioOf(context),
     );
   }
@@ -5079,7 +5081,7 @@ class _MapWorkspaceState extends State<MapWorkspace>
     if (cityID != null) {
       unawaited(_discovery.load(cityID, bounds));
       unawaited(_layers.load(cityID, bounds));
-      _syncMapContent(cityID, bounds);
+      // Content query starts with the renderer's real settled bounds and zoom.
     }
   }
 
@@ -5761,7 +5763,8 @@ class _MapWorkspaceState extends State<MapWorkspace>
       return result!.entities;
     }
     if (_layers.cityID != widget.city.selectedCity?.id) return const [];
-    return _layers.items.map((i) => i.entity).toList(growable: false);
+    return _layers.items.where((i) => i.kind != 'PLACE' && i.kind != 'MOMENT')
+        .map((i) => i.entity).toList(growable: false);
   }
 
   Future<void> _openMapLayers() async {
@@ -6294,7 +6297,12 @@ class _MapWorkspaceState extends State<MapWorkspace>
       client: _authenticatedTransport(client),
       apiBaseUrl: base ?? RemoteAgentTaskSource.apiBase,
       onForeground: () {
-        if (current()) _systemPushRefresh.value++;
+        if (!current()) return;
+        _systemPushRefresh.value++;
+        // A verified current-account event may include changed visibility.
+        // Retire all viewer summaries before re-reading; the push grants none.
+        _mapContent.retire();
+        unawaited(_mapContent.refresh());
       },
       onOpen: (item, event) async {
         if (!current() || _systemPush?.view?.matches(event) != true) return;
@@ -6779,15 +6787,65 @@ class _MapWorkspaceState extends State<MapWorkspace>
     if (leaveAuthor) _layers.leaveAuthor();
   }
 
+  void _openMapContentOverlap(List<MapEntity> entities) {
+    final pins = <OwnedMapPin>[];
+    for (final entity in entities) {
+      final pin = _mapContent.find(entity.id);
+      if (pin == null || !_mapContent.sourceCurrent(pin) ||
+          entity.sourceVersion != pin.sourceVersion) return;
+      pins.add(pin);
+    }
+    if (pins.length > 1) _openMapContentGroup(pins: pins);
+  }
+
+  void _openMapContentGroup({OwnedMapPin? cluster, List<OwnedMapPin> pins = const []}) {
+    if (_friendConversation?.audioActive == true) return;
+    final epoch = _mapContent.permissionEpoch, identity = _currentSeedIdentity;
+    final city = widget.city.selectedCity?.id, source = Object();
+    final parents = cluster == null ? pins : [cluster];
+    bool current() => mounted && epoch == _mapContent.permissionEpoch &&
+        identity == _currentSeedIdentity && city == widget.city.selectedCity?.id &&
+        parents.every((pin) {
+          final live = _mapContent.find(pin.mapID);
+          return live != null && live.sourceVersion == pin.sourceVersion && _mapContent.sourceCurrent(live);
+        }) && identical(_publicPlacePanelSource, source);
+    if (parents.isEmpty || !parents.every(_mapContent.sourceCurrent)) return;
+    _pauseComposer();
+    if (_composerDrafts.target.human) _exitFriendConversation();
+    ++_previewSelectionSerial;
+    setState(() {
+      _retirePublicPlacePanel();
+      _socialExpanded = false;
+      _publicPlacePanelSource = source;
+      _publicPlaceMapID = cluster?.mapID ?? pins.first.mapID;
+      _publicPlacePreview = false;
+      _publicPlacePanel = NowMapContentGroupPanel(
+        key: GlobalObjectKey(source), controller: _mapContent,
+        cluster: cluster, pins: pins, current: current,
+        changes: Listenable.merge([_mapContent, _seedEntryChanges, widget.city]),
+        onClose: () {
+          if (!mounted || !identical(_publicPlacePanelSource, source)) return;
+          setState(() => _retirePublicPlacePanel());
+          _workspace.selectEntity(null, preserveViewport: true);
+        },
+        onEdit: (momentID, readable) {
+          if (current() && readable()) unawaited(_openOwnedMomentInNow(momentID, sourceCurrent: readable));
+        },
+      );
+    });
+  }
+
   void _openMapContentPanel(OwnedMapPin pin) {
+    if (pin.isCluster) { _openMapContentGroup(cluster: pin); return; }
+
     if (_friendConversation?.audioActive == true ||
         !_mapContent.sourceCurrent(pin))
       return;
-    final epoch = _mapContent.epoch, identity = _currentSeedIdentity;
+    final epoch = _mapContent.permissionEpoch, identity = _currentSeedIdentity;
     final city = widget.city.selectedCity?.id, source = Object();
     bool current() =>
         mounted &&
-        epoch == _mapContent.epoch &&
+        epoch == _mapContent.permissionEpoch &&
         identity == _currentSeedIdentity &&
         city == widget.city.selectedCity?.id &&
         _mapContent.find(pin.mapID)?.sourceVersion == pin.sourceVersion &&

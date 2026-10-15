@@ -1,0 +1,35 @@
+Flutter assets will be downloaded from https://storage.flutter-io.cn. Make sure you trust this source!
+00:00 +0: loading D:/Project/birdtie/apps/client/test/content_map_controller_test.dart
+00:00 +0: v2 coordinate anchors and bounded cluster pages retain target grants and reject POI-only pins
+00:00 +1: settled query reuse, cancellation, LRU bytes and permission withdrawal
+00:00 +2: 12 covers 4 transports selected first, real DPR decode and renewed grants reuse pixels
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following TestFailure was thrown running a test:
+Expected: true
+  Actual: <false>
+
+When the exception was thrown, this was the stack:
+#4      drain (file:///D:/Project/birdtie/apps/client/test/content_map_controller_test.dart:229:3)
+<asynchronous suspension>
+#5      main.<anonymous closure> (file:///D:/Project/birdtie/apps/client/test/content_map_controller_test.dart:446:7)
+<asynchronous suspension>
+#6      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#7      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1952:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///D:/Project/birdtie/apps/client/test/content_map_controller_test.dart line 229
+The test description was:
+  12 covers 4 transports selected first, real DPR decode and renewed grants reuse pixels
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:02 +2 -1: 12 covers 4 transports selected first, real DPR decode and renewed grants reuse pixels [E]
+  Test failed. See exception logs above.
+  The test description was: 12 covers 4 transports selected first, real DPR decode and renewed grants reuse pixels
+  
+00:02 +2 -1: Some tests failed.
+
+Failing tests:
+  D:/Project/birdtie/apps/client/test/content_map_controller_test.dart: 12 covers 4 transports selected first, real DPR decode and renewed grants reuse pixels

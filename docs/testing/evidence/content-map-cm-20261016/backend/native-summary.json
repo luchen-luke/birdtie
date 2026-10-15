@@ -1,0 +1,66 @@
+{
+  "status": "PASS_SELECTED_NATIVE_TESTS",
+  "observedUTC": "2026-10-15T22:03:28.8805453Z",
+  "runs": [
+    {
+      "reason": "Missing BIRDTIE_LEGACY_IMPORT_NATIVE_TEST; preserved root evidence",
+      "skipped": 2,
+      "path": "native01",
+      "passed": 0,
+      "status": "SKIP_NOT_PASS"
+    },
+    {
+      "failed": 2,
+      "reason": "Actual SQL query failed; API correctly returned unavailable",
+      "path": "native02",
+      "passed": 0,
+      "status": "FAIL"
+    },
+    {
+      "failed": 2,
+      "reason": "Synthetic diagnostic identified reserved precision alias SQLSTATE42601; renamed coordinate_precision",
+      "path": "native03",
+      "passed": 0,
+      "status": "FAIL"
+    },
+    {
+      "passedTest": "TestMapContent171NativeCoordinateAnchorsAndRetirement",
+      "path": "native04",
+      "failed": 1,
+      "reason": "Old170 assertion still required catalogue admission source on all content points",
+      "status": "PARTIAL",
+      "passed": 1
+    },
+    {
+      "failed": 1,
+      "path": "native05",
+      "reason": "Test measured media selector across earlier deliberate location mutation; moved comparison baseline after mutation to isolate separate attachment deletion",
+      "status": "FAIL"
+    },
+    {
+      "passedTest": "TestMapContent170NativeOriginalPublicAndOwnPrivateCurrent",
+      "path": "native06",
+      "failed": 0,
+      "status": "PASS",
+      "passed": 1,
+      "skipped": 0
+    }
+  ],
+  "passingTests": {
+    "TestMapContent170NativeOriginalPublicAndOwnPrivateCurrent": "native06/stdout.jsonl",
+    "TestMapContent171NativeCoordinateAnchorsAndRetirement": "native04/stdout.jsonl"
+  },
+  "testBoundary": "Synthetic source only; two separately marked random PostgreSQL children migrated through 171 and cleaned by tests; source/parent target untouched. Each receipt confirms sourceStable and parent identity.",
+  "finalApiBehaviorChanges": [
+    "SQL alias precision renamed coordinate_precision"
+  ],
+  "testAdjustments": [
+    "Synthetic spatial query diagnostic reveals SQL errors only within synthetic tests",
+    "Removed obsolete demand for CIVU_PUBLIC_CATALOG from every content-admitted marker; original-public scope, count, real cover remain asserted",
+    "Independent-asset proof baseline now taken after deliberate location mutation to isolate attachment deletion"
+  ],
+  "actualSyntheticMapReadMilliseconds": 89,
+  "performanceQualification": "Single final synthetic map read; not matched production before/after or device performance.",
+  "remoteApply": "NOT_RUN",
+  "device": "NOT_RUN"
+}

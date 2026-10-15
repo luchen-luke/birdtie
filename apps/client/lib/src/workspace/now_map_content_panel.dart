@@ -61,15 +61,15 @@ class _NowMapContentPanelState extends State<NowMapContentPanel>
   bool get _current =>
       mounted &&
       _foreground &&
-      c.epoch == _epoch &&
+      c.permissionEpoch == _epoch &&
       widget.current() &&
-      c.sourceCurrent(widget.pin) &&
+      (_livePin != null && c.sourceCurrent(_livePin!)) &&
       _livePin != null;
 
   @override
   void initState() {
     super.initState();
-    _epoch = c.epoch;
+    _epoch = c.permissionEpoch;
     _listen();
     WidgetsBinding.instance.addObserver(this);
     unawaited(_read());
@@ -88,10 +88,10 @@ class _NowMapContentPanelState extends State<NowMapContentPanel>
       _listen();
     }
     if (oldWidget.controller != c ||
-        oldWidget.pin.placeID != widget.pin.placeID ||
+        oldWidget.pin.mapID != widget.pin.mapID ||
         oldWidget.pin.sourceVersion != widget.pin.sourceVersion) {
       _retire();
-      _epoch = c.epoch;
+      _epoch = c.permissionEpoch;
       _desiredCount = 1;
       _restoreOffset = 0;
       _expanded = false;
@@ -181,19 +181,25 @@ class _NowMapContentPanelState extends State<NowMapContentPanel>
       final collected = <OwnedMapMomentDetail>[];
       final seen = <String>{}, cursors = <String>{};
       String? cursor;
-      do {
-        final page = await c.readPlaceMoments(pin, cursor: cursor);
-        if (!pending()) return;
-        for (final item in page.items) {
-          if (!seen.add(item.id) || !c.detailCurrent(item)) {
-            throw const FormatException('地图动态分页已变化');
+      if (pin.isMomentAnchor) {
+        final target = pin.moments
+            .where((item) => item.id == pin.entryID)
+            .single;
+        collected.add(await c.readMoment(target));
+      } else
+        do {
+          final page = await c.readPlaceMoments(pin, cursor: cursor);
+          if (!pending()) return;
+          for (final item in page.items) {
+            if (!seen.add(item.id) || !c.detailCurrent(item)) {
+              throw const FormatException('地图动态分页已变化');
+            }
+            collected.add(item);
           }
-          collected.add(item);
-        }
-        cursor = page.nextCursor;
-        if (cursor != null && !cursors.add(cursor))
-          throw const FormatException('地图分页重复');
-      } while (cursor != null && collected.length < desired);
+          cursor = page.nextCursor;
+          if (cursor != null && !cursors.add(cursor))
+            throw const FormatException('地图分页重复');
+        } while (cursor != null && collected.length < desired);
       if (!pending()) return;
       _items = List.unmodifiable(collected);
       _hasRead = true;
@@ -291,7 +297,7 @@ class _NowMapContentPanelState extends State<NowMapContentPanel>
                           ),
                           if (pin != null)
                             Text(
-                              '${_category(pin.categoryCode)} · ${pin.momentCount}条动态',
+                              '${pin.isMomentAnchor ? '内容位置' : _category(pin.categoryCode)} · ${pin.momentCount}条动态',
                               style: Theme.of(context).textTheme.bodySmall,
                             ),
                           if (pin?.hasPrivateContent == true)
@@ -300,7 +306,7 @@ class _NowMapContentPanelState extends State<NowMapContentPanel>
                       ),
                     ),
                     IconButton(
-                      tooltip: _expanded ? '返回地图' : '关闭地点预览',
+                      tooltip: _expanded ? '返回地图' : '关闭内容预览',
                       onPressed: widget.onClose,
                       icon: const Icon(Icons.close),
                     ),
@@ -869,6 +875,325 @@ class _MapVideoState extends State<_MapVideo> {
             ),
           ),
       ],
+    );
+  }
+}
+
+/// Server clusters and screen overlaps stay in the same Now panel/map instance.
+/// Each leaf retains its own current grant; display proximity grants no access.
+class NowMapContentGroupPanel extends StatefulWidget {
+  const NowMapContentGroupPanel({
+    super.key,
+    required this.controller,
+    this.cluster,
+    this.pins = const [],
+    required this.current,
+    required this.changes,
+    required this.onClose,
+    required this.onEdit,
+  });
+  final OwnedMapController controller;
+  final OwnedMapPin? cluster;
+  final List<OwnedMapPin> pins;
+  final bool Function() current;
+  final Listenable changes;
+  final VoidCallback onClose;
+  final void Function(String, bool Function()) onEdit;
+  @override
+  State<NowMapContentGroupPanel> createState() =>
+      _NowMapContentGroupPanelState();
+}
+
+class _NowMapContentGroupPanelState extends State<NowMapContentGroupPanel> {
+  final _scroll = ScrollController();
+  List<OwnedMapPin> _pins = const [];
+  OwnedMapPin? _selected;
+  (String, String)? _restoreSelection;
+  Timer? _expiry;
+  String? _cursor, _error;
+  bool _loading = false;
+  int _request = 0, _desiredCount = 1;
+  late final int _permissionEpoch;
+  String? _windowStart;
+  final _pageStarts = <String?>[];
+  double _restoreOffset = 0;
+  bool get _current =>
+      mounted &&
+      _permissionEpoch == widget.controller.permissionEpoch &&
+      widget.current();
+  @override
+  void initState() {
+    super.initState();
+    _permissionEpoch = widget.controller.permissionEpoch;
+    _pins = widget.pins;
+    _desiredCount = math.max(1, _pins.length);
+    widget.changes.addListener(_changed);
+    if (widget.cluster != null) {
+      unawaited(_load());
+    } else {
+      _armLease();
+    }
+  }
+
+  void _rememberPosition() {
+    if (_scroll.hasClients) _restoreOffset = _scroll.offset;
+    final selected = _selected;
+    if (selected != null)
+      _restoreSelection = (selected.mapID, selected.sourceVersion);
+  }
+
+  void _clearMembers() {
+    _rememberPosition();
+    _expiry?.cancel();
+    _pins = const [];
+    _selected = null;
+    _cursor = null;
+  }
+
+  void _changed() {
+    if (!mounted) return;
+    if (!_current) {
+      ++_request;
+      _clearMembers();
+      if (_permissionEpoch != widget.controller.permissionEpoch) {
+        _restoreSelection = null;
+        _windowStart = null;
+        _pageStarts.clear();
+      }
+      _loading = false;
+    } else if (!_loading &&
+        (_pins.isEmpty ||
+            _pins.any((pin) => !widget.controller.sourceCurrent(pin)))) {
+      // A changed/expired member may not borrow its parent's renewed grant.
+      ++_request;
+      _clearMembers();
+      _loading = false;
+      unawaited(_load());
+    }
+    setState(() {});
+  }
+
+  void _armLease() {
+    _expiry?.cancel();
+    final deadlines = _pins.map((p) => p.validUntil).whereType<DateTime>();
+    if (deadlines.isEmpty) return;
+    final until = deadlines.reduce((a, b) => a.isBefore(b) ? a : b);
+    final remaining = until.difference(DateTime.now().toUtc());
+    _expiry = Timer(remaining > Duration.zero ? remaining : Duration.zero, () {
+      if (!mounted) return;
+      ++_request;
+      setState(() {
+        _clearMembers();
+        _loading = false;
+      });
+      if (_current) unawaited(_load());
+    });
+  }
+
+  void _restoreValidSelection() {
+    final target = _restoreSelection;
+    if (target != null) {
+      _selected = _pins
+          .where(
+            (p) =>
+                p.mapID == target.$1 &&
+                p.sourceVersion == target.$2 &&
+                widget.controller.sourceCurrent(p),
+          )
+          .firstOrNull;
+      _restoreSelection = null;
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _scroll.hasClients && _current) {
+        _scroll.jumpTo(
+          _restoreOffset.clamp(0, _scroll.position.maxScrollExtent),
+        );
+      }
+    });
+  }
+
+  Future<void> _load({bool more = false}) async {
+    if (!_current || _loading) return;
+    final serial = ++_request;
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      List<OwnedMapPin> next;
+      String? cursor;
+      final cluster = widget.cluster == null
+          ? null
+          : widget.controller.find(widget.cluster!.mapID);
+      if (cluster == null) {
+        next = [
+          for (final pin in widget.pins)
+            if (widget.controller.find(pin.mapID) case final fresh?)
+              if (fresh.sourceVersion == pin.sourceVersion &&
+                  widget.controller.sourceCurrent(fresh))
+                fresh,
+        ];
+      } else {
+        next = more ? [..._pins.where(widget.controller.sourceCurrent)] : [];
+        cursor = more ? _cursor : _windowStart;
+        final starts = more ? [..._pageStarts] : <String?>[];
+        do {
+          final start = cursor;
+          final page = await widget.controller.readClusterMembers(
+            cluster,
+            cursor: cursor,
+          );
+          if (!_current || serial != _request) return;
+          // The controller retains a bounded current member window. Drop
+          // retired earlier pages before appending, so pagination can proceed
+          // beyond that window without exposing expired text or false totals.
+          next = next.where(widget.controller.sourceCurrent).toList();
+          next.addAll(page.items);
+          starts.add(start);
+          // Keep only the current eight-page window. Its signed starting
+          // position survives content expiry, but no old text/cover grant does.
+          while (starts.length > 8) starts.removeAt(0);
+          cursor = page.nextCursor;
+          if (next.map((p) => p.mapID).toSet().length != next.length)
+            throw const FormatException('重复地图成员');
+        } while (!more && next.length < _desiredCount && cursor != null);
+        _pageStarts
+          ..clear()
+          ..addAll(starts);
+        _windowStart = starts.isEmpty ? null : starts.first;
+      }
+      if (!_current || serial != _request) return;
+      if (next.any((pin) => !widget.controller.sourceCurrent(pin)))
+        throw const FormatException('地图成员读取已失效');
+      _pins = List.unmodifiable(next);
+      _cursor = cursor;
+      _desiredCount = math.min(320, math.max(_desiredCount, next.length));
+      _restoreValidSelection();
+      _armLease();
+    } catch (_) {
+      if (_current && serial == _request) _error = '内容列表暂不可读，请重试。';
+    } finally {
+      if (mounted && serial == _request) setState(() => _loading = false);
+    }
+  }
+
+  @override
+  void dispose() {
+    ++_request;
+    _expiry?.cancel();
+    widget.changes.removeListener(_changed);
+    _scroll.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final selected = _selected;
+    if (_current &&
+        selected != null &&
+        widget.controller.sourceCurrent(selected)) {
+      void back() => setState(() {
+        _selected = null;
+        _restoreSelection = null;
+      });
+      if (selected.isCluster) {
+        return NowMapContentGroupPanel(
+          controller: widget.controller,
+          cluster: selected,
+          current: () => _current && widget.controller.sourceCurrent(selected),
+          changes: widget.changes,
+          onClose: back,
+          onEdit: widget.onEdit,
+        );
+      }
+      return NowMapContentPanel(
+        key: ValueKey(selected.mapID),
+        controller: widget.controller,
+        pin: selected,
+        current: () => _current && widget.controller.sourceCurrent(selected),
+        changes: widget.changes,
+        onClose: back,
+        onExpand: () {},
+        onEdit: widget.onEdit,
+      );
+    }
+    final visible = _current
+        ? _pins.where(widget.controller.sourceCurrent).toList()
+        : const <OwnedMapPin>[];
+    return Material(
+      color: Theme.of(context).colorScheme.surface,
+      child: Column(
+        children: [
+          ListTile(
+            title: Text(
+              !_current
+                  ? '地图内容'
+                  : widget.cluster == null
+                  ? '重叠位置的内容'
+                  : '${widget.cluster!.momentCount}条动态',
+            ),
+            subtitle: !_current
+                ? null
+                : Text(
+                    widget.cluster == null
+                        ? '选择要查看的内容'
+                        : '${widget.cluster!.anchorCount}个内容位置',
+                  ),
+            trailing: IconButton(
+              tooltip: '返回地图',
+              icon: const Icon(Icons.close),
+              onPressed: widget.onClose,
+            ),
+          ),
+          if (_loading) const LinearProgressIndicator(minHeight: 2),
+          Expanded(
+            child: !_current
+                ? const Center(child: Text('当前内容已不可读，请返回地图重新选择。'))
+                : ListView.builder(
+                    controller: _scroll,
+                    itemCount: visible.length + 1,
+                    itemBuilder: (context, index) {
+                      if (index == visible.length)
+                        return Column(
+                          children: [
+                            if (_error != null) Text(_error!),
+                            if (_error != null || _cursor != null)
+                              TextButton(
+                                onPressed: _loading
+                                    ? null
+                                    : () => _load(more: _error == null),
+                                child: Text(_error == null ? '加载更多位置' : '重试'),
+                              ),
+                          ],
+                        );
+                      final pin = visible[index];
+                      return ListTile(
+                        key: ValueKey(pin.mapID),
+                        leading: Icon(
+                          pin.isCluster
+                              ? Icons.layers_outlined
+                              : pin.isMomentAnchor
+                              ? Icons.photo_camera_outlined
+                              : Icons.place_outlined,
+                        ),
+                        title: Text(
+                          pin.name.isEmpty ? '无标题动态' : pin.name,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        subtitle: Text(
+                          '${pin.momentCount}条动态 · ${pin.visibilityLabel}',
+                        ),
+                        onTap: () => setState(() {
+                          _rememberPosition();
+                          _selected = pin;
+                        }),
+                      );
+                    },
+                  ),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -1,0 +1,19 @@
+Analyzing now_map_content_panel.dart, content_map_panel_test.dart...
+
+   info - apps\client\lib\src\workspace\now_map_content_panel.dart:118:7 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - apps\client\lib\src\workspace\now_map_content_panel.dart:157:11 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - apps\client\lib\src\workspace\now_map_content_panel.dart:190:9 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - apps\client\lib\src\workspace\now_map_content_panel.dart:201:13 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - apps\client\lib\src\workspace\now_map_content_panel.dart:271:50 - Unnecessary braces in a string interpolation. Try removing the braces. - unnecessary_brace_in_string_interps
+   info - apps\client\lib\src\workspace\now_map_content_panel.dart:348:29 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - apps\client\lib\src\workspace\now_map_content_panel.dart:750:7 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - apps\client\lib\src\workspace\now_map_content_panel.dart:854:19 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - apps\client\lib\src\workspace\now_map_content_panel.dart:935:7 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - apps\client\lib\src\workspace\now_map_content_panel.dart:1037:13 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - apps\client\lib\src\workspace\now_map_content_panel.dart:1042:9 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - apps\client\lib\src\workspace\now_map_content_panel.dart:1132:25 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - apps\client\test\content_map_panel_test.dart:3:8 - The import of 'package:flutter/foundation.dart' is unnecessary because all of the used elements are also provided by the import of 'package:flutter/material.dart'. Try removing the import directive. - unnecessary_import
+   info - apps\client\test\content_map_panel_test.dart:61:27 - Unnecessary use of multiple underscores. Try using '_'. - unnecessary_underscores
+   info - apps\client\test\content_map_panel_test.dart:135:27 - Unnecessary use of multiple underscores. Try using '_'. - unnecessary_underscores
+
+15 issues found.

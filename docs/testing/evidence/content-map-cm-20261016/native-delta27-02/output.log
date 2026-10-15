@@ -1,0 +1,9 @@
+00:00 +0: loading D:/Project/birdtie/apps/client/test/content_map_renderer_test.dart
+00:00 +0: bounded latest render, crossing viewport and complete task aggregation
+00:00 +1: actual Web content overlap and server cluster preserve one map and dispatch to Now
+00:00 +2: actual Native touch and initial screen viewport use content routing without replacing annotations
+Birdtie native map created.
+Birdtie native map style loaded.
+00:00 +3: actual JS vector style hides only provider POI and keeps roads and map instance
+00:01 +4: All tests passed!
+Flutter assets will be downloaded from https://storage.flutter-io.cn. Make sure you trust this source!

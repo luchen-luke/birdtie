@@ -1,0 +1,106 @@
+{
+  "status": "PASS_TARGETED_ANDROID_CONTENT_MAP",
+  "api": 26,
+  "apk": 28,
+  "schema": 171,
+  "deviceModel": "25098PN5AC",
+  "resolution": [
+    1220,
+    2656
+  ],
+  "profile": true,
+  "font": "NORMAL",
+  "contentWrites": 0,
+  "checkedOnRealDevice": [
+    "default content-only square clusters2/7 and readable labels",
+    "zoom13 cluster2 no longer hidden behind adjacent label",
+    "zoom14 independent media anchor with no placeId displayed square photograph",
+    "cluster group and direct independent marker open the matching original body and image",
+    "return to existing group and Now map",
+    "pan while detail open retains reauthorized matching content",
+    "keyboard open/close and camera operations keep mapCreations=1",
+    "35s stationary two renewals zero marker create/update/delete and zero cover requests/decodes"
+  ],
+  "metrics": {
+    "NativeContentMapMetrics": [
+      {
+        "mapCreations": "1",
+        "markerCreates": "17",
+        "markerUpdates": "27",
+        "markerDeletes": "15",
+        "renderPasses": "73",
+        "renderMicros": "786912",
+        "styleReadyMicros": "97939",
+        "firstContentMicros": "4884699",
+        "firstCoverMicros": "51231513",
+        "maxRenderMicros": "108467"
+      }
+    ],
+    "OwnedMapMediaController": [
+      {
+        "_epoch": "5",
+        "_running": "0",
+        "_reserved": "1027176",
+        "requests": "5",
+        "decodes": "5",
+        "cacheHits": "48",
+        "inFlightPeak": "3"
+      }
+    ],
+    "OwnedMapController": [
+      {
+        "_epoch": "13",
+        "_request": "41",
+        "requests": "28",
+        "cancellations": "0",
+        "cacheHits": "2",
+        "responseBytes": "116281"
+      }
+    ],
+    "_NativeCityMapViewState": [
+      {
+        "_styleReady": "true",
+        "vmObjectRef": "objects/3159/0"
+      }
+    ]
+  },
+  "screenshots": [
+    {
+      "file": "BirdTie-APK28-loaded.png",
+      "sha256": "7fc34c2f66e38dd51d4e639a2ad965673cea108176d19379fd0b81aa012e3cbc"
+    },
+    {
+      "file": "BirdTie-APK28-near.png",
+      "sha256": "ea63c96951f236c3aa127734118e3d387283d4cf0c9eeb444d07ad04c59b1243"
+    },
+    {
+      "file": "BirdTie-APK28-anchor.png",
+      "sha256": "9658e79a36525633d27ba413948990dcdbf06d542c690ad4b7fa123d93604fd3"
+    },
+    {
+      "file": "BirdTie-APK28-independent-point.png",
+      "sha256": "a9a9dcfa03bdbc9487219fca6f4a1d4303e686ff3cb99b68dff0185c10a554f2"
+    },
+    {
+      "file": "BirdTie-APK28-direct-anchor.png",
+      "sha256": "d7b8aa59c1ab88e17bcd9186dbad3fa2a3dbc5f28ef42a2ba1014094af4ca8c2"
+    },
+    {
+      "file": "BirdTie-APK28-panel-after-pan.png",
+      "sha256": "437f13210f595a62a5701fff4d8b0e1d8cd1515e5c4bf3e08ff1dfef5c3f7045"
+    },
+    {
+      "file": "BirdTie-APK28-keyboard.png",
+      "sha256": "09fafcd4db8131677954d6e1777a5c6669beaea65b134d5548fe54a276b4bd9c"
+    }
+  ],
+  "notRun": [
+    "strict same camera device A/B",
+    "10000 candidate real phone stress and250 page walk",
+    "cross-device withdrawal push",
+    "final build full publishing chain",
+    "screen recording excluded by user"
+  ],
+  "initialTimingsDefinition": "Microseconds from NativeCityMapView state creation to style ready and first completed authorized annotations. First cover counter includes user zoom delay because default far view has clusters only; not cold-start cover latency.",
+  "sanitizedUIEventsSHA256": "b9504e6d274a1b540d2033b682f64b0f7585f10a3bec3606b15258128a12ed73"
+}

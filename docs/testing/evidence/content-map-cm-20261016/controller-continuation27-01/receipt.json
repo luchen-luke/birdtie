@@ -1,0 +1,12 @@
+{
+  "command": [
+    "D:\\DevTools\\flutter\\bin\\flutter.bat",
+    "test",
+    "test/content_map_controller_test.dart",
+    "--reporter",
+    "expanded"
+  ],
+  "cwd": "D:\\Project\\birdtie\\apps\\client",
+  "exitCode": 0,
+  "logSHA256": "829afdf5d1ff7f8f52207a3f80927349e7c675f06b70788ae19c1ce11082b6f5"
+}

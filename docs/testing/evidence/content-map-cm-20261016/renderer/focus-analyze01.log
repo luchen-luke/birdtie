@@ -1,0 +1,16 @@
+Analyzing native_city_map_io.dart, content_map_renderer_test.dart...
+
+   info - apps\client\lib\src\city\native_city_map_io.dart:576:11 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - apps\client\lib\src\city\native_city_map_io.dart:715:7 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - apps\client\lib\src\city\native_city_map_io.dart:1034:9 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - apps\client\lib\src\city\native_city_map_io.dart:1097:15 - Don't use 'BuildContext's across async gaps. Try rewriting the code to not use the 'BuildContext', or guard the use with a 'mounted' check. - use_build_context_synchronously
+   info - apps\client\lib\src\city\native_city_map_io.dart:1112:9 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - apps\client\lib\src\city\native_city_map_io.dart:1126:9 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - apps\client\lib\src\city\native_city_map_io.dart:1136:9 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - apps\client\lib\src\city\native_city_map_io.dart:1181:9 - Use the null-aware marker '?' rather than a null check via an 'if'. Try using '?'. - use_null_aware_elements
+   info - apps\client\lib\src\city\native_city_map_io.dart:1565:17 - 'onTapListener' is deprecated and shouldn't be used. Use [MapboxMap.addInteraction] instead. Try replacing the use of the deprecated member with the replacement. - deprecated_member_use
+   info - apps\client\test\content_map_renderer_test.dart:48:38 - Statements in a for should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - apps\client\test\content_map_renderer_test.dart:321:65 - 'onTapListener' is deprecated and shouldn't be used. Use [MapboxMap.addInteraction] instead. Try replacing the use of the deprecated member with the replacement. - deprecated_member_use
+   info - apps\client\test\content_map_renderer_test.dart:526:7 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+
+12 issues found.

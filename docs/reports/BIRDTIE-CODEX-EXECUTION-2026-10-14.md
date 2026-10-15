@@ -402,3 +402,10 @@ NOT_RUN：旧owner真实fresh认证/认领/激活、真实native durable staging
 旧Civu writer已停且禁用（failed/timeout、MainPID0、8080拒绝）；四Pelias和旧网关停止，旧库／媒体／容器／配置保留。停服务90秒SIGTERM超时记录及第一次状态断言失败保留。完整旧数据适配仍PARTIAL：20永久owner映射、103Note／34Journey／3ThemeMap／189SavedPlace私人档案已提交；5511Place／339城市合法当前映射、407旧媒体的72差额及扫描／权利、旧关系／消息／组织和2个仅邮箱账号未全接续。私人档案不等于当前可编辑／公开对象；停写后最终增量核对尚未完成。原Activity／Collection创建原事实等历史差额和发布门槛不因这批关闭。
 
 详细事实及首失败保留见 [当前GitHub、远端与迁移记录](../reports/BIRDTIE-GITHUB-REMOTE-MIGRATION-2026-10-15.md)。本轮源码、测试、迁移、部署脚本与报告一起提交原GitHub分支；全量检查点位于 `docs/testing/evidence/social-remote-migration-20261015/checkpoint-final.json`。保留原256项、历史状态与父项IN_PROGRESS；Closed Pilot／Consumer Beta仍NO。
+
+
+## 2026-10-16 CM 内容地图增量交付
+
+继续现有任务，未回滚其他修改。默认Now改为视口内当前可访问内容，16个获准旧独立锚点进入独立库171，按原entry和对应媒体在同一Now面板读取。服务端权限聚合/分页、取消去重/缓存、12/4封面预算、DPR方形聚合、常驻地图和任务层回归已实施。API26、APK/Web29（APK与28逐字节一致）的实际回执及失败记录见docs/testing/evidence/content-map-cm-20261016/checkpoint171.json。
+
+完整路径/复用/接口/迁移/测试/性能在docs/reports/BIRDTIE-NOW-CONTENT-MAP-2026-10-16.md。CM09严格同相机性能、超大真机分页与跨设备撤回push仍NOT_RUN，父BT-FIX-NOW-UI-001保持IN_PROGRESS；不把旧发布验收当本最终包全流程重测。

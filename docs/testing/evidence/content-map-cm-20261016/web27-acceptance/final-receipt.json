@@ -1,0 +1,71 @@
+{
+  "status": "PASS_AFFECTED_WEB_WHEEL_FLOW",
+  "sourceRelease": "public-20261016-final-web27",
+  "webManifestSHA256": "a568e3717a4f28de85a4f6d72a4bf294f78cd91527c43abb19bdf93016b5a879",
+  "apiRelease": "API26",
+  "apiSchema": 171,
+  "browser": {
+    "engine": "CHROMIUM",
+    "headless": true,
+    "version": "155.0.8059.40",
+    "nonPersistentContext": true,
+    "webgl": true
+  },
+  "checks": [
+    {
+      "check": "PINNED_OWNER",
+      "passed": true
+    },
+    {
+      "check": "COMPLETED_NETWORK_RESOURCE_CONFIRMS_WHEEL_ONE_QUERY",
+      "passed": true,
+      "notes": "Browser Resource Timing completed map-content requests: initial zoom12 start52960ms duration141ms; wheel burst one new zoom13 request start54161ms duration273ms. No intermediate requests. Earlier response-handler assertion read the previous parsed page before its callback completed; preserve that harness timing failure separately."
+    },
+    {
+      "check": "REAL_ZOOMED_CONTENT_AND_MAP_PERSISTENCE",
+      "passed": true,
+      "notes": "Zoom13 screenshot shows content clusters split into two leaf places plus two clusters; same Mapbox DOM retained. Subsequent wheel reached zoom15 and independently rendered coordinate moment."
+    }
+  ],
+  "completedViewportResourceTiming": [
+    {
+      "startMs": 52960,
+      "durationMs": 141,
+      "zoom": 12,
+      "clusterMembers": false,
+      "transferBytes": 4559
+    },
+    {
+      "startMs": 54161,
+      "durationMs": 273,
+      "zoom": 13,
+      "clusterMembers": false,
+      "transferBytes": 6869
+    }
+  ],
+  "wheelBurst": {
+    "events": 3,
+    "intervalMs": 80,
+    "viewportRequestsDuringBurst": 1,
+    "oldZoom": 12,
+    "newZoom": 13,
+    "sameMapElement": true
+  },
+  "harnessFailureRetained": {
+    "receipt": "receipt.json",
+    "check": "REAL_WHEEL_BURST_NEW_ZOOM_ONE_QUERY",
+    "failure": "EARLY_PAGE_BODY_CALLBACK_OBSERVATION",
+    "resolution": "Completed browser Resource Timing proves one zoom13 request and UI screenshot shows updated viewport; no production failure inferred from the early parsed-page check."
+  },
+  "screenshot": {
+    "path": "C:\\Users\\chens\\Documents\\Codex\\2026-10-15\\d-project-birdtie-docs-reports-birdtie-2\\outputs\\cm-web27-wheel-content.png",
+    "sha256": "64deddad08b1bc33a0a4f690de4961a378c4760ed9394ed34d12a35c32bf73ed"
+  },
+  "logout": "PASS",
+  "contentWrites": 0,
+  "storageStateExported": false,
+  "privateValuesPersisted": false,
+  "recording": "NOT_RUN_USER_PREFERENCE",
+  "repeatedUnaffectedFlows": "NOT_RUN_ALREADY_VERIFIED_WEB26",
+  "driverSHA256": "532d4aac93bf794122ef791a575968e0f7f874b459a09335600b14877b45c291"
+}

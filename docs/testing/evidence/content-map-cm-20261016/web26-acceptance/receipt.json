@@ -1,0 +1,140 @@
+{
+  "status": "FAIL",
+  "headless": true,
+  "browserVersion": "155.0.8059.40",
+  "nonPersistentContext": true,
+  "privateValuesPersisted": false,
+  "contentWrites": 0,
+  "checks": [
+    {
+      "check": "PINNED_OWNER",
+      "passed": true
+    },
+    {
+      "check": "CLUSTER_TO_COORDINATE_ANCHOR_EXACT_MOMENT_READ_AND_IMAGE",
+      "passed": true,
+      "notes": "One cluster members response includes one MOMENT_ANCHOR with no POI and four places; anchor selection triggers one moment detail read, visible image, return restores member list."
+    },
+    {
+      "check": "DEFAULT_CONTENT_ONLY_SQUARE_CLUSTERS",
+      "passed": true,
+      "notes": "Default Aberdeen viewport returned two CLUSTER markers for nine accessible contents; no plain catalog business places."
+    },
+    {
+      "check": "SAME_MAP_ELEMENT_AFTER_DETAIL_AND_BACK",
+      "passed": true,
+      "notes": "DOM identity and one Mapbox canvas retained while opening anchor detail and returning to cluster list and map."
+    },
+    {
+      "check": "WEB_WHEEL_SETTLED_NEW_ZOOM_QUERY",
+      "passed": false,
+      "notes": "Wheel visibly zoomed map by two levels while viewport network responses remained zoom12 after quiet period. Final Web26 acceptance is FAIL pending repair."
+    },
+    {
+      "check": "EXPIRED_GRANT_TEXT_CLEARED",
+      "passed": true,
+      "notes": "Expired viewport removed content markers and showed retry; successful retry restored contents."
+    }
+  ],
+  "metrics": {
+    "mapQueries": 6,
+    "memberQueries": 2,
+    "placeReads": 0,
+    "momentReads": 1,
+    "coverReads": 2,
+    "denials": 2,
+    "contentWrites": 0,
+    "blockedWrites": 0,
+    "failedRequests": 6,
+    "browserPageErrors": 0
+  },
+  "events": [
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "detail"
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "response-inspection-failed"
+    }
+  ],
+  "logout": "PASS",
+  "failure": "WEB_WHEEL_VIEWPORT_QUERY_NOT_SETTLED",
+  "recording": "NOT_RUN",
+  "screenshots": [
+    {
+      "path": "C:\\Users\\chens\\Documents\\Codex\\2026-10-15\\d-project-birdtie-docs-reports-birdtie-2\\outputs\\cm-web26-cluster-seven-current.png",
+      "sha256": "2e37ef00b587193233e12cdb29c690fef1a2079cb87ef9dbba87adbbeae4809e"
+    },
+    {
+      "path": "C:\\Users\\chens\\Documents\\Codex\\2026-10-15\\d-project-birdtie-docs-reports-birdtie-2\\outputs\\cm-web26-cluster-seven.png",
+      "sha256": "32bcdc6200e05d6d17f66dec614c29ef84101a12bc071549b4cab1cbccb5b393"
+    },
+    {
+      "path": "C:\\Users\\chens\\Documents\\Codex\\2026-10-15\\d-project-birdtie-docs-reports-birdtie-2\\outputs\\cm-web26-default-aberdeen.png",
+      "sha256": "b9c95ba417fbedec4d5f2d1682adbdde861c6ec7e767af69f59b57824a10a33c"
+    },
+    {
+      "path": "C:\\Users\\chens\\Documents\\Codex\\2026-10-15\\d-project-birdtie-docs-reports-birdtie-2\\outputs\\cm-web26-independent-anchor-detail.png",
+      "sha256": "8772f1e23e323ef88d311a7b1edc94e3b99f75d42f10b6669b318e988a401d48"
+    },
+    {
+      "path": "C:\\Users\\chens\\Documents\\Codex\\2026-10-15\\d-project-birdtie-docs-reports-birdtie-2\\outputs\\cm-web26-zoomed-after-pan.png",
+      "sha256": "a931469e554236e242b170acc96fe2b44668ebaa4ebd99655a007e3d03bb5491"
+    },
+    {
+      "path": "C:\\Users\\chens\\Documents\\Codex\\2026-10-15\\d-project-birdtie-docs-reports-birdtie-2\\outputs\\cm-web26-zoomed.png",
+      "sha256": "4772377d790f9eb3e4254217306b47aa8059ea8b0e3a0e2a0e7d7d9bfd06b2b4"
+    }
+  ],
+  "sourceRelease": "public-20261016-final-web26",
+  "webManifestSHA256": "71d5d259b38eea3766e1b3ac15b1e7bd85858946486bd68c57c406890ebd77b0",
+  "apiSchema": 171,
+  "command": "python -u work/cm_web_acceptance.py",
+  "driverSHA256": "8522fe38d259e30b263eb513f524bd147f3638ddfc0ed264f7bae51e2e579656",
+  "scope": {
+    "account": "FIRST_PREVIOUSLY_CLAIMED_OWNER_ONLY_RAM_MATCH",
+    "privateValuesPersisted": false,
+    "storageStateExported": false,
+    "databaseWrites": 0,
+    "contentWrites": 0,
+    "liveApplication": true,
+    "rendering": "HEADLESS_REAL_CHROMIUM_WEBGL",
+    "recording": "NOT_RUN_USER_PREFERENCE"
+  }
+}

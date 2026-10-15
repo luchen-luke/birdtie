@@ -1,0 +1,57 @@
+Flutter assets will be downloaded from https://storage.flutter-io.cn. Make sure you trust this source!
+00:00 +0: loading D:/Project/birdtie/apps/client/test/content_map_web_scroll_test.dart
+00:00 +0: real FlutterMap wheel burst publishes newest zoom exactly once
+00:00 +1: real double tap ends once and rotation ends coalesce with move end
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following TestFailure was thrown running a test:
+Expected: an object with length of <1>
+  Actual: []
+   Which: has length of <0>
+
+When the exception was thrown, this was the stack:
+#4      main.<anonymous closure> (file:///D:/Project/birdtie/apps/client/test/content_map_web_scroll_test.dart:101:7)
+<asynchronous suspension>
+#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1952:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///D:/Project/birdtie/apps/client/test/content_map_web_scroll_test.dart line 101
+The test description was:
+  real double tap ends once and rotation ends coalesce with move end
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:00 +1 -1: real double tap ends once and rotation ends coalesce with move end [E]
+  Test failed. See exception logs above.
+  The test description was: real double tap ends once and rotation ends coalesce with move end
+  
+00:00 +1 -1: new gesture, scope change and dispose retire pending wheel snapshots
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following StateError was thrown running a test:
+Bad state: No element
+
+When the exception was thrown, this was the stack:
+#0      List.single (dart:core-patch/growable_array.dart:362:22)
+#1      main.<anonymous closure> (file:///D:/Project/birdtie/apps/client/test/content_map_web_scroll_test.dart:190:24)
+<asynchronous suspension>
+#2      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#3      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1952:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+The test description was:
+  new gesture, scope change and dispose retire pending wheel snapshots
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:00 +1 -2: new gesture, scope change and dispose retire pending wheel snapshots [E]
+  Test failed. See exception logs above.
+  The test description was: new gesture, scope change and dispose retire pending wheel snapshots
+  
+00:00 +1 -2: Some tests failed.
+
+Failing tests:
+  D:/Project/birdtie/apps/client/test/content_map_web_scroll_test.dart: new gesture, scope change and dispose retire pending wheel snapshots
+  D:/Project/birdtie/apps/client/test/content_map_web_scroll_test.dart: real double tap ends once and rotation ends coalesce with move end

@@ -1,0 +1,34 @@
+{
+  "status": "SOURCE_READY",
+  "timestampUTC": "2026-10-15T22:55:45.254892+00:00",
+  "apiChanged": false,
+  "databaseChanged": false,
+  "fix": "DPR-scaled square content cluster centred on its real projection; labels do not cover neighbouring current glyphs; people cluster render unchanged.",
+  "files": {
+    "apps/client/lib/src/workspace/map_marker_bitmap.dart": "a88d8f264440545267f9bdfdfe005b308968b22e85102f743597eaa41fd9b3d0",
+    "apps/client/lib/src/workspace/map_display_policy.dart": "f5bc2deec2b0e55964fc9cd78b8aa72b0cf7657fdfd5c5cf96a4f3ee33da9c08",
+    "apps/client/lib/src/city/native_city_map_io.dart": "58a083fb7496e67b76cdfef50b2715dd888640218f71db619c8a6e108c97d78b",
+    "apps/client/test/content_map_cluster_bitmap_test.dart": "a8580eb78f92ccacf2c5742b3713e18fa71100256b0755bca8d917a479b205b1"
+  },
+  "tests": [
+    {
+      "command": "flutter test test/content_map_cluster_bitmap_test.dart test/content_map_renderer_test.dart --reporter expanded",
+      "evidence": "cluster-glyph01.log",
+      "status": "FAIL",
+      "passed": 5,
+      "failed": 1,
+      "note": "All4 existing renderer tests passed. New count test compared single digits2/3 under Flutter Ahem font, which produces identical box glyphs. Test was changed to2/12 to inspect painted count width."
+    },
+    {
+      "command": "flutter test test/content_map_cluster_bitmap_test.dart --reporter expanded",
+      "evidence": "cluster-glyph02.log",
+      "status": "PASS",
+      "passed": 2,
+      "coverage": "Actual PNG at DPR1/3.25, opaque body/white count region/bounded scaling/front centre; peopleCluster bytes unchanged; neighbour labels cannot cover count at zoom12/17 and selected path; coordinate/ID/member mapping unchanged."
+    }
+  ],
+  "notRun": [
+    "APK28 installation and real cluster count visual check",
+    "Real font numeral appearance in screenshot; widget PNG uses test Ahem font"
+  ]
+}

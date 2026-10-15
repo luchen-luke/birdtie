@@ -1,0 +1,78 @@
+{
+  "status": "PASS_VISUAL_ONLY_NAVIGATION_INCOMPLETE",
+  "headless": true,
+  "browserVersion": "155.0.8059.40",
+  "nonPersistentContext": true,
+  "privateValuesPersisted": false,
+  "contentWrites": 0,
+  "checks": [
+    {
+      "check": "PINNED_OWNER",
+      "passed": true
+    },
+    {
+      "check": "DEFAULT_CLUSTER_COUNTS_VISIBLE_UNOBSCURED",
+      "passed": true,
+      "notes": "Actual Web28 1280x900 default Aberdeen screenshot shows clear square clusters 2 and 7 with centered unobscured counts."
+    },
+    {
+      "check": "WHEEL_REVEALS_INDEPENDENT_SQUARE_ANCHOR_NO_LABEL_COLLISION",
+      "passed": true,
+      "notes": "Wheel produced zoom14 viewport; actual screenshot shows independent square photo anchor, adjacent content-place circles and readable labels; no content count is covered."
+    }
+  ],
+  "metrics": {
+    "mapQueries": 3,
+    "memberQueries": 0,
+    "placeReads": 1,
+    "momentReads": 0,
+    "coverReads": 8,
+    "denials": 2,
+    "contentWrites": 0,
+    "blockedWrites": 0,
+    "failedRequests": 7,
+    "browserPageErrors": 0
+  },
+  "events": [
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 12.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 14.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 14.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "detail"
+    }
+  ],
+  "logout": "PASS",
+  "harnessLimitation": "Synchronous stdin wait paused route callbacks; expiry observations cannot establish a server/client continuation defect."
+}

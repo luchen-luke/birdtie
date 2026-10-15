@@ -1,0 +1,25 @@
+{
+  "task": "CM09 final integration privacy repair",
+  "at": "2026-10-15T22:11:47.753308+00:00",
+  "status": "FROZEN_LOCAL_DIRECT_PASS",
+  "fix": "Group member expiration independently retires text and selected detail even when parent cluster viewport renews; current-grant reload restores loaded pages and same source selected identity; no stale text on failed renewal; bounded current member window permits later pagination.",
+  "sources": {
+    "apps/client/lib/src/workspace/now_map_content_panel.dart": "ce2e8250af334fe28488bca2d46cfc5b00245da66dbf87e0100fe819b15c7904",
+    "apps/client/test/content_map_panel_test.dart": "4beb60674e118273068b41e0422cf9c146fa0fa446684eb676989b4427c5b895"
+  },
+  "test": {
+    "command": "flutter test test/content_map_panel_test.dart --reporter expanded",
+    "cwd": "D:/Project/birdtie/apps/client",
+    "log": "panel-lease01.log",
+    "passed": 2,
+    "exit": 0
+  },
+  "not_run": [
+    "APK26 runtime",
+    "real-device permission expiry/network evidence"
+  ],
+  "review_findings_sent_root": [
+    "default public media sync still receiving hidden PLACE/MOMENT needs root filter",
+    "Native programmatic flyTo250ms initial snapshot while750ms ignore window prevents final content query needs renderer fix"
+  ]
+}

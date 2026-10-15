@@ -1,0 +1,20 @@
+00:00 +0: loading D:/Project/birdtie/apps/client/test/content_map_renderer_test.dart
+00:00 +0: D:/Project/birdtie/apps/client/test/content_map_renderer_test.dart: bounded latest render, crossing viewport and complete task aggregation
+00:00 +1: D:/Project/birdtie/apps/client/test/content_map_renderer_test.dart: actual Web content overlap and server cluster preserve one map and dispatch to Now
+00:00 +2: D:/Project/birdtie/apps/client/test/content_map_renderer_test.dart: actual Web content overlap and server cluster preserve one map and dispatch to Now
+00:00 +3: D:/Project/birdtie/apps/client/test/content_map_renderer_test.dart: actual Web content overlap and server cluster preserve one map and dispatch to Now
+00:00 +4: D:/Project/birdtie/apps/client/test/content_map_renderer_test.dart: actual Web content overlap and server cluster preserve one map and dispatch to Now
+00:01 +5: D:/Project/birdtie/apps/client/test/content_map_renderer_test.dart: actual Web content overlap and server cluster preserve one map and dispatch to Now
+00:01 +6: D:/Project/birdtie/apps/client/test/content_map_controller_test.dart: settled query reuse, cancellation, LRU bytes and permission withdrawal
+00:01 +7: D:/Project/birdtie/apps/client/test/content_map_panel_test.dart: same leaf restores after viewport and selected budget changes; permission retirement cannot revive it
+00:01 +8: D:/Project/birdtie/apps/client/test/content_map_panel_test.dart: same leaf restores after viewport and selected budget changes; permission retirement cannot revive it
+00:01 +8: D:/Project/birdtie/apps/client/test/content_map_renderer_test.dart: actual Native touch and initial screen viewport use content routing without replacing annotations
+Birdtie native map created.
+Birdtie native map style loaded.
+00:01 +9: D:/Project/birdtie/apps/client/test/content_map_panel_test.dart: same leaf restores after viewport and selected budget changes; permission retirement cannot revive it
+00:01 +10: D:/Project/birdtie/apps/client/test/content_map_panel_test.dart: same leaf restores after viewport and selected budget changes; permission retirement cannot revive it
+00:01 +11: D:/Project/birdtie/apps/client/test/content_map_panel_test.dart: cluster continuation renews the bounded current window after thirty seconds instead of returning to page one
+00:08 +12: D:/Project/birdtie/apps/client/test/content_map_panel_test.dart: actual cluster panel pages, opens exact anchor detail, returns to loaded group and retires permission
+00:08 +13: D:/Project/birdtie/apps/client/test/content_map_panel_test.dart: parent renewal cannot extend child grant; expiry clears names during failure and retry restores loaded exact selection
+00:09 +14: All tests passed!
+Flutter assets will be downloaded from https://storage.flutter-io.cn. Make sure you trust this source!

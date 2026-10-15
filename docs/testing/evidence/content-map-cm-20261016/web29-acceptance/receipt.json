@@ -1,0 +1,204 @@
+{
+  "status": "PASS_AFFECTED_ACCESSIBILITY_POINTER_FLOW",
+  "headless": true,
+  "browserVersion": "155.0.8059.40",
+  "nonPersistentContext": true,
+  "privateValuesPersisted": false,
+  "contentWrites": 0,
+  "checks": [
+    {
+      "check": "PINNED_OWNER",
+      "passed": true
+    },
+    {
+      "check": "WEB29_ACCESSIBILITY_POINTER_TARGET_BOUNDARY",
+      "passed": true,
+      "notes": "Real pixel click at646,462 after zoom14 with accessibility enabled now hit MOMENT_ANCHOR, momentReads0->1/placeReads0 unchanged, correct moment title/photo preview inspected."
+    },
+    {
+      "check": "WEB29_COMPLETE_LABEL_AND_48DP_PRESERVED",
+      "passed": true,
+      "notes": "Six point semantic buttons retain full text labels and48x48 rects; computed overflow hidden only marked point nodes; elementsFromPoint at anchor center no longer returns upper place."
+    },
+    {
+      "check": "WEB29_RETURN_RETAINS_MAP_DOM",
+      "passed": true,
+      "notes": "Closed correct content preview; same initial map DOM element, one map and one canvas, six point markers and same camera."
+    }
+  ],
+  "metrics": {
+    "mapQueries": 7,
+    "memberQueries": 0,
+    "placeReads": 0,
+    "momentReads": 2,
+    "coverReads": 8,
+    "denials": 2,
+    "contentWrites": 0,
+    "blockedWrites": 0,
+    "failedRequests": 8,
+    "browserPageErrors": 0
+  },
+  "events": [
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 12.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 14.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 14.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "detail"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 14.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "detail"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 14.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 14.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 14.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    }
+  ],
+  "logout": "PASS",
+  "finalized": true,
+  "release": {
+    "api": 26,
+    "web": 29,
+    "manifestSha256": "bb00c1c9fb2790c14289fc3a9cbcecb488832a457a1fd6880d7378c0d80939f6"
+  },
+  "scope": "Only the Web28 accessibility pointer-overflow regression, full label/48dp preservation and return map identity; not a full release regression.",
+  "comparison": {
+    "previousReceipt": "docs/testing/evidence/content-map-cm-20261016/web28-acceptance/receipt.json",
+    "previousStatus": "PARTIAL_NORMAL_CANVAS_PASS_ACCESSIBILITY_HIT_FAIL",
+    "sameActualPointer": [
+      646,
+      462
+    ],
+    "beforeTopHit": "PLACE_CONTENT_OUTSIDE_48DP_RECT",
+    "afterTopHit": "MOMENT_ANCHOR_INSIDE_48DP_RECT",
+    "afterRect": {
+      "x": 621.984130859375,
+      "y": 438.28948974609375,
+      "width": 48,
+      "height": 48
+    },
+    "computedOverflow": "hidden",
+    "fullSemanticLabelRetained": true,
+    "checkedPointNodes": 6,
+    "momentReadsBefore": 0,
+    "momentReadsAfter": 1,
+    "placeReadsBefore": 0,
+    "placeReadsAfter": 0,
+    "returnedSameMapDOM": true,
+    "mapContainerCount": 1,
+    "canvasCount": 1
+  },
+  "keyboardActivation": {
+    "status": "NOT_RUN_COMPLETE_ACTIVATION",
+    "attempted": [
+      "Existing semantic node focus() then Enter",
+      "One real Tab; observed Flutter focus state"
+    ],
+    "observed": {
+      "markerTabIndex": -1,
+      "markerTabIndexAttribute": null,
+      "directFocusMatched": false,
+      "afterTabActiveTag": "FLUTTER-VIEW"
+    },
+    "limitation": "Exact marker keyboard activation was not established. No tabindex, focus or event state was patched for testing; full screen-reader/keyboard navigation was not implemented or claimed."
+  },
+  "harnessLimitations": [
+    "Continuous Playwright event pump avoids Web28 attempt01 stdin route-stall artifact.",
+    "A first post-wheel observation occurred before loaded pins; no click result from that stage was counted. Regression click was performed after six current point nodes were observed.",
+    "Aggregate counters include read-lease renewals during inspection; exact click delta is recorded separately.",
+    "failedRequests includes external/cancelled tile requests; all captured viewport/detail responses were200 and browserPageErrors0. Pre-login auth denials2 were not map-content failures."
+  ],
+  "screenshots": {
+    "correctPointerDetail": {
+      "path": "C:\\Users\\chens\\Documents\\Codex\\2026-10-15\\d-project-birdtie-docs-reports-birdtie-2\\outputs\\cm-web29-accessibility-pointer-anchor-loaded.png",
+      "sha256": "273a38b5516a04362c20010b32e229c7a4e1cb240da1bd5812686dd724fccd9c"
+    },
+    "returnSameMap": {
+      "path": "C:\\Users\\chens\\Documents\\Codex\\2026-10-15\\d-project-birdtie-docs-reports-birdtie-2\\outputs\\cm-web29-accessibility-return-same-map.png",
+      "sha256": "85d4cc965524171333cf56929a34f52a05b437b08412691ed811ac64d80eda50"
+    },
+    "keyboardBoundedObservation": {
+      "path": "C:\\Users\\chens\\Documents\\Codex\\2026-10-15\\d-project-birdtie-docs-reports-birdtie-2\\outputs\\cm-web29-keyboard-tab-observation.png",
+      "sha256": "85d4cc965524171333cf56929a34f52a05b437b08412691ed811ac64d80eda50"
+    }
+  },
+  "notRun": [
+    "Full CM01-CM09 replay on Web29",
+    "Content creation/edit/delete replay",
+    "Full keyboard/screen-reader activation",
+    "Screen recording"
+  ]
+}

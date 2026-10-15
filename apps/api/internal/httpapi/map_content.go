@@ -43,12 +43,17 @@ func (s *server) mapContentPort(w http.ResponseWriter) (content.HumanMapContentS
 }
 func (s *server) readMapContent(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "private, no-store")
-	v, e := mapContentQueryValues(r, "cityId", "west", "south", "east", "north")
-	if e != nil || len(v) != 5 {
+	v, e := mapContentQueryValues(r, "cityId", "west", "south", "east", "north", "zoom", "filterScope", "clusterId", "cursor", "sourceVersion", "selectedMarkerId")
+	if e != nil || len(v) < 5 || len(v) > 11 {
 		momentControlFailure(w, content.ErrInvalid)
 		return
 	}
-	q := content.MapContentQuery{CityID: v.Get("cityId")}
+	q := content.MapContentQuery{CityID: v.Get("cityId"), FilterScope: v.Get("filterScope"), ClusterID: v.Get("clusterId"), Cursor: v.Get("cursor"), SourceVersion: v.Get("sourceVersion"), SelectedMarkerID: v.Get("selectedMarkerId")}
+	q.Zoom, e = strconv.ParseFloat(v.Get("zoom"), 64)
+	if e != nil {
+		momentControlFailure(w, content.ErrInvalid)
+		return
+	}
 	values := []*float64{&q.Bounds.West, &q.Bounds.South, &q.Bounds.East, &q.Bounds.North}
 	for i, k := range []string{"west", "south", "east", "north"} {
 		f, e := strconv.ParseFloat(v.Get(k), 64)
@@ -75,7 +80,7 @@ func (s *server) readMapContent(w http.ResponseWriter, r *http.Request) {
 		momentControlFailure(w, e)
 		return
 	}
-	if !page.Valid(time.Now().UTC()) || page.ResponseProof == nil || page.ViewerAccountID != a.ID || page.CityID != q.CityID || page.Bounds != q.Bounds {
+	if !page.Valid(time.Now().UTC()) || page.ResponseProof == nil || page.ViewerAccountID != a.ID || page.CityID != q.CityID || page.Bounds != q.Bounds || page.Zoom != q.Zoom {
 		momentControlFailure(w, content.ErrUnavailable)
 		return
 	}
@@ -144,7 +149,7 @@ func (s *server) readMapContentBinary(w http.ResponseWriter, r *http.Request, ki
 	w.Header().Set("Cache-Control", "private, no-store")
 	v, e := mapContentQueryValues(r, "sourceVersion", "variant")
 	variant := v.Get("variant")
-	if e != nil || len(v) < 1 || len(v) > 2 || !content.MomentControlHex(v.Get("sourceVersion")) || !identity.HumanControlUUID(target) || !identity.HumanControlUUID(id) || (variant != "" && variant != "poster") || kind == "places" && variant != "" || r.Header.Get("Range") != "" {
+	if e != nil || len(v) < 1 || len(v) > 2 || !content.MomentControlHex(v.Get("sourceVersion")) || !identity.HumanControlUUID(target) || !identity.HumanControlUUID(id) || (variant != "" && variant != "poster" && variant != "marker") || kind == "places" && variant != "" && variant != "marker" || r.Header.Get("Range") != "" {
 		momentControlFailure(w, content.ErrInvalid)
 		return
 	}

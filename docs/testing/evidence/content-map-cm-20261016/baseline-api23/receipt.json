@@ -1,0 +1,24 @@
+{
+  "exitCode": 1,
+  "result": {
+    "status": "FAIL",
+    "devOnly": true,
+    "productionIdentityVerified": false,
+    "productionPhoneVerification": false,
+    "fixedCodeUsed": true,
+    "sourceWrites": 0,
+    "databaseDirectWrites": 0,
+    "remoteConfigurationChanged": false,
+    "agentActivationRequested": false,
+    "oldSessionAccepted": false,
+    "messagesSent": 0,
+    "privateValuesPersisted": false,
+    "allCreatedSessionsLoggedOut": true,
+    "schema": 170,
+    "contentWrites": 0,
+    "errorType": "NameError",
+    "errorCode": "BASELINE_FAILED"
+  },
+  "remoteScriptSHA256": "8eeae54ee4752d853512c8da5241beea15126a332e861ca96e7aed75cdaa7188",
+  "privateDataLogged": false
+}

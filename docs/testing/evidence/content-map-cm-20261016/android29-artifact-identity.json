@@ -1,0 +1,12 @@
+{
+  "status": "PASS_IDENTICAL_ANDROID_ARTIFACT",
+  "apk28SHA256": "4e23d39b20c7d2af8ca649b07e9a1770981dd66798bf13f87a1f2a2359c52f32",
+  "apk29SHA256": "4e23d39b20c7d2af8ca649b07e9a1770981dd66798bf13f87a1f2a2359c52f32",
+  "newBuildMatchesPreviousInstalledAndTestedBytes": true,
+  "installedBuildReadBackVerified": true,
+  "launchPASS": true,
+  "previousFullTargetedEvidence": "phone28-acceptance.json",
+  "previousPerformanceEvidence": "phone-apk28-final01/receipt.json",
+  "freshFullUITestRun": false,
+  "reason": "Final fix is Web semantics/CSS; Android output is byte-identical. Existing actual-device evidence remains for these exact installed bytes."
+}

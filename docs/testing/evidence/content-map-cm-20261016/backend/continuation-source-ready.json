@@ -1,0 +1,51 @@
+{
+  "status": "SOURCE_READY",
+  "recordedAtUTC": "2026-10-15T22:39:59.457674+00:00",
+  "fixes": [
+    "Signed cluster continuation positions live at most 30 minutes per issued cursor; each returned content page is reauthorized and has its own <=30 second lease. Current source and session checks remain mandatory.",
+    "Each leaf media source uses batched moment/place attachment facts independently of viewport and selected cover budget.",
+    "Now panels use permission epoch plus fresh same-source selectors. Eight-page member window renews at its current position without reusing old text grants."
+  ],
+  "tests": [
+    {
+      "evidence": "native-continuation01/receipt.json",
+      "status": "PASS",
+      "count": 2,
+      "coverage": "Real isolated PostgreSQL 81 coincident leaves, signed near-expiry position versus fresh page grant, terminal page, expired token, source mutation and session revocation; scoped media revision unit."
+    },
+    {
+      "evidence": "native-media-version01/receipt.json",
+      "status": "PASS",
+      "count": 1,
+      "coverage": "Original independent anchor matching entry/media, real marker thumbnail and geographic permission retirement with revised media facts."
+    },
+    {
+      "command": "flutter test test/content_map_panel_test.dart --reporter expanded",
+      "cwd": "D:\\Project\\birdtie\\apps\\client",
+      "evidence": "panel-continuation03.log",
+      "status": "PASS",
+      "count": 4,
+      "coverage": "400 members across10 pages, oldest window evicted at320, current41..360 window reloads after31s then reaches361..400; viewport/selected leaf restoration; identity retirement; original detail and failure expiry cases."
+    }
+  ],
+  "preservedFailures": [
+    {
+      "evidence": "panel-continuation01.log",
+      "status": "FAIL",
+      "reason": "The test inspected pre-rebuild button loading state directly after tap. Added a frame pump after tap; production behavior unchanged."
+    }
+  ],
+  "notRun": [
+    "All250 HTTP pages for10000 candidates sequentially",
+    "Physical-device pagination across hundreds of members",
+    "Remote cross-device withdrawal push delivery end-to-end",
+    "API26 deployment and live reacceptance at this evidence time"
+  ],
+  "files": {
+    "apps/api/internal/postgres/map_content.go": "0ec6dba7be6b9623c465e59718e4acad852adbb064c334556f8822fabe4ccec1",
+    "apps/api/internal/postgres/map_content_spatial.go": "7ac263e0bb117ad0e28395b101de5e6d6a460bfaaea05d7717011194c0902606",
+    "apps/api/internal/postgres/map_content_native_test.go": "edf2652c021d1b5e825e6590f4aab899680b5fc04b0de8758f77c505b62edbdd",
+    "apps/client/lib/src/workspace/now_map_content_panel.dart": "752e68b22476386a44d4fd9e7191f221c6e3e0f86d7a057c9d3f32bc01f7a557",
+    "apps/client/test/content_map_panel_test.dart": "e7b8077b8e942ef12870ed3c3bdc3ac1e48e0acd0878e137e767070a6653e22d"
+  }
+}

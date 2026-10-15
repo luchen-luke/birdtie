@@ -1,0 +1,27 @@
+{
+  "status": "SOURCE_FROZEN",
+  "reason": "REAL_WEB26_WHEEL_VIEWPORT_FAILURE",
+  "files": {
+    "apps/client/lib/src/city/public_city_map.dart": "4a66ac2a1e659c570a56623f806787a0fffb048fb82eec1fe801a7ac86442f0c",
+    "apps/client/test/content_map_web_scroll_test.dart": "8a8cc6562484e4a7549d86cc9eb16f28cd49b208ff2ecbd3117ad3bbf064c527"
+  },
+  "tests": {
+    "command": "flutter test test/content_map_web_scroll_test.dart --no-pub --reporter expanded",
+    "exitCode": 0,
+    "passed": 3,
+    "log": "docs/testing/evidence/content-map-cm-20261016/renderer/web-scroll02.log"
+  },
+  "analysis": {
+    "exitCode": 0,
+    "errors": 0,
+    "warnings": 0,
+    "info": 7,
+    "log": "docs/testing/evidence/content-map-cm-20261016/renderer/web-scroll-analyze01.log"
+  },
+  "remoteWeb27Retest": "NOT_RUN_WAIT_DEPLOY",
+  "recording": "NOT_RUN_USER_REQUEST",
+  "failedHistoryRetained": [
+    "renderer/web-scroll01.log",
+    "web26-acceptance/receipt.json"
+  ]
+}

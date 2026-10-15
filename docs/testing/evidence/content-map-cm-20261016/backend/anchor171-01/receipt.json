@@ -1,0 +1,27 @@
+{
+  "exitCode": 0,
+  "mode": "apply",
+  "remoteProgramSHA256": "18512593cd9abc5a68a04cc53b6ec335a2827964fe9a897972a1deb768d72132",
+  "result": {
+    "status": "VERIFIED",
+    "schema": 171,
+    "result": {
+      "runId": "c5df0d7c-f361-4275-9838-feb6d1d92352",
+      "status": "COMMITTED",
+      "counts": {
+        "anchors": 16,
+        "mediaAnchors": 15,
+        "noteAnchors": 1
+      },
+      "countsKnown": true,
+      "activated": false,
+      "sourceWrites": 0,
+      "mediaImported": false
+    },
+    "privateInputsUnchanged": true,
+    "sourceWrites": 0,
+    "sessionChanges": 0,
+    "nativeContentPublicationWrites": 0
+  },
+  "stderrPresent": false
+}

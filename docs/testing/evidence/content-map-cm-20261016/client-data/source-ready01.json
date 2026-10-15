@@ -1,0 +1,115 @@
+{
+  "task": "CM06-CM07 client data and exact panel routing",
+  "status": "LOCAL_IMPLEMENTED_DIRECT_TESTS_PASS",
+  "at": "2026-10-15T22:07:26.184939+00:00",
+  "production_frozen": true,
+  "changes": [
+    "apps/client/lib/src/workspace/owned_map_api.dart",
+    "apps/client/lib/src/workspace/owned_map_controller.dart",
+    "apps/client/lib/src/workspace/owned_map_media_controller.dart",
+    "apps/client/test/content_map_controller_test.dart",
+    "apps/client/test/owned_map_test.dart",
+    "apps/client/test/content_map_panel_test.dart"
+  ],
+  "source_sha256": {
+    "apps/client/lib/src/workspace/owned_map_api.dart": "5f5c024318e6fb3c07afb6de3a7227d81974eeede3e5b42085a253f7fc5b2a13",
+    "apps/client/lib/src/workspace/owned_map_controller.dart": "7397b58569b82ea4f34b62da211ea33100f58e350fdd02096ca3a60e6b5be397",
+    "apps/client/lib/src/workspace/owned_map_media_controller.dart": "c4094371b22442ece0105eae2612ffa798bc4af538ffac7c2891d3b08218cc02",
+    "apps/client/test/content_map_controller_test.dart": "92c8189827885a236c6b6565a6faa507ff72b61541b1e74415794259f7d4b7c5",
+    "apps/client/test/owned_map_test.dart": "6b5493cb8de9804b016f5df0bff80dab9c0384a8495ac56c50655283a402ad9b",
+    "apps/client/test/content_map_panel_test.dart": "98250211edb000aa7c971df552d517005b3edfeca4ee7ed253afb9b2ff2f30c9"
+  },
+  "interfaces": {
+    "controller": "updateQuery(cityID,bounds,{zoom=12,selectedMarkerID}); sync(...zoom,selectedMarkerID); readClusterMembers(pin,{cursor}); OwnedMapView.items",
+    "pin": "isPlace/isMomentAnchor/isCluster; mapID=owned-map:<canonical markerID>; anchorID/entryID/threadID; no fake place for independent anchor",
+    "metrics": "requests,cancellations,cacheHits,responseBytes,cachedViews,cachedPins,cachedBytes,mediaRequests,mediaDecodes,mediaCacheHits,mediaInFlightPeak,mediaCachedBytes"
+  },
+  "bounds": "Finite WGS84 date-line crossing supported. Snapped outward small prefetch cells at integer zoom, same-key reuse; no second debounce after renderer settled callback. Cluster member queries preserve original membersPath viewport/zoom/sourceVersion; cluster.bounds is tight fit geometry.",
+  "budgets": {
+    "views": 8,
+    "cachedPins": 320,
+    "viewportBytes": 2097152,
+    "serverPins": 40,
+    "coverCandidates": 12,
+    "concurrentCoverReads": 4,
+    "mediaCacheItems": 24,
+    "mediaCacheBytes": 25165824,
+    "derivativeMaxDimension": 160,
+    "decodeTarget": "36*dpr <=160",
+    "permissionLeaseSeconds": 30
+  },
+  "security": "AbortableRequest supersession plus identity/epoch/query guards; 401/403/404/409/410 retire cache and grants; same-scope weak failures retain only unexpired view. Cache keys exclude bearer. Stable asset/permission version caches pixels across viewports, and only current freshly granted selectors may expose wrappers. Account/org/origin/transport change clears cache. No video preload.",
+  "tests": [
+    {
+      "log": "direct01.log",
+      "status": "FAIL",
+      "reason": "New custom StreamedResponse fixture omitted contentLength; production exact media-byte validation correctly refused bytes."
+    },
+    {
+      "log": "direct02.log",
+      "status": "PASS",
+      "count": 3,
+      "exit": 0
+    },
+    {
+      "log": "direct03.log",
+      "status": "INTERRUPTED",
+      "reason": "Legacy MockClient delayed-response Future awaited inside FakeAsync runAsync stalled; new controller tests completed."
+    },
+    {
+      "log": "legacy-debug01.log",
+      "status": "INTERRUPTED",
+      "reason": "Located old fixture deadlock at await-pending; no production failure."
+    },
+    {
+      "log": "direct04.log",
+      "status": "INTERRUPTED",
+      "reason": "4 new tests completed; legacy pending Future still needed pump-aware drain."
+    },
+    {
+      "log": "legacy05.log",
+      "status": "PASS",
+      "count": 1,
+      "exit": 0,
+      "fix": "Preserved late-response ABA test using bounded pump-aware drain, rather than nested runAsync await."
+    },
+    {
+      "log": "direct06.log",
+      "status": "PASS",
+      "count": 5,
+      "exit": 0,
+      "command": "flutter test test/content_map_controller_test.dart test/owned_map_test.dart test/content_map_panel_test.dart --reporter expanded",
+      "cwd": "D:/Project/birdtie/apps/client"
+    }
+  ],
+  "analysis": {
+    "log": "analyze01.log",
+    "exit": 0,
+    "errors": 0,
+    "warnings": 0,
+    "info": 44,
+    "scope": "3 production files and new controller test"
+  },
+  "coverage": [
+    "coordinate-only moment anchor and exact entry identity",
+    "cluster tighter bounds and source/cursor/member grants",
+    "catalog-only momentCount0 rejection",
+    "single settled schedule/no extra debounce",
+    "same-key in-flight reuse, cancellation and stale grant rejection",
+    "viewport LRU pin/byte limits",
+    "weak 503 keeps valid view,403 immediate withdrawal",
+    "cross-dateline bounds",
+    "owner/org/origin/transport/hidden/expired ABA",
+    "place full pagination and 200 media limit",
+    "full content byte digest validation",
+    "12 candidate/4 concurrent covers, selected first",
+    "actual JPEG DPR image decode and pixel cache reauthorization",
+    "actual group widget loads pages, selects second anchor exact route, returns list without requery, removes inaccessible children"
+  ],
+  "not_run": [
+    "APK/Web actual provider runtime for this worker",
+    "real-device network/memory/frame measurements",
+    "production deployment acceptance",
+    "real current-account dataset permissions"
+  ]
+}

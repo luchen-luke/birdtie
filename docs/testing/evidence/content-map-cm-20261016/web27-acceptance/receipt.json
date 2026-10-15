@@ -1,0 +1,72 @@
+{
+  "status": "FAIL",
+  "headless": true,
+  "browserVersion": "155.0.8059.40",
+  "nonPersistentContext": true,
+  "privateValuesPersisted": false,
+  "contentWrites": 0,
+  "checks": [
+    {
+      "check": "PINNED_OWNER",
+      "passed": true
+    },
+    {
+      "check": "REAL_WHEEL_BURST_NEW_ZOOM_ONE_QUERY",
+      "passed": false,
+      "metrics": {
+        "queriesBefore": 1,
+        "queriesAfter": 2,
+        "delta": 1,
+        "zoomBefore": 12,
+        "zoomAfter": 12,
+        "mapElementRetained": true
+      }
+    },
+    {
+      "check": "COMPLETED_NETWORK_RESOURCE_CONFIRMS_WHEEL_ONE_QUERY",
+      "passed": true,
+      "notes": "Browser Resource Timing completed map-content requests: initial zoom12 start52960ms duration141ms; wheel burst one new zoom13 request start54161ms duration273ms. No intermediate requests. Earlier response-handler assertion read the previous parsed page before its callback completed; preserve that harness timing failure separately."
+    },
+    {
+      "check": "REAL_ZOOMED_CONTENT_AND_MAP_PERSISTENCE",
+      "passed": true,
+      "notes": "Zoom13 screenshot shows content clusters split into two leaf places plus two clusters; same Mapbox DOM retained. Subsequent wheel reached zoom15 and independently rendered coordinate moment."
+    }
+  ],
+  "metrics": {
+    "mapQueries": 5,
+    "memberQueries": 0,
+    "placeReads": 0,
+    "momentReads": 0,
+    "coverReads": 5,
+    "denials": 2,
+    "contentWrites": 0,
+    "blockedWrites": 0,
+    "failedRequests": 21,
+    "browserPageErrors": 0
+  },
+  "events": [
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "response-inspection-failed"
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "response-inspection-failed"
+    }
+  ],
+  "logout": "PASS"
+}

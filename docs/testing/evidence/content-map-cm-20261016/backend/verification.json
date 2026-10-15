@@ -1,0 +1,93 @@
+{
+  "observedDate": "2026-10-16",
+  "role": "content_map_backend",
+  "baselineCommit": "57f4141fb3c28dc6a03aaab8dcfd69be5d4ac7a5",
+  "status": "SOURCE_READY_NATIVE_NOT_RUN",
+  "verification": [
+    {
+      "status": "PASS",
+      "session": 26564,
+      "tests": [
+        "TestMapContentBoundsAndSourceScopeAreClosed",
+        "TestMapContentQueryRejectsDuplicateOrganizationAndUnknown",
+        "TestMapContent171SpatialBudgetCompleteAndStable",
+        "TestMapContent171AnchorIdentityAndPermissionCount",
+        "TestMapContent171AnchorPlanUsesOnlyExplicitInputs"
+      ],
+      "kind": "direct-go-tests",
+      "notes": "Ran before final selectedMarkerId, exact-coordinate dedup, tight cluster bounds, and explicit parent media_locations_set hardening. These final edits received compile-only verification; no claim of repeat test execution.",
+      "exitCode": 0
+    },
+    {
+      "status": "PASS",
+      "kind": "final-go-compile",
+      "exitCode": 0,
+      "command": "go test ./internal/content ./internal/httpapi ./internal/postgres ./internal/legacymapanchor ./cmd/legacy-map-anchor-restore -run '^$'",
+      "session": 79589
+    },
+    {
+      "counts": {
+        "anchors": 16,
+        "noteAnchors": 1,
+        "mediaAnchors": 15
+      },
+      "mode": "validate-only",
+      "status": "PASS",
+      "sourceWrites": 0,
+      "nativeWrites": 0,
+      "kind": "protected-source-plan-validation",
+      "notes": "No database access. Source content not copied into evidence.",
+      "initialFailures": [
+        "source_invalid due to struct digest normalization; fixed JSON normalization",
+        "one source read command used wrong relative working directory; corrected"
+      ]
+    }
+  ],
+  "pureGoAggregation": [
+    {
+      "markers": 27,
+      "candidates": 100,
+      "microseconds": 0,
+      "complete": 100
+    },
+    {
+      "markers": 32,
+      "candidates": 1000,
+      "microseconds": 2070,
+      "complete": 1000
+    },
+    {
+      "markers": 32,
+      "candidates": 10000,
+      "microseconds": 19377,
+      "complete": 10000
+    }
+  ],
+  "aggregationLimitation": "Single local Go run, not PostgreSQL or device performance. 0 microseconds is timer resolution, not zero work.",
+  "nativeTests": {
+    "status": "NOT_RUN",
+    "names": [
+      "TestMapContent170NativeOriginalPublicAndOwnPrivateCurrent",
+      "TestMapContent171NativeCoordinateAnchorsAndRetirement"
+    ],
+    "owner": "root"
+  },
+  "remoteApply": "NOT_RUN",
+  "realDevice": "NOT_RUN",
+  "sqlPerfBeforeAfter": "NOT_RUN",
+  "sourceCounts": {
+    "noteMediaBranchesMutuallyExclusive": true,
+    "mediaParentMoments": 8,
+    "distinctExactMomentCoordinatePairs": 15,
+    "withheldLinkedMediaGPS": 48,
+    "duplicateGroups": 0,
+    "sameMomentRealPlaceExactMatches": 0,
+    "mediaAnchors": 15,
+    "noteAnchors": 1
+  },
+  "limitations": [
+    "Native arbitrary coordinate editor is outside this read/display increment; existing REFERENCE writer and verified legacy anchors provide the active no-place read paths.",
+    "Cover enrichment is bounded to 12 returned leaves; admission/counts and initial reference cover metadata are batched. Detail media hydration remains guarded existing media readers.",
+    "Do not call this source reading or unit result runtime acceptance."
+  ]
+}

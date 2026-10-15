@@ -12,15 +12,15 @@ import 'map_marker_bitmap.dart';
 import 'map_marker_visual.dart';
 import 'owned_map_api.dart';
 
-/// Bounded authenticated pixels for this current personal map only. No URL,
-/// bearer, grant selector or original bytes are given to a map provider.
+/// Pixels are cached independently of viewport leases. Only a fresh current
+/// selector may activate cached pixels; neither URLs nor bearer reach the map.
 class OwnedMapMediaController extends ChangeNotifier {
   OwnedMapMediaController({
     required this.api,
     required this.current,
     required this.authorizationHeader,
     required this.now,
-    this.maxItems = 16,
+    this.maxItems = 24,
     this.maxBytes = 24 * 1024 * 1024,
   });
   final OwnedMapAPI api;
@@ -29,18 +29,23 @@ class OwnedMapMediaController extends ChangeNotifier {
   final DateTime Function() now;
   final int maxItems, maxBytes;
   final _entries = <String, _OwnedMapPixels>{};
+  final _active = <String, _ActivePixels>{};
   final _queue = <String>[];
-  final _keys = <String, String>{};
   int _epoch = 0, _running = 0, _reserved = 0;
+  int requests = 0, decodes = 0, cacheHits = 0, inFlightPeak = 0;
   bool _closed = false, _notifyingLater = false;
   String _origin = '';
   String? _authorization;
   OwnedMapView? _latestView;
-  double _latestRatio = 1;
   int get inFlight => _running;
   int get cachedItems => _entries.length;
+  int get cachedBytes => _reserved;
 
-  void sync(OwnedMapView view, {required double devicePixelRatio}) {
+  void sync(
+    OwnedMapView view, {
+    required double devicePixelRatio,
+    String? selectedMarkerID,
+  }) {
     if (_closed) return;
     final origin = canonicalAuthOrigin(api.apiBaseUrl()),
         auth = authorizationHeader();
@@ -53,88 +58,116 @@ class OwnedMapMediaController extends ChangeNotifier {
     }
     final renewed = !identical(_latestView, view);
     _latestView = view;
-    _latestRatio = devicePixelRatio;
-    // A successful new grant read permits retry of failed pixels. Ordinary
-    // build/sync calls never retry a failed transport in a frame loop.
-    if (renewed) {
-      for (final entry in _entries.values.toList()) {
-        if (entry.finished && entry.pixels == null) _retire(entry);
-      }
-    }
     final ratio = MapMarkerBitmap.pixelRatio(devicePixelRatio);
-    final selected = <String, String>{};
-    for (final pin in view.items) {
-      if (selected.length >= maxItems) break;
-      final cover = pin.cover;
-      if (cover == null) continue;
+    final chosen =
+        view.items.where((p) => p.cover != null && !p.isCluster).toList()..sort(
+          (a, b) =>
+              (b.canonicalMarkerID == selectedMarkerID ? 1 : 0) -
+              (a.canonicalMarkerID == selectedMarkerID ? 1 : 0),
+        );
+    final next = <String, _ActivePixels>{};
+    for (final pin in chosen.take(math.min(12, maxItems))) {
+      final cover = pin.cover!;
+      // Media sourceVersion describes this asset and its permission facts,
+      // not a viewport hash. A renewed camera lease does not redownload it.
       final key =
-          'owned:$_epoch:${pin.mapID}:${pin.sourceVersion}:${cover.identity}:$ratio';
-      selected[pin.mapID] = key;
-      final old = _entries[key];
-      if (old != null) {
-        old.until = view.validUntil;
-        continue;
+          '${cover.identity}:${cover.width}:${cover.height}:${pin.entity.kind.name}:${pin.categoryCode}:$ratio';
+      var entry = _entries.remove(key);
+      if (entry != null) _entries[key] = entry;
+      if (entry != null && entry.finished && entry.image == null && renewed) {
+        _retire(entry);
+        entry = null;
       }
-      final edge = (MapMarkerBitmap.pointCanvasSize * ratio).ceil();
-      // Raw transfers are capped separately at two times 16MiB by the API;
-      // reservations cover decoded pixels and both marker/native rasters.
-      final reservation = 320 * 180 * 4 + edge * edge * 4 * 4;
-      if (_reserved + reservation > maxBytes) {
-        selected.remove(pin.mapID);
-        continue;
+      if (entry == null) {
+        final edge = (MapMarkerBitmap.pointCanvasSize * ratio).ceil();
+        final reservation = 160 * 160 * 4 + edge * edge * 4 * 4;
+        _makeRoom(reservation, next.keys.toSet());
+        if (_entries.length >= maxItems || _reserved + reservation > maxBytes)
+          continue;
+        entry = _OwnedMapPixels(key, ratio, _epoch, reservation);
+        _entries[key] = entry;
+        _reserved += reservation;
       }
-      final entry = _OwnedMapPixels(
-        key,
-        pin,
-        cover,
-        view.validUntil,
-        ratio,
-        _epoch,
-        reservation,
-      );
-      _entries[key] = entry;
-      _reserved += reservation;
-      _queue.add(key);
+      final old = _active[pin.mapID];
+      final active =
+          old != null &&
+              identical(old.pin, pin) &&
+              old.entry == entry &&
+              old.until == view.validUntil
+          ? old
+          : _ActivePixels(pin, cover, entry, view.validUntil);
+      if (!identical(old, active) && entry.image != null) cacheHits++;
+      next[pin.mapID] = active;
+      if (!entry.running && !entry.finished && !_queue.contains(key))
+        _queue.add(key);
     }
-    _keys
+    _active
       ..clear()
-      ..addAll(selected);
+      ..addAll(next);
     for (final entry in _entries.values.toList()) {
-      if (_keys[entry.pin.mapID] != entry.key) _retire(entry);
+      if (_grant(entry) == null && entry.image == null) _retire(entry);
     }
     _drain();
   }
 
-  bool _current(_OwnedMapPixels entry) =>
+  void _makeRoom(int reservation, Set<String> keepIDs) {
+    for (final entry in _entries.values.toList()) {
+      if (_entries.length < maxItems && _reserved + reservation <= maxBytes)
+        break;
+      if (_active.values.any(
+        (g) => g.entry == entry && keepIDs.contains(g.pin.mapID),
+      ))
+        continue;
+      if (entry.running) continue;
+      _retire(entry);
+    }
+  }
+
+  _ActivePixels? _grant(_OwnedMapPixels entry) =>
+      _active.values.where((g) => g.entry == entry && _current(g)).firstOrNull;
+  bool _current(_ActivePixels grant) =>
       !_closed &&
-      !entry.retired &&
+      !grant.entry.retired &&
       current() &&
-      entry.epoch == _epoch &&
-      _entries[entry.key] == entry &&
-      _keys[entry.pin.mapID] == entry.key &&
-      entry.until.isAfter(now()) &&
+      grant.entry.epoch == _epoch &&
+      identical(_entries[grant.entry.key], grant.entry) &&
+      identical(_active[grant.pin.mapID], grant) &&
+      grant.until.isAfter(now()) &&
       authorizationHeader() == _authorization &&
       canonicalAuthOrigin(api.apiBaseUrl()) == _origin;
 
   MapEntity decorate(OwnedMapPin pin) {
-    final entry = _entries[_keys[pin.mapID]];
-    return pin.entity.withMediaPixels(
-      entry != null &&
-              _current(entry) &&
-              entry.pin.sourceVersion == pin.sourceVersion &&
-              entry.cover.identity == pin.cover?.identity
-          ? entry.pixels
-          : null,
+    final grant = _active[pin.mapID];
+    if (grant == null ||
+        !_current(grant) ||
+        grant.pin.sourceVersion != pin.sourceVersion ||
+        grant.cover.identity != pin.cover?.identity ||
+        grant.entry.image == null)
+      return pin.entity;
+    final entry = grant.entry;
+    grant.pixels ??= MapMediaPixels(
+      key: '${entry.key}:${pin.sourceVersion}',
+      image: entry.image!,
+      normalPNG: entry.normal!,
+      selectedPNG: entry.selected!,
+      devicePixelRatio: entry.ratio,
+      current: () => _current(grant),
     );
+    return pin.entity.withMediaPixels(grant.pixels);
   }
 
   void _drain() {
-    while (!_closed && _running < 2 && _queue.isNotEmpty) {
+    while (!_closed && _running < 4 && _queue.isNotEmpty) {
       final entry = _entries[_queue.removeAt(0)];
-      if (entry == null || !_current(entry) || entry.running || entry.finished)
+      if (entry == null ||
+          _grant(entry) == null ||
+          entry.running ||
+          entry.finished)
         continue;
       entry.running = true;
-      ++_running;
+      entry.abort = Completer<void>();
+      _running++;
+      inFlightPeak = math.max(inFlightPeak, _running);
       unawaited(_load(entry));
     }
   }
@@ -142,22 +175,28 @@ class OwnedMapMediaController extends ChangeNotifier {
   Future<void> _load(_OwnedMapPixels entry) async {
     Uint8List? bytes, normal, selected;
     ui.Image? image;
+    final grant = _grant(entry)!;
+    bool allowed() => _grant(entry) != null && !entry.retired;
     try {
+      requests++;
       bytes = await api.content(
-        entry.cover,
+        grant.cover,
         authorization: _authorization!,
         origin: _origin,
-        current: () => _current(entry),
+        current: allowed,
+        abortTrigger: entry.abort!.future,
       );
-      if (!_current(entry)) return;
+      if (!allowed()) return;
+      final target = math.min(160, (36 * entry.ratio).ceil());
       final scale = math.min(
         1.0,
-        math.min(320 / entry.cover.width, 180 / entry.cover.height),
+        math.min(target / grant.cover.width, target / grant.cover.height),
       );
+      decodes++;
       final codec = await ui.instantiateImageCodec(
         bytes,
-        targetWidth: math.max(1, (entry.cover.width * scale).round()),
-        targetHeight: math.max(1, (entry.cover.height * scale).round()),
+        targetWidth: math.max(1, (grant.cover.width * scale).round()),
+        targetHeight: math.max(1, (grant.cover.height * scale).round()),
         allowUpscaling: false,
       );
       try {
@@ -165,45 +204,40 @@ class OwnedMapMediaController extends ChangeNotifier {
       } finally {
         codec.dispose();
       }
-      if (!_current(entry)) return;
-      if (image.width > 320 || image.height > 180)
+      if (!allowed()) return;
+      if (image.width > 160 || image.height > 160)
         throw const FormatException('地图图片尺寸不符');
       normal = await MapMarkerBitmap.render(
-        kind: MapEntityKind.place,
-        categoryCode: entry.pin.categoryCode,
+        kind: grant.pin.entity.kind,
+        categoryCode: grant.pin.categoryCode,
         selected: false,
         devicePixelRatio: entry.ratio,
         photo: image,
       );
-      if (!_current(entry)) return;
+      if (!allowed()) return;
       selected = await MapMarkerBitmap.render(
-        kind: MapEntityKind.place,
-        categoryCode: entry.pin.categoryCode,
+        kind: grant.pin.entity.kind,
+        categoryCode: grant.pin.categoryCode,
         selected: true,
         devicePixelRatio: entry.ratio,
         photo: image,
       );
-      if (!_current(entry)) return;
+      if (!allowed()) return;
       final used =
           image.width * image.height * 4 +
           (normal.length + selected.length) * 4;
       if (used > entry.reservation) throw const FormatException('地图图片预算超限');
       _reserved -= entry.reservation - used;
       entry.reservation = used;
-      entry.pixels = MapMediaPixels(
-        key: entry.key,
-        image: image,
-        normalPNG: normal,
-        selectedPNG: selected,
-        devicePixelRatio: entry.ratio,
-        current: () => _current(entry),
-      );
+      entry.image = image;
+      entry.normal = normal;
+      entry.selected = selected;
       image = null;
       normal = null;
       selected = null;
     } catch (_) {
-      // Failed decoration keeps its authorized geographic point. Retry waits
-      // for a successful new metadata grant read, never a rendering frame.
+      // The geographic anchor survives failed decoration. Only a fresh grant
+      // retries; repeated build/sync calls do not create a transport loop.
     } finally {
       bytes?.fillRange(0, bytes.length, 0);
       normal?.fillRange(0, normal.length, 0);
@@ -211,8 +245,11 @@ class OwnedMapMediaController extends ChangeNotifier {
       image?.dispose();
       entry.running = false;
       entry.finished = true;
-      --_running;
-      if (entry.retired || entry.pixels == null) _release(entry);
+      if (entry.abort != null && !entry.abort!.isCompleted)
+        entry.abort!.complete();
+      entry.abort = null;
+      _running--;
+      if (entry.retired) _release(entry);
       _notify();
       _drain();
     }
@@ -222,44 +259,52 @@ class OwnedMapMediaController extends ChangeNotifier {
     entry.retired = true;
     _entries.remove(entry.key);
     _queue.remove(entry.key);
+    if (entry.abort != null && !entry.abort!.isCompleted)
+      entry.abort!.complete();
     if (!entry.running) _release(entry);
   }
 
   void _release(_OwnedMapPixels entry) {
     if (entry.released) return;
     entry.released = true;
-    final pixels = entry.pixels;
-    entry.pixels = null;
+    final image = entry.image, normal = entry.normal, selected = entry.selected;
+    entry.image = null;
+    entry.normal = null;
+    entry.selected = null;
+    // Accounting frees the reservation immediately; actual UI image disposal
+    // waits for the frame which removes invalid wrappers from the renderer.
+    _reserved -= entry.reservation;
     void release() {
-      pixels?.normalPNG.fillRange(0, pixels.normalPNG.length, 0);
-      pixels?.selectedPNG.fillRange(0, pixels.selectedPNG.length, 0);
-      pixels?.image.dispose();
-      _reserved -= entry.reservation;
+      normal?.fillRange(0, normal.length, 0);
+      selected?.fillRange(0, selected.length, 0);
+      image?.dispose();
     }
 
-    if (pixels == null) {
+    if (image == null) {
       release();
     } else {
-      SchedulerBinding.instance.addPostFrameCallback((_) {
-        release();
-        final view = _latestView;
-        if (!_closed && current() && view != null) {
-          sync(view, devicePixelRatio: _latestRatio);
-          _notify();
-        }
-      });
+      SchedulerBinding.instance.addPostFrameCallback((_) => release());
     }
+  }
+
+  void suspend() {
+    if (_closed) return;
+    _latestView = null;
+    _active.clear();
+    _queue.clear();
+    for (final entry in _entries.values.toList()) {
+      if (entry.image == null) _retire(entry);
+    }
+    _notify();
   }
 
   void retire() {
     if (_closed) return;
-    ++_epoch;
+    _epoch++;
     _latestView = null;
-    _keys.clear();
+    _active.clear();
     _queue.clear();
-    for (final entry in _entries.values.toList()) {
-      _retire(entry);
-    }
+    for (final entry in _entries.values.toList()) _retire(entry);
     _notify();
   }
 
@@ -287,23 +332,23 @@ class OwnedMapMediaController extends ChangeNotifier {
   }
 }
 
-class _OwnedMapPixels {
-  _OwnedMapPixels(
-    this.key,
-    this.pin,
-    this.cover,
-    this.until,
-    this.ratio,
-    this.epoch,
-    this.reservation,
-  );
-  final String key;
+class _ActivePixels {
+  _ActivePixels(this.pin, this.cover, this.entry, this.until);
   final OwnedMapPin pin;
   final OwnedMapCover cover;
-  DateTime until;
+  final _OwnedMapPixels entry;
+  final DateTime until;
+  MapMediaPixels? pixels;
+}
+
+class _OwnedMapPixels {
+  _OwnedMapPixels(this.key, this.ratio, this.epoch, this.reservation);
+  final String key;
   final double ratio;
   final int epoch;
   int reservation;
   bool running = false, finished = false, retired = false, released = false;
-  MapMediaPixels? pixels;
+  Completer<void>? abort;
+  ui.Image? image;
+  Uint8List? normal, selected;
 }

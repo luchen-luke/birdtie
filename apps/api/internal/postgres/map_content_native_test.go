@@ -6,14 +6,19 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
+	"math"
+	"net/url"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/birdtie/birdtie/apps/api/internal/content"
 	"github.com/birdtie/birdtie/apps/api/internal/identity"
 	"github.com/birdtie/birdtie/apps/api/internal/legacycontext"
+	"github.com/birdtie/birdtie/apps/api/internal/legacymapanchor"
 	"github.com/birdtie/birdtie/apps/api/internal/legacymedia"
 	"github.com/birdtie/birdtie/apps/api/internal/media"
 	"github.com/jackc/pgx/v5"
@@ -46,7 +51,7 @@ func (t map170TraceTx) Exec(ctx context.Context, q string, a ...any) (pgconn.Com
 	return v, e
 }
 
-func map170SyntheticInput(t *testing.T) (LegacyPrivateMediaInput, []byte) {
+func map170SyntheticInput(t *testing.T, anchors ...bool) (LegacyPrivateMediaInput, []byte) {
 	input, raw := legacyContextNativeInput(t)
 	var doc struct {
 		Tables map[string][]map[string]any `json:"tables"`
@@ -113,6 +118,37 @@ func map170SyntheticInput(t *testing.T) (LegacyPrivateMediaInput, []byte) {
 			}
 			copy["note_id"] = onlyID
 			tables["note_places"] = append(tables["note_places"].([]any), copy)
+		}
+		if len(anchors) > 0 && anchors[0] {
+			for _, v := range tables["notes"].([]any) {
+				r := v.(map[string]any)
+				if r["id"] == "14600000-0000-4000-8000-000000000020" {
+					r["media_locations_set"] = true
+				}
+				if r["id"] == onlyID {
+					r["map_anchor_lat"] = json.Number("57.18")
+					r["map_anchor_lng"] = json.Number("-2.2")
+					r["map_anchor_precision"] = "exact"
+					r["map_anchor_source"] = "manual"
+					r["media_locations_set"] = false
+				}
+			}
+			kept := []any{}
+			for _, v := range tables["note_places"].([]any) {
+				if v.(map[string]any)["note_id"] != onlyID {
+					kept = append(kept, v)
+				}
+			}
+			tables["note_places"] = kept
+			for _, v := range tables["note_media_locations"].([]any) {
+				r := v.(map[string]any)
+				if r["note_id"] == "14600000-0000-4000-8000-000000000020" {
+					r["map_enabled"] = true
+					r["latitude"] = json.Number("57.19")
+					r["longitude"] = json.Number("-2.21")
+					r["place_ids"] = []any{}
+				}
+			}
 		}
 	})
 	var header map[string]json.RawMessage
@@ -212,10 +248,15 @@ func TestMapContent170NativeOriginalPublicAndOwnPrivateCurrent(t *testing.T) {
 		return identity.Actor{ID: id, AccountType: "person"}, digest, session
 	}
 	viewer, digest, session := newReader("map170-viewer")
-	q := content.MapContentQuery{CityID: "aberdeen-gb", Bounds: content.MapContentBounds{West: -2.4, South: 57, East: -1.9, North: 57.3}}
+	q := content.MapContentQuery{CityID: "aberdeen-gb", Zoom: 16, Bounds: content.MapContentBounds{West: -2.4, South: 57, East: -1.9, North: 57.3}}
+	spatialRows, spatialErr := f.Pool.Query(ctx, mapContentSpatialSQL(), viewer.ID, q.Bounds.West, q.Bounds.South, q.Bounds.East, q.Bounds.North)
+	if spatialErr != nil {
+		t.Fatal("synthetic spatial SQL", spatialErr)
+	}
+	spatialRows.Close()
 	started := time.Now()
 	page, e := store.ReadHumanMapContent(ctx, digest, viewer, q)
-	if e != nil || !page.Valid(time.Now()) || len(page.Pins) != 3 {
+	if e != nil || !page.Valid(time.Now()) || len(page.Pins) != 2 {
 		t.Fatal("NULL-city OSM original-public grouped map", e, len(page.Pins))
 	}
 	t.Logf("map170 synthetic actual map read durationMs=%d", time.Since(started).Milliseconds())
@@ -226,8 +267,8 @@ func TestMapContent170NativeOriginalPublicAndOwnPrivateCurrent(t *testing.T) {
 		if p.MomentCount == 0 {
 			continue
 		}
-		if p.CityID != nil || p.MomentCount != 2 || p.Cover == nil || !containsMapString(p.VisibilitySources, "CIVU_PUBLIC_CATALOG") || !containsMapString(p.VisibilitySources, "CIVU_PUBLIC_MOMENT") {
-			t.Fatal("NULL city, grouped count or original-public image absent")
+		if p.CityID != nil || p.MomentCount != 2 || p.Cover == nil || !containsMapString(p.VisibilitySources, "CIVU_PUBLIC_MOMENT") {
+			t.Fatal("NULL city, grouped count or original-public image absent", p.CityID, p.MomentCount, p.Cover != nil, p.VisibilitySources)
 		}
 	}
 	only, e := store.ReadHumanMapContentMoment(ctx, digest, viewer, onlyMID)
@@ -275,7 +316,6 @@ func TestMapContent170NativeOriginalPublicAndOwnPrivateCurrent(t *testing.T) {
 	if e = binary.ResponseProof.RevalidateHumanControl(ctx); e != nil {
 		t.Fatal("binary metadata-only output proof", e)
 	}
-	originalBinaryProof := binary.ResponseProof
 	clear(binary.Bytes)
 	var coverPin content.MapContentPin
 	for _, p := range page.Pins {
@@ -288,7 +328,7 @@ func TestMapContent170NativeOriginalPublicAndOwnPrivateCurrent(t *testing.T) {
 	if cover == nil {
 		t.Fatal("real cover absent")
 	}
-	binary, e = store.ReadHumanMapContentBinary(ctx, digest, viewer, "places", coverPin.PlaceID, cover.ID, cover.SourceVersion, "")
+	binary, e = store.ReadHumanMapContentBinary(ctx, digest, viewer, "places", coverPin.PlaceID, cover.ID, cover.SourceVersion, "marker")
 	if e != nil || legacymedia.Hash(binary.Bytes) != cover.SHA256 {
 		t.Fatal("current cover real bytes", e)
 	}
@@ -349,6 +389,15 @@ func TestMapContent170NativeOriginalPublicAndOwnPrivateCurrent(t *testing.T) {
 	if e != nil || len(beforeDelete.Items) != 2 || len(beforeDelete.Items[0].Media) != 2 {
 		t.Fatal("current original-public page before independent image delete", e)
 	}
+	// Establish this selector after the intentional location mutation above,
+	// so the assertion isolates the unrelated attachment deletion only.
+	unchangedAsset := beforeDelete.Items[0].Media[0]
+	unchangedBinary, e := store.ReadHumanMapContentBinary(ctx, digest, viewer, "moments", mid, unchangedAsset.ID, unchangedAsset.SourceVersion, "")
+	if e != nil {
+		t.Fatal("current exact media selector before deletion", e)
+	}
+	originalBinaryProof := unchangedBinary.ResponseProof
+	clear(unchangedBinary.Bytes)
 	deletedImage := beforeDelete.Items[0].Media[1]
 	if e = store.DeleteHumanPrivateImage(ctx, ownerDigest, ownerActor, mid, deletedImage.ID, deletedImage.Revision); e != nil {
 		t.Fatal("real owner independent imported image deletion", e)
@@ -360,8 +409,8 @@ func TestMapContent170NativeOriginalPublicAndOwnPrivateCurrent(t *testing.T) {
 	if e = beforeDelete.ResponseProof.RevalidateHumanControl(ctx); e == nil {
 		t.Fatal("old full page proof survived independent image deletion")
 	}
-	if e = originalBinaryProof.RevalidateHumanControl(ctx); e == nil {
-		t.Fatal("metadata-only binary proof survived independent image deletion")
+	if e = originalBinaryProof.RevalidateHumanControl(ctx); e != nil {
+		t.Fatal("unchanged exact media selector invalidated by a different attachment deletion", e)
 	}
 	afterDelete, e := store.ReadHumanMapContentPlace(ctx, digest, viewer, plan.Places[0].TargetID, "")
 	if e != nil || len(afterDelete.Items) != 2 || len(afterDelete.Items[0].Media) != 1 || afterDelete.SourceVersion == beforeDelete.SourceVersion {
@@ -469,14 +518,14 @@ func TestMapContent170NativeOriginalPublicAndOwnPrivateCurrent(t *testing.T) {
 			found = true
 		}
 	}
-	if !found {
-		t.Fatal("current explicit borrowed place not shown")
+	if found {
+		t.Fatal("unselected collection-only place polluted the default content layer")
 	}
 	if _, e = store.UnpublishHumanCollection(ctx, otherDigest, other, "theme_map", source.ID, content.CollectionUnpublishInput{OperationID: cf.uuid(), Revision: source.Revision}); e != nil {
 		t.Fatal("real borrowed source withdrawal", e)
 	}
-	if e = borrowed.ResponseProof.RevalidateHumanControl(ctx); e == nil {
-		t.Fatal("old map proof survived borrowed source withdrawal")
+	if e = borrowed.ResponseProof.RevalidateHumanControl(ctx); e != nil {
+		t.Fatal("unselected collection withdrawal changed unrelated default content", e)
 	}
 	retired, e := store.ReadHumanMapContent(ctx, digest, viewer, q)
 	if e != nil {
@@ -492,5 +541,320 @@ func TestMapContent170NativeOriginalPublicAndOwnPrivateCurrent(t *testing.T) {
 	}
 	if _, e = store.ReadHumanMapContent(ctx, digest, viewer, q); e == nil {
 		t.Fatal("revoked session map remained readable")
+	}
+}
+
+func TestMapContent171SpatialBudgetCompleteAndStable(t *testing.T) {
+	// At normal city zoom use roughly a quarter of a tile, rather than
+	// collapsing places tens of kilometres apart into the same cell.
+	city := []mapSpatialLeaf{
+		{pin: content.MapContentPin{Anchor: content.MapContentAnchor{Latitude: 57.15, Longitude: -2.14}}},
+		{pin: content.MapContentPin{Anchor: content.MapContentAnchor{Latitude: 57.15, Longitude: -2.07}}},
+	}
+	if len(mapSpatialGroups(city, 12)) != 2 {
+		t.Fatal("normal city zoom collapsed distinct neighbourhoods")
+	}
+	for _, n := range []int{100, 1000, 10000} {
+		leaves := make([]mapSpatialLeaf, n)
+		for i := range leaves {
+			id := fmt.Sprintf("17100000-0000-4000-8000-%012d", i+1)
+			leaves[i] = mapSpatialLeaf{pin: content.MapContentPin{MarkerID: "anchor:" + id, Anchor: content.MapContentAnchor{CoordinateSystem: "wgs84", Precision: "point", Latitude: -70 + float64(i%97)*1.4, Longitude: -179 + float64(i%233)*1.53}}, moments: map[string]content.MapContentMomentSelector{id: {ID: id}}}
+		}
+		start := time.Now()
+		groups := mapSpatialGroups(leaves, 19)
+		elapsed := time.Since(start)
+		if len(groups) > 40 {
+			t.Fatalf("%d candidates made %d markers", n, len(groups))
+		}
+		seen := map[int]bool{}
+		for _, g := range groups {
+			for _, i := range g {
+				if seen[i] {
+					t.Fatal("candidate repeated")
+				}
+				seen[i] = true
+			}
+			pages := 0
+			for start := 0; start < len(g); start += 40 {
+				pages++
+				if len(g[start:min(start+40, len(g))]) > 40 {
+					t.Fatal("unbounded member page")
+				}
+			}
+			if pages < 1 {
+				t.Fatal("empty cluster")
+			}
+		}
+		if len(seen) != n {
+			t.Fatal("budget silently discarded candidates", n, len(seen))
+		}
+		if !reflect.DeepEqual(groups, mapSpatialGroups(leaves, 19)) {
+			t.Fatal("unstable grouping")
+		}
+		t.Logf("synthetic candidates=%d markers=%d aggregationMicros=%d completeLeaves=%d", n, len(groups), elapsed.Microseconds(), len(seen))
+	}
+	q := content.MapContentQuery{Bounds: content.MapContentBounds{West: 179, South: -5, East: -179, North: 5}, Zoom: 5}
+	if !q.Valid() {
+		t.Fatal("date line rejected")
+	}
+	path := mapMembersPath(q, "cluster:"+strings.Repeat("a", 64), strings.Repeat("b", 64), "next")
+	u, e := url.Parse(path)
+	if e != nil || u.Query().Get("west") != "179" || u.Query().Get("east") != "-179" || u.Query().Get("cursor") != "next" {
+		t.Fatal("member selector lost crossing scope")
+	}
+	sql := mapContentSpatialSQL()
+	for _, required := range []string{"p.latitude BETWEEN $3 AND $5", "f.latitude BETWEEN $3 AND $5", "m.id IN(SELECT mid FROM raw_ids)", "vm.source<>'CIVU_PUBLIC_MOMENT' OR relations.original_relation", "NOT relations.private_context AND relations.native_public_relation", "birdtie_legacy_map_moment_binding(m)=a.native_binding", "ctx.original_map_enabled", "l.precision='place'", "$2::float8>$4::float8"} {
+		if !strings.Contains(sql, required) {
+			t.Fatal("missing spatial/current authority clause", required)
+		}
+	}
+	if strings.Contains(sql, "LIMIT 10001") {
+		t.Fatal("global prefix truncation remains")
+	}
+	if (content.MapContentAnchor{CoordinateSystem: "wgs84", Precision: "point", Latitude: math.Inf(1)}).Valid() {
+		t.Fatal("infinite location accepted")
+	}
+}
+
+func TestMapContent171AnchorPlanUsesOnlyExplicitInputs(t *testing.T) {
+	input, _ := map170SyntheticInput(t, true)
+	plan, e := legacymapanchor.Build(legacyTestRunID, input.Source, input.Manifest)
+	if e != nil || plan.Counts.NoteAnchors != 1 || plan.Counts.MediaAnchors < 1 {
+		t.Fatal("explicit note/media anchor plan", e, plan.Counts)
+	}
+	ids := map[string]bool{}
+	for _, a := range plan.Anchors {
+		if ids[a.ID] || a.MomentID == "" || a.Latitude == 0 || a.Longitude == 0 {
+			t.Fatal("anchor identity or location inferred")
+		}
+		ids[a.ID] = true
+		if a.ContextID != "" && a.SourceMediaID == "" {
+			t.Fatal("media correspondence lost")
+		}
+	}
+	again, e := legacymapanchor.Build(legacyTestRunID, input.Source, input.Manifest)
+	if e != nil || !reflect.DeepEqual(again, plan) {
+		t.Fatal("unstable import replay")
+	}
+	altered := append([]byte(nil), input.Source...)
+	altered[len(altered)/2] ^= 1
+	if _, e = legacymapanchor.Build(legacyTestRunID, altered, input.Manifest); e == nil {
+		t.Fatal("unverified backup mutation accepted")
+	}
+}
+
+// Root executes this against a disposable marked PostgreSQL child. All inputs
+// are synthetic; no live user's geographic facts or account are involved.
+func TestMapContent171NativeCoordinateAnchorsAndRetirement(t *testing.T) {
+	f := legacyMigrationNativeFixture(t)
+	input, raw := map170SyntheticInput(t, true)
+	ctx := f.Context
+	for _, apply := range []func() error{
+		func() error { _, e := f.Importer.Apply(ctx, legacyTestRunID, input.Source, input.Manifest); return e },
+		func() error {
+			_, e := f.Importer.ApplyPersonalArchives(ctx, legacyTestRunID, input.Source, input.Manifest)
+			return e
+		},
+		func() error {
+			_, e := f.Importer.ApplyNativeAdaptation(ctx, legacyTestRunID, input.Source, input.Manifest)
+			return e
+		},
+		func() error {
+			_, e := f.Importer.ApplyLegacyPrivateMedia(ctx, legacyTestRunID, input, func(context.Context, legacymedia.Record) (io.ReadCloser, error) {
+				return io.NopCloser(bytes.NewReader(raw)), nil
+			})
+			return e
+		},
+		func() error {
+			_, e := f.Importer.ApplyContextAdaptation(ctx, legacyTestRunID, input.Source, input.Manifest)
+			return e
+		},
+		func() error {
+			_, e := f.Importer.ApplyLegacyMapRestore(ctx, legacyTestRunID, input.Source, input.Manifest)
+			return e
+		},
+		func() error {
+			_, e := f.Importer.ApplyLegacyMapAnchorRestore(ctx, legacyTestRunID, input.Source, input.Manifest)
+			return e
+		},
+	} {
+		if e := apply(); e != nil {
+			t.Fatal("synthetic anchor adaptation", e)
+		}
+	}
+	again, e := f.Importer.ApplyLegacyMapAnchorRestore(ctx, legacyTestRunID, input.Source, input.Manifest)
+	if e != nil || again.Counts.NoteAnchors != 1 {
+		t.Fatal("anchor replay", e)
+	}
+	var viewer, session string
+	viewer, _ = legacyMigrationUUID()
+	digest := sha256.Sum256([]byte("map171-independent-reader"))
+	if _, e = f.Pool.Exec(ctx, `INSERT INTO accounts(id,account_type,status)VALUES($1,'person','active')`, viewer); e != nil {
+		t.Fatal(e)
+	}
+	if e = f.Pool.QueryRow(ctx, `WITH cl AS(SELECT clock_timestamp() at) INSERT INTO sessions(account_id,token_sha256,authentication_method,expires_at,idle_expires_at)SELECT $1,$2,'synthetic_test',at+interval '1 hour',at+interval '1 hour' FROM cl RETURNING id`, viewer, digest[:]).Scan(&session); e != nil {
+		t.Fatal(e)
+	}
+	store := New(f.Pool, true)
+	actor := identity.Actor{ID: viewer, AccountType: "person"}
+	q := content.MapContentQuery{CityID: "aberdeen-gb", Bounds: content.MapContentBounds{West: -2.3, South: 57.17, East: -2.19, North: 57.21}, Zoom: 17}
+	spatialRows, spatialErr := f.Pool.Query(ctx, mapContentSpatialSQL(), viewer, q.Bounds.West, q.Bounds.South, q.Bounds.East, q.Bounds.North)
+	if spatialErr != nil {
+		t.Fatal("synthetic spatial SQL", spatialErr)
+	}
+	spatialRows.Close()
+	page, e := store.ReadHumanMapContent(ctx, digest, actor, q)
+	if e != nil || len(page.Pins) < 2 {
+		t.Fatal("unplaced coordinates not visible", e, len(page.Pins))
+	}
+	var mediaPin content.MapContentPin
+	for _, p := range page.Pins {
+		if p.Kind != "MOMENT_ANCHOR" || p.PlaceID != "" || p.EntryID != p.MomentID || p.AnchorID == "" || p.MomentCount != 1 {
+			t.Fatal("anchor became POI or wrong entry")
+		}
+		if p.Cover != nil {
+			mediaPin = p
+			u, _ := url.Parse(p.Cover.ContentPath)
+			b, e := store.ReadHumanMapContentBinary(ctx, digest, actor, "moments", p.MomentID, p.Cover.ID, p.Cover.SourceVersion, u.Query().Get("variant"))
+			if e != nil || len(b.Bytes) != p.Cover.ByteCount || p.Cover.Width > 160 || p.Cover.Height > 160 {
+				t.Fatal("real bounded marker thumbnail", e)
+			}
+			clear(b.Bytes)
+		}
+		detail, e := store.ReadHumanMapContentMoment(ctx, digest, actor, p.MomentID)
+		if e != nil || detail.ID != p.EntryID {
+			t.Fatal("anchor opened wrong child", e)
+		}
+	}
+	if mediaPin.Cover == nil {
+		t.Fatal("matching anchor media cover absent")
+	}
+	if _, e = f.Pool.Exec(ctx, `UPDATE private_moment_media_contexts SET status='REMOVED',revision=revision+1 WHERE id=(SELECT context_id FROM legacy_map_anchor_facts WHERE id=$1)`, mediaPin.AnchorID); e != nil {
+		t.Fatal(e)
+	}
+	if e = page.ResponseProof.RevalidateHumanControl(ctx); e == nil {
+		t.Fatal("revoked coordinate survived old map proof")
+	}
+	fresh, e := store.ReadHumanMapContent(ctx, digest, actor, q)
+	if e != nil {
+		t.Fatal(e)
+	}
+	for _, p := range fresh.Pins {
+		if p.AnchorID == mediaPin.AnchorID {
+			t.Fatal("retired original coordinate reappeared")
+		}
+	}
+	if _, e = f.Pool.Exec(ctx, `UPDATE sessions SET revoked_at=clock_timestamp() WHERE id=$1`, session); e != nil {
+		t.Fatal(e)
+	}
+	if _, e = store.ReadHumanMapContent(ctx, digest, actor, q); e == nil {
+		t.Fatal("logged out anchor cache readable")
+	}
+}
+
+func TestMapContent171MediaVersionsIgnoreViewportAndCoverBudget(t *testing.T) {
+	makeLeaf := func(mid string) mapSpatialLeaf {
+		return mapSpatialLeaf{pin: content.MapContentPin{SourceVersion: "base"}, moments: map[string]content.MapContentMomentSelector{mid: {ID: mid}}}
+	}
+	a, b := []mapSpatialLeaf{makeLeaf("one")}, []mapSpatialLeaf{makeLeaf("one"), makeLeaf("two")}
+	if e := mapSpatialMediaVersions(a, `[["moment","one","image",1]]`); e != nil {
+		t.Fatal(e)
+	}
+	if e := mapSpatialMediaVersions(b, `[["moment","one","image",1],["moment","two","image",2]]`); e != nil {
+		t.Fatal(e)
+	}
+	if a[0].pin.SourceVersion != b[0].pin.SourceVersion {
+		t.Fatal("unrelated viewport media changed a stable leaf")
+	}
+	c := []mapSpatialLeaf{makeLeaf("one")}
+	if e := mapSpatialMediaVersions(c, `[["moment","one","image",2]]`); e != nil {
+		t.Fatal(e)
+	}
+	if a[0].pin.SourceVersion == c[0].pin.SourceVersion {
+		t.Fatal("own media mutation did not retire leaf")
+	}
+}
+
+func TestMapContent171NativeContinuationReauthorizes(t *testing.T) {
+	f := legacyMigrationNativeFixture(t)
+	ctx := f.Context
+	owner, _ := legacyMigrationUUID()
+	digest := sha256.Sum256([]byte("synthetic-map171-continuation"))
+	if _, e := f.Pool.Exec(ctx, `INSERT INTO accounts(id,account_type,status)VALUES($1,'person','active')`, owner); e != nil {
+		t.Fatal(e)
+	}
+	if _, e := f.Pool.Exec(ctx, `WITH cl AS(SELECT clock_timestamp() at) INSERT INTO sessions(account_id,token_sha256,authentication_method,expires_at,idle_expires_at)SELECT $1,$2,'synthetic_test',at+interval '1 hour',at+interval '1 hour' FROM cl`, owner, digest[:]); e != nil {
+		t.Fatal(e)
+	}
+	if _, e := f.Pool.Exec(ctx, `INSERT INTO places(id,name,category_code,latitude,longitude,coordinate_system,location_precision,publication_status,source_label,source_ref,maintainer_label)
+SELECT md5('map171-cont-place:'||i)::uuid,'Synthetic continuation point','park',10,20,'wgs84','point','draft','LOCAL_SYNTHETIC_FIXTURE','disposable://map171-continuation','synthetic' FROM generate_series(1,81)i`); e != nil {
+		t.Fatal(e)
+	}
+	if _, e := f.Pool.Exec(ctx, `INSERT INTO moments(id,author_account_id,title,body,status,visibility,location_precision)
+SELECT md5('map171-cont-moment:'||i)::uuid,$1,'','Synthetic continuation content','draft','private','none' FROM generate_series(1,81)i`, owner); e != nil {
+		t.Fatal(e)
+	}
+	if _, e := f.Pool.Exec(ctx, `INSERT INTO moment_location_links(id,moment_id,kind,place_id,precision,position)
+SELECT md5('map171-cont-link:'||i)::uuid,md5('map171-cont-moment:'||i)::uuid,'PLACE',md5('map171-cont-place:'||i)::uuid,'place',0 FROM generate_series(1,81)i`); e != nil {
+		t.Fatal(e)
+	}
+	s := New(f.Pool, true)
+	a := identity.Actor{ID: owner, AccountType: "person"}
+	q := content.MapContentQuery{Bounds: content.MapContentBounds{West: 19, South: 9, East: 21, North: 11}, Zoom: 0}
+	page, e := s.ReadHumanMapContent(ctx, digest, a, q)
+	if e != nil || len(page.Pins) != 1 || page.TotalAnchorCount != 81 {
+		t.Fatal("complete overlap cluster", e)
+	}
+	q.ClusterID, q.SourceVersion = page.Pins[0].MarkerID, page.SourceVersion
+	first, e := s.ReadHumanMapContent(ctx, digest, a, q)
+	if e != nil || len(first.Pins) != 40 || first.NextCursor == nil {
+		t.Fatal("first", e)
+	}
+	position, e := decodeJourneyHistoryCursor(*first.NextCursor)
+	if e != nil || position.Until.Sub(first.ObservedAt) < 29*time.Minute {
+		t.Fatal("position lifetime still content lease", e)
+	}
+	// A genuinely signed near-expiry position cannot shorten a fresh ACL read.
+	position.Until = time.Now().Add(2 * time.Second)
+	q.Cursor, e = encodeJourneyHistoryCursor(*position)
+	if e != nil {
+		t.Fatal(e)
+	}
+	second, e := s.ReadHumanMapContent(ctx, digest, a, q)
+	if e != nil || len(second.Pins) != 40 || second.NextCursor == nil || second.ValidUntil.Sub(second.ObservedAt) < 25*time.Second || second.ValidUntil.Sub(second.ObservedAt) > 30*time.Second {
+		t.Fatal("new page not independently authorized", e)
+	}
+	q.SelectedMarkerID = second.Pins[39].MarkerID
+	selected, e := s.ReadHumanMapContent(ctx, digest, a, q)
+	if e != nil || selected.SourceVersion != second.SourceVersion {
+		t.Fatal("cover selection changed complete source", e)
+	}
+	for i := range selected.Pins {
+		if selected.Pins[i].SourceVersion != second.Pins[i].SourceVersion {
+			t.Fatal("cover budget changed leaf source")
+		}
+	}
+	q.Cursor = *second.NextCursor
+	last, e := s.ReadHumanMapContent(ctx, digest, a, q)
+	if e != nil || len(last.Pins) != 1 || last.NextCursor != nil {
+		t.Fatal("terminal position", e)
+	}
+	position.Until = time.Now().Add(-time.Second)
+	q.Cursor, _ = encodeJourneyHistoryCursor(*position)
+	if _, e = s.ReadHumanMapContent(ctx, digest, a, q); e == nil {
+		t.Fatal("expired position accepted")
+	}
+	q.Cursor = *second.NextCursor
+	if _, e = f.Pool.Exec(ctx, `UPDATE moments SET body=body||' changed',revision=revision+1 WHERE id=md5('map171-cont-moment:1')::uuid`); e != nil {
+		t.Fatal(e)
+	}
+	if _, e = s.ReadHumanMapContent(ctx, digest, a, q); e == nil {
+		t.Fatal("changed source resumed")
+	}
+	if _, e = f.Pool.Exec(ctx, `UPDATE sessions SET revoked_at=clock_timestamp() WHERE token_sha256=$1`, digest[:]); e != nil {
+		t.Fatal(e)
+	}
+	if _, e = s.ReadHumanMapContent(ctx, digest, a, q); e == nil {
+		t.Fatal("revoked session resumed")
 	}
 }

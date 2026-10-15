@@ -1,0 +1,31 @@
+00:00 +0: loading D:/Project/birdtie/apps/client/test/map_canvas_test.dart
+00:00 +0: Map1 failed photo stays same typed point and independent count expiry preserves task selection map
+00:00 +1: 地图来源选择从expandedAgentContentMode.results显露真实轻卡并保留任务与安全草稿
+00:01 +2: 地图来源选择从expandedAgentContentMode.conversation显露真实轻卡并保留任务与安全草稿
+00:01 +3: 地图来源旧callback未知ID或城市退役不修改当前选择或面板
+00:01 +4: 地图来源旧任务callback不能借相同ID覆盖新结果选择
+00:02 +5: 同任务只读刷新 none 后地图选择复核当前实体
+00:02 +6: 同任务只读刷新 version 后地图选择复核当前实体
+00:02 +7: 同任务只读刷新 title 后地图选择复核当前实体
+00:02 +8: 同任务只读刷新 summary 后地图选择复核当前实体
+00:02 +9: 同任务只读刷新 coordinates 后地图选择复核当前实体
+00:02 +10: 同任务只读刷新 anchor-place 后地图选择复核当前实体
+00:03 +11: 同任务只读刷新 scope 后地图选择复核当前实体
+00:03 +12: 同任务只读刷新 membership 后地图选择复核当前实体
+00:03 +13: 同任务只读刷新 withdraw 后地图选择复核当前实体
+00:03 +14: 同任务只读刷新 expired 后地图选择复核当前实体
+00:03 +15: 同任务只读刷新 task 后地图选择复核当前实体
+00:03 +16: 背景城市指引复用唯一顶部入口，任务ONLINE不重复并保持投影与旧callback
+00:03 +17: actual captured anonymous public wire needsScope retains real city and only typed public pins
+00:03 +18: actual captured anonymous public wire needsScopeRetry retains real city and only typed public pins
+Birdtie Agent API returned HTTP 503 (UNAVAILABLE).
+00:03 +19: actual captured anonymous public wire needsScopeArea retains real city and only typed public pins
+00:03 +20: actual captured anonymous public wire selectedCity retains real city and only typed public pins
+00:03 +21: actual captured anonymous public wire followUp retains real city and only typed public pins
+00:03 +22: anonymous captured wire retired by scope ABA never resurrects old local task or pins
+00:03 +23: captured public wire nativeTask city authority is not overwritten by local fallback
+00:03 +24: captured public wire nativeTaskID city authority is not overwritten by local fallback
+00:03 +25: typed layers and cards share exact IDs toggles preserve map Element selection and task
+00:03 +26: ONLINE retains current city projection key pins selection and map Element
+00:03 +27: All tests passed!
+Flutter assets will be downloaded from https://storage.flutter-io.cn. Make sure you trust this source!

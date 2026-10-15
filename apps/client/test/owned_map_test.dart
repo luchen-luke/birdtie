@@ -23,6 +23,10 @@ void main() {
         'test/fixtures/map-media/isolation-a.jpg',
       ).readAsBytesSync();
       final digest = sha256.convert(jpeg).toString();
+      final markerJpeg = base64Decode(
+        '/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCABaAKADASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwDiKKKKk8sKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigD//2Q==',
+      );
+      final markerDigest = sha256.convert(markerJpeg).toString();
       final identity = ValueNotifier(0);
       var now = DateTime.now().toUtc();
       var owner = _id(9001), origin = 'https://owned-map.test';
@@ -86,15 +90,19 @@ void main() {
         'revision': 1,
         'visibilitySource': 'CIVU_PUBLIC_CATALOG',
         'mimeType': 'image/jpeg',
-        'width': 320,
-        'height': 180,
-        'byteCount': jpeg.length,
-        'sha256': digest,
+        'width': 160,
+        'height': 90,
+        'byteCount': markerJpeg.length,
+        'sha256': markerDigest,
         'sourceVersion': source,
         'contentPath':
-            '/v1/me/map-content/places/${_id(5000)}/images/${_id(8001)}/content?sourceVersion=$source',
+            '/v1/me/map-content/places/${_id(5000)}/images/${_id(8001)}/content?sourceVersion=$source&variant=marker',
       };
       Map<String, Object?> pin(int n) => {
+        'kind': 'PLACE_CONTENT',
+        'markerId': 'place:${_id(5000 + n)}',
+        'entityId': _id(5000 + n),
+        'anchorCount': 1,
         'placeId': _id(5000 + n),
         'name': '合成地点 $n',
         'categoryCode': 'culture.museum',
@@ -107,10 +115,12 @@ void main() {
         },
         'visibilitySources': n == 0
             ? ['CIVU_PUBLIC_CATALOG', 'CIVU_PUBLIC_MOMENT', 'SELF_PRIVATE']
-            : ['CIVU_PUBLIC_CATALOG'],
+            : ['CIVU_PUBLIC_MOMENT'],
         'sourceVersion': source,
-        'momentCount': n == 0 ? 21 : 0,
-        'moments': n == 0 ? List.generate(20, (i) => selector(i + 1)) : [],
+        'momentCount': n == 0 ? 21 : 1,
+        'moments': n == 0
+            ? List.generate(20, (i) => selector(i + 1))
+            : [selector(100 + n)],
         'momentsTruncated': n == 0,
         'cover': n == 0 ? cover() : null,
       };
@@ -130,13 +140,21 @@ void main() {
         expectSync(request.followRedirects, isFalse);
         if (request.url.path == '/v1/me/map-content') {
           final response = json({
-            'schemaVersion': 'map-content-v1',
+            'schemaVersion': 'map-content-v2',
+            'zoom': double.parse(request.url.queryParameters['zoom']!),
+            'filterScope': 'DEFAULT_CONTENT',
+            'totalContentCount': 56,
+            'totalAnchorCount': 36,
+            'nextCursor': null,
             'scope': 'MAP_CONTENT',
             'viewerAccountId': owner,
             'cityId': 'aberdeen',
-            'bounds': bounds.toJson(),
+            'bounds': {
+              for (final k in ['west', 'south', 'east', 'north'])
+                k: double.parse(request.url.queryParameters[k]!),
+            },
             'sourceVersion': source,
-            'pins': List.generate(366, pin),
+            'pins': List.generate(36, pin),
             'truncated': false,
             ...lease(),
           });
@@ -175,7 +193,11 @@ void main() {
           });
         }
         if (request.url.path.endsWith('/content')) {
-          final bytes = Uint8List.fromList(jpeg);
+          final bytes = Uint8List.fromList(
+            request.url.queryParameters['variant'] == 'marker'
+                ? markerJpeg
+                : jpeg,
+          );
           if (corrupt) bytes[100] ^= 1;
           return http.Response.bytes(
             bytes,
@@ -230,7 +252,7 @@ void main() {
           now: () => now,
         ),
       );
-      expect(probe!.items, hasLength(366));
+      expect(probe!.items, hasLength(36));
       final verified = await t.runAsync(
         () => wire.content(
           probe.items.first.cover!,
@@ -239,13 +261,13 @@ void main() {
           current: () => true,
         ),
       );
-      expect(verified!.length, jpeg.length);
+      expect(verified!.length, markerJpeg.length);
       verified.fillRange(0, verified.length, 0);
       wire.dispose();
       controller.sync(cityID: 'aberdeen', bounds: bounds);
       await drain(
         () =>
-            controller.entities.length == 366 &&
+            controller.entities.length == 36 &&
             controller.entities.first.mediaPixels != null,
       );
       final initial = controller.items.first,
@@ -259,8 +281,8 @@ void main() {
       expect(controller.entities.first.categoryCode, 'culture.museum');
       expect(controller.entities.first.recentMoments!.labelAt(now), '21条动态');
       expect(pixels.current(), isTrue);
-      expect(pixels.image.width, 320);
-      expect(pixels.image.height, 180);
+      expect(pixels.image.width, 36);
+      expect(pixels.image.height, 20);
       expect(pixels.normalPNG, isNotEmpty);
       expect(pixels.selectedPNG, isNotEmpty);
       final raw = await t.runAsync(() => pixels.image.toByteData());
@@ -291,7 +313,12 @@ void main() {
       await t.pump(const Duration(seconds: 9));
       expect(now.isAfter(oldUntil), isTrue);
       expect(controller.sourceCurrent(initial), isTrue);
-      expect(pixels.current(), isTrue);
+      expect(pixels.current(), isFalse);
+      expect(controller.entities.first.mediaPixels!.current(), isTrue);
+      expect(
+        identical(controller.entities.first.mediaPixels!.image, pixels.image),
+        isTrue,
+      );
 
       // The native reader can return up to 200 independently verified media
       // objects. This is separate from the editor's entry count of 20.
@@ -367,7 +394,12 @@ void main() {
       await t.runAsync(controller.refresh);
       expect(identical(initial, controller.items.first), isFalse);
       expect(controller.sourceCurrent(initial), isTrue);
-      expect(pixels.current(), isTrue);
+      expect(pixels.current(), isFalse);
+      expect(controller.entities.first.mediaPixels!.current(), isTrue);
+      expect(
+        identical(controller.entities.first.mediaPixels!.image, pixels.image),
+        isTrue,
+      );
       expect(controller.detailCurrent(reread), isTrue);
       source = _hash('changed-source');
       await t.runAsync(controller.refresh);
@@ -390,7 +422,9 @@ void main() {
       expect(controller.items, isEmpty);
       expect(beforeABAPixels.current(), isFalse);
       delayed.complete(http.Response('', 200));
-      await t.runAsync(() => pending);
+      var pendingFinished = false;
+      unawaited(pending.then((_) => pendingFinished = true));
+      await drain(() => pendingFinished);
       expect(controller.items, isEmpty);
       owner = _id(9001);
       organization = null;

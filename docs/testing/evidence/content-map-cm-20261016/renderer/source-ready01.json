@@ -1,0 +1,57 @@
+{
+  "status": "SOURCE_READY",
+  "baseline": "57f4141fb3c28dc6a03aaab8dcfd69be5d4ac7a5",
+  "utc": "2026-10-15T21:51:43.612209+00:00",
+  "files": {
+    "apps/client/lib/src/city/native_city_map_io.dart": "2d811b82f96244a4daac35fe17a09a4fe128ffe731e398a83ad2a349aa163721",
+    "apps/client/lib/src/city/public_city_map.dart": "957dc2029f4559979f717f773009b353c6c1aa28b0e25046238046077a7960d2",
+    "apps/client/lib/src/city/mapbox_style.dart": "9b1d9364d0999de8aab02f5d6a919e56b7886e3ec80ca66df166d89643c2c7e4",
+    "apps/client/lib/src/workspace/map_display_policy.dart": "85e9a1b70a5cf7be2ffbddb8130c5040174bab00a20a010ff5e707772f2b0af6",
+    "apps/client/web/birdtie_mapbox.js": "c93e0fec5d3041b4c5b31c91a7913d522f6a739f622f7034730e5eecdcf756e5",
+    "apps/client/test/content_map_renderer_test.dart": "a5483c5e2c4436fcf7bc3647e01a207247acdfe0741e5db5e8ac0a49ece03964"
+  },
+  "tests": {
+    "direct01": {
+      "status": "FAIL",
+      "exitCode": 1,
+      "reason": "new test fixture MapOptions import ambiguity; no production compilation error"
+    },
+    "direct02": {
+      "status": "PASS",
+      "exitCode": 0,
+      "testCount": 4,
+      "command": "flutter test test/content_map_renderer_test.dart --reporter expanded",
+      "cwd": "D:/Project/birdtie/apps/client"
+    },
+    "analyze01": {
+      "status": "PASS",
+      "exitCode": 0,
+      "errors": 0,
+      "warnings": 0,
+      "info": 23,
+      "command": "dart analyze lib/src/city/native_city_map_io.dart lib/src/city/public_city_map.dart lib/src/city/mapbox_style.dart lib/src/workspace/map_display_policy.dart test/content_map_renderer_test.dart"
+    }
+  },
+  "scope": [
+    "initial/settled actual screen-corner viewport with dateline unwrap",
+    "owned content overlap -> Now callback; owned server cluster -> entity callback",
+    "task display grid aggregation <=40 with selected preserved and all original IDs reachable for 100/1000/10000 inputs",
+    "single running and one latest pending render; stable annotations; stale create retired",
+    "provider POI symbols hidden independently from Birdtie business layers; road/place labels and attribution retained",
+    "debug/profile numeric-only NativeContentMapMetrics"
+  ],
+  "notRun": [
+    "real Android rendering/interaction",
+    "real Web provider UI",
+    "release/profile build",
+    "device frame/memory benchmark",
+    "iOS",
+    "AMap rendering"
+  ],
+  "notes": [
+    "Old native real-touch 48dp hit tests and iconImage=null fixes retained.",
+    "Task aggregation source member changes invalidate old member reader.",
+    "Mixed 40 owned server markers plus selected task and overflow group may draw up to 42; normal task/default flows are separate.",
+    "Civu referenced read-only; no source copy or navigation/state migration."
+  ]
+}

@@ -1,0 +1,1 @@
+{"exitCode": 1, "command": ["D:\\DevTools\\flutter\\bin\\flutter.bat", "test", "test/map_canvas_test.dart", "test/personal_collection_map_test.dart", "--reporter", "expanded"]}

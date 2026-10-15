@@ -15,6 +15,8 @@ class NativeCityMapView extends StatelessWidget {
     this.selectedEntityId,
     this.onEntitySelected,
     this.onViewportSettled,
+    this.onContentViewportSettled,
+    this.onContentOverlap,
     this.onViewportInitialized,
     this.onCameraMotion,
     this.onMapUnavailable,
@@ -42,6 +44,8 @@ class NativeCityMapView extends StatelessWidget {
   final String? selectedEntityId;
   final ValueChanged<MapEntity>? onEntitySelected;
   final ValueChanged<MapBounds>? onViewportSettled;
+  final void Function(MapBounds bounds, double zoom)? onContentViewportSettled;
+  final ValueChanged<List<MapEntity>>? onContentOverlap;
   final ValueChanged<MapBounds>? onViewportInitialized;
   final VoidCallback? onCameraMotion;
   final ValueChanged<String>? onMapUnavailable;

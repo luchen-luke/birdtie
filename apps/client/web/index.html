@@ -31,6 +31,13 @@
 
   <title>birdtie_client</title>
   <link rel="manifest" href="manifest.json">
+  <style>
+    /* Flutter's accessible button text must stay inside its 48dp map target.
+       Keep the full accessible label without intercepting adjacent markers. */
+    flt-semantics[flt-semantics-identifier^="birdtie-map-point:"] {
+      overflow: hidden !important;
+    }
+  </style>
 </head>
 <body>
   <!--

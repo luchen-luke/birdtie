@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 import 'map_cluster_members_sheet.dart';
 import 'map_point_selection_sheet.dart';
 
@@ -23,6 +24,64 @@ import '../workspace/map_display_policy.dart';
 String get _mapboxPublicToken => BirdtieEnvironment.mapboxGlWebPublicToken;
 const _mapboxMobileToken = BirdtieEnvironment.mapboxMobilePublicToken;
 
+/// FlutterMap wheel/keyboard events have no MoveEnd. Collect their quiet period
+/// here; explicit gesture ends share the same replaceable publication slot.
+class WebMapViewportScheduler {
+  WebMapViewportScheduler({required this.onMotion, required this.onSettled});
+
+  final VoidCallback onMotion;
+  final ValueChanged<MapCamera> onSettled;
+  Timer? _pending;
+  bool _disposed = false;
+
+  void cancel() {
+    _pending?.cancel();
+    _pending = null;
+  }
+
+  void handle(MapEvent event) {
+    if (_disposed) return;
+    if (event.source == MapEventSource.mapController ||
+        event.source == MapEventSource.fitCamera) {
+      cancel();
+      return;
+    }
+    final ended =
+        event is MapEventMoveEnd ||
+        event is MapEventFlingAnimationEnd ||
+        event is MapEventFlingAnimationNotStarted ||
+        event is MapEventDoubleTapZoomEnd ||
+        event is MapEventRotateEnd;
+    final moving =
+        event is MapEventWithMove ||
+        event is MapEventMoveStart ||
+        event is MapEventRotateStart ||
+        event is MapEventDoubleTapZoomStart ||
+        event is MapEventFlingAnimationStart;
+    if (!ended && !moving) return;
+    cancel();
+    if (moving) onMotion();
+    final needsQuietPeriod =
+        event is MapEventScrollWheelZoom ||
+        event is MapEventNonRotatedSizeChange ||
+        (event is MapEventRotate &&
+            event.source == MapEventSource.cursorKeyboardRotation);
+    if (!ended && !needsQuietPeriod) return;
+    _pending = Timer(
+      needsQuietPeriod ? const Duration(milliseconds: 250) : Duration.zero,
+      () {
+        _pending = null;
+        if (!_disposed) onSettled(event.camera);
+      },
+    );
+  }
+
+  void dispose() {
+    _disposed = true;
+    cancel();
+  }
+}
+
 class PublicCityMapView extends StatefulWidget {
   const PublicCityMapView({
     super.key,
@@ -35,6 +94,8 @@ class PublicCityMapView extends StatefulWidget {
     this.onEntitySelected,
     this.onViewportSettled,
     this.onViewportInitialized,
+    this.onContentViewportSettled,
+    this.onContentOverlap,
     this.onCameraMotion,
     this.onMapUnavailable,
     this.fullBleed = false,
@@ -62,6 +123,8 @@ class PublicCityMapView extends StatefulWidget {
   final ValueChanged<MapEntity>? onEntitySelected;
   final ValueChanged<MapBounds>? onViewportSettled;
   final ValueChanged<MapBounds>? onViewportInitialized;
+  final void Function(MapBounds bounds, double zoom)? onContentViewportSettled;
+  final ValueChanged<List<MapEntity>>? onContentOverlap;
   final VoidCallback? onCameraMotion;
   final ValueChanged<String>? onMapUnavailable;
   final bool fullBleed;
@@ -97,6 +160,28 @@ class _PublicCityMapViewState extends State<PublicCityMapView> {
   int _webFocusSerial = 0;
   int _webMotionGeneration = 0;
   final ValueNotifier<int> _webDisplayRevision = ValueNotifier(0);
+  late final _webViewportEvents = WebMapViewportScheduler(
+    onMotion: () {
+      _webFocusSerial++;
+      _webMotionGeneration++;
+      widget.onCameraMotion?.call();
+    },
+    onSettled: _publishWebSettledViewport,
+  );
+
+  void _publishWebSettledViewport(MapCamera camera) {
+    if (!mounted || !_usesWebMapbox || !_webMapReady) return;
+    _webDisplayRevision.value++;
+    final visible = camera.visibleBounds;
+    final settled = MapBounds(
+      west: visible.west,
+      south: visible.south,
+      east: visible.east,
+      north: visible.north,
+    );
+    if (settled.isValid) widget.onViewportSettled?.call(settled);
+    if (_webBasemapReady) _publishWebContentViewport(camera);
+  }
 
   MapCameraFocusInput _focusInput(PublicCityMapView view) =>
       MapCameraFocusInput(
@@ -129,6 +214,7 @@ class _PublicCityMapViewState extends State<PublicCityMapView> {
     final explicitFocus = oldWidget.focusRevision != widget.focusRevision;
     if (!current.hasSameViewInputs(previous) || explicitFocus) {
       _webFocusSerial++;
+      _webViewportEvents.cancel();
     }
     if (oldWidget.city?.id != widget.city?.id) _tilesFailed = false;
     if (!_usesWebMapbox) {
@@ -140,6 +226,7 @@ class _PublicCityMapViewState extends State<PublicCityMapView> {
   }
 
   void _invalidatePendingWebFocus() {
+    _webViewportEvents.cancel();
     _webFocusSerial++;
     _webMotionGeneration++;
   }
@@ -160,7 +247,35 @@ class _PublicCityMapViewState extends State<PublicCityMapView> {
         north: bounds.north,
       );
       if (initial.isValid) widget.onViewportInitialized?.call(initial);
+      _publishWebContentViewport(_webMapController.camera);
     }
+  }
+
+  void _publishWebContentViewport(MapCamera camera) {
+    if (widget.onContentViewportSettled == null) return;
+    final full =
+        Offset.zero & Size(camera.nonRotatedSize.x, camera.nonRotatedSize.y);
+    final visible = (widget.contentRect ?? full).intersect(full);
+    if (visible.isEmpty) return;
+    Offset project(Offset pixel) {
+      final coordinate = camera.pointToLatLng(math.Point(pixel.dx, pixel.dy));
+      return Offset(coordinate.longitude, coordinate.latitude);
+    }
+
+    final bounds = MapDisplayPolicy.projectedViewport(
+      corners: [
+        for (final p in [
+          visible.topLeft,
+          visible.topRight,
+          visible.bottomRight,
+          visible.bottomLeft,
+        ])
+          project(p),
+      ],
+      center: project(visible.center),
+    );
+    if (bounds != null)
+      widget.onContentViewportSettled?.call(bounds, camera.zoom);
   }
 
   void _retryWebBasemap() {
@@ -210,6 +325,8 @@ class _PublicCityMapViewState extends State<PublicCityMapView> {
                     ),
         );
       }
+      if (_webBasemapReady)
+        _publishWebContentViewport(_webMapController.camera);
     });
   }
 
@@ -227,6 +344,7 @@ class _PublicCityMapViewState extends State<PublicCityMapView> {
     _readerChanges.changed();
     _readerChanges.dispose();
     _webFocusSerial++;
+    _webViewportEvents.dispose();
     _webMapController.dispose();
     _webDisplayRevision.dispose();
     super.dispose();
@@ -264,6 +382,10 @@ class _PublicCityMapViewState extends State<PublicCityMapView> {
         onViewportInitialized: city == null
             ? null
             : widget.onViewportInitialized,
+        onContentViewportSettled: city == null
+            ? null
+            : widget.onContentViewportSettled,
+        onContentOverlap: widget.onContentOverlap,
         onCameraMotion: city == null ? null : widget.onCameraMotion,
         onMapUnavailable: widget.onMapUnavailable,
         fullBleed: widget.fullBleed,
@@ -379,6 +501,8 @@ class _PublicCityMapViewState extends State<PublicCityMapView> {
                     _webMapReady = true;
                     _webDisplayRevision.value++;
                     _scheduleWebFocus();
+                    if (_webBasemapReady)
+                      _publishWebContentViewport(_webMapController.camera);
                   },
                   initialCameraFit: focusInput.fitsBounds
                       ? CameraFit.bounds(
@@ -390,38 +514,7 @@ class _PublicCityMapViewState extends State<PublicCityMapView> {
                   minZoom: 3,
                   maxZoom: 18,
                   backgroundColor: Colors.transparent,
-                  onMapEvent: (event) {
-                    if (event.source != MapEventSource.mapController &&
-                        event is! MapEventMoveEnd &&
-                        event is! MapEventFlingAnimationEnd) {
-                      widget.onCameraMotion?.call();
-                    }
-                    if (event is! MapEventMoveEnd &&
-                        event is! MapEventFlingAnimationEnd) {
-                      return;
-                    }
-                    _webDisplayRevision.value++;
-                    if (event.source == MapEventSource.mapController) return;
-                    final eventInput = _focusInput(widget);
-                    final motion = _webMotionGeneration;
-                    final visibleBounds = event.camera.visibleBounds;
-                    final settled = MapBounds(
-                      west: visibleBounds.west,
-                      south: visibleBounds.south,
-                      east: visibleBounds.east,
-                      north: visibleBounds.north,
-                    );
-                    if (settled.isValid) {
-                      scheduleMicrotask(() {
-                        if (mounted &&
-                            _usesWebMapbox &&
-                            motion == _webMotionGeneration &&
-                            eventInput.hasSameViewInputs(_focusInput(widget))) {
-                          widget.onViewportSettled?.call(settled);
-                        }
-                      });
-                    }
-                  },
+                  onMapEvent: _webViewportEvents.handle,
                 ),
                 children: [
                   Builder(
@@ -450,6 +543,7 @@ class _PublicCityMapViewState extends State<PublicCityMapView> {
                       contentRect: widget.contentRect,
                       revision: revision,
                       onSelected: _selectWebEntity,
+                      onContentOverlap: widget.onContentOverlap,
                       readerChanges: Listenable.merge([
                         _readerChanges,
                         widget.readerChanges,
@@ -542,6 +636,12 @@ class _PublicCityMapViewState extends State<PublicCityMapView> {
   }
 
   List<MapEntity> _currentClusterMembers(MapEntity cluster) {
+    if (MapDisplayPolicy.displayCluster(cluster)) {
+      return MapDisplayPolicy.currentDisplayClusterMembers(
+        cluster,
+        _currentPointSource(),
+      );
+    }
     final originals =
         widget.currentReaderEntities?.call() ??
         <MapEntity>[
@@ -567,7 +667,7 @@ class _PublicCityMapViewState extends State<PublicCityMapView> {
   }
 
   Future<void> _selectWebEntity(MapEntity entity) async {
-    if (entity.isCluster) {
+    if (entity.isCluster && !MapDisplayPolicy.contentEntity(entity)) {
       final selected = await showCurrentMapClusterMembers(
         context: context,
         cluster: entity,
@@ -612,6 +712,7 @@ class WebMapDisplayLayer extends StatefulWidget {
     required this.currentReaderScope,
     this.onMapReaderVisibilityChanged,
     this.onSelectedAnchor,
+    this.onContentOverlap,
   });
   final List<PublicPlace> places;
   final List<MapEntity> entities;
@@ -619,6 +720,7 @@ class WebMapDisplayLayer extends StatefulWidget {
   final Rect? contentRect;
   final int revision;
   final ValueChanged<MapEntity> onSelected;
+  final ValueChanged<List<MapEntity>>? onContentOverlap;
   final Listenable readerChanges;
   final List<MapEntity> Function() currentReaderEntities;
   final Object? Function() currentReaderScope;
@@ -641,6 +743,22 @@ class _WebMapDisplayLayerState extends State<WebMapDisplayLayer> {
     for (final entity in widget.currentReaderEntities())
       if (entity.hasMapAnchor) entity.id: entity,
   }.values.toList();
+
+  List<MapEntity> _currentRenderedPointSource() {
+    final source = _currentPointSource();
+    final visible = _plan?.entities ?? const <MapEntity>[];
+    final ids = visible.map((e) => e.id).toSet();
+    return [
+      ...source.where((e) => ids.contains(e.id)),
+      for (final entity in visible)
+        if (MapDisplayPolicy.displayCluster(entity) &&
+            MapDisplayPolicy.currentDisplayClusterMembers(
+              entity,
+              source,
+            ).isNotEmpty)
+          entity,
+    ];
+  }
 
   Map<String, Offset> _project(Iterable<MapEntity> source, MapCamera camera) =>
       {
@@ -675,13 +793,19 @@ class _WebMapDisplayLayerState extends State<WebMapDisplayLayer> {
   Future<void> _selectPoint(MapEntity tapped) async {
     if (!mounted || _pointChoiceOpen) return;
     if (tapped.isCluster) {
+      if (MapDisplayPolicy.displayCluster(tapped) &&
+          MapDisplayPolicy.currentDisplayClusterMembers(
+            tapped,
+            _currentPointSource(),
+          ).isEmpty)
+        return;
       widget.onSelected(tapped);
       return;
     }
     _pointChoiceOpen = true;
     final scope = _pointReaderScope();
     try {
-      final source = _currentPointSource();
+      final source = _currentRenderedPointSource();
       final camera = MapCamera.of(context);
       final rawPositions = _project(source, camera);
       final hits = MapDisplayPolicy.overlappingHitTargets(
@@ -708,11 +832,17 @@ class _WebMapDisplayLayerState extends State<WebMapDisplayLayer> {
         ...hits,
         ...sameAnchor,
       ].map((e) => (e.id, e.kind)).toSet();
-      List<MapEntity> freshHits() => _currentPointSource()
+      List<MapEntity> freshHits() => _currentRenderedPointSource()
           .where((e) => identities.contains((e.id, e.kind)))
           .toList();
       final fresh = freshHits();
       if (fresh.isEmpty || scope != _pointReaderScope()) return;
+      if (fresh.length > 1 &&
+          widget.onContentOverlap != null &&
+          fresh.every(MapDisplayPolicy.contentEntity)) {
+        widget.onContentOverlap!(List.unmodifiable(fresh));
+        return;
+      }
       final selected = fresh.length == 1
           ? fresh.single
           : await showCurrentMapPointChoices(

@@ -1,0 +1,20 @@
+{
+  "status": "PASS",
+  "checks": [
+    {
+      "receipt": "docs/testing/evidence/social-remote-migration-20261015/build26/receipt.json",
+      "checkedFiles": 2026,
+      "sourceMatchesBuild": true
+    },
+    {
+      "receipt": "docs/testing/evidence/content-map-cm-20261016/final-apk29/receipt.json",
+      "checkedFiles": 414,
+      "sourceMatchesBuild": true
+    },
+    {
+      "receipt": "docs/testing/evidence/content-map-cm-20261016/final-web29/receipt.json",
+      "checkedFiles": 414,
+      "sourceMatchesBuild": true
+    }
+  ]
+}

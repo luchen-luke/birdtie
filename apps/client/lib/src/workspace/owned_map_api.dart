@@ -91,11 +91,22 @@ class OwnedMapCover {
       OwnedMapCover._decode(raw, placeID: placeID);
   factory OwnedMapCover.poster(Object? raw, String momentID, String mediaID) =>
       OwnedMapCover._decode(raw, momentID: momentID, mediaID: mediaID);
+  factory OwnedMapCover.marker(
+    Object? raw, {
+    required String placeID,
+    required String momentID,
+  }) => OwnedMapCover._decode(
+    raw,
+    placeID: placeID.isEmpty ? null : placeID,
+    momentID: momentID.isEmpty ? null : momentID,
+    marker: true,
+  );
   factory OwnedMapCover._decode(
     Object? raw, {
     String? placeID,
     String? momentID,
     String? mediaID,
+    bool marker = false,
   }) {
     final v = humanControlObject(raw, {
       'kind',
@@ -135,23 +146,46 @@ class OwnedMapCover {
       throw const FormatException('地图图片来源不符');
     }
     final path = Uri.tryParse(v['contentPath']);
-    if (path == null ||
-        path.hasScheme ||
-        path.hasAuthority ||
-        path.hasFragment ||
-        path.path !=
-            (placeID != null
-                ? '/v1/me/map-content/places/$placeID/images/${v['id']}/content'
-                : '/v1/me/map-content/moments/$momentID/media/$mediaID/content') ||
-        path.queryParametersAll.length != (placeID != null ? 1 : 2) ||
-        path.queryParametersAll['sourceVersion']?.length != 1 ||
-        path.queryParameters['sourceVersion'] != v['sourceVersion'] ||
-        (placeID == null &&
-            (v['kind'] != 'MOMENT_VIDEO_POSTER' ||
-                v['id'] != mediaID ||
-                path.queryParametersAll['variant']?.length != 1 ||
-                path.queryParameters['variant'] != 'poster'))) {
-      throw const FormatException('地图图片路径不符');
+    if (marker) {
+      if (v['mimeType'] != 'image/jpeg' ||
+          v['width'] > 160 ||
+          v['height'] > 160 ||
+          v['byteCount'] > 512 * 1024 ||
+          path == null ||
+          path.hasScheme ||
+          path.hasAuthority ||
+          path.hasFragment ||
+          path.path !=
+              (placeID != null
+                  ? '/v1/me/map-content/places/$placeID/images/${v['id']}/content'
+                  : '/v1/me/map-content/moments/$momentID/media/${v['id']}/content') ||
+          path.queryParametersAll.length != 2 ||
+          path.queryParametersAll['sourceVersion']?.length != 1 ||
+          path.queryParameters['sourceVersion'] != v['sourceVersion'] ||
+          path.queryParametersAll['variant']?.length != 1 ||
+          path.queryParameters['variant'] != 'marker' ||
+          (placeID == null && !humanControlID(momentID))) {
+        throw const FormatException('地图缩略图来源不符');
+      }
+    } else {
+      if (path == null ||
+          path.hasScheme ||
+          path.hasAuthority ||
+          path.hasFragment ||
+          path.path !=
+              (placeID != null
+                  ? '/v1/me/map-content/places/$placeID/images/${v['id']}/content'
+                  : '/v1/me/map-content/moments/$momentID/media/$mediaID/content') ||
+          path.queryParametersAll.length != (placeID != null ? 1 : 2) ||
+          path.queryParametersAll['sourceVersion']?.length != 1 ||
+          path.queryParameters['sourceVersion'] != v['sourceVersion'] ||
+          (placeID == null &&
+              (v['kind'] != 'MOMENT_VIDEO_POSTER' ||
+                  v['id'] != mediaID ||
+                  path.queryParametersAll['variant']?.length != 1 ||
+                  path.queryParameters['variant'] != 'poster'))) {
+        throw const FormatException('地图图片路径不符');
+      }
     }
     return OwnedMapCover(
       kind: v['kind'],
@@ -185,31 +219,69 @@ class OwnedMapPin {
     required this.cover,
     this.observedAt,
     this.validUntil,
+    this.kind = 'PLACE_CONTENT',
+    this.markerID = '',
+    this.anchorID = '',
+    this.momentID = '',
+    this.entryID = '',
+    this.threadID = '',
+    this.membersPath = '',
+    this.bounds,
+    this.anchorCount = 1,
+    this.precision = 'point',
   });
   final String placeID, name, categoryCode, sourceVersion;
+  final String kind,
+      markerID,
+      anchorID,
+      momentID,
+      entryID,
+      threadID,
+      membersPath,
+      precision;
+  final MapBounds? bounds;
   final String? cityID;
   final double latitude, longitude;
   final List<String> visibilitySources;
-  final int momentCount;
+  final int momentCount, anchorCount;
   final List<OwnedMapMoment> moments;
   final bool momentsTruncated;
   final OwnedMapCover? cover;
   final DateTime? observedAt, validUntil;
-  String get mapID => 'owned-map:$placeID';
+  String get canonicalMarkerID =>
+      markerID.isEmpty ? 'place:$placeID' : markerID;
+  String get mapID => 'owned-map:$canonicalMarkerID';
+  bool get isCluster => kind == 'CLUSTER';
+  bool get isMomentAnchor => kind == 'MOMENT_ANCHOR';
+  bool get isPlace => kind == 'PLACE_CONTENT';
   bool get hasPrivateContent => visibilitySources.contains('SELF_PRIVATE');
   String get visibilityLabel => hasPrivateContent
       ? (visibilitySources.length == 1 ? '仅本人可见' : '含本人私人内容')
-      : '原公开地点与动态';
+      : '可访问动态';
   MapEntity get entity => MapEntity(
     id: mapID,
-    kind: MapEntityKind.place,
+    kind: isCluster
+        ? MapEntityKind.cluster
+        : isMomentAnchor
+        ? MapEntityKind.moment
+        : MapEntityKind.place,
     title: name,
-    subtitle: '$visibilityLabel${momentCount == 0 ? '' : ' · $momentCount条动态'}',
+    subtitle: '$visibilityLabel · $momentCount条动态',
     latitude: latitude,
     longitude: longitude,
     placeID: placeID,
+    precision: isCluster ? 'area' : precision,
     sourceVersion: sourceVersion,
     categoryCode: categoryCode,
+    anchorID: anchorID,
+    momentID: momentID,
+    entryID: entryID,
+    threadID: threadID,
+    contentCount: momentCount,
+    anchorCount: anchorCount,
+    momentRevision: isMomentAnchor && moments.isNotEmpty
+        ? moments.first.revision
+        : 0,
     recentMoments: observedAt == null || validUntil == null
         ? null
         : MapRecentMoments.visible(
@@ -224,27 +296,89 @@ class OwnedMapPin {
     MapBounds bounds, {
     DateTime? observedAt,
     DateTime? validUntil,
+    String cityID = '',
+    double zoom = 12,
+    String pageSourceVersion = '',
   }) {
-    final v = humanControlObject(raw, {
-      'placeId',
-      'name',
-      'categoryCode',
-      'cityId',
-      'anchor',
-      'visibilitySources',
-      'sourceVersion',
-      'momentCount',
-      'moments',
-      'momentsTruncated',
-      'cover',
-    });
+    final v = humanControlObject(
+      raw,
+      {
+        'markerId',
+        'kind',
+        'entityId',
+        'anchorCount',
+        'placeId',
+        'name',
+        'categoryCode',
+        'cityId',
+        'anchor',
+        'visibilitySources',
+        'sourceVersion',
+        'momentCount',
+        'moments',
+        'momentsTruncated',
+        'cover',
+      },
+      optional: {
+        'anchorId',
+        'momentId',
+        'entryId',
+        'threadId',
+        'membersPath',
+        'bounds',
+      },
+    );
+    final kind = v['kind'], place = v['placeId'], marker = v['markerId'];
+    final anchorID = v['anchorId'] ?? '',
+        moment = v['momentId'] ?? '',
+        entry = v['entryId'] ?? '',
+        thread = v['threadId'] ?? '',
+        path = v['membersPath'] ?? '';
     final anchor = humanControlObject(v['anchor'], {
       'coordinateSystem',
       'precision',
       'latitude',
       'longitude',
     });
-    if (!humanControlID(v['placeId']) ||
+    final identityValid = switch (kind) {
+      'PLACE_CONTENT' =>
+        humanControlID(place) &&
+            marker == 'place:$place' &&
+            v['entityId'] == place &&
+            anchorID == '' &&
+            moment == '' &&
+            entry == '' &&
+            thread == '' &&
+            path == '' &&
+            v['bounds'] == null &&
+            v['anchorCount'] == 1,
+      'MOMENT_ANCHOR' =>
+        place == '' &&
+            humanControlID(anchorID) &&
+            humanControlID(moment) &&
+            marker == 'anchor:$anchorID' &&
+            v['entityId'] == moment &&
+            entry == moment &&
+            (thread == '' || humanControlID(thread)) &&
+            path == '' &&
+            v['bounds'] == null &&
+            v['anchorCount'] == 1,
+      'CLUSTER' =>
+        place == '' &&
+            marker is String &&
+            marker.startsWith('cluster:') &&
+            humanControlHash(marker.substring(8)) &&
+            v['entityId'] == marker &&
+            anchorID == '' &&
+            moment == '' &&
+            entry == '' &&
+            thread == '' &&
+            v['anchorCount'] is int &&
+            v['anchorCount'] > 1 &&
+            v['cover'] == null,
+      _ => false,
+    };
+    if (!identityValid ||
         !humanControlHash(v['sourceVersion']) ||
         v['visibilitySources'] is! List ||
         (v['visibilitySources'] as List).isEmpty ||
@@ -256,34 +390,94 @@ class OwnedMapPin {
             (v['visibilitySources'] as List).length ||
         v['moments'] is! List ||
         (v['moments'] as List).length > 20 ||
-        !humanControlVersion(v['momentCount']) ||
+        !humanControlVersion(v['momentCount'], zero: false) ||
         v['momentsTruncated'] is! bool ||
         anchor['coordinateSystem'] != 'wgs84' ||
-        anchor['precision'] != 'point' ||
+        !const {'point', 'approximate'}.contains(anchor['precision']) ||
         anchor['latitude'] is! num ||
         anchor['longitude'] is! num) {
-      throw const FormatException('地图地点来源或权限不符');
+      throw const FormatException('地图内容来源或权限不符');
     }
     final lat = (anchor['latitude'] as num).toDouble(),
         lon = (anchor['longitude'] as num).toDouble();
     if (!lat.isFinite ||
         !lon.isFinite ||
-        lat < bounds.south ||
-        lat > bounds.north ||
-        lon < bounds.west ||
-        lon > bounds.east) {
+        lat < -90 ||
+        lat > 90 ||
+        lon < -180 ||
+        lon > 180 ||
+        !bounds.contains(lat, lon))
       throw const FormatException('地图位置超出当前范围');
+    MapBounds? clusterBounds;
+    if (kind == 'CLUSTER') {
+      final b = humanControlObject(v['bounds'], {
+        'west',
+        'east',
+        'south',
+        'north',
+      });
+      if (b.values.any((v) => v is! num)) {
+        throw const FormatException('地图聚合范围不符');
+      }
+      clusterBounds = MapBounds(
+        west: (b['west'] as num).toDouble(),
+        east: (b['east'] as num).toDouble(),
+        south: (b['south'] as num).toDouble(),
+        north: (b['north'] as num).toDouble(),
+      );
+      if (!clusterBounds.isValid ||
+          !clusterBounds.contains(lat, lon) ||
+          clusterBounds.longitudeSpan > bounds.longitudeSpan + 0.000003 ||
+          clusterBounds.south < bounds.south - 0.000002 ||
+          clusterBounds.north > bounds.north + 0.000002)
+        throw const FormatException('地图聚合范围超出视口');
+      final uri = path is String ? Uri.tryParse(path) : null;
+      final query = uri?.queryParameters;
+      if (uri == null ||
+          uri.hasScheme ||
+          uri.hasAuthority ||
+          uri.hasFragment ||
+          uri.path != '/v1/me/map-content' ||
+          uri.queryParametersAll.values.any((v) => v.length != 1) ||
+          !uri.queryParameters.keys.every(
+            const {
+              'cityId',
+              'west',
+              'south',
+              'east',
+              'north',
+              'zoom',
+              'filterScope',
+              'clusterId',
+              'sourceVersion',
+              'selectedMarkerId',
+            }.contains,
+          ) ||
+          (query?['cityId'] ?? '') != cityID ||
+          query?['clusterId'] != marker ||
+          query?['sourceVersion'] != pageSourceVersion ||
+          (query?['filterScope'] ?? 'DEFAULT_CONTENT') != 'DEFAULT_CONTENT' ||
+          double.tryParse(query?['zoom'] ?? '') != zoom ||
+          bounds.toJson().entries.any(
+            (e) => double.tryParse(query?[e.key] ?? '') != e.value,
+          )) {
+        throw const FormatException('地图聚合读取路径不符');
+      }
     }
     final moments = (v['moments'] as List).map(OwnedMapMoment.decode).toList();
     final cover = v['cover'] == null
         ? null
-        : OwnedMapCover.decode(v['cover'], v['placeId']);
+        : OwnedMapCover.marker(v['cover'], placeID: place, momentID: moment);
     if (moments.map((m) => m.id).toSet().length != moments.length ||
         v['momentCount'] < moments.length ||
         v['momentsTruncated'] != (v['momentCount'] > moments.length) ||
         moments.any(
           (m) => !(v['visibilitySources'] as List).contains(m.visibilitySource),
         ) ||
+        kind == 'MOMENT_ANCHOR' &&
+            (v['momentCount'] != 1 ||
+                moments.length != 1 ||
+                moments.single.id != moment) ||
         cover != null &&
             !(v['visibilitySources'] as List).contains(
               cover.visibilitySource,
@@ -291,8 +485,18 @@ class OwnedMapPin {
       throw const FormatException('地图动态数量不符');
     }
     return OwnedMapPin(
-      placeID: v['placeId'],
-      name: _text(v['name'], 1000),
+      placeID: place,
+      markerID: marker,
+      kind: kind,
+      anchorID: anchorID,
+      momentID: moment,
+      entryID: entry,
+      threadID: thread,
+      membersPath: path,
+      bounds: clusterBounds,
+      anchorCount: v['anchorCount'],
+      precision: anchor['precision'],
+      name: _text(v['name'], 16000),
       categoryCode: _text(v['categoryCode'], 160, empty: true),
       cityID: v['cityId'] == null ? null : _text(v['cityId'], 200, empty: true),
       latitude: lat,
@@ -319,9 +523,18 @@ class OwnedMapView {
     required this.sourceVersion,
     required this.items,
     required this.truncated,
+    this.zoom = 12,
+    this.filterScope = 'DEFAULT_CONTENT',
+    this.totalContentCount = 0,
+    this.totalAnchorCount = 0,
+    this.nextCursor,
+    this.byteCount = 0,
   });
-  final String viewerAccountID, cityID, sourceVersion;
+  final String viewerAccountID, cityID, sourceVersion, filterScope;
   final MapBounds bounds;
+  final double zoom;
+  final int totalContentCount, totalAnchorCount, byteCount;
+  final String? nextCursor;
   final DateTime observedAt, validUntil;
   final List<OwnedMapPin> items;
   final bool truncated;
@@ -331,6 +544,8 @@ class OwnedMapView {
     required String cityID,
     required MapBounds bounds,
     required DateTime now,
+    double zoom = 12,
+    int byteCount = 0,
   }) {
     final v = humanControlObject(raw, {
       'schemaVersion',
@@ -343,6 +558,11 @@ class OwnedMapView {
       'sourceVersion',
       'pins',
       'truncated',
+      'zoom',
+      'filterScope',
+      'totalContentCount',
+      'totalAnchorCount',
+      'nextCursor',
     });
     final b = humanControlObject(v['bounds'], {
       'west',
@@ -350,7 +570,7 @@ class OwnedMapView {
       'east',
       'north',
     });
-    if (v['schemaVersion'] != 'map-content-v1' ||
+    if (v['schemaVersion'] != 'map-content-v2' ||
         v['scope'] != 'MAP_CONTENT' ||
         !humanControlID(ownerID) ||
         v['viewerAccountId'] != ownerID ||
@@ -359,43 +579,56 @@ class OwnedMapView {
         b['south'] != bounds.south ||
         b['east'] != bounds.east ||
         b['north'] != bounds.north ||
+        v['zoom'] != zoom ||
+        v['filterScope'] != 'DEFAULT_CONTENT' ||
         !humanControlHash(v['sourceVersion']) ||
         v['pins'] is! List ||
-        (v['pins'] as List).length > 500 ||
-        v['truncated'] is! bool) {
+        (v['pins'] as List).length > 40 ||
+        v['truncated'] is! bool ||
+        !humanControlVersion(v['totalContentCount']) ||
+        !humanControlVersion(v['totalAnchorCount']) ||
+        v['totalAnchorCount'] < (v['pins'] as List).length ||
+        v['nextCursor'] != null &&
+            !humanControlText(v['nextCursor'], 1, 4096)) {
       throw const FormatException('地图读取身份或范围不符');
     }
-    final at = onlineStamp(v['observedAt']),
-        until = onlineStamp(v['validUntil']);
-    if (at.isAfter(now.add(const Duration(seconds: 2))) ||
-        !until.isAfter(now) ||
-        !until.isAfter(at) ||
-        until.difference(at) > const Duration(seconds: 30) ||
-        until.isAfter(now.add(const Duration(seconds: 32)))) {
-      throw const FormatException('地图读取期限不符');
-    }
+    final lease = _lease(v, now);
     final items = (v['pins'] as List)
         .map(
           (raw) => OwnedMapPin.decode(
             raw,
             bounds,
-            observedAt: at,
-            validUntil: until,
+            observedAt: lease.$1,
+            validUntil: lease.$2,
+            cityID: cityID,
+            zoom: zoom,
+            pageSourceVersion: v['sourceVersion'],
           ),
         )
         .toList();
-    if (items.map((v) => v.placeID).toSet().length != items.length) {
-      throw const FormatException('地图地点重复');
-    }
+    if (items.map((v) => v.mapID).toSet().length != items.length ||
+        items.any(
+          (p) =>
+              p.momentCount > v['totalContentCount'] ||
+              p.anchorCount > v['totalAnchorCount'],
+        ) ||
+        items.isEmpty && v['nextCursor'] != null)
+      throw const FormatException('地图内容重复或统计不符');
     return OwnedMapView(
       viewerAccountID: ownerID,
       cityID: cityID,
       bounds: bounds,
-      observedAt: at,
-      validUntil: until,
+      observedAt: lease.$1,
+      validUntil: lease.$2,
       sourceVersion: v['sourceVersion'],
       items: List.unmodifiable(items),
       truncated: v['truncated'],
+      zoom: zoom,
+      filterScope: v['filterScope'],
+      totalContentCount: v['totalContentCount'],
+      totalAnchorCount: v['totalAnchorCount'],
+      nextCursor: v['nextCursor'],
+      byteCount: byteCount,
     );
   }
 }
@@ -739,11 +972,21 @@ class OwnedMapPlacePage {
   }
 }
 
+class OwnedMapReadFailure implements Exception {
+  const OwnedMapReadFailure(this.statusCode);
+  final int statusCode;
+  bool get retiresGrant => const {401, 403, 404, 409, 410}.contains(statusCode);
+}
+
 class OwnedMapAPI {
-  OwnedMapAPI({required http.Client client, required this.apiBaseUrl})
-    : _client = client;
+  OwnedMapAPI({
+    required http.Client client,
+    required this.apiBaseUrl,
+    this.onDenied,
+  }) : _client = client;
   http.Client _client;
   final String Function() apiBaseUrl;
+  final void Function(int statusCode)? onDenied;
   bool _closed = false;
   int _transport = 0;
   void replaceTransport({required http.Client client}) {
@@ -758,6 +1001,7 @@ class OwnedMapAPI {
     required int limit,
     String? mime,
     int? exact,
+    Future<void>? abortTrigger,
   }) async {
     final transport = _transport, client = _client;
     bool valid() =>
@@ -766,11 +1010,22 @@ class OwnedMapAPI {
         current() &&
         canonicalAuthOrigin(apiBaseUrl()) == uri.origin;
     if (!valid()) throw const FormatException('地图读取已失效');
-    final request = http.Request('GET', uri)..followRedirects = false;
+    final request = http.AbortableRequest(
+      'GET',
+      uri,
+      abortTrigger: abortTrigger,
+    )..followRedirects = false;
     request.headers['Authorization'] = authorization;
     final response = await client
         .send(request)
         .timeout(const Duration(seconds: 12));
+    if (response.statusCode != 200) {
+      await response.stream.listen((_) {}).cancel();
+      if (valid() &&
+          const {401, 403, 404, 409, 410}.contains(response.statusCode))
+        onDenied?.call(response.statusCode);
+      throw OwnedMapReadFailure(response.statusCode);
+    }
     if (!valid() ||
         response.statusCode != 200 ||
         !response.headers['cache-control'].toString().toLowerCase().contains(
@@ -828,26 +1083,50 @@ class OwnedMapAPI {
     required String origin,
     required bool Function() current,
     required DateTime Function() now,
+    double zoom = 12,
+    String? selectedMarkerID,
+    Future<void>? abortTrigger,
+    OwnedMapPin? cluster,
+    String? cursor,
   }) async {
     if (!bounds.isValid ||
         !humanControlID(ownerID) ||
-        !humanControlText(cityID, 1, 200) ||
+        !humanControlText(cityID, 0, 180) ||
+        !zoom.isFinite ||
+        zoom < 0 ||
+        zoom > 22 ||
         canonicalAuthOrigin(origin) != origin ||
         authorization.isEmpty)
       throw const FormatException('地图读取条件不符');
-    final uri = Uri.parse(origin).replace(
-      path: '/v1/me/map-content',
-      queryParameters: {
-        'cityId': cityID,
-        ...bounds.toJson().map((k, v) => MapEntry(k, v.toString())),
-      },
-    );
+    final params = <String, String>{
+      if (cityID.isNotEmpty) 'cityId': cityID,
+      ...bounds.toJson().map((k, v) => MapEntry(k, v.toString())),
+      'zoom': zoom.toString(),
+      'filterScope': 'DEFAULT_CONTENT',
+      if (selectedMarkerID != null && selectedMarkerID.isNotEmpty)
+        'selectedMarkerId': selectedMarkerID,
+    };
+    if (cluster != null) {
+      if (!cluster.isCluster ||
+          cursor != null && !humanControlText(cursor, 1, 4096)) {
+        throw const FormatException('地图聚合读取条件不符');
+      }
+      final path = Uri.parse(cluster.membersPath);
+      params
+        ..clear()
+        ..addAll(path.queryParameters);
+      if (cursor != null) params['cursor'] = cursor;
+    }
+    final uri = Uri.parse(
+      origin,
+    ).replace(path: '/v1/me/map-content', queryParameters: params);
     final bytes = await _read(
       uri,
       authorization: authorization,
       current: current,
       limit: 4 * 1024 * 1024,
       mime: 'application/json',
+      abortTrigger: abortTrigger,
     );
     try {
       final envelope = humanControlObject(jsonDecode(utf8.decode(bytes)), {
@@ -859,6 +1138,8 @@ class OwnedMapAPI {
         cityID: cityID,
         bounds: bounds,
         now: now(),
+        zoom: zoom,
+        byteCount: bytes.length,
       );
     } finally {
       bytes.fillRange(0, bytes.length, 0);
@@ -870,6 +1151,7 @@ class OwnedMapAPI {
     required String authorization,
     required String origin,
     required bool Function() current,
+    Future<void>? abortTrigger,
   }) async {
     final bytes = await _read(
       Uri.parse(origin).resolve(cover.contentPath),
@@ -878,6 +1160,7 @@ class OwnedMapAPI {
       limit: cover.byteCount,
       exact: cover.byteCount,
       mime: cover.mimeType,
+      abortTrigger: abortTrigger,
     );
     try {
       final header = MomentImageHeader.inspect(

@@ -1,0 +1,94 @@
+Flutter assets will be downloaded from https://storage.flutter-io.cn. Make sure you trust this source!
+00:00 +0: loading D:/Project/birdtie/apps/client/test/content_map_cluster_bitmap_test.dart
+00:00 +0: D:/Project/birdtie/apps/client/test/content_map_cluster_bitmap_test.dart: content cluster has opaque centred square and readable count at phone DPR; people cluster stays unchanged
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following TestFailure was thrown while running async test code:
+Expected: not equals [
+            137,
+            80,
+            78,
+            71,
+            13,
+            10,
+            26,
+            10,
+            0,
+            0,
+            0,
+            13,
+            73,
+            72,
+            68,
+            82,
+            0,
+            0,
+            1,
+            56,
+            0,
+            0,
+            1,
+            56,
+            ...
+          ] ordered
+  Actual: [
+            137,
+            80,
+            78,
+            71,
+            13,
+            10,
+            26,
+            10,
+            0,
+            0,
+            0,
+            13,
+            73,
+            72,
+            68,
+            82,
+            0,
+            0,
+            1,
+            56,
+            0,
+            0,
+            1,
+            56,
+            ...
+          ]
+
+When the exception was thrown, this was the stack:
+#0      fail (package:matcher/src/expect/expect.dart:187:31)
+#1      _expect (package:matcher/src/expect/expect.dart:182:3)
+#2      expect (package:matcher/src/expect/expect.dart:65:3)
+#3      expect (package:flutter_test/src/widget_tester.dart:473:18)
+#4      main.<anonymous closure>.<anonymous closure> (file:///D:/Project/birdtie/apps/client/test/content_map_cluster_bitmap_test.dart:93:9)
+<asynchronous suspension>
+<asynchronous suspension>
+#6      main.<anonymous closure> (file:///D:/Project/birdtie/apps/client/test/content_map_cluster_bitmap_test.dart:46:7)
+<asynchronous suspension>
+#7      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#8      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1952:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided 2 frames from dart:async and package:stack_trace)
+
+The exception was caught asynchronously.
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:00 +0 -1: D:/Project/birdtie/apps/client/test/content_map_cluster_bitmap_test.dart: content cluster has opaque centred square and readable count at phone DPR; people cluster stays unchanged [E]
+  Test failed. See exception logs above.
+  The test description was: content cluster has opaque centred square and readable count at phone DPR; people cluster stays unchanged
+  
+00:00 +0 -1: D:/Project/birdtie/apps/client/test/content_map_cluster_bitmap_test.dart: neighbouring and selected place labels cannot cover a cluster count at either zoom; original coordinates and IDs remain
+00:00 +1 -1: D:/Project/birdtie/apps/client/test/content_map_renderer_test.dart: bounded latest render, crossing viewport and complete task aggregation
+00:00 +2 -1: D:/Project/birdtie/apps/client/test/content_map_renderer_test.dart: actual Web content overlap and server cluster preserve one map and dispatch to Now
+00:00 +3 -1: D:/Project/birdtie/apps/client/test/content_map_renderer_test.dart: actual Native touch and initial screen viewport use content routing without replacing annotations
+Birdtie native map created.
+Birdtie native map style loaded.
+00:00 +4 -1: D:/Project/birdtie/apps/client/test/content_map_renderer_test.dart: actual JS vector style hides only provider POI and keeps roads and map instance
+00:01 +5 -1: Some tests failed.
+
+Failing tests:
+  D:/Project/birdtie/apps/client/test/content_map_cluster_bitmap_test.dart: content cluster has opaque centred square and readable count at phone DPR; people cluster stays unchanged

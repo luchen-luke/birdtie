@@ -49,6 +49,7 @@ class MapCanvas extends StatefulWidget {
     this.focusRevision,
     this.onSelectedAnchor,
     this.onEntityPicked,
+    this.onContentOverlap,
     this.onMapReaderVisibilityChanged,
     this.personalCollection,
   });
@@ -73,6 +74,7 @@ class MapCanvas extends StatefulWidget {
   final ValueListenable<int>? focusRevision;
   final ValueChanged<({String? id, Offset? point})>? onSelectedAnchor;
   final ValueChanged<String>? onEntityPicked;
+  final ValueChanged<List<MapEntity>>? onContentOverlap;
   final ValueChanged<({Object token, bool visible})>?
   onMapReaderVisibilityChanged;
 
@@ -261,7 +263,8 @@ class _MapCanvasState extends State<MapCanvas> {
       ? _resultMapEntities(_mapResult!)
       : widget.layers != null
       ? widget.layers!.cityID == widget.city.selectedCity?.id
-            ? _typedMapEntities(widget.layers!.items)
+            ? _typedMapEntities(widget.layers!.items.where((item) =>
+                widget.mapContent == null || (item.kind != 'PLACE' && item.kind != 'MOMENT')))
             : const []
       : [
           if (_mapResult case final result?) ..._resultMapEntities(result),
@@ -328,7 +331,8 @@ class _MapCanvasState extends State<MapCanvas> {
         layers?.cityID == widget.city.selectedCity!.id &&
         (_mapResult == null || area?.read?.current == true);
     final items = typed && layers?.authorID == null
-        ? (area?.read?.current == true ? area!.items : layers!.items)
+        ? (area?.read?.current == true ? area!.items : layers!.items.where((item) =>
+            widget.mapContent == null || (item.kind != 'PLACE' && item.kind != 'MOMENT')).toList())
         : const <TypedMapItem>[];
     controller.sync(
       ownerID: widget.mediaOwnerID?.call(),
@@ -612,11 +616,11 @@ class _MapCanvasState extends State<MapCanvas> {
         ? null
         : widget.mapContent?.error ??
               (widget.mapContent?.loading == true && _entities().isEmpty
-                  ? '正在读取地点与动态…'
+                  ? '正在读取地图内容…'
                   : widget.mapContent?.view?.truncated == true
                   ? '当前范围地点较多，请放大地图继续查看。'
                   : widget.mapContent?.current == true && _entities().isEmpty
-                  ? '这个范围内暂无可见地点或动态。'
+                  ? '这个范围内暂无可访问动态。'
                   : null);
     return Stack(
       children: [
@@ -639,6 +643,15 @@ class _MapCanvasState extends State<MapCanvas> {
                 selectMapEntity(entity.id, shownEntity: entity),
             onPlaceSelected: (place) =>
                 selectMapEntity('place:${place.id}', shownPlace: place),
+            onContentOverlap: widget.onContentOverlap,
+            onContentViewportSettled: selectedCity == null ? null : (bounds, zoom) {
+              widget.mapState.zoom = zoom;
+              widget.mapContent?.sync(
+                cityID: selectedCity.id, bounds: bounds, zoom: zoom,
+                devicePixelRatio: MediaQuery.devicePixelRatioOf(context),
+                selectedMarkerID: widget.mapContent?.find(widget.workspace.selectedEntityId ?? '')?.canonicalMarkerID,
+              );
+            },
             onViewportSettled: selectedCity == null
                 ? null
                 : widget.mapState.cameraSettled,

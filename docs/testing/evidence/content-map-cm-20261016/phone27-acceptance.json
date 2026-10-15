@@ -1,0 +1,42 @@
+{
+  "status": "PARTIAL_VISUAL_CLUSTER_FAILURE_REQUIRES_APK28",
+  "package": "app.civu.civu_mobile.birdtiepreview",
+  "api": 26,
+  "apk": 27,
+  "contentWrites": 0,
+  "checks": [
+    {
+      "check": "DEFAULT_CONTENT_WITH_APPROVED_COORDINATE_ANCHOR",
+      "status": "PASS"
+    },
+    {
+      "check": "CLUSTER_TO_EXACT_ANCHOR_BODY_IMAGE_AND_BACK_SAME_NOW_PANEL",
+      "status": "PASS"
+    },
+    {
+      "check": "35S_TWO_RENEWALS_ZERO_MARKER_AND_COVER_MUTATION",
+      "status": "PASS"
+    },
+    {
+      "check": "NATIVE_CLUSTER_READABLE_SIZE_AND_LABEL_OCCLUSION",
+      "status": "FAIL",
+      "reason": "Old ratio1 bitmap shrinks count on DPR device, BOTTOM offset plus neighboring label obscures cluster. Semantics and real click route work; visual failure retained."
+    }
+  ],
+  "screenshots": [
+    {
+      "name": "cm-apk27-initial",
+      "sha256": "052803bb3098dfc1dd3e530573d9a5191306b08e89e90136b7f31e482ec8f65e"
+    },
+    {
+      "name": "cm-apk27-content-markers",
+      "sha256": "9645b268faf879a58d791a5ef045a9a08cd72b0c7871aa21de9ba4672895386d"
+    },
+    {
+      "name": "cm-apk27-anchor-panel",
+      "sha256": "023dd8e2b82e9b1b5df08ab3cc637385c9c98673485251ba56d0193722ba8123"
+    }
+  ],
+  "phonePerf": "phone-apk27-final01/receipt.json",
+  "oldCameraMatched": "NOT_RUN"
+}

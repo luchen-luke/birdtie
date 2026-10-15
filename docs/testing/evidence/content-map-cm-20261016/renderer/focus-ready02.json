@@ -1,0 +1,50 @@
+{
+  "task": "CM09 final integration programmatic camera repair",
+  "at": "2026-10-15T22:15:32.543262+00:00",
+  "status": "PRODUCTION_FROZEN_DIRECT_PASS",
+  "sources": {
+    "apps/client/lib/src/city/native_city_map_io.dart": "5276d4e938210ae644067d50bf7f4bfdf3d9bd49f7efd7c7c7ccb4d6841ba66a",
+    "apps/client/test/content_map_renderer_test.dart": "63a9a4930964fd5d4952d635ba791ced822d4411cc0d1565931f7a8887f79588"
+  },
+  "change": "Programmatic flyTo acknowledgement no longer produces a250ms mid-animation query. Initial/style/city/explicit focus share one replaceable scheduled projection delayed through existing750ms SDK exclusion window. A touch immediately cancels this wait and restores user camera-event collection. Motion/scope/serial guards discard stale reads. User idle/fallback scheduling remains unchanged and single-use.",
+  "tests": [
+    {
+      "log": "focus01.log",
+      "status": "FAIL",
+      "reason": "New dynamic fake camera exposed first-style focus under default task context; old initial250ms fixture assertion premature."
+    },
+    {
+      "log": "focus02.log",
+      "status": "FAIL",
+      "reason": "Old synthetic date-line fixture default non-idle context now correctly moved camera toward task points; fixture explicitly set production Now idle context."
+    },
+    {
+      "log": "focus03.log",
+      "status": "PASS",
+      "passed": 4,
+      "exit": 0,
+      "command": "flutter test test/content_map_renderer_test.dart --reporter expanded",
+      "cwd": "D:/Project/birdtie/apps/client"
+    }
+  ],
+  "new_coverage": [
+    "actual MapWidget city change stays silent at250ms while FakeSDK camera is in flight",
+    "single final projected query at completed camera target",
+    "pointer during city focus cancels obsolete callback and publishes user settled bounds",
+    "explicit focus publishes final viewport once",
+    "same native SDK widget instance"
+  ],
+  "analysis": {
+    "log": "focus-analyze01.log",
+    "errors": 0,
+    "warnings": 0,
+    "info": 12,
+    "exit": 0
+  },
+  "review": "Root owns final default public-media filtering; no additional confirmed regression found in active search/collection/activity branches. Same snapped query reuses in-flight/current view instead of a second HTTP request.",
+  "not_run": [
+    "APK26 real native callback timing",
+    "production viewport/ACL data",
+    "real memory/network/frame measurement"
+  ]
+}

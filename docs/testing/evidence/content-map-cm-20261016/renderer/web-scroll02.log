@@ -1,0 +1,6 @@
+Flutter assets will be downloaded from https://storage.flutter-io.cn. Make sure you trust this source!
+00:00 +0: loading D:/Project/birdtie/apps/client/test/content_map_web_scroll_test.dart
+00:00 +0: real FlutterMap wheel burst publishes newest zoom exactly once
+00:00 +1: real double tap ends once and rotation ends coalesce with move end
+00:00 +2: new gesture, scope change and dispose retire pending wheel snapshots
+00:00 +3: All tests passed!

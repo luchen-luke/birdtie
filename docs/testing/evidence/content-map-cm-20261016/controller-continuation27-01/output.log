@@ -1,0 +1,6 @@
+00:00 +0: loading D:/Project/birdtie/apps/client/test/content_map_controller_test.dart
+00:00 +0: v2 coordinate anchors and bounded cluster pages retain target grants and reject POI-only pins
+00:00 +1: settled query reuse, cancellation, LRU bytes and permission withdrawal
+00:00 +2: 12 covers 4 transports selected first, real DPR decode and renewed grants reuse pixels
+00:00 +3: All tests passed!
+Flutter assets will be downloaded from https://storage.flutter-io.cn. Make sure you trust this source!

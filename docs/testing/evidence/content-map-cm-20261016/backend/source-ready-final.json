@@ -1,0 +1,23 @@
+{
+  "status": "SOURCE_READY",
+  "observedUTC": "2026-10-15T22:13:53.788666+00:00",
+  "files": {
+    "apps/api/internal/content/map_content.go": "4acbac6f7dd448cac2ce3dc666d862d24aadf3dd5e2d1053911b7f59e57d6743",
+    "apps/api/internal/content/map_content_test.go": "b94a58e75cf34a5901c184edb9b8abfe6a4ac86d140f99cf6d3c33bf940fe7fe",
+    "apps/api/internal/httpapi/map_content.go": "f9a0fc5eb81045eb1655a135dea03221b55822d4fc312f671c2c985f361f4281",
+    "apps/api/internal/httpapi/map_content_test.go": "d38812be70896a0299967d67d42c3ea3ee66f3ece033e74d302e98b54769c497",
+    "apps/api/internal/postgres/map_content.go": "a68583103ae72a9226f19cfbf86486c63dc21b72d4c84376fbdb3e2f244c8df7",
+    "apps/api/internal/postgres/map_content_media.go": "5658a844a14b8353968e815c8f38fb3a74645b6468b67400ec4a6cda83b1f0c7",
+    "apps/api/internal/postgres/map_content_native_test.go": "b7ddb6b1da2b3f9522237c40060667b2618f7d0f91f95b1b09feb36142e049a5",
+    "apps/api/internal/postgres/map_content_spatial.go": "9206becdd660160d77b7b732f892928cac656e6af296c9ad4d65b2b65f2bb7da",
+    "apps/api/internal/postgres/legacy_map_anchor_restore.go": "d4ebdf3246ec5407f674317e59f21d3695f171f24f3baedcdcd3daa2531e3ff8",
+    "apps/api/internal/legacymapanchor/build.go": "d5ca82e7b7c73e1a47f4c2d3cecfaf88ec1019306dbdbf6bc71236f67948ea93",
+    "apps/api/cmd/legacy-map-anchor-restore/main.go": "08ac3f4c3296a1692873c5770549862f488ab4642aa671f82afea628143a340f",
+    "apps/api/migrations/171_content_map_anchors.sql": "6640e1bd70905a25a05cef5c5181556f5715ee3270f1260095283a05d7962b96",
+    "apps/api/migrations/171_content_map_anchors.down.sql": "0e7aafab458ba48fefa48ba16e3168b2bcac489d7c342bcf6ed5af5095766bfe",
+    "apps/api/internal/postgres/map_content_spatial_perf_native_test.go": "2faf21a716e09a2f3bac68c74c411ae13e7c337f5dcc61a92ba18339b7476196"
+  },
+  "nativeStatus": "PASS_170_AND_PRESSURE_NATIVE_FINAL01_171_NATIVE_FINAL02",
+  "apiSchema": "map-content-v2",
+  "migration": 171
+}

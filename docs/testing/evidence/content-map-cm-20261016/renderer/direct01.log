@@ -1,0 +1,15 @@
+Flutter assets will be downloaded from https://storage.flutter-io.cn. Make sure you trust this source!
+00:00 +0: loading D:/Project/birdtie/apps/client/test/content_map_renderer_test.dart
+test/content_map_renderer_test.dart:165:30: Error: 'MapOptions' is imported from both 'package:flutter_map/src/map/options/options.dart' and 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart'.
+              options: const MapOptions(
+                             ^^^^^^^^^^
+00:00 +0 -1: loading D:/Project/birdtie/apps/client/test/content_map_renderer_test.dart [E]
+  Failed to load "D:/Project/birdtie/apps/client/test/content_map_renderer_test.dart":
+  Compilation failed for testPath=D:/Project/birdtie/apps/client/test/content_map_renderer_test.dart: test/content_map_renderer_test.dart:165:30: Error: 'MapOptions' is imported from both 'package:flutter_map/src/map/options/options.dart' and 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart'.
+                options: const MapOptions(
+                               ^^^^^^^^^^
+  .
+00:00 +0 -1: Some tests failed.
+
+Failing tests:
+  D:/Project/birdtie/apps/client/test/content_map_renderer_test.dart: loading D:/Project/birdtie/apps/client/test/content_map_renderer_test.dart

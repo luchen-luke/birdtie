@@ -1,0 +1,11 @@
+{
+  "status": "FAIL",
+  "scenario": "same four map swipes east/west, 600ms each with 2s settle",
+  "firstInteractive": "NOT_RUN",
+  "firstContent": "NOT_RUN",
+  "firstCover": "NOT_RUN",
+  "rawPrivateDataSaved": false,
+  "pssBeforeKiB": 855836,
+  "errorType": "RuntimeError",
+  "errorCode": "RPC_setVMTimelineFlags"
+}

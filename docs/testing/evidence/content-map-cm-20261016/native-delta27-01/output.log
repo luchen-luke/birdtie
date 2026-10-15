@@ -1,0 +1,33 @@
+00:00 +0: loading D:/Project/birdtie/apps/client/test/content_map_renderer_test.dart
+00:00 +0 -1: loading D:/Project/birdtie/apps/client/test/content_map_renderer_test.dart [E]
+  Failed to load "D:/Project/birdtie/apps/client/test/content_map_renderer_test.dart":
+  Compilation failed for testPath=D:/Project/birdtie/apps/client/test/content_map_renderer_test.dart: test/content_map_renderer_test.dart:207:7: Error: Setter not found: 'oldGrant'.
+        oldGrant = false;
+        ^^^^^^^^
+  test/content_map_renderer_test.dart:209:51: Error: Method not found: 'pixels'.
+          row('owned-map:moment:a').withMediaPixels(pixels(() => true)),
+                                                    ^^^^^^
+  test/content_map_renderer_test.dart:214:14: Error: Undefined name 'map'.
+        expect(map.points.creates, 2);
+               ^^^
+  test/content_map_renderer_test.dart:216:9: Error: Undefined name 'map'.
+          map.points.updates,
+          ^^^
+  .
+00:00 +0 -1: Some tests failed.
+
+Failing tests:
+  D:/Project/birdtie/apps/client/test/content_map_renderer_test.dart: loading D:/Project/birdtie/apps/client/test/content_map_renderer_test.dart
+Flutter assets will be downloaded from https://storage.flutter-io.cn. Make sure you trust this source!
+test/content_map_renderer_test.dart:207:7: Error: Setter not found: 'oldGrant'.
+      oldGrant = false;
+      ^^^^^^^^
+test/content_map_renderer_test.dart:209:51: Error: Method not found: 'pixels'.
+        row('owned-map:moment:a').withMediaPixels(pixels(() => true)),
+                                                  ^^^^^^
+test/content_map_renderer_test.dart:214:14: Error: Undefined name 'map'.
+      expect(map.points.creates, 2);
+             ^^^
+test/content_map_renderer_test.dart:216:9: Error: Undefined name 'map'.
+        map.points.updates,
+        ^^^

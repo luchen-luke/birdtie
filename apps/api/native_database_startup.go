@@ -61,6 +61,9 @@ const nativeDatabaseProbeSQL = `WITH required(table_name,column_name,type_name) 
  ('legacy_map_visibility_runs','projection_sha256','text'),
  ('legacy_map_place_facts','coordinate_proof','text'),
  ('legacy_map_place_facts','native_binding','text'),
+ ('legacy_map_anchor_runs','projection_sha256','text'),
+ ('legacy_map_anchor_facts','native_binding','text'),
+ ('legacy_map_anchor_facts','coordinate_proof','text'),
  ('legacy_private_image_recovery_items','image_id','uuid'),
  ('sessions','development_credential_kind','text'),
  ('moment_location_links','id','uuid'),('moment_location_links','moment_id','uuid'),
@@ -121,6 +124,10 @@ const nativeDatabaseProbeSQL = `WITH required(table_name,column_name,type_name) 
  ('personal_collection_control_operations','expected_revision','bigint'),('personal_collection_control_operations','applied_revision','bigint'),
  ('personal_collection_control_operations','payload_digest','text'),('personal_collection_control_operations','committed_at','timestamp with time zone')
  ), required_trigger(table_name,trigger_name,function_name,deferred) AS (VALUES
+ ('legacy_map_anchor_runs','legacy_map_anchor_runs_immutable','birdtie_legacy_immutable',false),
+ ('legacy_map_anchor_facts','legacy_map_anchor_facts_immutable','birdtie_legacy_immutable',false),
+ ('legacy_map_anchor_runs','legacy_map_anchor_run_binding','birdtie_legacy_map_anchor_guard',true),
+ ('legacy_map_anchor_facts','legacy_map_anchor_fact_binding','birdtie_legacy_map_anchor_guard',true),
  ('legacy_map_visibility_runs','legacy_map_run_immutable','birdtie_legacy_immutable',false),
  ('legacy_map_place_facts','legacy_map_place_immutable','birdtie_legacy_immutable',false),
  ('legacy_map_visibility_runs','legacy_map_run_binding','birdtie_legacy_map_binding_guard',true),
@@ -152,6 +159,8 @@ const nativeDatabaseProbeSQL = `WITH required(table_name,column_name,type_name) 
        WHERE t.oid IS NULL OR t.tgenabled<>'O' OR f.proname<>r.function_name OR f.pronamespace<>n.oid
         OR t.tgdeferrable<>r.deferred OR t.tginitdeferred<>r.deferred
        ORDER BY r.table_name,r.trigger_name)
+ || ARRAY(SELECT 'content_map.contract'
+          WHERE public.birdtie_content_map_contract() IS DISTINCT FROM 'map-content-v2')
  || ARRAY(SELECT 'legacy_map_visibility.contract'
           WHERE public.birdtie_legacy_map_visibility_contract() IS DISTINCT FROM 'map-content-v1')
  || ARRAY(SELECT 'city_public_moment.contract'

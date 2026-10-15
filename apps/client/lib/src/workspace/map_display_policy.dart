@@ -1,8 +1,55 @@
+import 'dart:async';
+import 'dart:convert';
 import 'dart:math' as math;
+import 'package:crypto/crypto.dart';
 import 'package:flutter/painting.dart';
 
 import 'map_entities.dart';
 import 'map_marker_visual.dart';
+
+/// A single native mutation is allowed to run, with one replaceable pending
+/// frame. Callers fence awaits with [serial]; no Future chain grows per image.
+class LatestMapRenderQueue {
+  LatestMapRenderQueue(this.render);
+  final Future<void> Function(int serial) render;
+  int serial = 0, requested = 0, passes = 0, coalesced = 0, peakPending = 0;
+  bool _pending = false, _closed = false;
+  Completer<void>? _flight;
+
+  Future<void> schedule() {
+    if (_closed) return Future<void>.value();
+    serial++;
+    requested++;
+    if (_pending) coalesced++;
+    _pending = true;
+    peakPending = 1;
+    final existing = _flight;
+    if (existing != null) return existing.future;
+    final flight = _flight = Completer<void>();
+    unawaited(_drain(flight));
+    return flight.future;
+  }
+
+  Future<void> _drain(Completer<void> flight) async {
+    while (!_closed && _pending) {
+      _pending = false;
+      passes++;
+      try {
+        await render(serial);
+      } catch (_) {
+        // A failed provider update does not poison subsequent latest work.
+      }
+    }
+    _flight = null;
+    flight.complete();
+  }
+
+  void close() {
+    _closed = true;
+    _pending = false;
+    serial++;
+  }
+}
 
 /// Display-only output: the authorized ResultSet and its list are untouched.
 class MapDisplayPlan {
@@ -11,9 +58,11 @@ class MapDisplayPlan {
     this.labelIDs,
     this.omittedIDs, {
     this.denseIDs = const {},
+    this.clusterPositions = const {},
   });
   final List<MapEntity> entities;
   final Set<String> labelIDs, omittedIDs, denseIDs;
+  final Map<String, Offset> clusterPositions;
 }
 
 class MapDisplayLevel {
@@ -25,6 +74,150 @@ class MapDisplayLevel {
 /// Provider-independent policy. Input positions are map-local logical pixels
 /// returned by the current camera, after the source has enforced its ACL/lease.
 class MapDisplayPolicy {
+  /// Longitude is unwrapped around the actual projected centre, so a rotated
+  /// viewport spanning 180 degrees stays a short crossing interval. Inputs
+  /// come from provider screen projection, never a city/GPS approximation.
+  static MapBounds? projectedViewport({
+    required List<Offset> corners,
+    required Offset center,
+  }) {
+    if (corners.length != 4 ||
+        [center, ...corners].any(
+          (p) => !p.dx.isFinite || !p.dy.isFinite || p.dy < -90 || p.dy > 90,
+        )) {
+      return null;
+    }
+    double wrap(double longitude) => (longitude + 180) % 360 - 180;
+    final longitudes = corners.map((p) => center.dx + wrap(p.dx - center.dx));
+    final west = longitudes.reduce(math.min),
+        east = longitudes.reduce(math.max);
+    final bounds = MapBounds(
+      west: wrap(west),
+      east: wrap(east),
+      south: corners.map((p) => p.dy).reduce(math.min),
+      north: corners.map((p) => p.dy).reduce(math.max),
+    );
+    return bounds.isValid ? bounds : null;
+  }
+
+  static bool contentEntity(MapEntity entity) =>
+      entity.id.startsWith('owned-map:');
+
+  static bool displayCluster(MapEntity entity) =>
+      entity.kind == MapEntityKind.cluster &&
+      entity.id.startsWith('display-cluster:');
+
+  static String _membersVersion(List<MapEntity> members) => sha256
+      .convert(
+        utf8.encode(
+          jsonEncode([
+            for (final e in members)
+              [
+                e.id,
+                e.kind.name,
+                e.sourceVersion,
+                e.latitude,
+                e.longitude,
+                e.title,
+                e.subtitle,
+                e.precision,
+              ],
+          ]),
+        ),
+      )
+      .toString();
+
+  /// A display container carries no independent authority. Every original
+  /// member and revision must still be present before its reader can open.
+  static List<MapEntity> currentDisplayClusterMembers(
+    MapEntity cluster,
+    Iterable<MapEntity> source,
+  ) {
+    if (!displayCluster(cluster)) return const [];
+    final byID = {for (final e in source) e.id: e};
+    final members = [
+      for (final id in cluster.memberIDs)
+        if (byID[id] != null) byID[id]!,
+    ];
+    return members.length == cluster.memberIDs.length &&
+            _membersVersion(members) == cluster.sourceVersion
+        ? members
+        : const [];
+  }
+
+  static ({List<MapEntity> entities, Map<String, Offset> positions})
+  _boundedTasks(
+    List<MapEntity> source,
+    Map<String, Offset> positions,
+    String? selectedID,
+    int budget,
+  ) {
+    final keep = source
+        .where((e) => contentEntity(e) || e.id == selectedID)
+        .toList();
+    final candidates = source
+        .where((e) => !contentEntity(e) && e.id != selectedID)
+        .toList();
+    final slots = math.max(1, budget - keep.length);
+    if (candidates.length <= slots)
+      return (entities: source, positions: const {});
+    Map<(int, int), List<MapEntity>> cells = {};
+    var edge = 64.0;
+    for (var attempt = 0; attempt < 24; attempt++, edge *= 2) {
+      cells = {};
+      for (final entity in candidates) {
+        final p = positions[entity.id]!;
+        (cells[((p.dx / edge).floor(), (p.dy / edge).floor())] ??= []).add(
+          entity,
+        );
+      }
+      if (cells.length <= slots) break;
+    }
+    var groups = cells.values.toList();
+    if (groups.length > slots) {
+      // At low budgets a screen may straddle the grid origin. Spatially
+      // ordered partitions stay bounded without dropping any member.
+      candidates.sort((a, b) {
+        final x = positions[a.id]!.dx.compareTo(positions[b.id]!.dx);
+        return x != 0 ? x : positions[a.id]!.dy.compareTo(positions[b.id]!.dy);
+      });
+      final count = (candidates.length / slots).ceil();
+      groups = [
+        for (var i = 0; i < candidates.length; i += count)
+          candidates.sublist(i, math.min(i + count, candidates.length)),
+      ];
+    }
+    final result = <MapEntity>[...keep], projected = <String, Offset>{};
+    for (final members in groups) {
+      if (members.length == 1) {
+        result.add(members.single);
+        continue;
+      }
+      members.sort((a, b) => a.id.compareTo(b.id));
+      final id =
+          'display-cluster:${sha256.convert(utf8.encode(jsonEncode(members.map((e) => e.id).toList())))}';
+      // The container is anchored on a real member, never a fabricated POI.
+      final anchor = members.first;
+      result.add(
+        MapEntity(
+          id: id,
+          kind: MapEntityKind.cluster,
+          title: '${members.length}项内容',
+          subtitle: '查看当前范围内的对象',
+          latitude: anchor.latitude,
+          longitude: anchor.longitude,
+          precision: 'area',
+          memberIDs: members.map((e) => e.id).toList(),
+          sourceVersion: _membersVersion(members),
+          groupSummary: '${members.length}个当前对象',
+          isTaskResult: true,
+        ),
+      );
+      projected[id] = positions[anchor.id]!;
+    }
+    return (entities: result, positions: projected);
+  }
+
   // Concept mapping from the reviewed Civu proposed display policy. These
   // fields are consumed here; no Civu config or unpublished taxonomy is loaded.
   static const levels = [
@@ -65,7 +258,7 @@ class MapDisplayPolicy {
     Set<String> previouslyVisibleIDs = const {},
     Set<String> protectedIDs = const {},
     double? collisionRadius,
-    int ambientLimit = 64,
+    int ambientLimit = 40,
   }) {
     final unique = <String, MapEntity>{};
     for (final entity in entities) {
@@ -77,8 +270,14 @@ class MapDisplayPolicy {
         unique.putIfAbsent(entity.id, () => entity);
       }
     }
-    final ordered = unique.values.toList()
-      ..sort((a, b) => a.id.compareTo(b.id));
+    final bounded = _boundedTasks(
+      unique.values.toList(),
+      positions,
+      selectedID,
+      ambientLimit.clamp(1, 40),
+    );
+    positions = {...positions, ...bounded.positions};
+    final ordered = bounded.entities..sort((a, b) => a.id.compareTo(b.id));
     final emphasized = {...protectedIDs, ?selectedID};
     final requestedRadius = collisionRadius ?? radiusForZoom(zoom);
     final radius = requestedRadius.isFinite && requestedRadius > 0
@@ -92,7 +291,9 @@ class MapDisplayPolicy {
     }
     final dense = <String>{};
     for (final entity in ordered) {
-      if (emphasized.contains(entity.id) || entity.precision != 'point')
+      if (emphasized.contains(entity.id) ||
+          entity.precision != 'point' ||
+          contentEntity(entity))
         continue;
       final point = positions[entity.id]!, key = cell(point);
       var nearby = false;
@@ -109,13 +310,6 @@ class MapDisplayPolicy {
       if (nearby) dense.add(entity.id);
     }
     final labels = <String>{};
-    for (final entity in [
-      ...ordered.where((e) => e.id == selectedID),
-      ...ordered.where((e) => e.id != selectedID && emphasized.contains(e.id)),
-    ]) {
-      if (labels.length >= MapMarkerVisual.labelBudget) break;
-      labels.add(entity.id);
-    }
     // Civu content is useful at the opening city zoom too. Keep a small,
     // collision-aware set of real photo/story points legible among catalog
     // points. Density changes presentation only, never source coordinates.
@@ -131,44 +325,92 @@ class MapDisplayPolicy {
     });
     Rect labelRect(MapEntity e) {
       final p = positions[e.id]!;
+      final selected = e.id == selectedID;
+      final start = e.kind == MapEntityKind.cluster
+          ? (selected ? 25.0 : 23.0)
+          : MapMarkerVisual.diameter(
+                      selected: selected,
+                      dense: dense.contains(e.id),
+                    ) /
+                    2 +
+                MapMarkerVisual.labelGap;
       return Rect.fromLTWH(
-        p.dx - 18,
-        p.dy - 18,
-        36 + MapMarkerVisual.labelWidth + MapMarkerVisual.labelGap,
+        p.dx + start,
+        p.dy - 20,
+        MapMarkerVisual.labelWidth,
         40,
       );
     }
 
-    final occupied = [
+    // Icon overlap remains resolvable through the existing content chooser.
+    // Labels must not paint over another current glyph, especially the count
+    // inside a content cluster. This changes no identity or real coordinate.
+    final glyphs = <String, Rect>{
       for (final e in ordered)
-        if (labels.contains(e.id)) labelRect(e),
-    ];
+        if (e.kind == MapEntityKind.cluster ||
+            (e.precision == 'point' &&
+                {MapEntityKind.place, MapEntityKind.moment}.contains(e.kind)))
+          e.id: Rect.fromCenter(
+            center: positions[e.id]!,
+            width: e.kind == MapEntityKind.cluster
+                ? 44
+                : MapMarkerVisual.diameter(
+                    selected: e.id == selectedID,
+                    dense: dense.contains(e.id),
+                  ),
+            height: e.kind == MapEntityKind.cluster
+                ? 44
+                : MapMarkerVisual.diameter(
+                    selected: e.id == selectedID,
+                    dense: dense.contains(e.id),
+                  ),
+          ),
+    };
+    final occupied = <Rect>[];
+    bool addLabel(MapEntity entity) {
+      if (labels.contains(entity.id)) return true;
+      if (labels.length >= MapMarkerVisual.labelBudget) return false;
+      final rect = labelRect(entity);
+      if (occupied.any((other) => other.overlaps(rect.inflate(4))) ||
+          glyphs.entries.any(
+            (other) =>
+                other.key != entity.id && other.value.overlaps(rect.inflate(4)),
+          ))
+        return false;
+      labels.add(entity.id);
+      occupied.add(rect);
+      return true;
+    }
+
+    for (final entity in [
+      ...ordered.where((e) => e.id == selectedID),
+      ...ordered.where((e) => e.id != selectedID && emphasized.contains(e.id)),
+    ]) {
+      addLabel(entity);
+    }
     for (final entity in content) {
       if (labels.length >= MapMarkerVisual.labelBudget) break;
       if (labels.contains(entity.id)) continue;
-      final rect = labelRect(entity);
-      if (occupied.any((other) => other.overlaps(rect.inflate(4)))) continue;
       if (contentRect != null && !contentRect.contains(positions[entity.id]!))
         continue;
-      labels.add(entity.id);
-      occupied.add(rect);
+      if (!addLabel(entity)) continue;
       if (contentRank(entity) > 0) dense.remove(entity.id);
     }
     if (zoom >= 16) {
       for (final entity in ordered) {
         if (labels.length >= MapMarkerVisual.labelBudget) break;
-        if (!dense.contains(entity.id)) labels.add(entity.id);
+        if (!dense.contains(entity.id)) addLabel(entity);
       }
     }
     // Source ACL, scenario, viewport and lease filters own eligibility.
-    // Chrome/contentRect, prior visibility and ambientLimit may not erase it.
-    // Coincident anchors retain their original kind, ID and WGS84 coordinate;
-    // overlapping hit areas use a current-object chooser in each provider.
+    // Task overflow is represented by temporary, revalidated member containers;
+    // no source record or route is deleted and owned content stays server-bound.
     return MapDisplayPlan(
       List.unmodifiable(ordered),
       Set.unmodifiable(labels),
       const <String>{},
       denseIDs: Set.unmodifiable(dense),
+      clusterPositions: Map.unmodifiable(bounded.positions),
     );
   }
 

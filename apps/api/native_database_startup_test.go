@@ -127,6 +127,8 @@ func TestNativeStartupRejectsLegacyIncompleteAndUnavailableSchemas(t *testing.T)
 		{"no-145", nativeProbeRow{name: "birdtie_hangzhou", oid: 42, missing: []string{"public_moment_photos.rights"}}},
 		{"no-148-original-fact", nativeProbeRow{name: "birdtie_hangzhou", oid: 42, missing: []string{"human_moment_control_operations.payload_sha256"}}},
 		{"no-148-public-guard", nativeProbeRow{name: "birdtie_hangzhou", oid: 42, missing: []string{"human_moment_control_operations.human_moment_control_immutable"}}},
+		{"no-171-content-map-contract", nativeProbeRow{name: "birdtie_hangzhou", oid: 42, missing: []string{"content_map.contract"}}},
+		{"no-171-anchor-binding", nativeProbeRow{name: "birdtie_hangzhou", oid: 42, missing: []string{"legacy_map_anchor_facts.legacy_map_anchor_fact_binding"}}},
 		{"no-150-city-public-contract", nativeProbeRow{name: "birdtie_hangzhou", oid: 42, missing: []string{"city_public_moment.contract"}}},
 		{"no-151-moment-interaction-contract", nativeProbeRow{name: "birdtie_hangzhou", oid: 42, missing: []string{"moment_interaction.contract"}}},
 		{"no-152-public-media-contract", nativeProbeRow{name: "birdtie_hangzhou", oid: 42, missing: []string{"public_moment_media.contract"}}},

@@ -1,0 +1,18 @@
+{
+  "status": "PLAN_NOT_EXECUTED",
+  "scripts": {
+    "C:\\Users\\chens\\Documents\\Codex\\2026-10-15\\d-project-birdtie-docs-reports-birdtie-2\\work\\build_map171.py": "968ce6fbb45503acde8a534261939d61cf147f56b1d455d3ef76fab761503881",
+    "C:\\Users\\chens\\Documents\\Codex\\2026-10-15\\d-project-birdtie-docs-reports-birdtie-2\\work\\upgrade_native171_24.py": "ac15735912f367db4a553059685c92f0ad1b3514d3df56d61e4f6d94a535aee2",
+    "C:\\Users\\chens\\Documents\\Codex\\2026-10-15\\d-project-birdtie-docs-reports-birdtie-2\\work\\apply_map171.py": "bd2ed801c0bac46a511ea2c629ddaccb0df7d7e4076cd3eb15182b2aa7a72dec"
+  },
+  "expectedDatabase": "birdtie_native_hz_20261015",
+  "expectedDatabaseOID": 54087,
+  "previousRelease": "social170-20261015-build23",
+  "nextRelease": "social171-20261015-build24",
+  "schema": 171,
+  "binaries": 11,
+  "anchors": 16,
+  "privateSourceWrites": 0,
+  "remoteExecuted": false,
+  "dependencies": "Run original wrappers in root task work directory beside build_map20.py/apply_map170.py; repository deploy_birdtie_hangzhou.py supplies pinned transport and previous version. Evidence copies are review snapshots."
+}

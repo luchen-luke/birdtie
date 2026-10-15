@@ -1,0 +1,102 @@
+00:00 +0: loading D:/Project/birdtie/apps/client/test/map_canvas_test.dart
+00:00 +0: D:/Project/birdtie/apps/client/test/map_canvas_test.dart: Map1 failed photo stays same typed point and independent count expiry preserves task selection map
+00:00 +1: D:/Project/birdtie/apps/client/test/map_canvas_test.dart: Map1 failed photo stays same typed point and independent count expiry preserves task selection map
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following TestFailure was thrown running a test:
+Expected: true
+  Actual: <false>
+
+When the exception was thrown, this was the stack:
+#4      mediaWait (file:///D:/Project/birdtie/apps/client/test/map_media_controller_test.dart:116:3)
+<asynchronous suspension>
+#5      main.<anonymous closure> (file:///D:/Project/birdtie/apps/client/test/map_canvas_test.dart:101:7)
+<asynchronous suspension>
+#6      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#7      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1952:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///D:/Project/birdtie/apps/client/test/map_media_controller_test.dart line 116
+The test description was:
+  Map1 failed photo stays same typed point and independent count expiry preserves task selection map
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:02 +1 -1: D:/Project/birdtie/apps/client/test/map_canvas_test.dart: Map1 failed photo stays same typed point and independent count expiry preserves task selection map [E]
+  Test failed. See exception logs above.
+  The test description was: Map1 failed photo stays same typed point and independent count expiry preserves task selection map
+  
+Warning: At least one test in this suite creates an HttpClient. When running a test suite that uses
+TestWidgetsFlutterBinding, all HTTP requests will return status code 400, and no network request
+will actually be made. Any test expecting a real network connection and status code will fail.
+To test code that needs an HttpClient, provide your own HttpClient implementation to the code under
+test, so that your test can consistently provide a testable response to the code under test.
+00:02 +1 -1: D:/Project/birdtie/apps/client/test/map_canvas_test.dart: 地图来源选择从expandedAgentContentMode.results显露真实轻卡并保留任务与安全草稿
+00:03 +2 -1: D:/Project/birdtie/apps/client/test/map_canvas_test.dart: 地图来源选择从expandedAgentContentMode.conversation显露真实轻卡并保留任务与安全草稿
+00:03 +3 -1: D:/Project/birdtie/apps/client/test/map_canvas_test.dart: 地图来源旧callback未知ID或城市退役不修改当前选择或面板
+00:04 +4 -1: D:/Project/birdtie/apps/client/test/map_canvas_test.dart: 地图来源旧任务callback不能借相同ID覆盖新结果选择
+00:04 +5 -1: D:/Project/birdtie/apps/client/test/map_canvas_test.dart: 同任务只读刷新 none 后地图选择复核当前实体
+00:04 +6 -1: D:/Project/birdtie/apps/client/test/map_canvas_test.dart: 同任务只读刷新 version 后地图选择复核当前实体
+00:04 +7 -1: D:/Project/birdtie/apps/client/test/map_canvas_test.dart: 同任务只读刷新 title 后地图选择复核当前实体
+00:04 +8 -1: D:/Project/birdtie/apps/client/test/map_canvas_test.dart: 同任务只读刷新 summary 后地图选择复核当前实体
+00:05 +9 -1: D:/Project/birdtie/apps/client/test/map_canvas_test.dart: 同任务只读刷新 coordinates 后地图选择复核当前实体
+00:05 +10 -1: D:/Project/birdtie/apps/client/test/map_canvas_test.dart: 同任务只读刷新 anchor-place 后地图选择复核当前实体
+00:05 +11 -1: D:/Project/birdtie/apps/client/test/map_canvas_test.dart: 同任务只读刷新 scope 后地图选择复核当前实体
+00:05 +12 -1: D:/Project/birdtie/apps/client/test/map_canvas_test.dart: 同任务只读刷新 membership 后地图选择复核当前实体
+00:05 +13 -1: D:/Project/birdtie/apps/client/test/map_canvas_test.dart: 同任务只读刷新 withdraw 后地图选择复核当前实体
+00:06 +14 -1: D:/Project/birdtie/apps/client/test/map_canvas_test.dart: 同任务只读刷新 expired 后地图选择复核当前实体
+00:06 +15 -1: D:/Project/birdtie/apps/client/test/map_canvas_test.dart: 同任务只读刷新 task 后地图选择复核当前实体
+00:06 +16 -1: D:/Project/birdtie/apps/client/test/map_canvas_test.dart: 背景城市指引复用唯一顶部入口，任务ONLINE不重复并保持投影与旧callback
+00:06 +17 -1: D:/Project/birdtie/apps/client/test/map_canvas_test.dart: actual captured anonymous public wire needsScope retains real city and only typed public pins
+00:06 +18 -1: D:/Project/birdtie/apps/client/test/map_canvas_test.dart: actual captured anonymous public wire needsScopeRetry retains real city and only typed public pins
+Birdtie Agent API returned HTTP 503 (UNAVAILABLE).
+00:06 +19 -1: D:/Project/birdtie/apps/client/test/map_canvas_test.dart: actual captured anonymous public wire needsScopeArea retains real city and only typed public pins
+00:06 +20 -1: D:/Project/birdtie/apps/client/test/map_canvas_test.dart: actual captured anonymous public wire selectedCity retains real city and only typed public pins
+00:06 +21 -1: D:/Project/birdtie/apps/client/test/map_canvas_test.dart: actual captured anonymous public wire followUp retains real city and only typed public pins
+00:06 +22 -1: D:/Project/birdtie/apps/client/test/map_canvas_test.dart: anonymous captured wire retired by scope ABA never resurrects old local task or pins
+00:06 +23 -1: D:/Project/birdtie/apps/client/test/map_canvas_test.dart: captured public wire nativeTask city authority is not overwritten by local fallback
+00:06 +24 -1: D:/Project/birdtie/apps/client/test/map_canvas_test.dart: captured public wire nativeTaskID city authority is not overwritten by local fallback
+00:06 +25 -1: D:/Project/birdtie/apps/client/test/map_canvas_test.dart: typed layers and cards share exact IDs toggles preserve map Element selection and task
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following TestFailure was thrown running a test:
+Expected: Set:[
+            'place:12345678-1234-1234-1234-123456789abc',
+            'activity:12345678-1234-1234-1234-123456789abc',
+            'moment:12345678-1234-1234-1234-123456789abc',
+            'organization:12345678-1234-1234-1234-123456789abc',
+            'business:12345678-1234-1234-1234-123456789abc'
+          ]
+  Actual: Set:[
+            'activity:12345678-1234-1234-1234-123456789abc',
+            'organization:12345678-1234-1234-1234-123456789abc',
+            'business:12345678-1234-1234-1234-123456789abc'
+          ]
+   Which: does not contain 'place:12345678-1234-1234-1234-123456789abc'
+
+When the exception was thrown, this was the stack:
+#4      main.<anonymous closure> (file:///D:/Project/birdtie/apps/client/test/map_canvas_test.dart:841:7)
+<asynchronous suspension>
+#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1952:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///D:/Project/birdtie/apps/client/test/map_canvas_test.dart line 841
+The test description was:
+  typed layers and cards share exact IDs toggles preserve map Element selection and task
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:06 +25 -2: D:/Project/birdtie/apps/client/test/map_canvas_test.dart: typed layers and cards share exact IDs toggles preserve map Element selection and task [E]
+  Test failed. See exception logs above.
+  The test description was: typed layers and cards share exact IDs toggles preserve map Element selection and task
+  
+00:06 +25 -2: D:/Project/birdtie/apps/client/test/map_canvas_test.dart: ONLINE retains current city projection key pins selection and map Element
+00:06 +26 -2: Some tests failed.
+
+Failing tests:
+  D:/Project/birdtie/apps/client/test/map_canvas_test.dart: Map1 failed photo stays same typed point and independent count expiry preserves task selection map
+  D:/Project/birdtie/apps/client/test/map_canvas_test.dart: typed layers and cards share exact IDs toggles preserve map Element selection and task
+Flutter assets will be downloaded from https://storage.flutter-io.cn. Make sure you trust this source!

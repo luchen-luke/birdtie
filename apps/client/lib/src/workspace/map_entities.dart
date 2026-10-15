@@ -44,12 +44,18 @@ class MapBounds {
   final double north;
 
   bool get isValid =>
-      west >= -180 &&
+      west.isFinite && east.isFinite && south.isFinite && north.isFinite &&
+      west >= -180 && west <= 180 && east >= -180 &&
       east <= 180 &&
       south >= -90 &&
       north <= 90 &&
-      west < east &&
+      west != east &&
       south < north;
+
+  bool contains(double latitude, double longitude) => isValid &&
+      latitude.isFinite && longitude.isFinite && latitude >= south && latitude <= north &&
+      (west < east ? longitude >= west && longitude <= east : longitude >= west || longitude <= east);
+  double get longitudeSpan => west < east ? east - west : 360 - west + east;
 
   Map<String, double> toJson() => {
     'west': west,
@@ -84,6 +90,7 @@ class MapViewportState extends ChangeNotifier {
   MapBounds? searchAreaBounds;
   String? mapError;
   bool cameraMoving = false;
+  double zoom = 12;
 
   void reset() {
     viewportBounds = null;
@@ -153,6 +160,8 @@ class MapEntity {
     this.momentID = '',
     this.momentRevision = 0,
     this.categoryCode = '',
+    this.anchorID = '', this.entryID = '', this.threadID = '',
+    this.contentCount = 0, this.anchorCount = 0,
   });
   final String id;
   final MapEntityKind kind;
@@ -169,6 +178,8 @@ class MapEntity {
   final MapMediaPixels? mediaPixels;
   final String sourceVersion;
   final String categoryCode;
+  final String anchorID, entryID, threadID;
+  final int contentCount, anchorCount;
   // The native Moment selector is separate from a pin's compound map ID.
   final String momentID;
   final int momentRevision;
@@ -237,10 +248,12 @@ class MapEntity {
     momentID: momentID,
     momentRevision: momentRevision,
     categoryCode: categoryCode,
+    anchorID: anchorID, entryID: entryID, threadID: threadID,
+    contentCount: contentCount, anchorCount: anchorCount,
   );
   bool get isCluster => kind == MapEntityKind.cluster || memberIDs.length > 1;
   bool get hasMapAnchor =>
-      const {'point', 'area'}.contains(precision) &&
+      const {'point', 'area', 'approximate'}.contains(precision) &&
       latitude.isFinite &&
       longitude.isFinite &&
       latitude >= -90 &&
@@ -274,6 +287,8 @@ class MapEntity {
     momentID: momentID,
     momentRevision: momentRevision,
     categoryCode: categoryCode,
+    anchorID: anchorID, entryID: entryID, threadID: threadID,
+    contentCount: contentCount, anchorCount: anchorCount,
   );
 }
 
@@ -341,8 +356,9 @@ class MapEntityLayer extends StatelessWidget {
               {MapEntityKind.place, MapEntityKind.moment}.contains(entity.kind)
               ? 48
               : 58,
-          child:
-              {MapEntityKind.place, MapEntityKind.moment}.contains(entity.kind)
+          child: entity.kind == MapEntityKind.cluster
+              ? ContentClusterMapMarker(entity: entity, selected: selectedId == entity.id, onTap: () => onSelected(entity))
+              : {MapEntityKind.place, MapEntityKind.moment}.contains(entity.kind)
               ? IndividualMapMarker(
                   entity: entity,
                   selected: selectedId == entity.id,
@@ -612,4 +628,24 @@ class GroupMarker extends StatelessWidget {
     selected: selected,
     onTap: onTap,
   );
+}
+
+class ContentClusterMapMarker extends StatelessWidget {
+  const ContentClusterMapMarker({super.key, required this.entity, required this.selected, required this.onTap});
+  final MapEntity entity;
+  final bool selected;
+  final VoidCallback onTap;
+  @override
+  Widget build(BuildContext context) {
+    final count = entity.contentCount > 0 ? entity.contentCount : entity.memberIDs.length;
+    final label = entity.contentCount > 0 ? '$count条动态' : '$count项内容';
+    return Semantics(button: true, label: label, child: Tooltip(message: label,
+      child: InkResponse(onTap: onTap, radius: 24, child: Center(child: Container(
+        width: 36, height: 36, alignment: Alignment.center,
+        decoration: BoxDecoration(color: selected ? const Color(0xFF193B32) : const Color(0xFF87683C),
+          border: Border.all(color: Colors.white, width: 2), borderRadius: BorderRadius.circular(5),
+          boxShadow: const [BoxShadow(color: Color(0x55000000), blurRadius: 2, offset: Offset(2, 2))]),
+        child: Text('$count', style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
+      )))));
+  }
 }

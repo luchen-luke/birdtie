@@ -24,6 +24,7 @@ class MapMarkerBitmap {
   // Bounded across source revisions and DPRs. Every glyph stays at its anchor.
   static const cacheLimit = 128;
   static const pointCanvasSize = 96.0;
+  static const contentClusterSide = 32.0;
   static double pixelRatio(double value) =>
       value.isFinite && value > 0 ? value.clamp(.5, 8.0) : 1.0;
 
@@ -191,6 +192,67 @@ class MapMarkerBitmap {
     }
   }
 
+  /// Content counts use the same physical-pixel contract as individual pins.
+  /// The front card's centre is exactly the geographic/semantic anchor.
+  static Future<Uint8List> _contentCluster(
+    bool selected,
+    int count,
+    double ratio,
+  ) async {
+    const center = Offset(pointCanvasSize / 2, pointCanvasSize / 2);
+    const color = Color(0xFF315E50);
+    final side = selected ? 36.0 : contentClusterSide;
+    final rect = Rect.fromCenter(center: center, width: side, height: side);
+    final recorder = ui.PictureRecorder(), canvas = Canvas(recorder);
+    canvas.scale(ratio);
+    for (final card in [rect.translate(4, -4), rect]) {
+      final shape = RRect.fromRectAndRadius(card, const Radius.circular(5));
+      canvas.drawRRect(shape, Paint()..color = color);
+      canvas.drawRRect(
+        shape,
+        Paint()
+          ..color = Colors.white
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2,
+      );
+    }
+    final label = count > 0 ? count.toString() : '…';
+    final text = TextPainter(
+      text: TextSpan(
+        text: label,
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: label.length <= 3
+              ? 16
+              : label.length == 4
+              ? 12
+              : 10,
+          fontWeight: FontWeight.w600,
+          height: 1,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    )..layout();
+    final scale = (side - 6) / text.width;
+    canvas.save();
+    canvas.translate(center.dx, center.dy);
+    if (scale < 1) canvas.scale(scale);
+    text.paint(canvas, Offset(-text.width / 2, -text.height / 2));
+    canvas.restore();
+    text.dispose();
+    final picture = recorder.endRecording();
+    final extent = (pointCanvasSize * ratio).ceil();
+    final image = await picture.toImage(extent, extent);
+    picture.dispose();
+    try {
+      return (await image.toByteData(
+        format: ui.ImageByteFormat.png,
+      ))!.buffer.asUint8List();
+    } finally {
+      image.dispose();
+    }
+  }
+
   static Future<Uint8List> render({
     required MapEntityKind kind,
     required bool selected,
@@ -205,8 +267,11 @@ class MapMarkerBitmap {
     final individual =
         !approximate &&
         (kind == MapEntityKind.place || kind == MapEntityKind.moment);
-    // Other legacy glyphs keep their existing presentation in this repair.
-    final ratio = individual ? pixelRatio(devicePixelRatio) : 1.0;
+    final contentCluster = kind == MapEntityKind.cluster;
+    // People clusters and other legacy task glyphs keep their presentation.
+    final ratio = individual || contentCluster
+        ? pixelRatio(devicePixelRatio)
+        : 1.0;
     // Retain the optional argument for compatibility with older callers, but
     // never move a point or restore the retired ring/leader presentation.
     const offset = Offset.zero;
@@ -227,6 +292,11 @@ class MapMarkerBitmap {
       return cached;
     }
 
+    if (contentCluster) {
+      final bytes = await _contentCluster(selected, count, ratio);
+      _remember(key, bytes);
+      return bytes;
+    }
     if (individual) {
       final bytes = await _individualPoint(
         kind,

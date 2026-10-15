@@ -1,0 +1,12 @@
+Flutter assets will be downloaded from https://storage.flutter-io.cn. Make sure you trust this source!
+00:00 +0: loading D:/Project/birdtie/apps/client/test/content_map_panel_test.dart
+00:00 +0: cluster continuation renews the bounded current window after thirty seconds instead of returning to page one
+WINDOW_PAGE 1 requests=3 members=2 error=0 loading=1
+WINDOW_PAGE 2 requests=4 members=3 error=0 loading=1
+WINDOW_PAGE 3 requests=5 members=4 error=0 loading=1
+WINDOW_PAGE 4 requests=6 members=5 error=0 loading=1
+WINDOW_PAGE 5 requests=7 members=6 error=0 loading=1
+WINDOW_PAGE 6 requests=8 members=7 error=0 loading=1
+WINDOW_PAGE 7 requests=9 members=8 error=0 loading=1
+WINDOW_PAGE 8 requests=10 members=9 error=0 loading=1
+00:04 +1: All tests passed!

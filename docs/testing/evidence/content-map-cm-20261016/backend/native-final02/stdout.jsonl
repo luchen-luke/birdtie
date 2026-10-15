@@ -1,0 +1,9 @@
+{"Time":"2026-10-16T06:13:19.0204129+08:00","Action":"start","Package":"github.com/birdtie/birdtie/apps/api/internal/postgres"}
+{"Time":"2026-10-16T06:13:21.1671216+08:00","Action":"run","Package":"github.com/birdtie/birdtie/apps/api/internal/postgres","Test":"TestMapContent171NativeCoordinateAnchorsAndRetirement"}
+{"Time":"2026-10-16T06:13:21.1671216+08:00","Action":"output","Package":"github.com/birdtie/birdtie/apps/api/internal/postgres","Test":"TestMapContent171NativeCoordinateAnchorsAndRetirement","Output":"=== RUN   TestMapContent171NativeCoordinateAnchorsAndRetirement\n"}
+{"Time":"2026-10-16T06:13:23.534359+08:00","Action":"output","Package":"github.com/birdtie/birdtie/apps/api/internal/postgres","Test":"TestMapContent171NativeCoordinateAnchorsAndRetirement","Output":"    map_content_native_test.go:640: migration roundtrip uses independently owned database birdtie_owned_migration_6b6baed8b2480b8c9f2cba42 with 171 actual migrations\n"}
+{"Time":"2026-10-16T06:13:24.0467638+08:00","Action":"output","Package":"github.com/birdtie/birdtie/apps/api/internal/postgres","Test":"TestMapContent171NativeCoordinateAnchorsAndRetirement","Output":"--- PASS: TestMapContent171NativeCoordinateAnchorsAndRetirement (2.88s)\n"}
+{"Time":"2026-10-16T06:13:24.0467638+08:00","Action":"pass","Package":"github.com/birdtie/birdtie/apps/api/internal/postgres","Test":"TestMapContent171NativeCoordinateAnchorsAndRetirement","Elapsed":2.88}
+{"Time":"2026-10-16T06:13:24.0467638+08:00","Action":"output","Package":"github.com/birdtie/birdtie/apps/api/internal/postgres","Output":"PASS\n"}
+{"Time":"2026-10-16T06:13:24.0499465+08:00","Action":"output","Package":"github.com/birdtie/birdtie/apps/api/internal/postgres","Output":"ok  \tgithub.com/birdtie/birdtie/apps/api/internal/postgres\t5.030s\n"}
+{"Time":"2026-10-16T06:13:24.0499465+08:00","Action":"pass","Package":"github.com/birdtie/birdtie/apps/api/internal/postgres","Elapsed":5.03}

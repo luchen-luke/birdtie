@@ -121,7 +121,20 @@
           onStatus(value);
         }
       };
-      map.on('load', () => { if (current(id, job)) { apply(job); status('ready'); } });
+      const suppressProviderPoi = () => {
+        if (!current(id, job)) return;
+        try {
+          for (const layer of map.getStyle().layers || []) {
+            if (layer.type !== 'symbol') continue;
+            const labels = `${layer.id} ${layer['source-layer'] || ''}`.toLowerCase();
+            if (/(^|[\s_:/.-])poi([\s_:/.-]|$)/.test(labels)) {
+              map.setLayoutProperty(layer.id, 'visibility', 'none');
+            }
+          }
+        } catch (_) { /* A style error does not remove Birdtie content. */ }
+      };
+      map.on('style.load', suppressProviderPoi);
+      map.on('load', () => { if (current(id, job)) { suppressProviderPoi(); apply(job); status('ready'); } });
       // Handle errors without logging provider URLs or public token contents.
       map.on('error', () => status('failed'));
       job.observer = new ResizeObserver(() => {

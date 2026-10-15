@@ -1,0 +1,48 @@
+Analyzing owned_map_api.dart, owned_map_controller.dart, owned_map_media_controller.dart, content_map_controller_test.dart...
+
+   info - apps\client\lib\src\workspace\owned_map_api.dart:410:7 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - apps\client\lib\src\workspace\owned_map_api.dart:433:9 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - apps\client\lib\src\workspace\owned_map_api.dart:616:7 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - apps\client\lib\src\workspace\owned_map_api.dart:681:9 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - apps\client\lib\src\workspace\owned_map_api.dart:779:7 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - apps\client\lib\src\workspace\owned_map_api.dart:784:7 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - apps\client\lib\src\workspace\owned_map_api.dart:895:7 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - apps\client\lib\src\workspace\owned_map_api.dart:954:7 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - apps\client\lib\src\workspace\owned_map_api.dart:986:8 - Use an initializing formal to assign a parameter to a field. Try using an initialing formal ('this._client') to initialize the field. - prefer_initializing_formals
+   info - apps\client\lib\src\workspace\owned_map_api.dart:1026:9 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - apps\client\lib\src\workspace\owned_map_api.dart:1062:9 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - apps\client\lib\src\workspace\owned_map_api.dart:1100:7 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - apps\client\lib\src\workspace\owned_map_api.dart:1176:9 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - apps\client\lib\src\workspace\owned_map_api.dart:1236:7 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - apps\client\lib\src\workspace\owned_map_api.dart:1285:9 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - apps\client\lib\src\workspace\owned_map_controller.dart:3:8 - The import of 'dart:typed_data' is unnecessary because all of the used elements are also provided by the import of 'package:flutter/foundation.dart'. Try removing the import directive. - unnecessary_import
+   info - apps\client\lib\src\workspace\owned_map_controller.dart:94:26 - Empty catch block. Try adding statements to the block, adding a comment to the block, or removing the 'catch' clause. - empty_catches
+   info - apps\client\lib\src\workspace\owned_map_controller.dart:138:7 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - apps\client\lib\src\workspace\owned_map_controller.dart:153:7 - Statements in a for should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - apps\client\lib\src\workspace\owned_map_controller.dart:187:9 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - apps\client\lib\src\workspace\owned_map_controller.dart:196:7 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - apps\client\lib\src\workspace\owned_map_controller.dart:226:7 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - apps\client\lib\src\workspace\owned_map_controller.dart:264:7 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - apps\client\lib\src\workspace\owned_map_controller.dart:285:7 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - apps\client\lib\src\workspace\owned_map_controller.dart:330:7 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - apps\client\lib\src\workspace\owned_map_controller.dart:335:7 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - apps\client\lib\src\workspace\owned_map_controller.dart:403:36 - Statements in a for should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - apps\client\lib\src\workspace\owned_map_controller.dart:525:7 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - apps\client\lib\src\workspace\owned_map_controller.dart:543:7 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - apps\client\lib\src\workspace\owned_map_controller.dart:549:37 - Statements in a while should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - apps\client\lib\src\workspace\owned_map_controller.dart:553:9 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - apps\client\lib\src\workspace\owned_map_media_controller.dart:3:8 - The import of 'dart:typed_data' is unnecessary because all of the used elements are also provided by the import of 'package:flutter/foundation.dart'. Try removing the import directive. - unnecessary_import
+   info - apps\client\lib\src\workspace\owned_map_media_controller.dart:86:11 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - apps\client\lib\src\workspace\owned_map_media_controller.dart:102:9 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - apps\client\lib\src\workspace\owned_map_media_controller.dart:116:9 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - apps\client\lib\src\workspace\owned_map_media_controller.dart:120:9 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - apps\client\lib\src\workspace\owned_map_media_controller.dart:146:7 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - apps\client\lib\src\workspace\owned_map_media_controller.dart:166:9 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - apps\client\lib\src\workspace\owned_map_media_controller.dart:209:9 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - apps\client\lib\src\workspace\owned_map_media_controller.dart:249:9 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - apps\client\lib\src\workspace\owned_map_media_controller.dart:263:7 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - apps\client\lib\src\workspace\owned_map_media_controller.dart:307:51 - Statements in a for should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - apps\client\test\content_map_controller_test.dart:3:8 - The import of 'dart:typed_data' is unnecessary because all of the used elements are also provided by the import of 'package:flutter/foundation.dart'. Try removing the import directive. - unnecessary_import
+   info - apps\client\test\content_map_controller_test.dart:337:36 - Statements in a for should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+
+44 issues found.

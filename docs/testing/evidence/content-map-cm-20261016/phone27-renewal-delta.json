@@ -1,0 +1,36 @@
+{
+  "status": "PASS",
+  "scenario": "35s stationary real authorized map, spans two renewal windows",
+  "delta": {
+    "NativeContentMapMetrics": {
+      "mapCreations": 0,
+      "markerCreates": 0,
+      "markerUpdates": 0,
+      "markerDeletes": 0,
+      "renderPasses": 2,
+      "renderMicros": 11192,
+      "styleReadyMicros": 0,
+      "firstContentMicros": 0,
+      "firstCoverMicros": 0,
+      "maxRenderMicros": 0
+    },
+    "OwnedMapMediaController": {
+      "_epoch": 0,
+      "_running": 0,
+      "_reserved": 0,
+      "requests": 0,
+      "decodes": 0,
+      "cacheHits": 6,
+      "inFlightPeak": 0
+    },
+    "OwnedMapController": {
+      "_epoch": 0,
+      "_request": 2,
+      "requests": 2,
+      "cancellations": 0,
+      "cacheHits": 0,
+      "responseBytes": 12636
+    }
+  },
+  "contentWritten": false
+}

@@ -1,0 +1,425 @@
+{
+  "status": "PARTIAL_NORMAL_CANVAS_PASS_ACCESSIBILITY_HIT_FAIL",
+  "headless": true,
+  "browserVersion": "155.0.8059.40",
+  "nonPersistentContext": true,
+  "privateValuesPersisted": false,
+  "contentWrites": 0,
+  "checks": [
+    {
+      "check": "PINNED_OWNER",
+      "passed": true
+    },
+    {
+      "check": "WEB28_DEFAULT_SQUARE_CLUSTERS_COUNT_UNOBSCURED",
+      "passed": true,
+      "notes": "Live screenshot inspected: square 2 and 7 at default zoom12; no unreadable overlaid count."
+    },
+    {
+      "check": "WEB28_REAL_WHEEL_TO_SQUARE_INDEPENDENT_ANCHOR",
+      "passed": true,
+      "notes": "Actual wheel zoom12->14 response200; separate square photo marker visible."
+    },
+    {
+      "check": "WEB28_NORMAL_CANVAS_ANCHOR_EXACT_MOMENT_AND_EXPANDED_PANEL",
+      "passed": true,
+      "notes": "Without enabling accessibility, flt-semantics0: actual anchor-center mouse click incremented momentReads0->1 with placeReads unchanged8; inspected correct moment photo/title in preview and expanded Now panel."
+    },
+    {
+      "check": "WEB28_NORMAL_CANVAS_RETURN_MAP_DOM_RETAINED",
+      "passed": true,
+      "notes": "Expanded Now detail close returned to same map element, one map and one canvas; same zoom and visible marker positions."
+    },
+    {
+      "check": "WEB28_ACCESSIBILITY_POINTER_TARGET_BOUNDARY",
+      "passed": false,
+      "notes": "With Flutter accessibility enabled, upper place semantic direct text overflow intercepted physical mouse click at lower independent anchor: upper place opened. Without semantics same coordinate correctly opened moment. This is not a normal canvas routing failure."
+    }
+  ],
+  "metrics": {
+    "mapQueries": 18,
+    "memberQueries": 0,
+    "placeReads": 8,
+    "momentReads": 5,
+    "coverReads": 17,
+    "denials": 4,
+    "contentWrites": 0,
+    "blockedWrites": 0,
+    "failedRequests": 19,
+    "browserPageErrors": 0
+  },
+  "events": [
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 12.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 14.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 14.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "detail"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 14.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "detail"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 14.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "detail"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 14.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "detail"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 14.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "detail"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 14.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "detail"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 14.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "detail"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 14.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "detail"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 14.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 12.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 12.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 14.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "detail"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 14.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "detail"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 14.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "detail"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 14.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "detail"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 14.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "detail"
+    }
+  ],
+  "logout": "PASS",
+  "finalized": true,
+  "release": {
+    "api": 26,
+    "web": 28,
+    "manifestSha256": "c1e8bd4253942c398075ae328ad22d99e0ffb26f72589118e4b1dbc6d3b76927"
+  },
+  "harnessLimitations": [
+    "attempt01 synchronous stdin suspended Playwright route callbacks; its expiry/navigation observations are invalid as production renewal evidence.",
+    "Final session pumps Playwright event callbacks continuously during stdin waits. Counters include 30-second read-lease renewals and an explicit page reload to disable accessibility; total counts are not single-gesture request counts.",
+    "Failed-request total includes aborted/cancelled external map tile requests. App viewport/detail events in this receipt are 200; pre-login/reload auth denials are not map-content failures."
+  ],
+  "normalCanvasBatch": {
+    "semanticsCount": 0,
+    "wheel": {
+      "zoomBefore": 12,
+      "zoomAfter": 14,
+      "status": 200
+    },
+    "actualAnchorClick": {
+      "placeReadsBefore": 8,
+      "placeReadsAfter": 8,
+      "momentReadsBefore": 0,
+      "momentReadsAfter": 1
+    },
+    "expandedNowPanel": "PASS_VISUAL_CORRECT_MOMENT_PHOTO_AND_TITLE",
+    "closeReturn": {
+      "sameMapDOM": true,
+      "mapContainers": 1,
+      "canvasCount": 1,
+      "sameCameraVisual": true
+    }
+  },
+  "accessibilityFailure": {
+    "status": "FAIL",
+    "enableMethod": "Flutter Enable accessibility placeholder",
+    "actualPointer": [
+      646,
+      462
+    ],
+    "topHit": {
+      "tag": "FLT-SEMANTICS",
+      "role": "button",
+      "labelClass": "PLACE_CONTENT",
+      "rect": {
+        "x": 609.9237667089844,
+        "y": 388.68853759765625,
+        "width": 48,
+        "height": 48,
+        "bottom": 436.68853759765625
+      },
+      "style": {
+        "position": "absolute",
+        "overflow": "visible",
+        "pointerEvents": "all",
+        "transform": "matrix(1, 0, 0, 1, 609.924, 388.689)",
+        "zIndex": 3
+      },
+      "directTextPresent": true
+    },
+    "intendedHit": {
+      "tag": "FLT-SEMANTICS",
+      "role": "button",
+      "labelClass": "MOMENT_ANCHOR",
+      "rect": {
+        "x": 621.984130859375,
+        "y": 438.28948974609375,
+        "width": 48,
+        "height": 48,
+        "bottom": 486.28948974609375
+      }
+    },
+    "observedRead": "PLACE_DETAIL",
+    "expectedRead": "EXACT_MOMENT",
+    "reproductions": 2,
+    "inference": "Long direct semantics text overflows the button box, intercepting pointer outside its 48dp bounds. Actual canvas without semantics routes correctly at identical camera and pointer."
+  },
+  "screenshots": {
+    "default": {
+      "path": "C:\\Users\\chens\\Documents\\Codex\\2026-10-15\\d-project-birdtie-docs-reports-birdtie-2\\outputs\\cm-web28-no-semantics-loaded.png",
+      "sha256": "2ddd31817e12a1cacf34632962259ac53b55d00c70938048ab618e59f384abe7"
+    },
+    "near": {
+      "path": "C:\\Users\\chens\\Documents\\Codex\\2026-10-15\\d-project-birdtie-docs-reports-birdtie-2\\outputs\\cm-web28-no-semantics-near.png",
+      "sha256": "3058cc9345765af9fea0141910efd8c41b002eda442fbb23fa1b94c038772929"
+    },
+    "anchorPreview": {
+      "path": "C:\\Users\\chens\\Documents\\Codex\\2026-10-15\\d-project-birdtie-docs-reports-birdtie-2\\outputs\\cm-web28-no-semantics-anchor-click.png",
+      "sha256": "fe01f490d9e87964bbe796625d1d914576ebe5152dbe50b52201df21d35cb6b2"
+    },
+    "expandedNow": {
+      "path": "C:\\Users\\chens\\Documents\\Codex\\2026-10-15\\d-project-birdtie-docs-reports-birdtie-2\\outputs\\cm-web28-no-semantics-anchor-expanded.png",
+      "sha256": "4223b523466b60abb60d0f035e56003c885c6f4c7cef10b46851c79dfea76b97"
+    },
+    "return": {
+      "path": "C:\\Users\\chens\\Documents\\Codex\\2026-10-15\\d-project-birdtie-docs-reports-birdtie-2\\outputs\\cm-web28-no-semantics-return.png",
+      "sha256": "8f6ae270ef37790c931c48aa29b5087b0e4aa7be04b049a0e745a41d663e2e27"
+    },
+    "accessibilityWrongTarget": {
+      "path": "C:\\Users\\chens\\Documents\\Codex\\2026-10-15\\d-project-birdtie-docs-reports-birdtie-2\\outputs\\cm-web28-anchor-selected-final.png",
+      "sha256": "0c3e73bb2e7cecba35b115d788afc26948d5529c974a51d8f9b98a347bd02083"
+    }
+  },
+  "notRun": [
+    "Full CM01-CM09 replay on Web28",
+    "Web28 content publishing/editing/delete flows",
+    "Screen recording",
+    "Screen reader keyboard navigation"
+  ]
+}

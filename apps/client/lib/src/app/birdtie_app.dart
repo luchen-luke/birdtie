@@ -55,6 +55,7 @@ class _BirdtieShellState extends State<BirdtieShell>
   void initState() {
     super.initState();
     _city = PublicCityController(
+      loadUnrequestedPlaces: false,
       authorizationHeader: () => _auth.authorizationHeader,
       explorationStore: const SecureExplorationCityStore(),
     );

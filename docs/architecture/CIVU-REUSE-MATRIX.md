@@ -250,3 +250,12 @@ Birdtie 当前工作树核对：144 UPDATE 只允许私人草稿，公开撤回�
 API23/schema170、Web24与APK24已部署安装。真实手机已显示Civu式地点照片、名称和动态数；点选、在Now阅读正文/图片、返回与续期已验收。修复Android照片被旧图标名覆盖、透明画布误选邻点和弹层可见性交接。定向数据库/API/客户端测试及真实媒体摘要通过，完整记录见 `docs/reports/BIRDTIE-NOW-CIVU-MAP-2026-10-16.md` 和 `docs/testing/evidence/now-civu-map-20261016/checkpoint170.json`。
 
 此结论仅针对地图与阅读范围，不把APK19发布证据改记为APK24重测。全仓回归、iOS、Web完整交互、全部城市/账号和最终包完整发布重跑仍NOT_RUN，父任务保持IN_PROGRESS。
+
+
+## 2026-10-16 内容地图 CM 增量接续
+
+此节覆盖前轮“默认铺全部地点”的行为，不改历史执行事实。Civu-client本地/GitHub仍同1bbf0613，原项目只读；抽取persistent_map_scene的独立moment anchor、shootingPoint方形媒体、persistent_map_host的常驻/settled/取消/LRU、explore_map_viewport四角跨界以及Mapbox marker delta和12/4预算语义。未找到明确业务源码许可，未直接复制页面/导航/global state；Civu density返回空clusters不能作为聚合完成证据。
+
+Birdtie以原GET /v1/me/map-content适配v2视口SQL，ACL前置后聚合并完整分页，171恢复16个确有授权的旧地理锚点，零fake POI、源库零写。Now默认目录空读关闭；任务、收藏、旅程、主题地图、活动保留独立上下文。方形动态锚点→正确entry→原Now面板正文/媒体；无位置发布不变。原生按DPR居中方形内容聚合、稳定图片身份和增量annotation；Web滚轮/旋转/双击查询漏触发已修。授权与分页位置凭据分离，过期内容清除，当前320成员窗口可续页。
+
+API26/schema171、APK/Web29（APK与28逐字节一致）实际构建部署安装与目标验收，以docs/testing/evidence/content-map-cm-20261016/checkpoint171.json为准。来源映射、真实路径、测试/失败/性能和NOT_RUN见docs/reports/BIRDTIE-NOW-CONTENT-MAP-2026-10-16.md。严格同camera手机A/B、全部250页大聚合真机、真实跨设备撤回push未测，不称全部CM09或父任务完成。

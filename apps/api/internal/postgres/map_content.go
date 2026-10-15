@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/birdtie/birdtie/apps/api/internal/content"
@@ -25,7 +26,9 @@ type mapContentMoment struct {
 	owner, stamp string
 	places       []string
 }
+type mapContentReadFilter struct{ PlaceIDs, MomentIDs []string }
 type mapContentSnapshot struct {
+	filter    *mapContentReadFilter
 	at, until time.Time
 	source    string
 	places    map[string]*mapContentPlace
@@ -117,21 +120,24 @@ func mapContentBorrowedStampSQL(kind, dest string) string {
 // Moment revision and its location links did not change. These are small row
 // facts only: no private original, derivative or video bytea is loaded here.
 const mapContentMediaFactsSQL = `SELECT coalesce(jsonb_agg(token ORDER BY kind,id),'[]')::text FROM(
- SELECT 'PRIVATE_IMAGE' kind,i.id::text id,jsonb_build_array(i.id,i.xmin::text,i.status,i.revision,i.derivative_sha256,i.retain_until>clock_timestamp(),a.xmin::text,a.state) token FROM private_moment_images i LEFT JOIN media_assets a ON a.id=i.id AND a.owner_account_id=i.owner_account_id WHERE i.moment_id=ANY($1::uuid[])
- UNION ALL SELECT 'PRIVATE_VIDEO',v.id::text,jsonb_build_array(v.id,v.xmin::text,v.status,v.revision,v.content_sha256,v.poster_sha256,v.retain_until>clock_timestamp(),a.xmin::text,a.state) FROM private_moment_videos v LEFT JOIN media_assets a ON a.id=v.id AND a.owner_account_id=v.owner_account_id WHERE v.moment_id=ANY($1::uuid[])
- UNION ALL SELECT 'PUBLIC_SET',s.moment_id::text,jsonb_build_array(s.moment_id,s.xmin::text,s.version,s.status,s.approved_moment_revision,s.source_binding) FROM public_moment_media_sets s WHERE s.moment_id=ANY($1::uuid[])
- UNION ALL SELECT 'PUBLIC_ATTACHMENT',concat_ws(':',a.moment_id,a.set_version,a.position),jsonb_build_array(a.xmin::text,a.media_id,a.media_version,a.rights,a.retention_until>clock_timestamp(),a.display IS NOT NULL,a.thumbnail IS NOT NULL) FROM public_moment_media_attachments a JOIN public_moment_media_sets s ON s.moment_id=a.moment_id AND s.version=a.set_version WHERE a.moment_id=ANY($1::uuid[])
- UNION ALL SELECT 'PUBLIC_VIDEO',concat_ws(':',p.moment_id,p.set_version,p.position),jsonb_build_array(p.xmin::text,p.sha256,p.contract,p.content IS NOT NULL) FROM public_moment_media_video_payloads p JOIN public_moment_media_sets s ON s.moment_id=p.moment_id AND s.version=p.set_version WHERE p.moment_id=ANY($1::uuid[])
- UNION ALL SELECT 'REFERENCE',r.id::text,jsonb_build_array(r.xmin::text,l.xmin::text,m.xmin::text,i.xmin::text,asset.xmin::text,contributor.xmin::text,l.status,m.status,i.status,i.retain_until>clock_timestamp(),asset.state,
+ SELECT 'PRIVATE_IMAGE' kind,i.id::text id,jsonb_build_array('moment',i.moment_id,i.id,i.xmin::text,i.status,i.revision,i.derivative_sha256,i.retain_until>clock_timestamp(),a.xmin::text,a.state) token FROM private_moment_images i LEFT JOIN media_assets a ON a.id=i.id AND a.owner_account_id=i.owner_account_id WHERE i.moment_id=ANY($1::uuid[])
+ UNION ALL SELECT 'PRIVATE_VIDEO',v.id::text,jsonb_build_array('moment',v.moment_id,v.id,v.xmin::text,v.status,v.revision,v.content_sha256,v.poster_sha256,v.retain_until>clock_timestamp(),a.xmin::text,a.state) FROM private_moment_videos v LEFT JOIN media_assets a ON a.id=v.id AND a.owner_account_id=v.owner_account_id WHERE v.moment_id=ANY($1::uuid[])
+ UNION ALL SELECT 'PUBLIC_SET',s.moment_id::text,jsonb_build_array('moment',s.moment_id,s.moment_id,s.xmin::text,s.version,s.status,s.approved_moment_revision,s.source_binding) FROM public_moment_media_sets s WHERE s.moment_id=ANY($1::uuid[])
+ UNION ALL SELECT 'PUBLIC_ATTACHMENT',concat_ws(':',a.moment_id,a.set_version,a.position),jsonb_build_array('moment',a.moment_id,a.xmin::text,a.media_id,a.media_version,a.rights,a.retention_until>clock_timestamp(),a.display IS NOT NULL,a.thumbnail IS NOT NULL) FROM public_moment_media_attachments a JOIN public_moment_media_sets s ON s.moment_id=a.moment_id AND s.version=a.set_version WHERE a.moment_id=ANY($1::uuid[])
+ UNION ALL SELECT 'PUBLIC_VIDEO',concat_ws(':',p.moment_id,p.set_version,p.position),jsonb_build_array('moment',p.moment_id,p.xmin::text,p.sha256,p.contract,p.content IS NOT NULL) FROM public_moment_media_video_payloads p JOIN public_moment_media_sets s ON s.moment_id=p.moment_id AND s.version=p.set_version WHERE p.moment_id=ANY($1::uuid[])
+ UNION ALL SELECT 'REFERENCE',r.id::text,jsonb_build_array('place',r.target_id,r.xmin::text,l.xmin::text,m.xmin::text,i.xmin::text,asset.xmin::text,contributor.xmin::text,l.status,m.status,i.status,i.retain_until>clock_timestamp(),asset.state,
  (SELECT coalesce(jsonb_agg(jsonb_build_array(e.owner_account_id,e.target_account_id,e.version,e.xmin::text)ORDER BY e.owner_account_id,e.target_account_id),'[]')FROM person_block_control_epochs e WHERE(e.owner_account_id=$2 AND e.target_account_id=r.owner_account_id)OR(e.owner_account_id=r.owner_account_id AND e.target_account_id=$2)),
  EXISTS(SELECT 1 FROM account_blocks b WHERE(b.blocker_account_id=$2 AND b.blocked_account_id=r.owner_account_id)OR(b.blocker_account_id=r.owner_account_id AND b.blocked_account_id=$2)))
  FROM legacy_reference_media_relations r JOIN private_reference_image_links l ON l.id=r.id JOIN private_reference_image_materials m ON m.id=l.material_id
  JOIN accounts contributor ON contributor.id=r.owner_account_id LEFT JOIN private_moment_images i ON i.id=m.backing_image_id LEFT JOIN media_assets asset ON asset.id=i.id
- WHERE r.target_type='PLACE' AND(r.owner_account_id=$2 OR r.review_status='approved')
+ WHERE r.target_type='PLACE' AND r.target_id=ANY($3::uuid[]) AND(r.owner_account_id=$2 OR r.review_status='approved')
  )facts`
 
-func readMapContentSnapshot(ctx context.Context, f humanWriteFrame) (mapContentSnapshot, error) {
+func readMapContentSnapshot(ctx context.Context, f humanWriteFrame, filters ...*mapContentReadFilter) (mapContentSnapshot, error) {
 	v := mapContentSnapshot{places: map[string]*mapContentPlace{}, moments: map[string]*mapContentMoment{}, order: []string{}}
+	if len(filters) > 0 {
+		v.filter = filters[0]
+	}
 	if f.tx.QueryRow(ctx, `SELECT clock_timestamp()`).Scan(&v.at) != nil {
 		return v, content.ErrUnavailable
 	}
@@ -145,7 +151,14 @@ func readMapContentSnapshot(ctx context.Context, f humanWriteFrame) (mapContentS
 		return v, identity.ErrControlChanged
 	}
 	facts := []any{content.MapContentSchema, historyReader(f), principal}
-	rows, e := f.tx.Query(ctx, mapContentPlaceSQL())
+	placeSQL := mapContentPlaceSQL()
+	var placeArgs []any
+	if v.filter != nil {
+		placeSQL = strings.Replace(placeSQL, "WHERE p.publication_status IN", "WHERE p.id=ANY($1::uuid[]) AND p.publication_status IN", 1)
+		placeSQL = strings.Replace(placeSQL, " LIMIT 10001", "", 1)
+		placeArgs = []any{v.filter.PlaceIDs}
+	}
+	rows, e := f.tx.Query(ctx, placeSQL, placeArgs...)
 	if e != nil {
 		return v, content.ErrUnavailable
 	}
@@ -170,10 +183,17 @@ func readMapContentSnapshot(ctx context.Context, f humanWriteFrame) (mapContentS
 		e = rows.Err()
 	}
 	rows.Close()
-	if e != nil || count > 10000 {
+	if e != nil || v.filter == nil && count > 10000 {
 		return v, content.ErrUnavailable
 	}
-	rows, e = f.tx.Query(ctx, mapContentMomentsSQL, f.a.ID)
+	momentSQL := mapContentMomentsSQL
+	momentArgs := []any{f.a.ID}
+	if v.filter != nil {
+		momentSQL = strings.Replace(momentSQL, "WHERE m.status<>", "WHERE m.id=ANY($2::uuid[]) AND m.status<>", 1)
+		momentSQL = strings.Replace(momentSQL, " LIMIT 10001", "", 1)
+		momentArgs = append(momentArgs, v.filter.MomentIDs)
+	}
+	rows, e = f.tx.Query(ctx, momentSQL, momentArgs...)
 	if e != nil {
 		return v, content.ErrUnavailable
 	}
@@ -192,7 +212,7 @@ func readMapContentSnapshot(ctx context.Context, f humanWriteFrame) (mapContentS
 		e = rows.Err()
 	}
 	rows.Close()
-	if e != nil || len(v.order) > 10000 {
+	if e != nil || v.filter == nil && len(v.order) > 10000 {
 		return v, content.ErrUnavailable
 	}
 	if len(v.order) > 0 {
@@ -233,7 +253,13 @@ func readMapContentSnapshot(ctx context.Context, f humanWriteFrame) (mapContentS
 			return v, content.ErrUnavailable
 		}
 	}
-	rows, e = f.tx.Query(ctx, ownMapPlaceRelationsSQL(), f.a.ID)
+	ownSQL := ownMapPlaceRelationsSQL()
+	ownArgs := []any{f.a.ID}
+	if v.filter != nil {
+		ownSQL = "SELECT ''::text,''::text,NULL::timestamptz WHERE false"
+		ownArgs = nil
+	}
+	rows, e = f.tx.Query(ctx, ownSQL, ownArgs...)
 	if e != nil {
 		return v, content.ErrUnavailable
 	}
@@ -255,11 +281,16 @@ func readMapContentSnapshot(ctx context.Context, f humanWriteFrame) (mapContentS
 		e = rows.Err()
 	}
 	rows.Close()
-	if e != nil || count > 10000 {
+	if e != nil || v.filter == nil && count > 10000 {
 		return v, content.ErrUnavailable
 	}
 	var mediaFacts string
-	if e = f.tx.QueryRow(ctx, mapContentMediaFactsSQL, v.order, f.a.ID).Scan(&mediaFacts); e != nil {
+	pids := []string{}
+	for id := range v.places {
+		pids = append(pids, id)
+	}
+	sort.Strings(pids)
+	if e = f.tx.QueryRow(ctx, mapContentMediaFactsSQL, v.order, f.a.ID, pids).Scan(&mediaFacts); e != nil {
 		return v, content.ErrUnavailable
 	}
 	facts = append(facts, mediaFacts)
@@ -366,91 +397,27 @@ func (s *Store) beginMapContent(ctx context.Context, d [32]byte, a identity.Acto
 	}
 	// JIT dominates this bounded retained-field projection. Keep execution
 	// interpreted only for this transaction; every current authority predicate
-	// and final source/deadline proof still runs unchanged.
-	if _, e = f.tx.Exec(ctx, `SET LOCAL jit=off`); e != nil {
+	// and final source/deadline proof still runs unchanged. Viewport cardinality
+	// changes by orders of magnitude while panning: a cached generic range plan
+	// otherwise repeats a tiny-viewport nested loop for a 10k-content viewport.
+	// Bind the plan to this request's bounds without altering pool/global state.
+	if _, e = f.tx.Exec(ctx, `SET LOCAL jit=off; SET LOCAL plan_cache_mode=force_custom_plan`); e != nil {
 		_ = f.tx.Rollback(context.Background())
 		return ctx, f, content.ErrUnavailable
 	}
 	return ctx, f, nil
 }
-func (s *Store) finishMapContent(ctx context.Context, f humanWriteFrame, source string, until time.Time) error {
+func (s *Store) finishMapContent(ctx context.Context, f humanWriteFrame, snapshot mapContentSnapshot, until time.Time) error {
 	return s.humanWriteFinish(ctx, f, humanWriteGateDeadline(ctx, f, until, func() error {
-		fresh, e := readMapContentSnapshot(ctx, f)
+		fresh, e := readMapContentSnapshot(ctx, f, snapshot.filter)
 		if e != nil {
 			return e
 		}
-		if fresh.source != source || fresh.until.Before(until) {
+		if fresh.source != snapshot.source || fresh.until.Before(until) {
 			return identity.ErrControlChanged
 		}
 		return nil
 	}))
-}
-
-func (s *Store) ReadHumanMapContent(ctx context.Context, d [32]byte, a identity.Actor, q content.MapContentQuery) (content.MapContentPage, error) {
-	p := content.MapContentPage{SchemaVersion: content.MapContentSchema, Scope: "MAP_CONTENT", ViewerAccountID: a.ID, CityID: q.CityID, Bounds: q.Bounds, Pins: []content.MapContentPin{}}
-	if !q.Valid() {
-		return p, content.ErrInvalid
-	}
-	ctx, f, e := s.beginMapContent(ctx, d, a)
-	if e != nil {
-		return p, e
-	}
-	defer f.tx.Rollback(context.Background())
-	var city bool
-	if f.tx.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM cities WHERE id=$1 AND publication_status='published' AND(expires_at IS NULL OR expires_at>clock_timestamp()))`, q.CityID).Scan(&city) != nil {
-		return p, content.ErrUnavailable
-	}
-	if !city {
-		return p, content.ErrNotFound
-	}
-	v, e := readMapContentSnapshot(ctx, f)
-	if e != nil {
-		return p, e
-	}
-	p.ObservedAt, p.ValidUntil = v.at, v.until
-	ids := []string{}
-	for id, x := range v.places {
-		if x.pin.Anchor.Valid() && len(x.pin.VisibilitySources) > 0 && x.pin.Anchor.Longitude >= q.Bounds.West && x.pin.Anchor.Longitude <= q.Bounds.East && x.pin.Anchor.Latitude >= q.Bounds.South && x.pin.Anchor.Latitude <= q.Bounds.North {
-			ids = append(ids, id)
-		}
-	}
-	sort.Strings(ids)
-	p.Truncated = len(ids) > 500
-	if p.Truncated {
-		ids = ids[:500]
-	}
-	if e = s.loadMapContentReferenceAssetsTx(ctx, f, &v, ids); e != nil {
-		return p, e
-	}
-	for _, id := range ids {
-		x := v.places[id]
-		shrinkMapLease(&p.ValidUntil, x.until)
-		if x.catalog || x.published {
-			shrinkMapLease(&p.ValidUntil, x.publicUntil)
-		}
-		pin := x.pin
-		cover, e := s.mapContentCoverTx(ctx, f, &v, id)
-		if e != nil {
-			return p, e
-		}
-		pin.Cover = cover
-		if cover != nil && !containsMapString(pin.VisibilitySources, cover.VisibilitySource) {
-			pin.VisibilitySources = append(pin.VisibilitySources, cover.VisibilitySource)
-			sort.Strings(pin.VisibilitySources)
-		}
-		pin.SourceVersion = content.MomentControlHash([]any{v.source, id, pin.VisibilitySources, pin.Moments, cover})
-		p.Pins = append(p.Pins, pin)
-	}
-	shrinkMapLease(&p.ValidUntil, &v.until)
-	p.SourceVersion = content.MomentControlHash([]any{v.source, q.CityID, q.Bounds, p.Pins, p.Truncated})
-	if !p.Valid(time.Now().UTC()) {
-		return p, content.ErrUnavailable
-	}
-	if e = s.finishMapContent(ctx, f, v.source, p.ValidUntil); e != nil {
-		return content.MapContentPage{}, e
-	}
-	p.ResponseProof = &mapContentResponseProof{s: s, d: d, a: a, kind: "map", q: q, source: p.SourceVersion, until: p.ValidUntil}
-	return p, nil
 }
 
 func (s *Store) mapContentMomentTx(ctx context.Context, f humanWriteFrame, v *mapContentSnapshot, id string) (content.MapContentMoment, error) {
@@ -492,7 +459,11 @@ func (s *Store) ReadHumanMapContentMoment(ctx context.Context, d [32]byte, a ide
 		return content.MapContentMoment{}, e
 	}
 	defer f.tx.Rollback(context.Background())
-	v, e := readMapContentSnapshot(ctx, f)
+	filter, e := mapContentTargetFilter(ctx, f, "moments", id)
+	if e != nil {
+		return content.MapContentMoment{}, e
+	}
+	v, e := readMapContentSnapshot(ctx, f, filter)
 	if e != nil {
 		return content.MapContentMoment{}, e
 	}
@@ -500,7 +471,7 @@ func (s *Store) ReadHumanMapContentMoment(ctx context.Context, d [32]byte, a ide
 	if e != nil {
 		return r, e
 	}
-	if e = s.finishMapContent(ctx, f, v.source, r.ValidUntil); e != nil {
+	if e = s.finishMapContent(ctx, f, v, r.ValidUntil); e != nil {
 		return content.MapContentMoment{}, e
 	}
 	r.ResponseProof = &mapContentResponseProof{s: s, d: d, a: a, kind: "moment", id: id, source: r.SourceVersion, until: r.ValidUntil}
@@ -517,7 +488,11 @@ func (s *Store) ReadHumanMapContentPlace(ctx context.Context, d [32]byte, a iden
 		return p, e
 	}
 	defer f.tx.Rollback(context.Background())
-	v, e := readMapContentSnapshot(ctx, f)
+	filter, e := mapContentTargetFilter(ctx, f, "places", id)
+	if e != nil {
+		return p, e
+	}
+	v, e := readMapContentSnapshot(ctx, f, filter)
 	if e != nil {
 		return p, e
 	}
@@ -585,7 +560,7 @@ func (s *Store) ReadHumanMapContentPlace(ctx context.Context, d [32]byte, a iden
 	if !p.Valid(time.Now().UTC()) {
 		return p, content.ErrUnavailable
 	}
-	if e = s.finishMapContent(ctx, f, v.source, p.ValidUntil); e != nil {
+	if e = s.finishMapContent(ctx, f, v, p.ValidUntil); e != nil {
 		return content.MapContentPlacePage{}, e
 	}
 	p.ResponseProof = &mapContentResponseProof{s: s, d: d, a: a, kind: "place", id: id, cursor: cursor, source: p.SourceVersion, until: p.ValidUntil}

@@ -4,8 +4,11 @@ import (
 	"bytes"
 	"context"
 	"image"
-	_ "image/jpeg"
+	"image/jpeg"
 	_ "image/png"
+	"net/url"
+	"strings"
+	"sync"
 	"time"
 
 	"github.com/birdtie/birdtie/apps/api/internal/content"
@@ -58,7 +61,7 @@ func (s *Store) readMapContentMomentMediaTx(ctx context.Context, f humanWriteFra
 		}
 		if set.Status == "READY" {
 			for _, a := range set.Attachments {
-				source := content.MomentControlHash([]any{v.source, m.stamp, set.SourceVersion, a.MediaID, a.MediaVersion})
+				source := content.MomentControlHash([]any{historyReader(f), m.stamp, set.SourceVersion, a.MediaID, a.MediaVersion})
 				x := mapContentAsset{kind: "public-image", blobID: a.MediaID, mid: m.v.ID, until: &set.ValidUntil}
 				x.media = content.MapContentMedia{Kind: "IMAGE", ID: a.MediaID, Revision: a.MediaVersion, MIMEType: "image/jpeg", Width: a.Width, Height: a.Height, ByteCount: a.DisplayBytes, SHA256: a.DisplaySHA, SourceVersion: source, ContentPath: mapMediaPath(m.v.ID, a.MediaID, source)}
 				x.image = content.MapContentImage{Kind: "MOMENT_IMAGE", ID: a.MediaID, Revision: a.MediaVersion, VisibilitySource: m.v.VisibilitySource, MIMEType: "image/jpeg", Width: a.Width, Height: a.Height, ByteCount: a.ThumbnailBytes, SHA256: a.ThumbnailSHA, SourceVersion: content.MomentControlHash([]any{source, "thumbnail"})}
@@ -119,7 +122,7 @@ func (s *Store) readMapContentMomentMediaTx(ctx context.Context, f humanWriteFra
 		}
 		x.blobID = x.media.ID
 		x.media.Kind = "IMAGE"
-		x.media.SourceVersion = content.MomentControlHash([]any{v.source, m.stamp, stamp, x.media.ID, x.media.Revision, x.media.SHA256})
+		x.media.SourceVersion = content.MomentControlHash([]any{historyReader(f), m.stamp, stamp, x.media.ID, x.media.Revision, x.media.SHA256})
 		x.media.ContentPath = mapMediaPath(m.v.ID, x.media.ID, x.media.SourceVersion)
 		x.image = content.MapContentImage{Kind: "MOMENT_IMAGE", ID: x.media.ID, Revision: x.media.Revision, VisibilitySource: m.v.VisibilitySource, MIMEType: x.media.MIMEType, Width: x.media.Width, Height: x.media.Height, ByteCount: x.media.ByteCount, SHA256: x.media.SHA256, SourceVersion: x.media.SourceVersion, ContentPath: x.media.ContentPath}
 		out = append(out, x)
@@ -153,7 +156,7 @@ func (s *Store) readMapContentMomentMediaTx(ctx context.Context, f humanWriteFra
 		x.media.DurationMs = &duration
 		x.media.VideoCodec = &video
 		x.media.AudioCodec = &audio
-		x.media.SourceVersion = content.MomentControlHash([]any{v.source, m.stamp, stamp, x.media.ID, x.media.Revision, x.media.SHA256})
+		x.media.SourceVersion = content.MomentControlHash([]any{historyReader(f), m.stamp, stamp, x.media.ID, x.media.Revision, x.media.SHA256})
 		x.media.ContentPath = mapMediaPath(m.v.ID, x.media.ID, x.media.SourceVersion)
 		x.image = content.MapContentImage{Kind: "MOMENT_VIDEO_POSTER", ID: x.media.ID, Revision: x.media.Revision, VisibilitySource: m.v.VisibilitySource, MIMEType: "image/jpeg", Width: x.media.Width, Height: x.media.Height, ByteCount: posterSize, SHA256: posterSHA, SourceVersion: content.MomentControlHash([]any{x.media.SourceVersion, "poster", posterSHA})}
 		x.image.ContentPath = mapMediaPath(m.v.ID, x.media.ID, x.image.SourceVersion) + "&variant=poster"
@@ -251,7 +254,7 @@ func (s *Store) loadMapContentReferenceAssetsTx(ctx context.Context, f humanWrit
 		}
 		x.image.Kind = "REFERENCE_IMAGE"
 		x.image.VisibilitySource = scope
-		x.image.SourceVersion = content.MomentControlHash([]any{v.source, pid, scope, stamp, x.image.ID, x.image.Revision, x.image.SHA256})
+		x.image.SourceVersion = content.MomentControlHash([]any{historyReader(f), pid, scope, stamp, x.image.ID, x.image.Revision, x.image.SHA256})
 		x.image.ContentPath = mapImagePath(pid, x.image.ID, x.image.SourceVersion)
 		if x.image.Valid() {
 			loaded[pid] = append(loaded[pid], x)
@@ -335,7 +338,7 @@ func (s *Store) ReadHumanMapContentBinary(ctx context.Context, d [32]byte, a ide
 
 func (s *Store) readHumanMapContentBinary(ctx context.Context, d [32]byte, a identity.Actor, targetType, target, id, source, variant string, loadBytes bool) (content.MapContentBinary, error) {
 	r := content.MapContentBinary{}
-	if (targetType != "places" && targetType != "moments") || !identity.HumanControlUUID(target) || !identity.HumanControlUUID(id) || !content.MomentControlHex(source) || (variant != "" && variant != "poster") || targetType == "places" && variant != "" {
+	if (targetType != "places" && targetType != "moments") || !identity.HumanControlUUID(target) || !identity.HumanControlUUID(id) || !content.MomentControlHex(source) || (variant != "" && variant != "poster" && variant != "marker") || targetType == "places" && variant != "" && variant != "marker" {
 		return r, content.ErrInvalid
 	}
 	ctx, f, e := s.beginMapContent(ctx, d, a)
@@ -343,13 +346,18 @@ func (s *Store) readHumanMapContentBinary(ctx context.Context, d [32]byte, a ide
 		return r, e
 	}
 	defer f.tx.Rollback(context.Background())
-	v, e := readMapContentSnapshot(ctx, f)
+	filter, e := mapContentTargetFilter(ctx, f, targetType, target)
+	if e != nil {
+		return r, e
+	}
+	v, e := readMapContentSnapshot(ctx, f, filter)
 	if e != nil {
 		return r, e
 	}
 	r.ValidUntil = v.until
 	var chosen *mapContentAsset
-	poster := variant == "poster"
+	marker := variant == "marker"
+	poster := variant == "poster" || marker
 	if targetType == "moments" {
 		m := v.moments[target]
 		if m == nil {
@@ -363,6 +371,9 @@ func (s *Store) readHumanMapContentBinary(ctx context.Context, d [32]byte, a ide
 			want := x.media.SourceVersion
 			if poster {
 				want = x.image.SourceVersion
+			}
+			if marker {
+				want = mapMarkerVersion(want)
 			}
 			if x.media.ID == id && want == source {
 				xx := x
@@ -384,7 +395,11 @@ func (s *Store) readHumanMapContentBinary(ctx context.Context, d [32]byte, a ide
 			return r, e
 		}
 		for _, x := range refs {
-			if x.image.ID == id && x.image.SourceVersion == source {
+			want := x.image.SourceVersion
+			if marker {
+				want = mapMarkerVersion(want)
+			}
+			if x.image.ID == id && want == source {
 				xx := x
 				chosen = &xx
 				break
@@ -401,7 +416,11 @@ func (s *Store) readHumanMapContentBinary(ctx context.Context, d [32]byte, a ide
 					return r, e
 				}
 				for _, x := range assets {
-					if x.image.ID == id && content.MomentControlHash([]any{x.image.SourceVersion, target, "cover"}) == source {
+					want := content.MomentControlHash([]any{x.image.SourceVersion, target, "cover"})
+					if marker {
+						want = mapMarkerVersion(want)
+					}
+					if x.image.ID == id && want == source {
 						xx := x
 						chosen = &xx
 						poster = true
@@ -423,8 +442,24 @@ func (s *Store) readHumanMapContentBinary(ctx context.Context, d [32]byte, a ide
 	if targetType == "places" || poster || x.kind == "reference" {
 		r.MIMEType, r.SHA256 = x.image.MIMEType, x.image.SHA256
 	}
+	if marker {
+		thumb, err := s.mapMarkerBytesTx(ctx, f, x, source)
+		if err != nil {
+			return r, err
+		}
+		r.MIMEType = "image/jpeg"
+		r.SHA256 = thumb.sha
+		if e = s.finishMapContent(ctx, f, v, r.ValidUntil); e != nil {
+			return r, e
+		}
+		if loadBytes {
+			r.Bytes = append([]byte(nil), thumb.bytes...)
+			r.ResponseProof = &mapContentBinaryProof{s: s, d: d, a: a, targetType: targetType, target: target, id: id, source: source, variant: variant, mimeType: r.MIMEType, sha256: r.SHA256, until: r.ValidUntil}
+		}
+		return r, nil
+	}
 	if !loadBytes {
-		if e = s.finishMapContent(ctx, f, v.source, r.ValidUntil); e != nil {
+		if e = s.finishMapContent(ctx, f, v, r.ValidUntil); e != nil {
 			return r, e
 		}
 		return r, nil
@@ -469,11 +504,181 @@ func (s *Store) readHumanMapContentBinary(ctx context.Context, d [32]byte, a ide
 		clear(raw)
 		return r, content.ErrUnavailable
 	}
-	if e = s.finishMapContent(ctx, f, v.source, r.ValidUntil); e != nil {
+	if e = s.finishMapContent(ctx, f, v, r.ValidUntil); e != nil {
 		clear(raw)
 		return r, e
 	}
 	r.Bytes = raw
 	r.ResponseProof = &mapContentBinaryProof{s: s, d: d, a: a, targetType: targetType, target: target, id: id, source: source, variant: variant, mimeType: r.MIMEType, sha256: r.SHA256, until: r.ValidUntil}
 	return r, nil
+}
+
+// Small derivatives are cached in RAM only. The cache never answers an HTTP
+// request before that request rebuilds its current content/media authority.
+// Stable source versions isolate readers without storing a bearer token.
+type mapMarkerThumbnail struct {
+	bytes         []byte
+	width, height int
+	sha           string
+	used          time.Time
+}
+
+var mapMarkerCache = struct {
+	sync.Mutex
+	items map[string]mapMarkerThumbnail
+	bytes int
+}{items: map[string]mapMarkerThumbnail{}}
+var mapMarkerDecodes = make(chan struct{}, 2)
+
+func mapMarkerVersion(source string) string {
+	return content.MomentControlHash([]any{source, "marker160-v1"})
+}
+func cachedMapMarker(key string) (mapMarkerThumbnail, bool) {
+	mapMarkerCache.Lock()
+	defer mapMarkerCache.Unlock()
+	v, ok := mapMarkerCache.items[key]
+	if ok {
+		v.used = time.Now()
+		mapMarkerCache.items[key] = v
+	}
+	return v, ok
+}
+func saveMapMarker(key string, v mapMarkerThumbnail) {
+	mapMarkerCache.Lock()
+	defer mapMarkerCache.Unlock()
+	if old, ok := mapMarkerCache.items[key]; ok {
+		mapMarkerCache.bytes -= len(old.bytes)
+	}
+	v.used = time.Now()
+	mapMarkerCache.items[key] = v
+	mapMarkerCache.bytes += len(v.bytes)
+	for len(mapMarkerCache.items) > 96 || mapMarkerCache.bytes > 8*1024*1024 {
+		oldest := ""
+		var at time.Time
+		for k, x := range mapMarkerCache.items {
+			if oldest == "" || x.used.Before(at) {
+				oldest = k
+				at = x.used
+			}
+		}
+		mapMarkerCache.bytes -= len(mapMarkerCache.items[oldest].bytes)
+		delete(mapMarkerCache.items, oldest)
+	}
+}
+func (s *Store) mapMarkerBytesTx(ctx context.Context, f humanWriteFrame, x mapContentAsset, key string) (mapMarkerThumbnail, error) {
+	if cached, ok := cachedMapMarker(key); ok {
+		return cached, nil
+	}
+	select {
+	case mapMarkerDecodes <- struct{}{}:
+	case <-ctx.Done():
+		return mapMarkerThumbnail{}, content.ErrUnavailable
+	}
+	defer func() { <-mapMarkerDecodes }()
+	if cached, ok := cachedMapMarker(key); ok {
+		return cached, nil
+	}
+	var raw []byte
+	var e error
+	switch x.kind {
+	case "reference":
+		e = f.tx.QueryRow(ctx, `SELECT coalesce(m.content,i.derivative) FROM private_reference_image_materials m LEFT JOIN private_moment_images i ON i.id=m.backing_image_id WHERE m.id=$1 AND m.status='READY_PRIVATE'`, x.blobID).Scan(&raw)
+	case "private-image":
+		e = f.tx.QueryRow(ctx, `SELECT derivative FROM private_moment_images WHERE id=$1 AND status='ready_private' AND retain_until>clock_timestamp()`, x.blobID).Scan(&raw)
+	case "private-video":
+		e = f.tx.QueryRow(ctx, `SELECT poster FROM private_moment_videos WHERE id=$1 AND status='ready_private' AND retain_until>clock_timestamp()`, x.blobID).Scan(&raw)
+	case "public-image", "public-video":
+		e = f.tx.QueryRow(ctx, `SELECT a.thumbnail FROM public_moment_media_attachments a JOIN public_moment_media_sets s ON s.moment_id=a.moment_id AND s.version=a.set_version AND s.status='READY' WHERE a.moment_id=$1 AND a.media_id=$2 AND a.retention_until>clock_timestamp()`, x.mid, x.blobID).Scan(&raw)
+	default:
+		return mapMarkerThumbnail{}, content.ErrNotFound
+	}
+	defer clear(raw)
+	if e != nil || len(raw) < 1 || len(raw) > 16*1024*1024 || mm.DigestBytes(raw) != x.image.SHA256 {
+		return mapMarkerThumbnail{}, content.ErrUnavailable
+	}
+	cfg, _, e := image.DecodeConfig(bytes.NewReader(raw))
+	if e != nil || cfg.Width < 1 || cfg.Height < 1 || cfg.Width > 8192 || cfg.Height > 8192 || int64(cfg.Width)*int64(cfg.Height) > 48*1024*1024 {
+		return mapMarkerThumbnail{}, content.ErrUnavailable
+	}
+	decoded, _, e := image.Decode(bytes.NewReader(raw))
+	if e != nil {
+		return mapMarkerThumbnail{}, content.ErrUnavailable
+	}
+	w, h := cfg.Width, cfg.Height
+	if w > 160 || h > 160 {
+		scale := 160.0 / float64(max(w, h))
+		w = max(1, int(float64(w)*scale))
+		h = max(1, int(float64(h)*scale))
+	}
+	small := image.NewRGBA(image.Rect(0, 0, w, h))
+	bounds := decoded.Bounds()
+	for y := 0; y < h; y++ {
+		for xx := 0; xx < w; xx++ {
+			small.Set(xx, y, decoded.At(bounds.Min.X+xx*cfg.Width/w, bounds.Min.Y+y*cfg.Height/h))
+		}
+	}
+	var out bytes.Buffer
+	if jpeg.Encode(&out, small, &jpeg.Options{Quality: 76}) != nil {
+		return mapMarkerThumbnail{}, content.ErrUnavailable
+	}
+	v := mapMarkerThumbnail{bytes: out.Bytes(), width: w, height: h, sha: mm.DigestBytes(out.Bytes())}
+	saveMapMarker(key, v)
+	return v, nil
+}
+func (s *Store) mapMarkerThumbnailTx(ctx context.Context, f humanWriteFrame, v *mapContentSnapshot, original content.MapContentImage) (*content.MapContentImage, error) {
+	var chosen *mapContentAsset
+	u, e := url.Parse(original.ContentPath)
+	if e != nil {
+		return nil, content.ErrUnavailable
+	}
+	parts := strings.Split(u.Path, "/")
+	if len(parts) != 9 {
+		return nil, content.ErrUnavailable
+	}
+	target := parts[5]
+	if parts[4] == "places" {
+		for _, x := range v.references[target] {
+			if x.image.ID == original.ID {
+				copy := x
+				chosen = &copy
+				break
+			}
+		}
+	}
+	if chosen == nil {
+		for _, assets := range v.media {
+			for _, x := range assets {
+				if x.image.ID == original.ID {
+					copy := x
+					chosen = &copy
+					break
+				}
+			}
+			if chosen != nil {
+				break
+			}
+		}
+	}
+	if chosen == nil {
+		return nil, content.ErrUnavailable
+	}
+	key := mapMarkerVersion(original.SourceVersion)
+	thumb, e := s.mapMarkerBytesTx(ctx, f, *chosen, key)
+	if e != nil {
+		return nil, e
+	}
+	shrinkMapLease(&v.until, chosen.until)
+	result := original
+	result.Width = thumb.width
+	result.Height = thumb.height
+	result.ByteCount = len(thumb.bytes)
+	result.SHA256 = thumb.sha
+	result.MIMEType = "image/jpeg"
+	result.SourceVersion = key
+	q := u.Query()
+	q.Set("sourceVersion", key)
+	q.Set("variant", "marker")
+	u.RawQuery = q.Encode()
+	result.ContentPath = u.String()
+	return &result, nil
 }

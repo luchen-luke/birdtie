@@ -1,0 +1,51 @@
+{
+  "status": "MEASURED_SINGLE_SESSION_COMPARISON",
+  "beforeAPI": 23,
+  "afterAPI": 25,
+  "schemaBefore": 170,
+  "schemaAfter": 171,
+  "viewportsMatch": true,
+  "runsPerViewport": 3,
+  "metrics": [
+    {
+      "scenario": "wide",
+      "beforeMedianMs": 619.662,
+      "afterMedianMs": 120.86,
+      "beforeMedianJSONBytes": 166459,
+      "afterMedianJSONBytes": 4005,
+      "beforeMarkers": 384,
+      "afterMarkers": 2,
+      "afterTotalContentCount": 9,
+      "afterTotalAnchorCount": 7,
+      "beforeAdvertisedCoverBytes": 6333201,
+      "afterAdvertisedCoverBytes": 0
+    },
+    {
+      "scenario": "phone",
+      "beforeMedianMs": 616.089,
+      "afterMedianMs": 112.692,
+      "beforeMedianJSONBytes": 132194,
+      "afterMedianJSONBytes": 4041,
+      "beforeMarkers": 304,
+      "afterMarkers": 2,
+      "afterTotalContentCount": 9,
+      "afterTotalAnchorCount": 7,
+      "beforeAdvertisedCoverBytes": 6333201,
+      "afterAdvertisedCoverBytes": 0
+    },
+    {
+      "scenario": "adjacent",
+      "beforeMedianMs": 758.961,
+      "afterMedianMs": 113.226,
+      "beforeMedianJSONBytes": 133498,
+      "afterMedianJSONBytes": 4041,
+      "beforeMarkers": 307,
+      "afterMarkers": 2,
+      "afterTotalContentCount": 9,
+      "afterTotalAnchorCount": 7,
+      "beforeAdvertisedCoverBytes": 6333201,
+      "afterAdvertisedCoverBytes": 0
+    }
+  ],
+  "qualification": "Same HTTPS origin and3viewport bounds; API23 had no zoom parameter, API25 requests zoom12. Counts distinguish marker clusters from full content/anchor totals. AdvertisedCoverBytes measures declared payload budget, not all covers downloaded. This is API evidence, not device FPS/memory evidence."
+}

@@ -299,6 +299,7 @@ class PublicOrganizationPin {
 class PublicCityController extends ChangeNotifier {
   PublicCityController({
     this.authorizationHeader,
+    this.loadUnrequestedPlaces = true,
     http.Client? client,
     String? apiBaseUrl,
     ExplorationCityStore? explorationStore,
@@ -311,6 +312,7 @@ class PublicCityController extends ChangeNotifier {
        _explorationStore = explorationStore,
        _apiBase = (apiBaseUrl ?? BirdtieEnvironment.apiBaseUrl).trim();
 
+  final bool loadUnrequestedPlaces;
   final String _apiBase;
   final http.Client _client;
   final bool _ownsClient;
@@ -578,7 +580,8 @@ class PublicCityController extends ChangeNotifier {
 
   Future<void> loadPlaces() async {
     final cityID = _selectedCityID;
-    if (!configured || cityID == null) return;
+    if (!configured || cityID == null ||
+        (!loadUnrequestedPlaces && _placeQuery.isEmpty)) return;
     final request = ++_placeRequest;
     _placesLoading = true;
     _placeError = null;

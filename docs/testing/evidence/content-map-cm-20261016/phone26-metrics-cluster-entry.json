@@ -1,0 +1,39 @@
+{
+  "NativeContentMapMetrics": [
+    {
+      "mapCreations": "1",
+      "markerCreates": "6",
+      "markerUpdates": "59",
+      "markerDeletes": "3",
+      "renderPasses": "67",
+      "renderMicros": "807964"
+    }
+  ],
+  "OwnedMapMediaController": [
+    {
+      "_epoch": "5",
+      "_running": "0",
+      "_reserved": "400820",
+      "requests": "2",
+      "decodes": "2",
+      "cacheHits": "26",
+      "inFlightPeak": "2"
+    }
+  ],
+  "OwnedMapController": [
+    {
+      "_epoch": "7",
+      "_request": "37",
+      "requests": "30",
+      "cancellations": "0",
+      "cacheHits": "0",
+      "responseBytes": "113778"
+    }
+  ],
+  "_NativeCityMapViewState": [
+    {
+      "_styleReady": "true",
+      "vmObjectRef": "objects/1544/0"
+    }
+  ]
+}

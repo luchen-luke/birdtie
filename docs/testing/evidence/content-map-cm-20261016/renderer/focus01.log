@@ -1,0 +1,37 @@
+Flutter assets will be downloaded from https://storage.flutter-io.cn. Make sure you trust this source!
+00:00 +0: loading D:/Project/birdtie/apps/client/test/content_map_renderer_test.dart
+00:00 +0: bounded latest render, crossing viewport and complete task aggregation
+00:00 +1: actual Web content overlap and server cluster preserve one map and dispatch to Now
+00:00 +2: actual Native touch and initial screen viewport use content routing without replacing annotations
+Birdtie native map created.
+Birdtie native map style loaded.
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following TestFailure was thrown running a test:
+Expected: an object with length of <1>
+  Actual: []
+   Which: has length of <0>
+
+When the exception was thrown, this was the stack:
+#4      main.<anonymous closure> (file:///D:/Project/birdtie/apps/client/test/content_map_renderer_test.dart:306:7)
+<asynchronous suspension>
+#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1952:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///D:/Project/birdtie/apps/client/test/content_map_renderer_test.dart line 306
+The test description was:
+  actual Native touch and initial screen viewport use content routing without replacing annotations
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:00 +2 -1: actual Native touch and initial screen viewport use content routing without replacing annotations [E]
+  Test failed. See exception logs above.
+  The test description was: actual Native touch and initial screen viewport use content routing without replacing annotations
+  
+00:00 +2 -1: actual JS vector style hides only provider POI and keeps roads and map instance
+00:00 +3 -1: Some tests failed.
+
+Failing tests:
+  D:/Project/birdtie/apps/client/test/content_map_renderer_test.dart: actual Native touch and initial screen viewport use content routing without replacing annotations

@@ -1,0 +1,16 @@
+[
+  {
+    "name": "startup",
+    "exitCode": 0,
+    "errors": 0,
+    "warnings": 0,
+    "logSHA": "52c72f177fb6afb15c7fc2dd3de526572f576af037dc9b13cb6c068bd44569dc"
+  },
+  {
+    "name": "analyze",
+    "exitCode": 0,
+    "errors": 0,
+    "warnings": 0,
+    "logSHA": "e6e544f0f5fe553a4673f35af5061d2a71b30053d796c7bc21b2f8c9be964bc3"
+  }
+]

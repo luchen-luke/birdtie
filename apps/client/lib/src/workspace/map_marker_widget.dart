@@ -42,6 +42,7 @@ class CompactMapPointMarker extends StatelessWidget {
         : MapMarkerVisual.placeColor;
     final radius = moment ? MapMarkerVisual.radius(dense: pale) : size / 2;
     return Semantics(
+      identifier: 'birdtie-map-point:$id',
       button: true,
       selected: selected,
       label: [

@@ -416,3 +416,10 @@ NOT_RUN：旧owner真实fresh认证/认领/激活、真实native durable staging
 取消跨坐标网格数字块，真实小封面与同点角标、覆盖范围求差/封面复用、地图常驻、原作者/头像/原时间及完整比例图/显式视频阅读已接入。当前实际API29/schema172、APK33、Web33；没有回滚其他修改或修改Civu源项目。原作者补适配覆盖已迁入83条原公开动态、9作者和6头像，不是新增83条动态或完成全部迁移。
 
 报告docs/reports/BIRDTIE-NOW-MAP-REFINEMENT-2026-10-16.md与证据docs/testing/evidence/content-map-refinement-20261016/checkpoint172.json记录实际构建、部署、手机/Web、失败与性能边界。3个视频目标缺城市地图视图、200张冷图性能、严格同camera A/B、跨设备撤权及本包完整发布回归仍有缺口；父任务保持IN_PROGRESS。
+
+
+## 2026-10-16 按需阅读与国内地图纠正接续
+
+API30/schema173、APK34/Web34已实际交付按需图片阅读与两个城市相机，上海Web视频首次失败、重试成功的记录保留。用户随后指出国内偏移；新增Native/Web高德分流、WGS/GCJ边界、174精确provider修正及阅读取消/租期修复，已统一编译候选35。缺高德预览包Key及Web JS/安全代理，候选35未装包部署，174未生产执行；真实高德对齐及新包视频复验NOT_RUN。
+
+源码映射、路径、性能和历史失败见docs/reports/BIRDTIE-CHINA-MAP-BOUNDARY-2026-10-16.md及BIRDTIE-NOW-LAZY-MEDIA-CITY-VIEWPORTS-2026-10-16.md。checkpoint174明确live仍173/30/34，候选不等于验收。原Civu只读，私人信息不提交Git，原任务BT-FIX-NOW-UI-001保持IN_PROGRESS，不回滚或重建其他任务。

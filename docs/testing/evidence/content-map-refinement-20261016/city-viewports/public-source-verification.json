@@ -1,0 +1,73 @@
+{
+  "status": "SOURCE_VERIFIED",
+  "observedDate": "2026-10-16",
+  "commit": "789c9904087846cc3361302857aa2e76b0ae71ff",
+  "geoJSON": {
+    "url": "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/789c9904087846cc3361302857aa2e76b0ae71ff/geojson/ne_10m_populated_places_simple.geojson",
+    "bytes": 4932147,
+    "sha256": "fd3fa867a320cbd5c5b6bb5bc550afeec2939fb2cef688e508007282a55ac42f",
+    "crs": {
+      "type": "name",
+      "properties": {
+        "name": "urn:ogc:def:crs:OGC:1.3:CRS84"
+      }
+    }
+  },
+  "projection": {
+    "url": "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/789c9904087846cc3361302857aa2e76b0ae71ff/10m_cultural/ne_10m_populated_places_simple.prj",
+    "sha256": "a02a27b1d1982c8516d83398e85a3c8b1aef1713c13ef4d84d7bde17430c07c4",
+    "text": "GEOGCS[\"GCS_WGS_1984\",DATUM[\"D_WGS_1984\",SPHEROID[\"WGS_1984\",6378137.0,298.257223563]],PRIMEM[\"Greenwich\",0.0],UNIT[\"Degree\",0.0174532925199433]]"
+  },
+  "selectedPublicPoints": [
+    {
+      "name": "Shantou",
+      "country": "CHN",
+      "province": "Guangdong",
+      "featureClass": "Populated place",
+      "coordinates": [
+        116.66808,
+        23.371952
+      ]
+    },
+    {
+      "name": "Shanghai",
+      "country": "CHN",
+      "province": "Shanghai",
+      "featureClass": "Admin-1 capital",
+      "coordinates": [
+        121.434559,
+        31.218398
+      ]
+    }
+  ],
+  "purpose": "city browsing camera only",
+  "sourceCoordinates": "independent public Natural Earth points; not private content or device coordinates",
+  "licenseURL": "https://www.naturalearthdata.com/about/",
+  "license": "public domain",
+  "cameraDefaultZoom": 11,
+  "zoomAuthority": "Birdtie display choice; not an administrative boundary",
+  "governmentExtentChecks": [
+    {
+      "city": "Shanghai",
+      "url": "https://english.shanghai.gov.cn/en-Overview/20231209/705180b43f794c1ca43f4d1ddaa049a2.html",
+      "sourceDate": "2025-09-10",
+      "west": 120.85,
+      "east": 122.2,
+      "south": 30.666666666666668,
+      "north": 31.883333333333333,
+      "pointWithinPublishedExtent": true,
+      "usage": "identity cross-check only; government page CRS unspecified"
+    },
+    {
+      "city": "Shantou",
+      "url": "https://english.shantou.gov.cn/english/%EF%BB%BFoverview/environment/index.html",
+      "sourceDate": "2026-06-16",
+      "west": 116.24444444444444,
+      "east": 117.32638888888889,
+      "south": 23.0425,
+      "north": 23.647222222222222,
+      "pointWithinPublishedExtent": true,
+      "usage": "identity cross-check only; government page CRS unspecified"
+    }
+  ]
+}

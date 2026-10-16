@@ -25,6 +25,7 @@ type mapContentAsset struct {
 
 func mapImageDimensions(header []byte) (int, int, error) {
 	defer clear(header)
+	mapContentHeaderReadBytes.Add(uint64(len(header)))
 	c, _, e := image.DecodeConfig(bytes.NewReader(header))
 	if e != nil || c.Width < 1 || c.Height < 1 || c.Width > 8192 || c.Height > 8192 || int64(c.Width)*int64(c.Height) > 48*1024*1024 {
 		return 0, 0, content.ErrUnavailable
@@ -52,8 +53,12 @@ func (s *Store) mapContentMomentMediaTx(ctx context.Context, f humanWriteFrame, 
 	return assets, e
 }
 
-func (s *Store) readMapContentMomentMediaTx(ctx context.Context, f humanWriteFrame, v *mapContentSnapshot, m *mapContentMoment) ([]mapContentAsset, error) {
+func (s *Store) readMapContentMomentMediaTx(ctx context.Context, f humanWriteFrame, v *mapContentSnapshot, m *mapContentMoment, mediaID ...string) ([]mapContentAsset, error) {
 	out := []mapContentAsset{}
+	onlyID := ""
+	if len(mediaID) > 0 {
+		onlyID = mediaID[0]
+	}
 	if m.v.VisibilitySource == "BIRDTIE_PUBLIC_MOMENT" {
 		set, e := s.mediaSetTx(ctx, f.tx, mm.Access{AccountID: f.a.ID, AccountType: f.a.AccountType, SessionDigest: f.d}, m.v.ID, false)
 		if e != nil {
@@ -61,6 +66,9 @@ func (s *Store) readMapContentMomentMediaTx(ctx context.Context, f humanWriteFra
 		}
 		if set.Status == "READY" {
 			for _, a := range set.Attachments {
+				if onlyID != "" && a.MediaID != onlyID {
+					continue
+				}
 				source := content.MomentControlHash([]any{historyReader(f), m.stamp, set.SourceVersion, a.MediaID, a.MediaVersion})
 				x := mapContentAsset{kind: "public-image", blobID: a.MediaID, mid: m.v.ID, until: &set.ValidUntil}
 				x.media = content.MapContentMedia{Kind: "IMAGE", ID: a.MediaID, Revision: a.MediaVersion, MIMEType: "image/jpeg", Width: a.Width, Height: a.Height, ByteCount: a.DisplayBytes, SHA256: a.DisplaySHA, SourceVersion: source, ContentPath: mapMediaPath(m.v.ID, a.MediaID, source)}
@@ -103,9 +111,9 @@ func (s *Store) readMapContentMomentMediaTx(ctx context.Context, f humanWriteFra
 	// material's private purpose as a substitute for source visibility.
 	rows, e := f.tx.Query(ctx, `SELECT i.id::text,i.revision,i.mime_type,octet_length(i.derivative),i.derivative_sha256,substring(i.derivative FROM 1 FOR 65536),i.retain_until,jsonb_build_array(i.xmin::text,a.xmin::text)::text
  FROM private_moment_images i JOIN media_assets a ON a.id=i.id AND a.owner_account_id=i.owner_account_id AND a.state='ready_private' AND a.sha256_hex=i.derivative_sha256 AND a.byte_size=octet_length(i.derivative)
- WHERE i.moment_id=$1 AND i.owner_account_id=$2 AND i.status='ready_private' AND i.derivative IS NOT NULL AND i.retain_until>clock_timestamp()
+ WHERE i.moment_id=$1 AND i.owner_account_id=$2 AND i.status='ready_private' AND i.derivative IS NOT NULL AND i.retain_until>clock_timestamp() AND ($4='' OR i.id=NULLIF($4,'')::uuid)
  AND($3 OR EXISTS(SELECT 1 FROM(SELECT run_id,source_note_id,owner_account_id,moment_id,image_id FROM legacy_private_media_import_items UNION ALL SELECT run_id,source_note_id,owner_account_id,moment_id,image_id FROM legacy_private_image_recovery_items) imp JOIN legacy_native_adaptation_entities n ON n.run_id=imp.run_id AND n.kind='moment' AND n.source_key=imp.source_note_id::text AND n.target_id=imp.moment_id::text AND n.owner_account_id=imp.owner_account_id WHERE imp.image_id=i.id AND imp.moment_id=i.moment_id AND imp.owner_account_id=i.owner_account_id))
- ORDER BY i.created_at,i.id LIMIT 201`, m.v.ID, m.owner, m.owner == f.a.ID)
+ ORDER BY i.created_at,i.id LIMIT 201`, m.v.ID, m.owner, m.owner == f.a.ID, onlyID)
 	if e != nil {
 		return nil, content.ErrUnavailable
 	}
@@ -136,7 +144,7 @@ func (s *Store) readMapContentMomentMediaTx(ctx context.Context, f humanWriteFra
 	}
 	rows, e = f.tx.Query(ctx, `SELECT v.id::text,v.revision,v.width,v.height,v.content_size,v.content_sha256,v.duration_ms,v.audio_codec,v.poster_size,v.poster_sha256,v.retain_until,jsonb_build_array(v.xmin::text,a.xmin::text,imp.xmin::text)::text
  FROM private_moment_videos v JOIN media_assets a ON a.id=v.id AND a.owner_account_id=v.owner_account_id AND a.state='ready_private' AND a.sha256_hex=v.content_sha256 AND a.byte_size=v.content_size JOIN legacy_private_video_import_items imp ON imp.video_id=v.id AND imp.moment_id=v.moment_id AND imp.owner_account_id=v.owner_account_id AND imp.run_id=v.run_id
- WHERE v.moment_id=$1 AND v.owner_account_id=$2 AND v.status='ready_private' AND v.content IS NOT NULL AND v.poster IS NOT NULL AND v.retain_until>clock_timestamp() ORDER BY v.source_position,v.id LIMIT 201`, m.v.ID, m.owner)
+ WHERE v.moment_id=$1 AND v.owner_account_id=$2 AND v.status='ready_private' AND v.content IS NOT NULL AND v.poster IS NOT NULL AND v.retain_until>clock_timestamp() AND ($3='' OR v.id=NULLIF($3,'')::uuid) ORDER BY v.source_position,v.id LIMIT 201`, m.v.ID, m.owner, onlyID)
 	if e != nil {
 		return nil, content.ErrUnavailable
 	}
@@ -367,7 +375,7 @@ func (s *Store) readHumanMapContentBinary(ctx context.Context, d [32]byte, a ide
 		if m == nil {
 			return r, content.ErrNotFound
 		}
-		assets, e := s.mapContentMomentMediaTx(ctx, f, &v, m)
+		assets, e := s.readMapContentMomentMediaTx(ctx, f, &v, m, id)
 		if e != nil {
 			return r, e
 		}

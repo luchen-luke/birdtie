@@ -1,0 +1,1062 @@
+{
+  "schemaVersion": "birdtie-selected-plugin-provenance-v1",
+  "recordedAtUtc": "2026-10-16T09:57:12.538068+08:00",
+  "sourceRoot": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map",
+  "destinationRoot": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map",
+  "sourceCommit": "1bbf0613b513001447f326225c944c1a1fbd8e8f",
+  "sourcePackageWorktree": "clean",
+  "declaredUpstream": "https://github.com/kuloud/amap_map",
+  "packageVersion": "1.0.15",
+  "files": [
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\CIVU_PATCH.md",
+      "sourceSha256": "811d9d48d28e58df6182620915db539c6699343cd8478629e6a71d47c39e9b55",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\CIVU_PATCH.md",
+      "destinationSha256": "125a8d3e91680eeda3a8fbc0297fd48a24ea680269b2a643f71b7e2a26dddfe2",
+      "action": "copy_with_birdtie_provenance_append",
+      "bytes": 4130,
+      "previousBirdtieSha256": "cefeda51baca8464ea57aa10a8eaac7603b7f77287f94b0c4e8104902e3962f2",
+      "birdtieChanges": "Document privacy and lifecycle patches, original baseline and validation limits",
+      "preCompileSdk36Sha256": "a95e58c2a340d36a719271a4fdca638fbf176070203499c10278beb175aaea9d"
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\LICENSE",
+      "sourceSha256": "1eb85fc97224598dad1852b5d6483bbcf0aa8608790dcc657a5a2a761ae9c8c6",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\LICENSE",
+      "destinationSha256": "1eb85fc97224598dad1852b5d6483bbcf0aa8608790dcc657a5a2a761ae9c8c6",
+      "action": "byte_identical_copy",
+      "bytes": 11558
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\android\\build.gradle",
+      "sourceSha256": "bd6c570c8ad821d535a8db966b4d44ed4934bd393402d4edc201121e801bc9a7",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\android\\build.gradle",
+      "destinationSha256": "861faddbf5f60ae53345245f3454df52831b5c7ded16e25677be911a796ffefc",
+      "action": "copy_with_birdtie_compile_sdk_alignment",
+      "bytes": 728,
+      "preCompileSdk36Sha256": "bd6c570c8ad821d535a8db966b4d44ed4934bd393402d4edc201121e801bc9a7",
+      "birdtieChanges": [
+        "compileSdkVersion 35 to 36; app/lifecycle AAR compatibility; minSdk and AMap dependency unchanged"
+      ]
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\android\\gradle.properties",
+      "sourceSha256": "0727c8c8bab57af764b53726dc617b1e67d50b4679187fb2a2c1d30daf83325a",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\android\\gradle.properties",
+      "destinationSha256": "0727c8c8bab57af764b53726dc617b1e67d50b4679187fb2a2c1d30daf83325a",
+      "action": "byte_identical_copy",
+      "bytes": 85
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\android\\settings.gradle",
+      "sourceSha256": "6896c0ebf0b755b199c8d8fb0ab02322d2a24f1a79c5d491883d93cceee2d97e",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\android\\settings.gradle",
+      "destinationSha256": "6896c0ebf0b755b199c8d8fb0ab02322d2a24f1a79c5d491883d93cceee2d97e",
+      "action": "byte_identical_copy",
+      "bytes": 31
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\android\\src\\main\\AndroidManifest.xml",
+      "sourceSha256": "a56222968de4dae9be50b6c72c818950e72ae20959ea94a0a31a4b2223249fd6",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\android\\src\\main\\AndroidManifest.xml",
+      "destinationSha256": "a56222968de4dae9be50b6c72c818950e72ae20959ea94a0a31a4b2223249fd6",
+      "action": "byte_identical_copy",
+      "bytes": 54
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\android\\src\\main\\java\\com\\amap\\flutter\\map\\AMapFlutterMapPlugin.java",
+      "sourceSha256": "cfd90cd8431eb3d3b6d45bf8752e3f30fb52bc00c73a10ecc6c0c97c8b8d1a98",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\android\\src\\main\\java\\com\\amap\\flutter\\map\\AMapFlutterMapPlugin.java",
+      "destinationSha256": "cfd90cd8431eb3d3b6d45bf8752e3f30fb52bc00c73a10ecc6c0c97c8b8d1a98",
+      "action": "byte_identical_copy",
+      "bytes": 2667
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\android\\src\\main\\java\\com\\amap\\flutter\\map\\AMapOptionsBuilder.java",
+      "sourceSha256": "a2ed78b33a7d2e6336fecd2a156e8b44b3b5250c76d72360e246449724b1e4e6",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\android\\src\\main\\java\\com\\amap\\flutter\\map\\AMapOptionsBuilder.java",
+      "destinationSha256": "a2ed78b33a7d2e6336fecd2a156e8b44b3b5250c76d72360e246449724b1e4e6",
+      "action": "byte_identical_copy",
+      "bytes": 8113
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\android\\src\\main\\java\\com\\amap\\flutter\\map\\AMapPlatformView.java",
+      "sourceSha256": "38c21e5995fdc74ff582954f242644b620a567d8f564889319a84592b5bc1285",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\android\\src\\main\\java\\com\\amap\\flutter\\map\\AMapPlatformView.java",
+      "destinationSha256": "38c21e5995fdc74ff582954f242644b620a567d8f564889319a84592b5bc1285",
+      "action": "byte_identical_copy",
+      "bytes": 10237
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\android\\src\\main\\java\\com\\amap\\flutter\\map\\AMapPlatformViewFactory.java",
+      "sourceSha256": "21679acccb2ae5a1b4a1f249126ab36c40218e1290fe5c15f5e9c0e112cc7fc0",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\android\\src\\main\\java\\com\\amap\\flutter\\map\\AMapPlatformViewFactory.java",
+      "destinationSha256": "21679acccb2ae5a1b4a1f249126ab36c40218e1290fe5c15f5e9c0e112cc7fc0",
+      "action": "byte_identical_copy",
+      "bytes": 3072
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\android\\src\\main\\java\\com\\amap\\flutter\\map\\MapRenderLifecycle.java",
+      "sourceSha256": "59af02331d5729dc300593243227a4b6213868b7a39e6dc44fd468c3788708aa",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\android\\src\\main\\java\\com\\amap\\flutter\\map\\MapRenderLifecycle.java",
+      "destinationSha256": "59af02331d5729dc300593243227a4b6213868b7a39e6dc44fd468c3788708aa",
+      "action": "byte_identical_copy",
+      "bytes": 1859
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\android\\src\\main\\java\\com\\amap\\flutter\\map\\MyMethodCallHandler.java",
+      "sourceSha256": "a4688f46b4b1fe4e5409050b11bff96853848fdd557c87290dda9e94e89fda8b",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\android\\src\\main\\java\\com\\amap\\flutter\\map\\MyMethodCallHandler.java",
+      "destinationSha256": "a4688f46b4b1fe4e5409050b11bff96853848fdd557c87290dda9e94e89fda8b",
+      "action": "byte_identical_copy",
+      "bytes": 565
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\android\\src\\main\\java\\com\\amap\\flutter\\map\\ProxyLifecycleProvider.java",
+      "sourceSha256": "430c156b6cc9c780a27600282306b015e092522b62839dc253deb9b202dcda0d",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\android\\src\\main\\java\\com\\amap\\flutter\\map\\ProxyLifecycleProvider.java",
+      "destinationSha256": "430c156b6cc9c780a27600282306b015e092522b62839dc253deb9b202dcda0d",
+      "action": "byte_identical_copy",
+      "bytes": 3262
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\android\\src\\main\\java\\com\\amap\\flutter\\map\\core\\AMapOptionsSink.java",
+      "sourceSha256": "a6d0f2e0df373e94c0f8e81756328d66557863e1b1c4729986f63abba503d44b",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\android\\src\\main\\java\\com\\amap\\flutter\\map\\core\\AMapOptionsSink.java",
+      "destinationSha256": "a6d0f2e0df373e94c0f8e81756328d66557863e1b1c4729986f63abba503d44b",
+      "action": "byte_identical_copy",
+      "bytes": 1910
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\android\\src\\main\\java\\com\\amap\\flutter\\map\\core\\MapController.java",
+      "sourceSha256": "aa1737340d5aed44128f6e3710a1ccb4785272c52bd446a16fe9f00311840ca6",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\android\\src\\main\\java\\com\\amap\\flutter\\map\\core\\MapController.java",
+      "destinationSha256": "aa1737340d5aed44128f6e3710a1ccb4785272c52bd446a16fe9f00311840ca6",
+      "action": "byte_identical_copy",
+      "bytes": 13895
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\android\\src\\main\\java\\com\\amap\\flutter\\map\\core\\MapStripCapture.java",
+      "sourceSha256": "13002379c6938f2c70e2b94e15f6abf1844fc2246a5cbccdf893bfb1ae4556d3",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\android\\src\\main\\java\\com\\amap\\flutter\\map\\core\\MapStripCapture.java",
+      "destinationSha256": "13002379c6938f2c70e2b94e15f6abf1844fc2246a5cbccdf893bfb1ae4556d3",
+      "action": "byte_identical_copy",
+      "bytes": 2815
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\android\\src\\main\\java\\com\\amap\\flutter\\map\\core\\MapsInitializerController.java",
+      "sourceSha256": "79a9dc05930975915f242dabb02a9919e0a5806b30dd852ec230f4d50d104615",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\android\\src\\main\\java\\com\\amap\\flutter\\map\\core\\MapsInitializerController.java",
+      "destinationSha256": "79a9dc05930975915f242dabb02a9919e0a5806b30dd852ec230f4d50d104615",
+      "action": "byte_identical_copy",
+      "bytes": 1317
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\android\\src\\main\\java\\com\\amap\\flutter\\map\\core\\UISettingsSink.java",
+      "sourceSha256": "b10e98311afc9f8099b0547d988193a4bf863d1bd5480b9dca78d934b0ab5b74",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\android\\src\\main\\java\\com\\amap\\flutter\\map\\core\\UISettingsSink.java",
+      "destinationSha256": "b10e98311afc9f8099b0547d988193a4bf863d1bd5480b9dca78d934b0ab5b74",
+      "action": "byte_identical_copy",
+      "bytes": 1100
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\android\\src\\main\\java\\com\\amap\\flutter\\map\\overlays\\AbstractOverlayController.java",
+      "sourceSha256": "b5f46d32e557a4e99d08c474808be32a498660ae07faaa114b11c530bffd7473",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\android\\src\\main\\java\\com\\amap\\flutter\\map\\overlays\\AbstractOverlayController.java",
+      "destinationSha256": "b5f46d32e557a4e99d08c474808be32a498660ae07faaa114b11c530bffd7473",
+      "action": "byte_identical_copy",
+      "bytes": 821
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\android\\src\\main\\java\\com\\amap\\flutter\\map\\overlays\\marker\\MarkerController.java",
+      "sourceSha256": "f2a1c9bf968cc40f3b85a86b14e9dee2354b2432755a953d05de503580e09496",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\android\\src\\main\\java\\com\\amap\\flutter\\map\\overlays\\marker\\MarkerController.java",
+      "destinationSha256": "f2a1c9bf968cc40f3b85a86b14e9dee2354b2432755a953d05de503580e09496",
+      "action": "byte_identical_copy",
+      "bytes": 2438
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\android\\src\\main\\java\\com\\amap\\flutter\\map\\overlays\\marker\\MarkerOptionsBuilder.java",
+      "sourceSha256": "c3742d483d94d50a483af53a34469a803ba41199b1defa6e2df5fd0bbad28fb6",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\android\\src\\main\\java\\com\\amap\\flutter\\map\\overlays\\marker\\MarkerOptionsBuilder.java",
+      "destinationSha256": "c3742d483d94d50a483af53a34469a803ba41199b1defa6e2df5fd0bbad28fb6",
+      "action": "byte_identical_copy",
+      "bytes": 1997
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\android\\src\\main\\java\\com\\amap\\flutter\\map\\overlays\\marker\\MarkerOptionsSink.java",
+      "sourceSha256": "e3688119775ab1156ae2388c41d80480dcfdeaa654244e47c5a91a0e6d466980",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\android\\src\\main\\java\\com\\amap\\flutter\\map\\overlays\\marker\\MarkerOptionsSink.java",
+      "destinationSha256": "e3688119775ab1156ae2388c41d80480dcfdeaa654244e47c5a91a0e6d466980",
+      "action": "byte_identical_copy",
+      "bytes": 829
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\android\\src\\main\\java\\com\\amap\\flutter\\map\\overlays\\marker\\MarkerUtil.java",
+      "sourceSha256": "f118d192ac5b83f5636d46dc3d25624f09690079bfc63432c7cc3e87d2ae2bf5",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\android\\src\\main\\java\\com\\amap\\flutter\\map\\overlays\\marker\\MarkerUtil.java",
+      "destinationSha256": "f118d192ac5b83f5636d46dc3d25624f09690079bfc63432c7cc3e87d2ae2bf5",
+      "action": "byte_identical_copy",
+      "bytes": 3378
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\android\\src\\main\\java\\com\\amap\\flutter\\map\\overlays\\marker\\MarkersController.java",
+      "sourceSha256": "2defb834a237a4107fb12ca71dd92e371f2c56b19313c1e9f558778ef1f442f8",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\android\\src\\main\\java\\com\\amap\\flutter\\map\\overlays\\marker\\MarkersController.java",
+      "destinationSha256": "2defb834a237a4107fb12ca71dd92e371f2c56b19313c1e9f558778ef1f442f8",
+      "action": "byte_identical_copy",
+      "bytes": 7593
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\android\\src\\main\\java\\com\\amap\\flutter\\map\\overlays\\polygon\\PolygonController.java",
+      "sourceSha256": "4f63f58c650774650f94aec69753ecfa628cc4b41d06c3979ad47458b17d1375",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\android\\src\\main\\java\\com\\amap\\flutter\\map\\overlays\\polygon\\PolygonController.java",
+      "destinationSha256": "4f63f58c650774650f94aec69753ecfa628cc4b41d06c3979ad47458b17d1375",
+      "action": "byte_identical_copy",
+      "bytes": 1356
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\android\\src\\main\\java\\com\\amap\\flutter\\map\\overlays\\polygon\\PolygonOptionsBuilder.java",
+      "sourceSha256": "57ecdf272fd0686466df0a39207072597855a24362d4db3aea76d57416c574b2",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\android\\src\\main\\java\\com\\amap\\flutter\\map\\overlays\\polygon\\PolygonOptionsBuilder.java",
+      "destinationSha256": "57ecdf272fd0686466df0a39207072597855a24362d4db3aea76d57416c574b2",
+      "action": "byte_identical_copy",
+      "bytes": 1439
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\android\\src\\main\\java\\com\\amap\\flutter\\map\\overlays\\polygon\\PolygonOptionsSink.java",
+      "sourceSha256": "1f69dc1a72ff49c32b56e8c82b674d92333b29c7733fac6f2dccab3068c5f5a9",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\android\\src\\main\\java\\com\\amap\\flutter\\map\\overlays\\polygon\\PolygonOptionsSink.java",
+      "destinationSha256": "1f69dc1a72ff49c32b56e8c82b674d92333b29c7733fac6f2dccab3068c5f5a9",
+      "action": "byte_identical_copy",
+      "bytes": 705
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\android\\src\\main\\java\\com\\amap\\flutter\\map\\overlays\\polygon\\PolygonUtil.java",
+      "sourceSha256": "5ae518b2ae8533b0fe59c7c44e5854556c3a59028b55de9311683ac9133c369f",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\android\\src\\main\\java\\com\\amap\\flutter\\map\\overlays\\polygon\\PolygonUtil.java",
+      "destinationSha256": "5ae518b2ae8533b0fe59c7c44e5854556c3a59028b55de9311683ac9133c369f",
+      "action": "byte_identical_copy",
+      "bytes": 1683
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\android\\src\\main\\java\\com\\amap\\flutter\\map\\overlays\\polygon\\PolygonsController.java",
+      "sourceSha256": "b4aa1f16b826439869692b6dbe09cfc44eb815990f210e157cb44c398e9af39f",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\android\\src\\main\\java\\com\\amap\\flutter\\map\\overlays\\polygon\\PolygonsController.java",
+      "destinationSha256": "b4aa1f16b826439869692b6dbe09cfc44eb815990f210e157cb44c398e9af39f",
+      "action": "byte_identical_copy",
+      "bytes": 4280
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\android\\src\\main\\java\\com\\amap\\flutter\\map\\overlays\\polyline\\PolylineController.java",
+      "sourceSha256": "fd647aa16aee04572d63238c23f7efdc44038501e156d878f1606735d26343d4",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\android\\src\\main\\java\\com\\amap\\flutter\\map\\overlays\\polyline\\PolylineController.java",
+      "destinationSha256": "fd647aa16aee04572d63238c23f7efdc44038501e156d878f1606735d26343d4",
+      "action": "byte_identical_copy",
+      "bytes": 3141
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\android\\src\\main\\java\\com\\amap\\flutter\\map\\overlays\\polyline\\PolylineOptionsBuilder.java",
+      "sourceSha256": "8fdae5dc9eb656d130db6ecea9c0451e5b9d455aeadef07bfeb56ebce4b99cf3",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\android\\src\\main\\java\\com\\amap\\flutter\\map\\overlays\\polyline\\PolylineOptionsBuilder.java",
+      "destinationSha256": "8fdae5dc9eb656d130db6ecea9c0451e5b9d455aeadef07bfeb56ebce4b99cf3",
+      "action": "byte_identical_copy",
+      "bytes": 2545
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\android\\src\\main\\java\\com\\amap\\flutter\\map\\overlays\\polyline\\PolylineOptionsSink.java",
+      "sourceSha256": "930dcc5b26cf01c97ef905375ce3a25a1f28556ecf24f75a97cb6341f9b3fbda",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\android\\src\\main\\java\\com\\amap\\flutter\\map\\overlays\\polyline\\PolylineOptionsSink.java",
+      "destinationSha256": "930dcc5b26cf01c97ef905375ce3a25a1f28556ecf24f75a97cb6341f9b3fbda",
+      "action": "byte_identical_copy",
+      "bytes": 1396
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\android\\src\\main\\java\\com\\amap\\flutter\\map\\overlays\\polyline\\PolylineUtil.java",
+      "sourceSha256": "32c0aa3fdc004f1113331ffd67ad8a2cebfc3543ceca3e99136fed69fd072f6f",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\android\\src\\main\\java\\com\\amap\\flutter\\map\\overlays\\polyline\\PolylineUtil.java",
+      "destinationSha256": "32c0aa3fdc004f1113331ffd67ad8a2cebfc3543ceca3e99136fed69fd072f6f",
+      "action": "byte_identical_copy",
+      "bytes": 3522
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\android\\src\\main\\java\\com\\amap\\flutter\\map\\overlays\\polyline\\PolylinesController.java",
+      "sourceSha256": "8c164086b5895a863e92fd6c6ce67dc29cc59e42f4bce1332d44b3d9396181b5",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\android\\src\\main\\java\\com\\amap\\flutter\\map\\overlays\\polyline\\PolylinesController.java",
+      "destinationSha256": "8c164086b5895a863e92fd6c6ce67dc29cc59e42f4bce1332d44b3d9396181b5",
+      "action": "byte_identical_copy",
+      "bytes": 5052
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\android\\src\\main\\java\\com\\amap\\flutter\\map\\utils\\Const.java",
+      "sourceSha256": "90c821191b62ddce16ef4cc4a45a02133b5a526382d1bf7f1cbcdbbb85f00e07",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\android\\src\\main\\java\\com\\amap\\flutter\\map\\utils\\Const.java",
+      "destinationSha256": "90c821191b62ddce16ef4cc4a45a02133b5a526382d1bf7f1cbcdbbb85f00e07",
+      "action": "byte_identical_copy",
+      "bytes": 2349
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\android\\src\\main\\java\\com\\amap\\flutter\\map\\utils\\ConvertUtil.java",
+      "sourceSha256": "d0ed1871bb8bde8e059fe5796fda534c3fef4bcd17421603d5dc70a125788790",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\android\\src\\main\\java\\com\\amap\\flutter\\map\\utils\\ConvertUtil.java",
+      "destinationSha256": "d0ed1871bb8bde8e059fe5796fda534c3fef4bcd17421603d5dc70a125788790",
+      "action": "byte_identical_copy",
+      "bytes": 21430
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\android\\src\\main\\java\\com\\amap\\flutter\\map\\utils\\LogUtil.java",
+      "sourceSha256": "925a4c978e44a34717f4e40a4e733bf7b345958239fcc3fa365c1158f0c4ea5e",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\android\\src\\main\\java\\com\\amap\\flutter\\map\\utils\\LogUtil.java",
+      "destinationSha256": "925a4c978e44a34717f4e40a4e733bf7b345958239fcc3fa365c1158f0c4ea5e",
+      "action": "byte_identical_copy",
+      "bytes": 971
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\ios\\Classes\\AMapFlutterFactory.h",
+      "sourceSha256": "fb4bb7ebb86e5b8164d08b4c3249bf50794db6a0163648ed58c51df771226238",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\ios\\Classes\\AMapFlutterFactory.h",
+      "destinationSha256": "fb4bb7ebb86e5b8164d08b4c3249bf50794db6a0163648ed58c51df771226238",
+      "action": "byte_identical_copy",
+      "bytes": 369
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\ios\\Classes\\AMapFlutterFactory.m",
+      "sourceSha256": "e1a9b868218c43a0cae6cffb4e688ab5d74017e536482acea057954450555826",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\ios\\Classes\\AMapFlutterFactory.m",
+      "destinationSha256": "e1a9b868218c43a0cae6cffb4e688ab5d74017e536482acea057954450555826",
+      "action": "byte_identical_copy",
+      "bytes": 1028
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\ios\\Classes\\AMapFlutterMapPlugin.h",
+      "sourceSha256": "51c86ac89e0fef50e715c3337bb7b05a501072f9a2365a6c301c5204685cdb2f",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\ios\\Classes\\AMapFlutterMapPlugin.h",
+      "destinationSha256": "51c86ac89e0fef50e715c3337bb7b05a501072f9a2365a6c301c5204685cdb2f",
+      "action": "byte_identical_copy",
+      "bytes": 131
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\ios\\Classes\\AMapFlutterMapPlugin.m",
+      "sourceSha256": "061f6b9d89c19a2756c5ae3e802cc737e1356562931f8d06ca362386e9ea6029",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\ios\\Classes\\AMapFlutterMapPlugin.m",
+      "destinationSha256": "061f6b9d89c19a2756c5ae3e802cc737e1356562931f8d06ca362386e9ea6029",
+      "action": "byte_identical_copy",
+      "bytes": 649
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\ios\\Classes\\AMapViewController.h",
+      "sourceSha256": "931db9ea242a1b566f566c8b0e1f47a1d596bae2351c02a5a31f24743100c8d2",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\ios\\Classes\\AMapViewController.h",
+      "destinationSha256": "931db9ea242a1b566f566c8b0e1f47a1d596bae2351c02a5a31f24743100c8d2",
+      "action": "byte_identical_copy",
+      "bytes": 530
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\ios\\Classes\\AMapViewController.m",
+      "sourceSha256": "8a90acb4f0cbc309a46dcb52f497bb41b3be7fe1814d56ace60c8ed361933285",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\ios\\Classes\\AMapViewController.m",
+      "destinationSha256": "8a90acb4f0cbc309a46dcb52f497bb41b3be7fe1814d56ace60c8ed361933285",
+      "action": "byte_identical_copy",
+      "bytes": 23242
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\ios\\Classes\\Category\\FlutterMethodChannel+MethodCallDispatch.h",
+      "sourceSha256": "f7a7e3d54f94876a04f5f87d2c0d69180a7f8460e5476cffff6c971e28ddc126",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\ios\\Classes\\Category\\FlutterMethodChannel+MethodCallDispatch.h",
+      "destinationSha256": "f7a7e3d54f94876a04f5f87d2c0d69180a7f8460e5476cffff6c971e28ddc126",
+      "action": "byte_identical_copy",
+      "bytes": 891
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\ios\\Classes\\Category\\FlutterMethodChannel+MethodCallDispatch.m",
+      "sourceSha256": "e6fefea64cdcda8f7ec92d71cf49891cc0e2f22ac13916a75a896132a3592435",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\ios\\Classes\\Category\\FlutterMethodChannel+MethodCallDispatch.m",
+      "destinationSha256": "e6fefea64cdcda8f7ec92d71cf49891cc0e2f22ac13916a75a896132a3592435",
+      "action": "byte_identical_copy",
+      "bytes": 1423
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\ios\\Classes\\Category\\MAAnnotationView+Flutter.h",
+      "sourceSha256": "4839b99c389329585606162d3ec53022990921fa1b902834090eb07526c2c5bb",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\ios\\Classes\\Category\\MAAnnotationView+Flutter.h",
+      "destinationSha256": "4839b99c389329585606162d3ec53022990921fa1b902834090eb07526c2c5bb",
+      "action": "byte_identical_copy",
+      "bytes": 302
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\ios\\Classes\\Category\\MAAnnotationView+Flutter.m",
+      "sourceSha256": "466f7c24bb95e8857ef2b84e5deb7e98143d4f7957d1d0019d6a727b67ea26dc",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\ios\\Classes\\Category\\MAAnnotationView+Flutter.m",
+      "destinationSha256": "466f7c24bb95e8857ef2b84e5deb7e98143d4f7957d1d0019d6a727b67ea26dc",
+      "action": "byte_identical_copy",
+      "bytes": 1442
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\ios\\Classes\\Category\\MAMapView+Flutter.h",
+      "sourceSha256": "760f5e0845ea5efb2282bec5770e2c8dc1937c850c34315f9fe5132c808d3da4",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\ios\\Classes\\Category\\MAMapView+Flutter.h",
+      "destinationSha256": "760f5e0845ea5efb2282bec5770e2c8dc1937c850c34315f9fe5132c808d3da4",
+      "action": "byte_identical_copy",
+      "bytes": 717
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\ios\\Classes\\Category\\MAMapView+Flutter.m",
+      "sourceSha256": "04708e3f3075ab94340725b8d5079940e8dc2d06bdaccb6f3dab11dbc01d209f",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\ios\\Classes\\Category\\MAMapView+Flutter.m",
+      "destinationSha256": "04708e3f3075ab94340725b8d5079940e8dc2d06bdaccb6f3dab11dbc01d209f",
+      "action": "byte_identical_copy",
+      "bytes": 13271
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\ios\\Classes\\Category\\MAPointAnnotation+Flutter.h",
+      "sourceSha256": "23687282ec2977d3edf8e30dc1e78bc9f942093f238826880c4df36f0eb24b07",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\ios\\Classes\\Category\\MAPointAnnotation+Flutter.h",
+      "destinationSha256": "23687282ec2977d3edf8e30dc1e78bc9f942093f238826880c4df36f0eb24b07",
+      "action": "byte_identical_copy",
+      "bytes": 852
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\ios\\Classes\\Category\\MAPointAnnotation+Flutter.m",
+      "sourceSha256": "b6690137838c844cf162ca9c270a54dbb1ace647b39f4fddede6d51f6c7413e5",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\ios\\Classes\\Category\\MAPointAnnotation+Flutter.m",
+      "destinationSha256": "b6690137838c844cf162ca9c270a54dbb1ace647b39f4fddede6d51f6c7413e5",
+      "action": "byte_identical_copy",
+      "bytes": 722
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\ios\\Classes\\Category\\MAPolygon+Flutter.h",
+      "sourceSha256": "314128f812ebca6c1389da609794fb0ff7e83a95fc3eb953c68b164b8c74617a",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\ios\\Classes\\Category\\MAPolygon+Flutter.h",
+      "destinationSha256": "314128f812ebca6c1389da609794fb0ff7e83a95fc3eb953c68b164b8c74617a",
+      "action": "byte_identical_copy",
+      "bytes": 636
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\ios\\Classes\\Category\\MAPolygon+Flutter.m",
+      "sourceSha256": "227e603546c9a156d53773ea50d4450d7cd42b7b35fc953fcc7422f82ae4fc0a",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\ios\\Classes\\Category\\MAPolygon+Flutter.m",
+      "destinationSha256": "227e603546c9a156d53773ea50d4450d7cd42b7b35fc953fcc7422f82ae4fc0a",
+      "action": "byte_identical_copy",
+      "bytes": 612
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\ios\\Classes\\Category\\MAPolygonRenderer+Flutter.h",
+      "sourceSha256": "e508ceb7dc1d9a7c8ed26a13fe582e8f57650c18e1d6b9ec4c4bb92a8e9b6512",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\ios\\Classes\\Category\\MAPolygonRenderer+Flutter.h",
+      "destinationSha256": "e508ceb7dc1d9a7c8ed26a13fe582e8f57650c18e1d6b9ec4c4bb92a8e9b6512",
+      "action": "byte_identical_copy",
+      "bytes": 311
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\ios\\Classes\\Category\\MAPolygonRenderer+Flutter.m",
+      "sourceSha256": "20d4d672d09d1df61649a269e49d3a39d977077115a53754ff96390056d851ff",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\ios\\Classes\\Category\\MAPolygonRenderer+Flutter.m",
+      "destinationSha256": "20d4d672d09d1df61649a269e49d3a39d977077115a53754ff96390056d851ff",
+      "action": "byte_identical_copy",
+      "bytes": 554
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\ios\\Classes\\Category\\MAPolyline+Flutter.h",
+      "sourceSha256": "92ff2c0bfa9d997c5a0c4f8265e98b4ac7cbc0dc5e5f90b1c5f66cab76fc9553",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\ios\\Classes\\Category\\MAPolyline+Flutter.h",
+      "destinationSha256": "92ff2c0bfa9d997c5a0c4f8265e98b4ac7cbc0dc5e5f90b1c5f66cab76fc9553",
+      "action": "byte_identical_copy",
+      "bytes": 645
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\ios\\Classes\\Category\\MAPolyline+Flutter.m",
+      "sourceSha256": "8516d9e6d7fbd0959c3678b783b6e0f72bd3dd78941152e16d1bf33a6083c847",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\ios\\Classes\\Category\\MAPolyline+Flutter.m",
+      "destinationSha256": "8516d9e6d7fbd0959c3678b783b6e0f72bd3dd78941152e16d1bf33a6083c847",
+      "action": "byte_identical_copy",
+      "bytes": 624
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\ios\\Classes\\Category\\MAPolylineRenderer+Flutter.h",
+      "sourceSha256": "da95ced58fbf6e728198c1f085f37919d61ae60e1afa1a2d586c1ce8d8bcfb5d",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\ios\\Classes\\Category\\MAPolylineRenderer+Flutter.h",
+      "destinationSha256": "da95ced58fbf6e728198c1f085f37919d61ae60e1afa1a2d586c1ce8d8bcfb5d",
+      "action": "byte_identical_copy",
+      "bytes": 316
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\ios\\Classes\\Category\\MAPolylineRenderer+Flutter.m",
+      "sourceSha256": "232434d0cf9d504f1e370576c8a17ec04eeac2a58129b00d9d9dc6d096efb3f4",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\ios\\Classes\\Category\\MAPolylineRenderer+Flutter.m",
+      "destinationSha256": "232434d0cf9d504f1e370576c8a17ec04eeac2a58129b00d9d9dc6d096efb3f4",
+      "action": "byte_identical_copy",
+      "bytes": 789
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\ios\\Classes\\Model\\AMapCameraPosition.h",
+      "sourceSha256": "bc7068c7a2134764580b1e5a8130b13e234b9b4594574d14638bc86c3c62e142",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\ios\\Classes\\Model\\AMapCameraPosition.h",
+      "destinationSha256": "bc7068c7a2134764580b1e5a8130b13e234b9b4594574d14638bc86c3c62e142",
+      "action": "byte_identical_copy",
+      "bytes": 754
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\ios\\Classes\\Model\\AMapCameraPosition.m",
+      "sourceSha256": "4748b94eca73e2c6f5fa803a26d7f8e0247231679eed35a313ffb8400790ea59",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\ios\\Classes\\Model\\AMapCameraPosition.m",
+      "destinationSha256": "4748b94eca73e2c6f5fa803a26d7f8e0247231679eed35a313ffb8400790ea59",
+      "action": "byte_identical_copy",
+      "bytes": 795
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\ios\\Classes\\Model\\AMapInfoWindow.h",
+      "sourceSha256": "923c49515fb97c1e1c73ffc6543468f0e7f08f8ed9d2b50fc9df9ba8359d37b9",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\ios\\Classes\\Model\\AMapInfoWindow.h",
+      "destinationSha256": "923c49515fb97c1e1c73ffc6543468f0e7f08f8ed9d2b50fc9df9ba8359d37b9",
+      "action": "byte_identical_copy",
+      "bytes": 366
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\ios\\Classes\\Model\\AMapInfoWindow.m",
+      "sourceSha256": "89fecce3ebd8e4c1ee4f4901c40544bb7bef5d2b078d0f524bdd46d939c496f0",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\ios\\Classes\\Model\\AMapInfoWindow.m",
+      "destinationSha256": "89fecce3ebd8e4c1ee4f4901c40544bb7bef5d2b078d0f524bdd46d939c496f0",
+      "action": "byte_identical_copy",
+      "bytes": 154
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\ios\\Classes\\Model\\AMapLocation.h",
+      "sourceSha256": "7912c9b7e5a77a7fa55810ba9fb592f90657915eb9c9283cbf970b1fed94b59e",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\ios\\Classes\\Model\\AMapLocation.h",
+      "destinationSha256": "7912c9b7e5a77a7fa55810ba9fb592f90657915eb9c9283cbf970b1fed94b59e",
+      "action": "byte_identical_copy",
+      "bytes": 854
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\ios\\Classes\\Model\\AMapLocation.m",
+      "sourceSha256": "468957aa0ba2e5955f29e56605c550339fb221c21558bf3507b33cb5a4c6b1de",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\ios\\Classes\\Model\\AMapLocation.m",
+      "destinationSha256": "468957aa0ba2e5955f29e56605c550339fb221c21558bf3507b33cb5a4c6b1de",
+      "action": "byte_identical_copy",
+      "bytes": 660
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\ios\\Classes\\Model\\AMapMarker.h",
+      "sourceSha256": "77d9ff41f5264746d6abbbdf1729c55349080d56bd85937609ee58696adf89e0",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\ios\\Classes\\Model\\AMapMarker.h",
+      "destinationSha256": "77d9ff41f5264746d6abbbdf1729c55349080d56bd85937609ee58696adf89e0",
+      "action": "byte_identical_copy",
+      "bytes": 1362
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\ios\\Classes\\Model\\AMapMarker.m",
+      "sourceSha256": "8127f49d5a632428b6fa9dbcb35d10e84cff5c59e18e54bd8ca6517a5dca7ebe",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\ios\\Classes\\Model\\AMapMarker.m",
+      "destinationSha256": "8127f49d5a632428b6fa9dbcb35d10e84cff5c59e18e54bd8ca6517a5dca7ebe",
+      "action": "byte_identical_copy",
+      "bytes": 1852
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\ios\\Classes\\Model\\AMapPolygon.h",
+      "sourceSha256": "4bea0acc69669bf78dcbeafd635cf7184865057b53d7c7ed9687f31b656788fd",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\ios\\Classes\\Model\\AMapPolygon.h",
+      "destinationSha256": "4bea0acc69669bf78dcbeafd635cf7184865057b53d7c7ed9687f31b656788fd",
+      "action": "byte_identical_copy",
+      "bytes": 1011
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\ios\\Classes\\Model\\AMapPolygon.m",
+      "sourceSha256": "9cef3d91b1d688fd06ae68a3657c6027a59cb677372ffef092c144a713c10fa4",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\ios\\Classes\\Model\\AMapPolygon.m",
+      "destinationSha256": "9cef3d91b1d688fd06ae68a3657c6027a59cb677372ffef092c144a713c10fa4",
+      "action": "byte_identical_copy",
+      "bytes": 2764
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\ios\\Classes\\Model\\AMapPolyline.h",
+      "sourceSha256": "368020c40427c5c5169173a6fb76d70b850cd52bb18b3cd589d522cae0ba36ba",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\ios\\Classes\\Model\\AMapPolyline.h",
+      "destinationSha256": "368020c40427c5c5169173a6fb76d70b850cd52bb18b3cd589d522cae0ba36ba",
+      "action": "byte_identical_copy",
+      "bytes": 1451
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\ios\\Classes\\Model\\AMapPolyline.m",
+      "sourceSha256": "86a74eeedde048be036d12234de4564666b263c8bd82a72c0b36952873b7235b",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\ios\\Classes\\Model\\AMapPolyline.m",
+      "destinationSha256": "86a74eeedde048be036d12234de4564666b263c8bd82a72c0b36952873b7235b",
+      "action": "byte_identical_copy",
+      "bytes": 3187
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\ios\\Classes\\OverlayController\\AMapMarkerController.h",
+      "sourceSha256": "e219c6d30514e5489ce9187e50f1465730a68536dd6c87cda900c0dd5e806907",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\ios\\Classes\\OverlayController\\AMapMarkerController.h",
+      "destinationSha256": "e219c6d30514e5489ce9187e50f1465730a68536dd6c87cda900c0dd5e806907",
+      "action": "byte_identical_copy",
+      "bytes": 908
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\ios\\Classes\\OverlayController\\AMapMarkerController.m",
+      "sourceSha256": "905b7a5cf419c8f4351cf1a5726d2f3ee72574772df4903ba1ea9ede4356a0fa",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\ios\\Classes\\OverlayController\\AMapMarkerController.m",
+      "destinationSha256": "905b7a5cf419c8f4351cf1a5726d2f3ee72574772df4903ba1ea9ede4356a0fa",
+      "action": "byte_identical_copy",
+      "bytes": 5516
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\ios\\Classes\\OverlayController\\AMapPolygonController.h",
+      "sourceSha256": "984744fcd1a3dcd4e1462083b495210afb19491fb0ba1dba18cab525654b084b",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\ios\\Classes\\OverlayController\\AMapPolygonController.h",
+      "destinationSha256": "984744fcd1a3dcd4e1462083b495210afb19491fb0ba1dba18cab525654b084b",
+      "action": "byte_identical_copy",
+      "bytes": 735
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\ios\\Classes\\OverlayController\\AMapPolygonController.m",
+      "sourceSha256": "da686df86149001118921135c43c5b74771891027b280a0e6dcd1ae97ea96b5b",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\ios\\Classes\\OverlayController\\AMapPolygonController.m",
+      "destinationSha256": "da686df86149001118921135c43c5b74771891027b280a0e6dcd1ae97ea96b5b",
+      "action": "byte_identical_copy",
+      "bytes": 3715
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\ios\\Classes\\OverlayController\\AMapPolylineController.h",
+      "sourceSha256": "0e08314ae3e237e0d578ff01956d68043687525b1d1bda22b24465424d5e4b16",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\ios\\Classes\\OverlayController\\AMapPolylineController.h",
+      "destinationSha256": "0e08314ae3e237e0d578ff01956d68043687525b1d1bda22b24465424d5e4b16",
+      "action": "byte_identical_copy",
+      "bytes": 772
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\ios\\Classes\\OverlayController\\AMapPolylineController.m",
+      "sourceSha256": "82d5ae3959f4fa1289be61fc69b263f6b0d8f271644c113a08756808af8063e6",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\ios\\Classes\\OverlayController\\AMapPolylineController.m",
+      "destinationSha256": "82d5ae3959f4fa1289be61fc69b263f6b0d8f271644c113a08756808af8063e6",
+      "action": "byte_identical_copy",
+      "bytes": 4872
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\ios\\Classes\\Util\\AMapConvertUtil.h",
+      "sourceSha256": "11d42780ed5196d801e57ceb31e7df52d7891960c436968fdfa7b9c9b72915e2",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\ios\\Classes\\Util\\AMapConvertUtil.h",
+      "destinationSha256": "11d42780ed5196d801e57ceb31e7df52d7891960c436968fdfa7b9c9b72915e2",
+      "action": "byte_identical_copy",
+      "bytes": 2209
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\ios\\Classes\\Util\\AMapConvertUtil.m",
+      "sourceSha256": "fa50cd7573d6b0ed3127ac14bc6b40c5904799241c946b2e99e0c7a72639e1b1",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\ios\\Classes\\Util\\AMapConvertUtil.m",
+      "destinationSha256": "fa50cd7573d6b0ed3127ac14bc6b40c5904799241c946b2e99e0c7a72639e1b1",
+      "action": "byte_identical_copy",
+      "bytes": 9388
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\ios\\Classes\\Util\\AMapJsonUtils.h",
+      "sourceSha256": "c2d4763f1b154d0d2188e72b5b07b5ea0bfc31ed3f0a751a2757fd6daf61e5be",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\ios\\Classes\\Util\\AMapJsonUtils.h",
+      "destinationSha256": "c2d4763f1b154d0d2188e72b5b07b5ea0bfc31ed3f0a751a2757fd6daf61e5be",
+      "action": "byte_identical_copy",
+      "bytes": 938
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\ios\\Classes\\Util\\AMapJsonUtils.m",
+      "sourceSha256": "4f92b6f1631be30264b41303f276dffb820cc6e34ed8200fa2e79376b6fa650a",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\ios\\Classes\\Util\\AMapJsonUtils.m",
+      "destinationSha256": "4f92b6f1631be30264b41303f276dffb820cc6e34ed8200fa2e79376b6fa650a",
+      "action": "byte_identical_copy",
+      "bytes": 11064
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\ios\\Classes\\Util\\AMapMethodCallDispatcher.h",
+      "sourceSha256": "3ebee0757d74254d5e450ece28f62316e2cbbb5d2b65f8af2533e8395552d541",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\ios\\Classes\\Util\\AMapMethodCallDispatcher.h",
+      "destinationSha256": "3ebee0757d74254d5e450ece28f62316e2cbbb5d2b65f8af2533e8395552d541",
+      "action": "byte_identical_copy",
+      "bytes": 720
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\ios\\Classes\\Util\\AMapMethodCallDispatcher.m",
+      "sourceSha256": "785be9e673247f1239f15be7b6297d31174154adab4c6254f5763e44d43ac578",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\ios\\Classes\\Util\\AMapMethodCallDispatcher.m",
+      "destinationSha256": "785be9e673247f1239f15be7b6297d31174154adab4c6254f5763e44d43ac578",
+      "action": "byte_identical_copy",
+      "bytes": 1644
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\ios\\amap_map.podspec",
+      "sourceSha256": "608240aa2af02f76f2e0f6d5ec92763cdc91d0aaa0493c56ee856a480ab4b6c6",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\ios\\amap_map.podspec",
+      "destinationSha256": "608240aa2af02f76f2e0f6d5ec92763cdc91d0aaa0493c56ee856a480ab4b6c6",
+      "action": "byte_identical_copy",
+      "bytes": 1087
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\lib\\amap_map.dart",
+      "sourceSha256": "085be844cc0973cc1935c080354b070343304975e353842ced2730f16ca91ac7",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\lib\\amap_map.dart",
+      "destinationSha256": "085be844cc0973cc1935c080354b070343304975e353842ced2730f16ca91ac7",
+      "action": "byte_identical_copy",
+      "bytes": 1219
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\lib\\src\\amap_controller.dart",
+      "sourceSha256": "eb3c199e35c67ba2ac9eaec6b472618ca83bb67c15ca3c5db1062a426f4eed58",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\lib\\src\\amap_controller.dart",
+      "destinationSha256": "46e28bc832a98188b6aa06168767156e57cf0df4af6a346330b429f0f2ee1f2a",
+      "action": "copy_with_declared_birdtie_lifecycle_repair",
+      "bytes": 6885,
+      "previousBirdtieSha256": "eb3c199e35c67ba2ac9eaec6b472618ca83bb67c15ca3c5db1062a426f4eed58",
+      "birdtieChanges": [
+        "Own and cancel nine stream subscriptions",
+        "Guard queued callbacks and release MapState",
+        "Idempotent disponse compatibility method"
+      ]
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\lib\\src\\amap_initializer.dart",
+      "sourceSha256": "38b18346eed9c5b36cb4916dcd9391342d179477bc990ebee3f781cd368bd71e",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\lib\\src\\amap_initializer.dart",
+      "destinationSha256": "38b18346eed9c5b36cb4916dcd9391342d179477bc990ebee3f781cd368bd71e",
+      "action": "byte_identical_copy",
+      "bytes": 1880
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\lib\\src\\amap_widget.dart",
+      "sourceSha256": "93eb4c1784e2e3205283fe5dc120106e38882db2ae7e68935afe77882c01f9ab",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\lib\\src\\amap_widget.dart",
+      "destinationSha256": "14dd6a5ac859a8f47feb025afb1f093da544ad66a724634dea1453b7bfc3be0d",
+      "action": "copy_with_declared_birdtie_lifecycle_repair",
+      "bytes": 16645,
+      "previousBirdtieSha256": "93eb4c1784e2e3205283fe5dc120106e38882db2ae7e68935afe77882c01f9ab",
+      "birdtieChanges": [
+        "Synchronous dispose and pending channel retirement",
+        "Late init disposes controller without creation callback",
+        "Guard asynchronous overlay updates after unmount"
+      ]
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\lib\\src\\compatibility\\color_extensions.dart",
+      "sourceSha256": "4828af25db47bcd3748df46057c6d7c6fa90cd28fd2ad49de0c6195f7f68c521",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\lib\\src\\compatibility\\color_extensions.dart",
+      "destinationSha256": "4828af25db47bcd3748df46057c6d7c6fa90cd28fd2ad49de0c6195f7f68c521",
+      "action": "byte_identical_copy",
+      "bytes": 764
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\lib\\src\\compatibility\\compatibility_utils.dart",
+      "sourceSha256": "a05f7f68058ed28271d562e1bd426538195923fa51e5e8f52ba2d531643d1d3a",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\lib\\src\\compatibility\\compatibility_utils.dart",
+      "destinationSha256": "a05f7f68058ed28271d562e1bd426538195923fa51e5e8f52ba2d531643d1d3a",
+      "action": "byte_identical_copy",
+      "bytes": 1532
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\lib\\src\\core\\amap_flutter_platform.dart",
+      "sourceSha256": "bd32c41b9848cf5e4ca1b8ea30e841519c6734f8f6ad36ddff81879b9ea617c7",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\lib\\src\\core\\amap_flutter_platform.dart",
+      "destinationSha256": "bd32c41b9848cf5e4ca1b8ea30e841519c6734f8f6ad36ddff81879b9ea617c7",
+      "action": "byte_identical_copy",
+      "bytes": 1545
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\lib\\src\\core\\map_event.dart",
+      "sourceSha256": "97f83e3e35e23e12e469039cd406a5b1e6b8e0d92f7a984800351f690ce62c5d",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\lib\\src\\core\\map_event.dart",
+      "destinationSha256": "97f83e3e35e23e12e469039cd406a5b1e6b8e0d92f7a984800351f690ce62c5d",
+      "action": "byte_identical_copy",
+      "bytes": 2070
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\lib\\src\\core\\method_channel_amap_map.dart",
+      "sourceSha256": "5f72a8ee1ac12e2b73437b65b1419c2fb6c3474b4afe105b15c706d8a10ad419",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\lib\\src\\core\\method_channel_amap_map.dart",
+      "destinationSha256": "394fe27d016066ccdfe9a99c1f8158ab39031d6cb179cf2487cd001c559c2d60",
+      "action": "copy_with_declared_birdtie_lifecycle_repair",
+      "bytes": 11654,
+      "modification": "creationParams debugMode: kDebugMode -> false for all builds",
+      "previousBirdtieSha256": "5c749db7c30f0ebe98945c58097b69174f2d3474693e046ce021025358f7ea86",
+      "birdtieChanges": [
+        "Disable debug argument logging",
+        "Remove incoming method handler on channel disposal"
+      ]
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\lib\\src\\method_channel\\serialization.dart",
+      "sourceSha256": "a57cd754397e67a6d0a14c42aacbe5087372e12982f18d87f5153d3e44a2bb3d",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\lib\\src\\method_channel\\serialization.dart",
+      "destinationSha256": "a57cd754397e67a6d0a14c42aacbe5087372e12982f18d87f5153d3e44a2bb3d",
+      "action": "byte_identical_copy",
+      "bytes": 657
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\lib\\src\\types\\base_overlay.dart",
+      "sourceSha256": "7ebfa240a95d5b00b94b75adf85e4e796b39aa4cf609fff286c33efd87e810fa",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\lib\\src\\types\\base_overlay.dart",
+      "destinationSha256": "7ebfa240a95d5b00b94b75adf85e4e796b39aa4cf609fff286c33efd87e810fa",
+      "action": "byte_identical_copy",
+      "bytes": 1209
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\lib\\src\\types\\bitmap.dart",
+      "sourceSha256": "67b422682b8e4bf08f37909a11b040a60759a23518e4df49e6fa651f7d1191bf",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\lib\\src\\types\\bitmap.dart",
+      "destinationSha256": "67b422682b8e4bf08f37909a11b040a60759a23518e4df49e6fa651f7d1191bf",
+      "action": "byte_identical_copy",
+      "bytes": 4236
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\lib\\src\\types\\camera.dart",
+      "sourceSha256": "fc85a9c208c3a3f5302cc900abe780b52c351e47d85441f3169d75a68aa5fb3d",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\lib\\src\\types\\camera.dart",
+      "destinationSha256": "fc85a9c208c3a3f5302cc900abe780b52c351e47d85441f3169d75a68aa5fb3d",
+      "action": "byte_identical_copy",
+      "bytes": 4861
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\lib\\src\\types\\info_window_adapter.dart",
+      "sourceSha256": "9109a7fce712198df66a98c3e16de5aaaa44c1ca4b0bad0d95007b6803871e72",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\lib\\src\\types\\info_window_adapter.dart",
+      "destinationSha256": "9109a7fce712198df66a98c3e16de5aaaa44c1ca4b0bad0d95007b6803871e72",
+      "action": "byte_identical_copy",
+      "bytes": 1336
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\lib\\src\\types\\map_configuration.dart",
+      "sourceSha256": "ebad430ac2fb66b3a5efe3559ba1ad0417dfe654c19f63564bd26d2880156f2c",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\lib\\src\\types\\map_configuration.dart",
+      "destinationSha256": "ebad430ac2fb66b3a5efe3559ba1ad0417dfe654c19f63564bd26d2880156f2c",
+      "action": "byte_identical_copy",
+      "bytes": 11682
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\lib\\src\\types\\marker.dart",
+      "sourceSha256": "2c41e64eb64d3247e3c0c4651de0064f73083f5f9a5174132de0565f6451596c",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\lib\\src\\types\\marker.dart",
+      "destinationSha256": "2c41e64eb64d3247e3c0c4651de0064f73083f5f9a5174132de0565f6451596c",
+      "action": "byte_identical_copy",
+      "bytes": 7901
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\lib\\src\\types\\marker_updates.dart",
+      "sourceSha256": "e66a527befcc10aceec3f3c606565d573f6a7a184da89c8313f82581365d72e1",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\lib\\src\\types\\marker_updates.dart",
+      "destinationSha256": "e66a527befcc10aceec3f3c606565d573f6a7a184da89c8313f82581365d72e1",
+      "action": "byte_identical_copy",
+      "bytes": 2885
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\lib\\src\\types\\polygon.dart",
+      "sourceSha256": "563d01b17ba94b3cf5b694b9a86adcd87d46c5cc796a58758cc273d157362e37",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\lib\\src\\types\\polygon.dart",
+      "destinationSha256": "563d01b17ba94b3cf5b694b9a86adcd87d46c5cc796a58758cc273d157362e37",
+      "action": "byte_identical_copy",
+      "bytes": 4004
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\lib\\src\\types\\polygon_updates.dart",
+      "sourceSha256": "25694b5b180bd1f9adc090eaae06d4bd470d03d89e2b81af855e523aa77467df",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\lib\\src\\types\\polygon_updates.dart",
+      "destinationSha256": "25694b5b180bd1f9adc090eaae06d4bd470d03d89e2b81af855e523aa77467df",
+      "action": "byte_identical_copy",
+      "bytes": 3172
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\lib\\src\\types\\polyline.dart",
+      "sourceSha256": "55636134b885a4b0b11ca85c8451d7fa9d1bad7960f41d38d58e813a6c80815d",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\lib\\src\\types\\polyline.dart",
+      "destinationSha256": "55636134b885a4b0b11ca85c8451d7fa9d1bad7960f41d38d58e813a6c80815d",
+      "action": "byte_identical_copy",
+      "bytes": 5604
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\lib\\src\\types\\polyline_updates.dart",
+      "sourceSha256": "05c99c5ebd7f42abfa57c2153cc795dffba73911a443a7d2397999f0f84af788",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\lib\\src\\types\\polyline_updates.dart",
+      "destinationSha256": "05c99c5ebd7f42abfa57c2153cc795dffba73911a443a7d2397999f0f84af788",
+      "action": "byte_identical_copy",
+      "bytes": 3243
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\lib\\src\\types\\screen_coordinate.dart",
+      "sourceSha256": "d5d30b72256f01f586f13d47903d245e89c7debc90faa3e40304b0116943aa08",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\lib\\src\\types\\screen_coordinate.dart",
+      "destinationSha256": "d5d30b72256f01f586f13d47903d245e89c7debc90faa3e40304b0116943aa08",
+      "action": "byte_identical_copy",
+      "bytes": 1383
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\lib\\src\\types\\types.dart",
+      "sourceSha256": "12e7f40590057a1bf116e86ce02c3f316b679353d26275f9657ebdcc80903dff",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\lib\\src\\types\\types.dart",
+      "destinationSha256": "12e7f40590057a1bf116e86ce02c3f316b679353d26275f9657ebdcc80903dff",
+      "action": "byte_identical_copy",
+      "bytes": 777
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\lib\\src\\types\\ui.dart",
+      "sourceSha256": "0bf00b8a0d3a125bb0d71d0d4cb1d99794975a0a96c4b96c31d5b169131bf06d",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\lib\\src\\types\\ui.dart",
+      "destinationSha256": "0bf00b8a0d3a125bb0d71d0d4cb1d99794975a0a96c4b96c31d5b169131bf06d",
+      "action": "byte_identical_copy",
+      "bytes": 7120
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\lib\\src\\utils\\location_utils.dart",
+      "sourceSha256": "ec9dd0b750d2a9e7fe30d68c2fdb29e7e10c5d0cdb2c080174ab4a1b7e011ed3",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\lib\\src\\utils\\location_utils.dart",
+      "destinationSha256": "ec9dd0b750d2a9e7fe30d68c2fdb29e7e10c5d0cdb2c080174ab4a1b7e011ed3",
+      "action": "byte_identical_copy",
+      "bytes": 356
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\lib\\src\\utils\\option_equality.dart",
+      "sourceSha256": "1b8d566f52dfb73191bd8de6b66a04ab031100ec185be45a7be79a0d1f9d88ac",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\lib\\src\\utils\\option_equality.dart",
+      "destinationSha256": "1b8d566f52dfb73191bd8de6b66a04ab031100ec185be45a7be79a0d1f9d88ac",
+      "action": "byte_identical_copy",
+      "bytes": 919
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\pubspec.yaml",
+      "sourceSha256": "0f6cfc39b28db15ae96c6dcb7148d6e6997884fb422defc5a00ea1c589229418",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\pubspec.yaml",
+      "destinationSha256": "0f6cfc39b28db15ae96c6dcb7148d6e6997884fb422defc5a00ea1c589229418",
+      "action": "byte_identical_copy",
+      "bytes": 2408
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\res\\AZURE.png",
+      "sourceSha256": "2e042101411f4cd30ed9474231e092bd0b4ed038721dc5f3bab8b232668a3e6b",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\res\\AZURE.png",
+      "destinationSha256": "2e042101411f4cd30ed9474231e092bd0b4ed038721dc5f3bab8b232668a3e6b",
+      "action": "byte_identical_copy",
+      "bytes": 1513
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\res\\BLUE.png",
+      "sourceSha256": "b8cbf2271fb116da3187f46c25f6a064beeeaa9880f6da77a7f5e7ee46ca7d6c",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\res\\BLUE.png",
+      "destinationSha256": "b8cbf2271fb116da3187f46c25f6a064beeeaa9880f6da77a7f5e7ee46ca7d6c",
+      "action": "byte_identical_copy",
+      "bytes": 1554
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\res\\CYAN.png",
+      "sourceSha256": "2040ad62156227085c867052f440a08ab2cb8e8b5f51ba3129bba5fdf3070e09",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\res\\CYAN.png",
+      "destinationSha256": "2040ad62156227085c867052f440a08ab2cb8e8b5f51ba3129bba5fdf3070e09",
+      "action": "byte_identical_copy",
+      "bytes": 1529
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\res\\GREEN.png",
+      "sourceSha256": "91ad4282ff2d6ac6060ba587a8bcccab3db0458554cf2af3acbd3892e39940b7",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\res\\GREEN.png",
+      "destinationSha256": "91ad4282ff2d6ac6060ba587a8bcccab3db0458554cf2af3acbd3892e39940b7",
+      "action": "byte_identical_copy",
+      "bytes": 1546
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\res\\MAGENTA.png",
+      "sourceSha256": "c1a11e4f953d23b16f9e1bfca4c063c2c0575535179030e71d64a76b6fa857e7",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\res\\MAGENTA.png",
+      "destinationSha256": "c1a11e4f953d23b16f9e1bfca4c063c2c0575535179030e71d64a76b6fa857e7",
+      "action": "byte_identical_copy",
+      "bytes": 3151
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\res\\ORANGE.png",
+      "sourceSha256": "4a4d6334a8ecbb85ec214f0ebefb0fe3928fa8eff06475c874d715eb2d2c8efe",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\res\\ORANGE.png",
+      "destinationSha256": "4a4d6334a8ecbb85ec214f0ebefb0fe3928fa8eff06475c874d715eb2d2c8efe",
+      "action": "byte_identical_copy",
+      "bytes": 1526
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\res\\RED.png",
+      "sourceSha256": "bd9057e688871392dab664c51f3ecfed9a5638336c4b6eaf6abbf781a48614bc",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\res\\RED.png",
+      "destinationSha256": "bd9057e688871392dab664c51f3ecfed9a5638336c4b6eaf6abbf781a48614bc",
+      "action": "byte_identical_copy",
+      "bytes": 1523
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\res\\ROSE.png",
+      "sourceSha256": "f40a2b42ed9c32db71c4ccdce89b5e1af778d500022610cfcbfb8d12eed60304",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\res\\ROSE.png",
+      "destinationSha256": "f40a2b42ed9c32db71c4ccdce89b5e1af778d500022610cfcbfb8d12eed60304",
+      "action": "byte_identical_copy",
+      "bytes": 1537
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\res\\VIOLET.png",
+      "sourceSha256": "133dbc88ee6e18c9825c1e55e76258dc115ff6271d05f153a66348d125263d07",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\res\\VIOLET.png",
+      "destinationSha256": "133dbc88ee6e18c9825c1e55e76258dc115ff6271d05f153a66348d125263d07",
+      "action": "byte_identical_copy",
+      "bytes": 1529
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\res\\YELLOW.png",
+      "sourceSha256": "2252493edee05037e94228a4f234d3720893b498c15c467eec67aa889600a671",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\res\\YELLOW.png",
+      "destinationSha256": "2252493edee05037e94228a4f234d3720893b498c15c467eec67aa889600a671",
+      "action": "byte_identical_copy",
+      "bytes": 1507
+    },
+    {
+      "sourcePath": "D:\\Program\\Civu\\Civu-client\\packages\\amap_map\\res\\marker_default.png",
+      "sourceSha256": "ddd10f34b0443d5ecb3f535e44764d07a4b72182e955e450efcbf9378f9a1449",
+      "destinationPath": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\res\\marker_default.png",
+      "destinationSha256": "ddd10f34b0443d5ecb3f535e44764d07a4b72182e955e450efcbf9378f9a1449",
+      "action": "byte_identical_copy",
+      "bytes": 1519
+    }
+  ],
+  "generatedFiles": [
+    {
+      "path": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\NOTICE",
+      "sha256": "8836b991b36bbe5f239ac875dc2501b4c8836b7a418b9617c7a8f6c3a097bc8e",
+      "sourceLicensePath": "D:\\DevTools\\flutter\\LICENSE",
+      "sourceLicenseSha256": "a3a9fd82f800a47377f7d3f60c60a5c91cae0495be8f329031e1448ce0f5dab9"
+    },
+    {
+      "path": "D:\\Project\\birdtie\\apps\\client\\packages\\amap_map\\test\\amap_lifecycle_test.dart",
+      "sha256": "ee20fa0ab0e1ccdd4cdb6172cc330248bb5aa30f4e29187c992e3cd858821722",
+      "origin": "New Birdtie real-widget/mocked-native lifecycle regression; no Civu test copied"
+    }
+  ],
+  "excluded": [
+    "build",
+    ".git",
+    ".dart_tool",
+    "example",
+    "tests",
+    "android/src/test",
+    "gradle wrapper jar/scripts",
+    "showcase",
+    "keys",
+    "Civu application code"
+  ],
+  "validation": {
+    "copyHashCheck": "PASS_WITH_DECLARED_PATCH",
+    "dependencyResolution": "NOT_RUN",
+    "upstreamCurrentComparison": "NOT_RUN",
+    "tests": "NOT_RUN",
+    "build": "NOT_RUN",
+    "device": "NOT_RUN",
+    "production": "NOT_RUN"
+  },
+  "lifecycleRevision": {
+    "recordedAtUtc": "2026-10-16T02:18:35.3543022Z",
+    "test": "AMap disposal cancels all streams and native handlers without late revival",
+    "testLog": "../lifecycle-test01.log",
+    "status": "PASS",
+    "nativeSDK": "NOT_RUN"
+  },
+  "compileSdkRevision": {
+    "recordedAtUtc": "2026-10-16T02:21:29.7323621Z",
+    "failedBuild": "docs/testing/evidence/content-map-refinement-20261016/candidate-apk35",
+    "failedTask": ":amap_map:checkProfileAarMetadata",
+    "compileSdkBefore": 35,
+    "compileSdkAfter": 36,
+    "rebuild": "NOT_RUN_BY_THIS_WORKER"
+  }
+}

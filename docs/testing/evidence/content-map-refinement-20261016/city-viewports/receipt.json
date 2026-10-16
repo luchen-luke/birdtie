@@ -1,0 +1,49 @@
+{
+  "status": "SOURCE_AND_NATIVE_TEST_PASS_PRODUCTION_NOT_RUN",
+  "finalized": true,
+  "recordedAtUTC": "2026-10-16T01:20:42.151676+00:00",
+  "scope": "Two existing reviewed city camera configurations only",
+  "sourceFiles": {
+    "apps/api/migrations/173_reviewed_city_camera_viewports.sql": "62ddb7fd3ab8ee755e7dc2c40839f56a7e4490346d8eb5ac2702ea9afd130bc3",
+    "apps/api/internal/postgres/reviewed_city_camera_viewports_test.go": "228a17832e9fba29e9b3c4da20315d1e79849c7b8bf6065cbf14ff7539a3215a"
+  },
+  "publicSource": "public-source-verification.json",
+  "publicCatalogBefore": "public-catalog-before.json",
+  "readOnlyProductionPreflight": "preflight-receipt.json",
+  "actualEligibleUpdates": 2,
+  "nativeTest": {
+    "status": "PASS",
+    "name": "TestReviewedCityCameraViewportsNativeIdentityAndReplay",
+    "receipt": "docs/testing/evidence/content-map-lazy-display-20261016/backend/native02/receipt.json",
+    "receiptSHA256": "09274522b5650f4639366da623c81be7950adb64de1edb84a6d20339776ae40c",
+    "command": [
+      "C:\\Program Files\\Go\\bin\\go.exe",
+      "test",
+      "-mod=readonly",
+      "./internal/postgres",
+      "-count=1",
+      "-json",
+      "-run",
+      "^Test(MapContentLazy200NativeColdMetadataAndSelectedReads|ReviewedCityCameraViewportsNativeIdentityAndReplay)$"
+    ],
+    "cwd": "D:\\Project\\birdtie\\apps\\api",
+    "exitCode": 0,
+    "sourceStable": true,
+    "coverage": [
+      "exact stable ID, country, name, source_ref, source label and published status guards",
+      "existing map preserved",
+      "current catalog exposes both reviewed public cameras",
+      "replay updates zero rows",
+      "business accounts/places/moments/location-link row counts unchanged"
+    ],
+    "syntheticOwnedDatabase": true
+  },
+  "noSchemaContractChange": true,
+  "productionApplied": "NOT_RUN_BY_THIS_WORKER",
+  "newAPKWeb": "NOT_RUN_BY_THIS_WORKER",
+  "actualCityVideoNavigation": "NOT_RUN_FOR_THIS_MIGRATION",
+  "privateContentCoordinatesUsed": false,
+  "productionContentWrites": 0,
+  "productionSessionsCreated": 0,
+  "civuWrites": 0
+}

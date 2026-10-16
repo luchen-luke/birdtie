@@ -1,0 +1,26 @@
+{
+  "recordedAtUTC": "2026-10-16T01:20:16.788026+00:00",
+  "command": "Read-only SSH Python query helper + preflight.sql; no login and no writes",
+  "exitCode": 0,
+  "stderrPresent": false,
+  "remoteScriptSHA256": "c51ee8fdccf80906ac7a4d37b010a046a2ab7ab6ccae7f9e440cd8227a73393c",
+  "result": {
+    "status": "PASS",
+    "guard": {
+      "schema": 172,
+      "identity": true,
+      "currentNativeDatabase": true
+    },
+    "result": {
+      "presentCities": 2,
+      "expectedCities": 2,
+      "exactIdentities": 2,
+      "identityMismatches": 0,
+      "configuredOrPartial": 0,
+      "eligibleMissingMaps": 2
+    },
+    "databaseWrites": 0,
+    "sourceWrites": 0,
+    "sessionsCreated": 0
+  }
+}

@@ -45,3 +45,30 @@ func TestMapContent171AnchorIdentityAndPermissionCount(t *testing.T) {
 		t.Fatal("catalogue visibility stood in for private content permission")
 	}
 }
+
+func TestMapContentLazyDisplayDescriptorBindsExactOriginal(t *testing.T) {
+	now := time.Now().UTC()
+	mid, id, owner := "13000000-0000-4000-8000-000000000001", "13000000-0000-4000-8000-000000000002", "13000000-0000-4000-8000-000000000003"
+	original := strings.Repeat("a", 64)
+	source := MomentControlHash([]any{original, "display1280-v1"})
+	v := MapContentDisplayDescriptor{SchemaVersion: MapContentDisplaySchema, ViewerAccountID: owner, MomentID: mid, OriginalSourceVersion: original, ObservedAt: now, ValidUntil: now.Add(30 * time.Second), Media: MapContentMedia{Kind: "IMAGE", ID: id, Revision: 1, MIMEType: "image/jpeg", Width: 960, Height: 1280, ByteCount: 1234, SHA256: strings.Repeat("b", 64), SourceVersion: source, ContentPath: "/v1/me/map-content/moments/" + mid + "/media/" + id + "/content?sourceVersion=" + source + "&variant=display"}}
+	if !v.Valid(now) {
+		t.Fatal("valid display descriptor rejected")
+	}
+	for _, mutate := range []func(*MapContentDisplayDescriptor){
+		func(v *MapContentDisplayDescriptor) { v.OriginalSourceVersion = strings.Repeat("c", 64) },
+		func(v *MapContentDisplayDescriptor) { v.MomentID = owner },
+		func(v *MapContentDisplayDescriptor) { v.Media.ID = owner },
+		func(v *MapContentDisplayDescriptor) { v.Media.Width = 1281 },
+		func(v *MapContentDisplayDescriptor) { v.Media.ByteCount = 256*1024 + 1 },
+		func(v *MapContentDisplayDescriptor) { v.Media.DisplayDescriptorPath = "recursive" },
+		func(v *MapContentDisplayDescriptor) { v.ValidUntil = now },
+		func(v *MapContentDisplayDescriptor) { v.Media.ContentPath += "&unexpected=1" },
+	} {
+		bad := v
+		mutate(&bad)
+		if bad.Valid(now) {
+			t.Fatal("unbound descriptor accepted")
+		}
+	}
+}

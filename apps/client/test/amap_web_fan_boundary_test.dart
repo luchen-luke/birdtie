@@ -4,6 +4,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:birdtie_client/src/city/amap_city_map_stub.dart';
 import 'package:birdtie_client/src/city/map_point_selection_sheet.dart';
 import 'package:birdtie_client/src/workspace/map_entities.dart';
+import 'package:birdtie_client/src/workspace/map_display_policy.dart';
+import 'package:birdtie_client/src/city/map_coordinate_boundary.dart';
+import 'package:birdtie_client/src/city/map_provider_policy.dart';
+import 'package:birdtie_client/src/city/public_city_controller.dart';
 
 MapEntity _point(
   String id, {
@@ -37,6 +41,123 @@ String _frame(AMapSourceGate gate, int frame, {double dx = 0, int? revision}) =>
     });
 
 void main() {
+  test(
+    'explicit city country routes domestic/overseas and unknown retains provider',
+    () {
+      expect(
+        mapProviderForCountry(countryCode: 'CN', configuredProvider: 'mapbox'),
+        'amap',
+      );
+      expect(
+        mapProviderForCountry(
+          countryCode: ' chn ',
+          configuredProvider: 'mapbox',
+        ),
+        'amap',
+      );
+      expect(
+        mapProviderForCountry(countryCode: 'GB', configuredProvider: 'amap'),
+        'mapbox',
+      );
+      expect(
+        mapProviderForCountry(countryCode: '', configuredProvider: 'amap'),
+        'amap',
+      );
+      expect(
+        mapProviderForCountry(countryCode: '?', configuredProvider: 'mapbox'),
+        'mapbox',
+      );
+      final city = PublicCity.fromJson({
+        'id': 'synthetic-city',
+        'name': '城市',
+        'region': '区域',
+        'countryCode': 'CN',
+        'source': {'label': '来源', 'maintainer': '维护者'},
+        'map': null,
+      });
+      expect(city.countryCode, 'CN');
+    },
+  );
+  test(
+    'AMap SDK corners normalize once to WGS84 query; dateline stays short',
+    () {
+      final original = [
+        const Offset(121.40, 31.20),
+        const Offset(121.45, 31.22),
+        const Offset(121.43, 31.25),
+        const Offset(121.38, 31.23),
+        const Offset(121.415, 31.225),
+      ];
+      final gcj = original.map((p) {
+        final c = MapCoordinateBoundary.toAmap(p.dy, p.dx);
+        return Offset(c.longitude, c.latitude);
+      }).toList();
+      final bounds = canonicalAMapViewport(gcj)!;
+      expect(bounds.west, closeTo(121.38, .000001));
+      expect(bounds.east, closeTo(121.45, .000001));
+      expect(bounds.south, closeTo(31.20, .000001));
+      expect(bounds.north, closeTo(31.25, .000001));
+      final crossing = canonicalAMapViewport([
+        const Offset(179, 10),
+        const Offset(-179, 10),
+        const Offset(-179, 12),
+        const Offset(179, 12),
+        const Offset(180, 11),
+      ])!;
+      expect(crossing.west, 179);
+      expect(crossing.east, -179);
+      expect(crossing.longitudeSpan, 2);
+      expect(canonicalAMapViewport([const Offset(double.nan, 0)]), isNull);
+    },
+  );
+  test(
+    'owned anchor metadata and cluster counts survive source gate, full-size content is protected',
+    () {
+      final gate = AMapSourceGate();
+      gate.replace([
+        const MapEntity(
+          id: 'owned-map:anchor:synthetic',
+          kind: MapEntityKind.moment,
+          title: '正文',
+          subtitle: '',
+          latitude: 31.2,
+          longitude: 121.4,
+          precision: 'approximate',
+          anchorID: 'anchor',
+          entryID: 'entry',
+          momentID: 'moment',
+          threadID: 'thread',
+          contentCount: 1,
+          anchorCount: 1,
+        ),
+        const MapEntity(
+          id: 'owned-map:cluster:synthetic',
+          kind: MapEntityKind.cluster,
+          title: '7条内容',
+          subtitle: '',
+          latitude: 31.2,
+          longitude: 121.4,
+          precision: 'area',
+          contentCount: 7,
+          anchorCount: 9,
+        ),
+      ], 'owner');
+      final frame = gate.acceptFrame(_frame(gate, 1))!;
+      expect(frame.plan.entities, hasLength(2));
+      expect(frame.plan.denseIDs, isEmpty);
+      final anchor = gate.resolve(
+        gate.revision,
+        'owned-map:anchor:synthetic',
+        'moment',
+      )!;
+      expect(
+        (anchor.anchorID, anchor.entryID, anchor.momentID, anchor.threadID),
+        ('anchor', 'entry', 'moment', 'thread'),
+      );
+      expect(gate.rows.last.anchorCount, 9);
+      gate.dispose();
+    },
+  );
   test('重新挂载退休旧投影和点击，重新接受同来源地图的第一帧', () {
     final gate = AMapSourceGate();
     gate.replace(_rows(1), 'same-actor');
@@ -62,12 +183,21 @@ void main() {
         _point('person:area', kind: MapEntityKind.person, precision: 'area'),
       ], 'actor-a');
       final frame = gate.acceptFrame(_frame(gate, 1))!;
-      expect(frame.plan.entities, hasLength(116));
+      expect(frame.plan.entities.length, lessThanOrEqualTo(40));
+      final cluster = frame.plan.entities.single;
+      expect(MapDisplayPolicy.displayCluster(cluster), isTrue);
+      expect(
+        MapDisplayPolicy.currentDisplayClusterMembers(cluster, gate.rows),
+        hasLength(116),
+      );
       expect(frame.plan.omittedIDs, isEmpty);
       expect(frame.offsets['place:anchor'], Offset.zero);
       expect(frame.offsets['person:area'], isNull);
       expect(frame.offsets.values.toSet(), {Offset.zero});
-      expect(frame.displayed, frame.positions);
+      expect(frame.displayed, {
+        ...frame.positions,
+        ...frame.plan.clusterPositions,
+      });
       expect(
         (frame.layout(null)['markers'] as List).every(
           (m) => m['dx'] == 0 && m['dy'] == 0,

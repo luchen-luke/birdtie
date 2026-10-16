@@ -1,0 +1,15 @@
+{
+  "recordedAtUTC": "2026-10-16T01:58:59.787498+00:00",
+  "formulaSource": "https://raw.githubusercontent.com/wandergis/coordtransform/606c6f3b57b6f1d60458793fea39928d2b11b637/index.js",
+  "sourceCommit": "606c6f3b57b6f1d60458793fea39928d2b11b637",
+  "sourceSHA256": "e941a1a5825c1a615eb3e986a0bfa95b5cba03f6aa89fb20cf3be33259fb897c",
+  "licenseSource": "https://raw.githubusercontent.com/wandergis/coordtransform/606c6f3b57b6f1d60458793fea39928d2b11b637/LICENSE",
+  "licenseSHA256": "801448faad6ec70fbd0d1bf384f6b20cdbd332f333898b1b8122ec26cb0b5d79",
+  "adaptation": "Forward formula only, named latitude/longitude axes, finite validation, wider Civu-compatible conversion envelope and bounded iterative inverse. No business code copied; provider country policy is separate.",
+  "officialOracle": {
+    "status": "FAILED_PROVIDER_RESPONSE",
+    "code": "10013",
+    "messageCode": "USER_KEY_RECYCLED",
+    "privateLocationsSent": false
+  }
+}

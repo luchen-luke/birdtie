@@ -1,0 +1,58 @@
+{
+  "createdAtUTC": "2026-10-16T02:03:22.549577+00:00",
+  "status": "SOURCE_FROZEN_NOT_DEPLOYED",
+  "sourceSHA256": {
+    "apps/api/migrations/174_mainland_city_map_provider.sql": "a56730830f734632325cce0f9a73a2298cc86f2b96d71403f8a6fb809ed84938",
+    "apps/api/internal/postgres/mainland_city_map_provider_test.go": "c9950c70f67654b2d8c4257ffdf99da9e8fafb9d8f0546e2a9b1ddf0e8a21395"
+  },
+  "migration173UnmodifiedAgainstAPI30BuildReceipt": true,
+  "metadataPreparationNote": "First source-ready assembly attempted HEAD lookup; 173 is not yet tracked at HEAD, so no evidence was produced. Corrected to compare the deployed API30 build receipt SHA; native test was not rerun.",
+  "migration173SHA256": "62ddb7fd3ab8ee755e7dc2c40839f56a7e4490346d8eb5ac2702ea9afd130bc3",
+  "test": {
+    "name": "TestMainlandCityMapProviderNativeIdentityReplayAndPreservation",
+    "result": "PASS",
+    "count": 1,
+    "fail": 0,
+    "skip": 0,
+    "receipt": "native01/receipt.json",
+    "sourceStable": true,
+    "parentQAIdentityUnchanged": true,
+    "database": "owned migrated disposable child; no production data"
+  },
+  "contract": {
+    "countryCode": "foundation/model.go City JSON countryCode; postgres/catalog.go scanCity; httpapi/server.go listCities/getCity direct DTO",
+    "provider": "map.provider already supports amap and mapbox",
+    "canonicalCameraCoordinates": "WGS84 values introduced by 173 preserved exactly; renderer is responsible for provider boundary",
+    "contents": "no coordinate conversion or content, account, permission, POI changes"
+  },
+  "guards": [
+    "two exact stable city IDs",
+    "exact names",
+    "CN country",
+    "exact Civu source ref and label",
+    "published",
+    "provider still mapbox",
+    "exact 173 latitude and longitude",
+    "zoom still 11",
+    "exact Natural Earth source ref"
+  ],
+  "assertions": [
+    "two matching rows change only map_provider",
+    "ten independently changed fields skip without overwrite",
+    "same-name unrelated city unchanged",
+    "all non-provider city fields retained",
+    "business entity counts unchanged",
+    "exact replay affects zero rows",
+    "existing DTO retains CN and amap"
+  ],
+  "coordinateAudit": "No new production or backup read. Source audit agent separately verified two accessible Web34 public places: original AMap GCJ to stored WGS transformation correct and Birdtie values identical. This migration makes no inference about any other source coordinates.",
+  "notRun": [
+    "production migration 174",
+    "AMap native/Web integration or visual verification",
+    "all source coordinate precision audit"
+  ],
+  "productionReads": 0,
+  "productionWrites": 0,
+  "civuSourceReads": 0,
+  "civuSourceWrites": 0
+}

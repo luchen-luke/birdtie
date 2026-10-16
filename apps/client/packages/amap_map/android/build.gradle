@@ -1,0 +1,40 @@
+group 'com.amap.flutter.map'
+version '1.0'
+
+buildscript {
+    repositories {
+        google()
+        mavenCentral()
+    }
+
+    dependencies {
+        classpath 'com.android.tools.build:gradle:3.5.4'
+    }
+}
+
+rootProject.allprojects {
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+
+apply plugin: 'com.android.library'
+
+android {
+    namespace = "com.amap.flutter.map"
+    compileSdkVersion 36
+
+    defaultConfig {
+        minSdkVersion 21
+    }
+    lintOptions {
+        disable 'InvalidPackage'
+    }
+}
+
+dependencies {
+    implementation 'com.amap.api:3dmap-location-search:11.2.100_loc11.2.100_sea9.8.1'
+    implementation 'androidx.annotation:annotation:1.9.1'
+}
+

@@ -12,7 +12,9 @@ import 'package:latlong2/latlong.dart';
 import '../config/birdtie_environment.dart';
 import 'map_link.dart';
 import 'amap_city_map_stub.dart'
-    if (dart.library.html) 'amap_city_map_web.dart';
+    if (dart.library.html) 'amap_city_map_web.dart'
+    if (dart.library.io) 'amap_city_map_io.dart';
+import 'map_provider_policy.dart';
 import 'mapbox_web_basemap.dart';
 import 'map_camera_focus.dart';
 import 'native_city_map_stub.dart'
@@ -197,7 +199,11 @@ class _PublicCityMapViewState extends State<PublicCityMapView> {
 
   bool get _usesWebMapbox =>
       kIsWeb &&
-      widget.city?.map?.provider == 'mapbox' &&
+      mapProviderForCountry(
+            countryCode: widget.city?.countryCode ?? '',
+            configuredProvider: widget.city?.map?.provider ?? '',
+          ) ==
+          'mapbox' &&
       _mapboxPublicToken.startsWith('pk.');
 
   @override
@@ -354,6 +360,10 @@ class _PublicCityMapViewState extends State<PublicCityMapView> {
   Widget build(BuildContext context) {
     final city = widget.city;
     final viewport = city?.map;
+    final provider = mapProviderForCountry(
+      countryCode: city?.countryCode ?? '',
+      configuredProvider: viewport?.provider ?? 'mapbox',
+    );
     final coordinateScope = _pointReaderScope();
     final coordinateCallback = widget.onCoordinateSelected;
     bool coordinateCurrent() =>
@@ -367,7 +377,7 @@ class _PublicCityMapViewState extends State<PublicCityMapView> {
         (defaultTargetPlatform == TargetPlatform.iOS ||
             defaultTargetPlatform == TargetPlatform.android) &&
         _mapboxMobileToken.startsWith('pk.') &&
-        (viewport == null || viewport.provider == 'mapbox')) {
+        provider == 'mapbox') {
       return NativeCityMapView(
         key: const ValueKey('now-mapbox-native'),
         city: city,
@@ -409,11 +419,9 @@ class _PublicCityMapViewState extends State<PublicCityMapView> {
     if (viewport == null) {
       return const _MapUnavailable('该城市尚未配置地图视图。');
     }
-    if (viewport.provider == 'amap') {
-      if (coordinateCallback != null)
-        return const _MapUnavailable('当前地图尚不支持可核对的 WGS84 选点，请返回填写获准坐标。');
+    if (provider == 'amap') {
       return AMapCityMapView(
-        key: ValueKey('${city.id}-amap'),
+        key: const ValueKey('now-amap'),
         city: city,
         places: widget.places,
         entities: widget.entities,
@@ -432,9 +440,16 @@ class _PublicCityMapViewState extends State<PublicCityMapView> {
         preserveViewport: widget.preserveViewport,
         focusRevision: widget.focusRevision,
         contentRect: widget.contentRect,
+        ornamentTop: widget.ornamentTop,
+        onViewportInitialized: widget.onViewportInitialized,
+        onViewportSettled: widget.onViewportSettled,
+        onContentViewportSettled: widget.onContentViewportSettled,
+        onContentOverlap: widget.onContentOverlap,
+        onCoordinateSelected: widget.onCoordinateSelected,
+        coordinateSourceCurrent: coordinateCurrent,
       );
     }
-    if (viewport.provider != 'mapbox') {
+    if (provider != 'mapbox') {
       return const _MapUnavailable('该城市地图暂不可用，请使用地点列表。');
     }
     if (!kIsWeb) {

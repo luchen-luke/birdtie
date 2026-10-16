@@ -1,0 +1,47 @@
+{
+  "createdAtUTC": "2026-10-16T01:51:51.428181+00:00",
+  "jobs": [
+    {
+      "kind": "analyze",
+      "command": [
+        "D:/DevTools/flutter/bin/cache/dart-sdk/bin/dart.exe",
+        "analyze",
+        "--format",
+        "machine",
+        "lib/src/workspace/owned_map_api.dart",
+        "lib/src/workspace/owned_map_controller.dart",
+        "lib/src/workspace/now_map_content_panel.dart",
+        "test/content_map_lazy_display_test.dart"
+      ],
+      "exitCode": 0,
+      "logSHA256": "1446f6bb55d9288804d078aaa881db36675d6815242839b1c781a1fe6e228af1"
+    },
+    {
+      "kind": "test",
+      "command": [
+        "D:/DevTools/flutter/bin/flutter.bat",
+        "test",
+        "test/content_map_lazy_display_test.dart",
+        "test/content_map_panel_test.dart",
+        "--reporter",
+        "expanded"
+      ],
+      "exitCode": 0,
+      "logSHA256": "8f440657c0a59e9b83daea9fdd5036ea9ceb71556556519c8c5324d58c78a927"
+    }
+  ],
+  "sourceBefore": {
+    "apps/client/lib/src/workspace/owned_map_api.dart": "8d852070b64e8efe1f9722719c22520be49c6fa1784ea1a74af4e88403836e86",
+    "apps/client/lib/src/workspace/owned_map_controller.dart": "265ba6c5a48dc007692fbec57714af864b86546d97ab82758f1e4c58d12c0599",
+    "apps/client/lib/src/workspace/now_map_content_panel.dart": "744014b9ca071a50ff52586a5ab46281ff8cf6514a55529a747a0eff811ab435",
+    "apps/client/test/content_map_lazy_display_test.dart": "ba61b9fabda04982013b7f8e8cadf1568489c42eafcd9b910c889e75a061cc1e"
+  },
+  "sourceAfter": {
+    "apps/client/lib/src/workspace/owned_map_api.dart": "8d852070b64e8efe1f9722719c22520be49c6fa1784ea1a74af4e88403836e86",
+    "apps/client/lib/src/workspace/owned_map_controller.dart": "265ba6c5a48dc007692fbec57714af864b86546d97ab82758f1e4c58d12c0599",
+    "apps/client/lib/src/workspace/now_map_content_panel.dart": "744014b9ca071a50ff52586a5ab46281ff8cf6514a55529a747a0eff811ab435",
+    "apps/client/test/content_map_lazy_display_test.dart": "ba61b9fabda04982013b7f8e8cadf1568489c42eafcd9b910c889e75a061cc1e"
+  },
+  "sourceStable": true,
+  "productionWrites": 0
+}

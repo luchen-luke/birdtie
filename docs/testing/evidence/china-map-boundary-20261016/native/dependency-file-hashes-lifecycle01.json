@@ -1,0 +1,1712 @@
+[
+  {
+    "package": "amap_map",
+    "fileCount": 124,
+    "files": [
+      {
+        "path": "android/build.gradle",
+        "bytes": 728,
+        "sha256": "bd6c570c8ad821d535a8db966b4d44ed4934bd393402d4edc201121e801bc9a7"
+      },
+      {
+        "path": "android/gradle.properties",
+        "bytes": 85,
+        "sha256": "0727c8c8bab57af764b53726dc617b1e67d50b4679187fb2a2c1d30daf83325a"
+      },
+      {
+        "path": "android/settings.gradle",
+        "bytes": 31,
+        "sha256": "6896c0ebf0b755b199c8d8fb0ab02322d2a24f1a79c5d491883d93cceee2d97e"
+      },
+      {
+        "path": "android/src/main/AndroidManifest.xml",
+        "bytes": 54,
+        "sha256": "a56222968de4dae9be50b6c72c818950e72ae20959ea94a0a31a4b2223249fd6"
+      },
+      {
+        "path": "android/src/main/java/com/amap/flutter/map/AMapFlutterMapPlugin.java",
+        "bytes": 2667,
+        "sha256": "cfd90cd8431eb3d3b6d45bf8752e3f30fb52bc00c73a10ecc6c0c97c8b8d1a98"
+      },
+      {
+        "path": "android/src/main/java/com/amap/flutter/map/AMapOptionsBuilder.java",
+        "bytes": 8113,
+        "sha256": "a2ed78b33a7d2e6336fecd2a156e8b44b3b5250c76d72360e246449724b1e4e6"
+      },
+      {
+        "path": "android/src/main/java/com/amap/flutter/map/AMapPlatformView.java",
+        "bytes": 10237,
+        "sha256": "38c21e5995fdc74ff582954f242644b620a567d8f564889319a84592b5bc1285"
+      },
+      {
+        "path": "android/src/main/java/com/amap/flutter/map/AMapPlatformViewFactory.java",
+        "bytes": 3072,
+        "sha256": "21679acccb2ae5a1b4a1f249126ab36c40218e1290fe5c15f5e9c0e112cc7fc0"
+      },
+      {
+        "path": "android/src/main/java/com/amap/flutter/map/core/AMapOptionsSink.java",
+        "bytes": 1910,
+        "sha256": "a6d0f2e0df373e94c0f8e81756328d66557863e1b1c4729986f63abba503d44b"
+      },
+      {
+        "path": "android/src/main/java/com/amap/flutter/map/core/MapController.java",
+        "bytes": 13895,
+        "sha256": "aa1737340d5aed44128f6e3710a1ccb4785272c52bd446a16fe9f00311840ca6"
+      },
+      {
+        "path": "android/src/main/java/com/amap/flutter/map/core/MapsInitializerController.java",
+        "bytes": 1317,
+        "sha256": "79a9dc05930975915f242dabb02a9919e0a5806b30dd852ec230f4d50d104615"
+      },
+      {
+        "path": "android/src/main/java/com/amap/flutter/map/core/MapStripCapture.java",
+        "bytes": 2815,
+        "sha256": "13002379c6938f2c70e2b94e15f6abf1844fc2246a5cbccdf893bfb1ae4556d3"
+      },
+      {
+        "path": "android/src/main/java/com/amap/flutter/map/core/UISettingsSink.java",
+        "bytes": 1100,
+        "sha256": "b10e98311afc9f8099b0547d988193a4bf863d1bd5480b9dca78d934b0ab5b74"
+      },
+      {
+        "path": "android/src/main/java/com/amap/flutter/map/MapRenderLifecycle.java",
+        "bytes": 1859,
+        "sha256": "59af02331d5729dc300593243227a4b6213868b7a39e6dc44fd468c3788708aa"
+      },
+      {
+        "path": "android/src/main/java/com/amap/flutter/map/MyMethodCallHandler.java",
+        "bytes": 565,
+        "sha256": "a4688f46b4b1fe4e5409050b11bff96853848fdd557c87290dda9e94e89fda8b"
+      },
+      {
+        "path": "android/src/main/java/com/amap/flutter/map/overlays/AbstractOverlayController.java",
+        "bytes": 821,
+        "sha256": "b5f46d32e557a4e99d08c474808be32a498660ae07faaa114b11c530bffd7473"
+      },
+      {
+        "path": "android/src/main/java/com/amap/flutter/map/overlays/marker/MarkerController.java",
+        "bytes": 2438,
+        "sha256": "f2a1c9bf968cc40f3b85a86b14e9dee2354b2432755a953d05de503580e09496"
+      },
+      {
+        "path": "android/src/main/java/com/amap/flutter/map/overlays/marker/MarkerOptionsBuilder.java",
+        "bytes": 1997,
+        "sha256": "c3742d483d94d50a483af53a34469a803ba41199b1defa6e2df5fd0bbad28fb6"
+      },
+      {
+        "path": "android/src/main/java/com/amap/flutter/map/overlays/marker/MarkerOptionsSink.java",
+        "bytes": 829,
+        "sha256": "e3688119775ab1156ae2388c41d80480dcfdeaa654244e47c5a91a0e6d466980"
+      },
+      {
+        "path": "android/src/main/java/com/amap/flutter/map/overlays/marker/MarkersController.java",
+        "bytes": 7593,
+        "sha256": "2defb834a237a4107fb12ca71dd92e371f2c56b19313c1e9f558778ef1f442f8"
+      },
+      {
+        "path": "android/src/main/java/com/amap/flutter/map/overlays/marker/MarkerUtil.java",
+        "bytes": 3378,
+        "sha256": "f118d192ac5b83f5636d46dc3d25624f09690079bfc63432c7cc3e87d2ae2bf5"
+      },
+      {
+        "path": "android/src/main/java/com/amap/flutter/map/overlays/polygon/PolygonController.java",
+        "bytes": 1356,
+        "sha256": "4f63f58c650774650f94aec69753ecfa628cc4b41d06c3979ad47458b17d1375"
+      },
+      {
+        "path": "android/src/main/java/com/amap/flutter/map/overlays/polygon/PolygonOptionsBuilder.java",
+        "bytes": 1439,
+        "sha256": "57ecdf272fd0686466df0a39207072597855a24362d4db3aea76d57416c574b2"
+      },
+      {
+        "path": "android/src/main/java/com/amap/flutter/map/overlays/polygon/PolygonOptionsSink.java",
+        "bytes": 705,
+        "sha256": "1f69dc1a72ff49c32b56e8c82b674d92333b29c7733fac6f2dccab3068c5f5a9"
+      },
+      {
+        "path": "android/src/main/java/com/amap/flutter/map/overlays/polygon/PolygonsController.java",
+        "bytes": 4280,
+        "sha256": "b4aa1f16b826439869692b6dbe09cfc44eb815990f210e157cb44c398e9af39f"
+      },
+      {
+        "path": "android/src/main/java/com/amap/flutter/map/overlays/polygon/PolygonUtil.java",
+        "bytes": 1683,
+        "sha256": "5ae518b2ae8533b0fe59c7c44e5854556c3a59028b55de9311683ac9133c369f"
+      },
+      {
+        "path": "android/src/main/java/com/amap/flutter/map/overlays/polyline/PolylineController.java",
+        "bytes": 3141,
+        "sha256": "fd647aa16aee04572d63238c23f7efdc44038501e156d878f1606735d26343d4"
+      },
+      {
+        "path": "android/src/main/java/com/amap/flutter/map/overlays/polyline/PolylineOptionsBuilder.java",
+        "bytes": 2545,
+        "sha256": "8fdae5dc9eb656d130db6ecea9c0451e5b9d455aeadef07bfeb56ebce4b99cf3"
+      },
+      {
+        "path": "android/src/main/java/com/amap/flutter/map/overlays/polyline/PolylineOptionsSink.java",
+        "bytes": 1396,
+        "sha256": "930dcc5b26cf01c97ef905375ce3a25a1f28556ecf24f75a97cb6341f9b3fbda"
+      },
+      {
+        "path": "android/src/main/java/com/amap/flutter/map/overlays/polyline/PolylinesController.java",
+        "bytes": 5052,
+        "sha256": "8c164086b5895a863e92fd6c6ce67dc29cc59e42f4bce1332d44b3d9396181b5"
+      },
+      {
+        "path": "android/src/main/java/com/amap/flutter/map/overlays/polyline/PolylineUtil.java",
+        "bytes": 3522,
+        "sha256": "32c0aa3fdc004f1113331ffd67ad8a2cebfc3543ceca3e99136fed69fd072f6f"
+      },
+      {
+        "path": "android/src/main/java/com/amap/flutter/map/ProxyLifecycleProvider.java",
+        "bytes": 3262,
+        "sha256": "430c156b6cc9c780a27600282306b015e092522b62839dc253deb9b202dcda0d"
+      },
+      {
+        "path": "android/src/main/java/com/amap/flutter/map/utils/Const.java",
+        "bytes": 2349,
+        "sha256": "90c821191b62ddce16ef4cc4a45a02133b5a526382d1bf7f1cbcdbbb85f00e07"
+      },
+      {
+        "path": "android/src/main/java/com/amap/flutter/map/utils/ConvertUtil.java",
+        "bytes": 21430,
+        "sha256": "d0ed1871bb8bde8e059fe5796fda534c3fef4bcd17421603d5dc70a125788790"
+      },
+      {
+        "path": "android/src/main/java/com/amap/flutter/map/utils/LogUtil.java",
+        "bytes": 971,
+        "sha256": "925a4c978e44a34717f4e40a4e733bf7b345958239fcc3fa365c1158f0c4ea5e"
+      },
+      {
+        "path": "CIVU_PATCH.md",
+        "bytes": 3847,
+        "sha256": "a95e58c2a340d36a719271a4fdca638fbf176070203499c10278beb175aaea9d"
+      },
+      {
+        "path": "ios/amap_map.podspec",
+        "bytes": 1087,
+        "sha256": "608240aa2af02f76f2e0f6d5ec92763cdc91d0aaa0493c56ee856a480ab4b6c6"
+      },
+      {
+        "path": "ios/Classes/AMapFlutterFactory.h",
+        "bytes": 369,
+        "sha256": "fb4bb7ebb86e5b8164d08b4c3249bf50794db6a0163648ed58c51df771226238"
+      },
+      {
+        "path": "ios/Classes/AMapFlutterFactory.m",
+        "bytes": 1028,
+        "sha256": "e1a9b868218c43a0cae6cffb4e688ab5d74017e536482acea057954450555826"
+      },
+      {
+        "path": "ios/Classes/AMapFlutterMapPlugin.h",
+        "bytes": 131,
+        "sha256": "51c86ac89e0fef50e715c3337bb7b05a501072f9a2365a6c301c5204685cdb2f"
+      },
+      {
+        "path": "ios/Classes/AMapFlutterMapPlugin.m",
+        "bytes": 649,
+        "sha256": "061f6b9d89c19a2756c5ae3e802cc737e1356562931f8d06ca362386e9ea6029"
+      },
+      {
+        "path": "ios/Classes/AMapViewController.h",
+        "bytes": 530,
+        "sha256": "931db9ea242a1b566f566c8b0e1f47a1d596bae2351c02a5a31f24743100c8d2"
+      },
+      {
+        "path": "ios/Classes/AMapViewController.m",
+        "bytes": 23242,
+        "sha256": "8a90acb4f0cbc309a46dcb52f497bb41b3be7fe1814d56ace60c8ed361933285"
+      },
+      {
+        "path": "ios/Classes/Category/FlutterMethodChannel+MethodCallDispatch.h",
+        "bytes": 891,
+        "sha256": "f7a7e3d54f94876a04f5f87d2c0d69180a7f8460e5476cffff6c971e28ddc126"
+      },
+      {
+        "path": "ios/Classes/Category/FlutterMethodChannel+MethodCallDispatch.m",
+        "bytes": 1423,
+        "sha256": "e6fefea64cdcda8f7ec92d71cf49891cc0e2f22ac13916a75a896132a3592435"
+      },
+      {
+        "path": "ios/Classes/Category/MAAnnotationView+Flutter.h",
+        "bytes": 302,
+        "sha256": "4839b99c389329585606162d3ec53022990921fa1b902834090eb07526c2c5bb"
+      },
+      {
+        "path": "ios/Classes/Category/MAAnnotationView+Flutter.m",
+        "bytes": 1442,
+        "sha256": "466f7c24bb95e8857ef2b84e5deb7e98143d4f7957d1d0019d6a727b67ea26dc"
+      },
+      {
+        "path": "ios/Classes/Category/MAMapView+Flutter.h",
+        "bytes": 717,
+        "sha256": "760f5e0845ea5efb2282bec5770e2c8dc1937c850c34315f9fe5132c808d3da4"
+      },
+      {
+        "path": "ios/Classes/Category/MAMapView+Flutter.m",
+        "bytes": 13271,
+        "sha256": "04708e3f3075ab94340725b8d5079940e8dc2d06bdaccb6f3dab11dbc01d209f"
+      },
+      {
+        "path": "ios/Classes/Category/MAPointAnnotation+Flutter.h",
+        "bytes": 852,
+        "sha256": "23687282ec2977d3edf8e30dc1e78bc9f942093f238826880c4df36f0eb24b07"
+      },
+      {
+        "path": "ios/Classes/Category/MAPointAnnotation+Flutter.m",
+        "bytes": 722,
+        "sha256": "b6690137838c844cf162ca9c270a54dbb1ace647b39f4fddede6d51f6c7413e5"
+      },
+      {
+        "path": "ios/Classes/Category/MAPolygon+Flutter.h",
+        "bytes": 636,
+        "sha256": "314128f812ebca6c1389da609794fb0ff7e83a95fc3eb953c68b164b8c74617a"
+      },
+      {
+        "path": "ios/Classes/Category/MAPolygon+Flutter.m",
+        "bytes": 612,
+        "sha256": "227e603546c9a156d53773ea50d4450d7cd42b7b35fc953fcc7422f82ae4fc0a"
+      },
+      {
+        "path": "ios/Classes/Category/MAPolygonRenderer+Flutter.h",
+        "bytes": 311,
+        "sha256": "e508ceb7dc1d9a7c8ed26a13fe582e8f57650c18e1d6b9ec4c4bb92a8e9b6512"
+      },
+      {
+        "path": "ios/Classes/Category/MAPolygonRenderer+Flutter.m",
+        "bytes": 554,
+        "sha256": "20d4d672d09d1df61649a269e49d3a39d977077115a53754ff96390056d851ff"
+      },
+      {
+        "path": "ios/Classes/Category/MAPolyline+Flutter.h",
+        "bytes": 645,
+        "sha256": "92ff2c0bfa9d997c5a0c4f8265e98b4ac7cbc0dc5e5f90b1c5f66cab76fc9553"
+      },
+      {
+        "path": "ios/Classes/Category/MAPolyline+Flutter.m",
+        "bytes": 624,
+        "sha256": "8516d9e6d7fbd0959c3678b783b6e0f72bd3dd78941152e16d1bf33a6083c847"
+      },
+      {
+        "path": "ios/Classes/Category/MAPolylineRenderer+Flutter.h",
+        "bytes": 316,
+        "sha256": "da95ced58fbf6e728198c1f085f37919d61ae60e1afa1a2d586c1ce8d8bcfb5d"
+      },
+      {
+        "path": "ios/Classes/Category/MAPolylineRenderer+Flutter.m",
+        "bytes": 789,
+        "sha256": "232434d0cf9d504f1e370576c8a17ec04eeac2a58129b00d9d9dc6d096efb3f4"
+      },
+      {
+        "path": "ios/Classes/Model/AMapCameraPosition.h",
+        "bytes": 754,
+        "sha256": "bc7068c7a2134764580b1e5a8130b13e234b9b4594574d14638bc86c3c62e142"
+      },
+      {
+        "path": "ios/Classes/Model/AMapCameraPosition.m",
+        "bytes": 795,
+        "sha256": "4748b94eca73e2c6f5fa803a26d7f8e0247231679eed35a313ffb8400790ea59"
+      },
+      {
+        "path": "ios/Classes/Model/AMapInfoWindow.h",
+        "bytes": 366,
+        "sha256": "923c49515fb97c1e1c73ffc6543468f0e7f08f8ed9d2b50fc9df9ba8359d37b9"
+      },
+      {
+        "path": "ios/Classes/Model/AMapInfoWindow.m",
+        "bytes": 154,
+        "sha256": "89fecce3ebd8e4c1ee4f4901c40544bb7bef5d2b078d0f524bdd46d939c496f0"
+      },
+      {
+        "path": "ios/Classes/Model/AMapLocation.h",
+        "bytes": 854,
+        "sha256": "7912c9b7e5a77a7fa55810ba9fb592f90657915eb9c9283cbf970b1fed94b59e"
+      },
+      {
+        "path": "ios/Classes/Model/AMapLocation.m",
+        "bytes": 660,
+        "sha256": "468957aa0ba2e5955f29e56605c550339fb221c21558bf3507b33cb5a4c6b1de"
+      },
+      {
+        "path": "ios/Classes/Model/AMapMarker.h",
+        "bytes": 1362,
+        "sha256": "77d9ff41f5264746d6abbbdf1729c55349080d56bd85937609ee58696adf89e0"
+      },
+      {
+        "path": "ios/Classes/Model/AMapMarker.m",
+        "bytes": 1852,
+        "sha256": "8127f49d5a632428b6fa9dbcb35d10e84cff5c59e18e54bd8ca6517a5dca7ebe"
+      },
+      {
+        "path": "ios/Classes/Model/AMapPolygon.h",
+        "bytes": 1011,
+        "sha256": "4bea0acc69669bf78dcbeafd635cf7184865057b53d7c7ed9687f31b656788fd"
+      },
+      {
+        "path": "ios/Classes/Model/AMapPolygon.m",
+        "bytes": 2764,
+        "sha256": "9cef3d91b1d688fd06ae68a3657c6027a59cb677372ffef092c144a713c10fa4"
+      },
+      {
+        "path": "ios/Classes/Model/AMapPolyline.h",
+        "bytes": 1451,
+        "sha256": "368020c40427c5c5169173a6fb76d70b850cd52bb18b3cd589d522cae0ba36ba"
+      },
+      {
+        "path": "ios/Classes/Model/AMapPolyline.m",
+        "bytes": 3187,
+        "sha256": "86a74eeedde048be036d12234de4564666b263c8bd82a72c0b36952873b7235b"
+      },
+      {
+        "path": "ios/Classes/OverlayController/AMapMarkerController.h",
+        "bytes": 908,
+        "sha256": "e219c6d30514e5489ce9187e50f1465730a68536dd6c87cda900c0dd5e806907"
+      },
+      {
+        "path": "ios/Classes/OverlayController/AMapMarkerController.m",
+        "bytes": 5516,
+        "sha256": "905b7a5cf419c8f4351cf1a5726d2f3ee72574772df4903ba1ea9ede4356a0fa"
+      },
+      {
+        "path": "ios/Classes/OverlayController/AMapPolygonController.h",
+        "bytes": 735,
+        "sha256": "984744fcd1a3dcd4e1462083b495210afb19491fb0ba1dba18cab525654b084b"
+      },
+      {
+        "path": "ios/Classes/OverlayController/AMapPolygonController.m",
+        "bytes": 3715,
+        "sha256": "da686df86149001118921135c43c5b74771891027b280a0e6dcd1ae97ea96b5b"
+      },
+      {
+        "path": "ios/Classes/OverlayController/AMapPolylineController.h",
+        "bytes": 772,
+        "sha256": "0e08314ae3e237e0d578ff01956d68043687525b1d1bda22b24465424d5e4b16"
+      },
+      {
+        "path": "ios/Classes/OverlayController/AMapPolylineController.m",
+        "bytes": 4872,
+        "sha256": "82d5ae3959f4fa1289be61fc69b263f6b0d8f271644c113a08756808af8063e6"
+      },
+      {
+        "path": "ios/Classes/Util/AMapConvertUtil.h",
+        "bytes": 2209,
+        "sha256": "11d42780ed5196d801e57ceb31e7df52d7891960c436968fdfa7b9c9b72915e2"
+      },
+      {
+        "path": "ios/Classes/Util/AMapConvertUtil.m",
+        "bytes": 9388,
+        "sha256": "fa50cd7573d6b0ed3127ac14bc6b40c5904799241c946b2e99e0c7a72639e1b1"
+      },
+      {
+        "path": "ios/Classes/Util/AMapJsonUtils.h",
+        "bytes": 938,
+        "sha256": "c2d4763f1b154d0d2188e72b5b07b5ea0bfc31ed3f0a751a2757fd6daf61e5be"
+      },
+      {
+        "path": "ios/Classes/Util/AMapJsonUtils.m",
+        "bytes": 11064,
+        "sha256": "4f92b6f1631be30264b41303f276dffb820cc6e34ed8200fa2e79376b6fa650a"
+      },
+      {
+        "path": "ios/Classes/Util/AMapMethodCallDispatcher.h",
+        "bytes": 720,
+        "sha256": "3ebee0757d74254d5e450ece28f62316e2cbbb5d2b65f8af2533e8395552d541"
+      },
+      {
+        "path": "ios/Classes/Util/AMapMethodCallDispatcher.m",
+        "bytes": 1644,
+        "sha256": "785be9e673247f1239f15be7b6297d31174154adab4c6254f5763e44d43ac578"
+      },
+      {
+        "path": "lib/amap_map.dart",
+        "bytes": 1219,
+        "sha256": "085be844cc0973cc1935c080354b070343304975e353842ced2730f16ca91ac7"
+      },
+      {
+        "path": "lib/src/amap_controller.dart",
+        "bytes": 6885,
+        "sha256": "46e28bc832a98188b6aa06168767156e57cf0df4af6a346330b429f0f2ee1f2a"
+      },
+      {
+        "path": "lib/src/amap_initializer.dart",
+        "bytes": 1880,
+        "sha256": "38b18346eed9c5b36cb4916dcd9391342d179477bc990ebee3f781cd368bd71e"
+      },
+      {
+        "path": "lib/src/amap_widget.dart",
+        "bytes": 16645,
+        "sha256": "14dd6a5ac859a8f47feb025afb1f093da544ad66a724634dea1453b7bfc3be0d"
+      },
+      {
+        "path": "lib/src/compatibility/color_extensions.dart",
+        "bytes": 764,
+        "sha256": "4828af25db47bcd3748df46057c6d7c6fa90cd28fd2ad49de0c6195f7f68c521"
+      },
+      {
+        "path": "lib/src/compatibility/compatibility_utils.dart",
+        "bytes": 1532,
+        "sha256": "a05f7f68058ed28271d562e1bd426538195923fa51e5e8f52ba2d531643d1d3a"
+      },
+      {
+        "path": "lib/src/core/amap_flutter_platform.dart",
+        "bytes": 1545,
+        "sha256": "bd32c41b9848cf5e4ca1b8ea30e841519c6734f8f6ad36ddff81879b9ea617c7"
+      },
+      {
+        "path": "lib/src/core/map_event.dart",
+        "bytes": 2070,
+        "sha256": "97f83e3e35e23e12e469039cd406a5b1e6b8e0d92f7a984800351f690ce62c5d"
+      },
+      {
+        "path": "lib/src/core/method_channel_amap_map.dart",
+        "bytes": 11654,
+        "sha256": "394fe27d016066ccdfe9a99c1f8158ab39031d6cb179cf2487cd001c559c2d60"
+      },
+      {
+        "path": "lib/src/method_channel/serialization.dart",
+        "bytes": 657,
+        "sha256": "a57cd754397e67a6d0a14c42aacbe5087372e12982f18d87f5153d3e44a2bb3d"
+      },
+      {
+        "path": "lib/src/types/base_overlay.dart",
+        "bytes": 1209,
+        "sha256": "7ebfa240a95d5b00b94b75adf85e4e796b39aa4cf609fff286c33efd87e810fa"
+      },
+      {
+        "path": "lib/src/types/bitmap.dart",
+        "bytes": 4236,
+        "sha256": "67b422682b8e4bf08f37909a11b040a60759a23518e4df49e6fa651f7d1191bf"
+      },
+      {
+        "path": "lib/src/types/camera.dart",
+        "bytes": 4861,
+        "sha256": "fc85a9c208c3a3f5302cc900abe780b52c351e47d85441f3169d75a68aa5fb3d"
+      },
+      {
+        "path": "lib/src/types/info_window_adapter.dart",
+        "bytes": 1336,
+        "sha256": "9109a7fce712198df66a98c3e16de5aaaa44c1ca4b0bad0d95007b6803871e72"
+      },
+      {
+        "path": "lib/src/types/map_configuration.dart",
+        "bytes": 11682,
+        "sha256": "ebad430ac2fb66b3a5efe3559ba1ad0417dfe654c19f63564bd26d2880156f2c"
+      },
+      {
+        "path": "lib/src/types/marker_updates.dart",
+        "bytes": 2885,
+        "sha256": "e66a527befcc10aceec3f3c606565d573f6a7a184da89c8313f82581365d72e1"
+      },
+      {
+        "path": "lib/src/types/marker.dart",
+        "bytes": 7901,
+        "sha256": "2c41e64eb64d3247e3c0c4651de0064f73083f5f9a5174132de0565f6451596c"
+      },
+      {
+        "path": "lib/src/types/polygon_updates.dart",
+        "bytes": 3172,
+        "sha256": "25694b5b180bd1f9adc090eaae06d4bd470d03d89e2b81af855e523aa77467df"
+      },
+      {
+        "path": "lib/src/types/polygon.dart",
+        "bytes": 4004,
+        "sha256": "563d01b17ba94b3cf5b694b9a86adcd87d46c5cc796a58758cc273d157362e37"
+      },
+      {
+        "path": "lib/src/types/polyline_updates.dart",
+        "bytes": 3243,
+        "sha256": "05c99c5ebd7f42abfa57c2153cc795dffba73911a443a7d2397999f0f84af788"
+      },
+      {
+        "path": "lib/src/types/polyline.dart",
+        "bytes": 5604,
+        "sha256": "55636134b885a4b0b11ca85c8451d7fa9d1bad7960f41d38d58e813a6c80815d"
+      },
+      {
+        "path": "lib/src/types/screen_coordinate.dart",
+        "bytes": 1383,
+        "sha256": "d5d30b72256f01f586f13d47903d245e89c7debc90faa3e40304b0116943aa08"
+      },
+      {
+        "path": "lib/src/types/types.dart",
+        "bytes": 777,
+        "sha256": "12e7f40590057a1bf116e86ce02c3f316b679353d26275f9657ebdcc80903dff"
+      },
+      {
+        "path": "lib/src/types/ui.dart",
+        "bytes": 7120,
+        "sha256": "0bf00b8a0d3a125bb0d71d0d4cb1d99794975a0a96c4b96c31d5b169131bf06d"
+      },
+      {
+        "path": "lib/src/utils/location_utils.dart",
+        "bytes": 356,
+        "sha256": "ec9dd0b750d2a9e7fe30d68c2fdb29e7e10c5d0cdb2c080174ab4a1b7e011ed3"
+      },
+      {
+        "path": "lib/src/utils/option_equality.dart",
+        "bytes": 919,
+        "sha256": "1b8d566f52dfb73191bd8de6b66a04ab031100ec185be45a7be79a0d1f9d88ac"
+      },
+      {
+        "path": "LICENSE",
+        "bytes": 11558,
+        "sha256": "1eb85fc97224598dad1852b5d6483bbcf0aa8608790dcc657a5a2a761ae9c8c6"
+      },
+      {
+        "path": "NOTICE",
+        "bytes": 2875,
+        "sha256": "2b5b405d03bca4bbf8c28a22a06f4674862890299bb248765d1b29aa0401c392"
+      },
+      {
+        "path": "pubspec.yaml",
+        "bytes": 2408,
+        "sha256": "0f6cfc39b28db15ae96c6dcb7148d6e6997884fb422defc5a00ea1c589229418"
+      },
+      {
+        "path": "res/AZURE.png",
+        "bytes": 1513,
+        "sha256": "2e042101411f4cd30ed9474231e092bd0b4ed038721dc5f3bab8b232668a3e6b"
+      },
+      {
+        "path": "res/BLUE.png",
+        "bytes": 1554,
+        "sha256": "b8cbf2271fb116da3187f46c25f6a064beeeaa9880f6da77a7f5e7ee46ca7d6c"
+      },
+      {
+        "path": "res/CYAN.png",
+        "bytes": 1529,
+        "sha256": "2040ad62156227085c867052f440a08ab2cb8e8b5f51ba3129bba5fdf3070e09"
+      },
+      {
+        "path": "res/GREEN.png",
+        "bytes": 1546,
+        "sha256": "91ad4282ff2d6ac6060ba587a8bcccab3db0458554cf2af3acbd3892e39940b7"
+      },
+      {
+        "path": "res/MAGENTA.png",
+        "bytes": 3151,
+        "sha256": "c1a11e4f953d23b16f9e1bfca4c063c2c0575535179030e71d64a76b6fa857e7"
+      },
+      {
+        "path": "res/marker_default.png",
+        "bytes": 1519,
+        "sha256": "ddd10f34b0443d5ecb3f535e44764d07a4b72182e955e450efcbf9378f9a1449"
+      },
+      {
+        "path": "res/ORANGE.png",
+        "bytes": 1526,
+        "sha256": "4a4d6334a8ecbb85ec214f0ebefb0fe3928fa8eff06475c874d715eb2d2c8efe"
+      },
+      {
+        "path": "res/RED.png",
+        "bytes": 1523,
+        "sha256": "bd9057e688871392dab664c51f3ecfed9a5638336c4b6eaf6abbf781a48614bc"
+      },
+      {
+        "path": "res/ROSE.png",
+        "bytes": 1537,
+        "sha256": "f40a2b42ed9c32db71c4ccdce89b5e1af778d500022610cfcbfb8d12eed60304"
+      },
+      {
+        "path": "res/VIOLET.png",
+        "bytes": 1529,
+        "sha256": "133dbc88ee6e18c9825c1e55e76258dc115ff6271d05f153a66348d125263d07"
+      },
+      {
+        "path": "res/YELLOW.png",
+        "bytes": 1507,
+        "sha256": "2252493edee05037e94228a4f234d3720893b498c15c467eec67aa889600a671"
+      },
+      {
+        "path": "test/amap_lifecycle_test.dart",
+        "bytes": 5859,
+        "sha256": "ee20fa0ab0e1ccdd4cdb6172cc330248bb5aa30f4e29187c992e3cd858821722"
+      }
+    ]
+  },
+  {
+    "package": "flutter_adaptive_scaffold",
+    "fileCount": 139,
+    "files": [
+      {
+        "path": "AUTHORS",
+        "bytes": 269,
+        "sha256": "9bc3b22e0ec3fabeca02c171c390688c29991a16bd3517df18afc5a37b08ded3"
+      },
+      {
+        "path": "CHANGELOG.md",
+        "bytes": 3424,
+        "sha256": "5fa8ad01e4d064eecdd94895a417d7d044af23a52dd14e20ac43e057bc5261b1"
+      },
+      {
+        "path": "example/android/app/build.gradle",
+        "bytes": 2217,
+        "sha256": "92a9f13c42319dd10745d3676b66a53d9570ab4e8ea021d0163efa8afacbe120"
+      },
+      {
+        "path": "example/android/app/src/debug/AndroidManifest.xml",
+        "bytes": 378,
+        "sha256": "30b0832ed8b92dfbd6ae2abfa939ccf26333d37600056b1572bd4a397a18a74b"
+      },
+      {
+        "path": "example/android/app/src/main/AndroidManifest.xml",
+        "bytes": 1633,
+        "sha256": "249c345245dc76d958dc2eebced9a649f8235e7e8c744ca9d1032d4552d29a10"
+      },
+      {
+        "path": "example/android/app/src/main/kotlin/dev/flutter/example/MainActivity.kt",
+        "bytes": 289,
+        "sha256": "ba231243e8bbb6baf00425bd20fab1e8196ce7c16f1515cd78f92c6907465a6c"
+      },
+      {
+        "path": "example/android/app/src/main/res/drawable-v21/launch_background.xml",
+        "bytes": 438,
+        "sha256": "7ca6d5cec2169c5a98661a119db23a6f3399c8fef2256ff04f3a642831282478"
+      },
+      {
+        "path": "example/android/app/src/main/res/drawable/launch_background.xml",
+        "bytes": 434,
+        "sha256": "94433756fe10005ddd6fc55cc5c0b1e9f3c10b66a08ceac795ece6713d34e28a"
+      },
+      {
+        "path": "example/android/app/src/main/res/mipmap-hdpi/ic_launcher.png",
+        "bytes": 544,
+        "sha256": "6a7c8f0d703e3682108f9662f813302236240d3f8f638bb391e32bfb96055fef"
+      },
+      {
+        "path": "example/android/app/src/main/res/mipmap-mdpi/ic_launcher.png",
+        "bytes": 442,
+        "sha256": "c7c0c0189145e4e32a401c61c9bdc615754b0264e7afae24e834bb81049eaf81"
+      },
+      {
+        "path": "example/android/app/src/main/res/mipmap-xhdpi/ic_launcher.png",
+        "bytes": 721,
+        "sha256": "e14aa40904929bf313fded22cf7e7ffcbf1d1aac4263b5ef1be8bfce650397aa"
+      },
+      {
+        "path": "example/android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png",
+        "bytes": 1031,
+        "sha256": "4d470bf22d5c17d84edc5f82516d1ba8a1c09559cd761cefb792f86d9f52b540"
+      },
+      {
+        "path": "example/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png",
+        "bytes": 1443,
+        "sha256": "3c34e1f298d0c9ea3455d46db6b7759c8211a49e9ec6e44b635fc5c87dfb4180"
+      },
+      {
+        "path": "example/android/app/src/main/res/values-night/styles.xml",
+        "bytes": 995,
+        "sha256": "8c5bad5152f217e837519f9c15211d19f39bd45f5f67faf6dd81cb4b299e518f"
+      },
+      {
+        "path": "example/android/app/src/main/res/values/styles.xml",
+        "bytes": 996,
+        "sha256": "937d7c82f539c72eb94fd3a3773f29b3d3fef1997213c92cb632298cedf4bda9"
+      },
+      {
+        "path": "example/android/app/src/profile/AndroidManifest.xml",
+        "bytes": 378,
+        "sha256": "30b0832ed8b92dfbd6ae2abfa939ccf26333d37600056b1572bd4a397a18a74b"
+      },
+      {
+        "path": "example/android/build.gradle",
+        "bytes": 977,
+        "sha256": "fe3aa42228068035e8a7dc01c2bfec061a611882903831f275e0208321a54ce8"
+      },
+      {
+        "path": "example/android/gradle.properties",
+        "bytes": 82,
+        "sha256": "b1e114bf6dc9c036895d0909014ffc9f6e8fe30cce98c109786f49bb3d29bcf4"
+      },
+      {
+        "path": "example/android/gradle/wrapper/gradle-wrapper.properties",
+        "bytes": 202,
+        "sha256": "a1120b63c6bb603c76353250907a3e69fccdf5d5da69af2d274149ae4b7ecfbe"
+      },
+      {
+        "path": "example/android/settings.gradle",
+        "bytes": 893,
+        "sha256": "cd8b217edbfe08ca987daadc5498bb05a7268deaaf471e465bb1ccc8d673579f"
+      },
+      {
+        "path": "example/demo_files/adaptiveScaffold.gif",
+        "bytes": 3537913,
+        "sha256": "b2437ec52d4a1168416281cfd26637adee85b1b6c26b861117196062cebda7b1"
+      },
+      {
+        "path": "example/demo_files/screenSlots.png",
+        "bytes": 67896,
+        "sha256": "b389a87a1177bb36439b3d4b4a5267b8bf395b184b3e858339af0d78595f0b31"
+      },
+      {
+        "path": "example/images/avocado.png",
+        "bytes": 158352,
+        "sha256": "58378d7d6f9d909140faf08b8e5906f71dd2963acbe7aba5da1067da573f0d47"
+      },
+      {
+        "path": "example/images/habanero.png",
+        "bytes": 157928,
+        "sha256": "80362d43a9cc37883abc363624a82d9f91af39b7d89b8d69be319734b662de53"
+      },
+      {
+        "path": "example/images/mushroom.png",
+        "bytes": 202667,
+        "sha256": "1b5867b398f64b4c3749708af9024c01787b74f762ea931a5afa1e4f8fe76fb9"
+      },
+      {
+        "path": "example/images/plum.png",
+        "bytes": 117166,
+        "sha256": "edc97522d560b77a1c60301c3bc301bbcf1b0d23101627dc8f955fe10d6d3a18"
+      },
+      {
+        "path": "example/images/potato.png",
+        "bytes": 176497,
+        "sha256": "a602c6aae9eb1a8dfd6fdf7072789a066660bee479f49566d929307dd026d374"
+      },
+      {
+        "path": "example/images/strawberry.png",
+        "bytes": 280622,
+        "sha256": "8759ec243be830c000fd9fa4aa38671baf7a0070fd57ac2f0afa4529e26e096e"
+      },
+      {
+        "path": "example/ios/Flutter/AppFrameworkInfo.plist",
+        "bytes": 774,
+        "sha256": "4844be22b72d16d6f6013ce5a2240728c730ef1fef9cf43a5c55198b18614802"
+      },
+      {
+        "path": "example/ios/Flutter/Debug.xcconfig",
+        "bytes": 30,
+        "sha256": "a82d7765b37116ee4821d2cd1d65942febf8032353757ffb0826eabde785b4a6"
+      },
+      {
+        "path": "example/ios/Flutter/Release.xcconfig",
+        "bytes": 30,
+        "sha256": "a82d7765b37116ee4821d2cd1d65942febf8032353757ffb0826eabde785b4a6"
+      },
+      {
+        "path": "example/ios/Runner.xcodeproj/project.pbxproj",
+        "bytes": 18622,
+        "sha256": "dc8b2ec448da8fad504a747a3a0b6021be14b81adc88fe8e59471b09d400218f"
+      },
+      {
+        "path": "example/ios/Runner.xcodeproj/project.xcworkspace/contents.xcworkspacedata",
+        "bytes": 135,
+        "sha256": "7f3b00b5c3fdb45242d7b87e1e5c4e25d1fa8129a16c94295ecc4e8ea2235c5f"
+      },
+      {
+        "path": "example/ios/Runner.xcodeproj/project.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist",
+        "bytes": 238,
+        "sha256": "dfa0f9bb85b95ccba9c6811adadf8cb407fb5d52088e89db83ebc308ec448542"
+      },
+      {
+        "path": "example/ios/Runner.xcodeproj/project.xcworkspace/xcshareddata/WorkspaceSettings.xcsettings",
+        "bytes": 226,
+        "sha256": "11b247bc6796892d67c9a821d18604db4dd6a880981b34f38460b9866e6b247f"
+      },
+      {
+        "path": "example/ios/Runner.xcodeproj/xcshareddata/xcschemes/Runner.xcscheme",
+        "bytes": 3185,
+        "sha256": "7b24b1110250d9abb5836a4330580a96f3fa2fe6c008fb4589fbfec1e400485e"
+      },
+      {
+        "path": "example/ios/Runner.xcworkspace/contents.xcworkspacedata",
+        "bytes": 152,
+        "sha256": "46c3c9702ff7c5584e11c954d943cfb6e07fb26e3fbd072ddbc0f388aa352de1"
+      },
+      {
+        "path": "example/ios/Runner.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist",
+        "bytes": 238,
+        "sha256": "dfa0f9bb85b95ccba9c6811adadf8cb407fb5d52088e89db83ebc308ec448542"
+      },
+      {
+        "path": "example/ios/Runner.xcworkspace/xcshareddata/WorkspaceSettings.xcsettings",
+        "bytes": 226,
+        "sha256": "11b247bc6796892d67c9a821d18604db4dd6a880981b34f38460b9866e6b247f"
+      },
+      {
+        "path": "example/ios/Runner/AppDelegate.swift",
+        "bytes": 569,
+        "sha256": "755c69d899b09ddf1c834927a1864b7a35bf308dad883d712271adcad403feb4"
+      },
+      {
+        "path": "example/ios/Runner/Assets.xcassets/AppIcon.appiconset/Contents.json",
+        "bytes": 2519,
+        "sha256": "3b1e214f466ffedff74baa5598ad5c4421130eea6bc8d57b8fe23435e8280ae4"
+      },
+      {
+        "path": "example/ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-1024x1024@1x.png",
+        "bytes": 10932,
+        "sha256": "7770183009e914112de7d8ef1d235a6a30c5834424858e0d2f8253f6b8d31926"
+      },
+      {
+        "path": "example/ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-20x20@1x.png",
+        "bytes": 295,
+        "sha256": "cab10a0d391ec5bc09ef50ce49e8ad401cee7ef03707ec0923a222c5c2b3d212"
+      },
+      {
+        "path": "example/ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-20x20@2x.png",
+        "bytes": 406,
+        "sha256": "b9ad02cf6576a04d1b6806ac02a2431481b448dd0c2e505ce25842d1f7c4730b"
+      },
+      {
+        "path": "example/ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-20x20@3x.png",
+        "bytes": 450,
+        "sha256": "c6e6d3b215ae744a9c391f4c4d44157eff5e739d6ad6c39f9bfa5df66dddd267"
+      },
+      {
+        "path": "example/ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-29x29@1x.png",
+        "bytes": 282,
+        "sha256": "5dee24dc104ac76dc162e42ae0beb163d426bf365562ee28ba7b3ad368559a60"
+      },
+      {
+        "path": "example/ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-29x29@2x.png",
+        "bytes": 462,
+        "sha256": "a9b21eb6f4271385655a8771f76e29eef8c1107d7879cbcfc567e6619d1f716a"
+      },
+      {
+        "path": "example/ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-29x29@3x.png",
+        "bytes": 704,
+        "sha256": "e677d701ffe4af7bc2935098d6b3984cc9ab7ace573e6900955a5535b12410cf"
+      },
+      {
+        "path": "example/ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-40x40@1x.png",
+        "bytes": 406,
+        "sha256": "b9ad02cf6576a04d1b6806ac02a2431481b448dd0c2e505ce25842d1f7c4730b"
+      },
+      {
+        "path": "example/ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-40x40@2x.png",
+        "bytes": 586,
+        "sha256": "7c61c42fc7b657d9cf314d32a4ec458f0647c3aaf360be1b9377857266ec2499"
+      },
+      {
+        "path": "example/ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-40x40@3x.png",
+        "bytes": 862,
+        "sha256": "19be171481dc71a0b2803ebcd01dd8b0c5fd5778dee34c0a3cabc948c225f24e"
+      },
+      {
+        "path": "example/ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-60x60@2x.png",
+        "bytes": 862,
+        "sha256": "19be171481dc71a0b2803ebcd01dd8b0c5fd5778dee34c0a3cabc948c225f24e"
+      },
+      {
+        "path": "example/ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-60x60@3x.png",
+        "bytes": 1674,
+        "sha256": "4209a49e44a92ec40a327d3455eb1b1c153ee83d75de1c2be0a12ab18b2ff9de"
+      },
+      {
+        "path": "example/ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-76x76@1x.png",
+        "bytes": 762,
+        "sha256": "836c918cb613249eba0483a6b02fa3df3c1c0a89a315ee4d3b88509b83c7ab73"
+      },
+      {
+        "path": "example/ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-76x76@2x.png",
+        "bytes": 1226,
+        "sha256": "41c7d42f6e61f8fe7f30b1ffa2256aecbc9682be06d18c4a3062043e1a2e547c"
+      },
+      {
+        "path": "example/ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-83.5x83.5@2x.png",
+        "bytes": 1418,
+        "sha256": "5d7e5bdf01b93802bc973345b3a78c038907147625035952a08a115a563b7f81"
+      },
+      {
+        "path": "example/ios/Runner/Assets.xcassets/LaunchImage.imageset/Contents.json",
+        "bytes": 391,
+        "sha256": "ccc7950fd5f5b82067c85f667940a9d59189151460761ece8098ca78daa19469"
+      },
+      {
+        "path": "example/ios/Runner/Assets.xcassets/LaunchImage.imageset/LaunchImage.png",
+        "bytes": 68,
+        "sha256": "93ae7d494fad0fb30cbf3ae746a39c4bc7a0f8bbf87fbb587a3f3c01f3c5ce20"
+      },
+      {
+        "path": "example/ios/Runner/Assets.xcassets/LaunchImage.imageset/LaunchImage@2x.png",
+        "bytes": 68,
+        "sha256": "93ae7d494fad0fb30cbf3ae746a39c4bc7a0f8bbf87fbb587a3f3c01f3c5ce20"
+      },
+      {
+        "path": "example/ios/Runner/Assets.xcassets/LaunchImage.imageset/LaunchImage@3x.png",
+        "bytes": 68,
+        "sha256": "93ae7d494fad0fb30cbf3ae746a39c4bc7a0f8bbf87fbb587a3f3c01f3c5ce20"
+      },
+      {
+        "path": "example/ios/Runner/Assets.xcassets/LaunchImage.imageset/README.md",
+        "bytes": 336,
+        "sha256": "a985b626c4f7546a8ba392d135e9226c3547c8e2b46895f5f2bdf40d7b14ef9f"
+      },
+      {
+        "path": "example/ios/Runner/Base.lproj/LaunchScreen.storyboard",
+        "bytes": 2377,
+        "sha256": "857e61203b3deafb05766d8fcda898b86a7cb6f3d5e385ecc9926c4d698215e9"
+      },
+      {
+        "path": "example/ios/Runner/Base.lproj/Main.storyboard",
+        "bytes": 1605,
+        "sha256": "fd367b6c43006d61b730f674970dd48b9f662c8f2264e52ffc1558102a2c9f2d"
+      },
+      {
+        "path": "example/ios/Runner/Info.plist",
+        "bytes": 1641,
+        "sha256": "af7e2234b6d57c5f8a4c35538052b6d25eeb1c8b9d4d6569a2eeede9ce9c388d"
+      },
+      {
+        "path": "example/ios/Runner/Runner-Bridging-Header.h",
+        "bytes": 203,
+        "sha256": "8658bd8bee9fdd8a90eb4563e5d9b08495ca1fb2973f695c54ebc57fef3adf6d"
+      },
+      {
+        "path": "example/lib/adaptive_layout_demo.dart",
+        "bytes": 9474,
+        "sha256": "f9a6f868568ebec9df75f0ba6aae9507e7e1a719dfb60646069d49c8df8c3da0"
+      },
+      {
+        "path": "example/lib/adaptive_scaffold_demo.dart",
+        "bytes": 4450,
+        "sha256": "3faca6676d85b6d6a06125600382ec9dfae43709ec0602b29e7297fcd127ec05"
+      },
+      {
+        "path": "example/lib/main.dart",
+        "bytes": 37443,
+        "sha256": "e0a84df32edf27ffb8ba3ea9c96b1f18df43017b3811d56a96ed74baf31153cd"
+      },
+      {
+        "path": "example/linux/CMakeLists.txt",
+        "bytes": 5182,
+        "sha256": "d9c468baf6787c4c9799ccebb43c6cbbeea0956c34a9a6b54427590650a36461"
+      },
+      {
+        "path": "example/linux/flutter/CMakeLists.txt",
+        "bytes": 2815,
+        "sha256": "787189e2623313cfee590a0b553338eb9fc68b3af922ddd77c5d39c75f989aeb"
+      },
+      {
+        "path": "example/linux/flutter/generated_plugins.cmake",
+        "bytes": 739,
+        "sha256": "d5aaa52ef8594d3128b35b6619c6a353e1be5f3c5a63a9c29c0a32b424e91952"
+      },
+      {
+        "path": "example/linux/main.cc",
+        "bytes": 345,
+        "sha256": "f2aa630d24a0fce53a3299124d21e22e20c518bedb7c8f3db8486d5ee8e216d2"
+      },
+      {
+        "path": "example/linux/my_application.cc",
+        "bytes": 3950,
+        "sha256": "f9919b7b5b32e1aefaecd8536ccc403d161ed229d7b350ad3073e22f4e88c58b"
+      },
+      {
+        "path": "example/linux/my_application.h",
+        "bytes": 553,
+        "sha256": "b6bf2c1812edf4f7abbed288c85eb2fbead01d1c69f8284f37775332c7236eeb"
+      },
+      {
+        "path": "example/macos/Flutter/Flutter-Debug.xcconfig",
+        "bytes": 48,
+        "sha256": "62290ad8e938bf410206d8c7e131262696b58a6df110d39faf3399396ffe61b1"
+      },
+      {
+        "path": "example/macos/Flutter/Flutter-Release.xcconfig",
+        "bytes": 48,
+        "sha256": "62290ad8e938bf410206d8c7e131262696b58a6df110d39faf3399396ffe61b1"
+      },
+      {
+        "path": "example/macos/Runner.xcodeproj/project.pbxproj",
+        "bytes": 21343,
+        "sha256": "48fbaddfdf00b59a6ae5fc5f13d2bf056d44a69fbe5c09651d600b2bf13a9a88"
+      },
+      {
+        "path": "example/macos/Runner.xcodeproj/project.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist",
+        "bytes": 238,
+        "sha256": "dfa0f9bb85b95ccba9c6811adadf8cb407fb5d52088e89db83ebc308ec448542"
+      },
+      {
+        "path": "example/macos/Runner.xcodeproj/xcshareddata/xcschemes/Runner.xcscheme",
+        "bytes": 3189,
+        "sha256": "c6dd31f107bacb8a28771ccd74d4bc942f4452cb3ae1ddc72fa26911963be9a3"
+      },
+      {
+        "path": "example/macos/Runner.xcworkspace/contents.xcworkspacedata",
+        "bytes": 152,
+        "sha256": "46c3c9702ff7c5584e11c954d943cfb6e07fb26e3fbd072ddbc0f388aa352de1"
+      },
+      {
+        "path": "example/macos/Runner.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist",
+        "bytes": 238,
+        "sha256": "dfa0f9bb85b95ccba9c6811adadf8cb407fb5d52088e89db83ebc308ec448542"
+      },
+      {
+        "path": "example/macos/Runner/AppDelegate.swift",
+        "bytes": 379,
+        "sha256": "824c60474b20672b31ab869e8ae54f672c6b29424805f9bb2eee224999de685f"
+      },
+      {
+        "path": "example/macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_1024.png",
+        "bytes": 102994,
+        "sha256": "6232e5815af17e25e0268b2fec7aea9e068cc92ec709e9605c2b31df4ff2a313"
+      },
+      {
+        "path": "example/macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_128.png",
+        "bytes": 5680,
+        "sha256": "15591f03f31313af6fd644ed0512106cc04365130b8b73244f1cfa6dddfb4400"
+      },
+      {
+        "path": "example/macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_16.png",
+        "bytes": 520,
+        "sha256": "cc6928b5adfc00dbf526192e2705dd9af641cdf20ab4c6c7ca7cd4936dca59f0"
+      },
+      {
+        "path": "example/macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_256.png",
+        "bytes": 14142,
+        "sha256": "416efd77cde932d42ef34168da24dd428a495b1f4f34bbbd125a18d2add186a2"
+      },
+      {
+        "path": "example/macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_32.png",
+        "bytes": 1066,
+        "sha256": "ae8c4458e41f1e28b1e851ed87d3268d4a0351ceea427fa2a84cc94ddfb6d4c5"
+      },
+      {
+        "path": "example/macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_512.png",
+        "bytes": 36406,
+        "sha256": "0a91c6c1bf242e54ee179e34629e9ef3e8a6d286c0fce01e302280a8be9277e6"
+      },
+      {
+        "path": "example/macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_64.png",
+        "bytes": 2218,
+        "sha256": "6ad229623498e5f1277800db3ab7cb11faf85eb2569e1213f7d8e55003c07b42"
+      },
+      {
+        "path": "example/macos/Runner/Assets.xcassets/AppIcon.appiconset/Contents.json",
+        "bytes": 1291,
+        "sha256": "bc6ba8105ca69651aeeb77358851590de295dca04681a1d58c0f449641c242f3"
+      },
+      {
+        "path": "example/macos/Runner/Base.lproj/MainMenu.xib",
+        "bytes": 23729,
+        "sha256": "be9e9ef8469d3262370e0f0b855ed163cbf9c8362c59e330b2ffe63b86fa42f4"
+      },
+      {
+        "path": "example/macos/Runner/Configs/AppInfo.xcconfig",
+        "bytes": 601,
+        "sha256": "2635912a883c475c2a46161d8671267e650fc92bca75acafc77166a2260d6c96"
+      },
+      {
+        "path": "example/macos/Runner/Configs/Debug.xcconfig",
+        "bytes": 77,
+        "sha256": "8067d533ef6593760baad9a9855a786a7a77470fcc3f0925ec04fe43bc1ac4b0"
+      },
+      {
+        "path": "example/macos/Runner/Configs/Release.xcconfig",
+        "bytes": 79,
+        "sha256": "7a6a4b4d973a23052fa0a0388dd261e32d311d7b66ba1bfc3b914b361808ac61"
+      },
+      {
+        "path": "example/macos/Runner/Configs/Warnings.xcconfig",
+        "bytes": 580,
+        "sha256": "0e341a392b16ad302d12890aa3dac9257a6c10ece685437604259a85341645a3"
+      },
+      {
+        "path": "example/macos/Runner/DebugProfile.entitlements",
+        "bytes": 348,
+        "sha256": "ebaab2b9992173de422c33e1fbab7f6e31acaa2213956097ac8cefd894a91ac8"
+      },
+      {
+        "path": "example/macos/Runner/Info.plist",
+        "bytes": 1060,
+        "sha256": "f253e89c512b3a9a81bc5cdd7a14bf932470f835f261654a808ea4549cd94aad"
+      },
+      {
+        "path": "example/macos/Runner/MainFlutterWindow.swift",
+        "bytes": 558,
+        "sha256": "eae9d5428e3164c697544b105fe6573c3a0a5431fec71a8de8ddfca7e45eaf48"
+      },
+      {
+        "path": "example/macos/Runner/Release.entitlements",
+        "bytes": 240,
+        "sha256": "b746c74b201e6af4e0864fbd1f4f629f96156a7ec4b7208bc995d0a5089bb592"
+      },
+      {
+        "path": "example/pubspec.yaml",
+        "bytes": 590,
+        "sha256": "0bce2cd5293acc55f9c2e84bbf9a882e7a69b5a1dfd4bc4bd4d9760cb9890de9"
+      },
+      {
+        "path": "example/README.md",
+        "bytes": 460,
+        "sha256": "bc985ee5144d0caa7c5e0ef4d175e72154f195520d2f287f7b9879d403f88cdf"
+      },
+      {
+        "path": "example/test/adaptive_layout_demo_test.dart",
+        "bytes": 7498,
+        "sha256": "2e5b938f0ae7aea9556a89b776afaeccf966b9a1f1da2fe65bd1ae02edc8f991"
+      },
+      {
+        "path": "example/test/adaptive_scaffold_demo_test.dart",
+        "bytes": 4649,
+        "sha256": "a04affe1f926c75d6d1ea3cbd1d4ea85ebf5d32663b15bff240799a70b33af5b"
+      },
+      {
+        "path": "example/test/main_test.dart",
+        "bytes": 1732,
+        "sha256": "f351246f980e2d430ca64b8c1b96897ec6c49c0514536141efa74301a2ebe656"
+      },
+      {
+        "path": "example/web/favicon.png",
+        "bytes": 917,
+        "sha256": "7ab2525f4b86b65d3e4c70358a17e5a1aaf6f437f99cbcc046dad73d59bb9015"
+      },
+      {
+        "path": "example/web/icons/Icon-192.png",
+        "bytes": 5292,
+        "sha256": "3dce99077602f70421c1c6b2a240bc9b83d64d86681d45f2154143310c980be3"
+      },
+      {
+        "path": "example/web/icons/Icon-512.png",
+        "bytes": 8252,
+        "sha256": "baccb205ae45f0b421be1657259b4943ac40c95094ab877f3bcbe12cd544dcbe"
+      },
+      {
+        "path": "example/web/icons/Icon-maskable-192.png",
+        "bytes": 5594,
+        "sha256": "d2c842e22a9f4ec9d996b23373a905c88d9a203b220c5c151885ad621f974b5c"
+      },
+      {
+        "path": "example/web/icons/Icon-maskable-512.png",
+        "bytes": 20998,
+        "sha256": "6aee06cdcab6b2aef74b1734c4778f4421d2da100b0ff9e52b21b55240202929"
+      },
+      {
+        "path": "example/web/index.html",
+        "bytes": 1382,
+        "sha256": "b0b0e5eebf5d2eba083908de252a38d5253250ffc92a54985fd626b036828843"
+      },
+      {
+        "path": "example/web/manifest.json",
+        "bytes": 910,
+        "sha256": "7feffe71d6f01c61634fb6508601dd1b281be07397c4c23fa548e42b58995651"
+      },
+      {
+        "path": "example/windows/CMakeLists.txt",
+        "bytes": 3899,
+        "sha256": "423a7aad3c8673d35775597cb99433c9fbbe737ffb3ead49fb9cce940e574a53"
+      },
+      {
+        "path": "example/windows/flutter/CMakeLists.txt",
+        "bytes": 3742,
+        "sha256": "1fe418971b6f41bb35ceb3d64113a835f3f6f171ecaa707bf232492b57a588d6"
+      },
+      {
+        "path": "example/windows/flutter/generated_plugins.cmake",
+        "bytes": 743,
+        "sha256": "286346b0d5303dc6b41072f9582d4c52bca35255b85b27b310f858e264dfdc56"
+      },
+      {
+        "path": "example/windows/runner/CMakeLists.txt",
+        "bytes": 1737,
+        "sha256": "3e5ce631cebb4eadddd6859d8a5b1d23b83e95c13c6db405c114a7ec7258f22c"
+      },
+      {
+        "path": "example/windows/runner/flutter_window.cpp",
+        "bytes": 1927,
+        "sha256": "7a6172c8cd347c0e280f97c9e5f1003223ff7a933953af05948f3bf2d3674be1"
+      },
+      {
+        "path": "example/windows/runner/flutter_window.h",
+        "bytes": 1093,
+        "sha256": "fb5821c313a2463e5355e84e722fc7b8c382d46419e64a1f8b0f3d8507e7086d"
+      },
+      {
+        "path": "example/windows/runner/main.cpp",
+        "bytes": 1426,
+        "sha256": "5bae39db6763f967990370fe06a66393d7d6e8ce1aff82c37e5cc7d41880a25e"
+      },
+      {
+        "path": "example/windows/runner/resource.h",
+        "bytes": 380,
+        "sha256": "f822cddfc7b376e52f6d04c353ab4ad00bcecf0abed0a20fd5107e18383cabc8"
+      },
+      {
+        "path": "example/windows/runner/resources/app_icon.ico",
+        "bytes": 33772,
+        "sha256": "c098d3fc85cacff98b8e69811b48e9f0d852fcee278132d794411d978869cbf8"
+      },
+      {
+        "path": "example/windows/runner/runner.exe.manifest",
+        "bytes": 874,
+        "sha256": "c359297996f4d967b7768fa93ea1e01fb21c8e95c3f2041f101f0904e94bb333"
+      },
+      {
+        "path": "example/windows/runner/Runner.rc",
+        "bytes": 3025,
+        "sha256": "fc441e827c50b886b67efad8468b6217c06f24ede9a135389dfa5f61818dbf67"
+      },
+      {
+        "path": "example/windows/runner/utils.cpp",
+        "bytes": 1871,
+        "sha256": "30819bd91260a3ff899dce34b2ba21663b03ce23fe42aa500aed2d81bc317737"
+      },
+      {
+        "path": "example/windows/runner/utils.h",
+        "bytes": 837,
+        "sha256": "2a0e3de79fa15961468ef37d56003ddd2e6d85ea8032883d59fca887eb33ee7d"
+      },
+      {
+        "path": "example/windows/runner/win32_window.cpp",
+        "bytes": 7059,
+        "sha256": "72768aa1fe19fc15c1136f43f1687814161681a36d28d7c4b1a6656716c80147"
+      },
+      {
+        "path": "example/windows/runner/win32_window.h",
+        "bytes": 3427,
+        "sha256": "b4e5dc013e6ecac8feb827762b475b77f3e8ab1e02e5a89716cc89c3d4f64624"
+      },
+      {
+        "path": "lib/flutter_adaptive_scaffold.dart",
+        "bytes": 299,
+        "sha256": "41f41891c75cd6bdf4a35a89d183d4b97d97bc6e408f66e985802a96a495635f"
+      },
+      {
+        "path": "lib/src/adaptive_layout.dart",
+        "bytes": 23343,
+        "sha256": "b6df4bf3eb9ea6caef225122d64108021533139dd79af8464e20668c875db4b7"
+      },
+      {
+        "path": "lib/src/adaptive_scaffold.dart",
+        "bytes": 30465,
+        "sha256": "7fa8326851f0e9a95f6f26d1a2f91778e5c450f158bc48fec6321a3bf22ce202"
+      },
+      {
+        "path": "lib/src/breakpoints.dart",
+        "bytes": 5028,
+        "sha256": "6696ac6029b8652ac3235aaede3e27eabfb7f85b1d030f18f98d20e337c0eea8"
+      },
+      {
+        "path": "lib/src/slot_layout.dart",
+        "bytes": 6822,
+        "sha256": "1b56d9ec5bbde98ab25991d26d98329e236973bd42beaeeb8bb94d4fdae81276"
+      },
+      {
+        "path": "LICENSE",
+        "bytes": 1519,
+        "sha256": "89519eca6f7b9529b35bdddd623a58c3af06a88c458dbd6531ddb4675acf75a9"
+      },
+      {
+        "path": "pubspec.yaml",
+        "bytes": 537,
+        "sha256": "50a0551ce23df9273403947810570a649ab47c9b8c13fae49d02d8590d642418"
+      },
+      {
+        "path": "README.md",
+        "bytes": 9384,
+        "sha256": "fd68a78aa52c5f40f8752e7e3ef10d487d4553d2ce8e188af353977b4c043d75"
+      },
+      {
+        "path": "test/adaptive_layout_test.dart",
+        "bytes": 19012,
+        "sha256": "98dceb8a806e3fccced3c08505d64b8d31f060af2fe36c357e7101b1332588ef"
+      },
+      {
+        "path": "test/adaptive_scaffold_test.dart",
+        "bytes": 28717,
+        "sha256": "8455fa8952a013f7d5ef362dc1e5ddf3919a4373f529913db018f8baffa2e00e"
+      },
+      {
+        "path": "test/breakpoint_test.dart",
+        "bytes": 3690,
+        "sha256": "ae8a7a49b9deebfd10a21e0d1bb8a15f169fa66f9d9e0a61ea0cf3552f0f816d"
+      },
+      {
+        "path": "test/simulated_layout.dart",
+        "bytes": 6463,
+        "sha256": "b335f592d90ec180eed67b2359a4da1baee45dbd26df3bcf4b2e9ef6b0394ba7"
+      },
+      {
+        "path": "test/test_breakpoints.dart",
+        "bytes": 1247,
+        "sha256": "061517d9835d3ca85fd17db74cabc02696eb178d01706de6a1926f8307d3fece"
+      }
+    ]
+  },
+  {
+    "package": "stream_transform",
+    "fileCount": 45,
+    "files": [
+      {
+        "path": "analysis_options.yaml",
+        "bytes": 415,
+        "sha256": "05226319fa131355a0bba9b2e278acab135ccd57c451ee0b11bcf267225be7ab"
+      },
+      {
+        "path": "CHANGELOG.md",
+        "bytes": 5747,
+        "sha256": "ed3bf159f7bd0e9c0875a2af4571bd286d084fc76c80539842a41752f938f3a0"
+      },
+      {
+        "path": "example/index.html",
+        "bytes": 226,
+        "sha256": "59743f87eec8792c2c2a2d92fd46794288d09e50cc3e7d2fa3e2d6f219900d85"
+      },
+      {
+        "path": "example/main.dart",
+        "bytes": 920,
+        "sha256": "0393babf97b5551e924a99321717206f90a6892e87ac112bddc5d7b0b4812294"
+      },
+      {
+        "path": "lib/src/aggregate_sample.dart",
+        "bytes": 4681,
+        "sha256": "7d3c41d85df0bc84450b6d07b01dffd6f71372c65e3c160891c7eb72c751dff2"
+      },
+      {
+        "path": "lib/src/async_expand.dart",
+        "bytes": 3439,
+        "sha256": "e315bb8d17b3c8b0ad6bc2d3646e59d6ca4959f5b40f6130a1e08d42d1dea0d3"
+      },
+      {
+        "path": "lib/src/async_map.dart",
+        "bytes": 5568,
+        "sha256": "3fbea27c0cabb8856bec8573386d19a26690df579290c9145279f6e5fc83f51f"
+      },
+      {
+        "path": "lib/src/combine_latest.dart",
+        "bytes": 8255,
+        "sha256": "c11ecc38560ce682fe440e395d2c9252f99fcb785c1d5c5ae5ad7f0e29b63926"
+      },
+      {
+        "path": "lib/src/common_callbacks.dart",
+        "bytes": 251,
+        "sha256": "3ffdcb2400c9ee8c472354aa583e4e91ebf41634d59e61278ddf899fcc211f1d"
+      },
+      {
+        "path": "lib/src/concatenate.dart",
+        "bytes": 3938,
+        "sha256": "6c97804f99262e20d5f10838f75db382bb0ca1f73025e01a0262ce3cd2b0ef34"
+      },
+      {
+        "path": "lib/src/from_handlers.dart",
+        "bytes": 1982,
+        "sha256": "48f56492e5243c612ac0bd3bd3e9c084a0fab14e820263ef0c883f377c625dc2"
+      },
+      {
+        "path": "lib/src/merge.dart",
+        "bytes": 3580,
+        "sha256": "c4fd97bcfdb4f8bf6adb6ec59962ad7047716558722d8d0627e9f7365ccf1ee6"
+      },
+      {
+        "path": "lib/src/rate_limit.dart",
+        "bytes": 13423,
+        "sha256": "e06d3744680cd6aa488ce95cc1fe7ded0e816e981f94375b1d737db995bf8dfa"
+      },
+      {
+        "path": "lib/src/scan.dart",
+        "bytes": 1186,
+        "sha256": "f1a359117cd3766b486d8a028975a7b7a0fe71c3dcc82ec5415ad9f4d63aa181"
+      },
+      {
+        "path": "lib/src/switch.dart",
+        "bytes": 5114,
+        "sha256": "367204bf71131b2391ce238eafed678b12fe91099fadf95cfd31ef2cb86a4246"
+      },
+      {
+        "path": "lib/src/take_until.dart",
+        "bytes": 2153,
+        "sha256": "16cb55bd3a19cd569f7376285c1cb1531a236b1500a85247461cab6452c0309f"
+      },
+      {
+        "path": "lib/src/tap.dart",
+        "bytes": 1797,
+        "sha256": "0930de8a800bb4727aded514f9d11358866dea0faa9b4ce2150fcd9a724ae417"
+      },
+      {
+        "path": "lib/src/where.dart",
+        "bytes": 2697,
+        "sha256": "5c0093c3e5f99f053e4eb7f08d3da65d332c7144dc668bc24f371c3109eec4db"
+      },
+      {
+        "path": "lib/stream_transform.dart",
+        "bytes": 526,
+        "sha256": "a40bbd1fa0eea5b297b778e0b4b75ae692b487333cbded70453cb8ec48a2c92a"
+      },
+      {
+        "path": "LICENSE",
+        "bytes": 1504,
+        "sha256": "ea97a7558a7bd7cee4e2355f7529e3cbebb0dcbb546ddb9a90f10c9eb6b08da5"
+      },
+      {
+        "path": "pubspec.yaml",
+        "bytes": 425,
+        "sha256": "4bc1fa21b733e08cfea1a1814eb0aa73b4b228f8b3429b721207fad0e7afb6cd"
+      },
+      {
+        "path": "README.md",
+        "bytes": 7043,
+        "sha256": "9d06f46c563f093113113512ede89e7977b2dd9bcd1e3a5c9d965de30828ea4e"
+      },
+      {
+        "path": "test/async_expand_test.dart",
+        "bytes": 6808,
+        "sha256": "1e612f6ff8f06a7982abb25e6a67dbc962155d16dc4e338be781fd1416ff41eb"
+      },
+      {
+        "path": "test/async_map_buffer_test.dart",
+        "bytes": 6193,
+        "sha256": "77163193232f1f3222384881f0648accaa6d031b001c32edd0847082e370ef3c"
+      },
+      {
+        "path": "test/async_map_sample_test.dart",
+        "bytes": 6327,
+        "sha256": "df27b9b9eb97425e42da3224096515f942c1ba28df9c8c4ec4dbb3ba6bd1f1fa"
+      },
+      {
+        "path": "test/async_where_test.dart",
+        "bytes": 2935,
+        "sha256": "4e99a5cfb3f09bc6a155e288b9cf35ac2b4f60169381e037a67e17a542d46ce8"
+      },
+      {
+        "path": "test/audit_test.dart",
+        "bytes": 4320,
+        "sha256": "54a4b3b45abd7ab306082513784318e15df918df57a77e3325a4fe069f6cb7df"
+      },
+      {
+        "path": "test/buffer_test.dart",
+        "bytes": 8887,
+        "sha256": "664acdd35bae5ffb6595983c5b387c9fa9efac95d52283d1631fcedffe09e2ff"
+      },
+      {
+        "path": "test/combine_latest_all_test.dart",
+        "bytes": 4710,
+        "sha256": "a842e04cc12919c7cdc7f45b3c449c40e40ce594119e5d302240626f7f9800d3"
+      },
+      {
+        "path": "test/combine_latest_test.dart",
+        "bytes": 5520,
+        "sha256": "5e86cc0ffc2a7cec8692cd87b89531496e6a6ddacb25e116b651666f1a1b0a05"
+      },
+      {
+        "path": "test/concurrent_async_map_test.dart",
+        "bytes": 4858,
+        "sha256": "50c7c9708e83b6d6b4bb64d360bfde6a8215856d70b800930a6674ff97da7f84"
+      },
+      {
+        "path": "test/debounce_test.dart",
+        "bytes": 9330,
+        "sha256": "ae40b0919038047419b63378aab275e0b04ed416475bdf4f456b9896fe5b0106"
+      },
+      {
+        "path": "test/followd_by_test.dart",
+        "bytes": 5094,
+        "sha256": "d700243f65d18e78effd35a11dc349d60f5965dbfa10900a02a4083ef198a4d4"
+      },
+      {
+        "path": "test/from_handlers_test.dart",
+        "bytes": 5034,
+        "sha256": "be8675e68fd0ec5e3e282ff3ea82d678cccad30a64dafecd2b8106e16b553709"
+      },
+      {
+        "path": "test/merge_test.dart",
+        "bytes": 4619,
+        "sha256": "dbc9b8eb09dc88febce395828b8bd004da4b9ab1117bccf18c371501586b145a"
+      },
+      {
+        "path": "test/sample_test.dart",
+        "bytes": 8800,
+        "sha256": "434d1c2ded01ad7081ddabd9109e67a89de921883a5e6d12f13b56f980708d8c"
+      },
+      {
+        "path": "test/scan_test.dart",
+        "bytes": 3094,
+        "sha256": "4021d1eb6bbed718fdafa0f45480087ed1fd845b7c0032ffaaf16f52504caf27"
+      },
+      {
+        "path": "test/start_with_test.dart",
+        "bytes": 4889,
+        "sha256": "1b14f8b6a81b75f24ebf25e360603310d28e88bae877cd3536e2dbd3a01ec603"
+      },
+      {
+        "path": "test/switch_test.dart",
+        "bytes": 6855,
+        "sha256": "1c7cd45497d1a68a4d45c823c6541155ad7040732a2f1e905717a0e8e40464be"
+      },
+      {
+        "path": "test/take_until_test.dart",
+        "bytes": 4051,
+        "sha256": "339033d15a03d72091074c935c6bc0b7c797cf5d8d8ca883951c86b005d39c3d"
+      },
+      {
+        "path": "test/tap_test.dart",
+        "bytes": 3304,
+        "sha256": "f01a0e22c20e9e0993f0cb4e6fac8f32da3ca7ad0078dfc0c70cdb6f92849fc2"
+      },
+      {
+        "path": "test/throttle_test.dart",
+        "bytes": 5810,
+        "sha256": "e322d18853de420e732fce803d1c6c645ce08944e1eba7b3a4e96b3b6c7f4a19"
+      },
+      {
+        "path": "test/utils.dart",
+        "bytes": 639,
+        "sha256": "bbe5327267c86b42c78889ed6d2654dd25c255e2c1dec15862143ee3df0453bf"
+      },
+      {
+        "path": "test/where_not_null_test.dart",
+        "bytes": 1748,
+        "sha256": "78e398ff0f0789344f5f7c43bf11e817f7de8c1e795ef0512669c6939d06575a"
+      },
+      {
+        "path": "test/where_type_test.dart",
+        "bytes": 1742,
+        "sha256": "e63b4e27b03ef948c5a618824e7661f06d26edb771ce0794159d9a1466a4b717"
+      }
+    ]
+  },
+  {
+    "package": "x_amap_base",
+    "fileCount": 13,
+    "files": [
+      {
+        "path": "CHANGELOG.md",
+        "bytes": 173,
+        "sha256": "0023c80db8e4a385f943ea7c7626277608f6c5ab394687a84b378ce447af3c77"
+      },
+      {
+        "path": "lib/src/amap_api_key.dart",
+        "bytes": 1422,
+        "sha256": "471f340a7f563ce82d52429fc9db178e2d5234ffc7fd2be1626b42faac12d032"
+      },
+      {
+        "path": "lib/src/amap_privacy_statement.dart",
+        "bytes": 1701,
+        "sha256": "d4d2d9ad77185a5a2f3a0965ef90e3e941159d29be487122f915a9b14c2420a2"
+      },
+      {
+        "path": "lib/src/amap_tools.dart",
+        "bytes": 5311,
+        "sha256": "b4e0b17ad5485a0bb204d6d374d76e3ce40f17db57571fefb38ad066d19a9332"
+      },
+      {
+        "path": "lib/src/amap_utils.dart",
+        "bytes": 406,
+        "sha256": "275527a2067f49a1ad94aada9ad6304ac625d12d409c66aa21ec3072a0eecfe7"
+      },
+      {
+        "path": "lib/src/callbacks.dart",
+        "bytes": 155,
+        "sha256": "4e7d7328c6416607e104c103de7912edf675defbd557c3176472934abdefb589"
+      },
+      {
+        "path": "lib/src/location.dart",
+        "bytes": 5508,
+        "sha256": "2505aaab95b26fcf23ab9ce463e0f55e6c992cbcff635ba960a7409ae2945f43"
+      },
+      {
+        "path": "lib/src/options.dart",
+        "bytes": 176,
+        "sha256": "c2d43fed8c04eb35235ecc5226e4fc6d1d449adabb762b08c7e043d5c57220ce"
+      },
+      {
+        "path": "lib/src/poi.dart",
+        "bytes": 898,
+        "sha256": "1e76b7c19c4f36dfee821626c1e3b7136c69dc92a50d802443ddc30e335d31c1"
+      },
+      {
+        "path": "lib/x_amap_base.dart",
+        "bytes": 308,
+        "sha256": "f3f576648f10c76fcf3779218be005ed6e2bdd8a9be41c54aefdf85d12fe7428"
+      },
+      {
+        "path": "LICENSE",
+        "bytes": 11357,
+        "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
+      },
+      {
+        "path": "pubspec.yaml",
+        "bytes": 652,
+        "sha256": "9906ae17a66bb2fc9895c1244be7b63687494f8bed4a752f048d8292c295ec8b"
+      },
+      {
+        "path": "README.md",
+        "bytes": 512,
+        "sha256": "1a72e37a5ae915f4fa8d0e75a396675b6d7497713d117939ffeaaf2de1d9bd54"
+      }
+    ]
+  },
+  {
+    "package": "x_common",
+    "fileCount": 15,
+    "files": [
+      {
+        "path": "analysis_options.yaml",
+        "bytes": 154,
+        "sha256": "df692318073ecc5f3b8a759a1f9338eb21995900d3c2bc1fbcd2c7780a1c7c6e"
+      },
+      {
+        "path": "CHANGELOG.md",
+        "bytes": 150,
+        "sha256": "68fa4284ec1840d75463f2c9511a081c15abe1a1de3f3cf456640661eb8a97f3"
+      },
+      {
+        "path": "example/README.md",
+        "bytes": 110,
+        "sha256": "0fd44ac417979be35cd04f8c6830fd0c1a41cc420261989e4b55b1949738db99"
+      },
+      {
+        "path": "example/utils/logger/main.dart",
+        "bytes": 346,
+        "sha256": "8ed131dbefdaec07de32e7ebff001a3e2b1a6ef342f2680a59c31ad380815666"
+      },
+      {
+        "path": "lib/adaptive/adaptive.dart",
+        "bytes": 1153,
+        "sha256": "22b0ac4045c16d476a8b233cac4cd6d7a35519e7cb7ddf2f8751a105d7f88d5a"
+      },
+      {
+        "path": "lib/config/env.dart",
+        "bytes": 221,
+        "sha256": "4e5d5a164b2e056973ce88b0ce32c0e1d73c08c3795d2b7047d5d1bd9a3b27cc"
+      },
+      {
+        "path": "lib/extensions/iterable_extensions.dart",
+        "bytes": 427,
+        "sha256": "678c33ae5102532f6743cd76a27892353192ef989f662527ee670bb8950e6430"
+      },
+      {
+        "path": "lib/global.dart",
+        "bytes": 303,
+        "sha256": "a3c71aacbddcc677811a7463650ae9e42e503aa83dee57663a208812fc76db34"
+      },
+      {
+        "path": "lib/routes.dart",
+        "bytes": 716,
+        "sha256": "450e3232a3b1c01bf07e5a7d68923fa29c2a05da42309a0727d36f328d09b465"
+      },
+      {
+        "path": "lib/utils/logger.dart",
+        "bytes": 293,
+        "sha256": "bc78f27e0150e396c854b9727d74d5ba9e7d1e0adc24bf87c8526a49d8fd591f"
+      },
+      {
+        "path": "lib/x_common.dart",
+        "bytes": 298,
+        "sha256": "83c1d63b6d40abe7168c339c18c58334a7560707d11b4b7db8687e163e3854a6"
+      },
+      {
+        "path": "LICENSE",
+        "bytes": 11357,
+        "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
+      },
+      {
+        "path": "pubspec.yaml",
+        "bytes": 1852,
+        "sha256": "f0ef3fcd599332bf098920232571b5012e80bae4c3acb6c5643c4a210881b39b"
+      },
+      {
+        "path": "README.md",
+        "bytes": 928,
+        "sha256": "a7280d40fd4fcebf3a86b294d08e39d2a6c3ab6ed2807fab04bcc2ee9ad4a5fb"
+      },
+      {
+        "path": "test/x_common_test.dart",
+        "bytes": 322,
+        "sha256": "9d83c1baee9710f9606e302472c29eafc509a5714e274a1fd1aa371d43eade3b"
+      }
+    ]
+  }
+]

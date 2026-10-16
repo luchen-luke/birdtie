@@ -1,0 +1,63 @@
+{
+  "status": "PASS",
+  "privateValuesPersisted": false,
+  "sessionCleanup": "ALL_RETURNED_SESSIONS_REVOKED",
+  "remoteScriptSHA256": "ee465137469d5907fec98d65fa64e016e05fa100b25b917a513b04803c95742a",
+  "exitCode": 0,
+  "stderrPresent": false,
+  "result": {
+    "status": "PASS",
+    "devOnly": true,
+    "productionIdentityVerified": false,
+    "productionPhoneVerification": false,
+    "fixedCodeUsed": true,
+    "sourceWrites": 0,
+    "databaseDirectWrites": 0,
+    "remoteConfigurationChanged": false,
+    "agentActivationRequested": false,
+    "oldSessionAccepted": false,
+    "messagesSent": 0,
+    "privateValuesPersisted": false,
+    "allCreatedSessionsLoggedOut": true,
+    "schema": 173,
+    "apiBuild": 30,
+    "contentWrites": 0,
+    "otherOriginalOwnerLogins": 0,
+    "apiReleaseAndBinaryPinned": true,
+    "runningProcessPinned": true,
+    "selectedLegacyImageProvenanceBound": true,
+    "selectedImages": 1,
+    "lazyDetail": {
+      "elapsedMs": 60.006,
+      "httpResponseBytes": 4514
+    },
+    "descriptor": {
+      "elapsedMs": 1278.829,
+      "httpResponseBytes": 949
+    },
+    "display": {
+      "elapsedMs": 57.794,
+      "bytes": 54903,
+      "width": 960,
+      "height": 1280,
+      "hashVerified": true,
+      "actualJPEGDimensionsVerified": true
+    },
+    "originalBytes": 1519753,
+    "originalWidth": 5760,
+    "originalHeight": 7680,
+    "authorOriginalTimeRetained": true,
+    "originalImageBytesAndRevisionUnchanged": true,
+    "originalBackupsUnchanged": true,
+    "wrongOriginalAndDisplaySourceDenied": true,
+    "wrongMomentBindingDenied": true,
+    "viewerMatchesOnlyAuthorizedOwner": true,
+    "anonymousAllThreeDenied": true,
+    "realOtherOwnerLogin": "NOT_RUN",
+    "serverCacheState": "UNCONTROLLED_EXISTING_CACHE",
+    "endToEndPhone": "NOT_RUN",
+    "fullSize200Media": "NOT_RUN",
+    "loggedOutAllThreeDenied": true,
+    "sessionCleanup": "ALL_RETURNED_SESSIONS_REVOKED"
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "status": "NOT_EXECUTED_LOCAL_TRANSPORT_FAILURE",
+  "error": "Windows CreateProcess WinError 206 command line too long",
+  "sshProcessStarted": false,
+  "remoteWrites": 0,
+  "repair": "Compress the identical remote Python program before the existing base64 SSH transport; preserve this failed preparation."
+}

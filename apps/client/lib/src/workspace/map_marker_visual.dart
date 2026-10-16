@@ -146,12 +146,17 @@ class MapMediaPixels {
     required this.selectedPNG,
     required this.devicePixelRatio,
     required this.current,
+    this.validUntil,
   });
   final String key;
   final ui.Image image;
   final Uint8List normalPNG, selectedPNG;
   final double devicePixelRatio;
   final bool Function() current;
+
+  /// Original authority deadline for providers that retain a pixel copy outside
+  /// Dart. A copy cannot invent or extend this lease; the live guard still applies.
+  final DateTime? validUntil;
   Uint8List? png({
     required bool selected,
     required bool dense,

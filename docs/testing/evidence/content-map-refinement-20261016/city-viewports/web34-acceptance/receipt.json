@@ -1,0 +1,595 @@
+{
+  "status": "PARTIAL_FIRST_SHANGHAI_LOAD_FAILED_RETRY_PASS",
+  "headless": true,
+  "browserVersion": "155.0.8059.40",
+  "nonPersistentContext": true,
+  "privateValuesPersisted": false,
+  "contentWrites": 0,
+  "checks": [
+    {
+      "check": "EXPECTED_WEB34_MANIFEST",
+      "passed": true
+    },
+    {
+      "check": "PINNED_OWNER",
+      "passed": true
+    },
+    {
+      "check": "CITY_VIDEO_汕头市",
+      "passed": true,
+      "proof": {
+        "city": "汕头市",
+        "playbackAdvanced": true,
+        "playerHealthy": true,
+        "exactAuthorizedEntryReadByUI": true,
+        "returnedSameMapDOM": true,
+        "playerReleased": true
+      }
+    },
+    {
+      "check": "SHANTOU_VISIBLE_MAP_AFTER_RETURN",
+      "passed": true,
+      "notes": "After physical close at observed 48px return control, content list absent; screenshot and single retained map DOM."
+    },
+    {
+      "check": "SHANGHAI_FIRST_VIDEO_ATTEMPT",
+      "passed": false,
+      "notes": "Original 104-second video showed explicit load-failed retry UI after click; no video element. Preserved cm-web34-shanghai-video.png before retry."
+    },
+    {
+      "check": "CITY_VIDEO_上海市",
+      "passed": true,
+      "proof": {
+        "city": "上海市",
+        "playbackAdvanced": true,
+        "playerHealthy": true,
+        "exactAuthorizedEntryReadByUI": true,
+        "returnedSameMapDOM": true,
+        "playerReleased": true
+      }
+    },
+    {
+      "check": "SHANGHAI_VISIBLE_MAP_AFTER_RETURN",
+      "passed": true,
+      "notes": "Physical close of observed 48px return control restored visible city map, no content panel; map DOM retained and video released."
+    }
+  ],
+  "metrics": {
+    "mapQueries": 25,
+    "memberQueries": 0,
+    "placeReads": 15,
+    "momentReads": 0,
+    "coverReads": 15,
+    "denials": 2,
+    "contentWrites": 0,
+    "blockedWrites": 0,
+    "failedRequests": 39,
+    "browserPageErrors": 0,
+    "markerReads": 13,
+    "avatarReads": 1,
+    "detailMediaReads": 1,
+    "descriptorReads": 1,
+    "auditMetadataReads": 6
+  },
+  "events": [
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 12.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 12.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 11.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 11.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 11.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 11.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 11.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 11.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "detail"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 11.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "detail"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 11.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "detail"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 11.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "detail"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 11.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "detail"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 11.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 11.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 11.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 11.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 11.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 11.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "detail"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 11.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "detail"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 11.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "detail"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 11.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "detail"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 11.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "detail"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 11.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "detail"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 11.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 11.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "detail"
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "detail"
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "detail"
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "detail"
+    }
+  ],
+  "logout": "PASS",
+  "release": {
+    "web": 34,
+    "api": 30,
+    "schema": 173,
+    "manifestSHA256": "7c676913aa61b68ad7e582ef80028b44996c02d4d0e3a95b7f67667faf2cbc42",
+    "apiSHA256": "4cc70262b66cffa0061a79fa91fdc7f622de23aedd5552a713b5e1070a7b9900"
+  },
+  "screenshots": [
+    {
+      "path": "C:\\Users\\chens\\Documents\\Codex\\2026-10-15\\d-project-birdtie-docs-reports-birdtie-2\\outputs\\cm-web34-shantou-map.png",
+      "sha256": "8adb7b71d2d10082996152515ee8144e65cd6a5ddd9c474faa20ab2713626e0d"
+    },
+    {
+      "path": "C:\\Users\\chens\\Documents\\Codex\\2026-10-15\\d-project-birdtie-docs-reports-birdtie-2\\outputs\\cm-web34-shantou-video.png",
+      "sha256": "4c3a0aa6a17c4647175d0de0a306b54bf0928d01723a120c13364b6406749e2f"
+    },
+    {
+      "path": "C:\\Users\\chens\\Documents\\Codex\\2026-10-15\\d-project-birdtie-docs-reports-birdtie-2\\outputs\\cm-web34-shantou-return-map.png",
+      "sha256": "8adb7b71d2d10082996152515ee8144e65cd6a5ddd9c474faa20ab2713626e0d"
+    },
+    {
+      "path": "C:\\Users\\chens\\Documents\\Codex\\2026-10-15\\d-project-birdtie-docs-reports-birdtie-2\\outputs\\cm-web34-shanghai-map.png",
+      "sha256": "9acbbf7c6f82eb736a2513cadaaa33629f58fb897d9188713c6b579cdc79c96b"
+    },
+    {
+      "path": "C:\\Users\\chens\\Documents\\Codex\\2026-10-15\\d-project-birdtie-docs-reports-birdtie-2\\outputs\\cm-web34-shanghai-video.png",
+      "sha256": "1cec1deeb0eb7973e75697ab42564fd2a700f7081ae1a4a2d544317a965253d6"
+    },
+    {
+      "path": "C:\\Users\\chens\\Documents\\Codex\\2026-10-15\\d-project-birdtie-docs-reports-birdtie-2\\outputs\\cm-web34-shanghai-video-retry.png",
+      "sha256": "b9d3247820fc66d13eda0413877b80bf569fa65507a652d22c2636aae46afa7b"
+    },
+    {
+      "path": "C:\\Users\\chens\\Documents\\Codex\\2026-10-15\\d-project-birdtie-docs-reports-birdtie-2\\outputs\\cm-web34-shanghai-return-map.png",
+      "sha256": "0c274d2f636d927288048b032c1b3f43a0e19ed3080aed0f8b70766e6677bed7"
+    }
+  ],
+  "playbacks": {
+    "汕头市": [
+      {
+        "paused": false,
+        "currentTime": 15.078588,
+        "duration": 33.932479,
+        "readyState": 4,
+        "error": null,
+        "width": 1280,
+        "height": 720
+      },
+      {
+        "paused": false,
+        "currentTime": 25.832232,
+        "duration": 33.932479,
+        "readyState": 4,
+        "error": null,
+        "width": 1280,
+        "height": 720
+      }
+    ],
+    "上海市": [
+      {
+        "paused": false,
+        "currentTime": 20.666146,
+        "duration": 104.820375,
+        "readyState": 4,
+        "error": null,
+        "width": 1280,
+        "height": 720
+      },
+      {
+        "paused": false,
+        "currentTime": 40.990775,
+        "duration": 104.820375,
+        "readyState": 4,
+        "error": null,
+        "width": 1280,
+        "height": 720
+      }
+    ]
+  },
+  "scope": "Two reviewed city entries and one existing authorized video per city; no Aberdeen repeat; old city-entry failure retained",
+  "notRun": [
+    "Screen recording",
+    "Publishing/editing/deleting content",
+    "Full release regression",
+    "Other Shanghai video playback",
+    "Full clip playback for either selected video",
+    "Audible sound output in headless browser",
+    "Android playback in this Web-only batch",
+    "Fresh-repaired first-play regression for Web35",
+    "Repeated login or full Aberdeen regression"
+  ],
+  "finalized": true,
+  "finalizedAtUTC": "2026-10-16T01:41:35.000573+00:00",
+  "attemptReceipt": {
+    "path": "attempt01/receipt.json",
+    "sha256": "880608dcc033825addce193c8eac3404d6ce5bfd790d80aace3ca77872045125",
+    "statusPreserved": "FAIL"
+  },
+  "cityEntryResults": [
+    {
+      "city": "汕头市",
+      "defaultVisibleViewportPointCount": 4,
+      "defaultVisibleViewportDistinctContent": 3,
+      "mapEntry": "PASS",
+      "existingVideoSelectedExact": "PASS",
+      "firstPlayback": "PASS",
+      "returnVisibleMapSameDOM": "PASS"
+    },
+    {
+      "city": "上海市",
+      "defaultVisibleViewportPointCount": 14,
+      "defaultVisibleViewportDistinctContent": 15,
+      "mapEntry": "PASS",
+      "existingVideoSelectedExact": "PASS",
+      "firstPlayback": "FAIL",
+      "oneExplicitRetryPlayback": "PASS",
+      "returnVisibleMapSameDOM": "PASS"
+    }
+  ],
+  "networkObservation": {
+    "method": "Browser PerformanceResourceTiming from actual UI requests; no private URL saved",
+    "shantouVideo": {
+      "responseStatus": 200,
+      "durationMs": 4228,
+      "encodedBytes": 13959043,
+      "transferBytes": 13959343
+    },
+    "shanghaiFirst": {
+      "responseStatus": 200,
+      "durationMs": 15819,
+      "encodedBytesReported": 0,
+      "transferBytesReported": 300,
+      "videoElementCreated": false,
+      "visibleRetryError": true,
+      "incompleteBodyExplanation": "Browser reports incomplete/canceled response; transferred partial payload cannot be inferred from zero encodedBodySize."
+    },
+    "shanghaiRetry": {
+      "responseStatus": 200,
+      "durationMs": 17028,
+      "encodedBytes": 49250278,
+      "transferBytes": 49250578,
+      "videoElementCreated": true
+    }
+  },
+  "rootCauseAssessment": {
+    "status": "INFERENCE_NOT_EXCEPTION_TRACE",
+    "observed": "Same authorized 49MB video failed on initial read but decoded and played after one explicit retry. HTTP200 first request ended early at15.819s; retry completed17.028s.",
+    "likelyBoundary": "OwnedMapAPI.momentContent captures old detail.validUntil; pending checks fixed until while reader/detail parent renews. _read also has20s total and10s per-chunk limits. This can cancel a long download with insufficient remaining grant.",
+    "sourcePaths": [
+      "apps/client/lib/src/workspace/owned_map_api.dart:momentContent/_read",
+      "apps/client/lib/src/workspace/owned_map_controller.dart:momentContent/detailCurrent",
+      "apps/client/lib/src/workspace/now_map_content_panel.dart:video _play"
+    ],
+    "notProven": "Exact thrown exception/clock edge not instrumented in release; do not label as server timeout or codec defect."
+  },
+  "harnessLimitations": [
+    "Flutter semantics enabled for observation. Initial direct input.value/input Event did not update city filter; actual input focus and browser insertText editing then produced real filtered UI selection.",
+    "Shantou chosen semantic marker was underneath other overlapping markers and locator click timed out; physical visible overlap click opened current content list, then original target row was selected. No marker or detail state was injected.",
+    "Return-map semantic locator timed out once; physical click at observed close control restored visible map, independently checked by screenshots and sameDOM/player-release observations.",
+    "Early playback probes before video download completed found no player; these are not extra product failures. Shanghai displayed actual retry error on first download and that failure is retained.",
+    "requestfinished asset observer missed some large/aborted responses; aggregate failedRequests includes cancellations and is not a product-failure count. ResourceTiming and real video time advancement are recorded separately.",
+    "Canvas-rendered author/time were absent from body.innerText-based proof but visibly present with avatar in actual screenshots; body text booleans are not used as author-visibility failure.",
+    "Full-page screenshots may extend beyond1280x900 because Flutter semantics overflow; main viewport content remains original screenshot pixels."
+  ],
+  "preservedPriorGap": {
+    "path": "../../web33-acceptance/receipt.json",
+    "scope": "Prior missing city viewport failure retained. This run proves both city map entries available; first Shanghai video read uncovered a separate current failure."
+  }
+}

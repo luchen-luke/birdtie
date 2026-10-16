@@ -1,0 +1,27 @@
+{
+  "mode": "upgrade",
+  "exit_code": 0,
+  "host": "ecs-user@47.110.154.133",
+  "strict_host_key_checking": true,
+  "remoteScriptSHA256": "8d541725b41907a3441fdd0aa602d11be39257c4af0b630970643aefd0849b9a",
+  "stdoutSHA256": "9b7770ab459093a90b6bbac02c0a6a5d1d20086a8e466437f37a2122e4eb10d5",
+  "stderrSHA256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "public_routing_changed": false,
+  "result": {
+    "stage": "REFRESHED_READY",
+    "migrations": 173,
+    "appliedMigrations": 1,
+    "originalMigrationsUnchanged": 172,
+    "release": "/opt/birdtie/releases/social173-20261016-build30",
+    "previousRelease": "/opt/birdtie/releases/social172-20261015-build29",
+    "priorAPISHA256": "73a97552316ae642f4b97aea37c04266c3fd0959eeb0d346dd03bc6e54702818",
+    "apiSHA256": "4cc70262b66cffa0061a79fa91fdc7f622de23aedd5552a713b5e1070a7b9900",
+    "publicRoutingChanged": false,
+    "oldAssetsDeleted": false,
+    "reviewedCityCamerasUpdated": 2,
+    "cameraOtherFieldsUnchanged": true,
+    "originalCameraRowsPreservedOutsideRepository": true,
+    "atomicFileReplacement": true,
+    "rollbackOnReadinessFailure": true
+  }
+}

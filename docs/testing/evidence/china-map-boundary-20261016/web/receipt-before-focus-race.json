@@ -1,0 +1,76 @@
+{
+  "status": "DIRECT_CHECKS_PASS_LIVE_NOT_RUN",
+  "sourceStable": true,
+  "sourceBefore": {
+    "apps/client/lib/src/city/amap_city_map_web.dart": "8cadee82bfc556a09629ecb2baf4d641acc2e5a35eaceb82ce289693367519d4",
+    "apps/client/lib/src/city/amap_city_map_stub.dart": "5d5d69c1484f9515982fb8ace55935f5313d425266ecf6f00a1e7d1b9a829b4b",
+    "apps/client/lib/src/city/public_city_map.dart": "5d9333fbab060d7023e534ee9fe8a553becef09bf8c1d263e9c40fb41ab36edc",
+    "apps/client/lib/src/city/public_city_controller.dart": "d565d4d15a54065ef8fdd5eef6f3133f823fa9a94a77cbabf16128bc86441a93",
+    "apps/client/lib/src/city/map_provider_policy.dart": "adbca4500224697d82cff66b2368ffe3726e9c93ea596fe232a6c3e4dcef73cd",
+    "apps/client/web/birdtie_amap.js": "77bbc2d50409956f7f5589972ea1ebcec8ffef6f9f063630c2810c2ef3433104",
+    "apps/client/test/amap_web_bridge_test.cjs": "df612b82db73656c378d014fcd5e8147a78f387480cf25198248f86b4a6632fb",
+    "apps/client/test/amap_web_fan_boundary_test.dart": "7dd9644875e497614acfd416b9d76501ab5ba08123f4f57e564aeb04ab67ad30"
+  },
+  "sourceAfter": {
+    "apps/client/lib/src/city/amap_city_map_web.dart": "8cadee82bfc556a09629ecb2baf4d641acc2e5a35eaceb82ce289693367519d4",
+    "apps/client/lib/src/city/amap_city_map_stub.dart": "5d5d69c1484f9515982fb8ace55935f5313d425266ecf6f00a1e7d1b9a829b4b",
+    "apps/client/lib/src/city/public_city_map.dart": "5d9333fbab060d7023e534ee9fe8a553becef09bf8c1d263e9c40fb41ab36edc",
+    "apps/client/lib/src/city/public_city_controller.dart": "d565d4d15a54065ef8fdd5eef6f3133f823fa9a94a77cbabf16128bc86441a93",
+    "apps/client/lib/src/city/map_provider_policy.dart": "adbca4500224697d82cff66b2368ffe3726e9c93ea596fe232a6c3e4dcef73cd",
+    "apps/client/web/birdtie_amap.js": "77bbc2d50409956f7f5589972ea1ebcec8ffef6f9f063630c2810c2ef3433104",
+    "apps/client/test/amap_web_bridge_test.cjs": "df612b82db73656c378d014fcd5e8147a78f387480cf25198248f86b4a6632fb",
+    "apps/client/test/amap_web_fan_boundary_test.dart": "7dd9644875e497614acfd416b9d76501ab5ba08123f4f57e564aeb04ab67ad30"
+  },
+  "checks": [
+    {
+      "name": "javascript-fake-sdk",
+      "exitCode": 0,
+      "elapsedMs": 156,
+      "log": "javascript-fake-sdk.txt",
+      "logSHA256": "c1db925cd3b7c9cce5a23f3bc71d326ee52c2bd89bebadb1af610d14601d5b57"
+    },
+    {
+      "name": "dart-boundary",
+      "exitCode": 0,
+      "elapsedMs": 3703,
+      "log": "dart-boundary.txt",
+      "logSHA256": "af3a3fd0d59b2d966851453474c129244605ef302cb394229ad3f3cfbcb7b00b"
+    },
+    {
+      "name": "analyzer",
+      "exitCode": 0,
+      "elapsedMs": 1969,
+      "log": "analyzer.txt",
+      "logSHA256": "a12a43bfc9799a520214ce596c7d1fbcac9464bdad1b035bda0c15f4576af711"
+    }
+  ],
+  "scope": "AMap Web adapter, explicit city country routing, canonical viewport and current content markers",
+  "actualServices": {
+    "amapJsSDK": "NOT_RUN_MISSING_JS_KEY_AND_SECURITY_PROXY",
+    "domesticPhone": "NOT_RUN_SEPARATE_NATIVE_SCOPE",
+    "ShanghaiShantouMapboxRetest": "PAUSED_SUPERSEDED_PROVIDER_REQUIREMENT"
+  },
+  "limits": [
+    "Fake SDK and direct widget boundary checks do not establish actual AMap coordinate alignment, service availability or performance.",
+    "No production login, session, content write, database migration or deployment in this implementation batch."
+  ],
+  "sourceFacts": {
+    "previouslyVisitedPublicPlaces": 2,
+    "cityCount": 2,
+    "sourceGCJ02StoredWGS84": 2,
+    "originalConversionReplayWithinOneMicrodegree": 2,
+    "nativeCoordinatesExactlyMatchOriginal": 2,
+    "otherLocations": "NOT_INFERRED"
+  },
+  "performance": {
+    "sameScopeUnchangedMarkerNodeRetained": true,
+    "sameScopeSuccessfulCoordinateConversionReused": true,
+    "conversionCacheMaxEntries": 320,
+    "conversionBatchMax": 40,
+    "conversionWorkers": 2,
+    "refreshQueue": "one running plus latest pending",
+    "settledPublication": "one replaceable 180ms SDK quiet slot; no additional Dart debounce",
+    "wallClockBeforeAfter": "NOT_RUN"
+  },
+  "finalized": true
+}

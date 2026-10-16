@@ -1,0 +1,153 @@
+{
+  "createdAtUTC": "2026-10-16T01:19:52.426516+00:00",
+  "status": "SOURCE_READY_FROZEN",
+  "baseHEAD": "fc8e01553e383134c728baad7017c5bef3ce4bb8",
+  "files": [
+    {
+      "path": "apps/api/internal/content/map_content.go",
+      "sha256": "7d9b81ffdf4d1954873da4e8b11ff7304858c245e0faf9f681f42b7d4392292d"
+    },
+    {
+      "path": "apps/api/internal/content/map_content_test.go",
+      "sha256": "d0409b47df8b7f7edccc1a52d382cf19870e56cc7c5ba31ce37fb88063c9442c"
+    },
+    {
+      "path": "apps/api/internal/postgres/map_content.go",
+      "sha256": "4031cd6afc5e30d571e899da4cd29ca3a8d5d223db068b899b1d3493e2c2229d"
+    },
+    {
+      "path": "apps/api/internal/postgres/map_content_media.go",
+      "sha256": "7d281335b021e095569f0e26aa65fd533d7edc8da1da0602dddb76ed2e47ead0"
+    },
+    {
+      "path": "apps/api/internal/postgres/map_content_display.go",
+      "sha256": "063eeb1689b9d90944c2c478c87e0435fc4b1daf6e810fc64b45a893dad9d63b"
+    },
+    {
+      "path": "apps/api/internal/postgres/map_content_display_test.go",
+      "sha256": "02c9f5c00bc7fa7822b6217d843cbd5a57dcd32e2e90c45b2c826276e68e8fd1"
+    },
+    {
+      "path": "apps/api/internal/postgres/map_content_display_native_test.go",
+      "sha256": "c107d4100b27084e67278964bf8b097497b8f650229c90ed5ecc472764d7486d"
+    },
+    {
+      "path": "apps/api/internal/httpapi/map_content.go",
+      "sha256": "d0d006c8d243bd12be23db211b2c5b8d1ce5fbbf00c442b9821e27928c7a74f2"
+    },
+    {
+      "path": "apps/api/internal/httpapi/map_content_display.go",
+      "sha256": "18ef7d8addd4ec866d2c06fb3750c702a53ed61ac8c932c76586a726c71d80a4"
+    },
+    {
+      "path": "apps/api/internal/httpapi/map_content_display_test.go",
+      "sha256": "7dd40d0c00650f726d06c69e2d101a402dd4edee601233781a957aad6c1b1acf"
+    }
+  ],
+  "contract": {
+    "lazyOptIn": "mediaMode=lazy on existing moment detail and place-moments GET; omitted query preserves old eager response",
+    "lazyMedia": "real original retained media DTO metadata, plus exact displayDescriptorPath for private-image only; video/public-ready display unchanged",
+    "descriptorGET": "/v1/me/map-content/moments/{momentID}/media/{mediaID}/display-descriptor?sourceVersion={originalSourceVersion}",
+    "schemaVersion": "map-content-media-display-v1",
+    "fields": [
+      "schemaVersion",
+      "viewerAccountId",
+      "momentId",
+      "originalSourceVersion",
+      "observedAt",
+      "validUntil",
+      "media"
+    ],
+    "derivedSource": "SHA256(JSON([originalSourceVersion,\"display1280-v1\"]))",
+    "derivedImage": "actual whole-frame JPEG, long edge <=1280, bytes <=262144, true SHA/dimensions, exact variant=display contentPath; no recursive lazy path",
+    "authority": "new descriptor and existing bytes each current session/moment/media ACL + original source binding + pre-write proof; lazy proof preserves mode; no stored cache is authority",
+    "query": "only selected media image header read before generating/getting current-page derivative; old query behavior retained"
+  },
+  "tests": {
+    "direct01": {
+      "status": "PASS",
+      "topLevelPass": [
+        "TestMapContentLazyDisplayDescriptorBindsExactOriginal",
+        "TestMapContentDisplayBoundedWholeFrame",
+        "TestMapContentDisplayCacheBoundsAndVariantIsolation",
+        "TestMapContentDisplayHTTPMediaModeSelection",
+        "TestMapContentDisplayHTTPClosedInputs",
+        "TestMapContentDisplayHTTPDescriptorBinding",
+        "TestMapContentDisplayHTTPCurrentAuthority"
+      ]
+    },
+    "native01": {
+      "status": "PARTIAL_FAIL_PRESERVED",
+      "topLevelPass": [
+        "TestMapContentDisplayNativeCurrentAuthority"
+      ],
+      "failed": "TestMapContentLazy200NativeColdMetadataAndSelectedReads: synthetic fixture omitted required moment_location_links.id; no product path reached"
+    },
+    "native02": {
+      "status": "PASS",
+      "topLevelPass": [
+        "TestMapContentLazy200NativeColdMetadataAndSelectedReads",
+        "TestReviewedCityCameraViewportsNativeIdentityAndReplay"
+      ],
+      "sourceStable": true,
+      "schemaMigrations": 173,
+      "parentIdentityUnchanged": true,
+      "databaseMode": "each native test created and destroyed independently marked disposable child; never production or CIVU"
+    },
+    "uniqueTopLevelPassed": 10
+  },
+  "sameFixtureSQLMetrics": {
+    "coldEagerDetailAndProofMS": 842.851,
+    "coldLazyDetailAndProofMS": 166.67,
+    "detailAndPlaceWithProofHeaderBytes": 4256000,
+    "eagerDetailJSONBytes": 120453,
+    "eagerDisplayBodyFetchBytes": 1064000,
+    "eagerFullPixelDecodes": 200,
+    "fixtureHeight": 320,
+    "fixtureImageBytes": 5320,
+    "fixtureImages": 200,
+    "fixtureWidth": 240,
+    "lazyDetailAndPlaceDisplayBodyFetchBytes": 0,
+    "lazyDetailAndPlaceFullPixelDecodes": 0,
+    "lazyDetailJSONBytes": 162453,
+    "note": "Synthetic isolated PG timings; not 200 full-size image end-to-end performance",
+    "selectedBodyBytes": 10640,
+    "selectedDescriptorProofBytesProofMS": [
+      194.692,
+      181.066
+    ],
+    "selectedFullPixelDecodes": [
+      1,
+      2
+    ]
+  },
+  "singleLargeImageCPUMetrics": {
+    "syntheticSingleImageWidth": 5760,
+    "syntheticSingleImageHeight": 7680,
+    "originalBytes": 954955,
+    "displayBytes": 37875,
+    "coldPixelDecodeScaleEncodeMS": 967.97,
+    "includesDatabaseOrNetwork": false
+  },
+  "metricScope": [
+    "200 synthetic images, each 240x320 and 5320 bytes, real isolated PG, cold display/metadata caches for each mode.",
+    "Detail timings include store read plus pre-response permission proof; no HTTP/client/network/render time.",
+    "Selected timings include descriptor read+proof and binary read+proof; real JPEG SHA, byte count and dimensions checked.",
+    "Header bytes count app-received prefix bytes (up to64KiB per attachment), not PostgreSQL disk/TOAST IO. Small 5320-byte fixture fits entirely inside its header prefix.",
+    "Lazy body counter0 means no full derivative-generation body fetch; header-prefix reads still occur and are explicitly reported.",
+    "A selected request still checks lightweight authority facts for the target moment attachments; only selected image header/pixels are loaded for generation.",
+    "Single 5760x7680 image metric is synthetic decode/scale/encode CPU only, not matched production/phone or200 full-size images."
+  ],
+  "notRun": [
+    "Production API30 deployment/live verification by this worker",
+    "New client phone/browser lazy paging E2E",
+    "200 full-size images HTTP/phone end-to-end or multi-viewer saturation",
+    "PostgreSQL disk/TOAST IO accounting"
+  ],
+  "nonChanges": [
+    "No DDL in lazy-display scope",
+    "No CIVU/backups/production/business writes",
+    "No client/Git/queue/shared report edits",
+    "No deploy/build performed by this worker"
+  ]
+}

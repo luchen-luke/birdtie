@@ -1,0 +1,16 @@
+Flutter assets will be downloaded from https://storage.flutter-io.cn. Make sure you trust this source!
+00:00 +0: loading D:/Project/birdtie/apps/client/test/content_map_lazy_display_test.dart
+00:00 +0: D:/Project/birdtie/apps/client/test/content_map_lazy_display_test.dart: panel page change retires a pending descriptor before old bytes start
+00:00 +1: D:/Project/birdtie/apps/client/test/content_map_lazy_display_test.dart: panel page change retires a pending descriptor before old bytes start
+00:00 +2: D:/Project/birdtie/apps/client/test/content_map_panel_test.dart: cluster continuation renews the bounded current window after thirty seconds instead of returning to page one
+00:00 +3: D:/Project/birdtie/apps/client/test/content_map_panel_test.dart: cluster continuation renews the bounded current window after thirty seconds instead of returning to page one
+00:00 +4: D:/Project/birdtie/apps/client/test/content_map_panel_test.dart: cluster continuation renews the bounded current window after thirty seconds instead of returning to page one
+00:01 +5: D:/Project/birdtie/apps/client/test/content_map_panel_test.dart: cluster continuation renews the bounded current window after thirty seconds instead of returning to page one
+00:01 +6: D:/Project/birdtie/apps/client/test/content_map_panel_test.dart: cluster continuation renews the bounded current window after thirty seconds instead of returning to page one
+00:01 +7: D:/Project/birdtie/apps/client/test/content_map_panel_test.dart: cluster continuation renews the bounded current window after thirty seconds instead of returning to page one
+00:01 +8: D:/Project/birdtie/apps/client/test/content_map_panel_test.dart: cluster continuation renews the bounded current window after thirty seconds instead of returning to page one
+00:01 +9: D:/Project/birdtie/apps/client/test/content_map_panel_test.dart: cluster continuation renews the bounded current window after thirty seconds instead of returning to page one
+00:01 +10: D:/Project/birdtie/apps/client/test/content_map_panel_test.dart: cluster continuation renews the bounded current window after thirty seconds instead of returning to page one
+00:04 +11: D:/Project/birdtie/apps/client/test/content_map_panel_test.dart: actual cluster panel pages, opens exact anchor detail, returns to loaded group and retires permission
+00:04 +12: D:/Project/birdtie/apps/client/test/content_map_panel_test.dart: parent renewal cannot extend child grant; expiry clears names during failure and retry restores loaded exact selection
+00:05 +13: All tests passed!

@@ -152,6 +152,10 @@ class OwnedMapMediaController extends ChangeNotifier {
       selectedPNG: entry.selected!,
       devicePixelRatio: entry.ratio,
       current: () => _current(grant),
+      validUntil:
+          pin.validUntil != null && pin.validUntil!.isBefore(grant.until)
+          ? pin.validUntil
+          : grant.until,
     );
     return pin.entity.withMediaPixels(grant.pixels);
   }

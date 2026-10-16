@@ -7,6 +7,9 @@ environment:
   sdk: ^3.12.2
 
 dependencies:
+  amap_map:
+    path: packages/amap_map
+  x_amap_base: 1.0.3
   crypto: 3.0.7
   image_picker: 1.2.4
   file_selector: 1.1.0

@@ -1,0 +1,31 @@
+{
+  "command": [
+    "D:\\DevTools\\flutter\\bin\\flutter.bat",
+    "test",
+    "--no-pub",
+    "test/map_coordinate_boundary_test.dart",
+    "--reporter",
+    "expanded"
+  ],
+  "cwd": "D:\\Project\\birdtie\\apps\\client",
+  "startedAtUTC": "2026-10-16T02:09:43.384248+00:00",
+  "finishedAtUTC": "2026-10-16T02:09:46.066688+00:00",
+  "exitCode": 0,
+  "sourceBefore": {
+    "apps/client/lib/src/city/map_coordinate_boundary.dart": "38d889ffbc12fea7ed464896f25ff1c8410da067136c45dc217c3dba59d4d5f3",
+    "apps/client/test/map_coordinate_boundary_test.dart": "06b27e457e2fd512c84a113c9f4c218f844fa19dfc690f84d80eb502e91828a3",
+    "apps/client/lib/src/workspace/map_marker_visual.dart": "17dd909d2f50eb5411dcba1a3c65946b813d44c6ab9c98a5f735da51ec93e821",
+    "apps/client/lib/src/workspace/owned_map_media_controller.dart": "8f2d13e4d5b3d39dfe67006a3aed0de78438a17df701e5d1070ecd47843eca6c",
+    "apps/client/test/content_map_controller_test.dart": "2e7ae5e20119a07577e2916ea218bdf9d612f014548a7957c331369f90cc7a14"
+  },
+  "sourceAfter": {
+    "apps/client/lib/src/city/map_coordinate_boundary.dart": "38d889ffbc12fea7ed464896f25ff1c8410da067136c45dc217c3dba59d4d5f3",
+    "apps/client/test/map_coordinate_boundary_test.dart": "06b27e457e2fd512c84a113c9f4c218f844fa19dfc690f84d80eb502e91828a3",
+    "apps/client/lib/src/workspace/map_marker_visual.dart": "17dd909d2f50eb5411dcba1a3c65946b813d44c6ab9c98a5f735da51ec93e821",
+    "apps/client/lib/src/workspace/owned_map_media_controller.dart": "8f2d13e4d5b3d39dfe67006a3aed0de78438a17df701e5d1070ecd47843eca6c",
+    "apps/client/test/content_map_controller_test.dart": "2e7ae5e20119a07577e2916ea218bdf9d612f014548a7957c331369f90cc7a14"
+  },
+  "sourceStable": true,
+  "logSHA256": "2b6dffe1cd42c1dc97b1c4bebf4af711086c58e11442314b46af9e21d5f16508",
+  "scope": "Pinned MIT fixtures and targeted inverse envelope edge regression after integration review. Media tests were not repeated. No live provider precision claim."
+}

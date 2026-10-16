@@ -1,0 +1,8 @@
+Flutter assets will be downloaded from https://storage.flutter-io.cn. Make sure you trust this source!
+00:00 +0: loading D:/Project/birdtie/apps/client/packages/amap_map/test/amap_lifecycle_test.dart
+00:00 +0: AMap disposal cancels all streams and native handlers without late revival
+initState AMapWidget
+deactivate AMapWidget
+initState AMapWidget
+deactivate AMapWidget
+00:00 +1: All tests passed!

@@ -1,0 +1,126 @@
+{
+  "status": "ACTUAL_PHONE_HTTP_OBSERVATION",
+  "requests": [
+    {
+      "category": "map-viewport",
+      "lazyMode": false,
+      "status": 200,
+      "completed": true,
+      "elapsedMs": 747.332
+    },
+    {
+      "category": "map-viewport",
+      "lazyMode": false,
+      "status": 200,
+      "completed": true,
+      "elapsedMs": 647.859
+    },
+    {
+      "category": "other",
+      "lazyMode": false,
+      "status": 200,
+      "completed": true,
+      "elapsedMs": 448.598
+    },
+    {
+      "category": "map-viewport",
+      "lazyMode": false,
+      "status": 200,
+      "completed": true,
+      "elapsedMs": 629.194
+    },
+    {
+      "category": "map-viewport",
+      "lazyMode": false,
+      "status": 200,
+      "completed": true,
+      "elapsedMs": 679.825
+    },
+    {
+      "category": "place-moments",
+      "lazyMode": true,
+      "status": 200,
+      "completed": true,
+      "elapsedMs": 479.233
+    },
+    {
+      "category": "other",
+      "lazyMode": false,
+      "status": 200,
+      "completed": true,
+      "elapsedMs": 476.93
+    },
+    {
+      "category": "display-descriptor",
+      "lazyMode": false,
+      "status": 200,
+      "completed": true,
+      "elapsedMs": 3552.158
+    },
+    {
+      "category": "display-image",
+      "lazyMode": false,
+      "status": 200,
+      "completed": true,
+      "elapsedMs": 1332.288
+    },
+    {
+      "category": "map-viewport",
+      "lazyMode": false,
+      "status": 200,
+      "completed": true,
+      "elapsedMs": 686.141
+    },
+    {
+      "category": "place-moments",
+      "lazyMode": true,
+      "status": 200,
+      "completed": true,
+      "elapsedMs": 625.058
+    },
+    {
+      "category": "other",
+      "lazyMode": false,
+      "status": 200,
+      "completed": true,
+      "elapsedMs": 463.766
+    },
+    {
+      "category": "display-descriptor",
+      "lazyMode": false,
+      "status": 200,
+      "completed": true,
+      "elapsedMs": 687.913
+    },
+    {
+      "category": "display-image",
+      "lazyMode": false,
+      "status": 200,
+      "completed": true,
+      "elapsedMs": 1358.296
+    },
+    {
+      "category": "map-viewport",
+      "lazyMode": false,
+      "status": 200,
+      "completed": true,
+      "elapsedMs": 688.739
+    },
+    {
+      "category": "place-moments",
+      "lazyMode": true,
+      "status": 200,
+      "completed": true,
+      "elapsedMs": 479.288
+    },
+    {
+      "category": "map-viewport",
+      "lazyMode": false,
+      "status": 200,
+      "completed": true,
+      "elapsedMs": 792.972
+    }
+  ],
+  "rawURLsStored": false,
+  "loggingDisabledAndProfileCleared": true
+}

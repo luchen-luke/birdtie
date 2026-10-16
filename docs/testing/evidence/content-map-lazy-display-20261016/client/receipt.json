@@ -1,0 +1,142 @@
+{
+  "schema": "birdtie-reconstructed-test-log-receipt-v1",
+  "provenance": "RECONSTRUCTED_FROM_LOG",
+  "archived_at_utc": "2026-10-16T01:45:24.427059+00:00",
+  "new_tests_run_by_archiver": false,
+  "production_accessed_by_archiver": false,
+  "files": [
+    {
+      "file": "lazy-display-client-test01.log",
+      "original_path": "D:\\Project\\birdtie\\work\\lazy-display-client-test01.log",
+      "byte_count": 6500,
+      "sha256": "0747458fb84c5e6d405429b7c484bc7d7668b506e8bbc15b2fa9f142ada82ad4",
+      "provenance": "RECONSTRUCTED_FROM_LOG",
+      "command": null,
+      "command_status": "UNKNOWN_NOT_CAPTURED_IN_LOG_OR_LOCATED_RUNNER",
+      "cwd": null,
+      "cwd_status": "UNKNOWN_NOT_CAPTURED",
+      "exit_code": null,
+      "exit_code_status": "UNKNOWN_NOT_CAPTURED",
+      "execution_started_at": null,
+      "execution_finished_at": null,
+      "source_hash_at_execution": null,
+      "source_hash_status": "UNKNOWN_NO_HISTORICAL_SOURCE_FRAME; CURRENT_FILES_NOT_SUBSTITUTED",
+      "observed_test_root": "D:/Project/birdtie/apps/client",
+      "result": "FAIL",
+      "passed_tests": 5,
+      "failed_test_file_loads": 1,
+      "executed_new_lazy_test_cases": 0,
+      "failure": "LazyFixture.read conflicts with inherited BaseClient.read: incompatible return type and missing positional/named arguments.",
+      "observed_files": [
+        "test/content_map_lazy_display_test.dart",
+        "test/content_map_display_test.dart",
+        "test/content_map_reader_test.dart"
+      ]
+    },
+    {
+      "file": "lazy-display-client-test02.log",
+      "original_path": "D:\\Project\\birdtie\\work\\lazy-display-client-test02.log",
+      "byte_count": 548,
+      "sha256": "85347f64c89e5676bf79066141485efd99f7ddde68c8d69f9839da94b7951566",
+      "provenance": "RECONSTRUCTED_FROM_LOG",
+      "command": null,
+      "command_status": "UNKNOWN_NOT_CAPTURED_IN_LOG_OR_LOCATED_RUNNER",
+      "cwd": null,
+      "cwd_status": "UNKNOWN_NOT_CAPTURED",
+      "exit_code": null,
+      "exit_code_status": "UNKNOWN_NOT_CAPTURED",
+      "execution_started_at": null,
+      "execution_finished_at": null,
+      "source_hash_at_execution": null,
+      "source_hash_status": "UNKNOWN_NO_HISTORICAL_SOURCE_FRAME; CURRENT_FILES_NOT_SUBSTITUTED",
+      "observed_test_root": "D:/Project/birdtie/apps/client",
+      "result": "PASS",
+      "passed_tests": 4,
+      "failed_tests": 0,
+      "observed_files": [
+        "test/content_map_lazy_display_test.dart"
+      ]
+    },
+    {
+      "file": "lazy-display-client-test03.log",
+      "original_path": "D:\\Project\\birdtie\\work\\lazy-display-client-test03.log",
+      "byte_count": 548,
+      "sha256": "85347f64c89e5676bf79066141485efd99f7ddde68c8d69f9839da94b7951566",
+      "provenance": "RECONSTRUCTED_FROM_LOG",
+      "command": null,
+      "command_status": "UNKNOWN_NOT_CAPTURED_IN_LOG_OR_LOCATED_RUNNER",
+      "cwd": null,
+      "cwd_status": "UNKNOWN_NOT_CAPTURED",
+      "exit_code": null,
+      "exit_code_status": "UNKNOWN_NOT_CAPTURED",
+      "execution_started_at": null,
+      "execution_finished_at": null,
+      "source_hash_at_execution": null,
+      "source_hash_status": "UNKNOWN_NO_HISTORICAL_SOURCE_FRAME; CURRENT_FILES_NOT_SUBSTITUTED",
+      "observed_test_root": "D:/Project/birdtie/apps/client",
+      "result": "PASS",
+      "passed_tests": 4,
+      "failed_tests": 0,
+      "observed_files": [
+        "test/content_map_lazy_display_test.dart"
+      ]
+    },
+    {
+      "file": "lazy-display-client-analyze01.log",
+      "original_path": "D:\\Project\\birdtie\\work\\lazy-display-client-analyze01.log",
+      "byte_count": 8068,
+      "sha256": "ea05a5c7bdfa036d280bfc76538eee482588e430d2272d4894b67a6383d15b87",
+      "provenance": "RECONSTRUCTED_FROM_LOG",
+      "command": null,
+      "command_status": "UNKNOWN_NOT_CAPTURED_IN_LOG_OR_LOCATED_RUNNER",
+      "cwd": null,
+      "cwd_status": "UNKNOWN_NOT_CAPTURED",
+      "exit_code": null,
+      "exit_code_status": "UNKNOWN_NOT_CAPTURED",
+      "execution_started_at": null,
+      "execution_finished_at": null,
+      "source_hash_at_execution": null,
+      "source_hash_status": "UNKNOWN_NO_HISTORICAL_SOURCE_FRAME; CURRENT_FILES_NOT_SUBSTITUTED",
+      "observed_test_root": "D:/Project/birdtie/apps/client",
+      "result": "DIAGNOSTICS_CAPTURED_NO_ERROR_OR_WARNING",
+      "diagnostic_count": 42,
+      "severity_counts": {
+        "INFO": 42
+      },
+      "observed_files": [
+        "lib/src/workspace/owned_map_api.dart",
+        "lib/src/workspace/owned_map_controller.dart",
+        "test/content_map_lazy_display_test.dart"
+      ]
+    }
+  ],
+  "summary": {
+    "test01": "5 existing test cases passed; new lazy test file failed compilation, so its cases did not execute",
+    "test02": "4 lazy test cases passed",
+    "test03": "4 same lazy test cases passed again",
+    "distinct_passing_test_cases": 9,
+    "passing_executions_in_archived_logs": 13,
+    "current_new_panel_retirement_and_video_renewal_tests": "NOT_RUN_IN_THESE_LOGS",
+    "analyze_diagnostics": {
+      "INFO": 42
+    }
+  },
+  "caller_context_not_independently_proven_by_log": {
+    "test03": "Root identifies this as the final run after the aspect-ratio tolerance adjustment; logs do not bind that adjustment to a historical source hash."
+  },
+  "command_search": {
+    "searched": [
+      "root task cwd/work *.py, *.ps1, *.json, *.md",
+      "D:/Project/birdtie/work *.py, *.ps1, *.json, *.md"
+    ],
+    "method": "rg for exact log basenames and lazy test runner references",
+    "result": "No matching historical runner found. New test_lazy_retirement.py is a separate later run and was not used to reconstruct these commands."
+  },
+  "limitations": [
+    "Archive hashes prove saved log bytes only, not tested source versions.",
+    "Test working directory, exact command, process exit code, runtime versions and execution timestamps were not captured in these logs.",
+    "Observed absolute test/source paths do not prove the process cwd.",
+    "No claim of device, browser, production API, real media playback, or full publish-chain verification.",
+    "Analysis log contains informational diagnostics; no aggregate tool exit status was preserved."
+  ]
+}

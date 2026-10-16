@@ -774,8 +774,10 @@ class OwnedMapMomentMedia {
     required this.videoCodec,
     required this.audioCodec,
     required this.poster,
+    this.displayDescriptorPath,
   });
   final String kind, id, mimeType, sha256, sourceVersion, contentPath;
+  final String? displayDescriptorPath;
   final int revision, width, height, byteCount;
   final int? durationMs;
   final String? videoCodec, audioCodec;
@@ -787,22 +789,26 @@ class OwnedMapMomentMedia {
     String momentID,
     String visibilitySource,
   ) {
-    final v = humanControlObject(raw, {
-      'kind',
-      'id',
-      'revision',
-      'mimeType',
-      'width',
-      'height',
-      'byteCount',
-      'sha256',
-      'sourceVersion',
-      'contentPath',
-      'durationMs',
-      'videoCodec',
-      'audioCodec',
-      'poster',
-    });
+    final v = humanControlObject(
+      raw,
+      {
+        'kind',
+        'id',
+        'revision',
+        'mimeType',
+        'width',
+        'height',
+        'byteCount',
+        'sha256',
+        'sourceVersion',
+        'contentPath',
+        'durationMs',
+        'videoCodec',
+        'audioCodec',
+        'poster',
+      },
+      optional: {'displayDescriptorPath'},
+    );
     final video = v['kind'] == 'VIDEO';
     if (!const {'IMAGE', 'VIDEO'}.contains(v['kind']) ||
         !humanControlID(v['id']) ||
@@ -837,6 +843,14 @@ class OwnedMapMomentMedia {
     }
     final path = Uri.tryParse(v['contentPath']);
     final display = path?.queryParameters['variant'] == 'display';
+    final descriptor = v['displayDescriptorPath'];
+    if (descriptor != null &&
+        (video ||
+            display ||
+            descriptor !=
+                '/v1/me/map-content/moments/$momentID/media/${v['id']}/display-descriptor?sourceVersion=${v['sourceVersion']}')) {
+      throw const FormatException('地图图片阅读来源不符');
+    }
     if (path == null ||
         path.hasScheme ||
         path.hasAuthority ||
@@ -874,6 +888,71 @@ class OwnedMapMomentMedia {
       videoCodec: v['videoCodec'],
       audioCodec: v['audioCodec'],
       poster: poster,
+      displayDescriptorPath: descriptor,
+    );
+  }
+}
+
+/// Exact bytes for one selected image. A descriptor is not a renewed grant:
+/// the caller must keep the original detail and identity current throughout.
+class OwnedMapDisplayDescriptor {
+  const OwnedMapDisplayDescriptor(this.media, this.validUntil);
+  final OwnedMapMomentMedia media;
+  final DateTime validUntil;
+
+  factory OwnedMapDisplayDescriptor.decode(
+    Object? raw, {
+    required OwnedMapMomentDetail detail,
+    required OwnedMapMomentMedia original,
+    required DateTime now,
+  }) {
+    final v = humanControlObject(raw, {
+      'schemaVersion',
+      'viewerAccountId',
+      'momentId',
+      'originalSourceVersion',
+      'observedAt',
+      'validUntil',
+      'media',
+    });
+    if (v['schemaVersion'] != 'map-content-media-display-v1' ||
+        v['viewerAccountId'] != detail.viewerAccountID ||
+        v['momentId'] != detail.id ||
+        v['originalSourceVersion'] != original.sourceVersion ||
+        original.isVideo ||
+        original.displayDescriptorPath == null ||
+        !detail.media.any((item) => identical(item, original)) ||
+        !detail.validUntil.isAfter(now)) {
+      throw const FormatException('图片阅读描述已失效');
+    }
+    final lease = _lease(v, now);
+    final media = OwnedMapMomentMedia.decode(
+      v['media'],
+      detail.id,
+      detail.visibilitySource,
+    );
+    final expectedSource = sha256
+        .convert(
+          utf8.encode(jsonEncode([original.sourceVersion, 'display1280-v1'])),
+        )
+        .toString();
+    if (media.isVideo ||
+        media.id != original.id ||
+        media.revision != original.revision ||
+        media.sourceVersion != expectedSource ||
+        media.displayDescriptorPath != null ||
+        media.contentPath !=
+            '/v1/me/map-content/moments/${detail.id}/media/${original.id}/content?sourceVersion=$expectedSource&variant=display' ||
+        media.width > original.width ||
+        media.height > original.height ||
+        // The byte-budget fallback can perform several integer resamplings.
+        (media.width * original.height - media.height * original.width).abs() >
+            4 * (original.width + original.height)) {
+      throw const FormatException('图片阅读描述来源不符');
+    }
+    return OwnedMapDisplayDescriptor(
+      media,
+      lease.$2.isBefore(detail.validUntil) ? lease.$2 : detail.validUntil,
     );
   }
 }
@@ -1421,6 +1500,7 @@ class OwnedMapAPI {
     final value = OwnedMapMomentDetail.decode(
       await _json(
         target.detailPath,
+        query: const {'mediaMode': 'lazy'},
         authorization: authorization,
         origin: origin,
         current: current,
@@ -1452,7 +1532,7 @@ class OwnedMapAPI {
     final value = OwnedMapPlacePage.decode(
       await _json(
         '/v1/me/map-content/places/$placeID/moments',
-        query: cursor == null ? null : {'cursor': cursor},
+        query: {'mediaMode': 'lazy', if (cursor != null) 'cursor': cursor},
         authorization: authorization,
         origin: origin,
         current: current,
@@ -1497,20 +1577,43 @@ class OwnedMapAPI {
 
   Future<Uint8List> momentContent(
     OwnedMapMomentMedia media, {
+    required OwnedMapMomentDetail detail,
+    required DateTime Function() now,
     required String authorization,
     required String origin,
     required bool Function() current,
   }) async {
+    var selected = media;
+    var until = detail.validUntil;
+    bool pending() => current() && until.isAfter(now());
+    if (media.displayDescriptorPath != null) {
+      final path = Uri.parse(media.displayDescriptorPath!);
+      final descriptor = OwnedMapDisplayDescriptor.decode(
+        await _json(
+          path.path,
+          query: path.queryParameters,
+          authorization: authorization,
+          origin: origin,
+          current: pending,
+        ),
+        detail: detail,
+        original: media,
+        now: now(),
+      );
+      if (!pending()) throw const FormatException('图片阅读已失效');
+      selected = descriptor.media;
+      until = descriptor.validUntil;
+    }
     final bytes = await _read(
-      Uri.parse(origin).resolve(media.contentPath),
+      Uri.parse(origin).resolve(selected.contentPath),
       authorization: authorization,
-      current: current,
-      limit: media.byteCount,
-      exact: media.byteCount,
-      mime: media.mimeType,
+      current: pending,
+      limit: selected.byteCount,
+      exact: selected.byteCount,
+      mime: selected.mimeType,
     );
     try {
-      if (!current() || sha256.convert(bytes).toString() != media.sha256)
+      if (!pending() || sha256.convert(bytes).toString() != selected.sha256)
         throw const FormatException('地图动态媒体内容不符');
       if (media.isVideo) {
         if (bytes.length < 12 ||
@@ -1523,9 +1626,9 @@ class OwnedMapAPI {
           storedDerivative: true,
           importedLegacyPrivate: true,
         );
-        if (header.mime != media.mimeType ||
-            header.width != media.width ||
-            header.height != media.height) {
+        if (header.mime != selected.mimeType ||
+            header.width != selected.width ||
+            header.height != selected.height) {
           throw const FormatException('地图图片内容不符');
         }
       }

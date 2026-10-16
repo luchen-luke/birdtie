@@ -1,0 +1,22 @@
+✔ actual nonlinear SDK pixels and 115 original ID buttons, with stable nodes on mapmove (9.7215ms)
+✔ source withdrawal clears DOM/title/pixels synchronously; source and identity ABA retire saved clicks (2.8795ms)
+✔ retired nonzero ring layout is rejected and no leader nodes can return (1.6731ms)
+✔ late coordinates never restore withdrawn source, and fresh source can use the same ID (3.9046ms)
+✔ dispose before SDK and loader completion creates no map or late callback (2.4411ms)
+✔ reader covers native map interaction, cancelled drag cannot select and dispose destroys exactly once (1.7946ms)
+✔ 114 distinct original coordinates use bounded deduplicated 40/40/34 conversion batches (4.2882ms)
+✔ failed batch length never borrows prior coordinate cache or renders a partial current source (1.7847ms)
+✔ same-scope source updates retain unchanged nodes and coordinate conversions; stale clicks cannot revive (1.4558ms)
+✔ initial and burst wheel/rotation settled frames publish actual SDK corners and latest zoom once (1.331ms)
+✔ leased owned cover updates without null legacy photo metadata, expired bytes clear on next grant (1.6225ms)
+✔ display task cluster is bounded transport with exact current members and retires when a member is removed (2.716ms)
+✔ owned content and aggregate retain square full-size targets, counts and explicit map coordinate selection (1.1851ms)
+✔ loader/SDK/coordinate deadlines report failure, ignore late callbacks and dispose clears every timer (3.2228ms)
+ℹ tests 14
+ℹ suites 0
+ℹ pass 14
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 99.5263

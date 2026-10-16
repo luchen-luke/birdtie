@@ -1,0 +1,512 @@
+{
+  "status": "FAIL",
+  "headless": true,
+  "browserVersion": "155.0.8059.40",
+  "nonPersistentContext": true,
+  "privateValuesPersisted": false,
+  "contentWrites": 0,
+  "checks": [
+    {
+      "check": "EXPECTED_WEB34_MANIFEST",
+      "passed": true
+    },
+    {
+      "check": "PINNED_OWNER",
+      "passed": true
+    },
+    {
+      "check": "CITY_VIDEO_\u6c55\u5934\u5e02",
+      "passed": true,
+      "proof": {
+        "city": "\u6c55\u5934\u5e02",
+        "playbackAdvanced": true,
+        "playerHealthy": true,
+        "exactAuthorizedEntryReadByUI": true,
+        "returnedSameMapDOM": true,
+        "playerReleased": true
+      }
+    },
+    {
+      "check": "SHANTOU_VISIBLE_MAP_AFTER_RETURN",
+      "passed": true,
+      "notes": "After physical close at observed 48px return control, content list absent; screenshot and single retained map DOM."
+    },
+    {
+      "check": "SHANGHAI_FIRST_VIDEO_ATTEMPT",
+      "passed": false,
+      "notes": "Original 104-second video showed explicit load-failed retry UI after click; no video element. Preserved cm-web34-shanghai-video.png before retry."
+    },
+    {
+      "check": "CITY_VIDEO_\u4e0a\u6d77\u5e02",
+      "passed": true,
+      "proof": {
+        "city": "\u4e0a\u6d77\u5e02",
+        "playbackAdvanced": true,
+        "playerHealthy": true,
+        "exactAuthorizedEntryReadByUI": true,
+        "returnedSameMapDOM": true,
+        "playerReleased": true
+      }
+    },
+    {
+      "check": "SHANGHAI_VISIBLE_MAP_AFTER_RETURN",
+      "passed": true,
+      "notes": "Physical close of observed 48px return control restored visible city map, no content panel; map DOM retained and video released."
+    }
+  ],
+  "metrics": {
+    "mapQueries": 25,
+    "memberQueries": 0,
+    "placeReads": 15,
+    "momentReads": 0,
+    "coverReads": 15,
+    "denials": 2,
+    "contentWrites": 0,
+    "blockedWrites": 0,
+    "failedRequests": 39,
+    "browserPageErrors": 0,
+    "markerReads": 13,
+    "avatarReads": 1,
+    "detailMediaReads": 1,
+    "descriptorReads": 1,
+    "auditMetadataReads": 6
+  },
+  "events": [
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 12.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 12.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 11.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 11.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 11.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 11.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 11.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 11.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "detail"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 11.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "detail"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 11.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "detail"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 11.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "detail"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 11.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "detail"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 11.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 11.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 11.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 11.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 11.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 11.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "detail"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 11.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "detail"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 11.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "detail"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 11.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "detail"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 11.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "detail"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 11.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "detail"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 11.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 11.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "detail"
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "detail"
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "detail"
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "detail"
+    }
+  ],
+  "logout": "PASS",
+  "release": {
+    "web": 34,
+    "api": 30,
+    "schema": 173,
+    "manifestSHA256": "7c676913aa61b68ad7e582ef80028b44996c02d4d0e3a95b7f67667faf2cbc42",
+    "apiSHA256": "4cc70262b66cffa0061a79fa91fdc7f622de23aedd5552a713b5e1070a7b9900"
+  },
+  "screenshots": [
+    {
+      "path": "C:\\Users\\chens\\Documents\\Codex\\2026-10-15\\d-project-birdtie-docs-reports-birdtie-2\\outputs\\cm-web34-shantou-map.png",
+      "sha256": "8adb7b71d2d10082996152515ee8144e65cd6a5ddd9c474faa20ab2713626e0d"
+    },
+    {
+      "path": "C:\\Users\\chens\\Documents\\Codex\\2026-10-15\\d-project-birdtie-docs-reports-birdtie-2\\outputs\\cm-web34-shantou-video.png",
+      "sha256": "4c3a0aa6a17c4647175d0de0a306b54bf0928d01723a120c13364b6406749e2f"
+    },
+    {
+      "path": "C:\\Users\\chens\\Documents\\Codex\\2026-10-15\\d-project-birdtie-docs-reports-birdtie-2\\outputs\\cm-web34-shantou-return-map.png",
+      "sha256": "8adb7b71d2d10082996152515ee8144e65cd6a5ddd9c474faa20ab2713626e0d"
+    },
+    {
+      "path": "C:\\Users\\chens\\Documents\\Codex\\2026-10-15\\d-project-birdtie-docs-reports-birdtie-2\\outputs\\cm-web34-shanghai-map.png",
+      "sha256": "9acbbf7c6f82eb736a2513cadaaa33629f58fb897d9188713c6b579cdc79c96b"
+    },
+    {
+      "path": "C:\\Users\\chens\\Documents\\Codex\\2026-10-15\\d-project-birdtie-docs-reports-birdtie-2\\outputs\\cm-web34-shanghai-video.png",
+      "sha256": "1cec1deeb0eb7973e75697ab42564fd2a700f7081ae1a4a2d544317a965253d6"
+    },
+    {
+      "path": "C:\\Users\\chens\\Documents\\Codex\\2026-10-15\\d-project-birdtie-docs-reports-birdtie-2\\outputs\\cm-web34-shanghai-video-retry.png",
+      "sha256": "b9d3247820fc66d13eda0413877b80bf569fa65507a652d22c2636aae46afa7b"
+    },
+    {
+      "path": "C:\\Users\\chens\\Documents\\Codex\\2026-10-15\\d-project-birdtie-docs-reports-birdtie-2\\outputs\\cm-web34-shanghai-return-map.png",
+      "sha256": "0c274d2f636d927288048b032c1b3f43a0e19ed3080aed0f8b70766e6677bed7"
+    }
+  ],
+  "playbacks": {
+    "\u6c55\u5934\u5e02": [
+      {
+        "paused": false,
+        "currentTime": 15.078588,
+        "duration": 33.932479,
+        "readyState": 4,
+        "error": null,
+        "width": 1280,
+        "height": 720
+      },
+      {
+        "paused": false,
+        "currentTime": 25.832232,
+        "duration": 33.932479,
+        "readyState": 4,
+        "error": null,
+        "width": 1280,
+        "height": 720
+      }
+    ],
+    "\u4e0a\u6d77\u5e02": [
+      {
+        "paused": false,
+        "currentTime": 20.666146,
+        "duration": 104.820375,
+        "readyState": 4,
+        "error": null,
+        "width": 1280,
+        "height": 720
+      },
+      {
+        "paused": false,
+        "currentTime": 40.990775,
+        "duration": 104.820375,
+        "readyState": 4,
+        "error": null,
+        "width": 1280,
+        "height": 720
+      }
+    ]
+  },
+  "scope": "Two reviewed city entries and one existing authorized video per city; no Aberdeen repeat; old city-entry failure retained",
+  "notRun": [
+    "Screen recording",
+    "Publishing/editing/deleting content",
+    "Full release regression"
+  ]
+}

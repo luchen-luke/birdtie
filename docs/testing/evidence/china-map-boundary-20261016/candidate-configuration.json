@@ -1,0 +1,18 @@
+{
+  "status": "CANDIDATE_BUILD_WITHOUT_AMAP_CONFIGURATION",
+  "androidAMapDartKeyConfigured": false,
+  "webAMapJSKeyConfigured": false,
+  "webAMapSecurityProxyConfigured": false,
+  "knownAndroidPackage": "app.civu.civu_mobile.birdtiepreview",
+  "verifiedAPK34SigningSHA1": "73840a17d0ca7b4bf41541b42cecb7a234d50523",
+  "installOrDeploy": false,
+  "licenseNoticesSHA256": "44600ace573f3a64cd8078b3089f9b6cec54880a69921269cdfe29d583e1d4a7",
+  "compileSdkRepair": {
+    "oldCandidate": "candidate-apk35",
+    "status": "FAILED_AAR_METADATA_SDK35",
+    "newCandidate": "candidate-apk35-r2",
+    "compileSdk": 36,
+    "licenseNoticesSHA256": "f083be52f90050c594f9cf989211e748c96790a95bc28fe3f114c86db733dc8c",
+    "installOrDeploy": false
+  }
+}

@@ -17,6 +17,7 @@ func (s *server) RegisterMapContentRoutes(m *http.ServeMux) {
 	m.HandleFunc("GET /v1/me/map-content/moments/{momentID}", s.readMapContentMoment)
 	m.HandleFunc("GET /v1/me/map-content/places/{placeID}/images/{imageID}/content", s.readMapContentImage)
 	m.HandleFunc("GET /v1/me/map-content/moments/{momentID}/media/{mediaID}/content", s.readMapContentMedia)
+	m.HandleFunc("GET /v1/me/map-content/moments/{momentID}/media/{mediaID}/display-descriptor", s.readMapContentDisplayDescriptor)
 }
 func mapContentQueryValues(r *http.Request, keys ...string) (url.Values, error) {
 	v, e := referenceQuery(r)
@@ -89,9 +90,9 @@ func (s *server) readMapContent(w http.ResponseWriter, r *http.Request) {
 }
 func (s *server) readMapContentPlace(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "private, no-store")
-	v, e := mapContentQueryValues(r, "cursor")
+	v, e := mapContentQueryValues(r, "cursor", "mediaMode")
 	id := r.PathValue("placeID")
-	if e != nil || len(v) > 1 || !identity.HumanControlUUID(id) || len(v.Get("cursor")) > 4096 {
+	if e != nil || len(v) > 2 || !validMapMediaMode(v) || !identity.HumanControlUUID(id) || len(v.Get("cursor")) > 4096 {
 		momentControlFailure(w, content.ErrInvalid)
 		return
 	}
@@ -103,7 +104,16 @@ func (s *server) readMapContentPlace(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	page, e := p.ReadHumanMapContentPlace(r.Context(), d, a, id, v.Get("cursor"))
+	var page content.MapContentPlacePage
+	if v.Get("mediaMode") == "lazy" {
+		lazy, yes := s.mapContentLazyPort(w)
+		if !yes {
+			return
+		}
+		page, e = lazy.ReadHumanMapContentPlaceLazy(r.Context(), d, a, id, v.Get("cursor"))
+	} else {
+		page, e = p.ReadHumanMapContentPlace(r.Context(), d, a, id, v.Get("cursor"))
+	}
 	if e != nil {
 		momentControlFailure(w, e)
 		return
@@ -117,7 +127,8 @@ func (s *server) readMapContentPlace(w http.ResponseWriter, r *http.Request) {
 func (s *server) readMapContentMoment(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "private, no-store")
 	id := r.PathValue("momentID")
-	if r.URL.RawQuery != "" || r.URL.ForceQuery || len(r.Header.Values("X-Birdtie-Organization-Workspace")) > 0 || !identity.HumanControlUUID(id) {
+	query, e := mapContentQueryValues(r, "mediaMode")
+	if e != nil || !validMapMediaMode(query) || r.URL.ForceQuery || len(r.Header.Values("X-Birdtie-Organization-Workspace")) > 0 || !identity.HumanControlUUID(id) {
 		momentControlFailure(w, content.ErrInvalid)
 		return
 	}
@@ -129,7 +140,16 @@ func (s *server) readMapContentMoment(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	v, e := p.ReadHumanMapContentMoment(r.Context(), d, a, id)
+	var v content.MapContentMoment
+	if query.Get("mediaMode") == "lazy" {
+		lazy, yes := s.mapContentLazyPort(w)
+		if !yes {
+			return
+		}
+		v, e = lazy.ReadHumanMapContentMomentLazy(r.Context(), d, a, id)
+	} else {
+		v, e = p.ReadHumanMapContentMoment(r.Context(), d, a, id)
+	}
 	if e != nil {
 		momentControlFailure(w, e)
 		return

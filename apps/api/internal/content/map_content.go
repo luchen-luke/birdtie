@@ -189,20 +189,21 @@ type MapContentLocation struct {
 	Anchor  *MapContentAnchor `json:"anchor"`
 }
 type MapContentMedia struct {
-	Kind          string           `json:"kind"`
-	ID            string           `json:"id"`
-	Revision      int64            `json:"revision"`
-	MIMEType      string           `json:"mimeType"`
-	Width         int              `json:"width"`
-	Height        int              `json:"height"`
-	ByteCount     int              `json:"byteCount"`
-	SHA256        string           `json:"sha256"`
-	SourceVersion string           `json:"sourceVersion"`
-	ContentPath   string           `json:"contentPath"`
-	DurationMs    *int64           `json:"durationMs"`
-	VideoCodec    *string          `json:"videoCodec"`
-	AudioCodec    *string          `json:"audioCodec"`
-	Poster        *MapContentImage `json:"poster"`
+	DisplayDescriptorPath string           `json:"displayDescriptorPath,omitempty"`
+	Kind                  string           `json:"kind"`
+	ID                    string           `json:"id"`
+	Revision              int64            `json:"revision"`
+	MIMEType              string           `json:"mimeType"`
+	Width                 int              `json:"width"`
+	Height                int              `json:"height"`
+	ByteCount             int              `json:"byteCount"`
+	SHA256                string           `json:"sha256"`
+	SourceVersion         string           `json:"sourceVersion"`
+	ContentPath           string           `json:"contentPath"`
+	DurationMs            *int64           `json:"durationMs"`
+	VideoCodec            *string          `json:"videoCodec"`
+	AudioCodec            *string          `json:"audioCodec"`
+	Poster                *MapContentImage `json:"poster"`
 }
 type MapContentAuthor struct {
 	AccountID   string       `json:"accountId"`
@@ -276,6 +277,9 @@ func (v MapContentMoment) Valid(now time.Time) bool {
 			return false
 		}
 		seen[m.ID] = true
+		if m.DisplayDescriptorPath != "" && (m.Kind != "IMAGE" || m.DisplayDescriptorPath != MapContentDisplayDescriptorPath(v.ID, m.ID, m.SourceVersion) || strings.Contains(m.ContentPath, "&variant=")) {
+			return false
+		}
 		if m.Kind == "IMAGE" {
 			if m.MIMEType != "image/jpeg" && m.MIMEType != "image/png" || m.ByteCount > 16*1024*1024 || m.DurationMs != nil || m.VideoCodec != nil || m.AudioCodec != nil || m.Poster != nil {
 				return false
@@ -321,6 +325,38 @@ type MapContentBinary struct {
 	SHA256        string
 	ValidUntil    time.Time
 	ResponseProof identity.HumanControlProof
+}
+
+const MapContentDisplaySchema = "map-content-media-display-v1"
+
+func MapContentDisplayDescriptorPath(momentID, mediaID, source string) string {
+	return "/v1/me/map-content/moments/" + momentID + "/media/" + mediaID + "/display-descriptor?sourceVersion=" + source
+}
+
+type MapContentDisplayDescriptor struct {
+	SchemaVersion         string                     `json:"schemaVersion"`
+	ViewerAccountID       string                     `json:"viewerAccountId"`
+	MomentID              string                     `json:"momentId"`
+	OriginalSourceVersion string                     `json:"originalSourceVersion"`
+	ObservedAt            time.Time                  `json:"observedAt"`
+	ValidUntil            time.Time                  `json:"validUntil"`
+	Media                 MapContentMedia            `json:"media"`
+	ResponseProof         identity.HumanControlProof `json:"-"`
+}
+
+func (v MapContentDisplayDescriptor) Valid(now time.Time) bool {
+	m := v.Media
+	source := MomentControlHash([]any{v.OriginalSourceVersion, "display1280-v1"})
+	return v.SchemaVersion == MapContentDisplaySchema && identity.HumanControlUUID(v.ViewerAccountID) && identity.HumanControlUUID(v.MomentID) && MomentControlHex(v.OriginalSourceVersion) && mapContentLease(v.ObservedAt, v.ValidUntil, now, source) &&
+		m.Kind == "IMAGE" && identity.HumanControlUUID(m.ID) && m.Revision > 0 && m.MIMEType == "image/jpeg" && m.Width > 0 && m.Height > 0 && m.Width <= 1280 && m.Height <= 1280 && m.ByteCount > 0 && m.ByteCount <= 256*1024 && MomentControlHex(m.SHA256) && m.SourceVersion == source && m.DisplayDescriptorPath == "" && m.Poster == nil && m.DurationMs == nil && m.VideoCodec == nil && m.AudioCodec == nil &&
+		m.ContentPath == "/v1/me/map-content/moments/"+v.MomentID+"/media/"+m.ID+"/content?sourceVersion="+source+"&variant=display"
+}
+
+// Additive port: old eager clients and their existing store contract stay valid.
+type HumanMapContentLazyStore interface {
+	ReadHumanMapContentMomentLazy(context.Context, [32]byte, identity.Actor, string) (MapContentMoment, error)
+	ReadHumanMapContentPlaceLazy(context.Context, [32]byte, identity.Actor, string, string) (MapContentPlacePage, error)
+	ReadHumanMapContentDisplayDescriptor(context.Context, [32]byte, identity.Actor, string, string, string) (MapContentDisplayDescriptor, error)
 }
 type HumanMapContentStore interface {
 	ReadHumanMapContent(context.Context, [32]byte, identity.Actor, MapContentQuery) (MapContentPage, error)

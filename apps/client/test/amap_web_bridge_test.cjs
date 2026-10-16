@@ -14,6 +14,7 @@ class Element {
   set textContent(x) { this.replaceChildren(); this._text = x; }
   get textContent() { return this._text; }
   setAttribute(k, v) { this.attrs[k] = v; }
+  removeAttribute(k) { delete this.attrs[k]; if (k === 'src') delete this.src; }
   addEventListener(k, v) { (this.events[k] ??= []).push(v); }
   removeEventListener(k, v) { this.events[k] = (this.events[k] ?? []).filter(x => x !== v); }
   fire(k, extra = {}) { for (const f of this.events[k] ?? []) f({detail: 0, stopPropagation() {}, preventDefault() {}, ...extra}); }
@@ -32,6 +33,7 @@ function fixture({lateSDK = false, lateLoader = false, holdCoordinate = false, b
     emit(k) { for (const f of this.events[k] ?? []) f(); }
     lngLatToContainer(p) { this.projects++; return new Pixel(280 + (p.lng - this.center.lng) * 400 + (p.lat - this.center.lat) ** 2 * 37 + this.shiftX, 400 - (p.lat - this.center.lat) * 600 + (p.lng - this.center.lng) ** 2 * 23 + this.shiftY); }
     getZoom() { return this.zoom; } setZoomAndCenter(zoom, p) { this.zoom = zoom; this.center = p; }
+    containerToLngLat(p) { return new LngLat(this.center.lng + (p.x - 300) / 400, this.center.lat - (p.y - 400) / 600); }
     setBounds(b) { this.bounds = b; } setCenter(p) { this.center = p; }
     destroy() { this.destroyed = true; }
   }
@@ -51,10 +53,11 @@ function fixture({lateSDK = false, lateLoader = false, holdCoordinate = false, b
   const document = {head: {appendChild(script) { scripts.push(script); if (!lateLoader) throw new Error('external loader forbidden'); }}, getElementById: () => container, createElement: tag => new Element(tag), createElementNS: (_, tag) => new Element(tag)};
   vm.runInNewContext(source, {window, document, URL, Map: global.Map, Set, Promise, JSON, Number, Math, Object, Error,
     setTimeout: timeout, clearTimeout: clear, requestAnimationFrame: f => raf.push(f)}, {filename: 'birdtie_amap.js'});
-  const frames = [], selected = [], statuses = [];
+  const frames = [], selected = [], statuses = [], viewports = [], coordinates = [];
   const handle = window.birdtieAMapMount('test', JSON.stringify({key: 'synthetic-public', serviceHost: 'https://proxy.example.invalid/_AMapService', latitude: 30, longitude: 120, zoom: 14}),
-    v => frames.push(JSON.parse(v)), v => selected.push(JSON.parse(v)), v => statuses.push(JSON.parse(v)), () => {});
-  const update = (revision, markers) => window.birdtieAMapUpdate(handle, JSON.stringify({schema: 'birdtie-amap-source-v1', revision, markers}));
+    v => frames.push(JSON.parse(v)), v => selected.push(JSON.parse(v)), v => statuses.push(JSON.parse(v)), () => {},
+    v => viewports.push(JSON.parse(v)), v => coordinates.push(JSON.parse(v)));
+  const update = (revision, markers, scope) => window.birdtieAMapUpdate(handle, JSON.stringify({schema: 'birdtie-amap-source-v1', revision, markers, scope}));
   const buttons = () => container.children.flatMap(x => x.children).filter(x => x.tagName === 'button');
   const layout = (frame = frames.at(-1)) => {
     if (!frame) return;
@@ -63,7 +66,7 @@ function fixture({lateSDK = false, lateLoader = false, holdCoordinate = false, b
         selected: false, dense: true, showLabel: false}))}));
   };
   async function flush() { for (let i = 0; i < 150; i++) { await Promise.resolve(); await Promise.resolve(); for (const f of raf.splice(0)) f(); } }
-  return {window, container, maps, conversions, scripts, frames, selected, statuses, handle, update, buttons, layout, flush,
+  return {window, container, maps, conversions, scripts, frames, selected, statuses, viewports, coordinates, handle, update, buttons, layout, flush,
     loadCalls: () => loadCalls, finishSDK: () => sdkWait.resolve(sdk), finishLoader: () => { window.AMapLoader = api; scripts[0].onload(); },
     timerCount: () => timers.size, expire: delay => { for (const [id, timer] of [...timers]) if (timer.delay === delay) { clear(id); timer.fn(); } },
     destroy: () => window.birdtieAMapDestroy(handle)};
@@ -159,11 +162,100 @@ test('114 distinct original coordinates use bounded deduplicated 40/40/34 conver
 test('failed batch length never borrows prior coordinate cache or renders a partial current source', async () => {
   const f = fixture({badBatch: true});
   try {
-    f.update(1, [item('moment:old')]); await f.flush(); f.layout(); assert.equal(f.buttons().length, 1);
-    f.update(2, [item('moment:old'), {...item('moment:next'), longitude: 121.5}]);
+    f.update(1, [item('moment:old')], 1); await f.flush(); f.layout(); assert.equal(f.buttons().length, 1);
+    f.update(2, [item('moment:old'), {...item('moment:next'), longitude: 121.5}], 2);
     assert.equal(f.buttons().length, 0); await f.flush(); f.layout();
     assert.equal(f.buttons().length, 0); assert.equal(f.statuses.at(-1).ready, false);
     assert.ok(f.frames.every(x => x.revision !== 2));
+  } finally { f.destroy(); }
+});
+test('same-scope source updates retain unchanged nodes and coordinate conversions; stale clicks cannot revive', async () => {
+  const f = fixture();
+  try {
+    f.update(1, [item('owned-map:anchor:first'), item('owned-map:anchor:second')], 1);
+    await f.flush(); f.layout();
+    const first = f.buttons()[0], stale = first.events.click[0], conversions = f.conversions.length;
+    f.update(2, [item('owned-map:anchor:first', 'moment', '新授权标题')], 1);
+    assert.equal(f.buttons().length, 1); assert.equal(f.buttons()[0], first);
+    await f.flush(); f.layout();
+    assert.equal(f.conversions.length, conversions); assert.equal(first.title, '新授权标题');
+    stale({detail: 0, stopPropagation() {}, preventDefault() {}}); assert.equal(f.selected.length, 0);
+    first.fire('click'); assert.equal(f.selected.at(-1).revision, 2);
+  } finally { f.destroy(); }
+});
+test('initial and burst wheel/rotation settled frames publish actual SDK corners and latest zoom once', async () => {
+  const f = fixture();
+  try {
+    f.update(1, []); await f.flush(); f.expire(180);
+    assert.equal(f.viewports.length, 1); assert.equal(f.viewports[0].points.length, 5);
+    const map = f.maps[0]; map.zoom = 12.5;
+    for (const event of ['zoomchange', 'mapmove', 'rotatechange', 'zoomend', 'rotateend']) map.emit(event);
+    await f.flush(); f.expire(180);
+    assert.equal(f.viewports.length, 2); assert.equal(f.viewports[1].zoom, 12.5);
+    assert.deepEqual(f.viewports[1].points[0], [map.center.lng - .75, map.center.lat + 400 / 600]);
+    map.emit('moveend'); f.destroy(); f.expire(180); assert.equal(f.viewports.length, 2);
+  } finally { f.destroy(); }
+});
+test('user drag retires queued focus while marker coordinate conversion is still pending', async () => {
+  const f = fixture({holdCoordinate: true});
+  try {
+    f.update(1, [item('owned-map:anchor:pending')]);
+    f.window.birdtieAMapUpdate(f.handle, JSON.stringify({schema: 'birdtie-amap-source-v1', revision: 1,
+      focus: {serial: 1, latitude: 31.2, longitude: 121.4, zoom: 14, fit: false, padding: [0, 0, 0, 0]}}));
+    await f.flush();
+    const pending = f.conversions.find(x => x.coords[0] === 121.4); assert.ok(pending);
+    const map = f.maps[0];
+    f.container.fire('pointerdown'); map.emit('movestart');
+    map.center = {lng: 120.5, lat: 30.5}; map.zoom = 11;
+    map.emit('mapmove'); f.container.fire('pointerup'); map.emit('moveend');
+    pending.deliver(); await f.flush(); f.expire(180);
+    assert.equal(map.center.lng, 120.5); assert.equal(map.center.lat, 30.5); assert.equal(map.zoom, 11);
+    assert.equal(f.viewports.length, 1); assert.deepEqual(f.viewports[0].points[4], [120.5, 30.5]);
+  } finally { f.destroy(); }
+});
+test('leased owned cover updates without null legacy photo metadata, expired bytes clear on next grant', async () => {
+  const f = fixture();
+  try {
+    const cover = {...item('owned-map:anchor:photo'), ownedContent: true, mediaKey: 'synthetic:v1',
+      mediaPNG: 'iVBORw0KGgoAAA==', mediaSelectedPNG: 'iVBORw0KGgoBBB==', mediaDPR: 2,
+      mediaExpiresAt: Date.now() + 30000};
+    f.update(1, [cover], 1); await f.flush(); f.layout();
+    const button=f.buttons()[0], image=button.children[0].children[0];
+    assert.equal(image.style.display, ''); assert.ok(image.src.startsWith('data:image/png'));
+    f.update(2, [{...cover, mediaExpiresAt: Date.now()-1}], 1);
+    assert.equal(f.buttons()[0],button);assert.equal(image.src,undefined);
+    await f.flush();f.layout();assert.equal(image.style.display,'none');
+  } finally { f.destroy(); }
+});
+test('display task cluster is bounded transport with exact current members and retires when a member is removed', async () => {
+  const f=fixture();
+  try {
+    f.update(1,[item('task:a'),item('task:b')],1);await f.flush();
+    const frame=f.frames.at(-1),id='display-cluster:synthetic';
+    f.window.birdtieAMapLayout(f.handle,JSON.stringify({schema:'birdtie-amap-layout-v1',revision:frame.revision,frame:frame.frame,
+      markers:[{id,dx:0,dy:0,selected:false,dense:false,showLabel:false,
+        cluster:{id,kind:'cluster',title:'2项内容',subtitle:'',memberIDs:['task:a','task:b'],anchorID:'task:a',contentCount:2,precision:'area'}}]}));
+    assert.equal(f.buttons().length,1);f.buttons()[0].fire('click');assert.equal(f.selected.at(-1).id,id);
+    f.update(2,[item('task:a')],1);assert.equal(f.buttons().length,0);
+    await f.flush();f.layout();assert.equal(f.buttons()[0].dataset.birdtieMapId,'task:a');
+  }finally{f.destroy();}
+});
+test('owned content and aggregate retain square full-size targets, counts and explicit map coordinate selection', async () => {
+  const f = fixture();
+  try {
+    f.update(1, [{...item('owned-map:anchor:first'), ownedContent: true},
+      {...item('owned-map:cluster:second', 'cluster'), ownedContent: true, contentCount: 7, anchorCount: 9, precision: 'area'}]);
+    await f.flush(); f.layout();
+    for (const button of f.buttons()) {
+      assert.equal(button.style.width, '48px'); assert.equal(button.children[0].style.width, '28px');
+      assert.equal(button.children[0].style.borderRadius, '4px');
+    }
+    assert.equal(f.buttons()[1].children[0].children.at(-1).textContent, '7');
+    f.window.birdtieAMapUpdate(f.handle, JSON.stringify({schema: 'birdtie-amap-source-v1', revision: 1, coordinateSelection: true}));
+    const click = f.maps[0].events.click[0]; click({lnglat: {lng: 121.4, lat: 31.2}});
+    assert.equal(f.coordinates.length, 1); assert.equal(f.coordinates[0].revision, 1);
+    f.window.birdtieAMapReaderVisible(f.handle, true); click({lnglat: {lng: 121.4, lat: 31.2}});
+    assert.equal(f.coordinates.length, 1);
   } finally { f.destroy(); }
 });
 test('loader/SDK/coordinate deadlines report failure, ignore late callbacks and dispose clears every timer', async () => {

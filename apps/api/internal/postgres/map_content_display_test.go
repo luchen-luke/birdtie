@@ -9,6 +9,7 @@ import (
 	"image/png"
 	"math"
 	"testing"
+	"time"
 
 	"github.com/birdtie/birdtie/apps/api/internal/content"
 	mm "github.com/birdtie/birdtie/apps/api/internal/momentmedia"
@@ -36,9 +37,14 @@ func TestMapContentDisplayBoundedWholeFrame(t *testing.T) {
 		}
 		raw := input.Bytes()
 		hash := mm.DigestBytes(raw)
+		started := time.Now()
 		v, e := mapDisplayEncode(context.Background(), raw, hash)
+		elapsed := time.Since(started)
 		if e != nil || len(v.bytes) > mapDisplayMaxBytes || v.width > 1280 || v.height > 1280 || v.width < 1 || v.height < 1 || mm.DigestBytes(v.bytes) != v.sha || mm.DigestBytes(raw) != hash {
 			t.Fatal("bounded display or immutable original", e)
+		}
+		if size.X == 5760 {
+			t.Logf(`{"syntheticSingleImageWidth":5760,"syntheticSingleImageHeight":7680,"originalBytes":%d,"displayBytes":%d,"coldPixelDecodeScaleEncodeMS":%.3f,"includesDatabaseOrNetwork":false}`, len(raw), len(v.bytes), float64(elapsed.Microseconds())/1000)
 		}
 		if math.Abs(float64(v.width)/float64(v.height)-float64(size.X)/float64(size.Y)) > 2.0/float64(v.height) {
 			t.Fatal("aspect ratio changed")

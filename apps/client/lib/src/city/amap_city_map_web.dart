@@ -8,9 +8,11 @@ import '../workspace/map_entities.dart';
 import '../workspace/map_display_policy.dart';
 import 'public_city_controller.dart';
 import 'map_camera_focus.dart';
+import 'map_coordinate_boundary.dart';
 import 'map_point_selection_sheet.dart';
 import 'map_cluster_members_sheet.dart';
-import 'amap_city_map_stub.dart' show AMapSourceGate, AMapDisplayFrame;
+import 'amap_city_map_stub.dart'
+    show AMapSourceGate, AMapDisplayFrame, canonicalAMapViewport;
 
 @JS('birdtieAMapMount')
 external JSNumber _mountAMap(
@@ -20,6 +22,8 @@ external JSNumber _mountAMap(
   JSFunction onSelect,
   JSFunction onStatus,
   JSFunction onMotion,
+  JSFunction onViewport,
+  JSFunction onCoordinate,
 );
 @JS('birdtieAMapUpdate')
 external void _updateAMap(JSNumber handle, JSString config);
@@ -53,6 +57,13 @@ class AMapCityMapView extends StatefulWidget {
     this.preserveViewport = false,
     this.focusRevision = 0,
     this.contentRect,
+    this.ornamentTop,
+    this.onViewportSettled,
+    this.onViewportInitialized,
+    this.onContentViewportSettled,
+    this.onContentOverlap,
+    this.onCoordinateSelected,
+    this.coordinateSourceCurrent,
   });
   final PublicCity city;
   final List<PublicPlace> places;
@@ -72,6 +83,12 @@ class AMapCityMapView extends StatefulWidget {
   final ValueChanged<String>? onMapUnavailable;
   final int focusRevision;
   final Rect? contentRect;
+  final double? ornamentTop;
+  final ValueChanged<MapBounds>? onViewportSettled, onViewportInitialized;
+  final void Function(MapBounds, double)? onContentViewportSettled;
+  final ValueChanged<List<MapEntity>>? onContentOverlap;
+  final void Function(double, double)? onCoordinateSelected;
+  final bool Function()? coordinateSourceCurrent;
   @override
   State<AMapCityMapView> createState() => _AMapCityMapViewState();
 }
@@ -82,11 +99,20 @@ class _AMapCityMapViewState extends State<AMapCityMapView> {
   static int _nextID = 0;
   final _gate = AMapSourceGate(), _changes = MapReaderChanges();
   JSNumber? _handle;
-  JSFunction? _onFrame, _onSelect, _onStatus, _onMotion;
+  JSFunction? _onFrame,
+      _onSelect,
+      _onStatus,
+      _onMotion,
+      _onViewport,
+      _onCoordinate;
   AMapDisplayFrame? _frame;
   MapCameraFocusInput? _focus;
   int _mountEpoch = 0, _viewEpoch = 0, _focusSerial = 0, _renderEpoch = 0;
   bool _failed = false, _choiceOpen = false;
+  bool _viewportInitialized = false;
+  (MapBounds, double)? _lastViewport;
+  Object? _sourceScope;
+  int _sourceScopeSerial = 0;
 
   List<MapEntity> _source() =>
       widget.currentReaderEntities?.call() ??
@@ -135,7 +161,22 @@ class _AMapCityMapViewState extends State<AMapCityMapView> {
       old.readerChanges?.removeListener(_sourceChanged);
       widget.readerChanges?.addListener(_sourceChanged);
     }
+    if (old.city.id != widget.city.id) {
+      _viewportInitialized = false;
+      _lastViewport = null;
+    }
     _syncSource(forceFocus: old.focusRevision != widget.focusRevision);
+    if (old.onCoordinateSelected != widget.onCoordinateSelected &&
+        _handle != null) {
+      _updateAMap(
+        _handle!,
+        jsonEncode({
+          'schema': 'birdtie-amap-source-v1',
+          'revision': _gate.revision,
+          'coordinateSelection': widget.onCoordinateSelected != null,
+        }).toJS,
+      );
+    }
     if (old.selectedEntityId != widget.selectedEntityId ||
         old.contentRect != widget.contentRect)
       if (_handle case final h?) _projectAMap(h);
@@ -168,15 +209,22 @@ class _AMapCityMapViewState extends State<AMapCityMapView> {
         'latitude': e.latitude,
         'longitude': e.longitude,
         'precision': e.precision,
+        'contentCount': e.contentCount,
+        'anchorCount': e.anchorCount,
+        'ownedContent': MapDisplayPolicy.contentEntity(e),
         if ({MapEntityKind.place, MapEntityKind.moment}.contains(e.kind) &&
-            e.mediaPixels?.current() == true) ...{
+            e.mediaPixels?.current() == true &&
+            (e.mediaPixels?.validUntil ??
+                    e.momentPhoto?.expiresAt ??
+                    e.placePhoto?.expiresAt) !=
+                null) ...{
           'mediaKey': e.mediaPixels!.key,
           'mediaPNG': base64Encode(e.mediaPixels!.normalPNG),
           'mediaSelectedPNG': base64Encode(e.mediaPixels!.selectedPNG),
           'mediaExpiresAt':
-              (e.kind == MapEntityKind.moment
-                      ? e.momentPhoto!.expiresAt
-                      : e.placePhoto!.expiresAt)
+              (e.mediaPixels?.validUntil ??
+                      e.momentPhoto?.expiresAt ??
+                      e.placePhoto!.expiresAt)
                   .millisecondsSinceEpoch,
           'mediaDPR': e.mediaPixels!.devicePixelRatio,
         },
@@ -204,11 +252,20 @@ class _AMapCityMapViewState extends State<AMapCityMapView> {
 
   void _syncSource({bool forceFocus = false}) {
     if (!mounted) return;
-    final changed = _gate.replace(_source(), (
+    final sourceScope = (
       widget.city.id,
       widget.contextKey,
       widget.currentReaderScope?.call(),
-    ));
+    );
+    // Every source revision replaces the complete authorized set and retires
+    // its clicks. Viewport/source-version changes can retain unchanged nodes;
+    // city/task changes reset the provider transport as a separate boundary.
+    final transportScope = (widget.city.id, widget.contextKey);
+    if (_sourceScope != transportScope) {
+      _sourceScope = transportScope;
+      _sourceScopeSerial++;
+    }
+    final changed = _gate.replace(_source(), sourceScope);
     final next = _focusInput(), previous = _focus;
     final focus =
         forceFocus || previous == null || next.shouldFocusAfter(previous);
@@ -223,6 +280,8 @@ class _AMapCityMapViewState extends State<AMapCityMapView> {
           jsonEncode({
             'schema': 'birdtie-amap-source-v1',
             'revision': _gate.revision,
+            'scope': _sourceScopeSerial,
+            'coordinateSelection': widget.onCoordinateSelected != null,
             'markers': _markers(),
             if (focus && next.center != null) 'focus': _focusJSON(next),
           }).toJS,
@@ -236,6 +295,8 @@ class _AMapCityMapViewState extends State<AMapCityMapView> {
         jsonEncode({
           'schema': 'birdtie-amap-source-v1',
           'revision': _gate.revision,
+          'scope': _sourceScopeSerial,
+          'coordinateSelection': widget.onCoordinateSelected != null,
           'focus': _focusJSON(next),
         }).toJS,
       );
@@ -281,11 +342,13 @@ class _AMapCityMapViewState extends State<AMapCityMapView> {
             v['kind'] is! String ||
             v['frame'] != _frame?.frame)
           return;
-        final row = _gate.resolve(
-          v['revision'] as int,
-          v['id'] as String,
-          v['kind'] as String,
-        );
+        final row =
+            _gate.resolve(
+              v['revision'] as int,
+              v['id'] as String,
+              v['kind'] as String,
+            ) ??
+            _frame?.resolveDisplay(v['id'] as String, v['kind'] as String);
         if (row != null) unawaited(_selectPoint(row));
       } catch (_) {}
     }).toJS;
@@ -310,6 +373,67 @@ class _AMapCityMapViewState extends State<AMapCityMapView> {
         widget.onCameraMotion?.call();
       }
     }).toJS;
+    _onViewport = ((JSString raw) {
+      if (!current()) return;
+      try {
+        final v = jsonDecode(raw.toDart);
+        if (v is! Map ||
+            v['schema'] != 'birdtie-amap-viewport-v1' ||
+            v['revision'] != _gate.revision ||
+            v['zoom'] is! num ||
+            !(v['zoom'] as num).isFinite ||
+            v['points'] is! List ||
+            (v['points'] as List).length != 5)
+          return;
+        final points = <Offset>[];
+        for (final p in v['points'] as List) {
+          if (p is! List ||
+              p.length != 2 ||
+              p[0] is! num ||
+              p[1] is! num ||
+              !(p[0] as num).isFinite ||
+              !(p[1] as num).isFinite ||
+              (p[0] as num).abs() > 180 ||
+              (p[1] as num).abs() > 90)
+            return;
+          points.add(
+            Offset((p[0] as num).toDouble(), (p[1] as num).toDouble()),
+          );
+        }
+        final bounds = canonicalAMapViewport(points);
+        final zoom = (v['zoom'] as num).toDouble();
+        if (bounds == null || zoom < 1 || zoom > 20) return;
+        if (!_viewportInitialized) {
+          _viewportInitialized = true;
+          widget.onViewportInitialized?.call(bounds);
+        }
+        if (_lastViewport == (bounds, zoom)) return;
+        _lastViewport = (bounds, zoom);
+        widget.onViewportSettled?.call(bounds);
+        widget.onContentViewportSettled?.call(bounds, zoom);
+      } catch (_) {}
+    }).toJS;
+    _onCoordinate = ((JSString raw) {
+      if (!current() ||
+          widget.onCoordinateSelected == null ||
+          !(widget.coordinateSourceCurrent?.call() ?? true))
+        return;
+      try {
+        final v = jsonDecode(raw.toDart);
+        if (v is! Map ||
+            v['schema'] != 'birdtie-amap-coordinate-v1' ||
+            v['revision'] != _gate.revision ||
+            v['longitude'] is! num ||
+            v['latitude'] is! num)
+          return;
+        final lat = (v['latitude'] as num).toDouble();
+        final lon = (v['longitude'] as num).toDouble();
+        if (!lat.isFinite || !lon.isFinite || lat.abs() > 90 || lon.abs() > 180)
+          return;
+        final wgs = MapCoordinateBoundary.fromAmap(lat, lon);
+        widget.onCoordinateSelected?.call(wgs.latitude, wgs.longitude);
+      } catch (_) {}
+    }).toJS;
     final viewport = widget.city.map!;
     try {
       _handle = _mountAMap(
@@ -325,6 +449,8 @@ class _AMapCityMapViewState extends State<AMapCityMapView> {
         _onSelect!,
         _onStatus!,
         _onMotion!,
+        _onViewport!,
+        _onCoordinate!,
       );
       final focus = _focusInput();
       _updateAMap(
@@ -332,6 +458,8 @@ class _AMapCityMapViewState extends State<AMapCityMapView> {
         jsonEncode({
           'schema': 'birdtie-amap-source-v1',
           'revision': _gate.revision,
+          'scope': _sourceScopeSerial,
+          'coordinateSelection': widget.onCoordinateSelected != null,
           'markers': _markers(),
           if (focus.center != null) 'focus': _focusJSON(focus),
         }).toJS,
@@ -348,12 +476,24 @@ class _AMapCityMapViewState extends State<AMapCityMapView> {
 
   Future<void> _selectPoint(MapEntity tapped) async {
     if (!mounted || _choiceOpen || _frame == null) return;
+    if (tapped.isCluster && MapDisplayPolicy.contentEntity(tapped)) {
+      widget.onEntitySelected?.call(tapped);
+      return;
+    }
     _choiceOpen = true;
     final scope = _scope(), revision = _gate.revision;
     try {
-      final candidates = tapped.isCluster
+      final candidates = MapDisplayPolicy.displayCluster(tapped)
+          ? MapDisplayPolicy.currentDisplayClusterMembers(tapped, _gate.rows)
+          : tapped.isCluster
           ? _gate.rows.where((e) => tapped.memberIDs.contains(e.id)).toList()
           : _frame!.candidates(tapped.id);
+      if (candidates.length > 1 &&
+          candidates.every(MapDisplayPolicy.contentEntity) &&
+          widget.onContentOverlap != null) {
+        widget.onContentOverlap!(candidates);
+        return;
+      }
       final ids = {for (final e in candidates) (e.id, e.kind.name)};
       List<MapEntity> fresh() {
         _syncSource();
@@ -413,6 +553,8 @@ class _AMapCityMapViewState extends State<AMapCityMapView> {
     ++_renderEpoch;
     _gate.retireProjection();
     _frame = null;
+    _viewportInitialized = false;
+    _lastViewport = null;
     _changes.changed();
     _reportAnchor(null);
     if (_handle case final h?) _destroyAMap(h);

@@ -1,0 +1,51 @@
+Birdtie selected vendoring notice, 2026-10-16
+
+amap_map 1.0.15, upstream https://github.com/kuloud/amap_map
+Selected from D:/Program/Civu/Civu-client/packages/amap_map, Civu-client commit
+1bbf0613b513001447f326225c944c1a1fbd8e8f (package working tree clean).
+
+The original Apache License 2.0 is retained in LICENSE, along with every source
+copyright and license header. Original credits include kuloud and lbs.amap.com.
+Civu platform patches are retained; see CIVU_PATCH.md. Birdtie changes native
+debugMode to false in all build modes to suppress Android key/coordinate
+argument logging. Birdtie also cancels controller event subscriptions, releases
+the old widget reference and channel handler on disposal, and retires late
+widget initialization without reopening callbacks. Birdtie compiles the Android
+plugin against SDK 36 to match the app and the lifecycle dependency's AAR
+metadata requirement; minimum SDK 21 and the AMap SDK version are retained.
+The lifecycle regression test is new Birdtie code. No Civu product navigation,
+business models, account state, keys, build output or example application is copied.
+
+Some source files retain their original BSD-style notices:
+Copyright 2013 The Flutter Authors. All rights reserved.
+Copyright 2018 The Chromium Authors. All rights reserved.
+Copyright 2019 The Chromium Authors. All rights reserved.
+Copyright 2025 kuloud. All rights reserved.
+The Flutter BSD 3-clause license text from the installed Flutter SDK follows.
+These notices do not relicense those files as Apache-only.
+
+Copyright 2014 The Flutter Authors. All rights reserved.
+
+Redistribution and use in source and binary forms, with or without modification,
+are permitted provided that the following conditions are met:
+
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above
+      copyright notice, this list of conditions and the following
+      disclaimer in the documentation and/or other materials provided
+      with the distribution.
+    * Neither the name of Google Inc. nor the names of its
+      contributors may be used to endorse or promote products derived
+      from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.

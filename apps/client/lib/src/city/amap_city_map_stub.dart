@@ -3,6 +3,30 @@ import 'package:flutter/material.dart';
 import 'public_city_controller.dart';
 import '../workspace/map_entities.dart';
 import '../workspace/map_display_policy.dart';
+import 'map_coordinate_boundary.dart';
+
+/// SDK returns GCJ-02 screen corners. Only this boundary makes WGS84 query
+/// bounds; it is never used to rewrite a stored object or infer its country.
+MapBounds? canonicalAMapViewport(List<Offset> sdkPoints) {
+  if (sdkPoints.length != 5 ||
+      sdkPoints.any(
+        (p) =>
+            !p.dx.isFinite ||
+            !p.dy.isFinite ||
+            p.dx.abs() > 180 ||
+            p.dy.abs() > 90,
+      )) {
+    return null;
+  }
+  final points = sdkPoints.map((p) {
+    final wgs = MapCoordinateBoundary.fromAmap(p.dy, p.dx);
+    return Offset(wgs.longitude, wgs.latitude);
+  }).toList();
+  return MapDisplayPolicy.projectedViewport(
+    corners: points.take(4).toList(),
+    center: points.last,
+  );
+}
 
 /// Shared source/projection boundary, also used by the web adapter. These
 /// types require neither JavaScript nor an AMap key for boundary tests.
@@ -40,9 +64,18 @@ class AMapSourceGate {
           groupSummary: e.groupSummary,
           isTaskResult: e.isTaskResult,
           placePhoto: e.placePhoto,
+          momentPhoto: e.momentPhoto,
           recentMoments: e.recentMoments,
           mediaPixels: e.mediaPixels,
           sourceVersion: e.sourceVersion,
+          momentID: e.momentID,
+          momentRevision: e.momentRevision,
+          categoryCode: e.categoryCode,
+          anchorID: e.anchorID,
+          entryID: e.entryID,
+          threadID: e.threadID,
+          contentCount: e.contentCount,
+          anchorCount: e.anchorCount,
         ),
       );
     }
@@ -65,6 +98,15 @@ class AMapSourceGate {
             e.groupSummary,
             e.isTaskResult,
             e.decorationKey,
+            e.mediaPixels?.validUntil?.microsecondsSinceEpoch,
+            e.sourceVersion,
+            e.momentID,
+            e.momentRevision,
+            e.anchorID,
+            e.entryID,
+            e.threadID,
+            e.contentCount,
+            e.anchorCount,
           ];
         }(),
     ]);
@@ -134,10 +176,6 @@ class AMapSourceGate {
         zoom: (v['zoom'] as num).toDouble(),
         selectedID: selectedID,
         contentRect: contentRect,
-        protectedIDs: {
-          for (final e in rows)
-            if (e.isTaskResult) e.id,
-        },
       );
       return AMapDisplayFrame(
         revision,
@@ -174,7 +212,10 @@ class AMapDisplayFrame {
   final List<MapEntity> rows;
   final Map<String, Offset> positions, offsets;
   final MapDisplayPlan plan;
-  Map<String, Offset> get displayed => Map.unmodifiable(positions);
+  Map<String, Offset> get displayed =>
+      Map.unmodifiable({...positions, ...plan.clusterPositions});
+  MapEntity? resolveDisplay(String id, String kind) =>
+      plan.entities.where((e) => e.id == id && e.kind.name == kind).firstOrNull;
   List<MapEntity> candidates(String id) {
     final tapped = rows.where((e) => e.id == id).firstOrNull;
     if (tapped == null) return const [];
@@ -216,6 +257,18 @@ class AMapDisplayFrame {
           'selected': selectedID == e.id,
           'dense': plan.denseIDs.contains(e.id),
           'showLabel': plan.labelIDs.contains(e.id),
+          if (MapDisplayPolicy.displayCluster(e)) ...{
+            'cluster': {
+              'id': e.id,
+              'kind': e.kind.name,
+              'title': e.title,
+              'subtitle': e.subtitle,
+              'memberIDs': e.memberIDs,
+              'contentCount': e.memberIDs.length,
+              'precision': 'area',
+              'anchorID': e.memberIDs.first,
+            },
+          },
         },
     ],
   };
@@ -242,6 +295,13 @@ class AMapCityMapView extends StatelessWidget {
     this.preserveViewport = false,
     this.focusRevision = 0,
     this.contentRect,
+    this.ornamentTop,
+    this.onViewportSettled,
+    this.onViewportInitialized,
+    this.onContentViewportSettled,
+    this.onContentOverlap,
+    this.onCoordinateSelected,
+    this.coordinateSourceCurrent,
   });
   final PublicCity city;
   final List<PublicPlace> places;
@@ -261,6 +321,12 @@ class AMapCityMapView extends StatelessWidget {
   final ValueChanged<String>? onMapUnavailable;
   final int focusRevision;
   final Rect? contentRect;
+  final double? ornamentTop;
+  final ValueChanged<MapBounds>? onViewportSettled, onViewportInitialized;
+  final void Function(MapBounds, double)? onContentViewportSettled;
+  final ValueChanged<List<MapEntity>>? onContentOverlap;
+  final void Function(double, double)? onCoordinateSelected;
+  final bool Function()? coordinateSourceCurrent;
   @override
   Widget build(BuildContext context) => const Center(
     child: Padding(

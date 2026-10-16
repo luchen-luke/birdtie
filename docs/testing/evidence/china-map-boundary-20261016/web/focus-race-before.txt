@@ -1,0 +1,13 @@
+Console output captured from the focused pre-fix execution:
+Command: node --test --test-name-pattern="user drag retires queued focus" test/amap_web_bridge_test.cjs
+Exit code: 1
+
+FAIL user drag retires queued focus while marker coordinate conversion is still pending
+tests 1; pass 0; fail 1; skipped 0
+AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+121.406 !== 120.5
+at test/amap_web_bridge_test.cjs:212:12
+
+The queued old focus moved the fake SDK camera from the actual user-selected
+120.5 longitude back to the delayed converted focus 121.406 longitude.
+These are synthetic fixture coordinates, not account content locations.

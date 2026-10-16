@@ -7,13 +7,21 @@ import (
 	"image/color"
 	"image/jpeg"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/birdtie/birdtie/apps/api/internal/content"
+	"github.com/birdtie/birdtie/apps/api/internal/identity"
 	mm "github.com/birdtie/birdtie/apps/api/internal/momentmedia"
 )
 
 const mapDisplayMaxBytes = 256 * 1024
+
+// Aggregate counters used by the isolated cold-path regression. No content or
+// account identifiers are recorded, and counters never affect permissions.
+var mapDisplayDecodeCount atomic.Uint64
+var mapDisplayRawReadBytes atomic.Uint64
+var mapContentHeaderReadBytes atomic.Uint64
 
 // Reading derivatives are separate from marker160. Neither viewport metadata
 // nor marker generation calls this cache. Entries carry no authority: every
@@ -143,6 +151,7 @@ func mapDisplayEncode(ctx context.Context, raw []byte, expected string) (mapMark
 	if e != nil || cfg.Width < 1 || cfg.Height < 1 || cfg.Width > 8192 || cfg.Height > 8192 || int64(cfg.Width)*int64(cfg.Height) > 48*1024*1024 {
 		return mapMarkerThumbnail{}, content.ErrUnavailable
 	}
+	mapDisplayDecodeCount.Add(1)
 	src, _, e := image.Decode(bytes.NewReader(raw))
 	if e != nil {
 		return mapMarkerThumbnail{}, content.ErrUnavailable
@@ -200,6 +209,7 @@ func (s *Store) mapDisplayBytesTx(ctx context.Context, f humanWriteFrame, x mapC
 	if e != nil || len(raw) != x.media.ByteCount {
 		return mapMarkerThumbnail{}, content.ErrUnavailable
 	}
+	mapDisplayRawReadBytes.Add(uint64(len(raw)))
 	v, e := mapDisplayEncode(ctx, raw, x.media.SHA256)
 	if e == nil {
 		saveMapDisplay(key, v)
@@ -225,5 +235,83 @@ func (s *Store) mapDisplayMediaTx(ctx context.Context, f humanWriteFrame, x mapC
 	r.ByteCount, r.SHA256 = m.byteCount, m.sha
 	r.SourceVersion = key
 	r.ContentPath = mapMediaPath(x.mid, r.ID, r.SourceVersion) + "&variant=display"
+	return r, nil
+}
+
+type mapDisplayDescriptorProof struct {
+	s                      *Store
+	d                      [32]byte
+	a                      identity.Actor
+	moment, originalSource string
+	media                  content.MapContentMedia
+	until                  time.Time
+}
+
+func (p *mapDisplayDescriptorProof) RevalidateHumanControl(ctx context.Context) error {
+	if !p.until.After(time.Now().UTC()) {
+		return identity.ErrControlChanged
+	}
+	v, e := p.s.ReadHumanMapContentDisplayDescriptor(ctx, p.d, p.a, p.moment, p.media.ID, p.originalSource)
+	if e != nil {
+		return e
+	}
+	if v.ValidUntil.Before(p.until) || content.MomentControlHash(v.Media) != content.MomentControlHash(p.media) {
+		return identity.ErrControlChanged
+	}
+	return nil
+}
+
+func (s *Store) ReadHumanMapContentDisplayDescriptor(ctx context.Context, d [32]byte, a identity.Actor, momentID, mediaID, originalSource string) (content.MapContentDisplayDescriptor, error) {
+	r := content.MapContentDisplayDescriptor{SchemaVersion: content.MapContentDisplaySchema, ViewerAccountID: a.ID, MomentID: momentID, OriginalSourceVersion: originalSource}
+	if !identity.HumanControlUUID(momentID) || !identity.HumanControlUUID(mediaID) || !content.MomentControlHex(originalSource) {
+		return r, content.ErrInvalid
+	}
+	ctx, f, e := s.beginMapContent(ctx, d, a)
+	if e != nil {
+		return r, e
+	}
+	defer f.tx.Rollback(context.Background())
+	filter, e := mapContentTargetFilter(ctx, f, "moments", momentID)
+	if e != nil {
+		return r, e
+	}
+	v, e := readMapContentSnapshot(ctx, f, filter)
+	if e != nil {
+		return r, e
+	}
+	m := v.moments[momentID]
+	if m == nil {
+		return r, content.ErrNotFound
+	}
+	// Only the selected attachment's header is loaded. The retained image's
+	// exact hash/version and current legacy/self permissions remain unchanged.
+	assets, e := s.readMapContentMomentMediaTx(ctx, f, &v, m, mediaID)
+	if e != nil {
+		return r, e
+	}
+	var chosen *mapContentAsset
+	for i := range assets {
+		x := &assets[i]
+		if x.kind == "private-image" && x.media.ID == mediaID && x.media.SourceVersion == originalSource {
+			chosen = x
+			break
+		}
+	}
+	if chosen == nil {
+		return r, content.ErrNotFound
+	}
+	r.ObservedAt, r.ValidUntil = v.at, v.until
+	shrinkMapLease(&r.ValidUntil, chosen.until)
+	r.Media, e = s.mapDisplayMediaTx(ctx, f, *chosen)
+	if e != nil {
+		return r, e
+	}
+	if !r.Valid(time.Now().UTC()) {
+		return r, content.ErrUnavailable
+	}
+	if e = s.finishMapContent(ctx, f, v, r.ValidUntil); e != nil {
+		return r, e
+	}
+	r.ResponseProof = &mapDisplayDescriptorProof{s: s, d: d, a: a, moment: momentID, originalSource: originalSource, media: r.Media, until: r.ValidUntil}
 	return r, nil
 }

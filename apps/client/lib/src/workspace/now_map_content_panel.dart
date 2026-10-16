@@ -163,9 +163,12 @@ class _NowMapContentPanelState extends State<NowMapContentPanel>
       setState(() {
         if (_items.isNotEmpty && _scroll.hasClients)
           _restoreOffset = _scroll.offset;
-        _items = const [];
+        // A user-confirmed playback read may have renewed just one entry.
+        // Expiring neighbours must not retire that independently current grant.
+        _items = List.unmodifiable(_items.where(c.detailCurrent));
         _nextCursor = null;
-        _hasRead = false;
+        _hasRead = _items.isNotEmpty;
+        if (_items.isNotEmpty) _armLease();
       });
     });
     if (remaining > const Duration(seconds: 2)) {
@@ -232,6 +235,29 @@ class _NowMapContentPanelState extends State<NowMapContentPanel>
       }
     }
   }
+
+  bool _acceptFreshDetail(OwnedMapMomentDetail fresh) {
+    if (!_current || !c.detailCurrent(fresh)) return false;
+    final index = _items.indexWhere((item) => item.id == fresh.id);
+    if (index < 0 || _items[index].sourceVersion != fresh.sourceVersion) {
+      return false;
+    }
+    setState(() {
+      // A background page response started earlier must not replace this
+      // explicit read with a shorter, older lease when it arrives later.
+      ++_request;
+      _loading = false;
+      final next = [..._items];
+      next[index] = fresh;
+      _items = List.unmodifiable(next.where(c.detailCurrent));
+      _armLease();
+    });
+    return true;
+  }
+
+  Key _entryKey(OwnedMapMomentDetail item) => ValueKey(
+    'moment-entry:${item.id}:${item.revision}:${item.sourceVersion}',
+  );
 
   @override
   void dispose() {
@@ -317,6 +343,7 @@ class _NowMapContentPanelState extends State<NowMapContentPanel>
                     key: ValueKey('viewer:${viewed.id}'),
                     controller: c,
                     detail: viewed,
+                    onFreshDetail: _acceptFreshDetail,
                     current: () => _current && c.detailCurrent(viewed),
                     compact: false,
                     full: true,
@@ -398,6 +425,15 @@ class _NowMapContentPanelState extends State<NowMapContentPanel>
                                 ? _items.length
                                 : math.min(1, _items.length)) +
                             1,
+                        findChildIndexCallback: (key) {
+                          final count = _expanded
+                              ? _items.length
+                              : math.min(1, _items.length);
+                          for (var index = 0; index < count; index++) {
+                            if (key == _entryKey(_items[index])) return index;
+                          }
+                          return null;
+                        },
                         itemBuilder: (context, index) {
                           final visible = _expanded
                               ? _items.length
@@ -433,6 +469,7 @@ class _NowMapContentPanelState extends State<NowMapContentPanel>
                           }
                           final item = _items[index];
                           return Align(
+                            key: _entryKey(item),
                             alignment: Alignment.topCenter,
                             child: ConstrainedBox(
                               constraints: const BoxConstraints(maxWidth: 720),
@@ -442,6 +479,7 @@ class _NowMapContentPanelState extends State<NowMapContentPanel>
                                 ),
                                 controller: c,
                                 detail: item,
+                                onFreshDetail: _acceptFreshDetail,
                                 compact: !_expanded,
                                 current: () =>
                                     _current && c.detailCurrent(item),
@@ -493,6 +531,7 @@ class _MapMomentTile extends StatelessWidget {
     super.key,
     required this.controller,
     required this.detail,
+    required this.onFreshDetail,
     required this.current,
     required this.compact,
     required this.onEdit,
@@ -503,6 +542,7 @@ class _MapMomentTile extends StatelessWidget {
   });
   final OwnedMapController controller;
   final OwnedMapMomentDetail detail;
+  final bool Function(OwnedMapMomentDetail) onFreshDetail;
   final bool Function() current;
   final bool compact;
   final VoidCallback onEdit, onExpand;
@@ -667,6 +707,7 @@ class _MapMomentTile extends StatelessWidget {
             _MapMediaPager(
               controller: controller,
               detail: detail,
+              onFreshDetail: onFreshDetail,
               current: current,
               compact: compact,
               initialPage: page,
@@ -709,6 +750,7 @@ class _MapMediaPager extends StatefulWidget {
     super.key,
     required this.controller,
     required this.detail,
+    required this.onFreshDetail,
     required this.current,
     required this.compact,
     this.full = false,
@@ -718,6 +760,7 @@ class _MapMediaPager extends StatefulWidget {
   });
   final OwnedMapController controller;
   final OwnedMapMomentDetail detail;
+  final bool Function(OwnedMapMomentDetail) onFreshDetail;
   final bool Function() current;
   final bool compact, full;
   final int initialPage;
@@ -784,13 +827,22 @@ class _MapMediaPagerState extends State<_MapMediaPager> {
                 itemBuilder: (context, index) {
                   // Only the current page may own decoded pixels or a video player.
                   if (index != _index) return const SizedBox.expand();
-                  final media = widget.detail.media[index];
-                  bool current() => widget.current() && index == _index;
+                  final detail = widget.detail;
+                  final media = detail.media[index];
+                  bool current() =>
+                      mounted &&
+                      widget.current() &&
+                      index == _index &&
+                      widget.detail.id == detail.id &&
+                      widget.detail.sourceVersion == detail.sourceVersion &&
+                      index < widget.detail.media.length &&
+                      widget.detail.media[index].identity == media.identity;
                   if (media.isVideo)
                     return _MapVideo(
                       key: ValueKey(media.identity),
                       controller: widget.controller,
                       detail: widget.detail,
+                      onFreshDetail: widget.onFreshDetail,
                       media: media,
                       current: current,
                     );
@@ -802,8 +854,11 @@ class _MapMediaPagerState extends State<_MapMediaPager> {
                     decodeLimit: widget.full ? 2048 : 1280,
                     validUntil: widget.detail.validUntil,
                     current: current,
-                    read: () =>
-                        widget.controller.momentContent(widget.detail, media),
+                    read: () => widget.controller.momentContent(
+                      detail,
+                      media,
+                      current: current,
+                    ),
                   );
                   return widget.full
                       ? InteractiveViewer(
@@ -1016,11 +1071,13 @@ class _MapVideo extends StatefulWidget {
     super.key,
     required this.controller,
     required this.detail,
+    required this.onFreshDetail,
     required this.media,
     required this.current,
   });
   final OwnedMapController controller;
   final OwnedMapMomentDetail detail;
+  final bool Function(OwnedMapMomentDetail) onFreshDetail;
   final OwnedMapMomentMedia media;
   final bool Function() current;
   @override
@@ -1085,7 +1142,27 @@ class _MapVideoState extends State<_MapVideo> {
     VideoPlayerController? player;
     String? path;
     try {
-      data = await widget.controller.momentContent(widget.detail, widget.media);
+      // Playback is an explicit action. Obtain a fresh, current grant before
+      // starting a bounded video transfer instead of spending a stale list lease.
+      final fresh = await widget.controller.readMoment(widget.detail.selector);
+      if (!_current || request != _request) return;
+      final media = fresh.media
+          .where((item) => item.identity == widget.media.identity)
+          .singleOrNull;
+      if (fresh.sourceVersion != widget.detail.sourceVersion || media == null) {
+        throw const FormatException('视频来源已变化，请重新读取动态');
+      }
+      if (!widget.onFreshDetail(fresh)) {
+        throw const FormatException('视频读取已失效');
+      }
+      // The visible entry and its expiry timer must adopt the checked grant too.
+      await WidgetsBinding.instance.endOfFrame;
+      if (!_current || request != _request) return;
+      data = await widget.controller.momentContent(
+        fresh,
+        media,
+        current: () => _current && request == _request,
+      );
       if (!_current || request != _request) return;
       path = await local_video.createVideoMaterialMemoryPath(data);
       data.fillRange(0, data.length, 0);

@@ -1,0 +1,12 @@
+00:00 +0: loading D:/Project/birdtie/apps/client/test/amap_web_fan_boundary_test.dart
+00:00 +0: explicit city country routes domestic/overseas and unknown retains provider
+00:00 +1: AMap SDK corners normalize once to WGS84 query; dateline stays short
+00:00 +2: owned anchor metadata and cluster counts survive source gate, full-size content is protected
+00:00 +3: 重新挂载退休旧投影和点击，重新接受同来源地图的第一帧
+00:00 +4: AMap actual projected pixels retain 115 original IDs, zero layout offsets and area precision
+00:00 +5: AMap source/identity ABA and same-ID metadata changes permanently retire old click and frame
+00:00 +6: AMap bridge frames reject unknown, duplicate, missing IDs, duplicate frame and malformed shape
+00:00 +7: AMap complete original-ID chooser reaches the 114th moment with large text
+00:00 +8: AMap withdrawn and restored same-ID source cannot revive the old chooser tile
+00:00 +9: All tests passed!
+Flutter assets will be downloaded from https://storage.flutter-io.cn. Make sure you trust this source!

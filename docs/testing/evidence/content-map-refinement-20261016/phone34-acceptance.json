@@ -1,0 +1,42 @@
+{
+  "recordedAtUTC": "2026-10-16T01:44:51.118005+00:00",
+  "status": "PASS_TARGETED_IMAGE_PAGING_AND_SHANGHAI_MAP",
+  "apkBuild": 34,
+  "apiBuild": 30,
+  "schema": 173,
+  "checks": [
+    "Actual original four-image moment first image and second image rendered; author and original time visible.",
+    "Actual HTTP observation: only two display descriptors and two display-image requests for the two images selected; no claim of zero other requests.",
+    "Actual keyboard city search selected Shanghai; Mapbox base map and business content media markers visible.",
+    "Native map creation counter stayed 1 across reading, return, keyboard, and city selection.",
+    "Keyboard restored to original English layout; Birdtie Now remains foreground."
+  ],
+  "httpEvidence": "phone34-lazy-http.json",
+  "metricsEvidence": [
+    "phone34-after-reader.json",
+    "phone34-shanghai-map.json"
+  ],
+  "screenshots": {
+    "outputs/BirdTie-APK34-lazy-image1.png": "e42167032ac9f1903fd4fa2f6f75ca4005230df23204b8ea11c770ae1eaf85c2",
+    "outputs/BirdTie-APK34-lazy-image2.png": "d5e54658be8b375979e24c7b9c0646bb7150a2a7f5cc199acb61b5964f909575",
+    "outputs/BirdTie-APK34-city-shanghai-filter.png": "19a5a0726f4301c5869a333de5df1a10fb4f0e41cbe48e5e02af9bf61d2b91b9",
+    "outputs/BirdTie-APK34-city-shanghai-map.png": "4ecebc27e9c5b5c310bff30f1d051d55949a4ea92da419e927ff3f838d161cc5"
+  },
+  "cleanup": {
+    "httpLoggingDisabled": true,
+    "httpProfileCleared": true,
+    "timelineDisabledAndCleared": true,
+    "adbForward53926Removed": true,
+    "birdtieForeground": true
+  },
+  "notRun": [
+    "Shantou Android video in build34",
+    "Shanghai Android video in build34",
+    "200 full-resolution images phone end-to-end",
+    "full final-build publishing/thread regression"
+  ],
+  "knownFollowup": "Reader retirement callback and fresh video grant fix found after build34; build35 required. Build34 is not final delivery.",
+  "contentWrites": 0,
+  "screenRecording": false,
+  "sourceImagesStoredInGit": false
+}

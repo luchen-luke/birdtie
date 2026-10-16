@@ -1,0 +1,38 @@
+{
+  "catalogURL": "https://47.110.154.133/v1/cities",
+  "recordedAtUTC": "2026-10-16T01:20:16.788026+00:00",
+  "responseSHA256": "b21be9af4154e786e96285eecf1568302adb74a9989785af4f669616915e9212",
+  "totalCities": 1067,
+  "selectedPublicCities": [
+    {
+      "id": "civu-geo-4e2b4c4d-f186-42ca-b6f3-fc7e560dd00b",
+      "name": "上海市",
+      "region": "CN",
+      "countryCode": "CN",
+      "timeZone": "Asia/Shanghai",
+      "contentStatus": "building",
+      "source": {
+        "label": "Civu 城市目录",
+        "reference": "civu:geo_area:4e2b4c4d-f186-42ca-b6f3-fc7e560dd00b",
+        "maintainer": "Birdtie 迁移维护",
+        "updatedAt": "2026-10-15T14:01:44.137949+08:00",
+        "freshness": "unverified"
+      }
+    },
+    {
+      "id": "civu-geo-7af76973-a56d-4614-a20b-d5934f9ffe9d",
+      "name": "汕头市",
+      "region": "广东省",
+      "countryCode": "CN",
+      "timeZone": "Asia/Shanghai",
+      "contentStatus": "building",
+      "source": {
+        "label": "Civu 城市目录",
+        "reference": "civu:geo_area:7af76973-a56d-4614-a20b-d5934f9ffe9d",
+        "maintainer": "Birdtie 迁移维护",
+        "updatedAt": "2026-10-15T14:01:44.137949+08:00",
+        "freshness": "unverified"
+      }
+    }
+  ]
+}

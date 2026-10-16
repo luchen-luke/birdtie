@@ -1,0 +1,622 @@
+[
+  {
+    "path": "apps/client/packages/amap_map/android/build.gradle",
+    "bytes": 728,
+    "sha256": "bd6c570c8ad821d535a8db966b4d44ed4934bd393402d4edc201121e801bc9a7"
+  },
+  {
+    "path": "apps/client/packages/amap_map/android/gradle.properties",
+    "bytes": 85,
+    "sha256": "0727c8c8bab57af764b53726dc617b1e67d50b4679187fb2a2c1d30daf83325a"
+  },
+  {
+    "path": "apps/client/packages/amap_map/android/settings.gradle",
+    "bytes": 31,
+    "sha256": "6896c0ebf0b755b199c8d8fb0ab02322d2a24f1a79c5d491883d93cceee2d97e"
+  },
+  {
+    "path": "apps/client/packages/amap_map/android/src/main/AndroidManifest.xml",
+    "bytes": 54,
+    "sha256": "a56222968de4dae9be50b6c72c818950e72ae20959ea94a0a31a4b2223249fd6"
+  },
+  {
+    "path": "apps/client/packages/amap_map/android/src/main/java/com/amap/flutter/map/AMapFlutterMapPlugin.java",
+    "bytes": 2667,
+    "sha256": "cfd90cd8431eb3d3b6d45bf8752e3f30fb52bc00c73a10ecc6c0c97c8b8d1a98"
+  },
+  {
+    "path": "apps/client/packages/amap_map/android/src/main/java/com/amap/flutter/map/AMapOptionsBuilder.java",
+    "bytes": 8113,
+    "sha256": "a2ed78b33a7d2e6336fecd2a156e8b44b3b5250c76d72360e246449724b1e4e6"
+  },
+  {
+    "path": "apps/client/packages/amap_map/android/src/main/java/com/amap/flutter/map/AMapPlatformView.java",
+    "bytes": 10237,
+    "sha256": "38c21e5995fdc74ff582954f242644b620a567d8f564889319a84592b5bc1285"
+  },
+  {
+    "path": "apps/client/packages/amap_map/android/src/main/java/com/amap/flutter/map/AMapPlatformViewFactory.java",
+    "bytes": 3072,
+    "sha256": "21679acccb2ae5a1b4a1f249126ab36c40218e1290fe5c15f5e9c0e112cc7fc0"
+  },
+  {
+    "path": "apps/client/packages/amap_map/android/src/main/java/com/amap/flutter/map/core/AMapOptionsSink.java",
+    "bytes": 1910,
+    "sha256": "a6d0f2e0df373e94c0f8e81756328d66557863e1b1c4729986f63abba503d44b"
+  },
+  {
+    "path": "apps/client/packages/amap_map/android/src/main/java/com/amap/flutter/map/core/MapController.java",
+    "bytes": 13895,
+    "sha256": "aa1737340d5aed44128f6e3710a1ccb4785272c52bd446a16fe9f00311840ca6"
+  },
+  {
+    "path": "apps/client/packages/amap_map/android/src/main/java/com/amap/flutter/map/core/MapsInitializerController.java",
+    "bytes": 1317,
+    "sha256": "79a9dc05930975915f242dabb02a9919e0a5806b30dd852ec230f4d50d104615"
+  },
+  {
+    "path": "apps/client/packages/amap_map/android/src/main/java/com/amap/flutter/map/core/MapStripCapture.java",
+    "bytes": 2815,
+    "sha256": "13002379c6938f2c70e2b94e15f6abf1844fc2246a5cbccdf893bfb1ae4556d3"
+  },
+  {
+    "path": "apps/client/packages/amap_map/android/src/main/java/com/amap/flutter/map/core/UISettingsSink.java",
+    "bytes": 1100,
+    "sha256": "b10e98311afc9f8099b0547d988193a4bf863d1bd5480b9dca78d934b0ab5b74"
+  },
+  {
+    "path": "apps/client/packages/amap_map/android/src/main/java/com/amap/flutter/map/MapRenderLifecycle.java",
+    "bytes": 1859,
+    "sha256": "59af02331d5729dc300593243227a4b6213868b7a39e6dc44fd468c3788708aa"
+  },
+  {
+    "path": "apps/client/packages/amap_map/android/src/main/java/com/amap/flutter/map/MyMethodCallHandler.java",
+    "bytes": 565,
+    "sha256": "a4688f46b4b1fe4e5409050b11bff96853848fdd557c87290dda9e94e89fda8b"
+  },
+  {
+    "path": "apps/client/packages/amap_map/android/src/main/java/com/amap/flutter/map/overlays/AbstractOverlayController.java",
+    "bytes": 821,
+    "sha256": "b5f46d32e557a4e99d08c474808be32a498660ae07faaa114b11c530bffd7473"
+  },
+  {
+    "path": "apps/client/packages/amap_map/android/src/main/java/com/amap/flutter/map/overlays/marker/MarkerController.java",
+    "bytes": 2438,
+    "sha256": "f2a1c9bf968cc40f3b85a86b14e9dee2354b2432755a953d05de503580e09496"
+  },
+  {
+    "path": "apps/client/packages/amap_map/android/src/main/java/com/amap/flutter/map/overlays/marker/MarkerOptionsBuilder.java",
+    "bytes": 1997,
+    "sha256": "c3742d483d94d50a483af53a34469a803ba41199b1defa6e2df5fd0bbad28fb6"
+  },
+  {
+    "path": "apps/client/packages/amap_map/android/src/main/java/com/amap/flutter/map/overlays/marker/MarkerOptionsSink.java",
+    "bytes": 829,
+    "sha256": "e3688119775ab1156ae2388c41d80480dcfdeaa654244e47c5a91a0e6d466980"
+  },
+  {
+    "path": "apps/client/packages/amap_map/android/src/main/java/com/amap/flutter/map/overlays/marker/MarkersController.java",
+    "bytes": 7593,
+    "sha256": "2defb834a237a4107fb12ca71dd92e371f2c56b19313c1e9f558778ef1f442f8"
+  },
+  {
+    "path": "apps/client/packages/amap_map/android/src/main/java/com/amap/flutter/map/overlays/marker/MarkerUtil.java",
+    "bytes": 3378,
+    "sha256": "f118d192ac5b83f5636d46dc3d25624f09690079bfc63432c7cc3e87d2ae2bf5"
+  },
+  {
+    "path": "apps/client/packages/amap_map/android/src/main/java/com/amap/flutter/map/overlays/polygon/PolygonController.java",
+    "bytes": 1356,
+    "sha256": "4f63f58c650774650f94aec69753ecfa628cc4b41d06c3979ad47458b17d1375"
+  },
+  {
+    "path": "apps/client/packages/amap_map/android/src/main/java/com/amap/flutter/map/overlays/polygon/PolygonOptionsBuilder.java",
+    "bytes": 1439,
+    "sha256": "57ecdf272fd0686466df0a39207072597855a24362d4db3aea76d57416c574b2"
+  },
+  {
+    "path": "apps/client/packages/amap_map/android/src/main/java/com/amap/flutter/map/overlays/polygon/PolygonOptionsSink.java",
+    "bytes": 705,
+    "sha256": "1f69dc1a72ff49c32b56e8c82b674d92333b29c7733fac6f2dccab3068c5f5a9"
+  },
+  {
+    "path": "apps/client/packages/amap_map/android/src/main/java/com/amap/flutter/map/overlays/polygon/PolygonsController.java",
+    "bytes": 4280,
+    "sha256": "b4aa1f16b826439869692b6dbe09cfc44eb815990f210e157cb44c398e9af39f"
+  },
+  {
+    "path": "apps/client/packages/amap_map/android/src/main/java/com/amap/flutter/map/overlays/polygon/PolygonUtil.java",
+    "bytes": 1683,
+    "sha256": "5ae518b2ae8533b0fe59c7c44e5854556c3a59028b55de9311683ac9133c369f"
+  },
+  {
+    "path": "apps/client/packages/amap_map/android/src/main/java/com/amap/flutter/map/overlays/polyline/PolylineController.java",
+    "bytes": 3141,
+    "sha256": "fd647aa16aee04572d63238c23f7efdc44038501e156d878f1606735d26343d4"
+  },
+  {
+    "path": "apps/client/packages/amap_map/android/src/main/java/com/amap/flutter/map/overlays/polyline/PolylineOptionsBuilder.java",
+    "bytes": 2545,
+    "sha256": "8fdae5dc9eb656d130db6ecea9c0451e5b9d455aeadef07bfeb56ebce4b99cf3"
+  },
+  {
+    "path": "apps/client/packages/amap_map/android/src/main/java/com/amap/flutter/map/overlays/polyline/PolylineOptionsSink.java",
+    "bytes": 1396,
+    "sha256": "930dcc5b26cf01c97ef905375ce3a25a1f28556ecf24f75a97cb6341f9b3fbda"
+  },
+  {
+    "path": "apps/client/packages/amap_map/android/src/main/java/com/amap/flutter/map/overlays/polyline/PolylinesController.java",
+    "bytes": 5052,
+    "sha256": "8c164086b5895a863e92fd6c6ce67dc29cc59e42f4bce1332d44b3d9396181b5"
+  },
+  {
+    "path": "apps/client/packages/amap_map/android/src/main/java/com/amap/flutter/map/overlays/polyline/PolylineUtil.java",
+    "bytes": 3522,
+    "sha256": "32c0aa3fdc004f1113331ffd67ad8a2cebfc3543ceca3e99136fed69fd072f6f"
+  },
+  {
+    "path": "apps/client/packages/amap_map/android/src/main/java/com/amap/flutter/map/ProxyLifecycleProvider.java",
+    "bytes": 3262,
+    "sha256": "430c156b6cc9c780a27600282306b015e092522b62839dc253deb9b202dcda0d"
+  },
+  {
+    "path": "apps/client/packages/amap_map/android/src/main/java/com/amap/flutter/map/utils/Const.java",
+    "bytes": 2349,
+    "sha256": "90c821191b62ddce16ef4cc4a45a02133b5a526382d1bf7f1cbcdbbb85f00e07"
+  },
+  {
+    "path": "apps/client/packages/amap_map/android/src/main/java/com/amap/flutter/map/utils/ConvertUtil.java",
+    "bytes": 21430,
+    "sha256": "d0ed1871bb8bde8e059fe5796fda534c3fef4bcd17421603d5dc70a125788790"
+  },
+  {
+    "path": "apps/client/packages/amap_map/android/src/main/java/com/amap/flutter/map/utils/LogUtil.java",
+    "bytes": 971,
+    "sha256": "925a4c978e44a34717f4e40a4e733bf7b345958239fcc3fa365c1158f0c4ea5e"
+  },
+  {
+    "path": "apps/client/packages/amap_map/CIVU_PATCH.md",
+    "bytes": 3847,
+    "sha256": "a95e58c2a340d36a719271a4fdca638fbf176070203499c10278beb175aaea9d"
+  },
+  {
+    "path": "apps/client/packages/amap_map/ios/amap_map.podspec",
+    "bytes": 1087,
+    "sha256": "608240aa2af02f76f2e0f6d5ec92763cdc91d0aaa0493c56ee856a480ab4b6c6"
+  },
+  {
+    "path": "apps/client/packages/amap_map/ios/Classes/AMapFlutterFactory.h",
+    "bytes": 369,
+    "sha256": "fb4bb7ebb86e5b8164d08b4c3249bf50794db6a0163648ed58c51df771226238"
+  },
+  {
+    "path": "apps/client/packages/amap_map/ios/Classes/AMapFlutterFactory.m",
+    "bytes": 1028,
+    "sha256": "e1a9b868218c43a0cae6cffb4e688ab5d74017e536482acea057954450555826"
+  },
+  {
+    "path": "apps/client/packages/amap_map/ios/Classes/AMapFlutterMapPlugin.h",
+    "bytes": 131,
+    "sha256": "51c86ac89e0fef50e715c3337bb7b05a501072f9a2365a6c301c5204685cdb2f"
+  },
+  {
+    "path": "apps/client/packages/amap_map/ios/Classes/AMapFlutterMapPlugin.m",
+    "bytes": 649,
+    "sha256": "061f6b9d89c19a2756c5ae3e802cc737e1356562931f8d06ca362386e9ea6029"
+  },
+  {
+    "path": "apps/client/packages/amap_map/ios/Classes/AMapViewController.h",
+    "bytes": 530,
+    "sha256": "931db9ea242a1b566f566c8b0e1f47a1d596bae2351c02a5a31f24743100c8d2"
+  },
+  {
+    "path": "apps/client/packages/amap_map/ios/Classes/AMapViewController.m",
+    "bytes": 23242,
+    "sha256": "8a90acb4f0cbc309a46dcb52f497bb41b3be7fe1814d56ace60c8ed361933285"
+  },
+  {
+    "path": "apps/client/packages/amap_map/ios/Classes/Category/FlutterMethodChannel+MethodCallDispatch.h",
+    "bytes": 891,
+    "sha256": "f7a7e3d54f94876a04f5f87d2c0d69180a7f8460e5476cffff6c971e28ddc126"
+  },
+  {
+    "path": "apps/client/packages/amap_map/ios/Classes/Category/FlutterMethodChannel+MethodCallDispatch.m",
+    "bytes": 1423,
+    "sha256": "e6fefea64cdcda8f7ec92d71cf49891cc0e2f22ac13916a75a896132a3592435"
+  },
+  {
+    "path": "apps/client/packages/amap_map/ios/Classes/Category/MAAnnotationView+Flutter.h",
+    "bytes": 302,
+    "sha256": "4839b99c389329585606162d3ec53022990921fa1b902834090eb07526c2c5bb"
+  },
+  {
+    "path": "apps/client/packages/amap_map/ios/Classes/Category/MAAnnotationView+Flutter.m",
+    "bytes": 1442,
+    "sha256": "466f7c24bb95e8857ef2b84e5deb7e98143d4f7957d1d0019d6a727b67ea26dc"
+  },
+  {
+    "path": "apps/client/packages/amap_map/ios/Classes/Category/MAMapView+Flutter.h",
+    "bytes": 717,
+    "sha256": "760f5e0845ea5efb2282bec5770e2c8dc1937c850c34315f9fe5132c808d3da4"
+  },
+  {
+    "path": "apps/client/packages/amap_map/ios/Classes/Category/MAMapView+Flutter.m",
+    "bytes": 13271,
+    "sha256": "04708e3f3075ab94340725b8d5079940e8dc2d06bdaccb6f3dab11dbc01d209f"
+  },
+  {
+    "path": "apps/client/packages/amap_map/ios/Classes/Category/MAPointAnnotation+Flutter.h",
+    "bytes": 852,
+    "sha256": "23687282ec2977d3edf8e30dc1e78bc9f942093f238826880c4df36f0eb24b07"
+  },
+  {
+    "path": "apps/client/packages/amap_map/ios/Classes/Category/MAPointAnnotation+Flutter.m",
+    "bytes": 722,
+    "sha256": "b6690137838c844cf162ca9c270a54dbb1ace647b39f4fddede6d51f6c7413e5"
+  },
+  {
+    "path": "apps/client/packages/amap_map/ios/Classes/Category/MAPolygon+Flutter.h",
+    "bytes": 636,
+    "sha256": "314128f812ebca6c1389da609794fb0ff7e83a95fc3eb953c68b164b8c74617a"
+  },
+  {
+    "path": "apps/client/packages/amap_map/ios/Classes/Category/MAPolygon+Flutter.m",
+    "bytes": 612,
+    "sha256": "227e603546c9a156d53773ea50d4450d7cd42b7b35fc953fcc7422f82ae4fc0a"
+  },
+  {
+    "path": "apps/client/packages/amap_map/ios/Classes/Category/MAPolygonRenderer+Flutter.h",
+    "bytes": 311,
+    "sha256": "e508ceb7dc1d9a7c8ed26a13fe582e8f57650c18e1d6b9ec4c4bb92a8e9b6512"
+  },
+  {
+    "path": "apps/client/packages/amap_map/ios/Classes/Category/MAPolygonRenderer+Flutter.m",
+    "bytes": 554,
+    "sha256": "20d4d672d09d1df61649a269e49d3a39d977077115a53754ff96390056d851ff"
+  },
+  {
+    "path": "apps/client/packages/amap_map/ios/Classes/Category/MAPolyline+Flutter.h",
+    "bytes": 645,
+    "sha256": "92ff2c0bfa9d997c5a0c4f8265e98b4ac7cbc0dc5e5f90b1c5f66cab76fc9553"
+  },
+  {
+    "path": "apps/client/packages/amap_map/ios/Classes/Category/MAPolyline+Flutter.m",
+    "bytes": 624,
+    "sha256": "8516d9e6d7fbd0959c3678b783b6e0f72bd3dd78941152e16d1bf33a6083c847"
+  },
+  {
+    "path": "apps/client/packages/amap_map/ios/Classes/Category/MAPolylineRenderer+Flutter.h",
+    "bytes": 316,
+    "sha256": "da95ced58fbf6e728198c1f085f37919d61ae60e1afa1a2d586c1ce8d8bcfb5d"
+  },
+  {
+    "path": "apps/client/packages/amap_map/ios/Classes/Category/MAPolylineRenderer+Flutter.m",
+    "bytes": 789,
+    "sha256": "232434d0cf9d504f1e370576c8a17ec04eeac2a58129b00d9d9dc6d096efb3f4"
+  },
+  {
+    "path": "apps/client/packages/amap_map/ios/Classes/Model/AMapCameraPosition.h",
+    "bytes": 754,
+    "sha256": "bc7068c7a2134764580b1e5a8130b13e234b9b4594574d14638bc86c3c62e142"
+  },
+  {
+    "path": "apps/client/packages/amap_map/ios/Classes/Model/AMapCameraPosition.m",
+    "bytes": 795,
+    "sha256": "4748b94eca73e2c6f5fa803a26d7f8e0247231679eed35a313ffb8400790ea59"
+  },
+  {
+    "path": "apps/client/packages/amap_map/ios/Classes/Model/AMapInfoWindow.h",
+    "bytes": 366,
+    "sha256": "923c49515fb97c1e1c73ffc6543468f0e7f08f8ed9d2b50fc9df9ba8359d37b9"
+  },
+  {
+    "path": "apps/client/packages/amap_map/ios/Classes/Model/AMapInfoWindow.m",
+    "bytes": 154,
+    "sha256": "89fecce3ebd8e4c1ee4f4901c40544bb7bef5d2b078d0f524bdd46d939c496f0"
+  },
+  {
+    "path": "apps/client/packages/amap_map/ios/Classes/Model/AMapLocation.h",
+    "bytes": 854,
+    "sha256": "7912c9b7e5a77a7fa55810ba9fb592f90657915eb9c9283cbf970b1fed94b59e"
+  },
+  {
+    "path": "apps/client/packages/amap_map/ios/Classes/Model/AMapLocation.m",
+    "bytes": 660,
+    "sha256": "468957aa0ba2e5955f29e56605c550339fb221c21558bf3507b33cb5a4c6b1de"
+  },
+  {
+    "path": "apps/client/packages/amap_map/ios/Classes/Model/AMapMarker.h",
+    "bytes": 1362,
+    "sha256": "77d9ff41f5264746d6abbbdf1729c55349080d56bd85937609ee58696adf89e0"
+  },
+  {
+    "path": "apps/client/packages/amap_map/ios/Classes/Model/AMapMarker.m",
+    "bytes": 1852,
+    "sha256": "8127f49d5a632428b6fa9dbcb35d10e84cff5c59e18e54bd8ca6517a5dca7ebe"
+  },
+  {
+    "path": "apps/client/packages/amap_map/ios/Classes/Model/AMapPolygon.h",
+    "bytes": 1011,
+    "sha256": "4bea0acc69669bf78dcbeafd635cf7184865057b53d7c7ed9687f31b656788fd"
+  },
+  {
+    "path": "apps/client/packages/amap_map/ios/Classes/Model/AMapPolygon.m",
+    "bytes": 2764,
+    "sha256": "9cef3d91b1d688fd06ae68a3657c6027a59cb677372ffef092c144a713c10fa4"
+  },
+  {
+    "path": "apps/client/packages/amap_map/ios/Classes/Model/AMapPolyline.h",
+    "bytes": 1451,
+    "sha256": "368020c40427c5c5169173a6fb76d70b850cd52bb18b3cd589d522cae0ba36ba"
+  },
+  {
+    "path": "apps/client/packages/amap_map/ios/Classes/Model/AMapPolyline.m",
+    "bytes": 3187,
+    "sha256": "86a74eeedde048be036d12234de4564666b263c8bd82a72c0b36952873b7235b"
+  },
+  {
+    "path": "apps/client/packages/amap_map/ios/Classes/OverlayController/AMapMarkerController.h",
+    "bytes": 908,
+    "sha256": "e219c6d30514e5489ce9187e50f1465730a68536dd6c87cda900c0dd5e806907"
+  },
+  {
+    "path": "apps/client/packages/amap_map/ios/Classes/OverlayController/AMapMarkerController.m",
+    "bytes": 5516,
+    "sha256": "905b7a5cf419c8f4351cf1a5726d2f3ee72574772df4903ba1ea9ede4356a0fa"
+  },
+  {
+    "path": "apps/client/packages/amap_map/ios/Classes/OverlayController/AMapPolygonController.h",
+    "bytes": 735,
+    "sha256": "984744fcd1a3dcd4e1462083b495210afb19491fb0ba1dba18cab525654b084b"
+  },
+  {
+    "path": "apps/client/packages/amap_map/ios/Classes/OverlayController/AMapPolygonController.m",
+    "bytes": 3715,
+    "sha256": "da686df86149001118921135c43c5b74771891027b280a0e6dcd1ae97ea96b5b"
+  },
+  {
+    "path": "apps/client/packages/amap_map/ios/Classes/OverlayController/AMapPolylineController.h",
+    "bytes": 772,
+    "sha256": "0e08314ae3e237e0d578ff01956d68043687525b1d1bda22b24465424d5e4b16"
+  },
+  {
+    "path": "apps/client/packages/amap_map/ios/Classes/OverlayController/AMapPolylineController.m",
+    "bytes": 4872,
+    "sha256": "82d5ae3959f4fa1289be61fc69b263f6b0d8f271644c113a08756808af8063e6"
+  },
+  {
+    "path": "apps/client/packages/amap_map/ios/Classes/Util/AMapConvertUtil.h",
+    "bytes": 2209,
+    "sha256": "11d42780ed5196d801e57ceb31e7df52d7891960c436968fdfa7b9c9b72915e2"
+  },
+  {
+    "path": "apps/client/packages/amap_map/ios/Classes/Util/AMapConvertUtil.m",
+    "bytes": 9388,
+    "sha256": "fa50cd7573d6b0ed3127ac14bc6b40c5904799241c946b2e99e0c7a72639e1b1"
+  },
+  {
+    "path": "apps/client/packages/amap_map/ios/Classes/Util/AMapJsonUtils.h",
+    "bytes": 938,
+    "sha256": "c2d4763f1b154d0d2188e72b5b07b5ea0bfc31ed3f0a751a2757fd6daf61e5be"
+  },
+  {
+    "path": "apps/client/packages/amap_map/ios/Classes/Util/AMapJsonUtils.m",
+    "bytes": 11064,
+    "sha256": "4f92b6f1631be30264b41303f276dffb820cc6e34ed8200fa2e79376b6fa650a"
+  },
+  {
+    "path": "apps/client/packages/amap_map/ios/Classes/Util/AMapMethodCallDispatcher.h",
+    "bytes": 720,
+    "sha256": "3ebee0757d74254d5e450ece28f62316e2cbbb5d2b65f8af2533e8395552d541"
+  },
+  {
+    "path": "apps/client/packages/amap_map/ios/Classes/Util/AMapMethodCallDispatcher.m",
+    "bytes": 1644,
+    "sha256": "785be9e673247f1239f15be7b6297d31174154adab4c6254f5763e44d43ac578"
+  },
+  {
+    "path": "apps/client/packages/amap_map/lib/amap_map.dart",
+    "bytes": 1219,
+    "sha256": "085be844cc0973cc1935c080354b070343304975e353842ced2730f16ca91ac7"
+  },
+  {
+    "path": "apps/client/packages/amap_map/lib/src/amap_controller.dart",
+    "bytes": 6885,
+    "sha256": "46e28bc832a98188b6aa06168767156e57cf0df4af6a346330b429f0f2ee1f2a"
+  },
+  {
+    "path": "apps/client/packages/amap_map/lib/src/amap_initializer.dart",
+    "bytes": 1880,
+    "sha256": "38b18346eed9c5b36cb4916dcd9391342d179477bc990ebee3f781cd368bd71e"
+  },
+  {
+    "path": "apps/client/packages/amap_map/lib/src/amap_widget.dart",
+    "bytes": 16645,
+    "sha256": "14dd6a5ac859a8f47feb025afb1f093da544ad66a724634dea1453b7bfc3be0d"
+  },
+  {
+    "path": "apps/client/packages/amap_map/lib/src/compatibility/color_extensions.dart",
+    "bytes": 764,
+    "sha256": "4828af25db47bcd3748df46057c6d7c6fa90cd28fd2ad49de0c6195f7f68c521"
+  },
+  {
+    "path": "apps/client/packages/amap_map/lib/src/compatibility/compatibility_utils.dart",
+    "bytes": 1532,
+    "sha256": "a05f7f68058ed28271d562e1bd426538195923fa51e5e8f52ba2d531643d1d3a"
+  },
+  {
+    "path": "apps/client/packages/amap_map/lib/src/core/amap_flutter_platform.dart",
+    "bytes": 1545,
+    "sha256": "bd32c41b9848cf5e4ca1b8ea30e841519c6734f8f6ad36ddff81879b9ea617c7"
+  },
+  {
+    "path": "apps/client/packages/amap_map/lib/src/core/map_event.dart",
+    "bytes": 2070,
+    "sha256": "97f83e3e35e23e12e469039cd406a5b1e6b8e0d92f7a984800351f690ce62c5d"
+  },
+  {
+    "path": "apps/client/packages/amap_map/lib/src/core/method_channel_amap_map.dart",
+    "bytes": 11654,
+    "sha256": "394fe27d016066ccdfe9a99c1f8158ab39031d6cb179cf2487cd001c559c2d60"
+  },
+  {
+    "path": "apps/client/packages/amap_map/lib/src/method_channel/serialization.dart",
+    "bytes": 657,
+    "sha256": "a57cd754397e67a6d0a14c42aacbe5087372e12982f18d87f5153d3e44a2bb3d"
+  },
+  {
+    "path": "apps/client/packages/amap_map/lib/src/types/base_overlay.dart",
+    "bytes": 1209,
+    "sha256": "7ebfa240a95d5b00b94b75adf85e4e796b39aa4cf609fff286c33efd87e810fa"
+  },
+  {
+    "path": "apps/client/packages/amap_map/lib/src/types/bitmap.dart",
+    "bytes": 4236,
+    "sha256": "67b422682b8e4bf08f37909a11b040a60759a23518e4df49e6fa651f7d1191bf"
+  },
+  {
+    "path": "apps/client/packages/amap_map/lib/src/types/camera.dart",
+    "bytes": 4861,
+    "sha256": "fc85a9c208c3a3f5302cc900abe780b52c351e47d85441f3169d75a68aa5fb3d"
+  },
+  {
+    "path": "apps/client/packages/amap_map/lib/src/types/info_window_adapter.dart",
+    "bytes": 1336,
+    "sha256": "9109a7fce712198df66a98c3e16de5aaaa44c1ca4b0bad0d95007b6803871e72"
+  },
+  {
+    "path": "apps/client/packages/amap_map/lib/src/types/map_configuration.dart",
+    "bytes": 11682,
+    "sha256": "ebad430ac2fb66b3a5efe3559ba1ad0417dfe654c19f63564bd26d2880156f2c"
+  },
+  {
+    "path": "apps/client/packages/amap_map/lib/src/types/marker_updates.dart",
+    "bytes": 2885,
+    "sha256": "e66a527befcc10aceec3f3c606565d573f6a7a184da89c8313f82581365d72e1"
+  },
+  {
+    "path": "apps/client/packages/amap_map/lib/src/types/marker.dart",
+    "bytes": 7901,
+    "sha256": "2c41e64eb64d3247e3c0c4651de0064f73083f5f9a5174132de0565f6451596c"
+  },
+  {
+    "path": "apps/client/packages/amap_map/lib/src/types/polygon_updates.dart",
+    "bytes": 3172,
+    "sha256": "25694b5b180bd1f9adc090eaae06d4bd470d03d89e2b81af855e523aa77467df"
+  },
+  {
+    "path": "apps/client/packages/amap_map/lib/src/types/polygon.dart",
+    "bytes": 4004,
+    "sha256": "563d01b17ba94b3cf5b694b9a86adcd87d46c5cc796a58758cc273d157362e37"
+  },
+  {
+    "path": "apps/client/packages/amap_map/lib/src/types/polyline_updates.dart",
+    "bytes": 3243,
+    "sha256": "05c99c5ebd7f42abfa57c2153cc795dffba73911a443a7d2397999f0f84af788"
+  },
+  {
+    "path": "apps/client/packages/amap_map/lib/src/types/polyline.dart",
+    "bytes": 5604,
+    "sha256": "55636134b885a4b0b11ca85c8451d7fa9d1bad7960f41d38d58e813a6c80815d"
+  },
+  {
+    "path": "apps/client/packages/amap_map/lib/src/types/screen_coordinate.dart",
+    "bytes": 1383,
+    "sha256": "d5d30b72256f01f586f13d47903d245e89c7debc90faa3e40304b0116943aa08"
+  },
+  {
+    "path": "apps/client/packages/amap_map/lib/src/types/types.dart",
+    "bytes": 777,
+    "sha256": "12e7f40590057a1bf116e86ce02c3f316b679353d26275f9657ebdcc80903dff"
+  },
+  {
+    "path": "apps/client/packages/amap_map/lib/src/types/ui.dart",
+    "bytes": 7120,
+    "sha256": "0bf00b8a0d3a125bb0d71d0d4cb1d99794975a0a96c4b96c31d5b169131bf06d"
+  },
+  {
+    "path": "apps/client/packages/amap_map/lib/src/utils/location_utils.dart",
+    "bytes": 356,
+    "sha256": "ec9dd0b750d2a9e7fe30d68c2fdb29e7e10c5d0cdb2c080174ab4a1b7e011ed3"
+  },
+  {
+    "path": "apps/client/packages/amap_map/lib/src/utils/option_equality.dart",
+    "bytes": 919,
+    "sha256": "1b8d566f52dfb73191bd8de6b66a04ab031100ec185be45a7be79a0d1f9d88ac"
+  },
+  {
+    "path": "apps/client/packages/amap_map/LICENSE",
+    "bytes": 11558,
+    "sha256": "1eb85fc97224598dad1852b5d6483bbcf0aa8608790dcc657a5a2a761ae9c8c6"
+  },
+  {
+    "path": "apps/client/packages/amap_map/NOTICE",
+    "bytes": 2875,
+    "sha256": "2b5b405d03bca4bbf8c28a22a06f4674862890299bb248765d1b29aa0401c392"
+  },
+  {
+    "path": "apps/client/packages/amap_map/pubspec.yaml",
+    "bytes": 2408,
+    "sha256": "0f6cfc39b28db15ae96c6dcb7148d6e6997884fb422defc5a00ea1c589229418"
+  },
+  {
+    "path": "apps/client/packages/amap_map/res/AZURE.png",
+    "bytes": 1513,
+    "sha256": "2e042101411f4cd30ed9474231e092bd0b4ed038721dc5f3bab8b232668a3e6b"
+  },
+  {
+    "path": "apps/client/packages/amap_map/res/BLUE.png",
+    "bytes": 1554,
+    "sha256": "b8cbf2271fb116da3187f46c25f6a064beeeaa9880f6da77a7f5e7ee46ca7d6c"
+  },
+  {
+    "path": "apps/client/packages/amap_map/res/CYAN.png",
+    "bytes": 1529,
+    "sha256": "2040ad62156227085c867052f440a08ab2cb8e8b5f51ba3129bba5fdf3070e09"
+  },
+  {
+    "path": "apps/client/packages/amap_map/res/GREEN.png",
+    "bytes": 1546,
+    "sha256": "91ad4282ff2d6ac6060ba587a8bcccab3db0458554cf2af3acbd3892e39940b7"
+  },
+  {
+    "path": "apps/client/packages/amap_map/res/MAGENTA.png",
+    "bytes": 3151,
+    "sha256": "c1a11e4f953d23b16f9e1bfca4c063c2c0575535179030e71d64a76b6fa857e7"
+  },
+  {
+    "path": "apps/client/packages/amap_map/res/marker_default.png",
+    "bytes": 1519,
+    "sha256": "ddd10f34b0443d5ecb3f535e44764d07a4b72182e955e450efcbf9378f9a1449"
+  },
+  {
+    "path": "apps/client/packages/amap_map/res/ORANGE.png",
+    "bytes": 1526,
+    "sha256": "4a4d6334a8ecbb85ec214f0ebefb0fe3928fa8eff06475c874d715eb2d2c8efe"
+  },
+  {
+    "path": "apps/client/packages/amap_map/res/RED.png",
+    "bytes": 1523,
+    "sha256": "bd9057e688871392dab664c51f3ecfed9a5638336c4b6eaf6abbf781a48614bc"
+  },
+  {
+    "path": "apps/client/packages/amap_map/res/ROSE.png",
+    "bytes": 1537,
+    "sha256": "f40a2b42ed9c32db71c4ccdce89b5e1af778d500022610cfcbfb8d12eed60304"
+  },
+  {
+    "path": "apps/client/packages/amap_map/res/VIOLET.png",
+    "bytes": 1529,
+    "sha256": "133dbc88ee6e18c9825c1e55e76258dc115ff6271d05f153a66348d125263d07"
+  },
+  {
+    "path": "apps/client/packages/amap_map/res/YELLOW.png",
+    "bytes": 1507,
+    "sha256": "2252493edee05037e94228a4f234d3720893b498c15c467eec67aa889600a671"
+  },
+  {
+    "path": "apps/client/packages/amap_map/test/amap_lifecycle_test.dart",
+    "bytes": 5859,
+    "sha256": "ee20fa0ab0e1ccdd4cdb6172cc330248bb5aa30f4e29187c992e3cd858821722"
+  }
+]

@@ -44,3 +44,12 @@ Build **debug** native targets with `--dart-define-from-file=.env.maps.mobile.lo
 Birdtie's Android/iOS Flutter targets retain the Civu release application IDs. Android debug uses `.birdtiepreview` as an application ID suffix, so both apps can coexist on one device. The Birdtie-native Mapbox SDK adapter uses Birdtie's public City/Place state and the Civu custom style URI. On 2026-09-30 the Android preview installed and launched on a Xiaomi Android 16 device, loaded Aberdeen from the local Birdtie API through `adb reverse`, and displayed the custom Mapbox style. No published Place marker was available in the local seed data. iOS requires a Mac/Xcode build and device review. AMap Web JS 2.0 rendering is now wired for City view and public markers, with display conversion from WGS84 through `AMap.convertFrom`; the browser receives only the public Web Key and trusted proxy URL. No AMap Web Key or proxy is configured in this repository, so live tiles are unverified. Native Android/iOS AMap renderers remain unimplemented and show the list fallback. The City API may select `amap` before a platform renderer is configured.
 
 Local verification: Flutter analysis and the Web build completed earlier. The Android debug build completed using an isolated Gradle home, then `adb install --no-streaming -r` installed `app.civu.civu_mobile.birdtiepreview` without replacing the existing `app.civu.civu_mobile`. Android native Mapbox loading was visually confirmed on that device. iOS compilation and AMap rendering remain unverified. The final release requires the original Android signing identity and a versionCode greater than the current production release.
+
+
+## 2026-10-16 当前国内地图接线与配置状态
+
+前文“Native尚未实现”为历史快照。本轮已实现Native/Web内容地图适配，明确CN/CHN用AMap、其他已知国家用Mapbox；候选APK/Web35编译通过但未部署安装。WGS仅在显示/查询边界转换，174仅修上海/汕头provider，尚未生产执行。
+
+Native adapter现在读取BIRDTIE_AMAP_ANDROID_KEY/BIRDTIE_AMAP_IOS_KEY编译配置；Android清单android.key需与同目标身份保持一致。预览包仍是app.civu.civu_mobile.birdtiepreview，已核APK34 SHA1仍为73:84:0A:17:D0:CA:7B:4B:F4:15:41:B4:2C:EC:B7:A2:34:D5:05:23。本机旧清单Key与Civu正式包一致，未证明可用于预览包；当前编译JSON未设置AMap Key。Web仍缺BIRDTIE_AMAP_WEB_PUBLIC_KEY和受信BIRDTIE_AMAP_SERVICE_HOST。安全密钥只应在代理服务端。
+
+已用两个公开城市点核对旧Web Service Key，返回USER_KEY_RECYCLED/10013；这是另一平台，不能替代Android或JS Key，也不能据此判断Android Key失效。缺配置已向用户询问本机路径/控制台，未要求在聊天发密钥。真实国内地图对齐、原生SDK、Web SDK及性能仍NOT_RUN，源码/构建不能代替服务验收。

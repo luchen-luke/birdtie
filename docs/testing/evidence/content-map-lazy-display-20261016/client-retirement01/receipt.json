@@ -1,0 +1,48 @@
+{
+  "createdAtUTC": "2026-10-16T01:47:44.276723+00:00",
+  "jobs": [
+    {
+      "kind": "analyze",
+      "command": [
+        "D:/DevTools/flutter/bin/cache/dart-sdk/bin/dart.exe",
+        "analyze",
+        "--format",
+        "machine",
+        "lib/src/workspace/owned_map_api.dart",
+        "lib/src/workspace/owned_map_controller.dart",
+        "lib/src/workspace/now_map_content_panel.dart",
+        "test/content_map_lazy_display_test.dart"
+      ],
+      "exitCode": 0,
+      "logSHA256": "13a78b459d0e9522849b64728269b0bfdb2ffc0c31868d741f512a7717740e29"
+    },
+    {
+      "kind": "test",
+      "command": [
+        "D:/DevTools/flutter/bin/flutter.bat",
+        "test",
+        "test/content_map_lazy_display_test.dart",
+        "test/content_map_reader_test.dart",
+        "test/content_map_panel_test.dart",
+        "--reporter",
+        "expanded"
+      ],
+      "exitCode": 0,
+      "logSHA256": "2ef4bcd72e26f386e4447a1e1c2ade0febfaa3209f3e0d28903010818b683b69"
+    }
+  ],
+  "sourceBefore": {
+    "apps/client/lib/src/workspace/owned_map_api.dart": "8d852070b64e8efe1f9722719c22520be49c6fa1784ea1a74af4e88403836e86",
+    "apps/client/lib/src/workspace/owned_map_controller.dart": "265ba6c5a48dc007692fbec57714af864b86546d97ab82758f1e4c58d12c0599",
+    "apps/client/lib/src/workspace/now_map_content_panel.dart": "617028dd37787168c89d75cb37078b4f28ffa4629a9273a50119ab75706e1726",
+    "apps/client/test/content_map_lazy_display_test.dart": "6a8070d80b3282c6a59f7c9f0b078b5c2bb119301d4fe708acf3794de19d18c6"
+  },
+  "sourceAfter": {
+    "apps/client/lib/src/workspace/owned_map_api.dart": "8d852070b64e8efe1f9722719c22520be49c6fa1784ea1a74af4e88403836e86",
+    "apps/client/lib/src/workspace/owned_map_controller.dart": "265ba6c5a48dc007692fbec57714af864b86546d97ab82758f1e4c58d12c0599",
+    "apps/client/lib/src/workspace/now_map_content_panel.dart": "617028dd37787168c89d75cb37078b4f28ffa4629a9273a50119ab75706e1726",
+    "apps/client/test/content_map_lazy_display_test.dart": "6a8070d80b3282c6a59f7c9f0b078b5c2bb119301d4fe708acf3794de19d18c6"
+  },
+  "sourceStable": true,
+  "productionWrites": 0
+}

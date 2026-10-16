@@ -349,6 +349,7 @@ func shrinkMapLease(v *time.Time, t *time.Time) {
 }
 
 type mapContentResponseProof struct {
+	lazy                     bool
 	s                        *Store
 	d                        [32]byte
 	a                        identity.Actor
@@ -371,13 +372,13 @@ func (p *mapContentResponseProof) RevalidateHumanControl(ctx context.Context) er
 		}
 		source, until = v.SourceVersion, v.ValidUntil
 	case "place":
-		v, e := p.s.ReadHumanMapContentPlace(ctx, p.d, p.a, p.id, p.cursor)
+		v, e := p.s.readHumanMapContentPlace(ctx, p.d, p.a, p.id, p.cursor, p.lazy)
 		if e != nil {
 			return e
 		}
 		source, until = v.SourceVersion, v.ValidUntil
 	case "moment":
-		v, e := p.s.ReadHumanMapContentMoment(ctx, p.d, p.a, p.id)
+		v, e := p.s.readHumanMapContentMoment(ctx, p.d, p.a, p.id, p.lazy)
 		if e != nil {
 			return e
 		}
@@ -425,7 +426,7 @@ func (s *Store) finishMapContent(ctx context.Context, f humanWriteFrame, snapsho
 	}))
 }
 
-func (s *Store) mapContentMomentTx(ctx context.Context, f humanWriteFrame, v *mapContentSnapshot, id string) (content.MapContentMoment, error) {
+func (s *Store) mapContentMomentTx(ctx context.Context, f humanWriteFrame, v *mapContentSnapshot, id string, lazy bool) (content.MapContentMoment, error) {
 	m := v.moments[id]
 	if m == nil {
 		return content.MapContentMoment{}, content.ErrNotFound
@@ -438,9 +439,17 @@ func (s *Store) mapContentMomentTx(ctx context.Context, f humanWriteFrame, v *ma
 	}
 	r.Media = []content.MapContentMedia{}
 	for _, x := range assets {
-		media, err := s.mapDisplayMediaTx(ctx, f, x)
-		if err != nil {
-			return r, err
+		media := x.media
+		if lazy {
+			if x.kind == "private-image" {
+				media.DisplayDescriptorPath = content.MapContentDisplayDescriptorPath(id, media.ID, media.SourceVersion)
+			}
+		} else {
+			var err error
+			media, err = s.mapDisplayMediaTx(ctx, f, x)
+			if err != nil {
+				return r, err
+			}
 		}
 		r.Media = append(r.Media, media)
 		shrinkMapLease(&r.ValidUntil, x.until)
@@ -454,12 +463,21 @@ func (s *Store) mapContentMomentTx(ctx context.Context, f humanWriteFrame, v *ma
 		}
 	}
 	r.SourceVersion = content.MomentControlHash([]any{v.source, m.stamp, r.Author, r.CreatedAtSource, r.PublishedAt, r.Media, r.Locations})
+	if lazy {
+		r.SourceVersion = content.MomentControlHash([]any{r.SourceVersion, "mediaMode=lazy"})
+	}
 	if !r.Valid(time.Now().UTC()) {
 		return r, content.ErrUnavailable
 	}
 	return r, nil
 }
 func (s *Store) ReadHumanMapContentMoment(ctx context.Context, d [32]byte, a identity.Actor, id string) (content.MapContentMoment, error) {
+	return s.readHumanMapContentMoment(ctx, d, a, id, false)
+}
+func (s *Store) ReadHumanMapContentMomentLazy(ctx context.Context, d [32]byte, a identity.Actor, id string) (content.MapContentMoment, error) {
+	return s.readHumanMapContentMoment(ctx, d, a, id, true)
+}
+func (s *Store) readHumanMapContentMoment(ctx context.Context, d [32]byte, a identity.Actor, id string, lazy bool) (content.MapContentMoment, error) {
 	if !identity.HumanControlUUID(id) {
 		return content.MapContentMoment{}, content.ErrInvalid
 	}
@@ -476,18 +494,24 @@ func (s *Store) ReadHumanMapContentMoment(ctx context.Context, d [32]byte, a ide
 	if e != nil {
 		return content.MapContentMoment{}, e
 	}
-	r, e := s.mapContentMomentTx(ctx, f, &v, id)
+	r, e := s.mapContentMomentTx(ctx, f, &v, id, lazy)
 	if e != nil {
 		return r, e
 	}
 	if e = s.finishMapContent(ctx, f, v, r.ValidUntil); e != nil {
 		return content.MapContentMoment{}, e
 	}
-	r.ResponseProof = &mapContentResponseProof{s: s, d: d, a: a, kind: "moment", id: id, source: r.SourceVersion, until: r.ValidUntil}
+	r.ResponseProof = &mapContentResponseProof{s: s, d: d, a: a, kind: "moment", id: id, source: r.SourceVersion, until: r.ValidUntil, lazy: lazy}
 	return r, nil
 }
 
 func (s *Store) ReadHumanMapContentPlace(ctx context.Context, d [32]byte, a identity.Actor, id, cursor string) (content.MapContentPlacePage, error) {
+	return s.readHumanMapContentPlace(ctx, d, a, id, cursor, false)
+}
+func (s *Store) ReadHumanMapContentPlaceLazy(ctx context.Context, d [32]byte, a identity.Actor, id, cursor string) (content.MapContentPlacePage, error) {
+	return s.readHumanMapContentPlace(ctx, d, a, id, cursor, true)
+}
+func (s *Store) readHumanMapContentPlace(ctx context.Context, d [32]byte, a identity.Actor, id, cursor string, lazy bool) (content.MapContentPlacePage, error) {
 	p := content.MapContentPlacePage{SchemaVersion: content.MapContentPlaceSchema, ViewerAccountID: a.ID, PlaceID: id, Items: []content.MapContentMoment{}}
 	if !identity.HumanControlUUID(id) || len(cursor) > 4096 {
 		return p, content.ErrInvalid
@@ -516,6 +540,10 @@ func (s *Store) ReadHumanMapContentPlace(ctx context.Context, d [32]byte, a iden
 	}
 	query := content.MomentControlHash([]any{content.MapContentPlaceSchema, id})
 	source := content.MomentControlHash([]any{v.source, id})
+	if lazy {
+		query = content.MomentControlHash([]any{query, "mediaMode=lazy"})
+		source = content.MomentControlHash([]any{source, "mediaMode=lazy"})
+	}
 	c, e := decodeJourneyHistoryCursor(cursor)
 	if e != nil {
 		return p, e
@@ -546,7 +574,7 @@ func (s *Store) ReadHumanMapContentPlace(ctx context.Context, d [32]byte, a iden
 	}
 	end := min(start+20, len(ids))
 	for _, mid := range ids[start:end] {
-		r, e := s.mapContentMomentTx(ctx, f, &v, mid)
+		r, e := s.mapContentMomentTx(ctx, f, &v, mid, lazy)
 		if e != nil {
 			return p, e
 		}
@@ -572,7 +600,7 @@ func (s *Store) ReadHumanMapContentPlace(ctx context.Context, d [32]byte, a iden
 	if e = s.finishMapContent(ctx, f, v, p.ValidUntil); e != nil {
 		return content.MapContentPlacePage{}, e
 	}
-	p.ResponseProof = &mapContentResponseProof{s: s, d: d, a: a, kind: "place", id: id, cursor: cursor, source: p.SourceVersion, until: p.ValidUntil}
+	p.ResponseProof = &mapContentResponseProof{s: s, d: d, a: a, kind: "place", id: id, cursor: cursor, source: p.SourceVersion, until: p.ValidUntil, lazy: lazy}
 	return p, nil
 }
 

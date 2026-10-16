@@ -1,0 +1,32 @@
+{
+  "command": [
+    "D:\\DevTools\\flutter\\bin\\flutter.bat",
+    "test",
+    "--no-pub",
+    "test/map_coordinate_boundary_test.dart",
+    "test/content_map_controller_test.dart",
+    "--reporter",
+    "expanded"
+  ],
+  "cwd": "D:\\Project\\birdtie\\apps\\client",
+  "startedAtUTC": "2026-10-16T02:02:48.370067+00:00",
+  "finishedAtUTC": "2026-10-16T02:02:52.053132+00:00",
+  "exitCode": 0,
+  "sourceBefore": {
+    "apps/client/lib/src/city/map_coordinate_boundary.dart": "86704207fa1df2a93ca351f97f15d77567823ba9c5d1d7eace13b4cebc0201af",
+    "apps/client/test/map_coordinate_boundary_test.dart": "8c80a39a65d4b7bbd421c37b9f3b054ae09841c16af39cc3bf1fecc4455e0bcf",
+    "apps/client/lib/src/workspace/map_marker_visual.dart": "17dd909d2f50eb5411dcba1a3c65946b813d44c6ab9c98a5f735da51ec93e821",
+    "apps/client/lib/src/workspace/owned_map_media_controller.dart": "8f2d13e4d5b3d39dfe67006a3aed0de78438a17df701e5d1070ecd47843eca6c",
+    "apps/client/test/content_map_controller_test.dart": "2e7ae5e20119a07577e2916ea218bdf9d612f014548a7957c331369f90cc7a14"
+  },
+  "sourceAfter": {
+    "apps/client/lib/src/city/map_coordinate_boundary.dart": "86704207fa1df2a93ca351f97f15d77567823ba9c5d1d7eace13b4cebc0201af",
+    "apps/client/test/map_coordinate_boundary_test.dart": "8c80a39a65d4b7bbd421c37b9f3b054ae09841c16af39cc3bf1fecc4455e0bcf",
+    "apps/client/lib/src/workspace/map_marker_visual.dart": "17dd909d2f50eb5411dcba1a3c65946b813d44c6ab9c98a5f735da51ec93e821",
+    "apps/client/lib/src/workspace/owned_map_media_controller.dart": "8f2d13e4d5b3d39dfe67006a3aed0de78438a17df701e5d1070ecd47843eca6c",
+    "apps/client/test/content_map_controller_test.dart": "2e7ae5e20119a07577e2916ea218bdf9d612f014548a7957c331369f90cc7a14"
+  },
+  "sourceStable": true,
+  "logSHA256": "6738468eee242ff23f113cdad6a3025d72ed7bc9ceacc7a224538d83200f4d86",
+  "scope": "Pinned MIT public fixtures, bounded inverse and outside envelope; existing owned viewport/media budget test now also asserts exact propagated pixel lease. No official provider precision or live map claim."
+}

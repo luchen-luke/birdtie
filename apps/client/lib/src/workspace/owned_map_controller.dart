@@ -267,18 +267,22 @@ class OwnedMapController extends ChangeNotifier with WidgetsBindingObserver {
 
   Future<Uint8List> momentContent(
     OwnedMapMomentDetail detail,
-    OwnedMapMomentMedia media,
-  ) async {
+    OwnedMapMomentMedia media, {
+    bool Function()? current,
+  }) async {
     final identity = _identity, epoch = _epoch;
     bool pending() =>
         epoch == _epoch &&
         identity == _identity &&
+        (current?.call() ?? true) &&
         detailCurrent(detail) &&
         detail.media.any((item) => identical(item, media));
     if (!pending() || identity == null)
       throw const FormatException('地图媒体读取已失效');
     return _api.momentContent(
       media,
+      detail: detail,
+      now: _now,
       authorization: identity.$3!,
       origin: identity.$1,
       current: pending,

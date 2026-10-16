@@ -266,3 +266,12 @@ API26/schema171、APK/Web29（APK与28逐字节一致）实际构建部署安装
 只读Civu-client基线仍为1bbf0613，Civu-server为0489536a；不搬页面/导航/全局状态。延续persistent_map_scene、explore_map_viewport、marker budget/persistent host的能力语义：不同坐标不再网格合并，精确同点以小真实封面角标表示；视口覆盖求差及有界缓存、增量marker和地图常驻。Civu discover/feed/media viewer的作者、原时间、图片比例与显式视频播放语义接入Birdtie既有Now主面板。
 
 实际新路径、限制与源码映射见docs/reports/BIRDTIE-NOW-MAP-REFINEMENT-2026-10-16.md。独立Birdtie schema172给既有83条动态补原公开作者归属（9作者/6头像），不公开当前私密profile；API29提供受当前权限验证的旧图片阅读图，原件不变。API29/APK33/Web33实际部署/安装与针对性阅读验收有回执；缺城市视图的3个视频目标、200张冷图性能和完整发布回归仍未完成。
+
+
+## 2026-10-16 国内供应商、坐标边界与按需媒体增量
+
+Civu-client仍只读1bbf0613。两条此前实际访问的上海/汕头公开地点源有GCJ02→storedWGS84证明，Birdtie值与原值一致；未推定全库正确或转换全库。借鉴明确countryCode供应商分流，Birdtie原生适配现地图状态、权限、媒体budget和阅读入口；不搬Civu页面/导航。坐标前向公式取固定MIT coordtransform并保留完整许可；反算有界且区分数值包络与国家。
+
+本轮明确迁入窄包Civu packages/amap_map（Apache-2.0，含既有Android16补丁和11个公开插件图标），保留LICENSE/NOTICE/逐文件SHA；关闭原生日志、修订阅和迟到初始化销毁。此许可审计只覆盖该插件，不扩大到Civu业务源码。map_provider_policy、Native/Web适配、174保护迁移与来源路径见BIRDTIE-CHINA-MAP-BOUNDARY-2026-10-16.md。
+
+按需媒体由Birdtie自身API/阅读面板实现，API30已上线、34有目标图片及部分Web视频证据；候选35含取消/新租期和高德修复，未部署安装。高德配置缺口和国内真实对齐NOT_RUN，严格性能及更广父任务仍IN_PROGRESS，详见两份本轮报告。

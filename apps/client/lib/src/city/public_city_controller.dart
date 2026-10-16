@@ -37,6 +37,7 @@ class PublicCity {
     required this.id,
     required this.name,
     required this.region,
+    this.countryCode = '',
     this.timeZone = 'UTC',
     required this.contentStatus,
     required this.source,
@@ -46,6 +47,7 @@ class PublicCity {
   final String id;
   final String name;
   final String region;
+  final String countryCode;
   final String timeZone;
   final String contentStatus;
   final PublicSource source;
@@ -55,6 +57,7 @@ class PublicCity {
     id: json['id'] as String,
     name: json['name'] as String,
     region: json['region'] as String? ?? '',
+    countryCode: json['countryCode'] as String? ?? '',
     timeZone: json['timeZone'] as String? ?? 'UTC',
     contentStatus: json['contentStatus'] as String? ?? 'building',
     source: PublicSource.fromJson(json['source'] as Map<String, dynamic>),
@@ -580,8 +583,10 @@ class PublicCityController extends ChangeNotifier {
 
   Future<void> loadPlaces() async {
     final cityID = _selectedCityID;
-    if (!configured || cityID == null ||
-        (!loadUnrequestedPlaces && _placeQuery.isEmpty)) return;
+    if (!configured ||
+        cityID == null ||
+        (!loadUnrequestedPlaces && _placeQuery.isEmpty))
+      return;
     final request = ++_placeRequest;
     _placesLoading = true;
     _placeError = null;

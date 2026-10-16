@@ -1,0 +1,75 @@
+Flutter assets will be downloaded from https://storage.flutter-io.cn. Make sure you trust this source!
+00:00 +0: loading D:/Project/birdtie/apps/client/test/content_map_lazy_display_test.dart
+test/content_map_lazy_display_test.dart:107:32: Error: The return type of the method 'LazyFixture.read' is 'Future<OwnedMapMomentDetail>', which does not match the return type, 'Future<String>', of the overridden method, 'BaseClient.read'.
+ - 'Future' is from 'dart:async'.
+ - 'OwnedMapMomentDetail' is from 'package:birdtie_client/src/workspace/owned_map_api.dart' ('lib/src/workspace/owned_map_api.dart').
+Change to a subtype of 'Future<String>'.
+  Future<OwnedMapMomentDetail> read() => api.readMoment(
+                               ^
+/C:/Users/chens/AppData/Local/Pub/Cache/hosted/pub.flutter-io.cn/http-1.6.0/lib/src/base_client.dart:50:18: Context: This is the overridden method ('read').
+  Future<String> read(Uri url, {Map<String, String>? headers}) async {
+                 ^
+test/content_map_lazy_display_test.dart:107:32: Error: The method 'LazyFixture.read' has fewer positional arguments than those of overridden method 'BaseClient.read'.
+  Future<OwnedMapMomentDetail> read() => api.readMoment(
+                               ^
+/C:/Users/chens/AppData/Local/Pub/Cache/hosted/pub.flutter-io.cn/http-1.6.0/lib/src/base_client.dart:50:18: Context: This is the overridden method ('read').
+  Future<String> read(Uri url, {Map<String, String>? headers}) async {
+                 ^
+test/content_map_lazy_display_test.dart:107:32: Error: The method 'LazyFixture.read' has fewer named arguments than those of overridden method 'BaseClient.read'.
+  Future<OwnedMapMomentDetail> read() => api.readMoment(
+                               ^
+/C:/Users/chens/AppData/Local/Pub/Cache/hosted/pub.flutter-io.cn/http-1.6.0/lib/src/base_client.dart:50:18: Context: This is the overridden method ('read').
+  Future<String> read(Uri url, {Map<String, String>? headers}) async {
+                 ^
+00:00 +0 -1: loading D:/Project/birdtie/apps/client/test/content_map_lazy_display_test.dart [E]
+  Failed to load "D:/Project/birdtie/apps/client/test/content_map_lazy_display_test.dart":
+  Compilation failed for testPath=D:/Project/birdtie/apps/client/test/content_map_lazy_display_test.dart: test/content_map_lazy_display_test.dart:107:32: Error: The return type of the method 'LazyFixture.read' is 'Future<OwnedMapMomentDetail>', which does not match the return type, 'Future<String>', of the overridden method, 'BaseClient.read'.
+   - 'Future' is from 'dart:async'.
+   - 'OwnedMapMomentDetail' is from 'package:birdtie_client/src/workspace/owned_map_api.dart' ('lib/src/workspace/owned_map_api.dart').
+  Change to a subtype of 'Future<String>'.
+    Future<OwnedMapMomentDetail> read() => api.readMoment(
+                                 ^
+  /C:/Users/chens/AppData/Local/Pub/Cache/hosted/pub.flutter-io.cn/http-1.6.0/lib/src/base_client.dart:50:18: Context: This is the overridden method ('read').
+    Future<String> read(Uri url, {Map<String, String>? headers}) async {
+                   ^
+  test/content_map_lazy_display_test.dart:107:32: Error: The method 'LazyFixture.read' has fewer positional arguments than those of overridden method 'BaseClient.read'.
+    Future<OwnedMapMomentDetail> read() => api.readMoment(
+                                 ^
+  /C:/Users/chens/AppData/Local/Pub/Cache/hosted/pub.flutter-io.cn/http-1.6.0/lib/src/base_client.dart:50:18: Context: This is the overridden method ('read').
+    Future<String> read(Uri url, {Map<String, String>? headers}) async {
+                   ^
+  test/content_map_lazy_display_test.dart:107:32: Error: The method 'LazyFixture.read' has fewer named arguments than those of overridden method 'BaseClient.read'.
+    Future<OwnedMapMomentDetail> read() => api.readMoment(
+                                 ^
+  /C:/Users/chens/AppData/Local/Pub/Cache/hosted/pub.flutter-io.cn/http-1.6.0/lib/src/base_client.dart:50:18: Context: This is the overridden method ('read').
+    Future<String> read(Uri url, {Map<String, String>? headers}) async {
+                   ^
+  .
+  Error: The Dart compiler exited unexpectedly.
+  package:flutter_tools/src/base/common.dart 34:3  throwToolExit
+  package:flutter_tools/src/compile.dart 1009:11   DefaultResidentCompiler._compile.<fn>
+  dart:async/zone_root.dart 48:47                  _rootRunUnary
+  dart:async/zone.dart 733:19                      _CustomZone.runUnary
+  dart:async/future_impl.dart 948:45               Future._propagateToListeners.handleValueCallback
+  dart:async/future_impl.dart 977:13               Future._propagateToListeners
+  dart:async/future_impl.dart 862:9                Future._propagateToListeners
+  dart:async/future_impl.dart 720:5                Future._completeWithValue
+  dart:async/future_impl.dart 804:7                Future._asyncCompleteWithValue.<fn>
+  dart:async/zone_root.dart 35:13                  _rootRun
+  dart:async/zone.dart 726:19                      _CustomZone.run
+  dart:async/zone.dart 625:7                       _CustomZone.runGuarded
+  dart:async/zone.dart 666:23                      _CustomZone.bindCallbackGuarded.<fn>
+  dart:async/schedule_microtask.dart 40:35         _microtaskLoop
+  dart:async/schedule_microtask.dart 49:5          _startMicrotaskLoop
+  dart:isolate-patch/isolate_patch.dart 127:13     _runPendingImmediateCallback
+  dart:isolate-patch/isolate_patch.dart 193:5      _RawReceivePort._handleMessage
+  
+00:00 +0 -1: D:/Project/birdtie/apps/client/test/content_map_display_test.dart: bounded display image stays scoped to its actual moment and media
+00:00 +1 -1: D:/Project/birdtie/apps/client/test/content_map_reader_test.dart: moment author avatar accepts only its exact controlled source
+00:00 +2 -1: D:/Project/birdtie/apps/client/test/content_map_reader_test.dart: author and original time decode without inventing a publication timestamp
+00:00 +3 -1: D:/Project/birdtie/apps/client/test/content_map_reader_test.dart: author time, uncut aspect media and same-panel gallery preserve page and permission
+00:00 +4 -1: D:/Project/birdtie/apps/client/test/content_map_reader_test.dart: video only reads poster until explicit play; missing author and date stay honest
+00:00 +5 -1: Some tests failed.
+
+Failing tests:
+  D:/Project/birdtie/apps/client/test/content_map_lazy_display_test.dart: loading D:/Project/birdtie/apps/client/test/content_map_lazy_display_test.dart

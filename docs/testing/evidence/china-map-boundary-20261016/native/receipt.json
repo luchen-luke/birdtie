@@ -1,0 +1,236 @@
+{
+  "schema": "birdtie.native-amap-source-validation.v1",
+  "recordedAtUtc": "2026-10-16T02:04:32.3929458Z",
+  "repository": "D:\\Project\\birdtie",
+  "validationCwd": "D:\\Project\\birdtie\\apps\\client",
+  "implementation": "Native SDK adapter using existing Birdtie map display, source authorization, media pixels and shared coordinate boundary",
+  "runs": [
+    {
+      "name": "pub-get01",
+      "command": "D:\\DevTools\\flutter\\bin\\flutter.bat pub get --offline",
+      "childExitCode": 1,
+      "status": "FAILED_POST_STEP",
+      "log": "pub-get01.log",
+      "details": "Cached dependency resolution succeeded; Flutter Windows plugin symlink support post-step failed. Global OS/config not modified.",
+      "sourceShaAtExecution": null
+    },
+    {
+      "name": "analyze01",
+      "command": "D:\\DevTools\\flutter\\bin\\cache\\dart-sdk\\bin\\dart.exe analyze --format machine lib/src/city/amap_city_map_io.dart",
+      "childExitCode": 0,
+      "status": "PASS_WITH_INFO",
+      "errors": 0,
+      "warnings": 0,
+      "infos": 8,
+      "log": "analyze01.log",
+      "sourceShaAtExecution": null,
+      "details": "Before the bounded geometry cache and immediate grant-expiry cover. Historical source hash was not captured."
+    },
+    {
+      "name": "format02",
+      "command": "D:\\DevTools\\flutter\\bin\\cache\\dart-sdk\\bin\\dart.exe format lib/src/city/amap_city_map_io.dart",
+      "childExitCode": 0,
+      "status": "PASS",
+      "output": "Formatted 1 file (0 changed) in 0.01 seconds."
+    },
+    {
+      "name": "analyze02",
+      "command": "D:\\DevTools\\flutter\\bin\\cache\\dart-sdk\\bin\\dart.exe analyze --format machine lib/src/city/amap_city_map_io.dart",
+      "childExitCode": 0,
+      "status": "PASS_WITH_INFO",
+      "errors": 0,
+      "warnings": 0,
+      "infos": 9,
+      "log": "analyze02.log",
+      "sourceShaAtExecution": "a0c01a8d177f1bbbb7f9bfb5ef23c4d1ec63385da7ab1cbfd4ded2d4ca26d426"
+    },
+    {
+      "name": "format03",
+      "command": "D:\\DevTools\\flutter\\bin\\cache\\dart-sdk\\bin\\dart.exe format lib/src/city/amap_city_map_io.dart",
+      "childExitCode": 0,
+      "status": "PASS",
+      "output": "Formatted 1 file (1 changed) in 0.01 seconds."
+    },
+    {
+      "name": "analyze03",
+      "command": "D:\\DevTools\\flutter\\bin\\cache\\dart-sdk\\bin\\dart.exe analyze --format machine lib/src/city/amap_city_map_io.dart",
+      "childExitCode": 0,
+      "status": "PASS_WITH_INFO",
+      "errors": 0,
+      "warnings": 0,
+      "infos": 10,
+      "log": "analyze03.log",
+      "sourceShaAtExecution": "d31cb2acd506f96acc05e1ac6f6b235fd4f622d9305ae497e89dd5c072e74149",
+      "details": "Final native adapter with actual screen DPR independent from raster ratio; plugin PNG scale normalization."
+    }
+  ],
+  "sourceHashesAtAnalyze02": [
+    {
+      "path": "apps/client/lib/src/city/amap_city_map_io.dart",
+      "sha256": "a0c01a8d177f1bbbb7f9bfb5ef23c4d1ec63385da7ab1cbfd4ded2d4ca26d426"
+    },
+    {
+      "path": "apps/client/pubspec.yaml",
+      "sha256": "e500fabe401d53cd28977737ec0bd4d63ff47e5337db1ecf42fa91ff19789cbe"
+    },
+    {
+      "path": "apps/client/pubspec.lock",
+      "sha256": "422363d2c068d3e9b7ff15221b433d3b21b6b4c88266f8ba2081bede4dca8a79"
+    },
+    {
+      "path": "apps/client/packages/amap_map/lib/src/core/method_channel_amap_map.dart",
+      "sha256": "5c749db7c30f0ebe98945c58097b69174f2d3474693e046ce021025358f7ea86"
+    },
+    {
+      "path": "apps/client/lib/src/city/map_coordinate_boundary.dart",
+      "sha256": "86704207fa1df2a93ca351f97f15d77567823ba9c5d1d7eace13b4cebc0201af"
+    },
+    {
+      "path": "apps/client/lib/src/workspace/map_marker_visual.dart",
+      "sha256": "17dd909d2f50eb5411dcba1a3c65946b813d44c6ab9c98a5f735da51ec93e821"
+    }
+  ],
+  "notRun": [
+    "Flutter or native SDK build",
+    "APK installation",
+    "Android device UI/permission/marker retirement validation",
+    "iOS CocoaPods/build/device validation",
+    "Runtime projection calibration",
+    "Native map performance before/after measurement",
+    "Current upstream package comparison",
+    "Live API/deployment"
+  ],
+  "noNewTestsExecuted": false,
+  "notes": [
+    "The existing API controllers remain responsible for viewport bounds, authorization, cancellation and 12-image/4-request media budgets. The adapter neither queries all-city data nor downloads media.",
+    "No source Civu writes; no credentials copied.",
+    "Base-map labels remain SDK cartography; native SDK POI interaction is disabled. Business markers only come from the current Birdtie reader source.",
+    "Session consent is explicit before SDK initialization; no device location is requested.",
+    "Static analysis is not runtime acceptance."
+  ],
+  "finalSourceSha256": "d31cb2acd506f96acc05e1ac6f6b235fd4f622d9305ae497e89dd5c072e74149",
+  "fullFileInventories": [
+    {
+      "path": "plugin-file-hashes.json",
+      "fileCount": 123,
+      "sha256": "85429197e709563f2a427b089b1882af8836076a9f88c89ed4ee74f97131cf19"
+    },
+    {
+      "path": "dependency-file-hashes.json",
+      "packageCount": 5,
+      "fileCount": 335,
+      "sha256": "d8912feffe894fc19298c3417ca6631d1f411dcc63b0b01fe699abd24044361e"
+    }
+  ],
+  "privacyInitializationReview": {
+    "status": "SOURCE_REVIEW_ONLY",
+    "adapter": "Explicit session consent before updatePrivacyAgree and init, and before AMapWidget construction",
+    "dart": "AMapInitializer.updatePrivacyAgree stores the statement; init initializes DPR and stores API key; neither constructs a native map",
+    "android": "AMapPlatformViewFactory applies privacyStatement before constructing AMapPlatformView/MapView",
+    "ios": "AMapViewController applies privacy state before MAMapView allocation; its API key setter also occurs only after the explicit adapter consent gate",
+    "deviceStatus": "NOT_RUN"
+  },
+  "lifecycleRevision": {
+    "recordedAtUtc": "2026-10-16T02:18:35.4489968Z",
+    "command": "D:\\DevTools\\flutter\\bin\\flutter.bat test --no-pub --reporter expanded packages/amap_map/test/amap_lifecycle_test.dart",
+    "cwd": "D:\\Project\\birdtie\\apps\\client",
+    "childExitCode": 0,
+    "status": "PASS",
+    "passedTests": 1,
+    "testName": "AMap disposal cancels all streams and native handlers without late revival",
+    "log": "lifecycle-test01.log",
+    "format": {
+      "command": "D:\\DevTools\\flutter\\bin\\cache\\dart-sdk\\bin\\dart.exe format packages/amap_map/lib/src/amap_controller.dart packages/amap_map/lib/src/amap_widget.dart packages/amap_map/lib/src/core/method_channel_amap_map.dart packages/amap_map/test/amap_lifecycle_test.dart",
+      "exitCode": 0,
+      "output": "Formatted 4 files (1 changed) in 0.01 seconds."
+    },
+    "files": [
+      {
+        "path": "apps/client/packages/amap_map/lib/src/amap_controller.dart",
+        "sha256": "46e28bc832a98188b6aa06168767156e57cf0df4af6a346330b429f0f2ee1f2a"
+      },
+      {
+        "path": "apps/client/packages/amap_map/lib/src/amap_widget.dart",
+        "sha256": "14dd6a5ac859a8f47feb025afb1f093da544ad66a724634dea1453b7bfc3be0d"
+      },
+      {
+        "path": "apps/client/packages/amap_map/lib/src/core/method_channel_amap_map.dart",
+        "sha256": "394fe27d016066ccdfe9a99c1f8158ab39031d6cb179cf2487cd001c559c2d60"
+      },
+      {
+        "path": "apps/client/packages/amap_map/test/amap_lifecycle_test.dart",
+        "sha256": "ee20fa0ab0e1ccdd4cdb6172cc330248bb5aa30f4e29187c992e3cd858821722"
+      },
+      {
+        "path": "apps/client/packages/amap_map/NOTICE",
+        "sha256": "2b5b405d03bca4bbf8c28a22a06f4674862890299bb248765d1b29aa0401c392"
+      },
+      {
+        "path": "apps/client/packages/amap_map/CIVU_PATCH.md",
+        "sha256": "a95e58c2a340d36a719271a4fdca638fbf176070203499c10278beb175aaea9d"
+      },
+      {
+        "path": "apps/client/lib/src/city/map_coordinate_boundary.dart",
+        "sha256": "38d889ffbc12fea7ed464896f25ff1c8410da067136c45dc217c3dba59d4d5f3"
+      }
+    ],
+    "fullFileInventories": [
+      {
+        "path": "plugin-file-hashes-lifecycle01.json",
+        "fileCount": 124,
+        "sha256": "604f5f4da94b28fb3099d68854f35ae9b394d51f7be741db0f570d5d44e07caf"
+      },
+      {
+        "path": "dependency-file-hashes-lifecycle01.json",
+        "packageCount": 5,
+        "fileCount": 336,
+        "sha256": "155fb1d9563d52b8411cd4c244b22101aabf41ad6f5f0f08aa4c6f0a3463f478"
+      }
+    ],
+    "analysisStatus": "Prior analyze01/02/03 are retained as historical adapter analyses; no new analysis claimed for the plugin lifecycle patch",
+    "runtimeStatus": "Mocked native view only; native SDK/build/device/performance NOT_RUN"
+  },
+  "compileSdkRevision": {
+    "recordedAtUtc": "2026-10-16T02:21:29.8038733Z",
+    "failedBuildReceipt": "docs/testing/evidence/content-map-refinement-20261016/candidate-apk35/receipt.json",
+    "failedBuildLog": "docs/testing/evidence/content-map-refinement-20261016/candidate-apk35/output.log",
+    "failedBuildLogSha256": "db23499f467fc7ef5d7b9448b624bbdbc8a6c96bf7feba4522c7a96d997f7314",
+    "started": "2026-10-16T10:19:07.015014+08:00",
+    "completed": "2026-10-16T10:19:31.455123+08:00",
+    "childExitCode": 1,
+    "effectiveExitCode": 1,
+    "failedTask": ":amap_map:checkProfileAarMetadata",
+    "cause": "flutter_plugin_android_lifecycle AAR metadata requires compile SDK >=36; plugin declared 35",
+    "sourceChange": "Only production change is android/build.gradle compileSdkVersion 35 -> 36; minSdk21 and AMap dependency unchanged",
+    "files": [
+      {
+        "path": "apps/client/packages/amap_map/android/build.gradle",
+        "sha256": "861faddbf5f60ae53345245f3454df52831b5c7ded16e25677be911a796ffefc"
+      },
+      {
+        "path": "apps/client/packages/amap_map/NOTICE",
+        "sha256": "8836b991b36bbe5f239ac875dc2501b4c8836b7a418b9617c7a8f6c3a097bc8e"
+      },
+      {
+        "path": "apps/client/packages/amap_map/CIVU_PATCH.md",
+        "sha256": "125a8d3e91680eeda3a8fbc0297fd48a24ea680269b2a643f71b7e2a26dddfe2"
+      }
+    ],
+    "fullFileInventories": [
+      {
+        "path": "plugin-file-hashes-sdk36-01.json",
+        "fileCount": 124,
+        "sha256": "713e6bf785d915806bcce1931d9907ea0dc0365ac13595f51dc076ce72be2f26"
+      },
+      {
+        "path": "dependency-file-hashes-sdk36-01.json",
+        "packageCount": 5,
+        "fileCount": 336,
+        "sha256": "0652b6f338f96cd900b99cce6ea2207b445c7f5a98e428431581ac420869e67e"
+      }
+    ],
+    "additionalTests": "NOT_RUN",
+    "additionalBuild": "NOT_RUN_BY_THIS_WORKER",
+    "nextBuildOwner": "root"
+  }
+}

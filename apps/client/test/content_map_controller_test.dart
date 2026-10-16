@@ -502,6 +502,7 @@ void main() {
       final pixels = media.decorate(first.items.last).mediaPixels!;
       expect(pixels.image.width, lessThanOrEqualTo(72));
       expect(pixels.current(), true);
+      expect(pixels.validUntil, first.validUntil);
       media.suspend();
       expect(pixels.current(), false);
       expect(media.cachedItems, 12);
@@ -517,6 +518,7 @@ void main() {
       expect(media.cacheHits, 12);
       final next = media.decorate(renewed.items.last).mediaPixels!;
       expect(next.current(), true);
+      expect(next.validUntil, renewed.validUntil);
       expect(pixels.current(), false);
       allowed = false;
       media.retire();

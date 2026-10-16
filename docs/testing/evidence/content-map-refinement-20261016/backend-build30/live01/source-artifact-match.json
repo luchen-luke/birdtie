@@ -1,0 +1,20 @@
+{
+  "status": "PASS",
+  "apiBuild": 30,
+  "schema": 173,
+  "apiSHA256": "4cc70262b66cffa0061a79fa91fdc7f622de23aedd5552a713b5e1070a7b9900",
+  "artifactSHA256": "ccb77c3155d69114500ba2629966be3b596d42282d1ec4b690394e6a541ccbca",
+  "scopedFileCount": 10,
+  "checks": {
+    "buildSourceStable": true,
+    "everyFrozenLazyFileMatchesBuildSource": true,
+    "everyFrozenLazyFileStillMatchesWorkingTree": true,
+    "localAPIMatchesPinnedRunningRemoteBinary": true,
+    "buildArtifactMatchesReceipt": true,
+    "liveRunningProcessPinned": true,
+    "livePassedAndLoggedOut": true
+  },
+  "liveReceiptSHA256": "68a7705dabca3d0a3be1afd9d3bea8c94d43838cc2dbf416b2f30004194ef6bb",
+  "contentWrites": 0,
+  "sourceWrites": 0
+}

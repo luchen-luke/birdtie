@@ -1,0 +1,29 @@
+{"protocolVersion":"0.1.1","runnerVersion":null,"pid":15248,"type":"start","time":0}
+{"suite":{"id":0,"platform":"vm","path":"D:/Project/birdtie/apps/client/test/session_recovery_test.dart"},"type":"suite","time":0}
+{"test":{"id":1,"name":"loading D:/Project/birdtie/apps/client/test/session_recovery_test.dart","suiteID":0,"groupIDs":[],"metadata":{"skip":false,"skipReason":null},"line":null,"column":null,"url":null},"type":"testStart","time":0}
+{"count":1,"time":2,"type":"allSuites"}
+{"testID":1,"result":"success","skipped":false,"hidden":true,"type":"testDone","time":1036}
+{"group":{"id":2,"suiteID":0,"parentID":null,"name":"","metadata":{"skip":false,"skipReason":null},"testCount":11,"line":null,"column":null,"url":null},"type":"group","time":1037}
+{"test":{"id":3,"name":"explicit phone login stores returned persistent pair for the verified owner","suiteID":0,"groupIDs":[2],"metadata":{"skip":false,"skipReason":null},"line":82,"column":3,"url":"file:///D:/Project/birdtie/apps/client/test/session_recovery_test.dart"},"type":"testStart","time":1037}
+{"testID":3,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":1063}
+{"test":{"id":4,"name":"expired access restores original owner with rotated device grant, never fixed code","suiteID":0,"groupIDs":[2],"metadata":{"skip":false,"skipReason":null},"line":95,"column":3,"url":"file:///D:/Project/birdtie/apps/client/test/session_recovery_test.dart"},"type":"testStart","time":1063}
+{"testID":4,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":1070}
+{"test":{"id":5,"name":"temporary cold-start network failure retains sealed session and supports retry","suiteID":0,"groupIDs":[2],"metadata":{"skip":false,"skipReason":null},"line":115,"column":3,"url":"file:///D:/Project/birdtie/apps/client/test/session_recovery_test.dart"},"type":"testStart","time":1070}
+{"testID":5,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":1074}
+{"test":{"id":6,"name":"lost refresh response persists operation and retries exactly that rotation","suiteID":0,"groupIDs":[2],"metadata":{"skip":false,"skipReason":null},"line":136,"column":3,"url":"file:///D:/Project/birdtie/apps/client/test/session_recovery_test.dart"},"type":"testStart","time":1074}
+{"testID":6,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":1079}
+{"test":{"id":7,"name":"definitive refresh rejection requires login and does not retain old grant","suiteID":0,"groupIDs":[2],"metadata":{"skip":false,"skipReason":null},"line":158,"column":3,"url":"file:///D:/Project/birdtie/apps/client/test/session_recovery_test.dart"},"type":"testStart","time":1079}
+{"testID":7,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":1082}
+{"test":{"id":8,"name":"legacy expired access has explicit recovery requirement, never automatic login","suiteID":0,"groupIDs":[2],"metadata":{"skip":false,"skipReason":null},"line":171,"column":3,"url":"file:///D:/Project/birdtie/apps/client/test/session_recovery_test.dart"},"type":"testStart","time":1082}
+{"testID":8,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":1085}
+{"test":{"id":9,"name":"concurrent 401s share refresh and late old credential cannot retire new owner","suiteID":0,"groupIDs":[2],"metadata":{"skip":false,"skipReason":null},"line":188,"column":3,"url":"file:///D:/Project/birdtie/apps/client/test/session_recovery_test.dart"},"type":"testStart","time":1085}
+{"testID":9,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":1090}
+{"test":{"id":10,"name":"explicit logout cancels pending rotation and revokes late issued family","suiteID":0,"groupIDs":[2],"metadata":{"skip":false,"skipReason":null},"line":220,"column":3,"url":"file:///D:/Project/birdtie/apps/client/test/session_recovery_test.dart"},"type":"testStart","time":1090}
+{"testID":10,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":1096}
+{"test":{"id":11,"name":"disposed controller cannot revoke rotation adopted by its replacement","suiteID":0,"groupIDs":[2],"metadata":{"skip":false,"skipReason":null},"line":241,"column":3,"url":"file:///D:/Project/birdtie/apps/client/test/session_recovery_test.dart"},"type":"testStart","time":1097}
+{"testID":11,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":1102}
+{"test":{"id":12,"name":"old controller logout preserves a different account saved by replacement","suiteID":0,"groupIDs":[2],"metadata":{"skip":false,"skipReason":null},"line":270,"column":3,"url":"file:///D:/Project/birdtie/apps/client/test/session_recovery_test.dart"},"type":"testStart","time":1103}
+{"testID":12,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":1110}
+{"test":{"id":13,"name":"secure origin vault persists v3 pair and retry operation, rejects foreign origin","suiteID":0,"groupIDs":[2],"metadata":{"skip":false,"skipReason":null},"line":312,"column":3,"url":"file:///D:/Project/birdtie/apps/client/test/session_recovery_test.dart"},"type":"testStart","time":1110}
+{"testID":13,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":1117}
+{"success":true,"type":"done","time":1133}

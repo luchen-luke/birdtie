@@ -62,7 +62,7 @@ class _BirdtieShellState extends State<BirdtieShell>
     _privateClient = AuthenticatedClient(
       auth: _auth,
       onUnauthorized: (token) async {
-        await _auth.invalidateRejectedSession(token);
+        await _auth.recoverSession(expectedAuthorization: token);
       },
     );
     _moments = PrivateMomentController(
@@ -85,6 +85,11 @@ class _BirdtieShellState extends State<BirdtieShell>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     _cityRecovery.setForeground(state == AppLifecycleState.resumed);
+    if (state == AppLifecycleState.resumed &&
+        !_auth.signedIn &&
+        _auth.sessionRecoveryFailed) {
+      unawaited(_auth.recoverSession());
+    }
   }
 
   void _onAuthChange() {

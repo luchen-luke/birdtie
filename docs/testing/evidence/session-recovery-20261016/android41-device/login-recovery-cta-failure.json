@@ -1,0 +1,33 @@
+{
+  "status": "FAIL_REAL_DEVICE_TAP",
+  "apkLabel": 41,
+  "apiRelease": 32,
+  "schema": 176,
+  "notice": "登录后可查看地图动态。",
+  "tapPhysicalXY": [
+    878,
+    632
+  ],
+  "targetBounds": [
+    794,
+    553,
+    963,
+    709
+  ],
+  "adbDisplay": 0,
+  "result": "No login sheet visible after two checks; sidebar/profile fixed-code login works",
+  "legacyProfileLoginSucceeded": true,
+  "mapContentRestoredWithoutPan": true,
+  "mapMarkerCount": 7,
+  "oldPidDiagnostic": {
+    "pid": 12994,
+    "availableLogRows": 1427,
+    "fatal": 0,
+    "unhandled": 0,
+    "flutterExceptions": 0,
+    "afterDispose": 0,
+    "rawLogsSaved": false
+  },
+  "cause": "UNDER_INVESTIGATION_NATIVE_OVERLAY_HIT_TEST",
+  "noSyntheticContent": true
+}

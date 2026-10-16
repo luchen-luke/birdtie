@@ -1,0 +1,6 @@
+Flutter assets will be downloaded from https://storage.flutter-io.cn. Make sure you trust this source!
+00:00 +0: loading D:/Project/birdtie/apps/client/test/now_area_content_recovery_test.dart
+00:00 +0: guest area is incomplete rather than empty and offers explicit login
+00:00 +1: area waits for owned content and retains its current grant and shorter lease
+00:01 +2: rejected access recovers through retry without automatic login or camera recreation
+00:01 +3: All tests passed!

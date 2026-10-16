@@ -1,0 +1,111 @@
+Flutter assets will be downloaded from https://storage.flutter-io.cn. Make sure you trust this source!
+Resolving dependencies...
+Downloading packages...
+  _flutterfire_internals 1.3.77 (1.3.78 available)
+  app_links 7.2.1 (7.2.2 available)
+  app_links_linux 1.0.3 (1.0.4 available)
+  app_links_web 1.0.4 (1.0.5 available)
+  clock 1.1.2 (1.1.3 available)
+  code_assets 1.2.1 (2.1.0 available)
+  cross_file 0.3.5+5 (0.4.0 available)
+  firebase_core 4.14.0 (5.0.0 available)
+  firebase_core_web 3.12.0 (4.0.0 available)
+  firebase_messaging 16.7.0 (17.0.0 available)
+  firebase_messaging_platform_interface 4.10.0 (4.11.0 available)
+  firebase_messaging_web 4.2.5 (4.3.0 available)
+  flutter_adaptive_scaffold 0.1.12 (0.3.3+1 available)
+  flutter_map 7.0.2 (8.3.2 available)
+  flutter_secure_storage 10.3.4 (11.2.0 available)
+  flutter_secure_storage_darwin 0.3.2 (0.4.3 available)
+  hooks 2.0.2 (2.2.0 available)
+  image_picker_ios 0.8.13+9 (0.8.13+12 available)
+  intl 0.20.2 (0.20.3 available)
+  jni 1.0.3 (1.1.0 available)
+  jni_flutter 1.0.3 (1.0.4+1 available)
+  latlong2 0.9.1 (0.10.1 available)
+  mapbox_maps_flutter 2.26.0 (3.33.0 available)
+  matcher 0.12.19 (0.12.20 available)
+  material_color_utilities 0.13.0 (0.13.1 available)
+  meta 1.18.0 (1.19.0 available)
+  mgrs_dart 2.0.0 (3.0.0 available)
+  objective_c 9.5.0 (9.6.2 available)
+  petitparser 7.0.2 (7.1.0 available)
+  proj4dart 2.1.0 (3.0.0 available)
+  qr 3.0.2 (4.0.0 available)
+  record_use 0.6.0 (1.1.1 available)
+  share_plus 13.3.0 (13.3.1 available)
+  stack_trace 1.12.1 (1.12.2 available)
+  test_api 0.7.11 (0.7.15 available)
+  unicode 0.3.1 (1.1.9 available)
+  url_launcher 6.3.2 (6.3.3 available)
+  vector_graphics_compiler 1.3.0 (1.3.2 available)
+  vector_math 2.2.0 (2.4.3 available)
+  vm_service 15.3.0 (15.4.0 available)
+  x_amap_base 1.0.3 (2.0.0+2 available)
+  xml 7.0.1 (7.1.0 available)
+Got dependencies!
+42 packages have newer versions incompatible with dependency constraints.
+Try `flutter pub outdated` for more information.
+00:00 +0: loading D:/Project/birdtie/apps/client/test/now_area_content_recovery_test.dart
+00:00 +0: guest area is incomplete rather than empty and offers explicit login
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following TestFailure was thrown running a test:
+Expected: exactly one matching candidate
+  Actual: _TextWidgetFinder:<Found 0 widgets with text "登录后可查看地图动态。": []>
+   Which: means none were found but one was expected
+
+When the exception was thrown, this was the stack:
+#4      main.<anonymous closure> (file:///D:/Project/birdtie/apps/client/test/now_area_content_recovery_test.dart:201:9)
+<asynchronous suspension>
+#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1952:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///D:/Project/birdtie/apps/client/test/now_area_content_recovery_test.dart line 201
+The test description was:
+  guest area is incomplete rather than empty and offers explicit login
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:00 +0 -1: guest area is incomplete rather than empty and offers explicit login [E]
+  Test failed. See exception logs above.
+  The test description was: guest area is incomplete rather than empty and offers explicit login
+  
+Warning: At least one test in this suite creates an HttpClient. When running a test suite that uses
+TestWidgetsFlutterBinding, all HTTP requests will return status code 400, and no network request
+will actually be made. Any test expecting a real network connection and status code will fail.
+To test code that needs an HttpClient, provide your own HttpClient implementation to the code under
+test, so that your test can consistently provide a testable response to the code under test.
+00:00 +0 -1: area waits for owned content and retains its current grant and shorter lease
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following TestFailure was thrown running a test:
+Expected: AgentAreaStatus:<AgentAreaStatus.success>
+  Actual: AgentAreaStatus:<AgentAreaStatus.partial>
+
+When the exception was thrown, this was the stack:
+#4      main.<anonymous closure> (file:///D:/Project/birdtie/apps/client/test/now_area_content_recovery_test.dart:251:9)
+<asynchronous suspension>
+#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1952:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///D:/Project/birdtie/apps/client/test/now_area_content_recovery_test.dart line 251
+The test description was:
+  area waits for owned content and retains its current grant and shorter lease
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:01 +0 -2: area waits for owned content and retains its current grant and shorter lease [E]
+  Test failed. See exception logs above.
+  The test description was: area waits for owned content and retains its current grant and shorter lease
+  
+00:01 +0 -2: rejected access recovers through retry without automatic login or camera recreation
+00:01 +1 -2: Some tests failed.
+
+Failing tests:
+  D:/Project/birdtie/apps/client/test/now_area_content_recovery_test.dart: area waits for owned content and retains its current grant and shorter lease
+  D:/Project/birdtie/apps/client/test/now_area_content_recovery_test.dart: guest area is incomplete rather than empty and offers explicit login

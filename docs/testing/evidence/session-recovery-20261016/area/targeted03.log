@@ -1,0 +1,51 @@
+Flutter assets will be downloaded from https://storage.flutter-io.cn. Make sure you trust this source!
+00:00 +0: loading D:/Project/birdtie/apps/client/test/now_area_content_recovery_test.dart
+00:00 +0: D:/Project/birdtie/apps/client/test/now_area_content_recovery_test.dart: guest area is incomplete rather than empty and offers explicit login
+00:00 +1: D:/Project/birdtie/apps/client/test/now_content_geometry_test.dart: 空闲地图区域搜索字号1.0位于实测顶部署名之后且一次地图读取零Agent提交
+00:01 +2: D:/Project/birdtie/apps/client/test/now_content_geometry_test.dart: 空闲地图区域搜索字号1.0位于实测顶部署名之后且一次地图读取零Agent提交
+00:01 +3: D:/Project/birdtie/apps/client/test/now_content_geometry_test.dart: 空闲地图区域搜索字号1.0位于实测顶部署名之后且一次地图读取零Agent提交
+00:01 +4: D:/Project/birdtie/apps/client/test/now_content_geometry_test.dart: 空闲地图区域搜索字号1.0位于实测顶部署名之后且一次地图读取零Agent提交
+{"idleSearchGeometry":"actual-registered-camera-callback","scale":1.0,"searchRect":[94.0,696.0,218.0,744.0],"headerBottom":92.0,"ornamentTop":80.0,"ornamentReservedHeight":48,"mapElementRetained":true,"queries":0}
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following TestFailure was thrown running a test:
+Expected: exactly one matching candidate
+  Actual: _TextWidgetFinder:<Found 2 widgets with text "登录后可查看地图动态。": [
+            Text-[<'now-map-content-notice'>]("登录后可查看地图动态。", dependencies: [DefaultSelectionStyle,
+DefaultTextStyle, MediaQuery]),
+            Text("登录后可查看地图动态。", debugLabel: (((blackMountainView
+bodyLarge).apply).copyWith).copyWith, inherit: true, color: Color(alpha: 1.0000, red: 0.2157, green:
+0.2549, blue: 0.3176, colorSpace: ColorSpace.sRGB), family: Roboto, size: 15.0, weight: 400,
+letterSpacing: 0.0, height: 1.5x, decoration: Color(alpha: 1.0000, red: 0.0902, green: 0.1137, blue:
+0.1059, colorSpace: ColorSpace.sRGB) TextDecoration.none, dependencies: [DefaultSelectionStyle,
+DefaultTextStyle, MediaQuery]),
+          ]>
+   Which: is too many
+
+When the exception was thrown, this was the stack:
+#4      main.<anonymous closure> (file:///D:/Project/birdtie/apps/client/test/now_content_geometry_test.dart:332:7)
+<asynchronous suspension>
+#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1952:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///D:/Project/birdtie/apps/client/test/now_content_geometry_test.dart line 332
+The test description was:
+  空闲地图区域搜索字号1.0位于实测顶部署名之后且一次地图读取零Agent提交
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:01 +4 -1: D:/Project/birdtie/apps/client/test/now_content_geometry_test.dart: 空闲地图区域搜索字号1.0位于实测顶部署名之后且一次地图读取零Agent提交 [E]
+  Test failed. See exception logs above.
+  The test description was: 空闲地图区域搜索字号1.0位于实测顶部署名之后且一次地图读取零Agent提交
+  
+Warning: At least one test in this suite creates an HttpClient. When running a test suite that uses
+TestWidgetsFlutterBinding, all HTTP requests will return status code 400, and no network request
+will actually be made. Any test expecting a real network connection and status code will fail.
+To test code that needs an HttpClient, provide your own HttpClient implementation to the code under
+test, so that your test can consistently provide a testable response to the code under test.
+00:01 +4 -1: Some tests failed.
+
+Failing tests:
+  D:/Project/birdtie/apps/client/test/now_content_geometry_test.dart: 空闲地图区域搜索字号1.0位于实测顶部署名之后且一次地图读取零Agent提交

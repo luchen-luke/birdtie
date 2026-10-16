@@ -323,12 +323,19 @@ void main() {
       expect(area.bounds, canvas.mapState.viewportBounds);
       expect(
         area.status,
-        AgentAreaStatus.empty,
+        AgentAreaStatus.partial,
         reason:
-            'the controlled typed public map response is authoritatively empty',
+            'typed public empty cannot stand in for unavailable authenticated content',
       );
+      expect(area.read!.content!.available, isFalse);
       expect(mapReads, 1);
-      expect(find.text(area.summary), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byType(AgentConversation),
+          matching: find.text(area.summary),
+        ),
+        findsOneWidget,
+      );
       expect(f.workspace(t).task, isNull);
       expect(f.source.queries, isEmpty);
       expect(find.byKey(const Key('now-map-area-command')), findsNothing);

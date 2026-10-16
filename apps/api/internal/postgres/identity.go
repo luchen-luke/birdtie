@@ -19,7 +19,34 @@ func (s *Store) Authenticate(ctx context.Context, digest [32]byte) (identity.Act
 }
 
 func (s *Store) RevokeSession(ctx context.Context, digest [32]byte) error {
-	tag, err := s.pool.Exec(ctx, `UPDATE sessions SET revoked_at = now()
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(context.Background())
+	var accountID string
+	err = tx.QueryRow(ctx, `SELECT account_id::text FROM sessions WHERE token_sha256=$1`, digest[:]).Scan(&accountID)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return identity.ErrUnauthorized
+	}
+	if err != nil {
+		return err
+	}
+	if err = tx.QueryRow(ctx, `SELECT id::text FROM accounts WHERE id=$1 FOR SHARE`, accountID).Scan(&accountID); err != nil {
+		return err
+	}
+	var familyID string
+	err = tx.QueryRow(ctx, `SELECT f.id::text FROM persistent_session_access a JOIN persistent_session_families f ON f.id=a.family_id JOIN sessions s ON s.id=a.session_id WHERE s.token_sha256=$1 AND f.account_id=$2 FOR UPDATE OF f`, digest[:], accountID).Scan(&familyID)
+	if err == nil {
+		if err = revokePersistentFamily(ctx, tx, familyID); err != nil {
+			return err
+		}
+		return tx.Commit(ctx)
+	}
+	if !errors.Is(err, pgx.ErrNoRows) {
+		return err
+	}
+	tag, err := tx.Exec(ctx, `UPDATE sessions SET revoked_at = now()
         WHERE token_sha256 = $1 AND revoked_at IS NULL`, digest[:])
 	if err != nil {
 		return err
@@ -27,7 +54,7 @@ func (s *Store) RevokeSession(ctx context.Context, digest [32]byte) error {
 	if tag.RowsAffected() != 1 {
 		return identity.ErrUnauthorized
 	}
-	return nil
+	return tx.Commit(ctx)
 }
 
 func (s *Store) ReadProfile(ctx context.Context, actorID, targetID string) (identity.Profile, error) {

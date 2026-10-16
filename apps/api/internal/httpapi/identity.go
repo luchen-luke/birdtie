@@ -51,6 +51,9 @@ func (s *server) me(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *server) logout(w http.ResponseWriter, r *http.Request) {
+	if s.logoutPersistentSession(w, r) {
+		return
+	}
 	_, digest, err := s.actor(r, true)
 	if authFailed(w, err) {
 		return

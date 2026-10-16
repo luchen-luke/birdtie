@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated": "2026-10-16T10:46:53.027353+00:00",
+  "updated": "2026-10-16T13:59:46.700094+00:00",
   "tasks": [
     {
       "id": "BT-AUD-001",
@@ -21792,10 +21792,10 @@
           "synthetic_live_injection": "PROHIBITED",
           "normal_font_only": true,
           "recording": false,
-          "device": "CONNECTED_APK40_BOUNDED_CHECKS_EXECUTED",
-          "current_api": "API31/schema175",
-          "installed_apk": "40",
-          "candidate_apk": "40/installed/source562_verified",
+          "device": "BLOCKED_ADB_DISCONNECTED_AFTER_INSTALL",
+          "current_api": "API32/schema176",
+          "installed_apk": "42",
+          "candidate_apk": "42/installed/source429_verified",
           "second_real_user_device": "BLOCKED_MISSING_SECOND_PARTICIPANT_AND_DEVICE"
         },
         "evidence": [
@@ -21811,7 +21811,9 @@
           "docs/audits/CIVU-SOCIAL-REUSE-MATRIX.md",
           "docs/testing/evidence/dgs-20261016/android40-device/verification.json",
           "docs/testing/evidence/dgs-20261016/injection-guards/post175-readonly01.json",
-          "docs/testing/evidence/content-map-refinement-20261016/backend-build31/deploy01/receipt.json"
+          "docs/testing/evidence/content-map-refinement-20261016/backend-build31/deploy01/receipt.json",
+          "docs/reports/BIRDTIE-SESSION-RECOVERY-2026-10-16.md",
+          "docs/testing/evidence/session-recovery-20261016/android42-device/verification.json"
         ],
         "history": [
           {
@@ -21860,9 +21862,72 @@
               "DGS-14": "IN_PROGRESS",
               "DGS-15": "TODO"
             }
+          },
+          {
+            "at": "2026-10-16T13:28:49.432199+00:00",
+            "summary": "User APK40 blank-map recurrence: original owner session idle-expired; actual data preserved. API32/schema176 deployed; APK41 installed and authentic original owner map restored without pan. 41 recovery CTA native hit failed; fix in progress. Real 30-minute expiry wait started. Previous 32-second test did not cover auth idle expiry.",
+            "previous_boundaries": {
+              "web": "DEFERRED_BY_USER",
+              "civu": "READ_ONLY",
+              "synthetic_live_injection": "PROHIBITED",
+              "normal_font_only": true,
+              "recording": false,
+              "device": "CONNECTED_APK40_BOUNDED_CHECKS_EXECUTED",
+              "current_api": "API31/schema175",
+              "installed_apk": "40",
+              "candidate_apk": "40/installed/source562_verified",
+              "second_real_user_device": "BLOCKED_MISSING_SECOND_PARTICIPANT_AND_DEVICE"
+            },
+            "previous_checkpoint_statuses": {
+              "DGS-01": "DONE",
+              "DGS-02": "DONE",
+              "DGS-03": "DONE",
+              "DGS-04": "PARTIAL",
+              "DGS-05": "PARTIAL",
+              "DGS-06": "DONE",
+              "DGS-07": "PARTIAL",
+              "DGS-08": "PARTIAL",
+              "DGS-09": "PARTIAL",
+              "DGS-10": "PARTIAL",
+              "DGS-11": "PARTIAL",
+              "DGS-12": "PARTIAL",
+              "DGS-13": "PARTIAL",
+              "DGS-14": "PARTIAL",
+              "DGS-15": "PARTIAL"
+            }
+          },
+          {
+            "at": "2026-10-16T13:59:45.444890+00:00",
+            "summary": "APK42 installed and API32/schema176 active; source/62 client direct checks verified. Actual old access naturally expired; final cold start blocked by disconnected ADB, NOT_RUN preserved.",
+            "previous_boundaries": {
+              "web": "DEFERRED_BY_USER",
+              "civu": "READ_ONLY",
+              "synthetic_live_injection": "PROHIBITED",
+              "normal_font_only": true,
+              "recording": false,
+              "device": "CONNECTED_REAL_30_MINUTE_IDLE_RECOVERY_IN_PROGRESS",
+              "current_api": "API32/schema176",
+              "installed_apk": "41",
+              "candidate_apk": "41/installed/CTA_FIX_IN_PROGRESS",
+              "second_real_user_device": "BLOCKED_MISSING_SECOND_PARTICIPANT_AND_DEVICE"
+            }
           }
         ],
-        "overall_status": "PARTIAL"
+        "overall_status": "PARTIAL",
+        "session_recovery_20261016": {
+          "status": "PARTIAL",
+          "rootCause": "30-minute idle expiry without refresh credential; guest map and legacy area result hid unread content",
+          "api": "API32/schema176",
+          "apk": "42 installed; final device actions blocked",
+          "realOwnerMapRestored": true,
+          "realIdleTest": "SERVER_NATURAL_EXPIRY_CONFIRMED_DEVICE_AUTO_REFRESH_NOT_RUN",
+          "evidence": [
+            "docs/testing/evidence/session-recovery-20261016/root-cause-before.json",
+            "docs/testing/evidence/session-recovery-20261016/backend-build32/deploy01/receipt.json",
+            "docs/testing/evidence/session-recovery-20261016/android41-device/explicit-owner-login.json"
+          ],
+          "deviceDependency": "BLOCKED_ADB_DISCONNECTED"
+        }
       }
     },
     {
@@ -22252,6 +22317,7 @@
           "apps/api/internal/httpapi/contact_page_test.go",
           "apps/api/internal/httpapi/dev_email.go",
           "apps/api/internal/httpapi/dev_email_test.go",
+          "apps/api/internal/httpapi/dev_phone.go",
           "apps/api/internal/httpapi/entity_cover.go",
           "apps/api/internal/httpapi/entity_cover_frame_test.go",
           "apps/api/internal/httpapi/entity_cover_test.go",
@@ -22320,6 +22386,8 @@
           "apps/api/internal/httpapi/saved_page_test.go",
           "apps/api/internal/httpapi/saved_search_test.go",
           "apps/api/internal/httpapi/server.go",
+          "apps/api/internal/httpapi/session_refresh.go",
+          "apps/api/internal/httpapi/session_refresh_test.go",
           "apps/api/internal/httpapi/social_activity_publish.go",
           "apps/api/internal/httpapi/supplier_profiles.go",
           "apps/api/internal/httpapi/system_push.go",
@@ -22629,6 +22697,8 @@
           "apps/api/internal/postgres/saved_page_native_test.go",
           "apps/api/internal/postgres/saved_search_page.go",
           "apps/api/internal/postgres/saved_search_page_native_test.go",
+          "apps/api/internal/postgres/session_refresh.go",
+          "apps/api/internal/postgres/session_refresh_native_test.go",
           "apps/api/internal/postgres/supplier_profiles.go",
           "apps/api/internal/postgres/system_push.go",
           "apps/api/internal/postgres/system_push_delivery.go",
@@ -22652,6 +22722,7 @@
           "apps/api/internal/saved/point_test.go",
           "apps/api/internal/saved/search.go",
           "apps/api/internal/saved/search_test.go",
+          "apps/api/internal/sessionrefresh",
           "apps/api/internal/systempush",
           "apps/api/main.go",
           "apps/api/migrations/.gitattributes",
@@ -22799,6 +22870,8 @@
           "apps/api/migrations/174_mainland_city_map_provider.sql",
           "apps/api/migrations/175_person_follow_notifications.down.sql",
           "apps/api/migrations/175_person_follow_notifications.sql",
+          "apps/api/migrations/176_persistent_device_sessions.down.sql",
+          "apps/api/migrations/176_persistent_device_sessions.sql",
           "apps/api/native_database_startup.go",
           "apps/api/native_database_startup_test.go",
           "apps/api/system_push_startup.go",
@@ -22937,6 +23010,7 @@
           "apps/client/lib/src/workspace/agent_visual_controller.dart",
           "apps/client/lib/src/workspace/agent_visual_page.dart",
           "apps/client/lib/src/workspace/agent_visual_pending_store.dart",
+          "apps/client/lib/src/workspace/agent_workspace_controller.dart",
           "apps/client/lib/src/workspace/business_api.dart",
           "apps/client/lib/src/workspace/business_claim_notification_page.dart",
           "apps/client/lib/src/workspace/business_console_page.dart",
@@ -23271,6 +23345,7 @@
           "apps/client/test/moments_historical_test.dart",
           "apps/client/test/native_oidc_auth_test.dart",
           "apps/client/test/notification_schedule_page_test.dart",
+          "apps/client/test/now_area_content_recovery_test.dart",
           "apps/client/test/now_author_scope_navigation_test.dart",
           "apps/client/test/now_composer_draft_state_test.dart",
           "apps/client/test/now_composer_material_test.dart",
@@ -23382,6 +23457,7 @@
           "apps/client/test/saved_search_test.dart",
           "apps/client/test/secondary_identity_retirement_test.dart",
           "apps/client/test/session_origin_namespace_test.dart",
+          "apps/client/test/session_recovery_test.dart",
           "apps/client/test/settings_agent_profile_visibility_entry_test.dart",
           "apps/client/test/settings_enrichment_privacy_entry_test.dart",
           "apps/client/test/settings_legacy_archive_entry_test.dart",
@@ -23473,6 +23549,7 @@
           "docs/reports/birdtie-now-map-refinement-2026-10-16.md",
           "docs/reports/birdtie-now-unified-moment-editor-2026-10-15.md",
           "docs/reports/birdtie-now-v4-v41-integration-2026-10-11.md",
+          "docs/reports/birdtie-session-recovery-2026-10-16.md",
           "docs/reports/ui-copy-audit-current.md",
           "docs/reports/ui-copy-cleanup-result.md",
           "docs/research/evidence/social-core-plan-2026-10-15/receipt.json",
@@ -23495,6 +23572,8 @@
           "docs/testing/evidence/now-civu-map-20261016",
           "docs/testing/evidence/now-v4-v41-integration-20261010/continuation20",
           "docs/testing/evidence/remaining-execution-20261014",
+          "docs/testing/evidence/session-continuity-20261016/backend",
+          "docs/testing/evidence/session-recovery-20261016",
           "docs/testing/evidence/social-core-execution-20261015",
           "docs/testing/evidence/social-remote-migration-20261015",
           "docs/testing/ui-content-media-acceptance.md",
@@ -23527,6 +23606,7 @@
           "work/now-v4-v41-integration-20261010/active-runtime.local.json",
           "work/now-v4-v41-integration-20261010/continuation20",
           "work/remaining-execution-20261014",
+          "work/session-recovery-20261016",
           "work/social-core-execution-20261015",
           "work/social-remote-migration-20261015"
         ],

@@ -305,3 +305,11 @@ Android原包含3dmap-location-search 11.2.100/search9.8.1，此次新增窄Meth
 ## 后续实际交付更新：APK40 / API31 / schema175
 
 此前候选包/ADB离线记录为历史快照。当前40已替换安装，新高德Key和原Civu两份样式已在上海真机验证；直辖市城市尺度修复已入包。真实Civu owner会话、Aberdeen内容/图片/作者原时间、超过30秒后台后的地图恢复均已执行。巴黎外部目的地定位为APK39实际证据，40未重复。地图平移封面复用与性能限制、数据清理/隔离及社交缺口统一见 `docs/reports/BIRDTIE-DGS-EXECUTION-2026-10-16.md`；完整验收尚未完成，不能把旧NOT_RUN统称已通过。网页仍延期。
+
+## 2026-10-16 APK40空图复发：登录接续增量
+
+用户20:46截图后，原账号access在19:48:33已idle超时，absolute仍到翌日02:23:28；手机冷启动静默变为未登录。原102动态/83条Civu映射未丢失。前批32秒后台验收只覆盖地图30秒读取租期，未覆盖会话30分钟idle，不能视为长期登录恢复通过。
+
+只读Civu认证源码显示access/refresh分离（access约30分钟、refresh约30天）。本次仅复用接续语义，不复制Civu SharedPreferences凭据存放、非原子轮换或任意HTTP写重试。Birdtie继续origin绑定的secure vault，新增176设备凭据family：30天绝对期限、原身份仍需active/current、原子轮换、同操作60秒加密响应重放、退出撤销family；旧access不自动升级，首个新pair来自真实用户明确固定码登录。权限/审批继续按新Session重新验证。
+
+对应路径为 `apps/api/internal/sessionrefresh/`、`internal/postgres/session_refresh.go`、`internal/httpapi/session_refresh.go`、`migrations/176_persistent_device_sessions.sql`，以及 `apps/client/lib/src/auth/{birdtie_auth_controller,session_vault}.dart`；Now独立更新恢复提示并等待owned/typed源，保留地图实例。仅dev_phone接入持久接续，OIDC/dev_email保留既有行为。精确合包、部署、实际手机与NOT_RUN边界见 `docs/reports/BIRDTIE-SESSION-RECOVERY-2026-10-16.md`，不能把源码复用当Civu运行验收。

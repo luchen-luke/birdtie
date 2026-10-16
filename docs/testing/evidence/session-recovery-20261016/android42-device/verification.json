@@ -1,0 +1,51 @@
+{
+  "status": "PARTIAL_DEVICE_BLOCKED",
+  "atUTC": "2026-10-16T13:59:45.444890+00:00",
+  "apkLabel": 42,
+  "apiLabel": 32,
+  "schema": 176,
+  "apkSHA256": "af7f66f543f8050e790440aa9d3e9a8f77fe197e3843d0efa1e0e441e3b00d66",
+  "installed": true,
+  "sourceStable": true,
+  "originalOwnerMapRestoredOn41WithoutPan": true,
+  "originalOwnerMapPositionsOn41": 7,
+  "mapCreationsDuring41ExplicitLogin": 1,
+  "naturalThirtyMinuteServerIdleExpiryConfirmed": true,
+  "deviceAutomaticRefresh": "NOT_RUN_ADB_DISCONNECTED",
+  "device42RecoveryLoginCTA": "NOT_RUN_ADB_DISCONNECTED",
+  "device42AreaResult": "NOT_RUN_ADB_DISCONNECTED",
+  "realNetworkFailure": "NOT_RUN",
+  "syntheticContentWritten": false,
+  "sourceProjectWrites": 0,
+  "webBuiltOrDeployed": false,
+  "screenRecording": false,
+  "rawCredentialsOrPhonePersisted": false,
+  "evidenceSHA256": {
+    "root-cause-before.json": "836415680ec8d42cf4fe1518e271976ec10fcf71550a3c74eb063117325bac15",
+    "android41-device/explicit-owner-login.json": "629a8c2b7f66af24cbba3964bbd9c9fb770e3a33c75e479191d58ef05f7599bd",
+    "android41-device/cold-idle-start.json": "69dd5d841a76d07c571ca5d66cd421a61830346a81141431318e291cd94d4310",
+    "android42-device/install.json": "867bc10cd01d253f38ebbd7363baaebefab78c14be6830288eb63a17319c3b79",
+    "android42-device/artifact-identity.json": "7c719239ad25df025891d1870f8a6b082939ee19e9ba47afef283cf3642a8610",
+    "android42-device/expired-before-cold-start.json": "a29611f3aa967efaab000d4a6860116b78b536fbf896665506092554bd3a5f2f",
+    "android42-device/cold-start-blocked-adb.json": "048531fdd453956639cc10b42076666b6b54c84df37cbde8d4b4f25c51939ecb",
+    "final-client-source-check.json": "2a7892623d2bbe478dd84fc4d00fd7e79fb8f8da7612d0386329d0991d7b76f4",
+    "backend-build32/deploy01/receipt.json": "f1fbb4d3cacb12275ae4ccb4944b7da4f22f426da3170e1642d2b1e479fd49c2"
+  },
+  "screenshotsLocalOnly": [
+    {
+      "path": "C:\\Users\\chens\\Documents\\Codex\\2026-10-15\\d-project-birdtie-docs-reports-birdtie-2\\outputs\\BirdTie-APK40-regression-empty-before.png",
+      "sha256": "0d15296063f0a0036fa4f5d96ab57e964d58616147e7eeb5bc7a081065f14104",
+      "gitUploaded": false
+    },
+    {
+      "path": "C:\\Users\\chens\\Documents\\Codex\\2026-10-15\\d-project-birdtie-docs-reports-birdtie-2\\outputs\\BirdTie-APK41-login-required.png",
+      "sha256": "38cf98893be51fb7c0d8bda6129ffc848b1703d52ae775d53c0c13755c80d6c4",
+      "gitUploaded": false
+    },
+    {
+      "path": "C:\\Users\\chens\\Documents\\Codex\\2026-10-15\\d-project-birdtie-docs-reports-birdtie-2\\outputs\\BirdTie-APK41-owner-content-restored.png",
+      "sha256": "c3afa5194aadeb68664f313a4719a1fbe9fdd04962f751417a9204d4a156bdf7",
+      "gitUploaded": false
+    }
+  ]
+}

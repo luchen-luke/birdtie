@@ -1,0 +1,117 @@
+{
+  "status": "PASS_DIRECT_SCOPE",
+  "finalized": true,
+  "frozenAtUTC": "2026-10-16T13:09:50.023250+00:00",
+  "sourceFiles": {
+    "apps/api/internal/sessionrefresh/model.go": "6132bb7d9dc6f57f89936fa3687bf4d3e909ac7bb16fdb703f30e14f1cba104d",
+    "apps/api/internal/sessionrefresh/model_test.go": "f2a7880b60fa119ca88aa251a8c6844bd785d280c84c306fa0ab7cb196a734ce",
+    "apps/api/internal/postgres/dev_phone.go": "81b11a76e966d257d2e37f372db690ae3a985cef5dd9fe28fbcbf84091a7704e",
+    "apps/api/internal/postgres/identity.go": "ac8066f6753a506259d21962a36d5f51e3c6b0b8fcac1c03ba39ced4b4912bce",
+    "apps/api/internal/postgres/session_refresh.go": "459e6381b561ddd98f971669e1c4ead36afe3e1b4b23202ce7da0cfc76eace36",
+    "apps/api/internal/postgres/session_refresh_native_test.go": "1a318ffe189794642d44f01b625a999a7aab4368e9fbdf6ae852d84372af33e7",
+    "apps/api/internal/httpapi/dev_phone.go": "7505c012c94c1d324b72dcc0cbc8c5aae49cb461448f4c06fa0fbb258cc7fd2b",
+    "apps/api/internal/httpapi/identity.go": "81209863e28e4bedb8c6fa4eb5d26953e7a05546276dda43fed4b801f46d0759",
+    "apps/api/internal/httpapi/server.go": "5b0ef936248612c036b42d7f34732cf0137dffd0a4f6dc2d607ba96fde367ecc",
+    "apps/api/internal/httpapi/session_refresh.go": "4b0db27b2b778c7d6e6d4dda831316037caf7f47bde1e934cc899ef4962d62d3",
+    "apps/api/internal/httpapi/session_refresh_test.go": "497c7f601bde6fe71ce4db158b692ae47e62ed12c3b7ef8d54048f4e7ac07677",
+    "apps/api/migrations/176_persistent_device_sessions.sql": "f1d9770bf5d28f39f5b9473d2dd9517b2822114fb049f0ad32fccb1c4287ad93",
+    "apps/api/migrations/176_persistent_device_sessions.down.sql": "9cd7fcdb31d73887d301277d34f80637507f57f74762a8d5effd11f0470cd695",
+    "apps/api/native_database_startup.go": "5f282a38a411676d7359cc7811e680e5afe8eaec69468c6b176a925a88908049",
+    "apps/api/native_database_startup_test.go": "141028e04a2970d0e60aa3c0249628d05042613fed8d66f3f09155fd5cc87e4a"
+  },
+  "currentMatchesFinalNativeFrame": true,
+  "checks": [
+    {
+      "name": "isolated PostgreSQL session lifecycle",
+      "receipt": "native03/receipt.json",
+      "topLevelPass": [
+        "TestPersistentDeviceSessionNativeIdleRecoveryConcurrentRotationAndLogout",
+        "TestPersistentDeviceSessionNativeRevocationExpiryReplayAndFalseCredentials"
+      ],
+      "counts": {
+        "pass": 2,
+        "fail": 0,
+        "skip": 0
+      },
+      "sourceStable": true
+    },
+    {
+      "name": "strict HTTP refresh/logout",
+      "receipt": "direct02/receipt.json",
+      "topLevelPass": [
+        "TestDeviceSessionHTTPStrictRefreshWithoutAccessAndNoCredentialCache",
+        "TestDeviceSessionHTTPLogoutWithExpiredAccessAndRefreshOnly"
+      ],
+      "sourceStable": true
+    },
+    {
+      "name": "missing native schema refusal",
+      "receipt": "direct01/receipt.json",
+      "sourceStable": true
+    },
+    {
+      "name": "opaque token, operation and encrypted receipt protocol",
+      "command": "go test ./internal/sessionrefresh",
+      "exitCode": 0,
+      "topLevelTests": 4,
+      "observedOutput": "ok github.com/birdtie/birdtie/apps/api/internal/sessionrefresh 0.420s",
+      "evidence": "direct01/receipt.json earlierDirectExecutions; original stdout observed in tool result, not redirected; both protocol files unchanged since"
+    }
+  ],
+  "preservedFailures": [
+    {
+      "receipt": "native01/receipt.json",
+      "result": "one pass, one fail",
+      "cause": "fixture used two independent PostgreSQL clocks for a 60-second receipt interval; corrected fixture to one materialized timestamp; production guard unchanged"
+    }
+  ],
+  "contract": {
+    "supportedAuthenticationMethod": "dev_phone",
+    "accessAbsoluteMaximumSeconds": 28800,
+    "accessIdleMaximumSeconds": 1800,
+    "accessDeadlinesCappedByFamilyDeadline": true,
+    "familyAbsoluteSeconds": 2592000,
+    "familyDoesNotSlide": true,
+    "sameOperationReplaySeconds": 60,
+    "receiptEncryption": "AES-256-GCM with HKDF-SHA256, domain-separated family/operation/token binding",
+    "oldAccessRevokedOnRotation": true,
+    "newSessionDoesNotReviveOldApprovals": true,
+    "refreshRequiresActiveAccountCurrentIdentityAndEnabledPhoneAuth": true,
+    "logoutCanRevokeWithPhoneAuthDisabled": true,
+    "falseCredentialsDoNotMutateRows": true,
+    "familyRotationAndExplicitLoginShareIdentityAdvisoryLock": true,
+    "legacyAccessAutomaticallyEnrolled": false
+  },
+  "limits": [
+    "Existing v2 access-only installations need one explicit sign-in to receive device credentials.",
+    "OIDC and dev_email keep their prior behavior; device continuity is dev_phone only.",
+    "After the 60-second identical-operation response replay window, consumed credentials are rejected and their family is revoked.",
+    "The family has an absolute 30-day deadline; only a fresh explicit sign-in can start a new family."
+  ],
+  "notRun": [
+    "All-repository tests",
+    "Production migration or deployment by this worker",
+    "Production login/refresh",
+    "APK build/install or device cold-start recovery by this worker"
+  ],
+  "productionWrites": 0,
+  "productionLogins": 0,
+  "civuWrites": 0,
+  "evidenceSHA256": {
+    "direct01/receipt.json": "bb37d3ce5061ecbdb1da1bb34f90931c29e003e90716b279c50c1cb7b1bb8b9c",
+    "direct01/startup-stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "direct01/startup-stdout.jsonl": "d9f760f007b135c4d0d14fb2a11b1ab60fc01f800257dc82a0b170092eab0b0c",
+    "direct02/receipt.json": "6f3cce9b1bf16bb5afd5fafebe91e010b1b00d5ebcd9150adbab0143b1f9f976",
+    "direct02/stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "direct02/stdout.jsonl": "f37d44ae12d2bc4e4e57c2f33925b2c70064b45e04ffabff835a05ef661b0f9f",
+    "native01/receipt.json": "7a837318efdf6e79b6da56c927ad8cee7778308618af562cbc2f41a992d22abb",
+    "native01/stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "native01/stdout.jsonl": "706a81aa57bfe32a782a008712c3857b424c85a2a17df8c7f8ca3e8459f759f4",
+    "native02/receipt.json": "4b0ea4c463b4dd856808d8ed8226f4008700a9bb4fc7c93c7d7b0943df7b22d7",
+    "native02/stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "native02/stdout.jsonl": "d95186386336085df1c0b2a1409f9425cda26ca75411cce79314c86b32cc23c5",
+    "native03/receipt.json": "87dee988fc34ff55e36c043530c5099f40440ec7474a66c4b430a811cda4a8f5",
+    "native03/stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "native03/stdout.jsonl": "4ea1bfbc7ec76e2bb0915f1ddbf91b89d0538d4cad6daad1644fc19a37a688d0"
+  }
+}

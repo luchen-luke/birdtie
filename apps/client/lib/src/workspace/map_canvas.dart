@@ -757,7 +757,12 @@ class _MapCanvasState extends State<MapCanvas> {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Flexible(child: Text(contentMessage)),
+                      Flexible(
+                        child: Text(
+                          contentMessage,
+                          key: const Key('now-map-content-notice'),
+                        ),
+                      ),
                       if (widget.mapContent?.hasPreviousMapPage == true)
                         TextButton(
                           onPressed: widget.mapContent!.loading

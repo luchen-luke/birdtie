@@ -1,0 +1,11 @@
+{
+  "atUTC": "2026-10-16T13:58:58.595845+00:00",
+  "status": "BLOCKED_ADB_DISCONNECTED",
+  "adbDevices": [],
+  "actualDeviceColdStart": "NOT_RUN",
+  "apiIdleExpiryConfirmed": true,
+  "coldStartCommandExit": 1,
+  "noCredentialLoginPerformed": true,
+  "previousApkInstallVerified": true,
+  "rawDeviceStateClaimedAfterDisconnect": false
+}

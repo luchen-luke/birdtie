@@ -3280,6 +3280,7 @@ class _MapWorkspaceState extends State<MapWorkspace>
   (String?, String?) _workspaceIdentity = (null, null);
   String? _seedCheckedAuthorization;
   final _seedEntryChanges = ValueNotifier<int>(0);
+  String? _lastMapAccessNotice;
   final _placeEntryChanges = ValueNotifier<int>(0);
   late (String?, String?, String?) _seedIdentity;
   int _seedEntryEpoch = 0;
@@ -4186,7 +4187,6 @@ class _MapWorkspaceState extends State<MapWorkspace>
       _retainedImageDraft?.dispose();
       _retainedImageDraft = retained;
     }
-    _needsLogin = true;
     final owner = widget.auth.accountID;
     if (owner != null)
       for (final entry in _friendConversations.entries) {
@@ -4197,14 +4197,54 @@ class _MapWorkspaceState extends State<MapWorkspace>
       }
     final auth = widget.auth;
     try {
-      await auth.invalidateRejectedSession(expectedAuthorization);
+      await auth.recoverSession(expectedAuthorization: expectedAuthorization);
     } catch (_) {
-      /* Access is already retired; a new login replaces the vault. */
+      // Recovery owns credential retirement and vault retention. A transient
+      // failure must not delete the saved session or launch another login.
     }
     if (mounted && identical(auth, widget.auth)) {
-      setState(() {});
-      // _onAuthChange owns the recovery flow. A late vault deletion must not
-      // reopen login after the user explicitly leaves rejected-session recovery.
+      setState(() => _needsLogin = auth.sessionRecoveryRequired);
+    }
+  }
+
+  String? get _mapContentAccessNotice {
+    if (_organizations.active != null) return null;
+    final auth = widget.auth;
+    if (auth.sessionRestoring) return '正在恢复登录，随后读取地图动态…';
+    if (auth.signedIn) return null;
+    if (auth.busy) return '正在处理登录，请稍候…';
+    if (auth.sessionRecoveryFailed) return '暂时无法恢复登录，地图动态尚未读取。';
+    if (auth.sessionRecoveryRequired) return '登录已失效，重新登录后可查看地图动态。';
+    return '登录后可查看地图动态。';
+  }
+
+  String? get _mapContentAccessActionLabel {
+    final auth = widget.auth;
+    if (_organizations.active != null ||
+        auth.sessionRestoring ||
+        auth.busy ||
+        auth.signedIn) {
+      return null;
+    }
+    return auth.sessionRecoveryFailed ? '重试' : '登录';
+  }
+
+  Future<void> _recoverMapContent() async {
+    if (!mounted || _organizations.active != null) return;
+    final auth = widget.auth;
+    if (auth.sessionRestoring || auth.busy) return;
+    if (!auth.signedIn && auth.sessionRecoveryFailed) {
+      await auth.recoverSession();
+      if (!mounted || !identical(auth, widget.auth)) return;
+    }
+    if (!auth.signedIn &&
+        !auth.sessionRestoring &&
+        !auth.sessionRecoveryFailed) {
+      // This method is reached from an explicit recovery/login button only.
+      await _signInHere();
+    }
+    if (mounted && identical(auth, widget.auth) && auth.signedIn) {
+      _scheduleMapIdentityReload();
     }
   }
 
@@ -4226,6 +4266,10 @@ class _MapWorkspaceState extends State<MapWorkspace>
   }
 
   void _onAuthChange() {
+    final accessNotice = _mapContentAccessNotice;
+    final accessChanged = accessNotice != _lastMapAccessNotice;
+    _lastMapAccessNotice = accessNotice;
+    _needsLogin = !widget.auth.signedIn && widget.auth.sessionRecoveryRequired;
     _observeMomentEntrySource();
     final token = widget.auth.authorizationHeader;
     final identity = (
@@ -4237,6 +4281,18 @@ class _MapWorkspaceState extends State<MapWorkspace>
       // Restoring can finish after token/owner have already been observed.
       // That final notification must also create the local image picker.
       _syncTaskImages();
+      // Recovery can finish without changing the null guest identity. Update
+      // an explicitly requested area's incomplete source once, after listeners.
+      final area = _workspace.areaOperation;
+      if (accessChanged &&
+          !widget.auth.sessionRestoring &&
+          area?.read?.content?.available == false) {
+        scheduleMicrotask(() {
+          if (mounted && identical(_workspace.areaOperation, area)) {
+            unawaited(_workspace.retryMapArea());
+          }
+        });
+      }
       return;
     }
     final previousIdentity = _lastAuthIdentity;
@@ -4329,13 +4385,6 @@ class _MapWorkspaceState extends State<MapWorkspace>
               (value) => value.owner != widget.auth.accountID,
             )) {
       _clearRetainedFriendImages();
-    }
-    _needsLogin =
-        !widget.auth.signedIn && widget.auth.rejectedSessionOwnerID != null;
-    if (_needsLogin) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted && _needsLogin) unawaited(_signInHere());
-      });
     }
     for (final controller in _friendConversations.values) {
       controller.removeListener(_taskImagesChanged);
@@ -5668,11 +5717,9 @@ class _MapWorkspaceState extends State<MapWorkspace>
     var epoch = _layers.epoch;
     final identity = _currentSeedIdentity;
     final author = _layers.authorID;
-    if (author == null) {
-      _syncMapContent(cityID, bounds);
-      unawaited(_mapContent.refresh());
-    }
     final kinds = author == null ? Set.of(_layers.visible) : const {'MOMENT'};
+    final includeContent =
+        author == null && (kinds.contains('PLACE') || kinds.contains('MOMENT'));
     bool scopeCurrent() =>
         mounted &&
         epoch == _layers.epoch &&
@@ -5696,7 +5743,11 @@ class _MapWorkspaceState extends State<MapWorkspace>
             // First city initialization synchronously retires the old layer
             // epoch. Bind this command to that read before awaiting network.
             epoch = _layers.epoch;
-            await loading;
+            if (includeContent) _syncMapContent(cityID, bounds);
+            await Future.wait([
+              loading,
+              if (includeContent) _mapContent.refresh(),
+            ]);
           } else {
             await _layers.loadAuthor(cityID, bounds, author);
           }
@@ -5714,9 +5765,75 @@ class _MapWorkspaceState extends State<MapWorkspace>
                   : _layers.authorError ?? '作者范围暂不可用，请重新搜索。',
             );
           }
+          final owned = includeContent ? _mapContent.view : null;
+          final ownedEpoch = _mapContent.epoch;
+          final ownedBounds = OwnedMapController.queryBounds(
+            bounds,
+            _mapState.zoom,
+          );
+          final ownedAvailable =
+              owned != null &&
+              owned.cityID == cityID &&
+              owned.bounds == ownedBounds &&
+              _organizations.active == null;
+          final pins = ownedAvailable
+              ? owned.items
+                    .where(
+                      (pin) =>
+                          bounds.contains(pin.latitude, pin.longitude) &&
+                          _mapContent.sourceCurrent(pin),
+                    )
+                    .toList()
+              : const <OwnedMapPin>[];
+          final content = !includeContent
+              ? null
+              : AgentAreaContentRead(
+                  available: ownedAvailable,
+                  locationCount: pins.map((pin) => pin.mapID).toSet().length,
+                  truncated:
+                      ownedAvailable &&
+                      (owned.truncated ||
+                          owned.rejectedItemCount > 0 ||
+                          _mapContent.error != null),
+                  notice: ownedAvailable
+                      ? _mapContent.error
+                      : _organizations.active != null
+                      ? '当前组织身份未读取个人动态；可切回个人身份查看。'
+                      : _mapContentAccessNotice ??
+                            _mapContent.error ??
+                            '动态内容暂时无法读取，请重试。',
+                  recoveryLabel: _mapContentAccessActionLabel ?? '重试',
+                  onRecover:
+                      ownedAvailable ||
+                          _organizations.active != null ||
+                          widget.auth.sessionRestoring
+                      ? null
+                      : () async {
+                          if (!scopeCurrent()) return;
+                          if (widget.auth.signedIn) {
+                            await _workspace.retryMapArea();
+                          } else {
+                            await _recoverMapContent();
+                          }
+                        },
+                  current: () =>
+                      scopeCurrent() &&
+                      (!ownedAvailable ||
+                          (_mapContent.epoch == ownedEpoch &&
+                              _mapContent.current &&
+                              _mapContent.view?.bounds == ownedBounds &&
+                              _mapContent.view?.zoom == owned.zoom &&
+                              pins.every(_mapContent.sourceCurrent))),
+                );
+          final expires = [
+            public.validUntil,
+            if (private != null) private.validUntil,
+            if (ownedAvailable) owned.validUntil,
+          ].reduce((a, b) => a.isBefore(b) ? a : b);
           return AgentAreaRead(
             publicView: public,
             privateView: private,
+            content: content,
             unavailableKinds: author == null
                 ? _layers.unavailableKinds
                 : const {},
@@ -5728,8 +5845,7 @@ class _MapWorkspaceState extends State<MapWorkspace>
                 (private == null
                     ? (author == null ? _layers.privateView : null) == null
                     : _layers.retainsSnapshot(private)),
-            remaining: () =>
-                public.validUntil.difference(DateTime.now().toUtc()),
+            remaining: () => expires.difference(DateTime.now().toUtc()),
           );
         },
       ),
@@ -8766,6 +8882,8 @@ class _MapWorkspaceState extends State<MapWorkspace>
       _rememberCreation(includeInput: true);
       unawaited(_creationDrafts.flush());
       unawaited(_composerDrafts.flush());
+    } else if (!widget.auth.signedIn && widget.auth.sessionRecoveryFailed) {
+      unawaited(widget.auth.recoverSession());
     }
     _workspace.updateReplyRefreshVisibility();
     _layers.updateRefreshVisibility();
@@ -9167,6 +9285,61 @@ class _MapWorkspaceState extends State<MapWorkspace>
                     ),
                   ),
                 ),
+              // Authentication controls use the same host interaction layer as
+              // the toolbar, outside the stable native map subtree. The host's
+              // auth listener updates recovery state without recreating the map.
+              if (_mapContentAccessNotice case final String notice)
+                if (widget.city.renderCity != null &&
+                    _collectionProjection.value == null &&
+                    _layers.authorID == null &&
+                    !hasCreation &&
+                    !hasThread &&
+                    !hasHumanConversation &&
+                    !showSocial &&
+                    !editing)
+                  Positioned(
+                    key: const Key('now-map-access-overlay'),
+                    top: chromeBottom + 8,
+                    left: 16,
+                    right: 16,
+                    child: Align(
+                      alignment: Alignment.topCenter,
+                      child: Material(
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.surface.withValues(alpha: .94),
+                        borderRadius: BorderRadius.circular(12),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 4,
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Flexible(
+                                child: Text(
+                                  notice,
+                                  key: const Key('now-map-content-notice'),
+                                ),
+                              ),
+                              if (_mapContentAccessActionLabel
+                                  case final String action)
+                                TextButton(
+                                  key: const Key('now-map-content-recovery'),
+                                  style: TextButton.styleFrom(
+                                    minimumSize: const Size(48, 48),
+                                  ),
+                                  onPressed: () =>
+                                      unawaited(_recoverMapContent()),
+                                  child: Text(action),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
               if (!hasCreation &&
                   !hasSheet &&
                   !browse &&

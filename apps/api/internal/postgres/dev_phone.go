@@ -7,6 +7,7 @@ import (
 
 	"github.com/birdtie/birdtie/apps/api/internal/devauth"
 	"github.com/birdtie/birdtie/apps/api/internal/identity"
+	"github.com/birdtie/birdtie/apps/api/internal/sessionrefresh"
 	"github.com/jackc/pgx/v5"
 )
 
@@ -35,6 +36,10 @@ func (s *Store) RequestDevPhoneChallenge(ctx context.Context, phoneDigest [32]by
 }
 
 func (s *Store) VerifyDevPhoneChallenge(ctx context.Context, phoneDigest [32]byte, codeValid bool, sessionDigest [32]byte) error {
+	return s.verifyDevPhoneChallenge(ctx, phoneDigest, codeValid, sessionDigest, nil)
+}
+
+func (s *Store) verifyDevPhoneChallenge(ctx context.Context, phoneDigest [32]byte, codeValid bool, sessionDigest [32]byte, persistent *sessionrefresh.Response) error {
 	if !s.devPhoneEnabled {
 		return devauth.ErrDisabled
 	}
@@ -130,6 +135,11 @@ func (s *Store) VerifyDevPhoneChallenge(ctx context.Context, phoneDigest [32]byt
 	}
 	if firstEnrollment {
 		if err = s.finishLegacyDevPhoneEnrollment(ctx, tx, phoneDigest, accountID, sessionID); err != nil {
+			return err
+		}
+	}
+	if persistent != nil {
+		if err = s.attachPersistentSession(ctx, tx, accountID, sessionID, phoneDigest, persistent); err != nil {
 			return err
 		}
 	}

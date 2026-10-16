@@ -62,6 +62,14 @@ class BirdtieAuthController extends ChangeNotifier {
   bool _devEmailConfigured = false;
   bool _configurationChecked = false;
   bool _sessionRestoring = false;
+  bool _sessionRecoveryRequired = false;
+  bool _sessionRecoveryFailed = false;
+  Future<bool>? _sessionRecovery;
+  bool _hasSavedSession = false;
+  StoredSession? _knownSession;
+  Future<StoredSession?>? _recoverySessionRead;
+  int _explicitLogoutGeneration = 0;
+  bool _signingOut = false;
   Future<void>? _initialization;
   Future<void>? _configurationRead;
   bool _nativeCallbackHandling = false;
@@ -132,6 +140,8 @@ class BirdtieAuthController extends ChangeNotifier {
   bool get configurationChecking => _configurationRead != null;
   // Display state only. It is neither a Session nor permission to read data.
   bool get sessionRestoring => _sessionRestoring;
+  bool get sessionRecoveryRequired => _sessionRecoveryRequired;
+  bool get sessionRecoveryFailed => _sessionRecoveryFailed;
   bool get signedIn => _accessToken != null;
   bool get busy => _busy;
   String? get displayName => _displayName;
@@ -184,38 +194,7 @@ class BirdtieAuthController extends ChangeNotifier {
       }
       await resumeCallback();
       if (!_closed && _accessToken == null && !_busy && _apiBase.isNotEmpty) {
-        final attempt = _beginAttempt()!;
-        try {
-          final saved = await _withStorage(_sessionVault.read);
-          if (_ownsAttempt(attempt) &&
-              saved != null &&
-              saved.belongsTo(_apiOrigin)) {
-            try {
-              await _acceptSession(
-                saved.token,
-                method: saved.method,
-                persist: false,
-                isCurrent: () => _ownsAttempt(attempt),
-              );
-            } on _SessionRejected {
-              await _withStorage(() async {
-                if (!_ownsAttempt(attempt)) return;
-                final current = await _sessionVault.read();
-                if (_ownsAttempt(attempt) &&
-                    current?.belongsTo(_apiOrigin) == true &&
-                    current?.token == saved.token) {
-                  await _sessionVault.delete();
-                }
-              });
-            } catch (_) {
-              // Keep the saved credential for a later start if the API is offline.
-            }
-          }
-        } catch (_) {
-          if (_ownsAttempt(attempt)) _error = '无法读取本机登录会话，请检查设备存储。';
-        } finally {
-          _finishAttempt(attempt);
-        }
+        await recoverSession();
       }
     } finally {
       _sessionRestoring = false;
@@ -223,6 +202,219 @@ class BirdtieAuthController extends ChangeNotifier {
     }
     if (_closed) return;
     await refreshLoginConfiguration();
+  }
+
+  /// Revalidate saved access, then use an independently authorized device grant
+  /// when available. This never verifies a fixed code or retries a domain write.
+  Future<bool> recoverSession({String? expectedAuthorization}) {
+    if (_closed) return Future.value(false);
+    final existing = _sessionRecovery;
+    if (existing != null) return existing;
+    if (expectedAuthorization != null &&
+        authorizationHeader != expectedAuthorization)
+      return Future.value(signedIn);
+    if (expectedAuthorization == null && signedIn) return Future.value(true);
+    if (_busy || _apiOrigin.isEmpty) return Future.value(false);
+    final done = Completer<bool>();
+    _sessionRecovery = done.future;
+    unawaited(
+      _recoverSession(expectedAuthorization)
+          .then(
+            done.complete,
+            onError: (Object error, StackTrace stack) =>
+                done.completeError(error, stack),
+          )
+          .whenComplete(() {
+            if (identical(_sessionRecovery, done.future))
+              _sessionRecovery = null;
+          }),
+    );
+    return done.future;
+  }
+
+  Future<bool> _recoverSession(String? rejectedAuthorization) async {
+    // Capture this attempt's read before listeners can request logout. A
+    // replacement controller may later own a different pair in the same vault.
+    final savedRead = _withStorage(_sessionVault.read);
+    _recoverySessionRead = savedRead;
+    final logoutGeneration = _explicitLogoutGeneration;
+    final attempt = _beginAttempt();
+    if (attempt == null) {
+      if (identical(_recoverySessionRead, savedRead))
+        _recoverySessionRead = null;
+      return false;
+    }
+    bool current() => _ownsAttempt(attempt);
+    if (rejectedAuthorization != null) {
+      _rejectedSessionOwnerID = _accountID;
+      _accessToken = null;
+      _accountID = null;
+      _displayName = null;
+      _loginMethod = null;
+    }
+    _sessionRestoring = true;
+    _sessionRecoveryRequired = false;
+    _sessionRecoveryFailed = false;
+    _notify();
+    StoredSession? saved;
+    try {
+      saved = await savedRead;
+      if (!current()) return false;
+      if (saved == null || !saved.belongsTo(_apiOrigin)) {
+        _hasSavedSession = false;
+        _sessionRecoveryRequired = rejectedAuthorization != null;
+        return false;
+      }
+      _hasSavedSession = true;
+      if (rejectedAuthorization != null &&
+          rejectedAuthorization != 'Bearer ${saved.token}')
+        return false;
+      _knownSession = saved;
+      try {
+        if (rejectedAuthorization != null) throw const _SessionRejected();
+        await _acceptSession(
+          saved.token,
+          method: saved.method,
+          expectedAccountID: saved.ownerID,
+          persist: false,
+          isCurrent: current,
+        );
+      } on _SessionRejected {
+        if (!current()) return false;
+        if (!saved.hasRefresh) rethrow;
+        saved = await _rotateSavedSession(saved, current, logoutGeneration);
+        if (!current()) return false;
+        await _acceptSession(
+          saved.token,
+          method: saved.method,
+          expectedAccountID: saved.ownerID,
+          persist: false,
+          isCurrent: current,
+        );
+      }
+      return current() && signedIn;
+    } on _SessionRejected {
+      if (!current()) return false;
+      _rejectedSessionOwnerID ??= saved?.ownerID;
+      _sessionRecoveryRequired = true;
+      _hasSavedSession = false;
+      _error = '登录已失效，请重新登录。';
+      await _withStorage(() async {
+        final latest = await _sessionVault.read();
+        if (current() &&
+            latest?.belongsTo(_apiOrigin) == true &&
+            latest?.token == saved?.token &&
+            latest?.refreshToken == saved?.refreshToken)
+          await _sessionVault.delete();
+      });
+      return false;
+    } catch (_) {
+      if (current()) {
+        _sessionRecoveryFailed = true;
+        _error = '暂时无法恢复登录，请重试。';
+      }
+      return false;
+    } finally {
+      if (identical(_recoverySessionRead, savedRead))
+        _recoverySessionRead = null;
+      if (current()) {
+        _sessionRestoring = false;
+        _finishAttempt(attempt);
+      }
+    }
+  }
+
+  String _refreshOperationID() {
+    final random = Random.secure();
+    final bytes = List.generate(16, (_) => random.nextInt(256));
+    bytes[6] = (bytes[6] & 15) | 64;
+    bytes[8] = (bytes[8] & 63) | 128;
+    final hex = bytes.map((n) => n.toRadixString(16).padLeft(2, '0')).join();
+    return '${hex.substring(0, 8)}-${hex.substring(8, 12)}-${hex.substring(12, 16)}-${hex.substring(16, 20)}-${hex.substring(20)}';
+  }
+
+  Future<StoredSession> _rotateSavedSession(
+    StoredSession saved,
+    bool Function() current,
+    int logoutGeneration,
+  ) async {
+    final pending = await _withStorage(() async {
+      final latest = await _sessionVault.read();
+      if (!current() ||
+          latest?.belongsTo(_apiOrigin) != true ||
+          latest?.token != saved.token ||
+          latest?.refreshToken != saved.refreshToken) {
+        throw StateError('saved session changed');
+      }
+      final entry = latest!.pendingRefreshOperationID == null
+          ? latest.withRefreshOperation(_refreshOperationID())
+          : latest;
+      await _sessionVault.write(entry);
+      _knownSession = entry;
+      return entry;
+    });
+    if (!current()) throw StateError('recovery retired');
+    final response = await _client
+        .post(
+          _endpoint('/v1/session/refresh'),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({
+            'refreshToken': pending.refreshToken,
+            'operationId': pending.pendingRefreshOperationID,
+          }),
+        )
+        .timeout(const Duration(seconds: 10));
+    if (response.statusCode == 401 || response.statusCode == 403) {
+      throw const _SessionRejected();
+    }
+    if (response.statusCode != 200)
+      throw const FormatException('recovery unavailable');
+    final data =
+        (jsonDecode(response.body) as Map<String, dynamic>)['data']
+            as Map<String, dynamic>;
+    if (data['authMethod'] != 'dev_phone' ||
+        data['accountId'] != saved.ownerID ||
+        data['accessToken'] is! String ||
+        data['refreshToken'] is! String) {
+      throw const FormatException('recovery identity mismatch');
+    }
+    final next = StoredSession(
+      token: data['accessToken'],
+      method: saved.method,
+      origin: _apiOrigin,
+      refreshToken: data['refreshToken'],
+      ownerID: saved.ownerID,
+    );
+    if (!next.belongsTo(_apiOrigin))
+      throw const FormatException('invalid recovery');
+    // Persist the complete rotated pair before another read or UI publication.
+    // If /me is temporarily unavailable, the new pair remains recoverable.
+    try {
+      if (!current()) throw StateError('recovery retired');
+      await _withStorage(() async {
+        final latest = await _sessionVault.read();
+        if (!current() ||
+            latest?.token != pending.token ||
+            latest?.refreshToken != pending.refreshToken ||
+            latest?.pendingRefreshOperationID !=
+                pending.pendingRefreshOperationID) {
+          throw StateError('recovery storage changed');
+        }
+        await _sessionVault.write(next);
+        // Keep the exact completed write available to a logout queued behind
+        // this storage operation, even when it retired the recovery meanwhile.
+        _knownSession = next;
+      });
+      if (!current()) throw StateError('recovery retired');
+      return next;
+    } catch (_) {
+      // Disposal permits another controller to finish the same persisted
+      // operation. Only an explicit logout cancels this device's family.
+      if (!current() && _explicitLogoutGeneration != logoutGeneration) {
+        await _revokeIssuedToken(next.token, refreshToken: next.refreshToken);
+      }
+      rethrow;
+    }
   }
 
   /// Re-read public login availability after a transient connection failure.
@@ -370,6 +562,7 @@ class BirdtieAuthController extends ChangeNotifier {
     bool current() =>
         _ownsAttempt(attempt) && (isCurrent == null || isCurrent());
     String? issuedToken;
+    String? issuedRefreshToken;
     try {
       if (!current()) return false;
       final response = await _client
@@ -388,18 +581,46 @@ class BirdtieAuthController extends ChangeNotifier {
         _error = '测试验证码无效、已过期或尚未获取。';
         return false;
       }
-      final token =
-          (jsonDecode(response.body)
-              as Map<String, dynamic>)['data']['accessToken'];
+      final data =
+          (jsonDecode(response.body) as Map<String, dynamic>)['data']
+              as Map<String, dynamic>;
+      final token = data['accessToken'];
       if (token is! String || token.isEmpty) {
         throw const FormatException('session missing');
       }
       issuedToken = token;
+      final refresh = data['refreshToken'];
+      final owner = data['accountId'];
+      if (refresh != null) {
+        if (refresh is! String ||
+            owner is! String ||
+            data['authMethod'] != 'dev_phone' ||
+            !StoredSession(
+              token: token,
+              method: 'dev_phone',
+              origin: _apiOrigin,
+              refreshToken: refresh,
+              ownerID: owner,
+            ).belongsTo(_apiOrigin)) {
+          throw const FormatException('invalid persistent session');
+        }
+        issuedRefreshToken = refresh;
+      }
       if (!current()) throw StateError('login entry retired');
-      await _acceptSession(token, method: 'dev_phone', isCurrent: current);
+      await _acceptSession(
+        token,
+        method: 'dev_phone',
+        isCurrent: current,
+        refreshToken: issuedRefreshToken,
+        expectedAccountID: issuedRefreshToken == null ? null : owner as String,
+      );
       return true;
     } catch (_) {
-      if (issuedToken != null) await _discardIssuedToken(issuedToken);
+      if (issuedToken != null)
+        await _discardIssuedToken(
+          issuedToken,
+          refreshToken: issuedRefreshToken,
+        );
       if (current()) _error = '登录未完成，请稍后重试。';
       return false;
     } finally {
@@ -760,6 +981,8 @@ class BirdtieAuthController extends ChangeNotifier {
     required String method,
     bool persist = true,
     bool Function()? isCurrent,
+    String? refreshToken,
+    String? expectedAccountID,
   }) async {
     bool current() => !_closed && (isCurrent == null || isCurrent());
     if (!current()) throw StateError('login entry retired');
@@ -767,7 +990,8 @@ class BirdtieAuthController extends ChangeNotifier {
         .get(_endpoint('/v1/me'), headers: {'Authorization': 'Bearer $token'})
         .timeout(const Duration(seconds: 10));
     if (!current()) throw StateError('login entry retired');
-    if (me.statusCode == 401) throw const _SessionRejected();
+    if (me.statusCode == 401 || me.statusCode == 403)
+      throw const _SessionRejected();
     if (me.statusCode != 200) {
       throw const FormatException('account unavailable');
     }
@@ -776,6 +1000,9 @@ class BirdtieAuthController extends ChangeNotifier {
             as Map<String, dynamic>;
     final accountID = account['id'];
     if (accountID is! String) throw const FormatException('account missing');
+    if (expectedAccountID != null && accountID != expectedAccountID) {
+      throw const _SessionRejected();
+    }
     String label = 'Birdtie 账号';
     try {
       final profile = await _client
@@ -799,7 +1026,13 @@ class BirdtieAuthController extends ChangeNotifier {
         if (!current()) throw StateError('login entry retired');
         try {
           await _sessionVault.write(
-            StoredSession(token: token, method: method, origin: _apiOrigin),
+            StoredSession(
+              token: token,
+              method: method,
+              origin: _apiOrigin,
+              refreshToken: refreshToken,
+              ownerID: refreshToken == null ? null : accountID,
+            ),
           );
           if (!current()) throw StateError('login entry retired');
         } catch (_) {
@@ -819,18 +1052,36 @@ class BirdtieAuthController extends ChangeNotifier {
       throw StateError('login entry retired');
     }
     _accessToken = token;
+    if (persist || _knownSession?.token != token) {
+      _knownSession = StoredSession(
+        token: token,
+        method: method,
+        origin: _apiOrigin,
+        refreshToken: refreshToken,
+        ownerID: refreshToken == null ? null : accountID,
+      );
+    }
+    _hasSavedSession = true;
     _accountID = accountID;
     _rejectedSessionOwnerID = null;
+    _sessionRecoveryRequired = false;
+    _sessionRecoveryFailed = false;
     _displayName = label;
     _loginMethod = method;
   }
 
-  Future<void> _revokeIssuedToken(String token) async {
+  Future<void> _revokeIssuedToken(String token, {String? refreshToken}) async {
     try {
       await _client
           .post(
             _endpoint('/v1/session/logout'),
-            headers: {'Authorization': 'Bearer $token'},
+            headers: {
+              'Authorization': 'Bearer $token',
+              if (refreshToken != null) 'Content-Type': 'application/json',
+            },
+            body: refreshToken == null
+                ? null
+                : jsonEncode({'refreshToken': refreshToken}),
           )
           .timeout(const Duration(seconds: 5));
     } catch (_) {
@@ -838,7 +1089,7 @@ class BirdtieAuthController extends ChangeNotifier {
     }
   }
 
-  Future<void> _discardIssuedToken(String token) async {
+  Future<void> _discardIssuedToken(String token, {String? refreshToken}) async {
     try {
       await _withStorage(() async {
         final saved = await _sessionVault.read();
@@ -849,26 +1100,35 @@ class BirdtieAuthController extends ChangeNotifier {
     } catch (_) {
       // Failed cleanup never publishes a credential; revoke is still attempted.
     }
-    await _revokeIssuedToken(token);
+    await _revokeIssuedToken(token, refreshToken: refreshToken);
   }
 
   Future<void> signOut() async {
-    if (_closed) return;
+    if (_closed || _signingOut) return;
     final token = _accessToken;
-    if (token == null) {
-      if (_rejectedSessionOwnerID != null) {
-        // An explicit logout cancels recovery even after the rejected token
-        // was removed. In-flight login replies cannot undo that decision.
-        ++_authAttempt;
-        _busy = false;
-        _rejectedSessionOwnerID = null;
-        _notify();
-      }
+    final recoveringRead = _recoverySessionRead;
+    ++_explicitLogoutGeneration;
+    if (token == null && !_hasSavedSession && !_sessionRestoring) {
+      final changed =
+          _rejectedSessionOwnerID != null ||
+          _busy ||
+          _sessionRecoveryRequired ||
+          _sessionRecoveryFailed;
+      ++_authAttempt;
+      _busy = false;
+      _rejectedSessionOwnerID = null;
+      _sessionRecoveryRequired = false;
+      _sessionRecoveryFailed = false;
+      _knownSession = null;
+      if (changed) _notify();
       return;
     }
-    if (_busy) return;
-    final attempt = _beginAttempt();
-    if (attempt == null) return;
+    _signingOut = true;
+    // Logout also cancels a pending recovery, including a consumed grant whose
+    // response has not arrived yet. It must not be ignored while access is null.
+    final attempt = ++_authAttempt;
+    _busy = true;
+    _error = null;
     // Local access and visible private projections end at the user's logout
     // gesture, even if remote revocation is slow or the device is offline.
     _accessToken = null;
@@ -876,22 +1136,42 @@ class BirdtieAuthController extends ChangeNotifier {
     _accountID = null;
     _rejectedSessionOwnerID = null;
     _loginMethod = null;
+    _sessionRestoring = false;
+    _sessionRecoveryRequired = false;
+    _sessionRecoveryFailed = false;
+    _hasSavedSession = false;
     _notify();
     try {
       if (!_ownsAttempt(attempt)) return;
-      await _withStorage(() async {
+      final recoveringSnapshot = await recoveringRead;
+      final saved = await _withStorage(() async {
         final saved = await _sessionVault.read();
+        final owned = _knownSession ?? recoveringSnapshot;
         if (_ownsAttempt(attempt) &&
             saved?.belongsTo(_apiOrigin) == true &&
-            saved?.token == token) {
+            saved?.token == (owned?.token ?? token) &&
+            (owned == null || saved?.refreshToken == owned.refreshToken)) {
           await _sessionVault.delete();
+          return saved;
         }
+        // The current vault may belong to another controller/account. It is
+        // never the authority for which family this logout can revoke.
+        return owned;
       });
       if (!_ownsAttempt(attempt)) return;
+      final access = token ?? saved?.token;
+      final refresh = saved?.refreshToken;
+      if (access == null && refresh == null) return;
       final response = await _client
           .post(
             _endpoint('/v1/session/logout'),
-            headers: {'Authorization': 'Bearer $token'},
+            headers: {
+              if (access != null) 'Authorization': 'Bearer $access',
+              if (refresh != null) 'Content-Type': 'application/json',
+            },
+            body: refresh == null
+                ? null
+                : jsonEncode({'refreshToken': refresh}),
           )
           .timeout(const Duration(seconds: 10));
       if (response.statusCode != 204 && response.statusCode != 401) {
@@ -901,6 +1181,8 @@ class BirdtieAuthController extends ChangeNotifier {
     } catch (_) {
       if (_ownsAttempt(attempt)) _error = '本机已退出，服务端会话注销暂未确认。';
     } finally {
+      if (_ownsAttempt(attempt)) _knownSession = null;
+      _signingOut = false;
       _finishAttempt(attempt);
     }
   }
@@ -921,7 +1203,10 @@ class BirdtieAuthController extends ChangeNotifier {
     _accountID = null;
     _displayName = null;
     _loginMethod = null;
-    _error = null;
+    _sessionRecoveryRequired = true;
+    _hasSavedSession = false;
+    _sessionRecoveryFailed = false;
+    _error = '登录已失效，请重新登录。';
     _notify();
     await _withStorage(() async {
       final saved = await _sessionVault.read();

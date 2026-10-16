@@ -1,0 +1,30 @@
+{
+  "checks": {
+    "auth/auth04.json": {
+      "currentSourceMatches": true,
+      "exitCode": 0,
+      "sourceStable": true
+    },
+    "auth/auth05.json": {
+      "currentSourceMatches": true,
+      "exitCode": 0,
+      "sourceStable": true
+    },
+    "area/login-tap03.json": {
+      "currentSourceMatches": true,
+      "exitCode": 0,
+      "sourceStable": true
+    },
+    "area/compatibility42.json": {
+      "currentSourceMatches": true,
+      "exitCode": 0,
+      "sourceStable": true
+    }
+  },
+  "uniqueClientTests": 62,
+  "newRecoveryTests": 11,
+  "existingAuthTests": 45,
+  "mapHostAndAreaTests": 6,
+  "fullRepositorySuite": "NOT_RUN",
+  "phoneNetworkFailure": "NOT_RUN"
+}

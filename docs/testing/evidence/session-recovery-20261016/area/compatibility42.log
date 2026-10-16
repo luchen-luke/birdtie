@@ -1,0 +1,6 @@
+Flutter assets will be downloaded from https://storage.flutter-io.cn. Make sure you trust this source!
+00:00 +0: loading D:/Project/birdtie/apps/client/test/now_area_content_recovery_test.dart
+00:00 +0: D:/Project/birdtie/apps/client/test/now_content_geometry_test.dart: 空闲地图区域搜索字号1.0位于实测顶部署名之后且一次地图读取零Agent提交
+00:00 +1: D:/Project/birdtie/apps/client/test/now_content_geometry_test.dart: 空闲地图区域搜索字号1.0位于实测顶部署名之后且一次地图读取零Agent提交
+{"idleSearchGeometry":"actual-registered-camera-callback","scale":1.0,"searchRect":[94.0,696.0,218.0,744.0],"headerBottom":92.0,"ornamentTop":80.0,"ornamentReservedHeight":48,"mapElementRetained":true,"queries":0}
+00:00 +2: All tests passed!

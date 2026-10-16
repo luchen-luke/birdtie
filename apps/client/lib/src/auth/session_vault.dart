@@ -52,16 +52,41 @@ class StoredSession {
     required this.token,
     required this.method,
     this.origin = '',
+    this.refreshToken,
+    this.ownerID,
+    this.pendingRefreshOperationID,
   });
 
   final String token, method, origin;
+  final String? refreshToken, ownerID, pendingRefreshOperationID;
+  bool get hasRefresh => refreshToken != null;
   bool belongsTo(String expectedOrigin) =>
       canonicalStoredAuthOrigin(origin) &&
       origin == expectedOrigin &&
       token.isNotEmpty &&
       utf8.encode(token).length <= 4096 &&
-      const {'dev_phone', 'dev_email', 'oidc'}.contains(method);
+      const {'dev_phone', 'dev_email', 'oidc'}.contains(method) &&
+      (refreshToken == null
+          ? pendingRefreshOperationID == null && ownerID == null
+          : method == 'dev_phone' &&
+                RegExp(r'^btr1_[A-Za-z0-9_-]{43}$').hasMatch(refreshToken!) &&
+                _sessionUUID(ownerID) &&
+                (pendingRefreshOperationID == null ||
+                    _sessionUUID(pendingRefreshOperationID)));
+
+  StoredSession withRefreshOperation(String operationID) => StoredSession(
+    token: token,
+    method: method,
+    origin: origin,
+    refreshToken: refreshToken,
+    ownerID: ownerID,
+    pendingRefreshOperationID: operationID,
+  );
 }
+
+bool _sessionUUID(String? value) =>
+    value != null &&
+    RegExp(r'^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$').hasMatch(value);
 
 abstract interface class SessionVault {
   Future<StoredSession?> read();
@@ -96,6 +121,35 @@ class SecureSessionVault implements SessionVault {
       if (raw == null) return null;
       try {
         final data = jsonDecode(raw);
+        if (data is Map<String, dynamic> &&
+            data.length == 7 &&
+            data.keys.toSet().containsAll({
+              'schema',
+              'origin',
+              'token',
+              'method',
+              'refreshToken',
+              'ownerID',
+              'pendingRefreshOperationID',
+            }) &&
+            data['schema'] == 'birdtie-session-v3' &&
+            data['origin'] == expected &&
+            data['token'] is String &&
+            data['method'] is String &&
+            data['refreshToken'] is String &&
+            data['ownerID'] is String &&
+            (data['pendingRefreshOperationID'] == null ||
+                data['pendingRefreshOperationID'] is String)) {
+          final saved = StoredSession(
+            token: data['token'],
+            method: data['method'],
+            origin: expected,
+            refreshToken: data['refreshToken'],
+            ownerID: data['ownerID'],
+            pendingRefreshOperationID: data['pendingRefreshOperationID'],
+          );
+          if (saved.belongsTo(expected)) return saved;
+        }
         if (data is Map<String, dynamic> &&
             data.length == 4 &&
             data.keys.toSet().containsAll({
@@ -139,10 +193,17 @@ class SecureSessionVault implements SessionVault {
       () => storage.write(
         key: key,
         value: jsonEncode({
-          'schema': 'birdtie-session-v2',
+          'schema': session.hasRefresh
+              ? 'birdtie-session-v3'
+              : 'birdtie-session-v2',
           'origin': expected,
           'token': session.token,
           'method': session.method,
+          if (session.hasRefresh) ...{
+            'refreshToken': session.refreshToken,
+            'ownerID': session.ownerID,
+            'pendingRefreshOperationID': session.pendingRefreshOperationID,
+          },
         }),
       ),
     );

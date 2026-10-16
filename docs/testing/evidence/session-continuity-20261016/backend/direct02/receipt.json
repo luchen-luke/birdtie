@@ -1,0 +1,35 @@
+{
+  "command": [
+    "C:/Program Files/Go/bin/go.exe",
+    "test",
+    "-mod=readonly",
+    "./internal/httpapi",
+    "-run",
+    "^TestDeviceSessionHTTP",
+    "-count=1",
+    "-json"
+  ],
+  "cwd": "D:\\Project\\birdtie\\apps\\api",
+  "startedAtUTC": "2026-10-16T13:06:44.719639+00:00",
+  "exitCode": 0,
+  "sourceBefore": {
+    "apps/api/internal/httpapi/session_refresh.go": "4b0db27b2b778c7d6e6d4dda831316037caf7f47bde1e934cc899ef4962d62d3",
+    "apps/api/internal/httpapi/session_refresh_test.go": "497c7f601bde6fe71ce4db158b692ae47e62ed12c3b7ef8d54048f4e7ac07677",
+    "apps/api/internal/httpapi/identity.go": "81209863e28e4bedb8c6fa4eb5d26953e7a05546276dda43fed4b801f46d0759",
+    "apps/api/internal/httpapi/dev_phone.go": "7505c012c94c1d324b72dcc0cbc8c5aae49cb461448f4c06fa0fbb258cc7fd2b",
+    "apps/api/internal/httpapi/server.go": "5b0ef936248612c036b42d7f34732cf0137dffd0a4f6dc2d607ba96fde367ecc"
+  },
+  "sourceAfter": {
+    "apps/api/internal/httpapi/session_refresh.go": "4b0db27b2b778c7d6e6d4dda831316037caf7f47bde1e934cc899ef4962d62d3",
+    "apps/api/internal/httpapi/session_refresh_test.go": "497c7f601bde6fe71ce4db158b692ae47e62ed12c3b7ef8d54048f4e7ac07677",
+    "apps/api/internal/httpapi/identity.go": "81209863e28e4bedb8c6fa4eb5d26953e7a05546276dda43fed4b801f46d0759",
+    "apps/api/internal/httpapi/dev_phone.go": "7505c012c94c1d324b72dcc0cbc8c5aae49cb461448f4c06fa0fbb258cc7fd2b",
+    "apps/api/internal/httpapi/server.go": "5b0ef936248612c036b42d7f34732cf0137dffd0a4f6dc2d607ba96fde367ecc"
+  },
+  "sourceStable": true,
+  "topLevelPass": [
+    "TestDeviceSessionHTTPStrictRefreshWithoutAccessAndNoCredentialCache",
+    "TestDeviceSessionHTTPLogoutWithExpiredAccessAndRefreshOnly"
+  ],
+  "fixture": "HTTP fake only; no DB/API login; disabled sign-in logout covered"
+}

@@ -644,6 +644,7 @@ func New(catalog foundation.PublicCatalog, access identity.AccessStore, seed cit
 	mux.HandleFunc("POST /v1/me/blocks", s.blockAccount)
 	mux.HandleFunc("DELETE /v1/me/blocks/{accountID}", s.unblockAccount)
 	mux.HandleFunc("POST /v1/session/logout", s.logout)
+	mux.HandleFunc("POST /v1/session/refresh", s.refreshPersistentSession)
 	mux.HandleFunc("GET /v1/me/consents", s.listConsents)
 	mux.HandleFunc("POST /v1/me/consents", s.grantConsent)
 	mux.HandleFunc("DELETE /v1/me/consents/{grantID}", s.revokeConsent)

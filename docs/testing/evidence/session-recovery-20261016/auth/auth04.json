@@ -1,0 +1,26 @@
+{
+  "atUTC": "2026-10-16T13:19:34.722352+00:00",
+  "command": [
+    "D:\\DevTools\\flutter\\bin\\flutter.bat",
+    "test",
+    "--no-pub",
+    "--reporter",
+    "json",
+    "test/session_recovery_test.dart"
+  ],
+  "cwd": "D:\\Project\\birdtie\\apps\\client",
+  "exitCode": 0,
+  "sourceStable": true,
+  "sourceFrame": {
+    "apps/client/lib/src/auth/birdtie_auth_controller.dart": "bc919b1c36c79d169cded8b18989057551ab9b88cbdd96f46c4792b45a3ae7e6",
+    "apps/client/lib/src/auth/session_vault.dart": "7fc8a7e0ddacdb4dca8de514412c6a2b970b155dcc77a27970bbe004b861758a",
+    "apps/client/lib/src/auth/authenticated_client.dart": "b283a6890c6f703069735aebb0cc9d49972197d8046abe46e4d0462e82a08d42",
+    "apps/client/lib/src/app/birdtie_app.dart": "c039d0232011015f39b60887f3fba8c87069cfcec010d75afaf6c905ece521fc",
+    "apps/client/test/session_recovery_test.dart": "8017bb910070fdacad091d8177311fbd0e50cdc3f9679cce4b2eefc04729bd25"
+  },
+  "passed": 11,
+  "failed": 0,
+  "errors": [],
+  "usesSyntheticIsolatedMockOnly": true,
+  "productionWrites": 0
+}

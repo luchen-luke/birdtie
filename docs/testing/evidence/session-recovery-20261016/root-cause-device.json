@@ -1,0 +1,13 @@
+{
+  "apkLabel": 40,
+  "installedApkSHA256": "63d410883abeafadb717844dc1aaa13a3b8d84225831f41cc513e3e1673fb9f7",
+  "observedSignedOutInSidebar": true,
+  "currentApiAtObservation": 31,
+  "schemaAtObservation": 175,
+  "sessionIdleExpired": true,
+  "dataLossObserved": false,
+  "screenshotLocalOnly": "C:\\Users\\chens\\Documents\\Codex\\2026-10-15\\d-project-birdtie-docs-reports-birdtie-2\\outputs\\BirdTie-APK40-regression-empty-before.png",
+  "screenshotSHA256": "0d15296063f0a0036fa4f5d96ab57e964d58616147e7eeb5bc7a081065f14104",
+  "prior32SecondBackgroundTestDidNotCover1800SecondIdleExpiry": true,
+  "noScreenRecording": true
+}

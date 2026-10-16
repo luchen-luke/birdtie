@@ -1,0 +1,59 @@
+{
+  "startedAtUTC": "2026-10-16T13:03:59.895850+00:00",
+  "completedAtUTC": "2026-10-16T13:04:05.505351+00:00",
+  "command": [
+    "C:/Program Files/Go/bin/go.exe",
+    "test",
+    "-mod=readonly",
+    ".",
+    "-run",
+    "^TestNativeStartupRejectsLegacyIncompleteAndUnavailableSchemas$",
+    "-count=1",
+    "-json"
+  ],
+  "cwd": "D:\\Project\\birdtie\\apps\\api",
+  "exitCode": 0,
+  "sourceBefore": {
+    "apps/api/internal/sessionrefresh/model.go": "6132bb7d9dc6f57f89936fa3687bf4d3e909ac7bb16fdb703f30e14f1cba104d",
+    "apps/api/internal/sessionrefresh/model_test.go": "f2a7880b60fa119ca88aa251a8c6844bd785d280c84c306fa0ab7cb196a734ce",
+    "apps/api/internal/httpapi/session_refresh.go": "a67177a78fddd4838f3b9797e83dcce51a0a881e7f8fb93c2c26c438d41c860b",
+    "apps/api/internal/httpapi/session_refresh_test.go": "8b48dfb6c2886e6345c6dc78a7f275ee792f27a5dbb41b9f6018df1dbf5db7d4",
+    "apps/api/internal/httpapi/dev_phone.go": "7505c012c94c1d324b72dcc0cbc8c5aae49cb461448f4c06fa0fbb258cc7fd2b",
+    "apps/api/internal/httpapi/identity.go": "81209863e28e4bedb8c6fa4eb5d26953e7a05546276dda43fed4b801f46d0759",
+    "apps/api/internal/httpapi/server.go": "5b0ef936248612c036b42d7f34732cf0137dffd0a4f6dc2d607ba96fde367ecc",
+    "apps/api/native_database_startup.go": "5f282a38a411676d7359cc7811e680e5afe8eaec69468c6b176a925a88908049",
+    "apps/api/native_database_startup_test.go": "141028e04a2970d0e60aa3c0249628d05042613fed8d66f3f09155fd5cc87e4a"
+  },
+  "sourceAfter": {
+    "apps/api/internal/sessionrefresh/model.go": "6132bb7d9dc6f57f89936fa3687bf4d3e909ac7bb16fdb703f30e14f1cba104d",
+    "apps/api/internal/sessionrefresh/model_test.go": "f2a7880b60fa119ca88aa251a8c6844bd785d280c84c306fa0ab7cb196a734ce",
+    "apps/api/internal/httpapi/session_refresh.go": "a67177a78fddd4838f3b9797e83dcce51a0a881e7f8fb93c2c26c438d41c860b",
+    "apps/api/internal/httpapi/session_refresh_test.go": "8b48dfb6c2886e6345c6dc78a7f275ee792f27a5dbb41b9f6018df1dbf5db7d4",
+    "apps/api/internal/httpapi/dev_phone.go": "7505c012c94c1d324b72dcc0cbc8c5aae49cb461448f4c06fa0fbb258cc7fd2b",
+    "apps/api/internal/httpapi/identity.go": "81209863e28e4bedb8c6fa4eb5d26953e7a05546276dda43fed4b801f46d0759",
+    "apps/api/internal/httpapi/server.go": "5b0ef936248612c036b42d7f34732cf0137dffd0a4f6dc2d607ba96fde367ecc",
+    "apps/api/native_database_startup.go": "5f282a38a411676d7359cc7811e680e5afe8eaec69468c6b176a925a88908049",
+    "apps/api/native_database_startup_test.go": "141028e04a2970d0e60aa3c0249628d05042613fed8d66f3f09155fd5cc87e4a"
+  },
+  "sourceStable": true,
+  "earlierDirectExecutions": [
+    {
+      "command": "go test -mod=readonly ./internal/httpapi -run ^TestDeviceSessionHTTP -count=1",
+      "exitCode": 0,
+      "observedOutput": "ok github.com/birdtie/birdtie/apps/api/internal/httpapi 4.394s",
+      "sourceCapture": "After execution; these HTTP files were not edited afterward. Initial run output was returned by exec rather than redirected."
+    },
+    {
+      "command": "go test ./internal/sessionrefresh",
+      "exitCode": 0,
+      "observedOutput": "ok github.com/birdtie/birdtie/apps/api/internal/sessionrefresh 0.420s",
+      "sourceCapture": "After execution; protocol worker froze both files before returning this observed result."
+    }
+  ],
+  "notRun": [
+    "All-repository tests",
+    "Real production login or token refresh",
+    "APK/device session recovery"
+  ],
+  "productionWrites": 0
+}

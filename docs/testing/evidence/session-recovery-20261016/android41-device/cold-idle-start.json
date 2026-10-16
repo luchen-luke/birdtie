@@ -1,0 +1,10 @@
+{
+  "atUTC": "2026-10-16T13:26:59.720166+00:00",
+  "oldPID": 12994,
+  "package": "app.civu.civu_mobile.birdtiepreview",
+  "appStopped": true,
+  "appDataCleared": false,
+  "sessionDeadlineChanged": false,
+  "screenRecording": false,
+  "test": "actual wall-clock cold restart after server idle expiry; no fabricated expiry"
+}

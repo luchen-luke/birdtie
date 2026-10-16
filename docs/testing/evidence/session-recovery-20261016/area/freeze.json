@@ -1,0 +1,28 @@
+{
+  "baseline": "19ba964bfa1f9e7b2e57a3f79842ea291f71ff47",
+  "frozenAt": "2026-10-16T13:15:59.5760547Z",
+  "files": {
+    "apps/client/lib/src/workspace/agent_conversation.dart": "5bd2fbe0a9ac045cfe4bddc858c14d8d89d3ebe8fcf6ad6e251a72b73fa5b246",
+    "apps/client/test/now_content_geometry_test.dart": "6eb51dc90cbcb4f41602396f938628d89e80661c5a8a84d925e8b1473ede6346",
+    "apps/client/lib/src/workspace/agent_workspace_controller.dart": "ce9354776ee912722b488f4aac7a813f3284f214b4ed2ca7fb2db5903a88c90a",
+    "apps/client/lib/src/workspace/map_canvas.dart": "4c7ccbf8c28ca06b0c5e18551afed5b0f415bc662c7cddd4240153d6caef5110",
+    "apps/client/lib/src/workspace/map_workspace.dart": "794374040409cd65b0790bcc2eb279c58b5fe148782a8e54bc06c056e49150cc",
+    "apps/client/test/now_area_content_recovery_test.dart": "690166fe19c004b455bd0413d4bec1b29f29a41978f93c60a0103ce96a020d41"
+  },
+  "receipt": "targeted04.json",
+  "receiptSHA256": "8d7f08c0f19a133b964568ffd547436a8b980b125d008ce994feb0d0b7f8bcc0",
+  "result": "5 PASS 0 FAIL, exit 0, sourceStable true",
+  "notRun": [
+    "real device",
+    "build/install",
+    "real authentication/server refresh",
+    "performance",
+    "accessibility"
+  ],
+  "rootOwnedDependencies": [
+    "birdtie_auth_controller.dart",
+    "session_vault.dart",
+    "birdtie_app.dart",
+    "API176"
+  ]
+}

@@ -251,7 +251,27 @@ class AgentConversation extends StatelessWidget {
                       }
                     },
             ),
-          if ((operation.status == AgentAreaStatus.error ||
+          if (operation.current &&
+              operation.read?.content?.available == false &&
+              operation.read?.content?.onRecover != null)
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                key: const Key('now-area-content-recovery'),
+                style: TextButton.styleFrom(
+                  minimumSize: const Size(48, 48),
+                  textStyle: tokens.action,
+                ),
+                onPressed: () {
+                  if (operation.current) {
+                    operation.read!.content!.onRecover!();
+                  }
+                },
+                icon: const Icon(Icons.refresh),
+                label: Text(operation.read!.content!.recoveryLabel ?? '重试'),
+              ),
+            )
+          else if ((operation.status == AgentAreaStatus.error ||
                   operation.status == AgentAreaStatus.partial ||
                   !operation.current) &&
               operation.status != AgentAreaStatus.loading &&

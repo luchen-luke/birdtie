@@ -1,0 +1,39 @@
+{
+  "status": "READ_ONLY_OBSERVATION",
+  "apiRelease": "/opt/birdtie/releases/social176-20261016-build32",
+  "apiSHA256": "7543929ca5569e2501ef04bb00ffe7fdf44c9e57ce5a94478d612d3370e2d9d7",
+  "metadata": {
+    "moments": 102,
+    "messages": 39,
+    "readOnly": "on",
+    "observedAt": "2026-10-16T21:26:18.400576+08:00",
+    "civuMoments": 83,
+    "familyCount": 1,
+    "latestFamily": {
+      "tokens": 1,
+      "expired": false,
+      "revoked": false,
+      "createdAt": "2026-10-16T21:25:59.569366+08:00",
+      "expiresAt": "2026-11-15T21:25:59.569366+08:00",
+      "activeAccess": 1,
+      "revokedAccess": 0,
+      "accessSessions": 1,
+      "consumedTokens": 0
+    },
+    "claimedOwners": 1,
+    "latestSession": {
+      "method": "dev_phone",
+      "revoked": false,
+      "createdAt": "2026-10-16T21:25:59.565577+08:00",
+      "idleExpiry": "2026-10-16T21:56:15.418651+08:00",
+      "idleExpired": false,
+      "accountActive": true,
+      "absoluteExpiry": "2026-10-17T05:25:59.565577+08:00",
+      "absoluteExpired": false
+    }
+  },
+  "productionWrites": 0,
+  "apiLogins": 0,
+  "privateTokensOrBodiesReturned": false,
+  "probeSHA256": "3eabbc0bd38b40d7f66bdffbb0bc49c4f7e91c27e2bc05bdb6ca6fbecf5cf48f"
+}

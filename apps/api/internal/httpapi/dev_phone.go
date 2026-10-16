@@ -7,6 +7,7 @@ import (
 
 	"github.com/birdtie/birdtie/apps/api/internal/devauth"
 	"github.com/birdtie/birdtie/apps/api/internal/identity"
+	"github.com/birdtie/birdtie/apps/api/internal/sessionrefresh"
 )
 
 func (s *server) devPhoneStatus(w http.ResponseWriter, _ *http.Request) {
@@ -67,8 +68,21 @@ func (s *server) verifyDevPhoneCode(w http.ResponseWriter, r *http.Request) {
 		serverError(w, err)
 		return
 	}
-	err = s.devPhone.VerifyDevPhoneChallenge(
-		r.Context(), devauth.PhoneDigest(phone), code == devauth.Code, digest)
+	var persistent *sessionrefresh.Response
+	if store, ok := s.devPhone.(sessionrefresh.DevPhoneStore); ok {
+		refresh, _, tokenErr := sessionrefresh.NewToken()
+		if tokenErr != nil {
+			serverError(w, tokenErr)
+			return
+		}
+		result, verifyErr := store.VerifyDevPhoneChallengePersistent(r.Context(), devauth.PhoneDigest(phone), code == devauth.Code, token, refresh)
+		err = verifyErr
+		if err == nil {
+			persistent = &result
+		}
+	} else {
+		err = s.devPhone.VerifyDevPhoneChallenge(r.Context(), devauth.PhoneDigest(phone), code == devauth.Code, digest)
+	}
 	switch {
 	case errors.Is(err, devauth.ErrInvalid):
 		respondError(w, http.StatusUnauthorized, "invalid_code")
@@ -80,6 +94,10 @@ func (s *server) verifyDevPhoneCode(w http.ResponseWriter, r *http.Request) {
 		serverError(w, err)
 	default:
 		noCredentialCache(w)
+		if persistent != nil {
+			respond(w, http.StatusOK, map[string]any{"data": persistent})
+			return
+		}
 		respond(w, http.StatusOK, map[string]any{"data": map[string]any{
 			"accessToken": token, "tokenType": "Bearer",
 			"expiresInSeconds": 28800, "idleTimeoutSeconds": 1800,

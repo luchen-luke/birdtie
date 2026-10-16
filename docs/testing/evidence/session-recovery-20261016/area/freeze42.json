@@ -1,0 +1,16 @@
+{
+  "baseline": "19ba964bfa1f9e7b2e57a3f79842ea291f71ff47 plus preserved APK41 changes",
+  "frozenAt": "2026-10-16T13:31:17.6532164Z",
+  "files": {
+    "apps/client/lib/src/workspace/map_workspace.dart": "98c3f1c52cb6a4409587166e9686263dae09b033dd4297c9e444c07a90eeceaa",
+    "apps/client/test/now_area_content_recovery_test.dart": "7e33de3a7763bedb53971fdf2f58bdb889305655dbd1637f8f80f7b8364c66bb",
+    "apps/client/lib/src/workspace/map_canvas.dart": "eaefbad83e3fadc2ecb4f3a7a29c75ab240b433219b6c2b94682a26e073eb0c6"
+  },
+  "receipt": "login-tap03.json",
+  "receiptSHA256": "3db7fb53e0df4b02e40a56d645a34c8ee214706bb351bea090ec5b661ffbd521",
+  "result": "4 PASS 0 FAIL, exit 0",
+  "sourceStable": true,
+  "deviceRootCause": "NOT_CONFIRMED",
+  "deviceAPK42": "NOT_RUN",
+  "priorEvidence": "freeze.json and targeted04 preserved"
+}

@@ -58,6 +58,19 @@ type nativeDatabasePinger struct {
 // checks the native schema required by this package, not a migration ledger or
 // a claim that all product migrations, data, ACLs or media have been accepted.
 const nativeDatabaseProbeSQL = `WITH required(table_name,column_name,type_name) AS (VALUES
+ ('persistent_session_families','account_id','uuid'),
+ ('persistent_session_families','identity_issuer','text'),
+ ('persistent_session_families','identity_subject','text'),
+ ('persistent_session_families','expires_at','timestamp with time zone'),
+ ('persistent_session_families','revoked_at','timestamp with time zone'),
+ ('persistent_session_tokens','token_sha256','bytea'),
+ ('persistent_session_tokens','consumed_at','timestamp with time zone'),
+ ('persistent_session_tokens','operation_id','uuid'),
+ ('persistent_session_tokens','successor_sha256','bytea'),
+ ('persistent_session_tokens','receipt_ciphertext','bytea'),
+ ('persistent_session_tokens','receipt_expires_at','timestamp with time zone'),
+ ('persistent_session_access','session_id','uuid'),
+ ('persistent_session_access','family_id','uuid'),
  ('legacy_map_visibility_runs','projection_sha256','text'),
  ('legacy_map_place_facts','coordinate_proof','text'),
  ('legacy_map_place_facts','native_binding','text'),
@@ -127,6 +140,7 @@ const nativeDatabaseProbeSQL = `WITH required(table_name,column_name,type_name) 
  ('personal_collection_control_operations','expected_revision','bigint'),('personal_collection_control_operations','applied_revision','bigint'),
  ('personal_collection_control_operations','payload_digest','text'),('personal_collection_control_operations','committed_at','timestamp with time zone')
  ), required_trigger(table_name,trigger_name,function_name,deferred) AS (VALUES
+ ('persistent_session_families','persistent_session_family_guard','birdtie_persistent_session_family_guard',false),
  ('legacy_moment_author_runs','legacy_moment_author_runs_immutable','birdtie_legacy_immutable',false),
  ('legacy_moment_author_snapshots','legacy_moment_author_snapshots_immutable','birdtie_legacy_immutable',false),
  ('legacy_moment_author_facts','legacy_moment_author_facts_immutable','birdtie_legacy_immutable',false),

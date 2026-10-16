@@ -1,0 +1,38 @@
+{
+  "command": "D:/DevTools/flutter/bin/flutter.bat",
+  "arguments": [
+    "test",
+    "test/now_area_content_recovery_test.dart",
+    "--no-pub",
+    "--reporter",
+    "expanded"
+  ],
+  "cwd": "D:/Project/birdtie/apps/client",
+  "startedAt": "2026-10-16T13:30:34.4050791Z",
+  "finishedAt": "2026-10-16T13:30:39.8357705Z",
+  "exitCode": 0,
+  "sourceBefore": {
+    "apps/client/test/now_area_content_recovery_test.dart": "7e33de3a7763bedb53971fdf2f58bdb889305655dbd1637f8f80f7b8364c66bb",
+    "apps/client/lib/src/workspace/agent_workspace_controller.dart": "ce9354776ee912722b488f4aac7a813f3284f214b4ed2ca7fb2db5903a88c90a",
+    "apps/client/lib/src/workspace/map_workspace.dart": "98c3f1c52cb6a4409587166e9686263dae09b033dd4297c9e444c07a90eeceaa",
+    "apps/client/lib/src/auth/session_vault.dart": "7fc8a7e0ddacdb4dca8de514412c6a2b970b155dcc77a27970bbe004b861758a",
+    "apps/client/lib/src/workspace/agent_conversation.dart": "5bd2fbe0a9ac045cfe4bddc858c14d8d89d3ebe8fcf6ad6e251a72b73fa5b246",
+    "apps/client/test/now_p0_area_command_test.dart": "bf8867815adb73ff5128de5c7b54048e5bedad445e58d8ec84d5f443358fd6d6",
+    "apps/client/lib/src/workspace/map_canvas.dart": "eaefbad83e3fadc2ecb4f3a7a29c75ab240b433219b6c2b94682a26e073eb0c6",
+    "apps/client/lib/src/auth/birdtie_auth_controller.dart": "bc919b1c36c79d169cded8b18989057551ab9b88cbdd96f46c4792b45a3ae7e6",
+    "apps/client/test/now_content_geometry_test.dart": "6eb51dc90cbcb4f41602396f938628d89e80661c5a8a84d925e8b1473ede6346"
+  },
+  "sourceAfter": {
+    "apps/client/test/now_area_content_recovery_test.dart": "7e33de3a7763bedb53971fdf2f58bdb889305655dbd1637f8f80f7b8364c66bb",
+    "apps/client/lib/src/workspace/agent_workspace_controller.dart": "ce9354776ee912722b488f4aac7a813f3284f214b4ed2ca7fb2db5903a88c90a",
+    "apps/client/lib/src/workspace/map_workspace.dart": "98c3f1c52cb6a4409587166e9686263dae09b033dd4297c9e444c07a90eeceaa",
+    "apps/client/lib/src/auth/session_vault.dart": "7fc8a7e0ddacdb4dca8de514412c6a2b970b155dcc77a27970bbe004b861758a",
+    "apps/client/lib/src/workspace/agent_conversation.dart": "5bd2fbe0a9ac045cfe4bddc858c14d8d89d3ebe8fcf6ad6e251a72b73fa5b246",
+    "apps/client/test/now_p0_area_command_test.dart": "bf8867815adb73ff5128de5c7b54048e5bedad445e58d8ec84d5f443358fd6d6",
+    "apps/client/lib/src/workspace/map_canvas.dart": "eaefbad83e3fadc2ecb4f3a7a29c75ab240b433219b6c2b94682a26e073eb0c6",
+    "apps/client/lib/src/auth/birdtie_auth_controller.dart": "bc919b1c36c79d169cded8b18989057551ab9b88cbdd96f46c4792b45a3ae7e6",
+    "apps/client/test/now_content_geometry_test.dart": "6eb51dc90cbcb4f41602396f938628d89e80661c5a8a84d925e8b1473ede6346"
+  },
+  "sourceStable": true,
+  "verification": "isolated Flutter host/widget with mocked HTTP; device/live login/build NOT_RUN"
+}

@@ -34,12 +34,34 @@ enum AgentContentMode { results, conversation }
 
 enum AgentAreaStatus { loading, success, empty, partial, error }
 
+/// The authenticated content source is separate from legacy typed layers.
+/// A successful empty public layer says nothing about this source's access.
+class AgentAreaContentRead {
+  AgentAreaContentRead({
+    required this.available,
+    this.locationCount = 0,
+    this.truncated = false,
+    this.notice,
+    this.recoveryLabel,
+    this.onRecover,
+    bool Function()? current,
+  }) : _current = current ?? (() => true);
+
+  final bool available, truncated;
+  final int locationCount;
+  final String? notice, recoveryLabel;
+  final Future<void> Function()? onRecover;
+  final bool Function() _current;
+  bool get current => _current();
+}
+
 /// A read of the existing native map layers, separate from an Agent turn.
 /// Coverage is explicit: a failed source is never represented by an empty list.
 class AgentAreaRead {
   AgentAreaRead({
     this.publicView,
     this.privateView,
+    this.content,
     this.unavailableKinds = const {},
     bool Function()? current,
     Duration Function()? remaining,
@@ -47,14 +69,19 @@ class AgentAreaRead {
        _remaining = remaining == null ? null : (() => remaining());
 
   final TypedMapView? publicView, privateView;
+  final AgentAreaContentRead? content;
   final Set<String> unavailableKinds;
   final bool Function() _current;
   final Duration Function()? _remaining;
   bool get current =>
-      _current() && (remaining == null || remaining! > Duration.zero);
+      _current() &&
+      content?.current != false &&
+      (remaining == null || remaining! > Duration.zero);
   Duration? get remaining => _remaining?.call();
   bool get truncated =>
-      publicView?.truncated == true || privateView?.truncated == true;
+      publicView?.truncated == true ||
+      privateView?.truncated == true ||
+      content?.truncated == true;
   List<TypedMapItem> get items => [
     ...?publicView?.items,
     ...?privateView?.items,
@@ -89,17 +116,26 @@ class AgentAreaOperation {
   Set<String> get searchedKinds => kinds.difference(unavailableKinds);
   String get coverage =>
       '本次范围：${searchedKinds.map(mapLayerLabel).join('、')}'
+      '${read?.content == null
+          ? ''
+          : read!.content!.available
+          ? '、动态位置'
+          : '；动态内容暂不可用'}'
       '${unavailableKinds.isEmpty ? '' : '；暂不可用：${unavailableKinds.map(mapLayerLabel).join('、')}'}';
   String get summary => switch (status) {
     AgentAreaStatus.loading => '正在搜索这片地图区域…',
     AgentAreaStatus.error => failure?.userMessage ?? '暂时没能完成搜索，请重试。',
     _ when !current => '本次地图来源已失效，请重新搜索。',
     AgentAreaStatus.partial =>
-      read?.truncated == true
-          ? '已显示本次可读取的结果；当前来源只返回了部分内容。'
-          : '部分内容暂时无法获取，已显示本次查到的结果。',
+      read?.content?.notice ??
+          (read?.truncated == true
+              ? '已显示本次可读取的结果；当前来源只返回了部分内容。'
+              : '部分内容暂时无法获取，已显示本次查到的结果。'),
     AgentAreaStatus.empty => '本次未找到符合条件的结果。',
-    AgentAreaStatus.success => '找到 ${items.length} 条符合条件的地图内容。',
+    AgentAreaStatus.success =>
+      (read?.content?.locationCount ?? 0) > 0
+          ? '动态分布在 ${read!.content!.locationCount} 处地图位置。'
+          : '找到 ${items.length} 条符合条件的地图内容。',
   };
 }
 
@@ -795,8 +831,13 @@ class AgentWorkspaceController extends ChangeNotifier {
             )) {
           throw const AgentRequestFailure('本次地图来源已变化，请重新搜索。');
         }
-        final partial = read.unavailableKinds.isNotEmpty || read.truncated;
-        final empty = !read.items.any((i) => snapshotKinds.contains(i.kind));
+        final partial =
+            read.unavailableKinds.isNotEmpty ||
+            read.truncated ||
+            read.content?.available == false;
+        final empty =
+            !read.items.any((i) => snapshotKinds.contains(i.kind)) &&
+            (read.content?.locationCount ?? 0) == 0;
         present(
           partial
               ? AgentAreaStatus.partial

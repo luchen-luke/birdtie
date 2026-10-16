@@ -1,0 +1,147 @@
+
+┌─────────────────────────────────────────────────────────┐
+│ A new version of Flutter is available!                  │
+│                                                         │
+│ To update to the latest version, run "flutter upgrade". │
+└─────────────────────────────────────────────────────────┘
+{"protocolVersion":"0.1.1","runnerVersion":null,"pid":25592,"type":"start","time":0}
+{"suite":{"id":0,"platform":"vm","path":"D:/Project/birdtie/apps/client/test/session_recovery_test.dart"},"type":"suite","time":0}
+{"test":{"id":1,"name":"loading D:/Project/birdtie/apps/client/test/session_recovery_test.dart","suiteID":0,"groupIDs":[],"metadata":{"skip":false,"skipReason":null},"line":null,"column":null,"url":null},"type":"testStart","time":0}
+{"suite":{"id":2,"platform":"vm","path":"D:/Project/birdtie/apps/client/test/auth_restore_and_access_test.dart"},"type":"suite","time":3}
+{"test":{"id":3,"name":"loading D:/Project/birdtie/apps/client/test/auth_restore_and_access_test.dart","suiteID":2,"groupIDs":[],"metadata":{"skip":false,"skipReason":null},"line":null,"column":null,"url":null},"type":"testStart","time":3}
+{"suite":{"id":4,"platform":"vm","path":"D:/Project/birdtie/apps/client/test/auth_rejected_session_test.dart"},"type":"suite","time":3}
+{"test":{"id":5,"name":"loading D:/Project/birdtie/apps/client/test/auth_rejected_session_test.dart","suiteID":4,"groupIDs":[],"metadata":{"skip":false,"skipReason":null},"line":null,"column":null,"url":null},"type":"testStart","time":4}
+{"suite":{"id":6,"platform":"vm","path":"D:/Project/birdtie/apps/client/test/session_origin_namespace_test.dart"},"type":"suite","time":4}
+{"test":{"id":7,"name":"loading D:/Project/birdtie/apps/client/test/session_origin_namespace_test.dart","suiteID":6,"groupIDs":[],"metadata":{"skip":false,"skipReason":null},"line":null,"column":null,"url":null},"type":"testStart","time":4}
+{"suite":{"id":8,"platform":"vm","path":"D:/Project/birdtie/apps/client/test/auth_attempt_boundaries_test.dart"},"type":"suite","time":4}
+{"test":{"id":9,"name":"loading D:/Project/birdtie/apps/client/test/auth_attempt_boundaries_test.dart","suiteID":8,"groupIDs":[],"metadata":{"skip":false,"skipReason":null},"line":null,"column":null,"url":null},"type":"testStart","time":4}
+{"suite":{"id":10,"platform":"vm","path":"D:/Project/birdtie/apps/client/test/authenticated_client_test.dart"},"type":"suite","time":4}
+{"test":{"id":11,"name":"loading D:/Project/birdtie/apps/client/test/authenticated_client_test.dart","suiteID":10,"groupIDs":[],"metadata":{"skip":false,"skipReason":null},"line":null,"column":null,"url":null},"type":"testStart","time":5}
+{"suite":{"id":12,"platform":"vm","path":"D:/Project/birdtie/apps/client/test/dev_phone_auth_controller_test.dart"},"type":"suite","time":5}
+{"test":{"id":13,"name":"loading D:/Project/birdtie/apps/client/test/dev_phone_auth_controller_test.dart","suiteID":12,"groupIDs":[],"metadata":{"skip":false,"skipReason":null},"line":null,"column":null,"url":null},"type":"testStart","time":5}
+{"count":7,"time":5,"type":"allSuites"}
+{"testID":1,"result":"success","skipped":false,"hidden":true,"type":"testDone","time":11504}
+{"group":{"id":14,"suiteID":0,"parentID":null,"name":"","metadata":{"skip":false,"skipReason":null},"testCount":8,"line":null,"column":null,"url":null},"type":"group","time":11505}
+{"test":{"id":15,"name":"expired access restores original owner with rotated device grant, never fixed code","suiteID":0,"groupIDs":[14],"metadata":{"skip":false,"skipReason":null},"line":73,"column":3,"url":"file:///D:/Project/birdtie/apps/client/test/session_recovery_test.dart"},"type":"testStart","time":11505}
+{"testID":15,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":11533}
+{"test":{"id":16,"name":"temporary cold-start network failure retains sealed session and supports retry","suiteID":0,"groupIDs":[14],"metadata":{"skip":false,"skipReason":null},"line":93,"column":3,"url":"file:///D:/Project/birdtie/apps/client/test/session_recovery_test.dart"},"type":"testStart","time":11534}
+{"testID":16,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":11538}
+{"test":{"id":17,"name":"lost refresh response persists operation and retries exactly that rotation","suiteID":0,"groupIDs":[14],"metadata":{"skip":false,"skipReason":null},"line":114,"column":3,"url":"file:///D:/Project/birdtie/apps/client/test/session_recovery_test.dart"},"type":"testStart","time":11539}
+{"testID":17,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":11544}
+{"test":{"id":18,"name":"definitive refresh rejection requires login and does not retain old grant","suiteID":0,"groupIDs":[14],"metadata":{"skip":false,"skipReason":null},"line":136,"column":3,"url":"file:///D:/Project/birdtie/apps/client/test/session_recovery_test.dart"},"type":"testStart","time":11544}
+{"testID":18,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":11548}
+{"test":{"id":19,"name":"legacy expired access has explicit recovery requirement, never automatic login","suiteID":0,"groupIDs":[14],"metadata":{"skip":false,"skipReason":null},"line":149,"column":3,"url":"file:///D:/Project/birdtie/apps/client/test/session_recovery_test.dart"},"type":"testStart","time":11548}
+{"testID":19,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":11550}
+{"test":{"id":20,"name":"concurrent 401s share refresh and late old credential cannot retire new owner","suiteID":0,"groupIDs":[14],"metadata":{"skip":false,"skipReason":null},"line":166,"column":3,"url":"file:///D:/Project/birdtie/apps/client/test/session_recovery_test.dart"},"type":"testStart","time":11550}
+{"testID":20,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":11555}
+{"test":{"id":21,"name":"explicit logout cancels pending rotation and revokes late issued family","suiteID":0,"groupIDs":[14],"metadata":{"skip":false,"skipReason":null},"line":198,"column":3,"url":"file:///D:/Project/birdtie/apps/client/test/session_recovery_test.dart"},"type":"testStart","time":11556}
+{"testID":21,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":11562}
+{"test":{"id":22,"name":"secure origin vault persists v3 pair and retry operation, rejects foreign origin","suiteID":0,"groupIDs":[14],"metadata":{"skip":false,"skipReason":null},"line":219,"column":3,"url":"file:///D:/Project/birdtie/apps/client/test/session_recovery_test.dart"},"type":"testStart","time":11562}
+{"testID":22,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":11570}
+{"testID":3,"result":"success","skipped":false,"hidden":true,"type":"testDone","time":24309}
+{"group":{"id":23,"suiteID":2,"parentID":null,"name":"","metadata":{"skip":false,"skipReason":null},"testCount":9,"line":null,"column":null,"url":null},"type":"group","time":24309}
+{"test":{"id":24,"name":"restoration is visible, credential stays private, initialize reentry shares one operation","suiteID":2,"groupIDs":[23],"metadata":{"skip":false,"skipReason":null},"line":79,"column":3,"url":"file:///D:/Project/birdtie/apps/client/test/auth_restore_and_access_test.dart"},"type":"testStart","time":24310}
+{"testID":24,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":24338}
+{"test":{"id":25,"name":"retired login before dispatch never sends an authentication request","suiteID":2,"groupIDs":[23],"metadata":{"skip":false,"skipReason":null},"line":113,"column":3,"url":"file:///D:/Project/birdtie/apps/client/test/auth_restore_and_access_test.dart"},"type":"testStart","time":24339}
+{"testID":25,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":24344}
+{"test":{"id":26,"name":"late issued login after entry retirement is revoked without accepting or persisting","suiteID":2,"groupIDs":[23],"metadata":{"skip":false,"skipReason":null},"line":146,"column":3,"url":"file:///D:/Project/birdtie/apps/client/test/auth_restore_and_access_test.dart"},"type":"testStart","time":24344}
+{"testID":26,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":24352}
+{"test":{"id":27,"name":"restoring Inbox reads no private data and loads once after native auth succeeds","suiteID":2,"groupIDs":[23],"metadata":{"skip":false,"skipReason":null},"line":174,"column":5,"url":"package:flutter_test/src/widget_tester.dart","root_line":172,"root_column":3,"root_url":"file:///D:/Project/birdtie/apps/client/test/auth_restore_and_access_test.dart"},"type":"testStart","time":24352}
+{"testID":5,"result":"success","skipped":false,"hidden":true,"type":"testDone","time":24403}
+{"group":{"id":28,"suiteID":4,"parentID":null,"name":"","metadata":{"skip":false,"skipReason":null},"testCount":7,"line":null,"column":null,"url":null},"type":"group","time":24404}
+{"test":{"id":29,"name":"real-session 401 retires synchronously and stale 401 cannot sign out new login","suiteID":4,"groupIDs":[28],"metadata":{"skip":false,"skipReason":null},"line":15,"column":3,"url":"file:///D:/Project/birdtie/apps/client/test/auth_rejected_session_test.dart"},"type":"testStart","time":24404}
+{"testID":29,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":24433}
+{"test":{"id":30,"name":"repeated rejected-session callers cannot duplicate retirement notifications","suiteID":4,"groupIDs":[28],"metadata":{"skip":false,"skipReason":null},"line":62,"column":3,"url":"file:///D:/Project/birdtie/apps/client/test/auth_rejected_session_test.dart"},"type":"testStart","time":24433}
+{"testID":30,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":24439}
+{"test":{"id":31,"name":"signOut after rejected identity synchronously cancels recovery without null-token logout","suiteID":4,"groupIDs":[28],"metadata":{"skip":false,"skipReason":null},"line":95,"column":3,"url":"file:///D:/Project/birdtie/apps/client/test/auth_rejected_session_test.dart"},"type":"testStart","time":24439}
+{"testID":31,"error":"Expected: false\n  Actual: <true>\n","stackTrace":"package:matcher                                     expect\npackage:flutter_test/src/widget_tester.dart 473:18  expect\ntest\\auth_rejected_session_test.dart 133:7          main.<fn>\n","isFailure":true,"type":"error","time":24455}
+{"testID":31,"result":"failure","skipped":false,"hidden":false,"type":"testDone","time":24456}
+{"test":{"id":32,"name":"explicit logout while expired retires pending verify login reply without restoring identity","suiteID":4,"groupIDs":[28],"metadata":{"skip":false,"skipReason":null},"line":154,"column":5,"url":"file:///D:/Project/birdtie/apps/client/test/auth_rejected_session_test.dart"},"type":"testStart","time":24456}
+{"testID":32,"error":"Expected: false\n  Actual: <true>\n","stackTrace":"package:matcher                                     expect\npackage:flutter_test/src/widget_tester.dart 473:18  expect\ntest\\auth_rejected_session_test.dart 212:9          main.<fn>\n","isFailure":true,"type":"error","time":24465}
+{"testID":32,"result":"failure","skipped":false,"hidden":false,"type":"testDone","time":24465}
+{"test":{"id":33,"name":"explicit logout while expired retires pending identity login reply without restoring identity","suiteID":4,"groupIDs":[28],"metadata":{"skip":false,"skipReason":null},"line":154,"column":5,"url":"file:///D:/Project/birdtie/apps/client/test/auth_rejected_session_test.dart"},"type":"testStart","time":24466}
+{"testID":33,"error":"Expected: false\n  Actual: <true>\n","stackTrace":"package:matcher                                     expect\npackage:flutter_test/src/widget_tester.dart 473:18  expect\ntest\\auth_rejected_session_test.dart 212:9          main.<fn>\n","isFailure":true,"type":"error","time":24474}
+{"testID":33,"result":"failure","skipped":false,"hidden":false,"type":"testDone","time":24474}
+{"test":{"id":34,"name":"signOut immediately clears visible identity while remote logout is pending; status=204","suiteID":4,"groupIDs":[28],"metadata":{"skip":false,"skipReason":null},"line":265,"column":5,"url":"file:///D:/Project/birdtie/apps/client/test/auth_rejected_session_test.dart"},"type":"testStart","time":24475}
+{"testID":34,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":24480}
+{"test":{"id":35,"name":"signOut immediately clears visible identity while remote logout is pending; status=503","suiteID":4,"groupIDs":[28],"metadata":{"skip":false,"skipReason":null},"line":265,"column":5,"url":"file:///D:/Project/birdtie/apps/client/test/auth_rejected_session_test.dart"},"type":"testStart","time":24480}
+{"testID":35,"error":"Expected: not null\n  Actual: <null>\n","stackTrace":"package:matcher                                     expect\npackage:flutter_test/src/widget_tester.dart 473:18  expect\ntest\\auth_rejected_session_test.dart 331:9          main.<fn>\n","isFailure":true,"type":"error","time":24489}
+{"testID":35,"result":"failure","skipped":false,"hidden":false,"type":"testDone","time":24489}
+{"testID":7,"result":"success","skipped":false,"hidden":true,"type":"testDone","time":24624}
+{"group":{"id":36,"suiteID":6,"parentID":null,"name":"","metadata":{"skip":false,"skipReason":null},"testCount":12,"line":null,"column":null,"url":null},"type":"group","time":24624}
+{"test":{"id":37,"name":"canonical origin v2 keys normalize explicit default port but reject malformed input","suiteID":6,"groupIDs":[36],"metadata":{"skip":false,"skipReason":null},"line":89,"column":3,"url":"file:///D:/Project/birdtie/apps/client/test/session_origin_namespace_test.dart"},"type":"testStart","time":24624}
+{"testID":37,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":24641}
+{"test":{"id":38,"name":"legacy global v1 session and pending are retained but never sent to new origin","suiteID":6,"groupIDs":[36],"metadata":{"skip":false,"skipReason":null},"line":119,"column":3,"url":"file:///D:/Project/birdtie/apps/client/test/session_origin_namespace_test.dart"},"type":"testStart","time":24641}
+{"testID":38,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":24666}
+{"test":{"id":39,"name":"secure v2 credential payload and exact key isolate signout across two origins","suiteID":6,"groupIDs":[36],"metadata":{"skip":false,"skipReason":null},"line":166,"column":3,"url":"file:///D:/Project/birdtie/apps/client/test/session_origin_namespace_test.dart"},"type":"testStart","time":24666}
+{"testID":39,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":24678}
+{"test":{"id":40,"name":"foreign payload at local v2 key is rejected without deleting foreign key or legacy record","suiteID":6,"groupIDs":[36],"metadata":{"skip":false,"skipReason":null},"line":217,"column":3,"url":"file:///D:/Project/birdtie/apps/client/test/session_origin_namespace_test.dart"},"type":"testStart","time":24678}
+{"testID":40,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":24683}
+{"test":{"id":41,"name":"injected origin missing cannot restore or consume native pending at B","suiteID":6,"groupIDs":[36],"metadata":{"skip":false,"skipReason":null},"line":256,"column":5,"url":"file:///D:/Project/birdtie/apps/client/test/session_origin_namespace_test.dart"},"type":"testStart","time":24683}
+{"testID":41,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":24687}
+{"test":{"id":42,"name":"injected origin foreign cannot restore or consume native pending at B","suiteID":6,"groupIDs":[36],"metadata":{"skip":false,"skipReason":null},"line":256,"column":5,"url":"file:///D:/Project/birdtie/apps/client/test/session_origin_namespace_test.dart"},"type":"testStart","time":24688}
+{"testID":42,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":24691}
+{"test":{"id":43,"name":"native secure pending v2 exact origin and channel leave A operation untouched by B callback","suiteID":6,"groupIDs":[36],"metadata":{"skip":false,"skipReason":null},"line":308,"column":3,"url":"file:///D:/Project/birdtie/apps/client/test/session_origin_namespace_test.dart"},"type":"testStart","time":24691}
+{"testID":43,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":24698}
+{"test":{"id":44,"name":"browser v2 selector and payload bind API origin challenge channel and finite PKCE lease","suiteID":6,"groupIDs":[36],"metadata":{"skip":false,"skipReason":null},"line":346,"column":3,"url":"file:///D:/Project/birdtie/apps/client/test/session_origin_namespace_test.dart"},"type":"testStart","time":24698}
+{"testID":44,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":24703}
+{"test":{"id":45,"name":"cold native original callback at its bound API authenticates without profile or browser guess","suiteID":6,"groupIDs":[36],"metadata":{"skip":false,"skipReason":null},"line":407,"column":3,"url":"file:///D:/Project/birdtie/apps/client/test/session_origin_namespace_test.dart"},"type":"testStart","time":24704}
+{"testID":45,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":24712}
+{"test":{"id":46,"name":"origin A B A newer native attempt rejects old callback and disposed owner never revives it","suiteID":6,"groupIDs":[36],"metadata":{"skip":false,"skipReason":null},"line":449,"column":3,"url":"file:///D:/Project/birdtie/apps/client/test/session_origin_namespace_test.dart"},"type":"testStart","time":24713}
+{"testID":46,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":24726}
+{"test":{"id":47,"name":"failed A session storage never deletes foreign same-token B record and revokes at original A only","suiteID":6,"groupIDs":[36],"metadata":{"skip":false,"skipReason":null},"line":528,"column":3,"url":"file:///D:/Project/birdtie/apps/client/test/session_origin_namespace_test.dart"},"type":"testStart","time":24726}
+{"testID":47,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":24744}
+{"test":{"id":48,"name":"secure storage completed key lock does not retain a prior event-loop tail","suiteID":6,"groupIDs":[36],"metadata":{"skip":false,"skipReason":null},"line":552,"column":3,"url":"file:///D:/Project/birdtie/apps/client/test/session_origin_namespace_test.dart"},"type":"testStart","time":24745}
+{"testID":48,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":24747}
+{"testID":9,"result":"success","skipped":false,"hidden":true,"type":"testDone","time":24829}
+{"group":{"id":49,"suiteID":8,"parentID":null,"name":"","metadata":{"skip":false,"skipReason":null},"testCount":5,"line":null,"column":null,"url":null},"type":"group","time":24830}
+{"test":{"id":50,"name":"pending callback owns authentication before its asynchronous read","suiteID":8,"groupIDs":[49],"metadata":{"skip":false,"skipReason":null},"line":96,"column":3,"url":"file:///D:/Project/birdtie/apps/client/test/auth_attempt_boundaries_test.dart"},"type":"testStart","time":24830}
+{"testID":50,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":24890}
+{"test":{"id":51,"name":"old callback cannot consume the newer PKCE pending challenge","suiteID":8,"groupIDs":[49],"metadata":{"skip":false,"skipReason":null},"line":118,"column":3,"url":"file:///D:/Project/birdtie/apps/client/test/auth_attempt_boundaries_test.dart"},"type":"testStart","time":24890}
+{"testID":51,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":24901}
+{"test":{"id":52,"name":"matching callback arriving during browser launch is handled once","suiteID":8,"groupIDs":[49],"metadata":{"skip":false,"skipReason":null},"line":138,"column":3,"url":"file:///D:/Project/birdtie/apps/client/test/auth_attempt_boundaries_test.dart"},"type":"testStart","time":24902}
+{"testID":52,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":24912}
+{"test":{"id":53,"name":"retired OIDC origin during pending write never opens the browser","suiteID":8,"groupIDs":[49],"metadata":{"skip":false,"skipReason":null},"line":160,"column":3,"url":"file:///D:/Project/birdtie/apps/client/test/auth_attempt_boundaries_test.dart"},"type":"testStart","time":24912}
+{"testID":53,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":24919}
+{"test":{"id":54,"name":"retirement during secure session write clears only issued token and revokes once","suiteID":8,"groupIDs":[49],"metadata":{"skip":false,"skipReason":null},"line":179,"column":3,"url":"file:///D:/Project/birdtie/apps/client/test/auth_attempt_boundaries_test.dart"},"type":"testStart","time":24919}
+{"testID":54,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":24929}
+{"testID":11,"result":"success","skipped":false,"hidden":true,"type":"testDone","time":25098}
+{"group":{"id":55,"suiteID":10,"parentID":null,"name":"","metadata":{"skip":false,"skipReason":null},"testCount":8,"line":null,"column":null,"url":null},"type":"group","time":25098}
+{"test":{"id":56,"name":"concurrent 401s retire once without replaying writes","suiteID":10,"groupIDs":[55],"metadata":{"skip":false,"skipReason":null},"line":56,"column":3,"url":"file:///D:/Project/birdtie/apps/client/test/authenticated_client_test.dart"},"type":"testStart","time":25098}
+{"testID":56,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":25132}
+{"test":{"id":57,"name":"late old 401 and identity ABA cannot retire a current account","suiteID":10,"groupIDs":[55],"metadata":{"skip":false,"skipReason":null},"line":108,"column":3,"url":"file:///D:/Project/birdtie/apps/client/test/authenticated_client_test.dart"},"type":"testStart","time":25133}
+{"testID":57,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":25139}
+{"test":{"id":58,"name":"late successful private response is rejected after account change; ABA=false","suiteID":10,"groupIDs":[55],"metadata":{"skip":false,"skipReason":null},"line":141,"column":5,"url":"file:///D:/Project/birdtie/apps/client/test/authenticated_client_test.dart"},"type":"testStart","time":25139}
+{"testID":58,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":25142}
+{"test":{"id":59,"name":"late successful private response is rejected after account change; ABA=true","suiteID":10,"groupIDs":[55],"metadata":{"skip":false,"skipReason":null},"line":141,"column":5,"url":"file:///D:/Project/birdtie/apps/client/test/authenticated_client_test.dart"},"type":"testStart","time":25143}
+{"testID":59,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":25147}
+{"test":{"id":60,"name":"private response body arriving after accepted headers is retired on account switch","suiteID":10,"groupIDs":[55],"metadata":{"skip":false,"skipReason":null},"line":188,"column":3,"url":"file:///D:/Project/birdtie/apps/client/test/authenticated_client_test.dart"},"type":"testStart","time":25147}
+{"testID":60,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":25155}
+{"test":{"id":61,"name":"private body already buffered under A cannot complete successfully after identity ABA","suiteID":10,"groupIDs":[55],"metadata":{"skip":false,"skipReason":null},"line":227,"column":3,"url":"file:///D:/Project/birdtie/apps/client/test/authenticated_client_test.dart"},"type":"testStart","time":25156}
+{"testID":27,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":25161}
+{"test":{"id":62,"name":"cancel and repeated close callback keep Inbox and send no requests","suiteID":2,"groupIDs":[23],"metadata":{"skip":false,"skipReason":null},"line":174,"column":5,"url":"package:flutter_test/src/widget_tester.dart","root_line":216,"root_column":3,"root_url":"file:///D:/Project/birdtie/apps/client/test/auth_restore_and_access_test.dart"},"type":"testStart","time":25162}
+{"testID":61,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":25162}
+{"test":{"id":63,"name":"guarded success preserves transport metadata and final response URL","suiteID":10,"groupIDs":[55],"metadata":{"skip":false,"skipReason":null},"line":276,"column":3,"url":"file:///D:/Project/birdtie/apps/client/test/authenticated_client_test.dart"},"type":"testStart","time":25162}
+{"testID":63,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":25170}
+{"test":{"id":64,"name":"403, offline and anonymous public reads do not request login","suiteID":10,"groupIDs":[55],"metadata":{"skip":false,"skipReason":null},"line":319,"column":3,"url":"file:///D:/Project/birdtie/apps/client/test/authenticated_client_test.dart"},"type":"testStart","time":25171}
+{"testID":64,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":25175}
+{"testID":13,"result":"success","skipped":false,"hidden":true,"type":"testDone","time":25350}
+{"group":{"id":65,"suiteID":12,"parentID":null,"name":"","metadata":{"skip":false,"skipReason":null},"testCount":4,"line":null,"column":null,"url":null},"type":"group","time":25350}
+{"test":{"id":66,"name":"local development phone challenge creates and revokes a session","suiteID":12,"groupIDs":[65],"metadata":{"skip":false,"skipReason":null},"line":11,"column":3,"url":"file:///D:/Project/birdtie/apps/client/test/dev_phone_auth_controller_test.dart"},"type":"testStart","time":25350}
+{"testID":62,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":25365}
+{"test":{"id":67,"name":"guest Inbox at short screen and 200% exposes a real 48dp action","suiteID":2,"groupIDs":[23],"metadata":{"skip":false,"skipReason":null},"line":174,"column":5,"url":"package:flutter_test/src/widget_tester.dart","root_line":269,"root_column":3,"root_url":"file:///D:/Project/birdtie/apps/client/test/auth_restore_and_access_test.dart"},"type":"testStart","time":25365}
+{"testID":66,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":25383}
+{"test":{"id":68,"name":"saved Session resumes after restart and invalid Session is removed","suiteID":12,"groupIDs":[65],"metadata":{"skip":false,"skipReason":null},"line":81,"column":3,"url":"file:///D:/Project/birdtie/apps/client/test/dev_phone_auth_controller_test.dart"},"type":"testStart","time":25383}
+{"testID":68,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":25392}
+{"test":{"id":69,"name":"explicit email fixed-code realm persists and restores its truthful kind","suiteID":12,"groupIDs":[65],"metadata":{"skip":false,"skipReason":null},"line":132,"column":3,"url":"file:///D:/Project/birdtie/apps/client/test/dev_phone_auth_controller_test.dart"},"type":"testStart","time":25392}
+{"testID":69,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":25402}
+{"test":{"id":70,"name":"late email verify retires issued token without accepting owner or vault","suiteID":12,"groupIDs":[65],"metadata":{"skip":false,"skipReason":null},"line":202,"column":3,"url":"file:///D:/Project/birdtie/apps/client/test/dev_phone_auth_controller_test.dart"},"type":"testStart","time":25402}
+{"testID":70,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":25406}
+{"testID":67,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":25412}
+{"test":{"id":71,"name":"same-key auth replacement retires chooser without launching old dev login","suiteID":2,"groupIDs":[23],"metadata":{"skip":false,"skipReason":null},"line":174,"column":5,"url":"package:flutter_test/src/widget_tester.dart","root_line":321,"root_column":3,"root_url":"file:///D:/Project/birdtie/apps/client/test/auth_restore_and_access_test.dart"},"type":"testStart","time":25413}
+{"testID":71,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":25502}
+{"test":{"id":72,"name":"same-key MyActivities replacement rejects sources from the previous account","suiteID":2,"groupIDs":[23],"metadata":{"skip":false,"skipReason":null},"line":174,"column":5,"url":"package:flutter_test/src/widget_tester.dart","root_line":371,"root_column":3,"root_url":"file:///D:/Project/birdtie/apps/client/test/auth_restore_and_access_test.dart"},"type":"testStart","time":25502}
+{"testID":72,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":25560}
+{"test":{"id":73,"name":"MyActivities real login reads saved and phase-only notifications do not reload","suiteID":2,"groupIDs":[23],"metadata":{"skip":false,"skipReason":null},"line":174,"column":5,"url":"package:flutter_test/src/widget_tester.dart","root_line":456,"root_column":3,"root_url":"file:///D:/Project/birdtie/apps/client/test/auth_restore_and_access_test.dart"},"type":"testStart","time":25560}
+{"testID":73,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":25605}
+{"success":false,"type":"done","time":25631}

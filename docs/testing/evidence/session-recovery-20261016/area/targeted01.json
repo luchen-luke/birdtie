@@ -1,0 +1,27 @@
+{
+  "command": "D:/DevTools/flutter/bin/flutter.bat test test/now_area_content_recovery_test.dart --reporter expanded",
+  "cwd": "D:/Project/birdtie/apps/client",
+  "startedAt": "2026-10-16T13:08:11.2784633Z",
+  "finishedAt": "2026-10-16T13:08:24.1179001Z",
+  "exitCode": 1,
+  "sourceBefore": {
+    "apps/client/lib/src/workspace/agent_workspace_controller.dart": "5a196ed81ef6f1df446f78f38f291514548bc3f1a1302e6ae72e0765b38db472",
+    "apps/client/lib/src/workspace/map_canvas.dart": "0c92e2de7ff00da41d0181fbdacbed790ee2da4f19652945fa93049d9e2db62b",
+    "apps/client/lib/src/workspace/agent_conversation.dart": "5bd2fbe0a9ac045cfe4bddc858c14d8d89d3ebe8fcf6ad6e251a72b73fa5b246",
+    "apps/client/lib/src/workspace/map_workspace.dart": "626866ff3731377fc11afc67d9f9ca3acdcd9376188d054407bf338cc0a78e36",
+    "apps/client/lib/src/auth/session_vault.dart": "7fc8a7e0ddacdb4dca8de514412c6a2b970b155dcc77a27970bbe004b861758a",
+    "apps/client/lib/src/auth/birdtie_auth_controller.dart": "badb9a866b4257c79f40cf2b1058b53b9beff398e996d25545f72f9e85f72d17",
+    "apps/client/test/now_area_content_recovery_test.dart": "b14efe031704563bf79b1950c11944bb40dc391742beffeafa54df0231761c9e"
+  },
+  "sourceAfter": {
+    "apps/client/lib/src/workspace/agent_workspace_controller.dart": "5a196ed81ef6f1df446f78f38f291514548bc3f1a1302e6ae72e0765b38db472",
+    "apps/client/lib/src/workspace/map_canvas.dart": "0c92e2de7ff00da41d0181fbdacbed790ee2da4f19652945fa93049d9e2db62b",
+    "apps/client/lib/src/workspace/agent_conversation.dart": "5bd2fbe0a9ac045cfe4bddc858c14d8d89d3ebe8fcf6ad6e251a72b73fa5b246",
+    "apps/client/lib/src/workspace/map_workspace.dart": "626866ff3731377fc11afc67d9f9ca3acdcd9376188d054407bf338cc0a78e36",
+    "apps/client/lib/src/auth/session_vault.dart": "7fc8a7e0ddacdb4dca8de514412c6a2b970b155dcc77a27970bbe004b861758a",
+    "apps/client/lib/src/auth/birdtie_auth_controller.dart": "badb9a866b4257c79f40cf2b1058b53b9beff398e996d25545f72f9e85f72d17",
+    "apps/client/test/now_area_content_recovery_test.dart": "b14efe031704563bf79b1950c11944bb40dc391742beffeafa54df0231761c9e"
+  },
+  "sourceStable": true,
+  "verification": "isolated Flutter host/widget, mocked HTTP; device/live login/build NOT_RUN"
+}

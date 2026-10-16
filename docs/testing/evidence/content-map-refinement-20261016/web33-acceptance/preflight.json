@@ -1,0 +1,18 @@
+{
+  "status": "WEB_ASSETS_VERIFIED_API29_UI_NOT_RUN",
+  "manifestCanonicalSHA256": "5bb2eb4d68e60c3c5d763df718a00766cb65cfec3e5098385579b46a53c5ac1a",
+  "assets": {
+    "main.dart.js": {
+      "status": 200,
+      "bytes": 25908859,
+      "sha256": "c5091b591ae2beeda358ec1f431d3fe27b72df391990a56cced6848280ce2771"
+    },
+    "index.html": {
+      "status": 200,
+      "bytes": 1943,
+      "sha256": "7634d2d6d578838b262b27144c59a09d3856c86a276d091b84987bdba00f05ea"
+    }
+  },
+  "browserSessionCreated": false,
+  "scriptSyntax": "PASS"
+}

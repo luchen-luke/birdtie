@@ -41,7 +41,7 @@ Rect inkBounds((int, int, Uint8List) image) {
 
 void main() {
   testWidgets(
-    'content cluster has opaque centred square and readable count at phone DPR; people cluster stays unchanged',
+    'same-coordinate group keeps a compact photo with small badge at phone DPR; people unchanged',
     (t) async {
       await t.runAsync(() async {
         final normal = await MapMarkerBitmap.render(
@@ -62,13 +62,13 @@ void main() {
         expect((a.$1, a.$2), (96, 96));
         expect((b.$1, b.$2), (312, 312));
         final one = inkBounds(a), large = inkBounds(b);
-        expect(one.width, greaterThanOrEqualTo(37));
-        expect(one.height, greaterThanOrEqualTo(37));
+        expect(one.width, inInclusiveRange(28, 38));
+        expect(one.height, inInclusiveRange(28, 38));
         expect(large.width / 3.25, closeTo(one.width, 1));
         expect(large.height / 3.25, closeTo(one.height, 1));
-        expect(large.center.dx / 3.25, closeTo(50, 1));
-        expect(large.center.dy / 3.25, closeTo(46, 1));
-        // Front card centres on (48,48); the back card extends four dp up/right.
+        expect(large.center.dx / 3.25, closeTo(51.5, 1));
+        expect(large.center.dy / 3.25, closeTo(50.5, 1));
+        // The photo stays centred on the real anchor; only the small corner badge extends.
         final center = ((48 * 3.25).round() * b.$1 + (48 * 3.25).round()) * 4;
         expect(b.$3[center + 3], 255);
         var whiteCountPixels = 0;
@@ -93,6 +93,27 @@ void main() {
         // Flutter's Ahem fixture font uses the same glyph for single digits.
         // A second digit still exercises the count-dependent painted width.
         expect(twelve, isNot(orderedEquals(phone)));
+        final recorder = ui.PictureRecorder();
+        final canvas = Canvas(recorder);
+        canvas.drawRect(
+          const Rect.fromLTWH(0, 0, 16, 16),
+          Paint()..color = Colors.red,
+        );
+        final picture = recorder.endRecording();
+        final photo = await picture.toImage(16, 16);
+        picture.dispose();
+        final withPhoto = await pixels(
+          await MapMarkerBitmap.render(
+            kind: MapEntityKind.cluster,
+            selected: false,
+            count: 2,
+            photo: photo,
+          ),
+        );
+        photo.dispose();
+        final photoCentre = (48 * withPhoto.$1 + 48) * 4;
+        expect(withPhoto.$3[photoCentre], greaterThan(240));
+        expect(withPhoto.$3[photoCentre + 1], lessThan(100));
         final people = await MapMarkerBitmap.render(
           kind: MapEntityKind.peopleCluster,
           selected: false,

@@ -1,0 +1,9 @@
+{"Time":"2026-10-16T08:00:42.5523875+08:00","Action":"start","Package":"github.com/birdtie/birdtie/apps/api/internal/postgres"}
+{"Time":"2026-10-16T08:00:44.6509936+08:00","Action":"run","Package":"github.com/birdtie/birdtie/apps/api/internal/postgres","Test":"TestMapContent172NativeImmutableAttribution"}
+{"Time":"2026-10-16T08:00:44.6509936+08:00","Action":"output","Package":"github.com/birdtie/birdtie/apps/api/internal/postgres","Test":"TestMapContent172NativeImmutableAttribution","Output":"=== RUN   TestMapContent172NativeImmutableAttribution\n"}
+{"Time":"2026-10-16T08:00:47.0948475+08:00","Action":"output","Package":"github.com/birdtie/birdtie/apps/api/internal/postgres","Test":"TestMapContent172NativeImmutableAttribution","Output":"    map_content_author_native_test.go:79: migration roundtrip uses independently owned database birdtie_owned_migration_80cb29f75628018b129dece3 with 172 actual migrations\n"}
+{"Time":"2026-10-16T08:00:47.5319897+08:00","Action":"output","Package":"github.com/birdtie/birdtie/apps/api/internal/postgres","Test":"TestMapContent172NativeImmutableAttribution","Output":"--- PASS: TestMapContent172NativeImmutableAttribution (2.88s)\n"}
+{"Time":"2026-10-16T08:00:47.5319897+08:00","Action":"pass","Package":"github.com/birdtie/birdtie/apps/api/internal/postgres","Test":"TestMapContent172NativeImmutableAttribution","Elapsed":2.88}
+{"Time":"2026-10-16T08:00:47.5319897+08:00","Action":"output","Package":"github.com/birdtie/birdtie/apps/api/internal/postgres","Output":"PASS\n"}
+{"Time":"2026-10-16T08:00:47.5350896+08:00","Action":"output","Package":"github.com/birdtie/birdtie/apps/api/internal/postgres","Output":"ok  \tgithub.com/birdtie/birdtie/apps/api/internal/postgres\t4.982s\n"}
+{"Time":"2026-10-16T08:00:47.5350896+08:00","Action":"pass","Package":"github.com/birdtie/birdtie/apps/api/internal/postgres","Elapsed":4.983}

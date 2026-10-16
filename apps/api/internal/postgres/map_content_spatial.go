@@ -3,10 +3,8 @@ package postgres
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"github.com/birdtie/birdtie/apps/api/internal/content"
 	"github.com/birdtie/birdtie/apps/api/internal/identity"
-	"math"
 	"net/url"
 	"sort"
 	"strconv"
@@ -255,38 +253,22 @@ func mapContentTargetFilter(ctx context.Context, f humanWriteFrame, kind, id str
 	return v, nil
 }
 
-// A deterministic world grid gives stable clusters. If a viewport has more
-// than the drawing budget, coarsen the grid rather than dropping its tail.
-func mapSpatialGroups(leaves []mapSpatialLeaf, zoom float64) [][]int {
-	if len(leaves) <= 40 && zoom >= 14 {
-		out := [][]int{}
-		for i := range leaves {
-			out = append(out, []int{i})
+// Group only identical, equally precise source positions. A low zoom level is
+// not authority to relocate separate content into a synthetic numbered point.
+// Drawing limits are enforced by page size, never by merging distinct locations.
+func mapSpatialGroups(leaves []mapSpatialLeaf, _ float64) [][]int {
+	groups := [][]int{}
+	positions := map[content.MapContentAnchor]int{}
+	for i, leaf := range leaves {
+		at, found := positions[leaf.pin.Anchor]
+		if !found {
+			at = len(groups)
+			positions[leaf.pin.Anchor] = at
+			groups = append(groups, []int{})
 		}
-		return out
+		groups[at] = append(groups[at], i)
 	}
-	level := max(0, int(math.Floor(zoom))+2)
-	for {
-		cells := map[string][]int{}
-		size := 360 / math.Exp2(float64(level))
-		for i, x := range leaves {
-			k := fmt.Sprintf("%d:%d", int(math.Floor((x.pin.Anchor.Longitude+180)/size)), int(math.Floor((x.pin.Anchor.Latitude+90)/size)))
-			cells[k] = append(cells[k], i)
-		}
-		if len(cells) <= 40 || level == 0 {
-			keys := []string{}
-			for k := range cells {
-				keys = append(keys, k)
-			}
-			sort.Strings(keys)
-			out := [][]int{}
-			for _, k := range keys {
-				out = append(out, cells[k])
-			}
-			return out
-		}
-		level--
-	}
+	return groups
 }
 func mapClusterID(q content.MapContentQuery, leaves []mapSpatialLeaf, ids []int) string {
 	members := []string{}
@@ -332,6 +314,9 @@ func mapClusterBounds(q content.MapContentQuery, leaves []mapSpatialLeaf, ids []
 }
 func mapMembersPath(q content.MapContentQuery, cluster, source, cursor string) string {
 	v := url.Values{"west": {strconv.FormatFloat(q.Bounds.West, 'g', -1, 64)}, "south": {strconv.FormatFloat(q.Bounds.South, 'g', -1, 64)}, "east": {strconv.FormatFloat(q.Bounds.East, 'g', -1, 64)}, "north": {strconv.FormatFloat(q.Bounds.North, 'g', -1, 64)}, "zoom": {strconv.FormatFloat(q.Zoom, 'g', -1, 64)}, "filterScope": {"DEFAULT_CONTENT"}, "clusterId": {cluster}, "sourceVersion": {source}}
+	if cluster == "" {
+		v.Del("clusterId")
+	}
 	if q.CityID != "" {
 		v.Set("cityId", q.CityID)
 	}
@@ -369,7 +354,13 @@ func (s *Store) ReadHumanMapContent(ctx context.Context, d [32]byte, a identity.
 	}
 	p.TotalContentCount = len(mids)
 	groups := mapSpatialGroups(leaves, q.Zoom)
+	p.TotalPointCount = len(groups)
+	p.ViewportPath = mapMembersPath(q, "", source, "")
+	if q.SourceVersion != "" && q.SourceVersion != source {
+		return p, identity.ErrControlChanged
+	}
 	selected := []int{}
+	representatives := map[string]int{}
 	if q.ClusterID != "" {
 		if q.SourceVersion != source {
 			return p, identity.ErrControlChanged
@@ -419,7 +410,36 @@ func (s *Store) ReadHumanMapContent(ctx context.Context, d [32]byte, a identity.
 			p.Pins = append(p.Pins, leaves[i].pin)
 		}
 	} else {
-		for _, g := range groups {
+		query := "viewport:" + content.MomentControlHash([]any{q.Bounds, q.Zoom, q.CityID, "DEFAULT_CONTENT"})
+		start := 0
+		if q.Cursor != "" {
+			c, err := decodeJourneyHistoryCursor(q.Cursor)
+			if err != nil || c == nil || c.Owner != a.ID || c.Reader != historyReader(f) || c.Query != query || c.Source != source || !c.Until.After(at) {
+				return p, identity.ErrControlChanged
+			}
+			found := false
+			for i, g := range groups {
+				before := strings.TrimPrefix(strings.TrimPrefix(leaves[g[0]].pin.MarkerID, "place:"), "anchor:")
+				if before == c.Before {
+					start = i + 1
+					found = true
+					break
+				}
+			}
+			if !found || start >= len(groups) {
+				return p, content.ErrInvalid
+			}
+		}
+		end := min(start+40, len(groups))
+		if end < len(groups) {
+			before := strings.TrimPrefix(strings.TrimPrefix(leaves[groups[end-1][0]].pin.MarkerID, "place:"), "anchor:")
+			cursor, err := encodeJourneyHistoryCursor(journeyHistoryCursor{Version: 1, Owner: a.ID, Reader: historyReader(f), Query: query, Source: source, Before: before, Until: at.Add(30 * time.Minute)})
+			if err != nil {
+				return p, err
+			}
+			p.NextCursor = &cursor
+		}
+		for _, g := range groups[start:end] {
 			if len(g) == 1 {
 				i := g[0]
 				selected = append(selected, i)
@@ -430,6 +450,11 @@ func (s *Store) ReadHumanMapContent(ctx context.Context, d [32]byte, a identity.
 			x := content.MapContentPin{Kind: "CLUSTER", Name: "动态", CategoryCode: "moment", Anchor: first.Anchor, AnchorCount: len(g), VisibilitySources: []string{}, Moments: []content.MapContentMomentSelector{}}
 			x.MarkerID = mapClusterID(q, leaves, g)
 			x.EntityID = x.MarkerID
+			x.RepresentativeMarkerID = first.MarkerID
+			x.RepresentativePlaceID = first.PlaceID
+			x.RepresentativeMomentID = first.MomentID
+			representatives[x.MarkerID] = g[0]
+			selected = append(selected, g[0])
 			x.MembersPath = mapMembersPath(q, x.MarkerID, source, "")
 			bounds := mapClusterBounds(q, leaves, g)
 			x.Bounds = &bounds
@@ -461,8 +486,8 @@ func (s *Store) ReadHumanMapContent(ctx context.Context, d [32]byte, a identity.
 			p.Pins = append(p.Pins, x)
 		}
 	}
-	// Only returned leaves consume metadata/thumbnail budget. Clusters never
-	// hydrate or download every member. Counts above already include all leaves.
+	// Only returned leaves and one real representative per coincident group
+	// consume metadata/thumbnail budget; never hydrate every group member. Counts above already include all leaves.
 	filter := &mapContentReadFilter{PlaceIDs: []string{}, MomentIDs: []string{}}
 	for _, i := range selected {
 		x := leaves[i]
@@ -488,12 +513,12 @@ func (s *Store) ReadHumanMapContent(ctx context.Context, d [32]byte, a identity.
 	}
 	coverOrder := []int{}
 	for i := range p.Pins {
-		if p.Pins[i].Kind != "CLUSTER" && p.Pins[i].MarkerID == q.SelectedMarkerID {
+		if p.Pins[i].MarkerID == q.SelectedMarkerID {
 			coverOrder = append(coverOrder, i)
 		}
 	}
 	for i := range p.Pins {
-		if p.Pins[i].Kind != "CLUSTER" && p.Pins[i].MarkerID != q.SelectedMarkerID {
+		if p.Pins[i].MarkerID != q.SelectedMarkerID {
 			coverOrder = append(coverOrder, i)
 		}
 	}
@@ -502,18 +527,22 @@ func (s *Store) ReadHumanMapContent(ctx context.Context, d [32]byte, a identity.
 	}
 	for _, i := range coverOrder {
 		pin := &p.Pins[i]
+		target := *pin
+		if li, ok := representatives[pin.MarkerID]; ok {
+			target = leaves[li].pin
+		}
 		var cover *content.MapContentImage
-		if pin.Kind == "PLACE_CONTENT" {
-			cover, e = s.mapContentCoverTx(ctx, f, &v, pin.PlaceID)
+		if target.Kind == "PLACE_CONTENT" {
+			cover, e = s.mapContentCoverTx(ctx, f, &v, target.PlaceID)
 		} else {
-			m := v.moments[pin.MomentID]
+			m := v.moments[target.MomentID]
 			if m != nil {
 				var assets []mapContentAsset
 				assets, e = s.mapContentMomentMediaTx(ctx, f, &v, m)
 				if e == nil {
 					wanted := ""
 					for _, li := range selected {
-						if leaves[li].pin.MarkerID == pin.MarkerID {
+						if leaves[li].pin.MarkerID == target.MarkerID {
 							wanted = leaves[li].media
 							break
 						}

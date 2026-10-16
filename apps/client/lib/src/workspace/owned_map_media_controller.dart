@@ -59,19 +59,19 @@ class OwnedMapMediaController extends ChangeNotifier {
     final renewed = !identical(_latestView, view);
     _latestView = view;
     final ratio = MapMarkerBitmap.pixelRatio(devicePixelRatio);
-    final chosen =
-        view.items.where((p) => p.cover != null && !p.isCluster).toList()..sort(
-          (a, b) =>
-              (b.canonicalMarkerID == selectedMarkerID ? 1 : 0) -
-              (a.canonicalMarkerID == selectedMarkerID ? 1 : 0),
-        );
+    final chosen = view.items.where((p) => p.cover != null).toList()
+      ..sort(
+        (a, b) =>
+            (b.canonicalMarkerID == selectedMarkerID ? 1 : 0) -
+            (a.canonicalMarkerID == selectedMarkerID ? 1 : 0),
+      );
     final next = <String, _ActivePixels>{};
     for (final pin in chosen.take(math.min(12, maxItems))) {
       final cover = pin.cover!;
       // Media sourceVersion describes this asset and its permission facts,
       // not a viewport hash. A renewed camera lease does not redownload it.
       final key =
-          '${cover.identity}:${cover.width}:${cover.height}:${pin.entity.kind.name}:${pin.categoryCode}:$ratio';
+          '${cover.identity}:${cover.width}:${cover.height}:${pin.entity.kind.name}:${pin.categoryCode}:${pin.isCluster ? pin.momentCount : 0}:$ratio';
       var entry = _entries.remove(key);
       if (entry != null) _entries[key] = entry;
       if (entry != null && entry.finished && entry.image == null && renewed) {
@@ -209,6 +209,7 @@ class OwnedMapMediaController extends ChangeNotifier {
         throw const FormatException('地图图片尺寸不符');
       normal = await MapMarkerBitmap.render(
         kind: grant.pin.entity.kind,
+        count: grant.pin.isCluster ? grant.pin.momentCount : 0,
         categoryCode: grant.pin.categoryCode,
         selected: false,
         devicePixelRatio: entry.ratio,
@@ -217,6 +218,7 @@ class OwnedMapMediaController extends ChangeNotifier {
       if (!allowed()) return;
       selected = await MapMarkerBitmap.render(
         kind: grant.pin.entity.kind,
+        count: grant.pin.isCluster ? grant.pin.momentCount : 0,
         categoryCode: grant.pin.categoryCode,
         selected: true,
         devicePixelRatio: entry.ratio,

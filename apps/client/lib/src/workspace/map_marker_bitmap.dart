@@ -24,7 +24,7 @@ class MapMarkerBitmap {
   // Bounded across source revisions and DPRs. Every glyph stays at its anchor.
   static const cacheLimit = 128;
   static const pointCanvasSize = 96.0;
-  static const contentClusterSide = 32.0;
+  static const contentClusterSide = 28.0;
   static double pixelRatio(double value) =>
       value.isFinite && value > 0 ? value.clamp(.5, 8.0) : 1.0;
 
@@ -198,6 +198,7 @@ class MapMarkerBitmap {
     bool selected,
     int count,
     double ratio,
+    ui.Image? photo,
   ) async {
     const center = Offset(pointCanvasSize / 2, pointCanvasSize / 2);
     const color = Color(0xFF315E50);
@@ -205,40 +206,53 @@ class MapMarkerBitmap {
     final rect = Rect.fromCenter(center: center, width: side, height: side);
     final recorder = ui.PictureRecorder(), canvas = Canvas(recorder);
     canvas.scale(ratio);
-    for (final card in [rect.translate(4, -4), rect]) {
-      final shape = RRect.fromRectAndRadius(card, const Radius.circular(5));
-      canvas.drawRRect(shape, Paint()..color = color);
-      canvas.drawRRect(
-        shape,
-        Paint()
-          ..color = Colors.white
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 2,
-      );
+    final shape = RRect.fromRectAndRadius(rect, const Radius.circular(4));
+    canvas.drawRRect(shape, Paint()..color = color);
+    if (photo != null) {
+      canvas.save();
+      canvas.clipRRect(shape);
+      paintImage(canvas: canvas, rect: rect, image: photo, fit: BoxFit.cover);
+      canvas.restore();
+    } else {
+      for (final dy in [-4.0, 0.0, 4.0]) {
+        canvas.drawLine(
+          center + Offset(-5, dy),
+          center + Offset(5, dy),
+          Paint()
+            ..color = Colors.white
+            ..strokeWidth = 1.5,
+        );
+      }
     }
-    final label = count > 0 ? count.toString() : '…';
+    canvas.drawRRect(
+      shape,
+      Paint()
+        ..color = Colors.white
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5,
+    );
+    final badge = Rect.fromCenter(
+      center: rect.bottomRight - const Offset(1, 1),
+      width: 16,
+      height: 14,
+    );
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(badge, const Radius.circular(5)),
+      Paint()..color = Colors.white,
+    );
     final text = TextPainter(
       text: TextSpan(
-        text: label,
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: label.length <= 3
-              ? 16
-              : label.length == 4
-              ? 12
-              : 10,
-          fontWeight: FontWeight.w600,
+        text: count > 99 ? '99+' : '$count',
+        style: const TextStyle(
+          color: color,
+          fontSize: 9,
+          fontWeight: FontWeight.w700,
           height: 1,
         ),
       ),
       textDirection: TextDirection.ltr,
     )..layout();
-    final scale = (side - 6) / text.width;
-    canvas.save();
-    canvas.translate(center.dx, center.dy);
-    if (scale < 1) canvas.scale(scale);
-    text.paint(canvas, Offset(-text.width / 2, -text.height / 2));
-    canvas.restore();
+    text.paint(canvas, badge.center - Offset(text.width / 2, text.height / 2));
     text.dispose();
     final picture = recorder.endRecording();
     final extent = (pointCanvasSize * ratio).ceil();
@@ -293,8 +307,8 @@ class MapMarkerBitmap {
     }
 
     if (contentCluster) {
-      final bytes = await _contentCluster(selected, count, ratio);
-      _remember(key, bytes);
+      final bytes = await _contentCluster(selected, count, ratio, photo);
+      if (photo == null) _remember(key, bytes);
       return bytes;
     }
     if (individual) {

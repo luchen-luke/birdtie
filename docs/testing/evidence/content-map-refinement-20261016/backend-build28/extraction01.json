@@ -1,0 +1,21 @@
+{
+  "status": "AUTHENTICATED_AUTHOR_AVATAR_EXTRACTION_COMPLETE",
+  "accepted": true,
+  "selectedAssets": 6,
+  "blobFiles": 6,
+  "selectedOriginalBytes": 14140782,
+  "wholeGCMAuthenticated": true,
+  "wholePlaintextHashAndLengthMatched": true,
+  "exactObjectHashesMatched": true,
+  "currentUserOnlyDirectory": true,
+  "sourceInputsUnchanged": true,
+  "sourceWrites": 0,
+  "databaseWrites": 0,
+  "urlFetches": 0,
+  "mediaPublication": false,
+  "pixelDecode": "NOT_RUN",
+  "privateValuesOmitted": true,
+  "helperSHA256": "759d02ad5d71f1f90a32d9b90ed9e32f1f301424cafe154fe33bb89055a409e3",
+  "extractorSHA256": "56602920351ca6b5889e98b4defc9be1a7155280bbdb196d15bc34867df92b93",
+  "transferManifestSHA256": "b7af47e44bbd6fa6c645064e1b78ab882246e09e3b3f9d1e8877ab9ba39ccd1e"
+}

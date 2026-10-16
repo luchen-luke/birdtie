@@ -1,0 +1,267 @@
+{
+  "status": "PASS",
+  "at": "2026-10-15T23:48:07.617198+00:00",
+  "remoteScriptSHA256": "637190f8aafcbfee8a94cdff28ce38d0bd606e5039c37190a812e8ff07b6c1ae",
+  "privateValuesLogged": false,
+  "exitCode": 0,
+  "stderrPresent": false,
+  "result": {
+    "status": "PASS",
+    "devOnly": true,
+    "productionIdentityVerified": false,
+    "productionPhoneVerification": false,
+    "fixedCodeUsed": true,
+    "sourceWrites": 0,
+    "databaseDirectWrites": 0,
+    "remoteConfigurationChanged": false,
+    "agentActivationRequested": false,
+    "oldSessionAccepted": false,
+    "messagesSent": 0,
+    "privateValuesPersisted": false,
+    "allCreatedSessionsLoggedOut": true,
+    "schema": 171,
+    "apiBuild": 27,
+    "contentWrites": 0,
+    "measurements": [
+      {
+        "scenario": "wide",
+        "runs": [
+          {
+            "elapsedMs": 677.04,
+            "responseJSONBytes": 10383,
+            "httpResponseBytes": 10462,
+            "markers": 7,
+            "withContent": 7,
+            "totalContentCount": 9,
+            "totalAnchorCount": 7,
+            "covers": 7,
+            "advertisedCoverBytes": 44488,
+            "kindCounts": {
+              "PLACE_CONTENT": 6,
+              "MOMENT_ANCHOR": 1,
+              "CLUSTER": 0
+            },
+            "totalPointCount": 7
+          },
+          {
+            "elapsedMs": 230.179,
+            "responseJSONBytes": 10383,
+            "httpResponseBytes": 10462,
+            "markers": 7,
+            "withContent": 7,
+            "totalContentCount": 9,
+            "totalAnchorCount": 7,
+            "covers": 7,
+            "advertisedCoverBytes": 44488,
+            "kindCounts": {
+              "PLACE_CONTENT": 6,
+              "MOMENT_ANCHOR": 1,
+              "CLUSTER": 0
+            },
+            "totalPointCount": 7
+          },
+          {
+            "elapsedMs": 230.852,
+            "responseJSONBytes": 10383,
+            "httpResponseBytes": 10462,
+            "markers": 7,
+            "withContent": 7,
+            "totalContentCount": 9,
+            "totalAnchorCount": 7,
+            "covers": 7,
+            "advertisedCoverBytes": 44488,
+            "kindCounts": {
+              "PLACE_CONTENT": 6,
+              "MOMENT_ANCHOR": 1,
+              "CLUSTER": 0
+            },
+            "totalPointCount": 7
+          }
+        ]
+      },
+      {
+        "scenario": "phone",
+        "runs": [
+          {
+            "elapsedMs": 218.805,
+            "responseJSONBytes": 10407,
+            "httpResponseBytes": 10486,
+            "markers": 7,
+            "withContent": 7,
+            "totalContentCount": 9,
+            "totalAnchorCount": 7,
+            "covers": 7,
+            "advertisedCoverBytes": 44488,
+            "kindCounts": {
+              "PLACE_CONTENT": 6,
+              "MOMENT_ANCHOR": 1,
+              "CLUSTER": 0
+            },
+            "totalPointCount": 7
+          },
+          {
+            "elapsedMs": 219.787,
+            "responseJSONBytes": 10407,
+            "httpResponseBytes": 10486,
+            "markers": 7,
+            "withContent": 7,
+            "totalContentCount": 9,
+            "totalAnchorCount": 7,
+            "covers": 7,
+            "advertisedCoverBytes": 44488,
+            "kindCounts": {
+              "PLACE_CONTENT": 6,
+              "MOMENT_ANCHOR": 1,
+              "CLUSTER": 0
+            },
+            "totalPointCount": 7
+          },
+          {
+            "elapsedMs": 219.058,
+            "responseJSONBytes": 10407,
+            "httpResponseBytes": 10486,
+            "markers": 7,
+            "withContent": 7,
+            "totalContentCount": 9,
+            "totalAnchorCount": 7,
+            "covers": 7,
+            "advertisedCoverBytes": 44488,
+            "kindCounts": {
+              "PLACE_CONTENT": 6,
+              "MOMENT_ANCHOR": 1,
+              "CLUSTER": 0
+            },
+            "totalPointCount": 7
+          }
+        ]
+      },
+      {
+        "scenario": "adjacent",
+        "runs": [
+          {
+            "elapsedMs": 220.843,
+            "responseJSONBytes": 10407,
+            "httpResponseBytes": 10486,
+            "markers": 7,
+            "withContent": 7,
+            "totalContentCount": 9,
+            "totalAnchorCount": 7,
+            "covers": 7,
+            "advertisedCoverBytes": 44488,
+            "kindCounts": {
+              "PLACE_CONTENT": 6,
+              "MOMENT_ANCHOR": 1,
+              "CLUSTER": 0
+            },
+            "totalPointCount": 7
+          },
+          {
+            "elapsedMs": 219.172,
+            "responseJSONBytes": 10407,
+            "httpResponseBytes": 10486,
+            "markers": 7,
+            "withContent": 7,
+            "totalContentCount": 9,
+            "totalAnchorCount": 7,
+            "covers": 7,
+            "advertisedCoverBytes": 44488,
+            "kindCounts": {
+              "PLACE_CONTENT": 6,
+              "MOMENT_ANCHOR": 1,
+              "CLUSTER": 0
+            },
+            "totalPointCount": 7
+          },
+          {
+            "elapsedMs": 219.446,
+            "responseJSONBytes": 10407,
+            "httpResponseBytes": 10486,
+            "markers": 7,
+            "withContent": 7,
+            "totalContentCount": 9,
+            "totalAnchorCount": 7,
+            "covers": 7,
+            "advertisedCoverBytes": 44488,
+            "kindCounts": {
+              "PLACE_CONTENT": 6,
+              "MOMENT_ANCHOR": 1,
+              "CLUSTER": 0
+            },
+            "totalPointCount": 7
+          }
+        ]
+      }
+    ],
+    "sparseZoomChecks": [
+      {
+        "scenario": "wide",
+        "zoomChecks": 3,
+        "pointCount": 7,
+        "distinctLeafMarkers": 7
+      },
+      {
+        "scenario": "phone",
+        "zoomChecks": 3,
+        "pointCount": 7,
+        "distinctLeafMarkers": 7
+      },
+      {
+        "scenario": "adjacent",
+        "zoomChecks": 3,
+        "pointCount": 7,
+        "distinctLeafMarkers": 7
+      }
+    ],
+    "measurementsFrom": "verify01",
+    "observedMigratedAnchors": 16,
+    "allLeafMarkersRead": 55,
+    "viewportGroupsRead": 55,
+    "world": {
+      "elapsedMs": 4071.897,
+      "responseJSONBytes": 41234,
+      "httpResponseBytes": 41338,
+      "markers": 40,
+      "withContent": 40,
+      "totalContentCount": 43,
+      "totalAnchorCount": 55,
+      "covers": 12,
+      "advertisedCoverBytes": 80794,
+      "kindCounts": {
+        "PLACE_CONTENT": 24,
+        "MOMENT_ANCHOR": 16,
+        "CLUSTER": 0
+      },
+      "totalPointCount": 55
+    },
+    "near": {
+      "elapsedMs": 155.473,
+      "responseJSONBytes": 4975,
+      "httpResponseBytes": 5029,
+      "markers": 3,
+      "withContent": 3,
+      "totalContentCount": 1,
+      "totalAnchorCount": 3,
+      "covers": 3,
+      "advertisedCoverBytes": 22917,
+      "kindCounts": {
+        "PLACE_CONTENT": 1,
+        "MOMENT_ANCHOR": 2,
+        "CLUSTER": 0
+      }
+    },
+    "viewportPages": 2,
+    "coincidentGroupsVerified": 0,
+    "coincidentMemberPages": 0,
+    "distinctCoordinatesNeverClustered": true,
+    "allMigratedAnchorsAccessible": 16,
+    "originalCreatedTimeVerified": true,
+    "trueCurrentAuthorVerified": true,
+    "authorAvatarAvailable": false,
+    "avatarBytesVerified": 0,
+    "exactEntryAndMediaVerified": true,
+    "markerBytesVerified": 2855,
+    "protectedSourceUnchanged": true,
+    "anonymousDenied": true,
+    "loggedOutReadsDenied": true
+  }
+}

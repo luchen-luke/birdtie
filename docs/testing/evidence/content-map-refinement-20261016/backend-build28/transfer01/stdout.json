@@ -1,0 +1,18 @@
+{
+  "status": "PRIVATE_AUTHOR_AVATAR_TRANSFER_COMPLETE",
+  "selectedAssets": 6,
+  "privateImages": 6,
+  "systemArtworkArchives": 0,
+  "blobFiles": 6,
+  "files": 8,
+  "bytes": 14349212,
+  "directoryMode": "0700",
+  "fileMode": "0600",
+  "sourceAuthenticated": true,
+  "filesVerified": true,
+  "sourceInputsUnchanged": true,
+  "sourceWrites": 0,
+  "databaseWrites": 0,
+  "mediaPublication": false,
+  "privateValuesOmitted": true
+}

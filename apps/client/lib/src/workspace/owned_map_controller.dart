@@ -1,4 +1,7 @@
 import 'dart:async';
+import 'dart:convert';
+import 'package:crypto/crypto.dart';
+import 'map_content_coverage.dart';
 import 'dart:math' as math;
 import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
@@ -67,6 +70,8 @@ class OwnedMapController extends ChangeNotifier with WidgetsBindingObserver {
   Future<void>? _flight;
   Completer<void>? _abort;
   final _cache = <Object, OwnedMapView>{};
+  OwnedMapView? _activeUncached;
+  final _requestCursorByView = Expando<String>();
   final _extraPins = <String, (OwnedMapPin, OwnedMapPin, DateTime)>{};
   final _pinEpoch = Expando<int>();
   final _momentGrants = Expando<_OwnedMapGrant>();
@@ -76,6 +81,12 @@ class OwnedMapController extends ChangeNotifier with WidgetsBindingObserver {
   // Continuations locate a page; they do not authorize its content. Every
   // use still needs a fresh parent grant and a server ACL/source check.
   final _clusterCursors = <String, (OwnedMapPin, int, String, DateTime)>{};
+  int _pageOffset = 0;
+  final _usedPageCursors = <String>{};
+  int get mapPageNumber => _pageOffset ~/ 40 + 1;
+  bool get hasPreviousMapPage => _pageOffset > 0;
+  bool get hasNextMapPage =>
+      _visibleCachedPins().length > _pageOffset + 40 || _continuation != null;
   int requests = 0, cancellations = 0, cacheHits = 0, responseBytes = 0;
   int get epoch => _epoch;
   int get permissionEpoch => _permissionEpoch;
@@ -135,19 +146,20 @@ class OwnedMapController extends ChangeNotifier with WidgetsBindingObserver {
 
   bool sourceCurrent(OwnedMapPin pin) {
     if (!current || _pinEpoch[pin] != _epoch) return false;
-    if (_view!.items.any(
-      (p) => p.mapID == pin.mapID && p.sourceVersion == pin.sourceVersion,
-    ))
+    if (_coverageViews.any(
+      (v) =>
+          v.validUntil.isAfter(_now()) &&
+          v.items.any(
+            (p) => p.mapID == pin.mapID && p.sourceVersion == pin.sourceVersion,
+          ),
+    )) {
       return true;
+    }
     final extra = _extraPins[pin.mapID];
     return extra != null &&
         extra.$1.sourceVersion == pin.sourceVersion &&
         extra.$3.isAfter(_now()) &&
-        _view!.items.any(
-          (p) =>
-              p.mapID == extra.$2.mapID &&
-              p.sourceVersion == extra.$2.sourceVersion,
-        );
+        sourceCurrent(extra.$2);
   }
 
   void _registerPin(OwnedMapPin pin) {
@@ -294,6 +306,24 @@ class OwnedMapController extends ChangeNotifier with WidgetsBindingObserver {
     );
   }
 
+  Future<Uint8List> authorAvatarContent(OwnedMapMomentDetail detail) async {
+    final identity = _identity, epoch = _epoch, avatar = detail.author?.avatar;
+    bool pending() =>
+        epoch == _epoch &&
+        identity == _identity &&
+        detailCurrent(detail) &&
+        identical(detail.author?.avatar, avatar);
+    if (!pending() || identity == null || avatar == null) {
+      throw const FormatException('作者头像读取已失效');
+    }
+    return _api.avatarContent(
+      avatar,
+      authorization: identity.$3!,
+      origin: identity.$1,
+      current: pending,
+    );
+  }
+
   /// Small snapped prefetch cells bound incidental camera jitter; no city
   /// catalogue or external lookup participates. The query's exact bounds are
   /// also the permission-bound cache key and response decoder expectation.
@@ -342,29 +372,157 @@ class OwnedMapController extends ChangeNotifier with WidgetsBindingObserver {
       zoom.floorToDouble(),
       selected,
     );
+    final previousSelected = _query?.$4;
     final changed = query != _query;
     if (changed) {
-      _retireView(preserveMedia: true);
+      if (_query != null && _query!.$1 != cityID) {
+        _retireView(preserveMedia: true);
+      }
+      _cancelRequest();
+      _pageOffset = 0;
       _query = query;
     }
     if (!_allowed) {
       _retireView(preserveMedia: true);
       return;
     }
-    if (current) {
-      _media.sync(_view!, devicePixelRatio: _ratio, selectedMarkerID: selected);
-      return;
-    }
-    if (_loading) return;
     _pruneCache();
-    final key = _cacheKey(query), cached = _cache.remove(_cacheKey(query));
-    if (cached != null) {
-      _cache[key] = cached;
-      cacheHits++;
-      _apply(cached);
-    } else {
+    final missing = MapContentCoverage.missing(
+      query.$2,
+      _coverageViews.map((v) => v.bounds),
+    );
+    if (missing.isEmpty && changed) cacheHits++;
+    for (final key in _cache.keys.toList()) {
+      final value = _cache[key]!;
+      if (value.cityID == query.$1 &&
+          MapContentCoverage.intersects(value.bounds, query.$2)) {
+        _cache.remove(key);
+        _cache[key] = value;
+      }
+    }
+    _publishCoverage();
+    if (missing.isNotEmpty && !_loading)
+      unawaited(_loadRegions(missing, pad: true));
+    else if (selected != null &&
+        selected != previousSelected &&
+        items.any((p) => p.canonicalMarkerID == selected && p.cover == null)) {
       unawaited(refresh());
     }
+  }
+
+  Iterable<OwnedMapView> get _coverageViews => [
+    ..._cache.values,
+    if (_activeUncached != null) _activeUncached!,
+  ].where((v) => v.cityID == _query?.$1 && v.validUntil.isAfter(_now()));
+
+  List<OwnedMapPin> _visibleCachedPins() {
+    final query = _query;
+    if (query == null) return [];
+    final pins = <String, OwnedMapPin>{};
+    final views = _coverageViews.toList()
+      ..sort((a, b) => a.observedAt.compareTo(b.observedAt));
+    for (final v in views) {
+      for (final p in v.items) {
+        if (query.$2.contains(p.latitude, p.longitude) ||
+            p.canonicalMarkerID == query.$4)
+          pins[p.mapID] = p;
+      }
+    }
+    return pins.values.toList()..sort((a, b) => a.mapID.compareTo(b.mapID));
+  }
+
+  OwnedMapView? get _continuation => _coverageViews
+      .where(
+        (v) =>
+            MapContentCoverage.intersects(v.bounds, _query!.$2) &&
+            v.viewportPath.isNotEmpty &&
+            v.nextCursor != null &&
+            !_usedPageCursors.contains(v.nextCursor),
+      )
+      .firstOrNull;
+
+  void _publishCoverage() {
+    final query = _query;
+    if (query == null || !_allowed) return;
+    final views = _coverageViews
+        .where(
+          (v) =>
+              MapContentCoverage.intersects(v.bounds, query.$2) ||
+              v.items.any((p) => p.canonicalMarkerID == query.$4),
+        )
+        .toList();
+    if (views.isEmpty) {
+      _view = null;
+      _renew?.cancel();
+      _expiry?.cancel();
+      _media.suspend();
+      _notify();
+      return;
+    }
+    final pins = _visibleCachedPins();
+    if (_pageOffset >= pins.length)
+      _pageOffset = math.max(0, (pins.length - 1) ~/ 40 * 40);
+    final page = pins.skip(_pageOffset).take(40).toList();
+    final selected = pins
+        .where((p) => p.canonicalMarkerID == query.$4)
+        .firstOrNull;
+    if (selected != null && !page.contains(selected)) {
+      if (page.length == 40) page.removeLast();
+      page.add(selected);
+    }
+    final until = views
+        .map((v) => v.validUntil)
+        .reduce((a, b) => a.isBefore(b) ? a : b);
+    final observed = views
+        .map((v) => v.observedAt)
+        .reduce((a, b) => a.isAfter(b) ? a : b);
+    final versions = views.map((v) => v.sourceVersion).toSet().toList()..sort();
+    final next = _continuation;
+    _apply(
+      OwnedMapView(
+        viewerAccountID: _identity!.$2!,
+        cityID: query.$1,
+        bounds: query.$2,
+        observedAt: observed,
+        validUntil: until,
+        sourceVersion: sha256
+            .convert(utf8.encode(versions.join(':')))
+            .toString(),
+        items: List.unmodifiable(page),
+        zoom: query.$3,
+        truncated: pins.length > _pageOffset + 40 || next != null,
+        // These composed counts describe loaded objects only. Regional server
+        // totals cannot be added across overlapping, paginated coverage.
+        totalContentCount: pins
+            .expand((p) => p.moments)
+            .map((m) => m.id)
+            .toSet()
+            .length,
+        totalAnchorCount: pins.fold(0, (n, p) => n + p.anchorCount),
+        totalPointCount: pins.length,
+        nextCursor: next?.nextCursor,
+        viewportPath: next?.viewportPath ?? '',
+      ),
+    );
+  }
+
+  void previousMapPage() {
+    if (_pageOffset == 0) return;
+    _pageOffset = math.max(0, _pageOffset - 40);
+    _publishCoverage();
+  }
+
+  Future<void> nextMapPage() async {
+    if (_loading) return;
+    final query = _query, epoch = _epoch;
+    if (_visibleCachedPins().length <= _pageOffset + 40) {
+      final next = _continuation;
+      if (next == null) return;
+      await _loadRegions([next.bounds], continuation: next);
+    }
+    if (query != _query || epoch != _epoch || !_allowed) return;
+    if (_visibleCachedPins().length > _pageOffset + 40) _pageOffset += 40;
+    _publishCoverage();
   }
 
   void sync({
@@ -411,10 +569,13 @@ class OwnedMapController extends ChangeNotifier with WidgetsBindingObserver {
     final remaining = value.validUntil.difference(_now());
     _expiry = Timer(remaining, () {
       if (_closed || !identical(_view, value)) return;
-      _retireView(preserveMedia: true);
       _pruneCache();
-      _error = '地图内容读取已到期，请重新读取。';
-      _notify();
+      if (_activeUncached?.validUntil.isAfter(_now()) == false)
+        _activeUncached = null;
+      // Expire only the old grants. A newer strip and an in-flight renewal
+      // must survive while the now-uncovered area is fetched immediately.
+      _publishCoverage();
+      if (_allowed && !_loading) unawaited(refresh());
     });
     if (remaining > const Duration(seconds: 2)) {
       _renew = Timer(remaining ~/ 2, () {
@@ -449,7 +610,41 @@ class OwnedMapController extends ChangeNotifier with WidgetsBindingObserver {
     _notify();
   }
 
+  void _cancelRequest() {
+    ++_request;
+    final abort = _abort;
+    if (abort != null && !abort.isCompleted) {
+      abort.complete();
+      cancellations++;
+    }
+    _abort = null;
+    _flight = null;
+    _loading = false;
+  }
+
   Future<void> refresh() {
+    if (_flight != null) return _flight!;
+    if (!_allowed || _query == null) return Future<void>.value();
+    final missing = MapContentCoverage.missing(
+      _query!.$2,
+      _coverageViews.map((v) => v.bounds),
+    );
+    if (missing.isNotEmpty) return _loadRegions(missing, pad: true);
+    final renewals = _coverageViews
+        .where((v) => MapContentCoverage.intersects(v.bounds, _query!.$2))
+        .toList();
+    return _loadRegions(
+      renewals.map((v) => v.bounds).toList(),
+      renewals: renewals,
+    );
+  }
+
+  Future<void> _loadRegions(
+    List<MapBounds> regions, {
+    bool pad = false,
+    OwnedMapView? continuation,
+    List<OwnedMapView>? renewals,
+  }) {
     if (_flight != null) return _flight!;
     if (!_allowed || _query == null) return Future<void>.value();
     final epoch = _epoch,
@@ -459,7 +654,6 @@ class OwnedMapController extends ChangeNotifier with WidgetsBindingObserver {
     final abort = _abort = Completer<void>();
     _loading = true;
     _error = null;
-    requests++;
     _notify();
     final done = Completer<void>();
     _flight = done.future;
@@ -471,29 +665,88 @@ class OwnedMapController extends ChangeNotifier with WidgetsBindingObserver {
           identity == _identity &&
           query == _query;
       try {
-        final value = await _api.read(
-          cityID: query.$1,
-          bounds: query.$2,
-          zoom: query.$3,
-          selectedMarkerID: query.$4,
-          abortTrigger: abort.future,
-          ownerID: identity.$2!,
-          authorization: identity.$3!,
-          origin: identity.$1,
-          current: pending,
-          now: _now,
-        );
-        if (!pending() || !value.validUntil.isAfter(_now())) return;
-        responseBytes += value.byteCount;
-        final key = _cacheKey(query);
-        _cache.remove(key);
-        _cache[key] = value;
-        _pruneCache();
-        _apply(value);
-      } catch (_) {
-        if (pending()) {
-          _error = '地图内容暂不可读，请重试。';
+        // Padding is itself subtracted from valid coverage: a pan fetches new
+        // strips, never the already authorized centre of the previous view.
+        final targets = pad
+            ? MapContentCoverage.missing(
+                MapContentCoverage.padded(query.$2),
+                _coverageViews.map((v) => v.bounds),
+              )
+            : regions;
+        final changedSources = <String>{};
+        for (var targetIndex = 0; targetIndex < targets.length; targetIndex++) {
+          final bounds = targets[targetIndex];
+          final renewing = renewals?[targetIndex];
+          if (renewing != null &&
+              changedSources.contains(renewing.sourceVersion))
+            continue;
+          final requestCursor =
+              continuation?.nextCursor ??
+              (renewing == null ? null : _requestCursorByView[renewing]);
+          final path =
+              continuation?.viewportPath ??
+              (requestCursor != null ? renewing?.viewportPath : null);
+          if (!pending()) return;
+          requests++;
+          final value = await _api.read(
+            cityID: query.$1,
+            bounds: bounds,
+            zoom: query.$3,
+            selectedMarkerID: query.$4,
+            abortTrigger: abort.future,
+            ownerID: identity.$2!,
+            authorization: identity.$3!,
+            origin: identity.$1,
+            current: pending,
+            now: _now,
+            viewportPath: path,
+            cursor: requestCursor,
+          );
+          if (!pending() || !value.validUntil.isAfter(_now())) return;
+          responseBytes += value.byteCount;
+          if (renewing != null &&
+              value.sourceVersion == renewing.sourceVersion) {
+            _cache.removeWhere((_, old) => identical(old, renewing));
+            if (_usedPageCursors.contains(renewing.nextCursor) &&
+                value.nextCursor != null) {
+              _usedPageCursors.add(value.nextCursor!);
+            }
+          } else if (continuation == null) {
+            if (renewing != null) changedSources.add(renewing.sourceVersion);
+            // A new complete read supersedes old grants in that rectangle.
+            // Touching edges of the incremental strips do not invalidate a
+            // neighbouring cached region.
+            _cache.removeWhere(
+              (_, old) =>
+                  old.cityID == value.cityID &&
+                  _positiveOverlap(old.bounds, value.bounds),
+            );
+          } else {
+            _usedPageCursors.add(continuation.nextCursor!);
+            if (_usedPageCursors.length > 256)
+              _usedPageCursors.remove(_usedPageCursors.first);
+          }
+          final key = (
+            _cacheKey((query.$1, value.bounds, value.zoom, query.$4)),
+            requestCursor ?? '',
+          );
+          if (requestCursor != null)
+            _requestCursorByView[value] = requestCursor;
+          while (_usedPageCursors.length > 256)
+            _usedPageCursors.remove(_usedPageCursors.first);
+          if (value.byteCount > maxCachedBytes ||
+              value.items.length > maxCachedPins) {
+            _activeUncached = value;
+          } else {
+            _activeUncached = null;
+            _cache[key] = value;
+          }
+          for (final pin in value.items) _registerPin(pin);
+          _pruneCache();
+          _publishCoverage();
         }
+      } catch (_) {
+        if (pending()) _error = '地图内容暂不可读，请重试。';
       } finally {
         if (!abort.isCompleted) abort.complete();
         if (pending()) {
@@ -508,6 +761,15 @@ class OwnedMapController extends ChangeNotifier with WidgetsBindingObserver {
     return done.future;
   }
 
+  static bool _positiveOverlap(MapBounds a, MapBounds b) =>
+      MapContentCoverage.split(a).any(
+        (x) => MapContentCoverage.split(b).any(
+          (y) =>
+              math.min(x.east, y.east) - math.max(x.west, y.west) > 1e-9 &&
+              math.min(x.north, y.north) - math.max(x.south, y.south) > 1e-9,
+        ),
+      );
+
   Future<OwnedMapView> readClusterMembers(
     OwnedMapPin pin, {
     String? cursor,
@@ -517,7 +779,6 @@ class OwnedMapController extends ChangeNotifier with WidgetsBindingObserver {
     bool pending() =>
         epoch == _epoch &&
         identity == _identity &&
-        query == _query &&
         pin.isCluster &&
         sourceCurrent(pin) &&
         (cursor == null ||
@@ -616,6 +877,9 @@ class OwnedMapController extends ChangeNotifier with WidgetsBindingObserver {
     _permissionEpoch++;
     _clusterCursors.clear();
     _cache.clear();
+    _activeUncached = null;
+    _usedPageCursors.clear();
+    _pageOffset = 0;
     if (clearQuery) _query = null;
     _retireView(preserveMedia: false);
   }

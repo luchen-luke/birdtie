@@ -259,3 +259,10 @@ API23/schema170、Web24与APK24已部署安装。真实手机已显示Civu式地
 Birdtie以原GET /v1/me/map-content适配v2视口SQL，ACL前置后聚合并完整分页，171恢复16个确有授权的旧地理锚点，零fake POI、源库零写。Now默认目录空读关闭；任务、收藏、旅程、主题地图、活动保留独立上下文。方形动态锚点→正确entry→原Now面板正文/媒体；无位置发布不变。原生按DPR居中方形内容聚合、稳定图片身份和增量annotation；Web滚轮/旋转/双击查询漏触发已修。授权与分页位置凭据分离，过期内容清除，当前320成员窗口可续页。
 
 API26/schema171、APK/Web29（APK与28逐字节一致）实际构建部署安装与目标验收，以docs/testing/evidence/content-map-cm-20261016/checkpoint171.json为准。来源映射、真实路径、测试/失败/性能和NOT_RUN见docs/reports/BIRDTIE-NOW-CONTENT-MAP-2026-10-16.md。严格同camera手机A/B、全部250页大聚合真机、真实跨设备撤回push未测，不称全部CM09或父任务完成。
+
+
+## 2026-10-16 用户截图反馈：真实坐标、覆盖缓存与阅读面板
+
+只读Civu-client基线仍为1bbf0613，Civu-server为0489536a；不搬页面/导航/全局状态。延续persistent_map_scene、explore_map_viewport、marker budget/persistent host的能力语义：不同坐标不再网格合并，精确同点以小真实封面角标表示；视口覆盖求差及有界缓存、增量marker和地图常驻。Civu discover/feed/media viewer的作者、原时间、图片比例与显式视频播放语义接入Birdtie既有Now主面板。
+
+实际新路径、限制与源码映射见docs/reports/BIRDTIE-NOW-MAP-REFINEMENT-2026-10-16.md。独立Birdtie schema172给既有83条动态补原公开作者归属（9作者/6头像），不公开当前私密profile；API29提供受当前权限验证的旧图片阅读图，原件不变。API29/APK33/Web33实际部署/安装与针对性阅读验收有回执；缺城市视图的3个视频目标、200张冷图性能和完整发布回归仍未完成。

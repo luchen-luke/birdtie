@@ -1,0 +1,16 @@
+{
+  "exitCode": 0,
+  "stderrPresent": false,
+  "status": "PASS",
+  "result": {
+    "status": "PASS",
+    "readOnly": true,
+    "release": "/opt/birdtie/releases/social172-20261015-build28",
+    "apiSHA256": "9c4919d1f98916319c054e9b94a2fd6b4c93f161ff64a160ee1f1d609c9ffc43",
+    "databaseOID": 54087,
+    "schema": 172,
+    "migrations": 172,
+    "serviceActive": true,
+    "ready": true
+  }
+}

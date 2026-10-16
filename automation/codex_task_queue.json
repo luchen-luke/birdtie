@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated": "2026-10-15T23:20:04.476246+00:00",
+  "updated": "2026-10-16T00:56:55.302605+00:00",
   "tasks": [
     {
       "id": "BT-AUD-001",
@@ -21579,6 +21579,26 @@
           "report": "docs/reports/BIRDTIE-NOW-CONTENT-MAP-2026-10-16.md",
           "at": "2026-10-15T23:20:03.962033+00:00"
         }
+      },
+      "now_content_map_refinement_20261016": {
+        "owner": "root",
+        "status": "IN_PROGRESS",
+        "requirement": "User screenshot feedback: real coordinate covers, viewport/media reuse, original attribution and consumer reader",
+        "last_actual_checkpoint": {
+          "path": "docs/testing/evidence/content-map-refinement-20261016/checkpoint172.json",
+          "sha256": "058a831655d2b053dc52323f9157a20a2f2514c9647d2e779e2d451a68c5ed67",
+          "report": "docs/reports/BIRDTIE-NOW-MAP-REFINEMENT-2026-10-16.md",
+          "at": "2026-10-16T00:56:54.622138+00:00"
+        },
+        "remaining": [
+          "strict matched-camera same-content A/B",
+          "200-image cold reader latency",
+          "new 10k SQL pressure run",
+          "cross-device real withdrawal push",
+          "full final-build publishing/thread/upload-retry regression",
+          "iOS",
+          "3 of 4 video moment targets have no valid city map viewport; initial Shantou entry failed"
+        ]
       }
     },
     {
@@ -21826,6 +21846,7 @@
           "apps/api/cmd/legacy-map-anchor-restore",
           "apps/api/cmd/legacy-map-restore",
           "apps/api/cmd/legacy-media-import",
+          "apps/api/cmd/legacy-moment-author-restore",
           "apps/api/cmd/legacy-native-import",
           "apps/api/cmd/legacy-personal-import",
           "apps/api/cmd/legacy-social-import/main.go",
@@ -22066,6 +22087,7 @@
           "apps/api/internal/legacymigration/dev_phone_test.go",
           "apps/api/internal/legacymigration/model.go",
           "apps/api/internal/legacymigration/model_test.go",
+          "apps/api/internal/legacymomentauthor",
           "apps/api/internal/legacynative",
           "apps/api/internal/legacyplacereference",
           "apps/api/internal/legacyreferencemedia/build.go",
@@ -22235,6 +22257,7 @@
           "apps/api/internal/postgres/legacy_map_restore.go",
           "apps/api/internal/postgres/legacy_migration.go",
           "apps/api/internal/postgres/legacy_migration_native_test.go",
+          "apps/api/internal/postgres/legacy_moment_author_restore.go",
           "apps/api/internal/postgres/legacy_native_adaptation.go",
           "apps/api/internal/postgres/legacy_native_adaptation_native_test.go",
           "apps/api/internal/postgres/legacy_personal_archive_read.go",
@@ -22259,6 +22282,9 @@
           "apps/api/internal/postgres/location_references.go",
           "apps/api/internal/postgres/location_references_native_test.go",
           "apps/api/internal/postgres/map_content.go",
+          "apps/api/internal/postgres/map_content_display.go",
+          "apps/api/internal/postgres/map_content_display_native_test.go",
+          "apps/api/internal/postgres/map_content_display_test.go",
           "apps/api/internal/postgres/map_content_media.go",
           "apps/api/internal/postgres/map_content_native_test.go",
           "apps/api/internal/postgres/map_content_spatial.go",
@@ -22490,6 +22516,8 @@
           "apps/api/migrations/170_legacy_map_visibility.sql",
           "apps/api/migrations/171_content_map_anchors.down.sql",
           "apps/api/migrations/171_content_map_anchors.sql",
+          "apps/api/migrations/172_legacy_moment_authors.down.sql",
+          "apps/api/migrations/172_legacy_moment_authors.sql",
           "apps/api/native_database_startup.go",
           "apps/api/native_database_startup_test.go",
           "apps/api/system_push_startup.go",
@@ -22649,6 +22677,7 @@
           "apps/client/lib/src/workspace/local_visual_draft.dart",
           "apps/client/lib/src/workspace/location_reference_api.dart",
           "apps/client/lib/src/workspace/map_canvas.dart",
+          "apps/client/lib/src/workspace/map_content_coverage.dart",
           "apps/client/lib/src/workspace/map_display_policy.dart",
           "apps/client/lib/src/workspace/map_entities.dart",
           "apps/client/lib/src/workspace/map_layer_controls.dart",
@@ -22849,6 +22878,8 @@
           "apps/client/test/contact_code_test.dart",
           "apps/client/test/content_map_cluster_bitmap_test.dart",
           "apps/client/test/content_map_controller_test.dart",
+          "apps/client/test/content_map_coverage_test.dart",
+          "apps/client/test/content_map_display_test.dart",
           "apps/client/test/content_map_now_default_test.dart",
           "apps/client/test/content_map_panel_test.dart",
           "apps/client/test/content_map_renderer_test.dart",
@@ -23109,6 +23140,7 @@
           "docs/reports/birdtie-now-civu-map-2026-10-16.md",
           "docs/reports/birdtie-now-content-map-2026-10-16.md",
           "docs/reports/birdtie-now-creation-repair-2026-10-15.md",
+          "docs/reports/birdtie-now-map-refinement-2026-10-16.md",
           "docs/reports/birdtie-now-unified-moment-editor-2026-10-15.md",
           "docs/reports/birdtie-now-v4-v41-integration-2026-10-11.md",
           "docs/reports/ui-copy-audit-current.md",
@@ -23116,6 +23148,7 @@
           "docs/research/evidence/social-core-plan-2026-10-15/receipt.json",
           "docs/testing/evidence/civu-native-adaptation-20261015",
           "docs/testing/evidence/content-map-cm-20261016",
+          "docs/testing/evidence/content-map-refinement-20261016",
           "docs/testing/evidence/github-remote-completion-20261015",
           "docs/testing/evidence/now-civu-map-20261016",
           "docs/testing/evidence/now-v4-v41-integration-20261010/continuation20",
@@ -23126,6 +23159,7 @@
           "docs/ux/global-ux-interaction-contract.md",
           "scripts/deploy_birdtie_hangzhou.py",
           "scripts/deploy_birdtie_public_entry.py",
+          "scripts/enable_birdtie_response_compression.py",
           "scripts/extract_civu_hangzhou.py",
           "scripts/extract_civu_recovered_media.py",
           "scripts/extract_civu_reference_media.py",

@@ -263,8 +263,13 @@ class _MapCanvasState extends State<MapCanvas> {
       ? _resultMapEntities(_mapResult!)
       : widget.layers != null
       ? widget.layers!.cityID == widget.city.selectedCity?.id
-            ? _typedMapEntities(widget.layers!.items.where((item) =>
-                widget.mapContent == null || (item.kind != 'PLACE' && item.kind != 'MOMENT')))
+            ? _typedMapEntities(
+                widget.layers!.items.where(
+                  (item) =>
+                      widget.mapContent == null ||
+                      (item.kind != 'PLACE' && item.kind != 'MOMENT'),
+                ),
+              )
             : const []
       : [
           if (_mapResult case final result?) ..._resultMapEntities(result),
@@ -331,8 +336,15 @@ class _MapCanvasState extends State<MapCanvas> {
         layers?.cityID == widget.city.selectedCity!.id &&
         (_mapResult == null || area?.read?.current == true);
     final items = typed && layers?.authorID == null
-        ? (area?.read?.current == true ? area!.items : layers!.items.where((item) =>
-            widget.mapContent == null || (item.kind != 'PLACE' && item.kind != 'MOMENT')).toList())
+        ? (area?.read?.current == true
+              ? area!.items
+              : layers!.items
+                    .where(
+                      (item) =>
+                          widget.mapContent == null ||
+                          (item.kind != 'PLACE' && item.kind != 'MOMENT'),
+                    )
+                    .toList())
         : const <TypedMapItem>[];
     controller.sync(
       ownerID: widget.mediaOwnerID?.call(),
@@ -617,8 +629,9 @@ class _MapCanvasState extends State<MapCanvas> {
         : widget.mapContent?.error ??
               (widget.mapContent?.loading == true && _entities().isEmpty
                   ? '正在读取地图内容…'
-                  : widget.mapContent?.view?.truncated == true
-                  ? '当前范围地点较多，请放大地图继续查看。'
+                  : widget.mapContent?.hasNextMapPage == true ||
+                        widget.mapContent?.hasPreviousMapPage == true
+                  ? '第 ${widget.mapContent!.mapPageNumber} 组位置'
                   : widget.mapContent?.current == true && _entities().isEmpty
                   ? '这个范围内暂无可访问动态。'
                   : null);
@@ -644,14 +657,20 @@ class _MapCanvasState extends State<MapCanvas> {
             onPlaceSelected: (place) =>
                 selectMapEntity('place:${place.id}', shownPlace: place),
             onContentOverlap: widget.onContentOverlap,
-            onContentViewportSettled: selectedCity == null ? null : (bounds, zoom) {
-              widget.mapState.zoom = zoom;
-              widget.mapContent?.sync(
-                cityID: selectedCity.id, bounds: bounds, zoom: zoom,
-                devicePixelRatio: MediaQuery.devicePixelRatioOf(context),
-                selectedMarkerID: widget.mapContent?.find(widget.workspace.selectedEntityId ?? '')?.canonicalMarkerID,
-              );
-            },
+            onContentViewportSettled: selectedCity == null
+                ? null
+                : (bounds, zoom) {
+                    widget.mapState.zoom = zoom;
+                    widget.mapContent?.sync(
+                      cityID: selectedCity.id,
+                      bounds: bounds,
+                      zoom: zoom,
+                      devicePixelRatio: MediaQuery.devicePixelRatioOf(context),
+                      selectedMarkerID: widget.mapContent
+                          ?.find(widget.workspace.selectedEntityId ?? '')
+                          ?.canonicalMarkerID,
+                    );
+                  },
             onViewportSettled: selectedCity == null
                 ? null
                 : widget.mapState.cameraSettled,
@@ -732,6 +751,20 @@ class _MapCanvasState extends State<MapCanvas> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Flexible(child: Text(contentMessage)),
+                      if (widget.mapContent?.hasPreviousMapPage == true)
+                        TextButton(
+                          onPressed: widget.mapContent!.loading
+                              ? null
+                              : widget.mapContent!.previousMapPage,
+                          child: const Text('上一组'),
+                        ),
+                      if (widget.mapContent?.hasNextMapPage == true)
+                        TextButton(
+                          onPressed: widget.mapContent!.loading
+                              ? null
+                              : widget.mapContent!.nextMapPage,
+                          child: const Text('下一组'),
+                        ),
                       if (widget.mapContent?.error != null)
                         TextButton(
                           onPressed: () => widget.mapContent?.refresh(),

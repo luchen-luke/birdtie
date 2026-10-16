@@ -1,0 +1,24 @@
+{
+  "mode": "upgrade",
+  "exit_code": 0,
+  "host": "ecs-user@47.110.154.133",
+  "strict_host_key_checking": true,
+  "remoteScriptSHA256": "0469fba2320d0573275196c617e9394fa8dc58009a8d4d7f0ab2df053d0ad527",
+  "stdoutSHA256": "b9007d4fda26471f14f9d5823fff07f98a29640eed3c3ce6af25f57a2f46a5d4",
+  "stderrSHA256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "public_routing_changed": false,
+  "result": {
+    "stage": "REFRESHED_READY",
+    "migrations": 171,
+    "appliedMigrations": 0,
+    "originalMigrationsUnchanged": 171,
+    "release": "/opt/birdtie/releases/social171-20261015-build27",
+    "previousRelease": "/opt/birdtie/releases/social171-20261015-build26",
+    "priorAPISHA256": "d77531962e0a89fa4f136849d5e883342d8d8f66caf37df5079871b722e42afe",
+    "apiSHA256": "c95adfbe22b10df95f4e934d042c438f3977e710afd6260b30b5f0c0c37d8ed5",
+    "publicRoutingChanged": false,
+    "oldAssetsDeleted": false,
+    "atomicFileReplacement": true,
+    "rollbackOnReadinessFailure": true
+  }
+}

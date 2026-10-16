@@ -3,6 +3,7 @@ package content
 import (
 	"context"
 	"github.com/birdtie/birdtie/apps/api/internal/identity"
+	av "github.com/birdtie/birdtie/apps/api/internal/profileavatar"
 	"math"
 	"strings"
 	"time"
@@ -36,7 +37,7 @@ type MapContentQuery struct {
 }
 
 func (q MapContentQuery) Valid() bool {
-	return len(q.CityID) <= 180 && utf8.ValidString(q.CityID) && !strings.ContainsAny(q.CityID, "\x00/ ") && q.Bounds.Valid() && !math.IsNaN(q.Zoom) && q.Zoom >= 0 && q.Zoom <= 22 && (q.FilterScope == "" || q.FilterScope == "DEFAULT_CONTENT") && validMapSelectedMarker(q.SelectedMarkerID) && len(q.Cursor) <= 4096 && (q.ClusterID == "" && q.Cursor == "" && q.SourceVersion == "" || strings.HasPrefix(q.ClusterID, "cluster:") && MomentControlHex(strings.TrimPrefix(q.ClusterID, "cluster:")) && MomentControlHex(q.SourceVersion))
+	return len(q.CityID) <= 180 && utf8.ValidString(q.CityID) && !strings.ContainsAny(q.CityID, "\x00/ ") && q.Bounds.Valid() && !math.IsNaN(q.Zoom) && q.Zoom >= 0 && q.Zoom <= 22 && (q.FilterScope == "" || q.FilterScope == "DEFAULT_CONTENT") && validMapSelectedMarker(q.SelectedMarkerID) && len(q.Cursor) <= 4096 && (q.ClusterID == "" && (q.Cursor == "" && q.SourceVersion == "" || MomentControlHex(q.SourceVersion)) || strings.HasPrefix(q.ClusterID, "cluster:") && MomentControlHex(strings.TrimPrefix(q.ClusterID, "cluster:")) && MomentControlHex(q.SourceVersion))
 }
 
 func validMapSelectedMarker(id string) bool {
@@ -90,29 +91,34 @@ type MapContentMomentSelector struct {
 	DetailPath       string `json:"detailPath"`
 }
 type MapContentPin struct {
-	MarkerID          string                     `json:"markerId"`
-	Kind              string                     `json:"kind"`
-	EntityID          string                     `json:"entityId"`
-	AnchorID          string                     `json:"anchorId,omitempty"`
-	MomentID          string                     `json:"momentId,omitempty"`
-	EntryID           string                     `json:"entryId,omitempty"`
-	ThreadID          string                     `json:"threadId,omitempty"`
-	AnchorCount       int                        `json:"anchorCount"`
-	MembersPath       string                     `json:"membersPath,omitempty"`
-	Bounds            *MapContentBounds          `json:"bounds,omitempty"`
-	PlaceID           string                     `json:"placeId"`
-	Name              string                     `json:"name"`
-	CategoryCode      string                     `json:"categoryCode"`
-	CityID            *string                    `json:"cityId"`
-	Anchor            MapContentAnchor           `json:"anchor"`
-	VisibilitySources []string                   `json:"visibilitySources"`
-	SourceVersion     string                     `json:"sourceVersion"`
-	MomentCount       int                        `json:"momentCount"`
-	Moments           []MapContentMomentSelector `json:"moments"`
-	MomentsTruncated  bool                       `json:"momentsTruncated"`
-	Cover             *MapContentImage           `json:"cover"`
+	RepresentativeMarkerID string                     `json:"representativeMarkerId,omitempty"`
+	RepresentativePlaceID  string                     `json:"representativePlaceId,omitempty"`
+	RepresentativeMomentID string                     `json:"representativeMomentId,omitempty"`
+	MarkerID               string                     `json:"markerId"`
+	Kind                   string                     `json:"kind"`
+	EntityID               string                     `json:"entityId"`
+	AnchorID               string                     `json:"anchorId,omitempty"`
+	MomentID               string                     `json:"momentId,omitempty"`
+	EntryID                string                     `json:"entryId,omitempty"`
+	ThreadID               string                     `json:"threadId,omitempty"`
+	AnchorCount            int                        `json:"anchorCount"`
+	MembersPath            string                     `json:"membersPath,omitempty"`
+	Bounds                 *MapContentBounds          `json:"bounds,omitempty"`
+	PlaceID                string                     `json:"placeId"`
+	Name                   string                     `json:"name"`
+	CategoryCode           string                     `json:"categoryCode"`
+	CityID                 *string                    `json:"cityId"`
+	Anchor                 MapContentAnchor           `json:"anchor"`
+	VisibilitySources      []string                   `json:"visibilitySources"`
+	SourceVersion          string                     `json:"sourceVersion"`
+	MomentCount            int                        `json:"momentCount"`
+	Moments                []MapContentMomentSelector `json:"moments"`
+	MomentsTruncated       bool                       `json:"momentsTruncated"`
+	Cover                  *MapContentImage           `json:"cover"`
 }
 type MapContentPage struct {
+	ViewportPath      string                     `json:"viewportPath"`
+	TotalPointCount   int                        `json:"totalPointCount"`
 	Zoom              float64                    `json:"zoom"`
 	FilterScope       string                     `json:"filterScope"`
 	TotalContentCount int                        `json:"totalContentCount"`
@@ -172,7 +178,7 @@ func (p MapContentPin) validIdentity() bool {
 	case "MOMENT_ANCHOR":
 		return p.PlaceID == "" && identity.HumanControlUUID(p.AnchorID) && identity.HumanControlUUID(p.MomentID) && p.EntryID == p.MomentID && p.EntityID == p.MomentID && p.MarkerID == "anchor:"+p.AnchorID && p.AnchorCount == 1 && (p.ThreadID == "" || identity.HumanControlUUID(p.ThreadID))
 	case "CLUSTER":
-		return p.PlaceID == "" && p.EntityID == p.MarkerID && strings.HasPrefix(p.MarkerID, "cluster:") && MomentControlHex(strings.TrimPrefix(p.MarkerID, "cluster:")) && p.AnchorCount > 1 && p.Bounds != nil && p.Bounds.Valid() && strings.HasPrefix(p.MembersPath, "/v1/me/map-content?")
+		return p.PlaceID == "" && p.EntityID == p.MarkerID && strings.HasPrefix(p.MarkerID, "cluster:") && MomentControlHex(strings.TrimPrefix(p.MarkerID, "cluster:")) && p.AnchorCount > 1 && p.Bounds != nil && p.Bounds.Valid() && (p.RepresentativeMarkerID == "" || validMapSelectedMarker(p.RepresentativeMarkerID)) && strings.HasPrefix(p.MembersPath, "/v1/me/map-content?")
 	}
 	return false
 }
@@ -198,7 +204,41 @@ type MapContentMedia struct {
 	AudioCodec    *string          `json:"audioCodec"`
 	Poster        *MapContentImage `json:"poster"`
 }
+type MapContentAuthor struct {
+	AccountID   string       `json:"accountId"`
+	DisplayName string       `json:"displayName"`
+	Avatar      *av.Metadata `json:"avatar"`
+}
+
+func MapContentAuthorAvatarPath(momentID, mediaID, source string) string {
+	return "/v1/me/map-content/moments/" + momentID + "/author-avatar/" + mediaID + "/content?sourceVersion=" + source
+}
+func (a MapContentAuthor) ValidForMoment(momentID string) bool {
+	if a.Valid() {
+		return true
+	}
+	if a.Avatar == nil || !identity.HumanControlUUID(momentID) {
+		return false
+	}
+	m := *a.Avatar
+	prefix := "/v1/me/map-content/moments/" + momentID + "/author-avatar/"
+	tail := strings.TrimPrefix(m.ThumbnailPath, prefix)
+	parts := strings.Split(tail, "/content?sourceVersion=")
+	if !strings.HasPrefix(m.ThumbnailPath, prefix) || len(parts) != 2 || !identity.HumanControlUUID(parts[0]) || !MomentControlHex(parts[1]) {
+		return false
+	}
+	m.ThumbnailPath = av.Path(m.AccountID, m.Version)
+	a.Avatar = &m
+	return a.Valid()
+}
+func (a MapContentAuthor) Valid() bool {
+	return identity.HumanControlUUID(a.AccountID) && a.DisplayName != "" && len(a.DisplayName) <= 16000 && utf8.ValidString(a.DisplayName) && (a.Avatar == nil || a.Avatar.Valid() && a.Avatar.AccountID == a.AccountID)
+}
+
 type MapContentMoment struct {
+	Author           *MapContentAuthor          `json:"author"`
+	CreatedAtSource  string                     `json:"createdAtSource"`
+	PublishedAt      *time.Time                 `json:"publishedAt"`
 	SchemaVersion    string                     `json:"schemaVersion"`
 	ViewerAccountID  string                     `json:"viewerAccountId"`
 	ID               string                     `json:"id"`
@@ -219,6 +259,9 @@ type MapContentMoment struct {
 }
 
 func (v MapContentMoment) Valid(now time.Time) bool {
+	if v.Author != nil && !v.Author.ValidForMoment(v.ID) || (v.CreatedAtSource != "" && v.CreatedAtSource != "NATIVE" && v.CreatedAtSource != "CIVU_ORIGINAL" && v.CreatedAtSource != "UNKNOWN") || (v.PublishedAt != nil && (v.PublishedAt.IsZero() || v.PublishedAt.After(now))) {
+		return false
+	}
 	if v.SchemaVersion != MapContentMomentSchema || !identity.HumanControlUUID(v.ViewerAccountID) || !identity.HumanControlUUID(v.ID) || v.Revision < 1 || (v.Status != "draft" && v.Status != "published") || (v.Visibility != "private" && v.Visibility != "public") || !MapContentVisibility(v.VisibilitySource) || v.VisibilitySource == "CIVU_PUBLIC_CATALOG" || !utf8.ValidString(v.Title) || !utf8.ValidString(v.Body) || len(v.Title) > 16000 || len(v.Body) > 128*1024 || v.CreatedAt.IsZero() || v.Locations == nil || len(v.Locations) > 50 || v.Media == nil || len(v.Media) > 200 || !mapContentLease(v.ObservedAt, v.ValidUntil, now, v.SourceVersion) {
 		return false
 	}

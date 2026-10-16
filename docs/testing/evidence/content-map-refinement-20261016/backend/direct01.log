@@ -1,0 +1,3 @@
+ok  	github.com/birdtie/birdtie/apps/api/internal/content	0.598s
+ok  	github.com/birdtie/birdtie/apps/api/internal/postgres	2.764s
+ok  	github.com/birdtie/birdtie/apps/api/internal/httpapi	4.433s [no tests to run]

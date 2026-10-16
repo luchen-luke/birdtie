@@ -1,0 +1,76 @@
+{
+  "exitCode": 0,
+  "stderrPresent": false,
+  "remoteScriptSHA256": "eff4c8f065bf5a3f7896e4b504bc64d101bf3c931cd35c3b9ce4048f047ba04b",
+  "status": "PASS",
+  "result": {
+    "status": "PASS",
+    "devOnly": true,
+    "productionIdentityVerified": false,
+    "productionPhoneVerification": false,
+    "fixedCodeUsed": true,
+    "sourceWrites": 0,
+    "databaseDirectWrites": 0,
+    "remoteConfigurationChanged": false,
+    "agentActivationRequested": false,
+    "oldSessionAccepted": false,
+    "messagesSent": 0,
+    "privateValuesPersisted": true,
+    "allCreatedSessionsLoggedOut": true,
+    "schema": 172,
+    "apiBuild": 29,
+    "contentWrites": 0,
+    "originalSourcesUnchanged": true,
+    "worldPages": 2,
+    "worldTruePoints": 55,
+    "worldUniqueContent": 43,
+    "accessibleVideoMoments": 4,
+    "accessibleVideos": 4,
+    "distinctVideoCities": 3,
+    "targets": [
+      {
+        "targetIndex": 1,
+        "mediaCount": 1,
+        "mapPointCount": 2,
+        "cityCatalogMatches": 2,
+        "hasViewport": false,
+        "configuredPoints": 0,
+        "providers": []
+      },
+      {
+        "targetIndex": 2,
+        "mediaCount": 1,
+        "mapPointCount": 1,
+        "cityCatalogMatches": 1,
+        "hasViewport": false,
+        "configuredPoints": 0,
+        "providers": []
+      },
+      {
+        "targetIndex": 3,
+        "mediaCount": 1,
+        "mapPointCount": 1,
+        "cityCatalogMatches": 1,
+        "hasViewport": true,
+        "configuredPoints": 1,
+        "providers": [
+          "mapbox"
+        ]
+      },
+      {
+        "targetIndex": 4,
+        "mediaCount": 1,
+        "mapPointCount": 1,
+        "cityCatalogMatches": 1,
+        "hasViewport": false,
+        "configuredPoints": 0,
+        "providers": []
+      }
+    ],
+    "videoTargetsWithValidViewport": 1,
+    "videoPlayback": "NOT_RUN",
+    "uiVideoEntry": "READY_FOR_CHECK",
+    "privateLocatorSaved": true,
+    "loggedOutReadsDenied": true
+  }
+}

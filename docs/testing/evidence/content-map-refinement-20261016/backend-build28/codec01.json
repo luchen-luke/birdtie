@@ -1,0 +1,9 @@
+{
+  "status": "PASS",
+  "executed": "go run ./cmd/legacy-moment-author-restore --verify-blobs with exact protected original source, manifest, matched, pinned authenticated seal and extracted avatar blob root",
+  "avatars": 6,
+  "derivedBytes": 32295,
+  "databaseAccessed": false,
+  "sourceWrites": 0,
+  "ordinaryProfileUploadLimitUnchanged": true
+}

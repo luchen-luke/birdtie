@@ -1,0 +1,143 @@
+{
+  "status": "PASS",
+  "headless": true,
+  "browserVersion": "155.0.8059.40",
+  "nonPersistentContext": true,
+  "privateValuesPersisted": false,
+  "contentWrites": 0,
+  "checks": [
+    {
+      "check": "EXPECTED_WEB33_MANIFEST",
+      "passed": true
+    },
+    {
+      "check": "PINNED_OWNER",
+      "passed": true
+    },
+    {
+      "check": "WEB_SAME_TIMESTAMP_SIDEWAYS_MATCHES_ANDROID",
+      "passed": true,
+      "notes": "After actual UI play, DOM playback seek paused at51.8s, decoded406×720, readyState4/errornull, video CSS transform=none/objectFit=contain. Visual screenshot shows same sideways bar/people scene as APK33 last-frame screenshot; earlier Web12s upright. Direction change belongs to video content, no Android-only rotation discrepancy observed."
+    }
+  ],
+  "metrics": {
+    "mapQueries": 3,
+    "memberQueries": 0,
+    "placeReads": 2,
+    "momentReads": 0,
+    "coverReads": 6,
+    "denials": 2,
+    "contentWrites": 0,
+    "blockedWrites": 0,
+    "failedRequests": 5,
+    "browserPageErrors": 0,
+    "markerReads": 4,
+    "avatarReads": 1,
+    "detailMediaReads": 1
+  },
+  "events": [
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 12.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "detail"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 14.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "detail"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 14.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    }
+  ],
+  "logout": "PASS",
+  "release": {
+    "web": 33,
+    "schema": 172,
+    "manifestSHA256": "5bb2eb4d68e60c3c5d763df718a00766cb65cfec3e5098385579b46a53c5ac1a",
+    "api": 29,
+    "apiSHA256": "73a97552316ae642f4b97aea37c04266c3fd0959eeb0d346dd03bc6e54702818"
+  },
+  "screenshots": [
+    {
+      "path": "C:\\Users\\chens\\Documents\\Codex\\2026-10-15\\d-project-birdtie-docs-reports-birdtie-2\\outputs\\cm-web33-video-frame-51-8.png",
+      "sha256": "51161e80dd543efc697e1193b6b023c63b382019585e3950679ca2d0018a26f3"
+    }
+  ],
+  "scope": "Only compare existing source video at Web51.8s against APK33 near-end frame52.081s; actual UI play before DOM playback seek. No source/client changes.",
+  "notRun": [
+    "Screen recording",
+    "Publishing/editing/deleting content",
+    "Full release regression",
+    "Full continuous playback in this comparison batch",
+    "Audio verification",
+    "Source transform/encoding history audit"
+  ],
+  "finalized": true,
+  "finalizedAt": "2026-10-16T00:53:29.344532+00:00",
+  "orientationProof": {
+    "webTimeSeconds": 51.8,
+    "androidTimeSeconds": 52.081,
+    "webDecodedWidth": 406,
+    "webDecodedHeight": 720,
+    "webVideoCSSTransform": "none",
+    "webObjectFit": "contain",
+    "webReadyState": 4,
+    "webError": null,
+    "webSceneOrientation": "sideways",
+    "androidSceneOrientation": "sideways",
+    "earlierWeb12SecondSceneOrientation": "upright",
+    "conclusion": "Same source scene is sideways near end in both players. Observed direction change is within source video content; no platform-only rotation discrepancy found.",
+    "limitations": "Nearby timestamps rather than bit-identical frame; orientation metadata or encoding history not independently inspected."
+  },
+  "comparisons": [
+    {
+      "path": "C:\\Users\\chens\\Documents\\Codex\\2026-10-15\\d-project-birdtie-docs-reports-birdtie-2\\outputs\\cm-web33-video-playing.png",
+      "sha256": "95efc1041cc40edb9b4cf71ed6251bf9f85cfbf18fa082cf38149bc8cc04413a"
+    },
+    {
+      "path": "C:\\Users\\chens\\Documents\\Codex\\2026-10-15\\d-project-birdtie-docs-reports-birdtie-2\\outputs\\BirdTie-APK33-video-playing.png",
+      "sha256": "a7551503faa82f1e463894e3d14bcd5bc11a217725e58e432ae9dd5e52f3f63a"
+    }
+  ],
+  "preservedReceipts": [
+    {
+      "path": "../receipt.json",
+      "sha256": "9d6791ab1f7bbee67a2ab5dc5d3a2ae79c793a63edcf9b3714d1c5431f091078"
+    },
+    {
+      "path": "../video01/receipt.json",
+      "sha256": "2dfff36b649bcc52004d9ed6fdcc218e1cb715b3c543b63e054eef1a8502e491"
+    }
+  ]
+}

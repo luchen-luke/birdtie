@@ -1,0 +1,5 @@
+00:00 +0: loading D:/Project/birdtie/apps/client/test/content_map_cluster_bitmap_test.dart
+00:00 +0: same-coordinate group keeps a compact photo with small badge at phone DPR; people unchanged
+00:00 +1: neighbouring and selected place labels cannot cover a cluster count at either zoom; original coordinates and IDs remain
+00:00 +2: All tests passed!
+Flutter assets will be downloaded from https://storage.flutter-io.cn. Make sure you trust this source!

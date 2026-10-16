@@ -1,0 +1,34 @@
+{
+  "samples": [
+    [
+      {
+        "duration": {
+          "_duration": "52081000"
+        },
+        "position": {
+          "_duration": "52081000"
+        },
+        "isPlaying": "false",
+        "isBuffering": "false",
+        "errorDescription": "null",
+        "isInitialized": "true"
+      }
+    ],
+    [
+      {
+        "duration": {
+          "_duration": "52081000"
+        },
+        "position": {
+          "_duration": "52081000"
+        },
+        "isPlaying": "false",
+        "isBuffering": "false",
+        "errorDescription": "null",
+        "isInitialized": "true"
+      }
+    ]
+  ],
+  "actualNativePlayer": true,
+  "explicitPlayTap": true
+}

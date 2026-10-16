@@ -1,0 +1,14 @@
+{
+  "exitCode": 0,
+  "result": {
+    "status": "PASS",
+    "counts": {
+      "candidates": 6,
+      "preservedOriginal": 0,
+      "preservedMaterial": 0,
+      "absent": 6
+    }
+  },
+  "sourceWrites": 0,
+  "databaseWrites": 0
+}

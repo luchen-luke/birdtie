@@ -1,0 +1,92 @@
+{
+  "status": "IMPLEMENTED_DIRECT_TESTS_PASS_VISUAL_NOT_RUN",
+  "scope": "Now dynamic reading UI and OwnedMapMomentDetail author/time plus controlled avatar parsing/byte read. No Civu source changed.",
+  "sourceMapping": [
+    {
+      "reference": "D:/Program/Civu/Civu-client/lib/src/widgets/civu_discover_media_post.dart:627",
+      "capability": "Author/avatar hierarchy; publication metadata at987; ratio-led media at1416-1576",
+      "adaptedTo": "apps/client/lib/src/workspace/now_map_content_panel.dart::_MapMomentTile"
+    },
+    {
+      "reference": "D:/Program/Civu/Civu-client/lib/src/widgets/civu_moment_feed_card.dart:144",
+      "capability": "Media-led preview and author line399; title/body duplicate avoidance",
+      "adaptedTo": "NowMapContentPanel preview and _MapMomentTile"
+    },
+    {
+      "reference": "D:/Program/Civu/Civu-client/lib/src/widgets/civu_moment_media_viewer.dart",
+      "capability": "Unified attachment sequence",
+      "adaptedTo": "_MapMediaPager"
+    },
+    {
+      "reference": "D:/Program/Civu/Civu-client/lib/src/widgets/civu_media_viewer.dart:117",
+      "capability": "Only current page retains image/player; image zoom and page movement",
+      "adaptedTo": "Same Now panel media view, InteractiveViewer and current-page pager; no legacy navigation/global modal/session dependencies"
+    },
+    {
+      "reference": "apps/client/lib/src/workspace/person_avatar.dart::PersonAvatarMetadata",
+      "capability": "Existing verified128px JPEG avatar metadata/path/digest",
+      "adaptedTo": "OwnedMapMomentAuthor+OwnedMapAPI.avatarContent+root-owned controller.authorAvatarContent"
+    }
+  ],
+  "rules": {
+    "originalTimestamp": "publishedAt when present; verified NATIVE/CIVU_ORIGINAL creation timestamp otherwise, tooltip names creation not publication; UNKNOWN never displays import date",
+    "missingAuthor": "Actual supplied name; otherwise author unavailable, no invented identity",
+    "media": "Only current page, real aspect, uncut image, max preview height, same-panel zoom; video explicit play only",
+    "permissions": "Existing detail source/identity/deadline gates retained for text/avatar/media and edit; current group paging/expiry preserved"
+  },
+  "tests": [
+    {
+      "command": "flutter test --reporter expanded test/content_map_reader_test.dart test/content_map_panel_test.dart",
+      "cwd": "D:/Project/birdtie/apps/client",
+      "log": "reader-tests-02.log",
+      "exitCode": 0,
+      "passed": 7,
+      "covers": [
+        "author+date parsing and honest unknown fallback",
+        "title/body de-duplication",
+        "aspect ratio",
+        "page/full-view/return retention",
+        "edit callback and permission retirement",
+        "video poster only until play",
+        "existing same-source detail renewal/cluster paging/current-window/child expiry"
+      ]
+    },
+    {
+      "command": "dart analyze three reader/test files",
+      "log": "reader-analyze.log",
+      "exitCode": 0,
+      "errors": 0,
+      "warnings": 0,
+      "info": 17
+    }
+  ],
+  "priorFailure": "reader-tests-01.log preserved: pager test animation needed initial pump; group close label updated to return content list; detail-cache expected request count2->1 for same current source. No privacy assertion removed.",
+  "skill": {
+    "name": "impeccable",
+    "context": "root loaded context for this local refinement; read craft-floor/layout/typeset; no new brand direction",
+    "layoutScan": "layout-scan.json",
+    "typeScan": "type-scan.json",
+    "findings": 0
+  },
+  "uxChecks": [
+    "UX-CHECK-04",
+    "UX-CHECK-06",
+    "UX-CHECK-08",
+    "UX-CHECK-10",
+    "UX-CHECK-12",
+    "UX-CHECK-13",
+    "UX-CHECK-14"
+  ],
+  "notRun": [
+    "Real APK/Web visual acceptance of this UI batch",
+    "Real video player playback of this UI batch",
+    "Remote author/legacy-avatar delivery acceptance",
+    "Screen recording"
+  ],
+  "files": {
+    "apps/client/lib/src/workspace/now_map_content_panel.dart": "b8f57241cdc9e5610ee010c330e88c75e1e8cdf8f58b356410e0e62788d51bfb",
+    "apps/client/test/content_map_reader_test.dart": "093c3135d92dac65601fb5d72e8880c2492b7b766069404dcba9552c91cd5e4c",
+    "apps/client/test/content_map_panel_test.dart": "408890541db70f79ee34f7cce9fdd43c61f15f62708c1abc1ee305bdd7515237"
+  },
+  "sharedFileNote": "owned_map_api.dart author type/detail/avatarContent ranges authored here; other current viewport changes owned by root, so no whole-file freeze/hash asserted here."
+}

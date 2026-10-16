@@ -1,0 +1,31 @@
+{
+  "exitCode": 0,
+  "remoteProgramSHA256": "e0f7cd70a8e563b567c98a209a7402d4322c9c7c4cf05c668caeaf0c6d5de5de",
+  "result": {
+    "status": "COMMITTED_INSPECTED_REPLAYED",
+    "schema": 172,
+    "apiBuild": 28,
+    "counts": {
+      "moments": 83,
+      "authors": 9,
+      "avatars": 6
+    },
+    "deferred": {
+      "avatar_not_bound_to_preserved_media": 1
+    },
+    "actual": {
+      "authors": 9,
+      "avatars": 6,
+      "moments": 83,
+      "validBytes": true,
+      "avatarBytes": 32295
+    },
+    "nativeMomentsPlacesProfilesUnchanged": true,
+    "sourceInputsUnchanged": true,
+    "sourceWrites": 0,
+    "originalRunReused": true,
+    "sessionsCreated": 0,
+    "oldAvatarURLsFetched": 0
+  },
+  "stderrPresent": false
+}

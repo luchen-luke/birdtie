@@ -1,0 +1,42 @@
+{
+  "status": "DEPLOYED_LIVE_API_VERIFIED",
+  "schema": 171,
+  "databaseOID": 54087,
+  "priorAPI": 26,
+  "api": 27,
+  "priorAPISHA256": "d77531962e0a89fa4f136849d5e883342d8d8f66caf37df5079871b722e42afe",
+  "apiSHA256": "c95adfbe22b10df95f4e934d042c438f3977e710afd6260b30b5f0c0c37d8ed5",
+  "appliedMigrations": 0,
+  "originalMigrationsUnchanged": 171,
+  "deploymentReceipt": "backend-build27/deploy01/receipt.json",
+  "liveReceipt": "live-api27/verify02/receipt.json",
+  "comparison": "live-api27/verify02/comparison.json",
+  "failedAttemptsPreserved": [
+    "backend-build27/preflight.json",
+    "live-api27/verify01/receipt.json"
+  ],
+  "failureExplanations": [
+    "PostgreSQL oid JSON required integer conversion in read-only preflight; corrected guard PASS in preflight02",
+    "Initial acceptance selector incorrectly required migrated anchor authored by the same viewer. All16 migrated anchors are other-authored source-public content; same authorized viewer used throughout, no other account login. Corrected selector preserves current ACL and source-owner mapping."
+  ],
+  "results": {
+    "allCreatedSessionsLoggedOut": true,
+    "loggedOutReadsDenied": true,
+    "allMigratedAnchorsAccessible": 16,
+    "allLeafMarkersRead": 55,
+    "viewportPages": 2,
+    "coincidentGroupsVerified": 0,
+    "originalCreatedTimeVerified": true,
+    "trueCurrentAuthorVerified": true,
+    "authorAvatarAvailable": false,
+    "markerBytesVerified": 2855,
+    "protectedSourceUnchanged": true
+  },
+  "limitations": [
+    "No live exact-overlap group exists in this real scope; overlap paging tested on disposable native fixtures only",
+    "Private imported author profiles remain private and old avatar bytes have not been migrated; generic member fallback is not complete legacy author restoration",
+    "API27 returns more real points/covers than API26; median latency and response size increased, no performance speedup claim",
+    "Fixed code test does not establish production SMS/identity verification",
+    "Rollback implementation present; rollback failure path not induced in production"
+  ]
+}

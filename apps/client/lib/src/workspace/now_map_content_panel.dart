@@ -9,7 +9,6 @@ import '../content/video_material_player_stub.dart'
     if (dart.library.io) '../content/video_material_player_io.dart'
     if (dart.library.html) '../content/video_material_player_web.dart'
     as local_video;
-import 'map_marker_visual.dart';
 import 'owned_map_api.dart';
 import 'owned_map_controller.dart';
 
@@ -25,7 +24,11 @@ class NowMapContentPanel extends StatefulWidget {
     required this.onClose,
     required this.onExpand,
     required this.onEdit,
+    this.initialExpanded = false,
+    this.closeLabel,
   });
+  final bool initialExpanded;
+  final String? closeLabel;
   final OwnedMapController controller;
   final OwnedMapPin pin;
   final bool Function() current;
@@ -46,6 +49,8 @@ class _NowMapContentPanelState extends State<NowMapContentPanel>
   String? _nextCursor, _error;
   late int _epoch;
   int _request = 0, _desiredCount = 1;
+  String? _viewerMoment;
+  final _mediaPages = <String, int>{};
   double _restoreOffset = 0;
   bool _expanded = false,
       _loading = false,
@@ -70,6 +75,7 @@ class _NowMapContentPanelState extends State<NowMapContentPanel>
   void initState() {
     super.initState();
     _epoch = c.permissionEpoch;
+    _expanded = widget.initialExpanded;
     _listen();
     WidgetsBinding.instance.addObserver(this);
     unawaited(_read());
@@ -94,7 +100,9 @@ class _NowMapContentPanelState extends State<NowMapContentPanel>
       _epoch = c.permissionEpoch;
       _desiredCount = 1;
       _restoreOffset = 0;
-      _expanded = false;
+      _expanded = widget.initialExpanded;
+      _viewerMoment = null;
+      _mediaPages.clear();
       if (_scroll.hasClients) _scroll.jumpTo(0);
       unawaited(_read());
     } else if (!_current) {
@@ -240,18 +248,87 @@ class _NowMapContentPanelState extends State<NowMapContentPanel>
     widget.onExpand();
   }
 
+  void _openMedia(OwnedMapMomentDetail item, int page) {
+    if (!_current || !c.detailCurrent(item)) return;
+    if (_scroll.hasClients) _restoreOffset = _scroll.offset;
+    _mediaPages[item.id] = page;
+    setState(() {
+      _viewerMoment = item.id;
+      _expanded = true;
+    });
+    widget.onExpand();
+  }
+
+  void _closeMedia() {
+    setState(() => _viewerMoment = null);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _scroll.hasClients) {
+        _scroll.jumpTo(
+          _restoreOffset.clamp(0, _scroll.position.maxScrollExtent),
+        );
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, constraints) {
       final current = _current, pin = current ? _livePin : null;
-      final cover = pin?.cover;
-      final coverUntil = pin?.validUntil ?? c.view?.validUntil;
       final availableHeight = constraints.hasBoundedHeight
           ? constraints.maxHeight
           : 560.0;
       final height = _expanded
           ? availableHeight
-          : math.min(360.0, availableHeight);
+          : math.min(440.0, availableHeight);
+      final viewed = _items
+          .where(
+            (item) =>
+                item.id == _viewerMoment && current && c.detailCurrent(item),
+          )
+          .firstOrNull;
+      if (viewed != null) {
+        return SizedBox(
+          height: height,
+          child: Material(
+            color: const Color(0xFF101713),
+            child: Column(
+              children: [
+                SizedBox(
+                  height: 52,
+                  child: Row(
+                    children: [
+                      IconButton(
+                        tooltip: '返回动态',
+                        color: Colors.white,
+                        onPressed: _closeMedia,
+                        icon: const Icon(Icons.arrow_back),
+                      ),
+                      const Expanded(
+                        child: Text(
+                          '照片与视频',
+                          style: TextStyle(color: Colors.white, fontSize: 16),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: _MapMediaPager(
+                    key: ValueKey('viewer:${viewed.id}'),
+                    controller: c,
+                    detail: viewed,
+                    current: () => _current && c.detailCurrent(viewed),
+                    compact: false,
+                    full: true,
+                    initialPage: _mediaPages[viewed.id] ?? 0,
+                    onPageChanged: (index) => _mediaPages[viewed.id] = index,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      }
       return SizedBox(
         height: height,
         child: Material(
@@ -259,74 +336,55 @@ class _NowMapContentPanelState extends State<NowMapContentPanel>
           child: Column(
             children: [
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 8, 4, 8),
-                child: Row(
-                  children: [
-                    if (pin != null) ...[
-                      if (cover != null && coverUntil != null)
-                        SizedBox(
-                          width: 56,
-                          height: 56,
-                          child: _LeasePicture(
-                            key: ValueKey('place:${_epoch}:${cover.identity}'),
-                            identity: cover.identity,
-                            width: cover.width,
-                            height: cover.height,
-                            validUntil: coverUntil,
-                            current: () => _current,
-                            read: () =>
-                                c.coverContent(cover, current: () => _current),
-                          ),
-                        )
-                      else
-                        Icon(
-                          MapMarkerVisual.placeIcon(pin.categoryCode),
-                          size: 20,
+                padding: const EdgeInsets.only(left: 16, right: 4),
+                child: SizedBox(
+                  height: 52,
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          pin == null || pin.isMomentAnchor ? '动态' : pin.name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.titleMedium,
                         ),
-                      const SizedBox(width: 8),
-                    ],
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            pin?.name ?? '地图内容',
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.titleMedium,
-                          ),
-                          if (pin != null)
-                            Text(
-                              '${pin.isMomentAnchor ? '内容位置' : _category(pin.categoryCode)} · ${pin.momentCount}条动态',
-                              style: Theme.of(context).textTheme.bodySmall,
-                            ),
-                          if (pin?.hasPrivateContent == true)
-                            const Text('含仅本人可见内容'),
-                        ],
                       ),
-                    ),
-                    IconButton(
-                      tooltip: _expanded ? '返回地图' : '关闭内容预览',
-                      onPressed: widget.onClose,
-                      icon: const Icon(Icons.close),
-                    ),
-                  ],
+                      if (pin != null &&
+                          !pin.isMomentAnchor &&
+                          pin.momentCount > 1)
+                        Padding(
+                          padding: const EdgeInsets.only(left: 8),
+                          child: Text(
+                            '${pin.momentCount}条动态',
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                        ),
+                      IconButton(
+                        tooltip:
+                            widget.closeLabel ??
+                            (_expanded ? '返回地图' : '关闭内容预览'),
+                        onPressed: widget.onClose,
+                        icon: const Icon(Icons.close),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-              if (_loading) const LinearProgressIndicator(minHeight: 2),
+              if (_loading && _items.isEmpty)
+                const LinearProgressIndicator(minHeight: 2),
               Expanded(
                 child: !current
                     ? Center(
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Text('当前内容已不可读。'),
+                            const Text('这条动态暂时无法查看'),
                             TextButton(
                               onPressed: () async {
                                 await c.refresh();
                                 if (mounted && _current) await _read();
                               },
-                              child: const Text('重新读取地点'),
+                              child: const Text('重试'),
                             ),
                           ],
                         ),
@@ -334,7 +392,7 @@ class _NowMapContentPanelState extends State<NowMapContentPanel>
                     : ListView.builder(
                         key: const PageStorageKey('now-map-content-scroll'),
                         controller: _scroll,
-                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                        padding: const EdgeInsets.only(bottom: 16),
                         itemCount:
                             (_expanded
                                 ? _items.length
@@ -344,62 +402,75 @@ class _NowMapContentPanelState extends State<NowMapContentPanel>
                           final visible = _expanded
                               ? _items.length
                               : math.min(1, _items.length);
-                          if (index == visible)
-                            return Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                if (_error != null) Text(_error!),
-                                if (!_loading && _items.isEmpty)
-                                  Text(
-                                    _hasRead ? '这里暂时没有可读动态。' : '读取已到期，请重新读取。',
-                                  ),
-                                if (_error != null || !_hasRead && !_loading)
-                                  TextButton(
-                                    onPressed: _loading
-                                        ? null
-                                        : () => unawaited(_read()),
-                                    child: const Text('重新读取动态'),
-                                  ),
-                                if (_expanded && _nextCursor != null)
-                                  TextButton(
-                                    onPressed: _loading
-                                        ? null
-                                        : () => unawaited(_read(more: true)),
-                                    child: const Text('加载更多动态'),
-                                  ),
-                              ],
+                          if (index == visible) {
+                            return Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  if (_error != null) Text('动态暂时无法加载'),
+                                  if (!_loading && _items.isEmpty && _hasRead)
+                                    const Text('这里还没有可查看的动态'),
+                                  if (_error != null || !_hasRead && !_loading)
+                                    TextButton(
+                                      onPressed: _loading
+                                          ? null
+                                          : () => unawaited(_read()),
+                                      child: const Text('重试'),
+                                    ),
+                                  if (_expanded && _nextCursor != null)
+                                    TextButton(
+                                      onPressed: _loading
+                                          ? null
+                                          : () => unawaited(_read(more: true)),
+                                      child: const Text('加载更多动态'),
+                                    ),
+                                ],
+                              ),
                             );
+                          }
                           final item = _items[index];
-                          return _MapMomentTile(
-                            key: ValueKey(
-                              '${item.id}:${item.revision}:${item.sourceVersion}',
-                            ),
-                            controller: c,
-                            detail: item,
-                            compact: !_expanded,
-                            current: () => _current && c.detailCurrent(item),
-                            onEdit: () => widget.onEdit(
-                              item.id,
-                              () =>
-                                  _current &&
-                                  c.detailCurrent(item) &&
-                                  item.visibilitySource == 'SELF_PRIVATE' &&
-                                  item.canEdit,
+                          return Align(
+                            alignment: Alignment.topCenter,
+                            child: ConstrainedBox(
+                              constraints: const BoxConstraints(maxWidth: 720),
+                              child: _MapMomentTile(
+                                key: ValueKey(
+                                  '${item.id}:${item.revision}:${item.sourceVersion}',
+                                ),
+                                controller: c,
+                                detail: item,
+                                compact: !_expanded,
+                                current: () =>
+                                    _current && c.detailCurrent(item),
+                                page: _mediaPages[item.id] ?? 0,
+                                onPageChanged: (page) =>
+                                    _mediaPages[item.id] = page,
+                                onOpenMedia: (page) => _openMedia(item, page),
+                                onExpand: _expand,
+                                onEdit: () => widget.onEdit(
+                                  item.id,
+                                  () =>
+                                      _current &&
+                                      c.detailCurrent(item) &&
+                                      item.visibilitySource == 'SELF_PRIVATE' &&
+                                      item.canEdit,
+                                ),
+                              ),
                             ),
                           );
                         },
                       ),
               ),
               if (current && !_expanded && pin!.momentCount > 0)
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(8, 0, 8, 4),
-                    child: TextButton.icon(
-                      onPressed: _expand,
-                      icon: const Icon(Icons.expand_more),
-                      label: const Text('查看动态'),
-                    ),
+                SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: TextButton(
+                    onPressed: _expand,
+                    child: const Text('展开动态'),
                   ),
                 ),
             ],
@@ -410,18 +481,12 @@ class _NowMapContentPanelState extends State<NowMapContentPanel>
   );
 }
 
-String _category(String code) => switch (code) {
-  'cafe' || 'coffee_shop' => '咖啡馆',
-  'restaurant' || 'food' || 'food_drink' => '餐饮',
-  'bar' || 'pub' => '酒吧',
-  'museum' => '博物馆',
-  'art_gallery' => '美术馆',
-  'park' || 'nature' || 'nature_outdoor' => '自然与公园',
-  'hotel' || 'hostel' || 'lodging' => '住宿',
-  'shopping' || 'shop' || 'shopping_mall' => '商店',
-  'distillery' || 'brewery' || 'winery' => '酒厂',
-  _ => '地点',
-};
+String _momentTime(OwnedMapMomentDetail item) {
+  final time = item.displayPublishedAt?.toLocal();
+  if (time == null) return '时间未提供';
+  String two(int n) => n.toString().padLeft(2, '0');
+  return '${time.year}.${two(time.month)}.${two(time.day)}  ${two(time.hour)}:${two(time.minute)}';
+}
 
 class _MapMomentTile extends StatelessWidget {
   const _MapMomentTile({
@@ -431,97 +496,205 @@ class _MapMomentTile extends StatelessWidget {
     required this.current,
     required this.compact,
     required this.onEdit,
+    required this.page,
+    required this.onPageChanged,
+    required this.onOpenMedia,
+    required this.onExpand,
   });
   final OwnedMapController controller;
   final OwnedMapMomentDetail detail;
   final bool Function() current;
   final bool compact;
-  final VoidCallback onEdit;
+  final VoidCallback onEdit, onExpand;
+  final int page;
+  final ValueChanged<int> onPageChanged, onOpenMedia;
 
   @override
   Widget build(BuildContext context) {
     if (!current()) return const SizedBox.shrink();
-    final text = Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (detail.title.isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 6),
-            child: Text(
-              detail.title,
-              maxLines: compact ? 2 : null,
-              overflow: compact ? TextOverflow.ellipsis : null,
-              style: Theme.of(context).textTheme.titleSmall,
-            ),
-          ),
-        if (detail.body.isNotEmpty)
-          Text(
-            detail.body,
-            maxLines: compact ? 3 : null,
-            overflow: compact ? TextOverflow.ellipsis : null,
-          ),
-      ],
-    );
+    final colors = Theme.of(context).colorScheme;
+    final title = detail.title.trim(), body = detail.body.trim();
+    final author = detail.author, avatar = author?.avatar;
+    final name = author?.displayName.trim();
     return Padding(
-      padding: EdgeInsets.only(bottom: compact ? 12 : 20),
+      padding: EdgeInsets.only(bottom: compact ? 0 : 28),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(switch (detail.visibilitySource) {
-                  'SELF_PRIVATE' => '仅本人可见',
-                  'CIVU_PUBLIC_MOMENT' => '原公开记录',
-                  _ => '公开动态',
-                }, style: Theme.of(context).textTheme.bodySmall),
-              ),
-              if (detail.visibilitySource == 'SELF_PRIVATE' && detail.canEdit)
-                TextButton(
-                  onPressed: () {
-                    if (current()) onEdit();
-                  },
-                  child: const Text('编辑动态'),
-                ),
-            ],
-          ),
-          if (compact && detail.media.isNotEmpty)
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 4, 8, 12),
+            child: Row(
               children: [
-                SizedBox(
-                  width: 96,
-                  child: _MapMediaPager(
-                    controller: controller,
-                    detail: detail,
-                    current: current,
-                    compact: true,
+                Semantics(
+                  label: '作者头像',
+                  image: true,
+                  child: ClipOval(
+                    child: SizedBox(
+                      width: 36,
+                      height: 36,
+                      child: avatar == null
+                          ? ColoredBox(
+                              color: colors.surfaceContainerHighest,
+                              child: name != null && name.isNotEmpty
+                                  ? Center(
+                                      child: Text(
+                                        name.characters.first,
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w600,
+                                          color: colors.onSurfaceVariant,
+                                        ),
+                                      ),
+                                    )
+                                  : Icon(
+                                      Icons.person_outline,
+                                      size: 20,
+                                      color: colors.onSurfaceVariant,
+                                    ),
+                            )
+                          : _LeasePicture(
+                              key: ValueKey(
+                                'author:${avatar.accountID}:${avatar.version}:${avatar.digest}',
+                              ),
+                              identity:
+                                  '${avatar.accountID}:${avatar.version}:${avatar.digest}',
+                              width: 128,
+                              height: 128,
+                              validUntil: detail.validUntil,
+                              current: current,
+                              placeholder: const Icon(
+                                Icons.person_outline,
+                                size: 20,
+                              ),
+                              read: () =>
+                                  controller.authorAvatarContent(detail),
+                            ),
+                    ),
                   ),
                 ),
-                const SizedBox(width: 12),
-                Expanded(child: text),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        name == null || name.isEmpty ? '作者未提供' : name,
+                        key: ValueKey('moment-author:${detail.id}'),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 14,
+                          height: 1.3,
+                          fontWeight: FontWeight.w600,
+                          color: colors.onSurface,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Tooltip(
+                        message: detail.publishedAt != null
+                            ? '发布时间'
+                            : detail.createdAtSource == 'CIVU_ORIGINAL'
+                            ? '原创建时间'
+                            : detail.createdAtSource == 'NATIVE'
+                            ? '创建时间'
+                            : '未提供原时间',
+                        child: Text(
+                          _momentTime(detail),
+                          key: ValueKey('moment-time:${detail.id}'),
+                          style: TextStyle(
+                            fontSize: 12,
+                            height: 1.35,
+                            color: colors.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                if (detail.visibility == 'private')
+                  Tooltip(
+                    message: '仅自己可见',
+                    child: Padding(
+                      padding: const EdgeInsets.all(8),
+                      child: Icon(
+                        Icons.lock_outline,
+                        size: 16,
+                        color: colors.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                if (detail.visibilitySource == 'SELF_PRIVATE' && detail.canEdit)
+                  IconButton(
+                    tooltip: '编辑动态',
+                    icon: const Icon(Icons.edit_outlined, size: 20),
+                    onPressed: () {
+                      if (current()) onEdit();
+                    },
+                  ),
               ],
-            )
-          else
-            text,
-          if (!compact && detail.media.isNotEmpty)
+            ),
+          ),
+          if (title.isNotEmpty && title != body)
             Padding(
-              padding: const EdgeInsets.only(top: 10),
-              child: _MapMediaPager(
-                controller: controller,
-                detail: detail,
-                current: current,
-                compact: compact,
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+              child: Text(
+                title,
+                maxLines: compact ? 2 : null,
+                overflow: compact ? TextOverflow.ellipsis : null,
+                style: TextStyle(
+                  fontSize: 18,
+                  height: 1.4,
+                  fontWeight: FontWeight.w600,
+                  color: colors.onSurface,
+                ),
               ),
+            ),
+          if (body.isNotEmpty || title.isNotEmpty && title == body)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+              child: Text(
+                body.isEmpty ? title : body,
+                maxLines: compact ? 3 : null,
+                overflow: compact ? TextOverflow.ellipsis : null,
+                style: TextStyle(
+                  fontSize: 16,
+                  height: 1.55,
+                  color: colors.onSurface,
+                ),
+              ),
+            ),
+          if (detail.media.isNotEmpty)
+            _MapMediaPager(
+              controller: controller,
+              detail: detail,
+              current: current,
+              compact: compact,
+              initialPage: page,
+              onPageChanged: onPageChanged,
+              onOpen: onOpenMedia,
             ),
           if (!compact && detail.locations.isNotEmpty)
             Padding(
-              padding: const EdgeInsets.only(top: 8),
-              child: Wrap(
-                spacing: 8,
-                runSpacing: 4,
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  for (final location in detail.locations) Text(location.name),
+                  Icon(
+                    Icons.location_on_outlined,
+                    size: 16,
+                    color: colors.onSurfaceVariant,
+                  ),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
+                      detail.locations.map((p) => p.name).join(' · '),
+                      style: TextStyle(
+                        fontSize: 13,
+                        height: 1.5,
+                        color: colors.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -533,58 +706,179 @@ class _MapMomentTile extends StatelessWidget {
 
 class _MapMediaPager extends StatefulWidget {
   const _MapMediaPager({
+    super.key,
     required this.controller,
     required this.detail,
     required this.current,
     required this.compact,
+    this.full = false,
+    this.initialPage = 0,
+    required this.onPageChanged,
+    this.onOpen,
   });
   final OwnedMapController controller;
   final OwnedMapMomentDetail detail;
   final bool Function() current;
-  final bool compact;
+  final bool compact, full;
+  final int initialPage;
+  final ValueChanged<int> onPageChanged;
+  final ValueChanged<int>? onOpen;
   @override
   State<_MapMediaPager> createState() => _MapMediaPagerState();
 }
 
 class _MapMediaPagerState extends State<_MapMediaPager> {
-  int _index = 0;
+  late int _index;
+  late final PageController _pages;
   @override
-  Widget build(BuildContext context) => Column(
-    children: [
-      SizedBox(
-        height: widget.compact ? 96 : 240,
-        child: PageView.builder(
-          key: PageStorageKey(
-            'map-media:${widget.detail.id}:${widget.detail.sourceVersion}',
-          ),
-          itemCount: widget.detail.media.length,
-          onPageChanged: (index) => setState(() => _index = index),
-          itemBuilder: (context, index) {
-            final media = widget.detail.media[index];
-            return media.isVideo
-                ? _MapVideo(
-                    key: ValueKey(media.identity),
-                    controller: widget.controller,
-                    detail: widget.detail,
-                    media: media,
-                    current: widget.current,
-                  )
-                : _LeasePicture(
+  void initState() {
+    super.initState();
+    _index = widget.initialPage.clamp(0, widget.detail.media.length - 1);
+    _pages = PageController(initialPage: _index);
+  }
+
+  @override
+  void dispose() {
+    _pages.dispose();
+    super.dispose();
+  }
+
+  void _move(int delta) {
+    final target = _index + delta;
+    if (target >= 0 && target < widget.detail.media.length) {
+      _pages.animateToPage(
+        target,
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOut,
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, box) {
+      final selected = widget.detail.media[_index];
+      final ratio = selected.width / selected.height;
+      final height = widget.full
+          ? box.maxHeight
+          : math.min(box.maxWidth / ratio, widget.compact ? 300.0 : 560.0);
+      return SizedBox(
+        key: ValueKey('moment-media-frame:${widget.detail.id}:${widget.full}'),
+        height: height,
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: PageView.builder(
+                controller: _pages,
+                key: PageStorageKey(
+                  'map-media:${widget.detail.id}:${widget.full}',
+                ),
+                physics: widget.full
+                    ? const NeverScrollableScrollPhysics()
+                    : null,
+                itemCount: widget.detail.media.length,
+                onPageChanged: (index) {
+                  setState(() => _index = index);
+                  widget.onPageChanged(index);
+                },
+                itemBuilder: (context, index) {
+                  // Only the current page may own decoded pixels or a video player.
+                  if (index != _index) return const SizedBox.expand();
+                  final media = widget.detail.media[index];
+                  bool current() => widget.current() && index == _index;
+                  if (media.isVideo)
+                    return _MapVideo(
+                      key: ValueKey(media.identity),
+                      controller: widget.controller,
+                      detail: widget.detail,
+                      media: media,
+                      current: current,
+                    );
+                  final picture = _LeasePicture(
                     key: ValueKey(media.identity),
                     identity: media.identity,
                     width: media.width,
                     height: media.height,
+                    decodeLimit: widget.full ? 2048 : 1280,
                     validUntil: widget.detail.validUntil,
-                    current: widget.current,
+                    current: current,
                     read: () =>
                         widget.controller.momentContent(widget.detail, media),
                   );
-          },
+                  return widget.full
+                      ? InteractiveViewer(
+                          minScale: 1,
+                          maxScale: 4,
+                          child: SizedBox.expand(child: picture),
+                        )
+                      : Semantics(
+                          button: true,
+                          label: '查看第${index + 1}张图片',
+                          child: InkWell(
+                            onTap: () => widget.onOpen?.call(index),
+                            child: picture,
+                          ),
+                        );
+                },
+              ),
+            ),
+            if (widget.detail.media.length > 1)
+              Positioned(
+                right: 12,
+                top: 12,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: .65),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    child: Text(
+                      '${_index + 1} / ${widget.detail.media.length}',
+                      style: const TextStyle(fontSize: 12, color: Colors.white),
+                    ),
+                  ),
+                ),
+              ),
+            if (widget.detail.media.length > 1) ...[
+              if (_index > 0)
+                Positioned(
+                  left: 4,
+                  top: height / 2 - 24,
+                  child: IconButton.filledTonal(
+                    tooltip: '上一张',
+                    onPressed: () => _move(-1),
+                    icon: const Icon(Icons.chevron_left),
+                  ),
+                ),
+              if (_index + 1 < widget.detail.media.length)
+                Positioned(
+                  right: 4,
+                  top: height / 2 - 24,
+                  child: IconButton.filledTonal(
+                    tooltip: '下一张',
+                    onPressed: () => _move(1),
+                    icon: const Icon(Icons.chevron_right),
+                  ),
+                ),
+            ],
+            if (!widget.full)
+              Positioned(
+                right: 4,
+                bottom: 4,
+                child: IconButton.filledTonal(
+                  tooltip: '查看完整媒体',
+                  onPressed: () => widget.onOpen?.call(_index),
+                  icon: const Icon(Icons.open_in_full, size: 20),
+                ),
+              ),
+          ],
         ),
-      ),
-      if (widget.detail.media.length > 1)
-        Text('${_index + 1} / ${widget.detail.media.length}'),
-    ],
+      );
+    },
   );
 }
 
@@ -599,9 +893,13 @@ class _LeasePicture extends StatefulWidget {
     required this.validUntil,
     required this.current,
     required this.read,
+    this.decodeLimit = 1280,
+    this.placeholder,
   });
   final String identity;
   final int width, height;
+  final int decodeLimit;
+  final Widget? placeholder;
   final DateTime validUntil;
   final bool Function() current;
   final Future<Uint8List> Function() read;
@@ -664,7 +962,7 @@ class _LeasePictureState extends State<_LeasePicture> {
       if (!_current || request != _request) return;
       final scale = math.min(
         1.0,
-        math.min(960 / widget.width, 720 / widget.height),
+        widget.decodeLimit / math.max(widget.width, widget.height),
       );
       _image = ResizeImage(
         MemoryImage(data),
@@ -695,19 +993,21 @@ class _LeasePictureState extends State<_LeasePicture> {
       ? Image(
           image: _image!,
           fit: BoxFit.contain,
-          errorBuilder: (_, _, _) => const Text('图片暂不可读'),
+          errorBuilder: (_, _, _) => widget.placeholder ?? const Text('图片加载失败'),
         )
       : Center(
-          child: _failed
-              ? TextButton(
-                  onPressed: () => unawaited(_load()),
-                  child: const Text('重新读取图片'),
-                )
-              : const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                ),
+          child:
+              widget.placeholder ??
+              (_failed
+                  ? TextButton(
+                      onPressed: () => unawaited(_load()),
+                      child: const Text('重试'),
+                    )
+                  : const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )),
         );
 }
 
@@ -817,64 +1117,168 @@ class _MapVideoState extends State<_MapVideo> {
     super.dispose();
   }
 
+  String _duration(Duration value) {
+    final seconds = value.inSeconds;
+    return '${seconds ~/ 60}:${(seconds % 60).toString().padLeft(2, '0')}';
+  }
+
   @override
   Widget build(BuildContext context) {
     if (!_current) return const SizedBox.shrink();
     final poster = widget.media.poster;
-    return Column(
-      children: [
-        Expanded(
-          child: _player != null
-              ? AspectRatio(
-                  aspectRatio: _player!.value.aspectRatio,
-                  child: VideoPlayer(_player!),
-                )
-              : poster != null
-              ? _LeasePicture(
-                  identity: poster.identity,
-                  width: poster.width,
-                  height: poster.height,
-                  validUntil: widget.detail.validUntil,
-                  current: () => _current,
-                  read: () => widget.controller.coverContent(
-                    poster,
-                    current: () => _current,
+    return ColoredBox(
+      color: const Color(0xFF101713),
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          if (_player != null)
+            Center(
+              child: AspectRatio(
+                aspectRatio: _player!.value.aspectRatio,
+                child: VideoPlayer(_player!),
+              ),
+            )
+          else if (poster != null)
+            _LeasePicture(
+              identity: poster.identity,
+              width: poster.width,
+              height: poster.height,
+              validUntil: widget.detail.validUntil,
+              current: () => _current,
+              read: () => widget.controller.coverContent(
+                poster,
+                current: () => _current,
+              ),
+            )
+          else
+            const Center(
+              child: Icon(
+                Icons.videocam_outlined,
+                size: 36,
+                color: Colors.white70,
+              ),
+            ),
+          if (_player == null)
+            Center(
+              child: _loading
+                  ? const SizedBox(
+                      width: 28,
+                      height: 28,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2,
+                      ),
+                    )
+                  : IconButton.filled(
+                      tooltip: _error == null ? '播放视频' : '重试播放',
+                      style: IconButton.styleFrom(
+                        backgroundColor: Colors.black54,
+                        foregroundColor: Colors.white,
+                        minimumSize: const Size(56, 56),
+                      ),
+                      onPressed: () => unawaited(_play()),
+                      icon: Icon(
+                        _error == null ? Icons.play_arrow : Icons.refresh,
+                        size: 32,
+                      ),
+                    ),
+            ),
+          if (_error != null)
+            Positioned(
+              left: 16,
+              right: 16,
+              bottom: 40,
+              child: Text(
+                '视频加载失败，点击重试',
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Colors.white, fontSize: 13),
+              ),
+            ),
+          if (_player == null && widget.media.durationMs != null)
+            Positioned(
+              left: 12,
+              bottom: 12,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: Colors.black54,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 3,
                   ),
-                )
-              : const Center(child: Icon(Icons.videocam_outlined)),
-        ),
-        if (_error != null) Text(_error!),
-        if (_player != null)
-          ValueListenableBuilder(
-            valueListenable: _player!,
-            builder: (context, value, _) => IconButton(
-              tooltip: value.isPlaying ? '暂停' : '播放',
-              onPressed: () {
-                if (_current)
-                  unawaited(
-                    value.isPlaying ? _player!.pause() : _player!.play(),
-                  );
-              },
-              icon: Icon(value.isPlaying ? Icons.pause : Icons.play_arrow),
+                  child: Text(
+                    _duration(Duration(milliseconds: widget.media.durationMs!)),
+                    style: const TextStyle(color: Colors.white, fontSize: 12),
+                  ),
+                ),
+              ),
             ),
-          )
-        else
-          TextButton.icon(
-            onPressed: _loading ? null : () => unawaited(_play()),
-            icon: _loading
-                ? const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.play_circle_outline),
-            label: Text(
-              _loading
-                  ? '正在读取视频…'
-                  : '播放视频 · ${((widget.media.durationMs ?? 0) / 1000).toStringAsFixed(1)}秒',
+          if (_player != null)
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: ColoredBox(
+                color: Colors.black54,
+                child: ValueListenableBuilder(
+                  valueListenable: _player!,
+                  builder: (context, value, _) => Row(
+                    children: [
+                      IconButton(
+                        tooltip: value.isPlaying ? '暂停' : '播放',
+                        color: Colors.white,
+                        onPressed: () {
+                          if (_current)
+                            unawaited(
+                              value.isPlaying
+                                  ? _player!.pause()
+                                  : _player!.play(),
+                            );
+                        },
+                        icon: Icon(
+                          value.isPlaying ? Icons.pause : Icons.play_arrow,
+                        ),
+                      ),
+                      Text(
+                        _duration(value.position),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: VideoProgressIndicator(
+                          _player!,
+                          allowScrubbing: true,
+                          padding: const EdgeInsets.symmetric(vertical: 20),
+                          colors: const VideoProgressColors(
+                            playedColor: Colors.white,
+                            bufferedColor: Colors.white54,
+                            backgroundColor: Colors.white24,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Padding(
+                        padding: const EdgeInsets.only(right: 52),
+                        child: Text(
+                          _duration(value.duration),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ),
-          ),
-      ],
+        ],
+      ),
     );
   }
 }
@@ -1114,6 +1518,8 @@ class _NowMapContentGroupPanelState extends State<NowMapContentGroupPanel> {
         changes: widget.changes,
         onClose: back,
         onExpand: () {},
+        initialExpanded: true,
+        closeLabel: '返回内容列表',
         onEdit: widget.onEdit,
       );
     }

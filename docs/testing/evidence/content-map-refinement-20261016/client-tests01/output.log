@@ -1,0 +1,16 @@
+00:00 +0: loading D:/Project/birdtie/apps/client/test/content_map_controller_test.dart
+00:00 +0: D:/Project/birdtie/apps/client/test/content_map_controller_test.dart: v2 coordinate anchors and bounded cluster pages retain target grants and reject POI-only pins
+00:00 +1: D:/Project/birdtie/apps/client/test/content_map_controller_test.dart: v2 coordinate anchors and bounded cluster pages retain target grants and reject POI-only pins
+00:00 +2: D:/Project/birdtie/apps/client/test/content_map_coverage_test.dart: pan and zoom reuse loaded area; only new strips fetched; return keeps source and no map clear
+00:00 +3: D:/Project/birdtie/apps/client/test/content_map_controller_test.dart: settled query reuse, cancellation, LRU bytes and permission withdrawal
+00:00 +4: D:/Project/birdtie/apps/client/test/content_map_coverage_test.dart: 81 distinct positions stay bounded to 40 and all pages remain reachable
+00:00 +5: D:/Project/birdtie/apps/client/test/content_map_controller_test.dart: 12 covers 4 transports selected first, real DPR decode and renewed grants reuse pixels
+00:00 +6: D:/Project/birdtie/apps/client/test/content_map_controller_test.dart: 12 covers 4 transports selected first, real DPR decode and renewed grants reuse pixels
+00:00 +7: D:/Project/birdtie/apps/client/test/content_map_reader_test.dart: author time, uncut aspect media and same-panel gallery preserve page and permission
+00:00 +8: D:/Project/birdtie/apps/client/test/content_map_panel_test.dart: same leaf restores after viewport and selected budget changes; permission retirement cannot revive it
+00:00 +9: D:/Project/birdtie/apps/client/test/content_map_reader_test.dart: video only reads poster until explicit play; missing author and date stay honest
+00:01 +10: D:/Project/birdtie/apps/client/test/content_map_panel_test.dart: cluster continuation renews the bounded current window after thirty seconds instead of returning to page one
+00:04 +11: D:/Project/birdtie/apps/client/test/content_map_panel_test.dart: actual cluster panel pages, opens exact anchor detail, returns to loaded group and retires permission
+00:04 +12: D:/Project/birdtie/apps/client/test/content_map_panel_test.dart: parent renewal cannot extend child grant; expiry clears names during failure and retry restores loaded exact selection
+00:05 +13: All tests passed!
+Flutter assets will be downloaded from https://storage.flutter-io.cn. Make sure you trust this source!

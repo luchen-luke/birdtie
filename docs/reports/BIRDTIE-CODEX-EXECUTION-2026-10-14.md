@@ -409,3 +409,10 @@ NOT_RUN：旧owner真实fresh认证/认领/激活、真实native durable staging
 继续现有任务，未回滚其他修改。默认Now改为视口内当前可访问内容，16个获准旧独立锚点进入独立库171，按原entry和对应媒体在同一Now面板读取。服务端权限聚合/分页、取消去重/缓存、12/4封面预算、DPR方形聚合、常驻地图和任务层回归已实施。API26、APK/Web29（APK与28逐字节一致）的实际回执及失败记录见docs/testing/evidence/content-map-cm-20261016/checkpoint171.json。
 
 完整路径/复用/接口/迁移/测试/性能在docs/reports/BIRDTIE-NOW-CONTENT-MAP-2026-10-16.md。CM09严格同相机性能、超大真机分页与跨设备撤回push仍NOT_RUN，父BT-FIX-NOW-UI-001保持IN_PROGRESS；不把旧发布验收当本最终包全流程重测。
+
+
+## 2026-10-16 截图反馈后的地图与阅读增量
+
+取消跨坐标网格数字块，真实小封面与同点角标、覆盖范围求差/封面复用、地图常驻、原作者/头像/原时间及完整比例图/显式视频阅读已接入。当前实际API29/schema172、APK33、Web33；没有回滚其他修改或修改Civu源项目。原作者补适配覆盖已迁入83条原公开动态、9作者和6头像，不是新增83条动态或完成全部迁移。
+
+报告docs/reports/BIRDTIE-NOW-MAP-REFINEMENT-2026-10-16.md与证据docs/testing/evidence/content-map-refinement-20261016/checkpoint172.json记录实际构建、部署、手机/Web、失败与性能边界。3个视频目标缺城市地图视图、200张冷图性能、严格同camera A/B、跨设备撤权及本包完整发布回归仍有缺口；父任务保持IN_PROGRESS。

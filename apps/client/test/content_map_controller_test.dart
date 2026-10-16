@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:birdtie_client/src/workspace/map_content_coverage.dart';
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:birdtie_client/src/workspace/map_entities.dart';
@@ -260,12 +261,16 @@ void main() {
         zoom: 11,
         selectedMarkerID: 'owned-map:anchor:${id(1001)}',
       );
-      await drain(t, () => c.current);
+      await drain(t, () => c.current && !c.loading);
       final parent = c.items.single;
       expect(parent.isCluster, true);
       expect(parent.entity.kind, MapEntityKind.cluster);
       final first = await t.runAsync(() => c.readClusterMembers(parent));
-      expect(first!.bounds, c.view!.bounds);
+      expect(first!.bounds.contains(parent.latitude, parent.longitude), true);
+      expect(
+        first.bounds,
+        MapContentCoverage.padded(OwnedMapController.queryBounds(bounds, 11)),
+      );
       expect(first.nextCursor, 'second-page');
       final child = first.items.single;
       expect(child.isMomentAnchor, true);
@@ -294,13 +299,13 @@ void main() {
             .every(
               (r) =>
                   r.url.queryParameters['west'] ==
-                  c.view!.bounds.west.toString(),
+                  Uri.parse(c.items.single.membersPath).queryParameters['west'],
             ),
         true,
       );
       final permission = c.permissionEpoch;
       c.updateQuery('', bounds, zoom: 11);
-      await drain(t, () => c.current);
+      await drain(t, () => c.current && !c.loading);
       expect(c.permissionEpoch, permission);
       final resumed = await t.runAsync(
         () => c.readClusterMembers(c.items.single, cursor: first.nextCursor),
@@ -375,7 +380,7 @@ void main() {
       );
       const other = MapBounds(west: 1, south: 1, east: 2, north: 2);
       c.updateQuery('', other);
-      await drain(t, () => c.current);
+      await drain(t, () => c.current && !c.loading);
       expect(f.aborted, 1);
       expect(c.cancellations, 1);
       expect(c.view!.bounds, OwnedMapController.queryBounds(other, 12));
@@ -383,7 +388,7 @@ void main() {
       for (var i = 0; i < 20; i++) c.updateQuery('', other);
       expect(c.requests, 2);
       c.updateQuery('', bounds);
-      await drain(t, () => c.current);
+      await drain(t, () => c.current && !c.loading);
       c.updateQuery('', other);
       expect(c.current, true);
       expect(c.cacheHits, 1);
@@ -404,7 +409,7 @@ void main() {
           '',
           MapBounds(west: i + 10, south: 1, east: i + 10.5, north: 2),
         );
-        await drain(t, () => c.current);
+        await drain(t, () => c.current && !c.loading);
       }
       expect(c.cachedViews, 2);
       expect(c.cachedPins, 2);
@@ -413,7 +418,7 @@ void main() {
         '',
         const MapBounds(west: 179, south: -1, east: -179, north: 1),
       );
-      await drain(t, () => c.current);
+      await drain(t, () => c.current && !c.loading);
       expect(c.view!.bounds.west, greaterThan(c.view!.bounds.east));
       f.organization = id(99);
       identity.value++;
@@ -421,7 +426,7 @@ void main() {
       expect(c.cachedViews, 0);
       f.organization = null;
       identity.value++;
-      await drain(t, () => c.current);
+      await drain(t, () => c.current && !c.loading);
       f.now = f.now.add(const Duration(seconds: 31));
       expect(c.current, false);
       c.dispose();

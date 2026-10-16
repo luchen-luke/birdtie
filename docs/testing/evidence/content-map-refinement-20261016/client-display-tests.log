@@ -1,0 +1,8 @@
+Flutter assets will be downloaded from https://storage.flutter-io.cn. Make sure you trust this source!
+00:00 +0: loading D:/Project/birdtie/apps/client/test/content_map_display_test.dart
+00:00 +0: D:/Project/birdtie/apps/client/test/content_map_display_test.dart: bounded display image stays scoped to its actual moment and media
+00:00 +1: D:/Project/birdtie/apps/client/test/content_map_reader_test.dart: moment author avatar accepts only its exact controlled source
+00:00 +2: D:/Project/birdtie/apps/client/test/content_map_reader_test.dart: author and original time decode without inventing a publication timestamp
+00:00 +3: D:/Project/birdtie/apps/client/test/content_map_reader_test.dart: author time, uncut aspect media and same-panel gallery preserve page and permission
+00:00 +4: D:/Project/birdtie/apps/client/test/content_map_reader_test.dart: video only reads poster until explicit play; missing author and date stay honest
+00:00 +5: All tests passed!

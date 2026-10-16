@@ -545,14 +545,16 @@ func TestMapContent170NativeOriginalPublicAndOwnPrivateCurrent(t *testing.T) {
 }
 
 func TestMapContent171SpatialBudgetCompleteAndStable(t *testing.T) {
-	// At normal city zoom use roughly a quarter of a tile, rather than
-	// collapsing places tens of kilometres apart into the same cell.
+	// Distinct source coordinates remain distinct at every zoom. The wire
+	// response pages groups rather than inventing a shared location.
 	city := []mapSpatialLeaf{
 		{pin: content.MapContentPin{Anchor: content.MapContentAnchor{Latitude: 57.15, Longitude: -2.14}}},
 		{pin: content.MapContentPin{Anchor: content.MapContentAnchor{Latitude: 57.15, Longitude: -2.07}}},
 	}
-	if len(mapSpatialGroups(city, 12)) != 2 {
-		t.Fatal("normal city zoom collapsed distinct neighbourhoods")
+	for _, zoom := range []float64{0, 5, 12, 13, 19} {
+		if len(mapSpatialGroups(city, zoom)) != 2 {
+			t.Fatal("zoom collapsed distinct source positions", zoom)
+		}
 	}
 	for _, n := range []int{100, 1000, 10000} {
 		leaves := make([]mapSpatialLeaf, n)
@@ -563,8 +565,8 @@ func TestMapContent171SpatialBudgetCompleteAndStable(t *testing.T) {
 		start := time.Now()
 		groups := mapSpatialGroups(leaves, 19)
 		elapsed := time.Since(start)
-		if len(groups) > 40 {
-			t.Fatalf("%d candidates made %d markers", n, len(groups))
+		if len(groups) != n {
+			t.Fatalf("%d distinct positions merged into %d groups", n, len(groups))
 		}
 		seen := map[int]bool{}
 		for _, g := range groups {
@@ -725,6 +727,17 @@ func TestMapContent171NativeCoordinateAnchorsAndRetirement(t *testing.T) {
 		if e != nil || detail.ID != p.EntryID {
 			t.Fatal("anchor opened wrong child", e)
 		}
+		if detail.Author == nil || detail.Author.DisplayName != "Birdtie 成员" || detail.Author.Avatar != nil || detail.PublishedAt != nil {
+			t.Fatal("legacy visible content disclosed private author or invented publication")
+		}
+		if detail.CreatedAt.Year() == 2020 {
+			if detail.CreatedAtSource != "CIVU_ORIGINAL" {
+				t.Fatal("original legacy creation time not identified")
+			}
+		} else if detail.CreatedAtSource != "UNKNOWN" {
+			t.Fatal("import fallback presented as original creation", detail.CreatedAtSource)
+		}
+
 	}
 	if mediaPin.Cover == nil {
 		t.Fatal("matching anchor media cover absent")

@@ -1,0 +1,50 @@
+{
+  "status": "PASS_MEASUREMENT_ONLY",
+  "scenario": "same four map swipes east/west, 600ms each with 2s settle",
+  "firstInteractive": "NOT_RUN",
+  "firstContent": "NOT_RUN",
+  "firstCover": "NOT_RUN",
+  "rawPrivateDataSaved": false,
+  "pssBeforeKiB": 484135,
+  "elapsedMs": 11235,
+  "pssAfterKiB": 509949,
+  "requests": [
+    {
+      "category": "map-content",
+      "status": 200,
+      "durationMs": 1192.604,
+      "responseBytes": null,
+      "completed": true
+    },
+    {
+      "category": "map-content",
+      "status": 200,
+      "durationMs": 1792.035,
+      "responseBytes": null,
+      "completed": true
+    }
+  ],
+  "frameEvents": {
+    "Animator::BeginFrame": {
+      "samples": 331,
+      "p50Ms": 0.255,
+      "p95Ms": 1.83,
+      "maxMs": 5.381,
+      "over16_67ms": 0
+    },
+    "Rasterizer::DoDraw": {
+      "samples": 329,
+      "p50Ms": 1.564,
+      "p95Ms": 2.314,
+      "maxMs": 4.516,
+      "over16_67ms": 0
+    },
+    "GPURasterizer::Draw": {
+      "samples": 329,
+      "p50Ms": 1.573,
+      "p95Ms": 2.323,
+      "maxMs": 4.526,
+      "over16_67ms": 0
+    }
+  }
+}

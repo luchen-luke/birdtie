@@ -1,0 +1,25 @@
+{
+  "status": "SOURCE_READY_BUILT",
+  "files": {
+    "apps/api/internal/legacymomentauthor/build.go": "3a50aa1d7bec4cb820ebca4783e83708e6c7eb330d8b8e9f12c6ab73c1f8a951",
+    "apps/api/internal/postgres/legacy_moment_author_restore.go": "e73e0c36500c7a5c13159d4e227c47263a006ee07b4001bea1d056284e8c2808",
+    "apps/api/internal/postgres/map_content_authors.go": "668d5d6d8391ab781ea98526aabe5e922584bc9cc35fb1cded697d03324b8f21",
+    "apps/api/internal/postgres/map_content_author_native_test.go": "cbc6e4584f4cfb2c8a333dd29b815f8f329caa3126834392c63e494af9ecb397",
+    "apps/api/internal/content/map_content.go": "920287ef19bc0baba56e13273e9e50e9cbf25328d29ad99068af6f586b9231a6",
+    "apps/api/internal/postgres/map_content_media.go": "e51bd950a04df36b1ca4146abe6b534d700ff1f6c7b0ef7d2f43e4b9950a231a",
+    "apps/api/internal/httpapi/map_content.go": "a64289a0b02860d2624da916eb1442f0bb40ff1b0aec3d4a977ad266fdcf84ad",
+    "apps/api/cmd/legacy-moment-author-restore/main.go": "ec1fe03bb919323c00964d1c0174ee99041d46cbbf73b4b218347657744b3b4b",
+    "apps/api/migrations/172_legacy_moment_authors.sql": "15da9e58a6ba27acba72c09919c712ea8f0decc5b39b269c94d56a0d1870c305",
+    "apps/api/migrations/172_legacy_moment_authors.down.sql": "c0a7e059a5bb7905fe7d091643ca655e7b78c2b46d3c4918f282fac49f93cfd3",
+    "apps/api/native_database_startup.go": "00ca03907a9290af6293da561c7e6cc0a7b7850f99b2066b937e4eedcc57ff3d",
+    "apps/api/native_database_startup_test.go": "a35f651d792a2b456e2f536c9a55a3f22b7e6f257d8bd813ea8720d451a40c73"
+  },
+  "buildAPI": 28,
+  "schema": 172,
+  "nativeTest": "TestMapContent172NativeImmutableAttribution",
+  "nativeTestsPassed": 1,
+  "directTests": "TestMapContent172OriginalAuthorPlan and TestNativeDatabase*",
+  "sourceMatchesBuild": true,
+  "sourceCivuReadOnly": true,
+  "sourceReference": "backend-build27/civu-public-author-audit.json"
+}

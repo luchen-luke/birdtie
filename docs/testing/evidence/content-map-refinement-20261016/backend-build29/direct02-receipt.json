@@ -1,0 +1,19 @@
+{
+  "exitCode": 0,
+  "command": [
+    "C:/Program Files/Go/bin/go.exe",
+    "test",
+    "-mod=readonly",
+    "./internal/postgres",
+    "./internal/httpapi",
+    "-count=1",
+    "-json",
+    "-run",
+    "^Test(MapContentDisplayBoundedWholeFrame|MapContentDisplayCacheBoundsAndVariantIsolation)$"
+  ],
+  "passedTests": [
+    "TestMapContentDisplayBoundedWholeFrame",
+    "TestMapContentDisplayCacheBoundsAndVariantIsolation"
+  ],
+  "failedTests": []
+}

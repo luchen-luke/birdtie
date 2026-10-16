@@ -114,20 +114,15 @@ func TestMapContent171NativeSpatialPressure(t *testing.T) {
 		_ = frame.tx.Rollback(ctx)
 		started = time.Now()
 		page, e := s.ReadHumanMapContent(ctx, digest, a, q)
-		if e != nil || !page.Valid(time.Now()) || page.TotalAnchorCount != n || page.TotalContentCount != n || len(page.Pins) > 40 || len(page.Pins) != 1 || page.Pins[0].Kind != "CLUSTER" {
+		if e != nil || !page.Valid(time.Now()) || page.TotalAnchorCount != n || page.TotalContentCount != n || len(page.Pins) > 40 || len(page.Pins) != 40 || page.TotalPointCount != n || page.Pins[0].Kind != "PLACE_CONTENT" {
 			t.Fatal("bounded complete wire page", e, page.TotalAnchorCount, page.TotalContentCount, len(page.Pins))
 		}
 		apiMS := float64(time.Since(started).Microseconds()) / 1000
-		cluster := page.Pins[0]
-		if cluster.AnchorCount != n || cluster.MomentCount != n {
-			t.Fatal("cluster dropped tail")
-		}
 		members := q
-		members.ClusterID = cluster.MarkerID
 		members.SourceVersion = source
-		first, e := s.ReadHumanMapContent(ctx, digest, a, members)
-		if e != nil || len(first.Pins) != 40 || first.NextCursor == nil {
-			t.Fatal("first member page", e, len(first.Pins))
+		first := page
+		if first.NextCursor == nil {
+			t.Fatal("first viewport page missing continuation")
 		}
 		members.Cursor = *first.NextCursor
 		second, e := s.ReadHumanMapContent(ctx, digest, a, members)
@@ -137,7 +132,7 @@ func TestMapContent171NativeSpatialPressure(t *testing.T) {
 		// Exercise the actual signed terminal cursor against the complete SQL
 		// set without issuing 250 redundant full proof reads for 10k markers.
 		before := strings.TrimPrefix(leaves[n-41].pin.MarkerID, "place:")
-		cursor, e := encodeJourneyHistoryCursor(journeyHistoryCursor{Version: 1, Owner: owner, Reader: reader, Query: cluster.MarkerID, Source: source, Before: before, Until: page.ValidUntil})
+		cursor, e := encodeJourneyHistoryCursor(journeyHistoryCursor{Version: 1, Owner: owner, Reader: reader, Query: "viewport:" + content.MomentControlHash([]any{q.Bounds, q.Zoom, q.CityID, "DEFAULT_CONTENT"}), Source: source, Before: before, Until: page.ValidUntil})
 		if e != nil {
 			t.Fatal(e)
 		}

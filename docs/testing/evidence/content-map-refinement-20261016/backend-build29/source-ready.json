@@ -1,0 +1,49 @@
+{
+  "status": "SOURCE_FROZEN_BUILT",
+  "schema": 172,
+  "newMigrations": 0,
+  "originalMigrationsIdentical": 172,
+  "apiBuild": 29,
+  "apiSHA256": "8b1ea5b0942ea4482a5f7797b0e251a988f9ddce6abc620b53de71b9f4cfe3ba",
+  "sourcePaths": {
+    "apps/api/internal/postgres/map_content.go": "e89eb2c26407432891701caa38caf8a517ffa7e974d84b2193defcd164f90784",
+    "apps/api/internal/postgres/map_content_media.go": "4dab8fb5cc19cc567d64a640335365d440cd433fb9ab1314eb697a59f1119997",
+    "apps/api/internal/httpapi/map_content.go": "b5db5b8ba99dfa6ddb0c5d7327dc7234017af19ad85695a6b2c33f0e1438e241",
+    "apps/api/internal/postgres/map_content_display.go": "8e383fac8c52337b970985ba9ee48d560e4056ce7b35b15d9b41dba6e4cc44c9",
+    "apps/api/internal/postgres/map_content_display_test.go": "5ce251b73a703df2822593e192bc213238cd91e9f95e60d7e471f9aed16d8cb0",
+    "apps/api/internal/postgres/map_content_display_native_test.go": "2e4998aec9f6f08c0256adf6fd5f03ab1c885bbf6c2a7274dd8131b65352bcd5"
+  },
+  "contract": {
+    "kind": "IMAGE",
+    "mimeType": "image/jpeg",
+    "variant": "display",
+    "maxLongEdge": 1280,
+    "maxBytes": 262144,
+    "wholeFrame": true,
+    "crop": false,
+    "upscale": false,
+    "videoChanged": false,
+    "sourceOriginalChanged": false,
+    "viewportGeneratesDisplay": false,
+    "cacheItems": 32,
+    "cacheBytes": 8388608,
+    "decodeConcurrencySharedWithMarker": 2,
+    "eachReadCurrentACLAndResponseProof": true
+  },
+  "directTests": [
+    "TestMapContentDisplayBoundedWholeFrame",
+    "TestMapContentDisplayCacheBoundsAndVariantIsolation"
+  ],
+  "nativeTests": [
+    "TestMapContentDisplayNativeCurrentAuthority"
+  ],
+  "native01": "FAIL_fixture_sessions_idle_expiry_clock_calls",
+  "native02": "PASS",
+  "notRun": [
+    "production display acceptance pending deployment",
+    "phone33 display comparison by root",
+    "max200-image cold detail latency",
+    "rollback fault injection"
+  ],
+  "scope": "existing old private-image derivative reading; no Civu source write, no DB image mutation, no imports"
+}

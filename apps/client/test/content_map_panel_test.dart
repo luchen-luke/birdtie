@@ -108,7 +108,7 @@ void main() {
         f.requests
             .where((r) => r.url.path.endsWith('/moments/${fixtures.id(1)}'))
             .length,
-        2,
+        1, // The still-current same-version detail is reused across viewports.
       );
       identity.value++;
       await t.pump();
@@ -272,7 +272,7 @@ void main() {
       );
       expect(f.requests.any((r) => r.url.path.contains('/places/')), false);
       expect(find.byType(NowMapContentPanel), findsOneWidget);
-      await t.tap(find.byTooltip('关闭内容预览'));
+      await t.tap(find.byTooltip('返回内容列表'));
       await t.pump();
       expect(find.text('合成动态 1'), findsOneWidget);
       expect(find.text('合成动态 2'), findsOneWidget);
@@ -362,7 +362,7 @@ void main() {
         f.requests.last.url.path,
         '/v1/me/map-content/moments/${fixtures.id(2)}',
       );
-      await t.tap(find.byTooltip('关闭内容预览'));
+      await t.tap(find.byTooltip('返回内容列表'));
       await t.pump();
       expect(find.text('合成动态 1'), findsOneWidget);
       expect(find.text('合成动态 2'), findsOneWidget);

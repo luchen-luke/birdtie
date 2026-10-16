@@ -1,0 +1,75 @@
+{
+  "exitCode": 0,
+  "origin": "https://47.110.154.133",
+  "remoteScriptSHA256": "1e631d16f674b5bb902ddcab94b2f9415070c9239eda240d1488ed123673a5c5",
+  "scriptSHA256": "f8086b1e35ab2268b8ad96543193c8157d02052430f8931ce63a424b4f23f144",
+  "apply": false,
+  "result": {
+    "status": "INSPECTED",
+    "beforeConfigSHA256": "9bdac43ca4aaf84c6d4c691a0b50183bcb6d28f00b81ae3e9b923dd2dd9e1234",
+    "afterConfigSHA256": "0b4b23bdf64469d47d837e6ec1577b0a441a304115ed74636bad7bdacde27af7",
+    "installedVersion": "v2.10.2 h1:g/gTYjGMD0dec+UgMw8SnfmJ3I9+M2TdvoRL/Ovu6U8=",
+    "origin": "https://47.110.154.133",
+    "tlsDefaultValidation": true,
+    "before": {
+      "ready": {
+        "status": 200,
+        "requestAcceptEncoding": "gzip",
+        "contentEncoding": "",
+        "contentType": "application/json; charset=utf-8",
+        "cacheControl": "no-store",
+        "vary": "",
+        "wireBytes": 19,
+        "decodedBytes": 19,
+        "decodedSHA256": "682c055ddf7d0afe32b7b2646e1635ab3c83f65884a37aecdc8549e7031a3417",
+        "elapsedMs": 24.17
+      },
+      "cities": {
+        "status": 200,
+        "requestAcceptEncoding": "gzip",
+        "contentEncoding": "",
+        "contentType": "application/json; charset=utf-8",
+        "cacheControl": "no-store",
+        "vary": "",
+        "wireBytes": 405909,
+        "decodedBytes": 405909,
+        "decodedSHA256": "b21be9af4154e786e96285eecf1568302adb74a9989785af4f669616915e9212",
+        "elapsedMs": 12.67
+      },
+      "web": {
+        "status": 200,
+        "requestAcceptEncoding": "gzip",
+        "contentEncoding": "",
+        "contentType": "text/html; charset=utf-8",
+        "cacheControl": "",
+        "vary": "Accept-Encoding",
+        "wireBytes": 1943,
+        "decodedBytes": 1943,
+        "decodedSHA256": "7634d2d6d578838b262b27144c59a09d3856c86a276d091b84987bdba00f05ea",
+        "elapsedMs": 4.64
+      },
+      "privateRejection": {
+        "status": 400,
+        "requestAcceptEncoding": "gzip",
+        "contentEncoding": "",
+        "contentType": "application/json; charset=utf-8",
+        "cacheControl": "no-store",
+        "vary": "",
+        "wireBytes": 44,
+        "decodedBytes": 44,
+        "decodedSHA256": "7075792648587353da138611fc9ac2c69f5819461f2f9e059bd4a5e51241a1af",
+        "elapsedMs": 4.45
+      }
+    },
+    "after": {},
+    "configurationChange": "Add one site-level encode zstd gzip directive; no routes/TLS/cache headers altered",
+    "preserved": {
+      "civuCaddyfileSHA256": "d7e38d5451313782d46ed0f1555ca2f2043b382ea29d0c7135c0fe142073c671",
+      "webRelease": "/opt/birdtie/web/releases/public-20261016-final-web30",
+      "apiEnvironmentSHA256": "c6b3b8999428da6275a7c9c5ac424907d0efc335d7070d078e782172ab0ea73d"
+    },
+    "rollbackAttempted": false,
+    "installedBinaryValidation": "PASS"
+  },
+  "stderrBytes": 0
+}

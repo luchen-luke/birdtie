@@ -1,0 +1,54 @@
+{
+  "status": "SAME_BOUNDS_ZOOM12_THREE_READS",
+  "metrics": [
+    {
+      "scenario": "wide",
+      "beforeAPI": 26,
+      "afterAPI": 27,
+      "beforeMedianMs": 133.117,
+      "afterMedianMs": 230.852,
+      "beforeJSONBytes": 4005,
+      "afterJSONBytes": 10383,
+      "beforeMarkers": 2,
+      "afterMarkers": 7,
+      "afterContentCount": 9,
+      "afterAnchorCount": 7,
+      "afterPointCount": 7,
+      "afterCovers": 7,
+      "afterAdvertisedCoverBytes": 44488
+    },
+    {
+      "scenario": "phone",
+      "beforeAPI": 26,
+      "afterAPI": 27,
+      "beforeMedianMs": 121.704,
+      "afterMedianMs": 219.058,
+      "beforeJSONBytes": 4041,
+      "afterJSONBytes": 10407,
+      "beforeMarkers": 2,
+      "afterMarkers": 7,
+      "afterContentCount": 9,
+      "afterAnchorCount": 7,
+      "afterPointCount": 7,
+      "afterCovers": 7,
+      "afterAdvertisedCoverBytes": 44488
+    },
+    {
+      "scenario": "adjacent",
+      "beforeAPI": 26,
+      "afterAPI": 27,
+      "beforeMedianMs": 121.307,
+      "afterMedianMs": 219.446,
+      "beforeJSONBytes": 4041,
+      "afterJSONBytes": 10407,
+      "beforeMarkers": 2,
+      "afterMarkers": 7,
+      "afterContentCount": 9,
+      "afterAnchorCount": 7,
+      "afterPointCount": 7,
+      "afterCovers": 7,
+      "afterAdvertisedCoverBytes": 44488
+    }
+  ],
+  "qualification": "Single-session API timings, not device FPS. API26 merged distinct points; API27 returns actual individual points and bounded cover metadata. Extra reads verify low/high zoom and tight near viewport."
+}

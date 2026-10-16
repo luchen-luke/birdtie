@@ -1,0 +1,321 @@
+{
+  "status": "PARTIAL_DISPLAY_AUTHOR_PASS_VIDEO_CITY_ENTRY_FAIL",
+  "headless": true,
+  "browserVersion": "155.0.8059.40",
+  "nonPersistentContext": true,
+  "privateValuesPersisted": false,
+  "contentWrites": 0,
+  "checks": [
+    {
+      "check": "EXPECTED_WEB33_MANIFEST",
+      "passed": true
+    },
+    {
+      "check": "PINNED_OWNER",
+      "passed": true
+    },
+    {
+      "check": "DISPLAY_VARIANT_NETWORK_METADATA",
+      "passed": true,
+      "proof": {
+        "images": [
+          {
+            "displayVariant": true,
+            "maxDimension": 1280,
+            "byteCount": 239313,
+            "received": true,
+            "digestMatches": true,
+            "bytesMatch": true,
+            "mimeJPEG": true
+          }
+        ],
+        "author": {
+          "expectedAuthorPresent": true,
+          "authorVisible": false,
+          "timestampSource": "CIVU_ORIGINAL",
+          "originalTimeVisible": false,
+          "publishedAtPresent": false,
+          "avatarMetadataPresent": true,
+          "avatarSemanticVisible": false,
+          "exactSelectedEntry": false,
+          "sameOriginalMapDOM": true,
+          "mediaCount": 1,
+          "controlledAvatarReceived": true
+        }
+      }
+    },
+    {
+      "check": "DISPLAY_IMAGE_AUTHOR_VISIBLE",
+      "passed": true,
+      "notes": "Screenshot visually confirms real author nickname, controlled avatar, original creation time 2026.09.10 05:15 and fully rendered ship image. DOM text misses are Canvas observability limits; no false publication date inferred."
+    },
+    {
+      "check": "DISPLAY_READER_RETURN_ORIGINAL_MAP",
+      "passed": true,
+      "notes": "Returned detail to overlap group then map with real controls; original map DOM identity retained before later intentional city switch."
+    },
+    {
+      "check": "VIDEO_UI_CITY_ENTRY",
+      "passed": false,
+      "notes": "Authorized existing-video helper resolves to Shantou. Actual city picker selection displays 该城市尚未配置地图视图。 and zero map containers/no new map-content query. Playback NOT_RUN because city map entry unavailable; not absence of video data."
+    }
+  ],
+  "metrics": {
+    "mapQueries": 12,
+    "memberQueries": 0,
+    "placeReads": 0,
+    "momentReads": 9,
+    "coverReads": 7,
+    "denials": 2,
+    "contentWrites": 0,
+    "blockedWrites": 0,
+    "failedRequests": 11,
+    "browserPageErrors": 0,
+    "markerReads": 5,
+    "avatarReads": 1,
+    "detailMediaReads": 1
+  },
+  "events": [
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 14.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "detail"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 14.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "detail"
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "detail"
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "detail"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 14.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "detail"
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "detail"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 14.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "detail"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 14.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "detail"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 14.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "detail"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 14.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 14.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 14.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 14.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 14.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 14.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    }
+  ],
+  "logout": "PASS",
+  "release": {
+    "web": 33,
+    "schema": 172,
+    "manifestSHA256": "5bb2eb4d68e60c3c5d763df718a00766cb65cfec3e5098385579b46a53c5ac1a",
+    "api": 29,
+    "apiSHA256": "73a97552316ae642f4b97aea37c04266c3fd0959eeb0d346dd03bc6e54702818",
+    "mainDartSHA256": "c5091b591ae2beeda358ec1f431d3fe27b72df391990a56cced6848280ce2771",
+    "indexHTMLSHA256": "7634d2d6d578838b262b27144c59a09d3856c86a276d091b84987bdba00f05ea"
+  },
+  "screenshots": [
+    {
+      "path": "C:\\Users\\chens\\Documents\\Codex\\2026-10-15\\d-project-birdtie-docs-reports-birdtie-2\\outputs\\cm-web33-display-author.png",
+      "sha256": "a6ab365114425692382c2407a7f689ae1bce9b1286940ab06080112b77fdbb67"
+    },
+    {
+      "path": "C:\\Users\\chens\\Documents\\Codex\\2026-10-15\\d-project-birdtie-docs-reports-birdtie-2\\outputs\\cm-web33-shantou-video-entry.png",
+      "sha256": "cba45492bf643a3ee3c3326ac9f1cea0f1011c04f488fcd29e5cbeb34a971617"
+    }
+  ],
+  "scope": "Web33/API29 display image and author/avatar smoke, plus subsequently authorized existing-video city entry attempt. No content mutations and no full regression.",
+  "notRun": [
+    "Video playback (blocked by actual city map entry failure)",
+    "Screen recording",
+    "Publishing/editing/deleting content",
+    "Full release regression",
+    "Uninstrumented latency benchmark",
+    "Web33 independent exact-ID comparison"
+  ],
+  "finalized": true,
+  "finalizedAt": "2026-10-16T00:41:51.834898+00:00",
+  "attemptReceiptSHA256": "ec5086bdc4b930a97345c128cb2ac1e8af6bbb482f498504241a97460b55f9a2",
+  "displayProof": {
+    "status": "PASS",
+    "width": 960,
+    "height": 1280,
+    "bytes": 239313,
+    "mime": "image/jpeg",
+    "variant": "display",
+    "receivedBytesAndSHA256MatchMetadata": true,
+    "controlledAvatarReceivedAndDigestMatches": true,
+    "originalTimeSource": "CIVU_ORIGINAL",
+    "publishedAtAbsent": true,
+    "authorAndOriginalTimeVisuallyConfirmed": true,
+    "returnedToOriginalMapDOM": true
+  },
+  "videoProof": {
+    "status": "NOT_RUN",
+    "existingAccessibleVideosConfirmedByRoot": 4,
+    "cityEntry": "FAIL",
+    "city": "Shantou",
+    "observedMessage": "该城市尚未配置地图视图。",
+    "mapContainersAfterCitySelection": 0,
+    "newMapContentRequestsAfterCitySelection": 0,
+    "reason": "Actual city selection cannot create map view, so existing video marker is unreachable by this tested UI path. This is not evidence of absent video data."
+  },
+  "harnessInterference": [
+    "Initial point-click helper found no observed pins and raised IndexError before any click; actual visible semantic marker and overlap-row clicks were then used.",
+    "Canvas-painted author/date do not appear in body.innerText; authorVisible/originalTimeVisible/avatarSemanticVisible=false in raw automated proof are observability limits. Screenshot was inspected and confirms visible real author, avatar and original timestamp.",
+    "exactSelectedEntry=false in raw proof is not a detected ID mismatch: private targetMoment was never set because the helper failed. This narrow batch does not claim independent exact-ID comparison; Web32 previously passed that check.",
+    "In-memory fetch clone observation was used to hash only already requested selected content and received assets. It makes this batch unsuitable as an uninstrumented latency benchmark. No credentials or raw content response persisted.",
+    "First city-search synthetic input targeted a stale element after focus; retry to the real active search input produced the observed city result. No content state was modified.",
+    "Network counts include lease renewals, canceled request observation and two denials; this receipt does not claim a zero-error network profile."
+  ]
+}

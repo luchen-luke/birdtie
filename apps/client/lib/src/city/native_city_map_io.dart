@@ -1415,7 +1415,8 @@ class _NativeCityMapViewState extends State<NativeCityMapView> {
             : 0.78,
         symbolSortKey: entity.id == widget.selectedEntityId ? 100 : 0,
         customData: {'entityId': entity.id, 'kind': entity.kind.name},
-        textField: plan.labelIDs.contains(entity.id)
+        textField: plan.labelIDs.contains(entity.id) &&
+                (!contentCluster || entity.id == widget.selectedEntityId)
             ? (entity.groupSummary.isNotEmpty &&
                       entity.id == widget.selectedEntityId
                   ? '${entity.title}\n${entity.groupSummary}'

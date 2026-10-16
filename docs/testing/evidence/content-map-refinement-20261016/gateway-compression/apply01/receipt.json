@@ -1,0 +1,190 @@
+{
+  "exitCode": 0,
+  "origin": "https://47.110.154.133",
+  "remoteScriptSHA256": "d2c9e9e1ece66fd623f607e5ea3d7af07fbe0adce330726b6bd593dc5501de11",
+  "scriptSHA256": "f67f65be4710f0e71336cc8105d2575c450eba1d5f5eb1f2323dfd5c3e65539e",
+  "apply": true,
+  "result": {
+    "status": "PASS",
+    "beforeConfigSHA256": "9bdac43ca4aaf84c6d4c691a0b50183bcb6d28f00b81ae3e9b923dd2dd9e1234",
+    "afterConfigSHA256": "0b4b23bdf64469d47d837e6ec1577b0a441a304115ed74636bad7bdacde27af7",
+    "installedVersion": "v2.10.2 h1:g/gTYjGMD0dec+UgMw8SnfmJ3I9+M2TdvoRL/Ovu6U8=",
+    "origin": "https://47.110.154.133",
+    "tlsDefaultValidation": true,
+    "before": {
+      "ready": {
+        "status": 200,
+        "requestAcceptEncoding": "gzip",
+        "contentEncoding": "",
+        "contentType": "application/json; charset=utf-8",
+        "cacheControl": "no-store",
+        "vary": "",
+        "wireBytes": 19,
+        "decodedBytes": 19,
+        "decodedSHA256": "682c055ddf7d0afe32b7b2646e1635ab3c83f65884a37aecdc8549e7031a3417",
+        "elapsedMs": 23.75
+      },
+      "cities": {
+        "status": 200,
+        "requestAcceptEncoding": "gzip",
+        "contentEncoding": "",
+        "contentType": "application/json; charset=utf-8",
+        "cacheControl": "no-store",
+        "vary": "",
+        "wireBytes": 405909,
+        "decodedBytes": 405909,
+        "decodedSHA256": "b21be9af4154e786e96285eecf1568302adb74a9989785af4f669616915e9212",
+        "elapsedMs": 10.95
+      },
+      "web": {
+        "status": 200,
+        "requestAcceptEncoding": "gzip",
+        "contentEncoding": "",
+        "contentType": "text/html; charset=utf-8",
+        "cacheControl": "",
+        "vary": "Accept-Encoding",
+        "wireBytes": 1943,
+        "decodedBytes": 1943,
+        "decodedSHA256": "7634d2d6d578838b262b27144c59a09d3856c86a276d091b84987bdba00f05ea",
+        "elapsedMs": 4.39
+      },
+      "privateRejection": {
+        "status": 401,
+        "requestAcceptEncoding": "gzip",
+        "contentEncoding": "",
+        "contentType": "application/json; charset=utf-8",
+        "cacheControl": "no-store",
+        "vary": "",
+        "wireBytes": 34,
+        "decodedBytes": 34,
+        "decodedSHA256": "9ebe263a091798337ab939f39311314d184289bfc9dbb1152d757e93aa5ef65d",
+        "elapsedMs": 4.47
+      }
+    },
+    "after": {
+      "ready": {
+        "status": 200,
+        "requestAcceptEncoding": "gzip",
+        "contentEncoding": "",
+        "contentType": "application/json; charset=utf-8",
+        "cacheControl": "no-store",
+        "vary": "",
+        "wireBytes": 19,
+        "decodedBytes": 19,
+        "decodedSHA256": "682c055ddf7d0afe32b7b2646e1635ab3c83f65884a37aecdc8549e7031a3417",
+        "elapsedMs": 6.77
+      },
+      "cities": {
+        "status": 200,
+        "requestAcceptEncoding": "gzip",
+        "contentEncoding": "gzip",
+        "contentType": "application/json; charset=utf-8",
+        "cacheControl": "no-store",
+        "vary": "Accept-Encoding",
+        "wireBytes": 40835,
+        "decodedBytes": 405909,
+        "decodedSHA256": "b21be9af4154e786e96285eecf1568302adb74a9989785af4f669616915e9212",
+        "elapsedMs": 14.49
+      },
+      "web": {
+        "status": 200,
+        "requestAcceptEncoding": "gzip",
+        "contentEncoding": "gzip",
+        "contentType": "text/html; charset=utf-8",
+        "cacheControl": "",
+        "vary": "Accept-Encoding",
+        "wireBytes": 953,
+        "decodedBytes": 1943,
+        "decodedSHA256": "7634d2d6d578838b262b27144c59a09d3856c86a276d091b84987bdba00f05ea",
+        "elapsedMs": 4.53
+      },
+      "privateRejection": {
+        "status": 401,
+        "requestAcceptEncoding": "gzip",
+        "contentEncoding": "",
+        "contentType": "application/json; charset=utf-8",
+        "cacheControl": "no-store",
+        "vary": "",
+        "wireBytes": 34,
+        "decodedBytes": 34,
+        "decodedSHA256": "9ebe263a091798337ab939f39311314d184289bfc9dbb1152d757e93aa5ef65d",
+        "elapsedMs": 4.59
+      },
+      "citiesZstd": {
+        "status": 200,
+        "requestAcceptEncoding": "zstd",
+        "contentEncoding": "zstd",
+        "contentType": "application/json; charset=utf-8",
+        "cacheControl": "no-store",
+        "vary": "Accept-Encoding",
+        "wireBytes": 39312,
+        "elapsedMs": 14.99
+      }
+    },
+    "configurationChange": "Add one site-level encode zstd gzip directive; no routes/TLS/cache headers altered",
+    "preserved": {
+      "civuCaddyfileSHA256": "d7e38d5451313782d46ed0f1555ca2f2043b382ea29d0c7135c0fe142073c671",
+      "webRelease": "/opt/birdtie/web/releases/public-20261016-final-web30",
+      "apiEnvironmentSHA256": "c6b3b8999428da6275a7c9c5ac424907d0efc335d7070d078e782172ab0ea73d"
+    },
+    "rollbackAttempted": false,
+    "installedBinaryValidation": "PASS",
+    "synthetic": {
+      "status": "PASS",
+      "authentication": "SYNTHETIC_HEADER_ONLY_NO_REAL_SESSION",
+      "identity": {
+        "status": 200,
+        "requestAcceptEncoding": "identity",
+        "contentEncoding": "",
+        "contentType": "application/json",
+        "cacheControl": "private, no-store",
+        "vary": "",
+        "wireBytes": 4110,
+        "decodedBytes": 4110,
+        "decodedSHA256": "35fde5e3acb602d7f728cbd3f3bc78fb5d93d7ee53dfcdca631d0bd66ff2fb77",
+        "elapsedMs": 0.73
+      },
+      "gzip": {
+        "status": 200,
+        "requestAcceptEncoding": "gzip",
+        "contentEncoding": "gzip",
+        "contentType": "application/json",
+        "cacheControl": "private, no-store",
+        "vary": "Accept-Encoding",
+        "wireBytes": 57,
+        "decodedBytes": 4110,
+        "decodedSHA256": "35fde5e3acb602d7f728cbd3f3bc78fb5d93d7ee53dfcdca631d0bd66ff2fb77",
+        "elapsedMs": 0.8
+      },
+      "smallJSON": {
+        "status": 200,
+        "requestAcceptEncoding": "gzip",
+        "contentEncoding": "",
+        "contentType": "application/json",
+        "cacheControl": "private, no-store",
+        "vary": "",
+        "wireBytes": 2,
+        "decodedBytes": 2,
+        "decodedSHA256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+        "elapsedMs": 0.43
+      },
+      "alreadyCompressedMediaType": {
+        "status": 200,
+        "requestAcceptEncoding": "gzip",
+        "contentEncoding": "",
+        "contentType": "image/jpeg",
+        "cacheControl": "private, no-store",
+        "vary": "",
+        "wireBytes": 5600,
+        "decodedBytes": 5600,
+        "decodedSHA256": "40936f811a9b192a31159cfdc4ea32cd23f063dea72c13e124ec5413e4742ac2",
+        "elapsedMs": 0.47
+      }
+    },
+    "backupPath": "/etc/birdtie/Caddyfile.before-compression-20261016T000321Z-9bdac43ca4aa",
+    "backupSHA256": "9bdac43ca4aaf84c6d4c691a0b50183bcb6d28f00b81ae3e9b923dd2dd9e1234",
+    "reload": "PASS",
+    "noServiceRestart": true
+  },
+  "stderrBytes": 0
+}

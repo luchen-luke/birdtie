@@ -1,0 +1,119 @@
+Flutter assets will be downloaded from https://storage.flutter-io.cn. Make sure you trust this source!
+00:00 +0: loading D:/Project/birdtie/apps/client/test/content_map_reader_test.dart
+00:00 +0: D:/Project/birdtie/apps/client/test/content_map_reader_test.dart: author and original time decode without inventing a publication timestamp
+00:00 +1: D:/Project/birdtie/apps/client/test/content_map_reader_test.dart: author time, uncut aspect media and same-panel gallery preserve page and permission
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following TestFailure was thrown running a test:
+Expected: exactly one matching candidate
+  Actual: _TextWidgetFinder:<Found 0 widgets with text "2 / 2": []>
+   Which: means none were found but one was expected
+
+When the exception was thrown, this was the stack:
+#4      main.<anonymous closure> (file:///D:/Project/birdtie/apps/client/test/content_map_reader_test.dart:161:7)
+<asynchronous suspension>
+#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1952:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///D:/Project/birdtie/apps/client/test/content_map_reader_test.dart line 161
+The test description was:
+  author time, uncut aspect media and same-panel gallery preserve page and permission
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:00 +1 -1: D:/Project/birdtie/apps/client/test/content_map_panel_test.dart: same leaf restores after viewport and selected budget changes; permission retirement cannot revive it
+00:00 +1 -1: D:/Project/birdtie/apps/client/test/content_map_reader_test.dart: author time, uncut aspect media and same-panel gallery preserve page and permission [E]
+  Test failed. See exception logs above.
+  The test description was: author time, uncut aspect media and same-panel gallery preserve page and permission
+  
+00:00 +1 -1: D:/Project/birdtie/apps/client/test/content_map_panel_test.dart: same leaf restores after viewport and selected budget changes; permission retirement cannot revive it
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following TestFailure was thrown running a test:
+Expected: <2>
+  Actual: <1>
+
+When the exception was thrown, this was the stack:
+#4      main.<anonymous closure> (file:///D:/Project/birdtie/apps/client/test/content_map_panel_test.dart:107:7)
+<asynchronous suspension>
+#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1952:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///D:/Project/birdtie/apps/client/test/content_map_panel_test.dart line 107
+The test description was:
+  same leaf restores after viewport and selected budget changes; permission retirement cannot revive
+  it
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:00 +1 -2: D:/Project/birdtie/apps/client/test/content_map_reader_test.dart: video only reads poster until explicit play; missing author and date stay honest
+00:00 +1 -2: D:/Project/birdtie/apps/client/test/content_map_panel_test.dart: same leaf restores after viewport and selected budget changes; permission retirement cannot revive it [E]
+  Test failed. See exception logs above.
+  The test description was: same leaf restores after viewport and selected budget changes; permission retirement cannot revive it
+  
+00:00 +2 -2: D:/Project/birdtie/apps/client/test/content_map_panel_test.dart: cluster continuation renews the bounded current window after thirty seconds instead of returning to page one
+00:05 +3 -2: D:/Project/birdtie/apps/client/test/content_map_panel_test.dart: actual cluster panel pages, opens exact anchor detail, returns to loaded group and retires permission
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following assertion was thrown running a test:
+The finder "Found 0 widgets with widget matching predicate: []" (used in a call to "tap()") could
+not find any matching widgets.
+
+When the exception was thrown, this was the stack:
+#0      WidgetController._getElementPoint (package:flutter_test/src/controller.dart:2095:7)
+#1      WidgetController.getCenter (package:flutter_test/src/controller.dart:1947:12)
+#2      WidgetController.tap (package:flutter_test/src/controller.dart:1080:7)
+#3      main.<anonymous closure> (file:///D:/Project/birdtie/apps/client/test/content_map_panel_test.dart:275:15)
+<asynchronous suspension>
+#4      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#5      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1952:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+The test description was:
+  actual cluster panel pages, opens exact anchor detail, returns to loaded group and retires
+  permission
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:05 +3 -3: D:/Project/birdtie/apps/client/test/content_map_panel_test.dart: actual cluster panel pages, opens exact anchor detail, returns to loaded group and retires permission [E]
+  Test failed. See exception logs above.
+  The test description was: actual cluster panel pages, opens exact anchor detail, returns to loaded group and retires permission
+  
+00:05 +3 -3: D:/Project/birdtie/apps/client/test/content_map_panel_test.dart: parent renewal cannot extend child grant; expiry clears names during failure and retry restores loaded exact selection
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following assertion was thrown running a test:
+The finder "Found 0 widgets with widget matching predicate: []" (used in a call to "tap()") could
+not find any matching widgets.
+
+When the exception was thrown, this was the stack:
+#0      WidgetController._getElementPoint (package:flutter_test/src/controller.dart:2095:7)
+#1      WidgetController.getCenter (package:flutter_test/src/controller.dart:1947:12)
+#2      WidgetController.tap (package:flutter_test/src/controller.dart:1080:7)
+#3      main.<anonymous closure> (file:///D:/Project/birdtie/apps/client/test/content_map_panel_test.dart:365:15)
+<asynchronous suspension>
+#4      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#5      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1952:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+The test description was:
+  parent renewal cannot extend child grant; expiry clears names during failure and retry restores
+  loaded exact selection
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:05 +3 -4: D:/Project/birdtie/apps/client/test/content_map_panel_test.dart: parent renewal cannot extend child grant; expiry clears names during failure and retry restores loaded exact selection [E]
+  Test failed. See exception logs above.
+  The test description was: parent renewal cannot extend child grant; expiry clears names during failure and retry restores loaded exact selection
+  
+00:05 +3 -4: Some tests failed.
+
+Failing tests:
+  D:/Project/birdtie/apps/client/test/content_map_panel_test.dart: actual cluster panel pages, opens exact anchor detail, returns to loaded group and retires permission
+  D:/Project/birdtie/apps/client/test/content_map_panel_test.dart: parent renewal cannot extend child grant; expiry clears names during failure and retry restores loaded exact selection
+  D:/Project/birdtie/apps/client/test/content_map_panel_test.dart: same leaf restores after viewport and selected budget changes; permission retirement cannot revive it
+  D:/Project/birdtie/apps/client/test/content_map_reader_test.dart: author time, uncut aspect media and same-panel gallery preserve page and permission

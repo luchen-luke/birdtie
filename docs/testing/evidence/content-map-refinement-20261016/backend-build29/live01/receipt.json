@@ -1,0 +1,60 @@
+{
+  "exitCode": 0,
+  "stderrPresent": false,
+  "remoteScriptSHA256": "eaa4da6d68f30677ef082483c3d56edc5f3baa22ce19b01cf6ddfab33dd49104",
+  "status": "PASS",
+  "result": {
+    "status": "PASS",
+    "devOnly": true,
+    "productionIdentityVerified": false,
+    "productionPhoneVerification": false,
+    "fixedCodeUsed": true,
+    "sourceWrites": 0,
+    "databaseDirectWrites": 0,
+    "remoteConfigurationChanged": false,
+    "agentActivationRequested": false,
+    "oldSessionAccepted": false,
+    "messagesSent": 0,
+    "privateValuesPersisted": false,
+    "allCreatedSessionsLoggedOut": true,
+    "schema": 172,
+    "apiBuild": 29,
+    "contentWrites": 0,
+    "imageComparison": {
+      "originalBytes": 1519753,
+      "originalWidth": 5760,
+      "originalHeight": 7680,
+      "displayBytes": 54903,
+      "displayWidth": 960,
+      "displayHeight": 1280,
+      "reductionPercent": 96.387,
+      "runs": [
+        {
+          "bytes": 54903,
+          "elapsedMs": 58.704
+        },
+        {
+          "bytes": 54903,
+          "elapsedMs": 58.221
+        },
+        {
+          "bytes": 54903,
+          "elapsedMs": 57.613
+        }
+      ],
+      "hashVerified": true,
+      "unchangedOriginal": true
+    },
+    "originalSourcesUnchanged": true,
+    "wrongSourceAndVariantDenied": true,
+    "anonymousDenied": true,
+    "worldPages": 2,
+    "worldTruePoints": 55,
+    "worldUniqueContent": 43,
+    "accessibleVideoMoments": 4,
+    "accessibleVideos": 4,
+    "videoPlayback": "NOT_RUN",
+    "privateLocatorSaved": true,
+    "loggedOutReadsDenied": true
+  }
+}

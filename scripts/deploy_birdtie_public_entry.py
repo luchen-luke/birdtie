@@ -77,6 +77,7 @@ email_lines=re.findall(r'^\s*(email\s+[^\s#]+)\s*$',original_config,re.M)
 assert len(email_lines)==1 and re.search(r'^\s*default_sni\s+47[.]110[.]154[.]133\s*$',original_config,re.M)
 cfg='\n{\n '+email_lines[0]+'\n default_sni 47.110.154.133\n}\n'+"""
 https://47.110.154.133 {
+ encode zstd gzip
  tls {
   issuer acme {
    dir https://acme-v02.api.letsencrypt.org/directory

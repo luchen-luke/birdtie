@@ -1,0 +1,17 @@
+{"Time":"2026-10-16T08:24:49.4621416+08:00","Action":"start","Package":"github.com/birdtie/birdtie/apps/api/internal/postgres"}
+{"Time":"2026-10-16T08:24:52.1037793+08:00","Action":"run","Package":"github.com/birdtie/birdtie/apps/api/internal/postgres","Test":"TestMapContentDisplayBoundedWholeFrame"}
+{"Time":"2026-10-16T08:24:52.1037793+08:00","Action":"output","Package":"github.com/birdtie/birdtie/apps/api/internal/postgres","Test":"TestMapContentDisplayBoundedWholeFrame","Output":"=== RUN   TestMapContentDisplayBoundedWholeFrame\n"}
+{"Time":"2026-10-16T08:24:54.6897626+08:00","Action":"output","Package":"github.com/birdtie/birdtie/apps/api/internal/postgres","Test":"TestMapContentDisplayBoundedWholeFrame","Output":"--- PASS: TestMapContentDisplayBoundedWholeFrame (2.59s)\n"}
+{"Time":"2026-10-16T08:24:54.6902853+08:00","Action":"pass","Package":"github.com/birdtie/birdtie/apps/api/internal/postgres","Test":"TestMapContentDisplayBoundedWholeFrame","Elapsed":2.59}
+{"Time":"2026-10-16T08:24:54.6909906+08:00","Action":"run","Package":"github.com/birdtie/birdtie/apps/api/internal/postgres","Test":"TestMapContentDisplayCacheBoundsAndVariantIsolation"}
+{"Time":"2026-10-16T08:24:54.6909906+08:00","Action":"output","Package":"github.com/birdtie/birdtie/apps/api/internal/postgres","Test":"TestMapContentDisplayCacheBoundsAndVariantIsolation","Output":"=== RUN   TestMapContentDisplayCacheBoundsAndVariantIsolation\n"}
+{"Time":"2026-10-16T08:24:54.6915029+08:00","Action":"output","Package":"github.com/birdtie/birdtie/apps/api/internal/postgres","Test":"TestMapContentDisplayCacheBoundsAndVariantIsolation","Output":"--- PASS: TestMapContentDisplayCacheBoundsAndVariantIsolation (0.00s)\n"}
+{"Time":"2026-10-16T08:24:54.6915029+08:00","Action":"pass","Package":"github.com/birdtie/birdtie/apps/api/internal/postgres","Test":"TestMapContentDisplayCacheBoundsAndVariantIsolation","Elapsed":0}
+{"Time":"2026-10-16T08:24:54.6915029+08:00","Action":"output","Package":"github.com/birdtie/birdtie/apps/api/internal/postgres","Output":"PASS\n"}
+{"Time":"2026-10-16T08:24:54.7073235+08:00","Action":"output","Package":"github.com/birdtie/birdtie/apps/api/internal/postgres","Output":"ok  \tgithub.com/birdtie/birdtie/apps/api/internal/postgres\t5.243s\n"}
+{"Time":"2026-10-16T08:24:54.7073235+08:00","Action":"pass","Package":"github.com/birdtie/birdtie/apps/api/internal/postgres","Elapsed":5.245}
+{"Time":"2026-10-16T08:24:57.0260249+08:00","Action":"start","Package":"github.com/birdtie/birdtie/apps/api/internal/httpapi"}
+{"Time":"2026-10-16T08:25:01.4402853+08:00","Action":"output","Package":"github.com/birdtie/birdtie/apps/api/internal/httpapi","Output":"testing: warning: no tests to run\n"}
+{"Time":"2026-10-16T08:25:01.4402853+08:00","Action":"output","Package":"github.com/birdtie/birdtie/apps/api/internal/httpapi","Output":"PASS\n"}
+{"Time":"2026-10-16T08:25:01.4423737+08:00","Action":"output","Package":"github.com/birdtie/birdtie/apps/api/internal/httpapi","Output":"ok  \tgithub.com/birdtie/birdtie/apps/api/internal/httpapi\t4.416s [no tests to run]\n"}
+{"Time":"2026-10-16T08:25:01.4423737+08:00","Action":"pass","Package":"github.com/birdtie/birdtie/apps/api/internal/httpapi","Elapsed":4.416}

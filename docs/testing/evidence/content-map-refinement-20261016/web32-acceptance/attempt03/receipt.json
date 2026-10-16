@@ -1,0 +1,455 @@
+{
+  "status": "PASS",
+  "headless": true,
+  "browserVersion": "155.0.8059.40",
+  "nonPersistentContext": true,
+  "privateValuesPersisted": false,
+  "contentWrites": 0,
+  "checks": [
+    {
+      "check": "EXPECTED_WEB32_MANIFEST",
+      "passed": true
+    },
+    {
+      "check": "PINNED_OWNER",
+      "passed": true
+    },
+    {
+      "check": "EXACT_ANCHOR_AUTHOR_AVATAR_ORIGINAL_TIME",
+      "passed": true,
+      "notes": "Semantic point selection opened overlap list; selected exact anchor entry, controlled avatar JPEG digest/bytes matched detail metadata. Screenshot visually verifies supplied nickname and CIVU original creation time; body.innerText cannot expose Canvas text."
+    },
+    {
+      "check": "FULL_IMAGE_RETURN_SAME_MAP",
+      "passed": true,
+      "notes": "Real image expanded in same Now panel then returned through detail/list to map; image screenshot inspected, original map element true, one map/canvas."
+    },
+    {
+      "check": "VISITED_CANVAS_RANGE_NO_REPEAT_MEDIA",
+      "passed": true,
+      "notes": "Separate ordinary canvas after reload: visible map/markers moved 180px out then back; screenshot pair confirms real motion. Counters23/14(mapQueries/markerReads) unchanged across both legs, all media delta0, known-media repeats0. Map element retained within this canvas lifetime; intentional reload excluded from return identity assertion."
+    }
+  ],
+  "metrics": {
+    "mapQueries": 28,
+    "memberQueries": 0,
+    "placeReads": 0,
+    "momentReads": 5,
+    "coverReads": 19,
+    "denials": 4,
+    "contentWrites": 0,
+    "blockedWrites": 0,
+    "failedRequests": 28,
+    "browserPageErrors": 0,
+    "markerReads": 14,
+    "avatarReads": 2,
+    "detailMediaReads": 3
+  },
+  "events": [
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 12.0,
+      "members": false
+    },
+    {
+      "kind": "response-inspection-failed"
+    },
+    {
+      "kind": "response-inspection-failed"
+    },
+    {
+      "kind": "response-inspection-failed"
+    },
+    {
+      "kind": "response-inspection-failed"
+    },
+    {
+      "kind": "response-inspection-failed"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 12.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 12.0,
+      "members": false
+    },
+    {
+      "kind": "response-inspection-failed"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 12.0,
+      "members": false
+    },
+    {
+      "kind": "response-inspection-failed"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 14.0,
+      "members": false
+    },
+    {
+      "kind": "response-inspection-failed"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 14.0,
+      "members": false
+    },
+    {
+      "kind": "response-inspection-failed"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 14.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "detail"
+    },
+    {
+      "kind": "response-inspection-failed"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 14.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "detail"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 14.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "detail"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 14.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "detail"
+    },
+    {
+      "kind": "response-inspection-failed"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 14.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "detail"
+    },
+    {
+      "kind": "response-inspection-failed"
+    },
+    {
+      "kind": "response-inspection-failed"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 14.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 14.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 14.0,
+      "members": false
+    },
+    {
+      "kind": "response-inspection-failed"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 14.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 14.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 14.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 14.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 14.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 14.0,
+      "members": false
+    },
+    {
+      "kind": "response-inspection-failed"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 14.0,
+      "members": false
+    },
+    {
+      "kind": "response-inspection-failed"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 12.0,
+      "members": false
+    },
+    {
+      "kind": "response-inspection-failed"
+    },
+    {
+      "kind": "response-inspection-failed"
+    },
+    {
+      "kind": "response-inspection-failed"
+    },
+    {
+      "kind": "response-inspection-failed"
+    },
+    {
+      "kind": "response-inspection-failed"
+    },
+    {
+      "kind": "response-inspection-failed"
+    },
+    {
+      "kind": "response-inspection-failed"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 12.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 12.0,
+      "members": false
+    },
+    {
+      "kind": "response-inspection-failed"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 12.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 12.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 12.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    },
+    {
+      "kind": "viewport-response",
+      "status": 200,
+      "zoom": 12.0,
+      "members": false
+    },
+    {
+      "kind": "map-content",
+      "status": 200,
+      "pathClass": "viewport"
+    }
+  ],
+  "logout": "PASS",
+  "release": {
+    "web": 32,
+    "schema": 172,
+    "manifestSHA256": "a04f4ee23c33212529d09af8af6dabcad6f469eb6e2a5830edfd0ed58873eae8"
+  },
+  "screenshots": [
+    {
+      "path": "C:\\Users\\chens\\Documents\\Codex\\2026-10-15\\d-project-birdtie-docs-reports-birdtie-2\\outputs\\cm-web32-author-preview.png",
+      "sha256": "ded38ae9dabf76b5b6da5efc93b4f7983f4903b9521fb55d62a88da70d5938eb"
+    },
+    {
+      "path": "C:\\Users\\chens\\Documents\\Codex\\2026-10-15\\d-project-birdtie-docs-reports-birdtie-2\\outputs\\cm-web32-author-preview-loaded.png",
+      "sha256": "acaf01ddb1da496d1d8a8fbd495f522f84e58f96feaedf5de37e81eed4b1aa8e"
+    },
+    {
+      "path": "C:\\Users\\chens\\Documents\\Codex\\2026-10-15\\d-project-birdtie-docs-reports-birdtie-2\\outputs\\cm-web32-reader-author-image.png",
+      "sha256": "624a9f115a1e4d4afac87e3e8bf2a2df625b5fd4a7855bb8b69f495c5ead9e54"
+    },
+    {
+      "path": "C:\\Users\\chens\\Documents\\Codex\\2026-10-15\\d-project-birdtie-docs-reports-birdtie-2\\outputs\\cm-web32-full-image.png",
+      "sha256": "6e553aa491386430a8283d1c4f2a53283b3811c87ec236dcb876bc9f19ab58b3"
+    },
+    {
+      "path": "C:\\Users\\chens\\Documents\\Codex\\2026-10-15\\d-project-birdtie-docs-reports-birdtie-2\\outputs\\cm-web32-return-map.png",
+      "sha256": "435184759a3548615cc6e4d509d9eae3e52fb54380b8a5bf95204d4d061a1037"
+    },
+    {
+      "path": "C:\\Users\\chens\\Documents\\Codex\\2026-10-15\\d-project-birdtie-docs-reports-birdtie-2\\outputs\\cm-web32-pan-out.png",
+      "sha256": "435184759a3548615cc6e4d509d9eae3e52fb54380b8a5bf95204d4d061a1037"
+    },
+    {
+      "path": "C:\\Users\\chens\\Documents\\Codex\\2026-10-15\\d-project-birdtie-docs-reports-birdtie-2\\outputs\\cm-web32-canvas-pan-before.png",
+      "sha256": "992b2937927ecff0ebcbfb896f80cf644cd5b75edfa138a9d41cf00479d323e4"
+    },
+    {
+      "path": "C:\\Users\\chens\\Documents\\Codex\\2026-10-15\\d-project-birdtie-docs-reports-birdtie-2\\outputs\\cm-web32-canvas-pan-out.png",
+      "sha256": "81bdb088ff4ef6347ca3b429d396c8fb5827794541530669f4e80dac8ef0eb91"
+    },
+    {
+      "path": "C:\\Users\\chens\\Documents\\Codex\\2026-10-15\\d-project-birdtie-docs-reports-birdtie-2\\outputs\\cm-web32-canvas-pan-return.png",
+      "sha256": "992b2937927ecff0ebcbfb896f80cf644cd5b75edfa138a9d41cf00479d323e4"
+    }
+  ],
+  "scope": "Bounded actual owner reader/avatar/media and visited-viewport cache flow",
+  "notRun": [
+    "Screen recording",
+    "Publishing/editing/deleting content",
+    "Full release regression"
+  ]
+}

@@ -1,0 +1,77 @@
+{
+  "status": "DEPLOYED_READY_LIVE_PASS",
+  "apiBuild": 29,
+  "schema": 172,
+  "apiSHA256": "73a97552316ae642f4b97aea37c04266c3fd0959eeb0d346dd03bc6e54702818",
+  "release": "/opt/birdtie/releases/social172-20261015-build29",
+  "sourceFilesMatched": 2037,
+  "sourceStable": true,
+  "newMigrations": 0,
+  "oldMigrationsUnchanged": 172,
+  "tests": {
+    "direct02": [
+      "TestMapContentDisplayBoundedWholeFrame",
+      "TestMapContentDisplayCacheBoundsAndVariantIsolation"
+    ],
+    "native03": [
+      "TestMapContentDisplayNativeCurrentAuthority"
+    ],
+    "allListedTests": "PASS",
+    "native01": "FAIL_fixture_sessions_idle_expiry_two_clock_reads",
+    "native02": "PASS_before_descriptor_cache_addition",
+    "initialBuild": "build not deployed; final build02 used"
+  },
+  "actualImage": {
+    "originalBytes": 1519753,
+    "originalWidth": 5760,
+    "originalHeight": 7680,
+    "displayBytes": 54903,
+    "displayWidth": 960,
+    "displayHeight": 1280,
+    "reductionPercent": 96.387,
+    "runs": [
+      {
+        "bytes": 54903,
+        "elapsedMs": 58.704
+      },
+      {
+        "bytes": 54903,
+        "elapsedMs": 58.221
+      },
+      {
+        "bytes": 54903,
+        "elapsedMs": 57.613
+      }
+    ],
+    "hashVerified": true,
+    "unchangedOriginal": true
+  },
+  "live": [
+    "actual hash and byte length verified",
+    "original retained image hash and byte count unchanged",
+    "preserved source and manifest unchanged",
+    "wrong source and variant denied",
+    "anonymous and logout denied",
+    "all created sessions logged out",
+    "current-world complete 2-page 55-point 43-moment authorized inventory"
+  ],
+  "mapVideoMoments": 4,
+  "mapVideos": 4,
+  "privateLocator": {
+    "path": "cwd/work/phone-map-video29.private.json",
+    "outsideRepository": true,
+    "currentUserACL": true,
+    "containsToken": false,
+    "note": "live01 inherited privateValuesPersisted=false describes older base runner and is inaccurate for this new locator; the separately saved locator does contain selected current map IDs and coordinates. No such values enter aggregate evidence."
+  },
+  "notRun": [
+    "phone33 actual display timings and map video playback: root owns these checks",
+    "200-image initial cold detail performance",
+    "forced rollback fault injection",
+    "production SMS/identity proof"
+  ],
+  "originalRawImagesChanged": false,
+  "businessContentWrites": 0,
+  "sourceWrites": 0,
+  "newProtectedSourceCopies": 0
+}

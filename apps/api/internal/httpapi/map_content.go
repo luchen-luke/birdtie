@@ -12,6 +12,7 @@ import (
 
 func (s *server) RegisterMapContentRoutes(m *http.ServeMux) {
 	m.HandleFunc("GET /v1/me/map-content", s.readMapContent)
+	m.HandleFunc("GET /v1/me/map-content/moments/{momentID}/author-avatar/{mediaID}/content", s.readMapContentAuthorAvatar)
 	m.HandleFunc("GET /v1/me/map-content/places/{placeID}/moments", s.readMapContentPlace)
 	m.HandleFunc("GET /v1/me/map-content/moments/{momentID}", s.readMapContentMoment)
 	m.HandleFunc("GET /v1/me/map-content/places/{placeID}/images/{imageID}/content", s.readMapContentImage)
@@ -142,6 +143,9 @@ func (s *server) readMapContentMoment(w http.ResponseWriter, r *http.Request) {
 func (s *server) readMapContentImage(w http.ResponseWriter, r *http.Request) {
 	s.readMapContentBinary(w, r, "places", r.PathValue("placeID"), r.PathValue("imageID"))
 }
+func (s *server) readMapContentAuthorAvatar(w http.ResponseWriter, r *http.Request) {
+	s.readMapContentBinary(w, r, "moment-authors", r.PathValue("momentID"), r.PathValue("mediaID"))
+}
 func (s *server) readMapContentMedia(w http.ResponseWriter, r *http.Request) {
 	s.readMapContentBinary(w, r, "moments", r.PathValue("momentID"), r.PathValue("mediaID"))
 }
@@ -149,7 +153,7 @@ func (s *server) readMapContentBinary(w http.ResponseWriter, r *http.Request, ki
 	w.Header().Set("Cache-Control", "private, no-store")
 	v, e := mapContentQueryValues(r, "sourceVersion", "variant")
 	variant := v.Get("variant")
-	if e != nil || len(v) < 1 || len(v) > 2 || !content.MomentControlHex(v.Get("sourceVersion")) || !identity.HumanControlUUID(target) || !identity.HumanControlUUID(id) || (variant != "" && variant != "poster" && variant != "marker") || kind == "places" && variant != "" && variant != "marker" || r.Header.Get("Range") != "" {
+	if e != nil || len(v) < 1 || len(v) > 2 || !content.MomentControlHex(v.Get("sourceVersion")) || !identity.HumanControlUUID(target) || !identity.HumanControlUUID(id) || (variant != "" && variant != "poster" && variant != "marker" && variant != "display") || kind == "places" && variant != "" && variant != "marker" || kind == "moment-authors" && variant != "" || r.Header.Get("Range") != "" {
 		momentControlFailure(w, content.ErrInvalid)
 		return
 	}

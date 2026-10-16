@@ -1,0 +1,28 @@
+{
+  "status": "PRIVATE_AUTHOR_AVATAR_TRANSFER_ACCEPTED",
+  "exitCode": 0,
+  "helperSHA256": "e5a8c0432366206e336c3879e10217f5de1d3661d35f15e5f162a091b4a1f775",
+  "remoteScriptSHA256": "beb6b019995acb5a405ea2484c313d43a29f174e1e585fe44e8a6ce38bc81968",
+  "result": {
+    "status": "PRIVATE_AUTHOR_AVATAR_TRANSFER_COMPLETE",
+    "selectedAssets": 6,
+    "privateImages": 6,
+    "systemArtworkArchives": 0,
+    "blobFiles": 6,
+    "files": 8,
+    "bytes": 14349212,
+    "directoryMode": "0700",
+    "fileMode": "0600",
+    "sourceAuthenticated": true,
+    "filesVerified": true,
+    "sourceInputsUnchanged": true,
+    "sourceWrites": 0,
+    "databaseWrites": 0,
+    "mediaPublication": false,
+    "privateValuesOmitted": true
+  },
+  "sourceWrites": 0,
+  "databaseWrites": 0,
+  "importExecuted": false,
+  "privateValuesOmitted": true
+}

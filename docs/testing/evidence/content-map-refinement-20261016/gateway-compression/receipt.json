@@ -1,0 +1,58 @@
+{
+  "status": "PASS",
+  "finalized": true,
+  "releaseAtVerification": {
+    "web": "public-20261016-final-web30",
+    "api": "API27; no API changes by this task"
+  },
+  "deploymentReceipt": "apply01/receipt.json",
+  "inspectionReceipt": "inspect01/receipt.json",
+  "configBeforeSHA256": "9bdac43ca4aaf84c6d4c691a0b50183bcb6d28f00b81ae3e9b923dd2dd9e1234",
+  "configAfterSHA256": "0b4b23bdf64469d47d837e6ec1577b0a441a304115ed74636bad7bdacde27af7",
+  "backupPath": "/etc/birdtie/Caddyfile.before-compression-20261016T000321Z-9bdac43ca4aa",
+  "citiesWireBytesBefore": 405909,
+  "citiesWireBytesAfterGzip": 40840,
+  "wireReductionPercent": 89.94,
+  "contentHashUnchanged": true,
+  "clientNetworkCheck": {
+    "status": 200,
+    "contentEncoding": "gzip",
+    "cacheControl": "no-store",
+    "vary": "Accept-Encoding",
+    "wireBytes": 40840,
+    "decodedBytes": 405909,
+    "decodedSHA256": "b21be9af4154e786e96285eecf1568302adb74a9989785af4f669616915e9212",
+    "elapsedMs": 160.48,
+    "tlsDefaultValidation": true
+  },
+  "checks": {
+    "installedCaddyBinaryValidate": "PASS",
+    "liveReloadReady": "PASS",
+    "gzipJSONAndWeb": "PASS",
+    "zstdNegotiation": "PASS",
+    "originalCacheHeaders": "PASS",
+    "syntheticPrivateNoStore": "PASS",
+    "syntheticSmallJSONSkipped": "PASS",
+    "syntheticImageJPEGTypeSkipped": "PASS",
+    "oldCivuConfigPreserved": "PASS",
+    "APIEnvironmentPreserved": "PASS",
+    "noServiceRestart": "PASS",
+    "pythonSyntax": "PASS"
+  },
+  "notRun": [
+    "Phone latency/UI retry: coordinated by root after this change",
+    "Actual valid-user authenticated content response: synthetic no-store/auth-header proof used without login",
+    "Injected live rollback failure: rollback path implemented but no production failure injected",
+    "Zstd content decompression equivalence: gzip equality verified; zstd header/byte negotiation only"
+  ],
+  "deploymentCaveat": "Atomic host-file replacement leaves the running single-file bind mount pointing at the old inode; this task reloads the exact new bytes through stdin. Future gateway configuration reloads must read host /etc/birdtie/Caddyfile and use stdin until a normal container restart refreshes the bind mount. A subsequent restart reads the new persistent host file.",
+  "references": [
+    "https://caddyserver.com/docs/caddyfile/directives/encode",
+    "https://caddyserver.com/docs/command-line#caddy-reload"
+  ],
+  "localPreparationFailure": "Initial script preparation had nested triple-quote syntax error, corrected before any remote write. First live apply passed.",
+  "sourceSHA256": {
+    "scripts/enable_birdtie_response_compression.py": "f67f65be4710f0e71336cc8105d2575c450eba1d5f5eb1f2323dfd5c3e65539e",
+    "scripts/deploy_birdtie_public_entry.py": "020179875b5e13e3bdf200040968e04d9dcb23078039e335df67b524a8f55c0a"
+  }
+}

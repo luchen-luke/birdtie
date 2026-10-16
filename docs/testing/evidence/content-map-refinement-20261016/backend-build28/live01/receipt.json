@@ -1,0 +1,102 @@
+{
+  "exitCode": 0,
+  "stderrPresent": false,
+  "remoteScriptSHA256": "fa1b29c86c8f895b60f6b06e38287a68e306b7dbf37d721b29a4e13ad9f6ff22",
+  "status": "PASS",
+  "result": {
+    "status": "PASS",
+    "devOnly": true,
+    "productionIdentityVerified": false,
+    "productionPhoneVerification": false,
+    "fixedCodeUsed": true,
+    "sourceWrites": 0,
+    "databaseDirectWrites": 0,
+    "remoteConfigurationChanged": false,
+    "agentActivationRequested": false,
+    "oldSessionAccepted": false,
+    "messagesSent": 0,
+    "privateValuesPersisted": false,
+    "allCreatedSessionsLoggedOut": true,
+    "schema": 172,
+    "apiBuild": 28,
+    "contentWrites": 0,
+    "originalAuthorsChecked": 9,
+    "originalPublicAuthors": 8,
+    "currentSelfAuthors": 1,
+    "originalTimesChecked": 9,
+    "originalAvatarImagesChecked": 6,
+    "avatarBytesVerified": 32295,
+    "originalNameMatchesBackup": true,
+    "originalTimeMatchesBackup": true,
+    "unboundAvatarNotInvented": true,
+    "wrongAvatarSourceRejected": true,
+    "anonymousDenied": true,
+    "measurements": [
+      {
+        "scenario": "wide",
+        "runs": [
+          {
+            "elapsedMs": 686.523,
+            "responseJSONBytes": 10383,
+            "httpResponseBytes": 10462,
+            "markers": 7,
+            "withContent": 7,
+            "totalContentCount": 9,
+            "totalAnchorCount": 7,
+            "covers": 7,
+            "advertisedCoverBytes": 44488,
+            "kindCounts": {
+              "PLACE_CONTENT": 6,
+              "MOMENT_ANCHOR": 1,
+              "CLUSTER": 0
+            }
+          }
+        ]
+      },
+      {
+        "scenario": "phone",
+        "runs": [
+          {
+            "elapsedMs": 227.349,
+            "responseJSONBytes": 10407,
+            "httpResponseBytes": 10486,
+            "markers": 7,
+            "withContent": 7,
+            "totalContentCount": 9,
+            "totalAnchorCount": 7,
+            "covers": 7,
+            "advertisedCoverBytes": 44488,
+            "kindCounts": {
+              "PLACE_CONTENT": 6,
+              "MOMENT_ANCHOR": 1,
+              "CLUSTER": 0
+            }
+          }
+        ]
+      },
+      {
+        "scenario": "adjacent",
+        "runs": [
+          {
+            "elapsedMs": 230.519,
+            "responseJSONBytes": 10407,
+            "httpResponseBytes": 10486,
+            "markers": 7,
+            "withContent": 7,
+            "totalContentCount": 9,
+            "totalAnchorCount": 7,
+            "covers": 7,
+            "advertisedCoverBytes": 44488,
+            "kindCounts": {
+              "PLACE_CONTENT": 6,
+              "MOMENT_ANCHOR": 1,
+              "CLUSTER": 0
+            }
+          }
+        ]
+      }
+    ],
+    "sourceInputsUnchanged": true,
+    "loggedOutReadsDenied": true
+  }
+}

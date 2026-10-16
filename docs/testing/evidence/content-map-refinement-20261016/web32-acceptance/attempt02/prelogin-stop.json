@@ -1,0 +1,6 @@
+{
+  "status": "STOPPED_PRE_LOGIN_STDIN_CLOSED",
+  "phoneLookup": false,
+  "sessionCreated": false,
+  "reason": "PTY required for interactive command transport"
+}

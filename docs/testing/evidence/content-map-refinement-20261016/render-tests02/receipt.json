@@ -1,0 +1,1 @@
+{"command": ["D:\\DevTools\\flutter\\bin\\flutter.bat", "test", "test/content_map_cluster_bitmap_test.dart", "--reporter", "expanded", "--no-pub"], "exitCode": 0, "logSHA256": "0d8853a2f12257ab3c70504e58df37223bc38e39dfd4dd1965d58ab1a61cb50c"}

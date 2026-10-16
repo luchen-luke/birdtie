@@ -1,0 +1,10 @@
+{
+  "screenRecording": false,
+  "normalFontOnly": true,
+  "ext.dart.io.httpEnableTimelineLogging": "PASS",
+  "ext.dart.io.clearHttpProfile": "PASS",
+  "setVMTimelineFlags": "PASS",
+  "clearVMTimeline": "PASS",
+  "birdtieForeground": true,
+  "vmForwardRemoved": true
+}

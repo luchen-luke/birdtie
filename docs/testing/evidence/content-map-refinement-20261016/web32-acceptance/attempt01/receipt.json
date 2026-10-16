@@ -1,0 +1,38 @@
+{
+  "status": "FAIL",
+  "headless": true,
+  "browserVersion": "155.0.8059.40",
+  "nonPersistentContext": true,
+  "privateValuesPersisted": false,
+  "contentWrites": 0,
+  "checks": [],
+  "metrics": {
+    "mapQueries": 0,
+    "memberQueries": 0,
+    "placeReads": 0,
+    "momentReads": 0,
+    "coverReads": 0,
+    "denials": 0,
+    "contentWrites": 0,
+    "blockedWrites": 0,
+    "failedRequests": 0,
+    "browserPageErrors": 0,
+    "markerReads": 0,
+    "avatarReads": 0,
+    "detailMediaReads": 0
+  },
+  "events": [],
+  "logout": "NOT_RUN_NO_SESSION",
+  "release": {
+    "web": 32,
+    "schema": 172,
+    "manifestSHA256": "a04f4ee23c33212529d09af8af6dabcad6f469eb6e2a5830edfd0ed58873eae8"
+  },
+  "screenshots": [],
+  "scope": "Bounded actual owner reader/avatar/media and visited-viewport cache flow",
+  "notRun": [
+    "Screen recording",
+    "Publishing/editing/deleting content",
+    "Full release regression"
+  ]
+}

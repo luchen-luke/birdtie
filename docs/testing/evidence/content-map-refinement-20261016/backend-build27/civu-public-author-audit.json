@@ -1,0 +1,91 @@
+{
+  "status": "SOURCE_AUDIT_COMPLETE",
+  "writes": "EVIDENCE_ONLY",
+  "oldCivuRuntimeVerification": "NOT_RUN",
+  "sourceFiles": {
+    "D:/Program/Civu/Civu-server/api/internal/store/note_types.go": {
+      "exists": true,
+      "lines": [
+        5,
+        59
+      ],
+      "sha256": "4116963793ca73de23c305d7c12eca090492243ada5b861f3a8c6e1021b531cf"
+    },
+    "D:/Program/Civu/Civu-server/api/internal/store/notes_postgres.go": {
+      "exists": true,
+      "lines": [
+        40,
+        104,
+        122,
+        148,
+        691,
+        712,
+        731,
+        742,
+        771,
+        995,
+        1263,
+        1283
+      ],
+      "sha256": "f0973374434a792ad20f5f5a0cc06bc183786c9c4436929821aaaacb0e59993d"
+    },
+    "D:/Program/Civu/Civu-server/api/internal/store/moment_browse.go": {
+      "exists": true,
+      "lines": [
+        28
+      ],
+      "sha256": "2ab22ccbfe42ad67468f623b9d4e8a7cbb552d3fa70b656d5ac020f2c7a6fa5c"
+    },
+    "D:/Program/Civu/Civu-server/api/internal/httpapi/router.go": {
+      "exists": true,
+      "lines": [
+        283,
+        294
+      ],
+      "sha256": "2d132f7327488586bc03a6092c737856d2fc78ceb9ad5518a62b0a2d4477ee65"
+    },
+    "D:/Program/Civu/Civu-server/api/internal/httpapi/notes_handlers.go": {
+      "exists": true,
+      "lines": [
+        128,
+        143
+      ],
+      "sha256": "053fadcb3b25ecd9878c840cba37588f45c5c0cca4d46a217c9dbb7081c39f20"
+    },
+    "D:/Project/birdtie/scripts/extract_civu_hangzhou.py": {
+      "exists": true,
+      "lines": [
+        309,
+        552,
+        701
+      ],
+      "sha256": "7965cb67d8b7430e86f21ff65de970ba18dd3a0f3104f51838b72eddf3f2e0c5"
+    },
+    "D:/Project/birdtie/apps/api/internal/legacymigration/model.go": {
+      "exists": true,
+      "lines": [
+        58,
+        69,
+        137
+      ],
+      "sha256": "c344807ace990501466e5ce68ef06999ca10bf38d6c622d1880ec8decdc0ff5e"
+    },
+    "D:/Project/birdtie/apps/api/internal/postgres/legacy_migration.go": {
+      "exists": true,
+      "lines": [
+        286
+      ],
+      "sha256": "4febafac8c477fab48e009d5a24018c9a5f13fae24a28e5002fa1ffef45c8084"
+    }
+  },
+  "finding": "Original Civu readable moment contract includes a minimal Note.author with displayName and avatarUrl independently of profile_visibility. Birdtie private-profile-only author lookup is missing this retained public-content attribution, not evidence that the original name/avatar were never visible.",
+  "acl": "Original list/detail enforce content deletion/moderation, audience and block/hide rules. Public listing further forces public audience. Attribution must remain subordinate to exact current readable-moment authority.",
+  "backupFields": "users includes display_name/avatar_url/profile_visibility/status/version; notes includes author_id/visibility/moderation_status/deleted_at/created_at/version. Extraction and importer column allowlists retain them, but native importer writes user_profiles as private and does not import avatar bytes.",
+  "minimumAdaptation": "Add provenance-bound original author attribution for preserved readable Civu public moments, using exact source author/moment mappings, source SHA/version, current blocks and withdrawal state. Keep native profile privacy unchanged. Import only verified avatar bytes into controlled bounded derivative reads; never return arbitrary old URLs.",
+  "excludedReuse": "Civu handleFromEmail derives a handle from an email address; do not carry this fallback into new attribution.",
+  "notClaimed": [
+    "Original Civu live API execution",
+    "Old avatar byte availability",
+    "Old author attribution now fully restored"
+  ]
+}

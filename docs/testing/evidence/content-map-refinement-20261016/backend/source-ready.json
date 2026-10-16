@@ -1,0 +1,33 @@
+{
+  "status": "SOURCE_READY_DIRECT_VERIFIED",
+  "at": "2026-10-15T23:39:36.466772+00:00",
+  "files": {
+    "apps/api/internal/content/map_content.go": "5d815e5f51e74ddae64fc3e3ffa6da7930283e9f5d454634306250ac482ae235",
+    "apps/api/internal/postgres/map_content.go": "4b265a93557ba99a994b3ab106de6aa390a4f846c33facd9683121147da1a3c8",
+    "apps/api/internal/postgres/map_content_authors.go": "180e8e649d271f2839f700972c38289045659416656d48061602c4184bd502a9",
+    "apps/api/internal/postgres/map_content_spatial.go": "46e2c267369eeacbf0266f6edacfe79160ea4504fe1dfccb425b1de977809502",
+    "apps/api/internal/postgres/map_content_native_test.go": "a3434b7a39364d7ee511b334647c8de747e4e7077935645b561a7ca551011dd6",
+    "apps/api/internal/postgres/map_content_refinement_test.go": "b95d6533bb8f62d2027fe27f46d6ad02c547a643bf306d747663cdb57c237407",
+    "apps/api/internal/postgres/map_content_spatial_perf_native_test.go": "13200550be5ddbde7175d18c0fc4914b0fe4a573e7abe8b6fea610a353b54526"
+  },
+  "changes": [
+    "Exact-coordinate-and-precision overlap grouping only; all zoom levels preserve separate true points",
+    "Viewport groups paginate 40; viewportPath + totalPointCount + nextCursor; current ACL and unchanged source required on each page",
+    "Exact overlap representative uses real member selector and existing marker thumbnail budget",
+    "Current profile/field permitted displayName and controlled profileavatar.Metadata; own private nickname available to self",
+    "Native publishedAt only; original legacy creation marked only when exact archive mapping and created_at predates adaptation start; fallback date UNKNOWN"
+  ],
+  "tests": {
+    "direct01": "PASS: 4 direct content/postgres tests; HTTP package compiled but regex matched no tests",
+    "native01": "1 PASS coincidence continuation; 1 FAIL own name denied without agent, preserved",
+    "native02": "PASS real-coordinate viewport 40/40/1 + author/time/source/logout after own-name fix",
+    "native03": "2 PASS real-coordinate/author + existing coordinate anchor; actual JPEG controlled avatar read/removal; private legacy author denied; original and missing legacy dates distinguished"
+  },
+  "notRun": [
+    "New live deployment and real client acceptance (root owned)",
+    "Fresh 100/1000/10000 SQL timings after this refinement; pressure test updated to new pagination contract but not rerun",
+    "Import of old users.avatar_url: no old avatar binary was previously imported; current scope reads only existing controlled avatars",
+    "Original source field-level timestamp proof is not separately persisted; historical createdAt guard is conservative inference from fixed importer ordering, not a newly invented publishedAt"
+  ],
+  "scope": "No Civu writes, no remote writes, no migration, no client writes. Native tests used marked disposable child databases."
+}

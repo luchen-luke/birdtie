@@ -1,0 +1,442 @@
+{
+  "status": "OBSERVED_SLOW_ORIGINAL_IMAGE",
+  "originalImageBytes": 1519753,
+  "dimensions": [
+    5760,
+    7680
+  ],
+  "requests": [
+    {
+      "kind": "media",
+      "variant": "original",
+      "status": 200,
+      "durationMs": 6014.902,
+      "completed": true,
+      "contentLength": 254150,
+      "error": false
+    },
+    {
+      "kind": "media",
+      "variant": "original",
+      "status": 200,
+      "durationMs": 9508.753,
+      "completed": true,
+      "contentLength": 1519753,
+      "error": false
+    },
+    {
+      "kind": "media",
+      "variant": "original",
+      "status": 200,
+      "durationMs": 2920.191,
+      "completed": true,
+      "contentLength": 254150,
+      "error": false
+    },
+    {
+      "kind": "viewport",
+      "variant": "original",
+      "status": 200,
+      "durationMs": 1410.097,
+      "completed": true,
+      "contentLength": 488,
+      "error": false
+    },
+    {
+      "kind": "media",
+      "variant": "original",
+      "status": 200,
+      "durationMs": 3194.495,
+      "completed": true,
+      "contentLength": 198733,
+      "error": false
+    },
+    {
+      "kind": "viewport",
+      "variant": "original",
+      "status": 200,
+      "durationMs": 1305.994,
+      "completed": true,
+      "contentLength": -1,
+      "error": false
+    },
+    {
+      "kind": "media",
+      "variant": "original",
+      "status": 200,
+      "durationMs": 4144.391,
+      "completed": true,
+      "contentLength": 166928,
+      "error": false
+    },
+    {
+      "kind": "detail",
+      "variant": "original",
+      "status": 200,
+      "durationMs": 485.198,
+      "completed": true,
+      "contentLength": -1,
+      "error": false
+    },
+    {
+      "kind": "media",
+      "variant": "original",
+      "status": 200,
+      "durationMs": 2611.05,
+      "completed": true,
+      "contentLength": 166928,
+      "error": false
+    },
+    {
+      "kind": "media",
+      "variant": "original",
+      "status": 200,
+      "durationMs": 2546.651,
+      "completed": true,
+      "contentLength": 198733,
+      "error": false
+    },
+    {
+      "kind": "media",
+      "variant": "original",
+      "status": 200,
+      "durationMs": 3004.785,
+      "completed": true,
+      "contentLength": 254150,
+      "error": false
+    },
+    {
+      "kind": "viewport",
+      "variant": "original",
+      "status": 200,
+      "durationMs": 496.875,
+      "completed": true,
+      "contentLength": 488,
+      "error": false
+    },
+    {
+      "kind": "viewport",
+      "variant": "original",
+      "status": 200,
+      "durationMs": 660.421,
+      "completed": true,
+      "contentLength": -1,
+      "error": false
+    },
+    {
+      "kind": "detail",
+      "variant": "original",
+      "status": 200,
+      "durationMs": 481.124,
+      "completed": true,
+      "contentLength": -1,
+      "error": false
+    },
+    {
+      "kind": "media",
+      "variant": "original",
+      "status": 200,
+      "durationMs": 12408.622,
+      "completed": true,
+      "contentLength": 1519753,
+      "error": false
+    },
+    {
+      "kind": "avatar",
+      "variant": "original",
+      "status": 200,
+      "durationMs": 490.12,
+      "completed": true,
+      "contentLength": 6536,
+      "error": false
+    },
+    {
+      "kind": "viewport",
+      "variant": "original",
+      "status": 200,
+      "durationMs": 583.887,
+      "completed": true,
+      "contentLength": 489,
+      "error": false
+    },
+    {
+      "kind": "viewport",
+      "variant": "original",
+      "status": 200,
+      "durationMs": 729.153,
+      "completed": true,
+      "contentLength": -1,
+      "error": false
+    },
+    {
+      "kind": "detail",
+      "variant": "original",
+      "status": 200,
+      "durationMs": 562.823,
+      "completed": true,
+      "contentLength": -1,
+      "error": false
+    },
+    {
+      "kind": "viewport",
+      "variant": "original",
+      "status": 200,
+      "durationMs": 563.666,
+      "completed": true,
+      "contentLength": 487,
+      "error": false
+    },
+    {
+      "kind": "viewport",
+      "variant": "original",
+      "status": 200,
+      "durationMs": 1477.316,
+      "completed": true,
+      "contentLength": -1,
+      "error": false
+    },
+    {
+      "kind": "detail",
+      "variant": "original",
+      "status": 200,
+      "durationMs": 1818.87,
+      "completed": true,
+      "contentLength": -1,
+      "error": false
+    },
+    {
+      "kind": "viewport",
+      "variant": "original",
+      "status": 200,
+      "durationMs": 570.93,
+      "completed": true,
+      "contentLength": 488,
+      "error": false
+    },
+    {
+      "kind": "viewport",
+      "variant": "original",
+      "status": 200,
+      "durationMs": 707.961,
+      "completed": true,
+      "contentLength": -1,
+      "error": false
+    },
+    {
+      "kind": "detail",
+      "variant": "original",
+      "status": 200,
+      "durationMs": 562.811,
+      "completed": true,
+      "contentLength": -1,
+      "error": false
+    },
+    {
+      "kind": "viewport",
+      "variant": "original",
+      "status": 200,
+      "durationMs": 542.99,
+      "completed": true,
+      "contentLength": 489,
+      "error": false
+    },
+    {
+      "kind": "viewport",
+      "variant": "original",
+      "status": 200,
+      "durationMs": 711.801,
+      "completed": true,
+      "contentLength": -1,
+      "error": false
+    },
+    {
+      "kind": "detail",
+      "variant": "original",
+      "status": 200,
+      "durationMs": 1566.313,
+      "completed": true,
+      "contentLength": -1,
+      "error": false
+    },
+    {
+      "kind": "viewport",
+      "variant": "original",
+      "status": 200,
+      "durationMs": 635.213,
+      "completed": true,
+      "contentLength": 489,
+      "error": false
+    },
+    {
+      "kind": "viewport",
+      "variant": "original",
+      "status": 200,
+      "durationMs": 716.746,
+      "completed": true,
+      "contentLength": -1,
+      "error": false
+    },
+    {
+      "kind": "detail",
+      "variant": "original",
+      "status": 200,
+      "durationMs": 566.715,
+      "completed": true,
+      "contentLength": -1,
+      "error": false
+    },
+    {
+      "kind": "viewport",
+      "variant": "original",
+      "status": 200,
+      "durationMs": 620.023,
+      "completed": true,
+      "contentLength": 488,
+      "error": false
+    },
+    {
+      "kind": "viewport",
+      "variant": "original",
+      "status": 200,
+      "durationMs": 719.015,
+      "completed": true,
+      "contentLength": -1,
+      "error": false
+    },
+    {
+      "kind": "detail",
+      "variant": "original",
+      "status": 200,
+      "durationMs": 649.91,
+      "completed": true,
+      "contentLength": -1,
+      "error": false
+    },
+    {
+      "kind": "viewport",
+      "variant": "original",
+      "status": 200,
+      "durationMs": 548.234,
+      "completed": true,
+      "contentLength": 488,
+      "error": false
+    },
+    {
+      "kind": "viewport",
+      "variant": "original",
+      "status": 200,
+      "durationMs": 695.201,
+      "completed": true,
+      "contentLength": -1,
+      "error": false
+    },
+    {
+      "kind": "detail",
+      "variant": "original",
+      "status": 200,
+      "durationMs": 1812.635,
+      "completed": true,
+      "contentLength": -1,
+      "error": false
+    },
+    {
+      "kind": "viewport",
+      "variant": "original",
+      "status": 200,
+      "durationMs": 598.031,
+      "completed": true,
+      "contentLength": 489,
+      "error": false
+    },
+    {
+      "kind": "viewport",
+      "variant": "original",
+      "status": 200,
+      "durationMs": 773.174,
+      "completed": true,
+      "contentLength": -1,
+      "error": false
+    },
+    {
+      "kind": "detail",
+      "variant": "original",
+      "status": 200,
+      "durationMs": 573.617,
+      "completed": true,
+      "contentLength": -1,
+      "error": false
+    },
+    {
+      "kind": "viewport",
+      "variant": "original",
+      "status": 200,
+      "durationMs": 604.895,
+      "completed": true,
+      "contentLength": 488,
+      "error": false
+    },
+    {
+      "kind": "viewport",
+      "variant": "original",
+      "status": 200,
+      "durationMs": 736.288,
+      "completed": true,
+      "contentLength": -1,
+      "error": false
+    },
+    {
+      "kind": "detail",
+      "variant": "original",
+      "status": 200,
+      "durationMs": 636.286,
+      "completed": true,
+      "contentLength": -1,
+      "error": false
+    },
+    {
+      "kind": "viewport",
+      "variant": "original",
+      "status": 200,
+      "durationMs": 681.896,
+      "completed": true,
+      "contentLength": 488,
+      "error": false
+    },
+    {
+      "kind": "viewport",
+      "variant": "original",
+      "status": 200,
+      "durationMs": 819.126,
+      "completed": true,
+      "contentLength": -1,
+      "error": false
+    },
+    {
+      "kind": "detail",
+      "variant": "original",
+      "status": 200,
+      "durationMs": 1681.696,
+      "completed": true,
+      "contentLength": -1,
+      "error": false
+    },
+    {
+      "kind": "viewport",
+      "variant": "original",
+      "status": 200,
+      "durationMs": 687.949,
+      "completed": true,
+      "contentLength": -1,
+      "error": false
+    },
+    {
+      "kind": "viewport",
+      "variant": "original",
+      "status": 200,
+      "durationMs": 800.749,
+      "completed": true,
+      "contentLength": -1,
+      "error": false
+    }
+  ]
+}

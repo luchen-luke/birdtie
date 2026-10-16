@@ -1,0 +1,38 @@
+{
+  "birdtieBaseline": "556c56f6b9964c536468d1854a3a103a6329df1f",
+  "apiBefore": 26,
+  "schemaBefore": 171,
+  "webBefore": 29,
+  "apkBefore": 29,
+  "impeccableDetect": {
+    "command": "impeccable detect --json apps/client/lib/src/workspace/now_map_content_panel.dart apps/client/lib/src/workspace/map_entities.dart apps/client/lib/src/workspace/map_marker_bitmap.dart",
+    "findings": []
+  },
+  "originalSources": [
+    {
+      "path": "D:\\Program\\Civu\\Civu-client",
+      "head": "1bbf0613b513001447f326225c944c1a1fbd8e8f",
+      "clean": true,
+      "writeActions": 0
+    },
+    {
+      "path": "D:\\Program\\Civu\\Civu-server",
+      "head": "0489536a0eb0792deff7793c8b143ad3e741d5ce",
+      "clean": false,
+      "writeActions": 0
+    }
+  ],
+  "currentPhoneFailure": {
+    "apk": 30,
+    "step": "public city cold start",
+    "status": "FAIL",
+    "publicCatalogBytes": 405909,
+    "cityCount": 1067,
+    "responseHeadersReceived": true,
+    "downloadMs": 59117.224,
+    "clientTimeoutMs": 10000,
+    "localExactPublicDTOParse": "PASS_1067",
+    "cause": "uncompressed catalog over current slow device network",
+    "resolution": "gateway compression pending"
+  }
+}

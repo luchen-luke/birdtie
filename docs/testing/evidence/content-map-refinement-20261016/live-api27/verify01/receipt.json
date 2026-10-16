@@ -1,0 +1,220 @@
+{
+  "status": "FAIL",
+  "at": "2026-10-15T23:46:22.045510+00:00",
+  "remoteScriptSHA256": "9baaa97adf5f86c4da96ebe4c1cdd511de69cd388d961eb16faec0af15cb1d32",
+  "privateValuesLogged": false,
+  "exitCode": 1,
+  "stderrPresent": false,
+  "result": {
+    "status": "FAIL",
+    "devOnly": true,
+    "productionIdentityVerified": false,
+    "productionPhoneVerification": false,
+    "fixedCodeUsed": true,
+    "sourceWrites": 0,
+    "databaseDirectWrites": 0,
+    "remoteConfigurationChanged": false,
+    "agentActivationRequested": false,
+    "oldSessionAccepted": false,
+    "messagesSent": 0,
+    "privateValuesPersisted": false,
+    "allCreatedSessionsLoggedOut": true,
+    "schema": 171,
+    "apiBuild": 27,
+    "contentWrites": 0,
+    "measurements": [
+      {
+        "scenario": "wide",
+        "runs": [
+          {
+            "elapsedMs": 677.04,
+            "responseJSONBytes": 10383,
+            "httpResponseBytes": 10462,
+            "markers": 7,
+            "withContent": 7,
+            "totalContentCount": 9,
+            "totalAnchorCount": 7,
+            "covers": 7,
+            "advertisedCoverBytes": 44488,
+            "kindCounts": {
+              "PLACE_CONTENT": 6,
+              "MOMENT_ANCHOR": 1,
+              "CLUSTER": 0
+            },
+            "totalPointCount": 7
+          },
+          {
+            "elapsedMs": 230.179,
+            "responseJSONBytes": 10383,
+            "httpResponseBytes": 10462,
+            "markers": 7,
+            "withContent": 7,
+            "totalContentCount": 9,
+            "totalAnchorCount": 7,
+            "covers": 7,
+            "advertisedCoverBytes": 44488,
+            "kindCounts": {
+              "PLACE_CONTENT": 6,
+              "MOMENT_ANCHOR": 1,
+              "CLUSTER": 0
+            },
+            "totalPointCount": 7
+          },
+          {
+            "elapsedMs": 230.852,
+            "responseJSONBytes": 10383,
+            "httpResponseBytes": 10462,
+            "markers": 7,
+            "withContent": 7,
+            "totalContentCount": 9,
+            "totalAnchorCount": 7,
+            "covers": 7,
+            "advertisedCoverBytes": 44488,
+            "kindCounts": {
+              "PLACE_CONTENT": 6,
+              "MOMENT_ANCHOR": 1,
+              "CLUSTER": 0
+            },
+            "totalPointCount": 7
+          }
+        ]
+      },
+      {
+        "scenario": "phone",
+        "runs": [
+          {
+            "elapsedMs": 218.805,
+            "responseJSONBytes": 10407,
+            "httpResponseBytes": 10486,
+            "markers": 7,
+            "withContent": 7,
+            "totalContentCount": 9,
+            "totalAnchorCount": 7,
+            "covers": 7,
+            "advertisedCoverBytes": 44488,
+            "kindCounts": {
+              "PLACE_CONTENT": 6,
+              "MOMENT_ANCHOR": 1,
+              "CLUSTER": 0
+            },
+            "totalPointCount": 7
+          },
+          {
+            "elapsedMs": 219.787,
+            "responseJSONBytes": 10407,
+            "httpResponseBytes": 10486,
+            "markers": 7,
+            "withContent": 7,
+            "totalContentCount": 9,
+            "totalAnchorCount": 7,
+            "covers": 7,
+            "advertisedCoverBytes": 44488,
+            "kindCounts": {
+              "PLACE_CONTENT": 6,
+              "MOMENT_ANCHOR": 1,
+              "CLUSTER": 0
+            },
+            "totalPointCount": 7
+          },
+          {
+            "elapsedMs": 219.058,
+            "responseJSONBytes": 10407,
+            "httpResponseBytes": 10486,
+            "markers": 7,
+            "withContent": 7,
+            "totalContentCount": 9,
+            "totalAnchorCount": 7,
+            "covers": 7,
+            "advertisedCoverBytes": 44488,
+            "kindCounts": {
+              "PLACE_CONTENT": 6,
+              "MOMENT_ANCHOR": 1,
+              "CLUSTER": 0
+            },
+            "totalPointCount": 7
+          }
+        ]
+      },
+      {
+        "scenario": "adjacent",
+        "runs": [
+          {
+            "elapsedMs": 220.843,
+            "responseJSONBytes": 10407,
+            "httpResponseBytes": 10486,
+            "markers": 7,
+            "withContent": 7,
+            "totalContentCount": 9,
+            "totalAnchorCount": 7,
+            "covers": 7,
+            "advertisedCoverBytes": 44488,
+            "kindCounts": {
+              "PLACE_CONTENT": 6,
+              "MOMENT_ANCHOR": 1,
+              "CLUSTER": 0
+            },
+            "totalPointCount": 7
+          },
+          {
+            "elapsedMs": 219.172,
+            "responseJSONBytes": 10407,
+            "httpResponseBytes": 10486,
+            "markers": 7,
+            "withContent": 7,
+            "totalContentCount": 9,
+            "totalAnchorCount": 7,
+            "covers": 7,
+            "advertisedCoverBytes": 44488,
+            "kindCounts": {
+              "PLACE_CONTENT": 6,
+              "MOMENT_ANCHOR": 1,
+              "CLUSTER": 0
+            },
+            "totalPointCount": 7
+          },
+          {
+            "elapsedMs": 219.446,
+            "responseJSONBytes": 10407,
+            "httpResponseBytes": 10486,
+            "markers": 7,
+            "withContent": 7,
+            "totalContentCount": 9,
+            "totalAnchorCount": 7,
+            "covers": 7,
+            "advertisedCoverBytes": 44488,
+            "kindCounts": {
+              "PLACE_CONTENT": 6,
+              "MOMENT_ANCHOR": 1,
+              "CLUSTER": 0
+            },
+            "totalPointCount": 7
+          }
+        ]
+      }
+    ],
+    "sparseZoomChecks": [
+      {
+        "scenario": "wide",
+        "zoomChecks": 3,
+        "pointCount": 7,
+        "distinctLeafMarkers": 7
+      },
+      {
+        "scenario": "phone",
+        "zoomChecks": 3,
+        "pointCount": 7,
+        "distinctLeafMarkers": 7
+      },
+      {
+        "scenario": "adjacent",
+        "zoomChecks": 3,
+        "pointCount": 7,
+        "distinctLeafMarkers": 7
+      }
+    ],
+    "stage": "WORLD_VIEWPORT_PAGING",
+    "errorType": "RuntimeError",
+    "errorCode": "ALL_MIGRATED_ANCHORS_REACHABLE",
+    "loggedOutReadsDenied": false
+  }
+}

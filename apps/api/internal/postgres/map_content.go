@@ -215,6 +215,11 @@ func readMapContentSnapshot(ctx context.Context, f humanWriteFrame, filters ...*
 	if e != nil || v.filter == nil && len(v.order) > 10000 {
 		return v, content.ErrUnavailable
 	}
+	authorFacts, e := readMapContentAuthors(ctx, f, &v)
+	if e != nil {
+		return v, e
+	}
+	facts = append(facts, authorFacts)
 	if len(v.order) > 0 {
 		rows, e = f.tx.Query(ctx, mapContentCurrentMomentPlacesSQL(), v.order)
 		if e != nil {
@@ -433,7 +438,11 @@ func (s *Store) mapContentMomentTx(ctx context.Context, f humanWriteFrame, v *ma
 	}
 	r.Media = []content.MapContentMedia{}
 	for _, x := range assets {
-		r.Media = append(r.Media, x.media)
+		media, err := s.mapDisplayMediaTx(ctx, f, x)
+		if err != nil {
+			return r, err
+		}
+		r.Media = append(r.Media, media)
 		shrinkMapLease(&r.ValidUntil, x.until)
 	}
 	for _, pid := range m.places {
@@ -444,7 +453,7 @@ func (s *Store) mapContentMomentTx(ctx context.Context, f humanWriteFrame, v *ma
 			}
 		}
 	}
-	r.SourceVersion = content.MomentControlHash([]any{v.source, m.stamp, r.Media, r.Locations})
+	r.SourceVersion = content.MomentControlHash([]any{v.source, m.stamp, r.Author, r.CreatedAtSource, r.PublishedAt, r.Media, r.Locations})
 	if !r.Valid(time.Now().UTC()) {
 		return r, content.ErrUnavailable
 	}

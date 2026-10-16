@@ -1,0 +1,42 @@
+{
+  "status": "PASS",
+  "scope": "Parser-only compatibility for verified CIVU original author avatars in OwnedMapMomentDetail; UI unchanged.",
+  "productionRanges": [
+    "apps/client/lib/src/workspace/owned_map_api.dart::OwnedMapMomentAuthor.decode",
+    "apps/client/lib/src/workspace/owned_map_api.dart::_momentAuthorAvatar",
+    "apps/client/lib/src/workspace/owned_map_api.dart::OwnedMapMomentDetail.decode author call"
+  ],
+  "contract": {
+    "nativeAvatar": "Uses unchanged PersonAvatarMetadata.fromJson",
+    "legacyAvatar": "Exact same-origin relative current-moment/author-avatar/source-media-UUID/content path with one sourceVersion=64lowerhex parameter; nonzero canonical UUIDs; exact metadata keys, matching author, positive version,128x128, bounded positive bytes and64lowerhex digest",
+    "profileParser": "Unchanged; rejects the legacy moment-scoped avatar path"
+  },
+  "test": {
+    "file": "apps/client/test/content_map_reader_test.dart",
+    "command": "flutter test --reporter expanded test/content_map_reader_test.dart --plain-name 'moment author avatar accepts only its exact controlled source'",
+    "log": "legacy-author-avatar-parser-test-03.log",
+    "passed": 1,
+    "exitCode": 0,
+    "negativeCases": [
+      "different moment",
+      "absolute or protocol-relative host",
+      "extra or duplicate query",
+      "fragment or trailing newline",
+      "zero, malformed or percent-encoded source-media UUID",
+      "uppercase or short sourceVersion",
+      "different author account",
+      "zero version",
+      "wrong dimensions",
+      "zero or oversized bytes",
+      "short or newline-suffixed digest",
+      "unknown handle field"
+    ]
+  },
+  "priorFailure": "Initial two bounded runs failed the zero source-media UUID case; the broad existing humanControlID helper permits the zero UUID. The new avatar-only branch now explicitly requires nonzero personAvatarID and exact length. Failure logs preserved.",
+  "notRun": [
+    "Real API172 legacy-avatar delivery in this parser-only batch",
+    "APK/Web rendering of migrated author avatars",
+    "Screen recording"
+  ],
+  "freeze": "No further UI or parser changes planned; root may continue independent regions of the shared API file."
+}

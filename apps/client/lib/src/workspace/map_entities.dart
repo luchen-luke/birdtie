@@ -44,17 +44,28 @@ class MapBounds {
   final double north;
 
   bool get isValid =>
-      west.isFinite && east.isFinite && south.isFinite && north.isFinite &&
-      west >= -180 && west <= 180 && east >= -180 &&
+      west.isFinite &&
+      east.isFinite &&
+      south.isFinite &&
+      north.isFinite &&
+      west >= -180 &&
+      west <= 180 &&
+      east >= -180 &&
       east <= 180 &&
       south >= -90 &&
       north <= 90 &&
       west != east &&
       south < north;
 
-  bool contains(double latitude, double longitude) => isValid &&
-      latitude.isFinite && longitude.isFinite && latitude >= south && latitude <= north &&
-      (west < east ? longitude >= west && longitude <= east : longitude >= west || longitude <= east);
+  bool contains(double latitude, double longitude) =>
+      isValid &&
+      latitude.isFinite &&
+      longitude.isFinite &&
+      latitude >= south &&
+      latitude <= north &&
+      (west < east
+          ? longitude >= west && longitude <= east
+          : longitude >= west || longitude <= east);
   double get longitudeSpan => west < east ? east - west : 360 - west + east;
 
   Map<String, double> toJson() => {
@@ -160,8 +171,11 @@ class MapEntity {
     this.momentID = '',
     this.momentRevision = 0,
     this.categoryCode = '',
-    this.anchorID = '', this.entryID = '', this.threadID = '',
-    this.contentCount = 0, this.anchorCount = 0,
+    this.anchorID = '',
+    this.entryID = '',
+    this.threadID = '',
+    this.contentCount = 0,
+    this.anchorCount = 0,
   });
   final String id;
   final MapEntityKind kind;
@@ -248,8 +262,11 @@ class MapEntity {
     momentID: momentID,
     momentRevision: momentRevision,
     categoryCode: categoryCode,
-    anchorID: anchorID, entryID: entryID, threadID: threadID,
-    contentCount: contentCount, anchorCount: anchorCount,
+    anchorID: anchorID,
+    entryID: entryID,
+    threadID: threadID,
+    contentCount: contentCount,
+    anchorCount: anchorCount,
   );
   bool get isCluster => kind == MapEntityKind.cluster || memberIDs.length > 1;
   bool get hasMapAnchor =>
@@ -287,8 +304,11 @@ class MapEntity {
     momentID: momentID,
     momentRevision: momentRevision,
     categoryCode: categoryCode,
-    anchorID: anchorID, entryID: entryID, threadID: threadID,
-    contentCount: contentCount, anchorCount: anchorCount,
+    anchorID: anchorID,
+    entryID: entryID,
+    threadID: threadID,
+    contentCount: contentCount,
+    anchorCount: anchorCount,
   );
 }
 
@@ -345,7 +365,11 @@ class MapEntityLayer extends StatelessWidget {
             MapEntityKind.moment,
           }.contains(entity.kind),
           width:
-              {MapEntityKind.place, MapEntityKind.moment}.contains(entity.kind)
+              {
+                MapEntityKind.place,
+                MapEntityKind.moment,
+                MapEntityKind.cluster,
+              }.contains(entity.kind)
               ? 48
               : labelIDs != null && !labelIDs!.contains(entity.id)
               ? 48
@@ -353,12 +377,23 @@ class MapEntityLayer extends StatelessWidget {
               ? 142
               : 112,
           height:
-              {MapEntityKind.place, MapEntityKind.moment}.contains(entity.kind)
+              {
+                MapEntityKind.place,
+                MapEntityKind.moment,
+                MapEntityKind.cluster,
+              }.contains(entity.kind)
               ? 48
               : 58,
           child: entity.kind == MapEntityKind.cluster
-              ? ContentClusterMapMarker(entity: entity, selected: selectedId == entity.id, onTap: () => onSelected(entity))
-              : {MapEntityKind.place, MapEntityKind.moment}.contains(entity.kind)
+              ? ContentClusterMapMarker(
+                  entity: entity,
+                  selected: selectedId == entity.id,
+                  onTap: () => onSelected(entity),
+                )
+              : {
+                  MapEntityKind.place,
+                  MapEntityKind.moment,
+                }.contains(entity.kind)
               ? IndividualMapMarker(
                   entity: entity,
                   selected: selectedId == entity.id,
@@ -631,21 +666,86 @@ class GroupMarker extends StatelessWidget {
 }
 
 class ContentClusterMapMarker extends StatelessWidget {
-  const ContentClusterMapMarker({super.key, required this.entity, required this.selected, required this.onTap});
+  const ContentClusterMapMarker({
+    super.key,
+    required this.entity,
+    required this.selected,
+    required this.onTap,
+  });
   final MapEntity entity;
   final bool selected;
   final VoidCallback onTap;
   @override
   Widget build(BuildContext context) {
-    final count = entity.contentCount > 0 ? entity.contentCount : entity.memberIDs.length;
-    final label = entity.contentCount > 0 ? '$count条动态' : '$count项内容';
-    return Semantics(button: true, label: label, child: Tooltip(message: label,
-      child: InkResponse(onTap: onTap, radius: 24, child: Center(child: Container(
-        width: 36, height: 36, alignment: Alignment.center,
-        decoration: BoxDecoration(color: selected ? const Color(0xFF193B32) : const Color(0xFF87683C),
-          border: Border.all(color: Colors.white, width: 2), borderRadius: BorderRadius.circular(5),
-          boxShadow: const [BoxShadow(color: Color(0x55000000), blurRadius: 2, offset: Offset(2, 2))]),
-        child: Text('$count', style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
-      )))));
+    final count = entity.contentCount > 0
+        ? entity.contentCount
+        : entity.memberIDs.length;
+    final label = entity.contentCount > 0 ? '同一位置的$count条动态' : '$count项内容';
+    final pixels = entity.mediaPixels;
+    final size = selected ? 36.0 : 28.0;
+    return Semantics(
+      identifier: 'birdtie-map-point:${entity.id}',
+      button: true,
+      label: label,
+      child: SizedBox(
+        width: 48,
+        height: 48,
+        child: IconButton(
+          tooltip: label,
+          padding: EdgeInsets.zero,
+          onPressed: onTap,
+          icon: SizedBox(
+            width: size,
+            height: size,
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Positioned.fill(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF315E50),
+                      border: Border.all(color: Colors.white, width: 1.5),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: pixels?.current() == true
+                        ? RawImage(image: pixels!.image, fit: BoxFit.cover)
+                        : const Icon(
+                            Icons.notes_outlined,
+                            size: 15,
+                            color: Colors.white,
+                          ),
+                  ),
+                ),
+                Positioned(
+                  right: -6,
+                  bottom: -5,
+                  child: Container(
+                    constraints: const BoxConstraints(
+                      minWidth: 16,
+                      minHeight: 14,
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 3),
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(5),
+                    ),
+                    child: Text(
+                      count > 99 ? '99+' : '$count',
+                      style: const TextStyle(
+                        color: Color(0xFF315E50),
+                        fontSize: 9,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }

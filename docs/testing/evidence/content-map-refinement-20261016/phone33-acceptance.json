@@ -1,0 +1,114 @@
+{
+  "status": "PASS_TARGETED_MAP_READER_VIDEO_WITH_LIMITS",
+  "api": 29,
+  "schema": 172,
+  "apk": 33,
+  "apkSHA256": "ad30ee1401d9b154e77e2f91f5e908427e31f15cf8462c77a70588807e9b4646",
+  "installHashReadback": "PASS; device-start33/receipt.json",
+  "actualActions": [
+    "select real location and corresponding moment",
+    "expand same Now panel",
+    "read original author/avatar/time",
+    "advance to image 2 of 4",
+    "open full image then return retaining image 2 of 4",
+    "return to map",
+    "select real video via overlapping marker chooser",
+    "explicitly tap play",
+    "play to end",
+    "close reader and zoom original map"
+  ],
+  "video": {
+    "playingSampleObservedInToolOutput": {
+      "positionSeconds": 26.007,
+      "durationSeconds": 52.081,
+      "isPlaying": true,
+      "isBuffering": false,
+      "error": null,
+      "persistentRawReceipt": false
+    },
+    "savedProgressionFile": "phone33-video-progression.json",
+    "savedSamplesAreBothAtEnd": true,
+    "endSeconds": 52.081,
+    "playerInstancesAfterClosing": 0,
+    "nearEndDirection": "Web 51.8s same rotated scene as Android 52.081s; no Android-only rotation found; source encoding history not audited"
+  },
+  "mapInstanceCreationCountStartAndEnd": [
+    1,
+    1
+  ],
+  "coverRequestCountStartAndEnd": [
+    7,
+    7
+  ],
+  "coverDecodeCountStartAndEnd": [
+    7,
+    7
+  ],
+  "coverCacheHitCountStartAndEnd": [
+    217,
+    595
+  ],
+  "wholeSessionContentRequestsStartAndEnd": [
+    32,
+    86
+  ],
+  "requestCountCaveat": "Long-session values include background permission renewal; not a gesture-only window or a zero-HTTP claim",
+  "screenshots": {
+    "BirdTie-APK33-map.png": {
+      "sha256": "e1db18ad7ac379651122ccb83ca49e57c536b52dccda9ef701ea1557ab52705b",
+      "meaning": "Default map; real covers at independent coordinates",
+      "storage": "local outputs only, not committed media"
+    },
+    "BirdTie-APK33-map-zoomed.png": {
+      "sha256": "311a7f693b9d22633e6cee2e468aac1f7be1c4045fdef7a5a50dd78c44fd2ddf",
+      "meaning": "Zoomed map; no cross-coordinate numeric blocks",
+      "storage": "local outputs only, not committed media"
+    },
+    "BirdTie-APK33-reader-preview.png": {
+      "sha256": "698412107e2a710db4d56dd8e936209a55ecef196435488e0099497e76944ec1",
+      "meaning": "Initial moment reader preview",
+      "storage": "local outputs only, not committed media"
+    },
+    "BirdTie-APK33-reader-full-panel.png": {
+      "sha256": "d0b6b0281e2f7f427d58760e7dc53242678a24edc0f3410caf32f94fb79472ee",
+      "meaning": "Expanded reader with real attribution and media",
+      "storage": "local outputs only, not committed media"
+    },
+    "BirdTie-APK33-reader-second-image.png": {
+      "sha256": "4d15c867c940f6460dacb90150107df0b343d166e32cc60d6409a30df73b84bd",
+      "meaning": "Second image, author and original publication time",
+      "storage": "local outputs only, not committed media"
+    },
+    "BirdTie-APK33-gallery.png": {
+      "sha256": "ae1c269c03ead91f1158daf317aa1d8d2dae6b388ba17095a07a564980e455a0",
+      "meaning": "Full image viewer on page 2 of 4",
+      "storage": "local outputs only, not committed media"
+    },
+    "BirdTie-APK33-video-poster.png": {
+      "sha256": "e3de3a7d6c226b406124d7fd1941b4da355b4b4ff26ac1752a9e4ebd38df41af",
+      "meaning": "Video poster before explicit play",
+      "storage": "local outputs only, not committed media"
+    },
+    "BirdTie-APK33-video-ended.png": {
+      "sha256": "a7551503faa82f1e463894e3d14bcd5bc11a217725e58e432ae9dd5e52f3f63a",
+      "meaning": "Actual video end frame at 52.081 seconds; not mid-play evidence",
+      "storage": "local outputs only, not committed media"
+    },
+    "cm-web33-video-frame-51-8.png": {
+      "sha256": "51161e80dd543efc697e1193b6b023c63b382019585e3950679ca2d0018a26f3",
+      "meaning": "Same near-end scene on Web; source scene also rotated",
+      "storage": "local outputs only, not committed media"
+    }
+  },
+  "excludedMisnamedImage": "BirdTie-APK33-reader-expanded.png shows map only and is not expanded-reader evidence",
+  "screenRecording": false,
+  "notRun": [
+    "audio audibility",
+    "native seeking",
+    "strict equal-camera equal-load before/after",
+    "200-image cold detail latency",
+    "all final-build publishing and thread-edit flows",
+    "iOS"
+  ],
+  "cleanup": "phone33-cleanup.json"
+}

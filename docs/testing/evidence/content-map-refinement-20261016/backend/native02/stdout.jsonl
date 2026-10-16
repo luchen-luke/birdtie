@@ -1,0 +1,9 @@
+{"Time":"2026-10-16T07:37:36.5774278+08:00","Action":"start","Package":"github.com/birdtie/birdtie/apps/api/internal/postgres"}
+{"Time":"2026-10-16T07:37:38.6827483+08:00","Action":"run","Package":"github.com/birdtie/birdtie/apps/api/internal/postgres","Test":"TestMapContentRefinementNativeViewportPagingAndAuthor"}
+{"Time":"2026-10-16T07:37:38.6827483+08:00","Action":"output","Package":"github.com/birdtie/birdtie/apps/api/internal/postgres","Test":"TestMapContentRefinementNativeViewportPagingAndAuthor","Output":"=== RUN   TestMapContentRefinementNativeViewportPagingAndAuthor\n"}
+{"Time":"2026-10-16T07:37:41.0882628+08:00","Action":"output","Package":"github.com/birdtie/birdtie/apps/api/internal/postgres","Test":"TestMapContentRefinementNativeViewportPagingAndAuthor","Output":"    map_content_refinement_test.go:14: migration roundtrip uses independently owned database birdtie_owned_migration_9adf41d6970270a453242a5c with 171 actual migrations\n"}
+{"Time":"2026-10-16T07:37:41.5755014+08:00","Action":"output","Package":"github.com/birdtie/birdtie/apps/api/internal/postgres","Test":"TestMapContentRefinementNativeViewportPagingAndAuthor","Output":"--- PASS: TestMapContentRefinementNativeViewportPagingAndAuthor (2.89s)\n"}
+{"Time":"2026-10-16T07:37:41.5755014+08:00","Action":"pass","Package":"github.com/birdtie/birdtie/apps/api/internal/postgres","Test":"TestMapContentRefinementNativeViewportPagingAndAuthor","Elapsed":2.89}
+{"Time":"2026-10-16T07:37:41.5755014+08:00","Action":"output","Package":"github.com/birdtie/birdtie/apps/api/internal/postgres","Output":"PASS\n"}
+{"Time":"2026-10-16T07:37:41.5786161+08:00","Action":"output","Package":"github.com/birdtie/birdtie/apps/api/internal/postgres","Output":"ok  \tgithub.com/birdtie/birdtie/apps/api/internal/postgres\t5.001s\n"}
+{"Time":"2026-10-16T07:37:41.5786161+08:00","Action":"pass","Package":"github.com/birdtie/birdtie/apps/api/internal/postgres","Elapsed":5.001}

@@ -1,0 +1,20 @@
+[
+  {
+    "project": "Civu-client",
+    "branch": "master",
+    "localHead": "1bbf0613b513001447f326225c944c1a1fbd8e8f",
+    "githubBranchHead": "1bbf0613b513001447f326225c944c1a1fbd8e8f",
+    "headMatchesGitHub": true,
+    "workingTreeClean": true,
+    "sourceReadingIsRuntimeAcceptance": false
+  },
+  {
+    "project": "Civu-server",
+    "branch": "master",
+    "localHead": "0489536a0eb0792deff7793c8b143ad3e741d5ce",
+    "githubBranchHead": "0489536a0eb0792deff7793c8b143ad3e741d5ce",
+    "headMatchesGitHub": true,
+    "workingTreeClean": false,
+    "sourceReadingIsRuntimeAcceptance": false
+  }
+]

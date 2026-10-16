@@ -337,8 +337,11 @@ func (s *Store) ReadHumanMapContentBinary(ctx context.Context, d [32]byte, a ide
 }
 
 func (s *Store) readHumanMapContentBinary(ctx context.Context, d [32]byte, a identity.Actor, targetType, target, id, source, variant string, loadBytes bool) (content.MapContentBinary, error) {
+	if targetType == "moment-authors" && variant == "" {
+		return s.readHumanMapContentAuthorBinary(ctx, d, a, target, id, source, loadBytes)
+	}
 	r := content.MapContentBinary{}
-	if (targetType != "places" && targetType != "moments") || !identity.HumanControlUUID(target) || !identity.HumanControlUUID(id) || !content.MomentControlHex(source) || (variant != "" && variant != "poster" && variant != "marker") || targetType == "places" && variant != "" && variant != "marker" {
+	if (targetType != "places" && targetType != "moments") || !identity.HumanControlUUID(target) || !identity.HumanControlUUID(id) || !content.MomentControlHex(source) || (variant != "" && variant != "poster" && variant != "marker" && variant != "display") || targetType == "places" && variant != "" && variant != "marker" {
 		return r, content.ErrInvalid
 	}
 	ctx, f, e := s.beginMapContent(ctx, d, a)
@@ -357,6 +360,7 @@ func (s *Store) readHumanMapContentBinary(ctx context.Context, d [32]byte, a ide
 	r.ValidUntil = v.until
 	var chosen *mapContentAsset
 	marker := variant == "marker"
+	display := variant == "display"
 	poster := variant == "poster" || marker
 	if targetType == "moments" {
 		m := v.moments[target]
@@ -369,6 +373,12 @@ func (s *Store) readHumanMapContentBinary(ctx context.Context, d [32]byte, a ide
 		}
 		for _, x := range assets {
 			want := x.media.SourceVersion
+			if display {
+				if x.kind != "private-image" {
+					continue
+				}
+				want = mapDisplayVersion(want)
+			}
 			if poster {
 				want = x.image.SourceVersion
 			}
@@ -442,8 +452,14 @@ func (s *Store) readHumanMapContentBinary(ctx context.Context, d [32]byte, a ide
 	if targetType == "places" || poster || x.kind == "reference" {
 		r.MIMEType, r.SHA256 = x.image.MIMEType, x.image.SHA256
 	}
-	if marker {
-		thumb, err := s.mapMarkerBytesTx(ctx, f, x, source)
+	if marker || display {
+		var thumb mapMarkerThumbnail
+		var err error
+		if display {
+			thumb, err = s.mapDisplayBytesTx(ctx, f, x)
+		} else {
+			thumb, err = s.mapMarkerBytesTx(ctx, f, x, source)
+		}
 		if err != nil {
 			return r, err
 		}

@@ -1,0 +1,52 @@
+{
+  "status": "SOURCE_FROZEN_BUILT",
+  "schema": 172,
+  "newMigrations": 0,
+  "originalMigrationsIdentical": 172,
+  "apiBuild": 29,
+  "apiSHA256": "73a97552316ae642f4b97aea37c04266c3fd0959eeb0d346dd03bc6e54702818",
+  "sourcePaths": {
+    "apps/api/internal/postgres/map_content.go": "e89eb2c26407432891701caa38caf8a517ffa7e974d84b2193defcd164f90784",
+    "apps/api/internal/postgres/map_content_media.go": "4dab8fb5cc19cc567d64a640335365d440cd433fb9ab1314eb697a59f1119997",
+    "apps/api/internal/httpapi/map_content.go": "b5db5b8ba99dfa6ddb0c5d7327dc7234017af19ad85695a6b2c33f0e1438e241",
+    "apps/api/internal/postgres/map_content_display.go": "bfb8a64169536433ac349504519c681b77afcde847c6624da7a559f1fd4df856",
+    "apps/api/internal/postgres/map_content_display_test.go": "62d1e4b765d8500a2941965895d456ba66f72e611bbff9d06fb0d0c408b9e867",
+    "apps/api/internal/postgres/map_content_display_native_test.go": "2e4998aec9f6f08c0256adf6fd5f03ab1c885bbf6c2a7274dd8131b65352bcd5"
+  },
+  "contract": {
+    "kind": "IMAGE",
+    "mimeType": "image/jpeg",
+    "variant": "display",
+    "maxLongEdge": 1280,
+    "maxBytes": 262144,
+    "wholeFrame": true,
+    "crop": false,
+    "upscale": false,
+    "videoChanged": false,
+    "sourceOriginalChanged": false,
+    "viewportGeneratesDisplay": false,
+    "cacheItems": 32,
+    "cacheBytes": 8388608,
+    "decodeConcurrencySharedWithMarker": 2,
+    "metadataOnlyCacheItems": 4096,
+    "eachReadCurrentACLAndResponseProof": true
+  },
+  "directTests": [
+    "TestMapContentDisplayBoundedWholeFrame",
+    "TestMapContentDisplayCacheBoundsAndVariantIsolation"
+  ],
+  "nativeTests": [
+    "TestMapContentDisplayNativeCurrentAuthority"
+  ],
+  "native01": "FAIL_fixture_sessions_idle_expiry_clock_calls",
+  "native02": "PASS",
+  "native03": "PASS",
+  "pixelEvictionDoesNotRegenerateDescriptor": true,
+  "notRun": [
+    "production display acceptance pending deployment",
+    "phone33 display comparison by root",
+    "max200-image cold detail latency",
+    "rollback fault injection"
+  ],
+  "scope": "existing old private-image derivative reading; no Civu source write, no DB image mutation, no imports"
+}

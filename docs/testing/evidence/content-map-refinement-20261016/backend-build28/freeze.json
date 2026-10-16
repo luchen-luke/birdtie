@@ -1,0 +1,35 @@
+{
+  "status": "FROZEN",
+  "apiBuild": 28,
+  "schema": 172,
+  "apiSHA256": "9c4919d1f98916319c054e9b94a2fd6b4c93f161ff64a160ee1f1d609c9ffc43",
+  "allAPIgoSQLMatchesBuild": true,
+  "apiSourceFiles": 2034,
+  "originalSourceBackupMatcherSealUnchanged": true,
+  "localPrivateMaterial": {
+    "directory": "C:\\Users\\chens\\Documents\\Codex\\2026-10-14\\birdtie-hangzhou\\civu-private-author-avatars-20261016-01",
+    "files": 9,
+    "blobs": 6,
+    "bytes": 14140782,
+    "currentUserOnlyDACL": true,
+    "retained": true,
+    "inGitRepository": false
+  },
+  "remotePrivateMaterial": {
+    "directory": "/srv/birdtie-data/migration/private-author-avatars-20261016-01",
+    "files": 9,
+    "blobs": 6,
+    "directoryMode": "0700",
+    "fileMode": "0600",
+    "ownedByRoot": true,
+    "retained": true,
+    "publicURL": false
+  },
+  "databaseMaterial": "Only 6 bounded 128px JPEG thumbnails; 32295 bytes. Full originals remain in protected staging. No person profile/avatar rows changed.",
+  "rawSourceCivuWrites": 0,
+  "newPrivateFilesInGit": false,
+  "cleanupBoundary": "Retain accepted extraction and transfer proofs/originals in these exact protected directories. Do not delete original Civu, backup, source, manifest, matcher, seal, original media archive or key. No recursive cleanup performed.",
+  "deferredConstraint": "Future additive migration may fix exact counts keys; API28/172 frozen by root, no173 or altered172.",
+  "auditedCivuSourceFilesRehashedUnchanged": 5,
+  "wholeEncryptedMediaArchiveHash": "Verified during authenticated extraction; not redundantly rehashed after transfer"
+}

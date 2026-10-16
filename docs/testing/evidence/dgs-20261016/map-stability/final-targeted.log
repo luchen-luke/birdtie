@@ -1,0 +1,52 @@
+Flutter assets will be downloaded from https://storage.flutter-io.cn. Make sure you trust this source!
+00:00 +0: loading D:/Project/birdtie/apps/client/test/dgs_map_stability_test.dart
+00:00 +0: D:/Project/birdtie/apps/client/test/dgs_map_stability_test.dart: unproven or global 401/unauthorized retires the whole grant
+00:00 +1: D:/Project/birdtie/apps/client/test/dgs_map_stability_test.dart: unproven or global 401/unauthorized retires the whole grant
+00:00 +2: D:/Project/birdtie/apps/client/test/dgs_map_stability_test.dart: unproven or global 401/unauthorized retires the whole grant
+00:00 +3: D:/Project/birdtie/apps/client/test/dgs_map_stability_test.dart: unproven or global 401/unauthorized retires the whole grant
+00:00 +4: D:/Project/birdtie/apps/client/test/dgs_map_stability_test.dart: unproven or global 403/person_account_required retires the whole grant
+00:00 +5: D:/Project/birdtie/apps/client/test/dgs_map_stability_test.dart: unproven or global 403/forbidden retires the whole grant
+00:00 +6: D:/Project/birdtie/apps/client/test/dgs_map_stability_test.dart: unproven or global 409/human_control_changed retires the whole grant
+00:00 +7: D:/Project/birdtie/apps/client/test/dgs_map_stability_test.dart: unproven or global 410/not_found retires the whole grant
+00:00 +8: D:/Project/birdtie/apps/client/test/dgs_map_stability_test.dart: unproven or global 404/unrecognized retires the whole grant
+00:00 +9: D:/Project/birdtie/apps/client/test/dgs_map_stability_test.dart: resource recovery rechecks ACL once and never revives the old pin grant
+00:00 +10: D:/Project/birdtie/apps/client/test/dgs_map_stability_test.dart: owned transient failure retains the lease, retries once and retires on expiry
+00:00 +11: D:/Project/birdtie/apps/client/test/content_map_controller_test.dart: v2 coordinate anchors and bounded cluster pages retain target grants and reject POI-only pins
+00:00 +12: D:/Project/birdtie/apps/client/test/content_map_controller_test.dart: v2 coordinate anchors and bounded cluster pages retain target grants and reject POI-only pins
+00:00 +13: D:/Project/birdtie/apps/client/test/content_map_controller_test.dart: v2 coordinate anchors and bounded cluster pages retain target grants and reject POI-only pins
+00:00 +14: D:/Project/birdtie/apps/client/test/content_map_controller_test.dart: v2 coordinate anchors and bounded cluster pages retain target grants and reject POI-only pins
+00:00 +15: D:/Project/birdtie/apps/client/test/content_map_controller_test.dart: v2 coordinate anchors and bounded cluster pages retain target grants and reject POI-only pins
+00:00 +16: D:/Project/birdtie/apps/client/test/content_map_controller_test.dart: v2 coordinate anchors and bounded cluster pages retain target grants and reject POI-only pins
+00:00 +17: D:/Project/birdtie/apps/client/test/content_map_coverage_test.dart: pan and zoom reuse loaded area; only new strips fetched; return keeps source and no map clear
+00:00 +18: D:/Project/birdtie/apps/client/test/content_map_controller_test.dart: settled query reuse, cancellation, LRU bytes and permission withdrawal
+00:00 +19: D:/Project/birdtie/apps/client/test/map_layers_auto_refresh_test.dart: verified local media refresh defers behind covered route, retains old pins and coalesces one pending followup
+00:00 +20: D:/Project/birdtie/apps/client/test/map_layers_auto_refresh_test.dart: verified local media refresh defers behind covered route, retains old pins and coalesces one pending followup
+00:00 +21: D:/Project/birdtie/apps/client/test/map_layers_auto_refresh_test.dart: verified local media refresh defers behind covered route, retains old pins and coalesces one pending followup
+00:00 +22: D:/Project/birdtie/apps/client/test/content_map_controller_test.dart: 12 covers 4 transports selected first, real DPR decode and renewed grants reuse pixels
+00:00 +23: D:/Project/birdtie/apps/client/test/content_map_controller_test.dart: 12 covers 4 transports selected first, real DPR decode and renewed grants reuse pixels
+00:00 +24: D:/Project/birdtie/apps/client/test/content_map_controller_test.dart: 12 covers 4 transports selected first, real DPR decode and renewed grants reuse pixels
+00:00 +25: D:/Project/birdtie/apps/client/test/content_map_controller_test.dart: 12 covers 4 transports selected first, real DPR decode and renewed grants reuse pixels
+00:00 +26: D:/Project/birdtie/apps/client/test/content_map_controller_test.dart: 12 covers 4 transports selected first, real DPR decode and renewed grants reuse pixels
+00:00 +27: D:/Project/birdtie/apps/client/test/map_layers_partial_read_test.dart: public success and private HTTP 403 remain partial
+00:00 +28: D:/Project/birdtie/apps/client/test/map_layers_partial_read_test.dart: public success and private HTTP 503 remain partial
+00:00 +29: D:/Project/birdtie/apps/client/test/map_layers_partial_read_test.dart: public transient failure retains its valid lease and reports unavailable sources
+00:00 +30: D:/Project/birdtie/apps/client/test/map_layers_partial_read_test.dart: late private failure cannot overwrite a newer successful range
+00:00 +31: D:/Project/birdtie/apps/client/test/map_layers_partial_read_test.dart: late private failure after identity retirement cannot restore partial data
+00:00 +32: D:/Project/birdtie/apps/client/test/map_layers_api_test.dart: 无标题动态保留真实地点与原内容标识，其他对象仍验证名称
+00:00 +33: D:/Project/birdtie/apps/client/test/map_layers_api_test.dart: public header opts in without query changes, legacy response remains honest
+00:00 +34: D:/Project/birdtie/apps/client/test/map_layers_api_test.dart: six closed types real anchor original detail IDs and UTC offset
+00:00 +35: D:/Project/birdtie/apps/client/test/map_layers_api_test.dart: strict native wire isolates row or rejects envelope: body
+00:00 +36: D:/Project/birdtie/apps/client/test/map_layers_api_test.dart: strict native wire isolates row or rejects envelope: privatePublic
+00:00 +37: D:/Project/birdtie/apps/client/test/map_layers_api_test.dart: strict native wire isolates row or rejects envelope: duplicate
+00:00 +38: D:/Project/birdtie/apps/client/test/map_layers_api_test.dart: strict native wire isolates row or rejects envelope: unknown
+00:00 +39: D:/Project/birdtie/apps/client/test/map_layers_api_test.dart: strict native wire isolates row or rejects envelope: noPoint
+00:00 +40: D:/Project/birdtie/apps/client/test/map_layers_api_test.dart: strict native wire isolates row or rejects envelope: noPlace
+00:00 +41: D:/Project/birdtie/apps/client/test/map_layers_api_test.dart: strict native wire isolates row or rejects envelope: invalidDate
+00:00 +42: D:/Project/birdtie/apps/client/test/map_layers_api_test.dart: strict native wire isolates row or rejects envelope: invalidOffset
+00:00 +43: D:/Project/birdtie/apps/client/test/map_layers_api_test.dart: strict native wire isolates row or rejects envelope: expiry
+00:00 +44: D:/Project/birdtie/apps/client/test/map_layers_api_test.dart: strict native wire isolates row or rejects envelope: infinite
+00:00 +45: D:/Project/birdtie/apps/client/test/map_layers_api_test.dart: strict native wire isolates row or rejects envelope: city
+00:01 +46: D:/Project/birdtie/apps/client/test/map_layers_api_test.dart: strict native wire isolates row or rejects envelope: detail
+00:01 +47: D:/Project/birdtie/apps/client/test/map_layers_api_test.dart: strict native wire isolates row or rejects envelope: extraEnvelope
+00:01 +48: D:/Project/birdtie/apps/client/test/map_layers_api_test.dart: bounded GET uses original route no body no organization or owner
+00:01 +49: All tests passed!

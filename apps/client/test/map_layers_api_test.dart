@@ -167,54 +167,74 @@ void main() {
     'detail',
     'extraEnvelope',
   ]) {
-    test('strict native wire rejects $mode', () async {
-      final v = mapTestView();
-      final items = v['items'] as List;
-      switch (mode) {
-        case 'body':
-          (items[0] as Map)['body'] = 'private-body';
-        case 'privatePublic':
-          items.add(mapTestItem('OPPORTUNITY'));
-        case 'duplicate':
-          items.add(items[0]);
-        case 'unknown':
-          (items[0] as Map)['kind'] = 'PERSON';
-        case 'noPoint':
-          (items[0]['anchor'] as Map)['precision'] = 'area';
-        case 'noPlace':
-          (items[0]['anchor'] as Map)['placeId'] = '';
-        case 'invalidDate':
-          v['observedAt'] = '2026-13-04T12:00:00Z';
-        case 'invalidOffset':
-          v['observedAt'] = '2026-10-04T12:00:00+08:60';
-        case 'expiry':
-          v['validUntil'] = v['observedAt'];
-        case 'infinite':
-          v['validUntil'] = '2099-10-04T12:00:00Z';
-        case 'city':
-          v['cityId'] = 'other';
-        case 'detail':
-          (items[0]['detailRef'] as Map)['id'] = mapTestPlace;
-      }
-      final api = MapLayersApi(
-        client: MockClient(
-          (r) async => http.Response(
-            jsonEncode({
-              'data': v,
-              if (mode == 'extraEnvelope') 'private': 'secret',
-            }),
-            200,
-            headers: {'content-type': 'application/json; charset=utf-8'},
+    test(
+      'strict native wire isolates row or rejects envelope: $mode',
+      () async {
+        final v = mapTestView();
+        final items = v['items'] as List;
+        switch (mode) {
+          case 'body':
+            (items[0] as Map)['body'] = 'private-body';
+          case 'privatePublic':
+            items.add(mapTestItem('OPPORTUNITY'));
+          case 'duplicate':
+            items.add(items[0]);
+          case 'unknown':
+            (items[0] as Map)['kind'] = 'PERSON';
+          case 'noPoint':
+            (items[0]['anchor'] as Map)['precision'] = 'area';
+          case 'noPlace':
+            (items[0]['anchor'] as Map)['placeId'] = '';
+          case 'invalidDate':
+            v['observedAt'] = '2026-13-04T12:00:00Z';
+          case 'invalidOffset':
+            v['observedAt'] = '2026-10-04T12:00:00+08:60';
+          case 'expiry':
+            v['validUntil'] = v['observedAt'];
+          case 'infinite':
+            v['validUntil'] = '2099-10-04T12:00:00Z';
+          case 'city':
+            v['cityId'] = 'other';
+          case 'detail':
+            (items[0]['detailRef'] as Map)['id'] = mapTestPlace;
+        }
+        final api = MapLayersApi(
+          client: MockClient(
+            (r) async => http.Response(
+              jsonEncode({
+                'data': v,
+                if (mode == 'extraEnvelope') 'private': 'secret',
+              }),
+              200,
+              headers: {'content-type': 'application/json; charset=utf-8'},
+            ),
           ),
-        ),
-        apiBaseUrl: 'http://owned.test',
-      );
-      await expectLater(
-        api.read('owned-city', mapTestBounds),
-        throwsFormatException,
-      );
-      api.dispose();
-    });
+          apiBaseUrl: 'http://owned.test',
+        );
+        if (const {
+          'body',
+          'privatePublic',
+          'unknown',
+          'noPoint',
+          'noPlace',
+          'detail',
+        }.contains(mode)) {
+          final view = await api.read('owned-city', mapTestBounds);
+          expect(view.rejectedItemCount, 1);
+          expect(view.items.length, items.length - 1);
+          expect(view.items.any((item) => item.kind == 'OPPORTUNITY'), isFalse);
+          if (mode != 'privatePublic') {
+            expect(view.items.any((item) => item.kind == 'PLACE'), isFalse);
+          }
+        } else {
+          await expectLater(
+            api.read('owned-city', mapTestBounds),
+            throwsFormatException,
+          );
+        }
+        api.dispose();
+      },
+    );
   }
   test(
     'bounded GET uses original route no body no organization or owner',

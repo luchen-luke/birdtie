@@ -1,0 +1,28 @@
+{
+  "status": "PASS",
+  "counts": {
+    "schema": 173,
+    "moments": 102,
+    "accounts": 29,
+    "civuMoments": 83,
+    "conversations": 11,
+    "unknownMoments": 19,
+    "transactionReadOnly": "on",
+    "conversationMessages": 39,
+    "disabledInternalFKTriggers": 0,
+    "disposableRestoreDatabases": 0,
+    "legacyConversationMessages": 39
+  },
+  "apiUnit": {
+    "ActiveState": "active",
+    "SubState": "running"
+  },
+  "databaseOID": 54087,
+  "release": "/opt/birdtie/releases/social173-20261016-build30",
+  "binarySHA256": "4cc70262b66cffa0061a79fa91fdc7f622de23aedd5552a713b5e1070a7b9900",
+  "sourceSHA256": "ba6b9b5d2d404ada806a858cbc0931628a5958c4b2abdbd8b7d50b62b4e6f40d",
+  "httpLogins": 0,
+  "databaseWrites": 0,
+  "civuWrites": 0,
+  "remoteScriptSHA256": "d05c75dfdd150bc42008532cd3f6fcbec5a3115e45114195f203a6981cc86d5c"
+}

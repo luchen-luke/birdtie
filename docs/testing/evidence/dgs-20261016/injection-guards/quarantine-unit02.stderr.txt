@@ -1,0 +1,10 @@
+test_exact_plan_accepts_only_reviewed_six_accounts_and_environment (scripts.tests.test_fixture_account_quarantine.FixtureAccountQuarantineTests.test_exact_plan_accepts_only_reviewed_six_accounts_and_environment) ... ok
+test_identity_recheck_and_complete_snapshot_never_select_by_author (scripts.tests.test_fixture_account_quarantine.FixtureAccountQuarantineTests.test_identity_recheck_and_complete_snapshot_never_select_by_author) ... ok
+test_production_apply_rejects_missing_restore_without_side_effects (scripts.tests.test_fixture_account_quarantine.FixtureAccountQuarantineTests.test_production_apply_rejects_missing_restore_without_side_effects) ... ok
+test_restore_requires_exact_post_apply_rows_and_restores_only_status (scripts.tests.test_fixture_account_quarantine.FixtureAccountQuarantineTests.test_restore_requires_exact_post_apply_rows_and_restores_only_status) ... ok
+test_status_only_transaction_keeps_triggers_and_all_other_rows (scripts.tests.test_fixture_account_quarantine.FixtureAccountQuarantineTests.test_status_only_transaction_keeps_triggers_and_all_other_rows) ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.003s
+
+OK

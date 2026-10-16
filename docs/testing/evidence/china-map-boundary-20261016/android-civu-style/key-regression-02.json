@@ -1,0 +1,42 @@
+{
+  "finishedAt": "2026-10-16T08:37:03.190577+00:00",
+  "status": "FAIL",
+  "command": [
+    "cmd",
+    "/c",
+    "D:/DevTools/flutter/bin/flutter.bat",
+    "test",
+    "--no-pub",
+    "test/amap_native_configuration_test.dart",
+    "--reporter",
+    "expanded"
+  ],
+  "cwd": "D:\\Project\\birdtie\\apps\\client",
+  "exitCode": 1,
+  "testCount": 6,
+  "sourceBefore": {
+    "apps/client/lib/src/city/amap_offline_style.dart": "1c5d6ae61175e1d3396122611e4c8c2eaedfc6abe70594951dd9630c7874c132",
+    "apps/client/lib/src/city/amap_city_map_io.dart": "923934f28ed00dc947bbce788b724d3c77c64d68da37fcb7f2f8fbe92cfacb97",
+    "apps/client/pubspec.yaml": "65752b67bfeb5cf7392e1370c2f81022091354afe17c342c1620e6c38b0ecc7f",
+    "apps/client/assets/map_styles/civu_android/style.data": "2e58328b9a676e23705f8a11ded22f9eb5d5482d1c2d1d00b9d67494ec25c8d1",
+    "apps/client/assets/map_styles/civu_android/style_extra.data": "a2055f0e095badfbbb402eb5e61b49ec5a7ff71795be6600a6a55a92bb9e034b",
+    "apps/client/assets/map_styles/civu_android/README.md": "60195338a5dea1ade74dd338eec08704461aec9fd4d0372f896d84cc532db4d9"
+  },
+  "sourceAfter": {
+    "apps/client/lib/src/city/amap_offline_style.dart": "1c5d6ae61175e1d3396122611e4c8c2eaedfc6abe70594951dd9630c7874c132",
+    "apps/client/lib/src/city/amap_city_map_io.dart": "923934f28ed00dc947bbce788b724d3c77c64d68da37fcb7f2f8fbe92cfacb97",
+    "apps/client/pubspec.yaml": "65752b67bfeb5cf7392e1370c2f81022091354afe17c342c1620e6c38b0ecc7f",
+    "apps/client/assets/map_styles/civu_android/style.data": "2e58328b9a676e23705f8a11ded22f9eb5d5482d1c2d1d00b9d67494ec25c8d1",
+    "apps/client/assets/map_styles/civu_android/style_extra.data": "a2055f0e095badfbbb402eb5e61b49ec5a7ff71795be6600a6a55a92bb9e034b",
+    "apps/client/assets/map_styles/civu_android/README.md": "60195338a5dea1ade74dd338eec08704461aec9fd4d0372f896d84cc532db4d9"
+  },
+  "sourceStable": true,
+  "matchesAPK37FrozenStyleSources": true,
+  "testPath": "apps/client/test/amap_native_configuration_test.dart",
+  "testSHA256": "0f943ed5b3b8bf5feb12b59420be79967d7faff927e76f1d9763b43563ceb672",
+  "testOnlyAdaptation": "Prepare the real Android style pair in setUpAll, outside widget fake clocks, so key-only fixtures do not race the added independent asset gate. Key timeout, retry, late response, disposal and no SDK before consent assertions retained.",
+  "priorFailure": "key-regression-01.json",
+  "log": "key-regression-02.txt",
+  "logSHA256": "b25b2b8743f9a5c78cb3c0148fc59d88e4a67a5aec70b7dea3869606edba064b",
+  "finalized": false
+}

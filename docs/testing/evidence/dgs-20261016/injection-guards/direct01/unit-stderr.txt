@@ -1,0 +1,10 @@
+test_all_sql_seeds_guard_before_rows_without_changing_fixtures (scripts.tests.test_fixture_environment_guard.FixtureEnvironmentGuardTests.test_all_sql_seeds_guard_before_rows_without_changing_fixtures) ... ok
+test_api_origin_needs_literal_loopback_and_separate_high_port (scripts.tests.test_fixture_environment_guard.FixtureEnvironmentGuardTests.test_api_origin_needs_literal_loopback_and_separate_high_port) ... ok
+test_exact_database_marker_and_explicit_opt_in_are_all_required (scripts.tests.test_fixture_environment_guard.FixtureEnvironmentGuardTests.test_exact_database_marker_and_explicit_opt_in_are_all_required) ... ok
+test_retired_production_flows_have_no_opt_in_bypass (scripts.tests.test_fixture_environment_guard.FixtureEnvironmentGuardTests.test_retired_production_flows_have_no_opt_in_bypass) ... ok
+test_session_sql_cannot_be_generated_without_context (scripts.tests.test_fixture_environment_guard.FixtureEnvironmentGuardTests.test_session_sql_cannot_be_generated_without_context) ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.002s
+
+OK

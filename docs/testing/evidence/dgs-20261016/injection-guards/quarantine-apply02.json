@@ -1,0 +1,43 @@
+{
+  "status": "ALREADY_QUARANTINED",
+  "accounts": [
+    {
+      "id": "00429dde-9620-413f-b816-2b7312e348dc",
+      "sha256": "ec84407939799b0d2061d8e519e201caf8e7443a9f4d52a1d9c056f50290934c",
+      "status": "suspended"
+    },
+    {
+      "id": "43d4a612-fd94-4c5c-9f5f-bf4734877d53",
+      "sha256": "5cf335ac90e06247988aa76412bae11e86611c01593108878473f3c60714b8dc",
+      "status": "suspended"
+    },
+    {
+      "id": "5022d283-0b94-4348-ab53-e1df75024fca",
+      "sha256": "7beb5e1b4115e9b9bb2eb6860659f10851546f0525bb79b0216a973633a50e36",
+      "status": "suspended"
+    },
+    {
+      "id": "ce5ffa90-a75c-4047-b87c-1061a3097852",
+      "sha256": "ec03da45fabee580f098dbaba886c2b4a116080c8305fec763175eb16e719bc3",
+      "status": "suspended"
+    },
+    {
+      "id": "ebf5db2b-b05f-444b-ac84-32f1e43bf38a",
+      "sha256": "937dc36e6cfa81de902740ae7fd2523e16c10e52f5f324a97373a797fc79b81a",
+      "status": "suspended"
+    },
+    {
+      "id": "fac2c5b5-ed2c-499a-8030-d26861db080a",
+      "sha256": "18cfbecaca4f6e96c0ac05a569f65482377713460204f1c840f735958e485adb",
+      "status": "suspended"
+    }
+  ],
+  "manifestSHA256": "c10fde61ef9a7ed74cc1c0c20d8fb1cc316e078e4c54b14363d6deae49785dc9",
+  "triggersUnchanged": true,
+  "accountRowsDeleted": 0,
+  "contentRowsDeleted": 0,
+  "otherRowsUnchanged": true,
+  "otherTablesChecked": 276,
+  "sessionRowsChanged": 0,
+  "identitiesPreserved": true
+}

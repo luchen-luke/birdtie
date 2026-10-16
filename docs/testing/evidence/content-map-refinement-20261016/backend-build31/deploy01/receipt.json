@@ -1,0 +1,28 @@
+{
+  "mode": "upgrade",
+  "exit_code": 0,
+  "host": "ecs-user@47.110.154.133",
+  "strict_host_key_checking": true,
+  "remoteScriptSHA256": "7b54c35564e9c0c05c788c4c3163209428f64d5762d347633f44240d37b4a13a",
+  "stdoutSHA256": "390e9146e12c11e020102a79107ea563a730bfdf04783b658ef63b1fa00978f4",
+  "stderrSHA256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "public_routing_changed": false,
+  "result": {
+    "stage": "REFRESHED_READY",
+    "migrations": 175,
+    "appliedMigrations": 2,
+    "originalMigrationsUnchanged": 173,
+    "release": "/opt/birdtie/releases/social175-20261016-build31",
+    "previousRelease": "/opt/birdtie/releases/social173-20261016-build30",
+    "priorAPISHA256": "4cc70262b66cffa0061a79fa91fdc7f622de23aedd5552a713b5e1070a7b9900",
+    "apiSHA256": "3359b4baf56aadad3dff66c25e9d9cceaab4a5ef16fc78273a78881942216b4c",
+    "publicRoutingChanged": false,
+    "oldAssetsDeleted": false,
+    "mainlandCameraProvidersUpdated": 2,
+    "legacyRowsUnchanged": true,
+    "historicalFollowEventsCreated": 0,
+    "preUpgradeBackupSHA256": "c333e6abd83851819e1a71476e6dcd2dbabd3f2bb3ae9b1c2456af272804d491",
+    "atomicFileReplacement": true,
+    "rollbackOnReadinessFailure": true
+  }
+}

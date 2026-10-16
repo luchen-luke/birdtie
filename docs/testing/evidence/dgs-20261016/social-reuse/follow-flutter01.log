@@ -1,0 +1,6 @@
+Flutter assets will be downloaded from https://storage.flutter-io.cn. Make sure you trust this source!
+00:00 +0: loading D:/Project/birdtie/apps/client/test/person_follow_notification_test.dart
+00:00 +0: follow notifications negotiate compatibility and resolve current target
+00:00 +1: late person target is retired after identity changes
+00:00 +2: notification opens currently resolved profile and denial keeps inbox
+00:00 +3: All tests passed!

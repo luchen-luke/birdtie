@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:birdtie_client/src/city/exploration_city_store.dart';
 import 'package:birdtie_client/src/city/public_city_controller.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 
@@ -99,16 +100,16 @@ void main() {
     );
   });
 
-  test('无默认城市时选择可用城市级底图，不选未知provider或未配置高德', () async {
+  test('Android无默认城市时可使用原生高德，不选未知provider', () async {
     final catalog = _Catalog([
-      _city('shanghai-cn', provider: 'amap'),
       _city('unknown', provider: 'unknown'),
+      _city('shanghai-cn', provider: 'amap'),
       _city('edinburgh-gb'),
     ]);
     addTearDown(catalog.client.close);
     final controller = catalog.controller();
     await controller.loadCities();
-    expect(controller.selectedCity?.id, 'edinburgh-gb');
+    expect(controller.selectedCity?.id, 'shanghai-cn');
   });
 
   test('明确手动选城在新controller恢复，默认探索不自动写本机', () async {
@@ -270,7 +271,7 @@ void main() {
     expect(store.value, 'edinburgh-gb', reason: '临时回退不覆盖本人永久选城');
   });
 
-  test('保存的国内城市provider未配置时回退，但明确手动选择仍可进入错误恢复', () async {
+  test('Android恢复已保存国内城市，底图错误仍交原生地图处理', () async {
     final store = _MemoryCityStore()..value = 'shanghai-cn';
     final catalog = _Catalog([
       _city('shanghai-cn', provider: 'amap'),
@@ -280,12 +281,26 @@ void main() {
     final controller = catalog.controller(store: store);
     await controller.loadCities();
     await controller.explorationRestoreSettled;
-    expect(controller.selectedCity?.id, 'aberdeen-gb');
-    expect(controller.explorationNotice, contains('暂不可用'));
+    expect(controller.selectedCity?.id, 'shanghai-cn');
+    expect(controller.explorationNotice, isNull);
     controller.selectCity('shanghai-cn');
     expect(controller.selectedCity?.id, 'shanghai-cn');
     await controller.explorationWritesSettled;
     expect(store.value, 'shanghai-cn');
+  });
+
+  test('无原生高德的平台保留国内目录但不默认选择', () async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.linux;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+    final catalog = _Catalog([
+      _city('shanghai-cn', provider: 'amap'),
+      _city('edinburgh-gb'),
+    ]);
+    addTearDown(catalog.client.close);
+    final controller = catalog.controller();
+    await controller.loadCities();
+    expect(controller.selectedCity?.id, 'edinburgh-gb');
+    expect(controller.cities.map((v) => v.id), contains('shanghai-cn'));
   });
 
   test('目录暂时失败保留现有城市与手动选择，不伪造目录成功', () async {

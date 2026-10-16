@@ -27,7 +27,7 @@ func inboxPageNativeFailure(err error) error {
 const inboxPageVisibleSQL = `WITH visible AS MATERIALIZED (
  SELECT ` + inboxColumns + `,COALESCE(d.priority,50) AS sort_priority
  FROM inbox_items i LEFT JOIN native_notification_decisions d ON d.id=i.routing_decision_id
- WHERE i.recipient_account_id=$1 AND i.resource_type<>'conversation_message' AND ` + inboxVisibility + `
+ WHERE i.recipient_account_id=$1 AND i.resource_type<>'conversation_message' AND ($10::boolean OR i.resource_type<>'person_follow') AND ` + inboxVisibility + `
 ) `
 
 func inboxPageRead(ctx context.Context, tx pgx.Tx, owner string, in inbox.PageRequest, cursor *inbox.PageCursor) (inbox.Page, error) {
@@ -47,7 +47,7 @@ func inboxPageRead(ctx context.Context, tx pgx.Tx, owner string, in inbox.PageRe
   WHERE ($7='' OR category=$7) AND (NOT $8::boolean OR read_at IS NULL) AND origin=CASE WHEN $9='' THEN 'NATIVE' ELSE $9 END
   AND (NOT $2::boolean OR (sort_priority,created_at,id)<($3::int,$4::timestamptz,$5::uuid))
   ORDER BY sort_priority DESC,created_at DESC,id DESC LIMIT $6) v ON true
- ORDER BY v.sort_priority DESC,v.created_at DESC,v.id DESC`, owner, hasCursor, priority, stamp, inboxPageNullableID(id), in.Limit+1, in.Category, in.UnreadOnly, in.Origin)
+ ORDER BY v.sort_priority DESC,v.created_at DESC,v.id DESC`, owner, hasCursor, priority, stamp, inboxPageNullableID(id), in.Limit+1, in.Category, in.UnreadOnly, in.Origin, in.SupportsPersonFollow)
 	if err != nil {
 		return out, inboxPageNativeFailure(err)
 	}
@@ -91,7 +91,7 @@ func inboxPageRead(ctx context.Context, tx pgx.Tx, owner string, in inbox.PageRe
 	if len(out.Items) > in.Limit {
 		out.Items = out.Items[:in.Limit]
 		last := out.Items[len(out.Items)-1]
-		raw, e := inbox.EncodePageCursor(inbox.PageCursor{Version: 1, Origin: in.Origin, OwnerID: owner, View: in.View, Priority: lastPriority, Time: last.CreatedAt, ID: last.ID, Category: in.Category, UnreadOnly: in.UnreadOnly})
+		raw, e := inbox.EncodePageCursor(inbox.PageCursor{Version: 1, Origin: in.Origin, OwnerID: owner, View: in.View, Priority: lastPriority, Time: last.CreatedAt, ID: last.ID, Category: in.Category, UnreadOnly: in.UnreadOnly, SupportsPersonFollow: in.SupportsPersonFollow})
 		if e != nil {
 			return out, socialnow.ErrUnavailable
 		}

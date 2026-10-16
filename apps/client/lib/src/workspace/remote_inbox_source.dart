@@ -26,8 +26,10 @@ class InboxItem {
     this.actorID,
     this.actorAvatar,
     this.origin = 'NATIVE',
+    this.supported = true,
     this.historicalType,
   });
+  final bool supported;
   final String origin;
   final String? historicalType;
   final String id;
@@ -90,6 +92,7 @@ class InboxItem {
       'business_update',
       'moment_like',
       'moment_comment',
+      'person_follow',
       'legacy_history',
     ];
     if (!const [
@@ -99,12 +102,14 @@ class InboxItem {
           'agent_updates',
           'updates',
         ].contains(data['category']) ||
-        !kinds.contains(data['resourceType']) ||
+        data['resourceType'] is! String ||
+        !RegExp(r'^[a-z][a-z0-9_]{0,63}$').hasMatch(data['resourceType']) ||
         data['title'] is! String ||
         (data['title'] as String).trim().isEmpty ||
         data['detail'] is! String) {
       throw const FormatException('Unknown notification');
     }
+    final supported = kinds.contains(data['resourceType']);
     final origin = data['origin'] ?? 'NATIVE';
     if (!const ['NATIVE', 'LEGACY_HISTORY'].contains(origin) ||
         (origin == 'LEGACY_HISTORY') !=
@@ -128,16 +133,18 @@ class InboxItem {
     }
     final semantic = data['semanticCategory'];
     if (semantic != null &&
-        !const [
-          'MESSAGE',
-          'ACTIVITY',
-          'COMMUNITY',
-          'ORGANIZATION',
-          'BUSINESS',
-          'SYSTEM',
-          'AGENT',
-          'SOCIAL',
-        ].contains(semantic)) {
+        (semantic is! String ||
+            supported &&
+                !const [
+                  'MESSAGE',
+                  'ACTIVITY',
+                  'COMMUNITY',
+                  'ORGANIZATION',
+                  'BUSINESS',
+                  'SYSTEM',
+                  'AGENT',
+                  'SOCIAL',
+                ].contains(semantic))) {
       throw const FormatException('Unknown category');
     }
     final priority = data['notificationPriority'];
@@ -146,6 +153,23 @@ class InboxItem {
     if (route == 'DIGEST' &&
         (semantic == null || priority is! int || priority != 10)) {
       throw const FormatException('Invalid delivered digest metadata');
+    }
+    if (!supported) {
+      // Keep event identity, ordering and server unread totals. An unfamiliar
+      // event supplies no actionable target, text, avatar or deep-link grant.
+      final eventID = id(data['id']);
+      return InboxItem(
+        id: eventID,
+        category: data['category'],
+        title: '暂不支持的通知',
+        detail: '请更新应用后查看。',
+        resourceType: 'unsupported_notification',
+        resourceID: eventID,
+        createdAt: stamp(data['createdAt']),
+        readAt: data['readAt'] == null ? null : stamp(data['readAt']),
+        notificationRoute: route as String?,
+        supported: false,
+      );
     }
     if ((data['targetBusinessId'] != null &&
             !const [
@@ -185,6 +209,19 @@ class InboxItem {
       throw const FormatException('Conflicting notification destinations');
     }
     final rawAvatar = data['actorAvatar'], rawActor = data['actorId'];
+    if (data['resourceType'] == 'person_follow' &&
+        (data['category'] != 'updates' ||
+            semantic != 'SOCIAL' ||
+            !const ['NORMAL', 'IMMEDIATE', 'DIGEST'].contains(route) ||
+            [
+              data['targetActivityId'],
+              data['targetConversationId'],
+              data['targetCommunityId'],
+              data['targetTaskId'],
+              data['targetBusinessId'],
+            ].any((v) => v != null))) {
+      throw const FormatException('关注通知来源不符');
+    }
     if ((rawAvatar == null) != (rawActor == null) ||
         (rawAvatar != null &&
             !const {
@@ -452,7 +489,10 @@ class RemoteInboxSource {
               if (unreadOnly) 'unreadOnly': 'true',
             },
           ),
-          headers: {'Authorization': bearer},
+          headers: {
+            'Authorization': bearer,
+            'X-Birdtie-Inbox-Features': 'person-follow-v1',
+          },
         )
         .timeout(const Duration(seconds: 10));
     _checkIdentity(bearer, version);
@@ -480,6 +520,38 @@ class RemoteInboxSource {
       throw const FormatException('通知筛选结果不符');
     _checkIdentity(bearer, version);
     return page;
+  }
+
+  Future<String> personTarget(String itemID) async {
+    final validID = RegExp(
+      r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',
+    );
+    if (!validID.hasMatch(itemID)) {
+      throw const FormatException('通知标识不符');
+    }
+    final bearer = _headers()['Authorization']!, version = identityVersion;
+    _checkIdentity(bearer, version);
+    final response = await _client
+        .get(
+          _endpoint('/v1/me/inbox/$itemID/person-target'),
+          headers: {'Authorization': bearer},
+        )
+        .timeout(const Duration(seconds: 10));
+    _checkIdentity(bearer, version);
+    if (response.statusCode == 401) await onUnauthorized?.call(bearer);
+    if (response.statusCode != 200) throw InboxReadFailure(response.statusCode);
+    if (response.bodyBytes.length > 4096) {
+      throw const FormatException('关注通知目标过大');
+    }
+    final root = jsonDecode(utf8.decode(response.bodyBytes));
+    final data = root is Map<String, dynamic> ? root['data'] : null;
+    if (data is! Map<String, dynamic> ||
+        data.length != 1 ||
+        data['accountId'] is! String ||
+        !validID.hasMatch(data['accountId'] as String)) {
+      throw const FormatException('关注通知目标不符');
+    }
+    return data['accountId'] as String;
   }
 
   Future<({String momentID, String? commentID})> momentTarget(

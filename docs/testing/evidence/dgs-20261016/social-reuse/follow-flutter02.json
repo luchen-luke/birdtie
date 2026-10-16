@@ -1,0 +1,20 @@
+{
+  "sourceAfter": {
+    "apps/client/lib/src/workspace/remote_inbox_source.dart": "b25a9c3683db0dc29a57e0c98350aede65ea6048b4453c4cfb840a373a57f0f4",
+    "apps/client/lib/src/workspace/inbox.dart": "7522f2c2e2b17314e6f0510bb39c8514a40827f3a247729791a4720255a41b1f",
+    "apps/client/test/person_follow_notification_test.dart": "090292a84521f5fcade4760af28e54ff123a6ca4477199ad0ce560a182f566d9",
+    "apps/client/test/dgs_unknown_notification_test.dart": "6d98b550e17965d53c1a8cba3abe4136f9f15938160083fc9fa2dd761f761c7d"
+  },
+  "command": "flutter test --no-pub test/person_follow_notification_test.dart test/dgs_unknown_notification_test.dart --reporter expanded",
+  "device": "NOT_RUN",
+  "exitCode": 0,
+  "fixture": "isolated MockClient only",
+  "cwd": "D:/Project/birdtie/apps/client",
+  "sourceStable": true,
+  "sourceBefore": {
+    "apps/client/lib/src/workspace/remote_inbox_source.dart": "b25a9c3683db0dc29a57e0c98350aede65ea6048b4453c4cfb840a373a57f0f4",
+    "apps/client/lib/src/workspace/inbox.dart": "7522f2c2e2b17314e6f0510bb39c8514a40827f3a247729791a4720255a41b1f",
+    "apps/client/test/person_follow_notification_test.dart": "090292a84521f5fcade4760af28e54ff123a6ca4477199ad0ce560a182f566d9",
+    "apps/client/test/dgs_unknown_notification_test.dart": "6d98b550e17965d53c1a8cba3abe4136f9f15938160083fc9fa2dd761f761c7d"
+  }
+}

@@ -1,0 +1,2 @@
+psql:/dev-seeds/001_badminton.sql:27: ERROR:  exact owned fixture database marker required
+CONTEXT:  PL/pgSQL function inline_code_block line 15 at RAISE

@@ -1,0 +1,25 @@
+{
+  "NativeContentMapMetrics": [],
+  "OwnedMapMediaController": [
+    {
+      "_epoch": "6",
+      "_running": "0",
+      "_reserved": "2382596",
+      "requests": "19",
+      "decodes": "19",
+      "cacheHits": "276",
+      "inFlightPeak": "4"
+    }
+  ],
+  "OwnedMapController": [
+    {
+      "_epoch": "14",
+      "_request": "64",
+      "requests": "41",
+      "cancellations": "1",
+      "cacheHits": "6",
+      "responseBytes": "542780"
+    }
+  ],
+  "_NativeCityMapViewState": []
+}

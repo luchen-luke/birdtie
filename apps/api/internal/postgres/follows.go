@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/birdtie/birdtie/apps/api/internal/follow"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
@@ -54,7 +55,7 @@ func (s *Store) Follow(ctx context.Context, actor string, target follow.Target) 
 	if column == "" {
 		return follow.Record{}, follow.ErrInvalid
 	}
-	tx, err := s.pool.Begin(ctx)
+	tx, err := s.pool.BeginTx(ctx, pgx.TxOptions{IsoLevel: pgx.ReadCommitted})
 	if err != nil {
 		return follow.Record{}, err
 	}
@@ -69,7 +70,7 @@ func (s *Store) Follow(ctx context.Context, actor string, target follow.Target) 
 	if !allowed {
 		return follow.Record{}, follow.ErrUnavailable
 	}
-	_, err = tx.Exec(ctx, `INSERT INTO follows(follower_account_id,`+column+`)
+	inserted, err := tx.Exec(ctx, `INSERT INTO follows(follower_account_id,`+column+`)
 		VALUES($1,$2) ON CONFLICT DO NOTHING`, actor, target.ID)
 	var pgErr *pgconn.PgError
 	if errors.As(err, &pgErr) && pgErr.Code == "P0001" {
@@ -84,6 +85,11 @@ func (s *Store) Follow(ctx context.Context, actor string, target follow.Target) 
 		AND `+column+`=$2`, actor, target.ID).Scan(&item.ID, &item.CreatedAt)
 	if err != nil {
 		return follow.Record{}, err
+	}
+	if inserted.RowsAffected() == 1 && target.Type == follow.Person {
+		if err = createPersonFollowNotification(ctx, tx, item.ID, actor, target.ID); err != nil {
+			return follow.Record{}, err
+		}
 	}
 	if err = tx.Commit(ctx); err != nil {
 		return follow.Record{}, err

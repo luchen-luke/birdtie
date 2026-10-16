@@ -1,0 +1,24 @@
+{
+  "exitCode": 0,
+  "command": [
+    "D:\\DevTools\\flutter\\bin\\flutter.bat",
+    "pub",
+    "get",
+    "--offline",
+    "--no-example"
+  ],
+  "cwd": "D:\\Project\\birdtie\\apps\\client",
+  "processOnlyEnvironment": {
+    "FLUTTER_WINDOWS": "false",
+    "FLUTTER_LINUX": "false",
+    "FLUTTER_MACOS": "false",
+    "FLUTTER_WEB": "false"
+  },
+  "previousAMapRegistered": false,
+  "afterAMapRegistered": true,
+  "beforeSHA256": "f0033a58b49d9f069c0771451bd94f4af19aae07fa132dcee9b0ab3cec639a7d",
+  "afterSHA256": "225dd2184bd7687d062adbf02509f94b021376efd57a1fdb1b0a63107efc53d1",
+  "globalFlutterConfigurationChanged": false,
+  "systemDeveloperModeChanged": false,
+  "generatedFileEditedManually": false
+}

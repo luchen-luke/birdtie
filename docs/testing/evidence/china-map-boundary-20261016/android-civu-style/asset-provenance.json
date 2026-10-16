@@ -1,0 +1,16 @@
+[
+  {
+    "source": "D:\\Program\\Civu\\Civu-client\\assets\\map_styles\\civu_android\\style.data",
+    "destination": "D:\\Project\\birdtie\\apps\\client\\assets\\map_styles\\civu_android\\style.data",
+    "bytes": 213333,
+    "sha256": "2e58328b9a676e23705f8a11ded22f9eb5d5482d1c2d1d00b9d67494ec25c8d1",
+    "copiedVerbatim": true
+  },
+  {
+    "source": "D:\\Program\\Civu\\Civu-client\\assets\\map_styles\\civu_android\\style_extra.data",
+    "destination": "D:\\Project\\birdtie\\apps\\client\\assets\\map_styles\\civu_android\\style_extra.data",
+    "bytes": 3518,
+    "sha256": "a2055f0e095badfbbb402eb5e61b49ec5a7ff71795be6600a6a55a92bb9e034b",
+    "copiedVerbatim": true
+  }
+]

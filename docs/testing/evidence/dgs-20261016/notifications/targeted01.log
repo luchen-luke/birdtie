@@ -1,0 +1,51 @@
+Flutter assets will be downloaded from https://storage.flutter-io.cn. Make sure you trust this source!
+00:00 +0: loading D:/Project/birdtie/apps/client/test/dgs_unknown_notification_test.dart
+00:00 +0: D:/Project/birdtie/apps/client/test/dgs_unknown_notification_test.dart: unknown event preserves supported rows, pagination and server totals
+00:00 +1: D:/Project/birdtie/apps/client/test/dgs_unknown_notification_test.dart: unknown compatibility never weakens identity, delivery or duplicate rules
+00:00 +2: D:/Project/birdtie/apps/client/test/dgs_unknown_notification_test.dart: actual notification panel retains known row and cannot open unknown target
+00:00 +3: D:/Project/birdtie/apps/client/test/dgs_unknown_notification_test.dart: actual notification panel retains known row and cannot open unknown target
+00:00 +4: D:/Project/birdtie/apps/client/test/dgs_unknown_notification_test.dart: actual notification panel retains known row and cannot open unknown target
+00:00 +5: D:/Project/birdtie/apps/client/test/dgs_unknown_notification_test.dart: actual notification panel retains known row and cannot open unknown target
+00:00 +6: D:/Project/birdtie/apps/client/test/dgs_unknown_notification_test.dart: actual notification panel retains known row and cannot open unknown target
+00:00 +7: D:/Project/birdtie/apps/client/test/dgs_unknown_notification_test.dart: actual notification panel retains known row and cannot open unknown target
+00:00 +8: D:/Project/birdtie/apps/client/test/dgs_unknown_notification_test.dart: actual notification panel retains known row and cannot open unknown target
+00:00 +9: D:/Project/birdtie/apps/client/test/dgs_unknown_notification_test.dart: actual notification panel retains known row and cannot open unknown target
+00:00 +10: D:/Project/birdtie/apps/client/test/dgs_unknown_notification_test.dart: actual notification panel retains known row and cannot open unknown target
+00:00 +11: D:/Project/birdtie/apps/client/test/dgs_unknown_notification_test.dart: actual notification panel retains known row and cannot open unknown target
+00:00 +12: D:/Project/birdtie/apps/client/test/dgs_unknown_notification_test.dart: actual notification panel retains known row and cannot open unknown target
+00:00 +13: D:/Project/birdtie/apps/client/test/dgs_unknown_notification_test.dart: actual notification panel retains known row and cannot open unknown target
+00:00 +14: D:/Project/birdtie/apps/client/test/dgs_unknown_notification_test.dart: actual notification panel retains known row and cannot open unknown target
+00:00 +15: D:/Project/birdtie/apps/client/test/dgs_unknown_notification_test.dart: actual notification panel retains known row and cannot open unknown target
+00:00 +16: D:/Project/birdtie/apps/client/test/dgs_unknown_notification_test.dart: actual notification panel retains known row and cannot open unknown target
+00:00 +17: D:/Project/birdtie/apps/client/test/dgs_unknown_notification_test.dart: actual notification panel retains known row and cannot open unknown target
+00:00 +18: D:/Project/birdtie/apps/client/test/dgs_unknown_notification_test.dart: actual notification panel retains known row and cannot open unknown target
+00:00 +19: D:/Project/birdtie/apps/client/test/dgs_unknown_notification_test.dart: actual notification panel retains known row and cannot open unknown target
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following TestFailure was thrown running a test:
+Expected: exactly one matching candidate
+  Actual: _TextWidgetFinder:<Found 0 widgets with text "本人合成通知1": []>
+   Which: means none were found but one was expected
+
+When the exception was thrown, this was the stack:
+#4      main.<anonymous closure> (file:///D:/Project/birdtie/apps/client/test/dgs_unknown_notification_test.dart:125:7)
+<asynchronous suspension>
+#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1952:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///D:/Project/birdtie/apps/client/test/dgs_unknown_notification_test.dart line 125
+The test description was:
+  actual notification panel retains known row and cannot open unknown target
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:00 +19 -1: D:/Project/birdtie/apps/client/test/dgs_unknown_notification_test.dart: actual notification panel retains known row and cannot open unknown target [E]
+  Test failed. See exception logs above.
+  The test description was: actual notification panel retains known row and cannot open unknown target
+  
+00:00 +19 -1: Some tests failed.
+
+Failing tests:
+  D:/Project/birdtie/apps/client/test/dgs_unknown_notification_test.dart: actual notification panel retains known row and cannot open unknown target

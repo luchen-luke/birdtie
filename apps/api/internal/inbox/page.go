@@ -20,11 +20,12 @@ var ErrSourceChanged = errors.New("inbox source changed")
 var pageUUID = regexp.MustCompile(`^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$`)
 
 type PageRequest struct {
-	View, Cursor string
-	Origin       string
-	Limit        int
-	Category     string
-	UnreadOnly   bool
+	View, Cursor         string
+	Origin               string
+	Limit                int
+	Category             string
+	UnreadOnly           bool
+	SupportsPersonFollow bool
 }
 type Page struct {
 	Items                 []Item  `json:"items"`
@@ -41,15 +42,16 @@ type PagedStore interface {
 
 // The closed hint only locates a row. It never supplies current authorization.
 type PageCursor struct {
-	Version    int       `json:"v"`
-	Origin     string    `json:"origin,omitempty"`
-	OwnerID    string    `json:"owner"`
-	View       string    `json:"view"`
-	Priority   int       `json:"priority"`
-	Time       time.Time `json:"time"`
-	ID         string    `json:"id"`
-	Category   string    `json:"category,omitempty"`
-	UnreadOnly bool      `json:"unreadOnly,omitempty"`
+	Version              int       `json:"v"`
+	Origin               string    `json:"origin,omitempty"`
+	OwnerID              string    `json:"owner"`
+	View                 string    `json:"view"`
+	Priority             int       `json:"priority"`
+	Time                 time.Time `json:"time"`
+	ID                   string    `json:"id"`
+	Category             string    `json:"category,omitempty"`
+	UnreadOnly           bool      `json:"unreadOnly,omitempty"`
+	SupportsPersonFollow bool      `json:"personFollow,omitempty"`
 }
 
 func ValidCategory(v string) bool {
@@ -111,7 +113,7 @@ func NormalizePage(in PageRequest, owner string) (PageRequest, *PageCursor, erro
 		return in, nil, ErrInvalidPage
 	}
 	c, e := DecodePageCursor(in.Cursor, owner, in.View)
-	if e == nil && c != nil && (c.Category != in.Category || c.UnreadOnly != in.UnreadOnly || c.Origin != in.Origin) {
+	if e == nil && c != nil && (c.Category != in.Category || c.UnreadOnly != in.UnreadOnly || c.Origin != in.Origin || c.SupportsPersonFollow != in.SupportsPersonFollow) {
 		return in, nil, ErrInvalidPage
 	}
 	return in, c, e

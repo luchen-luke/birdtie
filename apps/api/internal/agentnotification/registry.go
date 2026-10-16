@@ -25,6 +25,7 @@ const (
 	KindBusinessUpdate Kind = "business_update"
 	KindMomentLike     Kind = "moment_like"
 	KindMomentComment  Kind = "moment_comment"
+	KindPersonFollow   Kind = "person_follow"
 )
 
 type Descriptor struct {
@@ -84,6 +85,8 @@ func LookupKind(kind Kind) (Descriptor, error) {
 		d.Category, d.Title, d.Detail = CategorySocial, "动态收到点赞", "有人赞了你的动态，请查看当前可见内容。"
 	case KindMomentComment:
 		d.Category, d.Title, d.Detail = CategorySocial, "动态收到评论", "有人评论了你的动态，请查看当前可见评论。"
+	case KindPersonFollow:
+		d.Category, d.Title, d.Detail = CategorySocial, "收到新的关注", "有人关注了你，可查看对方当前可见的资料。关注不会自动成为好友。"
 	default:
 		return Descriptor{}, ErrInvalid
 	}

@@ -11,8 +11,14 @@ class MainActivity : FlutterActivity() {
     private var localText: LocalImageTextRecognizer? = null
     private var voiceInput: VoiceInputRecognizer? = null
     private var friendAudio: FriendAudio? = null
+    private var mapConfiguration: MapConfiguration? = null
+    private var destinationSearch: DestinationSearch? = null
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        mapConfiguration?.close()
+        mapConfiguration = MapConfiguration(applicationContext, flutterEngine.dartExecutor.binaryMessenger)
+        destinationSearch?.close()
+        destinationSearch = DestinationSearch(applicationContext, flutterEngine.dartExecutor.binaryMessenger)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val manager = getSystemService(NotificationManager::class.java)
             manager.createNotificationChannel(NotificationChannel(
@@ -58,6 +64,10 @@ class MainActivity : FlutterActivity() {
         super.onActivityResult(requestCode, resultCode, data)
     }
     override fun cleanUpFlutterEngine(flutterEngine: FlutterEngine) {
+        destinationSearch?.close()
+        destinationSearch = null
+        mapConfiguration?.close()
+        mapConfiguration = null
         voiceInput?.close()
         voiceInput = null
         friendAudio?.close()

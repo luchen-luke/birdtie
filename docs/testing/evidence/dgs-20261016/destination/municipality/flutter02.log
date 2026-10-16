@@ -1,0 +1,6 @@
+Flutter assets will be downloaded from https://storage.flutter-io.cn. Make sure you trust this source!
+00:00 +0: loading D:/Project/birdtie/apps/client/test/amap_destination_search_test.dart
+00:00 +0: no SDK call before explicit session consent
+00:00 +1: native GCJ result converts once, remains temporary and has no internal city
+00:00 +2: cancellation retires a late native response
+00:00 +3: All tests passed!

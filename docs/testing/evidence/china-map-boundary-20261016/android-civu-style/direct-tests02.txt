@@ -1,0 +1,9 @@
+Flutter assets will be downloaded from https://storage.flutter-io.cn. Make sure you trust this source!
+00:00 +0: loading D:/Project/birdtie/apps/client/test/amap_offline_style_test.dart
+00:00 +0: bundled Android export retains the exact user files
+00:00 +1: one shared pair load honors byte offsets and reuses successful result
+00:00 +2: a damaged pair is rejected and a subsequent load retries both files
+00:00 +3: style failure retries; both files and consent precede first map, rebuild retains it (variant: TargetPlatform.android)
+initState AMapWidget
+deactivate AMapWidget
+00:00 +4: All tests passed!

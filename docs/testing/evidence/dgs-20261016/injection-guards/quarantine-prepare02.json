@@ -1,0 +1,495 @@
+{
+  "protocol": "BIRDTIE_DGS_EXACT_ACCOUNT_QUARANTINE_V1",
+  "status": "PREPARED_READ_ONLY_NOT_APPLIED",
+  "observedAt": "2026-10-16T09:45:32.301036+00:00",
+  "databaseName": "birdtie_native_hz_20261015",
+  "databaseOID": 54087,
+  "release": "/opt/birdtie/releases/social173-20261016-build30",
+  "binarySHA256": "4cc70262b66cffa0061a79fa91fdc7f622de23aedd5552a713b5e1070a7b9900",
+  "sourceSHA256": "ba6b9b5d2d404ada806a858cbc0931628a5958c4b2abdbd8b7d50b62b4e6f40d",
+  "actors": [
+    {
+      "id": "00429dde-9620-413f-b816-2b7312e348dc",
+      "status": "active",
+      "moments": 0,
+      "rowSHA256": "2eb12394eb50a26ce795c6744be5391e28379709b497fe9142576676e055d742",
+      "accountType": "person",
+      "legacyUsers": 0,
+      "emailBindings": 0,
+      "phoneBindings": 0,
+      "validSessions": 0,
+      "authIdentities": 1,
+      "fixedCodeIdentities": 1
+    },
+    {
+      "id": "43d4a612-fd94-4c5c-9f5f-bf4734877d53",
+      "status": "active",
+      "moments": 5,
+      "rowSHA256": "f15dec663c9071b80eee2777089e83826213ef7eeaa84384cccfff937030a94d",
+      "accountType": "person",
+      "legacyUsers": 0,
+      "emailBindings": 0,
+      "phoneBindings": 0,
+      "validSessions": 0,
+      "authIdentities": 1,
+      "fixedCodeIdentities": 1
+    },
+    {
+      "id": "5022d283-0b94-4348-ab53-e1df75024fca",
+      "status": "active",
+      "moments": 0,
+      "rowSHA256": "bb14913a3f3128cf85f5a60f0e68df1854cd9f610aa33fed3d1f78ba29880d10",
+      "accountType": "person",
+      "legacyUsers": 0,
+      "emailBindings": 0,
+      "phoneBindings": 0,
+      "validSessions": 0,
+      "authIdentities": 1,
+      "fixedCodeIdentities": 1
+    },
+    {
+      "id": "ce5ffa90-a75c-4047-b87c-1061a3097852",
+      "status": "active",
+      "moments": 13,
+      "rowSHA256": "6822c0ad07180af5363eaf60d42307a413c7ae2f82dbc555f09f98d802bc5443",
+      "accountType": "person",
+      "legacyUsers": 0,
+      "emailBindings": 0,
+      "phoneBindings": 0,
+      "validSessions": 0,
+      "authIdentities": 1,
+      "fixedCodeIdentities": 1
+    },
+    {
+      "id": "ebf5db2b-b05f-444b-ac84-32f1e43bf38a",
+      "status": "active",
+      "moments": 0,
+      "rowSHA256": "b799c868810187f07c351fd3c54976c2e7ba3f873953347f577b643ec27a97d6",
+      "accountType": "person",
+      "legacyUsers": 0,
+      "emailBindings": 0,
+      "phoneBindings": 0,
+      "validSessions": 0,
+      "authIdentities": 1,
+      "fixedCodeIdentities": 1
+    },
+    {
+      "id": "fac2c5b5-ed2c-499a-8030-d26861db080a",
+      "status": "active",
+      "moments": 0,
+      "rowSHA256": "d73b2d5ccce620372e693c081f968b2f472450dd50efdbc69c9bc92cde56b0d4",
+      "accountType": "person",
+      "legacyUsers": 0,
+      "emailBindings": 0,
+      "phoneBindings": 0,
+      "validSessions": 0,
+      "authIdentities": 1,
+      "fixedCodeIdentities": 1
+    }
+  ],
+  "protected": {
+    "account_auth_identities": {
+      "primaryKey": [
+        "issuer",
+        "subject"
+      ],
+      "rows": {
+        "count": 10,
+        "sha256": "a7e1e306f4c258f6b037c8e1a7f9e06fff8fd2d61334d2c3329b6a901243e837"
+      }
+    },
+    "accounts": {
+      "primaryKey": [
+        "id"
+      ],
+      "rows": {
+        "count": 23,
+        "sha256": "1cc07ad4326e82dd408c3ddc0444d2c6e18a68141c2acffab1c9e05754390ca3"
+      }
+    },
+    "connection_requests": {
+      "primaryKey": [
+        "id"
+      ],
+      "rows": {
+        "count": 6,
+        "sha256": "bf3ef9feb7c052d474e0d8563caf2251f3eec26a1c81f581af148b5c58cd683a"
+      }
+    },
+    "conversation_messages": {
+      "primaryKey": [
+        "id"
+      ],
+      "rows": {
+        "count": 39,
+        "sha256": "26e777f02df6a1b1120d43cdc59e585e2a3be82b375995f9f8fda5e1801659fb"
+      }
+    },
+    "conversations": {
+      "primaryKey": [
+        "id"
+      ],
+      "rows": {
+        "count": 11,
+        "sha256": "1be2af9b15f3dac36509a86b2c96a3b30d58973ea75e8de2cf7104862b015b95"
+      }
+    },
+    "follows": {
+      "primaryKey": [
+        "id"
+      ],
+      "rows": {
+        "count": 21,
+        "sha256": "571d6f935888494d674d8592d199cb461e92f2893af415525f1b63e12032b796"
+      }
+    },
+    "legacy_dev_email_bindings": {
+      "primaryKey": [
+        "email_digest"
+      ],
+      "rows": {
+        "count": 2,
+        "sha256": "3fa7e1bc1bce6be380023af13b222bdc64c95526af4fb3f4d87821798376c369"
+      }
+    },
+    "legacy_dev_phone_bindings": {
+      "primaryKey": [
+        "phone_digest"
+      ],
+      "rows": {
+        "count": 18,
+        "sha256": "4429d781f1d9966934ada865aca56fe75283b247568aad19c2906f2354116f21"
+      }
+    },
+    "legacy_entity_mappings": {
+      "primaryKey": [
+        "source_system",
+        "entity_kind",
+        "source_id"
+      ],
+      "rows": {
+        "count": 123,
+        "sha256": "ddc367d0c174fb3b0d426ab0dd45c2958846edd55d8f4cde8ec2a87607ecc870"
+      }
+    },
+    "legacy_map_anchor_facts": {
+      "primaryKey": [
+        "id"
+      ],
+      "rows": {
+        "count": 16,
+        "sha256": "4f4350c9a70516840e3a4b258722dde1fcee9eda18008fad7e7b9f7cce165a6f"
+      }
+    },
+    "legacy_moment_author_facts": {
+      "primaryKey": [
+        "moment_id"
+      ],
+      "rows": {
+        "count": 83,
+        "sha256": "4598ff5a171844e3a5d7039877417f3367b0c6861288881dddb56c1b9dec5fa6"
+      }
+    },
+    "legacy_native_adaptation_entities": {
+      "primaryKey": [
+        "kind",
+        "source_key"
+      ],
+      "rows": {
+        "count": 6582,
+        "sha256": "a211280bf825b95b440e6bd7612b021c170e37377c36e71ba8891cfafd286b55"
+      }
+    },
+    "legacy_native_context_entities": {
+      "primaryKey": [
+        "kind",
+        "source_key"
+      ],
+      "rows": {
+        "count": 424,
+        "sha256": "c4dc1ef0899e91744abb6552f66aaf08890bea37d0d299a707a9cd1cd4db19bc"
+      }
+    },
+    "legacy_private_image_recovery_items": {
+      "primaryKey": [
+        "source_note_id",
+        "source_media_id"
+      ],
+      "rows": {
+        "count": 31,
+        "sha256": "f213130ea5f82eb66688eb153bd96846045c184c204b7d8803263f0ff8318ed4"
+      }
+    },
+    "legacy_private_media_import_items": {
+      "primaryKey": [
+        "source_note_id",
+        "source_media_id"
+      ],
+      "rows": {
+        "count": 135,
+        "sha256": "23e6a2a7ddff7873c24f8ee5cffe82e30d929e2ccabeefbe4fd15a8815ac48c4"
+      }
+    },
+    "legacy_private_video_import_items": {
+      "primaryKey": [
+        "source_note_id",
+        "source_media_id"
+      ],
+      "rows": {
+        "count": 5,
+        "sha256": "b13fd4cc2fab0e99fba75d0c456f545dd17e81ee734785e39e756cd2b9e668a9"
+      }
+    },
+    "legacy_reference_media_relations": {
+      "primaryKey": [
+        "id"
+      ],
+      "rows": {
+        "count": 153,
+        "sha256": "748e7a3d8a569e63e7aba17474cefc434d5ff7cd89396e075aa5246ed48d9ebc"
+      }
+    },
+    "legacy_social_history_facts": {
+      "primaryKey": [
+        "kind",
+        "source_key"
+      ],
+      "rows": {
+        "count": 161,
+        "sha256": "5829a3b86a54058f381621a45e972855a099f8b50d6153129cc3dd0bc16c6f4a"
+      }
+    },
+    "legacy_social_import_entities": {
+      "primaryKey": [
+        "id"
+      ],
+      "rows": {
+        "count": 101,
+        "sha256": "751d7b15ed487a865c3fbc6c762b3733098b9f816655341a05b032d39bea6aff"
+      }
+    },
+    "media_assets": {
+      "primaryKey": [
+        "id"
+      ],
+      "rows": {
+        "count": 171,
+        "sha256": "1cc43ebe6700c40d3d6f51a3f3666775f5529f20823b9e5b5268e8bb5c1ee6dc"
+      }
+    },
+    "moment_threads": {
+      "primaryKey": [
+        "id"
+      ],
+      "rows": {
+        "count": 26,
+        "sha256": "37f64fb77d477945fb411feaf4ebe70ef583ad0b0ae3a611237dadb1fd57afa0"
+      }
+    },
+    "moments": {
+      "primaryKey": [
+        "id"
+      ],
+      "rows": {
+        "count": 102,
+        "sha256": "6e915ceedac093b279b03b0c4a00db521ea00f9a2b1cbddf142e2f16f9d67ee5"
+      }
+    },
+    "saved_items": {
+      "primaryKey": [
+        "id"
+      ],
+      "rows": {
+        "count": 189,
+        "sha256": "6c20c01c06496971fa9fad0be552f20191572a35ca92ee97eb40fdd69534edae"
+      }
+    },
+    "sessions": {
+      "primaryKey": [
+        "id"
+      ],
+      "rows": {
+        "count": 69,
+        "sha256": "d79dc1e520d014c719ddda67af344dda774c3c3d94206d3b723797401d403287"
+      }
+    },
+    "user_profiles": {
+      "primaryKey": [
+        "account_id"
+      ],
+      "rows": {
+        "count": 29,
+        "sha256": "89934561a8cc652b7d7329870dfc58bc788a714f6d50aa00c26b84881c5046d0"
+      }
+    }
+  },
+  "referencingRows": [
+    {
+      "table": "user_profiles",
+      "column": "account_id",
+      "count": 6
+    },
+    {
+      "table": "account_auth_identities",
+      "column": "account_id",
+      "count": 6
+    },
+    {
+      "table": "audit_events",
+      "column": "actor_account_id",
+      "count": 137
+    },
+    {
+      "table": "sessions",
+      "column": "account_id",
+      "count": 26
+    },
+    {
+      "table": "moments",
+      "column": "author_account_id",
+      "count": 18
+    },
+    {
+      "table": "inbox_items",
+      "column": "recipient_account_id",
+      "count": 4
+    },
+    {
+      "table": "agents",
+      "column": "principal_account_id",
+      "count": 6
+    },
+    {
+      "table": "moment_likes",
+      "column": "actor_account_id",
+      "count": 3
+    },
+    {
+      "table": "moment_comments",
+      "column": "author_account_id",
+      "count": 3
+    },
+    {
+      "table": "moment_interaction_operations",
+      "column": "actor_account_id",
+      "count": 6
+    },
+    {
+      "table": "inbox_management_operations",
+      "column": "actor_account_id",
+      "count": 2
+    },
+    {
+      "table": "agent_profiles",
+      "column": "owner_id",
+      "count": 6
+    },
+    {
+      "table": "moment_media_materials",
+      "column": "owner_account_id",
+      "count": 22
+    },
+    {
+      "table": "moment_media_prepare_operations",
+      "column": "actor_account_id",
+      "count": 24
+    },
+    {
+      "table": "public_moment_media_sets",
+      "column": "owner_account_id",
+      "count": 4
+    },
+    {
+      "table": "native_notification_decisions",
+      "column": "recipient_id",
+      "count": 4
+    },
+    {
+      "table": "native_notification_decisions",
+      "column": "actor_id",
+      "count": 4
+    },
+    {
+      "table": "moment_threads",
+      "column": "author_account_id",
+      "count": 4
+    },
+    {
+      "table": "moment_thread_operations",
+      "column": "actor_account_id",
+      "count": 21
+    },
+    {
+      "table": "agent_domain_outbox",
+      "column": "tenant_id",
+      "count": 53
+    },
+    {
+      "table": "agent_domain_outbox",
+      "column": "subject_id",
+      "count": 53
+    },
+    {
+      "table": "agent_domain_outbox",
+      "column": "actor_id",
+      "count": 53
+    },
+    {
+      "table": "agent_memory_source_invalidations",
+      "column": "owner_id",
+      "count": 77
+    },
+    {
+      "table": "human_moment_control_operations",
+      "column": "actor_account_id",
+      "count": 27
+    }
+  ],
+  "counts": {
+    "allMoments": 102,
+    "otherUnknown": 1,
+    "verifiedCivu": 83,
+    "civuOwnedByFixtures": 0,
+    "fixtureOwnedUnknown": 18
+  },
+  "plannedChange": {
+    "table": "accounts",
+    "column": "status",
+    "from": "active",
+    "to": "suspended",
+    "exactCount": 6,
+    "identityRowsPreserved": true,
+    "deleteRows": 0,
+    "sessionRevocationRows": 0,
+    "unknownContentRowsPreserved": 19,
+    "unknownFixtureContentVisibilityIsolated": 18
+  },
+  "blockers": [],
+  "apiLogins": 0,
+  "productionWrites": 0,
+  "restore": "Restore only these exact status transitions after matching post-apply account fingerprints; no automatic restore or identity removal.",
+  "manifestSHA256": "c10fde61ef9a7ed74cc1c0c20d8fb1cc316e078e4c54b14363d6deae49785dc9",
+  "sourceProofReceipts": [
+    {
+      "path": "docs/testing/evidence/github-remote-completion-20261015/remote-friend-chat-flow01/receipt.json",
+      "sha256": "50f1be60ec36aedf4ee03a30de3b523541d4bd41050f16a591b3841f12c5dfc7"
+    },
+    {
+      "path": "docs/testing/evidence/github-remote-completion-20261015/remote-friend-chat-flow02/receipt.json",
+      "sha256": "3e6a62d3144ccbbc38cccdf717d9b45aa2cc42e8e199e770e41fed6a1bb43554"
+    },
+    {
+      "path": "docs/testing/evidence/github-remote-completion-20261015/remote-media-thread-flow01/receipt.json",
+      "sha256": "5d6584837974f1263581b6dd3e0a79657b41d0300b4221405b1b326248c29cff"
+    },
+    {
+      "path": "docs/testing/evidence/github-remote-completion-20261015/remote-crosscity166-01/receipt.json",
+      "sha256": "41e8c001e6db017550a816c970afdbb1a12dd0ad383b7f31c5c154ff7472580f"
+    },
+    {
+      "path": "docs/testing/evidence/github-remote-completion-20261015/remote-multilocation166-01/receipt.json",
+      "sha256": "93228775c53b6278fd08abbff17acc8044583e6f7d1c56b6f49f9cb1b1427451"
+    }
+  ],
+  "remoteScriptSHA256": "efa82da27f53a244fbf8fe421f44b1face6da0092f1a242e6ae96409163caa8a"
+}

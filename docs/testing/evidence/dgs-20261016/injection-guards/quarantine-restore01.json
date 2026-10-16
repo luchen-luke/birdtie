@@ -1,0 +1,7 @@
+{
+  "status": "FAIL",
+  "stage": "QUARANTINE_RESTORED_CURRENT_COMPARE",
+  "errorCode": "QUARANTINE_RESTORED_SCHEMA_CHANGED",
+  "manifestSHA256": "c10fde61ef9a7ed74cc1c0c20d8fb1cc316e078e4c54b14363d6deae49785dc9",
+  "productionWrites": 0
+}

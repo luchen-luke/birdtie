@@ -1,0 +1,28 @@
+=== RUN   TestHistoricalProjectionKeepsThreadOwnerRolesAndOriginalNotificationState
+--- PASS: TestHistoricalProjectionKeepsThreadOwnerRolesAndOriginalNotificationState (0.00s)
+PASS
+ok  	github.com/birdtie/birdtie/apps/api/internal/legacyhistory	0.485s
+=== RUN   TestInboxPageCursorClosedOwnerViewAndSortHint
+--- PASS: TestInboxPageCursorClosedOwnerViewAndSortHint (0.01s)
+PASS
+ok  	github.com/birdtie/birdtie/apps/api/internal/inbox	0.324s
+=== RUN   TestConnectionDecisionOperationContract
+=== RUN   TestConnectionDecisionOperationContract/owner
+=== RUN   TestConnectionDecisionOperationContract/digest
+=== RUN   TestConnectionDecisionOperationContract/action
+=== RUN   TestConnectionDecisionOperationContract/state
+=== RUN   TestConnectionDecisionOperationContract/grant-like-status
+=== RUN   TestConnectionDecisionOperationContract/time
+=== RUN   TestConnectionDecisionOperationContract/false-no-effect
+--- PASS: TestConnectionDecisionOperationContract (0.00s)
+    --- PASS: TestConnectionDecisionOperationContract/owner (0.00s)
+    --- PASS: TestConnectionDecisionOperationContract/digest (0.00s)
+    --- PASS: TestConnectionDecisionOperationContract/action (0.00s)
+    --- PASS: TestConnectionDecisionOperationContract/state (0.00s)
+    --- PASS: TestConnectionDecisionOperationContract/grant-like-status (0.00s)
+    --- PASS: TestConnectionDecisionOperationContract/time (0.00s)
+    --- PASS: TestConnectionDecisionOperationContract/false-no-effect (0.00s)
+=== RUN   TestHumanMessageOperationBinding
+--- PASS: TestHumanMessageOperationBinding (0.00s)
+PASS
+ok  	github.com/birdtie/birdtie/apps/api/internal/connection	0.332s

@@ -1,0 +1,255 @@
+{
+  "status": "PASS",
+  "observedAt": "2026-10-16T10:30:47.552795+00:00",
+  "environmentAlias": "BIRDTIE_NATIVE_HZ",
+  "databaseOID": 54087,
+  "schemaMax": 175,
+  "schemaCount": 175,
+  "activeRelease": "/opt/birdtie/releases/social175-20261016-build31",
+  "activeBinarySHA256": "3359b4baf56aadad3dff66c25e9d9cceaab4a5ef16fc78273a78881942216b4c",
+  "apiUnit": {
+    "ActiveState": "active",
+    "SubState": "running"
+  },
+  "sourceBackupSHA256": "ba6b9b5d2d404ada806a858cbc0931628a5958c4b2abdbd8b7d50b62b4e6f40d",
+  "sourceBackupIntact": true,
+  "counts": {
+    "moments": 102,
+    "accounts": 29,
+    "messages": 39,
+    "readOnly": "on",
+    "conversations": 11,
+    "activeFixtures": 0,
+    "legacyMessages": 39,
+    "suspendedFixtures": 6,
+    "personFollowEvents": 0,
+    "fixedCodeIdentities": 6,
+    "verifiedCivuMoments": 83,
+    "validFixtureSessions": 0,
+    "inactiveAccountTriggers": 0,
+    "followNotificationDecisions": 0,
+    "retainedOtherUnknownMoments": 1,
+    "retainedFixtureUnknownMoments": 18,
+    "remainingQuarantineRestoreDatabases": 0
+  },
+  "checks": {
+    "countsMatch": true,
+    "protected24TablesMatch": true,
+    "otherUnknownRemainsWithdrawnPrivate": true,
+    "reviewedTwoCitiesUseAmap": true,
+    "onlyClaimedOriginalOwnerHasNonfixtureLiveSession": true
+  },
+  "unknownOtherBoundary": [
+    {
+      "status": "withdrawn",
+      "visibility": "private",
+      "authorStatus": "active",
+      "publicMapCandidate": false,
+      "activeLocationLinks": 1,
+      "publicBindingAvailable": false,
+      "ownedPrivateMapCandidate": false
+    }
+  ],
+  "protectedSnapshotComparison": {
+    "account_auth_identities": {
+      "rows": {
+        "count": 10,
+        "sha256": "a7e1e306f4c258f6b037c8e1a7f9e06fff8fd2d61334d2c3329b6a901243e837"
+      },
+      "matchesPreQuarantineSnapshot": true
+    },
+    "accounts": {
+      "rows": {
+        "count": 23,
+        "sha256": "1cc07ad4326e82dd408c3ddc0444d2c6e18a68141c2acffab1c9e05754390ca3"
+      },
+      "matchesPreQuarantineSnapshot": true
+    },
+    "connection_requests": {
+      "rows": {
+        "count": 6,
+        "sha256": "bf3ef9feb7c052d474e0d8563caf2251f3eec26a1c81f581af148b5c58cd683a"
+      },
+      "matchesPreQuarantineSnapshot": true
+    },
+    "conversation_messages": {
+      "rows": {
+        "count": 39,
+        "sha256": "26e777f02df6a1b1120d43cdc59e585e2a3be82b375995f9f8fda5e1801659fb"
+      },
+      "matchesPreQuarantineSnapshot": true
+    },
+    "conversations": {
+      "rows": {
+        "count": 11,
+        "sha256": "1be2af9b15f3dac36509a86b2c96a3b30d58973ea75e8de2cf7104862b015b95"
+      },
+      "matchesPreQuarantineSnapshot": true
+    },
+    "follows": {
+      "rows": {
+        "count": 21,
+        "sha256": "571d6f935888494d674d8592d199cb461e92f2893af415525f1b63e12032b796"
+      },
+      "matchesPreQuarantineSnapshot": true
+    },
+    "legacy_dev_email_bindings": {
+      "rows": {
+        "count": 2,
+        "sha256": "3fa7e1bc1bce6be380023af13b222bdc64c95526af4fb3f4d87821798376c369"
+      },
+      "matchesPreQuarantineSnapshot": true
+    },
+    "legacy_dev_phone_bindings": {
+      "rows": {
+        "count": 18,
+        "sha256": "4429d781f1d9966934ada865aca56fe75283b247568aad19c2906f2354116f21"
+      },
+      "matchesPreQuarantineSnapshot": true
+    },
+    "legacy_entity_mappings": {
+      "rows": {
+        "count": 123,
+        "sha256": "ddc367d0c174fb3b0d426ab0dd45c2958846edd55d8f4cde8ec2a87607ecc870"
+      },
+      "matchesPreQuarantineSnapshot": true
+    },
+    "legacy_map_anchor_facts": {
+      "rows": {
+        "count": 16,
+        "sha256": "4f4350c9a70516840e3a4b258722dde1fcee9eda18008fad7e7b9f7cce165a6f"
+      },
+      "matchesPreQuarantineSnapshot": true
+    },
+    "legacy_moment_author_facts": {
+      "rows": {
+        "count": 83,
+        "sha256": "4598ff5a171844e3a5d7039877417f3367b0c6861288881dddb56c1b9dec5fa6"
+      },
+      "matchesPreQuarantineSnapshot": true
+    },
+    "legacy_native_adaptation_entities": {
+      "rows": {
+        "count": 6582,
+        "sha256": "a211280bf825b95b440e6bd7612b021c170e37377c36e71ba8891cfafd286b55"
+      },
+      "matchesPreQuarantineSnapshot": true
+    },
+    "legacy_native_context_entities": {
+      "rows": {
+        "count": 424,
+        "sha256": "c4dc1ef0899e91744abb6552f66aaf08890bea37d0d299a707a9cd1cd4db19bc"
+      },
+      "matchesPreQuarantineSnapshot": true
+    },
+    "legacy_private_image_recovery_items": {
+      "rows": {
+        "count": 31,
+        "sha256": "f213130ea5f82eb66688eb153bd96846045c184c204b7d8803263f0ff8318ed4"
+      },
+      "matchesPreQuarantineSnapshot": true
+    },
+    "legacy_private_media_import_items": {
+      "rows": {
+        "count": 135,
+        "sha256": "23e6a2a7ddff7873c24f8ee5cffe82e30d929e2ccabeefbe4fd15a8815ac48c4"
+      },
+      "matchesPreQuarantineSnapshot": true
+    },
+    "legacy_private_video_import_items": {
+      "rows": {
+        "count": 5,
+        "sha256": "b13fd4cc2fab0e99fba75d0c456f545dd17e81ee734785e39e756cd2b9e668a9"
+      },
+      "matchesPreQuarantineSnapshot": true
+    },
+    "legacy_reference_media_relations": {
+      "rows": {
+        "count": 153,
+        "sha256": "748e7a3d8a569e63e7aba17474cefc434d5ff7cd89396e075aa5246ed48d9ebc"
+      },
+      "matchesPreQuarantineSnapshot": true
+    },
+    "legacy_social_history_facts": {
+      "rows": {
+        "count": 161,
+        "sha256": "5829a3b86a54058f381621a45e972855a099f8b50d6153129cc3dd0bc16c6f4a"
+      },
+      "matchesPreQuarantineSnapshot": true
+    },
+    "legacy_social_import_entities": {
+      "rows": {
+        "count": 101,
+        "sha256": "751d7b15ed487a865c3fbc6c762b3733098b9f816655341a05b032d39bea6aff"
+      },
+      "matchesPreQuarantineSnapshot": true
+    },
+    "media_assets": {
+      "rows": {
+        "count": 171,
+        "sha256": "1cc43ebe6700c40d3d6f51a3f3666775f5529f20823b9e5b5268e8bb5c1ee6dc"
+      },
+      "matchesPreQuarantineSnapshot": true
+    },
+    "moment_threads": {
+      "rows": {
+        "count": 26,
+        "sha256": "37f64fb77d477945fb411feaf4ebe70ef583ad0b0ae3a611237dadb1fd57afa0"
+      },
+      "matchesPreQuarantineSnapshot": true
+    },
+    "moments": {
+      "rows": {
+        "count": 102,
+        "sha256": "6e915ceedac093b279b03b0c4a00db521ea00f9a2b1cbddf142e2f16f9d67ee5"
+      },
+      "matchesPreQuarantineSnapshot": true
+    },
+    "saved_items": {
+      "rows": {
+        "count": 189,
+        "sha256": "6c20c01c06496971fa9fad0be552f20191572a35ca92ee97eb40fdd69534edae"
+      },
+      "matchesPreQuarantineSnapshot": true
+    },
+    "user_profiles": {
+      "rows": {
+        "count": 29,
+        "sha256": "89934561a8cc652b7d7329870dfc58bc788a714f6d50aa00c26b84881c5046d0"
+      },
+      "matchesPreQuarantineSnapshot": true
+    }
+  },
+  "legitimatePhoneLoginBoundary": {
+    "totalSessions": 70,
+    "pendingOtherChallenges": 0,
+    "liveClaimedOwnerSessions": 1,
+    "liveOtherNonfixtureSessions": 0,
+    "uniqueClaimedOriginalOwners": 1,
+    "pendingClaimedOwnerChallenges": 0,
+    "previousTotalSessions": 69,
+    "historicalRowsComparison": "NOT_RUN_ALLOWED_REAL_OWNER_PHONE_SESSION_CHURN",
+    "workerCreatedSessions": 0,
+    "workerApiLogins": 0
+  },
+  "reviewedCityProviders": {
+    "cnCountries": 2,
+    "amapProviders": 2,
+    "reviewedCities": 2
+  },
+  "oldCivuService": {
+    "ActiveState": "failed",
+    "SubState": "failed"
+  },
+  "productionWrites": 0,
+  "configurationWrites": 0,
+  "civuWrites": 0,
+  "apiLogins": 0,
+  "contentBodiesOrMediaRead": false,
+  "oldCleanupExecuted": false,
+  "fixtureRejectedLoginTest": "NOT_RUN",
+  "remoteScriptSHA256": "55cf22d2f4ec8384a19517c6215083f49e25a1dfe972d5bf7ab1dcbfdb47b92a",
+  "baselineReceipt": "docs/testing/evidence/dgs-20261016/injection-guards/quarantine-prepare02.json",
+  "baselineReceiptFileSHA256": "5fb9d40716d1936e615715663be1d464d6300124ada713e0f6d6745e52739329",
+  "harnessSHA256": "890d301c16a1b3020d92c04277ed1d9887349815878eac12c93e4e10aa8217e1"
+}

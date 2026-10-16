@@ -1,0 +1,148 @@
+{
+  "receipts": [
+    {
+      "source": "docs\\testing\\evidence\\github-remote-completion-20261015\\remote-friend-chat-flow01\\receipt.json",
+      "sha256": "50f1be60ec36aedf4ee03a30de3b523541d4bd41050f16a591b3841f12c5dfc7",
+      "priorStatus": "FAIL",
+      "exactMomentIDs": [
+        "b8b27221-24dd-40ce-8fc3-58868c332df5"
+      ],
+      "exactConversationIDs": [
+        "0261299f-845d-4381-971c-76683a2c86c3"
+      ],
+      "exactRequestIDs": [
+        "8676a012-9e61-4d1e-b96f-4098303e8b12"
+      ]
+    },
+    {
+      "source": "docs\\testing\\evidence\\github-remote-completion-20261015\\remote-friend-chat-flow02\\receipt.json",
+      "sha256": "3e6a62d3144ccbbc38cccdf717d9b45aa2cc42e8e199e770e41fed6a1bb43554",
+      "priorStatus": "PASS",
+      "exactMomentIDs": [
+        "c2a5e3ea-afbd-408f-b158-ea426c7da9e7"
+      ],
+      "exactConversationIDs": [
+        "0261299f-845d-4381-971c-76683a2c86c3"
+      ],
+      "exactRequestIDs": [
+        "97688296-58c0-4008-9f27-656001c8d596"
+      ]
+    },
+    {
+      "source": "docs\\testing\\evidence\\github-remote-completion-20261015\\remote-media-thread-flow01\\receipt.json",
+      "sha256": "5d6584837974f1263581b6dd3e0a79657b41d0300b4221405b1b326248c29cff",
+      "priorStatus": "PASS",
+      "exactMomentIDs": [
+        "964cc4c6-a188-4936-9dca-63d9cdb8d4d6",
+        "b14d84e8-f7e7-48a3-8acb-c425c744e98a",
+        "c90cf108-a9fe-4596-bb1e-b4a8204b76fe",
+        "e8062b7d-b6f9-47eb-9f53-6f88548e8c56"
+      ],
+      "exactConversationIDs": [],
+      "exactRequestIDs": []
+    },
+    {
+      "source": "docs\\testing\\evidence\\github-remote-completion-20261015\\remote-crosscity166-01\\receipt.json",
+      "sha256": "41e8c001e6db017550a816c970afdbb1a12dd0ad383b7f31c5c154ff7472580f",
+      "priorStatus": "PASS",
+      "exactMomentIDs": [
+        "4323975d-8dca-4112-b81c-7bc9f7a9179d"
+      ],
+      "exactConversationIDs": [],
+      "exactRequestIDs": []
+    },
+    {
+      "source": "docs\\testing\\evidence\\github-remote-completion-20261015\\remote-multilocation166-01\\receipt.json",
+      "sha256": "93228775c53b6278fd08abbff17acc8044583e6f7d1c56b6f49f9cb1b1427451",
+      "priorStatus": "PASS",
+      "exactMomentIDs": [
+        "47ce7ce5-dc4a-44c5-b58f-32d63d1518e1"
+      ],
+      "exactConversationIDs": [],
+      "exactRequestIDs": []
+    }
+  ],
+  "scripts": [
+    {
+      "source": "remote_friend_chat_flow.py",
+      "sha256": "4e4e51fbc66cde69b14371162f175b3097532fa1815b3f56192a3e4f367046ca",
+      "exactReservedSyntheticSubjects": 2
+    },
+    {
+      "source": "remote_friend_chat_flow02.py",
+      "sha256": "1521d264d1f620f70356bf0e81c5a0ad3fafad226188e2042e5d73eb30e6a5e5",
+      "exactReservedSyntheticSubjects": 2
+    },
+    {
+      "source": "remote_media_thread_flow.py",
+      "sha256": "a9bd905f9df82f343cbe032c7056bcbd9edda80b56d2ae42320f50a1a622200e",
+      "exactReservedSyntheticSubjects": 2
+    },
+    {
+      "source": "cleanup_device11_synthetic_thread.remote.py",
+      "sha256": "3a300f52b981659e7a8e95879449fedfe9bd7d04f99d5b0880a0417db57dd82a",
+      "exactReservedSyntheticSubjects": 1
+    },
+    {
+      "source": "verify_remote_social.py",
+      "sha256": "f4749111d9441ad3ab59c6fa419cc5ba19a99eb7de5a4fcdf2665109468e9950",
+      "exactReservedSyntheticSubjects": 2
+    },
+    {
+      "source": "verify_remote_social02.py",
+      "sha256": "c999564b709f3ed7980278115eb5e77919a83b68494c152298b4c51e2330294b",
+      "exactReservedSyntheticSubjects": 2
+    }
+  ],
+  "seedFiles": [
+    {
+      "source": "apps\\api\\dev-seeds\\001_badminton.sql",
+      "sha256": "8f31673225b40a1fc0dbbcdbd8478c39ac0a9e8e631c4d3d1132cdc379469568",
+      "exactIDs": [
+        "b1700000-0000-4000-8000-000000000001",
+        "b1700000-0000-4000-8000-000000000002",
+        "b1700000-0000-4000-8000-000000000003",
+        "b1700000-0000-4000-8000-000000000004",
+        "b1700000-0000-4000-8000-000000000005",
+        "b1700000-0000-4000-8000-000000000006",
+        "b1700000-0000-4000-8000-000000000007"
+      ]
+    },
+    {
+      "source": "apps\\api\\dev-seeds\\002_functional_mvp.sql",
+      "sha256": "fe74704bb20869d047c8452a071f332ae04651ba7aba26d54fa669d7c3666052",
+      "exactIDs": [
+        "b1700000-0000-4000-8000-000000000002",
+        "b1700000-0000-4000-8000-000000000004",
+        "b1700000-0000-4000-8000-000000000005",
+        "b1700000-0000-4000-8000-000000000006",
+        "b1700000-0000-4000-8000-000000000010",
+        "b1700000-0000-4000-8000-000000000011",
+        "b1700000-0000-4000-8000-000000000012",
+        "b1700000-0000-4000-8000-000000000013",
+        "b1700000-0000-4000-8000-000000000014",
+        "b1700000-0000-4000-8000-000000000015",
+        "b1700000-0000-4000-8000-000000000016",
+        "b1700000-0000-4000-8000-000000000017",
+        "b1700000-0000-4000-8000-000000000018",
+        "b1700000-0000-4000-8000-000000000019",
+        "b1700000-0000-4000-8000-000000000020",
+        "b1700000-0000-4000-8000-000000000021",
+        "b1700000-0000-4000-8000-000000000022",
+        "b1700000-0000-4000-8000-000000000023"
+      ]
+    },
+    {
+      "source": "apps\\api\\dev-seeds\\003_community_social.sql",
+      "sha256": "eaa3ebc5d895ad823a42582b059f17b4880cfa142cbda201fe0bfa4d95c5def2",
+      "exactIDs": [
+        "b1700000-0000-4000-8000-000000000010",
+        "b1700000-0000-4000-8000-000000000011",
+        "b1700000-0000-4000-8000-000000000030",
+        "b1700000-0000-4000-8000-000000000031",
+        "b1700000-0000-4000-8000-000000000032"
+      ]
+    }
+  ],
+  "syntheticAuthSubjectCount": 6
+}

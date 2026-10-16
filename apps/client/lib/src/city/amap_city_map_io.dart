@@ -15,18 +15,15 @@ import '../workspace/map_display_policy.dart';
 import '../workspace/map_entities.dart';
 import '../workspace/map_marker_bitmap.dart';
 import '../workspace/map_marker_visual.dart';
+import 'amap_native_configuration.dart';
+import 'amap_offline_style.dart';
+import 'amap_session_consent.dart';
 import 'map_camera_focus.dart';
 import 'map_cluster_members_sheet.dart';
 import 'map_coordinate_boundary.dart';
 import 'map_point_selection_sheet.dart';
 import 'now_map_compass.dart';
 import 'public_city_controller.dart';
-
-/// Consent is retained only for this running app session. A city/provider switch
-/// does not invent consent or repeatedly ask after the same explicit choice.
-class _AMapSessionConsent {
-  static bool accepted = false;
-}
 
 /// Birdtie owns permissions, content and WGS84 coordinates. The SDK owns only
 /// the native map and its GCJ-02 display/projection. No location SDK is started.
@@ -90,8 +87,6 @@ class AMapCityMapView extends StatefulWidget {
 
 class _AMapCityMapViewState extends State<AMapCityMapView>
     with WidgetsBindingObserver {
-  static const _androidKey = String.fromEnvironment('BIRDTIE_AMAP_ANDROID_KEY');
-  static const _iosKey = String.fromEnvironment('BIRDTIE_AMAP_IOS_KEY');
   static final _privacyURL = Uri.parse('https://lbs.amap.com/pages/privacy/');
   final _changes = MapReaderChanges();
   late final _renderQueue = LatestMapRenderQueue(_render);
@@ -116,6 +111,11 @@ class _AMapCityMapViewState extends State<AMapCityMapView>
   bool _foreground = true, _configured = false, _moving = false;
   bool _retiring = false, _choiceOpen = false, _initialized = false;
   String? _failure;
+  AMapNativeConfiguration? _keyConfiguration;
+  int _configurationRequest = 0;
+  amap.CustomStyleOptions? _offlineStyle;
+  bool _styleFailed = false;
+  int _styleRequest = 0;
   Size _size = Size.zero;
   double _ratio = 1, _screenRatio = 1;
   Timer? _settle, _expiry, _startup;
@@ -123,10 +123,8 @@ class _AMapCityMapViewState extends State<AMapCityMapView>
   bool get _supported =>
       defaultTargetPlatform == TargetPlatform.android ||
       defaultTargetPlatform == TargetPlatform.iOS;
-  bool get _hasKey =>
-      (defaultTargetPlatform == TargetPlatform.iOS ? _iosKey : _androidKey)
-          .trim()
-          .isNotEmpty;
+  bool get _styleReady =>
+      defaultTargetPlatform != TargetPlatform.android || _offlineStyle != null;
   // Native Android projection uses physical pixels; iOS uses logical points.
   double get _projectionScale =>
       defaultTargetPlatform == TargetPlatform.android ? _screenRatio : 1;
@@ -172,6 +170,44 @@ class _AMapCityMapViewState extends State<AMapCityMapView>
     WidgetsBinding.instance.addObserver(this);
     widget.readerChanges?.addListener(_sourceChanged);
     _syncSource();
+    unawaited(_readKeyConfiguration());
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      unawaited(_loadOfflineStyle());
+    }
+  }
+
+  Future<void> _loadOfflineStyle() async {
+    final request = ++_styleRequest;
+    try {
+      final style = await androidAMapOfflineStyle.load();
+      if (!mounted || request != _styleRequest) return;
+      setState(() {
+        _offlineStyle = style;
+        _styleFailed = false;
+      });
+      _configureAfterConsent();
+    } catch (_) {
+      if (!mounted || request != _styleRequest) return;
+      setState(() => _styleFailed = true);
+    }
+  }
+
+  void _retryOfflineStyle() {
+    setState(() => _styleFailed = false);
+    unawaited(_loadOfflineStyle());
+  }
+
+  Future<void> _readKeyConfiguration() async {
+    final request = ++_configurationRequest;
+    final configuration = await AMapNativeConfiguration.inspect();
+    if (!mounted || request != _configurationRequest) return;
+    setState(() => _keyConfiguration = configuration);
+    _configureAfterConsent();
+  }
+
+  void _retryKeyConfiguration() {
+    setState(() => _keyConfiguration = null);
+    unawaited(_readKeyConfiguration());
   }
 
   @override
@@ -193,8 +229,9 @@ class _AMapCityMapViewState extends State<AMapCityMapView>
   void _configureAfterConsent() {
     if (_configured ||
         !_supported ||
-        !_hasKey ||
-        !_AMapSessionConsent.accepted) {
+        _keyConfiguration?.configured != true ||
+        !_styleReady ||
+        !AMapSessionConsent.accepted) {
       return;
     }
     // This statement is reached only after the service disclosure was shown
@@ -208,7 +245,9 @@ class _AMapCityMapViewState extends State<AMapCityMapView>
     );
     amap.AMapInitializer.init(
       context,
-      apiKey: const abase.AMapApiKey(androidKey: _androidKey, iosKey: _iosKey),
+      // Null preserves Android's existing manifest configuration. An empty
+      // Dart key must not override the native key.
+      apiKey: _keyConfiguration!.apiKey,
     );
     _configured = true;
     _armStartup();
@@ -907,6 +946,8 @@ class _AMapCityMapViewState extends State<AMapCityMapView>
 
   @override
   void dispose() {
+    ++_styleRequest;
+    ++_configurationRequest;
     ++_sourceEpoch;
     ++_cameraEpoch;
     ++_sdkEpoch;
@@ -925,11 +966,71 @@ class _AMapCityMapViewState extends State<AMapCityMapView>
 
   @override
   Widget build(BuildContext context) {
-    if (!_supported || !_hasKey || widget.city.map == null) {
+    if (!_supported || widget.city.map == null) {
       return const Center(
         child: Padding(
           padding: EdgeInsets.all(24),
           child: Text('该设备的高德地图尚未配置，请使用地点列表。'),
+        ),
+      );
+    }
+    final keyConfiguration = _keyConfiguration;
+    if (keyConfiguration == null) {
+      return const Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(height: 12),
+            Text('正在检查高德地图配置…'),
+          ],
+        ),
+      );
+    }
+    if (!keyConfiguration.configured) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                keyConfiguration.source == AMapNativeKeySource.missing
+                    ? '该设备的高德地图尚未配置，请使用地点列表。'
+                    : '暂时无法读取高德地图配置，请重试或使用地点列表。',
+              ),
+              TextButton(
+                onPressed: _retryKeyConfiguration,
+                child: const Text('重试'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+    if (!_styleReady) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (!_styleFailed) ...[
+                const CircularProgressIndicator(),
+                const SizedBox(height: 12),
+              ],
+              Text(
+                _styleFailed
+                    ? '地图样式暂时无法加载，请重试或使用地点列表。'
+                    : '正在准备地图样式…',
+              ),
+              if (_styleFailed)
+                TextButton(
+                  onPressed: _retryOfflineStyle,
+                  child: const Text('重试地图样式'),
+                ),
+            ],
+          ),
         ),
       );
     }
@@ -966,7 +1067,7 @@ class _AMapCityMapViewState extends State<AMapCityMapView>
                 ),
                 FilledButton(
                   onPressed: () {
-                    _AMapSessionConsent.accepted = true;
+                    AMapSessionConsent.accepted = true;
                     _configureAfterConsent();
                     setState(() {});
                   },
@@ -1004,6 +1105,7 @@ class _AMapCityMapViewState extends State<AMapCityMapView>
             amap.AMapWidget(
               key: ValueKey('birdtie-native-amap:$sdk'),
               initialCameraPosition: initial,
+              customStyleOptions: _offlineStyle,
               markers: _markers.values.toSet(),
               onMapCreated: (map) => _onCreated(map, sdk),
               onCameraMove: _onMove,

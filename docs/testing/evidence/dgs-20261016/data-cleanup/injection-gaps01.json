@@ -1,0 +1,24 @@
+{
+  "status": "READ_ONLY_GAPS_CONFIRMED",
+  "facts": {
+    "confirmedSyntheticAccounts": 6,
+    "currentlyValidSyntheticSessions": 0,
+    "confirmedSyntheticActiveAccounts": 6
+  },
+  "productionWrites": 0,
+  "loginAttempts": 0,
+  "gaps": [
+    "Three dev-seed SQL files are comment-only environment restrictions, without a database identity or explicit fixture opt-in assertion.",
+    "Current fixed-code auth accepts valid normalized phone identities and has no exact synthetic fixture identity/account rejection gate.",
+    "Historical private-workspace remote acceptance scripts target the public API; some execute on invocation without a plan-only default."
+  ],
+  "alreadyGuarded": [
+    "automation/verify_social_e2e_local.py loopback, isolated database and ownership marker",
+    "apps/api/cmd/now-live-prepare/main.go named isolated database prefix and loopback DSN"
+  ],
+  "notFixtureInjection": [
+    "Legitimate personal Agent seed preferences",
+    "Permission-reviewed cityseed candidates"
+  ],
+  "remoteScriptSHA256": "9fd1802e7d891bb9c6fd9950d240282125506674c2f2c0784054271a72981f78"
+}

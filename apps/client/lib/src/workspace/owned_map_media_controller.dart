@@ -304,6 +304,17 @@ class OwnedMapMediaController extends ChangeNotifier {
     _notify();
   }
 
+  /// A resource-level denial retires its active pixels, including shared cache
+  /// entries, while independent geographic grants stay on the map.
+  void retirePins(Set<String> mapIDs) {
+    final entries = _active.entries
+        .where((entry) => mapIDs.contains(entry.key))
+        .map((entry) => entry.value.entry)
+        .toSet();
+    _active.removeWhere((_, grant) => entries.contains(grant.entry));
+    for (final entry in entries) _retire(entry);
+  }
+
   void retire() {
     if (_closed) return;
     _epoch++;

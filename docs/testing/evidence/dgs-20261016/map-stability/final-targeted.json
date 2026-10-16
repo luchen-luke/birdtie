@@ -1,0 +1,50 @@
+{
+  "command": "flutter test --no-pub test/dgs_map_stability_test.dart test/dgs_map_decode_isolation_test.dart test/content_map_controller_test.dart test/content_map_coverage_test.dart test/map_layers_auto_refresh_test.dart test/map_layers_partial_read_test.dart test/map_layers_api_test.dart --reporter expanded",
+  "cwd": "D:\\Project\\birdtie\\apps\\client",
+  "startedAt": "2026-10-16T08:52:30.6154927Z",
+  "finishedAt": "2026-10-16T08:52:34.2593265Z",
+  "exitCode": 0,
+  "sourceFrame": [
+    {
+      "path": "lib/src/workspace/owned_map_api.dart",
+      "sha256": "bea14ca90316247f99220e251025cfbcae65f9cfcd9bffd98dd6946eb5b9ec1a"
+    },
+    {
+      "path": "lib/src/workspace/owned_map_controller.dart",
+      "sha256": "0d4a87f87614b90336f2bad2f4d02685918fd43cc04e433bedae29bc539e5193"
+    },
+    {
+      "path": "lib/src/workspace/owned_map_media_controller.dart",
+      "sha256": "7edef7f9d19379ab3fa26efe897c1bf2353b9349ac93aef590381ff86b123a63"
+    },
+    {
+      "path": "lib/src/workspace/map_layers_api.dart",
+      "sha256": "6d57b4538834e3cc3b2e54943eeeee6c160f0c9fda1b1b90eca79ee745f0378e"
+    },
+    {
+      "path": "lib/src/workspace/map_layers_controller.dart",
+      "sha256": "92b7d16f63982bfb572760025a796b4f814ee7ee19d7679ac0bb4930a75eecf7"
+    },
+    {
+      "path": "test/dgs_map_stability_test.dart",
+      "sha256": "5358a2d970d394429dbb8b90329a22f03d843989452ccdd0d82ecd0e329f40eb"
+    },
+    {
+      "path": "test/dgs_map_decode_isolation_test.dart",
+      "sha256": "4553be3d06447a14dc3a0851e0cf4c9d9f9d7e15ac1968a4302afec1a4c76b2d"
+    },
+    {
+      "path": "test/map_layers_api_test.dart",
+      "sha256": "564aa26cfc0621d71e4005e7b1b34d83bccb0f96e668cbc9982a1b2be22ebaef"
+    },
+    {
+      "path": "test/map_layers_partial_read_test.dart",
+      "sha256": "95d243dd7dd47e41312f470287f60311eeee7aeb2f7b312949ef05722167989c"
+    }
+  ],
+  "environment": "ISOLATED_MOCK_HTTP_WIDGET",
+  "realDevice": "NOT_RUN",
+  "build": "NOT_RUN",
+  "deployment": "NOT_RUN",
+  "productionDataWrites": 0
+}

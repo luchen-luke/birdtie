@@ -1,0 +1,49 @@
+{
+  "command": "flutter test --no-pub test/destination_search_test.dart test/destination_map_target_test.dart test/public_city_exploration_test.dart --reporter expanded",
+  "cwd": "D:\\Project\\birdtie\\apps\\client",
+  "exitCode": 0,
+  "passed": 26,
+  "logFirstWrittenAt": "2026-10-16T09:23:24.1469576Z",
+  "logLastWrittenAt": "2026-10-16T09:23:28.9174799Z",
+  "sourceFrameBoundary": "Captured after run; assigned files unchanged since formatter before this run",
+  "sourceFrame": [
+    {
+      "path": "lib/src/city/browse_destination.dart",
+      "sha256": "690bf760cfa97b879948d42be5b05dc5592015229610f31b3f9c4c01e378e1ce"
+    },
+    {
+      "path": "lib/src/city/destination_search_service.dart",
+      "sha256": "0df3bc7b1b38ba12ea178d05ca17267b1efb03471244835e860ab6cd969d7467"
+    },
+    {
+      "path": "lib/src/city/destination_search_controller.dart",
+      "sha256": "570326d3f51cb2782b1322055ed5fc9a0c9f4da0705fdfddf609fd18f42df7b8"
+    },
+    {
+      "path": "lib/src/city/public_city_controller.dart",
+      "sha256": "1dec0c2fbd45b1c5d26d740347ce59ca25426921d9278dc87cd6b7362812163d"
+    },
+    {
+      "path": "lib/src/workspace/map_canvas.dart",
+      "sha256": "cdb1f6e48270a3bea8b0480ed1aa482e015bb17f5314981823f202dd0cff1ea8"
+    },
+    {
+      "path": "test/destination_search_test.dart",
+      "sha256": "f265039ed326582102b10284fa4deb6ab722073aa9474d54f12e3fcca36d5d45"
+    },
+    {
+      "path": "test/destination_map_target_test.dart",
+      "sha256": "2d4370965cc000f08dbbee374f9d91caf3ef19c941e6c49756cf21247ee34d20"
+    },
+    {
+      "path": "test/public_city_exploration_test.dart",
+      "sha256": "676b6d5347229ce3e3fa27b197552332381c67ab4441da6e54e5131aa7231062"
+    }
+  ],
+  "environment": "ISOLATED_MOCK_HTTP_WIDGET",
+  "build": "NOT_RUN",
+  "device": "NOT_RUN",
+  "deployment": "NOT_RUN",
+  "productionDataWrites": 0,
+  "liveProviderEvidence": "live-provider-check.json"
+}

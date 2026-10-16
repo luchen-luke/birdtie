@@ -1,0 +1,8 @@
+psql:/migrations/019_agent_identity_organizations.sql:35: NOTICE:  trigger "organizations_validate_account" for relation "organizations" does not exist, skipping
+psql:/migrations/019_agent_identity_organizations.sql:78: NOTICE:  trigger "agents_validate_principal" for relation "agents" does not exist, skipping
+psql:/migrations/019_agent_identity_organizations.sql:93: NOTICE:  trigger "organization_memberships_validate_principals" for relation "organization_memberships" does not exist, skipping
+psql:/migrations/020_agent_task_context.sql:3: NOTICE:  trigger "agent_tasks_validate_principal" for relation "agent_tasks" does not exist, skipping
+psql:/migrations/020_agent_task_context.sql:76: NOTICE:  trigger "agent_tasks_validate_principal" for relation "agent_tasks" does not exist, skipping
+psql:/migrations/021_core_activity_participation.sql:85: NOTICE:  trigger "activities_validate_organization" for relation "activities" does not exist, skipping
+psql:/migrations/021_core_activity_participation.sql:117: NOTICE:  trigger "activity_participations_validate_person" for relation "activity_participations" does not exist, skipping
+psql:/migrations/022_activity_participation_open_guard.sql:28: NOTICE:  trigger "activity_participation_open_guard" for relation "activity_participations" does not exist, skipping

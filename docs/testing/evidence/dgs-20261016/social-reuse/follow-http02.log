@@ -1,0 +1,52 @@
+=== RUN   TestNotificationNativeRegistry
+=== RUN   TestNotificationNativeRegistry/opportunity_available
+=== RUN   TestNotificationNativeRegistry/activity_reminder
+=== RUN   TestNotificationNativeRegistry/activity_change
+=== RUN   TestNotificationNativeRegistry/activity_cancelled
+=== RUN   TestNotificationNativeRegistry/activity_review
+=== RUN   TestNotificationNativeRegistry/place_review
+=== RUN   TestNotificationNativeRegistry/direct_message
+=== RUN   TestNotificationNativeRegistry/connection_request
+=== RUN   TestNotificationNativeRegistry/connection_decision
+=== RUN   TestNotificationNativeRegistry/community_message
+=== RUN   TestNotificationNativeRegistry/activity_message
+=== RUN   TestNotificationNativeRegistry/person_follow
+=== RUN   TestNotificationNativeRegistry/organization_invitation
+=== RUN   TestNotificationNativeRegistry/organization_membership_change
+=== RUN   TestNotificationNativeRegistry/agent_task_completed
+=== RUN   TestNotificationNativeRegistry/agent_task_failed
+=== RUN   TestNotificationNativeRegistry/business_claim_review
+=== RUN   TestNotificationNativeRegistry/business_update
+--- PASS: TestNotificationNativeRegistry (0.00s)
+    --- PASS: TestNotificationNativeRegistry/opportunity_available (0.00s)
+    --- PASS: TestNotificationNativeRegistry/activity_reminder (0.00s)
+    --- PASS: TestNotificationNativeRegistry/activity_change (0.00s)
+    --- PASS: TestNotificationNativeRegistry/activity_cancelled (0.00s)
+    --- PASS: TestNotificationNativeRegistry/activity_review (0.00s)
+    --- PASS: TestNotificationNativeRegistry/place_review (0.00s)
+    --- PASS: TestNotificationNativeRegistry/direct_message (0.00s)
+    --- PASS: TestNotificationNativeRegistry/connection_request (0.00s)
+    --- PASS: TestNotificationNativeRegistry/connection_decision (0.00s)
+    --- PASS: TestNotificationNativeRegistry/community_message (0.00s)
+    --- PASS: TestNotificationNativeRegistry/activity_message (0.00s)
+    --- PASS: TestNotificationNativeRegistry/person_follow (0.00s)
+    --- PASS: TestNotificationNativeRegistry/organization_invitation (0.00s)
+    --- PASS: TestNotificationNativeRegistry/organization_membership_change (0.00s)
+    --- PASS: TestNotificationNativeRegistry/agent_task_completed (0.00s)
+    --- PASS: TestNotificationNativeRegistry/agent_task_failed (0.00s)
+    --- PASS: TestNotificationNativeRegistry/business_claim_review (0.00s)
+    --- PASS: TestNotificationNativeRegistry/business_update (0.00s)
+PASS
+ok  	github.com/birdtie/birdtie/apps/api/internal/agentnotification	0.550s
+=== RUN   TestPersonFollowNotificationHTTPCurrentTargetAndCapability
+2026/10/16 18:03:08 request_id=f85afe6d293345c6931ee8543d8742af method=GET status=200 latency_ms=0
+2026/10/16 18:03:08 request_id=f92a61d48ebe93ffbbac23929629cd2f method=GET status=400 latency_ms=0
+2026/10/16 18:03:08 request_id=9428828e4edbb57a1ef256d8304d8e65 method=GET status=401 latency_ms=0
+2026/10/16 18:03:08 request_id=c79c98684c7b325b309d0f9746cab4d5 method=GET status=409 latency_ms=0
+2026/10/16 18:03:08 request_id=25e72fa4a1406719c5ff93dcafc3e7ad method=GET status=400 latency_ms=0
+2026/10/16 18:03:08 request_id=bb683f1652b0dc8569e1b69c5ee2bbc3 method=GET status=401 latency_ms=0
+2026/10/16 18:03:08 request_id=4dbade694a6884fac8f4236596873d6b method=GET status=503 latency_ms=0
+2026/10/16 18:03:08 request_id=6b6aa4af0340ab752509e71afe377d98 method=GET status=200 latency_ms=0
+--- PASS: TestPersonFollowNotificationHTTPCurrentTargetAndCapability (0.02s)
+PASS
+ok  	github.com/birdtie/birdtie/apps/api/internal/httpapi	4.428s

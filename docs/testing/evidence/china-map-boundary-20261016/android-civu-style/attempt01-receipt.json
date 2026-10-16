@@ -1,0 +1,38 @@
+{
+  "finishedAt": "2026-10-16T08:24:32.352978+00:00",
+  "status": "DIRECT_TESTS_FAIL",
+  "command": [
+    "cmd",
+    "/c",
+    "D:/DevTools/flutter/bin/flutter.bat",
+    "test",
+    "--no-pub",
+    "test/amap_offline_style_test.dart",
+    "--reporter",
+    "expanded"
+  ],
+  "cwd": "D:\\Project\\birdtie\\apps\\client",
+  "exitCode": 1,
+  "sourceBefore": {
+    "apps/client/lib/src/city/amap_offline_style.dart": "1c5d6ae61175e1d3396122611e4c8c2eaedfc6abe70594951dd9630c7874c132",
+    "apps/client/lib/src/city/amap_city_map_io.dart": "923934f28ed00dc947bbce788b724d3c77c64d68da37fcb7f2f8fbe92cfacb97",
+    "apps/client/pubspec.yaml": "71488dfc63f2c673cc35f74df96da9ef4cc817e1d4ad4417a388cbb9657e09f5",
+    "apps/client/test/amap_offline_style_test.dart": "ccd5862a99cceeb34eef9ae37dab56f8c484a83da65a2187b93b5c27dd13d222",
+    "apps/client/assets/map_styles/civu_android/style.data": "2e58328b9a676e23705f8a11ded22f9eb5d5482d1c2d1d00b9d67494ec25c8d1",
+    "apps/client/assets/map_styles/civu_android/style_extra.data": "a2055f0e095badfbbb402eb5e61b49ec5a7ff71795be6600a6a55a92bb9e034b",
+    "apps/client/assets/map_styles/civu_android/README.md": "60195338a5dea1ade74dd338eec08704461aec9fd4d0372f896d84cc532db4d9"
+  },
+  "sourceAfter": {
+    "apps/client/lib/src/city/amap_offline_style.dart": "1c5d6ae61175e1d3396122611e4c8c2eaedfc6abe70594951dd9630c7874c132",
+    "apps/client/lib/src/city/amap_city_map_io.dart": "923934f28ed00dc947bbce788b724d3c77c64d68da37fcb7f2f8fbe92cfacb97",
+    "apps/client/pubspec.yaml": "71488dfc63f2c673cc35f74df96da9ef4cc817e1d4ad4417a388cbb9657e09f5",
+    "apps/client/test/amap_offline_style_test.dart": "ccd5862a99cceeb34eef9ae37dab56f8c484a83da65a2187b93b5c27dd13d222",
+    "apps/client/assets/map_styles/civu_android/style.data": "2e58328b9a676e23705f8a11ded22f9eb5d5482d1c2d1d00b9d67494ec25c8d1",
+    "apps/client/assets/map_styles/civu_android/style_extra.data": "a2055f0e095badfbbb402eb5e61b49ec5a7ff71795be6600a6a55a92bb9e034b",
+    "apps/client/assets/map_styles/civu_android/README.md": "60195338a5dea1ade74dd338eec08704461aec9fd4d0372f896d84cc532db4d9"
+  },
+  "sourceStable": true,
+  "output": "direct-tests01.txt",
+  "outputSHA256": "625c17c6b78b5db5c5989141ad84dc5007e288183b0ce1ec42caa3a370e22705",
+  "finalized": false
+}

@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated": "2026-10-16T02:26:23.544463+00:00",
+  "updated": "2026-10-16T10:46:53.027353+00:00",
   "tasks": [
     {
       "id": "BT-AUD-001",
@@ -21613,6 +21613,256 @@
         "candidateSchema": 174,
         "candidateClient": 35,
         "candidateDeployed": false
+      },
+      "dgs_execution_20261016": {
+        "kind": "REQUIREMENT_OVERLAY_NOT_SEPARATE_LIVE_QUEUE",
+        "source": "Birdtie_真实数据_全球城市_社交复用_执行方案_2026-10-16.md",
+        "source_sha256": "29a4205da3fdd6fe4b680127068877fdbdcbc6c168b2a42de25eded5675b8cb7",
+        "parent_owner": "root",
+        "checkpoints": [
+          {
+            "id": "DGS-01",
+            "title": "实际构建与数据环境基线",
+            "depends_on_checkpoints": [],
+            "status": "DONE",
+            "evidence_owner_task_id": "BT-FIX-NOW-UI-001",
+            "current_evidence_boundary": "本地及GitHub起点cef1a11、当前APK40/API31/schema175逐项绑定；原附件旧基线不回退。"
+          },
+          {
+            "id": "DGS-02",
+            "title": "地图链路故障复现",
+            "depends_on_checkpoints": [
+              "DGS-01"
+            ],
+            "status": "DONE",
+            "evidence_owner_task_id": "BT-FIX-NOW-UI-001",
+            "current_evidence_boundary": "单封面故障全清、组织切换不恢复已确定性复现；逐项解码与链路计数留证。现场未登录是另一个已见原因，不声称唯一根因。"
+          },
+          {
+            "id": "DGS-03",
+            "title": "身份失效后统一恢复",
+            "depends_on_checkpoints": [
+              "DGS-02"
+            ],
+            "status": "DONE",
+            "evidence_owner_task_id": "BT-FIX-NOW-UI-001",
+            "current_evidence_boundary": "账号、token、组织监听后统一恢复3项通过；旧响应仍隔离；真实登录与40会话恢复已执行。"
+          },
+          {
+            "id": "DGS-04",
+            "title": "失败与过期恢复",
+            "depends_on_checkpoints": [
+              "DGS-03"
+            ],
+            "status": "PARTIAL",
+            "evidence_owner_task_id": "BT-FIX-NOW-UI-001",
+            "current_evidence_boundary": "网络/资源/过期边界直接测试通过；真实后台超过30秒恢复、阅读后地图常驻通过；手机断网矩阵及30次循环NOT_RUN。"
+          },
+          {
+            "id": "DGS-05",
+            "title": "可空标题地点与坐标投影",
+            "depends_on_checkpoints": [
+              "DGS-01"
+            ],
+            "status": "PARTIAL",
+            "evidence_owner_task_id": "BT-FIX-NOW-UI-001",
+            "current_evidence_boundary": "v2无POI坐标点、空标题解码及无标题分享直接测试通过；本批所有发布/读取入口全链路NOT_RUN。"
+          },
+          {
+            "id": "DGS-06",
+            "title": "合成来源审计与停止注入",
+            "depends_on_checkpoints": [
+              "DGS-01"
+            ],
+            "status": "DONE",
+            "evidence_owner_task_id": "BT-FIX-NOW-UI-001",
+            "current_evidence_boundary": "来源清单、3 seed双重环境守卫、7旧注入脚本封停；14实际阻断尝试、隔离PG验证通过，真人固定码保留。"
+          },
+          {
+            "id": "DGS-07",
+            "title": "备份限定清理与缓存对账",
+            "depends_on_checkpoints": [
+              "DGS-06"
+            ],
+            "status": "PARTIAL",
+            "evidence_owner_task_id": "BT-FIX-NOW-UI-001",
+            "current_evidence_boundary": "备份实际恢复、22表103行精确清理、幂等重跑及保护摘要通过；6测试账号隔离；手机长期旧缓存/搜索全入口矩阵NOT_RUN。"
+          },
+          {
+            "id": "DGS-08",
+            "title": "Civu真实身份内容媒体映射",
+            "depends_on_checkpoints": [
+              "DGS-01",
+              "DGS-06"
+            ],
+            "status": "PARTIAL",
+            "evidence_owner_task_id": "BT-FIX-NOW-UI-001",
+            "current_evidence_boundary": "部署后83 Civu动态/39旧消息及稳定映射保护；真实owner登录和原图片读取通过；全部媒体与关系逐项真人验收NOT_RUN。"
+          },
+          {
+            "id": "DGS-09",
+            "title": "全球目的地服务与Civu审计",
+            "depends_on_checkpoints": [
+              "DGS-01"
+            ],
+            "status": "PARTIAL",
+            "evidence_owner_task_id": "BT-FIX-NOW-UI-001",
+            "current_evidence_boundary": "中英文Mapbox真实调用200、手机巴黎选择及原生高德上海成功；provider失败仅直接测试，真机外部故障NOT_RUN。"
+          },
+          {
+            "id": "DGS-10",
+            "title": "搜索式目的地选择器",
+            "depends_on_checkpoints": [
+              "DGS-09"
+            ],
+            "status": "PARTIAL",
+            "evidence_owner_task_id": "BT-FIX-NOW-UI-001",
+            "current_evidence_boundary": "真实Now搜索/国家消歧/巴黎定位与上海城市尺度通过；全球语言和错误态真机矩阵NOT_RUN。"
+          },
+          {
+            "id": "DGS-11",
+            "title": "无内部城市的视口读取",
+            "depends_on_checkpoints": [
+              "DGS-05",
+              "DGS-09"
+            ],
+            "status": "PARTIAL",
+            "evidence_owner_task_id": "BT-FIX-NOW-UI-001",
+            "current_evidence_boundary": "无city目的地状态和bounds-only查询直接测试、巴黎手机定位通过；跨日期变更线真实设备NOT_RUN。"
+          },
+          {
+            "id": "DGS-12",
+            "title": "好友关注屏蔽差异及适配",
+            "depends_on_checkpoints": [
+              "DGS-08"
+            ],
+            "status": "PARTIAL",
+            "evidence_owner_task_id": "BT-FIX-NOW-UI-001",
+            "current_evidence_boundary": "好友/关注/屏蔽差异矩阵、新关注通知及当前权限适配；隔离双账号PG通过，真实双人设备依赖BLOCKED、E2E NOT_RUN。"
+          },
+          {
+            "id": "DGS-13",
+            "title": "私信通知未读历史适配",
+            "depends_on_checkpoints": [
+              "DGS-12"
+            ],
+            "status": "PARTIAL",
+            "evidence_owner_task_id": "BT-FIX-NOW-UI-001",
+            "current_evidence_boundary": "原消息/历史通知留存、禁止历史Push、未知单项降级、原生新关注通知部署；双设备未读/后台Push NOT_RUN；逐条撤回writer仍缺。"
+          },
+          {
+            "id": "DGS-14",
+            "title": "同内容跨入口权限一致",
+            "depends_on_checkpoints": [
+              "DGS-05",
+              "DGS-08",
+              "DGS-13"
+            ],
+            "status": "PARTIAL",
+            "evidence_owner_task_id": "BT-FIX-NOW-UI-001",
+            "current_evidence_boundary": "无标题分享、当前目标resolver、迟到身份拒绝通过；真实地图→图片已执行；全入口同内容真人E2E NOT_RUN。"
+          },
+          {
+            "id": "DGS-15",
+            "title": "整合回归与真实数据验收",
+            "depends_on_checkpoints": [
+              "DGS-01",
+              "DGS-02",
+              "DGS-03",
+              "DGS-04",
+              "DGS-05",
+              "DGS-06",
+              "DGS-07",
+              "DGS-08",
+              "DGS-09",
+              "DGS-10",
+              "DGS-11",
+              "DGS-12",
+              "DGS-13",
+              "DGS-14"
+            ],
+            "status": "PARTIAL",
+            "evidence_owner_task_id": "BT-FIX-NOW-UI-001",
+            "current_evidence_boundary": "APK40已装/API31已部署，地图/搜索/图片/前后台和性能抽样完成；其余明确列NOT_RUN/BLOCKED，整体不标完成。"
+          }
+        ],
+        "boundaries": {
+          "web": "DEFERRED_BY_USER",
+          "civu": "READ_ONLY",
+          "synthetic_live_injection": "PROHIBITED",
+          "normal_font_only": true,
+          "recording": false,
+          "device": "CONNECTED_APK40_BOUNDED_CHECKS_EXECUTED",
+          "current_api": "API31/schema175",
+          "installed_apk": "40",
+          "candidate_apk": "40/installed/source562_verified",
+          "second_real_user_device": "BLOCKED_MISSING_SECOND_PARTICIPANT_AND_DEVICE"
+        },
+        "evidence": [
+          "docs/audits/DGS-2026-10-16-BASELINE.md",
+          "docs/acceptance/DGS-2026-10-16-ACCEPTANCE.md",
+          "docs/testing/evidence/dgs-20261016/map-stability/REPORT.md",
+          "docs/testing/evidence/dgs-20261016/identity-host/after-fix.json",
+          "docs/testing/evidence/dgs-20261016/data-cleanup/receipt.json",
+          "docs/testing/evidence/dgs-20261016/destination/REPORT.md",
+          "docs/testing/evidence/dgs-20261016/root-integration/tests.json",
+          "docs/testing/evidence/dgs-20261016/notifications/targeted03.json",
+          "docs/reports/BIRDTIE-DGS-EXECUTION-2026-10-16.md",
+          "docs/audits/CIVU-SOCIAL-REUSE-MATRIX.md",
+          "docs/testing/evidence/dgs-20261016/android40-device/verification.json",
+          "docs/testing/evidence/dgs-20261016/injection-guards/post175-readonly01.json",
+          "docs/testing/evidence/content-map-refinement-20261016/backend-build31/deploy01/receipt.json"
+        ],
+        "history": [
+          {
+            "at": "2026-10-16T09:40:37.649784+00:00",
+            "summary": "Exact cleanup completed; Android38 built; destinations integrated; social and injection guards continue",
+            "previous_boundaries": {
+              "web": "DEFERRED_BY_USER",
+              "civu": "READ_ONLY",
+              "synthetic_live_injection": "PROHIBITED",
+              "normal_font_only": true,
+              "recording": false,
+              "device": "BLOCKED_ADB_DISCONNECTED",
+              "current_api": "API30/schema173",
+              "installed_apk": "36r2",
+              "candidate_apk": "37/newKey+CivuStyle; no DGS fixes"
+            }
+          },
+          {
+            "at": "2026-10-16T10:46:51.866501+00:00",
+            "summary": "API31/schema175 deployed; APK40 installed and bounded real device checks complete; social external dependencies and unrun checks remain",
+            "previous_boundaries": {
+              "web": "DEFERRED_BY_USER",
+              "civu": "READ_ONLY",
+              "synthetic_live_injection": "PROHIBITED",
+              "normal_font_only": true,
+              "recording": false,
+              "device": "BLOCKED_ADB_DISCONNECTED",
+              "current_api": "API30/schema173",
+              "installed_apk": "36r2",
+              "candidate_apk": "38/key+style+map+DGSdestination; notification/share subsequent"
+            },
+            "previous_checkpoint_statuses": {
+              "DGS-01": "PARTIAL",
+              "DGS-02": "PARTIAL",
+              "DGS-03": "PARTIAL",
+              "DGS-04": "PARTIAL",
+              "DGS-05": "PARTIAL",
+              "DGS-06": "IN_PROGRESS",
+              "DGS-07": "PARTIAL",
+              "DGS-08": "PARTIAL",
+              "DGS-09": "PARTIAL",
+              "DGS-10": "PARTIAL",
+              "DGS-11": "PARTIAL",
+              "DGS-12": "IN_PROGRESS",
+              "DGS-13": "IN_PROGRESS",
+              "DGS-14": "IN_PROGRESS",
+              "DGS-15": "TODO"
+            }
+          }
+        ],
+        "overall_status": "PARTIAL"
       }
     },
     {
@@ -21869,11 +22119,15 @@
           "apps/api/cmd/media-retention/main_test.go",
           "apps/api/cmd/system-push-worker",
           "apps/api/cmd/video-media-worker",
+          "apps/api/dev-seeds/001_badminton.sql",
+          "apps/api/dev-seeds/002_functional_mvp.sql",
+          "apps/api/dev-seeds/003_community_social.sql",
           "apps/api/internal/activitypublish/model.go",
           "apps/api/internal/agentaction/activity_join.go",
           "apps/api/internal/agentaction/activity_join_test.go",
           "apps/api/internal/agentmemoryreview",
           "apps/api/internal/agentnotification/registry.go",
+          "apps/api/internal/agentnotification/registry_test.go",
           "apps/api/internal/agentoutbox/control.go",
           "apps/api/internal/agentoutbox/control_test.go",
           "apps/api/internal/agentoutbox/dispatch.go",
@@ -22049,6 +22303,8 @@
           "apps/api/internal/httpapi/person_avatar.go",
           "apps/api/internal/httpapi/person_avatar_test.go",
           "apps/api/internal/httpapi/person_contexts.go",
+          "apps/api/internal/httpapi/person_follow_notifications.go",
+          "apps/api/internal/httpapi/person_follow_notifications_test.go",
           "apps/api/internal/httpapi/place_photo.go",
           "apps/api/internal/httpapi/place_photo_test.go",
           "apps/api/internal/httpapi/private_moment_videos.go",
@@ -22350,9 +22606,12 @@
           "apps/api/internal/postgres/organization_membership_control_native_test.go",
           "apps/api/internal/postgres/organization_memberships.go",
           "apps/api/internal/postgres/organizations.go",
+          "apps/api/internal/postgres/owned_migration_database_test.go",
           "apps/api/internal/postgres/person_avatar.go",
           "apps/api/internal/postgres/person_avatar_test.go",
           "apps/api/internal/postgres/person_contexts.go",
+          "apps/api/internal/postgres/person_follow_notifications.go",
+          "apps/api/internal/postgres/person_follow_notifications_native_test.go",
           "apps/api/internal/postgres/place_history.go",
           "apps/api/internal/postgres/place_history_page.go",
           "apps/api/internal/postgres/place_photo.go",
@@ -22538,6 +22797,8 @@
           "apps/api/migrations/172_legacy_moment_authors.sql",
           "apps/api/migrations/173_reviewed_city_camera_viewports.sql",
           "apps/api/migrations/174_mainland_city_map_provider.sql",
+          "apps/api/migrations/175_person_follow_notifications.down.sql",
+          "apps/api/migrations/175_person_follow_notifications.sql",
           "apps/api/native_database_startup.go",
           "apps/api/native_database_startup_test.go",
           "apps/api/system_push_startup.go",
@@ -22547,8 +22808,13 @@
           "apps/client/android/app/src/main/assets/birdtie_asr",
           "apps/client/android/app/src/main/cpp/birdtie_asr",
           "apps/client/android/app/src/main/kotlin/app/civu/civu_mobile/bundledofflinespeech.kt",
+          "apps/client/android/app/src/main/kotlin/app/civu/civu_mobile/destinationadministrativetype.kt",
+          "apps/client/android/app/src/main/kotlin/app/civu/civu_mobile/destinationsearch.kt",
           "apps/client/android/app/src/main/kotlin/app/civu/civu_mobile/mainactivity.kt",
+          "apps/client/android/app/src/main/kotlin/app/civu/civu_mobile/mapconfiguration.kt",
           "apps/client/android/app/src/main/kotlin/app/civu/civu_mobile/voiceinputrecognizer.kt",
+          "apps/client/android/app/src/test/kotlin/app/civu/civu_mobile/destinationadministrativetypetest.kt",
+          "apps/client/assets/map_styles/civu_android",
           "apps/client/ios/runner.xcodeproj/project.pbxproj",
           "apps/client/ios/runner/appdelegate.swift",
           "apps/client/ios/runner/info.plist",
@@ -22566,6 +22832,13 @@
           "apps/client/lib/src/city/amap_city_map_io.dart",
           "apps/client/lib/src/city/amap_city_map_stub.dart",
           "apps/client/lib/src/city/amap_city_map_web.dart",
+          "apps/client/lib/src/city/amap_destination_search.dart",
+          "apps/client/lib/src/city/amap_native_configuration.dart",
+          "apps/client/lib/src/city/amap_offline_style.dart",
+          "apps/client/lib/src/city/amap_session_consent.dart",
+          "apps/client/lib/src/city/browse_destination.dart",
+          "apps/client/lib/src/city/destination_search_controller.dart",
+          "apps/client/lib/src/city/destination_search_service.dart",
           "apps/client/lib/src/city/map_cluster_members_sheet.dart",
           "apps/client/lib/src/city/map_coordinate_boundary.dart",
           "apps/client/lib/src/city/map_point_selection_sheet.dart",
@@ -22861,7 +23134,10 @@
           "apps/client/test/agent_visual_controller_test.dart",
           "apps/client/test/agent_visual_page_test.dart",
           "apps/client/test/agent_visual_pending_store_test.dart",
+          "apps/client/test/amap_destination_search_test.dart",
+          "apps/client/test/amap_native_configuration_test.dart",
           "apps/client/test/amap_native_lifecycle_test.dart",
+          "apps/client/test/amap_offline_style_test.dart",
           "apps/client/test/amap_web_bridge_test.cjs",
           "apps/client/test/amap_web_fan_boundary_test.dart",
           "apps/client/test/auth_attempt_boundaries_test.dart",
@@ -22914,7 +23190,15 @@
           "apps/client/test/content_map_web_scroll_test.dart",
           "apps/client/test/copy29_baseline_settings.dart",
           "apps/client/test/cover_projection_retirement_test.dart",
+          "apps/client/test/destination_map_target_test.dart",
+          "apps/client/test/destination_search_test.dart",
           "apps/client/test/dev_phone_auth_controller_test.dart",
+          "apps/client/test/dgs_destination_picker_test.dart",
+          "apps/client/test/dgs_map_decode_isolation_test.dart",
+          "apps/client/test/dgs_map_identity_host_test.dart",
+          "apps/client/test/dgs_map_stability_test.dart",
+          "apps/client/test/dgs_moment_share_title_test.dart",
+          "apps/client/test/dgs_unknown_notification_test.dart",
           "apps/client/test/entity_cover_editor_test.dart",
           "apps/client/test/entity_cover_entry_test.dart",
           "apps/client/test/entity_cover_test.dart",
@@ -22958,6 +23242,7 @@
           "apps/client/test/map_layer_controls_test.dart",
           "apps/client/test/map_layers_api_test.dart",
           "apps/client/test/map_layers_auto_refresh_test.dart",
+          "apps/client/test/map_layers_partial_read_test.dart",
           "apps/client/test/map_layers_retained_snapshot_test.dart",
           "apps/client/test/map_marker_bitmap_test.dart",
           "apps/client/test/map_media_contract_test.dart",
@@ -23050,6 +23335,7 @@
           "apps/client/test/person_avatar_test.dart",
           "apps/client/test/person_avatar_widget_test.dart",
           "apps/client/test/person_contexts_page_test.dart",
+          "apps/client/test/person_follow_notification_test.dart",
           "apps/client/test/personal_collection_controller_test.dart",
           "apps/client/test/personal_collection_map_test.dart",
           "apps/client/test/personal_collection_page_test.dart",
@@ -23067,6 +23353,7 @@
           "apps/client/test/private_moment_video_test.dart",
           "apps/client/test/private_reference_media_test.dart",
           "apps/client/test/private_reference_targets_test.dart",
+          "apps/client/test/public_city_exploration_test.dart",
           "apps/client/test/public_moment_api_test.dart",
           "apps/client/test/public_moment_author_v2_test.dart",
           "apps/client/test/public_moment_control_page_test.dart",
@@ -23146,14 +23433,20 @@
           "apps/client/windows/flutter/ephemeral/.plugin_symlinks",
           "automation/codex_master_execution_prompt.md",
           "automation/codex_task_queue.json",
+          "automation/verify_community_migrations.ps1",
           "birdtie-moment-optional-title-and-location-2026-10-15.md",
           "birdtie-now-content-map-civu-reuse-2026-10-16.md",
           "deploy/.env.production.example",
           "deploy/caddy/birdtie.caddy.example",
           "deploy/compose.production.example.yaml",
           "deploy/nginx/birdtie.conf.example",
+          "docs/acceptance/dgs-2026-10-16-acceptance.md",
           "docs/architecture/civu-reuse-matrix.md",
           "docs/architecture/map-provider-configuration.md",
+          "docs/audits/civu-social-reuse-matrix.md",
+          "docs/audits/dgs-2026-10-16-baseline.md",
+          "docs/data/synthetic-data-cleanup-report.md",
+          "docs/data/synthetic-data-injection-guards.md",
           "docs/migration/birdtie-remote-migration-2026-10-15.md",
           "docs/migration/civu-data-preservation-and-migration.md",
           "docs/migration/civu-selected-collection-preparation.md",
@@ -23161,6 +23454,7 @@
           "docs/migration/civu-to-birdtie-entity-mapping.csv",
           "docs/migration/hangzhou-birdtie-execution-2026-10-14.md",
           "docs/migration/reviewed-city-camera-viewports-2026-10-16.md",
+          "docs/product/birdtie-global-destination-2026-10-16.md",
           "docs/product/birdtie-map-content-execution-spec-2026-10-14.md",
           "docs/product/birdtie-now-civu-map-2026-10-16.md",
           "docs/product/birdtie-now-content-map-2026-10-16.md",
@@ -23170,6 +23464,7 @@
           "docs/reports/birdtie-china-map-boundary-2026-10-16.md",
           "docs/reports/birdtie-civu-native-adaptation-2026-10-15.md",
           "docs/reports/birdtie-codex-execution-2026-10-14.md",
+          "docs/reports/birdtie-dgs-execution-2026-10-16.md",
           "docs/reports/birdtie-github-remote-migration-2026-10-15.md",
           "docs/reports/birdtie-now-civu-map-2026-10-16.md",
           "docs/reports/birdtie-now-content-map-2026-10-16.md",
@@ -23187,6 +23482,15 @@
           "docs/testing/evidence/content-map-lazy-display-20261016/backend",
           "docs/testing/evidence/content-map-lazy-display-20261016/client",
           "docs/testing/evidence/content-map-refinement-20261016",
+          "docs/testing/evidence/dgs-20261016/android39-device",
+          "docs/testing/evidence/dgs-20261016/android40-device",
+          "docs/testing/evidence/dgs-20261016/data-cleanup",
+          "docs/testing/evidence/dgs-20261016/destination",
+          "docs/testing/evidence/dgs-20261016/identity-host",
+          "docs/testing/evidence/dgs-20261016/injection-guards",
+          "docs/testing/evidence/dgs-20261016/map-stability",
+          "docs/testing/evidence/dgs-20261016/notifications",
+          "docs/testing/evidence/dgs-20261016/social-reuse",
           "docs/testing/evidence/github-remote-completion-20261015",
           "docs/testing/evidence/now-civu-map-20261016",
           "docs/testing/evidence/now-v4-v41-integration-20261010/continuation20",
@@ -23195,6 +23499,7 @@
           "docs/testing/evidence/social-remote-migration-20261015",
           "docs/testing/ui-content-media-acceptance.md",
           "docs/ux/global-ux-interaction-contract.md",
+          "scripts/audit_birdtie_synthetic_data.py",
           "scripts/deploy_birdtie_hangzhou.py",
           "scripts/deploy_birdtie_public_entry.py",
           "scripts/enable_birdtie_response_compression.py",
@@ -23203,14 +23508,20 @@
           "scripts/extract_civu_reference_media.py",
           "scripts/extract_civu_social_history.py",
           "scripts/extract_civu_social_supplement.py",
+          "scripts/fixture_environment_guard.py",
           "scripts/match_civu_media_archive.py",
           "scripts/prepare_civu_collections.py",
+          "scripts/purge_birdtie_synthetic_data.py",
+          "scripts/quarantine_birdtie_fixture_accounts.py",
           "scripts/read_civu_media_backup.mjs",
           "scripts/read_civu_recovered_media.mjs",
           "scripts/test_deploy_birdtie_hangzhou.py",
           "scripts/test_extract_civu_hangzhou.py",
           "scripts/test_match_civu_media_archive.py",
           "scripts/test_prepare_civu_collections.py",
+          "scripts/tests/test_fixture_account_quarantine.py",
+          "scripts/tests/test_fixture_environment_guard.py",
+          "scripts/tests/test_synthetic_data_cleanup.py",
           "work/civu-native-adaptation-20261015",
           "work/now-v4-v41-integration-20261010/active-install.local.json",
           "work/now-v4-v41-integration-20261010/active-runtime.local.json",

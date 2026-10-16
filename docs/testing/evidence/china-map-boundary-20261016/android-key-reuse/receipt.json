@@ -1,0 +1,62 @@
+{
+  "status": "DIRECT_CHECKS_PASS_NATIVE_NOT_RUN",
+  "finishedAt": "2026-10-16T07:12:02.893813+00:00",
+  "command": [
+    "cmd",
+    "/c",
+    "D:/DevTools/flutter/bin/flutter.bat",
+    "test",
+    "--no-pub",
+    "test/amap_native_configuration_test.dart",
+    "--reporter",
+    "expanded"
+  ],
+  "cwd": "D:\\Project\\birdtie\\apps\\client",
+  "exitCode": 0,
+  "sourceBefore": {
+    "apps/client/android/app/src/main/kotlin/app/civu/civu_mobile/MainActivity.kt": "abc074f812e0efc0e61204e1b10423c62857c78f3b2a925725a6d494688c6864",
+    "apps/client/android/app/src/main/kotlin/app/civu/civu_mobile/MapConfiguration.kt": "3707b0464b1b214b20084c7e58c1273be9cdb8f086f114bbe573565ef41e4147",
+    "apps/client/lib/src/city/amap_native_configuration.dart": "cbcb3e71a512075e4ea99025b4e0a692e9d4f75b8f9b543fe4cebc3359a8fe93",
+    "apps/client/lib/src/city/amap_city_map_io.dart": "d2c0c9a285be93ddf1a621c94782b44af4b2299ee745f2fa431908b1241a615c",
+    "apps/client/test/amap_native_configuration_test.dart": "2e553e5c1de154e0b695ce766343cd0e24505d394e0693f506aa6ea0f7b62797"
+  },
+  "sourceAfter": {
+    "apps/client/android/app/src/main/kotlin/app/civu/civu_mobile/MainActivity.kt": "abc074f812e0efc0e61204e1b10423c62857c78f3b2a925725a6d494688c6864",
+    "apps/client/android/app/src/main/kotlin/app/civu/civu_mobile/MapConfiguration.kt": "3707b0464b1b214b20084c7e58c1273be9cdb8f086f114bbe573565ef41e4147",
+    "apps/client/lib/src/city/amap_native_configuration.dart": "cbcb3e71a512075e4ea99025b4e0a692e9d4f75b8f9b543fe4cebc3359a8fe93",
+    "apps/client/lib/src/city/amap_city_map_io.dart": "d2c0c9a285be93ddf1a621c94782b44af4b2299ee745f2fa431908b1241a615c",
+    "apps/client/test/amap_native_configuration_test.dart": "2e553e5c1de154e0b695ce766343cd0e24505d394e0693f506aa6ea0f7b62797"
+  },
+  "sourceStable": true,
+  "checks": [
+    "Native configuration presence bridge returns only bool, no key payload",
+    "Manifest path passes apiKey=null",
+    "Explicit Android define and iOS configuration retained",
+    "Missing versus unavailable states",
+    "Loading/retry reaches explicit consent without AMapWidget",
+    "Timeout plus late response cannot replace retry",
+    "Disposal ignores late response"
+  ],
+  "testCount": 6,
+  "priorAttempt": {
+    "receipt": "attempt01-receipt.json",
+    "output": "attempt01-direct-tests.txt",
+    "status": "FAIL",
+    "cause": "Test harness set debugDefaultTargetPlatformOverride inside widget body; Flutter invariant failed after assertions. Fixed using TargetPlatformVariant; no production fix for this failure."
+  },
+  "evidence": {
+    "directTests": {
+      "path": "direct-tests.txt",
+      "sha256": "c7f4949f3e9b3b90deb19cd483ef2c24a314d5bf7a7b351bb15a426e7960c18e"
+    }
+  },
+  "notRun": [
+    "Android Kotlin compilation",
+    "APK build/install",
+    "Actual AMap key authorization",
+    "Device consent/map acceptance",
+    "iOS runtime"
+  ],
+  "keyPresenceIsNotAuthentication": true,
+  "finalized": true
+}

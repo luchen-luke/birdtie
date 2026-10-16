@@ -1,0 +1,26 @@
+Flutter assets will be downloaded from https://storage.flutter-io.cn. Make sure you trust this source!
+00:00 +0: loading D:/Project/birdtie/apps/client/test/dgs_moment_share_title_test.dart
+00:00 +0: untitled text and media moments use read-only share descriptions
+00:00 +0 -1: untitled text and media moments use read-only share descriptions [E]
+  FormatException: 公开目标不符
+  package:birdtie_client/src/workspace/connections.dart 1246:7  ConnectionSource.shareTargetTitle
+  
+00:00 +0 -1: share descriptions keep current denial and non-moment contracts
+00:00 +1 -1: late share description retires after token, identity epoch or disposal
+00:00 +1 -2: late share description retires after token, identity epoch or disposal [E]
+  Expected: throws <Instance of 'StateError'>
+    Actual: <Instance of 'Future<String>'>
+     Which: emitted '原账号标题'
+  
+  package:matcher                                    expectLater
+  package:flutter_test/src/widget_tester.dart 507:8  expectLater
+  test\dgs_moment_share_title_test.dart 78:24        main.<fn>
+  ===== asynchronous gap ===========================
+  dart:async                                         _CustomZone.registerUnaryCallback
+  test\dgs_moment_share_title_test.dart 74:7         main.<fn>
+  
+00:00 +1 -2: Some tests failed.
+
+Failing tests:
+  D:/Project/birdtie/apps/client/test/dgs_moment_share_title_test.dart: late share description retires after token, identity epoch or disposal
+  D:/Project/birdtie/apps/client/test/dgs_moment_share_title_test.dart: untitled text and media moments use read-only share descriptions

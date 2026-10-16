@@ -1,0 +1,6 @@
+{
+  "command": "flutter test --no-pub test/person_follow_notification_test.dart --reporter expanded",
+  "cwd": "D:\\Project\\birdtie\\apps\\client",
+  "exitCode": 0,
+  "fixture": "ISOLATED_MOCK_ONLY"
+}

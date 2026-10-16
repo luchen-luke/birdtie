@@ -1,0 +1,26 @@
+{
+  "moments": 102,
+  "accounts": 29,
+  "readOnly": "on",
+  "activeFixtures": 0,
+  "suspendedFixtures": 6,
+  "fixedCodeIdentities": 6,
+  "verifiedCivuMoments": 83,
+  "validFixtureSessions": 0,
+  "inactiveAccountTriggers": 0,
+  "retainedOtherUnknownMoments": 1,
+  "retainedFixtureUnknownMoments": 18,
+  "remainingQuarantineRestoreDatabases": 0,
+  "status": "PASS",
+  "databaseOID": 54087,
+  "release": "/opt/birdtie/releases/social173-20261016-build30",
+  "binarySHA256": "4cc70262b66cffa0061a79fa91fdc7f622de23aedd5552a713b5e1070a7b9900",
+  "apiUnit": {
+    "ActiveState": "active",
+    "SubState": "running"
+  },
+  "schemaMax": 173,
+  "productionWrites": 0,
+  "apiLogins": 0,
+  "remoteScriptSHA256": "d7b9de59b7e9a5efef335b9f85ccf1fb859fcf2e806918ca50e7e1d3924371f0"
+}

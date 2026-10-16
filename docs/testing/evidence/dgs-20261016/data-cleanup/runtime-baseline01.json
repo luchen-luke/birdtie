@@ -1,0 +1,68 @@
+{
+  "status": "PASS_READ_ONLY_BASELINE",
+  "observedAt": "2026-10-16T08:43:04.601401+00:00",
+  "environmentAlias": "BIRDTIE_NATIVE_HZ",
+  "databaseOID": 54087,
+  "migrationMax": 173,
+  "migrationCount": 173,
+  "transactionReadOnly": true,
+  "configuredEnvironment": "UNSET",
+  "activeRelease": "/opt/birdtie/releases/social173-20261016-build30",
+  "activeBinarySHA256": "4cc70262b66cffa0061a79fa91fdc7f622de23aedd5552a713b5e1070a7b9900",
+  "apiUnit": {
+    "ActiveState": "active",
+    "SubState": "running"
+  },
+  "civuServiceStates": [
+    {
+      "unit": "civu-api.service",
+      "ActiveState": "failed",
+      "SubState": "failed"
+    }
+  ],
+  "syntheticConfigurationFlags": {},
+  "noSyntheticConfigurationFlagPresent": true,
+  "sourceBackup": {
+    "sourceSHA256": "ba6b9b5d2d404ada806a858cbc0931628a5958c4b2abdbd8b7d50b62b4e6f40d",
+    "manifestSHA256": "78c390f8b3f714981b7e98f6e938065bd65de60a81dec226e0a77318627241f1",
+    "mode0600": true,
+    "manifestBindingVerified": true,
+    "tableCounts": {
+      "auth_identities": 21,
+      "cities": 339,
+      "geo_areas": 4330,
+      "journey_arrangements": 181,
+      "journey_media": 1,
+      "journey_members": 34,
+      "journey_notes": 1,
+      "journey_publication_places": 35,
+      "journey_publications": 11,
+      "journey_stops": 44,
+      "journeys": 34,
+      "media_assets": 407,
+      "moment_thread_legs": 5,
+      "moment_threads": 26,
+      "note_media": 215,
+      "note_media_locations": 94,
+      "note_places": 69,
+      "notes": 103,
+      "place_area_relations": 32,
+      "place_images": 148,
+      "place_provider_refs": 5593,
+      "place_save_sources": 57,
+      "places": 5511,
+      "regions": 3,
+      "theme_map_entries": 12,
+      "theme_map_entry_sources": 0,
+      "theme_maps": 3,
+      "user_saved_places": 189,
+      "users": 20
+    }
+  },
+  "httpLogins": 0,
+  "databaseWrites": 0,
+  "sourceWrites": 0,
+  "configurationWrites": 0,
+  "remoteScriptSHA256": "be31ef735a2cb593fa6f16cf31b7e000c2b256dff7077fe21d33e83e2580b102",
+  "schemaMetadataSHA256": "4cdc4911e399b7dbe7a2622928505ae6902b77976ae4ee647d63b05f339dd589"
+}

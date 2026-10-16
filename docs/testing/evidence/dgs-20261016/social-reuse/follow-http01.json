@@ -1,0 +1,6 @@
+{
+  "command": "go test -mod=readonly ./internal/agentnotification ./internal/httpapi -run ^(TestNotificationNativeRegistry|TestPersonFollowNotificationHTTPCurrentTargetAndCapability)$ -count=1 -v",
+  "cwd": "D:\\Project\\birdtie\\apps\\api",
+  "exitCode": 1,
+  "fixture": "ISOLATED_HTTP_HANDLER_MOCK_ONLY"
+}

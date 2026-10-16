@@ -518,7 +518,7 @@ class OwnedMapPin {
       bounds: clusterBounds,
       anchorCount: v['anchorCount'],
       precision: anchor['precision'],
-      name: _text(v['name'], 16000),
+      name: _text(v['name'], 16000, empty: kind == 'MOMENT_ANCHOR'),
       categoryCode: _text(v['categoryCode'], 160, empty: true),
       cityID: v['cityId'] == null ? null : _text(v['cityId'], 200, empty: true),
       latitude: lat,
@@ -553,11 +553,15 @@ class OwnedMapView {
     this.viewportPath = '',
     this.totalPointCount = 0,
     this.byteCount = 0,
+    this.rejectedItemCount = 0,
   });
   final String viewerAccountID, cityID, sourceVersion, filterScope;
   final MapBounds bounds;
   final double zoom;
   final int totalContentCount, totalAnchorCount, totalPointCount, byteCount;
+
+  /// Local diagnostics only; no rejected payload or private field is retained.
+  final int rejectedItemCount;
   final String viewportPath;
   final String? nextCursor;
   final DateTime observedAt, validUntil;
@@ -660,9 +664,12 @@ class OwnedMapView {
             !memberPage && v['totalPointCount'] < (v['pins'] as List).length)) {
       throw const FormatException('地图位置数量不符');
     }
-    final items = (v['pins'] as List)
-        .map(
-          (raw) => OwnedMapPin.decode(
+    final items = <OwnedMapPin>[];
+    var rejected = 0;
+    for (final raw in v['pins'] as List) {
+      try {
+        items.add(
+          OwnedMapPin.decode(
             raw,
             bounds,
             observedAt: lease.$1,
@@ -671,8 +678,16 @@ class OwnedMapView {
             zoom: zoom,
             pageSourceVersion: v['sourceVersion'],
           ),
-        )
-        .toList();
+        );
+      } on FormatException {
+        // All envelope identity, permission, range and lease checks above stay
+        // fail closed. A rejected row grants nothing and cannot hide valid rows.
+        rejected++;
+      }
+    }
+    if (items.isEmpty && rejected > 0) {
+      throw const FormatException('地图内容全部无法解析，请重新读取');
+    }
     if (items.map((v) => v.mapID).toSet().length != items.length ||
         items.any(
           (p) =>
@@ -698,6 +713,7 @@ class OwnedMapView {
       viewportPath: viewportPath,
       totalPointCount: v['totalPointCount'] ?? v['totalAnchorCount'],
       byteCount: byteCount,
+      rejectedItemCount: rejected,
     );
   }
 }
@@ -1238,9 +1254,21 @@ class OwnedMapPlacePage {
 }
 
 class OwnedMapReadFailure implements Exception {
-  const OwnedMapReadFailure(this.statusCode);
+  const OwnedMapReadFailure(
+    this.statusCode, {
+    this.code = '',
+    this.resourceKind,
+    this.resourceID,
+  });
   final int statusCode;
+  final String code;
+  final String? resourceKind, resourceID;
   bool get retiresGrant => const {401, 403, 404, 409, 410}.contains(statusCode);
+  bool get resourceScoped =>
+      resourceID != null &&
+      (statusCode == 404 && code == 'not_found' ||
+          statusCode == 409 && code == 'moment_changed');
+  bool get retryable => statusCode >= 500 && statusCode <= 599;
 }
 
 class OwnedMapAPI {
@@ -1251,7 +1279,7 @@ class OwnedMapAPI {
   }) : _client = client;
   http.Client _client;
   final String Function() apiBaseUrl;
-  final void Function(int statusCode)? onDenied;
+  final void Function(OwnedMapReadFailure failure)? onDenied;
   bool _closed = false;
   int _transport = 0;
   void replaceTransport({required http.Client client}) {
@@ -1285,11 +1313,18 @@ class OwnedMapAPI {
         .send(request)
         .timeout(const Duration(seconds: 12));
     if (response.statusCode != 200) {
-      await response.stream.listen((_) {}).cancel();
-      if (valid() &&
-          const {401, 403, 404, 409, 410}.contains(response.statusCode))
-        onDenied?.call(response.statusCode);
-      throw OwnedMapReadFailure(response.statusCode);
+      final code = await _errorCode(response);
+      final target = RegExp(
+        r'^/v1/me/map-content/(moments|places)/([0-9a-f-]{36})(?:/|$)',
+      ).firstMatch(uri.path);
+      final failure = OwnedMapReadFailure(
+        response.statusCode,
+        code: code,
+        resourceKind: target?.group(1),
+        resourceID: target?.group(2),
+      );
+      if (valid() && failure.retiresGrant) onDenied?.call(failure);
+      throw failure;
     }
     if (!valid() ||
         response.statusCode != 200 ||
@@ -1337,6 +1372,44 @@ class OwnedMapAPI {
       for (final chunk in chunks) {
         chunk.fillRange(0, chunk.length, 0);
       }
+    }
+  }
+
+  /// Only the existing error code is inspected, never logged or retained as a
+  /// response body. Unknown identity/permission failures remain global.
+  Future<String> _errorCode(http.StreamedResponse response) async {
+    if (!const {404, 409}.contains(response.statusCode) ||
+        response.headers['content-type']?.split(';').first !=
+            'application/json') {
+      await response.stream.listen((_) {}).cancel();
+      return '';
+    }
+    final reader = StreamIterator(response.stream);
+    final bytes = <int>[];
+    try {
+      final deadline = Stopwatch()..start();
+      while (await reader.moveNext().timeout(const Duration(seconds: 1))) {
+        if (deadline.elapsed > const Duration(seconds: 1) ||
+            bytes.length + reader.current.length > 2048)
+          return '';
+        bytes.addAll(reader.current);
+      }
+      final value = jsonDecode(utf8.decode(bytes));
+      final code = value is Map && value['error'] is Map
+          ? value['error']['code']
+          : null;
+      return const {
+            'not_found',
+            'moment_changed',
+            'human_control_changed',
+          }.contains(code)
+          ? code as String
+          : '';
+    } catch (_) {
+      return '';
+    } finally {
+      bytes.fillRange(0, bytes.length, 0);
+      await reader.cancel();
     }
   }
 

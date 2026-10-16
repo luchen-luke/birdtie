@@ -1,0 +1,36 @@
+{
+  "finishedAt": "2026-10-16T08:36:01.782835+00:00",
+  "command": [
+    "cmd",
+    "/c",
+    "D:/DevTools/flutter/bin/flutter.bat",
+    "test",
+    "--no-pub",
+    "test/amap_native_configuration_test.dart",
+    "--reporter",
+    "expanded"
+  ],
+  "cwd": "D:\\Project\\birdtie\\apps\\client",
+  "exitCode": 1,
+  "sourceBefore": {
+    "apps/client/lib/src/city/amap_offline_style.dart": "1c5d6ae61175e1d3396122611e4c8c2eaedfc6abe70594951dd9630c7874c132",
+    "apps/client/lib/src/city/amap_city_map_io.dart": "923934f28ed00dc947bbce788b724d3c77c64d68da37fcb7f2f8fbe92cfacb97",
+    "apps/client/pubspec.yaml": "65752b67bfeb5cf7392e1370c2f81022091354afe17c342c1620e6c38b0ecc7f",
+    "apps/client/assets/map_styles/civu_android/style.data": "2e58328b9a676e23705f8a11ded22f9eb5d5482d1c2d1d00b9d67494ec25c8d1",
+    "apps/client/assets/map_styles/civu_android/style_extra.data": "a2055f0e095badfbbb402eb5e61b49ec5a7ff71795be6600a6a55a92bb9e034b",
+    "apps/client/assets/map_styles/civu_android/README.md": "60195338a5dea1ade74dd338eec08704461aec9fd4d0372f896d84cc532db4d9"
+  },
+  "sourceAfter": {
+    "apps/client/lib/src/city/amap_offline_style.dart": "1c5d6ae61175e1d3396122611e4c8c2eaedfc6abe70594951dd9630c7874c132",
+    "apps/client/lib/src/city/amap_city_map_io.dart": "923934f28ed00dc947bbce788b724d3c77c64d68da37fcb7f2f8fbe92cfacb97",
+    "apps/client/pubspec.yaml": "65752b67bfeb5cf7392e1370c2f81022091354afe17c342c1620e6c38b0ecc7f",
+    "apps/client/assets/map_styles/civu_android/style.data": "2e58328b9a676e23705f8a11ded22f9eb5d5482d1c2d1d00b9d67494ec25c8d1",
+    "apps/client/assets/map_styles/civu_android/style_extra.data": "a2055f0e095badfbbb402eb5e61b49ec5a7ff71795be6600a6a55a92bb9e034b",
+    "apps/client/assets/map_styles/civu_android/README.md": "60195338a5dea1ade74dd338eec08704461aec9fd4d0372f896d84cc532db4d9"
+  },
+  "sourceStable": true,
+  "matchesAPK37FrozenStyleSources": true,
+  "testSHA256": "2e553e5c1de154e0b695ce766343cd0e24505d394e0693f506aa6ea0f7b62797",
+  "log": "key-regression-01.txt",
+  "logSHA256": "85b6839fab2245766b98025d72e2a55ad9cf049c699ad1fc31544e2a29875dca"
+}

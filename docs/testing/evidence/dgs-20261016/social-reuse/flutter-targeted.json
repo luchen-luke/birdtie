@@ -1,0 +1,51 @@
+{
+  "command": "flutter test --no-pub test/dgs_moment_share_title_test.dart test/legacy_social_native_test.dart test/legacy_social_history_test.dart --reporter expanded",
+  "cwd": "D:\\Project\\birdtie\\apps\\client",
+  "startedAt": "2026-10-16T09:39:08.1390243Z",
+  "exitCode": 0,
+  "before": [
+    {
+      "path": "lib/src/workspace/connections.dart",
+      "sha256": "bb2b1027da4362e434b29c1f32666c4cf9d6a193f658f0dc2eb96e60d9885126"
+    },
+    {
+      "path": "test/dgs_moment_share_title_test.dart",
+      "sha256": "770ecf88e120e31394ffaa58c7e6bcd867cc1bc25f16eee451284fe182c037b0"
+    },
+    {
+      "path": "lib/src/workspace/remote_inbox_source.dart",
+      "sha256": "541b2b434c1b0cdb77b99e1dbc2c612d04e62f14fa88b5325ad30a938c4ff768"
+    },
+    {
+      "path": "test/legacy_social_native_test.dart",
+      "sha256": "c293e09117c2022fb9fe548e00c8c742ef67af487bb1feb92d600d03d888d68a"
+    },
+    {
+      "path": "test/legacy_social_history_test.dart",
+      "sha256": "bd2310e0ee92c4643c950cf2b7a06e9379dfebbbb098d71063669abf12a5e1b3"
+    }
+  ],
+  "after": [
+    {
+      "path": "lib/src/workspace/connections.dart",
+      "sha256": "bb2b1027da4362e434b29c1f32666c4cf9d6a193f658f0dc2eb96e60d9885126"
+    },
+    {
+      "path": "test/dgs_moment_share_title_test.dart",
+      "sha256": "770ecf88e120e31394ffaa58c7e6bcd867cc1bc25f16eee451284fe182c037b0"
+    },
+    {
+      "path": "lib/src/workspace/remote_inbox_source.dart",
+      "sha256": "541b2b434c1b0cdb77b99e1dbc2c612d04e62f14fa88b5325ad30a938c4ff768"
+    },
+    {
+      "path": "test/legacy_social_native_test.dart",
+      "sha256": "c293e09117c2022fb9fe548e00c8c742ef67af487bb1feb92d600d03d888d68a"
+    },
+    {
+      "path": "test/legacy_social_history_test.dart",
+      "sha256": "bd2310e0ee92c4643c950cf2b7a06e9379dfebbbb098d71063669abf12a5e1b3"
+    }
+  ],
+  "kind": "ISOLATED_MOCK_ONLY"
+}

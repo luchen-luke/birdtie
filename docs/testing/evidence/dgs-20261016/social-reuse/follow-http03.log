@@ -1,0 +1,14 @@
+=== RUN   TestPersonFollowNotificationHTTPCurrentTargetAndCapability
+2026/10/16 18:08:04 request_id=ffc54214cb4517475fdf54936c349a7e method=GET status=200 latency_ms=0
+2026/10/16 18:08:04 request_id=b393ffdaaf32f5768914716c4e053845 method=GET status=400 latency_ms=0
+2026/10/16 18:08:04 request_id=d3e02ee7f1a47a3c656b027887289ef1 method=GET status=401 latency_ms=0
+2026/10/16 18:08:04 request_id=21b855f26de009cbcce64631628a196d method=GET status=404 latency_ms=0
+2026/10/16 18:08:04 request_id=f2dab616827ffca82f5d384e10e84fe2 method=GET status=409 latency_ms=0
+2026/10/16 18:08:04 request_id=2f661d912a94b08164d4c8654bbf9f9b method=GET status=400 latency_ms=0
+2026/10/16 18:08:04 request_id=df909cbedd54c64ce8f2273f9dda76e7 method=GET status=401 latency_ms=0
+2026/10/16 18:08:04 request_id=a9e1667d67966ebb11108f61477eb318 method=GET status=404 latency_ms=0
+2026/10/16 18:08:04 request_id=ca9ecf299c6842de1cbf5011f8ef5931 method=GET status=503 latency_ms=0
+2026/10/16 18:08:04 request_id=0b29c868424a6ed754c9c83a33d666dc method=GET status=200 latency_ms=0
+--- PASS: TestPersonFollowNotificationHTTPCurrentTargetAndCapability (0.03s)
+PASS
+ok  	github.com/birdtie/birdtie/apps/api/internal/httpapi	4.503s

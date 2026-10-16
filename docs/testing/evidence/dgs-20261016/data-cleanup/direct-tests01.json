@@ -1,0 +1,20 @@
+{
+  "status": "PASS",
+  "command": "python scripts/tests/test_synthetic_data_cleanup.py",
+  "exitCode": 0,
+  "durationSeconds": 0.094,
+  "stdout": "",
+  "stderr": "......\n----------------------------------------------------------------------\nRan 6 tests in 0.001s\n\nOK\n",
+  "sourceBefore": {
+    "scripts/audit_birdtie_synthetic_data.py": "647d0ecc3aa6e62dd0b19f09d04f411c08e98a416ce51ccafe950eb83df14ec5",
+    "scripts/purge_birdtie_synthetic_data.py": "d447aa5cacbb418abdd18a04d1b654e2dee17b75fb67f38fba101d0c2b1c42c3",
+    "scripts/tests/test_synthetic_data_cleanup.py": "68078d41f0633a88706fe837d5234318016cd5d334de5c430fcba0f07855e28f"
+  },
+  "sourceAfter": {
+    "scripts/audit_birdtie_synthetic_data.py": "647d0ecc3aa6e62dd0b19f09d04f411c08e98a416ce51ccafe950eb83df14ec5",
+    "scripts/purge_birdtie_synthetic_data.py": "d447aa5cacbb418abdd18a04d1b654e2dee17b75fb67f38fba101d0c2b1c42c3",
+    "scripts/tests/test_synthetic_data_cleanup.py": "68078d41f0633a88706fe837d5234318016cd5d334de5c430fcba0f07855e28f"
+  },
+  "sourceStable": true,
+  "productionWrites": 0
+}

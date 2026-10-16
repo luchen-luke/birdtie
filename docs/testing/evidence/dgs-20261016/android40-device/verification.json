@@ -1,0 +1,127 @@
+{
+  "atUTC": "2026-10-16T10:46:51.866501+00:00",
+  "kind": "ACTUAL_DEVICE_CHECKPOINT_WITH_EXPLICIT_LIMITS",
+  "apk": "40",
+  "api": "31",
+  "schema": 175,
+  "apkSHA256": "63d410883abeafadb717844dc1aaa13a3b8d84225831f41cc513e3e1673fb9f7",
+  "checks": [
+    {
+      "id": "install40",
+      "status": "PASS",
+      "evidenceBoundary": "替换安装保留app数据；原Civu不变"
+    },
+    {
+      "id": "civu_owner_restore40",
+      "status": "PASS",
+      "evidenceBoundary": "此前已接续的真实owner在39→40安装及冷启动后恢复，Aberdeen显示7个内容标记"
+    },
+    {
+      "id": "mapbox_pan40",
+      "status": "PASS_MEASUREMENT_ONLY",
+      "evidenceBoundary": "4次平移：1次map-content、0封面请求；地图创建计数保持1"
+    },
+    {
+      "id": "existing_moment_reader40",
+      "status": "PASS",
+      "evidenceBoundary": "实际打开原图片、作者头像/名称、原发布时间及私密标记；未发布新内容"
+    },
+    {
+      "id": "background_over_30_seconds40",
+      "status": "PASS",
+      "evidenceBoundary": "至少32秒后台超过30秒授权租期，回前台重新鉴权并恢复；mapCreations仍1"
+    },
+    {
+      "id": "paris_external_destination39",
+      "status": "PASS_PREDECESSOR_APK39",
+      "evidenceBoundary": "实际搜索Paris并选择法国巴黎，无内部city目录也定位；40未重复此项"
+    },
+    {
+      "id": "amap_shanghai40",
+      "status": "PASS",
+      "evidenceBoundary": "真实原生高德搜索、选上海到城市尺度、继续放大；新Key未见鉴权错误"
+    },
+    {
+      "id": "civu_amap_style40",
+      "status": "PASS",
+      "evidenceBoundary": "两份原始样式字节校验且真机显示，普通底图POI抑制，业务内容保留"
+    },
+    {
+      "id": "amap_pan40",
+      "status": "PASS_MEASUREMENT_ONLY",
+      "evidenceBoundary": "4次平移11.25秒，无Dart业务/封面HTTP请求；不包含原生SDK底图网络"
+    },
+    {
+      "id": "precise_ground_truth_coordinate_alignment",
+      "status": "NOT_RUN",
+      "evidenceBoundary": "未以真实测绘参考点进行米级对齐测量"
+    },
+    {
+      "id": "thirty_cold_starts",
+      "status": "NOT_RUN",
+      "evidenceBoundary": "仅本轮实际安装、冷启动和前后台恢复，不是30次压力循环"
+    },
+    {
+      "id": "physical_network_fault_matrix",
+      "status": "NOT_RUN",
+      "evidenceBoundary": "代码故障注入通过；手机断网/超时全矩阵未执行"
+    },
+    {
+      "id": "all_moment_entry_publish_and_video40",
+      "status": "NOT_RUN",
+      "evidenceBoundary": "本批图片读取证据不替代全部发布、视频、分享、通知完整链路"
+    },
+    {
+      "id": "two_real_users_two_devices_social",
+      "status": "NOT_RUN",
+      "evidenceBoundary": "外部依赖BLOCKED：尚缺第二位配合的真实账号及第二台设备"
+    },
+    {
+      "id": "fresh_deploy_backup_full_restore",
+      "status": "NOT_RUN",
+      "evidenceBoundary": "175升级前新备份只验证可读目录；独立清理批次备份已实际恢复验证"
+    }
+  ],
+  "screenshots": [
+    {
+      "file": "BirdTie-APK40-aberdeen-live-after-pan.png",
+      "sha256": "4900dc7e7df9676848a89c103fbf01b049d51f57ac976dde165e0980e5d5f4b9",
+      "description": "APK40 / Aberdeen真实已登录内容，平移后",
+      "storedInGit": false
+    },
+    {
+      "file": "BirdTie-APK40-moment-reader.png",
+      "sha256": "a2e37827df113de45c050f0f9410cce72e56b1f39b20dc865ac9d0769a33f336",
+      "description": "APK40 / 重叠内容选择面板（不是详情图）",
+      "storedInGit": false
+    },
+    {
+      "file": "BirdTie-APK40-moment-photo-author-time.png",
+      "sha256": "b20f559d2f28d6e13f91f4c3fc1c62991f536f4371a4cd142f8b4be87c06c555",
+      "description": "APK40 / 已有Civu图片、作者与原发布时间",
+      "storedInGit": false
+    },
+    {
+      "file": "BirdTie-APK40-shanghai-city-style.png",
+      "sha256": "152a9f76db5a91897e8f37725a9ca56326642683bf19525cd2ad61e6ec368857",
+      "description": "APK40 / 上海城市尺度与Civu高德样式",
+      "storedInGit": false
+    },
+    {
+      "file": "BirdTie-APK40-shanghai-close-style.png",
+      "sha256": "8b7d59ba74f27d8b25a4efe24c0571bd1f0878a7582ade601e2a539d966574bd",
+      "description": "APK40 / 街道尺度、底图普通POI抑制及真实业务内容点",
+      "storedInGit": false
+    },
+    {
+      "file": "BirdTie-APK39-paris-selected.png",
+      "sha256": "c9cd5c674664989ee01d08c3fc72bb5bd32dc85721b35544cfe0cb5eeefa4144",
+      "description": "APK39历史证据 / 非内部目录巴黎选择成功；不得归为40新执行",
+      "storedInGit": false
+    }
+  ],
+  "screenRecording": false,
+  "normalFont": true,
+  "privatePayloadOrCredentialsSavedInGit": false,
+  "nativeSDKNetworkAndGPUMeasurement": "NOT_RUN"
+}

@@ -1,0 +1,40 @@
+{
+  "status": "FAIL",
+  "stage": "QUARANTINE_RESTORED_CURRENT_COMPARE",
+  "errorCode": "QUARANTINE_RESTORED_SCHEMA_CHANGED",
+  "manifestSHA256": "c10fde61ef9a7ed74cc1c0c20d8fb1cc316e078e4c54b14363d6deae49785dc9",
+  "productionWrites": 0,
+  "diagnostics": {
+    "restoredCompare": {
+      "tablesEqual": true,
+      "schemaHashEqual": true,
+      "triggerFactsEqual": false,
+      "triggerDifferences": [
+        {
+          "source": {
+            "name": "organization_announcement_previews_organization_account_id_fkey",
+            "enabled": "O",
+            "definitionSHA256": "1519a86c2aee6ea89f8bb3f6736fbc1102ff89139242d519c848f32e94e6d939"
+          },
+          "restored": {
+            "name": "organization_announcement_previews_organization_account_id_fkey",
+            "enabled": "O",
+            "definitionSHA256": "702d4b04f704ca96a2e277321d40a740e43a53262929c7fecb8ffb364631dd9e"
+          }
+        },
+        {
+          "source": {
+            "name": "organization_announcement_previews_organization_account_id_fkey",
+            "enabled": "O",
+            "definitionSHA256": "702d4b04f704ca96a2e277321d40a740e43a53262929c7fecb8ffb364631dd9e"
+          },
+          "restored": {
+            "name": "organization_announcement_previews_organization_account_id_fkey",
+            "enabled": "O",
+            "definitionSHA256": "1519a86c2aee6ea89f8bb3f6736fbc1102ff89139242d519c848f32e94e6d939"
+          }
+        }
+      ]
+    }
+  }
+}

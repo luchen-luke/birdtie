@@ -1,0 +1,7 @@
+[PASS] Fixture guard rejects unmarked-database before seed rows
+[PASS] Fixture guard rejects missing-opt-in before seed rows
+[PASS] Fixture guard rejects mismatched-session-database before seed rows
+[PASS] Migration 030-032 forward: existing Activities 5 -> 5, organizers 5
+[PASS] Migration 032/031/030 down and 030/031/032 reapply on disposable seeded database
+[PASS] SQL invariants 030-032 and Community seed applied twice: three fixture Communities
+[PASS] Exact marked disposable fixture database dropped

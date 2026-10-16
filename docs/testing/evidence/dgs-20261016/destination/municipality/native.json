@@ -1,0 +1,27 @@
+{
+  "compileExitCode": 1,
+  "runCommand": [
+    "D:/DevTools/android-studio/jbr/bin/java.exe",
+    "-cp",
+    "C:\\Users\\chens\\AppData\\Local\\Temp\\birdtie-municipality-a2cd4d6988e649c588088ff479783a25;D:/DevTools/android-studio/plugins/Kotlin/kotlinc/lib/kotlin-stdlib.jar",
+    "app.civu.civu_mobile.DestinationAdministrativeTypeTestKt"
+  ],
+  "sourceAfter": {
+    "apps/client/android/app/src/main/kotlin/app/civu/civu_mobile/DestinationAdministrativeType.kt": "4fb3998ff2eac51d289e0e97b4644d0d8f2f82692fb3f74051e3014194955116",
+    "apps/client/android/app/src/main/kotlin/app/civu/civu_mobile/DestinationSearch.kt": "346a70b0eb9919b71c19917579984024ba994774058885b207f882a01fc32f1e",
+    "apps/client/android/app/src/test/kotlin/app/civu/civu_mobile/DestinationAdministrativeTypeTest.kt": "d02a2837de12ca9faa561e3fd80f4c47396fda959f5f28476f0d27f35561b148"
+  },
+  "sourceBefore": {
+    "apps/client/android/app/src/main/kotlin/app/civu/civu_mobile/DestinationAdministrativeType.kt": "4fb3998ff2eac51d289e0e97b4644d0d8f2f82692fb3f74051e3014194955116",
+    "apps/client/android/app/src/main/kotlin/app/civu/civu_mobile/DestinationSearch.kt": "346a70b0eb9919b71c19917579984024ba994774058885b207f882a01fc32f1e",
+    "apps/client/android/app/src/test/kotlin/app/civu/civu_mobile/DestinationAdministrativeTypeTest.kt": "d02a2837de12ca9faa561e3fd80f4c47396fda959f5f28476f0d27f35561b148"
+  },
+  "fixture": "direct production Kotlin mapper, no SDK or network",
+  "device": "NOT_RUN",
+  "sourceStable": true,
+  "runExitCode": null,
+  "compileCommand": [
+    "D:/DevTools/android-studio/jbr/bin/java.exe",
+    "-Dkotlin.home=D:/DevTools/android-studio/plugins/Kotlin/kotlinc -cp D:/DevTools/android-studio/plugins/Kotlin/kotlinc/lib/* org.jetbrains.kotlin.cli.jvm.K2JVMCompiler -jvm-target 17 -d C:\\Users\\chens\\AppData\\Local\\Temp\\birdtie-municipality-a2cd4d6988e649c588088ff479783a25 apps/client/android/app/src/main/kotlin/app/civu/civu_mobile/DestinationAdministrativeType.kt apps/client/android/app/src/test/kotlin/app/civu/civu_mobile/DestinationAdministrativeTypeTest.kt"
+  ]
+}

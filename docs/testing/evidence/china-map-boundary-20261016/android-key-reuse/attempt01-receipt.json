@@ -1,0 +1,45 @@
+{
+  "status": "DIRECT_CHECKS_FAIL",
+  "startedAt": "2026-10-16T07:10:47.359185+00:00",
+  "command": [
+    "cmd",
+    "/c",
+    "D:/DevTools/flutter/bin/flutter.bat",
+    "test",
+    "--no-pub",
+    "test/amap_native_configuration_test.dart",
+    "--reporter",
+    "expanded"
+  ],
+  "cwd": "D:\\Project\\birdtie\\apps\\client",
+  "exitCode": 1,
+  "sourceBefore": {
+    "apps/client/android/app/src/main/kotlin/app/civu/civu_mobile/MainActivity.kt": "abc074f812e0efc0e61204e1b10423c62857c78f3b2a925725a6d494688c6864",
+    "apps/client/android/app/src/main/kotlin/app/civu/civu_mobile/MapConfiguration.kt": "3707b0464b1b214b20084c7e58c1273be9cdb8f086f114bbe573565ef41e4147",
+    "apps/client/lib/src/city/amap_native_configuration.dart": "cbcb3e71a512075e4ea99025b4e0a692e9d4f75b8f9b543fe4cebc3359a8fe93",
+    "apps/client/lib/src/city/amap_city_map_io.dart": "d2c0c9a285be93ddf1a621c94782b44af4b2299ee745f2fa431908b1241a615c",
+    "apps/client/test/amap_native_configuration_test.dart": "f443c6c8bd9f02bf363306f1091ca472d582621b5c4c80c13a8a0bd4e10e6727"
+  },
+  "sourceAfter": {
+    "apps/client/android/app/src/main/kotlin/app/civu/civu_mobile/MainActivity.kt": "abc074f812e0efc0e61204e1b10423c62857c78f3b2a925725a6d494688c6864",
+    "apps/client/android/app/src/main/kotlin/app/civu/civu_mobile/MapConfiguration.kt": "3707b0464b1b214b20084c7e58c1273be9cdb8f086f114bbe573565ef41e4147",
+    "apps/client/lib/src/city/amap_native_configuration.dart": "cbcb3e71a512075e4ea99025b4e0a692e9d4f75b8f9b543fe4cebc3359a8fe93",
+    "apps/client/lib/src/city/amap_city_map_io.dart": "d2c0c9a285be93ddf1a621c94782b44af4b2299ee745f2fa431908b1241a615c",
+    "apps/client/test/amap_native_configuration_test.dart": "f443c6c8bd9f02bf363306f1091ca472d582621b5c4c80c13a8a0bd4e10e6727"
+  },
+  "sourceStable": true,
+  "evidence": {
+    "directTests": {
+      "path": "direct-tests.txt",
+      "sha256": "2e9fada2c803869af398baf4f05be3f468a2ed9704d1af6042d46a18af6fb944"
+    }
+  },
+  "notRun": [
+    "Android Kotlin compilation",
+    "APK build/install",
+    "Actual AMap key authorization",
+    "Device consent/map acceptance",
+    "iOS runtime"
+  ],
+  "finalized": false
+}

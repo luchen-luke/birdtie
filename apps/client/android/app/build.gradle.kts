@@ -120,3 +120,9 @@ kotlin {
 flutter {
     source = "../.."
 }
+
+dependencies {
+    // Same artifact already used by the CIVU-derived map plugin. Expose its
+    // existing search SDK to the app's narrow geographic-search bridge.
+    implementation("com.amap.api:3dmap-location-search:11.2.100_loc11.2.100_sea9.8.1")
+}

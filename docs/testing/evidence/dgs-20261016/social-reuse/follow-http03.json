@@ -1,0 +1,19 @@
+{
+  "fixture": "in-memory authenticated boundary fixture only",
+  "sourceStable": true,
+  "exitCode": 0,
+  "cwd": "D:/Project/birdtie/apps/api",
+  "command": "go test -mod=readonly ./internal/httpapi -run ^TestPersonFollowNotificationHTTPCurrentTargetAndCapability$ -count=1 -v",
+  "sourceAfter": {
+    "apps/api/internal/httpapi/person_follow_notifications.go": "fdb9dda04e7b836b90a649753616f805527b15153c1311b6e7c4e560c32ece8e",
+    "apps/api/internal/httpapi/person_follow_notifications_test.go": "710aade37c8a28e98a400890d0d02c6ac6fa918f3f96112a6bb15f4e2eaf38ff",
+    "apps/api/internal/httpapi/inbox_page.go": "04f13bab4eadaab6d1d48b1c25f26e83bec7f2a20d6f0fb5800afa78b3c864d8",
+    "apps/api/internal/inbox/page.go": "44b0828d6f3537ffe210741877f349a3d4bf6c12fed1653f8f9f7442b5e2ee56"
+  },
+  "sourceBefore": {
+    "apps/api/internal/httpapi/person_follow_notifications.go": "fdb9dda04e7b836b90a649753616f805527b15153c1311b6e7c4e560c32ece8e",
+    "apps/api/internal/httpapi/person_follow_notifications_test.go": "710aade37c8a28e98a400890d0d02c6ac6fa918f3f96112a6bb15f4e2eaf38ff",
+    "apps/api/internal/httpapi/inbox_page.go": "04f13bab4eadaab6d1d48b1c25f26e83bec7f2a20d6f0fb5800afa78b3c864d8",
+    "apps/api/internal/inbox/page.go": "44b0828d6f3537ffe210741877f349a3d4bf6c12fed1653f8f9f7442b5e2ee56"
+  }
+}

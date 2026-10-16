@@ -1,0 +1,31 @@
+{
+  "date": "2026-10-16",
+  "environment": "READ_ONLY_PUBLIC_GEOCODER",
+  "execution": "PowerShell System.Net.Http.HttpClient; two requests; exit 0",
+  "configurationRead": "apps/client/.env.maps.mobile.local.json",
+  "credentialPrinted": false,
+  "credentialWritten": false,
+  "provider": "Mapbox Geocoding v6 forward",
+  "endpointWithoutCredentials": "https://api.mapbox.com/search/geocode/v6/forward",
+  "parameters": {
+    "types": "country,region,district,place,locality",
+    "language": "zh-Hans,en",
+    "limit": "5",
+    "autocomplete": "false",
+    "permanent": "false"
+  },
+  "hardCountryOrBoundingBoxFilter": false,
+  "checks": [
+    {"query": "Paris", "httpStatus": 200, "candidateCount": 5, "attributionPresent": true},
+    {"query": "巴黎", "httpStatus": 200, "candidateCount": 5, "attributionPresent": true}
+  ],
+  "coordinatesRecorded": false,
+  "responsePersisted": false,
+  "resultCacheCreated": false,
+  "storageMode": "Temporary",
+  "rendererRestriction": "Mapbox map only",
+  "officialReference": "https://docs.mapbox.com/api/search/geocoding/",
+  "scope": "Proves existing public configuration can call v6 for these queries. It is not APK, device, permanent-storage entitlement, or AMap search acceptance.",
+  "amapSearch": "NOT_RUN",
+  "device": "NOT_RUN"
+}

@@ -281,4 +281,5 @@ func (s *server) registerInboxManagementRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /v1/me/inbox-management/operations/{operationID}", func(w http.ResponseWriter, r *http.Request) { s.historyInboxManagement(w, r, false) })
 	mux.HandleFunc("POST /v1/me/inbox-management/operations/{operationID}/stop", func(w http.ResponseWriter, r *http.Request) { s.historyInboxManagement(w, r, true) })
 	mux.HandleFunc("GET /v1/me/inbox/{itemID}/moment-target", s.readInboxMomentTarget)
+	mux.HandleFunc("GET /v1/me/inbox/{itemID}/person-target", s.readInboxPersonTarget)
 }

@@ -1,0 +1,61 @@
+Flutter assets will be downloaded from https://storage.flutter-io.cn. Make sure you trust this source!
+00:00 +0: loading D:/Project/birdtie/apps/client/test/dgs_map_stability_test.dart
+00:00 +0: one cover 404 cannot erase unrelated map content
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following TestFailure was thrown running a test:
+Expected: contains '17000000-0000-4000-8000-000000000002'
+  Actual: MappedListIterable<OwnedMapPin, String>:[]
+   Which: does not contain '17000000-0000-4000-8000-000000000002'
+A resource response is not evidence that the other grant was revoked.
+
+When the exception was thrown, this was the stack:
+#4      main.<anonymous closure> (file:///D:/Project/birdtie/apps/client/test/dgs_map_stability_test.dart:72:9)
+<asynchronous suspension>
+#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1952:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///D:/Project/birdtie/apps/client/test/dgs_map_stability_test.dart line 72
+The test description was:
+  one cover 404 cannot erase unrelated map content
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:00 +0 -1: one cover 404 cannot erase unrelated map content [E]
+  Test failed. See exception logs above.
+  The test description was: one cover 404 cannot erase unrelated map content
+  
+00:00 +0 -1: one cover 409 cannot erase unrelated map content
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following TestFailure was thrown running a test:
+Expected: contains '17000000-0000-4000-8000-000000000002'
+  Actual: MappedListIterable<OwnedMapPin, String>:[]
+   Which: does not contain '17000000-0000-4000-8000-000000000002'
+A resource response is not evidence that the other grant was revoked.
+
+When the exception was thrown, this was the stack:
+#4      main.<anonymous closure> (file:///D:/Project/birdtie/apps/client/test/dgs_map_stability_test.dart:72:9)
+<asynchronous suspension>
+#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1952:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///D:/Project/birdtie/apps/client/test/dgs_map_stability_test.dart line 72
+The test description was:
+  one cover 409 cannot erase unrelated map content
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:00 +0 -2: one cover 409 cannot erase unrelated map content [E]
+  Test failed. See exception logs above.
+  The test description was: one cover 409 cannot erase unrelated map content
+  
+00:00 +0 -2: Some tests failed.
+
+Failing tests:
+  D:/Project/birdtie/apps/client/test/dgs_map_stability_test.dart: one cover 404 cannot erase unrelated map content
+  D:/Project/birdtie/apps/client/test/dgs_map_stability_test.dart: one cover 409 cannot erase unrelated map content

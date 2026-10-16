@@ -33,6 +33,12 @@ func (s *server) listInboxPage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	in := inbox.PageRequest{View: inbox.NotificationsView, Limit: inbox.DefaultPageLimit}
+	features := r.Header.Values("X-Birdtie-Inbox-Features")
+	if len(features) > 1 || len(features) == 1 && features[0] != "person-follow-v1" {
+		inboxPageFailure(w, inbox.ErrInvalidPage)
+		return
+	}
+	in.SupportsPersonFollow = len(features) == 1
 	for k, v := range q {
 		if len(v) != 1 || k != "view" && k != "limit" && k != "cursor" && k != "category" && k != "unreadOnly" && k != "origin" {
 			inboxPageFailure(w, inbox.ErrInvalidPage)
@@ -144,6 +150,9 @@ func validInboxPage(page inbox.Page, in inbox.PageRequest, owner string) bool {
 	}
 	seen := map[string]bool{}
 	for _, item := range page.Items {
+		if item.ResourceType == "person_follow" && !in.SupportsPersonFollow {
+			return false
+		}
 		if !inbox.ValidPageID(item.ID) || !inbox.ValidPageID(item.ResourceID) || item.ResourceType == "conversation_message" || item.CreatedAt.IsZero() || seen[item.ID] || item.Title == "" {
 			return false
 		}
@@ -163,7 +172,7 @@ func validInboxPage(page inbox.Page, in inbox.PageRequest, owner string) bool {
 		}
 		c, err := inbox.DecodePageCursor(*page.NextCursor, owner, in.View)
 		last := page.Items[len(page.Items)-1]
-		if err != nil || c == nil || c.ID != last.ID || !c.Time.Equal(last.CreatedAt) || c.Category != in.Category || c.UnreadOnly != in.UnreadOnly || c.Origin != in.Origin {
+		if err != nil || c == nil || c.ID != last.ID || !c.Time.Equal(last.CreatedAt) || c.Category != in.Category || c.UnreadOnly != in.UnreadOnly || c.Origin != in.Origin || c.SupportsPersonFollow != in.SupportsPersonFollow {
 			return false
 		}
 	}

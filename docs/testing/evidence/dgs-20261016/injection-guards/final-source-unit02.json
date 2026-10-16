@@ -1,0 +1,21 @@
+{
+  "status": "DIRECT_UNIT_PASS_NATIVE_DELEGATED",
+  "observedAt": "2026-10-16T09:53:38.218071+00:00",
+  "command": "python -B -m unittest scripts.tests.test_fixture_environment_guard -v",
+  "cwd": "D:\\Project\\birdtie",
+  "exitCode": 0,
+  "tests": 5,
+  "resultSource": "Actual exec_command result: Ran 5 tests in 0.001s, OK; final strict owned migration prefix edition.",
+  "sourceFrame": {
+    "scripts/fixture_environment_guard.py": "c89e6f6564aa83ea37748b7658c63185083b5a35311b78ab6794c89ba28affef",
+    "scripts/tests/test_fixture_environment_guard.py": "510fadbc9a94b08959bb6629490fa6431056d0945797639a0915761f2026017c",
+    "automation/verify_community_migrations.ps1": "936df4b26bc92f9b258f5a4fa4c63330aaccc510592b00afe89307dc54d6c993",
+    "apps/api/internal/postgres/owned_migration_database_test.go": "d8d368be4d43d1e675cd845b2f4508aa14f5366797c55d5b012ec29b777e30e5",
+    "apps/api/dev-seeds/001_badminton.sql": "625da8e6cd04c91e6901b92e2b0af6832ffb5e15b89f350416170dc6fb39103b",
+    "apps/api/dev-seeds/002_functional_mvp.sql": "cf987c1441eaff55ef26e357f47d640e1abc82d16ee19b14468fc974b08352d8",
+    "apps/api/dev-seeds/003_community_social.sql": "f1c3c0981a18fcff55367d7b3064ab8f11e15a693c844c7f37acff9978e50e5d"
+  },
+  "nativeIntegration": "Root running two selected real PostgreSQL native tests; see root receipt when complete",
+  "priorCommunityRunner": "direct01/receipt.json; guarded fixture prefix unchanged, added owned migration prefix not covered by that earlier run",
+  "productionWrites": 0
+}

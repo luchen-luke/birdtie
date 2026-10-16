@@ -183,7 +183,7 @@ class _MapCanvasState extends State<MapCanvas> {
   String? _cityTaskCityID;
   String _cityTaskKey = 'idle';
   bool get _needsCityRecovery =>
-      widget.city.selectedCity == null &&
+      widget.city.renderCity == null &&
       widget.workspace.queryContextType != 'ONLINE' &&
       widget.workspace.task == null;
   bool get _showCityRecovery =>
@@ -200,7 +200,7 @@ class _MapCanvasState extends State<MapCanvas> {
   bool get _showsMapContent {
     if (widget.personalCollection?.value != null ||
         widget.layers?.authorID != null ||
-        widget.city.selectedCity?.id != widget.mapContent?.cityID)
+        widget.city.contentCityID != widget.mapContent?.cityID)
       return false;
     if (widget.workspace.areaOperation?.read?.current == true &&
         widget.workspace.areaOperation?.cityID == widget.city.selectedCity?.id)
@@ -394,10 +394,11 @@ class _MapCanvasState extends State<MapCanvas> {
   ];
 
   String _projectionKey() {
-    final city = widget.city.selectedCity;
+    final city = widget.city.renderCity;
     final map = city?.map;
     return [
       city?.id ?? '',
+      widget.city.contentCityID,
       if (city == null) '${widget.city.cityError}:${widget.city.citiesLoading}',
       'cityRecovery:$_needsCityRecovery',
       map?.provider ?? '',
@@ -488,6 +489,9 @@ class _MapCanvasState extends State<MapCanvas> {
   Widget build(BuildContext context) {
     _syncMedia();
     final selectedCity = widget.city.selectedCity;
+    final renderCity = widget.city.renderCity;
+    final browseKey = widget.city.browseKey;
+    final contentCityID = widget.city.contentCityID;
     final selectionWorkspace = widget.workspace;
     final selectionEpoch = selectionWorkspace.taskEpoch;
     final selectionResult = selectionWorkspace.presentedResult;
@@ -532,6 +536,7 @@ class _MapCanvasState extends State<MapCanvas> {
             !identical(workspace, selectionWorkspace) ||
             selectionEpoch != workspace.taskEpoch ||
             selectedCity?.id != widget.city.selectedCity?.id ||
+            browseKey != widget.city.browseKey ||
             shownEntity == null ||
             shownEntity.sourceVersion != contentPin.sourceVersion ||
             shownEntity.latitude != contentPin.latitude ||
@@ -639,10 +644,10 @@ class _MapCanvasState extends State<MapCanvas> {
       children: [
         Positioned.fill(
           child: PublicCityMapView(
-            city: selectedCity,
+            city: renderCity,
             places: _places(),
             entities: _entities(),
-            selectedEntityId: selectedCity == null
+            selectedEntityId: renderCity == null
                 ? null
                 : widget.workspace.selectedEntityId,
             contextKey: selectedCity == null
@@ -657,12 +662,13 @@ class _MapCanvasState extends State<MapCanvas> {
             onPlaceSelected: (place) =>
                 selectMapEntity('place:${place.id}', shownPlace: place),
             onContentOverlap: widget.onContentOverlap,
-            onContentViewportSettled: selectedCity == null
+            onContentViewportSettled: renderCity == null
                 ? null
                 : (bounds, zoom) {
+                    if (browseKey != widget.city.browseKey) return;
                     widget.mapState.zoom = zoom;
                     widget.mapContent?.sync(
-                      cityID: selectedCity.id,
+                      cityID: contentCityID,
                       bounds: bounds,
                       zoom: zoom,
                       devicePixelRatio: MediaQuery.devicePixelRatioOf(context),
@@ -671,13 +677,13 @@ class _MapCanvasState extends State<MapCanvas> {
                           ?.canonicalMarkerID,
                     );
                   },
-            onViewportSettled: selectedCity == null
+            onViewportSettled: renderCity == null
                 ? null
                 : widget.mapState.cameraSettled,
-            onViewportInitialized: selectedCity == null
+            onViewportInitialized: renderCity == null
                 ? null
                 : widget.onInitialViewport,
-            onCameraMotion: selectedCity == null
+            onCameraMotion: renderCity == null
                 ? null
                 : widget.mapState.cameraStarted,
             onMapUnavailable: widget.onMapUnavailable,
@@ -709,6 +715,7 @@ class _MapCanvasState extends State<MapCanvas> {
               widget.mapContent?.cityID,
               widget.mapContent?.view?.sourceVersion,
               widget.city.selectedCity?.id,
+              widget.city.browseKey,
               widget.workspace.taskEpoch,
               widget.workspace.task?.id,
               widget.personalCollection?.value,

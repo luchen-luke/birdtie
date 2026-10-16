@@ -1225,9 +1225,15 @@ class ConnectionSource {
       'business' => '/v1/businesses/$id',
       _ => '/v1/moments/$id',
     };
+    final headers = _headers(), epoch = _pageIdentityEpoch;
     final response = await _client
-        .get(_endpoint(path), headers: _headers())
+        .get(_endpoint(path), headers: headers)
         .timeout(const Duration(seconds: 12));
+    if (_closed ||
+        epoch != _pageIdentityEpoch ||
+        authorizationHeader() != headers['Authorization']) {
+      throw StateError('账号或入口已变化，请重新读取');
+    }
     if (response.statusCode != 200) throw StateError('内容暂不可分享');
     final data =
         (jsonDecode(utf8.decode(response.bodyBytes))
@@ -1241,9 +1247,19 @@ class ConnectionSource {
     if (data is! Map<String, dynamic> ||
         data[idKey] != id ||
         data[titleKey] is! String ||
-        (data[titleKey] as String).trim().isEmpty ||
+        type != 'moment' && (data[titleKey] as String).trim().isEmpty ||
         type == 'person' && data['visibility'] != 'public') {
       throw const FormatException('公开目标不符');
+    }
+    if (type == 'moment') {
+      if (data['body'] is! String) {
+        throw const FormatException('动态正文不符');
+      }
+      // This labels a share preview only. It never changes the Moment title.
+      final title = (data['title'] as String).trim();
+      if (title.isNotEmpty) return title;
+      final body = (data['body'] as String).trim();
+      return body.isEmpty ? '分享动态' : String.fromCharCodes(body.runes.take(120));
     }
     return data[titleKey] as String;
   }

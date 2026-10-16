@@ -1,0 +1,77 @@
+Flutter assets will be downloaded from https://storage.flutter-io.cn. Make sure you trust this source!
+00:00 +0: loading D:/Project/birdtie/apps/client/test/amap_native_configuration_test.dart
+00:00 +0: manifest presence grants configuration without passing a key to SDK
+00:00 +1: explicit Android define and existing iOS behavior bypass native probe
+00:00 +2: missing metadata and channel errors are distinct and never configured
+00:00 +3: loading and missing config retry reach consent without initializing SDK
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following assertion was thrown running a test:
+The value of a foundation debug variable was changed by the test.
+
+When the exception was thrown, this was the stack:
+#0      debugAssertAllFoundationVarsUnset.<anonymous closure> (package:flutter/src/foundation/debug.dart:45:7)
+#1      debugAssertAllFoundationVarsUnset (package:flutter/src/foundation/debug.dart:48:4)
+#2      TestWidgetsFlutterBinding._verifyInvariants (package:flutter_test/src/binding.dart:1995:7)
+#3      AutomatedTestWidgetsFlutterBinding._verifyInvariants (package:flutter_test/src/binding.dart:2524:11)
+#4      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1973:7)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+The test description was:
+  loading and missing config retry reach consent without initializing SDK
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:00 +3 -1: loading and missing config retry reach consent without initializing SDK [E]
+  Test failed. See exception logs above.
+  The test description was: loading and missing config retry reach consent without initializing SDK
+  
+00:00 +3 -1: timeout is retryable and its late response cannot replace current probe
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following assertion was thrown running a test:
+The value of a foundation debug variable was changed by the test.
+
+When the exception was thrown, this was the stack:
+#0      debugAssertAllFoundationVarsUnset.<anonymous closure> (package:flutter/src/foundation/debug.dart:45:7)
+#1      debugAssertAllFoundationVarsUnset (package:flutter/src/foundation/debug.dart:48:4)
+#2      TestWidgetsFlutterBinding._verifyInvariants (package:flutter_test/src/binding.dart:1995:7)
+#3      AutomatedTestWidgetsFlutterBinding._verifyInvariants (package:flutter_test/src/binding.dart:2524:11)
+#4      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1973:7)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+The test description was:
+  timeout is retryable and its late response cannot replace current probe
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:00 +3 -2: timeout is retryable and its late response cannot replace current probe [E]
+  Test failed. See exception logs above.
+  The test description was: timeout is retryable and its late response cannot replace current probe
+  
+00:00 +3 -2: configuration reply after map disposal does not initialize or setState
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following assertion was thrown running a test:
+The value of a foundation debug variable was changed by the test.
+
+When the exception was thrown, this was the stack:
+#0      debugAssertAllFoundationVarsUnset.<anonymous closure> (package:flutter/src/foundation/debug.dart:45:7)
+#1      debugAssertAllFoundationVarsUnset (package:flutter/src/foundation/debug.dart:48:4)
+#2      TestWidgetsFlutterBinding._verifyInvariants (package:flutter_test/src/binding.dart:1995:7)
+#3      AutomatedTestWidgetsFlutterBinding._verifyInvariants (package:flutter_test/src/binding.dart:2524:11)
+#4      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1973:7)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+The test description was:
+  configuration reply after map disposal does not initialize or setState
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:00 +3 -3: configuration reply after map disposal does not initialize or setState [E]
+  Test failed. See exception logs above.
+  The test description was: configuration reply after map disposal does not initialize or setState
+  
+00:00 +3 -3: Some tests failed.
+
+Failing tests:
+  D:/Project/birdtie/apps/client/test/amap_native_configuration_test.dart: configuration reply after map disposal does not initialize or setState
+  D:/Project/birdtie/apps/client/test/amap_native_configuration_test.dart: loading and missing config retry reach consent without initializing SDK
+  D:/Project/birdtie/apps/client/test/amap_native_configuration_test.dart: timeout is retryable and its late response cannot replace current probe

@@ -1,0 +1,10 @@
+Flutter assets will be downloaded from https://storage.flutter-io.cn. Make sure you trust this source!
+00:00 +0: loading D:/Project/birdtie/apps/client/test/amap_destination_search_test.dart
+00:00 +0: D:/Project/birdtie/apps/client/test/amap_destination_search_test.dart: no SDK call before explicit session consent
+00:00 +1: D:/Project/birdtie/apps/client/test/amap_destination_search_test.dart: native GCJ result converts once, remains temporary and has no internal city
+00:00 +2: D:/Project/birdtie/apps/client/test/amap_destination_search_test.dart: cancellation retires a late native response
+00:00 +3: D:/Project/birdtie/apps/client/test/dgs_destination_picker_test.dart: external destination selected from actual Now picker preserves text and reads bounds without city
+00:01 +4: D:/Project/birdtie/apps/client/test/dgs_map_identity_host_test.dart: identity workspace restores current map without a camera move
+00:01 +5: D:/Project/birdtie/apps/client/test/dgs_map_identity_host_test.dart: identity token restores current map without a camera move
+00:01 +6: D:/Project/birdtie/apps/client/test/dgs_map_identity_host_test.dart: identity account restores current map without a camera move
+00:01 +7: All tests passed!

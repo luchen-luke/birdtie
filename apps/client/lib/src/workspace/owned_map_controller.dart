@@ -36,7 +36,7 @@ class OwnedMapController extends ChangeNotifier with WidgetsBindingObserver {
     _api = OwnedMapAPI(
       client: client,
       apiBaseUrl: apiBaseUrl,
-      onDenied: (_) => _accessDenied(),
+      onDenied: _accessDenied,
     );
     _media = OwnedMapMediaController(
       api: _api,
@@ -74,6 +74,10 @@ class OwnedMapController extends ChangeNotifier with WidgetsBindingObserver {
   final _requestCursorByView = Expando<String>();
   final _extraPins = <String, (OwnedMapPin, OwnedMapPin, DateTime)>{};
   final _pinEpoch = Expando<int>();
+  final _invalidPins = Expando<bool>();
+  final _resourceRechecks = <String>{};
+  Timer? _recovery;
+  int _transientRetries = 0;
   final _momentGrants = Expando<_OwnedMapGrant>();
   final _detailGrants = Expando<_OwnedMapGrant>();
   final _coverChecks = Expando<bool Function()>();
@@ -145,7 +149,8 @@ class OwnedMapController extends ChangeNotifier with WidgetsBindingObserver {
   }
 
   bool sourceCurrent(OwnedMapPin pin) {
-    if (!current || _pinEpoch[pin] != _epoch) return false;
+    if (!current || _pinEpoch[pin] != _epoch || _invalidPins[pin] == true)
+      return false;
     if (_coverageViews.any(
       (v) =>
           v.validUntil.isAfter(_now()) &&
@@ -506,6 +511,7 @@ class OwnedMapController extends ChangeNotifier with WidgetsBindingObserver {
         totalPointCount: pins.length,
         nextCursor: next?.nextCursor,
         viewportPath: next?.viewportPath ?? '',
+        rejectedItemCount: views.fold(0, (n, v) => n + v.rejectedItemCount),
       ),
     );
   }
@@ -564,7 +570,7 @@ class OwnedMapController extends ChangeNotifier with WidgetsBindingObserver {
     _expiry?.cancel();
     _view = value;
     _leaseExpired = false;
-    _error = null;
+    _error = value.rejectedItemCount > 0 ? '部分地图内容暂不可读，请重试。' : null;
     for (final pin in value.items) _registerPin(pin);
     _extraPins.removeWhere(
       (_, extra) => !sourceCurrent(extra.$2) || !extra.$3.isAfter(_now()),
@@ -608,10 +614,100 @@ class OwnedMapController extends ChangeNotifier with WidgetsBindingObserver {
     if (_allowed && _query != null) unawaited(refresh());
   }
 
-  void _accessDenied() {
+  void _accessDenied(OwnedMapReadFailure failure) {
+    if (failure.resourceScoped) {
+      final resource = '${failure.resourceKind}:${failure.resourceID}';
+      final invalidated = <String>{};
+      bool affected(OwnedMapPin pin) => failure.resourceKind == 'places'
+          ? pin.placeID == failure.resourceID
+          : pin.momentID == failure.resourceID ||
+                pin.moments.any((m) => m.id == failure.resourceID) ||
+                pin.cover?.contentPath.startsWith(
+                      '/v1/me/map-content/moments/${failure.resourceID}/',
+                    ) ==
+                    true;
+      OwnedMapView withoutDenied(OwnedMapView value) {
+        final retained = <OwnedMapPin>[];
+        for (final pin in value.items) {
+          if (affected(pin)) {
+            _invalidPins[pin] = true;
+            invalidated.add(pin.mapID);
+          } else {
+            retained.add(pin);
+          }
+        }
+        if (retained.length == value.items.length) return value;
+        final clean = OwnedMapView(
+          viewerAccountID: value.viewerAccountID,
+          cityID: value.cityID,
+          bounds: value.bounds,
+          observedAt: value.observedAt,
+          validUntil: value.validUntil,
+          sourceVersion: value.sourceVersion,
+          items: List.unmodifiable(retained),
+          truncated: value.truncated,
+          zoom: value.zoom,
+          filterScope: value.filterScope,
+          totalContentCount: value.totalContentCount,
+          totalAnchorCount: value.totalAnchorCount,
+          totalPointCount: value.totalPointCount,
+          nextCursor: value.nextCursor,
+          viewportPath: value.viewportPath,
+          byteCount: value.byteCount,
+          rejectedItemCount: value.rejectedItemCount,
+        );
+        final cursor = _requestCursorByView[value];
+        if (cursor != null) _requestCursorByView[clean] = cursor;
+        return clean;
+      }
+
+      for (final key in _cache.keys.toList()) {
+        _cache[key] = withoutDenied(_cache[key]!);
+      }
+      if (_activeUncached != null)
+        _activeUncached = withoutDenied(_activeUncached!);
+      _extraPins.removeWhere((_, value) {
+        if (!affected(value.$1) && !affected(value.$2)) return false;
+        _invalidPins[value.$1] = true;
+        invalidated.add(value.$1.mapID);
+        return true;
+      });
+      _media.retirePins(invalidated);
+      _publishCoverage();
+      _error = '部分地图内容已变化，正在重新读取。';
+      // One coalesced revalidation per resource and identity. An unavailable
+      // image cannot loop forever or invalidate unrelated authorized content.
+      if (_resourceRechecks.length < 128 && _resourceRechecks.add(resource)) {
+        _scheduleRecovery();
+      } else {
+        _error = '部分地图内容暂不可读，请重试。';
+      }
+      _notify();
+      return;
+    }
     retire();
     _error = '地图内容权限已变化，请重新读取。';
     _notify();
+  }
+
+  void _scheduleRecovery() {
+    if (!_allowed || _query == null || _recovery?.isActive == true) return;
+    final epoch = _epoch, identity = _identity, query = _query;
+    bool current() =>
+        _allowed && epoch == _epoch && identity == _identity && query == _query;
+    _recovery = Timer(const Duration(seconds: 2), () {
+      if (!current()) return;
+      final pending = _flight;
+      if (pending != null) {
+        unawaited(
+          pending.then((_) {
+            if (current()) unawaited(refresh());
+          }),
+        );
+      } else {
+        unawaited(refresh());
+      }
+    });
   }
 
   void _cancelRequest() {
@@ -707,6 +803,7 @@ class OwnedMapController extends ChangeNotifier with WidgetsBindingObserver {
             cursor: requestCursor,
           );
           if (!pending() || !value.validUntil.isAfter(_now())) return;
+          _transientRetries = 0;
           responseBytes += value.byteCount;
           if (renewing != null &&
               value.sourceVersion == renewing.sourceVersion) {
@@ -749,8 +846,25 @@ class OwnedMapController extends ChangeNotifier with WidgetsBindingObserver {
           _pruneCache();
           _publishCoverage();
         }
-      } catch (_) {
-        if (pending()) _error = '地图内容暂不可读，请重试。';
+      } catch (failure) {
+        if (pending()) {
+          if (failure is FormatException) {
+            // A malformed authority envelope is not a transient transport
+            // outage. Do not retain old grants under unverified metadata.
+            retire();
+            _error = '地图内容校验失败，请重新读取。';
+            _notify();
+            return;
+          }
+          _error = '地图内容暂不可读，请重试。';
+          if (_transientRetries < 1 &&
+              (failure is TimeoutException ||
+                  failure is http.ClientException ||
+                  failure is OwnedMapReadFailure && failure.retryable)) {
+            _transientRetries++;
+            _scheduleRecovery();
+          }
+        }
       } finally {
         if (!abort.isCompleted) abort.complete();
         if (pending()) {
@@ -859,6 +973,7 @@ class OwnedMapController extends ChangeNotifier with WidgetsBindingObserver {
     _flight = null;
     _renew?.cancel();
     _expiry?.cancel();
+    _recovery?.cancel();
     _view = null;
     _leaseExpired = true;
     _loading = false;
@@ -879,6 +994,8 @@ class OwnedMapController extends ChangeNotifier with WidgetsBindingObserver {
   void retire({bool clearQuery = false}) {
     if (_closed) return;
     _permissionEpoch++;
+    _resourceRechecks.clear();
+    _transientRetries = 0;
     _clusterCursors.clear();
     _cache.clear();
     _activeUncached = null;

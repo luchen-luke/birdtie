@@ -1,0 +1,5 @@
+{
+  "exitCode": 0,
+  "note": "Default whitespace check treats existing CRLF as trailing whitespace. This explicit Windows EOL setting changed no configuration or files.",
+  "command": "git -c core.whitespace=cr-at-eol diff --check -- scoped existing source files"
+}

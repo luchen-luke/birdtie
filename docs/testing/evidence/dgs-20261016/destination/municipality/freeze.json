@@ -1,0 +1,13 @@
+{
+  "native": "native02.json: 12 case PASS, compile/run exit0, sourceStable",
+  "flutter": "flutter02.json: 3 PASS, exit0, sourceStable",
+  "frozenAtUTC": "2026-10-16T10:24:43.1696896Z",
+  "apkBuild": "NOT_RUN",
+  "sourceFiles": {
+    "apps/client/android/app/src/main/kotlin/app/civu/civu_mobile/DestinationSearch.kt": "346a70b0eb9919b71c19917579984024ba994774058885b207f882a01fc32f1e",
+    "apps/client/android/app/src/main/kotlin/app/civu/civu_mobile/DestinationAdministrativeType.kt": "4fb3998ff2eac51d289e0e97b4644d0d8f2f82692fb3f74051e3014194955116",
+    "apps/client/android/app/src/test/kotlin/app/civu/civu_mobile/DestinationAdministrativeTypeTest.kt": "d02a2837de12ca9faa561e3fd80f4c47396fda959f5f28476f0d27f35561b148",
+    "apps/client/test/amap_destination_search_test.dart": "ff29e19f595900c1073c427dd8e6d864986e8af25ad3c5c293d9c4112e69feac"
+  },
+  "device": "NOT_RUN"
+}

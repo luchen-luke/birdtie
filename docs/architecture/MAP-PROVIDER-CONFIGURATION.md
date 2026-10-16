@@ -1,5 +1,20 @@
 # Birdtie map provider configuration
 
+## 2026-10-16 Android37 增量更正（当前状态）
+
+本节优先于下方较早配置快照；旧失败证据保留。用户本轮明确暂不做网页，Web34保持，不要求网页Key，也不部署174。
+
+- 本机原本已有CIVU Android Key，旧问题包含Dart适配器未识别native manifest配置。现已接入只返回配置存在性的通道，不把Key传入诊断。
+- APK36第一次真机失败为未注册AMap平台视图；离线依赖解析此前在Windows symlink步骤退出，生成注册器陈旧。已通过仅进程级关闭非Android平台的离线pub get正常生成，未手改生成文件或全局系统设置。
+- APK36r2真机加载到高德底图，但原CIVU Key返回INVALID_USER_SCODE。用户随后已为预览包与实签名配置新Key；当前Key与CIVU不同，已核对配置和manifest一致，无需再次提供Key。原CIVU配置未改。
+- 已复用CIVU用户GeoHUB导出的原始 `style.data` 与 `style_extra.data`，Android首次创建map前加载，两文件字节与CIVU原件一致。加载失败可重试；成功同进程复用，抑制底图POI图标与文字，保留道路标注及Birdtie业务内容。插件的基础许可证与用户自有样式来源分开记录。
+- APK37已合包，SHA256 `d2a6cba403298bc605e27649c390cd71f3fd880a516e43ad690f1397eef85465`。包名 `app.civu.civu_mobile.birdtiepreview`，签名SHA1 `73:84:0A:17:D0:CA:7B:4B:F4:15:41:B4:2C:EC:B7:A2:34:D5:05:23`。Key不会提交Git。安装时ADB无设备，最新手机仍是36r2；37的新Key鉴权、自定义样式与地标对齐均NOT_RUN，外部依赖BLOCKED。
+- 6项Key桥接测试、4项样式测试PASS；样式接入后Key6项复跑PASS（不是新增6项）。保留两次fixture异步同步失败及修复记录。证据分别在 `docs/testing/evidence/china-map-boundary-20261016/android-key-reuse`、`android-civu-style`、`android36-device`、`android36-r2-device`、`android37-device`。
+- APK37不包含随后DGS地图稳定性和身份恢复代码。后续源码不能沿用APK37合包/真机结果，需合批新构建。
+
+新增源文件：`amap_native_configuration.dart`、`amap_offline_style.dart`、Android `MapConfiguration.kt`；适配 `MainActivity.kt`、`amap_city_map_io.dart` 与pubspec；样式来源 `D:\Program\Civu\Civu-client\assets\map_styles\civu_android` → `apps/client/assets/map_styles/civu_android`。CIVU只读，未整体迁移旧导航。
+
+
 Status: 2026-09-30. Overseas City provider: Mapbox; mainland China provider: AMap. Civu is a read-only configuration reference. This page records the exact values to create and where they belong; it does not include any key value.
 
 ## Reuse inventory
@@ -53,3 +68,7 @@ Local verification: Flutter analysis and the Web build completed earlier. The An
 Native adapter现在读取BIRDTIE_AMAP_ANDROID_KEY/BIRDTIE_AMAP_IOS_KEY编译配置；Android清单android.key需与同目标身份保持一致。预览包仍是app.civu.civu_mobile.birdtiepreview，已核APK34 SHA1仍为73:84:0A:17:D0:CA:7B:4B:F4:15:41:B4:2C:EC:B7:A2:34:D5:05:23。本机旧清单Key与Civu正式包一致，未证明可用于预览包；当前编译JSON未设置AMap Key。Web仍缺BIRDTIE_AMAP_WEB_PUBLIC_KEY和受信BIRDTIE_AMAP_SERVICE_HOST。安全密钥只应在代理服务端。
 
 已用两个公开城市点核对旧Web Service Key，返回USER_KEY_RECYCLED/10013；这是另一平台，不能替代Android或JS Key，也不能据此判断Android Key失效。缺配置已向用户询问本机路径/控制台，未要求在聊天发密钥。真实国内地图对齐、原生SDK、Web SDK及性能仍NOT_RUN，源码/构建不能代替服务验收。
+
+## 后续实际交付更新：APK40 / API31 / schema175
+
+此前候选包/ADB离线记录为历史快照。当前40已替换安装，新高德Key和原Civu两份样式已在上海真机验证；直辖市城市尺度修复已入包。真实Civu owner会话、Aberdeen内容/图片/作者原时间、超过30秒后台后的地图恢复均已执行。巴黎外部目的地定位为APK39实际证据，40未重复。地图平移封面复用与性能限制、数据清理/隔离及社交缺口统一见 `docs/reports/BIRDTIE-DGS-EXECUTION-2026-10-16.md`；完整验收尚未完成，不能把旧NOT_RUN统称已通过。网页仍延期。

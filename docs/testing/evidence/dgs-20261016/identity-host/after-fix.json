@@ -1,0 +1,18 @@
+{
+  "command": [
+    "D:\\DevTools\\flutter\\bin\\flutter.bat",
+    "test",
+    "--no-pub",
+    "test/dgs_map_identity_host_test.dart",
+    "--reporter",
+    "expanded"
+  ],
+  "cwd": "D:\\Project\\birdtie\\apps\\client",
+  "exitCode": 0,
+  "elapsedSeconds": 4.85,
+  "sourceFrame": {
+    "apps/client/lib/src/workspace/map_workspace.dart": "568735fdb9843406fe4316ca85b3da02e2b19b10b6f14b3ffea0e8b4d8ed9b2b",
+    "apps/client/test/dgs_map_identity_host_test.dart": "717d87516426ac96ffec703002f266adccad49a0a99a552e1c8b1fa93ffadc98"
+  },
+  "sourceStable": true
+}

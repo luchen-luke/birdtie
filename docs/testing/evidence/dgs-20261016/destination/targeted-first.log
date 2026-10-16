@@ -1,0 +1,57 @@
+Flutter assets will be downloaded from https://storage.flutter-io.cn. Make sure you trust this source!
+00:00 +0: loading D:/Project/birdtie/apps/client/test/destination_search_test.dart
+00:00 +0: D:/Project/birdtie/apps/client/test/destination_search_test.dart: v6 is global Temporary, no cache, separates domestic renderer scope
+00:00 +1: D:/Project/birdtie/apps/client/test/destination_search_test.dart: malformed envelope and transport token text never become UI errors
+00:00 +2: D:/Project/birdtie/apps/client/test/destination_search_test.dart: composing, debounce, abort, latest response and cancel own only active results
+00:00 +3: D:/Project/birdtie/apps/client/test/destination_search_test.dart: rate failure uses bounded retry and identity retirement fences late result
+00:00 +4: D:/Project/birdtie/apps/client/test/destination_map_target_test.dart: unregistered target survives late restore and catalog refresh without fake city API or persistence
+00:00 +5: D:/Project/birdtie/apps/client/test/destination_map_target_test.dart: Mapbox domestic target cannot silently cross to AMap renderer
+00:00 +6: D:/Project/birdtie/apps/client/test/destination_map_target_test.dart: external viewport queries omit cityId and keeps same map subtree and click fencing
+00:00 +7: D:/Project/birdtie/apps/client/test/destination_map_target_test.dart: external viewport queries omit cityId and keeps same map subtree and click fencing
+00:00 +7 -1: D:/Project/birdtie/apps/client/test/destination_map_target_test.dart: external viewport queries omit cityId and keeps same map subtree and click fencing
+00:00 +7 -1: D:/Project/birdtie/apps/client/test/public_city_exploration_test.dart: 无默认城市时选择可用城市级底图，不选未知provider或未配置高德 [E]
+  Expected: 'edinburgh-gb'
+    Actual: 'shanghai-cn'
+     Which: is different.
+            Expected: edinburgh- ...
+              Actual: shanghai-c ...
+                      ^
+             Differ at offset 0
+  
+  package:matcher                                     expect
+  package:flutter_test/src/widget_tester.dart 473:18  expect
+  test\public_city_exploration_test.dart 111:5        main.<fn>
+  
+00:00 +8 -1: D:/Project/birdtie/apps/client/test/destination_map_target_test.dart: external viewport queries omit cityId and keeps same map subtree and click fencing
+00:00 +9 -1: D:/Project/birdtie/apps/client/test/destination_map_target_test.dart: external viewport queries omit cityId and keeps same map subtree and click fencing
+00:00 +10 -1: D:/Project/birdtie/apps/client/test/destination_map_target_test.dart: external viewport queries omit cityId and keeps same map subtree and click fencing
+00:00 +11 -1: D:/Project/birdtie/apps/client/test/destination_map_target_test.dart: external viewport queries omit cityId and keeps same map subtree and click fencing
+00:00 +12 -1: D:/Project/birdtie/apps/client/test/destination_map_target_test.dart: external viewport queries omit cityId and keeps same map subtree and click fencing
+00:00 +13 -1: D:/Project/birdtie/apps/client/test/destination_map_target_test.dart: external viewport queries omit cityId and keeps same map subtree and click fencing
+00:00 +14 -1: D:/Project/birdtie/apps/client/test/destination_map_target_test.dart: external viewport queries omit cityId and keeps same map subtree and click fencing
+00:00 +15 -1: D:/Project/birdtie/apps/client/test/destination_map_target_test.dart: external viewport queries omit cityId and keeps same map subtree and click fencing
+00:00 +16 -1: D:/Project/birdtie/apps/client/test/destination_map_target_test.dart: external viewport queries omit cityId and keeps same map subtree and click fencing
+00:00 +16 -2: D:/Project/birdtie/apps/client/test/destination_map_target_test.dart: external viewport queries omit cityId and keeps same map subtree and click fencing
+00:00 +16 -2: D:/Project/birdtie/apps/client/test/public_city_exploration_test.dart: 保存的国内城市provider未配置时回退，但明确手动选择仍可进入错误恢复 [E]
+  Expected: 'aberdeen-gb'
+    Actual: 'shanghai-cn'
+     Which: is different.
+            Expected: aberdeen-g ...
+              Actual: shanghai-c ...
+                      ^
+             Differ at offset 0
+  
+  package:matcher                                     expect
+  package:flutter_test/src/widget_tester.dart 473:18  expect
+  test\public_city_exploration_test.dart 283:5        main.<fn>
+  
+00:00 +17 -2: D:/Project/birdtie/apps/client/test/destination_map_target_test.dart: external viewport queries omit cityId and keeps same map subtree and click fencing
+00:00 +18 -2: D:/Project/birdtie/apps/client/test/destination_map_target_test.dart: external viewport queries omit cityId and keeps same map subtree and click fencing
+00:00 +19 -2: D:/Project/birdtie/apps/client/test/destination_map_target_test.dart: external viewport queries omit cityId and keeps same map subtree and click fencing
+00:00 +20 -2: D:/Project/birdtie/apps/client/test/public_city_exploration_test.dart: 超时的旧本机读取不能在超时后改城市
+00:02 +21 -2: D:/Project/birdtie/apps/client/test/public_city_exploration_test.dart: 已销毁controller忽略迟到恢复，不向新工作区通知
+00:02 +22 -2: Some tests failed.
+
+Failing tests:
+  D:/Project/birdtie/apps/client/test/public_city_exploration_test.dart: 保存的国内城市provider未配置时回退，但明确手动选择仍可进入错误恢复
+  D:/Project/birdtie/apps/client/test/public_city_exploration_test.dart: 无默认城市时选择可用城市级底图，不选未知provider或未配置高德

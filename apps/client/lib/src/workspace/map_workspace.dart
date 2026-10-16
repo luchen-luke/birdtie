@@ -21,6 +21,11 @@ import 'new_people_page.dart';
 import 'opportunity_page.dart';
 import 'social_now_page.dart';
 import '../city/public_city_controller.dart';
+import '../city/browse_destination.dart';
+import '../city/destination_search_service.dart';
+import '../city/destination_search_controller.dart';
+import '../city/amap_destination_search.dart';
+import '../city/amap_session_consent.dart';
 import '../content/private_moment_controller.dart';
 import '../content/agent_seed_controller.dart';
 import '../content/moment_image_picker.dart';
@@ -184,8 +189,10 @@ class MapWorkspace extends StatefulWidget {
     this.friendImageEnabled = _friendImageRolloutEnabled,
     this.friendImagePicker,
     this.friendImagePendingStore,
+    this.destinationSearchService,
   });
   final PublicCityController city;
+  final DestinationSearchService? destinationSearchService;
   final BirdtieAuthController auth;
   final PrivateMomentController moments;
   final AgentTaskSource? agentTaskSource;
@@ -3267,6 +3274,7 @@ class _MapWorkspaceState extends State<MapWorkspace>
   }
 
   int _authSerial = 0;
+  bool _mapIdentityReloadScheduled = false;
   int _workspaceSerial = 0;
   final int _replyContextEpoch = 0;
   (String?, String?) _workspaceIdentity = (null, null);
@@ -3321,6 +3329,7 @@ class _MapWorkspaceState extends State<MapWorkspace>
   bool Function()? _cityPickerCurrent;
   final Map<Object, Object> _mapReaderOverlays = {};
   Object get _mapReaderBinding => (
+    widget.city.browseKey,
     _layers.epoch,
     _currentSeedIdentity,
     _layers.cityID,
@@ -3593,7 +3602,7 @@ class _MapWorkspaceState extends State<MapWorkspace>
         }
       },
     );
-    _lastCityID = widget.city.selectedCity?.id;
+    _lastCityID = widget.city.browseKey;
     widget.city.addListener(_onCityChange);
     _organizations.addListener(_refreshWorkspaceTasks);
     widget.auth.addListener(_onAuthChange);
@@ -3989,6 +3998,7 @@ class _MapWorkspaceState extends State<MapWorkspace>
       _layers.retire();
       _mapContent.retire();
       _retireSeedEntry();
+      _scheduleMapIdentityReload();
     }
   }
 
@@ -4348,15 +4358,7 @@ class _MapWorkspaceState extends State<MapWorkspace>
     _organizations.clear();
     _clearingAccount = false;
     _discovery.clear();
-    final cityID = widget.city.selectedCity?.id;
-    final bounds = _mapState.viewportBounds;
-    if (cityID != null && bounds != null) {
-      unawaited(_discovery.load(cityID, bounds));
-      unawaited(_layers.load(cityID, bounds));
-      _syncMapContent(cityID, bounds);
-    } else if (cityID != null && _mapState.mapError != null) {
-      unawaited(_discovery.loadCityActivities(cityID));
-    }
+    _scheduleMapIdentityReload();
     // Later identity listeners retire the old source epoch synchronously.
     // Read guest/owned history only after those listeners have completed.
     final recoveryView = _viewSerial, recoveryEpoch = _authSerial;
@@ -4555,9 +4557,33 @@ class _MapWorkspaceState extends State<MapWorkspace>
     _mapMedia.retire();
     _layers.retire();
     _mapContent.retire();
+    _scheduleMapIdentityReload();
     if (_clearingAccount || !widget.auth.signedIn) return;
     _clearAccountWorkspace();
     unawaited(_workspace.loadRecent());
+  }
+
+  // Clear old grants synchronously, then read once after every auth/workspace
+  // listener has retired its source. Read current identity and viewport here;
+  // no captured previous account or delayed A→B→A response can restore a grant.
+  void _scheduleMapIdentityReload() {
+    if (_mapIdentityReloadScheduled) return;
+    _mapIdentityReloadScheduled = true;
+    scheduleMicrotask(() {
+      _mapIdentityReloadScheduled = false;
+      if (!mounted || _clearingAccount) return;
+      final cityID = widget.city.selectedCity?.id;
+      final bounds = _mapState.viewportBounds;
+      if (cityID != null && bounds != null) {
+        unawaited(_discovery.load(cityID, bounds));
+        unawaited(_layers.load(cityID, bounds));
+      } else if (cityID != null && _mapState.mapError != null) {
+        unawaited(_discovery.loadCityActivities(cityID));
+      }
+      if (widget.city.renderCity != null && bounds != null) {
+        _syncMapContent(widget.city.contentCityID, bounds);
+      }
+    });
   }
 
   void _clearAccountWorkspace() {
@@ -4579,7 +4605,7 @@ class _MapWorkspaceState extends State<MapWorkspace>
 
   void _onCityChange() {
     _observeMomentEntrySource();
-    final cityID = widget.city.selectedCity?.id;
+    final cityID = widget.city.browseKey;
     if (cityID == _lastCityID) return;
     _retirePublicPlacePanel();
     // A geographic destination does not revoke the current conversation.
@@ -5012,7 +5038,7 @@ class _MapWorkspaceState extends State<MapWorkspace>
       }
     }
 
-    String? selected;
+    Object? selected;
     _cityPickerOpen = true;
     _cityPickerVisible = false;
     _cityPickerCurrent = current;
@@ -5021,7 +5047,7 @@ class _MapWorkspaceState extends State<MapWorkspace>
     if (widget.city.cities.isEmpty) unawaited(reload());
     try {
       if (!mounted || !current()) return;
-      selected = await showModalBottomSheet<String>(
+      selected = await showModalBottomSheet<Object>(
         context: context,
         showDragHandle: true,
         isScrollControlled: true,
@@ -5041,6 +5067,7 @@ class _MapWorkspaceState extends State<MapWorkspace>
             identityChanges: _activeIntentChanges,
             current: current,
             reloadCities: reload,
+            searchService: widget.destinationSearchService,
             onClose: (value) => Navigator.pop(sheetContext, value),
           ),
         ),
@@ -5053,7 +5080,14 @@ class _MapWorkspaceState extends State<MapWorkspace>
       _mapContent.updateRefreshVisibility();
     }
     if (!mounted || !current()) return;
-    if (selected != null) {
+    if (selected is BrowseDestination) {
+      ++_viewSerial;
+      _pendingCityCurrent = null;
+      _workspace.retirePendingQueryForViewChange();
+      _viewChoice = null;
+      _submittedChoice = null;
+      widget.city.selectDestination(selected);
+    } else if (selected is String) {
       _selectPublicCity(selected);
     } else if (_layers.publicView == null &&
         _layers.error != null &&
@@ -5763,8 +5797,10 @@ class _MapWorkspaceState extends State<MapWorkspace>
       return result!.entities;
     }
     if (_layers.cityID != widget.city.selectedCity?.id) return const [];
-    return _layers.items.where((i) => i.kind != 'PLACE' && i.kind != 'MOMENT')
-        .map((i) => i.entity).toList(growable: false);
+    return _layers.items
+        .where((i) => i.kind != 'PLACE' && i.kind != 'MOMENT')
+        .map((i) => i.entity)
+        .toList(growable: false);
   }
 
   Future<void> _openMapLayers() async {
@@ -6791,24 +6827,35 @@ class _MapWorkspaceState extends State<MapWorkspace>
     final pins = <OwnedMapPin>[];
     for (final entity in entities) {
       final pin = _mapContent.find(entity.id);
-      if (pin == null || !_mapContent.sourceCurrent(pin) ||
-          entity.sourceVersion != pin.sourceVersion) return;
+      if (pin == null ||
+          !_mapContent.sourceCurrent(pin) ||
+          entity.sourceVersion != pin.sourceVersion)
+        return;
       pins.add(pin);
     }
     if (pins.length > 1) _openMapContentGroup(pins: pins);
   }
 
-  void _openMapContentGroup({OwnedMapPin? cluster, List<OwnedMapPin> pins = const []}) {
+  void _openMapContentGroup({
+    OwnedMapPin? cluster,
+    List<OwnedMapPin> pins = const [],
+  }) {
     if (_friendConversation?.audioActive == true) return;
     final epoch = _mapContent.permissionEpoch, identity = _currentSeedIdentity;
     final city = widget.city.selectedCity?.id, source = Object();
     final parents = cluster == null ? pins : [cluster];
-    bool current() => mounted && epoch == _mapContent.permissionEpoch &&
-        identity == _currentSeedIdentity && city == widget.city.selectedCity?.id &&
+    bool current() =>
+        mounted &&
+        epoch == _mapContent.permissionEpoch &&
+        identity == _currentSeedIdentity &&
+        city == widget.city.selectedCity?.id &&
         parents.every((pin) {
           final live = _mapContent.find(pin.mapID);
-          return live != null && live.sourceVersion == pin.sourceVersion && _mapContent.sourceCurrent(live);
-        }) && identical(_publicPlacePanelSource, source);
+          return live != null &&
+              live.sourceVersion == pin.sourceVersion &&
+              _mapContent.sourceCurrent(live);
+        }) &&
+        identical(_publicPlacePanelSource, source);
     if (parents.isEmpty || !parents.every(_mapContent.sourceCurrent)) return;
     _pauseComposer();
     if (_composerDrafts.target.human) _exitFriendConversation();
@@ -6820,23 +6867,34 @@ class _MapWorkspaceState extends State<MapWorkspace>
       _publicPlaceMapID = cluster?.mapID ?? pins.first.mapID;
       _publicPlacePreview = false;
       _publicPlacePanel = NowMapContentGroupPanel(
-        key: GlobalObjectKey(source), controller: _mapContent,
-        cluster: cluster, pins: pins, current: current,
-        changes: Listenable.merge([_mapContent, _seedEntryChanges, widget.city]),
+        key: GlobalObjectKey(source),
+        controller: _mapContent,
+        cluster: cluster,
+        pins: pins,
+        current: current,
+        changes: Listenable.merge([
+          _mapContent,
+          _seedEntryChanges,
+          widget.city,
+        ]),
         onClose: () {
           if (!mounted || !identical(_publicPlacePanelSource, source)) return;
           setState(() => _retirePublicPlacePanel());
           _workspace.selectEntity(null, preserveViewport: true);
         },
         onEdit: (momentID, readable) {
-          if (current() && readable()) unawaited(_openOwnedMomentInNow(momentID, sourceCurrent: readable));
+          if (current() && readable())
+            unawaited(_openOwnedMomentInNow(momentID, sourceCurrent: readable));
         },
       );
     });
   }
 
   void _openMapContentPanel(OwnedMapPin pin) {
-    if (pin.isCluster) { _openMapContentGroup(cluster: pin); return; }
+    if (pin.isCluster) {
+      _openMapContentGroup(cluster: pin);
+      return;
+    }
 
     if (_friendConversation?.audioActive == true ||
         !_mapContent.sourceCurrent(pin))
@@ -9105,7 +9163,7 @@ class _MapWorkspaceState extends State<MapWorkspace>
                           (_socialNotificationUnread ?? 0) > 0,
                       onTools: () => unawaited(_openNowTools()),
                       onContext: () => unawaited(_chooseCity()),
-                      contextLabel: widget.city.selectedCity?.name ?? '未选城市',
+                      contextLabel: widget.city.browseLabel,
                     ),
                   ),
                 ),
@@ -10018,7 +10076,7 @@ class _NowExploreHandle extends StatelessWidget {
   );
 }
 
-/// A temporary directory search for geographic destinations only.
+/// Geographic search does not assign a location to the person or their draft.
 /// Online scopes and personal declarations remain in their existing settings.
 class _NowCityPicker extends StatefulWidget {
   const _NowCityPicker({
@@ -10027,32 +10085,93 @@ class _NowCityPicker extends StatefulWidget {
     required this.current,
     required this.reloadCities,
     required this.onClose,
+    this.searchService,
   });
   final PublicCityController city;
   final Listenable identityChanges;
   final bool Function() current;
   final Future<void> Function() reloadCities;
-  final ValueChanged<String?> onClose;
+  final ValueChanged<Object?> onClose;
+  final DestinationSearchService? searchService;
   @override
   State<_NowCityPicker> createState() => _NowCityPickerState();
 }
 
 class _NowCityPickerState extends State<_NowCityPicker> {
   final _search = TextEditingController();
+  late final DestinationSearchController _destinations;
   bool _refreshQueued = false;
   bool _retired = false;
   bool get _valid => mounted && !_retired && widget.current();
   @override
   void initState() {
     super.initState();
+    _destinations = DestinationSearchController(
+      service: widget.searchService,
+      current: () => _valid,
+    )..addListener(_changed);
     widget.city.addListener(_changed);
     widget.identityChanges.addListener(_changed);
-    _search.addListener(_changed);
+    _search.addListener(_searchChanged);
+  }
+
+  void _searchChanged() {
+    _destinations.updateInput(_search.value);
+    _changed();
+  }
+
+  Future<void> _enableDomesticSearch() async {
+    if (!_valid || !AMapDestinationSearchService.supported) return;
+    final accepted = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('启用国内目的地搜索'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              '国内地图与地理搜索由高德提供。启用后，高德会处理你输入的搜索词，以及提供服务所需的设备和网络信息。不会开启设备定位。',
+            ),
+            TextButton(
+              onPressed: () async {
+                final opened = await launchUrl(
+                  Uri.parse('https://lbs.amap.com/pages/privacy/'),
+                  mode: LaunchMode.externalApplication,
+                );
+                if (!opened && dialogContext.mounted) {
+                  ScaffoldMessenger.maybeOf(dialogContext)?.showSnackBar(
+                    const SnackBar(content: Text('暂时无法打开隐私权政策，请稍后再试。')),
+                  );
+                }
+              },
+              child: const Text('查看高德隐私权政策'),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('暂不启用'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('同意并启用'),
+          ),
+        ],
+      ),
+    );
+    if (!_valid || accepted != true) return;
+    AMapSessionConsent.accepted = true;
+    await _destinations.retry();
   }
 
   void _changed() {
     if (!mounted) return;
-    if (!widget.current()) _retired = true;
+    if (!widget.current() && !_retired) {
+      _retired = true;
+      _destinations.cancel();
+    }
     if (SchedulerBinding.instance.schedulerPhase ==
         SchedulerPhase.persistentCallbacks) {
       if (_refreshQueued) return;
@@ -10070,7 +10189,9 @@ class _NowCityPickerState extends State<_NowCityPicker> {
   void dispose() {
     widget.city.removeListener(_changed);
     widget.identityChanges.removeListener(_changed);
-    _search.removeListener(_changed);
+    _destinations.removeListener(_changed);
+    _destinations.dispose();
+    _search.removeListener(_searchChanged);
     _search.dispose();
     super.dispose();
   }
@@ -10100,7 +10221,7 @@ class _NowCityPickerState extends State<_NowCityPicker> {
                 padding: const EdgeInsets.fromLTRB(16, 0, 8, 8),
                 child: Row(
                   children: [
-                    Expanded(child: Text('选择城市', style: tokens.sheetTitle)),
+                    Expanded(child: Text('选择城市或目的地', style: tokens.sheetTitle)),
                     IconButton(
                       tooltip: '关闭城市选择',
                       visualDensity: VisualDensity.standard,
@@ -10121,9 +10242,13 @@ class _NowCityPickerState extends State<_NowCityPicker> {
                 child: TextField(
                   key: const Key('now-city-search'),
                   controller: _search,
+                  textInputAction: TextInputAction.search,
+                  onSubmitted: (_) {
+                    if (_valid) unawaited(_destinations.submit());
+                  },
                   style: tokens.composer,
                   decoration: InputDecoration(
-                    hintText: '搜索城市',
+                    hintText: '搜索城市、地区或目的地',
                     hintStyle: tokens.composer.copyWith(
                       color: tokens.metadata.color,
                     ),
@@ -10142,10 +10267,76 @@ class _NowCityPickerState extends State<_NowCityPicker> {
                     if (!_valid)
                       Text('城市目录已变化，请关闭后重新选择。', style: tokens.body)
                     else ...[
-                      if (widget.city.citiesLoading)
+                      if (widget.city.citiesLoading || _destinations.loading)
                         const LinearProgressIndicator(),
-                      if (widget.city.cityError case final error?)
+                      if (widget.city.cityError case final error?
+                          when query.isEmpty)
                         Text(error, style: tokens.body),
+                      if (widget.city.selectedDestination
+                          case final destination? when query.isEmpty)
+                        ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          title: Text(destination.name, style: tokens.chrome),
+                          subtitle: Text(
+                            destination.region,
+                            style: tokens.listSubtitle,
+                          ),
+                          trailing: const Icon(Icons.check),
+                          onTap: () {
+                            if (_valid) widget.onClose(null);
+                          },
+                        ),
+                      for (final destination in _destinations.items)
+                        ListTile(
+                          key: Key('now-destination-${destination.browseKey}'),
+                          contentPadding: EdgeInsets.zero,
+                          minTileHeight: 48,
+                          title: Text(destination.name, style: tokens.chrome),
+                          subtitle: Text(
+                            destination.region,
+                            style: tokens.listSubtitle,
+                          ),
+                          trailing: const Icon(Icons.north_west, size: 20),
+                          onTap: () {
+                            if (_valid) widget.onClose(destination);
+                          },
+                        ),
+                      if (_destinations.error case final error?)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(error, style: tokens.body),
+                              TextButton.icon(
+                                onPressed: _destinations.loading
+                                    ? null
+                                    : () {
+                                        if (_valid)
+                                          unawaited(_destinations.retry());
+                                      },
+                                icon: const Icon(Icons.refresh),
+                                label: const Text('重试搜索'),
+                              ),
+                            ],
+                          ),
+                        ),
+                      if (_destinations.domesticUnavailable)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          child:
+                              AMapDestinationSearchService.supported &&
+                                  !AMapSessionConsent.accepted
+                              ? TextButton.icon(
+                                  onPressed: _enableDomesticSearch,
+                                  icon: const Icon(Icons.map_outlined),
+                                  label: const Text('启用国内目的地搜索'),
+                                )
+                              : Text(
+                                  '国内目的地搜索暂不可用，仍可选择下方城市。',
+                                  style: tokens.body,
+                                ),
+                        ),
                       for (final city in cities)
                         ListTile(
                           key: Key('now-scope-city-${city.id}'),
@@ -10162,13 +10353,18 @@ class _NowCityPickerState extends State<_NowCityPicker> {
                             if (_valid) widget.onClose(city.id);
                           },
                         ),
-                      if (!widget.city.citiesLoading && cities.isEmpty)
+                      if (!widget.city.citiesLoading &&
+                          !_destinations.loading &&
+                          _destinations.error == null &&
+                          !_destinations.domesticUnavailable &&
+                          cities.isEmpty &&
+                          _destinations.items.isEmpty)
                         Padding(
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           child: Text(
                             query.isEmpty
-                                ? '当前城市目录暂无可用目的地。'
-                                : '当前城市目录中没有匹配的城市。',
+                                ? '输入城市、地区或目的地开始搜索。'
+                                : '没有找到匹配的目的地，试试完整名称或国家。',
                             style: tokens.body,
                           ),
                         ),
@@ -10186,6 +10382,17 @@ class _NowCityPickerState extends State<_NowCityPicker> {
                                 },
                           icon: const Icon(Icons.refresh),
                           label: const Text('重新读取城市'),
+                        ),
+                      if (_destinations.items.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8),
+                          child: Text(
+                            _destinations.items
+                                .map((item) => item.attribution)
+                                .toSet()
+                                .join('\n'),
+                            style: tokens.listSubtitle,
+                          ),
                         ),
                     ],
                   ],

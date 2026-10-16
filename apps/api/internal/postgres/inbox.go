@@ -82,7 +82,7 @@ func projectInboxActorMedia(item *inbox.Item) error {
 func (s *Store) ListInbox(ctx context.Context, ownerID string) ([]inbox.Item, error) {
 	rows, err := s.pool.Query(ctx, `SELECT `+inboxColumns+` FROM inbox_items i
         LEFT JOIN native_notification_decisions d ON d.id=i.routing_decision_id
-        WHERE i.recipient_account_id = $1 AND i.origin='NATIVE' AND `+inboxVisibility+`
+        WHERE i.recipient_account_id = $1 AND i.origin='NATIVE' AND i.resource_type<>'person_follow' AND `+inboxVisibility+`
         ORDER BY COALESCE(d.priority,50) DESC,i.created_at DESC,i.id DESC LIMIT 100`, ownerID)
 	if err != nil {
 		return nil, err
@@ -177,7 +177,7 @@ func (s *Store) ListHumanInbox(ctx context.Context, digest [32]byte, actor ident
 		return nil, err
 	}
 	rows, err := tx.Query(ctx, `SELECT `+inboxColumns+` FROM inbox_items i LEFT JOIN native_notification_decisions d ON d.id=i.routing_decision_id
- WHERE i.recipient_account_id=$1 AND i.origin='NATIVE' AND `+inboxVisibility+` AND EXISTS(SELECT 1 FROM sessions se WHERE se.account_id=$1 AND se.token_sha256=$2 AND se.revoked_at IS NULL AND se.expires_at>clock_timestamp() AND se.idle_expires_at>clock_timestamp() AND ($3::boolean OR se.authentication_method<>'dev_phone'))
+ WHERE i.recipient_account_id=$1 AND i.origin='NATIVE' AND i.resource_type<>'person_follow' AND `+inboxVisibility+` AND EXISTS(SELECT 1 FROM sessions se WHERE se.account_id=$1 AND se.token_sha256=$2 AND se.revoked_at IS NULL AND se.expires_at>clock_timestamp() AND se.idle_expires_at>clock_timestamp() AND ($3::boolean OR se.authentication_method<>'dev_phone'))
  ORDER BY COALESCE(d.priority,50) DESC,i.created_at DESC,i.id DESC LIMIT 100`, actor.ID, digest[:], s.devPhoneEnabled)
 	if err != nil {
 		return nil, socialnow.ErrUnavailable

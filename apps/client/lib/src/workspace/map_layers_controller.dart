@@ -456,6 +456,7 @@ class MapLayersController extends ChangeNotifier {
       }
       _authorExpiry?.cancel();
       authorView = view;
+      if (view.rejectedItemCount > 0) authorError = '部分作者动态暂不可读，请重试';
       _authorRetries = 0;
       _evidence('success', view: view, duration: remaining, author: true);
       _authorExpiry = Timer(remaining, () {
@@ -494,7 +495,10 @@ class MapLayersController extends ChangeNotifier {
       return true;
     } catch (failure) {
       if (current()) {
-        authorView = null;
+        if (!_retryable(failure) ||
+            authorView?.validUntil.isAfter(DateTime.now().toUtc()) != true) {
+          authorView = null;
+        }
         authorError = '当前范围的作者公开动态暂不可用，请重新读取';
         if (automatic && _retryable(failure)) {
           _scheduleRetry(
@@ -659,6 +663,10 @@ class MapLayersController extends ChangeNotifier {
       _expiry?.cancel();
       publicView = public;
       privateView = private;
+      if (public.rejectedItemCount > 0 ||
+          (private?.rejectedItemCount ?? 0) > 0) {
+        error = '部分地图内容暂不可读，请重试';
+      }
       if (privateUnavailable) {
         _unavailableKinds.add('OPPORTUNITY');
         error = '公开地图已读取；我的活动机会暂不可用，请重试';
@@ -717,8 +725,15 @@ class MapLayersController extends ChangeNotifier {
       }
     } catch (failure) {
       if (current()) {
-        publicView = null;
-        privateView = null;
+        final now = DateTime.now().toUtc();
+        if (!_retryable(failure) ||
+            publicView?.validUntil.isAfter(now) != true) {
+          publicView = null;
+        }
+        if (!_retryable(failure) ||
+            privateView?.validUntil.isAfter(now) != true) {
+          privateView = null;
+        }
         _unavailableKinds
           ..clear()
           ..addAll(requestedKinds);

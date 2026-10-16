@@ -25,6 +25,7 @@ import 'person_avatar.dart';
 import 'inbox_review_result_page.dart';
 import 'moment_interaction.dart';
 import 'public_moment_page.dart';
+import 'public_person_page.dart';
 import '../content/moment_control.dart' show newMomentOperationID;
 
 class InboxPanel extends StatefulWidget {
@@ -641,6 +642,7 @@ class _InboxPanelState extends State<InboxPanel> {
   }
 
   Future<void> _open(InboxItem item) async {
+    if (!item.supported) return;
     final serial = _serial, current = await _markRead(item);
     if (!mounted || current == null || !_current(serial)) {
       return;
@@ -651,7 +653,50 @@ class _InboxPanelState extends State<InboxPanel> {
       ).showSnackBar(const SnackBar(content: Text('原通知已保留；关联内容需要从当前详情重新打开。')));
       return;
     }
-    if (const {
+    if (current.resourceType == 'person_follow') {
+      final source = _source,
+          version = source.identityVersion,
+          identity = _identityEpoch;
+      bool valid() =>
+          _current(serial) &&
+          identical(source, _source) &&
+          version == source.identityVersion &&
+          identity == _identityEpoch;
+      try {
+        final accountID = await source.personTarget(current.id);
+        if (!mounted || !valid()) return;
+        final changes = Listenable.merge([
+          widget.auth,
+          widget.workspaceChanges,
+          _destinationChanges,
+        ]);
+        final route = MaterialPageRoute<void>(
+          builder: (_) => NotificationDestinationBoundary(
+            identityChanges: changes,
+            current: valid,
+            builder: (_) => PublicPersonPage(
+              accountID: accountID,
+              auth: widget.auth,
+              authorizationHeader: () =>
+                  valid() ? widget.auth.authorizationHeader : null,
+              workspaceID: widget.organizationWorkspaceID,
+              identityChanges: changes,
+              apiBaseUrl: source.followApiBaseUrl,
+              client: source.followClient,
+            ),
+          ),
+        );
+        _child = route;
+        await Navigator.of(context).push(route);
+        if (_child == route) _child = null;
+      } catch (_) {
+        if (mounted && valid()) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('这条关注通知已失效，请刷新通知。')));
+        }
+      }
+    } else if (const {
       'moment_like',
       'moment_comment',
     }.contains(current.resourceType)) {
@@ -1047,7 +1092,9 @@ class _InboxPanelState extends State<InboxPanel> {
     return CircleAvatar(
       backgroundColor: color.surfaceContainerLow,
       child: Icon(
-        item.resourceType == 'connection_request'
+        !item.supported
+            ? Icons.notifications_none
+            : item.resourceType == 'connection_request'
             ? Icons.person_add_alt_outlined
             : item.resourceType == 'conversation_message'
             ? Icons.chat_bubble_outline
@@ -1195,7 +1242,9 @@ class _InboxPanelState extends State<InboxPanel> {
               for (final item in _sectionItems(key))
                 ListTile(
                   contentPadding: EdgeInsets.zero,
-                  onTap: _openingID != null ? null : () => _open(item),
+                  onTap: _openingID != null || !item.supported
+                      ? null
+                      : () => _open(item),
                   leading: _itemLeading(item),
                   title: Text(
                     item.title,

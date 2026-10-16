@@ -332,12 +332,7 @@ class TypedMapItem {
     }
     final lat = (a['latitude'] as num).toDouble(),
         lon = (a['longitude'] as num).toDouble();
-    if (!lat.isFinite ||
-        !lon.isFinite ||
-        lat < bounds.south ||
-        lat > bounds.north ||
-        lon < bounds.west ||
-        lon > bounds.east) {
+    if (!lat.isFinite || !lon.isFinite || !bounds.contains(lat, lon)) {
       throw const FormatException('点位范围无效');
     }
     return TypedMapItem(
@@ -405,12 +400,14 @@ class TypedMapView {
     required this.truncated,
     required this.items,
     this.authorID,
+    this.rejectedItemCount = 0,
   });
   final String cityID, scope;
   final String? authorID;
   final DateTime observedAt, validUntil;
   final bool truncated;
   final List<TypedMapItem> items;
+  final int rejectedItemCount;
   factory TypedMapView.decode(
     dynamic raw,
     String city,
@@ -465,9 +462,12 @@ class TypedMapView {
         until.difference(observed) > const Duration(minutes: 2)) {
       throw const FormatException('地图来源已失效');
     }
-    final items = (x['items'] as List)
-        .map(
-          (e) => TypedMapItem.decode(
+    final items = <TypedMapItem>[];
+    var rejected = 0;
+    for (final e in x['items'] as List) {
+      try {
+        items.add(
+          TypedMapItem.decode(
             e,
             expected,
             bounds,
@@ -479,8 +479,14 @@ class TypedMapView {
             validUntil: until,
             now: now,
           ),
-        )
-        .toList(growable: false);
+        );
+      } on FormatException {
+        rejected++;
+      }
+    }
+    if (items.isEmpty && rejected > 0) {
+      throw const FormatException('地图内容全部无法解析，请重新读取');
+    }
     if (items.map((e) => e.mapID).toSet().length != items.length) {
       throw const FormatException('重复地图身份');
     }
@@ -492,6 +498,7 @@ class TypedMapView {
       truncated: x['truncated'],
       items: List.unmodifiable(items),
       authorID: authorID,
+      rejectedItemCount: rejected,
     );
   }
 }

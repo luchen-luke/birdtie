@@ -1,0 +1,29 @@
+Flutter assets will be downloaded from https://storage.flutter-io.cn. Make sure you trust this source!
+00:00 +0: loading D:/Project/birdtie/apps/client/test/destination_search_test.dart
+00:00 +0: D:/Project/birdtie/apps/client/test/destination_search_test.dart: composition keeps available provider, respects consent and independent backoff
+00:00 +1: D:/Project/birdtie/apps/client/test/destination_search_test.dart: v6 is global Temporary, no cache, separates domestic renderer scope
+00:00 +2: D:/Project/birdtie/apps/client/test/destination_search_test.dart: malformed envelope and transport token text never become UI errors
+00:00 +3: D:/Project/birdtie/apps/client/test/destination_search_test.dart: composing, debounce, abort, latest response and cancel own only active results
+00:00 +4: D:/Project/birdtie/apps/client/test/destination_search_test.dart: rate failure uses bounded retry and identity retirement fences late result
+00:00 +5: D:/Project/birdtie/apps/client/test/destination_map_target_test.dart: unregistered target survives late restore and catalog refresh without fake city API or persistence
+00:00 +6: D:/Project/birdtie/apps/client/test/destination_map_target_test.dart: Mapbox domestic target cannot silently cross to AMap renderer
+00:00 +7: D:/Project/birdtie/apps/client/test/destination_map_target_test.dart: external viewport queries omit cityId and keeps same map subtree and click fencing
+00:00 +8: D:/Project/birdtie/apps/client/test/destination_map_target_test.dart: external viewport queries omit cityId and keeps same map subtree and click fencing
+00:00 +9: D:/Project/birdtie/apps/client/test/destination_map_target_test.dart: external viewport queries omit cityId and keeps same map subtree and click fencing
+00:00 +10: D:/Project/birdtie/apps/client/test/destination_map_target_test.dart: external viewport queries omit cityId and keeps same map subtree and click fencing
+00:00 +11: D:/Project/birdtie/apps/client/test/destination_map_target_test.dart: external viewport queries omit cityId and keeps same map subtree and click fencing
+00:00 +12: D:/Project/birdtie/apps/client/test/destination_map_target_test.dart: external viewport queries omit cityId and keeps same map subtree and click fencing
+00:00 +13: D:/Project/birdtie/apps/client/test/destination_map_target_test.dart: external viewport queries omit cityId and keeps same map subtree and click fencing
+00:00 +14: D:/Project/birdtie/apps/client/test/destination_map_target_test.dart: external viewport queries omit cityId and keeps same map subtree and click fencing
+00:00 +15: D:/Project/birdtie/apps/client/test/destination_map_target_test.dart: external viewport queries omit cityId and keeps same map subtree and click fencing
+00:00 +16: D:/Project/birdtie/apps/client/test/destination_map_target_test.dart: external viewport queries omit cityId and keeps same map subtree and click fencing
+00:00 +17: D:/Project/birdtie/apps/client/test/destination_map_target_test.dart: external viewport queries omit cityId and keeps same map subtree and click fencing
+00:00 +18: D:/Project/birdtie/apps/client/test/destination_map_target_test.dart: external viewport queries omit cityId and keeps same map subtree and click fencing
+00:00 +19: D:/Project/birdtie/apps/client/test/destination_map_target_test.dart: external viewport queries omit cityId and keeps same map subtree and click fencing
+00:00 +20: D:/Project/birdtie/apps/client/test/destination_map_target_test.dart: external viewport queries omit cityId and keeps same map subtree and click fencing
+00:00 +21: D:/Project/birdtie/apps/client/test/destination_map_target_test.dart: external viewport queries omit cityId and keeps same map subtree and click fencing
+00:00 +22: D:/Project/birdtie/apps/client/test/destination_map_target_test.dart: external viewport queries omit cityId and keeps same map subtree and click fencing
+00:00 +23: D:/Project/birdtie/apps/client/test/destination_map_target_test.dart: external viewport queries omit cityId and keeps same map subtree and click fencing
+00:00 +24: D:/Project/birdtie/apps/client/test/public_city_exploration_test.dart: 超时的旧本机读取不能在超时后改城市
+00:02 +25: D:/Project/birdtie/apps/client/test/public_city_exploration_test.dart: 已销毁controller忽略迟到恢复，不向新工作区通知
+00:02 +26: All tests passed!

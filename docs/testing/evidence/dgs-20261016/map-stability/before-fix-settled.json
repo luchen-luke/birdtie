@@ -1,0 +1,28 @@
+{
+  "command": "flutter test --no-pub test/dgs_map_stability_test.dart --reporter expanded",
+  "cwd": "D:\\Project\\birdtie\\apps\\client",
+  "startedAt": "2026-10-16T08:40:08.4367387Z",
+  "finishedAt": "2026-10-16T08:40:11.3759706Z",
+  "exitCode": 1,
+  "sourceFrame": [
+    {
+      "path": "lib/src/workspace/owned_map_api.dart",
+      "sha256": "8d852070b64e8efe1f9722719c22520be49c6fa1784ea1a74af4e88403836e86"
+    },
+    {
+      "path": "lib/src/workspace/owned_map_controller.dart",
+      "sha256": "265ba6c5a48dc007692fbec57714af864b86546d97ab82758f1e4c58d12c0599"
+    },
+    {
+      "path": "lib/src/workspace/owned_map_media_controller.dart",
+      "sha256": "8f2d13e4d5b3d39dfe67006a3aed0de78438a17df701e5d1070ecd47843eca6c"
+    },
+    {
+      "path": "test/dgs_map_stability_test.dart",
+      "sha256": "9bcc13ce4d412f3fea7ae4128c204f7382a823f3ed42860d4f62f4ed9153e2a6"
+    }
+  ],
+  "environment": "ISOLATED_MOCK_CLIENT_WIDGET",
+  "realDevice": "NOT_RUN",
+  "note": "Settles asynchronous response cancellation before checking projection."
+}

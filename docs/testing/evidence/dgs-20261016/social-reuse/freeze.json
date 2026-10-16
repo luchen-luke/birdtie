@@ -1,0 +1,45 @@
+{
+  "fullTwoUserE2E": "NOT_RUN",
+  "restrictions": [
+    "No Civu writes",
+    "No real environment fixtures or login",
+    "No historical notification replay",
+    "No deployment by this worker"
+  ],
+  "receipts": {
+    "follow-native02/receipt.json": "d17a183a285bb02523c18f3006a61ba295fe34709a801783f3e6da4fd08d030c",
+    "legacy-history175/receipt.json": "216e66fde9eb025b14a66ed9877a6fa10538cf68e4f163587f387d60c989c5e1",
+    "follow-http03.json": "b07f7af04301cfc20f120d72d273be9f74d67804cb9041e6f64d48a2f6e36378",
+    "follow-http02.json": "e51e58a51ff2e39e8f5be8471120d491e7c62d34ad05bb263b2c9b9ea6221a29",
+    "follow-flutter02.json": "5670448a9b39b5a4986d4995bad84b6bec1ce2d9b83b824b3dcf2ee57d2d8004",
+    "flutter-targeted.json": "9910cafb96debdfb35a64e2ed450ab78a37b58dcebcf00c725b34db26841f5d2",
+    "go-domain.json": "cf3a0d610910d018573b33157702e064b56231d59595f969e4a77410c8a571b3"
+  },
+  "sourceCount": 20,
+  "head": "cef1a11ada611247021c4e81593c50437f336a66",
+  "frozenAtUTC": "2026-10-16T10:08:51.4958112Z",
+  "sourceFiles": {
+    "apps/api/migrations/175_person_follow_notifications.sql": "1371cd9124942a41b1fa766a0462c77127b78d4340a04da610931288df5d7afe",
+    "apps/api/migrations/175_person_follow_notifications.down.sql": "c805ae8b8135b22eb71ed25e5f7635421235c3d79db55f36918edfe82743e1a2",
+    "apps/api/internal/agentnotification/registry.go": "0fb343ca62f9c575ced9449cb1aed43391c85c41b6867cf821b3c148f39b5f33",
+    "apps/api/internal/agentnotification/registry_test.go": "6860b0783dd1c165d133c202d567569d31995082e2b825f9f0b05f3631a38845",
+    "apps/api/internal/postgres/follows.go": "db908e7634d37c17bf10e2f57dc225f5dad9d9285f3d0d58333432f1ad778b04",
+    "apps/api/internal/postgres/notification_routing.go": "18dde5786cb17b9dc3644dce1f06d0388561b1114bb6ba246a954b268797fe56",
+    "apps/api/internal/postgres/person_follow_notifications.go": "f1af49483c1335a387fddf3e1a761a59a9c54adb5717c9509859041a508c2d0a",
+    "apps/api/internal/postgres/person_follow_notifications_native_test.go": "cfb9c481b56e94eb7d8b3ea43b8495701372d365023d3fcb450b52557f3f123e",
+    "apps/api/internal/httpapi/person_follow_notifications.go": "fdb9dda04e7b836b90a649753616f805527b15153c1311b6e7c4e560c32ece8e",
+    "apps/api/internal/httpapi/person_follow_notifications_test.go": "710aade37c8a28e98a400890d0d02c6ac6fa918f3f96112a6bb15f4e2eaf38ff",
+    "apps/api/internal/httpapi/moment_interaction.go": "57c6c28f54fcfe6172e50addca9e1b0f6c72506fc60c27ac3be58f9128a71bfb",
+    "apps/api/internal/inbox/page.go": "44b0828d6f3537ffe210741877f349a3d4bf6c12fed1653f8f9f7442b5e2ee56",
+    "apps/api/internal/httpapi/inbox_page.go": "04f13bab4eadaab6d1d48b1c25f26e83bec7f2a20d6f0fb5800afa78b3c864d8",
+    "apps/api/internal/postgres/inbox_page.go": "e060e7c5afd40bd379bf3b98aa7d7a784155cde389371a2690fda9bff4301f86",
+    "apps/api/internal/postgres/inbox.go": "4842ca0cd15d26d208d1d0b37420f244b86e3809af1938b7dccaaab9d9a30e6b",
+    "apps/client/lib/src/workspace/remote_inbox_source.dart": "b25a9c3683db0dc29a57e0c98350aede65ea6048b4453c4cfb840a373a57f0f4",
+    "apps/client/lib/src/workspace/inbox.dart": "7522f2c2e2b17314e6f0510bb39c8514a40827f3a247729791a4720255a41b1f",
+    "apps/client/test/person_follow_notification_test.dart": "090292a84521f5fcade4760af28e54ff123a6ca4477199ad0ce560a182f566d9",
+    "apps/client/lib/src/workspace/connections.dart": "bb2b1027da4362e434b29c1f32666c4cf9d6a193f658f0dc2eb96e60d9885126",
+    "apps/client/test/dgs_moment_share_title_test.dart": "770ecf88e120e31394ffaa58c7e6bcd867cc1bc25f16eee451284fe182c037b0"
+  },
+  "device": "NOT_RUN",
+  "apiFinalChange": "person-target maps initial inbox NotFound to404 and final source disappearance to409; follow-http03 PASS"
+}

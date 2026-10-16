@@ -1,0 +1,22 @@
+{
+  "status": "READ_ONLY_BOUNDARY_CONFIRMED",
+  "rows": [
+    {
+      "status": "withdrawn",
+      "visibility": "private",
+      "authorStatus": "active",
+      "momentIdSHA256": "eaf9eb6fb8a7d46cb6abe0a7b6fbf85613058d7ed5b95421206781732b12323a",
+      "legacyAuthorMapped": false,
+      "publicMapCandidate": false,
+      "activeLocationLinks": 1,
+      "publicBindingAvailable": false,
+      "ownedPrivateMapCandidate": false
+    }
+  ],
+  "databaseOID": 54087,
+  "schemaMax": 173,
+  "productionWrites": 0,
+  "apiLogins": 0,
+  "contentOrMediaRead": false,
+  "remoteScriptSHA256": "b9124fd3220138011a077368cc9b761f1f2ed0a0166f4f3f385e4eaa288b8db9"
+}

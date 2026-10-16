@@ -1,0 +1,9 @@
+warning: in the working copy of 'apps/api/internal/agentnotification/registry.go', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/api/internal/agentnotification/registry_test.go', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/api/internal/httpapi/inbox_page.go', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/api/internal/httpapi/moment_interaction.go', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/api/internal/inbox/page.go', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/api/internal/postgres/follows.go', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/api/internal/postgres/inbox.go', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/api/internal/postgres/inbox_page.go', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/api/internal/postgres/notification_routing.go', LF will be replaced by CRLF the next time Git touches it

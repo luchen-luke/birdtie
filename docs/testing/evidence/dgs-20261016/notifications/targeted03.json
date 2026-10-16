@@ -1,0 +1,23 @@
+{
+  "command": [
+    "D:\\DevTools\\flutter\\bin\\flutter.bat",
+    "test",
+    "--no-pub",
+    "test/dgs_unknown_notification_test.dart",
+    "test/remote_inbox_source_test.dart",
+    "--reporter",
+    "expanded"
+  ],
+  "cwd": "D:\\Project\\birdtie\\apps\\client",
+  "exitCode": 0,
+  "elapsedSeconds": 4.34,
+  "sourceFrame": {
+    "apps/client/lib/src/workspace/remote_inbox_source.dart": "541b2b434c1b0cdb77b99e1dbc2c612d04e62f14fa88b5325ad30a938c4ff768",
+    "apps/client/lib/src/workspace/inbox.dart": "ff802affa995468ad156d94ec13dddf14a83516e9ac972487c694550b98b3eb7",
+    "apps/client/test/dgs_unknown_notification_test.dart": "6d98b550e17965d53c1a8cba3abe4136f9f15938160083fc9fa2dd761f761c7d",
+    "apps/client/test/remote_inbox_source_test.dart": "a8b63e42450bbba4c77df29e99f05d3f4813347c5a07ed7ee35e79cf11a1fcc9"
+  },
+  "sourceStable": true,
+  "device": "NOT_RUN",
+  "fixture": "isolated mock HTTP only"
+}

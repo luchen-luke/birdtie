@@ -1,0 +1,123 @@
+{
+  "at": "2026-10-16T09:42:16.091942+00:00",
+  "status": "PASS",
+  "unit": {
+    "command": [
+      "C:\\Users\\chens\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\python.exe",
+      "-B",
+      "-m",
+      "unittest",
+      "scripts.tests.test_fixture_environment_guard",
+      "-v"
+    ],
+    "cwd": "D:\\Project\\birdtie",
+    "exitCode": 0
+  },
+  "retiredScripts": [
+    {
+      "name": "remote_friend_chat_flow.py",
+      "mode": "import",
+      "blockedBeforeOriginalSideEffects": true
+    },
+    {
+      "name": "remote_friend_chat_flow.py",
+      "mode": "__main__",
+      "blockedBeforeOriginalSideEffects": true
+    },
+    {
+      "name": "remote_friend_chat_flow02.py",
+      "mode": "import",
+      "blockedBeforeOriginalSideEffects": true
+    },
+    {
+      "name": "remote_friend_chat_flow02.py",
+      "mode": "__main__",
+      "blockedBeforeOriginalSideEffects": true
+    },
+    {
+      "name": "remote_media_thread_flow.py",
+      "mode": "import",
+      "blockedBeforeOriginalSideEffects": true
+    },
+    {
+      "name": "remote_media_thread_flow.py",
+      "mode": "__main__",
+      "blockedBeforeOriginalSideEffects": true
+    },
+    {
+      "name": "remote_multilocation166.py",
+      "mode": "import",
+      "blockedBeforeOriginalSideEffects": true
+    },
+    {
+      "name": "remote_multilocation166.py",
+      "mode": "__main__",
+      "blockedBeforeOriginalSideEffects": true
+    },
+    {
+      "name": "remote_crosscity166.py",
+      "mode": "import",
+      "blockedBeforeOriginalSideEffects": true
+    },
+    {
+      "name": "remote_crosscity166.py",
+      "mode": "__main__",
+      "blockedBeforeOriginalSideEffects": true
+    },
+    {
+      "name": "verify_remote_social.py",
+      "mode": "import",
+      "blockedBeforeOriginalSideEffects": true
+    },
+    {
+      "name": "verify_remote_social.py",
+      "mode": "__main__",
+      "blockedBeforeOriginalSideEffects": true
+    },
+    {
+      "name": "verify_remote_social02.py",
+      "mode": "import",
+      "blockedBeforeOriginalSideEffects": true
+    },
+    {
+      "name": "verify_remote_social02.py",
+      "mode": "__main__",
+      "blockedBeforeOriginalSideEffects": true
+    }
+  ],
+  "localRunner": {
+    "command": [
+      "C:\\Users\\chens\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\native\\powershell\\pwsh.exe",
+      "-NoProfile",
+      "-File",
+      "D:\\Project\\birdtie\\automation\\verify_community_migrations.ps1",
+      "-EvidenceDirectory",
+      "D:\\Project\\birdtie\\docs\\testing\\evidence\\dgs-20261016\\injection-guards\\direct01\\sql-denials"
+    ],
+    "cwd": "D:\\Project\\birdtie",
+    "exitCode": 0
+  },
+  "sourceBefore": {
+    "scripts/fixture_environment_guard.py": "0f6db91ffab5ca6bacc6366294da56daaa4d8f494601d1a53959d018a7f5ef3e",
+    "scripts/tests/test_fixture_environment_guard.py": "82e51aedecc11a3a1a076b16b9c3b245e055c4f32debb98d9f68d9ac1650b2d6",
+    "automation/verify_community_migrations.ps1": "936df4b26bc92f9b258f5a4fa4c63330aaccc510592b00afe89307dc54d6c993",
+    "apps/api/dev-seeds/001_badminton.sql": "ba42b5809f86567ffa20dc85b0062954c2956850e708e3cb280a0f0c3792b54c",
+    "apps/api/dev-seeds/002_functional_mvp.sql": "7c4635e641694fa9c8d620366ec0583d6d0e5c0668ec4f970914ece17e18f373",
+    "apps/api/dev-seeds/003_community_social.sql": "a2d74db517c020fef5f19f7b879bf03bbce3eb929fab50ca3a3068c4c9421a56"
+  },
+  "sourceAfter": {
+    "scripts/fixture_environment_guard.py": "0f6db91ffab5ca6bacc6366294da56daaa4d8f494601d1a53959d018a7f5ef3e",
+    "scripts/tests/test_fixture_environment_guard.py": "82e51aedecc11a3a1a076b16b9c3b245e055c4f32debb98d9f68d9ac1650b2d6",
+    "automation/verify_community_migrations.ps1": "936df4b26bc92f9b258f5a4fa4c63330aaccc510592b00afe89307dc54d6c993",
+    "apps/api/dev-seeds/001_badminton.sql": "ba42b5809f86567ffa20dc85b0062954c2956850e708e3cb280a0f0c3792b54c",
+    "apps/api/dev-seeds/002_functional_mvp.sql": "7c4635e641694fa9c8d620366ec0583d6d0e5c0668ec4f970914ece17e18f373",
+    "apps/api/dev-seeds/003_community_social.sql": "a2d74db517c020fef5f19f7b879bf03bbce3eb929fab50ca3a3068c4c9421a56"
+  },
+  "sourceStable": true,
+  "productionRequests": 0,
+  "productionWrites": 0,
+  "limits": [
+    "Python loopback origin alone is not proof of API/database binding",
+    "Production fixture identity login/write gate is not implemented by this batch"
+  ]
+}

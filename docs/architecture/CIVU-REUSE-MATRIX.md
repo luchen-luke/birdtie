@@ -275,3 +275,33 @@ Civu-client仍只读1bbf0613。两条此前实际访问的上海/汕头公开地
 本轮明确迁入窄包Civu packages/amap_map（Apache-2.0，含既有Android16补丁和11个公开插件图标），保留LICENSE/NOTICE/逐文件SHA；关闭原生日志、修订阅和迟到初始化销毁。此许可审计只覆盖该插件，不扩大到Civu业务源码。map_provider_policy、Native/Web适配、174保护迁移与来源路径见BIRDTIE-CHINA-MAP-BOUNDARY-2026-10-16.md。
 
 按需媒体由Birdtie自身API/阅读面板实现，API30已上线、34有目标图片及部分Web视频证据；候选35含取消/新租期和高德修复，未部署安装。高德配置缺口和国内真实对齐NOT_RUN，严格性能及更广父任务仍IN_PROGRESS，详见两份本轮报告。
+
+
+## 2026-10-16 Android37 增量更正（当前状态）
+
+本节优先于下方较早配置快照；旧失败证据保留。用户本轮明确暂不做网页，Web34保持，不要求网页Key，也不部署174。
+
+- 本机原本已有CIVU Android Key，旧问题包含Dart适配器未识别native manifest配置。现已接入只返回配置存在性的通道，不把Key传入诊断。
+- APK36第一次真机失败为未注册AMap平台视图；离线依赖解析此前在Windows symlink步骤退出，生成注册器陈旧。已通过仅进程级关闭非Android平台的离线pub get正常生成，未手改生成文件或全局系统设置。
+- APK36r2真机加载到高德底图，但原CIVU Key返回INVALID_USER_SCODE。用户随后已为预览包与实签名配置新Key；当前Key与CIVU不同，已核对配置和manifest一致，无需再次提供Key。原CIVU配置未改。
+- 已复用CIVU用户GeoHUB导出的原始 `style.data` 与 `style_extra.data`，Android首次创建map前加载，两文件字节与CIVU原件一致。加载失败可重试；成功同进程复用，抑制底图POI图标与文字，保留道路标注及Birdtie业务内容。插件的基础许可证与用户自有样式来源分开记录。
+- APK37已合包，SHA256 `d2a6cba403298bc605e27649c390cd71f3fd880a516e43ad690f1397eef85465`。包名 `app.civu.civu_mobile.birdtiepreview`，签名SHA1 `73:84:0A:17:D0:CA:7B:4B:F4:15:41:B4:2C:EC:B7:A2:34:D5:05:23`。Key不会提交Git。安装时ADB无设备，最新手机仍是36r2；37的新Key鉴权、自定义样式与地标对齐均NOT_RUN，外部依赖BLOCKED。
+- 6项Key桥接测试、4项样式测试PASS；样式接入后Key6项复跑PASS（不是新增6项）。保留两次fixture异步同步失败及修复记录。证据分别在 `docs/testing/evidence/china-map-boundary-20261016/android-key-reuse`、`android-civu-style`、`android36-device`、`android36-r2-device`、`android37-device`。
+- APK37不包含随后DGS地图稳定性和身份恢复代码。后续源码不能沿用APK37合包/真机结果，需合批新构建。
+
+新增源文件：`amap_native_configuration.dart`、`amap_offline_style.dart`、Android `MapConfiguration.kt`；适配 `MainActivity.kt`、`amap_city_map_io.dart` 与pubspec；样式来源 `D:\Program\Civu\Civu-client\assets\map_styles\civu_android` → `apps/client/assets/map_styles/civu_android`。CIVU只读，未整体迁移旧导航。
+
+
+## 2026-10-16 DGS 地图稳定性与全球目的地增量
+
+在当前 cef1a11 基线继续修改，未回退附件4637cfb，也未写原Civu。Civu目的地目录实际不是全球地理服务；旧GET中心补齐存在写库路径，因此只读源码、未调用旧在线接口。复用300ms debounce、迟到响应淘汰和独立地理显示语义，接Birdtie新BrowseDestination、现有MapCanvas和bounds-only内容接口；不复制旧导航、持久Temporary结果或造内部City/POI。完整逐函数映射见 `docs/testing/evidence/dgs-20261016/destination/REPORT.md`。
+
+Android原包含3dmap-location-search 11.2.100/search9.8.1，此次新增窄MethodChannel地理搜索桥，沿Manifest Android Key和明确会话同意。SDK结果GCJ02只在明确边界转换，海外Mapbox搜索不受当前浏览国家限制，两类provider显示许可分开。Now选择器保留原正文与地图，真实空城市正常可选；产品规则见 `docs/product/BIRDTIE-GLOBAL-DESTINATION-2026-10-16.md`。
+
+地图内容单封面错误全清及个人/组织切换不恢复已复现并修复；49项读取测试、7项根组件/原生桥测试及26项目的地测试通过，包含重叠不可加作新增总数。APK38已编译及资产/签名核验，ADB离线，真实鉴权、自定义样式效果和坐标对齐仍NOT_RUN。后续通知/分享等修改不属于APK38证据。
+
+真实数据限定清理已执行22表103行（8动态、1会话、3消息、2请求及依赖），保留83条Civu动态、19条未知动态、39条旧消息、29账号；原Civu零写。精确恢复验证/重复执行与保护摘要见 `docs/data/SYNTHETIC-DATA-CLEANUP-REPORT.md`。此状态不等于所有旧数据端到端验收完成。
+
+## 后续实际交付更新：APK40 / API31 / schema175
+
+此前候选包/ADB离线记录为历史快照。当前40已替换安装，新高德Key和原Civu两份样式已在上海真机验证；直辖市城市尺度修复已入包。真实Civu owner会话、Aberdeen内容/图片/作者原时间、超过30秒后台后的地图恢复均已执行。巴黎外部目的地定位为APK39实际证据，40未重复。地图平移封面复用与性能限制、数据清理/隔离及社交缺口统一见 `docs/reports/BIRDTIE-DGS-EXECUTION-2026-10-16.md`；完整验收尚未完成，不能把旧NOT_RUN统称已通过。网页仍延期。

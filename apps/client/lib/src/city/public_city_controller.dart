@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../config/birdtie_environment.dart';
 import 'exploration_city_store.dart';
+import 'browse_destination.dart';
 import '../workspace/entity_cover.dart';
 import '../workspace/place_photo.dart';
 
@@ -327,6 +328,7 @@ class PublicCityController extends ChangeNotifier {
   List<PublicActivity> _activities = const [];
   List<PublicOrganizationPin> _organizationPins = const [];
   String? _selectedCityID;
+  BrowseDestination? _selectedDestination;
   String _placeQuery = '';
   String? _cityError;
   String? _placeError;
@@ -356,6 +358,65 @@ class PublicCityController extends ChangeNotifier {
       if (city.id == _selectedCityID) return city;
     }
     return null;
+  }
+
+  BrowseDestination? get selectedDestination => _selectedDestination;
+  String? get browseKey => _selectedDestination?.browseKey ?? selectedCity?.id;
+  String get browseLabel =>
+      _selectedDestination?.name ?? selectedCity?.name ?? '选择目的地';
+  String get contentCityID => selectedCity?.id ?? '';
+
+  /// Renderer-only compatibility projection. This object is never inserted into
+  /// [cities], persisted or used by a City API / task / publication operation.
+  PublicCity? get renderCity {
+    final destination = _selectedDestination;
+    if (destination == null) return selectedCity;
+    return PublicCity(
+      id: destination.browseKey,
+      name: destination.name,
+      region: destination.region,
+      countryCode: destination.countryCode,
+      contentStatus: 'unknown',
+      source: PublicSource(
+        label: destination.provider == 'amap' ? '高德地图' : 'Mapbox',
+        maintainer: '',
+        freshness: 'temporary',
+        updatedAt: null,
+      ),
+      map: PublicCityMap(
+        provider: destination.provider,
+        latitude: destination.latitude,
+        longitude: destination.longitude,
+        defaultZoom: destination.defaultZoom,
+        sourceRef: 'temporary-destination',
+      ),
+    );
+  }
+
+  bool selectDestination(BrowseDestination destination, {String? searchQuery}) {
+    if (_closed || !destination.valid) return false;
+    final catalogID = destination.internalCityID;
+    if (catalogID != null) {
+      if (destination.storageMode != DestinationStorageMode.catalog ||
+          !_cities.any((city) => city.id == catalogID))
+        return false;
+      selectCity(catalogID);
+      return true;
+    }
+    if (!((destination.provider == 'mapbox' &&
+            destination.countryCode != 'CN') ||
+        (destination.provider == 'amap' && destination.countryCode == 'CN'))) {
+      return false;
+    }
+    ++_explorationChoiceRevision;
+    _explorationFallback = false;
+    _explorationNotice = null;
+    // Fence pending catalog writes/restores without storing Temporary results.
+    _storedExplorationCityID = null;
+    _selectedDestination = destination;
+    _setSelectedCity(null);
+    _notify();
+    return true;
   }
 
   String? get cityError => _cityError;
@@ -391,14 +452,14 @@ class PublicCityController extends ChangeNotifier {
         map.defaultZoom > 18) {
       return false;
     }
-    // A configured city camera is usable even if its tile service temporarily
-    // fails. The existing map presents that error and retry. AMap currently has
-    // a web implementation only, so native startup must not default to it.
+    // A configured camera remains a usable preference during tile failures.
+    // Android now has the existing native AMap adapter as well.
     return map.provider == 'mapbox' ||
         (map.provider == 'amap' &&
-            kIsWeb &&
-            BirdtieEnvironment.amapWebPublicKey.isNotEmpty &&
-            BirdtieEnvironment.amapServiceHost.isNotEmpty);
+            ((!kIsWeb && defaultTargetPlatform == TargetPlatform.android) ||
+                (kIsWeb &&
+                    BirdtieEnvironment.amapWebPublicKey.isNotEmpty &&
+                    BirdtieEnvironment.amapServiceHost.isNotEmpty)));
   }
 
   PublicCity? _defaultExplorationCity() {
@@ -425,7 +486,10 @@ class PublicCityController extends ChangeNotifier {
         final saved = await store.readCityID().timeout(
           const Duration(seconds: 2),
         );
-        if (_closed || revision != _explorationChoiceRevision) return;
+        if (_closed ||
+            _selectedDestination != null ||
+            revision != _explorationChoiceRevision)
+          return;
         _storedExplorationCityID = saved;
         if (_cities.isNotEmpty && saved != null) {
           _selectRestoredOrDefault();
@@ -441,6 +505,7 @@ class PublicCityController extends ChangeNotifier {
   }
 
   void _selectRestoredOrDefault({String? removedCityName}) {
+    if (_selectedDestination != null) return;
     PublicCity? saved;
     for (final city in _cities) {
       if (city.id == _storedExplorationCityID && _hasUsableMap(city)) {
@@ -511,9 +576,11 @@ class PublicCityController extends ChangeNotifier {
       if (_closed) return;
       final previous = selectedCity;
       _cities = List.unmodifiable(next);
-      if (!next.any((city) => city.id == _selectedCityID)) {
+      if (_selectedDestination == null &&
+          !next.any((city) => city.id == _selectedCityID)) {
         _selectRestoredOrDefault(removedCityName: previous?.name);
-      } else if (_explorationFallback &&
+      } else if (_selectedDestination == null &&
+          _explorationFallback &&
           next.any(
             (city) =>
                 city.id == _storedExplorationCityID && _hasUsableMap(city),
@@ -539,6 +606,7 @@ class PublicCityController extends ChangeNotifier {
     // Even a temporary Task view must fence an older startup restore. Only an
     // explicit manual exploration choice is persisted across launches.
     _explorationChoiceRevision++;
+    _selectedDestination = null;
     _explorationFallback = false;
     if (rememberExploration) {
       _storedExplorationCityID = cityID;

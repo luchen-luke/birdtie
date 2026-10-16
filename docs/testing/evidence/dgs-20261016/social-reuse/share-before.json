@@ -1,0 +1,9 @@
+{
+  "command": "flutter test --no-pub test/dgs_moment_share_title_test.dart --reporter expanded",
+  "cwd": "D:\\Project\\birdtie\\apps\\client",
+  "startedAt": "2026-10-16T09:38:17.5188859Z",
+  "exitCode": 1,
+  "source": "c93080100b1dcae672c230f8efda1bb1e6dd36d1c4d7a52796d7c4cef1949f1d",
+  "evidence": "share-before.log",
+  "kind": "ISOLATED_MOCK_ONLY"
+}

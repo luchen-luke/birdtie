@@ -204,6 +204,8 @@ func routeNativeNotification(ctx context.Context, tx pgx.Tx, kind agentnotificat
 		sourceColumn = "business_public_update_id"
 	case agentnotification.KindMomentLike, agentnotification.KindMomentComment:
 		sourceColumn = "moment_interaction_event_id"
+	case agentnotification.KindPersonFollow:
+		sourceColumn = "person_follow_event_id"
 	default:
 		return false, agentnotification.ErrUnavailable
 	}
@@ -286,6 +288,8 @@ func deliverNativeNotificationDecision(ctx context.Context, tx pgx.Tx, decisionI
 	case agentnotification.KindConnectionRequest, agentnotification.KindConnectionDecision:
 		resourceType, resourceID = "connection_request", sourceID
 	case agentnotification.KindMomentLike, agentnotification.KindMomentComment:
+		resourceID = sourceID
+	case agentnotification.KindPersonFollow:
 		resourceID = sourceID
 	case agentnotification.KindDirectMessage:
 		resourceType, resourceID = "conversation_message", sourceID

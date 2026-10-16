@@ -1,0 +1,5 @@
+{
+  "log": "D:/Project/birdtie/docs/testing/evidence/dgs-20261016/social-reuse/follow-http02.log",
+  "exitCode": 0,
+  "command": "go test -mod=readonly ./internal/agentnotification ./internal/httpapi -run ^(TestNotificationNativeRegistry|TestPersonFollowNotificationHTTPCurrentTargetAndCapability)$ -count=1 -v"
+}

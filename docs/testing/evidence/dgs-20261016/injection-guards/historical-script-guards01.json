@@ -1,0 +1,63 @@
+{
+  "status": "GUARDS_INSTALLED_NOT_EXECUTED",
+  "scripts": [
+    {
+      "path": "C:\\Users\\chens\\Documents\\Codex\\2026-10-15\\d-project-birdtie-docs-reports-birdtie-2\\work\\remote_friend_chat_flow.py",
+      "originalBackup": "C:\\Users\\chens\\Documents\\Codex\\2026-10-15\\d-project-birdtie-docs-reports-birdtie-2\\work\\dgs-injection-originals\\remote_friend_chat_flow.py",
+      "sourceSHA256": "4e4e51fbc66cde69b14371162f175b3097532fa1815b3f56192a3e4f367046ca",
+      "guardedSHA256": "f897435a034732db7dcb6615811a08a83b54addfd3339557e1170286ed1b742f",
+      "guardInsertedAfterLine": 1,
+      "originalBytesPreserved": true
+    },
+    {
+      "path": "C:\\Users\\chens\\Documents\\Codex\\2026-10-15\\d-project-birdtie-docs-reports-birdtie-2\\work\\remote_friend_chat_flow02.py",
+      "originalBackup": "C:\\Users\\chens\\Documents\\Codex\\2026-10-15\\d-project-birdtie-docs-reports-birdtie-2\\work\\dgs-injection-originals\\remote_friend_chat_flow02.py",
+      "sourceSHA256": "1521d264d1f620f70356bf0e81c5a0ad3fafad226188e2042e5d73eb30e6a5e5",
+      "guardedSHA256": "6adc8d2a6ce857b23c44e1ac63a9d99df6fa90c9629af2f1d664c19856402c1c",
+      "guardInsertedAfterLine": 1,
+      "originalBytesPreserved": true
+    },
+    {
+      "path": "C:\\Users\\chens\\Documents\\Codex\\2026-10-15\\d-project-birdtie-docs-reports-birdtie-2\\work\\remote_media_thread_flow.py",
+      "originalBackup": "C:\\Users\\chens\\Documents\\Codex\\2026-10-15\\d-project-birdtie-docs-reports-birdtie-2\\work\\dgs-injection-originals\\remote_media_thread_flow.py",
+      "sourceSHA256": "a9bd905f9df82f343cbe032c7056bcbd9edda80b56d2ae42320f50a1a622200e",
+      "guardedSHA256": "9c98d6cbdebc839081fbbceaae9863da93ba94f1ef6e0443789d4dd0c8b494a6",
+      "guardInsertedAfterLine": 0,
+      "originalBytesPreserved": true
+    },
+    {
+      "path": "C:\\Users\\chens\\Documents\\Codex\\2026-10-15\\d-project-birdtie-docs-reports-birdtie-2\\work\\remote_multilocation166.py",
+      "originalBackup": "C:\\Users\\chens\\Documents\\Codex\\2026-10-15\\d-project-birdtie-docs-reports-birdtie-2\\work\\dgs-injection-originals\\remote_multilocation166.py",
+      "sourceSHA256": "4fae96d62a403d4452b2d56682a26b0e854bcf9d63dc9d6db13493fef68f8abc",
+      "guardedSHA256": "7d92100e0f019b20bf1fed7897d9e4820c778dc10bd0e05df00c9a07432f6a3c",
+      "guardInsertedAfterLine": 5,
+      "originalBytesPreserved": true
+    },
+    {
+      "path": "C:\\Users\\chens\\Documents\\Codex\\2026-10-15\\d-project-birdtie-docs-reports-birdtie-2\\work\\remote_crosscity166.py",
+      "originalBackup": "C:\\Users\\chens\\Documents\\Codex\\2026-10-15\\d-project-birdtie-docs-reports-birdtie-2\\work\\dgs-injection-originals\\remote_crosscity166.py",
+      "sourceSHA256": "00cde4007c57341cb861719e80bc0e387a042affadfbad582377e97a04614c3b",
+      "guardedSHA256": "0b8dd79df505ad421e94372ff103376b398be6bbf279f6b87133b1f7dfdd745b",
+      "guardInsertedAfterLine": 5,
+      "originalBytesPreserved": true
+    },
+    {
+      "path": "C:\\Users\\chens\\Documents\\Codex\\2026-10-15\\d-project-birdtie-docs-reports-birdtie-2\\work\\verify_remote_social.py",
+      "originalBackup": "C:\\Users\\chens\\Documents\\Codex\\2026-10-15\\d-project-birdtie-docs-reports-birdtie-2\\work\\dgs-injection-originals\\verify_remote_social.py",
+      "sourceSHA256": "f4749111d9441ad3ab59c6fa419cc5ba19a99eb7de5a4fcdf2665109468e9950",
+      "guardedSHA256": "f381871cc15bfa635ccad9d7e9cb480d36b996a9600ab7288265dd98932607b5",
+      "guardInsertedAfterLine": 5,
+      "originalBytesPreserved": true
+    },
+    {
+      "path": "C:\\Users\\chens\\Documents\\Codex\\2026-10-15\\d-project-birdtie-docs-reports-birdtie-2\\work\\verify_remote_social02.py",
+      "originalBackup": "C:\\Users\\chens\\Documents\\Codex\\2026-10-15\\d-project-birdtie-docs-reports-birdtie-2\\work\\dgs-injection-originals\\verify_remote_social02.py",
+      "sourceSHA256": "c999564b709f3ed7980278115eb5e77919a83b68494c152298b4c51e2330294b",
+      "guardedSHA256": "e9e2e8b61998fb80b403b997b37675413953c80c33ed63a1fe89391e7c12c698",
+      "guardInsertedAfterLine": 5,
+      "originalBytesPreserved": true
+    }
+  ],
+  "productionRequests": 0,
+  "productionWrites": 0
+}

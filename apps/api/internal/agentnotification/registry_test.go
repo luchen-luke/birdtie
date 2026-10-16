@@ -14,6 +14,7 @@ func TestNotificationNativeRegistry(t *testing.T) {
 	}{
 		{KindOpportunityAvailable, CategoryActivity}, {KindActivityReminder, CategoryActivity}, {KindActivityChange, CategoryActivity}, {KindActivityCancelled, CategoryActivity}, {KindActivityReview, CategoryActivity}, {KindPlaceReview, CategorySystem},
 		{KindDirectMessage, CategoryMessage}, {KindConnectionRequest, CategorySocial}, {KindConnectionDecision, CategorySocial}, {KindCommunityMessage, CategoryCommunity}, {KindActivityMessage, CategoryMessage},
+		{KindPersonFollow, CategorySocial},
 		{KindOrganizationInvitation, CategoryOrganization}, {KindOrganizationMembershipChange, CategoryOrganization}, {KindAgentTaskCompleted, CategoryAgent}, {KindAgentTaskFailed, CategoryAgent},
 	}
 	entries = append(entries, struct {

@@ -1,0 +1,32 @@
+{
+  "status": "PASS",
+  "at": "2026-10-16T09:57:10.554127+00:00",
+  "command": [
+    "C:\\Users\\chens\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\python.exe",
+    "-B",
+    "-m",
+    "unittest",
+    "scripts.tests.test_fixture_account_quarantine",
+    "-v"
+  ],
+  "cwd": "D:\\Project\\birdtie",
+  "exitCode": 0,
+  "tests": 5,
+  "sourceBefore": {
+    "scripts/quarantine_birdtie_fixture_accounts.py": "96875ec083f339d1d8c9c7a6fc62428727e3fe04e3fac87eca4161f818c6584c",
+    "scripts/tests/test_fixture_account_quarantine.py": "0cd0ae754fbe0870a15b064fdbad25f1380e870d77e07ceae1326a767beda100",
+    "scripts/audit_birdtie_synthetic_data.py": "647d0ecc3aa6e62dd0b19f09d04f411c08e98a416ce51ccafe950eb83df14ec5",
+    "scripts/purge_birdtie_synthetic_data.py": "d447aa5cacbb418abdd18a04d1b654e2dee17b75fb67f38fba101d0c2b1c42c3"
+  },
+  "sourceAfter": {
+    "scripts/quarantine_birdtie_fixture_accounts.py": "96875ec083f339d1d8c9c7a6fc62428727e3fe04e3fac87eca4161f818c6584c",
+    "scripts/tests/test_fixture_account_quarantine.py": "0cd0ae754fbe0870a15b064fdbad25f1380e870d77e07ceae1326a767beda100",
+    "scripts/audit_birdtie_synthetic_data.py": "647d0ecc3aa6e62dd0b19f09d04f411c08e98a416ce51ccafe950eb83df14ec5",
+    "scripts/purge_birdtie_synthetic_data.py": "d447aa5cacbb418abdd18a04d1b654e2dee17b75fb67f38fba101d0c2b1c42c3"
+  },
+  "sourceStable": true,
+  "restoreProof": "quarantine-restore03.json",
+  "restoreReceiptSHA256": "1715a096d9be66604e37f43d9d313996e545b5d51bbcab34ff79269888b12454",
+  "productionApply": "NOT_RUN_WAITING_ROOT_REVIEW",
+  "productionWrites": 0
+}

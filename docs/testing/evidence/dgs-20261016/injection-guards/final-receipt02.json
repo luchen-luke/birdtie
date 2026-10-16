@@ -1,0 +1,138 @@
+{
+  "status": "LIMITED_SCOPE_COMPLETE",
+  "finalizedAtUTC": "2026-10-16T10:07:03.259153+00:00",
+  "supersedes": "final-receipt.json only to add the requested non-fixture unknown visibility read and updated report; earlier receipt retained",
+  "sourceFrame": {
+    "apps/api/dev-seeds/001_badminton.sql": "625da8e6cd04c91e6901b92e2b0af6832ffb5e15b89f350416170dc6fb39103b",
+    "apps/api/dev-seeds/002_functional_mvp.sql": "cf987c1441eaff55ef26e357f47d640e1abc82d16ee19b14468fc974b08352d8",
+    "apps/api/dev-seeds/003_community_social.sql": "f1c3c0981a18fcff55367d7b3064ab8f11e15a693c844c7f37acff9978e50e5d",
+    "apps/api/internal/postgres/owned_migration_database_test.go": "d8d368be4d43d1e675cd845b2f4508aa14f5366797c55d5b012ec29b777e30e5",
+    "automation/verify_community_migrations.ps1": "936df4b26bc92f9b258f5a4fa4c63330aaccc510592b00afe89307dc54d6c993",
+    "docs/data/SYNTHETIC-DATA-INJECTION-GUARDS.md": "b00af2c54be450b260d3ce275a81f3ae1ac4c4a792b7866d8c5635b4ac6706ae",
+    "scripts/audit_birdtie_synthetic_data.py": "647d0ecc3aa6e62dd0b19f09d04f411c08e98a416ce51ccafe950eb83df14ec5",
+    "scripts/fixture_environment_guard.py": "c89e6f6564aa83ea37748b7658c63185083b5a35311b78ab6794c89ba28affef",
+    "scripts/purge_birdtie_synthetic_data.py": "d447aa5cacbb418abdd18a04d1b654e2dee17b75fb67f38fba101d0c2b1c42c3",
+    "scripts/quarantine_birdtie_fixture_accounts.py": "96875ec083f339d1d8c9c7a6fc62428727e3fe04e3fac87eca4161f818c6584c",
+    "scripts/tests/test_fixture_account_quarantine.py": "0cd0ae754fbe0870a15b064fdbad25f1380e870d77e07ceae1326a767beda100",
+    "scripts/tests/test_fixture_environment_guard.py": "510fadbc9a94b08959bb6629490fa6431056d0945797639a0915761f2026017c"
+  },
+  "testEvidence": {
+    "seedUnit": {
+      "path": "final-source-unit02.json",
+      "tests": 5,
+      "exitCode": 0
+    },
+    "retiredScripts": {
+      "path": "direct01/receipt.json",
+      "importAndMainProbes": 14,
+      "effectCalls": 0
+    },
+    "communityRunner": {
+      "path": "direct01/receipt.json",
+      "exitCode": 0,
+      "actualDatabase": "local PostgreSQL16",
+      "denials": 3,
+      "temporaryDatabaseDropped": true
+    },
+    "nativeHelper": {
+      "path": "docs/testing/evidence/dgs-20261016/legacy-native/selected01/receipt.json",
+      "exitCode": 0,
+      "pass": 2,
+      "skip": 0,
+      "currentSeedAndHelperSourceMatched": true
+    },
+    "quarantineUnit": {
+      "path": "quarantine-unit02.json",
+      "tests": 5,
+      "exitCode": 0
+    },
+    "quarantineRehearsal": {
+      "path": "quarantine-restore03.json",
+      "steps": [
+        "QUARANTINED",
+        "ALREADY_QUARANTINED",
+        "STATUS_RESTORED",
+        "QUARANTINED"
+      ],
+      "temporaryDatabaseDropped": true
+    }
+  },
+  "production": {
+    "manifestSHA256": "c10fde61ef9a7ed74cc1c0c20d8fb1cc316e078e4c54b14363d6deae49785dc9",
+    "apply": "quarantine-apply01.json",
+    "repeat": "quarantine-apply02.json",
+    "post": "quarantine-post01.json",
+    "accountStatusTransitions": 6,
+    "accountIdentitiesPreserved": 6,
+    "sessionRowsChanged": 0,
+    "contentRowsDeleted": 0,
+    "allOtherRowsUnchangedAcrossTables": 276,
+    "accountTriggerDefinitionsAndStatesUnchanged": 446,
+    "civuMomentsPreserved": 83,
+    "unknownMomentsPreserved": 19,
+    "unknownFixtureMomentsVisibilityIsolated": 18,
+    "otherUnknownMomentUnchanged": 1,
+    "apiLogins": 0,
+    "newContentCreated": 0,
+    "postCheckSchema": 173,
+    "apiUnit": "active/running"
+  },
+  "notRun": [
+    "Actual public rejected-login attempt",
+    "Real-user login regression",
+    "Phone visibility acceptance",
+    "Full repository test suite"
+  ],
+  "boundaries": [
+    "Fixed-code challenge endpoint remains available; existing identity verify/session and domain permissions enforce suspended status.",
+    "No arbitrary new phone/account is classified as synthetic.",
+    "Other old migration runners must explicitly migrate to the documented isolated database marker/opt-in contract.",
+    "Source-before/source-after checkpoints retain their actual historical stage; later edition compatibility is covered by final unit and two native checks.",
+    "No Civu changes, deployment changes or content deletion in this quarantine stage."
+  ],
+  "preservedFailures": [
+    "quarantine-prepare-attempt01-failure.json",
+    "quarantine-restore01.json",
+    "quarantine-restore02.json"
+  ],
+  "artifactSHA256": {
+    "001_badminton.sql.before.txt": "8f31673225b40a1fc0dbbcdbd8478c39ac0a9e8e631c4d3d1132cdc379469568",
+    "002_functional_mvp.sql.before.txt": "fe74704bb20869d047c8452a071f332ae04651ba7aba26d54fa669d7c3666052",
+    "003_community_social.sql.before.txt": "eaa3ebc5d895ad823a42582b059f17b4880cfa142cbda201fe0bfa4d95c5def2",
+    "direct01/receipt.json": "731fea9e43c953af5fd4c764860a83d6e7731afc14c05e083961437f8fa5c642",
+    "direct01/runner-stderr.txt": "35458f8f42fe7b4df645700ef397589a02555b54d66685e1b1edfa05499f7f75",
+    "direct01/runner-stdout.txt": "af736401e83e685c74eb91ff767959493dfa4b12f4330fbd2cb27e098930d821",
+    "direct01/sql-denials/mismatched-session-database.txt": "cdadefcc9ceddd49171953054e461157cda3ff33276e482f0ab15c4fc8c6c0fa",
+    "direct01/sql-denials/missing-opt-in.txt": "cdadefcc9ceddd49171953054e461157cda3ff33276e482f0ab15c4fc8c6c0fa",
+    "direct01/sql-denials/unmarked-database.txt": "42b6643116ef589981f2548cfed05960d6870a36e192cb6b0f678b7919a95aa0",
+    "direct01/unit-stderr.txt": "e039f16f96f3f9ae18657033b2236aaa77abf4bf34a7c87b301efe60fba0e2c5",
+    "direct01/unit-stdout.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "final-receipt.json": "e7725155f2dfec1f7133bfc528176d44b30f6d01d901c946f090196990c8ba46",
+    "final-source-unit02.json": "1b90bd8eb3eadd19e6f9a4ebd01e6f68721c42f504c1e34d122e2f50e8d7ca67",
+    "historical-script-guards01.json": "0da940eafd4dedd7c1451982e3e4ac9af3a6e270091591dd5ad6abe30dc06eaf",
+    "quarantine-apply01.json": "c82924f70294bb310ca5993ee35b3337e51b7522cad159d664162de22fbd8e85",
+    "quarantine-apply02.json": "4900708f1ce5449897618d84f9172c9f3e3a8749c3104fad114b9e0e8fef0554",
+    "quarantine-dryrun01.json": "1a7f61a64e40e4852adda3165f5595bb7a598fba2d680d2af3fc0c73ca5a3b9e",
+    "quarantine-post01.json": "6e44ec9926ab99ef5439dfc4b22243dd1f756ed4af531e8aea4ff736c067b4c6",
+    "quarantine-prepare-attempt01-failure.json": "5e33ed3c6e1db915a49a95a3d4e83028c8b94b1cf25792508dc6211f636bb073",
+    "quarantine-prepare02.json": "5fb9d40716d1936e615715663be1d464d6300124ada713e0f6d6745e52739329",
+    "quarantine-restore01.json": "a32e20ffae0de17c73b0f0e0323dd1b6988b46c7ac15f52611587c0a277dba44",
+    "quarantine-restore02.json": "2bc057be965c15408a6d6ec727e2a000324e3f49d78096bbcbe210fec1daf1fb",
+    "quarantine-restore03.json": "0b90a081546b2b9ae611f27d63c82983073565b76395b919aa14c2f95ec483a6",
+    "quarantine-unit02.json": "d44d51cc058c904adb89a0b33b6ac6fd19d30e2d1349c6d8cda47891946cabf2",
+    "quarantine-unit02.stderr.txt": "d9ba1f843f04a7424d56239402d0d451ed44544ff5add24818c2766b3789326e",
+    "quarantine-unit02.stdout.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "unknown-other-boundary01.json": "8ead12e772944b711673c9fea37b5860d7063596c443a2574aba515c28e7ebcd",
+    "verify_community_migrations.before.ps1": "6c3f2e628cac0ff49d9ef9570438ee855b0f2469438804a1151b5402a13f28e4"
+  },
+  "otherUnknownBoundary": {
+    "path": "unknown-other-boundary01.json",
+    "status": "withdrawn",
+    "visibility": "private",
+    "publicBindingAvailable": false,
+    "publicMapCandidate": false,
+    "ownedPrivateMapCandidate": false,
+    "unchanged": true,
+    "bodyMediaCoordinatesRead": false
+  }
+}

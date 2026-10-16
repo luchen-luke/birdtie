@@ -1,0 +1,27 @@
+{
+  "command": "flutter test --no-pub test/dgs_map_stability_test.dart --reporter expanded",
+  "cwd": "D:\\Project\\birdtie\\apps\\client",
+  "startedAt": "2026-10-16T08:39:31.3955760Z",
+  "finishedAt": "2026-10-16T08:39:34.3432884Z",
+  "exitCode": 1,
+  "sourceFrame": [
+    {
+      "path": "lib/src/workspace/owned_map_api.dart",
+      "sha256": "8d852070b64e8efe1f9722719c22520be49c6fa1784ea1a74af4e88403836e86"
+    },
+    {
+      "path": "lib/src/workspace/owned_map_controller.dart",
+      "sha256": "265ba6c5a48dc007692fbec57714af864b86546d97ab82758f1e4c58d12c0599"
+    },
+    {
+      "path": "lib/src/workspace/owned_map_media_controller.dart",
+      "sha256": "8f2d13e4d5b3d39dfe67006a3aed0de78438a17df701e5d1070ecd47843eca6c"
+    },
+    {
+      "path": "test/dgs_map_stability_test.dart",
+      "sha256": "5092173c72742199e6bb93867d4f51d58ab5bb184259d887e2c0aeeee80792d7"
+    }
+  ],
+  "environment": "ISOLATED_MOCK_CLIENT_WIDGET",
+  "realDevice": "NOT_RUN"
+}

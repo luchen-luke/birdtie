@@ -1,0 +1,8 @@
+{
+  "status": "ALREADY_CLEAN",
+  "manifestSHA256": "22333e1ce5e441f90c7879e0db7fe66c866483111b599a2328f3ab1a56eba802",
+  "triggersRestored": true,
+  "foreignKeysEnabled": true,
+  "protectedRowsUnchanged": true,
+  "cacheInvalidationsAdded": 0
+}

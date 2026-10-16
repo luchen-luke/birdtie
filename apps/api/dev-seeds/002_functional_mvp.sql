@@ -3,6 +3,31 @@
 -- Apply after all migrations and 001_badminton.sql; never use in shared or production data.
 BEGIN;
 
+-- DGS: explicit isolated fixture identity; never infer permission from local-looking DSNs.
+DO $birdtie_fixture_guard$
+DECLARE
+  fixture_db text := current_database();
+  fixture_marker text;
+  fixture_owner text;
+BEGIN
+  IF fixture_db !~ '^(birdtie_fixture_[a-z0-9_]{1,40}|birdtie_owned_migration_[0-9a-f]{24})$' THEN
+    RAISE EXCEPTION 'dedicated fixture database required' USING ERRCODE='42501';
+  END IF;
+  SELECT shobj_description(d.oid, 'pg_database'), pg_get_userbyid(d.datdba)
+    INTO fixture_marker, fixture_owner FROM pg_database d
+    WHERE d.datname = fixture_db AND NOT d.datistemplate AND d.datallowconn;
+  IF fixture_marker IS DISTINCT FROM 'BIRDTIE_ISOLATED_FIXTURE_V1:' || fixture_db
+     OR fixture_owner IS DISTINCT FROM current_user::text THEN
+    RAISE EXCEPTION 'exact owned fixture database marker required' USING ERRCODE='42501';
+  END IF;
+  IF current_setting('birdtie.fixture_opt_in', true) IS DISTINCT FROM 'isolated-fixtures-v1'
+     OR current_setting('birdtie.fixture_database', true) IS DISTINCT FROM fixture_db THEN
+    RAISE EXCEPTION 'explicit fixture session opt-in required' USING ERRCODE='42501';
+  END IF;
+END
+$birdtie_fixture_guard$;
+
+
 INSERT INTO accounts (id, account_type, status, handle) VALUES
   ('b1700000-0000-4000-8000-000000000010', 'person', 'active', 'birdtie-dev-admin'),
   ('b1700000-0000-4000-8000-000000000011', 'person', 'active', 'birdtie-dev-student'),

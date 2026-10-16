@@ -1,0 +1,7 @@
+{
+  "command": "go test ./internal/legacyhistory ./internal/inbox ./internal/connection -run ^(TestHistoricalProjectionKeepsThreadOwnerRolesAndOriginalNotificationState|TestInboxPageCursorClosedOwnerViewAndSortHint|TestConnectionDecisionOperationContract|TestHumanMessageOperationBinding)$ -count=1 -v",
+  "cwd": "D:\\Project\\birdtie\\apps\\api",
+  "startedAt": "2026-10-16T09:39:08.1279441Z",
+  "exitCode": 0,
+  "kind": "PURE_DOMAIN_NO_DATABASE_NO_NETWORK"
+}

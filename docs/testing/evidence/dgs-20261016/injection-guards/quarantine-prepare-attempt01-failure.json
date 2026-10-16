@@ -1,0 +1,7 @@
+{
+  "status": "FAILED_READ_ONLY_PREPARE",
+  "exitCode": 1,
+  "safeCode": "UNREVIEWED_ACCOUNT_REFERENCE",
+  "stderrSHA256": "c700045d2ad2abd40e9ecec3e586add1927ad20121b61978e7c15cca83465a46",
+  "productionWrites": 0
+}

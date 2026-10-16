@@ -1,0 +1,17 @@
+Flutter assets will be downloaded from https://storage.flutter-io.cn. Make sure you trust this source!
+00:00 +0: loading D:/Project/birdtie/apps/client/test/dgs_map_stability_test.dart
+00:00 +0: D:/Project/birdtie/apps/client/test/dgs_map_stability_test.dart: unproven or global 401/unauthorized retires the whole grant
+00:00 +1: D:/Project/birdtie/apps/client/test/dgs_map_stability_test.dart: unproven or global 401/unauthorized retires the whole grant
+00:00 +2: D:/Project/birdtie/apps/client/test/dgs_map_stability_test.dart: unproven or global 401/unauthorized retires the whole grant
+00:00 +3: D:/Project/birdtie/apps/client/test/dgs_map_stability_test.dart: unproven or global 401/unauthorized retires the whole grant
+00:00 +4: D:/Project/birdtie/apps/client/test/dgs_map_stability_test.dart: unproven or global 403/person_account_required retires the whole grant
+00:00 +5: D:/Project/birdtie/apps/client/test/dgs_map_stability_test.dart: unproven or global 403/forbidden retires the whole grant
+00:00 +6: D:/Project/birdtie/apps/client/test/dgs_map_stability_test.dart: unproven or global 409/human_control_changed retires the whole grant
+00:00 +7: D:/Project/birdtie/apps/client/test/dgs_map_stability_test.dart: unproven or global 410/not_found retires the whole grant
+00:00 +8: D:/Project/birdtie/apps/client/test/dgs_map_stability_test.dart: unproven or global 404/unrecognized retires the whole grant
+00:00 +9: D:/Project/birdtie/apps/client/test/dgs_map_stability_test.dart: resource recovery rechecks ACL once and never revives the old pin grant
+00:00 +10: D:/Project/birdtie/apps/client/test/dgs_map_stability_test.dart: owned transient failure retains the lease, retries once and retires on expiry
+00:00 +11: D:/Project/birdtie/apps/client/test/dgs_map_stability_test.dart: typed transient failure preserves valid public and author leases only
+00:00 +12: D:/Project/birdtie/apps/client/test/dgs_map_stability_test.dart: one cover 404 cannot erase unrelated map content
+00:00 +13: D:/Project/birdtie/apps/client/test/dgs_map_stability_test.dart: one cover 409 cannot erase unrelated map content
+00:00 +14: All tests passed!

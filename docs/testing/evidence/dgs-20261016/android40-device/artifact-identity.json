@@ -1,0 +1,16 @@
+{
+  "status": "PASS_SOURCE_AND_APK_IDENTITY",
+  "sourceStable": true,
+  "sourceFilesVerified": 562,
+  "apkSHA256": "63d410883abeafadb717844dc1aaa13a3b8d84225831f41cc513e3e1673fb9f7",
+  "package": "app.civu.civu_mobile.birdtiepreview",
+  "versionCode": "1",
+  "versionName": "0.1.0",
+  "signingSHA1": "73840a17d0ca7b4bf41541b42cecb7a234d50523",
+  "apkManifestKeyMatchesConfiguredBirdtieKey": true,
+  "configuredKeyDiffersFromCivu": true,
+  "keyValuesRetained": false,
+  "MITAndPluginNoticesPackaged": true,
+  "CivuAndroidStyleBundledVerbatim": true,
+  "webBuiltOrDeployed": false
+}

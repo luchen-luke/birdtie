@@ -96,6 +96,12 @@ func ownedMigrationDatabase(t *testing.T) {
 		parent.Close()
 		cancel()
 	})
+	// Retain the existing 96-bit random database identity used by native migration
+	// guards. Only this successfully created, owned database may admit dev seeds.
+	marker := "BIRDTIE_ISOLATED_FIXTURE_V1:" + name
+	if _, err = admin.Exec(ctx, "COMMENT ON DATABASE "+quoted+" IS '"+marker+"'"); err != nil {
+		t.Fatal("cannot mark owned migration fixture database", err)
+	}
 	uri.Path = "/" + name
 	uri.RawPath = ""
 	ownedDSN := uri.String()
@@ -133,7 +139,10 @@ func ownedMigrationDatabase(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if _, err = owned.Exec(ctx, string(raw)); err != nil {
+			// These commands share one Exec/connection; an unrelated pooled session
+			// cannot supply permission. Reset after the seed's own transaction ends.
+			seedSQL := "SET birdtie.fixture_opt_in='isolated-fixtures-v1'; SET birdtie.fixture_database='" + name + "';\n" + string(raw) + "\nRESET birdtie.fixture_opt_in; RESET birdtie.fixture_database;"
+			if _, err = owned.Exec(ctx, seedSQL); err != nil {
 				t.Fatal("owned local synthetic seed", seed, err)
 			}
 		}

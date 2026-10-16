@@ -1,0 +1,37 @@
+{
+  "protocol": "BIRDTIE_DGS_EXACT_CLEANUP_V1",
+  "status": "BACKUP_RESTORE_VERIFIED",
+  "observedAt": "2026-10-16T09:19:52.906231+00:00",
+  "manifestSHA256": "22333e1ce5e441f90c7879e0db7fe66c866483111b599a2328f3ab1a56eba802",
+  "databaseOID": 54087,
+  "release": "/opt/birdtie/releases/social173-20261016-build30",
+  "sourceSHA256": "ba6b9b5d2d404ada806a858cbc0931628a5958c4b2abdbd8b7d50b62b4e6f40d",
+  "backupPath": "/srv/birdtie-data/backups/dgs-cleanup/native-20261016091400-af763ccdaa7f.dump",
+  "backupBytes": 502639481,
+  "backupSHA256": "0ec21f783bb0c05a255fccb78203e12287307baf5cc6dbb6e8bf4e2525414319",
+  "backupMode": "0600",
+  "restoredDatabaseOID": 75920,
+  "restoredPlanIdentical": true,
+  "restoreCleanup": {
+    "status": "CLEANED",
+    "manifestSHA256": "22333e1ce5e441f90c7879e0db7fe66c866483111b599a2328f3ab1a56eba802",
+    "triggersRestored": true,
+    "foreignKeysEnabled": true,
+    "protectedRowsUnchanged": true,
+    "cacheInvalidationsAdded": 8
+  },
+  "restoreSecondApply": {
+    "status": "ALREADY_CLEAN",
+    "manifestSHA256": "22333e1ce5e441f90c7879e0db7fe66c866483111b599a2328f3ab1a56eba802",
+    "triggersRestored": true,
+    "foreignKeysEnabled": true,
+    "protectedRowsUnchanged": true,
+    "cacheInvalidationsAdded": 0
+  },
+  "restoreSearchPathCompatibility": "One pg_restore header statement only; public,pg_catalog; original dump unchanged; no COPY/body rewrite.",
+  "productionWrites": 0,
+  "civuWrites": 0,
+  "apiLogins": 0,
+  "originalUnknownMomentsPreserved": 19,
+  "disposableRestoreDatabaseDropped": true
+}

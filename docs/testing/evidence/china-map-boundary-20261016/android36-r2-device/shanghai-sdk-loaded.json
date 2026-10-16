@@ -1,0 +1,15 @@
+{
+  "atUTC": "2026-10-16T08:08:22.941941+00:00",
+  "package": "app.civu.civu_mobile.birdtiepreview",
+  "pid": 5710,
+  "knownAuthErrors": {
+    "INVALID_USER_SCODE": 3
+  },
+  "authNumericCodes": [],
+  "authFailureMentions": 1,
+  "fatalExceptionCount": 0,
+  "flutterUnhandledExceptionCount": 0,
+  "missingPluginExceptionCount": 0,
+  "rawSDKLogsRetained": false,
+  "keyValuesEmitted": false
+}

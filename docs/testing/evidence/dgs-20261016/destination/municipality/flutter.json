@@ -1,0 +1,18 @@
+{
+  "sourceStable": true,
+  "command": "flutter test --no-pub test/amap_destination_search_test.dart --reporter expanded",
+  "exitCode": 0,
+  "device": "NOT_RUN",
+  "cwd": "D:/Project/birdtie/apps/client",
+  "sourceBefore": {
+    "lib/src/city/browse_destination.dart": "690bf760cfa97b879948d42be5b05dc5592015229610f31b3f9c4c01e378e1ce",
+    "lib/src/city/amap_destination_search.dart": "9102062af706501097c8082450b7774b4cbdc3f9099a7173b5947cde38cec778",
+    "test/amap_destination_search_test.dart": "5659145ecb233f7b3d0574a91233820bf5c9c9cb6ed0bb59546b54edabcf19cc"
+  },
+  "sourceAfter": {
+    "lib/src/city/browse_destination.dart": "690bf760cfa97b879948d42be5b05dc5592015229610f31b3f9c4c01e378e1ce",
+    "lib/src/city/amap_destination_search.dart": "9102062af706501097c8082450b7774b4cbdc3f9099a7173b5947cde38cec778",
+    "test/amap_destination_search_test.dart": "5659145ecb233f7b3d0574a91233820bf5c9c9cb6ed0bb59546b54edabcf19cc"
+  },
+  "fixture": "MethodChannel Mock only"
+}

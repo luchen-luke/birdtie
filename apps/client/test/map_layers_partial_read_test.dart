@@ -66,7 +66,7 @@ void main() {
   }
 
   test(
-    'public failure is unavailable rather than an authoritative empty',
+    'public transient failure retains its valid lease and reports unavailable sources',
     () async {
       var fails = false;
       var privateReads = 0;
@@ -84,13 +84,14 @@ void main() {
       );
       addTearDown(c.dispose);
       await c.load('owned-city', f.mapTestBounds);
+      final previousPublic = c.publicView;
       c.visible.add('OPPORTUNITY');
       fails = true;
       await c.load('owned-city', f.mapTestBounds);
 
-      expect(c.partial, false);
+      expect(c.partial, true);
       expect(c.loading, false);
-      expect(c.publicView, null);
+      expect(c.publicView, same(previousPublic));
       expect(c.privateView, null);
       expect(c.error, isNotNull);
       expect(c.unavailableKinds, mapLayerKinds.toSet());

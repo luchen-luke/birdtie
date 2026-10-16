@@ -1,0 +1,2697 @@
+{
+  "protocol": "BIRDTIE_DGS_EXACT_CLEANUP_V1",
+  "status": "DRY_RUN",
+  "observedAt": "2026-10-16T09:13:38.321349+00:00",
+  "databaseOID": 54087,
+  "release": "/opt/birdtie/releases/social173-20261016-build30",
+  "binarySHA256": "4cc70262b66cffa0061a79fa91fdc7f622de23aedd5552a713b5e1070a7b9900",
+  "sourceSHA256": "ba6b9b5d2d404ada806a858cbc0931628a5958c4b2abdbd8b7d50b62b4e6f40d",
+  "roots": {
+    "moments": [
+      "b8b27221-24dd-40ce-8fc3-58868c332df5",
+      "c2a5e3ea-afbd-408f-b158-ea426c7da9e7",
+      "b14d84e8-f7e7-48a3-8acb-c425c744e98a",
+      "c90cf108-a9fe-4596-bb1e-b4a8204b76fe",
+      "e8062b7d-b6f9-47eb-9f53-6f88548e8c56",
+      "964cc4c6-a188-4936-9dca-63d9cdb8d4d6",
+      "4323975d-8dca-4112-b81c-7bc9f7a9179d",
+      "47ce7ce5-dc4a-44c5-b58f-32d63d1518e1"
+    ],
+    "conversation_messages": [
+      "6067adb5-e55b-44ec-b4d1-b5f15257ff85",
+      "bb226b82-1385-42ae-8bfb-70de2c89b5bc",
+      "d94008f8-de79-4de9-b032-0de001877335"
+    ],
+    "conversations": [
+      "0261299f-845d-4381-971c-76683a2c86c3"
+    ],
+    "connection_requests": [
+      "8676a012-9e61-4d1e-b96f-4098303e8b12",
+      "97688296-58c0-4008-9f27-656001c8d596"
+    ]
+  },
+  "actors": [
+    "00429dde-9620-413f-b816-2b7312e348dc",
+    "43d4a612-fd94-4c5c-9f5f-bf4734877d53",
+    "5022d283-0b94-4348-ab53-e1df75024fca",
+    "ce5ffa90-a75c-4047-b87c-1061a3097852",
+    "ebf5db2b-b05f-444b-ac84-32f1e43bf38a",
+    "fac2c5b5-ed2c-499a-8030-d26861db080a"
+  ],
+  "proofs": [
+    {
+      "path": "docs/testing/evidence/github-remote-completion-20261015/remote-friend-chat-flow01/receipt.json",
+      "sha256": "50f1be60ec36aedf4ee03a30de3b523541d4bd41050f16a591b3841f12c5dfc7"
+    },
+    {
+      "path": "docs/testing/evidence/github-remote-completion-20261015/remote-friend-chat-flow02/receipt.json",
+      "sha256": "3e6a62d3144ccbbc38cccdf717d9b45aa2cc42e8e199e770e41fed6a1bb43554"
+    },
+    {
+      "path": "docs/testing/evidence/github-remote-completion-20261015/remote-media-thread-flow01/receipt.json",
+      "sha256": "5d6584837974f1263581b6dd3e0a79657b41d0300b4221405b1b326248c29cff"
+    },
+    {
+      "path": "docs/testing/evidence/github-remote-completion-20261015/remote-crosscity166-01/receipt.json",
+      "sha256": "41e8c001e6db017550a816c970afdbb1a12dd0ad383b7f31c5c154ff7472580f"
+    },
+    {
+      "path": "docs/testing/evidence/github-remote-completion-20261015/remote-multilocation166-01/receipt.json",
+      "sha256": "93228775c53b6278fd08abbff17acc8044583e6f7d1c56b6f49f9cb1b1427451"
+    }
+  ],
+  "blockers": [],
+  "tables": {
+    "connection_request_decision_receipts": {
+      "primaryKey": [
+        "owner_account_id",
+        "operation_id"
+      ],
+      "rows": [
+        {
+          "key": [
+            "fac2c5b5-ed2c-499a-8030-d26861db080a",
+            "401aa211-0cbb-4ec5-a337-82844a60ccb3"
+          ],
+          "actors": [
+            "fac2c5b5-ed2c-499a-8030-d26861db080a"
+          ],
+          "legacy": false,
+          "sha256": "1e143bd92125e70ad5d9c288ebd2d6376010e683430a5aab5b93980266dd65e9"
+        },
+        {
+          "key": [
+            "fac2c5b5-ed2c-499a-8030-d26861db080a",
+            "9e35754e-9d0e-475b-9ddd-4acea5ec3da6"
+          ],
+          "actors": [
+            "fac2c5b5-ed2c-499a-8030-d26861db080a"
+          ],
+          "legacy": false,
+          "sha256": "54cd56cb69e9cc999dd8e927ca432e1cb12338cff6c31352dbafd3f2942fc425"
+        }
+      ],
+      "protectedRows": {
+        "count": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "connection_requests": {
+      "primaryKey": [
+        "id"
+      ],
+      "rows": [
+        {
+          "key": [
+            "8676a012-9e61-4d1e-b96f-4098303e8b12"
+          ],
+          "actors": [
+            "00429dde-9620-413f-b816-2b7312e348dc",
+            "fac2c5b5-ed2c-499a-8030-d26861db080a"
+          ],
+          "legacy": false,
+          "sha256": "381f568a61762dd8e532cdd5523e8beeea375ff90c629b2c3c18485e689022e5"
+        },
+        {
+          "key": [
+            "97688296-58c0-4008-9f27-656001c8d596"
+          ],
+          "actors": [
+            "00429dde-9620-413f-b816-2b7312e348dc",
+            "fac2c5b5-ed2c-499a-8030-d26861db080a"
+          ],
+          "legacy": false,
+          "sha256": "78efe554cde9669a374ce6232ea6a0a21f23de40897f9bb5d7e702fdd5f9830b"
+        }
+      ],
+      "protectedRows": {
+        "count": 6,
+        "sha256": "bf3ef9feb7c052d474e0d8563caf2251f3eec26a1c81f581af148b5c58cd683a"
+      }
+    },
+    "conversation_member_states": {
+      "primaryKey": [
+        "conversation_id",
+        "member_account_id"
+      ],
+      "rows": [
+        {
+          "key": [
+            "0261299f-845d-4381-971c-76683a2c86c3",
+            "00429dde-9620-413f-b816-2b7312e348dc"
+          ],
+          "actors": [
+            "00429dde-9620-413f-b816-2b7312e348dc"
+          ],
+          "legacy": false,
+          "sha256": "4cca0a73f31049c3dca51229c5da8188579454789809cd26e435f177a8d489a3"
+        },
+        {
+          "key": [
+            "0261299f-845d-4381-971c-76683a2c86c3",
+            "fac2c5b5-ed2c-499a-8030-d26861db080a"
+          ],
+          "actors": [
+            "fac2c5b5-ed2c-499a-8030-d26861db080a"
+          ],
+          "legacy": false,
+          "sha256": "8e802b785a7803a671214fe7307915d1686d1683601d1f42d61d975693b50804"
+        }
+      ],
+      "protectedRows": {
+        "count": 23,
+        "sha256": "1bd823276e4779ebc1f956e910de17c02c03888c598b93cd72b69fb6d3939854"
+      }
+    },
+    "conversation_messages": {
+      "primaryKey": [
+        "id"
+      ],
+      "rows": [
+        {
+          "key": [
+            "6067adb5-e55b-44ec-b4d1-b5f15257ff85"
+          ],
+          "actors": [
+            "00429dde-9620-413f-b816-2b7312e348dc"
+          ],
+          "legacy": false,
+          "sha256": "85b8a548d3106cb66cf281a69d5b7f6e8ccd5ead7769dda1bf64c9db429faa1d"
+        },
+        {
+          "key": [
+            "bb226b82-1385-42ae-8bfb-70de2c89b5bc"
+          ],
+          "actors": [
+            "00429dde-9620-413f-b816-2b7312e348dc"
+          ],
+          "legacy": false,
+          "sha256": "b34d220e03fb5fc1388711289ccc8cffedc394d631046d4565993d411d9fbfff"
+        },
+        {
+          "key": [
+            "d94008f8-de79-4de9-b032-0de001877335"
+          ],
+          "actors": [
+            "00429dde-9620-413f-b816-2b7312e348dc"
+          ],
+          "legacy": false,
+          "sha256": "fe6e8061a8d9b235d113ece94b5dc02124f82fbfb46567f1d72c2e711647e55c"
+        }
+      ],
+      "protectedRows": {
+        "count": 39,
+        "sha256": "26e777f02df6a1b1120d43cdc59e585e2a3be82b375995f9f8fda5e1801659fb"
+      }
+    },
+    "conversations": {
+      "primaryKey": [
+        "id"
+      ],
+      "rows": [
+        {
+          "key": [
+            "0261299f-845d-4381-971c-76683a2c86c3"
+          ],
+          "actors": [
+            "00429dde-9620-413f-b816-2b7312e348dc",
+            "fac2c5b5-ed2c-499a-8030-d26861db080a"
+          ],
+          "legacy": false,
+          "sha256": "6394713ac1fd49506f9fb470e6300a0e52292e2df4fc7ea4c7b700a049dac190"
+        }
+      ],
+      "protectedRows": {
+        "count": 11,
+        "sha256": "1be2af9b15f3dac36509a86b2c96a3b30d58973ea75e8de2cf7104862b015b95"
+      }
+    },
+    "human_entity_share_operations": {
+      "primaryKey": [
+        "actor_account_id",
+        "operation_id"
+      ],
+      "rows": [
+        {
+          "key": [
+            "00429dde-9620-413f-b816-2b7312e348dc",
+            "0ac39765-e612-4165-8745-f12ac30ab9ab"
+          ],
+          "actors": [
+            "00429dde-9620-413f-b816-2b7312e348dc"
+          ],
+          "legacy": false,
+          "sha256": "bb98007c8662a0c6aab2cc2a3df4fe709d559b4752903119f3798ad22229a473"
+        }
+      ],
+      "protectedRows": {
+        "count": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "human_moment_control_operations": {
+      "primaryKey": [
+        "actor_account_id",
+        "operation_id"
+      ],
+      "rows": [
+        {
+          "key": [
+            "00429dde-9620-413f-b816-2b7312e348dc",
+            "0b2f580b-ec78-48c3-84a6-c968b4a98dbf"
+          ],
+          "actors": [
+            "00429dde-9620-413f-b816-2b7312e348dc"
+          ],
+          "legacy": false,
+          "sha256": "46621aa8625c64513f9e31299de7322d16d98fde695be8517e421040945d1563"
+        },
+        {
+          "key": [
+            "00429dde-9620-413f-b816-2b7312e348dc",
+            "1469cb84-bb06-46c7-95eb-99c1f316fce5"
+          ],
+          "actors": [
+            "00429dde-9620-413f-b816-2b7312e348dc"
+          ],
+          "legacy": false,
+          "sha256": "00423b4430cabefb23c6587afdd1fe06fa7b264c712a47ea3b8bec279311d38e"
+        },
+        {
+          "key": [
+            "00429dde-9620-413f-b816-2b7312e348dc",
+            "28bfe614-42ff-4173-9fa0-d1bbe35f3c56"
+          ],
+          "actors": [
+            "00429dde-9620-413f-b816-2b7312e348dc"
+          ],
+          "legacy": false,
+          "sha256": "46f7dfec064a38a7218c9a21820076c9bd00fd52bd3b7df1fe93a3b01f405b03"
+        },
+        {
+          "key": [
+            "00429dde-9620-413f-b816-2b7312e348dc",
+            "5c512c69-89a1-4e93-b4cf-3570f2edc149"
+          ],
+          "actors": [
+            "00429dde-9620-413f-b816-2b7312e348dc"
+          ],
+          "legacy": false,
+          "sha256": "0477adf6e115d34c40686c956d42f641947014844f1ad8f4e2b34ea164779602"
+        },
+        {
+          "key": [
+            "00429dde-9620-413f-b816-2b7312e348dc",
+            "67d53731-094a-4cf2-ae5d-b315ebe6efb3"
+          ],
+          "actors": [
+            "00429dde-9620-413f-b816-2b7312e348dc"
+          ],
+          "legacy": false,
+          "sha256": "56180b1e292372c76ee8bad19d69f5b5163d9aa33a676020ac1d183046d37c36"
+        },
+        {
+          "key": [
+            "00429dde-9620-413f-b816-2b7312e348dc",
+            "dbf2b692-6879-4b68-b681-17cf49e91c2b"
+          ],
+          "actors": [
+            "00429dde-9620-413f-b816-2b7312e348dc"
+          ],
+          "legacy": false,
+          "sha256": "01e48c463c8dc91306e6550db2b62c958e45c3b69b644827fbc71baf447b784d"
+        },
+        {
+          "key": [
+            "ce5ffa90-a75c-4047-b87c-1061a3097852",
+            "32f70c02-b017-4d11-a8fb-9b087e82cd23"
+          ],
+          "actors": [
+            "ce5ffa90-a75c-4047-b87c-1061a3097852"
+          ],
+          "legacy": false,
+          "sha256": "de119df104696d77aa5409980267fdd6e58c0d6246a8957c7c3f6c0412e636b1"
+        },
+        {
+          "key": [
+            "ce5ffa90-a75c-4047-b87c-1061a3097852",
+            "5f811b56-3bae-4f0d-bb66-e000e1aa184e"
+          ],
+          "actors": [
+            "ce5ffa90-a75c-4047-b87c-1061a3097852"
+          ],
+          "legacy": false,
+          "sha256": "cbf59ba51cb0c7f6b6187f553117f4f17d18dca0483f1a0fdf2ec2058d782610"
+        },
+        {
+          "key": [
+            "ce5ffa90-a75c-4047-b87c-1061a3097852",
+            "6cd54589-791f-49dc-b0ae-8f413b539433"
+          ],
+          "actors": [
+            "ce5ffa90-a75c-4047-b87c-1061a3097852"
+          ],
+          "legacy": false,
+          "sha256": "b09fb2e15d0a1b53e989c5f706eebb636d53e759540d4a7a8e47996af74acd57"
+        },
+        {
+          "key": [
+            "ce5ffa90-a75c-4047-b87c-1061a3097852",
+            "938c11de-d2fc-452c-a318-c6b14038c6a8"
+          ],
+          "actors": [
+            "ce5ffa90-a75c-4047-b87c-1061a3097852"
+          ],
+          "legacy": false,
+          "sha256": "1b89bc0ffd97ad0f245d6577b10c52917c52accbfaa918038af06d5f893171ad"
+        },
+        {
+          "key": [
+            "ce5ffa90-a75c-4047-b87c-1061a3097852",
+            "966e1060-7885-472a-a502-242dfafe1a67"
+          ],
+          "actors": [
+            "ce5ffa90-a75c-4047-b87c-1061a3097852"
+          ],
+          "legacy": false,
+          "sha256": "9b1336e6a95a51691628f6ccad5e5562acd327066ebe6c3004c5c9454a755fa0"
+        },
+        {
+          "key": [
+            "ce5ffa90-a75c-4047-b87c-1061a3097852",
+            "b15e68f0-dd1a-4e78-81d5-a55b490f430e"
+          ],
+          "actors": [
+            "ce5ffa90-a75c-4047-b87c-1061a3097852"
+          ],
+          "legacy": false,
+          "sha256": "e27441c281c7403ac1fb525c0db33d89cc1bcf9f64bf8b43d16a002176dbfc3c"
+        },
+        {
+          "key": [
+            "ce5ffa90-a75c-4047-b87c-1061a3097852",
+            "b61b642c-35f0-42ea-95df-b67aa592893c"
+          ],
+          "actors": [
+            "ce5ffa90-a75c-4047-b87c-1061a3097852"
+          ],
+          "legacy": false,
+          "sha256": "8080c4e6df0c34b168b102ad6fd3f9d955774243df339be96ca6363f974f5767"
+        },
+        {
+          "key": [
+            "ce5ffa90-a75c-4047-b87c-1061a3097852",
+            "c9d75d1b-1ae0-4bdc-a312-ca623593df88"
+          ],
+          "actors": [
+            "ce5ffa90-a75c-4047-b87c-1061a3097852"
+          ],
+          "legacy": false,
+          "sha256": "281a35cbb75ac85f4ae39abb23b927d3715578bc278a0c91a274c39ad2fad8a2"
+        },
+        {
+          "key": [
+            "ce5ffa90-a75c-4047-b87c-1061a3097852",
+            "ca570981-d4fa-4a31-8d30-6a632d23bfac"
+          ],
+          "actors": [
+            "ce5ffa90-a75c-4047-b87c-1061a3097852"
+          ],
+          "legacy": false,
+          "sha256": "8a52b699abfeed6afb0e53ee8ca3cf8bad139358a4eeb4e0015091a079b87ccb"
+        },
+        {
+          "key": [
+            "ce5ffa90-a75c-4047-b87c-1061a3097852",
+            "d510769f-e32f-44e7-a2eb-071687f44075"
+          ],
+          "actors": [
+            "ce5ffa90-a75c-4047-b87c-1061a3097852"
+          ],
+          "legacy": false,
+          "sha256": "bfc6000af7d5e6d0e6e71c798575138e624bd95fe31fa27b240bee12b1c7ef6b"
+        },
+        {
+          "key": [
+            "ebf5db2b-b05f-444b-ac84-32f1e43bf38a",
+            "03960f69-0ed3-4105-a40f-4916030c96fa"
+          ],
+          "actors": [
+            "ebf5db2b-b05f-444b-ac84-32f1e43bf38a"
+          ],
+          "legacy": false,
+          "sha256": "12878e35607e76ee321a2827c253d89cd8cc5f4a0c3c75fc5909583ec0ab5a12"
+        },
+        {
+          "key": [
+            "ebf5db2b-b05f-444b-ac84-32f1e43bf38a",
+            "12ac1fa1-abf5-428f-bc8e-dc5f49da5d7a"
+          ],
+          "actors": [
+            "ebf5db2b-b05f-444b-ac84-32f1e43bf38a"
+          ],
+          "legacy": false,
+          "sha256": "1e25577a54cbdc3e728de9a1cb3c628f8299cf78a95641a4f5317aef240f7927"
+        },
+        {
+          "key": [
+            "ebf5db2b-b05f-444b-ac84-32f1e43bf38a",
+            "7bd58665-21ee-4776-b8f8-866d9b1c401f"
+          ],
+          "actors": [
+            "ebf5db2b-b05f-444b-ac84-32f1e43bf38a"
+          ],
+          "legacy": false,
+          "sha256": "a3293f723d809ac0bffde4f430c044e309b15de597d3124a90e3b31843cc147a"
+        },
+        {
+          "key": [
+            "ebf5db2b-b05f-444b-ac84-32f1e43bf38a",
+            "9e0e3777-e576-428f-9062-0c11b826c477"
+          ],
+          "actors": [
+            "ebf5db2b-b05f-444b-ac84-32f1e43bf38a"
+          ],
+          "legacy": false,
+          "sha256": "7def522116e3ede1d096ea6a55f03366413a159a16bbd528d4ba178bd6b1a3c0"
+        }
+      ],
+      "protectedRows": {
+        "count": 32,
+        "sha256": "f9eaf698473946ecbce240c2314e45d72353b24fa1cde2c870d023aa31458a8a"
+      }
+    },
+    "inbox_items": {
+      "primaryKey": [
+        "id"
+      ],
+      "rows": [
+        {
+          "key": [
+            "3c2ad8cd-5f4b-4e58-b614-379a326c53e7"
+          ],
+          "actors": [
+            "00429dde-9620-413f-b816-2b7312e348dc"
+          ],
+          "legacy": false,
+          "sha256": "3c51c111370db0e2437191cf2db6fa2f01d1bb1c027b741be50dd9e499052916"
+        },
+        {
+          "key": [
+            "4badab66-22de-4249-a14e-aa9b641bc4db"
+          ],
+          "actors": [
+            "fac2c5b5-ed2c-499a-8030-d26861db080a"
+          ],
+          "legacy": false,
+          "sha256": "f75c2e116b4e7de7da4696c772aefe51597e5af6cb2a8ae038935cae9f5039a8"
+        },
+        {
+          "key": [
+            "5a255c02-d593-4776-9190-f79f7eedaa29"
+          ],
+          "actors": [
+            "fac2c5b5-ed2c-499a-8030-d26861db080a"
+          ],
+          "legacy": false,
+          "sha256": "4566276688283d930296b5351aa4b9949947bb307bcbecc62a4a941a5f69d666"
+        },
+        {
+          "key": [
+            "99993f9e-069f-4b74-bb32-2f8d3e7715dc"
+          ],
+          "actors": [
+            "fac2c5b5-ed2c-499a-8030-d26861db080a"
+          ],
+          "legacy": false,
+          "sha256": "5d7cf671bca379c96d70e7736caed6374255c7d2e5dcb723794f83aaecff4690"
+        },
+        {
+          "key": [
+            "c32edef9-9389-4efb-84ca-33520c500f83"
+          ],
+          "actors": [
+            "00429dde-9620-413f-b816-2b7312e348dc"
+          ],
+          "legacy": false,
+          "sha256": "ff0803ed46ef08c7413883bbf4b738633fe4b79ea74e35666f20618bd1e2a035"
+        },
+        {
+          "key": [
+            "d331e794-31ad-493a-b14e-861aaafeebf0"
+          ],
+          "actors": [
+            "fac2c5b5-ed2c-499a-8030-d26861db080a"
+          ],
+          "legacy": false,
+          "sha256": "830fcff11bac528e5d1b765034553d9251a8a786cd11270fa7c42dbe089ffa52"
+        },
+        {
+          "key": [
+            "fde5c809-211a-4816-b625-34e3556fec3a"
+          ],
+          "actors": [
+            "fac2c5b5-ed2c-499a-8030-d26861db080a"
+          ],
+          "legacy": false,
+          "sha256": "0f9ba9c463af59b6ec9d8a30ecede79d56087279d5ae566f6232ea36053ac7cf"
+        }
+      ],
+      "protectedRows": {
+        "count": 113,
+        "sha256": "c95dd4e8aec1cbf1b9602bde74e39c3c227178d92a8f4f21d3103bac1aa53d84"
+      }
+    },
+    "moment_location_compatibility_backfill": {
+      "primaryKey": [
+        "moment_id"
+      ],
+      "rows": [
+        {
+          "key": [
+            "964cc4c6-a188-4936-9dca-63d9cdb8d4d6"
+          ],
+          "actors": [],
+          "legacy": false,
+          "sha256": "34628d1475aacef21fa0236d021459d33be3ebdc472b832890dd9845a23b773e"
+        },
+        {
+          "key": [
+            "b14d84e8-f7e7-48a3-8acb-c425c744e98a"
+          ],
+          "actors": [],
+          "legacy": false,
+          "sha256": "c9e381451f9576867a25232a8d1b38aef56439ed092b656a64ee22456b9a6b68"
+        },
+        {
+          "key": [
+            "b8b27221-24dd-40ce-8fc3-58868c332df5"
+          ],
+          "actors": [],
+          "legacy": false,
+          "sha256": "f64db8379e41cff1abdef1f21f7c6e00362c1ec948363667d48d2d78616bfc36"
+        },
+        {
+          "key": [
+            "c2a5e3ea-afbd-408f-b158-ea426c7da9e7"
+          ],
+          "actors": [],
+          "legacy": false,
+          "sha256": "5c41835a8c6befdbd9cb1a43b51344e4a4222452f5e781627e3fc4595dcf0f5d"
+        },
+        {
+          "key": [
+            "c90cf108-a9fe-4596-bb1e-b4a8204b76fe"
+          ],
+          "actors": [],
+          "legacy": false,
+          "sha256": "75d4dec2ae07249f28e4a6be39d0387e195c77903bf59cd715a9dab36f18881a"
+        },
+        {
+          "key": [
+            "e8062b7d-b6f9-47eb-9f53-6f88548e8c56"
+          ],
+          "actors": [],
+          "legacy": false,
+          "sha256": "520008be40f253a9b8ceacc113dd57566d72f9fae424b78c4d00e7acf13542a8"
+        }
+      ],
+      "protectedRows": {
+        "count": 86,
+        "sha256": "27359108f844211c112242dfb74eecdcd9cd96310bfa3149385c62a018ee9c9c"
+      }
+    },
+    "moment_location_epochs": {
+      "primaryKey": [
+        "moment_id"
+      ],
+      "rows": [
+        {
+          "key": [
+            "4323975d-8dca-4112-b81c-7bc9f7a9179d"
+          ],
+          "actors": [],
+          "legacy": false,
+          "sha256": "f4d6f2575a3544590a01b8c7003a58c93b5af0c189ee9b7d97b1763d2f7ccf20"
+        },
+        {
+          "key": [
+            "47ce7ce5-dc4a-44c5-b58f-32d63d1518e1"
+          ],
+          "actors": [],
+          "legacy": false,
+          "sha256": "72767f1100cfb08b84cede838b0493bc17cf6db4fd361aa80f3c4c7b39bd1c3f"
+        },
+        {
+          "key": [
+            "964cc4c6-a188-4936-9dca-63d9cdb8d4d6"
+          ],
+          "actors": [],
+          "legacy": false,
+          "sha256": "5765bf298cf2d175cb049d24f6fac3cd32f9997ba071508b0d9a9810191f32c9"
+        },
+        {
+          "key": [
+            "b14d84e8-f7e7-48a3-8acb-c425c744e98a"
+          ],
+          "actors": [],
+          "legacy": false,
+          "sha256": "1ab980ad3f857b35745870335d1706ed842cd0891b2270c3134453127d454271"
+        },
+        {
+          "key": [
+            "b8b27221-24dd-40ce-8fc3-58868c332df5"
+          ],
+          "actors": [],
+          "legacy": false,
+          "sha256": "c0d7e504b9365fc8ce3c538306f1a7c9bf61441d155fb7cb230458b9556e9339"
+        },
+        {
+          "key": [
+            "c2a5e3ea-afbd-408f-b158-ea426c7da9e7"
+          ],
+          "actors": [],
+          "legacy": false,
+          "sha256": "693eda304babb369a3b81c8b816530b50d35ca482bdda0d634f52e222dffdcb0"
+        },
+        {
+          "key": [
+            "c90cf108-a9fe-4596-bb1e-b4a8204b76fe"
+          ],
+          "actors": [],
+          "legacy": false,
+          "sha256": "8aa67d58f9cddf7ce5e4b10f6fa9fea62cae2c94bbd35d8546701c5bb9892e7a"
+        },
+        {
+          "key": [
+            "e8062b7d-b6f9-47eb-9f53-6f88548e8c56"
+          ],
+          "actors": [],
+          "legacy": false,
+          "sha256": "0410f58a3af7302d9565fa6d1a129e8e2b089bed3270dbc57eae319d5a185a7e"
+        }
+      ],
+      "protectedRows": {
+        "count": 63,
+        "sha256": "ec241367992c8257b71640082aa925150275c0787daeba5485c70c3f93bd44be"
+      }
+    },
+    "moment_location_links": {
+      "primaryKey": [
+        "id"
+      ],
+      "rows": [
+        {
+          "key": [
+            "04cbbb64-56d7-e182-1b8a-ff5e135a2458"
+          ],
+          "actors": [],
+          "legacy": false,
+          "sha256": "7de65be67205ea0c2a95ae34aace8eee42850471d50d934e3d23a73c0d15f266"
+        },
+        {
+          "key": [
+            "1a407042-0d7b-90ae-a150-815dd15d23b3"
+          ],
+          "actors": [],
+          "legacy": false,
+          "sha256": "3a1c91f41ec6ee5a82891f69042be2ef777d91d8d8ff18479dc29868b9f1d989"
+        },
+        {
+          "key": [
+            "52549725-6075-d889-028d-acd226f0cf90"
+          ],
+          "actors": [],
+          "legacy": false,
+          "sha256": "cf3fb1ae3ec7c003020466aec253abe6d28adfe107e33465014ec6cce122723d"
+        },
+        {
+          "key": [
+            "5b005277-0120-492d-ab87-5d6459f6b64d"
+          ],
+          "actors": [],
+          "legacy": false,
+          "sha256": "e0dc0b8f395c518104110f5e56e54717bc98c4350c60bec03dee809a41ec2030"
+        },
+        {
+          "key": [
+            "8c1fe95a-6ea8-4900-d694-0452bc51ae64"
+          ],
+          "actors": [],
+          "legacy": false,
+          "sha256": "7628b6721e65e3d5b6005c2c79d99bc45017124b381a00f797a66b7e89f4e602"
+        },
+        {
+          "key": [
+            "a9006b6e-0752-4b84-906d-cd448724ae74"
+          ],
+          "actors": [],
+          "legacy": false,
+          "sha256": "14b988ab0fba09579a4008ab55f0143b7f8d8a738c937142ab3d2c165a4ff8d9"
+        },
+        {
+          "key": [
+            "ba0f863d-e5ea-51af-6217-ee2a1922879e"
+          ],
+          "actors": [],
+          "legacy": false,
+          "sha256": "27533a5af94612ec126c9b5e898aa7f143dc33b31f9716255511ec98cea29252"
+        },
+        {
+          "key": [
+            "d0773853-65f4-4d21-a702-f75d360fe6c6"
+          ],
+          "actors": [],
+          "legacy": false,
+          "sha256": "df70055fe4fd807220ba946f43e499022dee1ad2f855eefeb3d4a8ba11df2f44"
+        },
+        {
+          "key": [
+            "e27910c6-2560-eb87-e593-214ecb80b3c1"
+          ],
+          "actors": [],
+          "legacy": false,
+          "sha256": "e9937ed3b76c9933b96946d650b8c7bce58efd83e5d14f6e3cb497cfc87cab77"
+        },
+        {
+          "key": [
+            "f95b3c1d-fbc4-4c2a-9038-1d193ac23b9c"
+          ],
+          "actors": [],
+          "legacy": false,
+          "sha256": "fd8a7bc0a8065c335deed983c2b56027d19cae4fce005159186b0b671ec3ceae"
+        }
+      ],
+      "protectedRows": {
+        "count": 68,
+        "sha256": "b08ce93a2b6ef066cda50e5d997aa453bd95b6b5303c8d86b9bcb617f43cd84d"
+      }
+    },
+    "moment_thread_members": {
+      "primaryKey": [
+        "thread_id",
+        "position"
+      ],
+      "rows": [
+        {
+          "key": [
+            "0c5731fa-8b50-4913-991f-a315afad7fbe",
+            0
+          ],
+          "actors": [],
+          "legacy": false,
+          "sha256": "3ab96897c59672dde9cf21f7c8f9359990dcced618aa9517b99ffa8860d18d1d"
+        },
+        {
+          "key": [
+            "0c5731fa-8b50-4913-991f-a315afad7fbe",
+            1
+          ],
+          "actors": [],
+          "legacy": false,
+          "sha256": "d46882518a16d479d6954b498e12597202c931fe98851a972cc2242aeb6f30f7"
+        }
+      ],
+      "protectedRows": {
+        "count": 37,
+        "sha256": "a2c06b8313bfc618f90c4cbdfb20679e0c2d876ab21657c46ea5558d7c08f5d8"
+      }
+    },
+    "moment_thread_operations": {
+      "primaryKey": [
+        "actor_account_id",
+        "operation_id"
+      ],
+      "rows": [
+        {
+          "key": [
+            "ebf5db2b-b05f-444b-ac84-32f1e43bf38a",
+            "72c06476-a6c2-46a3-84e9-5af8ce313b85"
+          ],
+          "actors": [
+            "ebf5db2b-b05f-444b-ac84-32f1e43bf38a"
+          ],
+          "legacy": false,
+          "sha256": "1433c9a21c47484b8f67e81927930e3c5f1cf4f51102246ea324b9d4d80e3bd8"
+        },
+        {
+          "key": [
+            "ebf5db2b-b05f-444b-ac84-32f1e43bf38a",
+            "fdab634d-8fca-4462-aeb7-e3c8ca1a2264"
+          ],
+          "actors": [
+            "ebf5db2b-b05f-444b-ac84-32f1e43bf38a"
+          ],
+          "legacy": false,
+          "sha256": "4ba74b20bd180eb8e97cae27238990eec1d2d46d1e632c05ce9ffa72160685a3"
+        }
+      ],
+      "protectedRows": {
+        "count": 21,
+        "sha256": "849d70025453390cfeac2baf36289ee7e8b10be32327b8850475c834043d653d"
+      }
+    },
+    "moment_threads": {
+      "primaryKey": [
+        "id"
+      ],
+      "rows": [
+        {
+          "key": [
+            "0c5731fa-8b50-4913-991f-a315afad7fbe"
+          ],
+          "actors": [
+            "ebf5db2b-b05f-444b-ac84-32f1e43bf38a"
+          ],
+          "legacy": false,
+          "sha256": "99e401ec2059b5b5bddad78d22555b1560ea70a6bb717fe675131c93c6f4a551"
+        }
+      ],
+      "protectedRows": {
+        "count": 26,
+        "sha256": "37f64fb77d477945fb411feaf4ebe70ef583ad0b0ae3a611237dadb1fd57afa0"
+      }
+    },
+    "moments": {
+      "primaryKey": [
+        "id"
+      ],
+      "rows": [
+        {
+          "key": [
+            "4323975d-8dca-4112-b81c-7bc9f7a9179d"
+          ],
+          "actors": [
+            "ce5ffa90-a75c-4047-b87c-1061a3097852"
+          ],
+          "legacy": false,
+          "sha256": "54736e2b732d8c9d2a813f243b82fc3e30dfedd3c7263b24c69c0a4e305ea2dc"
+        },
+        {
+          "key": [
+            "47ce7ce5-dc4a-44c5-b58f-32d63d1518e1"
+          ],
+          "actors": [
+            "ce5ffa90-a75c-4047-b87c-1061a3097852"
+          ],
+          "legacy": false,
+          "sha256": "29a131981394c9357fc635da6a6bd0ec926af2f2df0dbc7d462df776c0bbb958"
+        },
+        {
+          "key": [
+            "964cc4c6-a188-4936-9dca-63d9cdb8d4d6"
+          ],
+          "actors": [
+            "ebf5db2b-b05f-444b-ac84-32f1e43bf38a"
+          ],
+          "legacy": false,
+          "sha256": "8be1d093658e3c9eca4b284ecd118e70e96746882d8c684f089c006a4810e780"
+        },
+        {
+          "key": [
+            "b14d84e8-f7e7-48a3-8acb-c425c744e98a"
+          ],
+          "actors": [
+            "ce5ffa90-a75c-4047-b87c-1061a3097852"
+          ],
+          "legacy": false,
+          "sha256": "2b44e0a53f608d30c55ebe9e57bfb6988d487919534bc8af1622b1dee2c985f4"
+        },
+        {
+          "key": [
+            "b8b27221-24dd-40ce-8fc3-58868c332df5"
+          ],
+          "actors": [
+            "00429dde-9620-413f-b816-2b7312e348dc"
+          ],
+          "legacy": false,
+          "sha256": "4d1b010f29772a210ca089330b34f4e184a28a376ba23dd3703abad44183988d"
+        },
+        {
+          "key": [
+            "c2a5e3ea-afbd-408f-b158-ea426c7da9e7"
+          ],
+          "actors": [
+            "00429dde-9620-413f-b816-2b7312e348dc"
+          ],
+          "legacy": false,
+          "sha256": "00c6a3b679b4374b252b50167cefc04e5afb3e6bd08aa36d428dd6371297f2ff"
+        },
+        {
+          "key": [
+            "c90cf108-a9fe-4596-bb1e-b4a8204b76fe"
+          ],
+          "actors": [
+            "ebf5db2b-b05f-444b-ac84-32f1e43bf38a"
+          ],
+          "legacy": false,
+          "sha256": "51403b86c0697328602a91cc99e68d7924ec6cec903711eafcb1697beae27b61"
+        },
+        {
+          "key": [
+            "e8062b7d-b6f9-47eb-9f53-6f88548e8c56"
+          ],
+          "actors": [
+            "ebf5db2b-b05f-444b-ac84-32f1e43bf38a"
+          ],
+          "legacy": false,
+          "sha256": "4fbd6890c07188225c860c322b6029b94358bbe9378b0296ea83bdd99de4b0ab"
+        }
+      ],
+      "protectedRows": {
+        "count": 102,
+        "sha256": "6e915ceedac093b279b03b0c4a00db521ea00f9a2b1cbddf142e2f16f9d67ee5"
+      }
+    },
+    "native_notification_decisions": {
+      "primaryKey": [
+        "id"
+      ],
+      "rows": [
+        {
+          "key": [
+            "3abbe38b-69c6-4c89-a954-468f7120ed11"
+          ],
+          "actors": [],
+          "legacy": false,
+          "sha256": "5ed7feea9802bfb9be932d0b81e602c8e670f26b45527af3422915039fbeb2b7"
+        },
+        {
+          "key": [
+            "4c750a89-58ec-4668-a805-042d1911e237"
+          ],
+          "actors": [],
+          "legacy": false,
+          "sha256": "0f245f2c2ae72e26a37c1c0e8b92a642700409a933e9ca9aba2928f5e600ab90"
+        },
+        {
+          "key": [
+            "59d94a25-f2b2-4a62-aa33-e2d00e581f5d"
+          ],
+          "actors": [],
+          "legacy": false,
+          "sha256": "32f36a98a834d1727ab1f0f60fcb2432a91ba5a0f2785515ef1ee461bead7d20"
+        },
+        {
+          "key": [
+            "9f1cc928-add2-45cf-8390-0c1ad24cafa4"
+          ],
+          "actors": [],
+          "legacy": false,
+          "sha256": "5c8204fffac6b765f7a4b6dc49b9c672326aea2589d4c06ac1364cea7a230a60"
+        },
+        {
+          "key": [
+            "a7c3b8ff-2604-4916-80e9-5988b2418d85"
+          ],
+          "actors": [],
+          "legacy": false,
+          "sha256": "7dc5ce8008a5b703512e379e5b03bdc846d306fa6cd086e9c3d2154ca125b2c4"
+        },
+        {
+          "key": [
+            "bf2a6653-bf8a-4967-97a0-8904eb22f6ab"
+          ],
+          "actors": [],
+          "legacy": false,
+          "sha256": "86a41dd50141067dd1a992bb3c8db16bbe8b739b6970b00c8e14b73c63412518"
+        },
+        {
+          "key": [
+            "f7909391-9972-4219-8aeb-d1e1ee68c294"
+          ],
+          "actors": [],
+          "legacy": false,
+          "sha256": "0c8e6335adae439876c500373632d8b625913118d45a623932cd19499cb18e77"
+        }
+      ],
+      "protectedRows": {
+        "count": 4,
+        "sha256": "1232f834da964f24587b4383855421de892ab229e827bfc7bb6da59f7f1299ed"
+      }
+    },
+    "person_close_connections": {
+      "primaryKey": [
+        "owner_account_id",
+        "person_account_id"
+      ],
+      "rows": [
+        {
+          "key": [
+            "00429dde-9620-413f-b816-2b7312e348dc",
+            "fac2c5b5-ed2c-499a-8030-d26861db080a"
+          ],
+          "actors": [
+            "00429dde-9620-413f-b816-2b7312e348dc",
+            "fac2c5b5-ed2c-499a-8030-d26861db080a"
+          ],
+          "legacy": false,
+          "sha256": "717c9dd95c456948b7eaa6409b03f569f60314d07f90dbe871b9edfd1ce2a8ba"
+        },
+        {
+          "key": [
+            "fac2c5b5-ed2c-499a-8030-d26861db080a",
+            "00429dde-9620-413f-b816-2b7312e348dc"
+          ],
+          "actors": [
+            "fac2c5b5-ed2c-499a-8030-d26861db080a",
+            "00429dde-9620-413f-b816-2b7312e348dc"
+          ],
+          "legacy": false,
+          "sha256": "cce1356e487a781db65207cb4ec4187159a3726ab3b0b737ece3614face13b53"
+        }
+      ],
+      "protectedRows": {
+        "count": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "person_ties": {
+      "primaryKey": [
+        "id"
+      ],
+      "rows": [
+        {
+          "key": [
+            "68da90cf-a194-4cb4-ad45-0d5104d75d91"
+          ],
+          "actors": [
+            "00429dde-9620-413f-b816-2b7312e348dc",
+            "fac2c5b5-ed2c-499a-8030-d26861db080a"
+          ],
+          "legacy": false,
+          "sha256": "fa9dd04f4029ca2bf6ccb7c377b22cded21f118bf2b15c38d00568a623fa7516"
+        }
+      ],
+      "protectedRows": {
+        "count": 4,
+        "sha256": "1e9dc24481609bc52fd13aa798d008055052dacb4b328fcdcf9193aac21b9305"
+      }
+    },
+    "public_moment_media_attachments": {
+      "primaryKey": [
+        "moment_id",
+        "set_version",
+        "position"
+      ],
+      "rows": [
+        {
+          "key": [
+            "b14d84e8-f7e7-48a3-8acb-c425c744e98a",
+            1,
+            0
+          ],
+          "actors": [],
+          "legacy": false,
+          "sha256": "3d4fd4b6bae9e93d988bfada4a6a662529b96960e1358e87986697e8a2a7d6d6"
+        },
+        {
+          "key": [
+            "b14d84e8-f7e7-48a3-8acb-c425c744e98a",
+            1,
+            1
+          ],
+          "actors": [],
+          "legacy": false,
+          "sha256": "a5befe8ac8344904ac5135ad4d4b386a2befb299aac8a411cccaf609f10452fe"
+        },
+        {
+          "key": [
+            "b14d84e8-f7e7-48a3-8acb-c425c744e98a",
+            1,
+            2
+          ],
+          "actors": [],
+          "legacy": false,
+          "sha256": "6979390d9b46a4cb30c79e17d9ace08fcbbdb9db3bbba787d2d268de70d267cf"
+        },
+        {
+          "key": [
+            "b14d84e8-f7e7-48a3-8acb-c425c744e98a",
+            1,
+            3
+          ],
+          "actors": [],
+          "legacy": false,
+          "sha256": "80ccfba31398f61dc93bcffffd6d265ca274cd7622880490acadcd60f1fa0bc4"
+        },
+        {
+          "key": [
+            "b14d84e8-f7e7-48a3-8acb-c425c744e98a",
+            1,
+            4
+          ],
+          "actors": [],
+          "legacy": false,
+          "sha256": "0387e0952e6f4bd97768d1c83f28e842443974192113de53d66da5d3c45a44be"
+        },
+        {
+          "key": [
+            "b14d84e8-f7e7-48a3-8acb-c425c744e98a",
+            1,
+            5
+          ],
+          "actors": [],
+          "legacy": false,
+          "sha256": "1e0586ed96be5a339805c2c21f17ffe597f17ff4e612c16ee1530b2fc85ba2ca"
+        },
+        {
+          "key": [
+            "b14d84e8-f7e7-48a3-8acb-c425c744e98a",
+            1,
+            6
+          ],
+          "actors": [],
+          "legacy": false,
+          "sha256": "2c08e555333e42781a21f050af7654a4be4d365139c234819538f595b9c46e91"
+        },
+        {
+          "key": [
+            "b14d84e8-f7e7-48a3-8acb-c425c744e98a",
+            1,
+            7
+          ],
+          "actors": [],
+          "legacy": false,
+          "sha256": "99cf7de8f610b77160ae9093bf6666bc27d69706ba22c02fae46846d9f4d1a1b"
+        },
+        {
+          "key": [
+            "b14d84e8-f7e7-48a3-8acb-c425c744e98a",
+            1,
+            8
+          ],
+          "actors": [],
+          "legacy": false,
+          "sha256": "2a93363a5138f675d0af330b9bcae191a3f79c81bae67020651baa423b5218af"
+        },
+        {
+          "key": [
+            "c90cf108-a9fe-4596-bb1e-b4a8204b76fe",
+            1,
+            0
+          ],
+          "actors": [],
+          "legacy": false,
+          "sha256": "83c15308a5d2aaea987edfc91fd8ae5e8c771a9585bdd62c279f9670f190edae"
+        },
+        {
+          "key": [
+            "e8062b7d-b6f9-47eb-9f53-6f88548e8c56",
+            1,
+            0
+          ],
+          "actors": [],
+          "legacy": false,
+          "sha256": "ed4f8ca78a37271bb98224af78f43deaa7ffe768c7b051e4317724ad8b7a221c"
+        }
+      ],
+      "protectedRows": {
+        "count": 11,
+        "sha256": "07376873091d01e370334393d5eb7bd3ec3eda76082f41e938a1f697b54d66f5"
+      }
+    },
+    "public_moment_media_operations": {
+      "primaryKey": [
+        "actor_account_id",
+        "operation_id"
+      ],
+      "rows": [
+        {
+          "key": [
+            "ce5ffa90-a75c-4047-b87c-1061a3097852",
+            "6231c0bb-ccc4-4bd2-8e65-99212c266ca0"
+          ],
+          "actors": [
+            "ce5ffa90-a75c-4047-b87c-1061a3097852"
+          ],
+          "legacy": false,
+          "sha256": "531ed24561cfd3b8fe5a17d0091cd3fa819139434180a5b49ccdbef50b22dfc7"
+        },
+        {
+          "key": [
+            "ce5ffa90-a75c-4047-b87c-1061a3097852",
+            "c9cffc45-6a4d-4475-9619-c5c7fca823b6"
+          ],
+          "actors": [
+            "ce5ffa90-a75c-4047-b87c-1061a3097852"
+          ],
+          "legacy": false,
+          "sha256": "f114d6abd8dc108dc74ad7a8044f79cabb76a4aad8ac2da4dae831634e332660"
+        },
+        {
+          "key": [
+            "ebf5db2b-b05f-444b-ac84-32f1e43bf38a",
+            "31977ec2-3b63-414b-a252-4516bec027b9"
+          ],
+          "actors": [
+            "ebf5db2b-b05f-444b-ac84-32f1e43bf38a"
+          ],
+          "legacy": false,
+          "sha256": "00c78c34e82eb35c33aabf57f07ac408616d7a77193e821229f616d8eb5a09be"
+        }
+      ],
+      "protectedRows": {
+        "count": 1,
+        "sha256": "e51b522daf7b9a55cbcec7c2d02f77ae27c1ee0faa9c16e660f99e296f70874d"
+      }
+    },
+    "public_moment_media_sets": {
+      "primaryKey": [
+        "moment_id"
+      ],
+      "rows": [
+        {
+          "key": [
+            "b14d84e8-f7e7-48a3-8acb-c425c744e98a"
+          ],
+          "actors": [
+            "ce5ffa90-a75c-4047-b87c-1061a3097852"
+          ],
+          "legacy": false,
+          "sha256": "3fadba4dda10cd57d6e28e63e70ec3fef3713548340a6fd2f4e7265e9e3a0805"
+        },
+        {
+          "key": [
+            "c90cf108-a9fe-4596-bb1e-b4a8204b76fe"
+          ],
+          "actors": [
+            "ebf5db2b-b05f-444b-ac84-32f1e43bf38a"
+          ],
+          "legacy": false,
+          "sha256": "605747bda3184ca9c5d8b7933f4b1b7038780e8dfe41bb239db4751949683235"
+        },
+        {
+          "key": [
+            "e8062b7d-b6f9-47eb-9f53-6f88548e8c56"
+          ],
+          "actors": [
+            "ebf5db2b-b05f-444b-ac84-32f1e43bf38a"
+          ],
+          "legacy": false,
+          "sha256": "bf55f6754f116fc8d747acca83be00d4899ddb4a59128bd18066bfe115c6d00a"
+        }
+      ],
+      "protectedRows": {
+        "count": 5,
+        "sha256": "ce97584c91e92c8ada08c8bf67f748d76bc06d8587f3499dd49ba12c5417d5a6"
+      }
+    },
+    "public_moment_media_video_payloads": {
+      "primaryKey": [
+        "moment_id",
+        "set_version",
+        "position"
+      ],
+      "rows": [
+        {
+          "key": [
+            "c90cf108-a9fe-4596-bb1e-b4a8204b76fe",
+            1,
+            0
+          ],
+          "actors": [],
+          "legacy": false,
+          "sha256": "5047287cfa7db1d2aa71a14716834886af87a26c1164f79c753f2961abef58c3"
+        }
+      ],
+      "protectedRows": {
+        "count": 4,
+        "sha256": "60a17fe9b824a5e77122b77780657bbe3aa1930d7f90ad21dfaf29e6d6c7afcd"
+      }
+    }
+  },
+  "deletionOrder": [
+    "connection_request_decision_receipts",
+    "conversation_member_states",
+    "human_entity_share_operations",
+    "human_moment_control_operations",
+    "inbox_items",
+    "moment_location_compatibility_backfill",
+    "moment_location_epochs",
+    "moment_location_links",
+    "moment_thread_members",
+    "moment_thread_operations",
+    "person_close_connections",
+    "public_moment_media_operations",
+    "public_moment_media_video_payloads",
+    "moment_threads",
+    "native_notification_decisions",
+    "person_ties",
+    "public_moment_media_attachments",
+    "conversation_messages",
+    "public_moment_media_sets",
+    "conversations",
+    "moments",
+    "connection_requests"
+  ],
+  "referenceChecks": {
+    "activity_conversation_members": {
+      "count": 0
+    },
+    "activity_conversation_messages": {
+      "count": 0
+    },
+    "agent_consumer_inbox": {
+      "count": 0
+    },
+    "agent_domain_outbox": {
+      "count": 0
+    },
+    "agent_effect_ledger": {
+      "count": 0
+    },
+    "agent_enrichment_purpose_previews": {
+      "count": 0
+    },
+    "agent_memory_corrections": {
+      "count": 0
+    },
+    "agent_sandbox_writes": {
+      "count": 0
+    },
+    "community_conversation_members": {
+      "count": 0
+    },
+    "community_conversation_messages": {
+      "count": 0
+    },
+    "connection_request_decision_receipts": {
+      "count": 2
+    },
+    "connection_request_policy_bindings": {
+      "count": 0
+    },
+    "consent_grants": {
+      "count": 0
+    },
+    "conversation_member_states": {
+      "count": 2
+    },
+    "conversation_messages": {
+      "count": 3
+    },
+    "conversations": {
+      "count": 1
+    },
+    "entity_cover_operations": {
+      "count": 0
+    },
+    "entity_covers": {
+      "count": 0
+    },
+    "human_conversation_audio": {
+      "count": 0
+    },
+    "human_conversation_images": {
+      "count": 0
+    },
+    "human_entity_share_operations": {
+      "count": 1
+    },
+    "human_moment_control_operations": {
+      "count": 20
+    },
+    "human_write_control_operations": {
+      "count": 0
+    },
+    "inbox_items": {
+      "count": 7
+    },
+    "incident_reports": {
+      "count": 0
+    },
+    "legacy_entity_mappings": {
+      "count": 0
+    },
+    "legacy_journey_adaptations": {
+      "count": 0
+    },
+    "legacy_map_anchor_facts": {
+      "count": 0
+    },
+    "legacy_moment_author_facts": {
+      "count": 0
+    },
+    "legacy_native_adaptation_entities": {
+      "count": 0
+    },
+    "legacy_native_adaptation_residuals": {
+      "count": 0
+    },
+    "legacy_native_context_entities": {
+      "count": 0
+    },
+    "legacy_private_image_recovery_items": {
+      "count": 0
+    },
+    "legacy_private_media_import_items": {
+      "count": 0
+    },
+    "legacy_private_video_import_items": {
+      "count": 0
+    },
+    "legacy_reference_media_relations": {
+      "count": 0
+    },
+    "legacy_social_history_facts": {
+      "count": 0
+    },
+    "legacy_social_import_entities": {
+      "count": 0
+    },
+    "moment_activity_links": {
+      "count": 0
+    },
+    "moment_comments": {
+      "count": 0
+    },
+    "moment_community_links": {
+      "count": 0
+    },
+    "moment_interaction_operations": {
+      "count": 0
+    },
+    "moment_journey_links": {
+      "count": 0
+    },
+    "moment_likes": {
+      "count": 0
+    },
+    "moment_location_compatibility_backfill": {
+      "count": 6
+    },
+    "moment_location_epochs": {
+      "count": 8
+    },
+    "moment_location_links": {
+      "count": 10
+    },
+    "moment_location_media_rebindings": {
+      "count": 0
+    },
+    "moment_organization_links": {
+      "count": 0
+    },
+    "moment_thread_display_members": {
+      "count": 0
+    },
+    "moment_thread_edit_states": {
+      "count": 0
+    },
+    "moment_thread_entry_contexts": {
+      "count": 0
+    },
+    "moment_thread_members": {
+      "count": 2
+    },
+    "moment_thread_operations": {
+      "count": 2
+    },
+    "moment_thread_route_legs": {
+      "count": 0
+    },
+    "moment_threads": {
+      "count": 1
+    },
+    "native_notification_decisions": {
+      "count": 7
+    },
+    "native_notification_schedule_deliveries": {
+      "count": 0
+    },
+    "person_close_connections": {
+      "count": 2
+    },
+    "person_ties": {
+      "count": 1
+    },
+    "personal_collection_append_operations": {
+      "count": 0
+    },
+    "personal_collection_control_operations": {
+      "count": 0
+    },
+    "personal_collection_copy_borrowed_places": {
+      "count": 0
+    },
+    "personal_collection_copy_grants": {
+      "count": 0
+    },
+    "personal_collection_copy_operations": {
+      "count": 0
+    },
+    "personal_collection_copy_origins": {
+      "count": 0
+    },
+    "personal_collection_operations": {
+      "count": 0
+    },
+    "personal_collection_publication_operations": {
+      "count": 0
+    },
+    "private_moment_images": {
+      "count": 0
+    },
+    "private_moment_media_contexts": {
+      "count": 0
+    },
+    "private_moment_videos": {
+      "count": 0
+    },
+    "public_moment_media_attachments": {
+      "count": 11
+    },
+    "public_moment_media_operations": {
+      "count": 3
+    },
+    "public_moment_media_sets": {
+      "count": 3
+    },
+    "public_moment_media_video_payloads": {
+      "count": 1
+    },
+    "public_moment_photo_operations": {
+      "count": 0
+    },
+    "public_moment_photos": {
+      "count": 0
+    },
+    "system_push_events": {
+      "count": 0
+    }
+  },
+  "referenceSchema": {
+    "columns": {
+      "inbox_items": [
+        "resource_id",
+        "target_conversation_id"
+      ],
+      "person_ties": [
+        "request_id"
+      ],
+      "moment_likes": [
+        "moment_id"
+      ],
+      "conversations": [
+        "request_id"
+      ],
+      "entity_covers": [
+        "entity_id"
+      ],
+      "consent_grants": [
+        "resource_id"
+      ],
+      "moment_threads": [
+        "root_moment_id"
+      ],
+      "moment_comments": [
+        "moment_id"
+      ],
+      "incident_reports": [
+        "target_id"
+      ],
+      "system_push_events": [],
+      "agent_domain_outbox": [
+        "subject_id"
+      ],
+      "agent_effect_ledger": [
+        "subject_id"
+      ],
+      "agent_consumer_inbox": [
+        "subject_id"
+      ],
+      "agent_sandbox_writes": [
+        "target_id"
+      ],
+      "moment_journey_links": [
+        "moment_id"
+      ],
+      "public_moment_photos": [
+        "moment_id"
+      ],
+      "conversation_messages": [
+        "conversation_id",
+        "entity_id"
+      ],
+      "moment_activity_links": [
+        "moment_id"
+      ],
+      "moment_location_links": [
+        "moment_id"
+      ],
+      "moment_thread_members": [
+        "moment_id",
+        "thread_id"
+      ],
+      "private_moment_images": [
+        "moment_id"
+      ],
+      "private_moment_videos": [
+        "moment_id"
+      ],
+      "legacy_entity_mappings": [
+        "target_id"
+      ],
+      "moment_community_links": [
+        "moment_id"
+      ],
+      "moment_location_epochs": [
+        "moment_id"
+      ],
+      "entity_cover_operations": [
+        "entity_id"
+      ],
+      "legacy_map_anchor_facts": [
+        "moment_id"
+      ],
+      "agent_memory_corrections": [
+        "target_id"
+      ],
+      "human_conversation_audio": [
+        "conversation_id",
+        "message_id"
+      ],
+      "moment_thread_operations": [
+        "thread_id"
+      ],
+      "moment_thread_route_legs": [
+        "from_moment_id",
+        "thread_id",
+        "to_moment_id"
+      ],
+      "person_close_connections": [
+        "request_id"
+      ],
+      "public_moment_media_sets": [
+        "moment_id"
+      ],
+      "human_conversation_images": [
+        "conversation_id",
+        "message_id"
+      ],
+      "moment_organization_links": [
+        "moment_id"
+      ],
+      "moment_thread_edit_states": [
+        "thread_id"
+      ],
+      "conversation_member_states": [
+        "conversation_id",
+        "last_read_message_id"
+      ],
+      "legacy_journey_adaptations": [
+        "target_id"
+      ],
+      "legacy_moment_author_facts": [
+        "moment_id"
+      ],
+      "legacy_social_history_facts": [
+        "target_id"
+      ],
+      "moment_thread_entry_contexts": [
+        "moment_id",
+        "thread_id"
+      ],
+      "activity_conversation_members": [
+        "conversation_id"
+      ],
+      "human_entity_share_operations": [
+        "conversation_id",
+        "entity_id",
+        "message_id"
+      ],
+      "legacy_social_import_entities": [
+        "target_id"
+      ],
+      "moment_interaction_operations": [
+        "moment_id"
+      ],
+      "moment_thread_display_members": [
+        "moment_id",
+        "thread_id"
+      ],
+      "native_notification_decisions": [
+        "connection_request_id",
+        "message_id"
+      ],
+      "private_moment_media_contexts": [
+        "moment_id"
+      ],
+      "activity_conversation_messages": [
+        "conversation_id"
+      ],
+      "community_conversation_members": [
+        "conversation_id"
+      ],
+      "human_write_control_operations": [
+        "target_id"
+      ],
+      "legacy_native_context_entities": [
+        "target_id"
+      ],
+      "personal_collection_operations": [
+        "target_id"
+      ],
+      "public_moment_media_operations": [
+        "moment_id"
+      ],
+      "public_moment_photo_operations": [
+        "moment_id"
+      ],
+      "community_conversation_messages": [
+        "conversation_id"
+      ],
+      "human_moment_control_operations": [
+        "moment_id"
+      ],
+      "personal_collection_copy_grants": [
+        "target_id"
+      ],
+      "public_moment_media_attachments": [
+        "moment_id"
+      ],
+      "legacy_reference_media_relations": [
+        "target_id"
+      ],
+      "moment_location_media_rebindings": [
+        "moment_id"
+      ],
+      "personal_collection_copy_origins": [
+        "destination_id"
+      ],
+      "agent_enrichment_purpose_previews": [
+        "moment_id"
+      ],
+      "legacy_native_adaptation_entities": [
+        "target_id"
+      ],
+      "legacy_private_media_import_items": [
+        "moment_id"
+      ],
+      "legacy_private_video_import_items": [
+        "moment_id"
+      ],
+      "connection_request_policy_bindings": [
+        "request_id"
+      ],
+      "legacy_native_adaptation_residuals": [
+        "target_id"
+      ],
+      "public_moment_media_video_payloads": [
+        "moment_id"
+      ],
+      "legacy_private_image_recovery_items": [
+        "moment_id"
+      ],
+      "personal_collection_copy_operations": [
+        "destination_id"
+      ],
+      "connection_request_decision_receipts": [
+        "request_id"
+      ],
+      "personal_collection_append_operations": [
+        "target_id"
+      ],
+      "moment_location_compatibility_backfill": [
+        "moment_id"
+      ],
+      "personal_collection_control_operations": [
+        "target_id"
+      ],
+      "native_notification_schedule_deliveries": [],
+      "personal_collection_copy_borrowed_places": [
+        "destination_id"
+      ],
+      "personal_collection_publication_operations": [
+        "target_id"
+      ]
+    },
+    "primaryKeys": {
+      "connection_request_decision_receipts": [
+        "owner_account_id",
+        "operation_id"
+      ],
+      "connection_requests": [
+        "id"
+      ],
+      "conversation_member_states": [
+        "conversation_id",
+        "member_account_id"
+      ],
+      "conversation_messages": [
+        "id"
+      ],
+      "conversations": [
+        "id"
+      ],
+      "human_entity_share_operations": [
+        "actor_account_id",
+        "operation_id"
+      ],
+      "human_moment_control_operations": [
+        "actor_account_id",
+        "operation_id"
+      ],
+      "inbox_items": [
+        "id"
+      ],
+      "moment_location_compatibility_backfill": [
+        "moment_id"
+      ],
+      "moment_location_epochs": [
+        "moment_id"
+      ],
+      "moment_location_links": [
+        "id"
+      ],
+      "moment_thread_members": [
+        "thread_id",
+        "position"
+      ],
+      "moment_thread_operations": [
+        "actor_account_id",
+        "operation_id"
+      ],
+      "moment_threads": [
+        "id"
+      ],
+      "moments": [
+        "id"
+      ],
+      "native_notification_decisions": [
+        "id"
+      ],
+      "person_close_connections": [
+        "owner_account_id",
+        "person_account_id"
+      ],
+      "person_ties": [
+        "id"
+      ],
+      "public_moment_media_attachments": [
+        "moment_id",
+        "set_version",
+        "position"
+      ],
+      "public_moment_media_operations": [
+        "actor_account_id",
+        "operation_id"
+      ],
+      "public_moment_media_sets": [
+        "moment_id"
+      ],
+      "public_moment_media_video_payloads": [
+        "moment_id",
+        "set_version",
+        "position"
+      ]
+    },
+    "foreignKeys": [
+      {
+        "table": "agent_enrichment_purpose_previews",
+        "target": "moments",
+        "columns": [
+          "moment_id"
+        ],
+        "references": [
+          "id"
+        ]
+      },
+      {
+        "table": "connection_request_decision_receipts",
+        "target": "connection_requests",
+        "columns": [
+          "request_id"
+        ],
+        "references": [
+          "id"
+        ]
+      },
+      {
+        "table": "connection_request_policy_bindings",
+        "target": "connection_requests",
+        "columns": [
+          "request_id"
+        ],
+        "references": [
+          "id"
+        ]
+      },
+      {
+        "table": "conversation_member_states",
+        "target": "conversation_messages",
+        "columns": [
+          "conversation_id",
+          "last_read_message_id"
+        ],
+        "references": [
+          "conversation_id",
+          "id"
+        ]
+      },
+      {
+        "table": "conversation_member_states",
+        "target": "conversations",
+        "columns": [
+          "conversation_id"
+        ],
+        "references": [
+          "id"
+        ]
+      },
+      {
+        "table": "conversation_messages",
+        "target": "conversations",
+        "columns": [
+          "conversation_id"
+        ],
+        "references": [
+          "id"
+        ]
+      },
+      {
+        "table": "conversations",
+        "target": "connection_requests",
+        "columns": [
+          "request_id"
+        ],
+        "references": [
+          "id"
+        ]
+      },
+      {
+        "table": "human_conversation_audio",
+        "target": "conversation_messages",
+        "columns": [
+          "message_id"
+        ],
+        "references": [
+          "id"
+        ]
+      },
+      {
+        "table": "human_conversation_audio",
+        "target": "conversations",
+        "columns": [
+          "conversation_id"
+        ],
+        "references": [
+          "id"
+        ]
+      },
+      {
+        "table": "human_conversation_images",
+        "target": "conversation_messages",
+        "columns": [
+          "message_id"
+        ],
+        "references": [
+          "id"
+        ]
+      },
+      {
+        "table": "human_conversation_images",
+        "target": "conversations",
+        "columns": [
+          "conversation_id"
+        ],
+        "references": [
+          "id"
+        ]
+      },
+      {
+        "table": "human_moment_control_operations",
+        "target": "moments",
+        "columns": [
+          "moment_id"
+        ],
+        "references": [
+          "id"
+        ]
+      },
+      {
+        "table": "inbox_items",
+        "target": "conversations",
+        "columns": [
+          "target_conversation_id"
+        ],
+        "references": [
+          "id"
+        ]
+      },
+      {
+        "table": "inbox_items",
+        "target": "native_notification_decisions",
+        "columns": [
+          "routing_decision_id"
+        ],
+        "references": [
+          "id"
+        ]
+      },
+      {
+        "table": "legacy_map_anchor_facts",
+        "target": "moments",
+        "columns": [
+          "moment_id"
+        ],
+        "references": [
+          "id"
+        ]
+      },
+      {
+        "table": "legacy_moment_author_facts",
+        "target": "moments",
+        "columns": [
+          "moment_id"
+        ],
+        "references": [
+          "id"
+        ]
+      },
+      {
+        "table": "legacy_private_image_recovery_items",
+        "target": "moments",
+        "columns": [
+          "moment_id"
+        ],
+        "references": [
+          "id"
+        ]
+      },
+      {
+        "table": "legacy_private_media_import_items",
+        "target": "moments",
+        "columns": [
+          "moment_id"
+        ],
+        "references": [
+          "id"
+        ]
+      },
+      {
+        "table": "legacy_private_video_import_items",
+        "target": "moments",
+        "columns": [
+          "moment_id"
+        ],
+        "references": [
+          "id"
+        ]
+      },
+      {
+        "table": "moment_activity_links",
+        "target": "moments",
+        "columns": [
+          "moment_id",
+          "city_id"
+        ],
+        "references": [
+          "id",
+          "city_id"
+        ]
+      },
+      {
+        "table": "moment_comments",
+        "target": "moments",
+        "columns": [
+          "moment_id"
+        ],
+        "references": [
+          "id"
+        ]
+      },
+      {
+        "table": "moment_community_links",
+        "target": "moments",
+        "columns": [
+          "moment_id"
+        ],
+        "references": [
+          "id"
+        ]
+      },
+      {
+        "table": "moment_interaction_operations",
+        "target": "moments",
+        "columns": [
+          "moment_id"
+        ],
+        "references": [
+          "id"
+        ]
+      },
+      {
+        "table": "moment_journey_links",
+        "target": "moments",
+        "columns": [
+          "moment_id",
+          "city_id"
+        ],
+        "references": [
+          "id",
+          "city_id"
+        ]
+      },
+      {
+        "table": "moment_likes",
+        "target": "moments",
+        "columns": [
+          "moment_id"
+        ],
+        "references": [
+          "id"
+        ]
+      },
+      {
+        "table": "moment_location_epochs",
+        "target": "moments",
+        "columns": [
+          "moment_id"
+        ],
+        "references": [
+          "id"
+        ]
+      },
+      {
+        "table": "moment_location_links",
+        "target": "moments",
+        "columns": [
+          "moment_id"
+        ],
+        "references": [
+          "id"
+        ]
+      },
+      {
+        "table": "moment_organization_links",
+        "target": "moments",
+        "columns": [
+          "moment_id"
+        ],
+        "references": [
+          "id"
+        ]
+      },
+      {
+        "table": "moment_thread_display_members",
+        "target": "moment_thread_members",
+        "columns": [
+          "moment_id"
+        ],
+        "references": [
+          "moment_id"
+        ]
+      },
+      {
+        "table": "moment_thread_edit_states",
+        "target": "moment_threads",
+        "columns": [
+          "thread_id"
+        ],
+        "references": [
+          "id"
+        ]
+      },
+      {
+        "table": "moment_thread_entry_contexts",
+        "target": "moment_threads",
+        "columns": [
+          "thread_id"
+        ],
+        "references": [
+          "id"
+        ]
+      },
+      {
+        "table": "moment_thread_entry_contexts",
+        "target": "moments",
+        "columns": [
+          "moment_id"
+        ],
+        "references": [
+          "id"
+        ]
+      },
+      {
+        "table": "moment_thread_members",
+        "target": "moment_threads",
+        "columns": [
+          "thread_id"
+        ],
+        "references": [
+          "id"
+        ]
+      },
+      {
+        "table": "moment_thread_members",
+        "target": "moments",
+        "columns": [
+          "moment_id"
+        ],
+        "references": [
+          "id"
+        ]
+      },
+      {
+        "table": "moment_thread_operations",
+        "target": "moment_threads",
+        "columns": [
+          "thread_id"
+        ],
+        "references": [
+          "id"
+        ]
+      },
+      {
+        "table": "moment_thread_route_legs",
+        "target": "moment_threads",
+        "columns": [
+          "thread_id"
+        ],
+        "references": [
+          "id"
+        ]
+      },
+      {
+        "table": "moment_thread_route_legs",
+        "target": "moments",
+        "columns": [
+          "from_moment_id"
+        ],
+        "references": [
+          "id"
+        ]
+      },
+      {
+        "table": "moment_thread_route_legs",
+        "target": "moments",
+        "columns": [
+          "to_moment_id"
+        ],
+        "references": [
+          "id"
+        ]
+      },
+      {
+        "table": "moment_threads",
+        "target": "moments",
+        "columns": [
+          "root_moment_id"
+        ],
+        "references": [
+          "id"
+        ]
+      },
+      {
+        "table": "native_notification_decisions",
+        "target": "connection_requests",
+        "columns": [
+          "connection_request_id"
+        ],
+        "references": [
+          "id"
+        ]
+      },
+      {
+        "table": "native_notification_decisions",
+        "target": "conversation_messages",
+        "columns": [
+          "message_id"
+        ],
+        "references": [
+          "id"
+        ]
+      },
+      {
+        "table": "native_notification_schedule_deliveries",
+        "target": "inbox_items",
+        "columns": [
+          "inbox_item_id"
+        ],
+        "references": [
+          "id"
+        ]
+      },
+      {
+        "table": "native_notification_schedule_deliveries",
+        "target": "native_notification_decisions",
+        "columns": [
+          "decision_id"
+        ],
+        "references": [
+          "id"
+        ]
+      },
+      {
+        "table": "person_close_connections",
+        "target": "connection_requests",
+        "columns": [
+          "request_id"
+        ],
+        "references": [
+          "id"
+        ]
+      },
+      {
+        "table": "person_close_connections",
+        "target": "person_ties",
+        "columns": [
+          "tie_id"
+        ],
+        "references": [
+          "id"
+        ]
+      },
+      {
+        "table": "person_ties",
+        "target": "connection_requests",
+        "columns": [
+          "request_id"
+        ],
+        "references": [
+          "id"
+        ]
+      },
+      {
+        "table": "private_moment_images",
+        "target": "moments",
+        "columns": [
+          "moment_id"
+        ],
+        "references": [
+          "id"
+        ]
+      },
+      {
+        "table": "private_moment_media_contexts",
+        "target": "moments",
+        "columns": [
+          "moment_id"
+        ],
+        "references": [
+          "id"
+        ]
+      },
+      {
+        "table": "private_moment_videos",
+        "target": "moments",
+        "columns": [
+          "moment_id"
+        ],
+        "references": [
+          "id"
+        ]
+      },
+      {
+        "table": "public_moment_media_attachments",
+        "target": "public_moment_media_sets",
+        "columns": [
+          "moment_id"
+        ],
+        "references": [
+          "moment_id"
+        ]
+      },
+      {
+        "table": "public_moment_media_operations",
+        "target": "moments",
+        "columns": [
+          "moment_id"
+        ],
+        "references": [
+          "id"
+        ]
+      },
+      {
+        "table": "public_moment_media_sets",
+        "target": "moments",
+        "columns": [
+          "moment_id"
+        ],
+        "references": [
+          "id"
+        ]
+      },
+      {
+        "table": "public_moment_media_video_payloads",
+        "target": "public_moment_media_attachments",
+        "columns": [
+          "moment_id",
+          "set_version",
+          "position"
+        ],
+        "references": [
+          "moment_id",
+          "set_version",
+          "position"
+        ]
+      },
+      {
+        "table": "public_moment_photos",
+        "target": "moments",
+        "columns": [
+          "moment_id"
+        ],
+        "references": [
+          "id"
+        ]
+      },
+      {
+        "table": "system_push_events",
+        "target": "inbox_items",
+        "columns": [
+          "inbox_id"
+        ],
+        "references": [
+          "id"
+        ]
+      }
+    ]
+  },
+  "deleteTriggers": [
+    {
+      "table": "connection_request_decision_receipts",
+      "sha256": "450721b39973502ffb34cc93b37831a6e3ba859f88033d7c93d120e9b5793d7b",
+      "enabled": "O",
+      "trigger": "connection_decision_receipt_guard"
+    },
+    {
+      "table": "human_entity_share_operations",
+      "sha256": "3325bdee0cdb586da3375f67a63b3fde52ac52568314a3611808539ad7e3b152",
+      "enabled": "O",
+      "trigger": "entity_share_operation_guard"
+    },
+    {
+      "table": "human_moment_control_operations",
+      "sha256": "2cbfedc9f53f5ac85e5831aa8984b29d00c9613311648b538f8feb14007ff548",
+      "enabled": "O",
+      "trigger": "human_moment_control_immutable"
+    },
+    {
+      "table": "moment_location_compatibility_backfill",
+      "sha256": "c81afd8c2831e80b0e0600d038dc291e302539fa969c6977081eaafeba550abc",
+      "enabled": "O",
+      "trigger": "moment_location_backfill_immutable"
+    },
+    {
+      "table": "moment_location_epochs",
+      "sha256": "9ad01e1f9a1374b7b8edd405571b5140305c4bf378f12f73838574cfc2ed4efc",
+      "enabled": "O",
+      "trigger": "moment_location_epoch_guard"
+    },
+    {
+      "table": "moment_location_links",
+      "sha256": "5beef4c9f13ba7706a6d1f5a95e6bb8db95f72f769090688c443fa0992bc65c5",
+      "enabled": "O",
+      "trigger": "moment_location_identity"
+    },
+    {
+      "table": "moment_thread_members",
+      "sha256": "74dd01c6003b61c9cb91648bd7a3e0c42c0f1f28ea76257b81c03a8c3a5d6d66",
+      "enabled": "O",
+      "trigger": "moment_thread_members_immutable"
+    },
+    {
+      "table": "moment_thread_operations",
+      "sha256": "983b8add2ee0aee512199a72b571f340dd5b8d67eaddaddfae1ef5837db2c039",
+      "enabled": "O",
+      "trigger": "moment_thread_operations_immutable"
+    },
+    {
+      "table": "moment_threads",
+      "sha256": "6b32a0b43def37e7a22173a75d12c092cb998f31d4326a032f08419afa26e85a",
+      "enabled": "O",
+      "trigger": "moment_threads_guard"
+    },
+    {
+      "table": "moments",
+      "sha256": "6a06c2bd103294c1a57c3678f3dc6b61f8162b326b46ea19a23ce0c9bb4ebaba",
+      "enabled": "O",
+      "trigger": "memory_moment_invalidated"
+    },
+    {
+      "table": "person_close_connections",
+      "sha256": "af8720b29bf6d98643fe014dfe548bee0549536a8db10b2f70a6066b7f9117cf",
+      "enabled": "O",
+      "trigger": "close_connection_guard"
+    },
+    {
+      "table": "public_moment_media_operations",
+      "sha256": "9ecffcff84e4252b489695be26099b9188923948ea7175d74b3e570b0b9f0b39",
+      "enabled": "O",
+      "trigger": "public_moment_media_receipts_immutable"
+    },
+    {
+      "table": "public_moment_media_video_payloads",
+      "sha256": "5b19b4a279aa72dce8853a1652773f6281856810b7535974ec50fc1f508d52e4",
+      "enabled": "O",
+      "trigger": "public_video_payload_guard"
+    }
+  ],
+  "protectedGlobal": {
+    "accounts": {
+      "primaryKey": [
+        "id"
+      ],
+      "rows": {
+        "count": 29,
+        "sha256": "5f3f3c58567262d201fa4e148fb4d0f9240f005f203f4985cc0f73fb04fe976a"
+      }
+    },
+    "user_profiles": {
+      "primaryKey": [
+        "account_id"
+      ],
+      "rows": {
+        "count": 29,
+        "sha256": "89934561a8cc652b7d7329870dfc58bc788a714f6d50aa00c26b84881c5046d0"
+      }
+    },
+    "media_assets": {
+      "primaryKey": [
+        "id"
+      ],
+      "rows": {
+        "count": 171,
+        "sha256": "1cc43ebe6700c40d3d6f51a3f3666775f5529f20823b9e5b5268e8bb5c1ee6dc"
+      }
+    },
+    "legacy_entity_mappings": {
+      "primaryKey": [
+        "source_system",
+        "entity_kind",
+        "source_id"
+      ],
+      "rows": {
+        "count": 123,
+        "sha256": "ddc367d0c174fb3b0d426ab0dd45c2958846edd55d8f4cde8ec2a87607ecc870"
+      }
+    },
+    "legacy_native_adaptation_entities": {
+      "primaryKey": [
+        "kind",
+        "source_key"
+      ],
+      "rows": {
+        "count": 6582,
+        "sha256": "a211280bf825b95b440e6bd7612b021c170e37377c36e71ba8891cfafd286b55"
+      }
+    },
+    "legacy_native_context_entities": {
+      "primaryKey": [
+        "kind",
+        "source_key"
+      ],
+      "rows": {
+        "count": 424,
+        "sha256": "c4dc1ef0899e91744abb6552f66aaf08890bea37d0d299a707a9cd1cd4db19bc"
+      }
+    },
+    "legacy_reference_media_relations": {
+      "primaryKey": [
+        "id"
+      ],
+      "rows": {
+        "count": 153,
+        "sha256": "748e7a3d8a569e63e7aba17474cefc434d5ff7cd89396e075aa5246ed48d9ebc"
+      }
+    },
+    "legacy_private_media_import_items": {
+      "primaryKey": [
+        "source_note_id",
+        "source_media_id"
+      ],
+      "rows": {
+        "count": 135,
+        "sha256": "23e6a2a7ddff7873c24f8ee5cffe82e30d929e2ccabeefbe4fd15a8815ac48c4"
+      }
+    },
+    "legacy_private_video_import_items": {
+      "primaryKey": [
+        "source_note_id",
+        "source_media_id"
+      ],
+      "rows": {
+        "count": 5,
+        "sha256": "b13fd4cc2fab0e99fba75d0c456f545dd17e81ee734785e39e756cd2b9e668a9"
+      }
+    },
+    "legacy_private_image_recovery_items": {
+      "primaryKey": [
+        "source_note_id",
+        "source_media_id"
+      ],
+      "rows": {
+        "count": 31,
+        "sha256": "f213130ea5f82eb66688eb153bd96846045c184c204b7d8803263f0ff8318ed4"
+      }
+    },
+    "legacy_social_import_entities": {
+      "primaryKey": [
+        "id"
+      ],
+      "rows": {
+        "count": 101,
+        "sha256": "751d7b15ed487a865c3fbc6c762b3733098b9f816655341a05b032d39bea6aff"
+      }
+    },
+    "legacy_social_history_facts": {
+      "primaryKey": [
+        "kind",
+        "source_key"
+      ],
+      "rows": {
+        "count": 161,
+        "sha256": "5829a3b86a54058f381621a45e972855a099f8b50d6153129cc3dd0bc16c6f4a"
+      }
+    },
+    "legacy_map_anchor_facts": {
+      "primaryKey": [
+        "id"
+      ],
+      "rows": {
+        "count": 16,
+        "sha256": "4f4350c9a70516840e3a4b258722dde1fcee9eda18008fad7e7b9f7cce165a6f"
+      }
+    },
+    "legacy_moment_author_facts": {
+      "primaryKey": [
+        "moment_id"
+      ],
+      "rows": {
+        "count": 83,
+        "sha256": "4598ff5a171844e3a5d7039877417f3367b0c6861288881dddb56c1b9dec5fa6"
+      }
+    }
+  },
+  "retainedUnknownMoments": 19,
+  "accountsDeleted": 0,
+  "apiLogins": 0,
+  "productionWrites": 0,
+  "mediaRule": "Only exact FK/semantic dependencies; any real/unknown actor or unreviewed table blocks apply; no filesystem or bucket deletion.",
+  "fullNativeBackup": "NOT_RUN",
+  "restoreVerification": "NOT_RUN",
+  "manifestSHA256": "22333e1ce5e441f90c7879e0db7fe66c866483111b599a2328f3ab1a56eba802"
+}

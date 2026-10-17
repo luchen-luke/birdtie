@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated": "2026-10-17T17:42:58.141187+00:00",
+  "updated": "2026-10-17T20:09:55.419506+00:00",
   "tasks": [
     {
       "id": "BT-AUD-001",
@@ -21263,6 +21263,22 @@
           "at": "2026-10-17T17:33:26.622278+00:00",
           "summary": "Continued unified gaps after user request 全部完成. Added selected native place Task context, reader-wide original-deadline cache/singleflight, chunk/SHA video sink, numeric diagnostics, and first-motion-only AMap rebuild. Direct checks and isolated actual178 thread/selector SQL pass. Installed normal47 preserving data; API35 binary deployed with178 ledger unchanged. Real two-place-moment collection, both map panel settled geometry0px, warm image~30ms and isolated native H264 texture/cleanup verified. Real multi-user device/production video/historical blank cause remain unaccepted. No production fixtures/Task test queries; parent stays IN_PROGRESS.",
           "evidence": "docs/testing/evidence/now-unified-20261017/feedback/completion47-receipt.json"
+        },
+        {
+          "at": "2026-10-17T18:17:18.110316+00:00",
+          "summary": "User requests all remaining current unified acceptance. Continue real day2 Journey domain save path, isolated native HTTP multi-account/thread/video device evidence, map surface diagnostic metrics and actual TalkBack/keyboard/error flows; preserve historical evidence and all gates."
+        },
+        {
+          "at": "2026-10-17T18:29:20.699061+00:00",
+          "summary": "Register narrow authoritative same-place owned-map alias retention and its direct regression in existing R04 worker test scope."
+        },
+        {
+          "at": "2026-10-17T18:57:57.570638+00:00",
+          "summary": "Actual local device video found place-page vs single snapshot grant mismatch before transfer. Register source-preserving place-page renewal + direct regression; keep byte/SHA/player verification intact."
+        },
+        {
+          "at": "2026-10-17T20:09:54.256290+00:00",
+          "summary": "APK52 installed exact digest with existing data preserved. Real isolated HTTP/PG178 physical acceptance covers selected Journey day2 explicit save/reopen, multi-account 3-member thread withdrawal/block/session retirement, SHA-verified native video playback; owned local stack/database/reverse/apps cleaned. Source archived79c97b5; API35/schema178 unchanged verified read-only. Gesture INJECT_EVENTS, TalkBack WRITE_SECURE_SETTINGS, missing historical clip/WAN benchmark and broader original gates remain; parent IN_PROGRESS/R01-R18 PARTIAL. Exact evidence completion52-receipt.json and final Git verification separate."
         }
       ],
       "social_core_execution_20261015": {
@@ -22156,6 +22172,135 @@
             "artifactsExcluded": true,
             "rawPackageExcluded": true
           }
+        },
+        "fullAcceptanceContinuation": {
+          "requested": "完成所有未验收的",
+          "atUTC": "2026-10-17T18:17:18.110316+00:00",
+          "status": "PARTIAL_DELIVERED_APK52",
+          "writers": {
+            "integration_audit": [
+              "apps/client/lib/src/workspace/map_workspace.dart",
+              "apps/client/lib/src/workspace/selected_place_followup.dart",
+              "apps/client/lib/src/content/selected_place_journey.dart",
+              "apps/client/lib/src/content/selected_place_journey_page.dart",
+              "apps/client/test/selected_place_journey_test.dart",
+              "apps/client/test/selected_place_journey_page_test.dart",
+              "apps/client/lib/src/workspace/agent_workspace_controller.dart"
+            ],
+            "artifact_build_audit": [
+              "apps/client/android/app/src/profile/AndroidManifest.xml",
+              "apps/client/android/app/src/profile/res/xml/isolated_local_network_security_config.xml",
+              "work/now-unified-20261017/local-device-acceptance.py",
+              "apps/client/lib/src/workspace/owned_map_controller.dart",
+              "apps/client/test/now_place_video_renewal_test.dart"
+            ],
+            "root": [
+              "apps/client/android/app/build.gradle.kts",
+              "apps/client/android/app/src/main/kotlin/app/civu/civu_mobile/MainActivity.kt",
+              "apps/client/android/app/src/main/kotlin/app/civu/civu_mobile/NativeMapSurfaceEvidence.kt",
+              "apps/client/tool/native_acceptance/AndroidManifest.xml",
+              "apps/client/tool/native_acceptance/src/app/birdtie/evidence/AccessibilityEvidence.java",
+              "apps/client/tool/native_acceptance/README.md"
+            ]
+          },
+          "scope": "Current R01-R18 acceptance gaps only; full product/Closed Pilot unrelated gates preserved",
+          "boundaries": [
+            "no production fixtures or test Tasks",
+            "new marked isolated local DB and real HTTP only",
+            "no video recording; numeric surface metrics and necessary still screenshots",
+            "normal font; mixed-language voice/web remain deferred",
+            "root alone mutates queue/reports"
+          ],
+          "completedUpdateUTC": "2026-10-17T20:09:54.256290+00:00",
+          "codeCommit": "79c97b56f82b6dffa80f252597110a516986028a",
+          "evidence": "docs/testing/evidence/now-unified-20261017/feedback/completion52-receipt.json",
+          "apk": {
+            "version": "0.1.2+52",
+            "sha256": "d016abf209ff1e009c5c5f9d625f580807b427d4fe3031addd230ae28f7b0426",
+            "bytes": 346959439,
+            "installedBaseAPKMatches": true,
+            "frozenInputs": 1921
+          },
+          "actualAcceptance": [
+            "R04 exact selected Place into own private same-city rich Journey day2, explicit save and reopen",
+            "R08 A/B three-member thread, entry anchor2, first member withdrawn placeholder; block retires reader; session revoke401 retires old body",
+            "R12 place-page context video grant renewal and actual native playback",
+            "Production-origin52 common destination images and original Shanghai/composer preservation"
+          ],
+          "remaining": [
+            {
+              "item": "R13 current-build six-second real drag/zoom and all intermediate presentation frames",
+              "status": "BLOCKED_INJECT_EVENTS",
+              "evidence": "acceptance-device/71-six-second-pan.semantics.txt",
+              "boundary": "47 static before/after geometry is retained historical evidence, not relabelled52 PASS"
+            },
+            {
+              "item": "Real TalkBack focus, spoken content and gestures",
+              "status": "BLOCKED_NOT_RUN",
+              "evidence": "acceptance-device/blocked-final52-audit.json"
+            },
+            {
+              "item": "Historical two blank-map causes and missing10967.mp4",
+              "status": "NOT_REPRODUCED_SOURCE_MISSING",
+              "boundary": "SDK source samples are not screen presentation or historical causal evidence"
+            },
+            {
+              "item": "Production WAN large-video first-frame benchmark",
+              "status": "NOT_RUN",
+              "boundary": "Local real HTTP2371106B playback is not a production network/first-frame benchmark"
+            },
+            {
+              "item": "New Journey UNKNOWN recovery after process death",
+              "status": "NOT_PROVEN",
+              "boundary": "same-runtime pending new container is retained and reconciled without blind replay; no claim of persistent process-death recovery"
+            },
+            {
+              "item": "Unrelated full product, Closed Pilot and original release gates",
+              "status": "UNCHANGED"
+            }
+          ],
+          "surface": {
+            "mapbox": {
+              "samples": 71,
+              "observed": 71,
+              "sourceInstances": [
+                "1"
+              ],
+              "durationMs": 8025,
+              "scope": "SOURCE_ONLY_STATIC_BASELINE_NOT_PRESENTATION_OR_DRAG_ACCEPTANCE",
+              "evidence": "acceptance-device/77-video-transfer50.diagnostics.json"
+            },
+            "amap": {
+              "samples": 68,
+              "observed": 68,
+              "sourceInstances": [
+                "1"
+              ],
+              "durationMs": 8021,
+              "scope": "SOURCE_ONLY_STATIC_BASELINE_NOT_PRESENTATION_OR_DRAG_ACCEPTANCE",
+              "evidence": "acceptance-device/131-amap52-surface.diagnostics.json"
+            }
+          },
+          "productionWritesThisContinuation": 0,
+          "api": {
+            "status": "PASS_READ_ONLY",
+            "release": "/opt/birdtie/releases/social178-20261018-build35",
+            "apiSHA256": "e23dcaea5d59c5ff006ade7ba0dd1160409e02da0daa21cf40d1ef9b92b74f96",
+            "pid": 900060,
+            "identityVerified": true,
+            "schema": 178,
+            "ledgerSHA256": "d54564006b976406d7402c70028a1b393f9df20ae67a1d6a086766267901635a",
+            "ready": true,
+            "databaseWrites": 0,
+            "deploymentsThisContinuation": 0
+          },
+          "ownedFixtureResourcesCleaned": true,
+          "temporaryAppsRemoved": {
+            "app.birdtie.evidence": true,
+            "app.civu.civu_mobile.birdtieacceptance": true
+          },
+          "githubReceipt": "docs/testing/evidence/now-unified-20261017/feedback/completion52-github.json",
+          "overallDoneClaimed": false
         }
       }
     },
@@ -23138,7 +23283,10 @@
           "apps/client/android/app/src/main/kotlin/app/civu/civu_mobile/destinationsearch.kt",
           "apps/client/android/app/src/main/kotlin/app/civu/civu_mobile/mainactivity.kt",
           "apps/client/android/app/src/main/kotlin/app/civu/civu_mobile/mapconfiguration.kt",
+          "apps/client/android/app/src/main/kotlin/app/civu/civu_mobile/nativemapsurfaceevidence.kt",
           "apps/client/android/app/src/main/kotlin/app/civu/civu_mobile/voiceinputrecognizer.kt",
+          "apps/client/android/app/src/profile/androidmanifest.xml",
+          "apps/client/android/app/src/profile/res/xml/isolated_local_network_security_config.xml",
           "apps/client/android/app/src/test/kotlin/app/civu/civu_mobile/destinationadministrativetypetest.kt",
           "apps/client/assets/destinations/aberdeen.png",
           "apps/client/assets/destinations/beijing.png",
@@ -23230,6 +23378,8 @@
           "apps/client/lib/src/content/private_reference_targets_page.dart",
           "apps/client/lib/src/content/public_intent_section.dart",
           "apps/client/lib/src/content/saved_collection_append.dart",
+          "apps/client/lib/src/content/selected_place_journey.dart",
+          "apps/client/lib/src/content/selected_place_journey_page.dart",
           "apps/client/lib/src/content/video_material_controller.dart",
           "apps/client/lib/src/content/video_material_page.dart",
           "apps/client/lib/src/content/video_material_pending_store.dart",
@@ -23654,6 +23804,7 @@
           "apps/client/test/now_place_preview_close_surface_test.dart",
           "apps/client/test/now_place_preview_host_test.dart",
           "apps/client/test/now_place_preview_test.dart",
+          "apps/client/test/now_place_video_renewal_test.dart",
           "apps/client/test/now_private_moment_image_entry_test.dart",
           "apps/client/test/now_public_author_panel_test.dart",
           "apps/client/test/now_public_photo_entry_test.dart",
@@ -23735,6 +23886,8 @@
           "apps/client/test/saved_page_test.dart",
           "apps/client/test/saved_search_test.dart",
           "apps/client/test/secondary_identity_retirement_test.dart",
+          "apps/client/test/selected_place_journey_page_test.dart",
+          "apps/client/test/selected_place_journey_test.dart",
           "apps/client/test/session_origin_namespace_test.dart",
           "apps/client/test/session_recovery_test.dart",
           "apps/client/test/settings_agent_profile_visibility_entry_test.dart",
@@ -23782,6 +23935,9 @@
           "apps/client/test/voice_input_consent_test.dart",
           "apps/client/test/voice_input_test.dart",
           "apps/client/test/web_mapbox_basemap_contract_test.dart",
+          "apps/client/tool/native_acceptance/androidmanifest.xml",
+          "apps/client/tool/native_acceptance/readme.md",
+          "apps/client/tool/native_acceptance/src/app/birdtie/evidence/accessibilityevidence.java",
           "apps/client/tool/probes/now_map_media_device_probe.dart",
           "apps/client/web/birdtie_amap.js",
           "apps/client/web/birdtie_mapbox.js",

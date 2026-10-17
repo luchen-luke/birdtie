@@ -1,6 +1,26 @@
 # Birdtie Now 整合接线与合批编译 — 2026-10-17
 
 
+## 当前交付：52号与剩余验收边界（2026-10-18）
+
+用户继续要求“完成所有未验收的”后，补上真实 Journey 第2天保存及地点视频续租缺陷，并用独立本地数据库、真实 HTTP 和手机完成下述验收。当前正常应用已覆盖安装 **0.1.2 / 52**，API35/schema178继续在线。**本清单仍为 PARTIAL，父任务保持 IN_PROGRESS**：手势/读屏受系统权限限制，历史空白根因与生产 WAN 大视频性能仍缺证据。下方47及更早章节是保留的历史快照，以本节为当前范围。
+
+- **R04 已接真实旅程保存。** 先前47只检查活动 Plans 而遗漏既有 JourneyDetails，故“当前无第几天接口”不再适用。现在复用 PersonalCollectionController、JourneyDetailEditor 和原 Journey API：明确选择本人同城私有旅程或新建草稿，把当前权威 Place 作为 ARRANGEMENT/dayIndex=2 带入；原编辑器提交后独立 GET 核对 entry/place/city/day/revision，才显示“已核实保存”。账号、城市、Task、选中代次、transport 和 permissionEpoch 变化均退休旧操作；公开地点重新校验不延长旧地图/回复读取许可。实际手机50在隔离真实 API 中完成选择、编辑、明确保存和重新打开第2天；等待超过70秒、跨旧读取租期仍正确。新建 UNKNOWN 仅证实同运行期保留原操作并核实，不宣称跨进程恢复通过。最后52只补页头/SafeArea外观，相关6个widget复核通过，未向生产发送新测试Task或旅程写入。
+- **R08 补齐真机多账号/多成员。** 隔离 A/B 通过真实认证、三段串文从中间进入并定位第2段；A撤回首段后，B仍见三位置及“第1段暂不可查看”。B屏蔽A后旧正文/视频退休；撤销B会话返回401，手机自动移除旧内容并显示登录失效。截图105/121/123/124及独立HTTP回执相互对应。早先401过期token、错误revision及UI节点过期失败保留，没有换成通过记录。
+- **R12 修复实际读不到视频的问题。** 地点分页快照与单条 GET 的 sourceVersion 不同，49号真实视频在下载前失败。现按原地点/游标续租并验证 source、成员顺序/版本及媒体身份；串文分支保持原权威上下文，变化/缺失/撤权仍退休，未放宽播放器许可。50号实际由本地 HTTP 传输 2,371,106B，完整摘要校验后交原生播放器；downloaded 328.821ms、verified 328.903ms、initialized 621.691ms、playRequested 623.112ms。截图76显示时间变化的真实视频帧；关闭后私有 video.mp4 清空。这些是本地样本，**不是精确首帧或生产WAN性能**；未录屏。
+- **目的地与正常应用52。** 真机130确认上海/阿伯丁/青岛/济南纪念品图卡、国内/境外分类和搜索入口；133/143恢复可见上海道路，原“巴塞罗那”输入草稿保留。全球联网能力沿原服务保留，实际Paris仍引用44号已有证据，52未重复付费provider矩阵。公网1059目录仍精确排除原8个误分类地址片段，原业务记录保留；本轮生产数据库写入0。
+- **R13 增加真实 SDK 源缓冲观察，尚不能全验。** profile/debuggable 且显式 QA intent 才启用8秒/至多80次数值诊断；只读自身 MapView 的 TextureView/SurfaceView，像素在内存计算后清零，不存图片或视频。Mapbox50为71个有效样本/8.025秒，高德52为68个有效样本/8.021秒，sourceSeq均1；都只代表 SOURCE_ONLY 静态基线。系统拒绝 shell 与 UiAutomation 的 INJECT_EVENTS，6秒拖动未发生，不能将47号0px静止前后证据改称52号全手势通过。高德源缓冲有内容也不等于整屏展示无空白；历史10967.mp4仍缺失，无法补写历史两类空白的准确原因。
+- **辅助技术仍受限。** TalkBack启用命令因 WRITE_SECURE_SETTINGS 被拒，未完成真实读屏验收；当前设置与原空服务/disabled基线一致。单独验收工具的语义点击、输入和焦点可工作，但不等于TalkBack朗读/手势通过。没有再次要求用户确认同一设置，没有更改正常字号。
+
+直接测试：R04 direct10共30项通过（21项新增、9项原用例），最终页头direct11为其中6项重跑；地点视频10项及原串文续租1项通过。准确命令、cwd、退出码和旧失败分别在 `feedback/acceptance-r04/direct{10,11}/receipt.json` 与 `feedback/media04/now-place-video-receipt.json`。只跑直接相关检查；正常字体，适用UX-CHECK-01/02/04/05/06/07/08/09/10/11/12/13/14/16。辅助技术、历史原因、全产品和原Closed Pilot门槛继续保留。
+
+**最终安装包：** `D:/Project/birdtie/work/now-unified-20261017/completion-delivery/Birdtie-Now-Fixes-20261018-52.apk`，346959439B，SHA256 `d016abf209ff1e009c5c5f9d625f580807b427d4fe3031addd230ae28f7b0426`。正常 profile preview，包名 `app.civu.civu_mobile.birdtiepreview`，生产 origin `https://47.110.154.133`。实际手机 base.apk 摘要一致，1921项冻结构建输入前后及交付时一致；构建时为196c368加冻结工作区差异，后续源码归档为 `79c97b56f82b6dffa80f252597110a516986028a`，不称干净提交构建。48–50为隔离验收版本，51先完成正常构建，最终52含页头修正；失败和中间版本保留。
+
+**服务与清理：** 只读核对线上仍为 `/opt/birdtie/releases/social178-20261018-build35`，API SHA256 `e23dcaea5d59c5ff006ade7ba0dd1160409e02da0daa21cf40d1ef9b92b74f96`，schema178及ledger摘要未变；本轮无服务端源码改动，无重复部署/DDL。HTTPS ready、1059目录及TLS校验通过。所有新合成事实、A/B账号、串文、视频和旅程仅在新标记PG178子库与本地API；所拥有的API进程、端口、adb reverse、精确数据库和临时验收App/工具均已清理，原正常应用数据保留。
+
+本节总证据为 `docs/testing/evidence/now-unified-20261017/feedback/completion52-receipt.json`；细项为 `build52/receipt.json`、`install52-receipt.json`、`api52-readonly/receipt.json`、`acceptance-local/run-20261018-022504/`、`acceptance-r04/fixture-facts01/`、`acceptance-device/blocked-final52-audit.json`。必要真机静态截图59/63/76/105/121/123/124/130/133/143与数字trace保存在忽略目录，仅本机可读。GitHub继续 `codex/birdtie-import`，只上传本批精确源码、直接测试和文档/队列；上传方式、最终提交和远端一致性以 `feedback/completion52-github.json` 为准。原整合包、私有材料、设备截图、APK/API、数据库和凭据均不入Git。
+
+
 ## 继续补齐：47号与API35（2026-10-18）
 
 用户要求“全部完成”后，继续实际实现并交付遗漏；没有把原R01–R18或父任务直接标DONE。当前安装的是 **0.1.2 / 47** 正常应用，API35/schema178在线；实现、直接检查及下述限定真机检查通过，**整体体验验收仍PARTIAL**。后文43/44/45号记录均为保留的历史快照。

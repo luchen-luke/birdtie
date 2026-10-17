@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated": "2026-10-17T20:09:55.419506+00:00",
+  "updated": "2026-10-17T22:35:49.015357+00:00",
   "tasks": [
     {
       "id": "BT-AUD-001",
@@ -21279,6 +21279,30 @@
         {
           "at": "2026-10-17T20:09:54.256290+00:00",
           "summary": "APK52 installed exact digest with existing data preserved. Real isolated HTTP/PG178 physical acceptance covers selected Journey day2 explicit save/reopen, multi-account 3-member thread withdrawal/block/session retirement, SHA-verified native video playback; owned local stack/database/reverse/apps cleaned. Source archived79c97b5; API35/schema178 unchanged verified read-only. Gesture INJECT_EVENTS, TalkBack WRITE_SECURE_SETTINGS, missing historical clip/WAN benchmark and broader original gates remain; parent IN_PROGRESS/R01-R18 PARTIAL. Exact evidence completion52-receipt.json and final Git verification separate."
+        },
+        {
+          "at": "2026-10-17T20:57:54.091556+00:00",
+          "summary": "User requests fixes for remaining gates and reports severe AMap keyboard/Now lag and inconsistent/incomplete destination categories. Existing task continuation: destination worker18 verified city artwork IDs + Chinese display, Journey worker durable create PREPARED/UNKNOWN readback; root keyboard/map work and opt-in own-window diagnostic. No duplicate task, no claim past gates passed."
+        },
+        {
+          "at": "2026-10-17T21:46:30.202934+00:00",
+          "summary": "57 actual WAN video exposed20s body ceiling (13773355B) before original grant expires. Preserve FAIL and continue exact-context renewed authorization fix in original task. No full acceptance claim."
+        },
+        {
+          "at": "2026-10-17T22:16:25.543618+00:00",
+          "summary": "WAN cancellation review found concurrent RAF write/close can prevent temp deletion. Extend exact worker scope only video_material_sink_io.dart; serialize pending IO and revoke late finish path. Preserve original failures; no production data writes."
+        },
+        {
+          "at": "2026-10-17T22:18:07.560396+00:00",
+          "summary": "Root investigates observed57 AMap cold start roads present but content appears only after pan: initial viewport callback can change reader scope and skip settled content query. Root owns exactAMap source/test, separate from WAN worker4 source files. Add direct regression before any fix; do not claim missing historical recording root cause."
+        },
+        {
+          "at": "2026-10-17T22:22:23.947465+00:00",
+          "summary": "Extend exact WAN worker scope to content_map_thread_test.dart fake override optional current/abort signature compatibility, preserving original thread renewal regression. Root initial-viewport regression reproduced contentQueries0 after scope-changing init and green after fresh-scope reproject; historical blank recording still missing."
+        },
+        {
+          "at": "2026-10-17T22:35:48.374660+00:00",
+          "summary": "Installed59:23 destination icons/Chinese regions, AMap IME work reduction,56 real UNKNOWN kill/restart one Journey no POST replay,57 sparse preview0px,59 same real WAN video after57 genuine20s failure. Exact cleanup complete. TalkBack off/OS hardware input/historical blank cause/full release gates not accepted; task remainsIN_PROGRESS."
         }
       ],
       "social_core_execution_20261015": {
@@ -22301,6 +22325,120 @@
           },
           "githubReceipt": "docs/testing/evidence/now-unified-20261017/feedback/completion52-github.json",
           "overallDoneClaimed": false
+        },
+        "performance53Continuation": {
+          "requested": "修复未验收项、高德键盘与Now卡顿、国内境外已有图标目的地和中文归属一致性",
+          "atUTC": "2026-10-17T20:57:54.091556+00:00",
+          "status": "PARTIAL_DELIVERED_APK59",
+          "writers": {
+            "destination_controller": [
+              "apps/client/lib/src/city/destination_shortlist.dart",
+              "apps/client/lib/src/city/destination_presentation.dart",
+              "apps/client/lib/src/city/destination_artwork.dart",
+              "apps/client/lib/src/city/destination_picker_grid.dart",
+              "apps/client/test/destination_shortlist_test.dart",
+              "apps/client/test/destination_presentation_test.dart",
+              "apps/client/test/destination_artwork_test.dart",
+              "apps/client/test/dgs_destination_picker_test.dart",
+              "apps/client/assets/destinations/chengdu.png",
+              "apps/client/assets/destinations/chongqing.png",
+              "apps/client/assets/destinations/guangzhou.png",
+              "apps/client/assets/destinations/hangzhou.png",
+              "apps/client/assets/destinations/sanya.png",
+              "apps/client/assets/destinations/xiamen.png",
+              "apps/client/assets/destinations/xian.png",
+              "apps/client/assets/destinations/glasgow.png",
+              "apps/client/assets/destinations/inverness.png",
+              "apps/client/assets/destinations/london.png",
+              "apps/client/assets/destinations/oban.png",
+              "apps/client/assets/destinations/york.png"
+            ],
+            "integration_audit": [
+              "apps/client/lib/src/content/collection_create_pending_store.dart",
+              "apps/client/lib/src/content/personal_collection_controller.dart",
+              "apps/client/lib/src/content/personal_collection_page.dart",
+              "apps/client/lib/src/content/selected_place_journey.dart",
+              "apps/client/test/collection_create_pending_store_test.dart",
+              "apps/client/test/personal_collection_controller_test.dart",
+              "apps/client/test/personal_collection_page_test.dart",
+              "apps/client/test/selected_place_journey_test.dart",
+              "work/now-unified-20261017/restart-device53.py",
+              "work/now-unified-20261017/restart53-api-windows-amd64.exe"
+            ],
+            "root": [
+              "apps/client/lib/src/workspace/map_workspace.dart",
+              "apps/client/lib/src/workspace/map_canvas.dart",
+              "apps/client/lib/src/workspace/now_map_inset_gate.dart",
+              "apps/client/lib/src/workspace/now_qa_bridge.dart",
+              "apps/client/test/map_canvas_test.dart",
+              "apps/client/android/app/src/main/kotlin/app/civu/civu_mobile/MainActivity.kt",
+              "apps/client/android/app/src/main/kotlin/app/civu/civu_mobile/NativeUiAcceptance.kt",
+              "apps/client/test/now_qa_bridge_test.dart",
+              "docs/architecture/CIVU-REUSE-MATRIX.md",
+              "docs/reports/BIRDTIE-NOW-UNIFIED-INTEGRATION-2026-10-17.md",
+              "automation/codex_task_queue.json",
+              "apps/client/lib/src/city/destination_search_shortcuts.dart",
+              "apps/client/test/destination_search_shortcuts_test.dart",
+              "apps/client/pubspec.yaml",
+              "apps/client/assets/destinations/dali.png",
+              "apps/client/assets/destinations/skye.png",
+              "apps/client/assets/destinations/islay.png",
+              "apps/client/assets/destinations/iceland.png",
+              "apps/client/assets/destinations/lisbon.png",
+              "apps/client/lib/src/workspace/sidebar.dart",
+              "apps/client/test/now_journey_navigation_test.dart",
+              "apps/client/lib/src/city/amap_city_map_io.dart",
+              "apps/client/test/now_map_ime_performance_test.dart"
+            ],
+            "artifact_build_audit": [
+              "apps/client/test/amap_city_map_motion_test.dart"
+            ],
+            "artifact_build_audit_wan57": [
+              "apps/client/lib/src/workspace/owned_map_api.dart",
+              "apps/client/lib/src/workspace/owned_map_controller.dart",
+              "apps/client/lib/src/workspace/now_map_content_panel.dart",
+              "apps/client/test/map_video_transfer_test.dart",
+              "apps/client/test/content_map_reader_test.dart",
+              "apps/client/test/content_map_controller_test.dart",
+              "apps/client/lib/src/content/video_material_sink_io.dart",
+              "apps/client/test/content_map_thread_test.dart"
+            ]
+          },
+          "readOnlyAudit": "artifact_build_audit now owns AMap render + ready harness finalization after root draft; destination frozen",
+          "boundaries": [
+            "root plus two implementation workers; existing task only",
+            "normal font; no video/audio recording",
+            "no production fixtures or test Tasks; real production media read only",
+            "existing Civu source read-only selected authorized asset copies only",
+            "new own-window QA dispatch must not claim OS/human gesture acceptance",
+            "root alone queue/report; preserve all historical failures and release gates"
+          ],
+          "destinationImplementation": "FROZEN21_DIRECT_PASS",
+          "artworkSearchShortcuts": "Root adds5 existing approved images as explicit global-search shortcuts, no invented City IDs or copied coordinates, same category filters",
+          "deviceFinding": "53/54 actual UI found PersonalCollectionPage had no direct ordinary route, only selectedPlace wrapper; root connects My Journeys to support restart recovery independently of old Task, then normal55+acceptance56 justified rebuild",
+          "wan57Continuation": {
+            "atUTC": "2026-10-17T21:46:30.202934+00:00",
+            "status": "FIXED_AND_SAMPLED_PASS_APP59_PRIOR_FAIL_PRESERVED",
+            "deviceEvidence": "feedback/acceptance-device/278-normal57-wan-failed.diagnostics.json",
+            "failure": "real existing104s production video:20.493s abort after13773355B; fixed20s body budget plus fixed30s grant prevents slow valid video transfer",
+            "scope": "Only bounded video transfer with exact-context fresh authorization; no extension of old grants, no Range or public URL; no production synthetic records"
+          },
+          "deliveredAtUTC": "2026-10-17T22:35:48.374660+00:00",
+          "sourceCommit": "6dfc5d70c1d15f686d73ffb24cb1e1b38f63e3ac",
+          "artifact": "D:\\Project\\birdtie\\work\\now-unified-20261017\\completion-delivery\\Birdtie-Now-Fixes-20261018-59.apk",
+          "artifactSHA256": "5efae4a0051433a18749a23aec21561a013fc9a4429d8805e42e909f774ade36",
+          "finalReceipt": "docs/testing/evidence/now-unified-20261017/feedback/completion59-receipt.json",
+          "unknownRestart": "PASS_REAL_LOCAL_APP56_NO_POST_REPLAY",
+          "wan": "PASS_ONE_EXISTING_PRODUCTION_VIDEO_SAMPLE_APP59",
+          "previewPan": "PASS_SPARSE_APP57_OWN_WINDOW_SYNTHETIC_ONLY",
+          "overallDoneClaimed": false,
+          "remaining": [
+            "TalkBack not enabled by user",
+            "OS/human hardware gestures",
+            "historical blank exact cause without missing original recording",
+            "exact native first-frame/absolute whole-product60or120fps",
+            "original release gates"
+          ]
         }
       }
     },
@@ -23284,16 +23422,34 @@
           "apps/client/android/app/src/main/kotlin/app/civu/civu_mobile/mainactivity.kt",
           "apps/client/android/app/src/main/kotlin/app/civu/civu_mobile/mapconfiguration.kt",
           "apps/client/android/app/src/main/kotlin/app/civu/civu_mobile/nativemapsurfaceevidence.kt",
+          "apps/client/android/app/src/main/kotlin/app/civu/civu_mobile/nativeuiacceptance.kt",
           "apps/client/android/app/src/main/kotlin/app/civu/civu_mobile/voiceinputrecognizer.kt",
           "apps/client/android/app/src/profile/androidmanifest.xml",
           "apps/client/android/app/src/profile/res/xml/isolated_local_network_security_config.xml",
           "apps/client/android/app/src/test/kotlin/app/civu/civu_mobile/destinationadministrativetypetest.kt",
           "apps/client/assets/destinations/aberdeen.png",
           "apps/client/assets/destinations/beijing.png",
+          "apps/client/assets/destinations/chengdu.png",
+          "apps/client/assets/destinations/chongqing.png",
+          "apps/client/assets/destinations/dali.png",
           "apps/client/assets/destinations/edinburgh.png",
+          "apps/client/assets/destinations/glasgow.png",
+          "apps/client/assets/destinations/guangzhou.png",
+          "apps/client/assets/destinations/hangzhou.png",
+          "apps/client/assets/destinations/iceland.png",
+          "apps/client/assets/destinations/inverness.png",
+          "apps/client/assets/destinations/islay.png",
           "apps/client/assets/destinations/jinan-69b9d3d6.png",
+          "apps/client/assets/destinations/lisbon.png",
+          "apps/client/assets/destinations/london.png",
+          "apps/client/assets/destinations/oban.png",
           "apps/client/assets/destinations/qingdao-d2988c88.png",
+          "apps/client/assets/destinations/sanya.png",
           "apps/client/assets/destinations/shanghai.png",
+          "apps/client/assets/destinations/skye.png",
+          "apps/client/assets/destinations/xiamen.png",
+          "apps/client/assets/destinations/xian.png",
+          "apps/client/assets/destinations/york.png",
           "apps/client/assets/map_styles/civu_android",
           "apps/client/ios/runner.xcodeproj/project.pbxproj",
           "apps/client/ios/runner/appdelegate.swift",
@@ -23320,8 +23476,10 @@
           "apps/client/lib/src/city/destination_artwork.dart",
           "apps/client/lib/src/city/destination_artwork_view.dart",
           "apps/client/lib/src/city/destination_picker_grid.dart",
+          "apps/client/lib/src/city/destination_presentation.dart",
           "apps/client/lib/src/city/destination_search_controller.dart",
           "apps/client/lib/src/city/destination_search_service.dart",
+          "apps/client/lib/src/city/destination_search_shortcuts.dart",
           "apps/client/lib/src/city/destination_shortlist.dart",
           "apps/client/lib/src/city/map_cluster_members_sheet.dart",
           "apps/client/lib/src/city/map_coordinate_boundary.dart",
@@ -23344,6 +23502,7 @@
           "apps/client/lib/src/content/collection_copy_controller.dart",
           "apps/client/lib/src/content/collection_copy_page.dart",
           "apps/client/lib/src/content/collection_copy_pending_store.dart",
+          "apps/client/lib/src/content/collection_create_pending_store.dart",
           "apps/client/lib/src/content/collection_publication_controller.dart",
           "apps/client/lib/src/content/collection_publication_page.dart",
           "apps/client/lib/src/content/collection_publication_pending_store.dart",
@@ -23496,12 +23655,14 @@
           "apps/client/lib/src/workspace/now_glass_surface.dart",
           "apps/client/lib/src/workspace/now_image_materials.dart",
           "apps/client/lib/src/workspace/now_map_content_panel.dart",
+          "apps/client/lib/src/workspace/now_map_inset_gate.dart",
           "apps/client/lib/src/workspace/now_moment_editor_host.dart",
           "apps/client/lib/src/workspace/now_moment_intent.dart",
           "apps/client/lib/src/workspace/now_perf_probe.dart",
           "apps/client/lib/src/workspace/now_place_preview.dart",
           "apps/client/lib/src/workspace/now_private_moment_image_page.dart",
           "apps/client/lib/src/workspace/now_public_place_panel.dart",
+          "apps/client/lib/src/workspace/now_qa_bridge.dart",
           "apps/client/lib/src/workspace/now_social_edge.dart",
           "apps/client/lib/src/workspace/now_social_edge_source.dart",
           "apps/client/lib/src/workspace/now_ui_tokens.dart",
@@ -23655,6 +23816,7 @@
           "apps/client/test/collection_copy_controller_test.dart",
           "apps/client/test/collection_copy_page_test.dart",
           "apps/client/test/collection_copy_pending_store_test.dart",
+          "apps/client/test/collection_create_pending_store_test.dart",
           "apps/client/test/collection_publication_controller_test.dart",
           "apps/client/test/collection_publication_page_test.dart",
           "apps/client/test/collection_publication_pending_store_test.dart",
@@ -23681,6 +23843,7 @@
           "apps/client/test/content_map_lazy_display_test.dart",
           "apps/client/test/content_map_now_default_test.dart",
           "apps/client/test/content_map_panel_test.dart",
+          "apps/client/test/content_map_reader_test.dart",
           "apps/client/test/content_map_renderer_test.dart",
           "apps/client/test/content_map_thread_test.dart",
           "apps/client/test/content_map_web_scroll_test.dart",
@@ -23688,6 +23851,8 @@
           "apps/client/test/cover_projection_retirement_test.dart",
           "apps/client/test/destination_artwork_test.dart",
           "apps/client/test/destination_map_target_test.dart",
+          "apps/client/test/destination_presentation_test.dart",
+          "apps/client/test/destination_search_shortcuts_test.dart",
           "apps/client/test/destination_search_test.dart",
           "apps/client/test/destination_shortlist_test.dart",
           "apps/client/test/dev_phone_auth_controller_test.dart",
@@ -23787,8 +23952,10 @@
           "apps/client/test/now_ime_composer_send_test.dart",
           "apps/client/test/now_individual_moment_navigation_test.dart",
           "apps/client/test/now_inline_creation_test.dart",
+          "apps/client/test/now_journey_navigation_test.dart",
           "apps/client/test/now_map_content_integration_test.dart",
           "apps/client/test/now_map_content_test.dart",
+          "apps/client/test/now_map_ime_performance_test.dart",
           "apps/client/test/now_map_lease_resume_host_test.dart",
           "apps/client/test/now_map_reader_handoff_test.dart",
           "apps/client/test/now_material_menu_live_entry_test.dart",
@@ -23809,6 +23976,7 @@
           "apps/client/test/now_public_author_panel_test.dart",
           "apps/client/test/now_public_photo_entry_test.dart",
           "apps/client/test/now_public_place_parent_restore_test.dart",
+          "apps/client/test/now_qa_bridge_test.dart",
           "apps/client/test/now_recording_content_hierarchy_test.dart",
           "apps/client/test/now_recording_materials_test.dart",
           "apps/client/test/now_selected_place_followup_test.dart",

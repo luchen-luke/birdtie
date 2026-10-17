@@ -1,5 +1,26 @@
 # Birdtie Now 整合接线与合批编译 — 2026-10-17
 
+## 当前交付：59号，性能、目的地与重启恢复（2026-10-18）
+
+正常应用已覆盖安装 **0.1.2 / 59**，保留原预览身份及应用数据。用户反馈的目的地缺项/中文归属、AMap键盘卡顿、跨进程UNKNOWN恢复已在本批继续修复；真实公网大视频又复现了57号的20秒中止，随后修复并以同一现有视频核实。**整体仍PARTIAL，BT-FIX-NOW-UI-001继续IN_PROGRESS**；TalkBack、系统级真人手势及历史空白的准确原因没有冒称全部验收。52及更早章节保留为历史快照，以本节为当前交付范围。
+
+- **全部已有图标目的地。** 现在共23张图卡，国内12、境外11：18个经sourceRef/国家/真实City ID核实的目录项，另5个未能精确绑定当前City的旧素材作为明确标注的联网搜索捷径，不伪造City/坐标、不自动切图。去掉8项上限；保留当前/真实近期及原全球联网防抖、同意、署名和显式消歧。上海显示“中国”，青岛/济南“中国 · 山东”，阿伯丁/爱丁堡“英国 · 苏格兰”，中英原名与别名仍可搜索。仅从只读Civu选择复制17份既有PNG，原始路径/目标/边界已记CIVU-REUSE-MATRIX，未迁入测试城市。53真实截图238–247已逐段看到国内和境外的全部已有图标及5个搜索项；59号295/296再次确认当前图卡与中文归属，最终APK逐字节核对全部23份素材。
+- **AMap键盘与地图工作量。** 键盘逐帧只更新输入界面，地图内容矩形在最后一帧后140ms合并；无native差异时不重复等待SDK投影与render barrier。身份/来源退休即使marker key相同仍必须走屏障，3秒超时保留遮罩并提供同实例重试，不把旧来源露回。另实测冷启动首次范围回调切换reader状态后跳过content查询，回归先复现0次查询，再修为在新状态下重新投影，避免必须先拖地图才显示内容；不是复用旧范围许可；59号真机288无需pan即已显示地点标记。真实同机单次Android GFX采样：52号80帧、jank33.75%、p95=250ms；53号202帧、jank9.90%、p95=36ms；最终59号206帧、jank16.02%、p95=46ms，未隐藏比53号较差的单次结果，仍存在卡顿帧。相机/标记布局非完全相同，RPC时长还含instrumentation启动，不称输入延迟或通用速度倍数。独立8秒Flutter键盘样本134帧，UI p95=6.625ms、raster p95=8.38ms、totalSpan p95=27.791ms；未计原生SDK呈现，不宣称60/120fps全面通过。53至57的性能实现逐字节一致，59另补冷启动范围回调切换状态时的查询重发及视频续授权，未切换地图HC/Texture宿主。
+- **真实地图响应与卡片稳定。** 明确QA intent、profile/debuggable及专用预览身份下，应用自己的窗口可以执行6秒合成拖动，未绕过系统INJECT_EVENTS。57号短预览基线及名义1/3/6秒原图中，卡片均为[52,1408,1168,2344)，边缘位移0px、卡片全部像素一致；三个独立底图地标对应移动67/229/375px。证明这些采样中的底图移动和同一地点/媒体页稳定，不能代替连续全部帧或真人手势验收。274误把完整reader当短预览，guard拒绝且旧事件混入的失败另有correction，不计PASS。历史10967.mp4缺失，当前道路可见与3秒超时负例通过不等于补证历史两类空白的准确根因。
+- **异常新建跨进程恢复。** POST前先安全持久化PREPARED元数据并独立精确读回；只保存origin/owner/kind/city/opID/输入指纹/阶段，不保存正文或凭据。UNKNOWN/崩溃后仅GET原操作，身份/城市/origin/迟到响应围栏不变，401/403/404/存储失败不重发创建。56号独立标记PG178+真实API先提交201再断开客户端，手机显示未知；强制停止原PID9163并确认无进程，再冷启动、从侧栏“我的内容→我的旅程”发现待核实记录并明确读取，恢复原标题。独立SQL为1条旅程/1条操作，创建POST共1次、其后重发0。54号真实发现普通入口缺失，55/56补入口后完成该链；57移除重复标题栏并真机复核，没有把87个组件/控制器测试冒称此前已有普通入口。
+- **公网现有大视频。** 57号同一1:44视频在20.493秒接收13,773,355B后实际失败，原证据保留。修复仅针对视频的有界传输预算，并在原thread或原place+cursor上下文取得新权威授权；相同revision/source/媒体身份才替换本次传输引用、同步可见详情，旧grant和缓存的截止时间不改。续读/撤权/身份城市transport变化、取消、后台帧ack挂起、空流、SHA/长度不符均中止流并清理私有临时文件；保留10秒idle/大小限制及完整SHA后才能交播放器，最终再权威复核，不加Range或公开永久URL。59号同一现有生产视频通过真实HTTPS读取 **49,250,278B**，downloaded=89526.311ms、verified=89526.668ms、initialized=90127.694ms、playRequested=90157.389ms；两张稀疏静态截图及35秒后仍“暂停”语义确认播放，退出后video.mp4为0。这是一次WAN样本，播放请求/截图不是精确原生首帧时间，也不是所有网络与视频的全面帧率基准。没有录音或录屏。
+
+直接相关检查：目的地21项；持久创建/恢复87项（正常字号，两个旧放大字号案例保留但明确排除）；root共9个唯一case覆盖IME gate、ready AMap屏障/超时、原motion、QA guard、5个搜索捷径及侧栏入口，新增冷启动范围重发1项（相关5项复核通过，旧失败保留）。WAN续授权相关32个唯一直接case通过；精确命令、cwd、退出码、数量与审查在`feedback/performance53/wan57/`，复跑不重复加总。未重跑全仓测试/分析或逐项重复Go/数据库整检；本批无服务端源码变更，无新DDL/重复部署。适用UX-CHECK-01/02/04/05/06/07/08/09/10/11/12/13/14/16，正常字号。
+
+最终APK：`D:/Project/birdtie/work/now-unified-20261017/completion-delivery/Birdtie-Now-Fixes-20261018-59.apk`，353518927B，SHA256 `5efae4a0051433a18749a23aec21561a013fc9a4429d8805e42e909f774ade36`，包名`app.civu.civu_mobile.birdtiepreview`，profile / development，origin`https://47.110.154.133`。手机实际base.apk摘要一致，1944项冻结输入前后及交付时一致；构建为已记录HEAD加冻结工作区差异，源码随后精确归档为`6dfc5d70c1d15f686d73ffb24cb1e1b38f63e3ac`，不称干净提交构建。53/54为性能及首次隔离包、55/56为新入口、57为标题栏修正及保留的真实WAN失败，59为本批最终修复包，中间版本和失败全部保留。
+
+公网TLS ready与1059目录只读复核通过，原8个误分类地址投影仍精确排除，原业务记录未删除。新合成账号/旅程仅在本次独立标记子库；API/代理、精确库/OID和本次adb reverse已独立核验清理，临时验收应用及工具已卸载，正常应用保留。生产测试Task/旅程/动态创建为0。API35/schema178沿现有服务继续，本批没有服务端修改。
+
+**仍未验收：** 用户明确表示TalkBack暂未启用，当前真实读屏为NOT_RUN；系统继续禁止INJECT_EVENTS，自窗口合成输入不冒称系统/真人手势。历史两类地图空白的原始录制缺失、精确原生首帧和完整产品/Closed Pilot门槛保留。没有用局部通过把原队列标DONE。
+
+总回执`feedback/completion59-receipt.json`；关键证据为`build59/receipt.json`、`install59-receipt.json`、`performance53/{dest,map,journey}/receipt.json`、`performance53/root/direct-summary.json`、`performance53/root/initial-viewport-receipt.json`、`performance53/journey/preview57-audit.json`、`performance53/restart-local/run-20261018-051233/{restart56-checkpoint,cleanup-verification}.json`、`performance53/wan57-real-failure.json`及`performance53/wan59-existing-video.json`。截图/数值trace只存忽略的本机证据目录。GitHub继续原`codex/birdtie-import`，源码/最终文档提交与远端一致性以`completion59-github.json`为准；原整合包、私有材料、截图、APK/API、数据库及凭据均不入Git。
+
+
 
 ## 当前交付：52号与剩余验收边界（2026-10-18）
 

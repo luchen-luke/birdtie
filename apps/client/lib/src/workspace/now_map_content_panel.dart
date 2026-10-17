@@ -16,6 +16,8 @@ import 'owned_map_controller.dart';
 /// access or changes the source of a legacy record.
 class NowMapReadingPosition {
   double offset = 0;
+  double collectionOffset = 0;
+  String? threadSeedMomentID;
   bool expanded = false;
   final mediaPages = <String, int>{};
 }
@@ -53,6 +55,9 @@ class _NowMapContentPanelState extends State<NowMapContentPanel>
   final _scroll = ScrollController();
   List<OwnedMapMomentDetail> _items = const [];
   OwnedMapThread? _thread;
+  List<OwnedMapMomentDetail>? _collectionItems;
+  String? _collectionCursor, _activeSeedID;
+  double _collectionOffset = 0;
   Listenable? _changes;
   Timer? _renew, _expiry;
   String? _nextCursor, _error;
@@ -87,6 +92,8 @@ class _NowMapContentPanelState extends State<NowMapContentPanel>
     _expanded =
         widget.initialExpanded || widget.readingPosition?.expanded == true;
     _restoreOffset = widget.readingPosition?.offset ?? 0;
+    _collectionOffset = widget.readingPosition?.collectionOffset ?? 0;
+    _activeSeedID = widget.readingPosition?.threadSeedMomentID;
     _mediaPages.addAll(widget.readingPosition?.mediaPages ?? const {});
     _scroll.addListener(_rememberPosition);
     _listen();
@@ -115,6 +122,9 @@ class _NowMapContentPanelState extends State<NowMapContentPanel>
       _restoreOffset = 0;
       _expanded = widget.initialExpanded;
       _viewerMoment = null;
+      _activeSeedID = null;
+      _collectionItems = null;
+      _collectionCursor = null;
       _mediaPages.clear();
       if (_scroll.hasClients) _scroll.jumpTo(0);
       unawaited(_read());
@@ -202,6 +212,7 @@ class _NowMapContentPanelState extends State<NowMapContentPanel>
     bool pending() => _current && request == _request;
     _loading = true;
     _error = null;
+    var enteringThread = false;
     if (mounted) setState(() {});
     try {
       // Renew the already loaded pages with fresh cursors. Keep list identity,
@@ -230,22 +241,43 @@ class _NowMapContentPanelState extends State<NowMapContentPanel>
         } while (cursor != null && collected.length < desired);
       if (!pending()) return;
       OwnedMapThread? thread;
-      if (_expanded &&
-          collected.isNotEmpty &&
-          (pin.isMomentAnchor || collected.length == 1 && cursor == null)) {
-        thread = await c.readThread(pin, collected.first);
+      final seedID =
+          _activeSeedID ??
+          (pin.isMomentAnchor
+              ? pin.entryID
+              : collected.length == 1 && cursor == null
+              ? collected.first.id
+              : null);
+      OwnedMapMomentDetail? seed;
+      if (_expanded && seedID != null) {
+        seed = collected.where((item) => item.id == seedID).firstOrNull;
+        if (seed == null) {
+          _thread = null;
+          _items = const [];
+          throw const FormatException('原动态已不可读取');
+        }
+        thread = await c.readThread(pin, seed);
         if (!pending()) return;
+        if (!pin.isMomentAnchor &&
+            (_collectionItems != null ||
+                collected.length > 1 ||
+                cursor != null)) {
+          _collectionItems = List.unmodifiable(collected);
+          _collectionCursor = cursor;
+        }
+        if (thread != null || _collectionItems != null) _activeSeedID = seed.id;
       }
+      enteringThread = _thread == null && thread != null;
       _thread = thread;
       _items = List.unmodifiable(
         thread == null
-            ? collected
+            ? (_collectionItems != null && seed != null ? [seed] : collected)
             : thread.entries
                   .map((entry) => entry.detail)
                   .whereType<OwnedMapMomentDetail>(),
       );
       _hasRead = true;
-      _nextCursor = cursor;
+      _nextCursor = _collectionItems != null ? null : cursor;
       _desiredCount = math.max(1, collected.length);
       _armLease();
     } catch (_) {
@@ -254,11 +286,14 @@ class _NowMapContentPanelState extends State<NowMapContentPanel>
       if (pending()) {
         _loading = false;
         setState(() {});
-        if (_restoreOffset > 0 && _items.isNotEmpty) {
+        if ((_restoreOffset != 0 || enteringThread) && _items.isNotEmpty) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (!pending() || !_scroll.hasClients) return;
             _scroll.jumpTo(
-              math.min(_restoreOffset, _scroll.position.maxScrollExtent),
+              _restoreOffset.clamp(
+                _scroll.position.minScrollExtent,
+                _scroll.position.maxScrollExtent,
+              ),
             );
             _restoreOffset = 0;
           });
@@ -315,6 +350,8 @@ class _NowMapContentPanelState extends State<NowMapContentPanel>
     if (position == null) return;
     if (_scroll.hasClients) position.offset = _scroll.offset;
     position.expanded = _expanded;
+    position.threadSeedMomentID = _activeSeedID;
+    position.collectionOffset = _collectionOffset;
     position.mediaPages.addAll(_mediaPages);
   }
 
@@ -326,31 +363,72 @@ class _NowMapContentPanelState extends State<NowMapContentPanel>
     unawaited(_readCurrentThread());
   }
 
-  Future<void> _readCurrentThread() async {
+  Future<void> _readCurrentThread({OwnedMapMomentDetail? selected}) async {
     if (!_current ||
         _loading ||
         _items.isEmpty ||
-        !(_livePin!.isMomentAnchor ||
-            _items.length == 1 && _nextCursor == null))
+        selected == null &&
+            !(_livePin!.isMomentAnchor ||
+                _items.length == 1 && _nextCursor == null))
       return;
     final request = ++_request, pin = _livePin!;
+    final seed = selected ?? _items.first;
+    final originItems = _items, originCursor = _nextCursor;
+    final originOffset = _scroll.hasClients ? _scroll.offset : 0.0;
     bool pending() => _current && request == _request;
-    setState(() => _loading = true);
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
     try {
-      final thread = await c.readThread(pin, _items.first);
-      if (!pending() || thread == null) return;
+      final thread = await c.readThread(pin, seed);
+      if (!pending() || !c.detailCurrent(seed)) return;
+      if (thread == null && selected == null) return;
+      if (selected != null && !pin.isMomentAnchor) {
+        _collectionItems = originItems;
+        _collectionCursor = originCursor;
+        _collectionOffset = originOffset;
+      }
+      _activeSeedID = seed.id;
       _thread = thread;
       _items = List.unmodifiable(
-        thread.entries
-            .map((entry) => entry.detail)
-            .whereType<OwnedMapMomentDetail>(),
+        thread == null
+            ? [seed]
+            : thread.entries
+                  .map((entry) => entry.detail)
+                  .whereType<OwnedMapMomentDetail>(),
       );
+      _nextCursor = null;
+      _restoreOffset = 0;
       _armLease();
+      _rememberPosition();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (pending() && _scroll.hasClients) _scroll.jumpTo(0);
+      });
     } catch (_) {
       if (pending()) _error = '串文暂时无法加载';
     } finally {
       if (pending()) setState(() => _loading = false);
     }
+  }
+
+  void _returnToCollection() {
+    if (!_current || _collectionItems == null) return;
+    ++_request;
+    setState(() {
+      _thread = null;
+      _activeSeedID = null;
+      _items = List.unmodifiable(_collectionItems!.where(c.detailCurrent));
+      _nextCursor = _collectionCursor;
+      _restoreOffset = _collectionOffset;
+      _collectionItems = null;
+      _collectionCursor = null;
+      _loading = false;
+      _error = null;
+    });
+    _rememberPosition();
+    _armLease();
+    unawaited(_read());
   }
 
   void _openMedia(OwnedMapMomentDetail item, int page) {
@@ -369,7 +447,10 @@ class _NowMapContentPanelState extends State<NowMapContentPanel>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted && _scroll.hasClients) {
         _scroll.jumpTo(
-          _restoreOffset.clamp(0, _scroll.position.maxScrollExtent),
+          _restoreOffset.clamp(
+            _scroll.position.minScrollExtent,
+            _scroll.position.maxScrollExtent,
+          ),
         );
       }
     });
@@ -388,7 +469,7 @@ class _NowMapContentPanelState extends State<NowMapContentPanel>
           : 560.0;
       final height = _expanded
           ? availableHeight
-          : math.min(440.0, availableHeight);
+          : math.min(288.0, availableHeight);
       final viewed = _items
           .where(
             (item) =>
@@ -451,20 +532,29 @@ class _NowMapContentPanelState extends State<NowMapContentPanel>
                   height: 52,
                   child: Row(
                     children: [
-                      Icon(
-                        pin?.isMomentAnchor == true
-                            ? Icons.photo_outlined
-                            : Icons.place_outlined,
-                        size: 20,
-                        semanticLabel: pin?.isMomentAnchor == true
-                            ? '动态'
-                            : '地点',
-                      ),
+                      if (_collectionItems != null)
+                        IconButton(
+                          tooltip: '返回地点动态',
+                          icon: const Icon(Icons.arrow_back),
+                          onPressed: _returnToCollection,
+                        )
+                      else
+                        Icon(
+                          pin?.isMomentAnchor == true
+                              ? Icons.photo_outlined
+                              : Icons.place_outlined,
+                          size: 20,
+                          semanticLabel: pin?.isMomentAnchor == true
+                              ? '动态'
+                              : '地点',
+                        ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           thread != null
                               ? '串文 · ${thread.entries.length}段'
+                              : _collectionItems != null
+                              ? '动态'
                               : pin == null
                               ? '动态'
                               : pin.isMomentAnchor
@@ -476,6 +566,7 @@ class _NowMapContentPanelState extends State<NowMapContentPanel>
                         ),
                       ),
                       if (thread == null &&
+                          _collectionItems == null &&
                           pin != null &&
                           !pin.isMomentAnchor &&
                           pin.momentCount > 0)
@@ -516,10 +607,12 @@ class _NowMapContentPanelState extends State<NowMapContentPanel>
                           ],
                         ),
                       )
-                    : ListView.builder(
+                    : _MapReadingList(
                         key: const PageStorageKey('now-map-content-scroll'),
                         controller: _scroll,
-                        padding: const EdgeInsets.only(bottom: 16),
+                        thread: thread,
+                        seedMomentID: _activeSeedID,
+                        padding: EdgeInsets.only(bottom: _expanded ? 16 : 0),
                         itemCount:
                             (_expanded
                                 ? entryCount
@@ -620,6 +713,14 @@ class _NowMapContentPanelState extends State<NowMapContentPanel>
                                     onOpenMedia: (page) =>
                                         _openMedia(item, page),
                                     onExpand: _expand,
+                                    onReadThread:
+                                        _expanded &&
+                                            thread == null &&
+                                            _collectionItems == null
+                                        ? () => unawaited(
+                                            _readCurrentThread(selected: item),
+                                          )
+                                        : null,
                                     onEdit: () => widget.onEdit(
                                       item.id,
                                       () =>
@@ -658,6 +759,80 @@ class _NowMapContentPanelState extends State<NowMapContentPanel>
   );
 }
 
+/// Two bounded slivers keep the selected authoritative position at zero.
+/// Earlier positions remain above it, without building every media tile just
+/// to discover an estimated scroll offset.
+class _MapReadingList extends StatelessWidget {
+  const _MapReadingList({
+    super.key,
+    required this.controller,
+    required this.thread,
+    required this.seedMomentID,
+    required this.padding,
+    required this.itemCount,
+    required this.itemBuilder,
+    required this.findChildIndexCallback,
+  });
+  final ScrollController controller;
+  final OwnedMapThread? thread;
+  final String? seedMomentID;
+  final EdgeInsets padding;
+  final int itemCount;
+  final IndexedWidgetBuilder itemBuilder;
+  final int? Function(Key) findChildIndexCallback;
+
+  @override
+  Widget build(BuildContext context) {
+    final value = thread;
+    if (value == null) {
+      return ListView.builder(
+        key: const PageStorageKey('now-map-place-entries'),
+        controller: controller,
+        padding: padding,
+        itemCount: itemCount,
+        itemBuilder: itemBuilder,
+        findChildIndexCallback: findChildIndexCallback,
+      );
+    }
+    final requested = value.entries.indexWhere(
+      (entry) => entry.detail?.id == seedMomentID,
+    );
+    final start = math.max(0, requested);
+    final center = ValueKey('thread-center:${value.threadID}:$seedMomentID');
+    return CustomScrollView(
+      key: PageStorageKey('thread-scroll:${value.threadID}:$seedMomentID'),
+      controller: controller,
+      center: center,
+      slivers: [
+        SliverList(
+          delegate: SliverChildBuilderDelegate(
+            (context, index) => itemBuilder(context, start - index - 1),
+            childCount: start,
+            findChildIndexCallback: (key) {
+              final index = findChildIndexCallback(key);
+              return index != null && index < start ? start - index - 1 : null;
+            },
+          ),
+        ),
+        SliverPadding(
+          key: center,
+          padding: padding,
+          sliver: SliverList(
+            delegate: SliverChildBuilderDelegate(
+              (context, index) => itemBuilder(context, start + index),
+              childCount: itemCount - start,
+              findChildIndexCallback: (key) {
+                final index = findChildIndexCallback(key);
+                return index != null && index >= start ? index - start : null;
+              },
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 String _momentTime(OwnedMapMomentDetail item) {
   final time = item.displayPublishedAt?.toLocal();
   if (time == null) return '时间未提供';
@@ -678,6 +853,7 @@ class _MapMomentTile extends StatelessWidget {
     required this.onPageChanged,
     required this.onOpenMedia,
     required this.onExpand,
+    this.onReadThread,
   });
   final OwnedMapController controller;
   final OwnedMapMomentDetail detail;
@@ -685,6 +861,7 @@ class _MapMomentTile extends StatelessWidget {
   final bool Function() current;
   final bool compact;
   final VoidCallback onEdit, onExpand;
+  final VoidCallback? onReadThread;
   final int page;
   final ValueChanged<int> onPageChanged, onOpenMedia;
 
@@ -695,6 +872,58 @@ class _MapMomentTile extends StatelessWidget {
     final title = detail.title.trim(), body = detail.body.trim();
     final author = detail.author, avatar = author?.avatar;
     final name = author?.displayName.trim();
+    if (compact) {
+      // Header and primary action use 100dp of the 288dp preview. The media
+      // stays first; a single representative line never pushes it off screen.
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (detail.media.isNotEmpty)
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: _MapMediaPager(
+                  controller: controller,
+                  detail: detail,
+                  onFreshDetail: onFreshDetail,
+                  current: current,
+                  compact: true,
+                  initialPage: page,
+                  onPageChanged: onPageChanged,
+                  onOpen: onOpenMedia,
+                ),
+              ),
+            const SizedBox(height: 4),
+            Text(
+              '${name == null || name.isEmpty ? '作者未提供' : name} · ${_momentTime(detail)}',
+              key: ValueKey('moment-author:${detail.id}'),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 12,
+                height: 1.2,
+                color: colors.onSurfaceVariant,
+              ),
+            ),
+            if (body.isNotEmpty || title.isNotEmpty) ...[
+              const SizedBox(height: 4),
+              Text(
+                body.isEmpty ? title : body,
+                key: ValueKey('moment-preview-body:${detail.id}'),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 13,
+                  height: 1.35,
+                  color: colors.onSurface,
+                ),
+              ),
+            ],
+          ],
+        ),
+      );
+    }
     return Padding(
       padding: EdgeInsets.only(bottom: compact ? 0 : 28),
       child: Column(
@@ -876,6 +1105,18 @@ class _MapMomentTile extends StatelessWidget {
                     ),
                   ),
                 ],
+              ),
+            ),
+          if (onReadThread != null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+              child: TextButton.icon(
+                key: ValueKey('read-thread:${detail.id}'),
+                onPressed: () {
+                  if (current()) onReadThread!();
+                },
+                icon: const Icon(Icons.view_stream_outlined, size: 18),
+                label: const Text('连续阅读'),
               ),
             ),
         ],

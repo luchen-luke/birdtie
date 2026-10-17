@@ -331,3 +331,12 @@ Android原包含3dmap-location-search 11.2.100/search9.8.1，此次新增窄Meth
 初次合批编译阶段仅准备迁移177。用户随后要求安装、部署与上传GitHub；已核对真实live两城同run映射和系统原图，新增受限备份、保留原176条迁移摘要，事务执行177并启用API33。两城公网324px派生摘要与APK一致；原系统档案与Civu均无写入。完整三城原版本、源ID、目标ID、派生SHA和证据见 `docs/reports/BIRDTIE-NOW-UNIFIED-INTEGRATION-2026-10-17.md` 与 `docs/testing/evidence/now-unified-20261017/artwork-r15/`。代码、编译、装机和真实验收分别记账，不能由旧APK40/42推定本轮通过。
 
 原字节完整本机来源目录：C:/Users/chens/Documents/Codex/2026-10-14/birdtie-hangzhou/civu-private-reference-images-20261015-02/。选定源文件分别为 d2988c88b86453e1ead0c637ffeb85abdcfd89c9ce3894d12351a609b4429988.blob 与 69b9d3d653f3b7f64fd1423c54e18d73cb90f1186a824bb1cfe1319a835a4218.blob；对应去向为上表两份324px PNG，非复制整个受限导出。
+
+
+## 2026-10-17 用户反馈：常用目的地与错误城市投影
+
+只读复核Civu-client/lib/src/widgets/civu_destination_picker.dart:357–398、featured_destinations.dart和destination_souvenirs.dart后，沿用“上海/阿伯丁＋真实访问/近期、少量有图目的地”的入口形式，移除空查询对全1067项的网格枚举；全球联网搜索不受精选或分类限制。不迁旧provider快照、坐标或demo fallback。
+
+明确选定原图来源 `D:/Program/Civu/Civu-client/assets/destinations/{shanghai,aberdeen,beijing}.png` → `apps/client/assets/destinations/`同名文件，逐字节一致；真实ID与country/source reference经当前公共catalog核实，详见artwork-r15/feedback-receipt.json。原图和Civu仓均只读，remote新版优先规则保留。
+
+8项IS数字标签经受限原source SHA与10个公开OSM地点city/address字段核实为地址片段误分类，非本轮合成fixture。178仅新增精确审查排除，ListCities过滤当前仍匹配的审查事实，GetCity/ListPlaces与业务实体不变；保护10个Place和1条Moment，不能按数字名清空真实数据。API34已启用该投影隔离；最终45号尚待ADB重连装机，44号不能代表最终pan修正验收。

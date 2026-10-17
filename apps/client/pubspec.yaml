@@ -41,6 +41,9 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
+    - assets/destinations/shanghai.png
+    - assets/destinations/aberdeen.png
+    - assets/destinations/beijing.png
     - assets/destinations/edinburgh.png
     - assets/destinations/qingdao-d2988c88.png
     - assets/destinations/jinan-69b9d3d6.png

@@ -145,15 +145,29 @@ class OwnedMapController extends ChangeNotifier with WidgetsBindingObserver {
       current ? List.unmodifiable(items.map(_media.decorate)) : const [];
   OwnedMapView? get view => current ? _view : null;
   OwnedMapPin? find(String mapID) {
-    if (!current) return null;
+    if (!_allowed) return null;
     final direct = items.where((p) => p.mapID == mapID).firstOrNull;
-    if (direct != null) return direct;
+    if (direct != null && sourceCurrent(direct)) return direct;
     final extra = _extraPins[mapID];
-    return extra != null && sourceCurrent(extra.$1) ? extra.$1 : null;
+    if (extra != null && sourceCurrent(extra.$1)) return extra.$1;
+    // A camera change is not a withdrawal of the selected reader's lease.
+    // Only the explicit selection can be recovered outside the current page.
+    if (mapID != 'owned-map:${_query?.$4}') return null;
+    final candidates =
+        _coverageViews
+            .expand((v) => v.items)
+            .where((p) => p.mapID == mapID && sourceCurrent(p))
+            .toList()
+          ..sort(
+            (a, b) => (a.observedAt ?? DateTime(0)).compareTo(
+              b.observedAt ?? DateTime(0),
+            ),
+          );
+    return candidates.lastOrNull;
   }
 
   bool sourceCurrent(OwnedMapPin pin) {
-    if (!current || _pinEpoch[pin] != _epoch || _invalidPins[pin] == true)
+    if (!_allowed || _pinEpoch[pin] != _epoch || _invalidPins[pin] == true)
       return false;
     if (_coverageViews.any(
       (v) =>
@@ -558,6 +572,31 @@ class OwnedMapController extends ChangeNotifier with WidgetsBindingObserver {
     if (_activeUncached != null) _activeUncached!,
   ].where((v) => v.cityID == _query?.$1 && v.validUntil.isAfter(_now()));
 
+  // One latest selected source may survive LRU pressure. It remains inside
+  // the same byte/pin/view budgets and keeps its original server deadline.
+  OwnedMapView? get _selectedCoverage {
+    final selected = _query?.$4;
+    if (selected == null) return null;
+    final extra = _extraPins['owned-map:$selected'];
+    final parentID = extra?.$2.canonicalMarkerID;
+    OwnedMapView? latest;
+    for (final value in _coverageViews) {
+      if (value.items.any(
+            (p) =>
+                _invalidPins[p] != true &&
+                (p.canonicalMarkerID == selected ||
+                    p.canonicalMarkerID == parentID &&
+                        p.sourceVersion == extra?.$2.sourceVersion),
+          ) &&
+          (latest == null || !value.observedAt.isBefore(latest.observedAt))) {
+        latest = value;
+      }
+    }
+    return latest;
+  }
+
+  bool _selectedFrom(OwnedMapView value) => identical(value, _selectedCoverage);
+
   List<OwnedMapPin> _visibleCachedPins() {
     final query = _query;
     if (query == null) return [];
@@ -566,8 +605,9 @@ class OwnedMapController extends ChangeNotifier with WidgetsBindingObserver {
       ..sort((a, b) => a.observedAt.compareTo(b.observedAt));
     for (final v in views) {
       for (final p in v.items) {
-        if (query.$2.contains(p.latitude, p.longitude) ||
-            p.canonicalMarkerID == query.$4)
+        if (_invalidPins[p] != true &&
+            (query.$2.contains(p.latitude, p.longitude) ||
+                p.canonicalMarkerID == query.$4))
           pins[p.mapID] = p;
       }
     }
@@ -591,7 +631,7 @@ class OwnedMapController extends ChangeNotifier with WidgetsBindingObserver {
         .where(
           (v) =>
               MapContentCoverage.intersects(v.bounds, query.$2) ||
-              v.items.any((p) => p.canonicalMarkerID == query.$4),
+              _selectedFrom(v),
         )
         .toList();
     if (views.isEmpty) {
@@ -691,11 +731,15 @@ class OwnedMapController extends ChangeNotifier with WidgetsBindingObserver {
 
   void _pruneCache() {
     _cache.removeWhere((_, v) => !v.validUntil.isAfter(_now()));
+    final selected = _selectedCoverage;
     while (_cache.isNotEmpty &&
         (cachedViews > maxCachedViews ||
             cachedPins > maxCachedPins ||
             cachedBytes > maxCachedBytes)) {
-      _cache.remove(_cache.keys.first);
+      final victim = _cache.keys
+          .where((key) => !identical(_cache[key], selected))
+          .firstOrNull;
+      _cache.remove(victim ?? _cache.keys.first);
     }
   }
 
@@ -863,9 +907,15 @@ class OwnedMapController extends ChangeNotifier with WidgetsBindingObserver {
       _query!.$2,
       _coverageViews.map((v) => v.bounds),
     );
-    if (missing.isNotEmpty) return _loadRegions(missing, pad: true);
+    if (missing.isNotEmpty)
+      return _loadRegions(missing, pad: true, renewSelected: true);
+    final selected = _selectedCoverage;
     final renewals = _coverageViews
-        .where((v) => MapContentCoverage.intersects(v.bounds, _query!.$2))
+        .where(
+          (v) =>
+              identical(v, selected) ||
+              MapContentCoverage.intersects(v.bounds, _query!.$2),
+        )
         .toList();
     return _loadRegions(
       renewals.map((v) => v.bounds).toList(),
@@ -876,6 +926,7 @@ class OwnedMapController extends ChangeNotifier with WidgetsBindingObserver {
   Future<void> _loadRegions(
     List<MapBounds> regions, {
     bool pad = false,
+    bool renewSelected = false,
     OwnedMapView? continuation,
     List<OwnedMapView>? renewals,
   }) {
@@ -901,16 +952,25 @@ class OwnedMapController extends ChangeNotifier with WidgetsBindingObserver {
       try {
         // Padding is itself subtracted from valid coverage: a pan fetches new
         // strips, never the already authorized centre of the previous view.
-        final targets = pad
+        final selectedRenewal = renewSelected ? _selectedCoverage : null;
+        final uncovered = pad
             ? MapContentCoverage.missing(
                 MapContentCoverage.padded(query.$2),
                 _coverageViews.map((v) => v.bounds),
               )
             : regions;
+        final targets = [
+          if (selectedRenewal != null) selectedRenewal.bounds,
+          ...uncovered,
+        ];
         final changedSources = <String>{};
         for (var targetIndex = 0; targetIndex < targets.length; targetIndex++) {
           final bounds = targets[targetIndex];
-          final renewing = renewals?[targetIndex];
+          final renewing = selectedRenewal != null
+              ? targetIndex == 0
+                    ? selectedRenewal
+                    : null
+              : renewals?[targetIndex];
           if (renewing != null &&
               changedSources.contains(renewing.sourceVersion))
             continue;
@@ -939,6 +999,23 @@ class OwnedMapController extends ChangeNotifier with WidgetsBindingObserver {
           if (!pending() || !value.validUntil.isAfter(_now())) return;
           _transientRetries = 0;
           responseBytes += value.byteCount;
+          // A newer authority response retires known changed/withdrawn pins
+          // even if another still-leased rectangle also contains the old pin.
+          final incoming = {for (final pin in value.items) pin.mapID: pin};
+          for (final old in _coverageViews.expand((v) => v.items)) {
+            final fresh = incoming[old.mapID];
+            if (fresh != null && fresh.sourceVersion != old.sourceVersion ||
+                continuation == null &&
+                    value.nextCursor == null &&
+                    value.bounds.contains(old.latitude, old.longitude) &&
+                    fresh == null) {
+              _invalidPins[old] = true;
+            }
+          }
+          final selectedCoverage = _selectedCoverage;
+          final selectedPin = selectedCoverage?.items
+              .where((p) => p.canonicalMarkerID == query.$4)
+              .firstOrNull;
           if (renewing != null &&
               value.sourceVersion == renewing.sourceVersion) {
             _cache.removeWhere((_, old) => identical(old, renewing));
@@ -954,7 +1031,13 @@ class OwnedMapController extends ChangeNotifier with WidgetsBindingObserver {
             _cache.removeWhere(
               (_, old) =>
                   old.cityID == value.cityID &&
-                  _positiveOverlap(old.bounds, value.bounds),
+                  _positiveOverlap(old.bounds, value.bounds) &&
+                  !(identical(old, selectedCoverage) &&
+                      selectedPin != null &&
+                      !value.bounds.contains(
+                        selectedPin.latitude,
+                        selectedPin.longitude,
+                      )),
             );
           } else {
             _usedPageCursors.add(continuation.nextCursor!);

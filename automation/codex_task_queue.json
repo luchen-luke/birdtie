@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated": "2026-10-17T09:25:24.811128+00:00",
+  "updated": "2026-10-17T10:50:13.397344+00:00",
   "tasks": [
     {
       "id": "BT-AUD-001",
@@ -21239,6 +21239,16 @@
           "at": "2026-10-17T09:25:24.108772+00:00",
           "summary": "User explicitly requested installation, deployment and GitHub upload. Exact profile preview APK installed preserving data and launched. API33/schema177 live after fresh native backup and exact 176-ledger checks; two public artwork bodies match APK, wrong-version404 and unauthenticated-thread401. Parent remains IN_PROGRESS; full UI/native thread/performance/release gaps preserved. Git source push tracked by separate receipt.",
           "evidence": "docs/testing/evidence/now-unified-20261017/delivery-receipt.json"
+        },
+        {
+          "at": "2026-10-17T09:55:52.583981+00:00",
+          "summary": "User feedback invalidates complete-experience claim for previous unified delivery. Reopened actual map/reader/destination gaps within original IN_PROGRESS task, narrow writers coordinated by root; no new live backlog.",
+          "evidence": "user screenshots and same-package SHA verification"
+        },
+        {
+          "at": "2026-10-17T10:50:12.786568+00:00",
+          "summary": "User feedback corrected false complete-experience implication. Common destination shortlist and real Paris search seen on44; real48dp pan layout failure reproduced then fixed with red/green regression and final45 APK built. API34/schema178 live,8 exact erroneous city projections isolated preserving10Places/1Moment. Final45 installation blocked by ADB disconnect; no full-checklist completion claim.",
+          "evidence": "docs/testing/evidence/now-unified-20261017/feedback/receipt.json"
         }
       ],
       "social_core_execution_20261015": {
@@ -22016,6 +22026,66 @@
           "branch": "codex/birdtie-import",
           "receipt": "docs/testing/evidence/now-unified-20261017/github/receipt.json"
         }
+      },
+      "now_unified_feedback_20261017": {
+        "status": "PARTIAL_DELIVERY_DEVICE45_DISCONNECTED",
+        "reason": "User sees all reported issues; map pan still jumps/reloads reader; wants Civu-style small frequent shortlist and global search, remove proven test pollution",
+        "priorDeliveredCodeCommit": "535078f965db1327ba94bb1227bd1a97b78e71dd",
+        "priorFullAcceptance": "NOT_PASSED",
+        "implementationWriters": {
+          "root": [
+            "map_workspace.dart",
+            "map_canvas.dart",
+            "owned_map_controller.dart",
+            "controller/integration/picker tests",
+            "queue/reports/data operations"
+          ],
+          "artifact_build_audit": [
+            "now_map_content_panel.dart",
+            "content_map_thread_test.dart",
+            "owned_map_controller.dart",
+            "map_canvas.dart",
+            "content_map_controller_test.dart"
+          ],
+          "integration_audit": [
+            "destination_shortlist.dart",
+            "destination_shortlist_test.dart",
+            "destination_artwork.dart",
+            "pubspec.yaml",
+            "selected Shanghai/Aberdeen/Beijing PNG assets"
+          ],
+          "destination_controller": [
+            "catalog.go ListCities exclusion only",
+            "178_destination_catalog_review.sql and down",
+            "read-only sanitized city source review"
+          ]
+        },
+        "databaseCleanup": "trace exact provenance and dependencies before deleting verified synthetic records; retain uncertain legacy source archives and real personal records",
+        "overallAcceptance": "PARTIAL",
+        "allR01R18Accepted": false,
+        "latestAPK": {
+          "path": "D:\\Project\\birdtie\\work\\now-unified-20261017\\feedback-delivery\\Birdtie-Now-Fixes-20261017-r3.apk",
+          "mode": "profile preview",
+          "kind": "apk",
+          "sha256": "b8fa7c2fe7bb5a89323ab9f88f2a89e223e91c4cda2ad09122fbe173bb0e7e83",
+          "buildOutput": "D:\\Project\\birdtie\\apps\\client\\build\\app\\outputs\\flutter-apk\\app-profile.apk",
+          "bytes": 345369623
+        },
+        "latestVersion": "0.1.1+45",
+        "latestAPKInstalled": false,
+        "actualInstalled": "0.1.1+44; destination/search verified,48dp pan issue failed",
+        "apiRelease": "/opt/birdtie/releases/social178-20261017-build34",
+        "schema": 178,
+        "catalogExclusions": 8,
+        "deletedBusinessRows": 0,
+        "deviceBlock": "ADB device c641566b disconnected at final45 install",
+        "receipt": "docs/testing/evidence/now-unified-20261017/feedback/receipt.json",
+        "notRun": [
+          "version45 device installation and moving/settled screenshot confirmation",
+          "real multi-account thread/withdrawal verification",
+          "full video first-frame/performance and both historical native-map blank causes",
+          "full product/release acceptance"
+        ]
       }
     },
     {
@@ -22973,6 +23043,8 @@
           "apps/api/migrations/176_persistent_device_sessions.sql",
           "apps/api/migrations/177_city_artwork_projection.down.sql",
           "apps/api/migrations/177_city_artwork_projection.sql",
+          "apps/api/migrations/178_destination_catalog_review.down.sql",
+          "apps/api/migrations/178_destination_catalog_review.sql",
           "apps/api/native_database_startup.go",
           "apps/api/native_database_startup_test.go",
           "apps/api/system_push_startup.go",
@@ -22988,9 +23060,12 @@
           "apps/client/android/app/src/main/kotlin/app/civu/civu_mobile/mapconfiguration.kt",
           "apps/client/android/app/src/main/kotlin/app/civu/civu_mobile/voiceinputrecognizer.kt",
           "apps/client/android/app/src/test/kotlin/app/civu/civu_mobile/destinationadministrativetypetest.kt",
+          "apps/client/assets/destinations/aberdeen.png",
+          "apps/client/assets/destinations/beijing.png",
           "apps/client/assets/destinations/edinburgh.png",
           "apps/client/assets/destinations/jinan-69b9d3d6.png",
           "apps/client/assets/destinations/qingdao-d2988c88.png",
+          "apps/client/assets/destinations/shanghai.png",
           "apps/client/assets/map_styles/civu_android",
           "apps/client/ios/runner.xcodeproj/project.pbxproj",
           "apps/client/ios/runner/appdelegate.swift",
@@ -23019,6 +23094,7 @@
           "apps/client/lib/src/city/destination_picker_grid.dart",
           "apps/client/lib/src/city/destination_search_controller.dart",
           "apps/client/lib/src/city/destination_search_service.dart",
+          "apps/client/lib/src/city/destination_shortlist.dart",
           "apps/client/lib/src/city/map_cluster_members_sheet.dart",
           "apps/client/lib/src/city/map_coordinate_boundary.dart",
           "apps/client/lib/src/city/map_point_selection_sheet.dart",
@@ -23375,6 +23451,7 @@
           "apps/client/test/destination_artwork_test.dart",
           "apps/client/test/destination_map_target_test.dart",
           "apps/client/test/destination_search_test.dart",
+          "apps/client/test/destination_shortlist_test.dart",
           "apps/client/test/dev_phone_auth_controller_test.dart",
           "apps/client/test/dgs_destination_picker_test.dart",
           "apps/client/test/dgs_map_decode_isolation_test.dart",
@@ -23511,6 +23588,7 @@
           "apps/client/test/organization_map_location_page_test.dart",
           "apps/client/test/organization_map_marker_test.dart",
           "apps/client/test/organization_membership_pages_test.dart",
+          "apps/client/test/owned_map_controller_test.dart",
           "apps/client/test/owned_map_media_controller_test.dart",
           "apps/client/test/owned_map_test.dart",
           "apps/client/test/person_avatar_api_test.dart",
@@ -23684,6 +23762,7 @@
           "docs/testing/evidence/now-unified-20261017/build",
           "docs/testing/evidence/now-unified-20261017/client",
           "docs/testing/evidence/now-unified-20261017/deploy",
+          "docs/testing/evidence/now-unified-20261017/feedback",
           "docs/testing/evidence/now-unified-20261017/github",
           "docs/testing/evidence/now-unified-20261017/install",
           "docs/testing/evidence/now-unified-20261017/thread",

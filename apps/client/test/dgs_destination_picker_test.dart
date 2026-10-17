@@ -265,6 +265,15 @@ void main() {
 
         await t.tap(find.byKey(const Key('now-city-picker')));
         await t.pumpAndSettle();
+        expect(find.text('常用目的地'), findsOneWidget);
+        expect(
+          find.byKey(const Key('now-scope-city-unit-no-map')),
+          findsNothing,
+          reason:
+              'an unvisited city is searchable, not dumped into common destinations',
+        );
+        await t.enterText(find.byKey(const Key('now-city-search')), '合成巴黎');
+        await t.pump();
         final card = find.byKey(const Key('now-scope-city-unit-no-map'));
         await t.ensureVisible(card);
         await t.tap(card);
@@ -281,6 +290,8 @@ void main() {
         await t.pumpAndSettle();
         expect(city.selectedCity?.id, 'unit-current');
         expect(city.selectedDestination, isNull);
+        await t.enterText(find.byKey(const Key('now-city-search')), '合成巴黎');
+        await t.pump();
         await t.ensureVisible(card);
         await t.tap(card);
         await t.pumpAndSettle();

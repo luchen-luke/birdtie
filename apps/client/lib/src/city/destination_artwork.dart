@@ -45,6 +45,15 @@ class CityArtworkMetadata {
 /// original souvenir, verified against the supplied provenance manifest.
 String? destinationLocalArtwork(String cityID, {String? remoteVersion}) {
   final asset = switch (cityID) {
+    'civu-geo-4e2b4c4d-f186-42ca-b6f3-fc7e560dd00b' => (
+      'assets/destinations/shanghai.png',
+      '',
+    ),
+    'aberdeen-gb' => ('assets/destinations/aberdeen.png', ''),
+    'civu-geo-7800f687-1404-4bb4-aed3-ddd54a6376af' => (
+      'assets/destinations/beijing.png',
+      '',
+    ),
     'civu-geo-7a536573-67c6-42f0-9ede-c423fb5dba00' => (
       'assets/destinations/qingdao-d2988c88.png',
       '9a62fcce9f889e12fa192cb58ed0bb010089e7b59b6595070949be9bfa0182f0',

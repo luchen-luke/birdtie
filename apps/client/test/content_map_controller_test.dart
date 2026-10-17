@@ -26,7 +26,10 @@ class Fixture extends http.BaseClient {
   bool clusters = false,
       covers = false,
       holdMedia = false,
-      rotateCursors = false;
+      rotateCursors = false,
+      geographicSelection = false,
+      hideSelected = false;
+  String? pinVersion;
   int cursorRevision = 0;
   int count = 1, status = 200, aborted = 0;
   final requests = <http.BaseRequest>[];
@@ -76,7 +79,7 @@ class Fixture extends http.BaseClient {
       'longitude': (b.west + b.longitudeSpan / 2 + 180) % 360 - 180,
     },
     'visibilitySources': ['SELF_PRIVATE'],
-    'sourceVersion': hash('pin-$n'),
+    'sourceVersion': pinVersion ?? hash('pin-$n'),
     'momentCount': 1,
     'moments': [selector(n)],
     'momentsTruncated': false,
@@ -96,6 +99,21 @@ class Fixture extends http.BaseClient {
       member ? 1 : count,
       (i) => pin(member ? (q['cursor'] == null ? 1 : 2) : i + 1, b),
     );
+    if (geographicSelection) {
+      pins = b.contains(57.2, -2.1) && !hideSelected
+          ? [
+              {
+                ...pin(1, b),
+                'anchor': {
+                  'coordinateSystem': 'wgs84',
+                  'precision': 'point',
+                  'latitude': 57.2,
+                  'longitude': -2.1,
+                },
+              },
+            ]
+          : [];
+    }
     if (clusters && !member) {
       final p = pin(1, b);
       final lat = (p['anchor'] as Map)['latitude'] as double,
@@ -138,8 +156,8 @@ class Fixture extends http.BaseClient {
       'sourceVersion': source,
       'pins': pins,
       'truncated': false,
-      'totalContentCount': clusters ? 2 : count,
-      'totalAnchorCount': clusters ? 2 : count,
+      'totalContentCount': clusters ? 2 : pins.length,
+      'totalAnchorCount': clusters ? 2 : pins.length,
       'nextCursor': member && rotateCursors
           ? 'continuation-${cursorRevision++}'
           : member && q['cursor'] == null
@@ -240,6 +258,154 @@ Future<void> drain(WidgetTester t, bool Function() done) async {
 }
 
 void main() {
+  testWidgets(
+    'selected coverage survives empty pan and bounded eviction without rereading detail',
+    (t) async {
+      final f = Fixture()..geographicSelection = true;
+      final identity = ValueNotifier(0);
+      final c = OwnedMapController(
+        client: f,
+        apiBaseUrl: () => base,
+        ownerID: () => f.owner,
+        authorizationHeader: () => 'Bearer fixture',
+        organizationWorkspaceID: () => f.organization,
+        identityChanges: identity,
+        refreshAllowed: () => true,
+        now: () => f.now,
+        maxCachedViews: 2,
+        maxCachedPins: 2,
+        maxCachedBytes: 18000,
+      );
+      final selectedID = 'owned-map:anchor:${id(1001)}';
+      c.updateQuery('', bounds, selectedMarkerID: selectedID);
+      await drain(t, () => c.current && !c.loading);
+      final original = c.find(selectedID)!;
+      final detail = await t.runAsync(
+        () => c.readMoment(original.moments.single),
+      );
+      expect(c.detailCurrent(detail!), true);
+      for (var i = 0; i < 6; i++) {
+        c.updateQuery(
+          '',
+          MapBounds(west: 10 + i * 2, south: 1, east: 11 + i * 2, north: 2),
+          selectedMarkerID: selectedID,
+        );
+        expect(c.sourceCurrent(original), true);
+        expect(c.find(selectedID), same(original));
+        await drain(t, () => c.current && !c.loading);
+        expect(c.find(selectedID), same(original));
+        expect(c.detailCurrent(detail), true);
+        expect(c.cachedViews, lessThanOrEqualTo(2));
+        expect(c.cachedPins, lessThanOrEqualTo(2));
+        expect(c.cachedBytes, lessThanOrEqualTo(18000));
+      }
+      expect(
+        f.requests.where((r) => r.url.path.endsWith('/${id(1)}')).length,
+        1,
+        reason: 'Settled camera updates never request the reader body again.',
+      );
+      final originalBounds = MapContentCoverage.padded(
+        OwnedMapController.queryBounds(bounds, 12),
+      );
+      f.now = f.now.add(const Duration(seconds: 10));
+      final beforeRenewal = f.requests.length;
+      await t.runAsync(c.refresh);
+      final renewal = f.requests
+          .skip(beforeRenewal)
+          .where((r) => r.url.path == '/v1/me/map-content');
+      expect(
+        renewal.any(
+          (r) =>
+              double.parse(r.url.queryParameters['west']!) ==
+                  originalBounds.west &&
+              double.parse(r.url.queryParameters['south']!) ==
+                  originalBounds.south,
+        ),
+        true,
+        reason: 'The offscreen selected source region receives a real renewal.',
+      );
+      expect(c.sourceCurrent(original), true);
+      expect(
+        c.find(selectedID)!.validUntil,
+        f.now.add(const Duration(seconds: 30)),
+      );
+      f.now = f.now.add(const Duration(seconds: 21));
+      expect(
+        c.detailCurrent(detail),
+        false,
+        reason: 'Renewing the marker never extends an old body grant.',
+      );
+      expect(c.sourceCurrent(c.find(selectedID)!), true);
+      f.now = f.now.add(const Duration(seconds: 10));
+      expect(c.find(selectedID), isNull);
+      expect(c.sourceCurrent(original), false);
+      c.dispose();
+      identity.dispose();
+      await t.pump();
+    },
+  );
+  testWidgets(
+    'selected coverage changed source withdrawal and identity fail closed offscreen',
+    (t) async {
+      final f = Fixture()..geographicSelection = true;
+      final identity = ValueNotifier(0);
+      final c = OwnedMapController(
+        client: f,
+        apiBaseUrl: () => base,
+        ownerID: () => f.owner,
+        authorizationHeader: () => 'Bearer fixture',
+        organizationWorkspaceID: () => f.organization,
+        identityChanges: identity,
+        refreshAllowed: () => true,
+        now: () => f.now,
+      );
+      final selectedID = 'owned-map:anchor:${id(1001)}';
+      c.updateQuery('', bounds, selectedMarkerID: selectedID);
+      await drain(t, () => c.current && !c.loading);
+      final original = c.find(selectedID)!;
+      final detail = (await t.runAsync(
+        () => c.readMoment(original.moments.single),
+      ))!;
+      const empty = MapBounds(west: 10, south: 1, east: 11, north: 2);
+      c.updateQuery('', empty, selectedMarkerID: selectedID);
+      await drain(t, () => c.current && !c.loading);
+      f.pinVersion = hash('changed-selected');
+      f.source = hash('changed-page');
+      await t.runAsync(c.refresh);
+      expect(c.sourceCurrent(original), false);
+      expect(c.detailCurrent(detail), false);
+      final changed = c.find(selectedID)!;
+      expect(changed.sourceVersion, f.pinVersion);
+      f.hideSelected = true;
+      f.source = hash('withdrawn-page');
+      await t.runAsync(c.refresh);
+      expect(c.find(selectedID), isNull);
+      expect(c.sourceCurrent(changed), false);
+      f.hideSelected = false;
+      c.updateQuery('', bounds, selectedMarkerID: selectedID);
+      await t.runAsync(c.refresh);
+      final beforeDenied = c.find(selectedID)!;
+      c.updateQuery('', empty, selectedMarkerID: selectedID);
+      await drain(t, () => c.current && !c.loading);
+      f.status = 403;
+      await t.runAsync(c.refresh);
+      expect(c.sourceCurrent(beforeDenied), false);
+      expect(c.find(selectedID), isNull);
+      expect(c.cachedViews, 0);
+      f.status = 200;
+      c.updateQuery('', bounds, selectedMarkerID: selectedID);
+      await drain(t, () => c.current && !c.loading);
+      final beforeIdentity = c.find(selectedID)!;
+      f.organization = id(42);
+      identity.value++;
+      expect(c.sourceCurrent(beforeIdentity), false);
+      expect(c.find(selectedID), isNull);
+      expect(c.cachedViews, 0);
+      c.dispose();
+      identity.dispose();
+      await t.pump();
+    },
+  );
   testWidgets(
     'v2 coordinate anchors and bounded cluster pages retain target grants and reject POI-only pins',
     (t) async {

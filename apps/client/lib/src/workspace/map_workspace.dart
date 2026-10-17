@@ -28,6 +28,7 @@ import '../city/destination_search_controller.dart';
 import '../city/destination_artwork.dart';
 import '../city/destination_artwork_view.dart';
 import '../city/destination_picker_grid.dart';
+import '../city/destination_shortlist.dart';
 import '../city/amap_destination_search.dart';
 import '../city/amap_session_consent.dart';
 import '../content/private_moment_controller.dart';
@@ -5162,6 +5163,7 @@ class _MapWorkspaceState extends State<MapWorkspace>
       bounds: bounds,
       zoom: _mapState.zoom,
       devicePixelRatio: MediaQuery.devicePixelRatioOf(context),
+      selectedMarkerID: _workspace.selectedEntityId,
     );
   }
 
@@ -7014,6 +7016,12 @@ class _MapWorkspaceState extends State<MapWorkspace>
   }
 
   void _openMapContentPanel(OwnedMapPin pin) {
+    final existing = _publicPlacePanel;
+    if (existing is NowMapContentPanel &&
+        existing.pin.mapID == pin.mapID &&
+        existing.pin.sourceVersion == pin.sourceVersion &&
+        _mapContent.sourceCurrent(pin))
+      return;
     if (pin.isCluster) {
       _openMapContentGroup(cluster: pin);
       return;
@@ -7084,11 +7092,29 @@ class _MapWorkspaceState extends State<MapWorkspace>
   }) {
     if (_friendConversation?.audioActive == true) return;
     if (!{'PLACE', 'MOMENT'}.contains(item.kind) ||
-        item.placeID.isEmpty ||
+        (item.kind == 'PLACE' && item.placeID.isEmpty) ||
         (item.kind == 'MOMENT' &&
             (item.detailType != 'MOMENT' || item.detailID != item.id))) {
       return;
     }
+    // The public place list and the map use the same current reader whenever
+    // the map-content source has independently granted this exact object.
+    // Author-scoped navigation keeps its own source and existing actions.
+    if (_layers.authorID == null && _organizations.active == null) {
+      final candidates = _mapContent.items.where(
+        (pin) => item.kind == 'PLACE'
+            ? pin.isPlace && pin.placeID == item.placeID
+            : pin.isMomentAnchor && pin.momentID == item.id,
+      );
+      if (candidates.length == 1 &&
+          _mapContent.sourceCurrent(candidates.single)) {
+        final pin = candidates.single;
+        _workspace.selectEntity(pin.mapID, preserveViewport: true);
+        _openMapContentPanel(pin);
+        return;
+      }
+    }
+    if (item.placeID.isEmpty) return;
     final auth = widget.auth,
         client = widget.seedClient,
         base = widget.seedApiBaseUrl;
@@ -9177,7 +9203,9 @@ class _MapWorkspaceState extends State<MapWorkspace>
               (constraints.maxHeight -
                       layout.bottom -
                       layout.surfaceHeight -
-                      (hasSearchArea && !editing ? 56 : 8))
+                      (hasSearchArea && !editing && _publicPlacePanel == null
+                          ? 56
+                          : 8))
                   .clamp(chromeBottom, constraints.maxHeight);
           final mapRect = Rect.fromLTRB(
             16,
@@ -9188,7 +9216,7 @@ class _MapWorkspaceState extends State<MapWorkspace>
           // A short preview belongs to the screen, not the projected marker.
           // Camera movement (including a temporarily unavailable native anchor)
           // must not change its width, height or reading position.
-          final previewViewport = (mapBottom - chromeBottom).clamp(0.0, 360.0);
+          final previewViewport = (mapBottom - chromeBottom).clamp(0.0, 288.0);
           final previewVisible = !editing && previewViewport >= 120;
           if (_mapContentRect.value != mapRect) {
             WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -9430,7 +9458,12 @@ class _MapWorkspaceState extends State<MapWorkspace>
                   right: 0,
                   bottom: 0,
                   child: Material(
-                    color: Theme.of(context).colorScheme.surface,
+                    type: _publicPlacePanel is NowMapContentGroupPanel
+                        ? MaterialType.transparency
+                        : MaterialType.canvas,
+                    color: _publicPlacePanel is NowMapContentGroupPanel
+                        ? null
+                        : Theme.of(context).colorScheme.surface,
                     child: Padding(
                       padding: EdgeInsets.only(
                         bottom: layout.bottom + layout.surfaceHeight,
@@ -10437,28 +10470,20 @@ class _NowCityPickerState extends State<_NowCityPicker> {
     final query = _search.text.trim().toLowerCase();
     final resolving = _destinations.resolvingCity;
     final browsing = query.isEmpty && resolving == null;
-    final cities = widget.city.cities
-        .where((city) {
-          if (!browsing)
-            return '${city.name} ${city.region} ${city.countryCode}'
-                .toLowerCase()
-                .contains(query);
-          return switch (_catalogFilter) {
-            'CN' => city.countryCode == 'CN',
-            'abroad' => city.countryCode.isNotEmpty && city.countryCode != 'CN',
-            _ => true,
-          };
-        })
-        .toList(growable: false);
-    final recentIDs = {
-      if (widget.city.selectedCity case final city?) city.id,
-      ...widget.city.recentCityIDs,
-    };
-    final recent = recentIDs
-        .map((id) => widget.city.cities.where((c) => c.id == id).firstOrNull)
-        .whereType<PublicCity>()
-        .take(6)
-        .toList();
+    final cities = browsing
+        ? destinationShortlist(
+            catalog: widget.city.cities,
+            currentCityID: widget.city.selectedCity?.id,
+            recentCityIDs: widget.city.recentCityIDs,
+            filter: _catalogFilter,
+          )
+        : widget.city.cities
+              .where(
+                (city) => '${city.name} ${city.region} ${city.countryCode}'
+                    .toLowerCase()
+                    .contains(query),
+              )
+              .toList(growable: false);
     final linked = _destinations.items
         .map((d) => d.internalCityID)
         .whereType<String>()
@@ -10545,28 +10570,8 @@ class _NowCityPickerState extends State<_NowCityPicker> {
                                   semanticsLabel: '目的地加载中',
                                 ),
                               ),
-                            if (browsing && recent.isNotEmpty)
-                              _status(
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text('最近', style: tokens.metadata),
-                                    const SizedBox(height: 4),
-                                    Wrap(
-                                      spacing: 8,
-                                      runSpacing: 4,
-                                      children: [
-                                        for (final city in recent)
-                                          ActionChip(
-                                            label: Text(city.name),
-                                            onPressed: () =>
-                                                _selectCatalog(city),
-                                          ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ),
+                            if (browsing)
+                              _status(Text('常用目的地', style: tokens.chrome)),
                             if (browsing)
                               _status(
                                 Wrap(

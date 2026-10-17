@@ -672,9 +672,7 @@ class _MapCanvasState extends State<MapCanvas> {
                       bounds: bounds,
                       zoom: zoom,
                       devicePixelRatio: MediaQuery.devicePixelRatioOf(context),
-                      selectedMarkerID: widget.mapContent
-                          ?.find(widget.workspace.selectedEntityId ?? '')
-                          ?.canonicalMarkerID,
+                      selectedMarkerID: widget.workspace.selectedEntityId,
                     );
                   },
             onViewportSettled: renderCity == null

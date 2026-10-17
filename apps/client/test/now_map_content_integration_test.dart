@@ -391,10 +391,24 @@ void main() {
       );
       await t.pump(const Duration(milliseconds: 200));
       final panelState = t.state(find.byType(NowMapContentPanel));
-      expect(t.widget<Text>(find.text(body)).maxLines, 2);
+      expect(t.widget<Text>(find.text(body)).maxLines, 1);
+      expect(t.getSize(find.byType(NowMapContentPanel)).height, 288);
       expect(t.getSize(find.byType(PageView)).height, 144);
       expect(find.byTooltip('关闭内容预览'), findsOneWidget);
       final previewBounds = t.getRect(find.byType(NowMapContentPanel));
+      // The real renderer announces motion and settles a search-area command.
+      // That command is hidden while this reader is open, so neither phase
+      // may reserve its 56dp row or change the preview's screen geometry.
+      for (final moving in [true, false, true, false]) {
+        if (moving) {
+          canvas().mapState.cameraStarted();
+        } else {
+          canvas().mapState.cameraSettled(mapTestBounds);
+        }
+        await t.pump();
+        expect(t.getRect(find.byType(NowMapContentPanel)), previewBounds,
+            reason: 'hidden search-area row cannot move the selected reader');
+      }
       final mapView = t.widget<PublicCityMapView>(
         find.byType(PublicCityMapView),
       );

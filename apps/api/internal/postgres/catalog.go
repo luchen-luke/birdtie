@@ -33,7 +33,16 @@ const cityColumns = `id, name, region, country_code, time_zone, content_status,
 
 func (s *Store) ListCities(ctx context.Context) ([]foundation.City, error) {
 	rows, err := s.pool.Query(ctx, `SELECT `+cityColumns+`
-        FROM cities WHERE publication_status = 'published' ORDER BY name, id LIMIT 5000`)
+        FROM cities WHERE publication_status = 'published'
+          AND NOT EXISTS (
+            SELECT 1 FROM destination_catalog_exclusions review
+            WHERE review.city_id=cities.id AND review.active
+              AND review.expected_source_ref=cities.source_ref
+              AND review.expected_country_code=cities.country_code
+              AND review.expected_name=cities.name
+              AND review.expected_city_updated_at=cities.updated_at
+          )
+        ORDER BY name, id LIMIT 5000`)
 	if err != nil {
 		return nil, err
 	}

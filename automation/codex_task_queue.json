@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated": "2026-10-17T17:33:27.262454+00:00",
+  "updated": "2026-10-17T17:42:58.141187+00:00",
   "tasks": [
     {
       "id": "BT-AUD-001",
@@ -22145,7 +22145,17 @@
           "schema": 178,
           "sourceImplementationCompleteWithinDeclaredScope": true,
           "overallAcceptance": "PARTIAL",
-          "github": "PENDING exact selective commit/push"
+          "github": {
+            "atUTC": "2026-10-17T17:42:57.513114+00:00",
+            "status": "SOURCE_REMOTE_VERIFIED",
+            "repository": "https://github.com/luchen-luke/birdtie",
+            "branch": "codex/birdtie-import",
+            "codeCommit": "87e9e53dd9f01f9b66dd9fad03a296b6c25ae687",
+            "sourceRemoteVerified": true,
+            "sourceCommitFiles": 36,
+            "artifactsExcluded": true,
+            "rawPackageExcluded": true
+          }
         }
       }
     },

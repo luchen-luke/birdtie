@@ -4,17 +4,17 @@
 
 **前面的R01–R18没有全部完成真人体验验收。** 用户的新包截图与实际地图移动否定了“已完成修复”的笼统表述；原父任务始终IN_PROGRESS。下面原18项表为535078f交付时的实现记录，本节是后续真实反馈与当前状态，不能用局部测试抹掉失败。
 
-- 默认改为常用/精选最多8个真实目录ID：上海、阿伯丁，加当前/真实近期与青岛、济南、爱丁堡、北京补位；国内/境外只过滤该小集合。搜索仍用完整合法目录与既有全球联网服务。新增上海/阿伯丁/北京3份Civu原PNG，6份图都在APK内逐字节核实。44号真机截图已确认首屏上海/阿伯丁/青岛/济南图卡，真实Paris联网结果与原草稿/地图保留。
+- 默认改为常用/精选最多8个真实目录ID：上海、阿伯丁，加当前/真实近期与青岛、济南、爱丁堡、北京补位；国内/境外只过滤该小集合。搜索仍用完整合法目录与既有全球联网服务。新增上海/阿伯丁/北京3份Civu原PNG，6份图都在APK内逐字节核实。44与45号真机截图已确认首屏上海/阿伯丁/青岛/济南图卡；真实Paris联网结果为44号已运行范围，原草稿/地图保留。
 - 连续阅读入口补到地点每条动态；权威串文第N段进入即定位该段，保留前段与不可读位置；null关系不伪称串文。短预览重排为288dp、媒体优先。原公开列表在独立当前map-content授权唯一匹配时复用同reader，MOMENT_ANCHOR不再错误要求Place ID。
 - 选中reader不再随当前视口空页丢失来源；最多保护一个仍在原缓存预算内的最新选中coverage并离屏续租，身份/新source/撤权/到期仍退休。重叠列表外层透明、内部按真实项数收紧。
-- **44号真机仍复现48dp跳动**：相机settled生成“搜索此区域”命令，尽管命令被reader遮住，宿主仍预留56而非8dp。保留移动前后截图；新增真实cameraStarted/cameraSettled回归先失败，单点修正后通过。修正已进45号，手机在最后覆盖安装前断开ADB，因此45号尚未装机，最终移动复核NOT_RUN。不能把44号或单元结果写成45号真机通过。
+- **44号真机仍复现48dp跳动**：相机settled生成“搜索此区域”命令，尽管命令被reader遮住，宿主仍预留56而非8dp。保留移动前后截图；新增真实cameraStarted/cameraSettled回归先失败，单点修正后通过。修正已进45号，首次install02因ADB断开失败并保留。用户重连后install03已覆盖安装45号，设备base.apk摘要与产物一致。正向/反向移动前后三张真机截图的预览物理矩形均为[52,1408,1168,2344]，相对位移0px；44号旧失败为上移156px。本次仅确认这些静止终态及同一地点/媒体页保留，不把它称中间所有动画帧或性能量化通过。
 - 截图`100b/20a/22a/23B`及另4项来自旧Civu OSM地址片段误分类。迁移178按8个精确UUID、source reference、原名/国家、同run alias、原source SHA与ledger建立独立审查隔离；不按名字正则批删。公网目录1067→1059，6个常用身份仍在。8个City、10个真实Place、1条Moment在同事务精确ID快照中保持不变，未删业务记录，原档案/aliases保留。
 - 直接检查：shortlist5、thread6、controller文件5、workspace/picker5项通过（重叠复跑不加总）；相关Go catalog1项通过。48dp回归02-red退出1、03-green退出0。一次未完成APK构建因真实入口缺陷中止；44构建装机后发现真实48dp问题，最终只重编受影响Flutter为45，成功且API源未改、复用已成功Go产物。失败全部保留。
 - API34/schema178已部署，原177条ledger摘要逐项保留，只增178。上线前独立custom备份502677531B，SHA256 `ec249930cb6547c5857b51ccfd40746f42a8d2d947ab12a21ff7f2d2699ce6bb`；API环境与Caddy/TLS路由未改，ready与公网目录检查通过。原公共Place可见性仍由既有状态/授权决定；首次检查器未经证实地假设10条都能匿名展示，其失败不计PASS。
 
-最终APK为 `D:/Project/birdtie/work/now-unified-20261017/feedback-delivery/Birdtie-Now-Fixes-20261017-r3.apk`，0.1.1 / versionCode45，profile preview，包名与原签名保持。SHA256 `b8fa7c2fe7bb5a89323ab9f88f2a89e223e91c4cda2ad09122fbe173bb0e7e83`，345369623B。API SHA256 `e9392c0a6b7d15d3f7ab35f3941b00df0f4a141e310af20521532b16176a5b6f`。构建前后1581项输入SHA一致。设备当前已证实安装的是44号；45签名、清单、6图素材已核实，但最后安装失败原因为`device not found`。
+最终APK为 `D:/Project/birdtie/work/now-unified-20261017/feedback-delivery/Birdtie-Now-Fixes-20261017-r3.apk`，0.1.1 / versionCode45，profile preview，包名与原签名保持。SHA256 `b8fa7c2fe7bb5a89323ab9f88f2a89e223e91c4cda2ad09122fbe173bb0e7e83`，345369623B。API SHA256 `e9392c0a6b7d15d3f7ab35f3941b00df0f4a141e310af20521532b16176a5b6f`。构建前后1581项输入SHA一致。设备当前已证实覆盖安装45号，原数据保留，实际base.apk SHA256与产物一致；原install02的`device not found`是保留的历史失败。
 
-证据总回执：`docs/testing/evidence/now-unified-20261017/feedback/receipt.json`；真实手机截图在`install/feedback01/05-common-destinations.png`、`06-global-search.png`、`08-preview-before-pan.png`和`09-preview-after-pan.png`。前两张为PASS范围，后两张为44号FAIL证据。最终45真机移动、真实多账号串文撤权、视频/性能和历史两类底图专项仍未通过；全清单不得标DONE。GitHub仍推原codex/birdtie-import，仅本批精确文件，结果见`feedback/github/receipt.json`。
+证据总回执：`docs/testing/evidence/now-unified-20261017/feedback/receipt.json`；真实手机截图在`install/feedback01/05-common-destinations.png`、`06-global-search.png`、`08-preview-before-pan.png`和`09-preview-after-pan.png`。前两张为PASS范围，后两张为44号FAIL证据。45号现已完成常用目的地图卡、移动/反向移动静止几何与当前地点单条展开复核（install/feedback01/11-v45-common、13/14/15-v45-preview、17-v45-expanded-loaded.png，详见feedback/install03/ui-receipt.json）；全宽展开可见原正文/图片/9媒体计数，草稿保留。真实多成员/多账号串文撤权、所有中间手势帧、视频/性能和历史两类底图专项仍未通过；全清单不得标DONE。Paris仍仅引用44号既有联网搜索证据，45号未重复。GitHub仍推原codex/birdtie-import，仅本批精确文件，结果见`feedback/github/receipt.json`。
 
 
 本轮在官方 `D:\Project\birdtie` 实施，分支 `codex/birdtie-import`，基线 `f9645afe4060abe3538e49dbeb34bc4f07a891ad`。开始时只有用户解压的 `Birdtie-Now-Unified/` 未跟踪，其余工作树干净。保留其他worktree、原256任务、历史DONE/失败和门槛，未领取新任务。全部增量并回原 `BT-FIX-NOW-UI-001`；R编号只作交付索引。父任务仍 IN_PROGRESS，整体体验仍 PARTIAL。

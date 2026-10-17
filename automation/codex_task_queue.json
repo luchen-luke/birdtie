@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated": "2026-10-17T10:50:13.397344+00:00",
+  "updated": "2026-10-17T15:38:12.659303+00:00",
   "tasks": [
     {
       "id": "BT-AUD-001",
@@ -21249,6 +21249,11 @@
           "at": "2026-10-17T10:50:12.786568+00:00",
           "summary": "User feedback corrected false complete-experience implication. Common destination shortlist and real Paris search seen on44; real48dp pan layout failure reproduced then fixed with red/green regression and final45 APK built. API34/schema178 live,8 exact erroneous city projections isolated preserving10Places/1Moment. Final45 installation blocked by ADB disconnect; no full-checklist completion claim.",
           "evidence": "docs/testing/evidence/now-unified-20261017/feedback/receipt.json"
+        },
+        {
+          "at": "2026-10-17T15:38:12.012969+00:00",
+          "summary": "User reconnected c641566b. Installed existing45 APK preserving data, exact device digest matched. Real common shortlist, three identical settled preview pixel rectangles across pan/reverse pan, and current-place single-entry full-width expansion observed.44 failure and45 first disconnected attempt retained. No code/build/deploy rerun; full R01-R18 remains unaccepted and parent IN_PROGRESS.",
+          "evidence": "docs/testing/evidence/now-unified-20261017/feedback/install03/ui-receipt.json"
         }
       ],
       "social_core_execution_20261015": {
@@ -22028,7 +22033,7 @@
         }
       },
       "now_unified_feedback_20261017": {
-        "status": "PARTIAL_DELIVERY_DEVICE45_DISCONNECTED",
+        "status": "DEVICE45_BOUNDED_UI_SMOKE_PASS_OVERALL_PARTIAL",
         "reason": "User sees all reported issues; map pan still jumps/reloads reader; wants Civu-style small frequent shortlist and global search, remove proven test pollution",
         "priorDeliveredCodeCommit": "535078f965db1327ba94bb1227bd1a97b78e71dd",
         "priorFullAcceptance": "NOT_PASSED",
@@ -22072,20 +22077,21 @@
           "bytes": 345369623
         },
         "latestVersion": "0.1.1+45",
-        "latestAPKInstalled": false,
-        "actualInstalled": "0.1.1+44; destination/search verified,48dp pan issue failed",
+        "latestAPKInstalled": true,
+        "actualInstalled": "0.1.1+45; exact installed digest; common artwork, settled pan/reverse-pan geometry and single-entry place expansion verified",
         "apiRelease": "/opt/birdtie/releases/social178-20261017-build34",
         "schema": 178,
         "catalogExclusions": 8,
         "deletedBusinessRows": 0,
-        "deviceBlock": "ADB device c641566b disconnected at final45 install",
+        "deviceBlock": null,
         "receipt": "docs/testing/evidence/now-unified-20261017/feedback/receipt.json",
         "notRun": [
-          "version45 device installation and moving/settled screenshot confirmation",
           "real multi-account thread/withdrawal verification",
           "full video first-frame/performance and both historical native-map blank causes",
-          "full product/release acceptance"
-        ]
+          "full product/release acceptance",
+          "all intermediate gesture-frame timing; true multi-entry thread and multiple-account acceptance not covered by current-place single-entry expansion"
+        ],
+        "deviceReceipt": "docs/testing/evidence/now-unified-20261017/feedback/install03/ui-receipt.json"
       }
     },
     {

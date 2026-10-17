@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:video_player/video_player.dart';
+import 'video_material_sink_io.dart' as streamed;
 
 VideoPlayerController? createVideoMaterialPlayer(String path) {
   if (!Platform.isAndroid && !Platform.isIOS && !Platform.isMacOS) return null;
@@ -26,6 +27,7 @@ Future<String> createVideoMaterialMemoryPath(Uint8List bytes) async {
 }
 
 Future<void> releaseVideoMaterialPath(String path) async {
+  await streamed.releaseSinkVideoMaterial(path);
   final dir = _ownedVideoPaths.remove(path);
   if (dir == null) return; // Original gallery files are never deleted.
   final file = File(path);

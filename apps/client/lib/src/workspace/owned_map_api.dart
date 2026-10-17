@@ -9,6 +9,7 @@ import '../auth/session_vault.dart';
 import '../content/moment_image_header.dart';
 import 'human_causal_control.dart';
 import 'map_entities.dart';
+import 'map_media_read_metrics.dart';
 import 'map_marker_visual.dart';
 import 'now_context_query_api.dart' show onlineStamp;
 import 'person_avatar.dart';
@@ -1391,6 +1392,10 @@ class OwnedMapAPI {
   final void Function(OwnedMapReadFailure failure)? onDenied;
   bool _closed = false;
   int _transport = 0;
+  final _contentDeadlines = Expando<DateTime>();
+  final _contentTraces = Expando<MapMediaReadTrace>();
+  DateTime? contentValidUntil(Uint8List bytes) => _contentDeadlines[bytes];
+  MapMediaReadTrace? contentTrace(Uint8List bytes) => _contentTraces[bytes];
   void replaceTransport({required http.Client client}) {
     ++_transport;
     _client = client;
@@ -1405,6 +1410,8 @@ class OwnedMapAPI {
     int? exact,
     Future<void>? abortTrigger,
     bool allowMissing = false,
+    MapMediaReadTrace? trace,
+    Future<void> Function(Uint8List bytes)? receive,
   }) async {
     final transport = _transport, client = _client;
     bool valid() =>
@@ -1419,9 +1426,11 @@ class OwnedMapAPI {
       abortTrigger: abortTrigger,
     )..followRedirects = false;
     request.headers['Authorization'] = authorization;
+    if (trace != null) trace.requests++;
     final response = await client
         .send(request)
         .timeout(const Duration(seconds: 12));
+    trace?.mark(MapMediaReadStage.headers);
     if (response.statusCode != 200) {
       final code = await _errorCode(response, allowMissingRoute: allowMissing);
       final target = RegExp(
@@ -1470,10 +1479,22 @@ class OwnedMapAPI {
         }
         final chunk = Uint8List.fromList(reader.current);
         count += chunk.length;
-        chunks.add(chunk);
+        if (chunk.isNotEmpty) trace?.mark(MapMediaReadStage.firstByte);
+        if (trace != null) trace.bytes = count;
+        if (receive == null) {
+          chunks.add(chunk);
+        } else {
+          try {
+            await receive(chunk);
+          } finally {
+            chunk.fillRange(0, chunk.length, 0);
+          }
+        }
       }
       if (!valid() || exact != null && count != exact)
         throw const FormatException('地图内容大小不符');
+      trace?.mark(MapMediaReadStage.downloaded);
+      if (receive != null) return Uint8List(0);
       final bytes = Uint8List(count);
       var offset = 0;
       for (final chunk in chunks) {
@@ -1822,10 +1843,14 @@ class OwnedMapAPI {
     required String origin,
     required bool Function() current,
   }) async {
+    final trace = MapMediaReadMetrics.begin(
+      media.isVideo ? MapMediaReadKind.video : MapMediaReadKind.image,
+    );
     var selected = media;
     var until = detail.validUntil;
     bool pending() => current() && until.isAfter(now());
     if (media.displayDescriptorPath != null) {
+      trace.requests++;
       final path = Uri.parse(media.displayDescriptorPath!);
       final descriptor = OwnedMapDisplayDescriptor.decode(
         await _json(
@@ -1843,6 +1868,7 @@ class OwnedMapAPI {
       selected = descriptor.media;
       until = descriptor.validUntil;
     }
+    trace.mark(MapMediaReadStage.descriptorReady);
     final bytes = await _read(
       Uri.parse(origin).resolve(selected.contentPath),
       authorization: authorization,
@@ -1850,6 +1876,7 @@ class OwnedMapAPI {
       limit: selected.byteCount,
       exact: selected.byteCount,
       mime: selected.mimeType,
+      trace: trace,
     );
     try {
       if (!pending() || sha256.convert(bytes).toString() != selected.sha256)
@@ -1871,10 +1898,68 @@ class OwnedMapAPI {
           throw const FormatException('地图图片内容不符');
         }
       }
+      trace.mark(MapMediaReadStage.verified);
+      _contentDeadlines[bytes] = until;
+      _contentTraces[bytes] = trace;
       return bytes;
     } catch (_) {
+      trace.mark(MapMediaReadStage.failed);
       bytes.fillRange(0, bytes.length, 0);
       rethrow;
+    }
+  }
+
+  /// Transfers to a private, unpublished sink. The caller may publish a player
+  /// path only after this completes with exact bytes, full SHA, and live ACL.
+  Future<void> transferVideo(
+    OwnedMapMomentMedia media, {
+    required OwnedMapMomentDetail detail,
+    required DateTime Function() now,
+    required String authorization,
+    required String origin,
+    required bool Function() current,
+    required Future<void> Function(Uint8List bytes) receive,
+    required MapMediaReadTrace trace,
+  }) async {
+    bool pending() => current() && detail.validUntil.isAfter(now());
+    if (!media.isVideo ||
+        media.displayDescriptorPath != null ||
+        !detail.media.any((m) => identical(m, media)) ||
+        !pending()) {
+      throw const FormatException('地图视频读取已失效');
+    }
+    final digest = _MapMediaDigest();
+    final hasher = sha256.startChunkedConversion(digest);
+    final prefix = <int>[];
+    try {
+      await _read(
+        Uri.parse(origin).resolve(media.contentPath),
+        authorization: authorization,
+        current: pending,
+        limit: media.byteCount,
+        exact: media.byteCount,
+        mime: media.mimeType,
+        trace: trace,
+        receive: (chunk) async {
+          hasher.add(chunk);
+          if (prefix.length < 12) prefix.addAll(chunk.take(12 - prefix.length));
+          await receive(chunk);
+          if (!pending()) throw const FormatException('地图视频读取已失效');
+        },
+      );
+      hasher.close();
+      if (!pending() ||
+          digest.value?.toString() != media.sha256 ||
+          prefix.length < 12 ||
+          ascii.decode(prefix.sublist(4, 8), allowInvalid: true) != 'ftyp') {
+        throw const FormatException('地图视频内容不符');
+      }
+      trace.mark(MapMediaReadStage.verified);
+    } catch (_) {
+      trace.mark(MapMediaReadStage.failed);
+      rethrow;
+    } finally {
+      prefix.fillRange(0, prefix.length, 0);
     }
   }
 
@@ -1882,4 +1967,12 @@ class OwnedMapAPI {
     _closed = true;
     ++_transport;
   }
+}
+
+class _MapMediaDigest implements Sink<Digest> {
+  Digest? value;
+  @override
+  void add(Digest data) => value = data;
+  @override
+  void close() {}
 }

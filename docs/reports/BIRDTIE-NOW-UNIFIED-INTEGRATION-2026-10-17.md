@@ -1,5 +1,25 @@
 # Birdtie Now 整合接线与合批编译 — 2026-10-17
 
+
+## 继续补齐：47号与API35（2026-10-18）
+
+用户要求“全部完成”后，继续实际实现并交付遗漏；没有把原R01–R18或父任务直接标DONE。当前安装的是 **0.1.2 / 47** 正常应用，API35/schema178在线；实现、直接检查及下述限定真机检查通过，**整体体验验收仍PARTIAL**。后文43/44/45号记录均为保留的历史快照。
+
+- R04：在关闭阅读面板前捕获当前原生Place selector，绑定账号、城市、Task和选中代次；后端重新读本城已发布地点、来源generation及本人Task，独立selector在LIMIT前过滤，31个同名结果不会漏选。地址/时间复用站内事实及最终重验；不把地图读取许可当模型许可。当前Plans无“第几天”行程接口，“把这个加入第二天”保留准确地点与day=2待选目标草稿，明确尚未保存计划。没有为验收向生产发送测试Task查询。
+- R08：实际PostgreSQL178隔离库完成顺序/无位置段、第二用户、屏蔽、session撤销、旧proof退休和编辑排序，3个新reader原生case通过。所有合成数据只在标记的独立子库中，子库及专用父库已清理。R04另一个原生case核验第31条、跨城、撤权和Task CAS；首次旧fixture失败保留，改为单一owned库后native06通过。真实手机蓝啤古的地点集合确实有2条独立动态，正文与2/7媒体分别呈现；第一条连续阅读由权威接口返回1段，不能把地点总数2改称串文2段。真实多成员/多账号手机正例尚未验收。
+- R11：4图/1MiB缓存上移至同reader，预览、展开和完整查看共用；同键single-flight、每消费者独立字节副本，保留旧detail及更短descriptor原截止、撤权/身份/source退休。真机读到请求数0的缓存命中，解码可见33.25ms与30.60ms；一次201321B冷读约2.1–2.2秒。30秒旧许可到期后重新传输符合边界，后台续租不延长旧缓存；不把这些单次样本称通用性能基准。
+- R12：视频按chunk写入私有未发布临时文件并增量SHA，大小/MIME/header/完整摘要及当前许可通过后才交播放器；失败、超限和退休清理。未启用Range或永久公开URL。临时profile46 probe以零网络MockClient提供17517B合成H264，复用真实transfer/sink/原生VideoPlayer；实际160×90画面已截图、到期/撤销后显示临时文件删除。playRequested后第一张可见截图上界约0.427秒（非原生首帧精确事件），不代表线上大视频网络性能。随后已覆盖恢复正常47号；正常APK每个libapp.so均不含probe域名，probe未进入生产入口/数据/素材。
+- R13：Mapbox/高德新增仅profile有界数值诊断，不含ID、URL、密钥、正文和坐标。高德camera tick整层重建用真实adapter widget先复现（10次vs2次），仅首次motion重建后回归通过。47号Mapbox短预览移动前后矩形均[52,1408,1168,2344]，高德已展开reader均[0,514,1220,2370]，静止终态位移均0px。Mapbox同host创建1/style1、SDK帧持续；高德同host创建1/本地style1，背景pause后恢复pause0/fps30，实际道路底图可见。高德SDK未暴露原生frame/tile/attach事件，0/-1代表未知；尝试双击未确认缩放，不计zoom PASS。历史空白在本次范围未复现，仍不能宣称其两类根因已全部定位。没有录屏。
+
+直接检查限定本次变更：媒体13个唯一case、R04 Flutter9及Go8顶层/19子例（旧端口重查不重复计数）、地图诊断6、相机motion1；原生SQL另记3个thread reader与1个selected-place case。保留初次失败及测试夹具修复，不重跑全仓测试。适用UX-CHECK-01/02/04/05/06/07/08/09/10/11/12/13/14/16；正常字号，辅助技术与完整产品发布验收未冒称通过。
+
+正常交付APK：`D:/Project/birdtie/work/now-unified-20261017/completion-delivery/Birdtie-Now-Fixes-20261018-r4.apk`，345566235B，SHA256 `45f217996a6bdc00b355f3d303eb394c8e8184aeae9ad87c1314988ea1e1a6ae`；沿原预览包名和签名。手机c641566b实际base.apk摘要一致，覆盖安装保留原数据/“巴塞罗那”草稿。独立probe46仅为原生测试历史，不是交付安装包。API35 SHA256 `e23dcaea5d59c5ff006ade7ba0dd1160409e02da0daa21cf40d1ef9b92b74f96`，发布目录`/opt/birdtie/releases/social178-20261018-build35`。1588项构建输入前后SHA一致；代码冻结后一次正常APK/API合批编译。此API只更新binary，178条迁移ledger摘要不变，无DDL/fixture写入，环境与公网路由不变；公网HTTPS ready及1059目录通过。
+
+本节证据：`feedback/completion47-receipt.json`、`completion47/receipt.json`、`install47/{receipt,ui-receipt}.json`、`thread04/receipt.json`、`r04-native06/receipt.json`、`probe46/device-receipt.json`、`api35-{preflight,deploy}/receipt.json`及`api35-public.json`。截图在`install/feedback01/25`至`52`相应命名文件；同伴审核、源SHA、直接命令/cwd/退出码在media04、native04、r04-selected-place。GitHub继续原`codex/birdtie-import`精确提交，结果和远端SHA由`feedback/completion47-github.json`记录；原整合包、私有材料、设备截图、APK/API和凭据不入Git。
+
+未闭环的真实范围：手机多成员/多账号串文撤权、线上大视频首帧、历史空白根因、R04真实目标行程选择及完整产品/辅助技术验收。保留原IN_PROGRESS及发布门槛，不用局部成功称全清单已验收。
+
+
 ## 最新反馈纠正与实际状态（0.1.1+45）
 
 **前面的R01–R18没有全部完成真人体验验收。** 用户的新包截图与实际地图移动否定了“已完成修复”的笼统表述；原父任务始终IN_PROGRESS。下面原18项表为535078f交付时的实现记录，本节是后续真实反馈与当前状态，不能用局部测试抹掉失败。

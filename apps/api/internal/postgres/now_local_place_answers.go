@@ -38,6 +38,9 @@ func localNamedFactHasNoCurrentPlace(query string, places []foundation.Place) bo
 }
 
 func currentLocalPlaceQuestion(t agentworkspace.Task) (agentworkspace.LocalPlaceQuestion, bool) {
+	if agentworkspace.SelectedPlaceDayDraftTask(t) {
+		return agentworkspace.LocalPlaceQuestion{Name: t.Filters["searchTerm"], Field: agentworkspace.SelectedPlaceDayDraft}, true
+	}
 	if _, ok := agentworkspace.ParseObjectivePlaceFields(t.Filters["currentQuery"]); ok && t.Intent == agentworkspace.FindPlace && t.Status == agentworkspace.TaskActive && t.ContextType == "CITY" {
 		intent := agentworkspace.ParseMVPIntent(t.Filters["currentQuery"], &t)
 		if intent.Supported && intent.Category == t.Filters["category"] && t.Filters["searchTerm"] == "" {
@@ -49,6 +52,9 @@ func currentLocalPlaceQuestion(t agentworkspace.Task) (agentworkspace.LocalPlace
 		return q, true
 	}
 	field := ""
+	if f, day, selected := agentworkspace.ParseSelectedPlaceFollowup(t.Filters["currentQuery"]); selected && day == 0 && t.Filters[agentworkspace.SelectedPlaceContextFilter] == "native-map-v1" {
+		field = f.Topic
+	}
 	if agentworkspace.IsLocalPlaceHoursFollowupQuery(t.Filters["currentQuery"]) {
 		field = agentworkspace.PlaceOpeningHours
 	} else if agentworkspace.IsLocalPlaceAddressFollowupQuery(t.Filters["currentQuery"]) {
@@ -328,7 +334,8 @@ func (s *Store) TryOwnLocalPlaceReply(ctx context.Context, a arp.Access) (agentw
 		return nil, false, nil
 	}
 	boundFactPlace := nativeResolvedPublicPlace{}
-	if (question.Field == agentworkspace.PlaceOpeningHours && agentworkspace.IsLocalPlaceHoursFollowupQuery(t.Filters["currentQuery"])) ||
+	if t.Filters[agentworkspace.SelectedPlaceContextFilter] == "native-map-v1" ||
+		(question.Field == agentworkspace.PlaceOpeningHours && agentworkspace.IsLocalPlaceHoursFollowupQuery(t.Filters["currentQuery"])) ||
 		(question.Field == agentworkspace.PlaceAddress && agentworkspace.IsLocalPlaceAddressFollowupQuery(t.Filters["currentQuery"])) {
 		// The grammar and retained scalar filters are not a grant. Reuse the
 		// original selected entity's live city/name/generation proof in this tx.
@@ -340,6 +347,12 @@ func (s *Store) TryOwnLocalPlaceReply(ctx context.Context, a arp.Access) (agentw
 	q, source, e := s.captureReplyCurrentSourceTx(ctx, tx, a, t, p)
 	if e != nil {
 		return nil, false, e
+	}
+	if t.Filters[agentworkspace.SelectedPlaceContextFilter] == "native-map-v1" {
+		source, e = selectedPublicPlaceSource(source, boundFactPlace)
+		if e != nil {
+			return nil, false, e
+		}
 	}
 	if boundFactPlace.valid && !localPlaceHoursSourceMatches(boundFactPlace, source) {
 		return nil, false, agentworkspace.ErrPlaceFollowupChanged
@@ -498,6 +511,9 @@ func (s *Store) TryOwnLocalPlaceReply(ctx context.Context, a arp.Access) (agentw
 		}
 		if question.Field == agentworkspace.PlaceOpeningHours {
 			text = c.factText
+		}
+		if question.Field == agentworkspace.SelectedPlaceDayDraft {
+			text = agentworkspace.SelectedPlaceDayDraftText(c.place.Name)
 		}
 		if objective {
 			text, e = localObjectivePlaceText(c.place, c.fields, objectiveFields, sourceIDs)

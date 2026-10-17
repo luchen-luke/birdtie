@@ -10,6 +10,7 @@ import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 
 import 'mapbox_style.dart';
 import 'map_camera_focus.dart';
+import 'native_map_diagnostics.dart';
 import 'native_map_failure.dart';
 import 'now_map_compass.dart';
 import 'public_city_controller.dart';
@@ -130,8 +131,12 @@ class NativeCityMapView extends StatefulWidget {
   State<NativeCityMapView> createState() => _NativeCityMapViewState();
 }
 
-class _NativeCityMapViewState extends State<NativeCityMapView> {
+class _NativeCityMapViewState extends State<NativeCityMapView>
+    with WidgetsBindingObserver {
   MapboxMap? _map;
+  final _diagnostics = NativeMapDiagnostics(
+    provider: NativeMapDiagnosticProvider.mapbox,
+  );
   final _readerChanges = MapReaderChanges();
   final _pointSemantics =
       ValueNotifier<List<({MapEntity entity, Offset point})>>([]);
@@ -169,6 +174,11 @@ class _NativeCityMapViewState extends State<NativeCityMapView> {
   @override
   void initState() {
     super.initState();
+    _diagnostics.mounted();
+    if (WidgetsBinding.instance.lifecycleState case final state?) {
+      _diagnostics.lifecycle(state.index);
+    }
+    if (_diagnostics.enabled) WidgetsBinding.instance.addObserver(this);
     MapboxOptions.setAccessToken(widget.accessToken);
     final viewport = widget.city?.map;
     _initialViewport = CameraViewportState(
@@ -663,6 +673,7 @@ class _NativeCityMapViewState extends State<NativeCityMapView> {
 
   void _onCameraChanged(CameraChangedEventData event) {
     if (mounted) {
+      _diagnostics.cameraMoving();
       _bearing.value = event.cameraState.bearing;
       if (_pointSemantics.value.isNotEmpty) _pointSemantics.value = const [];
     }
@@ -689,10 +700,12 @@ class _NativeCityMapViewState extends State<NativeCityMapView> {
       _cameraSettleTimer = Timer(quietPeriod - elapsed, _settleAfterQuiet);
       return;
     }
+    _diagnostics.cameraSettled();
     unawaited(_publishViewport());
   }
 
   Future<void> _onMapIdle(MapIdleEventData event) async {
+    if (mounted) _diagnostics.cameraSettled();
     if (_northCameraEvidenceEnabled) {
       unawaited(_completeNorthCameraEvidence('sdk_idle'));
     }
@@ -754,7 +767,14 @@ class _NativeCityMapViewState extends State<NativeCityMapView> {
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    _diagnostics.lifecycle(state.index);
+  }
+
+  @override
   void dispose() {
+    if (_diagnostics.enabled) WidgetsBinding.instance.removeObserver(this);
+    _diagnostics.dispose();
     _markerQueue.close();
     ++_readerEpoch;
     _readerChanges.changed();
@@ -828,6 +848,7 @@ class _NativeCityMapViewState extends State<NativeCityMapView> {
   Future<void> _onStyleLoaded() async {
     final map = _map;
     if (map == null || !mounted) return;
+    _diagnostics.styleLoaded();
     final firstStyle = !_styleReady;
     debugPrint('Birdtie native map style loaded.');
     if (widget.fullBleed) {
@@ -874,6 +895,12 @@ class _NativeCityMapViewState extends State<NativeCityMapView> {
     if (!mounted) return;
     _coordinateMapLoaded = false;
     final changed = _mapFailure.report(event.type.name, event.message);
+    final failure = _mapFailure.failure!;
+    _diagnostics.resourceError(
+      resource: failure.resource,
+      reason: failure.reason,
+      httpStatus: failure.httpStatus,
+    );
     _mapRetryTimer?.cancel();
     if (changed) {
       debugPrint(
@@ -889,6 +916,7 @@ class _NativeCityMapViewState extends State<NativeCityMapView> {
 
   void _onMapLoaded() {
     if (!mounted) return;
+    _diagnostics.mapLoaded();
     _coordinateMapLoaded = true;
     if (!_mapFailure.mapLoaded()) return;
     _mapRetryTimer?.cancel();
@@ -900,6 +928,7 @@ class _NativeCityMapViewState extends State<NativeCityMapView> {
   Future<void> _retryMap() async {
     final map = _map;
     if (map == null || !_mapFailure.beginRetry()) return;
+    _diagnostics.styleRetry();
     setState(() {});
     _mapRetryTimer?.cancel();
     _mapRetryTimer = Timer(const Duration(seconds: 15), () {
@@ -1595,6 +1624,7 @@ class _NativeCityMapViewState extends State<NativeCityMapView> {
                 viewport: _initialViewport,
                 onMapCreated: (map) {
                   _map = map;
+                  _diagnostics.created();
                   if (!kReleaseMode) contentMapMetrics.mapCreations++;
                   debugPrint('Birdtie native map created.');
                   unawaited(_updateOrnaments());
@@ -1602,6 +1632,15 @@ class _NativeCityMapViewState extends State<NativeCityMapView> {
                 onStyleLoadedListener: (_) => unawaited(_onStyleLoaded()),
                 onMapLoadErrorListener: _onMapLoadError,
                 onMapLoadedListener: (_) => _onMapLoaded(),
+                onRenderFrameFinishedListener: _diagnostics.enabled
+                    ? (event) => _diagnostics.renderFrame(
+                        fullyRendered: event.renderMode == RenderMode.FULL,
+                        durationMicros: event.timeInterval.end
+                            .difference(event.timeInterval.begin)
+                            .inMicroseconds,
+                        needsRepaint: event.needsRepaint,
+                      )
+                    : null,
                 onCameraChangeListener: _onCameraChanged,
                 onMapIdleListener: _onMapIdle,
                 onTapListener: (gesture) {

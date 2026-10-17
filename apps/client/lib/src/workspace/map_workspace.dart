@@ -56,6 +56,7 @@ import 'agent_result_sheet.dart';
 import 'agent_activity_join_entry.dart';
 import 'agent_activity_join_page.dart';
 import 'agent_workspace_controller.dart';
+import 'selected_place_followup.dart';
 import 'task_image_controller.dart';
 import 'task_image_pending_store.dart';
 import 'task_image_page.dart';
@@ -5510,9 +5511,68 @@ class _MapWorkspaceState extends State<MapWorkspace>
     return true;
   }
 
+  SelectedPlaceFollowup? _selectedPlaceForSubmit(String query) {
+    if (!isSelectedPlaceFollowupQuery(query) ||
+        widget.auth.accountID == null ||
+        widget.auth.authorizationHeader == null ||
+        _organizations.active != null ||
+        _online.selected != null)
+      return null;
+    // Capture the native selector before retiring the reader presentation.
+    // Neither its media lease nor a map-only grant becomes Task authority.
+    final selected = _workspace.selectedEntityId;
+    if (selected == null) return null;
+    final pin = _mapContent.find(selected);
+    final typed = _layers.find(selected);
+    String? placeID;
+    if (pin != null && pin.isPlace && _mapContent.sourceCurrent(pin)) {
+      placeID = pin.placeID;
+    } else if (typed != null && typed.kind == 'PLACE') {
+      placeID = typed.placeID;
+    } else {
+      for (final place in widget.city.places) {
+        if (selected == 'place:${place.id}') {
+          placeID = place.id;
+          break;
+        }
+      }
+    }
+    final city = _queryCityID;
+    if (placeID == null || city == null) return null;
+    final owner = widget.auth.accountID,
+        token = widget.auth.authorizationHeader,
+        identity = _currentSeedIdentity,
+        epoch = _seedEntryEpoch,
+        browse = widget.city.browseKey,
+        selectionSerial = _previewSelectionSerial;
+    return SelectedPlaceFollowup(
+      placeID: placeID,
+      cityID: city,
+      taskID: _workspace.result == null ? null : _workspace.task?.id,
+      current: () =>
+          mounted &&
+          owner == widget.auth.accountID &&
+          token == widget.auth.authorizationHeader &&
+          identity == _currentSeedIdentity &&
+          epoch == _seedEntryEpoch &&
+          browse == widget.city.browseKey &&
+          city == _queryCityID &&
+          _organizations.active == null &&
+          _online.selected == null &&
+          selected == _workspace.selectedEntityId &&
+          selectionSerial == _previewSelectionSerial &&
+          (pin == null ||
+              (_mapContent.sourceCurrent(pin) &&
+                  _mapContent.find(selected)?.sourceVersion ==
+                      pin.sourceVersion)),
+    );
+  }
+
   Future<void> _submitInSelectedView(String query) async {
     final draftIdentity = _composerDrafts.identity;
     final draftVersion = _composerDrafts.contentVersion;
+    final selectedPlace = _selectedPlaceForSubmit(query);
+    final selectedTask = _workspace.task;
     if (_publicPlacePanel != null) setState(_retirePublicPlacePanel);
     if (_preserveUnfinishedTaskImage(query)) return;
     if (_imageDraft?.localBytes != null &&
@@ -5632,11 +5692,20 @@ class _MapWorkspaceState extends State<MapWorkspace>
     final material = _imageDraft?.snapshot();
     final previousTask = _workspace.result == null ? null : _workspace.task;
     final prefix = previousTask?.messages.toList() ?? <AgentMessage>[];
+    if (selectedPlace != null &&
+        (!selectedPlace.current || !identical(selectedTask, _workspace.task))) {
+      _composerKey.currentState?.fillDraft(query, requestFocus: false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('当前地点或任务已变化，请重新选择地点。原输入仍保留。')),
+      );
+      return;
+    }
     final sending = _workspace.submit(
       query,
       widget.city.activities,
       widget.city.places,
       cityID: _queryCityID,
+      selectedPlace: selectedPlace,
     );
     final sendingEpoch = _workspace.taskEpoch;
     await sending;

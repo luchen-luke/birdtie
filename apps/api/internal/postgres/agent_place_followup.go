@@ -16,6 +16,7 @@ import (
 )
 
 var _ agentworkspace.PublicPlaceFollowupPort = (*Store)(nil)
+var _ agentworkspace.SelectedPlaceFollowupPort = (*Store)(nil)
 
 // Comparable private data keeps the original CALL -> MODEL preparation's
 // exact comparison. No native row generation or identifier reaches the model.
@@ -67,6 +68,17 @@ func publicPlaceMatchesCurrentSearch(name, term string) bool {
 // then appends that user turn through the original Task writer in the SAME
 // native transaction. Human read policy is a brake, never model-egress approval.
 func (s *Store) ContinueOwnPublicPlace(ctx context.Context, a arp.Access, query string) (agentworkspace.Task, error) {
+	return s.continueOwnPublicPlace(ctx, a, query, nil)
+}
+
+func (s *Store) ContinueOwnSelectedPlace(ctx context.Context, a arp.Access, query string, selected agentworkspace.SelectedPlaceSelector) (agentworkspace.Task, error) {
+	if !selected.Valid() {
+		return agentworkspace.Task{}, arp.ErrDenied
+	}
+	return s.continueOwnPublicPlace(ctx, a, query, &selected)
+}
+
+func (s *Store) continueOwnPublicPlace(ctx context.Context, a arp.Access, query string, selected *agentworkspace.SelectedPlaceSelector) (agentworkspace.Task, error) {
 	tx, _, policy, e := s.beginCurrentToolRead(ctx, a.Actor, a.SessionDigest, resultProjectionRelations)
 	if e != nil {
 		return agentworkspace.Task{}, e
@@ -77,11 +89,20 @@ func (s *Store) ContinueOwnPublicPlace(ctx context.Context, a arp.Access, query 
 		return t, e
 	}
 	f, ok := agentworkspace.ParsePlaceFollowup(query, &t)
-	if !ok || t.Status != agentworkspace.TaskCompleted || agenttool.Restrict(agenttool.CurrentSearchTool("place"), actorref.Person, policy.level).Denied {
+	day := 0
+	newSelectedTask := selected != nil && t.Status == agentworkspace.TaskActive && t.Intent == "PENDING" && t.Query == query && len(t.Conversation) == 1 && t.Conversation[0].Role == "user" && t.Conversation[0].Text == query
+	if selected != nil {
+		f, day, ok = agentworkspace.ParseSelectedPlaceFollowup(query)
+	}
+	if !ok || (t.Status != agentworkspace.TaskCompleted && !newSelectedTask) || agenttool.Restrict(agenttool.CurrentSearchTool("place"), actorref.Person, policy.level).Denied {
 		return agentworkspace.Task{}, arp.ErrDenied
 	}
 	var id, expectedName string
-	if f.Pronoun {
+	if selected != nil {
+		// Explicit map selector has no reply membership. The canonical public
+		// row below is independently read before creating any new membership.
+		id = selected.PlaceID
+	} else if f.Pronoun {
 		selector, selectErr := latestSinglePlaceReply(t)
 		if selectErr != nil {
 			return agentworkspace.Task{}, selectErr
@@ -133,7 +154,7 @@ func (s *Store) ContinueOwnPublicPlace(ctx context.Context, a arp.Access, query 
 		}
 	}
 	place, e := nativePublicFollowupPlaceTx(ctx, tx, id, t.CityID, policy.until)
-	if e != nil || place.name != expectedName {
+	if e != nil || (expectedName != "" && place.name != expectedName) {
 		return agentworkspace.Task{}, agentworkspace.ErrPlaceFollowupChanged
 	}
 	// Do not mutate the caller's map or turn before all source checks succeed.
@@ -142,11 +163,30 @@ func (s *Store) ContinueOwnPublicPlace(ctx context.Context, a arp.Access, query 
 		filters[key] = value
 	}
 	t.Filters = filters
+	if selected == nil {
+		delete(t.Filters, agentworkspace.SelectedPlaceContextFilter)
+		if !f.Pronoun {
+			delete(t.Filters, agentworkspace.SelectedPlaceDayFilter)
+		}
+	}
+	if selected != nil {
+		agentworkspace.ClearPlaceFollowupContext(&t)
+		for _, key := range []string{"category", "distancePreference", "mapWest", "mapSouth", "mapEast", "mapNorth", "resultIDs"} {
+			delete(t.Filters, key)
+		}
+		t.Filters["locationPreference"] = "city"
+		t.Filters[agentworkspace.SelectedPlaceContextFilter] = "native-map-v1"
+		if day == 2 {
+			t.Filters[agentworkspace.SelectedPlaceDayFilter] = "2"
+		}
+	}
 	t.Intent, t.Status = agentworkspace.FindPlace, agentworkspace.TaskActive
 	t.Filters["targetIntent"], t.Filters["searchTerm"], t.Filters["currentQuery"] = agentworkspace.FindPlace, place.name, query
 	t.Filters["timePreference"] = f.TimePreference
 	t.Filters[agentworkspace.PlaceFollowupIDFilter], t.Filters[agentworkspace.PlaceFollowupGenerationFilter], t.Filters[agentworkspace.PlaceFollowupTopicFilter] = place.id, place.generation, f.Topic
-	t.Conversation = append(t.Conversation, agentworkspace.Message{Role: "user", Text: query})
+	if !newSelectedTask {
+		t.Conversation = append(t.Conversation, agentworkspace.Message{Role: "user", Text: query})
+	}
 	t, e = s.updateTaskInTx(ctx, tx, t)
 	if e != nil {
 		return agentworkspace.Task{}, e
@@ -160,7 +200,12 @@ func (s *Store) ContinueOwnPublicPlace(ctx context.Context, a arp.Access, query 
 	if e != nil {
 		return agentworkspace.Task{}, e
 	}
-	if len(receipt.Items) != 1 || receipt.Items[0].Entity != (arp.Ref{Type: "place", ID: place.id}) || receipt.Items[0].Title != place.name {
+	if selected != nil {
+		_, e = selectedPublicPlaceSource(receipt, place)
+	} else if len(receipt.Items) != 1 || receipt.Items[0].Entity != (arp.Ref{Type: "place", ID: place.id}) || receipt.Items[0].Title != place.name {
+		e = agentworkspace.ErrPlaceFollowupChanged
+	}
+	if e != nil {
 		return agentworkspace.Task{}, agentworkspace.ErrPlaceFollowupChanged
 	}
 	current, e := nativePublicFollowupPlaceTx(ctx, tx, place.id, t.CityID, receipt.ValidUntil)
@@ -171,6 +216,29 @@ func (s *Store) ContinueOwnPublicPlace(ctx context.Context, a arp.Access, query 
 		return agentworkspace.Task{}, arp.ErrUnavailable
 	}
 	return t, nil
+}
+
+// Native name search can match another similarly named venue. Keep only the
+// exact selected public row already present in the current native receipt.
+// The original seal/deadline remains a ceiling; this does not grant new refs.
+func selectedPublicPlaceSource(source arp.Receipt, place nativeResolvedPublicPlace) (arp.Receipt, error) {
+	items := []arp.Item{}
+	for _, item := range source.Items {
+		if item.Entity == (arp.Ref{Type: "place", ID: place.id}) && item.Title == place.name {
+			items = append(items, item)
+		}
+	}
+	selected := source.Places[:0:0]
+	for _, value := range source.Places {
+		if value.ID == place.id && value.Name == place.name {
+			selected = append(selected, value)
+		}
+	}
+	if !place.valid || len(items) != 1 || len(selected) != 1 {
+		return arp.Receipt{}, agentworkspace.ErrPlaceFollowupChanged
+	}
+	source.Items, source.Places = items, selected
+	return source, nil
 }
 
 func nativeResolvedPlaceFromTaskTx(ctx context.Context, tx pgx.Tx, t agentworkspace.Task, deadline time.Time) (nativeResolvedPublicPlace, string, error) {

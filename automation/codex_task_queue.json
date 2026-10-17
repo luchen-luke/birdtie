@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated": "2026-10-17T15:38:12.659303+00:00",
+  "updated": "2026-10-17T17:33:27.262454+00:00",
   "tasks": [
     {
       "id": "BT-AUD-001",
@@ -21254,6 +21254,15 @@
           "at": "2026-10-17T15:38:12.012969+00:00",
           "summary": "User reconnected c641566b. Installed existing45 APK preserving data, exact device digest matched. Real common shortlist, three identical settled preview pixel rectangles across pan/reverse pan, and current-place single-entry full-width expansion observed.44 failure and45 first disconnected attempt retained. No code/build/deploy rerun; full R01-R18 remains unaccepted and parent IN_PROGRESS.",
           "evidence": "docs/testing/evidence/now-unified-20261017/feedback/install03/ui-receipt.json"
+        },
+        {
+          "at": "2026-10-17T16:10:12.743896+00:00",
+          "summary": "User requests all current unified work completed. Continue actual media/cache/timing, native-map diagnostic and isolated authoritative-thread gaps under existing task. No reset of old acceptance/history; parent remains IN_PROGRESS."
+        },
+        {
+          "at": "2026-10-17T17:33:26.622278+00:00",
+          "summary": "Continued unified gaps after user request 全部完成. Added selected native place Task context, reader-wide original-deadline cache/singleflight, chunk/SHA video sink, numeric diagnostics, and first-motion-only AMap rebuild. Direct checks and isolated actual178 thread/selector SQL pass. Installed normal47 preserving data; API35 binary deployed with178 ledger unchanged. Real two-place-moment collection, both map panel settled geometry0px, warm image~30ms and isolated native H264 texture/cleanup verified. Real multi-user device/production video/historical blank cause remain unaccepted. No production fixtures/Task test queries; parent stays IN_PROGRESS.",
+          "evidence": "docs/testing/evidence/now-unified-20261017/feedback/completion47-receipt.json"
         }
       ],
       "social_core_execution_20261015": {
@@ -22033,7 +22042,7 @@
         }
       },
       "now_unified_feedback_20261017": {
-        "status": "DEVICE45_BOUNDED_UI_SMOKE_PASS_OVERALL_PARTIAL",
+        "status": "APK47_API35_DELIVERED_SCOPED_CHECKS_PASS_OVERALL_PARTIAL",
         "reason": "User sees all reported issues; map pan still jumps/reloads reader; wants Civu-style small frequent shortlist and global search, remove proven test pollution",
         "priorDeliveredCodeCommit": "535078f965db1327ba94bb1227bd1a97b78e71dd",
         "priorFullAcceptance": "NOT_PASSED",
@@ -22078,7 +22087,7 @@
         },
         "latestVersion": "0.1.1+45",
         "latestAPKInstalled": true,
-        "actualInstalled": "0.1.1+45; exact installed digest; common artwork, settled pan/reverse-pan geometry and single-entry place expansion verified",
+        "actualInstalled": "0.1.2+47; exact installed digest, normal main restored after isolated46 video probe",
         "apiRelease": "/opt/birdtie/releases/social178-20261017-build34",
         "schema": 178,
         "catalogExclusions": 8,
@@ -22086,12 +22095,58 @@
         "deviceBlock": null,
         "receipt": "docs/testing/evidence/now-unified-20261017/feedback/receipt.json",
         "notRun": [
-          "real multi-account thread/withdrawal verification",
-          "full video first-frame/performance and both historical native-map blank causes",
-          "full product/release acceptance",
-          "all intermediate gesture-frame timing; true multi-entry thread and multiple-account acceptance not covered by current-place single-entry expansion"
+          "real multi-member and multi-user device thread/withdrawal positive (current selected first entry is legitimately one-member)",
+          "production large-video network/first-frame benchmark (isolated17517B H264 proof only)",
+          "historical native blank root cause (current bounded Mapbox/AMap drags/readers/resume passed)",
+          "R04 live Task POST and target Plan selection; selectedPlace/day2 remain an explicit pending-target draft, not saved itinerary",
+          "complete product/release and assistive-technology acceptance"
         ],
-        "deviceReceipt": "docs/testing/evidence/now-unified-20261017/feedback/install03/ui-receipt.json"
+        "deviceReceipt": "docs/testing/evidence/now-unified-20261017/feedback/install47/ui-receipt.json",
+        "completionContinuation": {
+          "requested": "全部完成",
+          "atUTC": "2026-10-17T17:33:26.622278+00:00",
+          "scope": "Current unified R01-R18 gaps only; preserve original tasks and gates",
+          "status": "APK47_API35_DELIVERED_SCOPED_CHECKS_PASS_OVERALL_PARTIAL",
+          "writers": {
+            "root": "queue/shared reports/device/production; map_content_thread_test.go isolated PostgreSQL tests; amap_city_map_io.dart motion callback only after worker completes diagnostics",
+            "artifact_build_audit": "reader shared bounded cache, immutable descriptor expiry, singleflight, controlled video chunk sink, numeric media timing, direct regressions in assigned files",
+            "integration_audit": {
+              "scope": [
+                "apps/client/lib/src/workspace/map_workspace.dart",
+                "apps/client/lib/src/workspace/agent_workspace_controller.dart",
+                "apps/client/lib/src/workspace/remote_agent_task_source.dart",
+                "apps/client/lib/src/workspace/selected_place_followup.dart",
+                "apps/client/test/now_selected_place_followup_test.dart",
+                "apps/api/internal/agentworkspace/place_followup.go",
+                "apps/api/internal/agentworkspace/selected_place_followup.go",
+                "apps/api/internal/agentworkspace/selected_place_followup_test.go",
+                "apps/api/internal/httpapi/agent_workspace.go",
+                "apps/api/internal/httpapi/agent_place_followup.go",
+                "apps/api/internal/httpapi/agent_selected_place_followup_test.go",
+                "apps/api/internal/postgres/agent_place_followup.go",
+                "apps/api/internal/postgres/now_local_place_answers.go",
+                "apps/api/internal/postgres/agent_selected_place_followup_test.go",
+                "apps/api/internal/postgres/agent_result_projection.go",
+                "apps/client/tool/probes/now_map_media_device_probe.dart"
+              ],
+              "purpose": "R04 selected native place read-only turn context and honest day2 target clarification; no Plan side effect"
+            },
+            "destination_controller": "read-only isolated native thread test tooling audit"
+          },
+          "restrictions": [
+            "No production fixture injection",
+            "No recording",
+            "Normal system font",
+            "No repeated broad test suite"
+          ],
+          "evidence": "docs/testing/evidence/now-unified-20261017/feedback/completion47-receipt.json",
+          "finalVersion": 47,
+          "apiBuild": 35,
+          "schema": 178,
+          "sourceImplementationCompleteWithinDeclaredScope": true,
+          "overallAcceptance": "PARTIAL",
+          "github": "PENDING exact selective commit/push"
+        }
       }
     },
     {
@@ -22380,6 +22435,9 @@
           "apps/api/internal/agenttool/activity_join_test.go",
           "apps/api/internal/agenttool/registry_test.go",
           "apps/api/internal/agentvisual",
+          "apps/api/internal/agentworkspace/place_followup.go",
+          "apps/api/internal/agentworkspace/selected_place_followup.go",
+          "apps/api/internal/agentworkspace/selected_place_followup_test.go",
           "apps/api/internal/businessconsole/member_projection_test.go",
           "apps/api/internal/businessconsole/model.go",
           "apps/api/internal/cityartwork",
@@ -22453,10 +22511,13 @@
           "apps/api/internal/httpapi/agent_activity_join_test.go",
           "apps/api/internal/httpapi/agent_memory_review_page.go",
           "apps/api/internal/httpapi/agent_memory_review_page_test.go",
+          "apps/api/internal/httpapi/agent_place_followup.go",
           "apps/api/internal/httpapi/agent_runs_page.go",
           "apps/api/internal/httpapi/agent_runs_page_test.go",
+          "apps/api/internal/httpapi/agent_selected_place_followup_test.go",
           "apps/api/internal/httpapi/agent_visual.go",
           "apps/api/internal/httpapi/agent_visual_test.go",
+          "apps/api/internal/httpapi/agent_workspace.go",
           "apps/api/internal/httpapi/blocks.go",
           "apps/api/internal/httpapi/business_member_projection_test.go",
           "apps/api/internal/httpapi/chat_entity_sharing.go",
@@ -22684,10 +22745,12 @@
           "apps/api/internal/postgres/agent_participation_outbox.go",
           "apps/api/internal/postgres/agent_participation_outbox_integration_test.go",
           "apps/api/internal/postgres/agent_participation_outbox_test.go",
+          "apps/api/internal/postgres/agent_place_followup.go",
           "apps/api/internal/postgres/agent_result_projection.go",
           "apps/api/internal/postgres/agent_runs.go",
           "apps/api/internal/postgres/agent_runs_page.go",
           "apps/api/internal/postgres/agent_runs_page_integration_test.go",
+          "apps/api/internal/postgres/agent_selected_place_followup_test.go",
           "apps/api/internal/postgres/agent_task_request_context_invalidation.go",
           "apps/api/internal/postgres/agent_task_request_context_invalidation_native_test.go",
           "apps/api/internal/postgres/agent_task_request_context_invalidation_test.go",
@@ -22840,6 +22903,7 @@
           "apps/api/internal/postgres/moment_video_carry_native_test.go",
           "apps/api/internal/postgres/moments.go",
           "apps/api/internal/postgres/notification_routing.go",
+          "apps/api/internal/postgres/now_local_place_answers.go",
           "apps/api/internal/postgres/organization_faq.go",
           "apps/api/internal/postgres/organization_human_control.go",
           "apps/api/internal/postgres/organization_map_locations.go",
@@ -23111,6 +23175,7 @@
           "apps/client/lib/src/city/mapbox_web_basemap_web.dart",
           "apps/client/lib/src/city/native_city_map_io.dart",
           "apps/client/lib/src/city/native_city_map_stub.dart",
+          "apps/client/lib/src/city/native_map_diagnostics.dart",
           "apps/client/lib/src/city/public_city_controller.dart",
           "apps/client/lib/src/city/public_city_map.dart",
           "apps/client/lib/src/city/third_party/coordtransform.license",
@@ -23162,6 +23227,9 @@
           "apps/client/lib/src/content/video_material_player_io.dart",
           "apps/client/lib/src/content/video_material_player_stub.dart",
           "apps/client/lib/src/content/video_material_player_web.dart",
+          "apps/client/lib/src/content/video_material_sink_io.dart",
+          "apps/client/lib/src/content/video_material_sink_stub.dart",
+          "apps/client/lib/src/content/video_material_sink_web.dart",
           "apps/client/lib/src/legacy/legacy_shell.dart",
           "apps/client/lib/src/settings/settings_page.dart",
           "apps/client/lib/src/workspace/active_social_intent_card.dart",
@@ -23247,6 +23315,7 @@
           "apps/client/lib/src/workspace/map_marker_visual.dart",
           "apps/client/lib/src/workspace/map_marker_widget.dart",
           "apps/client/lib/src/workspace/map_media_controller.dart",
+          "apps/client/lib/src/workspace/map_media_read_metrics.dart",
           "apps/client/lib/src/workspace/map_workspace.dart",
           "apps/client/lib/src/workspace/memory_content_fields.dart",
           "apps/client/lib/src/workspace/model_egress_page.dart",
@@ -23320,11 +23389,13 @@
           "apps/client/lib/src/workspace/public_person_page.dart",
           "apps/client/lib/src/workspace/public_query_field_evidence.dart",
           "apps/client/lib/src/workspace/public_query_field_evidence_panel.dart",
+          "apps/client/lib/src/workspace/remote_agent_task_source.dart",
           "apps/client/lib/src/workspace/remote_inbox_source.dart",
           "apps/client/lib/src/workspace/route_draft.dart",
           "apps/client/lib/src/workspace/route_draft_page.dart",
           "apps/client/lib/src/workspace/saved_items.dart",
           "apps/client/lib/src/workspace/saved_map_projection.dart",
+          "apps/client/lib/src/workspace/selected_place_followup.dart",
           "apps/client/lib/src/workspace/settings_page.dart",
           "apps/client/lib/src/workspace/sidebar.dart",
           "apps/client/lib/src/workspace/social_now_page.dart",
@@ -23397,6 +23468,7 @@
           "apps/client/test/agent_visual_controller_test.dart",
           "apps/client/test/agent_visual_page_test.dart",
           "apps/client/test/agent_visual_pending_store_test.dart",
+          "apps/client/test/amap_city_map_motion_test.dart",
           "apps/client/test/amap_destination_search_test.dart",
           "apps/client/test/amap_native_configuration_test.dart",
           "apps/client/test/amap_native_lifecycle_test.dart",
@@ -23513,10 +23585,12 @@
           "apps/client/test/map_marker_bitmap_test.dart",
           "apps/client/test/map_media_contract_test.dart",
           "apps/client/test/map_media_controller_test.dart",
+          "apps/client/test/map_media_read_metrics_test.dart",
           "apps/client/test/map_media_rendering_test.dart",
           "apps/client/test/map_moment_media_sidecar_test.dart",
           "apps/client/test/map_point_selection_sheet_test.dart",
           "apps/client/test/map_provider_policy_test.dart",
+          "apps/client/test/map_video_transfer_test.dart",
           "apps/client/test/map_web_fan_test.dart",
           "apps/client/test/map_workspace_auth_test.dart",
           "apps/client/test/map_workspace_shell_test.dart",
@@ -23535,6 +23609,7 @@
           "apps/client/test/moment_publication_controller_test.dart",
           "apps/client/test/moment_thread_test.dart",
           "apps/client/test/moments_historical_test.dart",
+          "apps/client/test/native_map_diagnostics_test.dart",
           "apps/client/test/native_oidc_auth_test.dart",
           "apps/client/test/notification_schedule_page_test.dart",
           "apps/client/test/now_area_content_recovery_test.dart",
@@ -23575,6 +23650,7 @@
           "apps/client/test/now_public_place_parent_restore_test.dart",
           "apps/client/test/now_recording_content_hierarchy_test.dart",
           "apps/client/test/now_recording_materials_test.dart",
+          "apps/client/test/now_selected_place_followup_test.dart",
           "apps/client/test/now_sidebar_identity_test.dart",
           "apps/client/test/now_sidebar_tap_trace_test.dart",
           "apps/client/test/now_social_edge_host_test.dart",
@@ -23696,6 +23772,7 @@
           "apps/client/test/voice_input_consent_test.dart",
           "apps/client/test/voice_input_test.dart",
           "apps/client/test/web_mapbox_basemap_contract_test.dart",
+          "apps/client/tool/probes/now_map_media_device_probe.dart",
           "apps/client/web/birdtie_amap.js",
           "apps/client/web/birdtie_mapbox.js",
           "apps/client/web/index.html",

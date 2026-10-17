@@ -15,6 +15,7 @@ import 'external_place_candidates.dart';
 import 'map_layers_api.dart';
 import 'now_context_query_api.dart';
 import 'sponsored_opportunities.dart';
+import 'selected_place_followup.dart';
 
 enum AgentViewState { idle, typing, searching, results, conversation }
 
@@ -608,6 +609,13 @@ abstract class AgentTaskSource {
     List<PublicActivity> activities,
     List<PublicPlace> places,
   ) => resolve(query, activities, places);
+  Future<AgentResult> continueSelectedPlace(
+    AgentTask? task,
+    String query,
+    SelectedPlaceFollowup selected,
+    List<PublicActivity> activities,
+    List<PublicPlace> places,
+  ) => Future.error(const AgentRequestFailure('当前地点承接暂不可用；原对话与输入仍保留。'));
   Future<AgentResult> searchArea(
     AgentTask? task,
     String query,
@@ -955,6 +963,7 @@ class AgentWorkspaceController extends ChangeNotifier {
     _lastQuery = query;
     _lastBounds = null;
     _lastActiveTask = null;
+    _lastSelectedPlace = null;
     _lastRestoreTask = null;
     requestFailure = const AgentRequestFailure(
       '选择城市后继续原查询；尚未搜索公开内容。',
@@ -1005,6 +1014,7 @@ class AgentWorkspaceController extends ChangeNotifier {
   String? _lastQuery;
   MapBounds? _lastBounds;
   AgentTask? _lastActiveTask;
+  SelectedPlaceFollowup? _lastSelectedPlace;
   AgentTask? _lastRestoreTask;
   List<PublicActivity> _lastActivities = const [];
   List<PublicPlace> _lastPlaces = const [];
@@ -1098,6 +1108,7 @@ class AgentWorkspaceController extends ChangeNotifier {
     _lastQuery = null;
     _lastBounds = null;
     _lastActiveTask = null;
+    _lastSelectedPlace = null;
     _lastRestoreTask = null;
     sheetExtent = AgentSheetExtent.peek;
     state = AgentViewState.idle;
@@ -1193,6 +1204,7 @@ class AgentWorkspaceController extends ChangeNotifier {
     _lastQuery = effectiveQuery;
     _lastBounds = bounds;
     _lastActiveTask = activeTask;
+    _lastSelectedPlace = null;
     _lastActivities = activities;
     _lastPlaces = places;
     _lastCityID = cityID;
@@ -1213,6 +1225,7 @@ class AgentWorkspaceController extends ChangeNotifier {
     List<PublicActivity> activities,
     List<PublicPlace> places, {
     String? cityID,
+    SelectedPlaceFollowup? selectedPlace,
   }) async {
     final query = raw.trim();
     if (query.isEmpty) return;
@@ -1248,6 +1261,7 @@ class AgentWorkspaceController extends ChangeNotifier {
     _lastQuery = query;
     _lastBounds = null;
     _lastActiveTask = continuing ? previousTask : null;
+    _lastSelectedPlace = selectedPlace;
     _lastActivities = activities;
     _lastPlaces = places;
     _lastCityID = cityID;
@@ -1259,6 +1273,7 @@ class AgentWorkspaceController extends ChangeNotifier {
       activities: activities,
       places: places,
       cityID: cityID,
+      selectedPlace: selectedPlace,
     );
   }
 
@@ -1323,6 +1338,7 @@ class AgentWorkspaceController extends ChangeNotifier {
       serial: serial,
       query: query,
       activeTask: _lastActiveTask,
+      selectedPlace: _lastSelectedPlace,
       activities: _lastActivities,
       places: _lastPlaces,
       cityID: _lastCityID,
@@ -1338,6 +1354,7 @@ class AgentWorkspaceController extends ChangeNotifier {
     required List<PublicPlace> places,
     String? cityID,
     MapBounds? bounds,
+    SelectedPlaceFollowup? selectedPlace,
   }) async {
     retireReplyRefresh();
     preserveReplyCamera = false;
@@ -1345,7 +1362,18 @@ class AgentWorkspaceController extends ChangeNotifier {
     final previousResult = result;
     AgentResult resolved;
     try {
-      resolved = bounds != null
+      if (selectedPlace != null && !selectedPlace.current) {
+        throw const AgentRequestFailure('当前地点或账号范围已变化，请重新选择地点。');
+      }
+      resolved = selectedPlace != null
+          ? await _source.continueSelectedPlace(
+              activeTask,
+              query,
+              selectedPlace,
+              activities,
+              places,
+            )
+          : bounds != null
           ? await _source.searchArea(
               activeTask,
               query,
@@ -1356,6 +1384,9 @@ class AgentWorkspaceController extends ChangeNotifier {
           : continuing
           ? await _source.followUp(activeTask, query, activities, places)
           : await _source.resolve(query, activities, places);
+      if (selectedPlace != null && !selectedPlace.current) {
+        throw const AgentRequestFailure('当前地点或账号范围已变化，本轮结果未显示。');
+      }
     } catch (error) {
       if (serial != _serial) return;
       requestError = _failureMessage(error);
@@ -1697,6 +1728,7 @@ class AgentWorkspaceController extends ChangeNotifier {
     _lastQuery = null;
     _lastBounds = null;
     _lastActiveTask = null;
+    _lastSelectedPlace = null;
     _lastRestoreTask = null;
     sheetExtent = AgentSheetExtent.peek;
     state = AgentViewState.idle;

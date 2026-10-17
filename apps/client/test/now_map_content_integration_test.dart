@@ -406,8 +406,11 @@ void main() {
           canvas().mapState.cameraSettled(mapTestBounds);
         }
         await t.pump();
-        expect(t.getRect(find.byType(NowMapContentPanel)), previewBounds,
-            reason: 'hidden search-area row cannot move the selected reader');
+        expect(
+          t.getRect(find.byType(NowMapContentPanel)),
+          previewBounds,
+          reason: 'hidden search-area row cannot move the selected reader',
+        );
       }
       final mapView = t.widget<PublicCityMapView>(
         find.byType(PublicCityMapView),
@@ -469,6 +472,34 @@ void main() {
         (mapReads, pageReads),
         readsBefore,
         reason: 'Expansion must not restart a content read.',
+      );
+      expect(
+        imageReads,
+        2,
+        reason: 'Compact to expanded keeps the exact already-read assets.',
+      );
+      await t.tap(find.byType(PageView));
+      await t.pump();
+      await waitFor(() => find.byTooltip('返回动态').evaluate().isNotEmpty);
+      await waitFor(
+        () => find
+            .descendant(of: find.byType(PageView), matching: find.byType(Image))
+            .evaluate()
+            .isNotEmpty,
+      );
+      expect(imageReads, 2, reason: 'Fullscreen shares the reader byte cache.');
+      await t.tap(find.byTooltip('返回动态'));
+      await t.pump();
+      await waitFor(
+        () => find
+            .descendant(of: find.byType(PageView), matching: find.byType(Image))
+            .evaluate()
+            .isNotEmpty,
+      );
+      expect(
+        imageReads,
+        2,
+        reason: 'Returning from fullscreen never redownloads.',
       );
       expect(owned.epoch, epoch);
       expect(owned.current, isTrue);

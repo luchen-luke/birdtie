@@ -135,6 +135,13 @@ class LazyFixture extends ReaderFixture {
 }
 
 class _PanelLazyFixture extends LazyFixture {
+  DateTime? descriptorUntil;
+  @override
+  Map<String, Object?> descriptor(int n) => {
+    ...super.descriptor(n),
+    if (descriptorUntil != null)
+      'validUntil': descriptorUntil!.toIso8601String(),
+  };
   final descriptorGates = <int, Completer<void>>{
     1: Completer<void>(),
     2: Completer<void>(),
@@ -164,6 +171,13 @@ class _PanelLazyFixture extends LazyFixture {
   @override
   Future<http.StreamedResponse> send(http.BaseRequest request) async {
     final path = request.url.path;
+    if (path.endsWith('/thread')) {
+      return http.StreamedResponse(
+        Stream.value(utf8.encode('404 page not found\n')),
+        404,
+        headers: {'content-type': 'text/plain'},
+      );
+    }
     if (!path.endsWith('/display-descriptor') && !path.endsWith('/content')) {
       return super.send(request);
     }
@@ -239,6 +253,13 @@ class _PanelVideoRenewalFixture extends ReaderFixture {
   @override
   Future<http.StreamedResponse> send(http.BaseRequest request) async {
     final uri = request.url;
+    if (uri.path.endsWith('/thread')) {
+      return http.StreamedResponse(
+        Stream.value(utf8.encode('404 page not found\n')),
+        404,
+        headers: {'content-type': 'text/plain'},
+      );
+    }
     if (uri.path == '/v1/me/map-content/moments/${f.id(1)}') {
       final first = !events.contains('initial-detail');
       events.add(first ? 'initial-detail' : 'fresh-detail');
@@ -393,6 +414,111 @@ Future<(OwnedMapController, ValueNotifier<int>)> _mountLazyPanel(
 }
 
 void main() {
+  testWidgets('media04 fullscreen handoff joins the pending image request', (
+    t,
+  ) async {
+    final fixture = _PanelLazyFixture()..now = DateTime.now().toUtc();
+    final (controller, identity) = await _mountLazyPanel(t, fixture);
+    try {
+      expect(fixture.descriptorRequests.length, 1);
+      await t.tap(find.byType(PageView));
+      await t.pump();
+      expect(find.byTooltip('返回动态'), findsOneWidget);
+      fixture.releaseDescriptor(1);
+      await f.drain(
+        t,
+        () => find
+            .descendant(of: find.byType(PageView), matching: find.byType(Image))
+            .evaluate()
+            .isNotEmpty,
+      );
+      expect(fixture.descriptorRequests.length, 1);
+      expect(fixture.byteRequests.length, 1);
+      await t.tap(find.byTooltip('返回动态'));
+      await t.pump();
+      await f.drain(
+        t,
+        () => find
+            .descendant(of: find.byType(PageView), matching: find.byType(Image))
+            .evaluate()
+            .isNotEmpty,
+      );
+      expect(fixture.descriptorRequests.length, 1);
+      expect(fixture.byteRequests.length, 1);
+      expect(t.takeException(), isNull);
+    } finally {
+      fixture.releaseDescriptor(1);
+      fixture.releaseDescriptor(2);
+      await disposeReader(t, controller, identity);
+    }
+  });
+  test(
+    'media04 display bytes retain the shorter descriptor deadline',
+    () async {
+      final x = LazyFixture();
+      addTearDown(x.api.dispose);
+      final until = x.now.add(const Duration(seconds: 2));
+      x.changeDescriptor = (value) => {
+        ...value,
+        'validUntil': until.toIso8601String(),
+      };
+      final detail = await x.readDetail();
+      final bytes = await x.bytes(detail, 0);
+      expect(x.api.contentValidUntil(bytes), until);
+      expect(until.isBefore(detail.validUntil), true);
+      bytes.fillRange(0, bytes.length, 0);
+    },
+  );
+  testWidgets(
+    'media04 cached image retires at descriptor expiry before detail expiry',
+    (t) async {
+      final fixture = _PanelLazyFixture()..now = DateTime.now().toUtc();
+      final until = fixture.now.add(const Duration(milliseconds: 700));
+      fixture.changeDescriptor = (value) => {
+        ...value,
+        'validUntil': until.toIso8601String(),
+      };
+      // The real transport below uses descriptor(), so bind its narrow lease there.
+      fixture.descriptorUntil = until;
+      final (controller, identity) = await _mountLazyPanel(t, fixture);
+      try {
+        fixture.releaseDescriptor(1);
+        await f.drain(
+          t,
+          () => find
+              .descendant(
+                of: find.byType(PageView),
+                matching: find.byType(Image),
+              )
+              .evaluate()
+              .isNotEmpty,
+        );
+        await t.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 750)),
+        );
+        await t.pump(const Duration(seconds: 1));
+        expect(controller.current, true);
+        expect(
+          find.descendant(
+            of: find.byType(PageView),
+            matching: find.byType(Image),
+          ),
+          findsNothing,
+        );
+        fixture.now = DateTime.now().toUtc();
+        fixture.descriptorUntil = null;
+        await t.tap(find.byType(PageView));
+        await t.pump();
+        await f.drain(t, () => fixture.descriptorRequests.length == 2);
+        await f.drain(t, () => fixture.byteRequests.length == 2);
+        expect(t.takeException(), isNull);
+      } finally {
+        fixture.releaseDescriptor(1);
+        fixture.releaseDescriptor(2);
+        await disposeReader(t, controller, identity);
+      }
+    },
+  );
   testWidgets(
     'panel page change retires a pending descriptor before old bytes start',
     (t) async {
@@ -408,7 +534,7 @@ void main() {
         await t.pump();
         await t.pump(const Duration(milliseconds: 250));
         await f.drain(t, () => fixture.descriptorRequests.length == 2);
-        expect(find.text('2 / 2'), findsOneWidget);
+        expect(find.text('媒体 2 / 2'), findsOneWidget);
         expect(controller.current, isTrue);
 
         fixture.releaseDescriptor(2);
@@ -440,7 +566,7 @@ void main() {
           ),
           isFalse,
         );
-        expect(find.text('2 / 2'), findsOneWidget);
+        expect(find.text('媒体 2 / 2'), findsOneWidget);
         expect(t.takeException(), isNull);
       } finally {
         fixture.releaseDescriptor(1);

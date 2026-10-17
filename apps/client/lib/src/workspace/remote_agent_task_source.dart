@@ -20,6 +20,7 @@ import 'map_entities.dart';
 import 'map_layers_api.dart';
 import 'now_context_query_api.dart';
 import 'sponsored_opportunities.dart';
+import 'selected_place_followup.dart';
 import '../config/birdtie_environment.dart';
 
 String _activityStatusLabel(String status) => switch (status) {
@@ -195,6 +196,28 @@ class RemoteAgentTaskSource extends AgentTaskSource {
     List<PublicPlace> places,
   ) async {
     return _submit(query, null);
+  }
+
+  @override
+  Future<AgentResult> continueSelectedPlace(
+    AgentTask? task,
+    String query,
+    SelectedPlaceFollowup selected,
+    List<PublicActivity> activities,
+    List<PublicPlace> places,
+  ) {
+    if (!selected.current ||
+        selected.cityID != cityID() ||
+        selected.taskID != task?.id ||
+        authorizationHeader() == null ||
+        organizationWorkspaceID?.call() != null ||
+        onlineContextID?.call() != null ||
+        !isSelectedPlaceFollowupQuery(query)) {
+      return Future.error(
+        const AgentRequestFailure('当前地点、任务或账号范围已变化，请重新选择地点。'),
+      );
+    }
+    return _submit(query, task?.id, selectedPlace: selected);
   }
 
   @override
@@ -489,7 +512,18 @@ class RemoteAgentTaskSource extends AgentTaskSource {
     String? taskID, {
     MapBounds? bounds,
     Map<String, Object>? onlinePlaceContext,
+    SelectedPlaceFollowup? selectedPlace,
   }) async {
+    final selectionToken = authorizationHeader();
+    bool selectionCurrent() =>
+        selectedPlace == null ||
+        (!_publicEvidenceDisposed &&
+            selectedPlace.current &&
+            selectedPlace.cityID == cityID() &&
+            authorizationHeader() == selectionToken &&
+            organizationWorkspaceID?.call() == null &&
+            onlineContextID?.call() == null);
+    if (!selectionCurrent()) throw const AgentRequestFailure('当前地点或账号范围已变化。');
     final online = onlineContextID?.call();
     if (online != null) {
       if (bounds != null || taskID != null) {
@@ -551,6 +585,8 @@ class RemoteAgentTaskSource extends AgentTaskSource {
               'taskId': ?taskID,
               if (bounds != null) 'mapBounds': bounds.toJson(),
               'onlinePlaceContext': ?onlinePlaceContext,
+              if (selectedPlace != null)
+                'selectedPlace': selectedPlace.selector,
             }),
           )
           .timeout(currentQueryTimeout);
@@ -573,6 +609,8 @@ class RemoteAgentTaskSource extends AgentTaskSource {
       debugPrint('Birdtie Agent could not connect to the API.');
       throw const AgentRequestFailure('无法连接 Birdtie 服务，请检查网络与服务状态。');
     }
+    if (!selectionCurrent())
+      throw const AgentRequestFailure('当前地点或账号范围已变化，本轮结果未显示。');
     if (response.statusCode != 200) {
       final code = _errorCode(response.body);
       _diagnostics.finished(
@@ -623,6 +661,12 @@ class RemoteAgentTaskSource extends AgentTaskSource {
         readAnswerSources: readAnswerSources,
         messageSourcesCurrent: messageSourcesCurrent,
       );
+      if (selectedPlace != null &&
+          (result.task == null ||
+              result.task!.cityID != selectedPlace.cityID ||
+              (taskID != null && result.task!.id != taskID))) {
+        throw const AgentRequestFailure('地点回复的任务范围已变化，本轮结果未显示。');
+      }
       _diagnostics.finished(
         requestId: response.headers['x-request-id'] ?? requestID,
         status: 'HTTP 200',

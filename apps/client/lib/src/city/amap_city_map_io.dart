@@ -22,6 +22,8 @@ import 'map_camera_focus.dart';
 import 'map_cluster_members_sheet.dart';
 import 'map_coordinate_boundary.dart';
 import 'map_point_selection_sheet.dart';
+import 'native_map_diagnostics.dart';
+import 'native_map_failure.dart';
 import 'now_map_compass.dart';
 import 'public_city_controller.dart';
 
@@ -89,6 +91,9 @@ class _AMapCityMapViewState extends State<AMapCityMapView>
     with WidgetsBindingObserver {
   static final _privacyURL = Uri.parse('https://lbs.amap.com/pages/privacy/');
   final _changes = MapReaderChanges();
+  final _diagnostics = NativeMapDiagnostics(
+    provider: NativeMapDiagnosticProvider.amap,
+  );
   late final _renderQueue = LatestMapRenderQueue(_render);
   amap.AMapController? _map;
   amap.CameraPosition? _camera;
@@ -167,6 +172,10 @@ class _AMapCityMapViewState extends State<AMapCityMapView>
   @override
   void initState() {
     super.initState();
+    _diagnostics.mounted();
+    if (WidgetsBinding.instance.lifecycleState case final state?) {
+      _diagnostics.lifecycle(state.index);
+    }
     WidgetsBinding.instance.addObserver(this);
     widget.readerChanges?.addListener(_sourceChanged);
     _syncSource();
@@ -185,9 +194,16 @@ class _AMapCityMapViewState extends State<AMapCityMapView>
         _offlineStyle = style;
         _styleFailed = false;
       });
+      // Local style bytes are ready; this is not an SDK render/loaded event.
+      _diagnostics.stylePrepared();
       _configureAfterConsent();
     } catch (_) {
       if (!mounted || request != _styleRequest) return;
+      _diagnostics.resourceError(
+        resource: NativeMapResource.style,
+        reason: NativeMapFailureReason.unavailable,
+        stage: NativeMapDiagnosticFailureStage.localStyle,
+      );
       setState(() => _styleFailed = true);
     }
   }
@@ -383,6 +399,10 @@ class _AMapCityMapViewState extends State<AMapCityMapView>
 
   void _onCreated(amap.AMapController map, int sdk) {
     if (!mounted || sdk != _sdkEpoch) return;
+    // AMapController.init waits for map#waitForMap before delivering this
+    // callback. It is readiness evidence, not a presented native frame.
+    _diagnostics.created();
+    _diagnostics.mapLoaded();
     _startup?.cancel();
     _map = map;
     _change(() => _failure = null);
@@ -444,18 +464,23 @@ class _AMapCityMapViewState extends State<AMapCityMapView>
 
   void _onMove(amap.CameraPosition camera) {
     if (!mounted) return;
+    final wasMoving = _moving;
+    _diagnostics.cameraMoving();
     _camera = camera;
     ++_cameraEpoch;
     ++_focusSerial;
     _settle?.cancel();
-    if (!_moving) widget.onCameraMotion?.call();
+    if (!wasMoving) widget.onCameraMotion?.call();
     _moving = true;
     _positions = const {};
     _reportAnchor(null);
-    _change(() {});
+    // Only the first tick changes visible overlays. Camera coordinates and
+    // epochs keep advancing without rebuilding the platform view each tick.
+    if (!wasMoving) _change(() {});
   }
 
   void _onMoveEnd(amap.CameraPosition camera) {
+    if (mounted) _diagnostics.cameraSettled();
     _camera = camera;
     _moving = false;
     ++_cameraEpoch;
@@ -883,19 +908,34 @@ class _AMapCityMapViewState extends State<AMapCityMapView>
   Future<void> _setRenderingState() async {
     final map = _map;
     if (map == null) return;
+    final paused = !_foreground;
     try {
       if (defaultTargetPlatform == TargetPlatform.android) {
-        await map.setRenderingPaused(!_foreground);
+        await map.setRenderingPaused(paused);
       }
       if (!mounted || map != _map) return;
-      await map.setRenderFps(_foreground && _readerTokens.isEmpty ? 30 : 5);
+      final fps = _foreground && _readerTokens.isEmpty ? 30 : 5;
+      await map.setRenderFps(fps);
+      if (!mounted || map != _map) return;
+      _diagnostics.renderingState(
+        paused: defaultTargetPlatform == TargetPlatform.android ? paused : null,
+        fps: fps,
+      );
     } catch (_) {
+      if (mounted && map == _map) {
+        _diagnostics.resourceError(
+          resource: NativeMapResource.other,
+          reason: NativeMapFailureReason.unavailable,
+          stage: NativeMapDiagnosticFailureStage.renderControl,
+        );
+      }
       // Older iOS SDKs do not expose render throttling. Access guards remain.
     }
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    _diagnostics.lifecycle(state.index);
     _foreground = state == AppLifecycleState.resumed;
     ++_cameraEpoch;
     ++_focusSerial;
@@ -909,6 +949,11 @@ class _AMapCityMapViewState extends State<AMapCityMapView>
   }
 
   void _fail(String message) {
+    _diagnostics.resourceError(
+      resource: NativeMapResource.other,
+      reason: NativeMapFailureReason.unavailable,
+      stage: NativeMapDiagnosticFailureStage.initialization,
+    );
     _change(() => _failure = message);
     widget.onMapUnavailable?.call(message);
   }
@@ -946,6 +991,7 @@ class _AMapCityMapViewState extends State<AMapCityMapView>
 
   @override
   void dispose() {
+    _diagnostics.dispose();
     ++_styleRequest;
     ++_configurationRequest;
     ++_sourceEpoch;

@@ -171,10 +171,11 @@ func (s *server) createAgentTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var input struct {
-		Query              string                    `json:"query"`
-		TaskID             string                    `json:"taskId"`
-		MapBounds          *agentworkspace.MapBounds `json:"mapBounds"`
-		OnlinePlaceContext *onlinePlaceContext       `json:"onlinePlaceContext,omitempty"`
+		Query              string                                `json:"query"`
+		TaskID             string                                `json:"taskId"`
+		MapBounds          *agentworkspace.MapBounds             `json:"mapBounds"`
+		OnlinePlaceContext *onlinePlaceContext                   `json:"onlinePlaceContext,omitempty"`
+		SelectedPlace      *agentworkspace.SelectedPlaceSelector `json:"selectedPlace,omitempty"`
 	}
 	decoder := json.NewDecoder(http.MaxBytesReader(w, r.Body, 4096))
 	decoder.DisallowUnknownFields()
@@ -199,6 +200,21 @@ func (s *server) createAgentTask(w http.ResponseWriter, r *http.Request) {
 	if input.MapBounds != nil && input.OnlinePlaceContext != nil {
 		respondError(w, http.StatusBadRequest, "online_place_scope_conflict")
 		return
+	}
+	if input.SelectedPlace != nil {
+		if actor.ID == "" || actor.AccountType != "person" || organizationWorkspace || digest == ([32]byte{}) {
+			respondError(w, http.StatusForbidden, "place_followup_forbidden")
+			return
+		}
+		_, _, selectedQuery := agentworkspace.ParseSelectedPlaceFollowup(query)
+		if !input.SelectedPlace.Valid() || !selectedQuery || input.MapBounds != nil || input.OnlinePlaceContext != nil {
+			respondError(w, http.StatusBadRequest, "invalid_selected_place_context")
+			return
+		}
+		if _, ready := s.agent.(agentworkspace.SelectedPlaceFollowupPort); !ready {
+			respondError(w, http.StatusServiceUnavailable, "place_followup_unavailable")
+			return
+		}
 	}
 	principalType, policy := workspaceAgentPolicy(organizationWorkspace)
 	if !policy.Available || !policy.Allows(agentruntime.CityContextRead) ||
@@ -254,6 +270,10 @@ func (s *server) createAgentTask(w http.ResponseWriter, r *http.Request) {
 		}
 		if task.CityID != cityID {
 			respondError(w, http.StatusConflict, "task_city_mismatch")
+			return
+		}
+		if input.SelectedPlace != nil {
+			s.executeSelectedPlaceFollowup(w, r, digest, actor, task, query, *input.SelectedPlace, workspace, role, permissions)
 			return
 		}
 		if !explicitPreference && input.MapBounds == nil && s.tryOnlineRestaurantFollowup(w, r, digest, actor, task, input.OnlinePlaceContext, query, workspace, role, permissions) {
@@ -312,6 +332,10 @@ func (s *server) createAgentTask(w http.ResponseWriter, r *http.Request) {
 				agentTaskWriteFailure(w, err, organizationWorkspace)
 				return
 			}
+		}
+		if input.SelectedPlace != nil {
+			s.executeSelectedPlaceFollowup(w, r, digest, actor, task, query, *input.SelectedPlace, workspace, role, permissions)
+			return
 		}
 	}
 	if _, preference := agentworkspace.ParseNowExplicitPreference(query); preference {

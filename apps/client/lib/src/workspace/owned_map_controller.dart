@@ -9,8 +9,13 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 import 'package:http/http.dart' as http;
 import '../auth/session_vault.dart';
+import '../content/video_material_sink_stub.dart'
+    if (dart.library.io) '../content/video_material_sink_io.dart'
+    if (dart.library.html) '../content/video_material_sink_web.dart'
+    as video_sink;
 import 'human_causal_control.dart';
 import 'map_entities.dart';
+import 'map_media_read_metrics.dart';
 import 'owned_map_api.dart';
 import 'owned_map_media_controller.dart';
 
@@ -440,6 +445,52 @@ class OwnedMapController extends ChangeNotifier with WidgetsBindingObserver {
       origin: identity.$1,
       current: pending,
     );
+  }
+
+  DateTime contentValidUntil(Uint8List bytes, OwnedMapMomentDetail detail) =>
+      _api.contentValidUntil(bytes) ?? detail.validUntil;
+  MapMediaReadTrace? contentTrace(Uint8List bytes) => _api.contentTrace(bytes);
+
+  Future<String> prepareVideo(
+    OwnedMapMomentDetail detail,
+    OwnedMapMomentMedia media, {
+    required bool Function() current,
+    required MapMediaReadTrace trace,
+  }) async {
+    final identity = _identity, epoch = _epoch;
+    bool pending() =>
+        epoch == _epoch &&
+        identity == _identity &&
+        current() &&
+        detailCurrent(detail) &&
+        detail.media.any((m) => identical(m, media));
+    if (!pending() || identity == null || !media.isVideo) {
+      throw const FormatException('地图视频读取已失效');
+    }
+    final sink = await video_sink.VideoMaterialSink.create(
+      limit: media.byteCount,
+    );
+    var handedOff = false;
+    try {
+      await _api.transferVideo(
+        media,
+        detail: detail,
+        now: _now,
+        authorization: identity.$3!,
+        origin: identity.$1,
+        current: pending,
+        receive: sink.add,
+        trace: trace,
+      );
+      if (!pending()) throw const FormatException('地图视频读取已失效');
+      final path = await sink.finish();
+      if (!pending()) throw const FormatException('地图视频读取已失效');
+      trace.mark(MapMediaReadStage.materialReady);
+      handedOff = true;
+      return path;
+    } finally {
+      if (!handedOff) await sink.discard();
+    }
   }
 
   Future<Uint8List> coverContent(

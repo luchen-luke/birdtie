@@ -11,6 +11,7 @@ import '../content/video_material_player_stub.dart'
     as local_video;
 import 'owned_map_api.dart';
 import 'owned_map_controller.dart';
+import 'map_media_read_metrics.dart';
 
 /// Read-only content stays over the original Now map. It never grants public
 /// access or changes the source of a legacy record.
@@ -65,6 +66,7 @@ class _NowMapContentPanelState extends State<NowMapContentPanel>
   int _request = 0, _desiredCount = 1;
   String? _viewerMoment;
   final _mediaPages = <String, int>{};
+  late final _images = _MapReaderImages(() => c, () => _current);
   double _restoreOffset = 0;
   bool _expanded = false,
       _loading = false,
@@ -145,6 +147,7 @@ class _NowMapContentPanelState extends State<NowMapContentPanel>
   }
 
   void _retire() {
+    _images.clear();
     _rememberPosition();
     if (_items.isNotEmpty && _scroll.hasClients)
       _restoreOffset = _scroll.offset;
@@ -165,6 +168,7 @@ class _NowMapContentPanelState extends State<NowMapContentPanel>
     } else if (!_hasRead && !_loading) {
       unawaited(_read());
     }
+    _images.prune();
     setState(() {});
   }
 
@@ -205,6 +209,7 @@ class _NowMapContentPanelState extends State<NowMapContentPanel>
 
   Future<void> _read({bool more = false}) async {
     if (!_current || _loading) return;
+    final trace = MapMediaReadMetrics.begin(MapMediaReadKind.detail);
     final pin = _livePin!, request = ++_request;
     final desired = more
         ? math.max(_desiredCount, _items.length) + 20
@@ -224,9 +229,11 @@ class _NowMapContentPanelState extends State<NowMapContentPanel>
         final target = pin.moments
             .where((item) => item.id == pin.entryID)
             .single;
+        trace.requests++;
         collected.add(await c.readMoment(target));
       } else
         do {
+          trace.requests++;
           final page = await c.readPlaceMoments(pin, cursor: cursor);
           if (!pending()) return;
           for (final item in page.items) {
@@ -256,6 +263,7 @@ class _NowMapContentPanelState extends State<NowMapContentPanel>
           _items = const [];
           throw const FormatException('原动态已不可读取');
         }
+        trace.requests++;
         thread = await c.readThread(pin, seed);
         if (!pending()) return;
         if (!pin.isMomentAnchor &&
@@ -280,7 +288,9 @@ class _NowMapContentPanelState extends State<NowMapContentPanel>
       _nextCursor = _collectionItems != null ? null : cursor;
       _desiredCount = math.max(1, collected.length);
       _armLease();
+      trace.mark(MapMediaReadStage.detailReady);
     } catch (_) {
+      trace.mark(MapMediaReadStage.failed);
       if (pending()) _error = '动态暂不可读，请重新读取。';
     } finally {
       if (pending()) {
@@ -506,6 +516,7 @@ class _NowMapContentPanelState extends State<NowMapContentPanel>
                   child: _MapMediaPager(
                     key: ValueKey('viewer:${viewed.id}'),
                     controller: c,
+                    images: _images,
                     detail: viewed,
                     onFreshDetail: _acceptFreshDetail,
                     current: () => _current && c.detailCurrent(viewed),
@@ -702,6 +713,7 @@ class _NowMapContentPanelState extends State<NowMapContentPanel>
                                       '${item.id}:${item.revision}:${item.sourceVersion}',
                                     ),
                                     controller: c,
+                                    images: _images,
                                     detail: item,
                                     onFreshDetail: _acceptFreshDetail,
                                     compact: !_expanded,
@@ -844,6 +856,7 @@ class _MapMomentTile extends StatelessWidget {
   const _MapMomentTile({
     super.key,
     required this.controller,
+    required this.images,
     required this.detail,
     required this.onFreshDetail,
     required this.current,
@@ -856,6 +869,7 @@ class _MapMomentTile extends StatelessWidget {
     this.onReadThread,
   });
   final OwnedMapController controller;
+  final _MapReaderImages images;
   final OwnedMapMomentDetail detail;
   final bool Function(OwnedMapMomentDetail) onFreshDetail;
   final bool Function() current;
@@ -885,6 +899,7 @@ class _MapMomentTile extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12),
                 child: _MapMediaPager(
                   controller: controller,
+                  images: images,
                   detail: detail,
                   onFreshDetail: onFreshDetail,
                   current: current,
@@ -1074,6 +1089,7 @@ class _MapMomentTile extends StatelessWidget {
           if (detail.media.isNotEmpty)
             _MapMediaPager(
               controller: controller,
+              images: images,
               detail: detail,
               onFreshDetail: onFreshDetail,
               current: current,
@@ -1125,10 +1141,174 @@ class _MapMomentTile extends StatelessWidget {
   }
 }
 
+class _ReaderImage {
+  _ReaderImage(this.bytes, this.until, this.detail, this.trace);
+  final Uint8List bytes;
+  final DateTime until;
+  final OwnedMapMomentDetail detail;
+  final MapMediaReadTrace? trace;
+  void clear() => bytes.fillRange(0, bytes.length, 0);
+}
+
+class _ImageFlight {
+  final consumers = <bool Function()>[];
+  late Future<_ReaderImage> future;
+  int waiting = 0;
+  _ReaderImage? result;
+}
+
+/// Reader-owned, shared by preview, expanded list and fullscreen. Only selected
+/// images are read; each consumer gets separate bytes to zero on retirement.
+class _MapReaderImages {
+  _MapReaderImages(this.controller, this.current);
+  final OwnedMapController Function() controller;
+  final bool Function() current;
+  final _entries = <String, _ReaderImage>{};
+  final _flights = <String, _ImageFlight>{};
+  final _deadlines = Expando<DateTime>();
+  final _traces = Expando<MapMediaReadTrace>();
+  Timer? _expiry;
+  int _epoch = 0, _bytes = 0;
+  DateTime? deadline(Uint8List bytes) => _deadlines[bytes];
+  MapMediaReadTrace? trace(Uint8List bytes) => _traces[bytes];
+  String _key(OwnedMapMomentDetail detail, OwnedMapMomentMedia media) =>
+      '${detail.viewerAccountID}:${detail.id}:${media.identity}';
+  void evict(OwnedMapMomentDetail detail, OwnedMapMomentMedia media) {
+    final retired = _entries.remove(_key(detail, media));
+    if (retired != null) {
+      _bytes -= retired.bytes.length;
+      retired.clear();
+    }
+  }
+
+  bool _valid(_ReaderImage value) =>
+      current() &&
+      value.until.isAfter(DateTime.now().toUtc()) &&
+      controller().detailCurrent(value.detail);
+  void clear() {
+    ++_epoch;
+    _expiry?.cancel();
+    for (final value in _entries.values) {
+      value.clear();
+    }
+    _entries.clear();
+    _flights.clear();
+    _bytes = 0;
+  }
+
+  void prune() {
+    for (final key in _entries.keys.toList()) {
+      if (!_valid(_entries[key]!)) {
+        final retired = _entries.remove(key)!;
+        _bytes -= retired.bytes.length;
+        retired.clear();
+      }
+    }
+    _expiry?.cancel();
+    if (_entries.isNotEmpty) {
+      final until = _entries.values
+          .map((v) => v.until)
+          .reduce((a, b) => a.isBefore(b) ? a : b);
+      final remaining = until.difference(DateTime.now().toUtc());
+      _expiry = Timer(remaining.isNegative ? Duration.zero : remaining, prune);
+    }
+  }
+
+  Uint8List _copy(_ReaderImage value, {bool hit = false}) {
+    final result = Uint8List.fromList(value.bytes);
+    _deadlines[result] = value.until;
+    final measured = hit
+        ? MapMediaReadMetrics.begin(MapMediaReadKind.image)
+        : value.trace;
+    if (hit) {
+      measured!.cacheHit = true;
+      measured.mark(MapMediaReadStage.verified);
+    }
+    if (measured != null) _traces[result] = measured;
+    return result;
+  }
+
+  Future<Uint8List> read(
+    OwnedMapMomentDetail detail,
+    OwnedMapMomentMedia media,
+    bool Function() consumer,
+  ) async {
+    final c = controller(), epoch = _epoch;
+    bool authorized() =>
+        epoch == _epoch &&
+        current() &&
+        identical(controller(), c) &&
+        c.detailCurrent(detail) &&
+        detail.media.any((m) => identical(m, media));
+    if (!authorized() || !consumer()) throw const FormatException('图片读取已失效');
+    prune();
+    // Detail snapshots differ between a single entry and its authoritative
+    // thread. Reuse only this exact asset, under both current detail grants.
+    final key = _key(detail, media);
+    final cached = _entries.remove(key);
+    if (cached != null) {
+      _entries[key] = cached;
+      return _copy(cached, hit: true);
+    }
+    var flight = _flights[key];
+    if (flight == null) {
+      flight = _ImageFlight();
+      _flights[key] = flight;
+      final job = flight;
+      // Transfer authority needs a current reader and at least one visible
+      // consumer. Mode handoff can join the same pending descriptor/request.
+      bool pending() => authorized() && job.consumers.any((f) => f());
+      job.future = Future.microtask(() async {
+        final bytes = await c.momentContent(detail, media, current: pending);
+        final until = c.contentValidUntil(bytes, detail);
+        if (!pending() || !until.isAfter(DateTime.now().toUtc())) {
+          bytes.fillRange(0, bytes.length, 0);
+          throw const FormatException('图片读取已失效');
+        }
+        final value = job.result = _ReaderImage(
+          bytes,
+          until,
+          detail,
+          c.contentTrace(bytes),
+        );
+        if (bytes.length <= 1024 * 1024) {
+          _entries[key] = value;
+          _bytes += bytes.length;
+          while (_entries.length > 4 || _bytes > 1024 * 1024) {
+            final retired = _entries.remove(_entries.keys.first)!;
+            _bytes -= retired.bytes.length;
+            retired.clear();
+          }
+          prune();
+        }
+        return value;
+      });
+    }
+    final job = flight;
+    job.consumers.add(consumer);
+    job.waiting++;
+    try {
+      final value = await job.future;
+      if (!authorized() || !consumer() || !_valid(value))
+        throw const FormatException('图片读取已失效');
+      return _copy(value);
+    } finally {
+      job.waiting--;
+      job.consumers.remove(consumer);
+      if (job.waiting == 0) {
+        if (identical(_flights[key], job)) _flights.remove(key);
+        if (job.result != null && !_entries.values.contains(job.result))
+          job.result!.clear();
+      }
+    }
+  }
+}
+
 class _MapMediaPager extends StatefulWidget {
   const _MapMediaPager({
     super.key,
     required this.controller,
+    required this.images,
     required this.detail,
     required this.onFreshDetail,
     required this.current,
@@ -1139,6 +1319,7 @@ class _MapMediaPager extends StatefulWidget {
     this.onOpen,
   });
   final OwnedMapController controller;
+  final _MapReaderImages images;
   final OwnedMapMomentDetail detail;
   final bool Function(OwnedMapMomentDetail) onFreshDetail;
   final bool Function() current;
@@ -1153,85 +1334,15 @@ class _MapMediaPager extends StatefulWidget {
 class _MapMediaPagerState extends State<_MapMediaPager> {
   late int _index;
   late final PageController _pages;
-  final _imageBytes = <String, Uint8List>{};
-  int _imageByteCount = 0;
-  Timer? _imageExpiry;
   @override
   void initState() {
     super.initState();
     _index = widget.initialPage.clamp(0, widget.detail.media.length - 1);
     _pages = PageController(initialPage: _index);
-    _armImageExpiry();
-  }
-
-  @override
-  void didUpdateWidget(_MapMediaPager old) {
-    super.didUpdateWidget(old);
-    if (old.detail.id != widget.detail.id ||
-        old.detail.sourceVersion != widget.detail.sourceVersion ||
-        old.controller != widget.controller)
-      _clearImageBytes();
-    _armImageExpiry();
-  }
-
-  void _clearImageBytes() {
-    for (final bytes in _imageBytes.values) bytes.fillRange(0, bytes.length, 0);
-    _imageBytes.clear();
-    _imageByteCount = 0;
-  }
-
-  void _armImageExpiry() {
-    _imageExpiry?.cancel();
-    final remaining = widget.detail.validUntil.difference(
-      DateTime.now().toUtc(),
-    );
-    _imageExpiry = Timer(
-      remaining.isNegative ? Duration.zero : remaining,
-      _clearImageBytes,
-    );
-  }
-
-  Future<Uint8List> _readImage(
-    OwnedMapMomentDetail detail,
-    OwnedMapMomentMedia media,
-    bool Function() current,
-  ) async {
-    if (!current() || !widget.controller.detailCurrent(detail))
-      throw const FormatException('图片读取已失效');
-    final key = '${detail.id}:${detail.sourceVersion}:${media.identity}';
-    final cached = _imageBytes.remove(key);
-    if (cached != null) {
-      _imageBytes[key] = cached;
-      // The decoded-page owner zeroes its own copy on page retirement.
-      return Uint8List.fromList(cached);
-    }
-    final bytes = await widget.controller.momentContent(
-      detail,
-      media,
-      current: current,
-    );
-    if (!current() || !widget.controller.detailCurrent(detail)) {
-      bytes.fillRange(0, bytes.length, 0);
-      throw const FormatException('图片读取已失效');
-    }
-    // No prefetch. Retain at most four explicitly read images and 1 MiB in
-    // this reader, under its existing identity/source/lease only.
-    if (bytes.length <= 1024 * 1024) {
-      _imageBytes[key] = Uint8List.fromList(bytes);
-      _imageByteCount += bytes.length;
-      while (_imageBytes.length > 4 || _imageByteCount > 1024 * 1024) {
-        final retired = _imageBytes.remove(_imageBytes.keys.first)!;
-        _imageByteCount -= retired.length;
-        retired.fillRange(0, retired.length, 0);
-      }
-    }
-    return bytes;
   }
 
   @override
   void dispose() {
-    _imageExpiry?.cancel();
-    _clearImageBytes();
     _pages.dispose();
     super.dispose();
   }
@@ -1304,7 +1415,10 @@ class _MapMediaPagerState extends State<_MapMediaPager> {
                     decodeLimit: widget.full ? 2048 : 1280,
                     validUntil: widget.detail.validUntil,
                     current: current,
-                    read: () => _readImage(detail, media, current),
+                    read: () => widget.images.read(detail, media, current),
+                    contentUntil: widget.images.deadline,
+                    contentTrace: widget.images.trace,
+                    onRetry: () => widget.images.evict(detail, media),
                   );
                   return widget.full
                       ? InteractiveViewer(
@@ -1398,6 +1512,9 @@ class _LeasePicture extends StatefulWidget {
     required this.read,
     this.decodeLimit = 1280,
     this.placeholder,
+    this.contentUntil,
+    this.contentTrace,
+    this.onRetry,
   });
   final String identity;
   final int width, height;
@@ -1406,6 +1523,9 @@ class _LeasePicture extends StatefulWidget {
   final DateTime validUntil;
   final bool Function() current;
   final Future<Uint8List> Function() read;
+  final DateTime? Function(Uint8List bytes)? contentUntil;
+  final MapMediaReadTrace? Function(Uint8List bytes)? contentTrace;
+  final VoidCallback? onRetry;
   @override
   State<_LeasePicture> createState() => _LeasePictureState();
 }
@@ -1414,12 +1534,16 @@ class _LeasePictureState extends State<_LeasePicture> {
   Uint8List? _data;
   ImageProvider? _image;
   Timer? _expiry;
+  DateTime? _contentUntil;
+  MapMediaReadTrace? _trace;
   int _request = 0;
   bool _loading = false, _failed = false;
   bool get _current =>
       mounted &&
       widget.current() &&
-      DateTime.now().toUtc().isBefore(widget.validUntil);
+      DateTime.now().toUtc().isBefore(widget.validUntil) &&
+      (_contentUntil == null ||
+          DateTime.now().toUtc().isBefore(_contentUntil!));
   @override
   void initState() {
     super.initState();
@@ -1437,7 +1561,11 @@ class _LeasePictureState extends State<_LeasePicture> {
 
   void _arm() {
     _expiry?.cancel();
-    final remaining = widget.validUntil.difference(DateTime.now().toUtc());
+    final until =
+        _contentUntil != null && _contentUntil!.isBefore(widget.validUntil)
+        ? _contentUntil!
+        : widget.validUntil;
+    final remaining = until.difference(DateTime.now().toUtc());
     _expiry = Timer(remaining.isNegative ? Duration.zero : remaining, () {
       _clear();
       if (mounted) setState(() {});
@@ -1451,6 +1579,8 @@ class _LeasePictureState extends State<_LeasePicture> {
     if (image != null) unawaited(image.evict());
     _data?.fillRange(0, _data!.length, 0);
     _data = null;
+    _contentUntil = null;
+    _trace = null;
     _loading = false;
   }
 
@@ -1463,6 +1593,10 @@ class _LeasePictureState extends State<_LeasePicture> {
     try {
       data = await widget.read();
       if (!_current || request != _request) return;
+      _contentUntil = widget.contentUntil?.call(data);
+      _trace = widget.contentTrace?.call(data);
+      if (!_current) return;
+      _arm();
       final scale = math.min(
         1.0,
         widget.decodeLimit / math.max(widget.width, widget.height),
@@ -1491,6 +1625,7 @@ class _LeasePictureState extends State<_LeasePicture> {
 
   void _retry() {
     if (!_current) return;
+    widget.onRetry?.call();
     _clear();
     setState(() => _failed = false);
     unawaited(_load());
@@ -1513,6 +1648,11 @@ class _LeasePictureState extends State<_LeasePicture> {
       ? Image(
           image: _image!,
           fit: BoxFit.contain,
+          frameBuilder: (_, child, frame, synchronous) {
+            if (frame != null && _current)
+              _trace?.mark(MapMediaReadStage.imageVisible);
+            return child;
+          },
           errorBuilder: (_, _, _) => widget.placeholder ?? _failure(),
         )
       : Center(
@@ -1603,13 +1743,15 @@ class _MapVideoState extends State<_MapVideo> {
     _loading = true;
     _error = null;
     setState(() {});
-    Uint8List? data;
+    final trace = MapMediaReadMetrics.begin(MapMediaReadKind.video);
     VideoPlayerController? player;
     String? path;
     try {
       // Playback is an explicit action. Obtain a fresh, current grant before
       // starting a bounded video transfer instead of spending a stale list lease.
+      trace.requests++;
       final fresh = await widget.controller.readMoment(widget.detail.selector);
+      trace.mark(MapMediaReadStage.detailReady);
       if (!_current || request != _request) return;
       final media = fresh.media
           .where((item) => item.identity == widget.media.identity)
@@ -1623,29 +1765,28 @@ class _MapVideoState extends State<_MapVideo> {
       // The visible entry and its expiry timer must adopt the checked grant too.
       await WidgetsBinding.instance.endOfFrame;
       if (!_current || request != _request) return;
-      data = await widget.controller.momentContent(
+      path = await widget.controller.prepareVideo(
         fresh,
         media,
         current: () => _current && request == _request,
+        trace: trace,
       );
-      if (!_current || request != _request) return;
-      path = await local_video.createVideoMaterialMemoryPath(data);
-      data.fillRange(0, data.length, 0);
-      data = null;
       if (!_current || request != _request) return;
       player = local_video.createVideoMaterialPlayer(path);
       if (player == null) throw const FormatException('此平台暂不支持视频播放');
       await player.initialize();
+      trace.mark(MapMediaReadStage.initialized);
       if (!_current || request != _request) return;
       _player = player;
       player = null;
       _path = path;
       path = null;
       await _player!.play();
+      trace.mark(MapMediaReadStage.playRequested);
     } catch (_) {
+      trace.mark(MapMediaReadStage.failed);
       if (_current && request == _request) _error = '视频暂不可播放，请重试。';
     } finally {
-      data?.fillRange(0, data.length, 0);
       await player?.dispose();
       if (path != null) await local_video.releaseVideoMaterialPath(path);
       if (mounted && request == _request) setState(() => _loading = false);

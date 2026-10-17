@@ -395,6 +395,21 @@ func (s *Store) captureAgentResultProjectionSelectedTx(ctx context.Context, tx p
 		return r, e
 	}
 	query, e := json.Marshal(q)
+	selectedNativePlaceID := ""
+	if history == nil && current.Filters[agentworkspace.SelectedPlaceContextFilter] == "native-map-v1" {
+		if fence != nil || policy == nil || q.Kind != "place" {
+			return r, arp.ErrDenied
+		}
+		place, _, selectedErr := nativeResolvedPlaceFromTaskTx(ctx, tx, current, policy.until)
+		if selectedErr != nil || !place.valid {
+			return r, arp.ErrChanged
+		}
+		selectedNativePlaceID = place.id
+		query, e = json.Marshal(struct {
+			arp.Query
+			SelectedNativePlaceID string
+		}{q, selectedNativePlaceID})
+	}
 	if history != nil {
 		query, e = json.Marshal(struct {
 			arp.Query
@@ -411,6 +426,11 @@ func (s *Store) captureAgentResultProjectionSelectedTx(ctx context.Context, tx p
 		// Constrain original membership BEFORE the original LIMIT 30. Filtering
 		// a latest-search receipt afterward would lose rows and its proof.
 		sql = historicalReplyProjectionSQL(sql)
+	}
+	if selectedNativePlaceID != "" {
+		// Independent current native selector, never fabricated history refs.
+		// Keep every original public ACL/source fence and filter before LIMIT.
+		sql = selectedNativePlaceProjectionSQL(sql)
 	}
 	if policy != nil {
 		sql, args = currentToolProjectionStatement(sql, args, policy)
@@ -510,6 +530,10 @@ func (s *Store) captureAgentResultProjectionSelectedTx(ctx context.Context, tx p
 		return arp.Receipt{}, arp.ErrChanged
 	}
 	return r, nil
+}
+
+func selectedNativePlaceProjectionSQL(sql string) string {
+	return strings.Replace(sql, "WHERE s.kind=q->>'Kind' AND", "WHERE s.kind=q->>'Kind' AND s.id=q->>'SelectedNativePlaceID' AND", 1)
 }
 
 func (s *Store) ReadAgentResultProjection(ctx context.Context, a arp.Access, q arp.Query) (arp.Receipt, error) {

@@ -71,6 +71,8 @@ func ClearPlaceFollowupContext(task *Task) {
 	delete(task.Filters, PlaceFollowupIDFilter)
 	delete(task.Filters, PlaceFollowupGenerationFilter)
 	delete(task.Filters, PlaceFollowupTopicFilter)
+	delete(task.Filters, SelectedPlaceContextFilter)
+	delete(task.Filters, SelectedPlaceDayFilter)
 }
 
 func ValidPlaceFollowupName(name string) bool {

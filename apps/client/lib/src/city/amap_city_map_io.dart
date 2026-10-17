@@ -540,7 +540,15 @@ class _AMapCityMapViewState extends State<AMapCityMapView>
         _initialized = true;
         widget.onViewportInitialized?.call(bounds);
       }
-      if (!current()) return;
+      if (!current()) {
+        // Initial viewport consumers may synchronously start their own source
+        // reads and change reader scope. Reproject under the new scope rather
+        // than dropping the first content query until the user's first pan.
+        if (mounted && map == _map && !_moving && _foreground) {
+          _scheduleSettled();
+        }
+        return;
+      }
       widget.onViewportSettled?.call(bounds);
       widget.onContentViewportSettled?.call(
         bounds,

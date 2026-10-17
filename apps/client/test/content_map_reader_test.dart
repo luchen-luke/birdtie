@@ -1,14 +1,31 @@
+import 'dart:async';
+import 'dart:io';
+import 'dart:typed_data';
 import 'package:birdtie_client/src/workspace/now_map_content_panel.dart';
 import 'package:birdtie_client/src/workspace/owned_map_api.dart';
 import 'package:birdtie_client/src/workspace/owned_map_controller.dart';
 import 'package:birdtie_client/src/workspace/person_avatar.dart';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
 import 'content_map_controller_test.dart' as f;
 
 class ReaderFixture extends f.Fixture {
   bool video = false, unknown = false;
+  @override
+  Future<http.StreamedResponse> send(http.BaseRequest request) async {
+    if (request.url.path.endsWith('/thread')) {
+      return http.StreamedResponse(
+        Stream.value('404 page not found\n'.codeUnits),
+        404,
+        headers: {'content-type': 'text/plain'},
+      );
+    }
+    return super.send(request);
+  }
+
   Map<String, Object?> media(int n, {bool isVideo = false}) => {
     'kind': isVideo ? 'VIDEO' : 'IMAGE',
     'id': f.id(6000 + n),
@@ -48,6 +65,78 @@ class ReaderFixture extends f.Fixture {
     'media': [media(1, isVideo: video), if (!video) media(2)],
   };
 }
+
+class _CancellableVideoFixture extends ReaderFixture {
+  _CancellableVideoFixture() {
+    video = true;
+  }
+  bool bodyRequested = false, cancelled = false;
+  late final body = StreamController<List<int>>(
+    onCancel: () {
+      cancelled = true;
+    },
+  );
+  final bytes = Uint8List.fromList([
+    0,
+    0,
+    0,
+    24,
+    102,
+    116,
+    121,
+    112,
+    105,
+    115,
+    111,
+    109,
+    0,
+    0,
+    0,
+    0,
+    105,
+    115,
+    111,
+    109,
+    109,
+    112,
+    52,
+    50,
+  ]);
+  @override
+  Map<String, Object?> media(int n, {bool isVideo = false}) => {
+    ...super.media(n, isVideo: isVideo),
+    'byteCount': bytes.length,
+    'sha256': sha256.convert(bytes).toString(),
+  };
+  @override
+  Future<http.StreamedResponse> send(http.BaseRequest request) async {
+    if (request.url.path.endsWith('/content') &&
+        request.url.queryParameters['variant'] == null) {
+      bodyRequested = true;
+      return http.StreamedResponse(
+        body.stream,
+        200,
+        contentLength: bytes.length,
+        headers: {
+          'cache-control': 'private, no-store',
+          'content-type': 'video/mp4',
+          'x-content-type-options': 'nosniff',
+        },
+      );
+    }
+    return super.send(request);
+  }
+}
+
+Future<Set<String>> _temporaryVideoReads() async => {
+  await for (final e in Directory.systemTemp.list())
+    if (e is Directory &&
+        e.path
+            .split(Platform.pathSeparator)
+            .last
+            .startsWith('birdtie-video-read-'))
+      e.path,
+};
 
 Future<(OwnedMapController, ValueNotifier<int>)> mountReader(
   WidgetTester t,
@@ -113,6 +202,30 @@ Future<void> disposeReader(
 }
 
 void main() {
+  testWidgets(
+    'WAN reader disposal cancels the loading video socket and deletes unpublished temp',
+    (t) async {
+      final fixture = _CancellableVideoFixture()..now = DateTime.now().toUtc();
+      final before = await t.runAsync(_temporaryVideoReads);
+      final (c, identity) = await mountReader(t, fixture);
+      await t.tap(find.byTooltip('播放视频'));
+      await f.drain(t, () => fixture.bodyRequested);
+      expect(fixture.cancelled, false);
+      await disposeReader(t, c, identity);
+      await f.drain(t, () => fixture.cancelled);
+      Set<String>? after;
+      for (var i = 0; i < 100; i++) {
+        after = await t.runAsync(_temporaryVideoReads);
+        if (setEquals(after, before)) break;
+        await t.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 5)),
+        );
+        await t.pump();
+      }
+      expect(after, before);
+      unawaited(fixture.body.close());
+    },
+  );
   test('moment author avatar accepts only its exact controlled source', () {
     final fixture = ReaderFixture();
     final sourceID = f.id(8000);
@@ -147,10 +260,10 @@ void main() {
     expect(legacy.version, 3);
     final nativePath = '/v1/accounts/${fixture.owner}/avatar/3/content';
     expect(
-      decode({...avatar, 'thumbnailPath': nativePath})
-          .author!
-          .avatar!
-          .thumbnailPath,
+      decode({
+        ...avatar,
+        'thumbnailPath': nativePath,
+      }).author!.avatar!.thumbnailPath,
       nativePath,
     );
     // The profile parser remains restricted to native profile-avatar routes.
@@ -218,7 +331,7 @@ void main() {
   );
 
   testWidgets(
-    'author time, uncut aspect media and same-panel gallery preserve page and permission',
+    'author time, stable media frame and same-panel gallery preserve page and permission',
     (t) async {
       final fixture = ReaderFixture()..now = DateTime.now().toUtc();
       var edits = 0;
@@ -233,22 +346,22 @@ void main() {
       expect(find.textContaining('原公开记录'), findsNothing);
       final frame = find.byKey(ValueKey('moment-media-frame:${f.id(1)}:false'));
       expect(t.getSize(frame).width, 360);
-      expect(t.getSize(frame).height, closeTo(360 * 90 / 160, .1));
+      expect(t.getSize(frame).height, closeTo(360 * .75, .1));
       await t.tap(find.byTooltip('编辑动态'));
       expect(edits, 1);
       await t.tap(find.byTooltip('下一张'));
       await t.pump();
       await t.pump(const Duration(milliseconds: 250));
       await t.pump();
-      expect(find.text('2 / 2'), findsOneWidget);
+      expect(find.text('媒体 2 / 2'), findsOneWidget);
       await t.tap(find.byTooltip('查看完整媒体'));
       await t.pump();
       expect(find.text('照片与视频'), findsOneWidget);
       expect(find.byType(InteractiveViewer), findsOneWidget);
-      expect(find.text('2 / 2'), findsOneWidget);
+      expect(find.text('媒体 2 / 2'), findsOneWidget);
       await t.tap(find.byTooltip('返回动态'));
       await t.pump();
-      expect(find.text('2 / 2'), findsOneWidget);
+      expect(find.text('媒体 2 / 2'), findsOneWidget);
       identity.value++;
       await t.pump();
       expect(find.text('林小满'), findsNothing);

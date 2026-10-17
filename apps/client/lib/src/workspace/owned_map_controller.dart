@@ -321,10 +321,17 @@ class OwnedMapController extends ChangeNotifier with WidgetsBindingObserver {
     }
   }
 
-  Future<OwnedMapMomentDetail> readMoment(OwnedMapMoment target) async {
+  Future<OwnedMapMomentDetail> readMoment(
+    OwnedMapMoment target, {
+    bool Function()? current,
+    Future<void>? abortTrigger,
+  }) async {
     final grant = _momentGrants[target], identity = _identity, epoch = _epoch;
     bool pending() =>
-        epoch == _epoch && identity == _identity && momentCurrent(target);
+        epoch == _epoch &&
+        identity == _identity &&
+        (current?.call() ?? true) &&
+        momentCurrent(target);
     if (!pending() || grant == null || identity == null)
       throw const FormatException('地图动态读取已失效');
     final originalThread = _momentThreads[target];
@@ -338,6 +345,7 @@ class OwnedMapController extends ChangeNotifier with WidgetsBindingObserver {
           origin: identity.$1,
           current: pending,
           now: _now,
+          abortTrigger: abortTrigger,
         );
       } on OwnedMapReadFailure catch (failure) {
         if (failure.retiresGrant) _retireThread(originalThread);
@@ -379,6 +387,7 @@ class OwnedMapController extends ChangeNotifier with WidgetsBindingObserver {
           origin: identity.$1,
           current: pending,
           now: _now,
+          abortTrigger: abortTrigger,
         );
       } on OwnedMapReadFailure catch (failure) {
         if (failure.retiresGrant) _retirePlaceRead(originalPlace);
@@ -413,6 +422,7 @@ class OwnedMapController extends ChangeNotifier with WidgetsBindingObserver {
       origin: identity.$1,
       current: pending,
       now: _now,
+      abortTrigger: abortTrigger,
     );
     if (!pending()) throw const FormatException('地图动态读取已失效');
     _registerDetail(value, grant.pin, thread: _momentThreads[target]);
@@ -541,22 +551,129 @@ class OwnedMapController extends ChangeNotifier with WidgetsBindingObserver {
     OwnedMapMomentMedia media, {
     required bool Function() current,
     required MapMediaReadTrace trace,
+    Future<bool> Function(OwnedMapMomentDetail fresh)? onFreshDetail,
+    Future<void>? abortTrigger,
   }) async {
     final identity = _identity, epoch = _epoch;
+    var active = detail;
+    var finished = false;
+    Object? stopped;
+    final abort = Completer<void>();
+    Timer? renewalTimer, absoluteTimer;
+    Future<void>? renewal;
     bool pending() =>
+        !finished &&
+        stopped == null &&
         epoch == _epoch &&
         identity == _identity &&
         current() &&
-        detailCurrent(detail) &&
-        detail.media.any((m) => identical(m, media));
+        detailCurrent(active) &&
+        active.media.any((m) => m.identity == media.identity);
     if (!pending() || identity == null || !media.isVideo) {
       throw const FormatException('地图视频读取已失效');
     }
+    void stop(Object reason) {
+      if (finished || stopped != null) return;
+      stopped = reason;
+      renewalTimer?.cancel();
+      if (!abort.isCompleted) abort.complete();
+    }
+
+    Future<T> guarded<T>(Future<T> job) => Future.any<T>([
+      job,
+      abort.future.then<T>(
+        (_) => throw stopped ?? const FormatException('地图视频读取已失效'),
+      ),
+    ]);
+
+    void changed() {
+      if (!pending()) stop(const FormatException('地图视频读取已失效'));
+    }
+
+    late void Function() armRenewal;
+    Future<void> renewAuthority() {
+      if (renewal != null) return renewal!;
+      final done = Completer<void>();
+      renewal = done.future;
+      unawaited(() async {
+        try {
+          if (!pending()) throw const FormatException('地图视频读取已失效');
+          trace.requests++;
+          // readMoment preserves the exact thread or original place+cursor
+          // context. A cursor's original expiry is deliberately not extended.
+          final fresh = await guarded(
+            readMoment(
+              active.selector,
+              current: pending,
+              abortTrigger: abort.future,
+            ),
+          );
+          if (!pending()) throw const FormatException('地图视频读取已失效');
+          if (fresh.id != detail.id ||
+              fresh.revision != detail.revision ||
+              fresh.visibilitySource != detail.visibilitySource ||
+              fresh.sourceVersion != detail.sourceVersion ||
+              !listEquals(
+                fresh.media.map((m) => m.identity).toList(),
+                detail.media.map((m) => m.identity).toList(),
+              )) {
+            _detailGrants[active] = null;
+            _momentGrants[active.selector] = null;
+            final thread = _detailThreads[active];
+            if (thread != null) _retireThread(thread);
+            final place = _detailPlaceReads[active];
+            if (place != null) _retirePlaceRead(place);
+            _notify();
+            throw const FormatException('地图视频来源已变化');
+          }
+          // Replace only this transfer's authority reference. The old detail,
+          // media/cache descriptors and their deadlines remain untouched.
+          active = fresh;
+          if (onFreshDetail != null && !await guarded(onFreshDetail(fresh))) {
+            throw const FormatException('地图视频读取已失效');
+          }
+          if (!pending()) throw const FormatException('地图视频读取已失效');
+          armRenewal();
+          done.complete();
+        } catch (error, stack) {
+          stop(error);
+          done.completeError(error, stack);
+        } finally {
+          if (identical(renewal, done.future)) renewal = null;
+        }
+      }());
+      return done.future;
+    }
+
+    armRenewal = () {
+      renewalTimer?.cancel();
+      final remaining = active.validUntil.difference(_now());
+      if (!pending() || remaining <= Duration.zero) {
+        stop(const FormatException('地图视频读取已失效'));
+        return;
+      }
+      final half = remaining ~/ 2;
+      renewalTimer = Timer(
+        half > const Duration(seconds: 10) ? const Duration(seconds: 10) : half,
+        () => unawaited(renewAuthority().catchError((Object _) {})),
+      );
+    };
     final sink = await video_sink.VideoMaterialSink.create(
       limit: media.byteCount,
     );
+    addListener(changed);
+    abortTrigger?.then((_) => stop(const FormatException('视频读取已取消')));
     var handedOff = false;
     try {
+      // One absolute budget includes headers, metadata renewals, UI adoption,
+      // the complete transfer and final proof. No renewal restarts this timer.
+      absoluteTimer = Timer(
+        const Duration(seconds: 110),
+        () =>
+            stop(TimeoutException('视频读取总预算已用尽', const Duration(seconds: 110))),
+      );
+      if (!pending()) throw const FormatException('地图视频读取已失效');
+      armRenewal();
       await _api.transferVideo(
         media,
         detail: detail,
@@ -564,16 +681,37 @@ class OwnedMapController extends ChangeNotifier with WidgetsBindingObserver {
         authorization: identity.$3!,
         origin: identity.$1,
         current: pending,
-        receive: sink.add,
+        authorizedDetail: () => active,
+        abortTrigger: abort.future,
+        receive: (bytes) async {
+          if (active.validUntil.difference(_now()) <=
+              const Duration(seconds: 15)) {
+            await renewAuthority();
+          }
+          if (!pending()) throw const FormatException('地图视频读取已失效');
+          await sink.add(bytes);
+        },
         trace: trace,
       );
+      // Hash success alone never publishes a path. Recheck the same authority
+      // once more after the final byte and before the sink can be handed off.
+      renewalTimer?.cancel();
+      final earlier = renewal;
+      if (earlier != null) await guarded(earlier);
+      renewalTimer?.cancel();
+      await guarded(renewAuthority());
       if (!pending()) throw const FormatException('地图视频读取已失效');
-      final path = await sink.finish();
+      final path = await guarded(sink.finish());
       if (!pending()) throw const FormatException('地图视频读取已失效');
       trace.mark(MapMediaReadStage.materialReady);
       handedOff = true;
       return path;
     } finally {
+      finished = true;
+      renewalTimer?.cancel();
+      absoluteTimer?.cancel();
+      removeListener(changed);
+      if (!abort.isCompleted) abort.complete();
       if (!handedOff) await sink.discard();
     }
   }

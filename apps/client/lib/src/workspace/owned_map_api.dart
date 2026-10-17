@@ -1412,6 +1412,7 @@ class OwnedMapAPI {
     bool allowMissing = false,
     MapMediaReadTrace? trace,
     Future<void> Function(Uint8List bytes)? receive,
+    Duration bodyTimeout = const Duration(seconds: 20),
   }) async {
     final transport = _transport, client = _client;
     bool valid() =>
@@ -1469,12 +1470,28 @@ class OwnedMapAPI {
     final chunks = <Uint8List>[];
     final reader = StreamIterator(response.stream);
     var count = 0;
-    final deadline = Stopwatch()..start();
+    Object? stopped;
+    Completer<void>? receiving;
+    var finished = false;
+    void stop(Object reason) {
+      if (finished || stopped != null) return;
+      stopped = reason;
+      final wait = receiving;
+      if (wait != null && !wait.isCompleted) wait.completeError(reason);
+      unawaited(reader.cancel());
+    }
+
+    // A total timer also bounds a stalled last chunk and can be exercised with
+    // the widget fake clock. The independent ten-second idle timeout remains.
+    final deadline = Timer(
+      bodyTimeout,
+      () => stop(TimeoutException('地图内容传输超时', bodyTimeout)),
+    );
+    abortTrigger?.then((_) => stop(http.RequestAbortedException(uri)));
     try {
       while (await reader.moveNext().timeout(const Duration(seconds: 10))) {
-        if (!valid() ||
-            deadline.elapsed > const Duration(seconds: 20) ||
-            count + reader.current.length > limit) {
+        if (stopped != null) throw stopped!;
+        if (!valid() || count + reader.current.length > limit) {
           throw const FormatException('地图读取已失效或超限');
         }
         final chunk = Uint8List.fromList(reader.current);
@@ -1484,13 +1501,26 @@ class OwnedMapAPI {
         if (receive == null) {
           chunks.add(chunk);
         } else {
+          final wait = receiving = Completer<void>();
+          unawaited(
+            Future<void>.sync(() => receive(chunk)).then(
+              (_) {
+                if (!wait.isCompleted) wait.complete();
+              },
+              onError: (Object e, StackTrace s) {
+                if (!wait.isCompleted) wait.completeError(e, s);
+              },
+            ),
+          );
           try {
-            await receive(chunk);
+            await wait.future;
           } finally {
+            if (identical(receiving, wait)) receiving = null;
             chunk.fillRange(0, chunk.length, 0);
           }
         }
       }
+      if (stopped != null) throw stopped!;
       if (!valid() || exact != null && count != exact)
         throw const FormatException('地图内容大小不符');
       trace?.mark(MapMediaReadStage.downloaded);
@@ -1503,6 +1533,8 @@ class OwnedMapAPI {
       }
       return bytes;
     } finally {
+      finished = true;
+      deadline.cancel();
       await reader.cancel();
       for (final chunk in chunks) {
         chunk.fillRange(0, chunk.length, 0);
@@ -1687,6 +1719,7 @@ class OwnedMapAPI {
     required String origin,
     required bool Function() current,
     bool allowMissing = false,
+    Future<void>? abortTrigger,
   }) async {
     if (canonicalAuthOrigin(origin) != origin || authorization.isEmpty) {
       throw const FormatException('地图读取身份不符');
@@ -1698,6 +1731,7 @@ class OwnedMapAPI {
       limit: 8 * 1024 * 1024,
       mime: 'application/json',
       allowMissing: allowMissing,
+      abortTrigger: abortTrigger,
     );
     try {
       return humanControlObject(jsonDecode(utf8.decode(bytes)), {
@@ -1715,6 +1749,7 @@ class OwnedMapAPI {
     required String origin,
     required bool Function() current,
     required DateTime Function() now,
+    Future<void>? abortTrigger,
   }) async {
     if (!humanControlID(target.id) ||
         target.detailPath != '/v1/me/map-content/moments/${target.id}') {
@@ -1727,6 +1762,7 @@ class OwnedMapAPI {
         authorization: authorization,
         origin: origin,
         current: current,
+        abortTrigger: abortTrigger,
       ),
       ownerID: ownerID,
       now: now(),
@@ -1746,6 +1782,7 @@ class OwnedMapAPI {
     required String origin,
     required bool Function() current,
     required DateTime Function() now,
+    Future<void>? abortTrigger,
   }) async {
     if (!humanControlID(seedMomentID)) {
       throw const FormatException('地图串文入口不符');
@@ -1758,6 +1795,7 @@ class OwnedMapAPI {
           origin: origin,
           current: current,
           allowMissing: true,
+          abortTrigger: abortTrigger,
         ),
         ownerID: ownerID,
         seedMomentID: seedMomentID,
@@ -1784,6 +1822,7 @@ class OwnedMapAPI {
     required String origin,
     required bool Function() current,
     required DateTime Function() now,
+    Future<void>? abortTrigger,
   }) async {
     if (!humanControlID(placeID) ||
         cursor != null && !humanControlText(cursor, 1, 4096)) {
@@ -1796,6 +1835,7 @@ class OwnedMapAPI {
         authorization: authorization,
         origin: origin,
         current: current,
+        abortTrigger: abortTrigger,
       ),
       ownerID: ownerID,
       placeID: placeID,
@@ -1920,8 +1960,20 @@ class OwnedMapAPI {
     required bool Function() current,
     required Future<void> Function(Uint8List bytes) receive,
     required MapMediaReadTrace trace,
+    OwnedMapMomentDetail Function()? authorizedDetail,
+    Future<void>? abortTrigger,
   }) async {
-    bool pending() => current() && detail.validUntil.isAfter(now());
+    bool pending() {
+      final active = authorizedDetail?.call() ?? detail;
+      return current() &&
+          active.validUntil.isAfter(now()) &&
+          active.id == detail.id &&
+          active.revision == detail.revision &&
+          active.visibilitySource == detail.visibilitySource &&
+          active.sourceVersion == detail.sourceVersion &&
+          active.media.any((m) => m.identity == media.identity);
+    }
+
     if (!media.isVideo ||
         media.displayDescriptorPath != null ||
         !detail.media.any((m) => identical(m, media)) ||
@@ -1940,6 +1992,10 @@ class OwnedMapAPI {
         exact: media.byteCount,
         mime: media.mimeType,
         trace: trace,
+        // This is a transport budget, never an extension of an ACL lease.
+        // Header12s + body110s stays below the visual API's125s write budget.
+        bodyTimeout: const Duration(seconds: 110),
+        abortTrigger: abortTrigger,
         receive: (chunk) async {
           hasher.add(chunk);
           if (prefix.length < 12) prefix.addAll(chunk.take(12 - prefix.length));

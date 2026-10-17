@@ -92,6 +92,81 @@ void main() {
     await androidAMapOfflineStyle.load();
   });
   testWidgets(
+    'ready AMap republishes settled viewport after initial callback changes scope',
+    (tester) async {
+      final consent = AMapSessionConsent.accepted;
+      final surface = _surface..started = false;
+      AMapFlutterPlatform.instance = surface;
+      AMapSessionConsent.accepted = true;
+      var scope = Object();
+      var initialized = 0, contentQueries = 0;
+      const native = MethodChannel('amap_map_753');
+      binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        AMapNativeConfiguration.channel,
+        (_) async => true,
+      );
+      binding.defaultBinaryMessenger.setMockMethodCallHandler(native, (
+        call,
+      ) async {
+        if (call.method == 'map#toScreenCoordinate') {
+          return {'x': 100, 'y': 100};
+        }
+        if (call.method == 'map#fromScreenCoordinate') {
+          final point = call.arguments as Map;
+          return [
+            31.25 - (point['y'] as num) / 10000,
+            121.4 + (point['x'] as num) / 10000,
+          ];
+        }
+        return null;
+      });
+      addTearDown(() {
+        AMapFlutterPlatform.instance = _surface;
+        AMapSessionConsent.accepted = consent;
+        binding.defaultBinaryMessenger.setMockMethodCallHandler(
+          AMapNativeConfiguration.channel,
+          null,
+        );
+        binding.defaultBinaryMessenger.setMockMethodCallHandler(native, null);
+      });
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: AMapCityMapView(
+              city: _city,
+              places: const [],
+              entities: const [],
+              selectedEntityId: null,
+              onPlaceSelected: (_) {},
+              onEntitySelected: (_) {},
+              fullBleed: true,
+              currentReaderScope: () => scope,
+              onViewportInitialized: (_) {
+                initialized++;
+                scope = Object();
+              },
+              onContentViewportSettled: (_, _) {
+                contentQueries++;
+              },
+            ),
+          ),
+        ),
+      );
+      await _settleReady(tester);
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.pump();
+      expect(surface.started, true);
+      expect(initialized, 1);
+      expect(
+        contentQueries,
+        1,
+        reason: 'the current settled query must not require the first user pan',
+      );
+      await tester.pumpWidget(const SizedBox.shrink());
+    },
+    variant: TargetPlatformVariant.only(TargetPlatform.android),
+  );
+  testWidgets(
     'ready AMap rect-only update skips projection barrier; source change does not',
     (tester) async {
       final consent = AMapSessionConsent.accepted;

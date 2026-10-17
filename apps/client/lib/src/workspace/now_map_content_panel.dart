@@ -1693,6 +1693,7 @@ class _MapVideoState extends State<_MapVideo> {
   VideoPlayerController? _player;
   String? _path, _error;
   Timer? _expiry;
+  Completer<void>? _abort;
   int _request = 0;
   bool _loading = false;
   bool get _current =>
@@ -1726,6 +1727,9 @@ class _MapVideoState extends State<_MapVideo> {
 
   Future<void> _clear() async {
     ++_request;
+    final abort = _abort;
+    _abort = null;
+    if (abort != null && !abort.isCompleted) abort.complete();
     final player = _player, path = _path;
     _player = null;
     _path = null;
@@ -1740,6 +1744,7 @@ class _MapVideoState extends State<_MapVideo> {
   Future<void> _play() async {
     if (!_current || _loading) return;
     final request = ++_request;
+    final abort = _abort = Completer<void>();
     _loading = true;
     _error = null;
     setState(() {});
@@ -1750,7 +1755,11 @@ class _MapVideoState extends State<_MapVideo> {
       // Playback is an explicit action. Obtain a fresh, current grant before
       // starting a bounded video transfer instead of spending a stale list lease.
       trace.requests++;
-      final fresh = await widget.controller.readMoment(widget.detail.selector);
+      final fresh = await widget.controller.readMoment(
+        widget.detail.selector,
+        current: () => _current && request == _request && !abort.isCompleted,
+        abortTrigger: abort.future,
+      );
       trace.mark(MapMediaReadStage.detailReady);
       if (!_current || request != _request) return;
       final media = fresh.media
@@ -1770,6 +1779,21 @@ class _MapVideoState extends State<_MapVideo> {
         media,
         current: () => _current && request == _request,
         trace: trace,
+        abortTrigger: abort.future,
+        onFreshDetail: (renewed) async {
+          if (!_current || request != _request || abort.isCompleted) {
+            return false;
+          }
+          if (renewed.sourceVersion != widget.detail.sourceVersion ||
+              !renewed.media.any((item) => item.identity == media.identity) ||
+              !widget.onFreshDetail(renewed)) {
+            return false;
+          }
+          // The parent must adopt the checked grant and refresh this widget's
+          // expiry/current closures before the transfer uses the new lease.
+          await WidgetsBinding.instance.endOfFrame;
+          return _current && request == _request && !abort.isCompleted;
+        },
       );
       if (!_current || request != _request) return;
       player = local_video.createVideoMaterialPlayer(path);
@@ -1787,6 +1811,8 @@ class _MapVideoState extends State<_MapVideo> {
       trace.mark(MapMediaReadStage.failed);
       if (_current && request == _request) _error = '视频暂不可播放，请重试。';
     } finally {
+      if (identical(_abort, abort)) _abort = null;
+      if (!abort.isCompleted) abort.complete();
       await player?.dispose();
       if (path != null) await local_video.releaseVideoMaterialPath(path);
       if (mounted && request == _request) setState(() => _loading = false);

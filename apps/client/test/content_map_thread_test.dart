@@ -171,8 +171,15 @@ class _FeedbackPanelController extends OwnedMapController {
   @override
   bool threadCurrent(OwnedMapThread value) => value.current;
   @override
-  Future<OwnedMapMomentDetail> readMoment(OwnedMapMoment value) async =>
-      detail(value.id);
+  Future<OwnedMapMomentDetail> readMoment(
+    OwnedMapMoment value, {
+    bool Function()? current,
+    Future<void>? abortTrigger,
+  }) async {
+    if (current != null && !current()) throw const FormatException('已失效');
+    return detail(value.id);
+  }
+
   @override
   Future<OwnedMapPlacePage> readPlaceMoments(
     OwnedMapPin value, {

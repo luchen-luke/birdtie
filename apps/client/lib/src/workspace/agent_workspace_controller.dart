@@ -1445,8 +1445,25 @@ class AgentWorkspaceController extends ChangeNotifier {
     }
     _presentCurrentTypedAnswer(resolved);
     _rememberReply(resolved);
+    // The selected native Place can have an owned-map or provider pin ID.
+    // A current explicit selector and the freshly read same canonical Place
+    // keep that existing selection; a new search never gets this exception.
+    final retainsSelectedNativePlace =
+        selectedPlace != null &&
+        selectedPlace.current &&
+        resolved.replyProjectionCurrent &&
+        resolved.projectionItems?.any(
+              (item) =>
+                  item.valid &&
+                  item.scope == 'AUTHORIZED_VIEW' &&
+                  item.entity.type == 'place' &&
+                  item.entity.id == selectedPlace.placeID &&
+                  item.detail == item.entity,
+            ) ==
+            true;
     if (resolved.onlineContext == null &&
         selectedEntityId != null &&
+        !retainsSelectedNativePlace &&
         (!_containsEntity(resolved, selectedEntityId!) ||
             _placeSearchSlotsChanged(activeTask, resolved.task))) {
       selectedEntityId = null;

@@ -25,6 +25,13 @@ if (amapPropertiesFile.exists()) {
 }
 
 val releaseBuildRequested = gradle.startParameter.taskNames.any { it.contains("release", ignoreCase = true) }
+// A separately installed, loopback-backed acceptance build keeps the user's
+// normal preview data and authentication intact. Never change the store ID.
+val isolatedAcceptanceApp = System.getenv("BIRDTIE_ANDROID_ACCEPTANCE_APP") == "1"
+if (releaseBuildRequested && isolatedAcceptanceApp) {
+    throw GradleException("The isolated acceptance identity is unavailable for release builds")
+}
+val previewSuffix = if (isolatedAcceptanceApp) ".birdtieacceptance" else ".birdtiepreview"
 val releaseStorePath = System.getenv("BIRDTIE_ANDROID_STORE_FILE")
 val releaseAlias = System.getenv("BIRDTIE_ANDROID_KEY_ALIAS")
 val releaseStorePassword = System.getenv("BIRDTIE_ANDROID_STORE_PASSWORD")
@@ -47,6 +54,10 @@ android {
     namespace = "app.civu.civu_mobile"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
+
+    buildFeatures {
+        buildConfig = true
+    }
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -96,12 +107,12 @@ android {
     buildTypes {
         debug {
             // Side-by-side phone testing must not replace the installed Civu app.
-            applicationIdSuffix = ".birdtiepreview"
+            applicationIdSuffix = previewSuffix
         }
         getByName("profile") {
             // Flutter creates profile from debug before the project adds its
             // suffix. Keep physical profiling on the same isolated preview ID.
-            applicationIdSuffix = ".birdtiepreview"
+            applicationIdSuffix = previewSuffix
         }
         release {
             if (releaseSigningReady) {

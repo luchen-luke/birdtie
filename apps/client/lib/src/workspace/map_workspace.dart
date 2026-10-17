@@ -40,6 +40,8 @@ import 'moment_locations_api.dart';
 import '../content/private_moment_media_controller.dart';
 import '../content/legacy_moment_materials_panel.dart';
 import '../content/personal_collection_controller.dart';
+import '../content/selected_place_journey.dart';
+import '../content/selected_place_journey_page.dart';
 import '../content/video_material_controller.dart';
 import '../legacy/legacy_shell.dart';
 import 'agent_composer.dart';
@@ -3170,6 +3172,8 @@ class _MapWorkspaceState extends State<MapWorkspace>
       >{};
   int _humanDraftRevision = 0;
   TaskImageRetainedDraft? _retainedImageDraft;
+  final _selectedPlaceJourneyRecovery =
+      <(String, String, String), PersonalCollectionRetainedLocalDraft>{};
   // Retain routing selectors only. Private history must be read again under
   // the replacement credential, and recovery must never replay an Agent turn.
   AgentTask? _rejectedAgentTask;
@@ -5544,28 +5548,111 @@ class _MapWorkspaceState extends State<MapWorkspace>
         identity = _currentSeedIdentity,
         epoch = _seedEntryEpoch,
         browse = widget.city.browseKey,
-        selectionSerial = _previewSelectionSerial;
+        selectionSerial = _previewSelectionSerial,
+        origin = widget.seedApiBaseUrl,
+        client = widget.seedClient,
+        permissionEpoch = _mapContent.permissionEpoch;
+    bool contextCurrent() {
+      if (!mounted ||
+          owner != widget.auth.accountID ||
+          token != widget.auth.authorizationHeader ||
+          identity != _currentSeedIdentity ||
+          epoch != _seedEntryEpoch ||
+          browse != widget.city.browseKey ||
+          city != _queryCityID ||
+          origin != widget.seedApiBaseUrl ||
+          !identical(client, widget.seedClient) ||
+          _organizations.active != null ||
+          _online.selected != null ||
+          selected != _workspace.selectedEntityId ||
+          selectionSerial != _previewSelectionSerial)
+        return false;
+      if (pin != null) {
+        if (permissionEpoch != _mapContent.permissionEpoch) return false;
+        // A live authoritative replacement/denial retires the intent. Merely
+        // suspending an old private read lease does not authorize or cancel a
+        // separate Journey's independently reread public Place.
+        if (_mapContent.current &&
+            _mapContent.find(selected)?.sourceVersion != pin.sourceVersion)
+          return false;
+      }
+      return true;
+    }
+
     return SelectedPlaceFollowup(
       placeID: placeID,
       cityID: city,
       taskID: _workspace.result == null ? null : _workspace.task?.id,
+      contextCurrent: contextCurrent,
       current: () =>
-          mounted &&
-          owner == widget.auth.accountID &&
-          token == widget.auth.authorizationHeader &&
-          identity == _currentSeedIdentity &&
-          epoch == _seedEntryEpoch &&
-          browse == widget.city.browseKey &&
-          city == _queryCityID &&
-          _organizations.active == null &&
-          _online.selected == null &&
-          selected == _workspace.selectedEntityId &&
-          selectionSerial == _previewSelectionSerial &&
+          contextCurrent() &&
           (pin == null ||
               (_mapContent.sourceCurrent(pin) &&
                   _mapContent.find(selected)?.sourceVersion ==
                       pin.sourceVersion)),
     );
+  }
+
+  Future<void> _openSelectedPlaceJourney(
+    SelectedPlaceFollowup selection,
+    int taskEpoch,
+  ) async {
+    final task = _workspace.task, result = _workspace.result;
+    if (task == null ||
+        result == null ||
+        !selection.current ||
+        !result.replyProjectionCurrent)
+      return;
+    bool current() =>
+        mounted &&
+        selection.contextCurrent &&
+        _workspace.taskEpoch == taskEpoch &&
+        identical(_workspace.task, task) &&
+        widget.city.selectedCity?.id == selection.cityID;
+    if (!current()) return;
+    _pauseComposer();
+    final client = widget.seedClient ?? http.Client();
+    final origin = widget.seedApiBaseUrl ?? BirdtieEnvironment.apiBaseUrl;
+    final recoveryKey = (origin, widget.auth.accountID!, selection.cityID);
+    final controller = SelectedPlaceJourneyController(
+      selection: selection,
+      day: 2,
+      ownerID: () => widget.auth.accountID,
+      authorizationHeader: () => widget.auth.authorizationHeader,
+      sourceCurrent: current,
+      identityChanges: Listenable.merge([
+        widget.auth,
+        widget.city,
+        _workspace,
+        _organizations,
+        _seedEntryChanges,
+        _layers,
+        _mapContent,
+      ]),
+      client: _authenticatedTransport(client),
+      apiBaseUrl: origin,
+      retainedLocalDraft: _selectedPlaceJourneyRecovery[recoveryKey],
+      onRetainLocalDraft: (draft) {
+        if (draft.unknown) {
+          _selectedPlaceJourneyRecovery[recoveryKey] = draft;
+        } else {
+          _selectedPlaceJourneyRecovery.remove(recoveryKey);
+        }
+      },
+    );
+    try {
+      await Navigator.of(context).push<void>(
+        MaterialPageRoute(
+          builder: (_) => SelectedPlaceJourneyPage(
+            controller: controller,
+            cityName: widget.city.selectedCity?.name ?? '',
+          ),
+        ),
+      );
+    } finally {
+      controller.dispose();
+      if (widget.seedClient == null) client.close();
+    }
   }
 
   Future<void> _submitInSelectedView(String query) async {
@@ -5727,6 +5814,9 @@ class _MapWorkspaceState extends State<MapWorkspace>
       taskID: _workspace.task?.id,
     );
     if (mounted) setState(() {});
+    if (selectedPlace != null && selectedPlaceFollowupDay(query) == 2) {
+      await _openSelectedPlaceJourney(selectedPlace, sendingEpoch);
+    }
     if (material == null || !material.isCurrent) return;
     final task = _workspace.task;
     final index = prefix.length;

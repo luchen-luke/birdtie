@@ -89,6 +89,8 @@ class OwnedMapController extends ChangeNotifier with WidgetsBindingObserver {
   final _retiredThreads = Expando<bool>();
   final _detailThreads = Expando<OwnedMapThread>();
   final _momentThreads = Expando<OwnedMapThread>();
+  final _detailPlaceReads = Expando<_OwnedMapPlaceRead>();
+  final _momentPlaceReads = Expando<_OwnedMapPlaceRead>();
   final _coverChecks = Expando<bool Function()>();
   final _cursors = <String, (_OwnedMapGrant, String)>{};
   // Continuations locate a page; they do not authorize its content. Every
@@ -217,12 +219,14 @@ class OwnedMapController extends ChangeNotifier with WidgetsBindingObserver {
 
   bool momentCurrent(OwnedMapMoment target) =>
       _grantCurrent(_momentGrants[target]) &&
+      _placeReadCurrent(_momentPlaceReads[target]) &&
       (_momentThreads[target] == null ||
           threadCurrent(_momentThreads[target]!));
 
   bool detailCurrent(OwnedMapMomentDetail detail) =>
       detail.validUntil.isAfter(_now()) &&
       _grantCurrent(_detailGrants[detail]) &&
+      _placeReadCurrent(_detailPlaceReads[detail]) &&
       (_detailThreads[detail] == null ||
           threadCurrent(_detailThreads[detail]!));
 
@@ -234,6 +238,34 @@ class OwnedMapController extends ChangeNotifier with WidgetsBindingObserver {
   void _retireThread(OwnedMapThread thread) {
     _retiredThreads[thread] = true;
     _notify();
+  }
+
+  bool _placeReadCurrent(_OwnedMapPlaceRead? read) =>
+      read == null || !read.retired && read.page.validUntil.isAfter(_now());
+
+  void _retirePlaceRead(_OwnedMapPlaceRead read) {
+    read.retired = true;
+    _notify();
+  }
+
+  bool _samePlaceContent(OwnedMapPlacePage a, OwnedMapPlacePage b) {
+    if (a.placeID != b.placeID ||
+        a.sourceVersion != b.sourceVersion ||
+        a.items.length != b.items.length)
+      return false;
+    for (var i = 0; i < a.items.length; i++) {
+      final x = a.items[i], y = b.items[i];
+      if (x.id != y.id ||
+          x.revision != y.revision ||
+          x.visibilitySource != y.visibilitySource ||
+          x.sourceVersion != y.sourceVersion ||
+          !listEquals(
+            x.media.map((m) => m.identity).toList(),
+            y.media.map((m) => m.identity).toList(),
+          ))
+        return false;
+    }
+    return true;
   }
 
   bool _sameThreadContent(OwnedMapThread a, OwnedMapThread b) {
@@ -332,6 +364,48 @@ class OwnedMapController extends ChangeNotifier with WidgetsBindingObserver {
       _registerThread(renewed, grant.pin);
       return selected;
     }
+    final originalPlace = _momentPlaceReads[target];
+    if (originalPlace != null) {
+      OwnedMapPlacePage renewed;
+      try {
+        // A place list's detail source includes its whole place snapshot. A
+        // single-moment GET has a different source even with unchanged media.
+        // Reauthorize the exact original page without guessing a thread.
+        renewed = await _api.readPlaceMoments(
+          originalPlace.page.placeID,
+          cursor: originalPlace.cursor,
+          ownerID: identity.$2!,
+          authorization: identity.$3!,
+          origin: identity.$1,
+          current: pending,
+          now: _now,
+        );
+      } on OwnedMapReadFailure catch (failure) {
+        if (failure.retiresGrant) _retirePlaceRead(originalPlace);
+        rethrow;
+      } on FormatException {
+        _retirePlaceRead(originalPlace);
+        rethrow;
+      }
+      if (!pending() ||
+          !_samePlaceContent(originalPlace.page, renewed) ||
+          originalPlace.cursor != null &&
+              renewed.validUntil.isAfter(originalPlace.page.validUntil)) {
+        _retirePlaceRead(originalPlace);
+        throw const FormatException('地点动态来源已变化，请重新读取');
+      }
+      final selected = renewed.items
+          .where((detail) => detail.id == target.id)
+          .singleOrNull;
+      if (selected == null ||
+          selected.revision != target.revision ||
+          selected.visibilitySource != target.visibilitySource) {
+        _retirePlaceRead(originalPlace);
+        throw const FormatException('地点动态读取目标已变化');
+      }
+      _registerPlacePage(renewed, grant.pin, originalPlace.cursor);
+      return selected;
+    }
     final value = await _api.readMoment(
       target,
       ownerID: identity.$2!,
@@ -409,18 +483,29 @@ class OwnedMapController extends ChangeNotifier with WidgetsBindingObserver {
     if (!pending() || previous != null && value.sourceVersion != previous.$2) {
       throw const FormatException('地点动态来源已变化，请重新读取');
     }
+    _registerPlacePage(value, pin, cursor);
+    return value;
+  }
+
+  void _registerPlacePage(
+    OwnedMapPlacePage value,
+    OwnedMapPin pin,
+    String? cursor,
+  ) {
+    final read = _OwnedMapPlaceRead(value, cursor);
     for (final detail in value.items) {
       _registerDetail(detail, pin);
+      _detailPlaceReads[detail] = read;
+      _momentPlaceReads[detail.selector] = read;
     }
     _cursors.removeWhere((_, v) => !_grantCurrent(v.$1));
     if (value.nextCursor != null) {
       if (_cursors.length >= 128) _cursors.remove(_cursors.keys.first);
       _cursors[value.nextCursor!] = (
-        _OwnedMapGrant(pin, epoch, value.validUntil),
+        _OwnedMapGrant(pin, _epoch, value.validUntil),
         value.sourceVersion,
       );
     }
-    return value;
   }
 
   Future<Uint8List> momentContent(
@@ -1307,4 +1392,11 @@ class _OwnedMapGrant {
   final OwnedMapPin pin;
   final int epoch;
   final DateTime? until;
+}
+
+class _OwnedMapPlaceRead {
+  _OwnedMapPlaceRead(this.page, this.cursor);
+  final OwnedMapPlacePage page;
+  final String? cursor;
+  bool retired = false;
 }

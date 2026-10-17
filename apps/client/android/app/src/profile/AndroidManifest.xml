@@ -4,4 +4,6 @@
          to allow setting breakpoints, to provide hot reload, etc.
     -->
     <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- Isolated local API acceptance through adb reverse only. -->
+    <application android:networkSecurityConfig="@xml/isolated_local_network_security_config" />
 </manifest>

@@ -13,6 +13,7 @@ class MainActivity : FlutterActivity() {
     private var friendAudio: FriendAudio? = null
     private var mapConfiguration: MapConfiguration? = null
     private var destinationSearch: DestinationSearch? = null
+    private var mapSurfaceEvidence: NativeMapSurfaceEvidence? = null
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         mapConfiguration?.close()
@@ -32,11 +33,15 @@ class MainActivity : FlutterActivity() {
         voiceInput?.setQaTiming(intent?.getBooleanExtra("birdtie.qa.voiceTiming", false) == true)
         friendAudio?.close()
         friendAudio = FriendAudio(this, flutterEngine.dartExecutor.binaryMessenger)
+        mapSurfaceEvidence?.close()
+        mapSurfaceEvidence = NativeMapSurfaceEvidence(this, flutterEngine)
+        mapSurfaceEvidence?.armFrom(intent)
     }
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
         voiceInput?.setQaTiming(intent.getBooleanExtra("birdtie.qa.voiceTiming", false))
+        mapSurfaceEvidence?.armFrom(intent)
     }
     override fun onResume() {
         super.onResume()
@@ -44,6 +49,7 @@ class MainActivity : FlutterActivity() {
         friendAudio?.onResume()
     }
     override fun onPause() {
+        mapSurfaceEvidence?.stop("activity_pause")
         voiceInput?.onPause()
         friendAudio?.onPause()
         super.onPause()
@@ -64,6 +70,8 @@ class MainActivity : FlutterActivity() {
         super.onActivityResult(requestCode, resultCode, data)
     }
     override fun cleanUpFlutterEngine(flutterEngine: FlutterEngine) {
+        mapSurfaceEvidence?.close()
+        mapSurfaceEvidence = null
         destinationSearch?.close()
         destinationSearch = null
         mapConfiguration?.close()

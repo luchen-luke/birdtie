@@ -6,37 +6,54 @@ class SelectedPlaceFollowup {
     required this.cityID,
     required this.taskID,
     required bool Function() current,
-  }) : _current = current;
+    bool Function()? contextCurrent,
+  }) : _current = current,
+       _contextCurrent = contextCurrent ?? current;
 
   final String placeID, cityID;
   final String? taskID;
   final bool Function() _current;
+  final bool Function() _contextCurrent;
   static final _uuid = RegExp(
     r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',
   );
-  bool get current =>
+  bool get _valid =>
       cityID.isNotEmpty &&
       _uuid.hasMatch(placeID) &&
-      placeID != '00000000-0000-0000-0000-000000000000' &&
-      _current();
+      placeID != '00000000-0000-0000-0000-000000000000';
+  bool get current => _valid && _current();
+
+  /// Identity and the user's selection only. This never authorizes reading a
+  /// map pin, reply, media, or saving; a destination domain must reread itself.
+  bool get contextCurrent => _valid && _contextCurrent();
   Map<String, Object> get selector => {'placeId': placeID};
 }
 
+String _selectedPlaceQuestion(String query) =>
+    query.trim().toLowerCase().replaceAll(RegExp(r'[ ?？!！。.]+$'), '');
+
+const _selectedPlaceDayTwoQueries = {
+  '把这个加入第二天',
+  '把这个地方加入第二天',
+  '把它加入第二天',
+  '将这个加入第二天',
+  '将它加入第二天',
+  '加入第二天',
+  'add this to day 2',
+  'add this place to day 2',
+  'add it to day 2',
+};
+
+/// Day sequence is explicit; tomorrow is never interpreted as day two.
+int? selectedPlaceFollowupDay(String query) =>
+    _selectedPlaceDayTwoQueries.contains(_selectedPlaceQuestion(query))
+    ? 2
+    : null;
+
 bool isSelectedPlaceFollowupQuery(String query) {
-  final text = query.trim().toLowerCase().replaceAll(
-    RegExp(r'[ ?？!！。.]+$'),
-    '',
-  );
+  final text = _selectedPlaceQuestion(query);
+  if (_selectedPlaceDayTwoQueries.contains(text)) return true;
   if (const {
-    '把这个加入第二天',
-    '把这个地方加入第二天',
-    '把它加入第二天',
-    '将这个加入第二天',
-    '将它加入第二天',
-    '加入第二天',
-    'add this to day 2',
-    'add this place to day 2',
-    'add it to day 2',
     '地址',
     '地址是什么',
     'address',

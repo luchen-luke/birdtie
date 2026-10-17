@@ -1,0 +1,7 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="app.birdtie.evidence">
+    <uses-sdk android:minSdkVersion="24" android:targetSdkVersion="36" />
+    <application android:label="Birdtie acceptance evidence" android:debuggable="true" />
+    <instrumentation android:name="app.birdtie.evidence.AccessibilityEvidence"
+        android:targetPackage="app.birdtie.evidence"
+        android:functionalTest="true" />
+</manifest>

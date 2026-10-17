@@ -1271,6 +1271,115 @@ class OwnedMapReadFailure implements Exception {
   bool get retryable => statusCode >= 500 && statusCode <= 599;
 }
 
+class OwnedMapThreadEntry {
+  const OwnedMapThreadEntry(this.position, this.detail);
+  final int position;
+  final OwnedMapMomentDetail? detail;
+  bool get available => detail != null;
+}
+
+class OwnedMapThread {
+  const OwnedMapThread({
+    required this.threadID,
+    required this.seedMomentID,
+    required this.seedRevision,
+    required this.seedVisibilitySource,
+    required this.entries,
+    required this.observedAt,
+    required this.validUntil,
+    required this.sourceVersion,
+  });
+  final String threadID, seedMomentID, seedVisibilitySource, sourceVersion;
+  final int seedRevision;
+  final List<OwnedMapThreadEntry> entries;
+  final DateTime observedAt, validUntil;
+  bool get current => validUntil.isAfter(DateTime.now().toUtc());
+  bool get hasThread => threadID.isNotEmpty;
+
+  factory OwnedMapThread.decode(
+    Object? raw, {
+    required String ownerID,
+    required String seedMomentID,
+    required DateTime now,
+  }) {
+    final v = humanControlObject(raw, {
+      'schemaVersion',
+      'viewerAccountId',
+      'seedMomentId',
+      'seedRevision',
+      'seedVisibilitySource',
+      'status',
+      'threadId',
+      'entries',
+      'observedAt',
+      'validUntil',
+      'sourceVersion',
+    });
+    if (v['schemaVersion'] != 'map-content-thread-v1' ||
+        v['viewerAccountId'] != ownerID ||
+        !humanControlID(ownerID) ||
+        v['seedMomentId'] != seedMomentID ||
+        !humanControlID(seedMomentID) ||
+        !humanControlVersion(v['seedRevision'], zero: false) ||
+        !const {
+          'SELF_PRIVATE',
+          'CIVU_PUBLIC_MOMENT',
+          'BIRDTIE_PUBLIC_MOMENT',
+        }.contains(v['seedVisibilitySource']) ||
+        v['entries'] is! List ||
+        (v['status'] == 'NOT_A_THREAD'
+            ? v['threadId'] != '' || (v['entries'] as List).isNotEmpty
+            : v['status'] != 'AVAILABLE' ||
+                  !humanControlID(v['threadId']) ||
+                  (v['entries'] as List).isEmpty ||
+                  (v['entries'] as List).length > 20)) {
+      throw const FormatException('地图串文来源不符');
+    }
+    final lease = _lease(v, now), entries = <OwnedMapThreadEntry>[];
+    final seen = <String>{};
+    var seedFound = false;
+    for (final rawEntry in v['entries'] as List) {
+      final e = humanControlObject(rawEntry, {'position', 'status', 'detail'});
+      if (e['position'] != entries.length ||
+          !const {'AVAILABLE', 'UNAVAILABLE'}.contains(e['status']) ||
+          (e['status'] == 'UNAVAILABLE') != (e['detail'] == null)) {
+        throw const FormatException('地图串文段序不符');
+      }
+      final detail = e['detail'] == null
+          ? null
+          : OwnedMapMomentDetail.decode(
+              e['detail'],
+              ownerID: ownerID,
+              now: now,
+            );
+      if (detail != null) {
+        if (!seen.add(detail.id) || detail.validUntil.isBefore(lease.$2)) {
+          throw const FormatException('地图串文内容已变化');
+        }
+        if (detail.id == seedMomentID) {
+          seedFound =
+              detail.revision == v['seedRevision'] &&
+              detail.visibilitySource == v['seedVisibilitySource'];
+        }
+      }
+      entries.add(OwnedMapThreadEntry(entries.length, detail));
+    }
+    if (v['status'] == 'AVAILABLE' && !seedFound) {
+      throw const FormatException('地图串文入口已变化');
+    }
+    return OwnedMapThread(
+      threadID: v['threadId'],
+      seedMomentID: seedMomentID,
+      seedRevision: v['seedRevision'],
+      seedVisibilitySource: v['seedVisibilitySource'],
+      entries: List.unmodifiable(entries),
+      observedAt: lease.$1,
+      validUntil: lease.$2,
+      sourceVersion: v['sourceVersion'],
+    );
+  }
+}
+
 class OwnedMapAPI {
   OwnedMapAPI({
     required http.Client client,
@@ -1295,6 +1404,7 @@ class OwnedMapAPI {
     String? mime,
     int? exact,
     Future<void>? abortTrigger,
+    bool allowMissing = false,
   }) async {
     final transport = _transport, client = _client;
     bool valid() =>
@@ -1313,7 +1423,7 @@ class OwnedMapAPI {
         .send(request)
         .timeout(const Duration(seconds: 12));
     if (response.statusCode != 200) {
-      final code = await _errorCode(response);
+      final code = await _errorCode(response, allowMissingRoute: allowMissing);
       final target = RegExp(
         r'^/v1/me/map-content/(moments|places)/([0-9a-f-]{36})(?:/|$)',
       ).firstMatch(uri.path);
@@ -1323,7 +1433,11 @@ class OwnedMapAPI {
         resourceKind: target?.group(1),
         resourceID: target?.group(2),
       );
-      if (valid() && failure.retiresGrant) onDenied?.call(failure);
+      if (valid() &&
+          failure.retiresGrant &&
+          !(allowMissing && code == 'route_not_found')) {
+        onDenied?.call(failure);
+      }
       throw failure;
     }
     if (!valid() ||
@@ -1377,10 +1491,18 @@ class OwnedMapAPI {
 
   /// Only the existing error code is inspected, never logged or retained as a
   /// response body. Unknown identity/permission failures remain global.
-  Future<String> _errorCode(http.StreamedResponse response) async {
+  Future<String> _errorCode(
+    http.StreamedResponse response, {
+    bool allowMissingRoute = false,
+  }) async {
+    final plainMissing =
+        allowMissingRoute &&
+        response.statusCode == 404 &&
+        response.headers['content-type']?.split(';').first == 'text/plain';
     if (!const {404, 409}.contains(response.statusCode) ||
-        response.headers['content-type']?.split(';').first !=
-            'application/json') {
+        !plainMissing &&
+            response.headers['content-type']?.split(';').first !=
+                'application/json') {
       await response.stream.listen((_) {}).cancel();
       return '';
     }
@@ -1390,9 +1512,14 @@ class OwnedMapAPI {
       final deadline = Stopwatch()..start();
       while (await reader.moveNext().timeout(const Duration(seconds: 1))) {
         if (deadline.elapsed > const Duration(seconds: 1) ||
-            bytes.length + reader.current.length > 2048)
+            bytes.length + reader.current.length > (plainMissing ? 64 : 2048))
           return '';
         bytes.addAll(reader.current);
+      }
+      if (plainMissing) {
+        return utf8.decode(bytes) == '404 page not found\n'
+            ? 'route_not_found'
+            : '';
       }
       final value = jsonDecode(utf8.decode(bytes));
       final code = value is Map && value['error'] is Map
@@ -1538,6 +1665,7 @@ class OwnedMapAPI {
     required String authorization,
     required String origin,
     required bool Function() current,
+    bool allowMissing = false,
   }) async {
     if (canonicalAuthOrigin(origin) != origin || authorization.isEmpty) {
       throw const FormatException('地图读取身份不符');
@@ -1548,6 +1676,7 @@ class OwnedMapAPI {
       current: current,
       limit: 8 * 1024 * 1024,
       mime: 'application/json',
+      allowMissing: allowMissing,
     );
     try {
       return humanControlObject(jsonDecode(utf8.decode(bytes)), {
@@ -1587,6 +1716,43 @@ class OwnedMapAPI {
         value.visibilitySource != target.visibilitySource)
       throw const FormatException('地图动态来源已变化');
     return value;
+  }
+
+  Future<OwnedMapThread?> readThread(
+    String seedMomentID, {
+    required String ownerID,
+    required String authorization,
+    required String origin,
+    required bool Function() current,
+    required DateTime Function() now,
+  }) async {
+    if (!humanControlID(seedMomentID)) {
+      throw const FormatException('地图串文入口不符');
+    }
+    try {
+      final value = OwnedMapThread.decode(
+        await _json(
+          '/v1/me/map-content/moments/$seedMomentID/thread',
+          authorization: authorization,
+          origin: origin,
+          current: current,
+          allowMissing: true,
+        ),
+        ownerID: ownerID,
+        seedMomentID: seedMomentID,
+        now: now(),
+      );
+      if (!current()) throw const FormatException('地图串文读取已失效');
+      return value.hasThread ? value : null;
+    } on OwnedMapReadFailure catch (failure) {
+      // An older API has no additive reader route. Keep its existing single
+      // entry path; absence of this endpoint does not establish no thread.
+      if (failure.statusCode == 404 &&
+          failure.code == 'route_not_found' &&
+          current())
+        return null;
+      rethrow;
+    }
   }
 
   Future<OwnedMapPlacePage> readPlaceMoments(

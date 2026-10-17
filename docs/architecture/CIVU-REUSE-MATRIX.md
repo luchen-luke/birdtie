@@ -313,3 +313,21 @@ Android原包含3dmap-location-search 11.2.100/search9.8.1，此次新增窄Meth
 只读Civu认证源码显示access/refresh分离（access约30分钟、refresh约30天）。本次仅复用接续语义，不复制Civu SharedPreferences凭据存放、非原子轮换或任意HTTP写重试。Birdtie继续origin绑定的secure vault，新增176设备凭据family：30天绝对期限、原身份仍需active/current、原子轮换、同操作60秒加密响应重放、退出撤销family；旧access不自动升级，首个新pair来自真实用户明确固定码登录。权限/审批继续按新Session重新验证。
 
 对应路径为 `apps/api/internal/sessionrefresh/`、`internal/postgres/session_refresh.go`、`internal/httpapi/session_refresh.go`、`migrations/176_persistent_device_sessions.sql`，以及 `apps/client/lib/src/auth/{birdtie_auth_controller,session_vault}.dart`；Now独立更新恢复提示并等待owned/typed源，保留地图实例。仅dev_phone接入持久接续，OIDC/dev_email保留既有行为。精确合包、部署、实际手机与NOT_RUN边界见 `docs/reports/BIRDTIE-SESSION-RECOVERY-2026-10-16.md`，不能把源码复用当Civu运行验收。
+
+
+## 2026-10-17 Now 目的地图与连续阅读增量
+
+本轮接续原 `BT-FIX-NOW-UI-001` 的 DGS-09/10/11、既有视觉与内容地图工作。外部来源为 `D:\Project\birdtie\Birdtie-Now-Unified`，先读 `START-HERE-CODEX.md`，按本机 `f9645af` 逐 hunk 接回3文件候选补丁；未整体复制旧仓或覆盖后续修复。
+
+| 选定来源 | Birdtie 去向与适配 | 复用与权限边界 |
+| --- | --- | --- |
+| Civu 国内/境外目录、透明纪念品 contain 的既有交互概念 | `apps/client/lib/src/city/destination_picker_grid.dart` 与原 `_NowCityPicker`；沿用现中文主题、唯一查询焦点和原全球搜索 controller | 不复制旧导航、Riverpod、城市全集或 provider 结果持久快照；无图仍可选，无可靠镜头由当前查询显式消歧 |
+| 受限 `civu-private-reference-images-20261015-02` 同 run `c5df0d7c-f361-4275-9838-feb6d1d92352` 的青岛 REQ-360 与济南系统档案原字节 | `internal/cityartwork/fallbackexport` 按摘要生成 `apps/client/assets/destinations/qingdao-d2988c88.png`、`jinan-69b9d3d6.png`；均324px，非原图替换 | 原3351927/2749346字节文件保持不变。只有 sourceGeo→同run city alias→系统媒体精确关系可生成公开只读投影；禁止 owner 私有文件、通用档案下载或名称猜映射 |
+| 包 `assets/edinburgh.png`，原 Civu-client `assets/destinations/edinburgh.png` | `apps/client/assets/destinations/edinburgh.png`，原512px透明PNG，SHA256 `1cab9f1418801643a59ce4eaafd8b94be485c69d79b1465603ab653674a565e7` | 仅真实 `civu-geo-66920ecb-9717-42bb-8320-a43a1d2851d2` 本地fallback；不声称系统档案绑定。实际第三份系统档案是York |
+| 既有原串文成员与逐条可见性事实 | Birdtie原生 `map-content/moments/{id}/thread` 与现reader；不从作者、相邻地点或发布时间推断 | 复用现 moment_threads 权威顺序与 map ACL；不可读段保留位置，不包含原ID/正文/媒体。无地图位置的真实兄弟段也可按当前权限读取 |
+
+图像是本次明确选定的已有系统/包素材，保留来源、原版本、摘要和尺寸；未引入新第三方素材或AI替代图。业务实现为Birdtie原生代码，不复制许可不明的旧业务源码；未扩大历史私人媒体权限。远端新版或非法远端metadata不能被旧本地图静默覆盖。原始档案不可变，派生缓存与客户端已读媒体缓存均有界，并按当前身份/来源/期限退休。
+
+初次合批编译阶段仅准备迁移177。用户随后要求安装、部署与上传GitHub；已核对真实live两城同run映射和系统原图，新增受限备份、保留原176条迁移摘要，事务执行177并启用API33。两城公网324px派生摘要与APK一致；原系统档案与Civu均无写入。完整三城原版本、源ID、目标ID、派生SHA和证据见 `docs/reports/BIRDTIE-NOW-UNIFIED-INTEGRATION-2026-10-17.md` 与 `docs/testing/evidence/now-unified-20261017/artwork-r15/`。代码、编译、装机和真实验收分别记账，不能由旧APK40/42推定本轮通过。
+
+原字节完整本机来源目录：C:/Users/chens/Documents/Codex/2026-10-14/birdtie-hangzhou/civu-private-reference-images-20261015-02/。选定源文件分别为 d2988c88b86453e1ead0c637ffeb85abdcfd89c9ce3894d12351a609b4429988.blob 与 69b9d3d653f3b7f64fd1423c54e18d73cb90f1186a824bb1cfe1319a835a4218.blob；对应去向为上表两份324px PNG，非复制整个受限导出。

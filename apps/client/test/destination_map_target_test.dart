@@ -42,7 +42,140 @@ Map<String, dynamic> catalogCity() => {
   },
 };
 
+BrowseDestination _candidate({
+  String country = 'GB',
+  String provider = 'mapbox',
+  String featureType = 'place',
+  DestinationStorageMode storageMode = DestinationStorageMode.temporary,
+  String? cityID,
+}) => BrowseDestination(
+  provider: provider,
+  externalID: 'unit-resolved',
+  name: 'Synthetic resolved city',
+  countryCode: country,
+  region: 'Synthetic region',
+  latitude: 55.95,
+  longitude: -3.19,
+  featureType: featureType,
+  attribution: 'UNIT',
+  storageMode: storageMode,
+  internalCityID: cityID,
+);
+
 void main() {
+  test(
+    'confirmed catalog identity retains session camera without storing geometry or being overwritten by restore',
+    () async {
+      final store = PendingStore();
+      var rows = [
+        catalogCity(),
+        {...catalogCity(), 'id': 'unit-no-map', 'map': null},
+      ];
+      final city = PublicCityController(
+        apiBaseUrl: 'https://unit.invalid',
+        explorationStore: store,
+        client: MockClient(
+          (r) async => http.Response(
+            jsonEncode({'data': r.url.path == '/v1/cities' ? rows : []}),
+            200,
+          ),
+        ),
+      );
+      addTearDown(city.dispose);
+      await city.loadCities();
+      final original = city.selectedCity;
+      final candidate = _candidate();
+      final bound = city.bindCatalogDestination('unit-no-map', candidate)!;
+      expect(
+        city.selectedCity,
+        same(original),
+        reason: 'binding is not a choice',
+      );
+      expect(city.selectedDestination, isNull);
+      expect(city.hasUsableMap(city.cities.last), false);
+      expect(bound.internalCityID, 'unit-no-map');
+      expect(bound.storageMode, DestinationStorageMode.temporary);
+      expect(city.selectDestination(bound), true);
+      store.read.complete('unit-catalog');
+      await city.explorationRestoreSettled;
+      await city.explorationWritesSettled;
+      await city.loadCities();
+      expect(city.selectedCity?.id, 'unit-no-map');
+      expect(city.contentCityID, 'unit-no-map');
+      expect(city.browseKey, 'unit-no-map');
+      expect(city.renderCity?.id, 'unit-no-map');
+      expect(city.renderCity?.map?.latitude, candidate.latitude);
+      expect(city.renderCity?.map?.longitude, candidate.longitude);
+      expect(city.selectedDestination, same(bound));
+      expect(city.selectedCity?.map, isNull, reason: 'no catalog mutation');
+      expect(store.writes, ['unit-no-map']);
+      expect(city.recentCityIDs, ['unit-no-map']);
+      city.selectDestination(destination);
+      expect(city.recentCityIDs, ['unit-no-map']);
+      expect(store.writes, [
+        'unit-no-map',
+      ], reason: 'external camera stays temporary');
+
+      city.selectDestination(bound);
+      rows = [catalogCity()];
+      await city.loadCities();
+      expect(city.selectedDestination, isNull);
+      expect(city.selectedCity?.id, 'unit-catalog');
+      expect(city.recentCityIDs, isEmpty);
+      expect(city.selectDestination(bound), false, reason: 'retired identity');
+    },
+  );
+
+  test(
+    'catalog camera binding rejects wrong country, level and renderer',
+    () async {
+      final city = PublicCityController(
+        apiBaseUrl: 'https://unit.invalid',
+        client: MockClient(
+          (r) async => http.Response(
+            jsonEncode({
+              'data': r.url.path == '/v1/cities'
+                  ? [
+                      catalogCity(),
+                      {...catalogCity(), 'id': 'unit-no-map', 'map': null},
+                    ]
+                  : [],
+            }),
+            200,
+          ),
+        ),
+      );
+      addTearDown(city.dispose);
+      await city.loadCities();
+      for (final candidate in [
+        _candidate(country: 'FR'),
+        _candidate(provider: 'amap'),
+        _candidate(featureType: 'country'),
+        _candidate(featureType: 'region'),
+        _candidate(featureType: 'district'),
+        _candidate(featureType: 'locality'),
+        _candidate(cityID: 'unit-other-city'),
+      ]) {
+        expect(city.bindCatalogDestination('unit-no-map', candidate), isNull);
+      }
+      expect(city.bindCatalogDestination('missing-city', _candidate()), isNull);
+      expect(
+        city.selectDestination(
+          _candidate(
+            cityID: 'unit-no-map',
+            storageMode: DestinationStorageMode.catalog,
+          ),
+        ),
+        false,
+        reason:
+            'no reliable camera must not silently discard the provider camera',
+      );
+      expect(city.selectedCity?.id, 'unit-catalog');
+      expect(city.selectedDestination, isNull);
+      expect(city.recentCityIDs, isEmpty);
+    },
+  );
+
   test(
     'unregistered target survives late restore and catalog refresh without fake city API or persistence',
     () async {

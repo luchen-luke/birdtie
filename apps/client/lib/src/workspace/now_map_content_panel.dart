@@ -14,6 +14,12 @@ import 'owned_map_controller.dart';
 
 /// Read-only content stays over the original Now map. It never grants public
 /// access or changes the source of a legacy record.
+class NowMapReadingPosition {
+  double offset = 0;
+  bool expanded = false;
+  final mediaPages = <String, int>{};
+}
+
 class NowMapContentPanel extends StatefulWidget {
   const NowMapContentPanel({
     super.key,
@@ -26,9 +32,11 @@ class NowMapContentPanel extends StatefulWidget {
     required this.onEdit,
     this.initialExpanded = false,
     this.closeLabel,
+    this.readingPosition,
   });
   final bool initialExpanded;
   final String? closeLabel;
+  final NowMapReadingPosition? readingPosition;
   final OwnedMapController controller;
   final OwnedMapPin pin;
   final bool Function() current;
@@ -44,6 +52,7 @@ class _NowMapContentPanelState extends State<NowMapContentPanel>
     with WidgetsBindingObserver {
   final _scroll = ScrollController();
   List<OwnedMapMomentDetail> _items = const [];
+  OwnedMapThread? _thread;
   Listenable? _changes;
   Timer? _renew, _expiry;
   String? _nextCursor, _error;
@@ -75,7 +84,11 @@ class _NowMapContentPanelState extends State<NowMapContentPanel>
   void initState() {
     super.initState();
     _epoch = c.permissionEpoch;
-    _expanded = widget.initialExpanded;
+    _expanded =
+        widget.initialExpanded || widget.readingPosition?.expanded == true;
+    _restoreOffset = widget.readingPosition?.offset ?? 0;
+    _mediaPages.addAll(widget.readingPosition?.mediaPages ?? const {});
+    _scroll.addListener(_rememberPosition);
     _listen();
     WidgetsBinding.instance.addObserver(this);
     unawaited(_read());
@@ -122,12 +135,14 @@ class _NowMapContentPanelState extends State<NowMapContentPanel>
   }
 
   void _retire() {
+    _rememberPosition();
     if (_items.isNotEmpty && _scroll.hasClients)
       _restoreOffset = _scroll.offset;
     ++_request;
     _renew?.cancel();
     _expiry?.cancel();
     _items = const [];
+    _thread = null;
     _nextCursor = null;
     _loading = false;
     _hasRead = false;
@@ -148,9 +163,11 @@ class _NowMapContentPanelState extends State<NowMapContentPanel>
     _expiry?.cancel();
     if (_items.isEmpty) return;
     final now = DateTime.now().toUtc();
-    final until = _items
+    var until = _items
         .map((item) => item.validUntil)
         .reduce((a, b) => a.isBefore(b) ? a : b);
+    if (_thread != null && _thread!.validUntil.isBefore(until))
+      until = _thread!.validUntil;
     final remaining = until.difference(now);
     if (remaining <= Duration.zero) {
       _items = const [];
@@ -212,7 +229,21 @@ class _NowMapContentPanelState extends State<NowMapContentPanel>
             throw const FormatException('地图分页重复');
         } while (cursor != null && collected.length < desired);
       if (!pending()) return;
-      _items = List.unmodifiable(collected);
+      OwnedMapThread? thread;
+      if (_expanded &&
+          collected.isNotEmpty &&
+          (pin.isMomentAnchor || collected.length == 1 && cursor == null)) {
+        thread = await c.readThread(pin, collected.first);
+        if (!pending()) return;
+      }
+      _thread = thread;
+      _items = List.unmodifiable(
+        thread == null
+            ? collected
+            : thread.entries
+                  .map((entry) => entry.detail)
+                  .whereType<OwnedMapMomentDetail>(),
+      );
       _hasRead = true;
       _nextCursor = cursor;
       _desiredCount = math.max(1, collected.length);
@@ -249,7 +280,18 @@ class _NowMapContentPanelState extends State<NowMapContentPanel>
       _loading = false;
       final next = [..._items];
       next[index] = fresh;
-      _items = List.unmodifiable(next.where(c.detailCurrent));
+      final thread = c.threadForDetail(fresh);
+      if (thread != null) {
+        _thread = thread;
+        _items = List.unmodifiable(
+          thread.entries
+              .map((entry) => entry.detail)
+              .whereType<OwnedMapMomentDetail>()
+              .where(c.detailCurrent),
+        );
+      } else {
+        _items = List.unmodifiable(next.where(c.detailCurrent));
+      }
       _armLease();
     });
     return true;
@@ -268,10 +310,47 @@ class _NowMapContentPanelState extends State<NowMapContentPanel>
     super.dispose();
   }
 
+  void _rememberPosition() {
+    final position = widget.readingPosition;
+    if (position == null) return;
+    if (_scroll.hasClients) position.offset = _scroll.offset;
+    position.expanded = _expanded;
+    position.mediaPages.addAll(_mediaPages);
+  }
+
   void _expand() {
     if (!_current) return;
     setState(() => _expanded = true);
     widget.onExpand();
+    _rememberPosition();
+    unawaited(_readCurrentThread());
+  }
+
+  Future<void> _readCurrentThread() async {
+    if (!_current ||
+        _loading ||
+        _items.isEmpty ||
+        !(_livePin!.isMomentAnchor ||
+            _items.length == 1 && _nextCursor == null))
+      return;
+    final request = ++_request, pin = _livePin!;
+    bool pending() => _current && request == _request;
+    setState(() => _loading = true);
+    try {
+      final thread = await c.readThread(pin, _items.first);
+      if (!pending() || thread == null) return;
+      _thread = thread;
+      _items = List.unmodifiable(
+        thread.entries
+            .map((entry) => entry.detail)
+            .whereType<OwnedMapMomentDetail>(),
+      );
+      _armLease();
+    } catch (_) {
+      if (pending()) _error = '串文暂时无法加载';
+    } finally {
+      if (pending()) setState(() => _loading = false);
+    }
   }
 
   void _openMedia(OwnedMapMomentDetail item, int page) {
@@ -300,6 +379,10 @@ class _NowMapContentPanelState extends State<NowMapContentPanel>
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, constraints) {
       final current = _current, pin = current ? _livePin : null;
+      final thread = _expanded && _thread != null && c.threadCurrent(_thread!)
+          ? _thread
+          : null;
+      final entryCount = thread?.entries.length ?? _items.length;
       final availableHeight = constraints.hasBoundedHeight
           ? constraints.maxHeight
           : 560.0;
@@ -368,17 +451,34 @@ class _NowMapContentPanelState extends State<NowMapContentPanel>
                   height: 52,
                   child: Row(
                     children: [
+                      Icon(
+                        pin?.isMomentAnchor == true
+                            ? Icons.photo_outlined
+                            : Icons.place_outlined,
+                        size: 20,
+                        semanticLabel: pin?.isMomentAnchor == true
+                            ? '动态'
+                            : '地点',
+                      ),
+                      const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          pin == null || pin.isMomentAnchor ? '动态' : pin.name,
+                          thread != null
+                              ? '串文 · ${thread.entries.length}段'
+                              : pin == null
+                              ? '动态'
+                              : pin.isMomentAnchor
+                              ? (pin.threadID.isEmpty ? '动态' : '串文中的动态')
+                              : pin.name,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: Theme.of(context).textTheme.titleMedium,
                         ),
                       ),
-                      if (pin != null &&
+                      if (thread == null &&
+                          pin != null &&
                           !pin.isMomentAnchor &&
-                          pin.momentCount > 1)
+                          pin.momentCount > 0)
                         Padding(
                           padding: const EdgeInsets.only(left: 8),
                           child: Text(
@@ -422,21 +522,25 @@ class _NowMapContentPanelState extends State<NowMapContentPanel>
                         padding: const EdgeInsets.only(bottom: 16),
                         itemCount:
                             (_expanded
-                                ? _items.length
+                                ? entryCount
                                 : math.min(1, _items.length)) +
                             1,
                         findChildIndexCallback: (key) {
                           final count = _expanded
-                              ? _items.length
+                              ? entryCount
                               : math.min(1, _items.length);
                           for (var index = 0; index < count; index++) {
-                            if (key == _entryKey(_items[index])) return index;
+                            final item =
+                                thread?.entries[index].detail ??
+                                (thread == null ? _items[index] : null);
+                            if (item != null && key == _entryKey(item))
+                              return index;
                           }
                           return null;
                         },
                         itemBuilder: (context, index) {
                           final visible = _expanded
-                              ? _items.length
+                              ? entryCount
                               : math.min(1, _items.length);
                           if (index == visible) {
                             return Padding(
@@ -467,35 +571,66 @@ class _NowMapContentPanelState extends State<NowMapContentPanel>
                               ),
                             );
                           }
-                          final item = _items[index];
+                          final entry = thread?.entries[index];
+                          final item =
+                              entry?.detail ??
+                              (thread == null ? _items[index] : null);
+                          if (item == null)
+                            return Padding(
+                              key: ValueKey('thread-unavailable:$index'),
+                              padding: const EdgeInsets.all(16),
+                              child: Text('第${entry!.position + 1}段暂不可查看'),
+                            );
                           return Align(
                             key: _entryKey(item),
                             alignment: Alignment.topCenter,
                             child: ConstrainedBox(
                               constraints: const BoxConstraints(maxWidth: 720),
-                              child: _MapMomentTile(
-                                key: ValueKey(
-                                  '${item.id}:${item.revision}:${item.sourceVersion}',
-                                ),
-                                controller: c,
-                                detail: item,
-                                onFreshDetail: _acceptFreshDetail,
-                                compact: !_expanded,
-                                current: () =>
-                                    _current && c.detailCurrent(item),
-                                page: _mediaPages[item.id] ?? 0,
-                                onPageChanged: (page) =>
-                                    _mediaPages[item.id] = page,
-                                onOpenMedia: (page) => _openMedia(item, page),
-                                onExpand: _expand,
-                                onEdit: () => widget.onEdit(
-                                  item.id,
-                                  () =>
-                                      _current &&
-                                      c.detailCurrent(item) &&
-                                      item.visibilitySource == 'SELF_PRIVATE' &&
-                                      item.canEdit,
-                                ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  if (entry != null)
+                                    Padding(
+                                      padding: const EdgeInsets.fromLTRB(
+                                        16,
+                                        12,
+                                        16,
+                                        4,
+                                      ),
+                                      child: Text(
+                                        '第${entry.position + 1}段',
+                                        style: Theme.of(
+                                          context,
+                                        ).textTheme.labelLarge,
+                                      ),
+                                    ),
+                                  _MapMomentTile(
+                                    key: ValueKey(
+                                      '${item.id}:${item.revision}:${item.sourceVersion}',
+                                    ),
+                                    controller: c,
+                                    detail: item,
+                                    onFreshDetail: _acceptFreshDetail,
+                                    compact: !_expanded,
+                                    current: () =>
+                                        _current && c.detailCurrent(item),
+                                    page: _mediaPages[item.id] ?? 0,
+                                    onPageChanged: (page) =>
+                                        _mediaPages[item.id] = page,
+                                    onOpenMedia: (page) =>
+                                        _openMedia(item, page),
+                                    onExpand: _expand,
+                                    onEdit: () => widget.onEdit(
+                                      item.id,
+                                      () =>
+                                          _current &&
+                                          c.detailCurrent(item) &&
+                                          item.visibilitySource ==
+                                              'SELF_PRIVATE' &&
+                                          item.canEdit,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           );
@@ -508,7 +643,11 @@ class _NowMapContentPanelState extends State<NowMapContentPanel>
                   height: 48,
                   child: TextButton(
                     onPressed: _expand,
-                    child: const Text('展开动态'),
+                    child: Text(
+                      pin.isMomentAnchor
+                          ? '查看动态'
+                          : '查看此地点的全部${pin.momentCount}条动态',
+                    ),
                   ),
                 ),
             ],
@@ -679,7 +818,7 @@ class _MapMomentTile extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
               child: Text(
                 title,
-                maxLines: compact ? 2 : null,
+                maxLines: compact ? 1 : null,
                 overflow: compact ? TextOverflow.ellipsis : null,
                 style: TextStyle(
                   fontSize: 18,
@@ -694,7 +833,7 @@ class _MapMomentTile extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
               child: Text(
                 body.isEmpty ? title : body,
-                maxLines: compact ? 3 : null,
+                maxLines: compact ? 2 : null,
                 overflow: compact ? TextOverflow.ellipsis : null,
                 style: TextStyle(
                   fontSize: 16,
@@ -773,15 +912,85 @@ class _MapMediaPager extends StatefulWidget {
 class _MapMediaPagerState extends State<_MapMediaPager> {
   late int _index;
   late final PageController _pages;
+  final _imageBytes = <String, Uint8List>{};
+  int _imageByteCount = 0;
+  Timer? _imageExpiry;
   @override
   void initState() {
     super.initState();
     _index = widget.initialPage.clamp(0, widget.detail.media.length - 1);
     _pages = PageController(initialPage: _index);
+    _armImageExpiry();
+  }
+
+  @override
+  void didUpdateWidget(_MapMediaPager old) {
+    super.didUpdateWidget(old);
+    if (old.detail.id != widget.detail.id ||
+        old.detail.sourceVersion != widget.detail.sourceVersion ||
+        old.controller != widget.controller)
+      _clearImageBytes();
+    _armImageExpiry();
+  }
+
+  void _clearImageBytes() {
+    for (final bytes in _imageBytes.values) bytes.fillRange(0, bytes.length, 0);
+    _imageBytes.clear();
+    _imageByteCount = 0;
+  }
+
+  void _armImageExpiry() {
+    _imageExpiry?.cancel();
+    final remaining = widget.detail.validUntil.difference(
+      DateTime.now().toUtc(),
+    );
+    _imageExpiry = Timer(
+      remaining.isNegative ? Duration.zero : remaining,
+      _clearImageBytes,
+    );
+  }
+
+  Future<Uint8List> _readImage(
+    OwnedMapMomentDetail detail,
+    OwnedMapMomentMedia media,
+    bool Function() current,
+  ) async {
+    if (!current() || !widget.controller.detailCurrent(detail))
+      throw const FormatException('图片读取已失效');
+    final key = '${detail.id}:${detail.sourceVersion}:${media.identity}';
+    final cached = _imageBytes.remove(key);
+    if (cached != null) {
+      _imageBytes[key] = cached;
+      // The decoded-page owner zeroes its own copy on page retirement.
+      return Uint8List.fromList(cached);
+    }
+    final bytes = await widget.controller.momentContent(
+      detail,
+      media,
+      current: current,
+    );
+    if (!current() || !widget.controller.detailCurrent(detail)) {
+      bytes.fillRange(0, bytes.length, 0);
+      throw const FormatException('图片读取已失效');
+    }
+    // No prefetch. Retain at most four explicitly read images and 1 MiB in
+    // this reader, under its existing identity/source/lease only.
+    if (bytes.length <= 1024 * 1024) {
+      _imageBytes[key] = Uint8List.fromList(bytes);
+      _imageByteCount += bytes.length;
+      while (_imageBytes.length > 4 || _imageByteCount > 1024 * 1024) {
+        final retired = _imageBytes.remove(_imageBytes.keys.first)!;
+        _imageByteCount -= retired.length;
+        retired.fillRange(0, retired.length, 0);
+      }
+    }
+    return bytes;
   }
 
   @override
   void dispose() {
+    _imageExpiry?.cancel();
+    _clearImageBytes();
     _pages.dispose();
     super.dispose();
   }
@@ -800,11 +1009,11 @@ class _MapMediaPagerState extends State<_MapMediaPager> {
   @override
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, box) {
-      final selected = widget.detail.media[_index];
-      final ratio = selected.width / selected.height;
+      // One reading frame for the whole gallery: a portrait/landscape/video
+      // transition changes only the fitted content, never the surrounding list.
       final height = widget.full
           ? box.maxHeight
-          : math.min(box.maxWidth / ratio, widget.compact ? 300.0 : 560.0);
+          : math.min(box.maxWidth * .75, widget.compact ? 144.0 : 360.0);
       return SizedBox(
         key: ValueKey('moment-media-frame:${widget.detail.id}:${widget.full}'),
         height: height,
@@ -854,11 +1063,7 @@ class _MapMediaPagerState extends State<_MapMediaPager> {
                     decodeLimit: widget.full ? 2048 : 1280,
                     validUntil: widget.detail.validUntil,
                     current: current,
-                    read: () => widget.controller.momentContent(
-                      detail,
-                      media,
-                      current: current,
-                    ),
+                    read: () => _readImage(detail, media, current),
                   );
                   return widget.full
                       ? InteractiveViewer(
@@ -892,13 +1097,15 @@ class _MapMediaPagerState extends State<_MapMediaPager> {
                       vertical: 4,
                     ),
                     child: Text(
-                      '${_index + 1} / ${widget.detail.media.length}',
+                      '媒体 ${_index + 1} / ${widget.detail.media.length}',
                       style: const TextStyle(fontSize: 12, color: Colors.white),
                     ),
                   ),
                 ),
               ),
-            if (widget.detail.media.length > 1) ...[
+            // Touch galleries swipe directly. Desktop/full-view navigation
+            // retains buttons without covering the compact media preview.
+            if (widget.detail.media.length > 1 && !widget.compact) ...[
               if (_index > 0)
                 Positioned(
                   left: 4,
@@ -1041,27 +1248,44 @@ class _LeasePictureState extends State<_LeasePicture> {
     super.dispose();
   }
 
+  void _retry() {
+    if (!_current) return;
+    _clear();
+    setState(() => _failed = false);
+    unawaited(_load());
+  }
+
+  Widget _failure() => Center(
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const Text('图片加载失败'),
+        TextButton(onPressed: _retry, child: const Text('重试')),
+      ],
+    ),
+  );
+
   @override
   Widget build(BuildContext context) => !_current
-      ? const SizedBox.shrink()
+      ? (widget.placeholder ?? const Center(child: Text('媒体暂不可用')))
       : _image != null
       ? Image(
           image: _image!,
           fit: BoxFit.contain,
-          errorBuilder: (_, _, _) => widget.placeholder ?? const Text('图片加载失败'),
+          errorBuilder: (_, _, _) => widget.placeholder ?? _failure(),
         )
       : Center(
           child:
               widget.placeholder ??
               (_failed
-                  ? TextButton(
-                      onPressed: () => unawaited(_load()),
-                      child: const Text('重试'),
-                    )
+                  ? _failure()
                   : const SizedBox(
                       width: 20,
                       height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        semanticsLabel: '图片加载中',
+                      ),
                     )),
         );
 }
@@ -1603,7 +1827,7 @@ class _NowMapContentGroupPanelState extends State<NowMapContentGroupPanel> {
     final visible = _current
         ? _pins.where(widget.controller.sourceCurrent).toList()
         : const <OwnedMapPin>[];
-    return Material(
+    final list = Material(
       color: Theme.of(context).colorScheme.surface,
       child: Column(
         children: [
@@ -1612,16 +1836,12 @@ class _NowMapContentGroupPanelState extends State<NowMapContentGroupPanel> {
               !_current
                   ? '地图内容'
                   : widget.cluster == null
-                  ? '重叠位置的内容'
+                  ? '选择查看'
                   : '${widget.cluster!.momentCount}条动态',
             ),
-            subtitle: !_current
+            subtitle: !_current || widget.cluster == null
                 ? null
-                : Text(
-                    widget.cluster == null
-                        ? '选择要查看的内容'
-                        : '${widget.cluster!.anchorCount}个内容位置',
-                  ),
+                : Text('${widget.cluster!.anchorCount}个内容位置'),
             trailing: IconButton(
               tooltip: '返回地图',
               icon: const Icon(Icons.close),
@@ -1660,12 +1880,16 @@ class _NowMapContentGroupPanelState extends State<NowMapContentGroupPanel> {
                               : Icons.place_outlined,
                         ),
                         title: Text(
-                          pin.name.isEmpty ? '无标题动态' : pin.name,
+                          pin.name.isEmpty ? '动态' : pin.name,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),
                         subtitle: Text(
-                          '${pin.momentCount}条动态 · ${pin.visibilityLabel}',
+                          pin.isCluster
+                              ? '${pin.anchorCount}个内容位置'
+                              : pin.isMomentAnchor
+                              ? (pin.threadID.isEmpty ? '动态' : '串文动态')
+                              : '地点 · ${pin.momentCount}条动态',
                         ),
                         onTap: () => setState(() {
                           _rememberPosition();
@@ -1677,6 +1901,24 @@ class _NowMapContentGroupPanelState extends State<NowMapContentGroupPanel> {
           ),
         ],
       ),
+    );
+    // Two overlapping objects need a short chooser, not a mostly empty reader.
+    // Selecting an object above still uses the full retained detail viewport.
+    return LayoutBuilder(
+      builder: (context, limits) {
+        final available = limits.hasBoundedHeight ? limits.maxHeight : 560.0;
+        final height = math.min(
+          available,
+          88.0 +
+              visible.length * 88.0 +
+              (_loading ? 4.0 : 0.0) +
+              (_error != null || _cursor != null ? 48.0 : 0.0),
+        );
+        return Align(
+          alignment: Alignment.bottomCenter,
+          child: SizedBox(height: height, child: list),
+        );
+      },
     );
   }
 }

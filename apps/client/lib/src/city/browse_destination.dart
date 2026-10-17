@@ -30,6 +30,18 @@ class BrowseDestination {
 
   bool get isTemporary => storageMode == DestinationStorageMode.temporary;
   String get browseKey => 'destination:$provider:$externalID';
+
+  /// This checks the known country, administrative level and renderer boundary
+  /// only. A user must still inspect and explicitly choose the matching city;
+  /// equal names alone never establish a catalog identity.
+  bool canLocateCatalogCity(String catalogCountryCode) =>
+      valid &&
+      isTemporary &&
+      countryCode == catalogCountryCode.trim().toUpperCase() &&
+      featureType == 'place' &&
+      ((provider == 'amap' && countryCode == 'CN') ||
+          (provider == 'mapbox' && countryCode != 'CN'));
+
   bool get valid =>
       provider.isNotEmpty &&
       externalID.isNotEmpty &&

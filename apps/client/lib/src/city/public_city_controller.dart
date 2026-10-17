@@ -6,6 +6,8 @@ import 'package:http/http.dart' as http;
 import '../config/birdtie_environment.dart';
 import 'exploration_city_store.dart';
 import 'browse_destination.dart';
+import 'destination_artwork.dart';
+import 'map_provider_policy.dart';
 import '../workspace/entity_cover.dart';
 import '../workspace/place_photo.dart';
 
@@ -43,6 +45,8 @@ class PublicCity {
     required this.contentStatus,
     required this.source,
     required this.map,
+    this.artwork,
+    this.artworkDeclared = false,
   });
 
   final String id;
@@ -53,6 +57,8 @@ class PublicCity {
   final String contentStatus;
   final PublicSource source;
   final PublicCityMap? map;
+  final CityArtworkMetadata? artwork;
+  final bool artworkDeclared;
 
   factory PublicCity.fromJson(Map<String, dynamic> json) => PublicCity(
     id: json['id'] as String,
@@ -65,6 +71,11 @@ class PublicCity {
     map: json['map'] is Map<String, dynamic>
         ? PublicCityMap.fromJson(json['map'] as Map<String, dynamic>)
         : null,
+    artwork: CityArtworkMetadata.optional(
+      json['artwork'],
+      json['id'] as String,
+    ),
+    artworkDeclared: json['artwork'] != null,
   );
 }
 
@@ -329,6 +340,7 @@ class PublicCityController extends ChangeNotifier {
   List<PublicOrganizationPin> _organizationPins = const [];
   String? _selectedCityID;
   BrowseDestination? _selectedDestination;
+  final List<String> _recentCityIDs = [];
   String _placeQuery = '';
   String? _cityError;
   String? _placeError;
@@ -361,7 +373,8 @@ class PublicCityController extends ChangeNotifier {
   }
 
   BrowseDestination? get selectedDestination => _selectedDestination;
-  String? get browseKey => _selectedDestination?.browseKey ?? selectedCity?.id;
+  String? get browseKey => selectedCity?.id ?? _selectedDestination?.browseKey;
+  List<String> get recentCityIDs => List.unmodifiable(_recentCityIDs);
   String get browseLabel =>
       _selectedDestination?.name ?? selectedCity?.name ?? '选择目的地';
   String get contentCityID => selectedCity?.id ?? '';
@@ -371,11 +384,14 @@ class PublicCityController extends ChangeNotifier {
   PublicCity? get renderCity {
     final destination = _selectedDestination;
     if (destination == null) return selectedCity;
+    final catalogCity = selectedCity;
     return PublicCity(
-      id: destination.browseKey,
+      id: catalogCity?.id ?? destination.browseKey,
       name: destination.name,
       region: destination.region,
       countryCode: destination.countryCode,
+      timeZone: catalogCity?.timeZone ?? 'UTC',
+      artwork: catalogCity?.artwork,
       contentStatus: 'unknown',
       source: PublicSource(
         label: destination.provider == 'amap' ? '高德地图' : 'Mapbox',
@@ -397,10 +413,24 @@ class PublicCityController extends ChangeNotifier {
     if (_closed || !destination.valid) return false;
     final catalogID = destination.internalCityID;
     if (catalogID != null) {
-      if (destination.storageMode != DestinationStorageMode.catalog ||
-          !_cities.any((city) => city.id == catalogID))
-        return false;
-      selectCity(catalogID);
+      final city = _catalogCity(catalogID);
+      if (city == null) return false;
+      if (destination.storageMode == DestinationStorageMode.catalog) {
+        if (!hasUsableMap(city)) return false;
+        selectCity(catalogID);
+        return true;
+      }
+      if (!destination.canLocateCatalogCity(city.countryCode)) return false;
+      // Keep the real catalog identity and the provider's session-only camera
+      // independently. Persisting only the ID cannot persist Temporary geometry.
+      ++_explorationChoiceRevision;
+      _explorationFallback = false;
+      _selectedDestination = destination;
+      _rememberExplorationCity(catalogID);
+      final changed = _selectedCityID != catalogID;
+      _setSelectedCity(catalogID);
+      _notify();
+      if (changed) unawaited(_loadSelectedCityContent());
       return true;
     }
     if (!((destination.provider == 'mapbox' &&
@@ -417,6 +447,43 @@ class PublicCityController extends ChangeNotifier {
     _setSelectedCity(null);
     _notify();
     return true;
+  }
+
+  PublicCity? _catalogCity(String cityID) {
+    for (final city in _cities) {
+      if (city.id == cityID) return city;
+    }
+    return null;
+  }
+
+  /// Binds only a candidate explicitly confirmed by the user in the catalog
+  /// resolution view. Calling this does not commit the choice or move the map.
+  BrowseDestination? bindCatalogDestination(
+    String cityID,
+    BrowseDestination candidate,
+  ) {
+    final city = _catalogCity(cityID);
+    if (_closed ||
+        city == null ||
+        !candidate.canLocateCatalogCity(city.countryCode) ||
+        (candidate.internalCityID != null &&
+            candidate.internalCityID != cityID)) {
+      return null;
+    }
+    return BrowseDestination(
+      provider: candidate.provider,
+      externalID: candidate.externalID,
+      name: city.name,
+      countryCode: city.countryCode,
+      region: city.region,
+      latitude: candidate.latitude,
+      longitude: candidate.longitude,
+      featureType: candidate.featureType,
+      attribution: candidate.attribution,
+      storageMode: DestinationStorageMode.temporary,
+      bounds: candidate.bounds,
+      internalCityID: cityID,
+    );
   }
 
   String? get cityError => _cityError;
@@ -440,7 +507,7 @@ class PublicCityController extends ChangeNotifier {
     if (!_closed) notifyListeners();
   }
 
-  bool _hasUsableMap(PublicCity city) {
+  bool hasUsableMap(PublicCity city) {
     final map = city.map;
     if (map == null ||
         !map.latitude.isFinite ||
@@ -454,6 +521,13 @@ class PublicCityController extends ChangeNotifier {
     }
     // A configured camera remains a usable preference during tile failures.
     // Android now has the existing native AMap adapter as well.
+    if (mapProviderForCountry(
+          countryCode: city.countryCode,
+          configuredProvider: map.provider,
+        ) !=
+        map.provider) {
+      return false;
+    }
     return map.provider == 'mapbox' ||
         (map.provider == 'amap' &&
             ((!kIsWeb && defaultTargetPlatform == TargetPlatform.android) ||
@@ -464,12 +538,12 @@ class PublicCityController extends ChangeNotifier {
 
   PublicCity? _defaultExplorationCity() {
     for (final city in _cities) {
-      if (city.id == defaultExplorationCityID && _hasUsableMap(city)) {
+      if (city.id == defaultExplorationCityID && hasUsableMap(city)) {
         return city;
       }
     }
     for (final city in _cities) {
-      if (_hasUsableMap(city)) return city;
+      if (hasUsableMap(city)) return city;
     }
     for (final city in _cities) {
       if (city.id == defaultExplorationCityID) return city;
@@ -508,7 +582,7 @@ class PublicCityController extends ChangeNotifier {
     if (_selectedDestination != null) return;
     PublicCity? saved;
     for (final city in _cities) {
-      if (city.id == _storedExplorationCityID && _hasUsableMap(city)) {
+      if (city.id == _storedExplorationCityID && hasUsableMap(city)) {
         saved = city;
         break;
       }
@@ -576,14 +650,19 @@ class PublicCityController extends ChangeNotifier {
       if (_closed) return;
       final previous = selectedCity;
       _cities = List.unmodifiable(next);
+      _recentCityIDs.removeWhere((id) => !_cities.any((city) => city.id == id));
+      final resolvedCatalogID = _selectedDestination?.internalCityID;
+      if (resolvedCatalogID != null &&
+          !_cities.any((city) => city.id == resolvedCatalogID)) {
+        _selectedDestination = null;
+      }
       if (_selectedDestination == null &&
           !next.any((city) => city.id == _selectedCityID)) {
         _selectRestoredOrDefault(removedCityName: previous?.name);
       } else if (_selectedDestination == null &&
           _explorationFallback &&
           next.any(
-            (city) =>
-                city.id == _storedExplorationCityID && _hasUsableMap(city),
+            (city) => city.id == _storedExplorationCityID && hasUsableMap(city),
           )) {
         _selectRestoredOrDefault();
       }
@@ -609,22 +688,7 @@ class PublicCityController extends ChangeNotifier {
     _selectedDestination = null;
     _explorationFallback = false;
     if (rememberExploration) {
-      _storedExplorationCityID = cityID;
-      _explorationNotice = null;
-      final store = _explorationStore;
-      if (store != null) {
-        _explorationWriteTail = _explorationWriteTail.then((_) async {
-          if (_closed || _storedExplorationCityID != cityID) return;
-          try {
-            await store.writeCityID(cityID);
-          } catch (_) {
-            if (!_closed && _storedExplorationCityID == cityID) {
-              _explorationNotice = '本次选城已生效，但未能保存到本机；重启后可重新选择。';
-              _notify();
-            }
-          }
-        });
-      }
+      _rememberExplorationCity(cityID);
     }
     if (cityID == _selectedCityID) {
       _notify();
@@ -635,6 +699,27 @@ class PublicCityController extends ChangeNotifier {
     unawaited(loadPlaces());
     unawaited(loadActivities());
     unawaited(loadOrganizationPins());
+  }
+
+  void _rememberExplorationCity(String cityID) {
+    _storedExplorationCityID = cityID;
+    _explorationNotice = null;
+    _recentCityIDs.remove(cityID);
+    _recentCityIDs.insert(0, cityID);
+    if (_recentCityIDs.length > 6) _recentCityIDs.removeLast();
+    final store = _explorationStore;
+    if (store == null) return;
+    _explorationWriteTail = _explorationWriteTail.then((_) async {
+      if (_closed || _storedExplorationCityID != cityID) return;
+      try {
+        await store.writeCityID(cityID);
+      } catch (_) {
+        if (!_closed && _storedExplorationCityID == cityID) {
+          _explorationNotice = '本次选城已生效，但未能保存到本机；重启后可重新选择。';
+          _notify();
+        }
+      }
+    });
   }
 
   void searchPlaces(String query) {

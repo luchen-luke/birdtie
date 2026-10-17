@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
+import 'dart:math' as math;
 import 'package:crypto/crypto.dart';
 
 import 'business_console_page.dart';
@@ -24,6 +25,9 @@ import '../city/public_city_controller.dart';
 import '../city/browse_destination.dart';
 import '../city/destination_search_service.dart';
 import '../city/destination_search_controller.dart';
+import '../city/destination_artwork.dart';
+import '../city/destination_artwork_view.dart';
+import '../city/destination_picker_grid.dart';
 import '../city/amap_destination_search.dart';
 import '../city/amap_session_consent.dart';
 import '../content/private_moment_controller.dart';
@@ -3237,6 +3241,7 @@ class _MapWorkspaceState extends State<MapWorkspace>
   late final OwnedMapController _mapContent;
   String? _mapContentLastThreadOperation;
   Widget? _publicPlacePanel;
+  final _mapReadingPositions = <String, NowMapReadingPosition>{};
   bool _publicPlacePreview = false, _socialExpanded = false;
   bool _humanConversationExpanded = false;
   bool _publicPlaceStoriesExpanded = false;
@@ -5088,7 +5093,7 @@ class _MapWorkspaceState extends State<MapWorkspace>
     }
 
     Object? selected;
-    _cityPickerOpen = true;
+    setState(() => _cityPickerOpen = true);
     _cityPickerVisible = false;
     _cityPickerCurrent = current;
     _layers.updateRefreshVisibility();
@@ -5117,12 +5122,14 @@ class _MapWorkspaceState extends State<MapWorkspace>
             current: current,
             reloadCities: reload,
             searchService: widget.destinationSearchService,
+            artworkClient: widget.seedClient,
+            apiBaseUrl: widget.seedApiBaseUrl,
             onClose: (value) => Navigator.pop(sheetContext, value),
           ),
         ),
       );
     } finally {
-      _cityPickerOpen = false;
+      if (mounted) setState(() => _cityPickerOpen = false);
       _cityPickerVisible = false;
       _cityPickerCurrent = null;
       _layers.updateRefreshVisibility();
@@ -7017,6 +7024,14 @@ class _MapWorkspaceState extends State<MapWorkspace>
       return;
     final epoch = _mapContent.permissionEpoch, identity = _currentSeedIdentity;
     final city = widget.city.selectedCity?.id, source = Object();
+    final positionKey =
+        '${widget.auth.accountID}|${widget.seedApiBaseUrl}|${widget.city.browseKey}|${pin.mapID}|${pin.sourceVersion}';
+    final position = _mapReadingPositions.putIfAbsent(
+      positionKey,
+      NowMapReadingPosition.new,
+    );
+    while (_mapReadingPositions.length > 24)
+      _mapReadingPositions.remove(_mapReadingPositions.keys.first);
     bool current() =>
         mounted &&
         epoch == _mapContent.permissionEpoch &&
@@ -7033,12 +7048,13 @@ class _MapWorkspaceState extends State<MapWorkspace>
       _socialExpanded = false;
       _publicPlacePanelSource = source;
       _publicPlaceMapID = pin.mapID;
-      _publicPlacePreview = true;
+      _publicPlacePreview = !position.expanded;
       _publicPlacePanel = NowMapContentPanel(
         // Preview and expanded reader have different parents in the Now stack.
         key: GlobalObjectKey(source),
         controller: _mapContent,
         pin: pin,
+        readingPosition: position,
         current: current,
         changes: Listenable.merge([
           _mapContent,
@@ -9016,8 +9032,9 @@ class _MapWorkspaceState extends State<MapWorkspace>
       body: LayoutBuilder(
         builder: (context, constraints) {
           final media = MediaQuery.of(context);
-          final keyboard = media.viewInsets.bottom;
-          final editing = _workspace.inputFocused || keyboard > 0;
+          final keyboard = _cityPickerOpen ? 0.0 : media.viewInsets.bottom;
+          final editing =
+              !_cityPickerOpen && (_workspace.inputFocused || keyboard > 0);
           final hasCreation = _creationCurrent;
           final hasThread = _threadCurrent;
           final minimumComposerHeight = AgentComposer.minimumInputHeightOf(
@@ -9168,8 +9185,11 @@ class _MapWorkspaceState extends State<MapWorkspace>
             (constraints.maxWidth - 16).clamp(16, double.infinity),
             mapBottom,
           );
-          final previewViewport = (mapBottom - chromeBottom).clamp(0.0, 260.0);
-          final previewVisible = !editing && previewViewport >= 56;
+          // A short preview belongs to the screen, not the projected marker.
+          // Camera movement (including a temporarily unavailable native anchor)
+          // must not change its width, height or reading position.
+          final previewViewport = (mapBottom - chromeBottom).clamp(0.0, 360.0);
+          final previewVisible = !editing && previewViewport >= 120;
           if (_mapContentRect.value != mapRect) {
             WidgetsBinding.instance.addPostFrameCallback((_) {
               if (mounted && _mapContentRect.value != mapRect)
@@ -9395,6 +9415,27 @@ class _MapWorkspaceState extends State<MapWorkspace>
                           _workspace.areaOperation?.bounds ==
                               _mapState.searchAreaBounds,
                       onPressed: _searchThisArea,
+                    ),
+                  ),
+                ),
+              if (_publicPlacePanel != null && !_publicPlacePreview)
+                Positioned(
+                  top: _publicPlacePanelMapVisible
+                      ? (visibleHeight - 200).clamp(
+                          chromeBottom,
+                          constraints.maxHeight,
+                        )
+                      : chromeBottom,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  child: Material(
+                    color: Theme.of(context).colorScheme.surface,
+                    child: Padding(
+                      padding: EdgeInsets.only(
+                        bottom: layout.bottom + layout.surfaceHeight,
+                      ),
+                      child: FocusTraversalGroup(child: _publicPlacePanel!),
                     ),
                   ),
                 ),
@@ -10048,62 +10089,15 @@ class _MapWorkspaceState extends State<MapWorkspace>
               if (_publicPlacePanel != null && _publicPlacePreview)
                 Positioned(
                   key: const Key('now-place-preview-position'),
-                  left:
-                      (!_publicPlaceStoriesExpanded &&
-                                  _selectedMapAnchor.value.id ==
-                                      _publicPlaceMapID &&
-                                  _selectedMapAnchor.value.point != null
-                              ? _selectedMapAnchor.value.point!.dx - 125
-                              : 16.0)
-                          .clamp(
-                            16.0,
-                            (constraints.maxWidth - 266).clamp(
-                              16.0,
-                              double.infinity,
-                            ),
-                          ),
-                  top: !previewVisible
-                      ? 0.0
-                      : (_selectedMapAnchor.value.id == _publicPlaceMapID &&
-                                    _selectedMapAnchor.value.point != null
-                                ? _selectedMapAnchor.value.point!.dy -
-                                      previewViewport -
-                                      12
-                                : chromeBottom + 16)
-                            .clamp(
-                              chromeBottom,
-                              mapBottom - previewViewport > chromeBottom
-                                  ? mapBottom - previewViewport
-                                  : chromeBottom,
-                            ),
+                  left: 16,
                   right: 16,
-                  bottom: previewVisible
-                      ? layout.bottom + layout.surfaceHeight + 8
-                      : 0.0,
+                  bottom: constraints.maxHeight - mapBottom,
+                  height: previewViewport,
                   child: _RetainedMapContext(
                     visible: previewVisible,
-                    child: Align(
-                      alignment: Alignment.topLeft,
-                      child: SingleChildScrollView(child: _publicPlacePanel!),
-                    ),
-                  ),
-                ),
-              if (_publicPlacePanel != null && !_publicPlacePreview)
-                Positioned(
-                  top: _publicPlacePanelMapVisible
-                      ? (visibleHeight - 200).clamp(
-                          chromeBottom,
-                          constraints.maxHeight,
-                        )
-                      : chromeBottom,
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  child: Padding(
-                    padding: EdgeInsets.only(
-                      bottom: layout.bottom + layout.surfaceHeight,
-                    ),
-                    child: FocusTraversalGroup(child: _publicPlacePanel!),
+                    child: _publicPlacePanel is NowMapContentPanel
+                        ? _publicPlacePanel!
+                        : SingleChildScrollView(child: _publicPlacePanel!),
                   ),
                 ),
               if (editing &&
@@ -10259,6 +10253,8 @@ class _NowCityPicker extends StatefulWidget {
     required this.reloadCities,
     required this.onClose,
     this.searchService,
+    this.artworkClient,
+    this.apiBaseUrl,
   });
   final PublicCityController city;
   final Listenable identityChanges;
@@ -10266,12 +10262,17 @@ class _NowCityPicker extends StatefulWidget {
   final Future<void> Function() reloadCities;
   final ValueChanged<Object?> onClose;
   final DestinationSearchService? searchService;
+  final http.Client? artworkClient;
+  final String? apiBaseUrl;
   @override
   State<_NowCityPicker> createState() => _NowCityPickerState();
 }
 
 class _NowCityPickerState extends State<_NowCityPicker> {
   final _search = TextEditingController();
+  final _searchFocus = FocusNode();
+  late final DestinationArtworkLoader _artwork;
+  String _catalogFilter = 'all';
   late final DestinationSearchController _destinations;
   bool _refreshQueued = false;
   bool _retired = false;
@@ -10279,6 +10280,10 @@ class _NowCityPickerState extends State<_NowCityPicker> {
   @override
   void initState() {
     super.initState();
+    _artwork = DestinationArtworkLoader(
+      client: widget.artworkClient,
+      apiBaseUrl: widget.apiBaseUrl,
+    );
     _destinations = DestinationSearchController(
       service: widget.searchService,
       current: () => _valid,
@@ -10291,6 +10296,35 @@ class _NowCityPickerState extends State<_NowCityPicker> {
   void _searchChanged() {
     _destinations.updateInput(_search.value);
     _changed();
+  }
+
+  void _selectCatalog(PublicCity city) {
+    if (!_valid) return;
+    if (widget.city.hasUsableMap(city)) {
+      widget.onClose(city.id);
+    } else {
+      // Keep the current map until an explicit, disambiguated choice returns.
+      _searchFocus.unfocus();
+      final resolution = _destinations.resolveCity(city);
+      _search.removeListener(_searchChanged);
+      _search.text = _destinations.query;
+      _search.addListener(_searchChanged);
+      unawaited(resolution);
+    }
+  }
+
+  void _selectDestination(BrowseDestination destination) {
+    if (!_valid) return;
+    final city = _destinations.resolvingCity;
+    final selected = city == null
+        ? destination
+        : widget.city.bindCatalogDestination(city.id, destination);
+    if (selected != null) widget.onClose(selected);
+  }
+
+  void _cancelResolution() {
+    _destinations.cancelResolution();
+    _search.clear();
   }
 
   Future<void> _enableDomesticSearch() async {
@@ -10366,45 +10400,93 @@ class _NowCityPickerState extends State<_NowCityPicker> {
     _destinations.dispose();
     _search.removeListener(_searchChanged);
     _search.dispose();
+    _searchFocus.dispose();
+    _artwork.dispose();
     super.dispose();
   }
+
+  Widget _status(Widget child) => SliverToBoxAdapter(
+    child: Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: child,
+    ),
+  );
+
+  Widget _catalogRow(PublicCity city) => ListTile(
+    key: Key('now-scope-city-${city.id}'),
+    contentPadding: EdgeInsets.zero,
+    leading: DestinationArtworkView(
+      cityID: city.id,
+      artwork: city.artwork,
+      hasRemoteArtwork: city.artworkDeclared,
+      loader: _artwork,
+      size: 48,
+    ),
+    title: Text(city.name),
+    subtitle: city.region.isEmpty ? null : Text(city.region),
+    trailing: city.id == widget.city.selectedCity?.id
+        ? const Icon(Icons.check)
+        : null,
+    onTap: () => _selectCatalog(city),
+  );
 
   @override
   Widget build(BuildContext context) {
     final tokens = NowUiTokens.reviewedOf(context);
+    final media = MediaQuery.of(context);
     final query = _search.text.trim().toLowerCase();
+    final resolving = _destinations.resolvingCity;
+    final browsing = query.isEmpty && resolving == null;
     final cities = widget.city.cities
-        .where(
-          (city) => '${city.name} ${city.region}'.toLowerCase().contains(query),
-        )
+        .where((city) {
+          if (!browsing)
+            return '${city.name} ${city.region} ${city.countryCode}'
+                .toLowerCase()
+                .contains(query);
+          return switch (_catalogFilter) {
+            'CN' => city.countryCode == 'CN',
+            'abroad' => city.countryCode.isNotEmpty && city.countryCode != 'CN',
+            _ => true,
+          };
+        })
+        .toList(growable: false);
+    final recentIDs = {
+      if (widget.city.selectedCity case final city?) city.id,
+      ...widget.city.recentCityIDs,
+    };
+    final recent = recentIDs
+        .map((id) => widget.city.cities.where((c) => c.id == id).firstOrNull)
+        .whereType<PublicCity>()
+        .take(6)
         .toList();
+    final linked = _destinations.items
+        .map((d) => d.internalCityID)
+        .whereType<String>()
+        .toSet();
+    final matched = cities.where((c) => !linked.contains(c.id)).toList();
+    final height = math
+        .min(
+          media.size.height * .78,
+          media.size.height - media.viewInsets.bottom - media.padding.top - 24,
+        )
+        .clamp(160.0, double.infinity);
     return Padding(
-      padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
-      child: ConstrainedBox(
+      padding: EdgeInsets.only(bottom: media.viewInsets.bottom),
+      child: SizedBox(
         key: const Key('now-scope-picker'),
-        constraints: BoxConstraints(
-          maxHeight: MediaQuery.sizeOf(context).height * .7,
-        ),
+        height: height,
         child: SafeArea(
           top: false,
           child: Column(
-            mainAxisSize: MainAxisSize.min,
             children: [
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 8, 8),
+                padding: const EdgeInsets.fromLTRB(20, 0, 8, 8),
                 child: Row(
                   children: [
-                    Expanded(child: Text('选择城市或目的地', style: tokens.sheetTitle)),
+                    Expanded(child: Text('选择目的地', style: tokens.sheetTitle)),
                     IconButton(
                       tooltip: '关闭城市选择',
-                      visualDensity: VisualDensity.standard,
-                      constraints: const BoxConstraints(
-                        minWidth: 48,
-                        minHeight: 48,
-                      ),
-                      onPressed: () {
-                        if (mounted) widget.onClose(null);
-                      },
+                      onPressed: () => widget.onClose(null),
                       icon: const Icon(Icons.close),
                     ),
                   ],
@@ -10415,159 +10497,264 @@ class _NowCityPickerState extends State<_NowCityPicker> {
                 child: TextField(
                   key: const Key('now-city-search'),
                   controller: _search,
+                  focusNode: _searchFocus,
                   textInputAction: TextInputAction.search,
                   onSubmitted: (_) {
                     if (_valid) unawaited(_destinations.submit());
                   },
                   style: tokens.composer,
                   decoration: InputDecoration(
-                    hintText: '搜索城市、地区或目的地',
+                    hintText: '搜索国家、地区或城市',
                     hintStyle: tokens.composer.copyWith(
                       color: tokens.metadata.color,
                     ),
+                    filled: true,
+                    fillColor: Theme.of(
+                      context,
+                    ).colorScheme.surfaceContainerLow,
                     prefixIcon: const Icon(Icons.search),
+                    suffixIcon: query.isNotEmpty || resolving != null
+                        ? IconButton(
+                            tooltip: '清除目的地搜索',
+                            onPressed: _cancelResolution,
+                            icon: const Icon(Icons.close),
+                          )
+                        : null,
                   ),
                 ),
               ),
               const SizedBox(height: 8),
-              Flexible(
-                fit: FlexFit.loose,
-                child: ListView(
+              Expanded(
+                child: CustomScrollView(
                   key: const Key('now-scope-options'),
-                  shrinkWrap: true,
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                  children: [
-                    if (!_valid)
-                      Text('城市目录已变化，请关闭后重新选择。', style: tokens.body)
-                    else ...[
-                      if (widget.city.citiesLoading || _destinations.loading)
-                        const LinearProgressIndicator(),
-                      if (widget.city.cityError case final error?
-                          when query.isEmpty)
-                        Text(error, style: tokens.body),
-                      if (widget.city.selectedDestination
-                          case final destination? when query.isEmpty)
-                        ListTile(
-                          contentPadding: EdgeInsets.zero,
-                          title: Text(destination.name, style: tokens.chrome),
-                          subtitle: Text(
-                            destination.region,
-                            style: tokens.listSubtitle,
-                          ),
-                          trailing: const Icon(Icons.check),
-                          onTap: () {
-                            if (_valid) widget.onClose(null);
-                          },
-                        ),
-                      for (final destination in _destinations.items)
-                        ListTile(
-                          key: Key('now-destination-${destination.browseKey}'),
-                          contentPadding: EdgeInsets.zero,
-                          minTileHeight: 48,
-                          title: Text(destination.name, style: tokens.chrome),
-                          subtitle: Text(
-                            destination.region,
-                            style: tokens.listSubtitle,
-                          ),
-                          trailing: const Icon(Icons.north_west, size: 20),
-                          onTap: () {
-                            if (_valid) widget.onClose(destination);
-                          },
-                        ),
-                      if (_destinations.error case final error?)
-                        Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(error, style: tokens.body),
-                              TextButton.icon(
-                                onPressed: _destinations.loading
-                                    ? null
-                                    : () {
-                                        if (_valid)
-                                          unawaited(_destinations.retry());
-                                      },
-                                icon: const Icon(Icons.refresh),
-                                label: const Text('重试搜索'),
+                  cacheExtent: 196,
+                  slivers: [
+                    SliverPadding(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                      sliver: SliverMainAxisGroup(
+                        slivers: [
+                          if (!_valid)
+                            _status(
+                              Text('城市目录已变化，请关闭后重新选择。', style: tokens.body),
+                            )
+                          else ...[
+                            if (widget.city.citiesLoading ||
+                                _destinations.loading)
+                              _status(
+                                const LinearProgressIndicator(
+                                  semanticsLabel: '目的地加载中',
+                                ),
+                              ),
+                            if (browsing && recent.isNotEmpty)
+                              _status(
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text('最近', style: tokens.metadata),
+                                    const SizedBox(height: 4),
+                                    Wrap(
+                                      spacing: 8,
+                                      runSpacing: 4,
+                                      children: [
+                                        for (final city in recent)
+                                          ActionChip(
+                                            label: Text(city.name),
+                                            onPressed: () =>
+                                                _selectCatalog(city),
+                                          ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            if (browsing)
+                              _status(
+                                Wrap(
+                                  spacing: 8,
+                                  children: [
+                                    for (final filter in const {
+                                      'all': '全部',
+                                      'CN': '国内',
+                                      'abroad': '境外',
+                                    }.entries)
+                                      ChoiceChip(
+                                        label: Text(filter.value),
+                                        selected: _catalogFilter == filter.key,
+                                        onSelected: (_) => setState(
+                                          () => _catalogFilter = filter.key,
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                            if (resolving != null)
+                              _status(
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        '为${resolving.name}选择地图位置',
+                                        style: tokens.chrome,
+                                      ),
+                                    ),
+                                    TextButton(
+                                      onPressed: _cancelResolution,
+                                      child: const Text('返回目录'),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            if (widget.city.cityError case final error?
+                                when browsing)
+                              _status(Text(error, style: tokens.body)),
+                            if (!browsing &&
+                                _destinations.items.isNotEmpty) ...[
+                              _status(Text('联网结果', style: tokens.chrome)),
+                              SliverList.builder(
+                                itemCount: _destinations.items.length,
+                                itemBuilder: (context, index) {
+                                  final destination =
+                                      _destinations.items[index];
+                                  final related =
+                                      resolving ??
+                                      widget.city.cities
+                                          .where(
+                                            (c) =>
+                                                c.id ==
+                                                destination.internalCityID,
+                                          )
+                                          .firstOrNull;
+                                  return ListTile(
+                                    key: Key(
+                                      'now-destination-${destination.browseKey}',
+                                    ),
+                                    contentPadding: EdgeInsets.zero,
+                                    leading: related == null
+                                        ? const SizedBox.square(
+                                            dimension: 48,
+                                            child: Icon(Icons.place_outlined),
+                                          )
+                                        : DestinationArtworkView(
+                                            cityID: related.id,
+                                            artwork: related.artwork,
+                                            hasRemoteArtwork:
+                                                related.artworkDeclared,
+                                            loader: _artwork,
+                                            size: 48,
+                                          ),
+                                    title: Text(
+                                      destination.name,
+                                      style: tokens.chrome,
+                                    ),
+                                    subtitle: Text(
+                                      '${destination.region} · ${destination.countryCode}',
+                                      style: tokens.listSubtitle,
+                                    ),
+                                    trailing: const Icon(Icons.chevron_right),
+                                    onTap: () =>
+                                        _selectDestination(destination),
+                                  );
+                                },
                               ),
                             ],
-                          ),
-                        ),
-                      if (_destinations.domesticUnavailable)
-                        Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                          child:
-                              AMapDestinationSearchService.supported &&
-                                  !AMapSessionConsent.accepted
-                              ? TextButton.icon(
-                                  onPressed: _enableDomesticSearch,
-                                  icon: const Icon(Icons.map_outlined),
-                                  label: const Text('启用国内目的地搜索'),
-                                )
-                              : Text(
-                                  '国内目的地搜索暂不可用，仍可选择下方城市。',
+                            if (_destinations.error case final error?)
+                              _status(
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(error, style: tokens.body),
+                                    TextButton.icon(
+                                      onPressed: _destinations.loading
+                                          ? null
+                                          : () {
+                                              if (_valid)
+                                                unawaited(
+                                                  _destinations.retry(),
+                                                );
+                                            },
+                                      icon: const Icon(Icons.refresh),
+                                      label: const Text('重试搜索'),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            if (_destinations.domesticUnavailable)
+                              _status(
+                                AMapDestinationSearchService.supported &&
+                                        !AMapSessionConsent.accepted
+                                    ? TextButton.icon(
+                                        onPressed: _enableDomesticSearch,
+                                        icon: const Icon(Icons.map_outlined),
+                                        label: const Text('启用国内目的地搜索'),
+                                      )
+                                    : Text(
+                                        '国内目的地搜索暂不可用，仍可选择目录城市。',
+                                        style: tokens.body,
+                                      ),
+                              ),
+                            if (browsing)
+                              DestinationPickerGrid(
+                                cities: cities,
+                                loader: _artwork,
+                                selectedCityID: widget.city.selectedCity?.id,
+                                onSelect: _selectCatalog,
+                              )
+                            else if (resolving == null &&
+                                matched.isNotEmpty) ...[
+                              _status(Text('目录匹配', style: tokens.chrome)),
+                              SliverList.builder(
+                                itemCount: matched.length,
+                                itemBuilder: (_, index) =>
+                                    _catalogRow(matched[index]),
+                              ),
+                            ],
+                            if (!widget.city.citiesLoading &&
+                                !_destinations.loading &&
+                                _destinations.error == null &&
+                                !_destinations.domesticUnavailable &&
+                                (browsing
+                                    ? cities.isEmpty
+                                    : _destinations.items.isEmpty &&
+                                          (resolving != null ||
+                                              matched.isEmpty)))
+                              _status(
+                                Text(
+                                  browsing
+                                      ? '此分类暂无目的地，可搜索任意国家或城市。'
+                                      : resolving != null
+                                      ? '没有找到可确认的城市位置，请修改名称或国家后重试。'
+                                      : '没有找到匹配的目的地，试试完整名称或国家。',
                                   style: tokens.body,
                                 ),
-                        ),
-                      for (final city in cities)
-                        ListTile(
-                          key: Key('now-scope-city-${city.id}'),
-                          contentPadding: EdgeInsets.zero,
-                          minTileHeight: 48,
-                          title: Text(city.name, style: tokens.chrome),
-                          subtitle: city.region.isEmpty
-                              ? null
-                              : Text(city.region, style: tokens.listSubtitle),
-                          trailing: city.id == widget.city.selectedCity?.id
-                              ? const Icon(Icons.check)
-                              : null,
-                          onTap: () {
-                            if (_valid) widget.onClose(city.id);
-                          },
-                        ),
-                      if (!widget.city.citiesLoading &&
-                          !_destinations.loading &&
-                          _destinations.error == null &&
-                          !_destinations.domesticUnavailable &&
-                          cities.isEmpty &&
-                          _destinations.items.isEmpty)
-                        Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          child: Text(
-                            query.isEmpty
-                                ? '输入城市、地区或目的地开始搜索。'
-                                : '没有找到匹配的目的地，试试完整名称或国家。',
-                            style: tokens.body,
-                          ),
-                        ),
-                      if (widget.city.cities.isEmpty ||
-                          widget.city.cityError != null)
-                        TextButton.icon(
-                          style: TextButton.styleFrom(
-                            minimumSize: const Size(48, 48),
-                            textStyle: tokens.action,
-                          ),
-                          onPressed: widget.city.citiesLoading
-                              ? null
-                              : () {
-                                  if (_valid) unawaited(widget.reloadCities());
-                                },
-                          icon: const Icon(Icons.refresh),
-                          label: const Text('重新读取城市'),
-                        ),
-                      if (_destinations.items.isNotEmpty)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 8),
-                          child: Text(
-                            _destinations.items
-                                .map((item) => item.attribution)
-                                .toSet()
-                                .join('\n'),
-                            style: tokens.listSubtitle,
-                          ),
-                        ),
-                    ],
+                              ),
+                            if (widget.city.cities.isEmpty ||
+                                widget.city.cityError != null)
+                              _status(
+                                TextButton.icon(
+                                  onPressed: widget.city.citiesLoading
+                                      ? null
+                                      : () {
+                                          if (_valid)
+                                            unawaited(widget.reloadCities());
+                                        },
+                                  icon: const Icon(Icons.refresh),
+                                  label: const Text('重新读取城市'),
+                                ),
+                              ),
+                            if (_destinations.items.isNotEmpty)
+                              _status(
+                                Text(
+                                  _destinations.items
+                                      .map((d) => d.attribution)
+                                      .toSet()
+                                      .join('\n'),
+                                  style: tokens.listSubtitle,
+                                ),
+                              ),
+                          ],
+                        ],
+                      ),
+                    ),
                   ],
                 ),
               ),

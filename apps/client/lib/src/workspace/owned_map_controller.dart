@@ -80,6 +80,10 @@ class OwnedMapController extends ChangeNotifier with WidgetsBindingObserver {
   int _transientRetries = 0;
   final _momentGrants = Expando<_OwnedMapGrant>();
   final _detailGrants = Expando<_OwnedMapGrant>();
+  final _threadGrants = Expando<_OwnedMapGrant>();
+  final _retiredThreads = Expando<bool>();
+  final _detailThreads = Expando<OwnedMapThread>();
+  final _momentThreads = Expando<OwnedMapThread>();
   final _coverChecks = Expando<bool Function()>();
   final _cursors = <String, (_OwnedMapGrant, String)>{};
   // Continuations locate a page; they do not authorize its content. Every
@@ -193,15 +197,73 @@ class OwnedMapController extends ChangeNotifier with WidgetsBindingObserver {
       (grant.until == null || grant.until!.isAfter(_now()));
 
   bool momentCurrent(OwnedMapMoment target) =>
-      _grantCurrent(_momentGrants[target]);
+      _grantCurrent(_momentGrants[target]) &&
+      (_momentThreads[target] == null ||
+          threadCurrent(_momentThreads[target]!));
 
   bool detailCurrent(OwnedMapMomentDetail detail) =>
-      detail.validUntil.isAfter(_now()) && _grantCurrent(_detailGrants[detail]);
+      detail.validUntil.isAfter(_now()) &&
+      _grantCurrent(_detailGrants[detail]) &&
+      (_detailThreads[detail] == null ||
+          threadCurrent(_detailThreads[detail]!));
 
-  void _registerDetail(OwnedMapMomentDetail detail, OwnedMapPin pin) {
-    final grant = _OwnedMapGrant(pin, _epoch, detail.validUntil);
+  bool threadCurrent(OwnedMapThread thread) =>
+      _retiredThreads[thread] != true &&
+      thread.validUntil.isAfter(_now()) &&
+      _grantCurrent(_threadGrants[thread]);
+
+  void _retireThread(OwnedMapThread thread) {
+    _retiredThreads[thread] = true;
+    _notify();
+  }
+
+  bool _sameThreadContent(OwnedMapThread a, OwnedMapThread b) {
+    if (a.threadID != b.threadID || a.entries.length != b.entries.length)
+      return false;
+    for (var i = 0; i < a.entries.length; i++) {
+      final x = a.entries[i], y = b.entries[i];
+      if (x.position != y.position ||
+          x.available != y.available ||
+          x.detail?.id != y.detail?.id ||
+          x.detail?.revision != y.detail?.revision ||
+          x.detail?.sourceVersion != y.detail?.sourceVersion)
+        return false;
+    }
+    return true;
+  }
+
+  OwnedMapThread? threadForDetail(OwnedMapMomentDetail detail) {
+    final thread = _detailThreads[detail];
+    return thread != null && threadCurrent(thread) && detailCurrent(detail)
+        ? thread
+        : null;
+  }
+
+  void _registerThread(OwnedMapThread thread, OwnedMapPin pin) {
+    _threadGrants[thread] = _OwnedMapGrant(pin, _epoch, thread.validUntil);
+    for (final entry in thread.entries) {
+      if (entry.detail != null) {
+        _registerDetail(entry.detail!, pin, thread: thread);
+      }
+    }
+  }
+
+  void _registerDetail(
+    OwnedMapMomentDetail detail,
+    OwnedMapPin pin, {
+    OwnedMapThread? thread,
+  }) {
+    final until =
+        thread != null && thread.validUntil.isBefore(detail.validUntil)
+        ? thread.validUntil
+        : detail.validUntil;
+    final grant = _OwnedMapGrant(pin, _epoch, until);
     _detailGrants[detail] = grant;
     _momentGrants[detail.selector] = grant;
+    if (thread != null) {
+      _detailThreads[detail] = thread;
+      _momentThreads[detail.selector] = thread;
+    }
     for (final media in detail.media) {
       if (media.poster != null)
         _coverChecks[media.poster!] = () => detailCurrent(detail);
@@ -214,6 +276,43 @@ class OwnedMapController extends ChangeNotifier with WidgetsBindingObserver {
         epoch == _epoch && identity == _identity && momentCurrent(target);
     if (!pending() || grant == null || identity == null)
       throw const FormatException('地图动态读取已失效');
+    final originalThread = _momentThreads[target];
+    if (originalThread != null) {
+      OwnedMapThread? renewed;
+      try {
+        renewed = await _api.readThread(
+          target.id,
+          ownerID: identity.$2!,
+          authorization: identity.$3!,
+          origin: identity.$1,
+          current: pending,
+          now: _now,
+        );
+      } on OwnedMapReadFailure catch (failure) {
+        if (failure.retiresGrant) _retireThread(originalThread);
+        rethrow;
+      }
+      if (!pending() ||
+          renewed == null ||
+          !_sameThreadContent(originalThread, renewed)) {
+        _retireThread(originalThread);
+        throw const FormatException('地图串文已变化');
+      }
+      final selected = renewed.entries
+          .map((entry) => entry.detail)
+          .whereType<OwnedMapMomentDetail>()
+          .where((detail) => detail.id == target.id)
+          .firstOrNull;
+      if (selected == null ||
+          selected.revision != target.revision ||
+          selected.visibilitySource != target.visibilitySource) {
+        throw const FormatException('地图串文动态来源已变化');
+      }
+      // Renew the actual relation and its sibling grants together. A single
+      // moment read has a different snapshot source and cannot renew a thread.
+      _registerThread(renewed, grant.pin);
+      return selected;
+    }
     final value = await _api.readMoment(
       target,
       ownerID: identity.$2!,
@@ -223,8 +322,43 @@ class OwnedMapController extends ChangeNotifier with WidgetsBindingObserver {
       now: _now,
     );
     if (!pending()) throw const FormatException('地图动态读取已失效');
-    _registerDetail(value, grant.pin);
+    _registerDetail(value, grant.pin, thread: _momentThreads[target]);
     return value;
+  }
+
+  Future<OwnedMapThread?> readThread(
+    OwnedMapPin pin,
+    OwnedMapMomentDetail seed,
+  ) async {
+    final identity = _identity, epoch = _epoch;
+    bool pending() =>
+        epoch == _epoch &&
+        identity == _identity &&
+        identity != null &&
+        sourceCurrent(pin) &&
+        detailCurrent(seed) &&
+        _detailGrants[seed]?.pin.mapID == pin.mapID &&
+        _detailGrants[seed]?.pin.sourceVersion == pin.sourceVersion;
+    if (!pending() || identity == null) {
+      throw const FormatException('地图串文读取已失效');
+    }
+    final thread = await _api.readThread(
+      seed.id,
+      ownerID: identity.$2!,
+      authorization: identity.$3!,
+      origin: identity.$1,
+      current: pending,
+      now: _now,
+    );
+    if (!pending()) throw const FormatException('地图串文读取已失效');
+    if (thread == null) return null;
+    if (thread.seedRevision != seed.revision ||
+        thread.seedVisibilitySource != seed.visibilitySource ||
+        !thread.validUntil.isAfter(_now())) {
+      throw const FormatException('地图串文入口已变化');
+    }
+    _registerThread(thread, pin);
+    return thread;
   }
 
   Future<OwnedMapPlacePage> readPlaceMoments(

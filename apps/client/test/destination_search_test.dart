@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:birdtie_client/src/city/browse_destination.dart';
 import 'package:birdtie_client/src/city/destination_search_controller.dart';
 import 'package:birdtie_client/src/city/destination_search_service.dart';
+import 'package:birdtie_client/src/city/public_city_controller.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -82,6 +83,123 @@ class FixedSearch implements DestinationSearchService {
 }
 
 void main() {
+  test(
+    'catalog resolution reuses request fencing and never infers identity',
+    () async {
+      final service = PendingSearch();
+      final controller = DestinationSearchController(service: service);
+      addTearDown(controller.dispose);
+      const city = PublicCity(
+        id: 'unit-city',
+        name: 'Synthetic City',
+        region: 'Synthetic Region',
+        countryCode: 'FR',
+        contentStatus: 'unit',
+        map: null,
+        source: PublicSource(
+          label: 'unit',
+          maintainer: 'unit',
+          freshness: 'unit',
+          updatedAt: null,
+        ),
+      );
+      final resolving = controller.resolveCity(city);
+      expect(service.calls, ['Synthetic City Synthetic Region FR']);
+      expect(controller.resolvingCity, same(city));
+      expect(controller.loading, true);
+      service.pending[0].complete(
+        const DestinationSearchResult(
+          destinations: [
+            destination,
+            BrowseDestination(
+              provider: 'mapbox',
+              externalID: 'wrong-country',
+              name: 'Synthetic City',
+              countryCode: 'GB',
+              region: 'Synthetic',
+              latitude: 55,
+              longitude: -3,
+              featureType: 'place',
+              attribution: 'UNIT',
+              storageMode: DestinationStorageMode.temporary,
+            ),
+            BrowseDestination(
+              provider: 'mapbox',
+              externalID: 'wrong-level',
+              name: 'Synthetic City',
+              countryCode: 'FR',
+              region: 'Synthetic',
+              latitude: 48,
+              longitude: 2,
+              featureType: 'region',
+              attribution: 'UNIT',
+              storageMode: DestinationStorageMode.temporary,
+            ),
+          ],
+        ),
+      );
+      await resolving;
+      expect(controller.items, [destination]);
+      expect(controller.items.single.internalCityID, isNull);
+      expect(
+        controller.recentQueries,
+        isEmpty,
+        reason: 'generated query is not user text',
+      );
+      final retry = controller.retry();
+      controller.cancelResolution();
+      expect(controller.resolvingCity, isNull);
+      expect(controller.query, isEmpty);
+      service.pending[1].complete(
+        const DestinationSearchResult(destinations: [destination]),
+      );
+      await retry;
+      expect(controller.items, isEmpty);
+      expect(controller.loading, false);
+      expect(service.cancellations, 1);
+    },
+  );
+
+  testWidgets(
+    'edited search exits catalog resolution and retires old candidates',
+    (t) async {
+      final service = PendingSearch();
+      final controller = DestinationSearchController(service: service);
+      addTearDown(controller.dispose);
+      const city = PublicCity(
+        id: 'unit-city',
+        name: 'Synthetic City',
+        region: '',
+        countryCode: 'FR',
+        contentStatus: 'unit',
+        map: null,
+        source: PublicSource(
+          label: 'unit',
+          maintainer: 'unit',
+          freshness: 'unit',
+          updatedAt: null,
+        ),
+      );
+      final resolving = controller.resolveCity(city);
+      controller.updateInput(const TextEditingValue(text: 'New user query'));
+      expect(controller.resolvingCity, isNull);
+      await t.pump(const Duration(milliseconds: 300));
+      expect(service.calls, ['Synthetic City FR', 'New user query']);
+      service.pending[0].complete(
+        const DestinationSearchResult(destinations: [destination]),
+      );
+      await resolving;
+      expect(controller.items, isEmpty);
+      service.pending[1].complete(
+        const DestinationSearchResult(destinations: []),
+      );
+      await t.pump();
+      expect(controller.items, isEmpty);
+      expect(controller.recentQueries, ['New user query']);
+      expect(service.cancellations, 1);
+    },
+  );
+
   test(
     'composition keeps available provider, respects consent and independent backoff',
     () async {

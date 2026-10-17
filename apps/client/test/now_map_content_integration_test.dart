@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:ui' as ui;
 
 import 'package:birdtie_client/src/app/birdtie_surfaces.dart';
 import 'package:birdtie_client/src/city/public_city_controller.dart';
@@ -101,17 +102,48 @@ void main() {
     final jpeg = File(
       'test/fixtures/map-media/isolation-a.jpg',
     ).readAsBytesSync();
+    // A real portrait attachment exercises the same decoder/byte checks as
+    // the landscape fixture without adding any production sample content.
+    final portrait = (await t.runAsync(() async {
+      final recording = ui.PictureRecorder();
+      ui.Canvas(recording).drawRect(
+        const ui.Rect.fromLTWH(0, 0, 180, 320),
+        ui.Paint()..color = const ui.Color(0xFF547064),
+      );
+      final picture = recording.endRecording();
+      final portraitImage = await picture.toImage(180, 320);
+      try {
+        final data = await portraitImage.toByteData(
+          format: ui.ImageByteFormat.png,
+        );
+        return data!.buffer.asUint8List();
+      } finally {
+        portraitImage.dispose();
+        picture.dispose();
+      }
+    }))!;
     const body = '合成原正文第一行\n第二行内容\n第三行内容\n第四行完整内容';
-    var mapReads = 0, pageReads = 0;
+    const nextBody = '合成串文第三段，与地点集合和媒体页数分别计数';
+    Map<String, dynamic>? seedDetail;
+    var mapReads = 0, pageReads = 0, imageReads = 0;
     final methods = <String>[];
-    http.Response json(Object value) => http.Response.bytes(
-      utf8.encode(jsonEncode({'data': value})),
-      200,
-      headers: {
-        'content-type': 'application/json',
-        'cache-control': 'no-store',
-      },
-    );
+    http.Response json(Object value) {
+      if (value is Map &&
+          value['schemaVersion'] == 'map-content-place-moments-v1') {
+        seedDetail = Map<String, dynamic>.from(
+          (value['items'] as List).first as Map,
+        );
+      }
+      return http.Response.bytes(
+        utf8.encode(jsonEncode({'data': value})),
+        200,
+        headers: {
+          'content-type': 'application/json',
+          'cache-control': 'no-store',
+        },
+      );
+    }
+
     final client = MockClient((r) async {
       methods.add(r.method);
       final now = DateTime.now().toUtc();
@@ -122,16 +154,28 @@ void main() {
       if (r.url.path == '/v1/me/map-content') {
         mapReads++;
         return json({
-          'schemaVersion': 'map-content-v1',
+          'schemaVersion': 'map-content-v2',
           'scope': 'MAP_CONTENT',
           'viewerAccountId': auth.accountID,
           'cityId': 'alpha',
-          'bounds': mapTestBounds.toJson(),
+          'bounds': {
+            for (final key in ['west', 'south', 'east', 'north'])
+              key: double.parse(r.url.queryParameters[key]!),
+          },
           'sourceVersion': source,
           'truncated': false,
+          'zoom': double.parse(r.url.queryParameters['zoom'] ?? '12'),
+          'filterScope': 'DEFAULT_CONTENT',
+          'totalContentCount': 1,
+          'totalAnchorCount': 1,
+          'nextCursor': null,
           ...lease,
           'pins': [
             {
+              'markerId': 'place:${id(1)}',
+              'kind': 'PLACE_CONTENT',
+              'entityId': id(1),
+              'anchorCount': 1,
               'placeId': id(1),
               'name': '合成展开地点',
               'categoryCode': 'museum',
@@ -155,6 +199,40 @@ void main() {
               ],
               'momentsTruncated': false,
               'cover': null,
+            },
+          ],
+        });
+      }
+      if (r.url.path == '/v1/me/map-content/moments/${id(2)}/thread') {
+        return json({
+          'schemaVersion': 'map-content-thread-v1',
+          'viewerAccountId': auth.accountID,
+          'seedMomentId': id(2),
+          'seedRevision': 1,
+          'seedVisibilitySource': 'SELF_PRIVATE',
+          'status': 'AVAILABLE',
+          'threadId': id(99),
+          'sourceVersion': List.filled(64, 'd').join(),
+          ...lease,
+          'entries': [
+            {
+              'position': 0,
+              'status': 'AVAILABLE',
+              'detail': {...seedDetail!, ...lease},
+            },
+            {'position': 1, 'status': 'UNAVAILABLE', 'detail': null},
+            {
+              'position': 2,
+              'status': 'AVAILABLE',
+              'detail': {
+                ...seedDetail!,
+                ...lease,
+                'id': id(5),
+                'body': nextBody,
+                'locations': [],
+                'media': [],
+                'sourceVersion': List.filled(64, 'e').join(),
+              },
             },
           ],
         });
@@ -204,20 +282,40 @@ void main() {
                   'audioCodec': null,
                   'poster': null,
                 },
+                {
+                  'kind': 'IMAGE',
+                  'id': id(4),
+                  'revision': 1,
+                  'mimeType': 'image/png',
+                  'width': 180,
+                  'height': 320,
+                  'byteCount': portrait.length,
+                  'sha256': sha256.convert(portrait).toString(),
+                  'sourceVersion': source,
+                  'contentPath':
+                      '/v1/me/map-content/moments/${id(2)}/media/${id(4)}/content?sourceVersion=$source',
+                  'durationMs': null,
+                  'videoCodec': null,
+                  'audioCodec': null,
+                  'poster': null,
+                },
               ],
             },
           ],
         });
       }
       if (r.url.path.endsWith('/content')) {
+        imageReads++;
+        final isPortrait = r.url.path.endsWith('/${id(4)}/content');
+        final data = isPortrait ? portrait : jpeg;
         return http.Response.bytes(
-          jpeg,
+          data,
           200,
           headers: {
-            'content-type': 'image/jpeg',
+            'content-type': isPortrait ? 'image/png' : 'image/jpeg',
             'cache-control': 'no-store',
             'x-content-type-options': 'nosniff',
-            'content-length': '${jpeg.length}',
+            'content-length': '${data.length}',
           },
         );
       }
@@ -293,17 +391,60 @@ void main() {
       );
       await t.pump(const Duration(milliseconds: 200));
       final panelState = t.state(find.byType(NowMapContentPanel));
-      expect(t.widget<Text>(find.text(body)).maxLines, 3);
-      expect(t.getSize(find.byType(PageView)).height, 96);
-      expect(find.byTooltip('关闭地点预览'), findsOneWidget);
+      expect(t.widget<Text>(find.text(body)).maxLines, 2);
+      expect(t.getSize(find.byType(PageView)).height, 144);
+      expect(find.byTooltip('关闭内容预览'), findsOneWidget);
+      final previewBounds = t.getRect(find.byType(NowMapContentPanel));
+      final mapView = t.widget<PublicCityMapView>(
+        find.byType(PublicCityMapView),
+      );
+      for (final point in <Offset?>[
+        const Offset(24, 200),
+        const Offset(370, 500),
+        null, // AMap temporarily has no projected anchor while moving.
+      ]) {
+        mapView.onSelectedAnchor!((id: owned.entities.single.id, point: point));
+        await t.pump();
+        expect(t.getRect(find.byType(NowMapContentPanel)), previewBounds);
+        expect(t.state(find.byType(NowMapContentPanel)), same(panelState));
+        expect(t.element(find.byType(PublicCityMapView)), same(mapElement));
+      }
+      await t.ensureVisible(find.byType(PageView));
+      await t.drag(find.byType(PageView), const Offset(-320, 0));
+      await t.pump(const Duration(milliseconds: 350));
+      expect(find.text('媒体 2 / 2'), findsOneWidget);
+      expect(t.getSize(find.byType(PageView)).height, 144);
+      await waitFor(
+        () => find
+            .descendant(of: find.byType(PageView), matching: find.byType(Image))
+            .evaluate()
+            .isNotEmpty,
+      );
+      await t.drag(find.byType(PageView), const Offset(320, 0));
+      await t.pump(const Duration(milliseconds: 350));
+      await waitFor(
+        () => find
+            .descendant(of: find.byType(PageView), matching: find.byType(Image))
+            .evaluate()
+            .isNotEmpty,
+      );
+      expect(
+        imageReads,
+        2,
+        reason:
+            'Returning to a current, already read page must reuse its bounded reader bytes.',
+      );
       final readsBefore = (mapReads, pageReads);
-      await t.tap(find.text('查看动态'));
+      await t.tap(find.text('查看此地点的全部1条动态'));
       await t.pump();
       expect(t.state(find.byType(NowMapContentPanel)), same(panelState));
       expect(find.byTooltip('返回地图'), findsOneWidget);
-      expect(find.text('查看动态'), findsNothing);
+      expect(find.text('查看此地点的全部1条动态'), findsNothing);
       expect(t.widget<Text>(find.text(body)).maxLines, isNull);
-      expect(t.getSize(find.byType(PageView)).height, 240);
+      expect(
+        t.getSize(find.byType(PageView)).height,
+        inInclusiveRange(144, 360),
+      );
       await waitFor(
         () => find
             .descendant(of: find.byType(PageView), matching: find.byType(Image))
@@ -324,6 +465,29 @@ void main() {
         t.state<AgentComposerState>(find.byType(AgentComposer)),
         same(composer),
       );
+      await waitFor(() => find.text('串文 · 3段').evaluate().isNotEmpty);
+      await t.scrollUntilVisible(
+        find.text('第2段暂不可查看'),
+        160,
+        scrollable: find
+            .descendant(
+              of: find.byType(NowMapContentPanel),
+              matching: find.byType(Scrollable),
+            )
+            .first,
+      );
+      expect(find.text('第2段暂不可查看'), findsOneWidget);
+      await t.scrollUntilVisible(
+        find.text(nextBody),
+        160,
+        scrollable: find
+            .descendant(
+              of: find.byType(NowMapContentPanel),
+              matching: find.byType(Scrollable),
+            )
+            .first,
+      );
+      expect(find.text(nextBody), findsOneWidget);
       await t.tap(find.byTooltip('返回地图'));
       await t.pumpAndSettle();
       expect(find.byType(NowMapContentPanel), findsNothing);
@@ -448,7 +612,11 @@ void main() {
         entities: entities,
         positions: {
           for (var i = 0; i < 20; i++)
-            entities[i].id: Offset(80.0 + i * 4, 150),
+            // The recent point has actual room for a label; other dense
+            // points remain selectable without painting over their glyphs.
+            entities[i].id: i == 10
+                ? const Offset(300, 250)
+                : Offset(80.0 + i * 4, 150),
         },
         zoom: 13,
       );

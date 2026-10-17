@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 
 import 'browse_destination.dart';
 import 'destination_search_service.dart';
+import 'public_city_controller.dart';
 
 class DestinationSearchController extends ChangeNotifier {
   DestinationSearchController({
@@ -29,6 +30,7 @@ class DestinationSearchController extends ChangeNotifier {
   final List<DateTime> _calls = [];
   DateTime? _retryAt;
   String? _error;
+  PublicCity? _resolvingCity;
 
   String get query => _input.text.trim();
   List<BrowseDestination> get items => _items;
@@ -36,12 +38,18 @@ class DestinationSearchController extends ChangeNotifier {
   String? get error => _error;
   bool get domesticUnavailable => _domesticUnavailable;
   List<String> get recentQueries => List.unmodifiable(_recentQueries);
+  PublicCity? get resolvingCity => _resolvingCity;
   bool get _valid => !_closed && (_current?.call() ?? true);
   bool get _composing =>
       _input.composing.isValid && !_input.composing.isCollapsed;
 
   void updateInput(TextEditingValue value) {
     if (_closed || value == _input) return;
+    if (value.text == _input.text && value.composing == _input.composing) {
+      _input = value;
+      return;
+    }
+    _resolvingCity = null;
     _input = value;
     _cancelPending();
     _items = const [];
@@ -61,6 +69,38 @@ class DestinationSearchController extends ChangeNotifier {
   }
 
   Future<void> retry() => submit();
+
+  /// Reuses the same request budget, abort and latest-response fencing. This
+  /// never selects a city or moves the map: the caller presents these candidates
+  /// with their country/region and binds only the user's explicit choice.
+  Future<void> resolveCity(PublicCity city) async {
+    if (!_valid) return;
+    _cancelPending();
+    _resolvingCity = city;
+    _input = TextEditingValue(
+      text: [
+        city.name,
+        city.region,
+        city.countryCode,
+      ].where((part) => part.trim().isNotEmpty).join(' '),
+    );
+    _items = const [];
+    _error = null;
+    _domesticUnavailable = false;
+    if (!RegExp(r'^[A-Z]{2}$').hasMatch(city.countryCode)) {
+      _error = '此目录城市缺少可核对的国家信息，请直接搜索目的地。';
+      notifyListeners();
+      return;
+    }
+    await _search(_generation);
+  }
+
+  void cancelResolution() {
+    if (_closed) return;
+    _resolvingCity = null;
+    _input = TextEditingValue.empty;
+    cancel();
+  }
 
   Future<void> _search(int generation) async {
     if (!_valid || generation != _generation || _composing || query.isEmpty)
@@ -85,13 +125,22 @@ class DestinationSearchController extends ChangeNotifier {
     try {
       final result = await _service.search(value, abortTrigger: abort.future);
       if (!live()) return;
-      _items = result.destinations;
+      final city = _resolvingCity;
+      _items = city == null
+          ? result.destinations
+          : List.unmodifiable(
+              result.destinations.where(
+                (item) => item.canLocateCatalogCity(city.countryCode),
+              ),
+            );
       _domesticUnavailable = result.domesticUnavailable;
       _error = result.partialError;
       _retryAt = null;
-      _recentQueries.remove(value);
-      _recentQueries.insert(0, value);
-      if (_recentQueries.length > 8) _recentQueries.removeLast();
+      if (city == null) {
+        _recentQueries.remove(value);
+        _recentQueries.insert(0, value);
+        if (_recentQueries.length > 8) _recentQueries.removeLast();
+      }
     } catch (failure) {
       if (!live()) return;
       _items = const [];
@@ -126,6 +175,7 @@ class DestinationSearchController extends ChangeNotifier {
     _items = const [];
     _error = null;
     _domesticUnavailable = false;
+    _resolvingCity = null;
     notifyListeners();
   }
 

@@ -3,6 +3,7 @@ package foundation
 import (
 	"context"
 	"errors"
+	"github.com/birdtie/birdtie/apps/api/internal/cityartwork"
 	"github.com/birdtie/birdtie/apps/api/internal/entitycover"
 	"github.com/birdtie/birdtie/apps/api/internal/placephoto"
 	"time"
@@ -34,14 +35,15 @@ func (s *Source) SetFreshness(now time.Time) {
 }
 
 type City struct {
-	ID            string   `json:"id"`
-	Name          string   `json:"name"`
-	Region        string   `json:"region"`
-	CountryCode   string   `json:"countryCode"`
-	TimeZone      string   `json:"timeZone"`
-	ContentStatus string   `json:"contentStatus"`
-	Source        Source   `json:"source"`
-	Map           *CityMap `json:"map,omitempty"`
+	Artwork       *cityartwork.Metadata `json:"artwork,omitempty"`
+	ID            string                `json:"id"`
+	Name          string                `json:"name"`
+	Region        string                `json:"region"`
+	CountryCode   string                `json:"countryCode"`
+	TimeZone      string                `json:"timeZone"`
+	ContentStatus string                `json:"contentStatus"`
+	Source        Source                `json:"source"`
+	Map           *CityMap              `json:"map,omitempty"`
 }
 
 type CityMap struct {

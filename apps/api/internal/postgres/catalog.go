@@ -2,9 +2,11 @@ package postgres
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"time"
 
+	"github.com/birdtie/birdtie/apps/api/internal/cityartwork"
 	"github.com/birdtie/birdtie/apps/api/internal/foundation"
 	lr "github.com/birdtie/birdtie/apps/api/internal/locationreference"
 	"github.com/birdtie/birdtie/apps/api/internal/momentmedia"
@@ -27,7 +29,7 @@ func New(pool *pgxpool.Pool, devPhoneEnabled bool) *Store {
 const cityColumns = `id, name, region, country_code, time_zone, content_status,
     source_label, source_ref, maintainer_label, updated_at, verified_at, expires_at,
     map_provider, map_center_latitude, map_center_longitude, map_default_zoom,
-    map_viewport_source_ref`
+    map_viewport_source_ref, ` + cityArtworkMetadataSQL
 
 func (s *Store) ListCities(ctx context.Context) ([]foundation.City, error) {
 	rows, err := s.pool.Query(ctx, `SELECT `+cityColumns+`
@@ -115,17 +117,24 @@ func scanCity(row scanner) (foundation.City, error) {
 	var city foundation.City
 	var provider, sourceRef *string
 	var latitude, longitude, zoom *float64
+	var artwork []byte
 	err := row.Scan(
 		&city.ID, &city.Name, &city.Region, &city.CountryCode,
 		&city.TimeZone, &city.ContentStatus, &city.Source.Label,
 		&city.Source.Reference, &city.Source.Maintainer,
 		&city.Source.UpdatedAt, &city.Source.VerifiedAt, &city.Source.ExpiresAt,
-		&provider, &latitude, &longitude, &zoom, &sourceRef,
+		&provider, &latitude, &longitude, &zoom, &sourceRef, &artwork,
 	)
 	if err != nil {
 		return foundation.City{}, notFound(err)
 	}
 	city.Source.SetFreshness(time.Now().UTC())
+	if len(artwork) > 0 && string(artwork) != "null" {
+		var metadata cityartwork.Metadata
+		if json.Unmarshal(artwork, &metadata) == nil && cityartwork.ValidVersion(metadata.Version) && metadata.DescriptorPath == cityartwork.DescriptorPath(city.ID, metadata.Version) {
+			city.Artwork = &metadata
+		}
+	}
 	if provider != nil && latitude != nil && longitude != nil && zoom != nil && sourceRef != nil {
 		city.Map = &foundation.CityMap{
 			Provider: *provider, Latitude: *latitude, Longitude: *longitude,

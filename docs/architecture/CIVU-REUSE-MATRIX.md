@@ -340,3 +340,15 @@ Android原包含3dmap-location-search 11.2.100/search9.8.1，此次新增窄Meth
 明确选定原图来源 `D:/Program/Civu/Civu-client/assets/destinations/{shanghai,aberdeen,beijing}.png` → `apps/client/assets/destinations/`同名文件，逐字节一致；真实ID与country/source reference经当前公共catalog核实，详见artwork-r15/feedback-receipt.json。原图和Civu仓均只读，remote新版优先规则保留。
 
 8项IS数字标签经受限原source SHA与10个公开OSM地点city/address字段核实为地址片段误分类，非本轮合成fixture。178仅新增精确审查排除，ListCities过滤当前仍匹配的审查事实，GetCity/ListPlaces与业务实体不变；保护10个Place和1条Moment，不能按数字名清空真实数据。API34已启用该投影隔离；45号已在用户重连后实际覆盖安装；同版本常用图卡、正反移动的静止预览几何与当前单条地点展开已核实，详见feedback/install03/ui-receipt.json。44号旧失败与45号首次断开保留；多账号串文/性能/历史空图仍未验收。
+
+## 2026-10-18 目的地分类完整展示与中文归属
+
+用户本轮要求国内/境外显示此前已有图标和名称，并纠正CN/中国、Scotland/苏格兰混用；这覆盖上一节最多8项精选的展示决定。只读核查 `D:/Program/Civu/Civu-client/assets/destinations/README.md`（REQ-301/303/304用户获准生成/用户附件来源）、`destination_souvenirs.dart` 与当前Birdtie1059目录。没有复制旧名称猜绑定、provider结果、坐标、Session、Riverpod或业务权限代码。
+
+明确选定新增原PNG来源 `D:/Program/Civu/Civu-client/assets/destinations/` → `D:/Project/birdtie/apps/client/assets/destinations/`，下列每个同名文件逐字节复制并核对SHA256：`chengdu.png`、`chongqing.png`、`guangzhou.png`、`hangzhou.png`、`sanya.png`、`xiamen.png`、`xian.png`、`glasgow.png`、`inverness.png`、`london.png`、`oban.png`、`york.png`（共3602393B）；以及 `dali.png`、`skye.png`、`islay.png`、`iceland.png`、`lisbon.png`（共2576982B）。Civu源及README保持只读；既有6份Birdtie图不替换，不重新生成、裁图或引入第三方素材/依赖。
+
+前12份加既有6份，使用当前真实ID、国家与sourceRef独立核实的18个目录投影（国内11、境外7）；只改中文展示字段与搜索别名，原名称/region/身份不变。上海显示“中国”、青岛/济南“中国 · 山东”、阿伯丁/爱丁堡“英国 · 苏格兰”等；分类在完整展示集合上执行，全球搜索仍独立，不再先截8再过滤。远端未知新图版本不回退旧本地图。
+
+另5份原图没有合适的当前City身份：大理旧为532901区县而当前只有大理州；天空岛/艾雷岛原为travel_region；冰岛原为country；里斯本原为manual-city且当前目录无PT。这5项以明确“搜索”的已有图卡进入原全球搜索和用户显式候选选择，不制造PublicCity/ID，不把旧坐标或国家/旅行区域绑到别的城市。合计23个已有图标入口，国内12、境外11；18个目录入口与5个搜索入口的行为由中文动作说明。
+
+来源、逐图摘要、18条实际目录绑定及直接检查保存在 `docs/testing/evidence/now-unified-20261017/feedback/performance53/dest/receipt.json` 和 `search-shortcut-assets.json`；实现位于 `city/destination_{presentation,shortlist,artwork,picker_grid,search_shortcuts}.dart` 与原Now目的地入口。复制与单元通过不等于新包实机验收；构建、装机及性能结果由本批总报告另记，原发布门槛保留。

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'destination_artwork.dart';
 import 'destination_artwork_view.dart';
+import 'destination_presentation.dart';
 import 'public_city_controller.dart';
 
 /// The catalog is a lazy shortcut, never a restriction on global search.
@@ -29,11 +30,15 @@ class DestinationPickerGrid extends StatelessWidget {
       delegate: SliverChildBuilderDelegate((context, index) {
         final city = cities[index];
         final selected = city.id == selectedCityID;
+        final name = destinationDisplayName(city);
+        final region = destinationDisplayRegion(city);
         final colors = Theme.of(context).colorScheme;
         return Semantics(
           selected: selected,
           button: true,
-          label: city.name,
+          label: '$name，$region',
+          excludeSemantics: true,
+          onTap: () => onSelect(city),
           child: Material(
             color: Colors.transparent,
             child: InkWell(
@@ -61,17 +66,17 @@ class DestinationPickerGrid extends StatelessWidget {
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      city.name,
+                      name,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.titleSmall,
                     ),
-                    if (city.region.isNotEmpty)
+                    if (region.isNotEmpty)
                       Padding(
                         padding: const EdgeInsets.only(top: 2),
                         child: Text(
-                          city.region,
+                          region,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           textAlign: TextAlign.center,

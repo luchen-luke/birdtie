@@ -47,6 +47,23 @@ flutter:
     - assets/destinations/edinburgh.png
     - assets/destinations/qingdao-d2988c88.png
     - assets/destinations/jinan-69b9d3d6.png
+    - assets/destinations/chengdu.png
+    - assets/destinations/chongqing.png
+    - assets/destinations/guangzhou.png
+    - assets/destinations/hangzhou.png
+    - assets/destinations/sanya.png
+    - assets/destinations/xiamen.png
+    - assets/destinations/xian.png
+    - assets/destinations/glasgow.png
+    - assets/destinations/inverness.png
+    - assets/destinations/london.png
+    - assets/destinations/oban.png
+    - assets/destinations/york.png
+    - assets/destinations/dali.png
+    - assets/destinations/skye.png
+    - assets/destinations/islay.png
+    - assets/destinations/iceland.png
+    - assets/destinations/lisbon.png
     - assets/images/mapbox-logo.svg
     - assets/map_styles/civu_android/style.data
     - assets/map_styles/civu_android/style_extra.data

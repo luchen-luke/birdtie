@@ -525,7 +525,7 @@ class _AMapCityMapViewState extends State<AMapCityMapView>
             ),
           ),
         ),
-      );
+      ).timeout(const Duration(seconds: 3));
       if (!current()) return;
       final canonical = projected.map((p) {
         final point = MapCoordinateBoundary.fromAmap(p.latitude, p.longitude);
@@ -604,7 +604,7 @@ class _AMapCityMapViewState extends State<AMapCityMapView>
               _displayCoordinate(e.latitude, e.longitude),
             ),
           ),
-        );
+        ).timeout(const Duration(seconds: 3));
         if (!current()) return;
         for (var i = 0; i < batch.length; i++) {
           final point = Offset(
@@ -711,29 +711,51 @@ class _AMapCityMapViewState extends State<AMapCityMapView>
         next[e.id] = marker;
       }
       if (!current()) return;
-      _change(() {
-        if (!current()) return;
-        _markers = next;
-        _geometry = geometry;
-        _geometryCamera = camera;
-        _markerKeys = keys;
-        _displayed = plan.entities;
-        _positions = {...positions, ...plan.clusterPositions};
-        _labels = plan.labelIDs;
-        _previousVisible = plan.entities.map((e) => e.id).toSet();
-      });
+      final nextPositions = {...positions, ...plan.clusterPositions};
+      final nativeChanged = !mapEquals(_markerKeys, keys);
+      final overlayChanged =
+          !mapEquals(_positions, nextPositions) ||
+          !setEquals(_labels, plan.labelIDs) ||
+          !listEquals(
+            _displayed.map((e) => e.id).toList(),
+            plan.entities.map((e) => e.id).toList(),
+          );
+      // These are geometry caches, never permission or read grants.
+      _geometry = geometry;
+      _geometryCamera = camera;
+      _previousVisible = plan.entities.map((e) => e.id).toSet();
+      if (nativeChanged || overlayChanged) {
+        _change(() {
+          if (!current()) return;
+          if (nativeChanged) {
+            _markers = next;
+            _markerKeys = keys;
+          }
+          _displayed = plan.entities;
+          _positions = nextPositions;
+          _labels = plan.labelIDs;
+        });
+      }
+      // Rect-only and cached geometry updates need no native write barrier.
+      // A retiring ACL/source scope must always keep the full barrier below.
+      if (!nativeChanged && !_retiring) {
+        _reportAnchor(nextPositions[widget.selectedEntityId]);
+        return;
+      }
       // MarkerUpdates is the plugin's incremental add/change/remove path.
       // Let its widget update reach the platform channel before uncovering a
       // retired permission scope; the subsequent SDK projection is a barrier.
       await WidgetsBinding.instance.endOfFrame;
       if (!current()) return;
-      await map.toScreenCoordinate(
-        _camera?.target ??
-            _displayCoordinate(
-              widget.city.map!.latitude,
-              widget.city.map!.longitude,
-            ),
-      );
+      await map
+          .toScreenCoordinate(
+            _camera?.target ??
+                _displayCoordinate(
+                  widget.city.map!.latitude,
+                  widget.city.map!.longitude,
+                ),
+          )
+          .timeout(const Duration(seconds: 3));
       if (!current()) return;
       _change(() {
         if (current()) _retiring = false;
@@ -1065,11 +1087,7 @@ class _AMapCityMapViewState extends State<AMapCityMapView>
                 const CircularProgressIndicator(),
                 const SizedBox(height: 12),
               ],
-              Text(
-                _styleFailed
-                    ? '地图样式暂时无法加载，请重试或使用地点列表。'
-                    : '正在准备地图样式…',
-              ),
+              Text(_styleFailed ? '地图样式暂时无法加载，请重试或使用地点列表。' : '正在准备地图样式…'),
               if (_styleFailed)
                 TextButton(
                   onPressed: _retryOfflineStyle,

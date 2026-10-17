@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import '../workspace/selected_place_followup.dart';
 import 'collection_control.dart';
 import 'collection_control_pending_store.dart';
+import 'collection_create_pending_store.dart';
 import 'collection_publication_pending_store.dart';
 import 'journey_detail.dart';
 import 'personal_collection_controller.dart';
@@ -69,6 +70,7 @@ class SelectedPlaceJourneyController extends ChangeNotifier {
     PersonalCollectionRetainedLocalDraft? retainedLocalDraft,
     ValueChanged<PersonalCollectionRetainedLocalDraft>? onRetainLocalDraft,
     CollectionControlPendingStore? controlPendingStore,
+    CollectionCreatePendingStore? createPendingStore,
     Future<Map<String, dynamic>?> Function(String id)?
     publicationRecoveryReader,
   }) : _owner = ownerID(),
@@ -93,6 +95,7 @@ class SelectedPlaceJourneyController extends ChangeNotifier {
       client: client,
       apiBaseUrl: apiBaseUrl,
       controlPendingStore: controlPendingStore,
+      createPendingStore: createPendingStore,
       retainedLocalDraft: retainedLocalDraft,
       onRetainLocalDraft: onRetainLocalDraft,
       publicationRecoveryReader:
@@ -202,6 +205,17 @@ class SelectedPlaceJourneyController extends ChangeNotifier {
     error = null;
     _notify();
     try {
+      await collections.loadCreatePending();
+      if (!current) return;
+      if (collections.createReadFailed) {
+        error = collections.error;
+        return;
+      }
+      if (collections.createPending != null) {
+        recoveringOriginal = true;
+        editing = true;
+        return;
+      }
       if (!await _readPlace()) return;
       await collections.load(more: more);
       if (current && collections.error != null) error = collections.error;

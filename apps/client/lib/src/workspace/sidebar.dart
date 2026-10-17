@@ -39,6 +39,7 @@ class Sidebar extends StatelessWidget {
     required this.onViewInvitations,
     this.onChooseCity,
     this.onTools,
+    this.onJourneys,
     this.onWorkspaceSelected,
     this.signedIn = true,
     this.sessionRestoring = false,
@@ -55,6 +56,7 @@ class Sidebar extends StatelessWidget {
   final VoidCallback onViewInvitations;
   final VoidCallback? onChooseCity;
   final VoidCallback? onTools;
+  final VoidCallback? onJourneys;
   final VoidCallback? onWorkspaceSelected;
   final bool signedIn;
   final bool sessionRestoring;
@@ -197,6 +199,9 @@ class Sidebar extends StatelessWidget {
                             '收藏',
                             () => onDestination(SidebarDestination.saved),
                           ),
+                          if (organizations.active == null &&
+                              onJourneys != null)
+                            _item(Icons.luggage_outlined, '我的旅程', onJourneys!),
                           // Merchant permissions come from the native Business
                           // API, independently of Organization roles.
                           if (organizations.active == null)

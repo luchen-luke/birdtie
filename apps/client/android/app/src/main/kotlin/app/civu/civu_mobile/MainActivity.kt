@@ -14,6 +14,7 @@ class MainActivity : FlutterActivity() {
     private var mapConfiguration: MapConfiguration? = null
     private var destinationSearch: DestinationSearch? = null
     private var mapSurfaceEvidence: NativeMapSurfaceEvidence? = null
+    private var uiAcceptance: NativeUiAcceptance? = null
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         mapConfiguration?.close()
@@ -36,19 +37,28 @@ class MainActivity : FlutterActivity() {
         mapSurfaceEvidence?.close()
         mapSurfaceEvidence = NativeMapSurfaceEvidence(this, flutterEngine)
         mapSurfaceEvidence?.armFrom(intent)
+        uiAcceptance?.close()
+        uiAcceptance = NativeUiAcceptance(this, flutterEngine)
+        uiAcceptance?.armFrom(intent)
     }
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
         voiceInput?.setQaTiming(intent.getBooleanExtra("birdtie.qa.voiceTiming", false))
         mapSurfaceEvidence?.armFrom(intent)
+        uiAcceptance?.armFrom(intent)
     }
     override fun onResume() {
         super.onResume()
         voiceInput?.onResume()
         friendAudio?.onResume()
     }
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        if (!hasFocus) uiAcceptance?.cancel()
+    }
     override fun onPause() {
+        uiAcceptance?.cancel()
         mapSurfaceEvidence?.stop("activity_pause")
         voiceInput?.onPause()
         friendAudio?.onPause()
@@ -70,6 +80,8 @@ class MainActivity : FlutterActivity() {
         super.onActivityResult(requestCode, resultCode, data)
     }
     override fun cleanUpFlutterEngine(flutterEngine: FlutterEngine) {
+        uiAcceptance?.close()
+        uiAcceptance = null
         mapSurfaceEvidence?.close()
         mapSurfaceEvidence = null
         destinationSearch?.close()

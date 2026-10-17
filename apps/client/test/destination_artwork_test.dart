@@ -9,6 +9,7 @@ import 'package:birdtie_client/src/city/public_city_controller.dart';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -79,6 +80,142 @@ class _VersionArtworkLoader extends DestinationArtworkLoader {
 }
 
 void main() {
+  test(
+    'all newly selected Civu originals are bundled under exact catalog IDs',
+    () async {
+      const selected = <String, (String, String)>{
+        '3545e9c0-951b-43c4-b08e-6e251f06961a': (
+          'chengdu',
+          'cf8eba71100cb74682c3e342eb92cf202943321ce9a38d6ff977e3cf7863c4eb',
+        ),
+        'ce95fde6-9f53-4e08-9395-603b29d93695': (
+          'chongqing',
+          '912fda3d7e3a4ab9751b3225dacc411846f5fce5f622af7fb822bb3f368336c8',
+        ),
+        'bf470294-58bf-4c40-8ae9-7bdb133aa79a': (
+          'guangzhou',
+          'f2f3f5fc35a5926f4711c0fa88869ed8bd2565157b73d162e23299641c272af7',
+        ),
+        'a3e6e0fe-6e2e-4789-8591-0b1a8c2b4c21': (
+          'hangzhou',
+          '51a553bc7d8e931a784fbad4ccf9810e695104de6b2020d6876aaee2d8284e36',
+        ),
+        '62580aa5-27db-449c-85c2-fb1d18f6e27a': (
+          'sanya',
+          '24003933d483f33f7e122f4d084a21b6ab52607ddfdb9cb6926878d4e57d0708',
+        ),
+        'e608a913-b824-4102-827b-4f2f6340cc58': (
+          'xiamen',
+          'c41b8d2ef713a4bcaeac103af2deec7cac433da7cc5f8a8b612649ee17423ee0',
+        ),
+        'f27e9a14-6461-429a-8c8c-51a23825ac00': (
+          'xian',
+          '0e32c246a9510ebf1a789065cb07b531937f737fb6466ec1af5b92cf56d50bfd',
+        ),
+        '3d036847-c12d-464b-b2d4-28e2018a2c45': (
+          'glasgow',
+          '29106527a824983853792ebd365dd2f6307e2049c7611f05ef79d0a8d607a9c9',
+        ),
+        'bd8be026-9f57-4fd9-81a8-2ae331ebe3ca': (
+          'inverness',
+          'c7b5a389dc150508b20c97927506a708a00526f1d5a8cf1722d62ee96525b1ad',
+        ),
+        '53e52b17-4c9a-4bdc-bd69-c74c8932f3c6': (
+          'london',
+          '56b56d79698b42dd1ee81670741bcdb9c8944dd7ac666c52ae0057bdad9f8303',
+        ),
+        'ea7251b0-0f1e-47ff-b2ab-48ee344fcaa4': (
+          'oban',
+          '3113b95fe329561924ee7a7f80b8b5c116fe19ea533be427dad1cb5191483358',
+        ),
+        'cd00608f-6497-4912-ac88-2c55ccd0f57e': (
+          'york',
+          'c71a4e0e79ce1a858dbb45eef935231b5d49a95c9c6646aaad6307bc45f680f4',
+        ),
+      };
+      for (final entry in selected.entries) {
+        final id = 'civu-geo-${entry.key}',
+            asset = 'assets/destinations/${entry.value.$1}.png';
+        expect(destinationLocalArtwork(id), asset);
+        expect(destinationLocalArtwork(id, remoteVersion: _version), isNull);
+        final data = await rootBundle.load(asset);
+        expect(
+          sha256
+              .convert(
+                data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes),
+              )
+              .toString(),
+          entry.value.$2,
+        );
+        expect(data.getUint32(16), entry.value.$1 == 'york' ? 768 : 512);
+        expect(data.getUint32(20), data.getUint32(16));
+      }
+      for (final id in [
+        'civu-geo-419c8051-a273-4e0a-81b4-98ec13103b1f',
+        'civu-geo-a1bfe797-7607-4992-8088-fc14d9dd42da',
+        'civu-geo-cb9a67eb-fa97-4ef5-8849-114cc1199717',
+        'civu-geo-1e2773a8-1638-45d4-81bc-b332db729c61',
+        'manual-city:lisbon',
+      ]) {
+        expect(destinationLocalArtwork(id), isNull);
+      }
+    },
+  );
+
+  testWidgets(
+    'reviewed grid exposes Chinese label and selects the unchanged catalog object',
+    (t) async {
+      final city = PublicCity(
+        id: 'aberdeen-gb',
+        name: 'Aberdeen',
+        region: 'Scotland',
+        countryCode: 'GB',
+        contentStatus: 'empty',
+        map: null,
+        source: const PublicSource(
+          label: 'unit',
+          reference: 'docs/product/01-Birdtie-产品文档-V3.0.md',
+          maintainer: 'unit',
+          freshness: 'unverified',
+          updatedAt: null,
+        ),
+      );
+      final loader = _VisibleArtworkLoader();
+      final semantics = t.ensureSemantics();
+      PublicCity? selected;
+      try {
+        await t.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: CustomScrollView(
+                slivers: [
+                  DestinationPickerGrid(
+                    cities: [city],
+                    loader: loader,
+                    onSelect: (value) => selected = value,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+        await t.pumpAndSettle();
+        expect(find.text('阿伯丁'), findsOneWidget);
+        expect(find.text('英国 · 苏格兰'), findsOneWidget);
+        expect(find.text('Aberdeen'), findsNothing);
+        expect(find.bySemanticsLabel('阿伯丁，英国 · 苏格兰'), findsOneWidget);
+        await t.tap(find.byKey(const Key('now-scope-city-aberdeen-gb')));
+        expect(selected, same(city));
+        expect(selected!.name, 'Aberdeen');
+        expect(t.takeException(), isNull);
+      } finally {
+        await t.pumpWidget(const SizedBox.shrink());
+        semantics.dispose();
+        loader.dispose();
+      }
+    },
+  );
+
   test('optional artwork failures preserve selectable catalog identity', () {
     final metadata = _metadata();
     for (final raw in [

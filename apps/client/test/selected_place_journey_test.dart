@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:birdtie_client/src/content/collection_control_pending_store.dart';
+import 'package:birdtie_client/src/content/collection_create_pending_store.dart';
 import 'package:birdtie_client/src/content/journey_detail.dart';
 import 'package:birdtie_client/src/content/personal_collection_controller.dart';
 import 'package:birdtie_client/src/content/selected_place_journey.dart';
@@ -135,10 +136,12 @@ class JourneyHarness {
       client: client,
       apiBaseUrl: 'https://synthetic.invalid',
       controlPendingStore: MemoryCollectionControlPendingStore(),
+      createPendingStore: createStore,
       publicationRecoveryReader: (_) async => null,
     );
   }
   final changes = ValueNotifier(0);
+  final createStore = MemoryCollectionCreatePendingStore();
   String? owner = journeyOwner, token = 'Bearer synthetic';
   bool selected = true, taskCurrent = true, verificationWrong = false;
   bool createUnknown = false;
@@ -218,6 +221,57 @@ class _SelectedMapReplySource extends AgentTaskSource {
 }
 
 void main() {
+  test(
+    'create recovery cold selected adapter reads original Journey without old selector grant or false current-selection receipt',
+    () async {
+      final h = JourneyHarness();
+      addTearDown(h.dispose);
+      await h.controller.load();
+      await h.controller.choose();
+      h.createUnknown = true;
+      expect(await h.controller.collections.save(), false);
+      final original = h.records[newJourneyID]!;
+      h.controller.dispose();
+      h.placeStatus = 403;
+      h.requests.clear();
+      // A new context has no old draft, entry ID, Task or public Place grant.
+      final next = SelectedPlaceJourneyController(
+        selection: SelectedPlaceFollowup(
+          placeID: journeyEntry,
+          cityID: journeyCity,
+          taskID: 'fresh-task',
+          current: () => true,
+        ),
+        day: 2,
+        ownerID: () => h.owner,
+        authorizationHeader: () => h.token,
+        sourceCurrent: () => true,
+        identityChanges: h.changes,
+        client: h.client,
+        apiBaseUrl: 'https://synthetic.invalid',
+        controlPendingStore: MemoryCollectionControlPendingStore(),
+        createPendingStore: h.createStore,
+        publicationRecoveryReader: (_) async => null,
+      );
+      addTearDown(next.dispose);
+      await next.load();
+      expect(next.recoveringOriginal, true);
+      expect(next.editing, true);
+      expect(h.requests, isEmpty);
+      expect(await next.collections.save(), false);
+      expect(await next.collections.recoverCreate(), true);
+      expect(
+        h.requests.single,
+        startsWith('GET /v1/me/personal-collections/operations/'),
+      );
+      final entry = next.collections.editing!.journeyDetails!.itinerary.single;
+      expect(entry.text('placeId'), journeyPlace);
+      expect(entry.day('dayIndex'), 2);
+      expect(next.collections.editing!.id, original['id']);
+      expect(next.receipt, isNull);
+      expect(h.creates, 1);
+    },
+  );
   TestWidgetsFlutterBinding.ensureInitialized();
   test(
     'explicit current owned-map Place alias survives native day-two reply and can enter Journey selection',
@@ -255,6 +309,7 @@ void main() {
         client: h.client,
         apiBaseUrl: 'https://synthetic.invalid',
         controlPendingStore: MemoryCollectionControlPendingStore(),
+        createPendingStore: MemoryCollectionCreatePendingStore(),
         publicationRecoveryReader: (_) async => null,
       );
       addTearDown(journey.dispose);
@@ -525,6 +580,7 @@ void main() {
         apiBaseUrl: 'https://synthetic.invalid',
         retainedLocalDraft: retained,
         controlPendingStore: MemoryCollectionControlPendingStore(),
+        createPendingStore: MemoryCollectionCreatePendingStore(),
         publicationRecoveryReader: (_) async => null,
       );
       addTearDown(resumed.dispose);

@@ -1,5 +1,6 @@
 import 'package:birdtie_client/src/city/destination_artwork.dart';
 import 'package:birdtie_client/src/city/destination_shortlist.dart';
+import 'package:birdtie_client/src/city/destination_presentation.dart';
 import 'package:birdtie_client/src/city/public_city_controller.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -9,12 +10,21 @@ const _beijing = 'civu-geo-7800f687-1404-4bb4-aed3-ddd54a6376af';
 const _edinburgh = 'civu-geo-66920ecb-9717-42bb-8320-a43a1d2851d2';
 const _qingdao = 'civu-geo-7a536573-67c6-42f0-9ede-c423fb5dba00';
 const _jinan = 'civu-geo-bbffd2af-68b4-49ee-bb01-5e5a7673aa9b';
+const _gbIDs = {
+  _aberdeen,
+  _edinburgh,
+  'civu-geo-53e52b17-4c9a-4bdc-bd69-c74c8932f3c6',
+  'civu-geo-cd00608f-6497-4912-ac88-2c55ccd0f57e',
+  'civu-geo-3d036847-c12d-464b-b2d4-28e2018a2c45',
+  'civu-geo-bd8be026-9f57-4fd9-81a8-2ae331ebe3ca',
+  'civu-geo-ea7251b0-0f1e-47ff-b2ab-48ee344fcaa4',
+};
 
 PublicCity _city(String id, {String? country, String? source}) => PublicCity(
   id: id,
   name: '合成测试名称 $id',
   region: '合成测试地区',
-  countryCode: country ?? (id == _aberdeen || id == _edinburgh ? 'GB' : 'CN'),
+  countryCode: country ?? (_gbIDs.contains(id) ? 'GB' : 'CN'),
   contentStatus: 'empty',
   source: PublicSource(
     label: '隔离测试目录',
@@ -63,7 +73,7 @@ void main() {
   );
 
   test(
-    'only actual current and recent catalog identities enter bounded list',
+    'recent choices are bounded separately and never displace illustrated cities',
     () {
       final catalog = [
         ..._catalog(),
@@ -77,9 +87,8 @@ void main() {
           _shanghai,
           for (var i = 0; i < 12; i++) 'synthetic-recent-$i',
         ],
-        limit: 100,
       );
-      expect(result.length, 8);
+      expect(result.length, 10);
       expect(result.map((c) => c.id).take(3), [
         _shanghai,
         _aberdeen,
@@ -87,6 +96,36 @@ void main() {
       ]);
       expect(result.map((c) => c.id).toSet().length, result.length);
       expect(result.any((c) => c.id == 'not-in-catalog'), isFalse);
+    },
+  );
+
+  test(
+    'all 18 reviewed illustrated cities remain available across categories',
+    () {
+      final catalog = [
+        _city('synthetic-unvisited'),
+        for (final id in destinationReviewedCityIDs.toList().reversed)
+          _city(id),
+      ];
+      final all = destinationShortlist(catalog: catalog);
+      final domestic = destinationShortlist(catalog: catalog, filter: 'CN');
+      final abroad = destinationShortlist(catalog: catalog, filter: 'abroad');
+      expect(all, hasLength(18));
+      expect(domestic, hasLength(11));
+      expect(abroad, hasLength(7));
+      expect(all.map((city) => city.id).toSet(), {
+        ...domestic.map((city) => city.id),
+        ...abroad.map((city) => city.id),
+      });
+      expect(
+        all.every((city) => destinationLocalArtwork(city.id) != null),
+        isTrue,
+      );
+      expect(
+        all.every((city) => catalog.any((v) => identical(v, city))),
+        isTrue,
+      );
+      expect(all.any((city) => city.id == 'synthetic-unvisited'), isFalse);
     },
   );
 

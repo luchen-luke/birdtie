@@ -2,10 +2,12 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:birdtie_client/src/content/collection_control.dart';
 import 'package:birdtie_client/src/content/collection_control_pending_store.dart';
+import 'package:birdtie_client/src/content/collection_create_pending_store.dart';
 import 'collection_control_test.dart';
 
 import 'package:birdtie_client/src/content/personal_collection_controller.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -62,6 +64,7 @@ PersonalCollectionController collectionController(
   PersonalCollectionRetainedLocalDraft? retained,
   ValueChanged<PersonalCollectionRetainedLocalDraft>? onRetain,
   CollectionControlPendingStore? controlStore,
+  CollectionCreatePendingStore? createStore,
 }) => PersonalCollectionController(
   kind: kind,
   cityID: cityID,
@@ -74,6 +77,7 @@ PersonalCollectionController collectionController(
   retainedLocalDraft: retained,
   onRetainLocalDraft: onRetain,
   controlPendingStore: controlStore ?? MemoryCollectionControlPendingStore(),
+  createPendingStore: createStore ?? MemoryCollectionCreatePendingStore(),
 );
 void seedCollectionDraft(PersonalCollectionController c) {
   c.setText(title: '周末路线');
@@ -90,6 +94,7 @@ Future<bool> saveCollectionUpdate(
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  collectionCreateRecoveryCases();
   collection147ControllerCases();
   test(
     'C3 withdrawn borrowed source permits only original selectors own text CAS without restoring metadata',
@@ -415,6 +420,7 @@ void main() {
     var source = true;
     final signal = ChangeNotifier();
     final reply = Completer<http.Response>();
+    final postEntered = Completer<void>();
     PersonalCollectionRetainedLocalDraft? retained;
     var posts = 0;
     final calls = <http.Request>[];
@@ -422,6 +428,7 @@ void main() {
       calls.add(r);
       if (r.method == 'POST') {
         posts++;
+        postEntered.complete();
         return reply.future;
       }
       return collectionResponse(collectionReceipt());
@@ -434,6 +441,7 @@ void main() {
     );
     seedCollectionDraft(old);
     final submitted = old.save();
+    await postEntered.future;
     source = false;
     signal.notifyListeners();
     expect(retained!.unknown, isTrue);
@@ -601,16 +609,21 @@ void main() {
     },
   );
   for (final kind in ['journey', 'theme_map']) {
-    test('个人$kind未知回执只重放原operation，不重复创建', () async {
+    test('个人$kind未知回执只读取原operation，不重复创建', () async {
       final requests = <Map<String, dynamic>>[];
       var posts = 0;
       final client = MockClient((r) async {
         if (r.method == 'POST') {
           requests.add(jsonDecode(r.body) as Map<String, dynamic>);
-          if (++posts == 1) throw http.ClientException('lost receipt');
-          return collectionResponse(collectionReceipt(kind: kind), code: 201);
+          ++posts;
+          throw http.ClientException('lost receipt');
         }
-        throw StateError(r.url.path);
+        expect(r.method, 'GET');
+        expect(
+          r.url.path,
+          endsWith('/operations/${requests.single['operationId']}'),
+        );
+        return collectionResponse(collectionReceipt(kind: kind));
       });
       final c = collectionController(client, kind: kind);
       addTearDown(c.dispose);
@@ -622,8 +635,9 @@ void main() {
       expect(c.draftEntries, hasLength(1));
       c.setText(title: '不能覆盖在途版本');
       expect(c.title, '周末路线');
-      expect(await c.save(), isTrue);
-      expect(requests[0], requests[1]);
+      expect(await c.save(), isFalse);
+      expect(await c.recover(), isTrue);
+      expect(posts, 1);
       expect(
         requests.first['operationId'],
         matches(RegExp(r'^[0-9a-f-]{36}$')),
@@ -659,8 +673,10 @@ void main() {
     var owner = collectionOwner;
     final changes = ChangeNotifier(), pending = Completer<http.Response>();
     var calls = 0;
+    final postEntered = Completer<void>();
     final client = MockClient((r) {
       calls++;
+      postEntered.complete();
       return pending.future;
     });
     final c = collectionController(
@@ -674,6 +690,7 @@ void main() {
     seedCollectionDraft(c);
     final first = c.save();
     expect(await c.save(), isFalse);
+    await postEntered.future;
     expect(c.saving, isTrue);
     owner = collectionID;
     changes.notifyListeners();
@@ -797,6 +814,284 @@ void main() {
     });
     expect(entry.sourceCurrent, isFalse);
   });
+}
+
+class CreateFaultStore extends MemoryCollectionCreatePendingStore {
+  bool readFails = false, writeFails = false, removeFails = false;
+  bool writeNotRetained = false;
+  Completer<void>? preparedGate, preparedEntered;
+  @override
+  Future<CollectionCreatePending?> read(
+    String origin,
+    String owner,
+    String kind,
+    String city,
+  ) {
+    if (readFails) throw StateError('isolated read failure');
+    return super.read(origin, owner, kind, city);
+  }
+
+  @override
+  Future<void> write(
+    String origin,
+    String owner,
+    CollectionCreatePending p,
+  ) async {
+    if (writeFails) throw StateError('isolated write failure');
+    if (writeNotRetained) return;
+    if (p.stage == 'PREPARED' && preparedGate != null) {
+      preparedEntered?.complete();
+      await preparedGate!.future;
+    }
+    await super.write(origin, owner, p);
+  }
+
+  @override
+  Future<void> remove(
+    String origin,
+    String owner,
+    CollectionCreatePending p,
+  ) async {
+    if (removeFails) throw StateError('isolated remove failure');
+    await super.remove(origin, owner, p);
+  }
+}
+
+CollectionCreatePending collectionCreatePrepared() =>
+    CollectionCreatePending.prepared(
+      '44444444-4444-4444-8444-444444444444',
+      CollectionControlBody.normalize({
+        'kind': 'journey',
+        'cityId': 'aberdeen-gb',
+        'title': '周末路线',
+        'summary': '',
+        'entries': [
+          {
+            'placeId': collectionPlaceID,
+            'note': '',
+            'locationVisibility': 'hidden',
+          },
+        ],
+      }),
+    );
+
+void collectionCreateRecoveryCases() {
+  test(
+    'create recovery true cold secure reconstruction uses exact original GET no retained object or replay',
+    () async {
+      FlutterSecureStorage.setMockInitialValues({});
+      final calls = <http.Request>[];
+      final client = MockClient((r) async {
+        calls.add(r);
+        return r.method == 'POST'
+            ? collectionResponse(null, code: 503)
+            : collectionResponse(collectionReceipt());
+      });
+      addTearDown(client.close);
+      final old = collectionController(
+        client,
+        createStore: const SecureCollectionCreatePendingStore(),
+      );
+      seedCollectionDraft(old);
+      expect(await old.save(), false);
+      final operation = jsonDecode(calls.single.body)['operationId'];
+      old.dispose();
+      // Nothing from the old controller, payload, or host cache enters this one.
+      final next = collectionController(
+        client,
+        token: () => 'Bearer fresh-session',
+        createStore: const SecureCollectionCreatePendingStore(),
+      );
+      addTearDown(next.dispose);
+      await next.loadCreatePending();
+      expect(next.createPending!.operationID, operation);
+      expect(next.uncertain, true);
+      expect(next.title, isEmpty);
+      expect(await next.save(), false);
+      expect(await next.recover(), true);
+      expect(calls.map((r) => r.method).toList(), ['POST', 'GET']);
+      expect(
+        calls.last.url.path,
+        '/v1/me/personal-collections/operations/$operation',
+      );
+      expect(calls.last.headers['Authorization'], 'Bearer fresh-session');
+      expect(calls.last.followRedirects, false);
+      expect(next.editing!.id, collectionID);
+      expect(next.uncertain, false);
+      expect(await const FlutterSecureStorage().readAll(), isEmpty);
+    },
+  );
+  test(
+    'create recovery await durable PREPARED before first producer and never repeat UNKNOWN',
+    () async {
+      final store = CreateFaultStore()
+        ..preparedGate = Completer<void>()
+        ..preparedEntered = Completer<void>();
+      var posts = 0;
+      final client = MockClient((r) async {
+        posts++;
+        return collectionResponse(null, code: 500);
+      });
+      final c = collectionController(client, createStore: store);
+      addTearDown(c.dispose);
+      addTearDown(client.close);
+      seedCollectionDraft(c);
+      final save = c.save();
+      await store.preparedEntered!.future;
+      expect(posts, 0);
+      expect(c.saving, true);
+      store.preparedGate!.complete();
+      expect(await save, false);
+      expect(posts, 1);
+      expect(store.values.values.single.stage, 'UNKNOWN');
+      expect(await c.save(), false);
+      expect(posts, 1);
+    },
+  );
+  for (final phase in ['read', 'write', 'readback']) {
+    test('create recovery $phase storage failure aborts first send', () async {
+      final store = CreateFaultStore()
+        ..readFails = phase == 'read'
+        ..writeFails = phase == 'write'
+        ..writeNotRetained = phase == 'readback';
+      var posts = 0;
+      final client = MockClient((r) async {
+        posts++;
+        return collectionResponse(collectionReceipt(), code: 201);
+      });
+      final c = collectionController(client, createStore: store);
+      addTearDown(c.dispose);
+      addTearDown(client.close);
+      seedCollectionDraft(c);
+      expect(await c.save(), false);
+      expect(posts, 0);
+      expect(c.createReadFailed, true);
+      expect(c.editable, false);
+    });
+  }
+  test(
+    'create recovery identity retirement during durable preparation never dispatches and preserves PREPARED',
+    () async {
+      final store = CreateFaultStore()
+        ..preparedGate = Completer<void>()
+        ..preparedEntered = Completer<void>();
+      var active = true, posts = 0;
+      final changes = ChangeNotifier();
+      final client = MockClient((r) async {
+        posts++;
+        return collectionResponse(collectionReceipt(), code: 201);
+      });
+      final c = collectionController(
+        client,
+        createStore: store,
+        current: () => active,
+        changes: changes,
+      );
+      addTearDown(c.dispose);
+      addTearDown(client.close);
+      addTearDown(changes.dispose);
+      seedCollectionDraft(c);
+      final save = c.save();
+      await store.preparedEntered!.future;
+      active = false;
+      changes.notifyListeners();
+      store.preparedGate!.complete();
+      expect(await save, false);
+      expect(posts, 0);
+      expect(store.values.values.single.stage, 'PREPARED');
+    },
+  );
+  for (final mismatch in [
+    '404',
+    '403',
+    '500',
+    '302',
+    'owner',
+    'city',
+    'kind',
+    'digest',
+    'revision',
+    'public',
+    'delete-failure',
+  ]) {
+    test(
+      'create recovery $mismatch retains selector without false adoption or producer',
+      () async {
+        final store = CreateFaultStore()
+          ..removeFails = mismatch == 'delete-failure';
+        final p = collectionCreatePrepared();
+        await store.write('https://synthetic.invalid', collectionOwner, p);
+        final calls = <http.Request>[];
+        final client = MockClient((r) async {
+          calls.add(r);
+          final v = collectionReceipt();
+          if (mismatch == 'owner') v['ownerAccountId'] = collectionID;
+          if (mismatch == 'city') v['cityId'] = 'other-city';
+          if (mismatch == 'kind') v['kind'] = 'theme_map';
+          if (mismatch == 'digest') v['title'] = '已被另一个端修改';
+          if (mismatch == 'revision') v['revision'] = 2;
+          if (mismatch == 'public') v['visibility'] = 'public';
+          return collectionResponse(v, code: int.tryParse(mismatch) ?? 200);
+        });
+        final c = collectionController(client, createStore: store);
+        addTearDown(c.dispose);
+        addTearDown(client.close);
+        expect(await c.recoverCreate(), false);
+        expect(calls.single.method, 'GET');
+        expect(c.editing, isNull);
+        expect(c.uncertain, true);
+        expect(store.values.values.single.same(p), true);
+        expect(await c.save(), false);
+        expect(calls, hasLength(1));
+      },
+    );
+  }
+  for (final boundary in ['owner', 'token', 'source']) {
+    test(
+      'create recovery late $boundary ABA read cannot adopt or delete original pending',
+      () async {
+        final store = MemoryCollectionCreatePendingStore();
+        await store.write(
+          'https://synthetic.invalid',
+          collectionOwner,
+          collectionCreatePrepared(),
+        );
+        var owner = collectionOwner, token = 'Bearer old', active = true;
+        final changes = ChangeNotifier(),
+            entered = Completer<void>(),
+            reply = Completer<http.Response>();
+        final client = MockClient((r) async {
+          entered.complete();
+          return reply.future;
+        });
+        final c = collectionController(
+          client,
+          createStore: store,
+          owner: () => owner,
+          token: () => token,
+          current: () => active,
+          changes: changes,
+        );
+        addTearDown(c.dispose);
+        addTearDown(client.close);
+        addTearDown(changes.dispose);
+        final reading = c.recoverCreate();
+        await entered.future;
+        if (boundary == 'owner') owner = collectionID;
+        if (boundary == 'token') token = 'Bearer different';
+        if (boundary == 'source') active = false;
+        changes.notifyListeners();
+        owner = collectionOwner;
+        token = 'Bearer old';
+        active = true;
+        changes.notifyListeners();
+        reply.complete(collectionResponse(collectionReceipt()));
+        expect(await reading, false);
+        expect(c.editing, isNull);
+        expect(store.values, hasLength(1));
+      },
+    );
+  }
 }
 
 class ControlFailReadbackStore extends MemoryCollectionControlPendingStore {

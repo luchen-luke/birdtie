@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
+import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
@@ -9,6 +10,7 @@ import '../config/birdtie_environment.dart';
 import 'collection_control.dart';
 import 'journey_detail.dart';
 import 'collection_control_pending_store.dart';
+import 'collection_create_pending_store.dart';
 import '../workspace/legacy_place_reference_page.dart';
 
 final _collectionUUID = RegExp(
@@ -310,10 +312,13 @@ class PersonalCollectionController extends ChangeNotifier {
     this.onRetainLocalDraft,
     this.publicationRecoveryReader,
     CollectionControlPendingStore? controlPendingStore,
+    CollectionCreatePendingStore? createPendingStore,
   }) : _client = client ?? http.Client(),
        _ownsClient = client == null,
        controlPendingStore =
            controlPendingStore ?? const SecureCollectionControlPendingStore(),
+       createPendingStore =
+           createPendingStore ?? const SecureCollectionCreatePendingStore(),
        _base = apiBaseUrl ?? BirdtieEnvironment.apiBaseUrl {
     if (!const ['journey', 'theme_map'].contains(kind))
       throw ArgumentError.value(kind);
@@ -340,6 +345,11 @@ class PersonalCollectionController extends ChangeNotifier {
   final http.Client _client;
   final bool _ownsClient;
   final CollectionControlPendingStore controlPendingStore;
+  final CollectionCreatePendingStore createPendingStore;
+  CollectionCreatePending? createPending;
+  bool createReady = false, createReadFailed = false;
+  Future<void>? _createReadFuture;
+  int _createReads = 0;
   late final CollectionControlAPI controlAPI;
   List<CollectionControlPending> controlPending = const [];
   CollectionControlPreview? controlPreview;
@@ -354,6 +364,9 @@ class PersonalCollectionController extends ChangeNotifier {
   CollectionControlPending? _notSubmittedControl;
   CollectionControlPending? get controlNotSubmitted => _notSubmittedControl;
   bool get controlBlocked =>
+      !createReady ||
+      createReadFailed ||
+      createPending != null ||
       !controlReady ||
       controlReadFailed ||
       controlPending.isNotEmpty ||
@@ -656,6 +669,8 @@ class PersonalCollectionController extends ChangeNotifier {
       current &&
       !saving &&
       !uncertain &&
+      !createReadFailed &&
+      createPending == null &&
       !controlReadFailed &&
       !controlCurrentUnread &&
       controlPending.isEmpty &&
@@ -726,6 +741,10 @@ class PersonalCollectionController extends ChangeNotifier {
       lastControlReceipt = null;
       controlReady = false;
       _controlReads++;
+      createPending = null;
+      createReady = false;
+      _createReads++;
+      _createReadFuture = null;
       error = '账号、城市或工作身份已变化，请返回后重新打开。';
     } else if (authorizationHeader() != _token) {
       _token = authorizationHeader();
@@ -738,6 +757,9 @@ class PersonalCollectionController extends ChangeNotifier {
       loading = saving = searching = false;
       controlPreview = null;
       controlReady = false;
+      createReady = false;
+      _createReads++;
+      _createReadFuture = null;
       places = const [];
       items = const [];
       draftEntries = List.unmodifiable(
@@ -1126,40 +1148,85 @@ class PersonalCollectionController extends ChangeNotifier {
       };
     }
     final epoch = _epoch;
+    final owner = _owner!;
+    late final CollectionCreatePending prepared;
+    try {
+      prepared = CollectionCreatePending.prepared(
+        _pending!['operationId'] as String,
+        CollectionControlBody.normalize({..._pending!}..remove('operationId')),
+      );
+    } catch (_) {
+      _pending = null;
+      error = '这份草稿暂时无法完整核对，请检查后保存；尚未发送。';
+      _notify();
+      return false;
+    }
     saving = true;
     error = null;
+    var preparedDurably = false;
     _notify();
     try {
+      // No producer can run before this original selector is durable. A crash
+      // with either PREPARED or UNKNOWN is recovered through GET, never POST.
+      await createPendingStore.write(controlAPI.origin, owner, prepared);
+      final durable = await createPendingStore.read(
+        controlAPI.origin,
+        owner,
+        kind,
+        cityID,
+      );
+      if (durable == null ||
+          !durable.same(prepared) ||
+          durable.stage != 'PREPARED') {
+        throw const FormatException('原创建准备记录未准确读回');
+      }
+      preparedDurably = true;
+      if (!_valid(epoch)) return false;
+      createPending = prepared;
+      _retainLocalDraft();
       final r = await _client
           .post(_uri(''), headers: _headers, body: jsonEncode(_pending))
           .timeout(const Duration(seconds: 12));
       if (!_valid(epoch)) return false;
-      if (r.statusCode != 201) {
-        if (r.statusCode >= 400 && r.statusCode < 500) {
-          _pending = null;
-          uncertain = false;
-          error = r.statusCode == 409
-              ? '地点或草稿版本已变化，保留本机草稿，请重新查看后保存。'
-              : '保存未被接受，保留本机草稿，请检查后重试。';
-          return false;
-        }
-        throw const FormatException();
-      }
+      if (r.statusCode != 201) throw const FormatException();
       final v = _record(r);
-      if (v.status != 'draft' || (_pendingID != null && v.id != _pendingID))
-        throw const FormatException();
+      _verifyCreated(v, prepared);
+      await createPendingStore.remove(controlAPI.origin, owner, prepared);
+      if (!_valid(epoch)) return false;
+      createPending = null;
       _adopt(v);
       items = List.unmodifiable([v, ...items.where((e) => e.id != v.id)]);
       return true;
     } catch (_) {
       if (_valid(epoch)) {
-        uncertain = true;
-        error = '保存结果尚未确认，原稿已保留。请核实结果或按原稿重试。';
+        if (!preparedDurably) {
+          createReady = false;
+          createReadFailed = true;
+          error = '本机原保存记录暂时无法确认，尚未发送。请重新读取本机原操作。';
+        } else {
+          uncertain = true;
+          error = '保存结果尚未确认，请核实原结果；不会再次提交。';
+          try {
+            await createPendingStore.write(
+              controlAPI.origin,
+              owner,
+              prepared.unknown,
+            );
+            if (_valid(epoch)) createPending = prepared.unknown;
+          } catch (_) {
+            if (_valid(epoch)) {
+              createReady = false;
+              createReadFailed = true;
+              error = '原保存结果与本机记录尚未核实，请重新读取；不会再次提交。';
+            }
+          }
+        }
       }
       return false;
     } finally {
       if (_valid(epoch)) {
         saving = false;
+        _retainLocalDraft();
         _notify();
       }
     }
@@ -1221,7 +1288,149 @@ class PersonalCollectionController extends ChangeNotifier {
     }
   }
 
+  void _verifyCreated(PersonalCollection v, CollectionCreatePending p) {
+    final body = CollectionControlBody.normalize({
+      'kind': v.kind,
+      'cityId': v.cityID,
+      'title': v.title,
+      'summary': v.summary,
+      'entries': v.entries.map((e) => e.toInput()).toList(),
+      if (v.journeyDetails != null)
+        'journeyDetails': v.journeyDetails!.toInput(),
+    });
+    if (v.ownerID != _owner ||
+        v.kind != p.kind ||
+        v.cityID != p.cityID ||
+        v.status != 'draft' ||
+        v.visibility != 'private' ||
+        v.revision != 1 ||
+        CollectionCreatePending.inputDigest(body) != p.payloadDigest) {
+      throw const FormatException('原创建结果与当前内容无法准确核对');
+    }
+  }
+
+  /// Fresh sessions may recover their own original operation, never old grants.
+  Future<void> loadCreatePending() {
+    if (!current) return Future.value();
+    final old = _createReadFuture;
+    if (old != null) return old;
+    late Future<void> future;
+    future = _readCreatePending().whenComplete(() {
+      if (identical(_createReadFuture, future)) _createReadFuture = null;
+    });
+    _createReadFuture = future;
+    return future;
+  }
+
+  Future<void> _readCreatePending() async {
+    if (!current) return;
+    final epoch = _epoch, serial = ++_createReads, owner = _owner!;
+    try {
+      final p = await createPendingStore.read(
+        controlAPI.origin,
+        owner,
+        kind,
+        cityID,
+      );
+      if (!_valid(epoch) || serial != _createReads) return;
+      createPending = p;
+      createReady = true;
+      createReadFailed = false;
+      if (p != null) {
+        uncertain = true;
+        _restoredUnknown = true;
+        controlPreview = null;
+        error = '原创建结果待核实，请读取原结果；不会再次提交。';
+      }
+    } catch (_) {
+      if (_valid(epoch) && serial == _createReads) {
+        createReady = false;
+        createReadFailed = true;
+        error = '本机原创建记录暂不可读，请重新读取；当前不提交新操作。';
+      }
+    } finally {
+      if (_valid(epoch) && serial == _createReads) _notify();
+    }
+  }
+
+  Future<bool> recoverCreate() async {
+    if (!current || saving) return false;
+    await loadCreatePending();
+    final p = createPending;
+    if (!current || saving || !createReady || createReadFailed || p == null)
+      return false;
+    final epoch = _epoch, owner = _owner!;
+    saving = true;
+    error = null;
+    _notify();
+    try {
+      final request =
+          http.Request(
+              'GET',
+              Uri.parse(controlAPI.origin).replace(
+                path: '/v1/me/personal-collections/operations/${p.operationID}',
+              ),
+            )
+            ..followRedirects = false
+            ..headers.addAll(_headers);
+      final header = _token;
+      final response = await _client
+          .send(request)
+          .timeout(const Duration(seconds: 12));
+      final bytes = BytesBuilder(copy: false);
+      await for (final chunk in response.stream.timeout(
+        const Duration(seconds: 12),
+      )) {
+        if (!_valid(epoch) ||
+            header != _token ||
+            chunk.length > 1024 * 1024 - bytes.length) {
+          throw const FormatException('原创建读取已变化或超出范围');
+        }
+        bytes.add(chunk);
+      }
+      final r = http.Response.bytes(
+        bytes.takeBytes(),
+        response.statusCode,
+        headers: response.headers,
+      );
+      if (!_valid(epoch) || !identical(p, createPending)) return false;
+      final contentTypes = [
+        for (final e in response.headers.entries)
+          if (e.key.toLowerCase() == 'content-type')
+            e.value.split(';').first.trim().toLowerCase(),
+      ];
+      if (r.statusCode != 200 ||
+          contentTypes.length != 1 ||
+          contentTypes.single != 'application/json')
+        throw const FormatException();
+      final v = _record(r);
+      _verifyCreated(v, p);
+      // A missing/currently changed object cannot retire the original selector.
+      await createPendingStore.remove(controlAPI.origin, owner, p);
+      if (!_valid(epoch) || !identical(p, createPending)) return false;
+      createPending = null;
+      _adopt(v);
+      items = List.unmodifiable([v, ...items.where((e) => e.id != v.id)]);
+      _retainLocalDraft();
+      return true;
+    } catch (_) {
+      if (_valid(epoch)) {
+        uncertain = true;
+        error = '尚未核实原创建结果，或当前内容已变化。保留原操作记录，不会再次提交。';
+      }
+      return false;
+    } finally {
+      if (_valid(epoch)) {
+        saving = false;
+        _notify();
+      }
+    }
+  }
+
   Future<bool> recover() async {
+    await loadCreatePending();
+    if (!createReady || createReadFailed) return false;
+    if (createPending != null) return recoverCreate();
     if (controlPending.isNotEmpty) return recoverControl(controlPending.first);
     if (_pendingID != null && (_pending?['operationId'] == null)) {
       error = '这份旧记录没有可核对的原操作回执，当前保留原稿；读取当前对象不能证明那次修改或移除成功。';
@@ -1304,9 +1513,13 @@ class PersonalCollectionController extends ChangeNotifier {
     final old = _controlReadFuture;
     if (old != null) return old;
     late Future<void> future;
-    future = _readControlPending().whenComplete(() {
-      if (identical(_controlReadFuture, future)) _controlReadFuture = null;
-    });
+    future =
+        (() async {
+          await loadCreatePending();
+          if (current) await _readControlPending();
+        })().whenComplete(() {
+          if (identical(_controlReadFuture, future)) _controlReadFuture = null;
+        });
     _controlReadFuture = future;
     return future;
   }

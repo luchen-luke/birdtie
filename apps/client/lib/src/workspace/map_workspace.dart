@@ -29,6 +29,10 @@ import '../city/destination_artwork.dart';
 import '../city/destination_artwork_view.dart';
 import '../city/destination_picker_grid.dart';
 import '../city/destination_shortlist.dart';
+import '../city/destination_presentation.dart';
+import '../city/destination_search_shortcuts.dart';
+import 'now_map_inset_gate.dart';
+import 'now_qa_bridge.dart';
 import '../city/amap_destination_search.dart';
 import '../city/amap_session_consent.dart';
 import '../content/private_moment_controller.dart';
@@ -40,6 +44,7 @@ import 'moment_locations_api.dart';
 import '../content/private_moment_media_controller.dart';
 import '../content/legacy_moment_materials_panel.dart';
 import '../content/personal_collection_controller.dart';
+import '../content/personal_collection_page.dart';
 import '../content/selected_place_journey.dart';
 import '../content/selected_place_journey_page.dart';
 import '../content/video_material_controller.dart';
@@ -3174,6 +3179,8 @@ class _MapWorkspaceState extends State<MapWorkspace>
   TaskImageRetainedDraft? _retainedImageDraft;
   final _selectedPlaceJourneyRecovery =
       <(String, String, String), PersonalCollectionRetainedLocalDraft>{};
+  final _personalJourneyDrafts =
+      <(String, String, String), PersonalCollectionRetainedLocalDraft>{};
   // Retain routing selectors only. Private history must be read again under
   // the replacement credential, and recovery must never replay an Agent turn.
   AgentTask? _rejectedAgentTask;
@@ -3333,6 +3340,8 @@ class _MapWorkspaceState extends State<MapWorkspace>
   double _ornamentHeight = 48;
   final _ornamentTop = ValueNotifier<double?>(null);
   final _mapContentRect = ValueNotifier<Rect?>(null);
+  late final NowMapInsetGate _mapInsetGate;
+  late final NowQaBridge _qaBridge;
   final _mapFocusRevision = ValueNotifier<int>(0);
   double? _resultContentHeight;
   Object? _measuredPresentation;
@@ -3412,6 +3421,29 @@ class _MapWorkspaceState extends State<MapWorkspace>
   @override
   void initState() {
     super.initState();
+    _mapInsetGate = NowMapInsetGate((rect) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted &&
+            _mapInsetGate.value == rect &&
+            _mapContentRect.value != rect)
+          _mapContentRect.value = rect;
+      });
+    });
+    _qaBridge = NowQaBridge(
+      current: () =>
+          mounted &&
+          ModalRoute.of(context)?.isCurrent == true &&
+          WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed &&
+          !_cityPickerOpen &&
+          !_creationCurrent &&
+          !_threadCurrent &&
+          !_socialExpanded &&
+          _workspace.task == null &&
+          (_publicPlacePanel == null || _publicPlacePreview),
+      refreshRate: () => View.of(context).display.refreshRate,
+      showKeyboard: () => _composerKey.currentState?.resumeEditing(),
+      hideKeyboard: _pauseComposer,
+    );
     publicMomentPhotoChanges.addListener(_onPublicMomentPhotoChange);
     publicMomentMediaChanges.addListener(_onPublicMomentMediaChange);
     _nowPerf = NowPerfProbe.fromEnvironment(
@@ -4540,6 +4572,8 @@ class _MapWorkspaceState extends State<MapWorkspace>
     _collectionProjectionExpiry?.cancel();
     _savedMapSource?.dispose();
     _collectionProjection.dispose();
+    _qaBridge.dispose();
+    _mapInsetGate.dispose();
     _nowPerf.dispose();
     if (_sidebarTapTraceEnabled) {
       WidgetsBinding.instance.pointerRouter.removeGlobalRoute(
@@ -4805,6 +4839,70 @@ class _MapWorkspaceState extends State<MapWorkspace>
           _traceSidebar('header_pointer_cancel', pointer: event),
       child: child,
     );
+  }
+
+  Future<void> _openPersonalJourneys() async {
+    _pauseComposer();
+    if (!widget.auth.signedIn) await _signInHere();
+    final auth = widget.auth, city = widget.city;
+    final owner = auth.accountID, chosen = city.selectedCity;
+    if (!mounted ||
+        !auth.signedIn ||
+        owner == null ||
+        chosen == null ||
+        _organizations.active != null)
+      return;
+    final client = widget.seedClient, base = widget.seedApiBaseUrl;
+    final origin = base ?? BirdtieEnvironment.apiBaseUrl;
+    bool current() =>
+        mounted &&
+        identical(auth, widget.auth) &&
+        identical(city, widget.city) &&
+        auth.signedIn &&
+        auth.accountID == owner &&
+        _organizations.active == null &&
+        city.selectedCity?.id == chosen.id &&
+        identical(client, widget.seedClient) &&
+        base == widget.seedApiBaseUrl;
+    final changes = Listenable.merge([auth, city, _organizations]);
+    final key = (owner, chosen.id, origin);
+    final controller = PersonalCollectionController(
+      kind: 'journey',
+      cityID: chosen.id,
+      ownerID: () => auth.accountID,
+      authorizationHeader: () => auth.authorizationHeader,
+      sourceCurrent: current,
+      identityChanges: changes,
+      client: _authenticatedTransport(client),
+      apiBaseUrl: origin,
+      retainedLocalDraft: _personalJourneyDrafts.remove(key),
+      onRetainLocalDraft: (draft) {
+        _personalJourneyDrafts[key] = draft;
+        while (_personalJourneyDrafts.length > 8) {
+          _personalJourneyDrafts.remove(_personalJourneyDrafts.keys.first);
+        }
+      },
+    );
+    final route = MaterialPageRoute<void>(
+      builder: (_) => NotificationDestinationBoundary(
+        identityChanges: changes,
+        current: current,
+        builder: (_) => PersonalCollectionPage(
+          controller: controller,
+          cityName: destinationDisplayName(chosen),
+          cityNames: {
+            for (final item in city.cities)
+              item.id: destinationDisplayName(item),
+          },
+        ),
+      ),
+    );
+    try {
+      await Navigator.of(context).push(route);
+      await route.completed;
+    } finally {
+      controller.dispose();
+    }
   }
 
   Future<void> _openNowTools() async {
@@ -9193,6 +9291,10 @@ class _MapWorkspaceState extends State<MapWorkspace>
           Navigator.pop(context);
         },
         onDestination: _destination,
+        onJourneys: () {
+          _scaffold.currentState?.closeDrawer();
+          unawaited(_openPersonalJourneys());
+        },
         onTools: () {
           _scaffold.currentState?.closeDrawer();
           unawaited(_openNowTools());
@@ -9377,12 +9479,9 @@ class _MapWorkspaceState extends State<MapWorkspace>
           // must not change its width, height or reading position.
           final previewViewport = (mapBottom - chromeBottom).clamp(0.0, 288.0);
           final previewVisible = !editing && previewViewport >= 120;
-          if (_mapContentRect.value != mapRect) {
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (mounted && _mapContentRect.value != mapRect)
-                _mapContentRect.value = mapRect;
-            });
-          }
+          // The composer follows every IME frame. Native map chrome only
+          // receives the settled geometry; ACL/source changes never use this gate.
+          _mapInsetGate.offer(mapRect, keyboard);
           return Stack(
             children: [
               Positioned.fill(
@@ -10614,8 +10713,8 @@ class _NowCityPickerState extends State<_NowCityPicker> {
       loader: _artwork,
       size: 48,
     ),
-    title: Text(city.name),
-    subtitle: city.region.isEmpty ? null : Text(city.region),
+    title: Text(destinationDisplayName(city)),
+    subtitle: Text(destinationDisplayRegion(city)),
     trailing: city.id == widget.city.selectedCity?.id
         ? const Icon(Icons.check)
         : null,
@@ -10637,11 +10736,7 @@ class _NowCityPickerState extends State<_NowCityPicker> {
             filter: _catalogFilter,
           )
         : widget.city.cities
-              .where(
-                (city) => '${city.name} ${city.region} ${city.countryCode}'
-                    .toLowerCase()
-                    .contains(query),
-              )
+              .where((city) => destinationMatchesQuery(city, query))
               .toList(growable: false);
     final linked = _destinations.items
         .map((d) => d.internalCityID)
@@ -10757,7 +10852,7 @@ class _NowCityPickerState extends State<_NowCityPicker> {
                                   children: [
                                     Expanded(
                                       child: Text(
-                                        '为${resolving.name}选择地图位置',
+                                        '为${destinationDisplayName(resolving)}选择地图位置',
                                         style: tokens.chrome,
                                       ),
                                     ),
@@ -10807,11 +10902,15 @@ class _NowCityPickerState extends State<_NowCityPicker> {
                                             size: 48,
                                           ),
                                     title: Text(
-                                      destination.name,
+                                      related == null
+                                          ? destination.name
+                                          : destinationDisplayName(related),
                                       style: tokens.chrome,
                                     ),
                                     subtitle: Text(
-                                      '${destination.region} · ${destination.countryCode}',
+                                      related == null
+                                          ? '${destination.region} · ${destination.countryCode}'
+                                          : destinationDisplayRegion(related),
                                       style: tokens.listSubtitle,
                                     ),
                                     trailing: const Icon(Icons.chevron_right),
@@ -10872,12 +10971,30 @@ class _NowCityPickerState extends State<_NowCityPicker> {
                                     _catalogRow(matched[index]),
                               ),
                             ],
+                            if (browsing) ...[
+                              _status(Text('更多目的地', style: tokens.chrome)),
+                              DestinationSearchShortcutGrid(
+                                filter: _catalogFilter,
+                                onSearch: (query) {
+                                  _search.value = TextEditingValue(
+                                    text: query,
+                                    selection: TextSelection.collapsed(
+                                      offset: query.length,
+                                    ),
+                                  );
+                                  _searchFocus.requestFocus();
+                                },
+                              ),
+                            ],
                             if (!widget.city.citiesLoading &&
                                 !_destinations.loading &&
                                 _destinations.error == null &&
                                 !_destinations.domesticUnavailable &&
                                 (browsing
-                                    ? cities.isEmpty
+                                    ? cities.isEmpty &&
+                                          destinationShortcutsFor(
+                                            _catalogFilter,
+                                          ).isEmpty
                                     : _destinations.items.isEmpty &&
                                           (resolving != null ||
                                               matched.isEmpty)))

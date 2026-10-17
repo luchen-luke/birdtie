@@ -1,6 +1,8 @@
 import 'dart:convert';
+import 'dart:ui' show SemanticsAction;
 import 'package:birdtie_client/src/content/collection_control.dart';
 import 'package:birdtie_client/src/content/collection_control_pending_store.dart';
+import 'package:birdtie_client/src/content/collection_create_pending_store.dart';
 import 'collection_control_test.dart';
 import 'package:birdtie_client/src/content/personal_collection_page.dart';
 import 'package:birdtie_client/src/content/collection_copy_pending_store.dart';
@@ -32,6 +34,77 @@ import 'collection_copy_page_test.dart'
 import 'collection_copy_pending_store_test.dart' show copyStored;
 
 void main() {
+  testWidgets(
+    'create recovery normal390 cold secure page offers semantic original GET only then shows verified record',
+    (t) async {
+      copyViewport(t);
+      final semantics = t.ensureSemantics();
+      try {
+        var posts = 0;
+        final reads = <String>[];
+        final client = MockClient((r) async {
+          if (r.method == 'POST') {
+            posts++;
+            return collectionResponse(null, code: 503);
+          }
+          reads.add(r.url.path);
+          return collectionResponse(
+            r.url.path.contains('/operations/')
+                ? collectionReceipt()
+                : {'items': <Object>[]},
+          );
+        });
+        final old = collectionController(
+          client,
+          createStore: const SecureCollectionCreatePendingStore(),
+        );
+        seedCollectionDraft(old);
+        expect(await old.save(), false);
+        old.dispose();
+        final next = collectionController(
+          client,
+          createStore: const SecureCollectionCreatePendingStore(),
+        );
+        await t.pumpWidget(
+          copyApp(
+            PersonalCollectionPage(
+              controller: next,
+              cityName: '合成城市',
+              copyPendingStore: MemoryCollectionCopyPendingStore(),
+            ),
+          ),
+        );
+        await copySettle(t);
+        expect(find.textContaining('上次新建保存结果待核实'), findsOneWidget);
+        expect(find.text('按原稿重试'), findsNothing);
+        final recover = find.byKey(
+          ValueKey(
+            'collection-create-recover-${next.createPending!.operationID}',
+          ),
+        );
+        expect(
+          t
+              .getSemantics(recover)
+              .getSemanticsData()
+              .hasAction(SemanticsAction.tap),
+          true,
+        );
+        await t.tap(recover);
+        await copySettle(t);
+        expect(next.editing!.id, collectionID);
+        expect(find.textContaining('上次新建保存结果待核实'), findsNothing);
+        expect(posts, 1);
+        expect(reads.where((p) => p.contains('/operations/')), hasLength(1));
+        expect(await const FlutterSecureStorage().readAll(), isEmpty);
+        expect(t.takeException(), isNull);
+        await t.pumpWidget(const SizedBox());
+        next.dispose();
+        client.close();
+      } finally {
+        semantics.dispose();
+      }
+    },
+  );
   collection147PageCases();
   setUpAll(copyLoadFonts);
   setUp(() => FlutterSecureStorage.setMockInitialValues({}));
@@ -90,7 +163,7 @@ void main() {
         );
       });
       final c = collectionController(client, apiBaseUrl: copyBase);
-      await c.openID(copyDestination);
+      expect(await c.openID(copyDestination), true, reason: c.error);
       await t.pumpWidget(
         copyApp(
           PersonalCollectionPage(
@@ -112,7 +185,7 @@ void main() {
       expect(puts, isEmpty);
       expect(find.text('检查修改'), findsOneWidget);
       await t.tap(find.byKey(const Key('collection-control-confirm')));
-      await copySettle(t);
+      await collection147CommitReady(t, c);
       expect(puts, hasLength(1));
       expect(c.lastControlReceipt!.expectedRevision, 1);
       expect(puts.single['title'], '合成本人新标题');
@@ -158,7 +231,7 @@ void main() {
             );
           });
       final c = collectionController(client, apiBaseUrl: copyBase);
-      await c.openID(copyDestination);
+      expect(await c.openID(copyDestination), true, reason: c.error);
       await t.pumpWidget(
         copyApp(
           PersonalCollectionPage(
@@ -170,7 +243,11 @@ void main() {
       );
       await copySettle(t);
       final publish = find.byKey(const Key('collection-publication'));
-      await t.ensureVisible(publish);
+      await t.scrollUntilVisible(
+        publish,
+        180,
+        scrollable: find.byType(Scrollable).first,
+      );
       expect(t.widget<OutlinedButton>(publish).onPressed, isNull);
       expect(
         find.byKey(const Key('collection-private-copy-restriction')),
@@ -311,7 +388,11 @@ void main() {
         '属于本人的新副本',
       );
       final publish = find.byKey(const Key('collection-publication'));
-      await t.ensureVisible(publish);
+      await t.scrollUntilVisible(
+        publish,
+        180,
+        scrollable: find.byType(Scrollable).first,
+      );
       expect(t.widget<OutlinedButton>(publish).onPressed, isNull);
       expect(store.values, isEmpty);
       expect(t.takeException(), isNull);
@@ -381,9 +462,9 @@ void main() {
         c.dispose();
         client.close();
       }
-    });
+    }, tags: const ['historical-enlarged-font']);
   }
-  testWidgets('保存失败保留草稿，未知结果有核实与同稿重试', (t) async {
+  testWidgets('保存失败保留草稿，未知结果只核实原保存而不重发', (t) async {
     final client = MockClient(
       (r) async => r.method == 'POST'
           ? collectionResponse(null, code: 503)
@@ -407,8 +488,13 @@ void main() {
       await t.tap(save);
       await t.pumpAndSettle();
       expect(c.title, '周末路线');
-      expect(find.text('核实结果'), findsOneWidget);
-      expect(find.text('按原稿重试'), findsOneWidget);
+      await t.scrollUntilVisible(
+        find.text('核实原保存'),
+        -180,
+        scrollable: find.byType(Scrollable).first,
+      );
+      expect(find.text('核实原保存'), findsOneWidget);
+      expect(find.text('按原稿重试'), findsNothing);
       expect(t.takeException(), isNull);
     } finally {
       await t.pumpWidget(const SizedBox());

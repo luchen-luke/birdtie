@@ -66,6 +66,54 @@ String? destinationLocalArtwork(String cityID, {String? remoteVersion}) {
       'assets/destinations/edinburgh.png',
       '',
     ),
+    'civu-geo-a3e6e0fe-6e2e-4789-8591-0b1a8c2b4c21' => (
+      'assets/destinations/hangzhou.png',
+      '',
+    ),
+    'civu-geo-3545e9c0-951b-43c4-b08e-6e251f06961a' => (
+      'assets/destinations/chengdu.png',
+      '',
+    ),
+    'civu-geo-f27e9a14-6461-429a-8c8c-51a23825ac00' => (
+      'assets/destinations/xian.png',
+      '',
+    ),
+    'civu-geo-e608a913-b824-4102-827b-4f2f6340cc58' => (
+      'assets/destinations/xiamen.png',
+      '',
+    ),
+    'civu-geo-62580aa5-27db-449c-85c2-fb1d18f6e27a' => (
+      'assets/destinations/sanya.png',
+      '',
+    ),
+    'civu-geo-bf470294-58bf-4c40-8ae9-7bdb133aa79a' => (
+      'assets/destinations/guangzhou.png',
+      '',
+    ),
+    'civu-geo-ce95fde6-9f53-4e08-9395-603b29d93695' => (
+      'assets/destinations/chongqing.png',
+      '',
+    ),
+    'civu-geo-53e52b17-4c9a-4bdc-bd69-c74c8932f3c6' => (
+      'assets/destinations/london.png',
+      '',
+    ),
+    'civu-geo-cd00608f-6497-4912-ac88-2c55ccd0f57e' => (
+      'assets/destinations/york.png',
+      '',
+    ),
+    'civu-geo-3d036847-c12d-464b-b2d4-28e2018a2c45' => (
+      'assets/destinations/glasgow.png',
+      '',
+    ),
+    'civu-geo-bd8be026-9f57-4fd9-81a8-2ae331ebe3ca' => (
+      'assets/destinations/inverness.png',
+      '',
+    ),
+    'civu-geo-ea7251b0-0f1e-47ff-b2ab-48ee344fcaa4' => (
+      'assets/destinations/oban.png',
+      '',
+    ),
     _ => null,
   };
   // A known older souvenir never replaces an unknown/newer server version.

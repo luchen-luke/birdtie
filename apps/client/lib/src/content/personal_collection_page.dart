@@ -472,6 +472,7 @@ class _PersonalCollectionPageState extends State<PersonalCollectionPage> {
       client: source.transport,
       apiBaseUrl: source.apiBaseUrl,
       controlPendingStore: source.controlPendingStore,
+      createPendingStore: source.createPendingStore,
       publicationRecoveryReader: (id) => CollectionPublicationPendingStore(
         origin: source.apiBaseUrl,
         owner: owner,
@@ -821,6 +822,47 @@ class _PersonalCollectionPageState extends State<PersonalCollectionPage> {
     }
   }
 
+  Widget _createRecovery() {
+    final source = c, epoch = _pageEpoch, pending = c.createPending;
+    bool current() =>
+        mounted &&
+        identical(c, source) &&
+        epoch == _pageEpoch &&
+        source.current;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (!c.createReady || c.createReadFailed) ...[
+          const Text('请先读取本机原保存记录；当前不会提交新操作。'),
+          OutlinedButton(
+            key: const Key('collection-create-read-local'),
+            onPressed: current() && !source.saving
+                ? () {
+                    if (current()) unawaited(source.loadCreatePending());
+                  }
+                : null,
+            child: const Text('重新读取本机原保存'),
+          ),
+        ],
+        if (pending != null) ...[
+          Semantics(
+            liveRegion: true,
+            child: const Text('上次新建保存结果待核实。请读取原结果，不会再次提交。'),
+          ),
+          OutlinedButton(
+            key: ValueKey('collection-create-recover-${pending.operationID}'),
+            onPressed: current() && !source.saving && !source.createReadFailed
+                ? () {
+                    if (current()) unawaited(source.recoverCreate());
+                  }
+                : null,
+            child: const Text('核实原保存'),
+          ),
+        ],
+      ],
+    );
+  }
+
   Widget _controlRecovery() {
     final source = c, epoch = _pageEpoch;
     bool current() =>
@@ -1073,6 +1115,8 @@ class _PersonalCollectionPageState extends State<PersonalCollectionPage> {
           '${widget.cityName.isEmpty ? '' : '${widget.cityName} · '}${c.editing?.status == 'published' ? '已公开，撤回公开后可修改' : '仅自己可见'}',
           style: tokens.metadata,
         ),
+        if (!c.createReady || c.createReadFailed || c.createPending != null)
+          _createRecovery(),
         const SizedBox(height: 20),
         if (c.kind == 'journey' &&
             c.editing != null &&
@@ -1174,6 +1218,8 @@ class _PersonalCollectionPageState extends State<PersonalCollectionPage> {
           runSpacing: 8,
           children: [
             if (c.uncertain &&
+                c.createPending == null &&
+                !c.createReadFailed &&
                 c.controlPending.isEmpty &&
                 c.controlNotSubmitted == null) ...[
               FilledButton(

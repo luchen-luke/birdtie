@@ -1,0 +1,23 @@
+{
+  "command": [
+    "D:/DevTools/flutter/bin/flutter.bat",
+    "test",
+    "--no-pub",
+    "--reporter=expanded",
+    "test/amap_city_map_motion_test.dart"
+  ],
+  "cwd": "D:\\Project\\birdtie\\apps\\client",
+  "startedUTC": "2026-10-18T22:47:35.660292+00:00",
+  "seconds": 3.984,
+  "exitCode": 1,
+  "sourceBefore": {
+    "apps/client/lib/src/city/amap_city_map_io.dart": "280614dec21468befb4ff105a8e9fcf630ace4dfd7b7ab5ccb649faf2e9999a7",
+    "apps/client/test/amap_city_map_motion_test.dart": "c5d15d0b2e33bd69a61bbd5fbe948955441c56647be6c3ead736b1561ed48a66"
+  },
+  "sourceAfter": {
+    "apps/client/lib/src/city/amap_city_map_io.dart": "280614dec21468befb4ff105a8e9fcf630ace4dfd7b7ab5ccb649faf2e9999a7",
+    "apps/client/test/amap_city_map_motion_test.dart": "c5d15d0b2e33bd69a61bbd5fbe948955441c56647be6c3ead736b1561ed48a66"
+  },
+  "sourceStable": true,
+  "boundary": "Only actual AMap widget/SDK-channel fixture regression; no APK/ADB/production. Deterministic model defect; real device cause not yet established."
+}

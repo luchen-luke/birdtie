@@ -251,7 +251,9 @@ class _MapWorkspaceState extends State<MapWorkspace>
   final _threadImages = <String, PublicMomentMediaController>{};
   final _threadMediaLoads = <String, Future<void>>{};
   bool _threadMediaFinalizing = false;
-  bool _threadShowingDetail = false;
+  Widget? _editorMomentReader;
+  Object? _editorReadSource;
+  Object? _editorComposerTargetKey;
   final _threadStagesForCommit = <PublicMomentMediaController, List<String>>{};
   String? _threadStageOperation;
   String? _threadActiveEntry;
@@ -768,7 +770,7 @@ class _MapWorkspaceState extends State<MapWorkspace>
     if (_threadActiveEntry != entry) {
       _threadActiveEntry = entry;
       ++_threadEntrySerial;
-      _threadShowingDetail = false;
+      _closeEditorMomentReader();
     }
     if (t != null) {
       final mapReceipt = t.receipt;
@@ -1056,30 +1058,6 @@ class _MapWorkspaceState extends State<MapWorkspace>
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (_threadShowingDetail &&
-            entry.momentID.isNotEmpty &&
-            entry.originalStatus == 'published')
-          SizedBox(
-            height: 320,
-            child: PublicMomentPage(
-              key: ValueKey((
-                'unified-moment-detail',
-                entry.momentID,
-                entry.expectedRevision,
-              )),
-              momentID: entry.momentID,
-              onNavigateMap: _navigateToMapTarget,
-              embedded: true,
-              showManagement: false,
-              authorizationHeader: () =>
-                  _threadCurrent ? widget.auth.authorizationHeader : null,
-              ownerID: () => _threadCurrent ? widget.auth.accountID : null,
-              workspaceID: () => _organizations.active?.id,
-              identityChanges: _activeIntentChanges,
-              client: widget.moments.borrowedClient,
-              apiBaseUrl: widget.moments.apiBaseUrl,
-            ),
-          ),
         if (entry.preserveMedia) const Text('原公开媒体将保留；只有明确移除或选择新材料才会替换。'),
         if (entry.preserveMedia)
           TextButton(
@@ -1150,6 +1128,7 @@ class _MapWorkspaceState extends State<MapWorkspace>
   }
 
   void _retireMomentThread() {
+    _closeEditorMomentReader();
     _momentThread?.removeListener(_threadChanged);
     _momentThread?.retire();
     _momentThread?.dispose();
@@ -1271,7 +1250,6 @@ class _MapWorkspaceState extends State<MapWorkspace>
   bool _creationCollapsed = false, _creationBusy = false;
   bool _creationTitleEditing = false, _creationUncertain = false;
   bool _creationPublished = false;
-  bool _creationShowingDetail = false;
   String? _creationError,
       _creationNotice,
       _creationMomentID,
@@ -1297,7 +1275,7 @@ class _MapWorkspaceState extends State<MapWorkspace>
     _personalSourceSerial,
     widget.seedClient,
     widget.seedApiBaseUrl,
-    _composerDrafts.target.key,
+    _editorComposerTargetKey ?? _composerDrafts.target.key,
   );
   bool get _creationCurrent =>
       _creation != null &&
@@ -1318,7 +1296,7 @@ class _MapWorkspaceState extends State<MapWorkspace>
     if (!_creationCurrent) return;
     var draft = _creation!.copyWith(nativeMomentID: _creationMomentID ?? '');
     final text = _composerDrafts.value.text;
-    if (includeInput && text.isNotEmpty) {
+    if (includeInput && !_composerDrafts.target.content && text.isNotEmpty) {
       draft = draft.withText(text, titleOnly: _creationTitleEditing);
     }
     // Closing an untouched panel cannot erase a saved draft whose read is late.
@@ -1430,6 +1408,7 @@ class _MapWorkspaceState extends State<MapWorkspace>
   }
 
   Future<void> _beginCreation(String kind) async {
+    if (kind == 'journey' && !BirdtieEnvironment.journeysEnabled) return;
     if (kind == 'moment') {
       await _beginMomentThread();
       return;
@@ -1463,7 +1442,7 @@ class _MapWorkspaceState extends State<MapWorkspace>
     _creationMedia?.dispose();
     _creationMedia = null;
     _creationUsesMediaSet = false;
-    _creationShowingDetail = false;
+    _closeEditorMomentReader();
     if (_creationCurrent) {
       _rememberCreation(includeInput: true);
     }
@@ -1534,6 +1513,7 @@ class _MapWorkspaceState extends State<MapWorkspace>
 
   void _exitCreation() {
     if (_creationBusy) return;
+    _closeEditorMomentReader();
     _creationLocationLabelTimer?.cancel();
     _creationLocationLabelDeadline = null;
     _creationLocationLabels.clear();
@@ -1556,6 +1536,7 @@ class _MapWorkspaceState extends State<MapWorkspace>
   }
 
   void _clearRetiredCreation() {
+    _closeEditorMomentReader();
     _creationLocationLabelTimer?.cancel();
     _creationLocationLabelDeadline = null;
     _creationLocationLabels.clear();
@@ -2118,7 +2099,7 @@ class _MapWorkspaceState extends State<MapWorkspace>
         _creationMedia?.dispose();
         _creationMedia = null;
       }
-      _creationShowingDetail = false;
+      _closeEditorMomentReader();
       _creationPhotoPublished = false;
       if (publicUpdate) _syncCreationMedia();
     }
@@ -2792,7 +2773,7 @@ class _MapWorkspaceState extends State<MapWorkspace>
                         _creationMedia?.dispose();
                         _creationMedia = null;
                       }
-                      _creationShowingDetail = false;
+                      _closeEditorMomentReader();
                       _creationPhotoPublished = false;
                     }
                     _creationNotice = withdrawn
@@ -2986,24 +2967,6 @@ class _MapWorkspaceState extends State<MapWorkspace>
                 },
               ),
             ),
-          if (_creationShowingDetail && _creationMomentID != null)
-            SizedBox(
-              height: 320,
-              child: PublicMomentPage(
-                key: ValueKey((_creationMomentID, _creationPublishedRevision)),
-                momentID: _creationMomentID!,
-                onNavigateMap: _navigateToMapTarget,
-                embedded: true,
-                showManagement: false,
-                authorizationHeader: () =>
-                    _creationCurrent ? widget.auth.authorizationHeader : null,
-                ownerID: () => _creationCurrent ? widget.auth.accountID : null,
-                workspaceID: () => _organizations.active?.id,
-                identityChanges: _activeIntentChanges,
-                client: widget.moments.borrowedClient,
-                apiBaseUrl: widget.moments.apiBaseUrl,
-              ),
-            ),
           if (photo != null)
             PublicMomentPhotoEditor(
               key: ObjectKey(photo),
@@ -3022,11 +2985,110 @@ class _MapWorkspaceState extends State<MapWorkspace>
     );
   }
 
+  void _closeEditorMomentReader() {
+    if (_editorReadSource == null) return;
+    _restoreContentTarget(endSession: true);
+    _editorReadSource = null;
+    _editorComposerTargetKey = null;
+    _editorMomentReader = null;
+  }
+
+  void _openThreadMomentReader() {
+    final t = _momentThread;
+    if (!_threadCurrent || t == null || t.entries.isEmpty) return;
+    final entry = t.entries[t.activeIndex];
+    if (entry.momentID.isEmpty || entry.originalStatus != 'published') return;
+    final serial = _threadEntrySerial;
+    _openEditorMomentReader(
+      entry.momentID,
+      () =>
+          _threadCurrent &&
+          identical(t, _momentThread) &&
+          serial == _threadEntrySerial &&
+          t.entries.isNotEmpty &&
+          t.entries[t.activeIndex].localID == entry.localID &&
+          t.entries[t.activeIndex].expectedRevision == entry.expectedRevision,
+    );
+  }
+
+  void _openEditorMomentReader(String id, bool Function() sourceCurrent) {
+    if (!mounted || !sourceCurrent()) return;
+    _pauseComposer();
+    _closeEditorMomentReader();
+    _retirePublicPlacePanel();
+    final source = Object();
+    _editorComposerTargetKey = _composerDrafts.target.key;
+    _editorReadSource = source;
+    bool current() =>
+        mounted && identical(_editorReadSource, source) && sourceCurrent();
+    setState(() {
+      _editorMomentReader = Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton.icon(
+              key: const Key('now-return-moment-editor'),
+              onPressed: () {
+                if (mounted && identical(_editorReadSource, source)) {
+                  _pauseComposer();
+                  setState(_closeEditorMomentReader);
+                }
+              },
+              icon: const Icon(Icons.arrow_back),
+              label: const Text('返回动态编辑'),
+            ),
+          ),
+          Expanded(
+            child: PublicMomentPage(
+              key: ValueKey(('now-editor-reader', source, id)),
+              momentID: id,
+              embedded: true,
+              showManagement: false,
+              sourceCurrent: current,
+              useNowComposer: true,
+              authorizationHeader: () =>
+                  current() ? widget.auth.authorizationHeader : null,
+              ownerID: () => current() ? widget.auth.accountID : null,
+              workspaceID: () => _organizations.active?.id,
+              identityChanges: _activeIntentChanges,
+              client: widget.moments.borrowedClient,
+              apiBaseUrl: widget.moments.apiBaseUrl,
+              onNavigateMap: _navigateToMapTarget,
+              onCommentIntent: () {
+                if (current()) _contentOptOut = null;
+              },
+              onOpenActivity: (activity) {
+                if (current()) _openFallbackActivity(activity, source: 'place');
+              },
+              onCommentTarget: (controller, momentID, title, reply) =>
+                  _bindContentTarget(
+                    source,
+                    controller,
+                    momentID,
+                    title,
+                    reply,
+                    current,
+                  ),
+            ),
+          ),
+        ],
+      );
+    });
+  }
+
   Future<void> _viewCreationMoment() async {
     if (!_creationCurrent || !_creationPublished || _creationMomentID == null)
       return;
-    _pauseComposer();
-    setState(() => _creationShowingDetail = !_creationShowingDetail);
+    final id = _creationMomentID!, revision = _creationPublishedRevision;
+    _openEditorMomentReader(
+      id,
+      () =>
+          _creationCurrent &&
+          _creationPublished &&
+          _creationMomentID == id &&
+          _creationPublishedRevision == revision,
+    );
   }
 
   Widget _creationReviewedLocations(MomentControlPreview preview) => Column(
@@ -3275,6 +3337,7 @@ class _MapWorkspaceState extends State<MapWorkspace>
   String? _contentTitle;
   bool Function()? _contentSourceCurrent;
   Object? _contentOptOut;
+  Object? _contentTargetSource;
   bool _contentSubmitting = false;
   NowJourneyController? _nowJourneys;
   NowJourneyFieldEdit? _journeyField;
@@ -4930,6 +4993,7 @@ class _MapWorkspaceState extends State<MapWorkspace>
   }
 
   Future<void> _openPersonalJourneys({String kind = 'journey'}) async {
+    if (kind == 'journey' && !BirdtieEnvironment.journeysEnabled) return;
     _pauseComposer();
     if (!widget.auth.signedIn) await _signInHere();
     final auth = widget.auth, city = widget.city;
@@ -5803,6 +5867,7 @@ class _MapWorkspaceState extends State<MapWorkspace>
     SelectedPlaceFollowup selection,
     int taskEpoch,
   ) async {
+    if (!BirdtieEnvironment.journeysEnabled) return;
     final task = _workspace.task, result = _workspace.result;
     if (task == null ||
         result == null ||
@@ -6020,7 +6085,7 @@ class _MapWorkspaceState extends State<MapWorkspace>
       taskID: _workspace.task?.id,
     );
     if (mounted) setState(() {});
-    if (selectedPlace != null && selectedPlaceFollowupDay(query) == 2) {
+    if (BirdtieEnvironment.journeysEnabled && selectedPlace != null && selectedPlaceFollowupDay(query) == 2) {
       await _openSelectedPlaceJourney(selectedPlace, sendingEpoch);
     }
     if (material == null || !material.isCurrent) return;
@@ -7343,6 +7408,7 @@ class _MapWorkspaceState extends State<MapWorkspace>
   void _restoreContentTarget({bool endSession = false}) {
     _contentInteraction?.removeListener(_contentComposerChanged);
     _contentInteraction = null;
+    _contentTargetSource = null;
     _contentSourceCurrent = null;
     _contentReply = null;
     _contentTitle = null;
@@ -7369,7 +7435,10 @@ class _MapWorkspaceState extends State<MapWorkspace>
     MomentComment? reply,
     bool Function() readable,
   ) {
-    if (!mounted || !identical(_publicPlacePanelSource, source)) return;
+    if (!mounted ||
+        (!identical(_publicPlacePanelSource, source) &&
+            !identical(_editorReadSource, source)))
+      return;
     if (momentID == null && title == null) {
       setState(_restoreContentTarget);
       return;
@@ -7392,10 +7461,11 @@ class _MapWorkspaceState extends State<MapWorkspace>
     }
     setState(() {
       _journeyField = null;
+      _contentTargetSource = source;
       _contentTitle = title;
       _contentReply = reply;
       _contentSourceCurrent = () =>
-          readable() && (controller == null || controller.current());
+          readable() && controller != null && controller.current();
       _composerDrafts.select(next);
     });
   }
@@ -7469,11 +7539,11 @@ class _MapWorkspaceState extends State<MapWorkspace>
     }
     final c = _contentInteraction!,
         reply = _contentReply,
-        source = _publicPlacePanelSource;
+        source = _contentTargetSource;
     bool draftCurrent() =>
         mounted &&
         identical(_contentInteraction, c) &&
-        identical(_publicPlacePanelSource, source) &&
+        identical(_contentTargetSource, source) &&
         _contentSourceCurrent?.call() == true &&
         _composerDrafts.identity == identity &&
         _composerDrafts.contentVersion == version &&
@@ -7500,6 +7570,7 @@ class _MapWorkspaceState extends State<MapWorkspace>
   }
 
   Future<void> _openNowJourneys() async {
+    if (!BirdtieEnvironment.journeysEnabled) return;
     if (_creationBusy || _friendConversation?.audioActive == true) return;
     if (!widget.auth.signedIn) await _signInHere();
     if (!mounted || !widget.auth.signedIn || _organizations.active != null)
@@ -7693,7 +7764,7 @@ class _MapWorkspaceState extends State<MapWorkspace>
         readable() &&
         identical(_publicPlacePanelSource, source);
     setState(() {
-      _publicPlacePanelSource = source;
+      _activatePublicReaderSource(source);
       _publicPlacePanelMapVisible = false;
       _publicPlacePanel = Column(
         children: [
@@ -7750,6 +7821,13 @@ class _MapWorkspaceState extends State<MapWorkspace>
     });
   }
 
+  void _activatePublicReaderSource(Object source) {
+    // Reading another source retires the editor reader, not its saved draft.
+    // Its late callbacks must never compete with the new Now comment target.
+    _closeEditorMomentReader();
+    _publicPlacePanelSource = source;
+  }
+
   void _retirePublicPlacePanel({bool leaveAuthor = true}) {
     _restoreContentTarget(endSession: true);
     _journeyHost = false;
@@ -7802,7 +7880,7 @@ class _MapWorkspaceState extends State<MapWorkspace>
     setState(() {
       _retirePublicPlacePanel();
       _socialExpanded = false;
-      _publicPlacePanelSource = source;
+      _activatePublicReaderSource(source);
       _publicPlacePreview = false;
       _publicPlacePanel = NowMapContentGroupPanel(
         key: GlobalObjectKey(source),
@@ -7885,7 +7963,7 @@ class _MapWorkspaceState extends State<MapWorkspace>
     setState(() {
       _retirePublicPlacePanel();
       _socialExpanded = false;
-      _publicPlacePanelSource = source;
+      _activatePublicReaderSource(source);
       _publicPlacePreview = !position.expanded;
       _publicPlacePanel = NowMapContentPanel(
         // Preview and expanded reader have different parents in the Now stack.
@@ -8008,7 +8086,7 @@ class _MapWorkspaceState extends State<MapWorkspace>
         originCurrent() && identical(_publicPlacePanelSource, source);
     if (!originCurrent() || city == null) return;
     if (_composerDrafts.target.human) _exitFriendConversation();
-    _publicPlacePanelSource = source;
+    _activatePublicReaderSource(source);
     _socialSelectionSerial++;
     _socialExpanded = false;
     final priorSelection = _workspace.selectedEntityId;
@@ -9471,6 +9549,8 @@ class _MapWorkspaceState extends State<MapWorkspace>
     required bool Function() sourceCurrent,
     required VoidCallback onReady,
   }) async {
+    if (collection.kind == 'journey' && !BirdtieEnvironment.journeysEnabled)
+      return;
     if (!sourceCurrent()) return;
     final auth = widget.auth, owner = auth.accountID;
     final identity = _currentSeedIdentity, serial = _personalSourceSerial;
@@ -10106,6 +10186,8 @@ class _MapWorkspaceState extends State<MapWorkspace>
             FocusManager.instance.primaryFocus?.unfocus();
           } else if (_publicPlacePanel != null) {
             setState(_retirePublicPlacePanel);
+          } else if (_editorReadSource != null) {
+            setState(_closeEditorMomentReader);
           } else if (_threadCurrent) {
             _closeMomentThread();
           } else if (_creationCurrent) {
@@ -10153,10 +10235,12 @@ class _MapWorkspaceState extends State<MapWorkspace>
           Navigator.pop(context);
         },
         onDestination: _destination,
-        onJourneys: () {
-          _scaffold.currentState?.closeDrawer();
-          unawaited(_openPersonalJourneys());
-        },
+        onJourneys: BirdtieEnvironment.journeysEnabled
+            ? () {
+                _scaffold.currentState?.closeDrawer();
+                unawaited(_openPersonalJourneys());
+              }
+            : null,
         onTools: () {
           _scaffold.currentState?.closeDrawer();
           unawaited(_openNowTools());
@@ -10184,8 +10268,8 @@ class _MapWorkspaceState extends State<MapWorkspace>
           final keyboard = _cityPickerOpen ? 0.0 : media.viewInsets.bottom;
           final editing =
               !_cityPickerOpen && (_workspace.inputFocused || keyboard > 0);
-          final hasCreation = _creationCurrent;
-          final hasThread = _threadCurrent;
+          final hasCreation = _creationCurrent && _publicPlacePanel == null;
+          final hasThread = _threadCurrent && _publicPlacePanel == null;
           final minimumComposerHeight = AgentComposer.minimumInputHeightOf(
             context,
           );
@@ -10475,7 +10559,8 @@ class _MapWorkspaceState extends State<MapWorkspace>
                     ),
                   ),
                 ),
-              if (_publicPlacePanel == null &&
+              if (BirdtieEnvironment.journeysEnabled &&
+                  _publicPlacePanel == null &&
                   !hasCreation &&
                   !hasThread &&
                   !showSocial &&
@@ -10894,64 +10979,80 @@ class _MapWorkspaceState extends State<MapWorkspace>
                               ),
                               if (hasHumanConversation)
                                 _humanConversationPanel(_friendConversation!),
-                              if (hasCreation) _creationPanel(),
+                              if (hasCreation)
+                                _editorMomentReader == null
+                                    ? _creationPanel()
+                                    : SizedBox(
+                                        height: 420,
+                                        child: _editorMomentReader,
+                                      ),
                               if (hasThread)
                                 ConstrainedBox(
                                   constraints: const BoxConstraints(
                                     maxHeight: 420,
                                   ),
-                                  child: MomentThreadPanel(
-                                    controller: _momentThread!,
-                                    entryMaterials: _threadEntryMaterials(),
-                                    materialsReady: _threadMaterialsReady,
-                                    onActiveText: (text) => _composerKey
-                                        .currentState
-                                        ?.fillDraft(text),
-                                    onClose: _closeMomentThread,
-                                    preservedMediaBuilder: (index, set) =>
-                                        PublicMomentMediaGallery(
-                                          set: set,
-                                          api: _threadImageController(
-                                            _momentThread!
-                                                .entries[index]
-                                                .localID,
-                                          ).api,
-                                          current: () =>
-                                              _threadCurrent &&
-                                              _momentThread!
-                                                      .previewValue
-                                                      ?.current ==
-                                                  true,
-                                        ),
-                                    onRestoreRetired: (id) => unawaited(
-                                      _restoreRetiredThreadEntry(id),
-                                    ),
-                                    onRemoveEntry: (index) =>
-                                        unawaited(_removeThreadEntry(index)),
-                                    onOpenActive: () {
-                                      setState(
-                                        () => _threadShowingDetail =
-                                            !_threadShowingDetail,
-                                      );
-                                    },
-                                    onPublished: (_) {
-                                      if (mounted) {
-                                        _mapMedia.retire();
-                                        _threadShowingDetail =
-                                            _momentThread?.receipt?.action !=
-                                            'WITHDRAW';
-                                        unawaited(widget.moments.refresh());
-                                        if (_layers.cityID != null &&
-                                            _layers.bounds != null)
-                                          unawaited(
-                                            _layers.load(
-                                              _layers.cityID!,
-                                              _layers.bounds!,
+                                  child:
+                                      _editorMomentReader ??
+                                      MomentThreadPanel(
+                                        controller: _momentThread!,
+                                        entryMaterials: _threadEntryMaterials(),
+                                        materialsReady: _threadMaterialsReady,
+                                        onActiveText: (text) {
+                                          if (_editorReadSource == null &&
+                                              !_composerDrafts.target.content) {
+                                            _composerKey.currentState
+                                                ?.fillDraft(text);
+                                          }
+                                        },
+                                        onClose: _closeMomentThread,
+                                        preservedMediaBuilder: (index, set) =>
+                                            PublicMomentMediaGallery(
+                                              set: set,
+                                              api: _threadImageController(
+                                                _momentThread!
+                                                    .entries[index]
+                                                    .localID,
+                                              ).api,
+                                              current: () =>
+                                                  _threadCurrent &&
+                                                  _momentThread!
+                                                          .previewValue
+                                                          ?.current ==
+                                                      true,
                                             ),
-                                          );
-                                      }
-                                    },
-                                  ),
+                                        onRestoreRetired: (id) => unawaited(
+                                          _restoreRetiredThreadEntry(id),
+                                        ),
+                                        onRemoveEntry: (index) => unawaited(
+                                          _removeThreadEntry(index),
+                                        ),
+                                        onOpenActive: _openThreadMomentReader,
+                                        onPublished: (receipt) {
+                                          if (mounted &&
+                                              _threadCurrent &&
+                                              identical(
+                                                _momentThread?.receipt,
+                                                receipt,
+                                              )) {
+                                            _mapMedia.retire();
+                                            if (_momentThread
+                                                    ?.receipt
+                                                    ?.action !=
+                                                'WITHDRAW') {
+                                              _openThreadMomentReader();
+                                            }
+                                            unawaited(widget.moments.refresh());
+                                            if (_layers.cityID != null &&
+                                                _layers.bounds != null)
+                                              unawaited(
+                                                _layers.load(
+                                                  _layers.cityID!,
+                                                  _layers.bounds!,
+                                                ),
+                                              );
+                                          }
+                                        },
+                                      ),
                                 ),
                             ],
                           ),
@@ -10981,8 +11082,13 @@ class _MapWorkspaceState extends State<MapWorkspace>
                               allowEmptyContent:
                                   _composerDrafts.target.mode == 'edit-journey',
                               onExitContent: () {
+                                if (_editorReadSource != null) {
+                                  _pauseComposer();
+                                  setState(_closeEditorMomentReader);
+                                  return;
+                                }
                                 _contentOptOut = (
-                                  _publicPlacePanelSource,
+                                  _contentTargetSource,
                                   _composerDrafts.target.contentID,
                                 );
                                 _pauseComposer();
@@ -11049,11 +11155,15 @@ class _MapWorkspaceState extends State<MapWorkspace>
                                   : _composerDrafts.value,
                               onDraftChanged: (value) {
                                 ++_humanDraftRevision;
-                                if (hasCreation) _retireCreationApprovals();
+                                if (hasCreation &&
+                                    !_composerDrafts.target.content)
+                                  _retireCreationApprovals();
                                 _composerDrafts.update(value);
-                                if (hasThread)
+                                if (hasThread &&
+                                    !_composerDrafts.target.content)
                                   _momentThread!.updateActiveText(value.text);
-                                if (hasCreation) {
+                                if (hasCreation &&
+                                    !_composerDrafts.target.content) {
                                   ++_creationRestoreSerial;
                                   _rememberCreation(includeInput: true);
                                 }
@@ -11131,7 +11241,9 @@ class _MapWorkspaceState extends State<MapWorkspace>
                               onCreateActivity: _composerDrafts.target.agent
                                   ? () => unawaited(_beginCreation('activity'))
                                   : null,
-                              onCreateJourney: _composerDrafts.target.agent
+                              onCreateJourney:
+                                  BirdtieEnvironment.journeysEnabled &&
+                                      _composerDrafts.target.agent
                                   ? () => unawaited(_beginCreation('journey'))
                                   : null,
                               onCreateThemeMap: _composerDrafts.target.agent
@@ -11324,18 +11436,18 @@ class _MapWorkspaceState extends State<MapWorkspace>
                       : 0,
                   child: _RetainedMapContext(
                     visible: !_publicPlacePreview || previewVisible,
-                    child: Material(
-                      color: Theme.of(context).colorScheme.surface,
-                      child: AnimatedPadding(
-                        duration: media.disableAnimations
-                            ? Duration.zero
-                            : const Duration(milliseconds: 260),
-                        curve: Curves.easeOutCubic,
-                        padding: EdgeInsets.only(
-                          bottom: _publicPlacePreview
-                              ? 0
-                              : layout.bottom + layout.surfaceHeight,
-                        ),
+                    child: AnimatedPadding(
+                      duration: media.disableAnimations
+                          ? Duration.zero
+                          : const Duration(milliseconds: 260),
+                      curve: Curves.easeOutCubic,
+                      padding: EdgeInsets.only(
+                        bottom: _publicPlacePreview
+                            ? 0
+                            : layout.bottom + layout.surfaceHeight,
+                      ),
+                      child: Material(
+                        color: Theme.of(context).colorScheme.surface,
                         child: FocusTraversalGroup(child: _publicPlacePanel!),
                       ),
                     ),

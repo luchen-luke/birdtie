@@ -1,0 +1,85 @@
+{
+  "recordedAt": "2026-10-18T22:19:16.167Z",
+  "frozen": true,
+  "sources": [
+    {
+      "path": "apps/client/lib/src/workspace/now_map_content_panel.dart",
+      "sha256": "41ba9db8f80ab1d2f42f31d327ff7e1735a290e8909b9e46390933fcb01f514f",
+      "crlf": 2959,
+      "lf": 2959
+    },
+    {
+      "path": "apps/client/test/now_content_first_test.dart",
+      "sha256": "51e086a2eed4b7819de0aaa2323a5a4d5652cec20709f1b7beb36b36302022b3",
+      "crlf": 623,
+      "lf": 623
+    }
+  ],
+  "redOriginalProductionSHA": "ff93e292b74ed3e52eded67225db6a504dff1012727b7f1c84825346d0c46028",
+  "checks": [
+    {
+      "command": "D:/DevTools/flutter/bin/flutter.bat test --no-pub --reporter=expanded test/now_content_first_test.dart --plain-name 'Now private target'",
+      "cwd": "D:/Project/birdtie/apps/client",
+      "exitCode": 1,
+      "log": "red01.log",
+      "selected": 4,
+      "passed": 0,
+      "failed": 4
+    },
+    {
+      "command": "D:/DevTools/flutter/bin/flutter.bat test --no-pub --reporter=expanded test/now_content_first_test.dart --plain-name 'Now private target'",
+      "cwd": "D:/Project/birdtie/apps/client",
+      "exitCode": 1,
+      "selected": 4,
+      "passed": 0,
+      "failed": 4,
+      "cause": "The callback binding fix had landed but the private-entry comment button condition had not yet been written. All four tests reached and failed the findsNothing assertion for comment-target:<MomentID>.",
+      "summary": "green01-failed-summary.json"
+    },
+    {
+      "command": "D:/DevTools/flutter/bin/flutter.bat test --no-pub --reporter=expanded test/now_content_first_test.dart --plain-name 'Now private target'",
+      "cwd": "D:/Project/birdtie/apps/client",
+      "exitCode": 0,
+      "log": "green02.log",
+      "selected": 4,
+      "passed": 4,
+      "failed": 0
+    },
+    {
+      "command": "D:/DevTools/flutter/bin/flutter.bat test --no-pub --reporter=expanded test/now_content_first_test.dart",
+      "cwd": "D:/Project/birdtie/apps/client",
+      "exitCode": 0,
+      "log": "final09.log",
+      "selected": 9,
+      "passed": 9,
+      "failed": 0
+    }
+  ],
+  "observedEvidence": "work/content-first-20261019/moment-priority80/device/shanghai80-full/{screen.png,semantics.json}",
+  "observedFinding": "The actual lock is the private-visibility indicator. Publishing was disabled in the semantics tree; no write disclosure was observed. The private Moment was nevertheless incorrectly labelled as a public comment target.",
+  "boundaries": [
+    "Initial private or draft Moment is read-only and does not set a public comment target.",
+    "The same previously public Moment becoming private retains original Moment ID/detail and reply with null controller.",
+    "An explicit different private Moment clears the prior public target; drafts remain owned by the host target store.",
+    "Private/draft entries expose no comment-target button.",
+    "Public comment permission, source lease, revision, identity and late-result guards remain intact.",
+    "Host null-controller readability closure is separately owned by root/artifact."
+  ],
+  "applicableUX": [
+    "UX-CHECK-05 target/audience clarity",
+    "UX-CHECK-06 source/unavailable distinction",
+    "UX-CHECK-14 normal font only"
+  ],
+  "notRun": [
+    "full Flutter suite",
+    "APK build",
+    "install",
+    "device",
+    "production writes"
+  ],
+  "nativeFontScale": "normal",
+  "workerWritesOnly": [
+    "apps/client/lib/src/workspace/now_map_content_panel.dart",
+    "apps/client/test/now_content_first_test.dart"
+  ]
+}

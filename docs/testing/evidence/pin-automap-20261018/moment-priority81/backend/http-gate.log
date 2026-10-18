@@ -1,0 +1,4 @@
+=== RUN   TestJourneyAvailabilityDisabledKeepsOriginalRecovery
+--- PASS: TestJourneyAvailabilityDisabledKeepsOriginalRecovery (0.00s)
+PASS
+ok  	github.com/birdtie/birdtie/apps/api/internal/httpapi	4.388s

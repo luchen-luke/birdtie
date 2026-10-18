@@ -1,0 +1,59 @@
+{
+  "startedUTC": "2026-10-18T23:00:27.926756+00:00",
+  "mode": "api42",
+  "status": "BUILT_INPUTS_STABLE_NOT_DEPLOYED",
+  "executed": true,
+  "deployed": false,
+  "databaseMigration": "NOT_RUN",
+  "businessWrites": false,
+  "scriptSHA256": "4532be2444fa26fe7e5abb3cea71beac8622ced4d1e8e55c306180212200f856",
+  "inputScopeLimit": "Same API source/data/tool/VCS scope as API41. No claim of hermetic external Go module-cache reproduction.",
+  "beforeManifestSHA256": "0d3cd59acdb7986515d7e0a4086b2a19a479a97a28114de23e9519c039b95cae",
+  "inputCount": 2105,
+  "inputBytes": 33238613,
+  "command": [
+    "C:\\Program Files\\Go\\bin\\go.exe",
+    "build",
+    "-mod=readonly",
+    "-trimpath",
+    "-o",
+    "D:\\Project\\birdtie\\work\\content-first-20261019\\moment-priority80\\deploy42\\delivery42\\birdtie-api-linux-amd64-content-first42-final",
+    "."
+  ],
+  "cwd": "D:\\Project\\birdtie\\apps\\api",
+  "sourceHead": "f24683d74cfebdcdcf4e94faed264147a75ef9d8",
+  "build": {
+    "command": [
+      "C:\\Program Files\\Go\\bin\\go.exe",
+      "build",
+      "-mod=readonly",
+      "-trimpath",
+      "-o",
+      "D:\\Project\\birdtie\\work\\content-first-20261019\\moment-priority80\\deploy42\\delivery42\\birdtie-api-linux-amd64-content-first42-final",
+      "."
+    ],
+    "cwd": "D:\\Project\\birdtie\\apps\\api",
+    "exitCode": 0,
+    "elapsedSeconds": 3.532,
+    "log": "D:\\Project\\birdtie\\work\\content-first-20261019\\moment-priority80\\deploy42\\build\\attempt-20261018T230027Z-06a6c294\\build.log"
+  },
+  "afterManifestSHA256": "0d3cd59acdb7986515d7e0a4086b2a19a479a97a28114de23e9519c039b95cae",
+  "sourceStable": true,
+  "changes": {
+    "added": [],
+    "removed": [],
+    "modified": [],
+    "metadataChanged": []
+  },
+  "artifactChecks": {
+    "format": "ELF64",
+    "architecture": "amd64",
+    "os": "linux",
+    "cgoEnabled": false,
+    "goBuildInfo": "D:\\Project\\birdtie\\work\\content-first-20261019\\moment-priority80\\deploy42\\delivery42\\birdtie-api-linux-amd64-content-first42-final: go1.26.7\n\tpath\tgithub.com/birdtie/birdtie/apps/api\n\tmod\tgithub.com/birdtie/birdtie/apps/api\t(devel)\t\n\tdep\tgithub.com/coreos/go-oidc/v3\tv3.21.0\th1:wZo4Q9Pum8dYEj0eMUPrqR+kvuGkeUplbLpNCkBqoWM=\n\tdep\tgithub.com/go-jose/go-jose/v4\tv4.1.4\th1:moDMcTHmvE6Groj34emNPLs/qtYXRVcd6S7NHbHz3kA=\n\tdep\tgithub.com/jackc/pgpassfile\tv1.0.0\th1:/6Hmqy13Ss2zCq62VdNG8tM1wchn8zjSGOBJ6icpsIM=\n\tdep\tgithub.com/jackc/pgservicefile\tv0.0.0-20240606120523-5a60cdf6a761\th1:iCEnooe7UlwOQYpKFhBabPMi4aNAfoODPEFNiAnClxo=\n\tdep\tgithub.com/jackc/pgx/v5\tv5.10.0\th1:VhSvgU2jSli8o3AqIEOTJr7rZwAEUVo4E4XhR94Zfr0=\n\tdep\tgithub.com/jackc/puddle/v2\tv2.2.2\th1:PR8nw+E/1w0GLuRFSmiioY6UooMp6KJv0/61nB7icHo=\n\tdep\tgolang.org/x/oauth2\tv0.37.0\th1:JUlcxA8oAtauLfiH8FX2/FkAWHAdi0QtGCGc+hofE98=\n\tdep\tgolang.org/x/sync\tv0.17.0\th1:l60nONMj9l5drqw6jlhIELNv9I0A4OFgRsG9k2oT9Ug=\n\tdep\tgolang.org/x/text\tv0.29.0\th1:1neNs90w9YzJ9BocxfsQNHKuAT4pkghyXc4nhZ6sJvk=\n\tbuild\t-buildmode=exe\n\tbuild\t-compiler=gc\n\tbuild\t-trimpath=true\n\tbuild\tCGO_ENABLED=0\n\tbuild\tGOARCH=amd64\n\tbuild\tGOOS=linux\n\tbuild\tGOAMD64=v1\n\tbuild\tvcs=git\n\tbuild\tvcs.revision=f24683d74cfebdcdcf4e94faed264147a75ef9d8\n\tbuild\tvcs.time=2026-10-18T21:23:22Z\n\tbuild\tvcs.modified=true"
+  },
+  "artifact": "D:\\Project\\birdtie\\work\\content-first-20261019\\moment-priority80\\deploy42\\delivery42\\birdtie-api-linux-amd64-content-first42-final",
+  "artifactSHA256": "97cd8df6c5b48eec094d66039458541387f87fac82ff46d45c62cf1d61069913",
+  "artifactBytes": 36232202,
+  "completedUTC": "2026-10-18T23:00:33.699091+00:00"
+}

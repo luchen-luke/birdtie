@@ -1,0 +1,161 @@
+Flutter assets will be downloaded from https://storage.flutter-io.cn. Make sure you trust this source!
+00:00 +0: loading D:/Project/birdtie/apps/client/test/amap_city_map_motion_test.dart
+00:00 +0: (setUpAll)
+00:00 +0: native expiry ignores counts that were not painted in overview
+00:00 +1: native retirement rejects retained invalid private pixels
+00:00 +2: native retirement distinguishes query refresh from revoked content
+00:00 +3: visible inactive does not pause GL or change fps; hidden does
+00:00 +4: late native pause is serialized and cannot restore stale fps
+00:00 +5: retired render control cannot continue after native await
+00:00 +6: native clear acknowledges during motion and rejects superseded authority (variant: TargetPlatform.android)
+initState AMapWidget
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following TestFailure was thrown running a test:
+Expected: equals [
+            137,
+            80,
+            78,
+            71,
+            13,
+            10,
+            26,
+            10,
+            0,
+            0,
+            0,
+            13,
+            73,
+            72,
+            68,
+            82,
+            0,
+            0,
+            0,
+            48,
+            0,
+            0,
+            0,
+            48,
+            ...
+          ] ordered
+  Actual: [
+            137,
+            80,
+            78,
+            71,
+            13,
+            10,
+            26,
+            10,
+            0,
+            0,
+            0,
+            13,
+            73,
+            72,
+            68,
+            82,
+            0,
+            0,
+            0,
+            153,
+            0,
+            0,
+            0,
+            48,
+            ...
+          ]
+   Which: at location [19] is <153> instead of <48>
+This test must actually copy the verified photo PNG, not a DPR fallback glyph
+
+When the exception was thrown, this was the stack:
+#4      main.<anonymous closure> (file:///D:/Project/birdtie/apps/client/test/amap_city_map_motion_test.dart:539:7)
+<asynchronous suspension>
+#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1952:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///D:/Project/birdtie/apps/client/test/amap_city_map_motion_test.dart line 539
+The test description was:
+  native clear acknowledges during motion and rejects superseded authority (variant:
+  TargetPlatform.android)
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:00 +6 -1: native clear acknowledges during motion and rejects superseded authority (variant: TargetPlatform.android) [E]
+  Test failed. See exception logs above.
+  The test description was: native clear acknowledges during motion and rejects superseded authority (variant: TargetPlatform.android)
+  
+00:00 +6 -1: fresh moment subtitle uses source authority instead of Place auxiliary lease (variant: TargetPlatform.android)
+deactivate AMapWidget
+initState AMapWidget
+deactivate AMapWidget
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following TestFailure was thrown running a test:
+Expected: an object with length of <2>
+  Actual: Set:[]
+   Which: has length of <0>
+Decoration guards cannot veto the still-authorized basic point or its neighbor
+
+When the exception was thrown, this was the stack:
+#4      main.<anonymous closure> (file:///D:/Project/birdtie/apps/client/test/amap_city_map_motion_test.dart:981:11)
+<asynchronous suspension>
+#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1952:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///D:/Project/birdtie/apps/client/test/amap_city_map_motion_test.dart line 981
+The test description was:
+  fresh moment subtitle uses source authority instead of Place auxiliary lease (variant:
+  TargetPlatform.android)
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:01 +6 -2: fresh moment subtitle uses source authority instead of Place auxiliary lease (variant: TargetPlatform.android) [E]
+  Test failed. See exception logs above.
+  The test description was: fresh moment subtitle uses source authority instead of Place auxiliary lease (variant: TargetPlatform.android)
+  
+00:01 +6 -2: expired photo falls back without blocking live source pins or semantics (variant: TargetPlatform.android)
+initState AMapWidget
+deactivate AMapWidget
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following TestFailure was thrown running a test:
+Expected: an object with length of <2>
+  Actual: Set:[]
+   Which: has length of <0>
+Decoration guards cannot veto the still-authorized basic point or its neighbor
+
+When the exception was thrown, this was the stack:
+#4      main.<anonymous closure> (file:///D:/Project/birdtie/apps/client/test/amap_city_map_motion_test.dart:981:11)
+<asynchronous suspension>
+#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1952:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///D:/Project/birdtie/apps/client/test/amap_city_map_motion_test.dart line 981
+The test description was:
+  expired photo falls back without blocking live source pins or semantics (variant:
+  TargetPlatform.android)
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:01 +6 -3: expired photo falls back without blocking live source pins or semantics (variant: TargetPlatform.android) [E]
+  Test failed. See exception logs above.
+  The test description was: expired photo falls back without blocking live source pins or semantics (variant: TargetPlatform.android)
+  
+00:01 +6 -3: one camera motion hides overlays once without rebuilding each tick (variant: TargetPlatform.android)
+initState AMapWidget
+deactivate AMapWidget
+00:01 +7 -3: (tearDownAll)
+00:01 +7 -3: Some tests failed.
+
+Failing tests:
+  D:/Project/birdtie/apps/client/test/amap_city_map_motion_test.dart: expired photo falls back without blocking live source pins or semantics (variant: TargetPlatform.android)
+  D:/Project/birdtie/apps/client/test/amap_city_map_motion_test.dart: fresh moment subtitle uses source authority instead of Place auxiliary lease (variant: TargetPlatform.android)
+  D:/Project/birdtie/apps/client/test/amap_city_map_motion_test.dart: native clear acknowledges during motion and rejects superseded authority (variant: TargetPlatform.android)

@@ -1,0 +1,7 @@
+{
+  "path": "apps/client/test/amap_city_map_motion_test.dart",
+  "beforeSHA256": "1983520007e1e4abb70351b528b3bdbf1bc95a1dcca3ee2735732d6623e6fca6",
+  "afterSHA256": "1cd22838c5b3a5ff6692cf1796da30a2d9323b361849c8ace2c9472138e85a17",
+  "semanticTextUnchanged": true,
+  "method": "Restore original HEAD line endings for unchanged lines only"
+}

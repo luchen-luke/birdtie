@@ -9,6 +9,9 @@ class BirdtieEnvironment {
     'BIRDTIE_ENVIRONMENT',
     defaultValue: kReleaseMode ? '' : 'development',
   );
+  // Journey is paused; existing records remain available for future recovery.
+  static const journeysEnabled = false;
+
   static const apiBaseUrl = String.fromEnvironment('BIRDTIE_API_BASE_URL');
   static const mapboxWebPublicToken = String.fromEnvironment(
     'BIRDTIE_MAPBOX_PUBLIC_TOKEN',

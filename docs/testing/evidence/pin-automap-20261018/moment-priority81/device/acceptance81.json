@@ -1,0 +1,75 @@
+{
+  "versionCode": 81,
+  "createdUTC": "2026-10-18T22:42:56.498547+00:00",
+  "status": "PARTIAL_FAIL_AMAP_READER_RETURN",
+  "cases": [
+    {
+      "localDirectory": "work/content-first-20261019/moment-priority80/device/private81-full",
+      "result": "PASS: actual expanded private Moment shows original Now composer and no public comment target; screenshot visually inspected",
+      "hashes": {
+        "receipt.json": "3224926fdf07b4db9e7afd0ee18ceb661b1231f173c957c035eca1357488b6e7",
+        "screen.png": "cc63719e7c0c39447d4401156812f1e3a292b132fc01545e9ed66483af6b3664",
+        "semantics.json": "207d3fa481d620274ba8c85e913d5c37c93ac7e8e55085e8772724d186abcd65"
+      }
+    },
+    {
+      "localDirectory": "work/content-first-20261019/moment-priority80/device/materials81",
+      "result": "PASS: Moment and theme-map entries present; Journey entry absent",
+      "hashes": {
+        "receipt.json": "5e35e60ecd00f034f29fa1e534ac4e7368efec69ae4e68940efadd488eafee5e",
+        "screen.png": "59449d7193b24080fdb42012c2ffc8876469fc1dd92bac42a493dfa361964abb",
+        "semantics.json": "6d539a017360ae008c0a0759ad67540b7e99d102df43147a5d68986113b15e86"
+      }
+    },
+    {
+      "localDirectory": "work/content-first-20261019/moment-priority80/device/return81-map",
+      "result": "FAIL: screenshot after reader return shows no pins and loading indicator",
+      "hashes": {
+        "receipt.json": "9bb345ec899d414d76d5a8697b27394bd26353e9590067d8a9f705ab40e87446",
+        "screen.png": "e154b24bc702c1a3a5d954631abee2022364d1a07ffd765208f24d6a27d5bf2c",
+        "semantics.json": "ec0ab92516ab072efbf291b86a83fc36d926c4106ba136f9e9598fba547821d3"
+      }
+    },
+    {
+      "localDirectory": "work/content-first-20261019/moment-priority80/device/return81-settled",
+      "result": "FAIL: no pin semantics after return",
+      "hashes": {
+        "receipt.json": "248f0e44930765958fa6aa0c5228ff52ee2ddaa96a946a3240e0c9739364294f",
+        "screen.png": "92c4f13b63d1185ebf2dd4b7f430ade3cef88fce431be673129e22df2fed9ac6",
+        "semantics.json": "abbda8b1ccc8fcdfcaa4437ed072b3c0b10e9c6b81f60e30b53c4f4b7f6428cf"
+      }
+    },
+    {
+      "localDirectory": "work/content-first-20261019/moment-priority80/device/return81-noinstrument",
+      "result": "FAIL: independent screenshot without instrumentation still has no pins at 22:34:10 UTC",
+      "hashes": {
+        "receipt.json": "010b67629d66e6139784a8bb3922ef08b576560b9cbcfabf290696f489378af1",
+        "screen.png": "a0d3643673d74f8136fcda31158b4c3cb9026443051c52753fe30987bd14760a"
+      }
+    },
+    {
+      "localDirectory": "work/content-first-20261019/moment-priority80/device/return81-search-result",
+      "result": "FAIL: explicit search reports 28 positions but no pin semantics",
+      "hashes": {
+        "receipt.json": "824c0741e0b336532b9a41100d682e1e8aa8f1b871040c0e8c5a17f1f0e5ddf0",
+        "screen.png": "0409bcf8007ed5673c673bbe92ebd2db7c442ea3315e35aa34450ab32b743343",
+        "semantics.json": "9fbf0092e5168144d2a77c88cab19cee9248579381b47ea03e54c4469e2ff3b5"
+      }
+    },
+    {
+      "localDirectory": "work/content-first-20261019/moment-priority80/device/aberdeen81-restored",
+      "result": "PASS: Mapbox read-list-return restores eight Moment semantics and screenshot pins; screenshot visually inspected",
+      "hashes": {
+        "receipt.json": "c3828bd63aa6b8c6c59108eca74ba370de9569b9baebf16512d57e6270ed3303",
+        "screen.png": "878801d99b1ca0b8195f981c54b6650f2da487a2beea6f86a75a39ed56071594",
+        "semantics.json": "041b99a061f1c968c6283b0fae5f2bbe490830bed88f0cb27a40ad6f2f2fa485"
+      }
+    }
+  ],
+  "realProductionContentCreated": false,
+  "realProductionPublishEditDelete": "NOT_RUN",
+  "gesturesPerformance": "NOT_RUN",
+  "talkback": "USER_DEFERRED",
+  "web": "USER_DEFERRED",
+  "rootCauseStatus": "Expired media PNG can block whole AMap render batch; widget reproduction and prospective82 physical verification pending. Bridge marker ACK issue is separate static finding, not proven device cause."
+}

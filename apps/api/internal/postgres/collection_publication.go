@@ -157,6 +157,11 @@ func (s *Store) mutateCollectionPublication(ctx context.Context, d [32]byte, a i
 	if !errors.Is(e, pgx.ErrNoRows) {
 		return content.PersonalCollection{}, content.ErrUnavailable
 	}
+	// Recovery above is still available for an already committed original
+	// operation. New Journey publications are deferred with their UI.
+	if kind == "journey" && action == "PUBLISH" && !content.JourneysEnabled {
+		return content.PersonalCollection{}, content.ErrUnavailable
+	}
 	var locked string
 	e = tx.QueryRow(ctx, `SELECT id FROM `+table+` WHERE id=$1 AND owner_account_id=$2 FOR UPDATE`, id, a.ID).Scan(&locked)
 	if errors.Is(e, pgx.ErrNoRows) {
@@ -177,6 +182,9 @@ func (s *Store) mutateCollectionPublication(ctx context.Context, d [32]byte, a i
 	richStamp := ""
 	var source *content.CollectionInput
 	if rich {
+		if !content.JourneysEnabled {
+			return content.PersonalCollection{}, content.ErrUnavailable
+		}
 		if allowCopy || len(entries) != 0 {
 			return content.PersonalCollection{}, content.ErrInvalid
 		}
@@ -437,7 +445,7 @@ func (s *Store) readPublicCollection(ctx context.Context, access content.PublicM
 	if ctx == nil || ctx.Err() != nil || s == nil || s.pool == nil {
 		return v, content.ErrUnavailable
 	}
-	if kind == "journey" {
+	if kind == "journey" && content.JourneysEnabled {
 		rich, e := s.readPublicJourney(ctx, access, id, until)
 		if !errors.Is(e, content.ErrNotFound) {
 			return rich, e

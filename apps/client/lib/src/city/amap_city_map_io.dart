@@ -1261,9 +1261,21 @@ class _AMapCityMapViewState extends State<AMapCityMapView>
         final media = e.kind == MapEntityKind.moment ? e.mediaPixels : null;
         // Pixels originate in Birdtie's existing permission-aware 12-item /
         // four-request media controllers. This adapter never fetches media.
-        final png = media?.png(selected: selected, dense: dense, ratio: _ratio);
+        // Their original deadline can precede the still-live basic source
+        // grant. Omit expired decoration before constructing this batch;
+        // retrying the same expired PNG would veto every authorized marker.
+        final png =
+            media != null &&
+                (media.validUntil == null ||
+                    DateTime.now().toUtc().isBefore(media.validUntil!))
+            ? media.png(selected: selected, dense: dense, ratio: _ratio)
+            : null;
         if (png != null) copiedMediaIDs.add(e.id);
-        if (placement?.auxiliary != null) copiedAuxiliaryIDs.add(e.id);
+        // Only a Place's recent-Moment count has its own auxiliary lease.
+        // A Moment subtitle is part of its source/read grant, not that count.
+        final copiedRecentCount =
+            e.kind == MapEntityKind.place && placement?.auxiliary != null;
+        if (copiedRecentCount) copiedAuxiliaryIDs.add(e.id);
         if (png != null) {
           copiedGuards.add(
             () =>
@@ -1272,7 +1284,7 @@ class _AMapCityMapViewState extends State<AMapCityMapView>
                     DateTime.now().toUtc().isBefore(media.validUntil!)),
           );
         }
-        if (placement?.auxiliary != null) {
+        if (copiedRecentCount) {
           copiedGuards.add(
             () =>
                 e.recentMoments?.labelAt(DateTime.now().toUtc()) ==
@@ -1363,7 +1375,7 @@ class _AMapCityMapViewState extends State<AMapCityMapView>
           bool labelCurrent() =>
               current() &&
               (png == null || media?.current() == true) &&
-              (placement.auxiliary == null ||
+              (!copiedRecentCount ||
                   e.recentMoments?.labelAt(DateTime.now().toUtc()) ==
                       placement.auxiliary);
           final composed = await MapMarkerBitmap.withNativeLabel(

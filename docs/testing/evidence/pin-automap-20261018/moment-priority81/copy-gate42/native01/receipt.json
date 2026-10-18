@@ -1,0 +1,221 @@
+{
+  "startedUTC": "2026-10-18T22:58:39.098476+00:00",
+  "status": "PASS_STOPPED_CLEANED",
+  "databaseName": "birdtie_fixture_copy42_ceee17f66ad94b85",
+  "containerName": "birdtie-copy42-pg-ceee17f66ad9",
+  "ownerMarker": "64493d810185478abde6a9ba85aeac69",
+  "commands": [
+    {
+      "argv": [
+        "C:/Program Files/Docker/Docker/resources/bin/docker.exe",
+        "image",
+        "inspect",
+        "postgres:16-alpine",
+        "--format",
+        "{{.Id}}"
+      ],
+      "cwd": "D:\\Project\\birdtie",
+      "exitCode": 0,
+      "elapsedSeconds": 0.174,
+      "log": null
+    },
+    {
+      "argv": [
+        "C:/Program Files/Docker/Docker/resources/bin/docker.exe",
+        "run",
+        "-d",
+        "--rm",
+        "--name",
+        "birdtie-copy42-pg-ceee17f66ad9",
+        "--label",
+        "birdtie.pmap-owner=64493d810185478abde6a9ba85aeac69",
+        "--tmpfs",
+        "/var/lib/postgresql/data:rw",
+        "--memory",
+        "512m",
+        "--cpus",
+        "2",
+        "-e",
+        "POSTGRES_USER=birdtie",
+        "-e",
+        "POSTGRES_DB=birdtie_fixture_copy42_ceee17f66ad94b85",
+        "-e",
+        "POSTGRES_PASSWORD",
+        "-p",
+        "127.0.0.1::5432",
+        "postgres:16-alpine",
+        "-c",
+        "shared_buffers=64MB"
+      ],
+      "cwd": "D:\\Project\\birdtie",
+      "exitCode": 0,
+      "elapsedSeconds": 0.397,
+      "log": "docker-start.log"
+    },
+    {
+      "argv": [
+        "C:/Program Files/Docker/Docker/resources/bin/docker.exe",
+        "exec",
+        "-i",
+        "8e59be996c7b03ca3f4a72c07af899d359ef2f16a9059dc1dcd3f4bda3b5e617",
+        "psql",
+        "-X",
+        "-qAt",
+        "-v",
+        "ON_ERROR_STOP=1",
+        "-U",
+        "birdtie",
+        "-d",
+        "birdtie_fixture_copy42_ceee17f66ad94b85"
+      ],
+      "cwd": "D:\\Project\\birdtie",
+      "exitCode": 0,
+      "elapsedSeconds": 1.976,
+      "log": "migrations.log"
+    },
+    {
+      "argv": [
+        "C:/Program Files/Docker/Docker/resources/bin/docker.exe",
+        "logs",
+        "8e59be996c7b03ca3f4a72c07af899d359ef2f16a9059dc1dcd3f4bda3b5e617"
+      ],
+      "cwd": "D:\\Project\\birdtie",
+      "exitCode": 0,
+      "elapsedSeconds": 0.15,
+      "log": "owned-postgres.log"
+    },
+    {
+      "argv": [
+        "C:/Program Files/Docker/Docker/resources/bin/docker.exe",
+        "exec",
+        "-i",
+        "8e59be996c7b03ca3f4a72c07af899d359ef2f16a9059dc1dcd3f4bda3b5e617",
+        "psql",
+        "-X",
+        "-qAt",
+        "-v",
+        "ON_ERROR_STOP=1",
+        "-U",
+        "birdtie",
+        "-d",
+        "postgres"
+      ],
+      "cwd": "D:\\Project\\birdtie",
+      "exitCode": 0,
+      "elapsedSeconds": 0.204,
+      "log": "drop-owned-parent.log"
+    },
+    {
+      "argv": [
+        "C:/Program Files/Docker/Docker/resources/bin/docker.exe",
+        "stop",
+        "--time",
+        "10",
+        "8e59be996c7b03ca3f4a72c07af899d359ef2f16a9059dc1dcd3f4bda3b5e617"
+      ],
+      "cwd": "D:\\Project\\birdtie",
+      "exitCode": 0,
+      "elapsedSeconds": 0.407,
+      "log": "docker-stop.log"
+    }
+  ],
+  "productionAccess": false,
+  "postgresImageId": "sha256:cf78e76683b9ca8c5733cbbdce6c9262b45b6767934dd0a95e671f9a0fc20685",
+  "containerId": "8e59be996c7b03ca3f4a72c07af899d359ef2f16a9059dc1dcd3f4bda3b5e617",
+  "loopbackHost": "127.0.0.1",
+  "exclusiveHostPort": 6678,
+  "dsnGuard": {
+    "literalLoopback": true,
+    "dedicatedDatabase": true,
+    "exclusiveOwnedPort": true,
+    "noInheritedDSN": true,
+    "passwordPersisted": false
+  },
+  "databaseBindingBefore": {
+    "name": "birdtie_fixture_copy42_ceee17f66ad94b85",
+    "oid": 16384,
+    "marker": "BIRDTIE_ISOLATED_FIXTURE_V1:birdtie_fixture_copy42_ceee17f66ad94b85",
+    "owner": "birdtie",
+    "actor": "birdtie",
+    "systemId": "7698146135949725737"
+  },
+  "migrationCount": 180,
+  "seedCount": 3,
+  "migrationSourceSHA256": "5f9cbcef73a6eafd0048e221c67ba9be2c254c99d730c055b4a9a99cdb244f42",
+  "journey180Absent": true,
+  "databaseBindingAfterMigrations": {
+    "name": "birdtie_fixture_copy42_ceee17f66ad94b85",
+    "oid": 16384,
+    "marker": "BIRDTIE_ISOLATED_FIXTURE_V1:birdtie_fixture_copy42_ceee17f66ad94b85",
+    "owner": "birdtie",
+    "actor": "birdtie",
+    "systemId": "7698146135949725737"
+  },
+  "guardFunctionPresent": true,
+  "runtimeSchema": "Exact owned marked parent 001-179+181; no180; no child fixtures",
+  "fixtureSchemaScope": "new Journey-copy gate case runs directly against this dedicated parent",
+  "testSource": [
+    {
+      "path": "apps\\api\\internal\\postgres\\collection_copy.go",
+      "sha256": "e917f6dc8df508698de5b5b99bfdefac205fcc77cc55d7ed0599e609971c25ee"
+    },
+    {
+      "path": "apps\\api\\internal\\postgres\\journey_copy_availability_native_test.go",
+      "sha256": "95cec3c292329f31958cea57b4921fd128331d4bf37665b293510359566cfd35"
+    },
+    {
+      "path": "apps\\api\\internal\\content\\feature_availability.go",
+      "sha256": "9fd3794bff9fa47c80904550f969cfee3d1eb9d9e38aab0cc23858828334c7f9"
+    }
+  ],
+  "goRun": {
+    "runs": [
+      {
+        "command": [
+          "C:/Program Files/Go/bin/go.exe",
+          "test",
+          "-p",
+          "1",
+          "./internal/postgres",
+          "-run",
+          "^TestJourneyCopyAvailabilityNative179KeepsOriginalRecovery$",
+          "-count=1",
+          "-v",
+          "-timeout",
+          "90s"
+        ],
+        "exitCode": 0,
+        "elapsedSeconds": 12.658
+      }
+    ],
+    "cwd": "D:\\Project\\birdtie\\apps\\api",
+    "exitCode": 0,
+    "elapsedSeconds": 12.659,
+    "log": "D:\\Project\\birdtie\\work\\content-first-20261019\\moment-priority80\\copy-gate42\\native01\\go-native-direct01.log"
+  },
+  "testPass": [
+    "TestJourneyCopyAvailabilityNative179KeepsOriginalRecovery"
+  ],
+  "testFail": [],
+  "testSkip": [],
+  "databaseBindingAfterTests": {
+    "name": "birdtie_fixture_copy42_ceee17f66ad94b85",
+    "oid": 16384,
+    "marker": "BIRDTIE_ISOLATED_FIXTURE_V1:birdtie_fixture_copy42_ceee17f66ad94b85",
+    "owner": "birdtie",
+    "actor": "birdtie",
+    "systemId": "7698146135949725737"
+  },
+  "remainingChildDatabases": [],
+  "databaseBindingBeforeCleanup": {
+    "name": "birdtie_fixture_copy42_ceee17f66ad94b85",
+    "oid": 16384,
+    "marker": "BIRDTIE_ISOLATED_FIXTURE_V1:birdtie_fixture_copy42_ceee17f66ad94b85",
+    "owner": "birdtie",
+    "actor": "birdtie",
+    "systemId": "7698146135949725737"
+  },
+  "ownedParentDropped": true,
+  "ownedContainerRemoved": true,
+  "completedUTC": "2026-10-18T22:59:00.291461+00:00"
+}

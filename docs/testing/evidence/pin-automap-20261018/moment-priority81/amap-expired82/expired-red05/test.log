@@ -1,0 +1,38 @@
+Flutter assets will be downloaded from https://storage.flutter-io.cn. Make sure you trust this source!
+00:00 +0: loading D:/Project/birdtie/apps/client/test/amap_city_map_motion_test.dart
+00:00 +0: (setUpAll)
+00:00 +0: expired photo falls back without blocking live source pins or semantics (variant: TargetPlatform.android)
+initState AMapWidget
+deactivate AMapWidget
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following TestFailure was thrown running a test:
+Expected: an object with length of <2>
+  Actual: Set:[]
+   Which: has length of <0>
+Decoration guards cannot veto the still-authorized basic point or its neighbor
+
+When the exception was thrown, this was the stack:
+#4      main.<anonymous closure> (file:///D:/Project/birdtie/apps/client/test/amap_city_map_motion_test.dart:981:11)
+<asynchronous suspension>
+#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1952:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///D:/Project/birdtie/apps/client/test/amap_city_map_motion_test.dart line 981
+The test description was:
+  expired photo falls back without blocking live source pins or semantics (variant:
+  TargetPlatform.android)
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:00 +0 -1: expired photo falls back without blocking live source pins or semantics (variant: TargetPlatform.android) [E]
+  Test failed. See exception logs above.
+  The test description was: expired photo falls back without blocking live source pins or semantics (variant: TargetPlatform.android)
+  
+00:00 +0 -1: (tearDownAll)
+00:00 +0 -1: Some tests failed.
+
+Failing tests:
+  D:/Project/birdtie/apps/client/test/amap_city_map_motion_test.dart: expired photo falls back without blocking live source pins or semantics (variant: TargetPlatform.android)

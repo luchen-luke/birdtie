@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:birdtie_client/src/workspace/saved_items.dart';
@@ -81,13 +82,16 @@ class AppendFixture {
   http.Response _result(String op, {bool stop = false}) => collectionResponse({
     'operationId': op,
     'kind': 'journey',
-    'collectionId': badReceipt ? '44444444-4444-4444-8444-444444444444' : collectionID,
+    'collectionId': badReceipt
+        ? '44444444-4444-4444-8444-444444444444'
+        : collectionID,
     'appliedRevision': stop ? 0 : 2,
     'status': stop ? 'STOPPED' : 'SUCCEEDED',
   });
-  SavedCollectionAppendController controller() =>
+  SavedCollectionAppendController controller({bool includeJourneys = true}) =>
       SavedCollectionAppendController(
         saved: saved,
+        includeJourneys: includeJourneys,
         selected: [SavedItem.fromJson(searchRow(note: '私人备注不得入集合'))],
         ownerID: () => owner,
         sourceCurrent: () => current,
@@ -110,6 +114,28 @@ class AppendFixture {
 }
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  setUp(() => FlutterSecureStorage.setMockInitialValues({}));
+  test(
+    'paused Journey is absent from picker; original uncertain operation remains recoverable',
+    () async {
+      final f = AppendFixture(loseResponse: true), original = f.controller();
+      await f.choose(original);
+      expect(await original.submit(), isFalse);
+      final selector = Map.of(f.journal.value!);
+      original.dispose();
+      final hidden = f.controller(includeJourneys: false);
+      expect(hidden.collections.keys, ['theme_map']);
+      await hidden.load();
+      expect(hidden.uncertain, isTrue);
+      expect(f.journal.value, selector);
+      expect(await hidden.recover(), isTrue);
+      expect(f.calls.where((r) => r.method == 'POST'), hasLength(1));
+      hidden.dispose();
+      f.dispose();
+    },
+  );
+
   test('collectionAppend preview取消零写，去重且不复制Saved私人note', () async {
     final f = AppendFixture(), c = f.controller();
     await f.choose(c);

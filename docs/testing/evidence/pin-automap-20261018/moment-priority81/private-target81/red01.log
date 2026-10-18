@@ -1,0 +1,109 @@
+Flutter assets will be downloaded from https://storage.flutter-io.cn. Make sure you trust this source!
+00:00 +0: loading D:/Project/birdtie/apps/client/test/now_content_first_test.dart
+00:00 +0: Now private target initial published stays read only
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following TestFailure was thrown running a test:
+Expected: <true>
+  Actual: <false>
+
+When the exception was thrown, this was the stack:
+#4      main.<anonymous closure> (file:///D:/Project/birdtie/apps/client/test/now_content_first_test.dart:349:9)
+<asynchronous suspension>
+#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1952:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///D:/Project/birdtie/apps/client/test/now_content_first_test.dart line 349
+The test description was:
+  Now private target initial published stays read only
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:00 +0 -1: Now private target initial published stays read only [E]
+  Test failed. See exception logs above.
+  The test description was: Now private target initial published stays read only
+  
+00:00 +0 -1: Now private target initial draft stays read only
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following TestFailure was thrown running a test:
+Expected: <true>
+  Actual: <false>
+
+When the exception was thrown, this was the stack:
+#4      main.<anonymous closure> (file:///D:/Project/birdtie/apps/client/test/now_content_first_test.dart:349:9)
+<asynchronous suspension>
+#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1952:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///D:/Project/birdtie/apps/client/test/now_content_first_test.dart line 349
+The test description was:
+  Now private target initial draft stays read only
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:00 +0 -2: Now private target initial draft stays read only [E]
+  Test failed. See exception logs above.
+  The test description was: Now private target initial draft stays read only
+  
+00:00 +0 -2: Now private target withdrawal retains original public reply disabled
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following TestFailure was thrown running a test:
+Expected: same instance as <Instance of 'OwnedMapMomentDetail'>
+  Actual: <Instance of 'OwnedMapMomentDetail'>
+
+When the exception was thrown, this was the stack:
+#4      main.<anonymous closure> (file:///D:/Project/birdtie/apps/client/test/now_content_first_test.dart:394:7)
+<asynchronous suspension>
+#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1952:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///D:/Project/birdtie/apps/client/test/now_content_first_test.dart line 394
+The test description was:
+  Now private target withdrawal retains original public reply disabled
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:00 +0 -3: Now private target withdrawal retains original public reply disabled [E]
+  Test failed. See exception logs above.
+  The test description was: Now private target withdrawal retains original public reply disabled
+  
+00:00 +0 -3: Now private target explicit other Moment does not retain public target
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following TestFailure was thrown running a test:
+Expected: null
+  Actual: <Instance of 'OwnedMapMomentDetail'>
+
+When the exception was thrown, this was the stack:
+#4      main.<anonymous closure> (file:///D:/Project/birdtie/apps/client/test/now_content_first_test.dart:435:7)
+<asynchronous suspension>
+#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1952:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///D:/Project/birdtie/apps/client/test/now_content_first_test.dart line 435
+The test description was:
+  Now private target explicit other Moment does not retain public target
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:00 +0 -4: Now private target explicit other Moment does not retain public target [E]
+  Test failed. See exception logs above.
+  The test description was: Now private target explicit other Moment does not retain public target
+  
+00:01 +0 -4: Some tests failed.
+
+Failing tests:
+  D:/Project/birdtie/apps/client/test/now_content_first_test.dart: Now private target explicit other Moment does not retain public target
+  D:/Project/birdtie/apps/client/test/now_content_first_test.dart: Now private target initial draft stays read only
+  D:/Project/birdtie/apps/client/test/now_content_first_test.dart: Now private target initial published stays read only
+  D:/Project/birdtie/apps/client/test/now_content_first_test.dart: Now private target withdrawal retains original public reply disabled

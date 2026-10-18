@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:typed_data';
+import 'dart:ui' as ui;
 
 import 'package:amap_map/amap_map.dart' as amap;
 import 'package:amap_map/src/core/amap_flutter_platform.dart';
@@ -12,6 +13,7 @@ import 'package:birdtie_client/src/city/map_privacy_consent.dart';
 import 'package:birdtie_client/src/city/public_city_controller.dart';
 import 'package:birdtie_client/src/workspace/map_entities.dart';
 import 'package:birdtie_client/src/workspace/map_marker_visual.dart';
+import 'package:birdtie_client/src/workspace/map_marker_bitmap.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -37,6 +39,8 @@ class _MapSurface extends MethodChannelAMapFlutterMap
 
 class _LiveMapSurface extends MethodChannelAMapFlutterMap
     with MockPlatformInterfaceMixin {
+  _LiveMapSurface({this.viewID = 73});
+  final int viewID;
   bool createdOnce = false;
   @override
   Widget buildView(
@@ -44,11 +48,45 @@ class _LiveMapSurface extends MethodChannelAMapFlutterMap
     Set<Factory<OneSequenceGestureRecognizer>> gestureRecognizers,
     void Function(int) created,
   ) {
+    // The vendored widget captures its first MethodChannel platform in a
+    // library-level final. Forward only the test surface creation to the
+    // current fake, so later widgets receive their own real view lifecycle.
+    final active = AMapFlutterPlatform.instance;
+    if (!identical(active, this)) {
+      return active.buildView(creationParams, gestureRecognizers, created);
+    }
     if (!createdOnce) {
       createdOnce = true;
-      WidgetsBinding.instance.addPostFrameCallback((_) => created(73));
+      WidgetsBinding.instance.addPostFrameCallback((_) => created(viewID));
     }
     return const SizedBox.expand();
+  }
+}
+
+// Labels expand the native PNG canvas while the glyph stays at its anchor.
+// Compare every pixel of the actual 30dp photo glyph, rather than mistaking
+// a larger caption canvas for a missing photo or a wrong DPR.
+Future<Uint8List> _glyphPixels(Uint8List png, Offset anchor) async {
+  final codec = await ui.instantiateImageCodec(png);
+  final image = (await codec.getNextFrame()).image;
+  try {
+    const side = 30;
+    final left = (anchor.dx * image.width - side / 2).round();
+    final top = (anchor.dy * image.height - side / 2).round();
+    expect(left, inInclusiveRange(0, image.width - side));
+    expect(top, inInclusiveRange(0, image.height - side));
+    final rgba = (await image.toByteData(
+      format: ui.ImageByteFormat.rawRgba,
+    ))!.buffer.asUint8List();
+    final region = BytesBuilder(copy: false);
+    for (var y = top; y < top + side; y++) {
+      final start = (y * image.width + left) * 4;
+      region.add(rgba.sublist(start, start + side * 4));
+    }
+    return region.takeBytes();
+  } finally {
+    image.dispose();
+    codec.dispose();
   }
 }
 
@@ -534,14 +572,23 @@ void main() {
       );
       await drain(20);
       expect(mapWidget().markers, hasLength(2));
+      final actualPhoto = mapWidget().markers.singleWhere(
+        (m) => m.id == 'isolated-clear',
+      );
       expect(
-        mapWidget().markers
-            .singleWhere((m) => m.id == 'isolated-clear')
-            .icon
-            .toMap()[1],
-        orderedEquals(pixels.normalPNG),
+        await tester.runAsync(
+          () => _glyphPixels(
+            actualPhoto.icon.toMap()[1] as Uint8List,
+            actualPhoto.anchor,
+          ),
+        ),
+        orderedEquals(
+          (await tester.runAsync(
+            () => _glyphPixels(pixels.normalPNG, const Offset(.5, .5)),
+          ))!,
+        ),
         reason:
-            'This test must actually copy the verified photo PNG, not a DPR fallback glyph',
+            'The entire 30dp photo glyph must match the verified PNG at DPR 1, independently of the caption canvas',
       );
       final element = tester.element(find.byType(amap.AMapWidget));
       final oldNative = rows.first;
@@ -727,6 +774,327 @@ void main() {
     },
     variant: TargetPlatformVariant.only(TargetPlatform.android),
   );
+  for (final expiredPhoto in [false, true])
+    testWidgets(
+      expiredPhoto
+          ? 'expired photo falls back without blocking live source pins or semantics'
+          : 'fresh moment subtitle uses source authority instead of Place auxiliary lease',
+      (tester) async {
+        tester.view.devicePixelRatio = 1;
+        tester.view.physicalSize = const Size(800, 600);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        addTearDown(tester.view.resetPhysicalSize);
+        final semantics = tester.ensureSemantics();
+        final viewID = expiredPhoto ? 75 : 74;
+        AMapFlutterPlatform.instance = _LiveMapSurface(viewID: viewID);
+        final consentController = MapPrivacyConsentController(
+          store: MemoryMapPrivacyConsentStore(),
+        );
+        await consentController.setDecision(true);
+        final consent = AMapSessionConsent.replaceControllerForTesting(
+          consentController,
+        );
+        final native = MethodChannel('amap_map_$viewID');
+        // Limit each SDK projection round explicitly. The old expired-PNG path
+        // keeps scheduling another batch; a synchronous fake would spin forever
+        // before the test could observe the missing markers or unmount safely.
+        final pending = <(Completer<Map<String, int>>, Map<String, int>)>[];
+        var projectionCalls = 0;
+        final markerWrites = <Map>[];
+        binding.defaultBinaryMessenger.setMockMethodCallHandler(
+          AMapNativeConfiguration.channel,
+          (_) async => true,
+        );
+        binding.defaultBinaryMessenger.setMockMethodCallHandler(native, (
+          call,
+        ) async {
+          switch (call.method) {
+            case 'map#toScreenCoordinate':
+              projectionCalls++;
+              final coordinate = call.arguments as List;
+              final hold = Completer<Map<String, int>>();
+              pending.add((
+                hold,
+                !expiredPhoto && (coordinate.first as num) > 31.215
+                    ? {'x': 500, 'y': 300}
+                    : {'x': 200, 'y': 300},
+              ));
+              return hold.future;
+            case 'map#fromScreenCoordinate':
+              return [31.2, 121.4];
+            case 'markers#update':
+              markerWrites.add(call.arguments as Map);
+          }
+          return null;
+        });
+        final changes = ValueNotifier(0);
+        var reader = 0;
+        var sourceLive = true;
+        final image = (await tester.runAsync(mapFixtureImage))!;
+        final pixels = (await tester.runAsync(
+          () => fixturePixels(image, () => true, kind: MapEntityKind.moment),
+        ))!;
+        addTearDown(image.dispose);
+        final basicUntil = DateTime.now().toUtc().add(
+          const Duration(minutes: 2),
+        );
+        MapMediaPixels media(DateTime until) => MapMediaPixels(
+          key: pixels.key,
+          image: image,
+          normalPNG: pixels.normalPNG,
+          selectedPNG: pixels.selectedPNG,
+          devicePixelRatio: 1,
+          current: () => true,
+          validUntil: until,
+        );
+        MapEntity moment(MapMediaPixels value, DateTime sourceUntil) {
+          final row = MapEntity(
+            id: 'isolated-expired-photo',
+            kind: MapEntityKind.moment,
+            title: '隔离过期照片',
+            subtitle: '原动态副标题',
+            latitude: 31.2,
+            longitude: 121.4,
+            sourceVersion: 'same-authoritative-source',
+            mediaPixels: value,
+          );
+          return row.withMediaPixels(
+            value,
+            readGrant: MapEntityReadGrant(
+              source: row,
+              copiedPixels: value,
+              validUntil: sourceUntil,
+              current: () => sourceLive,
+            ),
+          );
+        }
+
+        final otherSource = MapEntity(
+          id: 'isolated-unaffected-place',
+          kind: MapEntityKind.place,
+          title: '隔离有效地点',
+          subtitle: '',
+          latitude: expiredPhoto ? 31.2 : 31.22,
+          longitude: 121.4,
+          sourceVersion: 'unchanged-neighbor',
+        );
+        final other = otherSource.withMediaPixels(
+          null,
+          readGrant: MapEntityReadGrant(
+            source: otherSource,
+            validUntil: basicUntil,
+            current: () => sourceLive,
+          ),
+        );
+        final expired = media(
+          expiredPhoto
+              ? DateTime.now().toUtc().subtract(const Duration(seconds: 1))
+              : basicUntil,
+        );
+        var active = moment(expired, basicUntil);
+        List<MapEntity> rows = [active, other];
+        addTearDown(() {
+          changes.dispose();
+          AMapFlutterPlatform.instance = _MapSurface();
+          AMapSessionConsent.replaceControllerForTesting(consent);
+          consentController.dispose();
+          binding.defaultBinaryMessenger.setMockMethodCallHandler(native, null);
+          binding.defaultBinaryMessenger.setMockMethodCallHandler(
+            AMapNativeConfiguration.channel,
+            null,
+          );
+        });
+        const city = PublicCity(
+          id: 'isolated-expired-city',
+          name: '隔离单测城市',
+          region: '',
+          countryCode: 'CN',
+          contentStatus: 'ready',
+          source: PublicSource(
+            label: 'isolated',
+            maintainer: 'isolated',
+            freshness: 'test',
+            updatedAt: null,
+          ),
+          map: PublicCityMap(
+            provider: 'amap',
+            latitude: 31.2,
+            longitude: 121.4,
+            defaultZoom: 11,
+            sourceRef: 'isolated',
+          ),
+        );
+        amap.AMapWidget mapWidget() =>
+            tester.widget<amap.AMapWidget>(find.byType(amap.AMapWidget));
+        void releaseProjections() {
+          final held = List.of(pending);
+          pending.clear();
+          for (final (hold, value) in held) {
+            if (!hold.isCompleted) hold.complete(value);
+          }
+        }
+
+        Future<void> drain([int rounds = 16]) async {
+          for (var i = 0; i < rounds; i++) {
+            releaseProjections();
+            await tester.runAsync(
+              () => Future<void>.delayed(const Duration(milliseconds: 10)),
+            );
+            await tester.pump(const Duration(milliseconds: 40));
+          }
+        }
+
+        Future<Uint8List> markerCenter(amap.Marker marker) async =>
+            _glyphPixels(marker.icon.toMap()[1] as Uint8List, marker.anchor);
+        final bare = (await tester.runAsync(
+          () => MapMarkerBitmap.render(
+            kind: MapEntityKind.moment,
+            selected: true,
+          ),
+        ))!;
+        final bareCenter = (await tester.runAsync(
+          () => _glyphPixels(bare, const Offset(.5, .5)),
+        ))!;
+        final photoCenter = (await tester.runAsync(
+          () => _glyphPixels(pixels.selectedPNG, const Offset(.5, .5)),
+        ))!;
+        expect(
+          photoCenter,
+          isNot(equals(bareCenter)),
+          reason:
+              'The actual verified fixture photo must differ from the bare square',
+        );
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: AMapCityMapView(
+                city: city,
+                places: const [],
+                entities: const [],
+                selectedEntityId: active.id,
+                onPlaceSelected: (_) {},
+                onEntitySelected: (_) {},
+                fullBleed: true,
+                // A glyph-only viewport isolates the photo-deadline gate from
+                // title/auxiliary label guards. Exact-coordinate siblings remain
+                // independent and both keep their real 48dp semantic targets.
+                contentRect: expiredPhoto
+                    ? const Rect.fromLTWH(183, 283, 34, 34)
+                    : const Rect.fromLTWH(0, 0, 800, 600),
+                readerChanges: changes,
+                currentReaderEntities: () => rows,
+                currentReaderScope: () => reader,
+                currentRenderAuthorityScope: () => 'same-isolated-authority',
+              ),
+            ),
+          ),
+        );
+        try {
+          await drain(24);
+          final element = tester.element(find.byType(amap.AMapWidget));
+          expect(
+            active.readGrant!.authorizes(active, DateTime.now().toUtc()),
+            isTrue,
+          );
+          expect(expired.current(), isTrue);
+          expect(
+            DateTime.now().toUtc().isBefore(expired.validUntil!),
+            !expiredPhoto,
+          );
+          expect(
+            mapWidget().markers,
+            hasLength(2),
+            reason:
+                'Decoration guards cannot veto the still-authorized basic point or its neighbor',
+          );
+          expect(find.bySemanticsLabel('动态 隔离过期照片'), findsOneWidget);
+          expect(find.bySemanticsLabel('地点 隔离有效地点'), findsOneWidget);
+          expect(
+            await tester.runAsync(
+              () => markerCenter(
+                mapWidget().markers.singleWhere((m) => m.id == active.id),
+              ),
+            ),
+            expiredPhoto ? bareCenter : photoCenter,
+            reason:
+                'Expired photo becomes a bare square; a live photo and Moment subtitle remain readable',
+          );
+          expect(find.byKey(const Key('amap-retiring-cover')), findsNothing);
+          // A same-source refresh must not retain the expired photo in copied
+          // media IDs/deadlines, otherwise it reenters the retirement cover.
+          reader++;
+          changes.value++;
+          await drain();
+          expect(mapWidget().markers, hasLength(2));
+          expect(find.byKey(const Key('amap-retiring-cover')), findsNothing);
+          final beforeFreshWrites = markerWrites.length;
+          active = moment(media(basicUntil), basicUntil);
+          rows = [active, other];
+          reader++;
+          changes.value++;
+          await drain();
+          expect(mapWidget().markers, hasLength(2));
+          if (expiredPhoto) {
+            expect(
+              markerWrites.length,
+              greaterThan(beforeFreshWrites),
+              reason: 'A fresh photo must change the bare native bitmap key',
+            );
+          }
+          expect(
+            await tester.runAsync(
+              () => markerCenter(
+                mapWidget().markers.singleWhere((m) => m.id == active.id),
+              ),
+            ),
+            photoCenter,
+            reason:
+                'An independently live photo grant can restore its verified pixels',
+          );
+          active = moment(
+            media(basicUntil),
+            DateTime.now().toUtc().add(const Duration(seconds: 1)),
+          );
+          rows = [active, other];
+          reader++;
+          changes.value++;
+          await drain();
+          expect(mapWidget().markers, hasLength(2));
+          await tester.runAsync(
+            () => Future<void>.delayed(const Duration(milliseconds: 1100)),
+          );
+          await tester.pump(const Duration(seconds: 2));
+          await drain();
+          expect(sourceLive, isTrue);
+          expect(active.mediaPixels!.current(), isTrue);
+          expect(
+            DateTime.now().toUtc().isBefore(active.mediaPixels!.validUntil!),
+            isTrue,
+          );
+          expect(
+            active.readGrant!.authorizes(active, DateTime.now().toUtc()),
+            isFalse,
+          );
+          expect(
+            mapWidget().markers.map((m) => m.id),
+            [other.id],
+            reason:
+                'Expired basic source authority cannot fall back or revive even with live photo pixels',
+          );
+          expect(find.bySemanticsLabel('地点 隔离有效地点'), findsOneWidget);
+          expect(find.bySemanticsLabel('动态 隔离过期照片'), findsNothing);
+          expect(tester.element(find.byType(amap.AMapWidget)), same(element));
+          expect(projectionCalls, greaterThan(2));
+        } finally {
+          sourceLive = false;
+          await tester.pumpWidget(const SizedBox.shrink());
+          releaseProjections();
+          await tester.pump();
+          semantics.dispose();
+        }
+      },
+      variant: TargetPlatformVariant.only(TargetPlatform.android),
+    );
   testWidgets(
     'one camera motion hides overlays once without rebuilding each tick',
     (tester) async {

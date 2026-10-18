@@ -82,7 +82,11 @@ func mapContentRouteFacts(ctx context.Context, f humanWriteFrame, leaves []mapSp
 	if len(candidateIDs) > 500 {
 		candidateIDs = candidateIDs[:500]
 	}
-	journeyEdges, err := store.ReadJourneyPublicationEdgesTx(ctx, f.tx, content.PublicMomentAccess{Actor: f.a, SessionDigest: f.d}, candidateIDs, 200)
+	journeyEdges := []JourneyPublicationEdge{}
+	var err error
+	if content.JourneysEnabled {
+		journeyEdges, err = store.ReadJourneyPublicationEdgesTx(ctx, f.tx, content.PublicMomentAccess{Actor: f.a, SessionDigest: f.d}, candidateIDs, 200)
+	}
 	if err != nil {
 		return "", err
 	}

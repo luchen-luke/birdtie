@@ -1,0 +1,14 @@
+{
+  "productionAccess": false,
+  "http": {
+    "command": "go test ./internal/httpapi -run ^TestJourneyAvailabilityDisabledKeepsOriginalRecovery$ -count=1 -v",
+    "exitCode": 0
+  },
+  "native179": "NOT_RUN_BY_WORKER_ROOT_OWNS_ISOLATED_RUN",
+  "migrationsRun": false,
+  "cwd": "D:\\Project\\birdtie\\apps\\api",
+  "postgres": {
+    "command": "go test ./internal/postgres -run ^TestContentFirstStableChronology$ -count=1 -v",
+    "exitCode": 0
+  }
+}

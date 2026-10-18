@@ -1,0 +1,27 @@
+{
+  "command": [
+    "D:/DevTools/flutter/bin/flutter.bat",
+    "test",
+    "--no-pub",
+    "--reporter=expanded",
+    "test/now_moment_entry_composer_test.dart",
+    "--plain-name",
+    "switching editor reader"
+  ],
+  "cwd": "D:\\Project\\birdtie\\apps\\client",
+  "startedUTC": "2026-10-18T22:26:56.062915+00:00",
+  "seconds": 6.156,
+  "exitCode": 1,
+  "sourceBefore": {
+    "apps/client/lib/src/workspace/map_workspace.dart": "370ed4c0dd4e60509ae09969712dbcc373c46217e8c260635c7a53f0869e643b",
+    "apps/client/test/now_moment_entry_composer_test.dart": "43e24434cb692eaceefd00b4fe4fbc0f036dc827aa61eb5d32d8422b89570a45",
+    "apps/client/lib/src/workspace/now_map_content_panel.dart": "75962abf27bc5b9e1480e84bd2828f6dffa64280347145e99870c72d30abf495"
+  },
+  "sourceAfter": {
+    "apps/client/lib/src/workspace/map_workspace.dart": "370ed4c0dd4e60509ae09969712dbcc373c46217e8c260635c7a53f0869e643b",
+    "apps/client/test/now_moment_entry_composer_test.dart": "43e24434cb692eaceefd00b4fe4fbc0f036dc827aa61eb5d32d8422b89570a45",
+    "apps/client/lib/src/workspace/now_map_content_panel.dart": "75962abf27bc5b9e1480e84bd2828f6dffa64280347145e99870c72d30abf495"
+  },
+  "sourceStable": true,
+  "boundary": "Only actual MapWorkspace widget regression; no native/ADB/build/production."
+}

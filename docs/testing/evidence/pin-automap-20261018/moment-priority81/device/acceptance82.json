@@ -1,0 +1,96 @@
+{
+  "versionCode": 82,
+  "createdUTC": "2026-10-18T23:06:38.612335+00:00",
+  "status": "PASS_TARGETED_READ_ONLY_CASES_NOT_FULL_MOMENT_ACCEPTANCE",
+  "apkSHA256": "f5d34de47cb7a286fdb3f1e1c93358bbf2b898e4d3d881b31319fb7aeac6d040",
+  "installedAPKVerified": true,
+  "appDataCleared": false,
+  "cases": [
+    {
+      "localDirectory": "work/content-first-20261019/moment-priority80/device/private82-full",
+      "result": "PASS: visually inspected real private Moment reader; original Now composer visible and public comment target absent",
+      "hashes": {
+        "receipt.json": "c2f461490e4d8975df5ee121219cc518b0cef82f370bcf8b438169a6c8e3e0d3",
+        "screen.png": "7c0c120a36f9508aa8a4dff4ec6e8f70e75466908fd968c1d3b53fd931193a6b",
+        "semantics.json": "eeb069713fb91519eac2eeea4e6fd1102566cd36bb1975b5d2455e5156110900"
+      },
+      "atUTC": "2026-10-18T22:57:24.167921+00:00"
+    },
+    {
+      "localDirectory": "work/content-first-20261019/moment-priority80/device/return82-map",
+      "result": "PASS: first read-return restores 25 exact original Moment semantic labels/bounds; actual pixels visually inspected",
+      "hashes": {
+        "receipt.json": "677932980818b51233401f7201cac99604e5fe154e50288cc9c61bee63657cd7",
+        "screen.png": "e03d79fcdc1ad7159896a880691dc33abd7ebb58dd3b20b7a6b0d3c619814fa7",
+        "semantics.json": "ff04a06161f9ef6619775d208988e64b8d770a7cc19dece24e9df04dafcc3910"
+      },
+      "atUTC": "2026-10-18T22:58:03.737390+00:00"
+    },
+    {
+      "localDirectory": "work/content-first-20261019/moment-priority80/device/return82-long-map",
+      "result": "PASS: repeated prolonged read-return restores same 25 original labels/bounds; actual selected photo/title and other square pins visually inspected",
+      "hashes": {
+        "receipt.json": "22cd80b0fb049dbaed79da86311708b6f2d0e852037858149ad1d84ca6e7229e",
+        "screen.png": "434130fb666da3a28bfb0eca9caee35b79c104894d98a3af719e98deee5bb2a9",
+        "semantics.json": "ff04a06161f9ef6619775d208988e64b8d770a7cc19dece24e9df04dafcc3910"
+      },
+      "atUTC": "2026-10-18T23:00:16.875930+00:00"
+    },
+    {
+      "localDirectory": "work/content-first-20261019/moment-priority80/device/materials82",
+      "result": "PASS: existing Moment and ThemeMap entries remain; Journey entry absent",
+      "hashes": {
+        "receipt.json": "6111fb0957fd626e2abb693a888ea6547496a3cbd0adccc220ee23023026785a",
+        "screen.png": "ea33ddc64e0567863fc2a5f4db035d9edddc8a3ef83d0ae2a143f988cf17cdc4",
+        "semantics.json": "6d539a017360ae008c0a0759ad67540b7e99d102df43147a5d68986113b15e86"
+      },
+      "atUTC": "2026-10-18T23:02:56.057202+00:00"
+    },
+    {
+      "localDirectory": "work/content-first-20261019/moment-priority80/device/aberdeen82-api42",
+      "result": "PASS: actual Mapbox base map/attribution and eight Moment semantics after API42 deployment; screenshot visually inspected",
+      "hashes": {
+        "receipt.json": "0217266b34b86d09c7a6e6476aae866a6049f3b104ec1e37f29d1e3389827521",
+        "screen.png": "c94949fe3354a447042dd1922f44116cb6c9b31034944e06a69635ad16ed3c2d",
+        "semantics.json": "041b99a061f1c968c6283b0fae5f2bbe490830bed88f0cb27a40ad6f2f2fa485"
+      },
+      "atUTC": "2026-10-18T23:04:29.531118+00:00"
+    },
+    {
+      "localDirectory": "work/content-first-20261019/moment-priority80/device/shanghai82-api42-final",
+      "result": "PASS: destination switch back automatically displays AMap/attribution and 25 Moment semantics; screenshot visually inspected",
+      "hashes": {
+        "receipt.json": "2e616792045bb2231f08125a26f92c88db4967a7922a56175424628660e18952",
+        "screen.png": "4d2933461b6483b729b064515edbdb1b5ef792fd754b8b613745720d13326c28",
+        "semantics.json": "0324e3a6faf2f76845bd307522e3a0b953be48c52a1e553da0223aa76729b1c0"
+      },
+      "atUTC": "2026-10-18T23:05:29.446930+00:00"
+    }
+  ],
+  "readingIntervals": {
+    "firstOpenToReturnSeconds": 37.365,
+    "secondPinClickToReturnSeconds": 91.594,
+    "secondConfirmedReaderDumpToReturnSeconds": 63.07,
+    "continuousVideo": "NOT_RUN"
+  },
+  "historicalFailure": "device/acceptance81.json retained; 81 no-pin return was real, not replaced by widget results",
+  "toolAttempt": "private82-long-full-open lookup had no 查看动态 button because selected pin reopened the existing full reader directly; no click performed, original failure and fresh state retained",
+  "helperCleanup": {
+    "removed": true,
+    "normalAppRetained": true,
+    "receiptLocalPath": "work/content-first-20261019/moment-priority80/device/helper82-cleanup/receipt.json",
+    "receiptSHA256": "b1c52c6f48890133288f66e7dc663e909fcdea115f01247f7420d42056b29f97"
+  },
+  "installationReceipt": {
+    "localPath": "work/content-first-20261019/moment-priority80/device/install82/receipt.json",
+    "sha256": "0d5896a20acd704c33ba4dc3816660b9c3ce6eee87f1d7b72e6a0a7e7ad86312"
+  },
+  "phoneActions": "Actual app-only accessibility semantics; not human gestures or TalkBack. All viewed Moments already existed. No production publishing or synthetic content.",
+  "publishEditDeleteCommentsOnPhone": "NOT_RUN",
+  "weakNetworkAndVideoStress": "NOT_RUN",
+  "newGesturePerformance": "NOT_RUN",
+  "webTalkBack": "NOT_RUN_USER_DEFERRED",
+  "largeFont": "USER_EXCLUDED",
+  "newRecording": "NOT_RUN",
+  "businessTestContentWritten": false
+}

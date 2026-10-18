@@ -1,0 +1,28 @@
+{
+  "command": [
+    "C:/Program Files/Go/bin/go.exe",
+    "test",
+    "-p",
+    "1",
+    "./internal/httpapi",
+    "-run",
+    "^Test(JourneyAvailabilityDisabledKeepsOriginalRecovery|JourneyCopyAvailabilityDisabledKeepsOriginalRecovery|CollectionCopyHTTP)",
+    "-count=1",
+    "-v",
+    "-timeout",
+    "90s"
+  ],
+  "cwd": "D:\\Project\\birdtie\\apps\\api",
+  "exitCode": 0,
+  "elapsedSeconds": 22.594,
+  "log": "http01.log",
+  "pass": [
+    "TestCollectionCopyHTTPClosedPreviewAndSeparateRecovery",
+    "TestCollectionCopyHTTPFinalOriginalFrameAndSourceProof",
+    "TestJourneyAvailabilityDisabledKeepsOriginalRecovery",
+    "TestJourneyCopyAvailabilityDisabledKeepsOriginalRecovery"
+  ],
+  "fail": [],
+  "skip": [],
+  "productionAccess": false
+}

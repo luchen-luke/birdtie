@@ -1,0 +1,53 @@
+{
+  "status": "FROZEN_DIRECT_RELATED_PASS",
+  "command": [
+    "D:/DevTools/flutter/bin/flutter.bat",
+    "test",
+    "--no-pub",
+    "--reporter=expanded",
+    "test/now_moment_entry_composer_test.dart"
+  ],
+  "cwd": "D:\\Project\\birdtie\\apps\\client",
+  "exitCode": 0,
+  "uniqueTests": 6,
+  "existingTests": 4,
+  "newCrossSourceTests": 2,
+  "controlledRed": "exclusive-red05: both real MapCanvas direct pin and overlap group entries left captured editor A sourceCurrent=true. Same final test and panel bytes as full GREEN. Early assertion proves unsafe coexistence; it does not claim the old late response had already overwritten B.",
+  "controlledRedExitCode": 1,
+  "redGreenSameTestAndPanel": true,
+  "sourceStable": true,
+  "sourceHashes": {
+    "apps/client/lib/src/workspace/map_workspace.dart": "a81d7cc42e1059ca23a78d92f7f176d3db57c73dfd2648e8e8112de09d9c688b",
+    "apps/client/test/now_moment_entry_composer_test.dart": "43e24434cb692eaceefd00b4fe4fbc0f036dc827aa61eb5d32d8422b89570a45",
+    "apps/client/lib/src/workspace/now_map_content_panel.dart": "75962abf27bc5b9e1480e84bd2828f6dffa64280347145e99870c72d30abf495"
+  },
+  "workerProductionChanges": [
+    "Shared _activatePublicReaderSource retires old editor reader source before assigning new current public reader source. All four concrete public source entry assignments use it.",
+    "Opening an editor reader explicitly retires the opposing public reader, without changing general retire semantics.",
+    "hasCreation/hasThread presentation is suspended while a public reader is open, preserving original controllers and their local drafts."
+  ],
+  "greenAssertions": [
+    "Direct pin and overlap group enter the actual valid map-content reader with a real current public comment contract.",
+    "Captured A sourceCurrent is immediately false; original A interaction is retired.",
+    "B target and separate comment draft survive both a held A interaction HTTP response and a previously captured A callback.",
+    "Only one TextField, unchanged map element; existing root-host assertions preserve original identity/expiry safeguards.",
+    "Closing B restores the exact A MomentThreadController, original editor text and map element. No fixture POST/PUT/DELETE."
+  ],
+  "CRLFPreserved": true,
+  "failuresPreserved": {
+    "exclusive-red01": "Initial map lifecycle fixture not resumed/IO not drained; not product evidence.",
+    "exclusive-red02": "Map HTTP fixture omitted required no-store; not product evidence.",
+    "exclusive-red03": "Valid map loaded, but old simultaneous editor full-height left B group 12dp and direct preview inaccessible. First failure was missing view, not a claimed late-response overwrite.",
+    "exclusive-red04": "Immediate A source guard asserted true under old code; cleanup noise preserved.",
+    "exclusive-green01": "Pre-edit textual guard asserted incorrectly before any production write; the command subsequently re-ran the old source. Not a green claim.",
+    "exclusive-green02": "B source retire guard passed, but comment metadata stream had not drained within fake-only pumps; fixed bounded real IO wait in fixture.",
+    "exclusive-green03": "Both direct/overlap tests passed; then full file was run once."
+  },
+  "notRun": [
+    "Build",
+    "ADB",
+    "Full analysis",
+    "Production data"
+  ],
+  "handoff": "Root owns final batch and build81 reprepare."
+}

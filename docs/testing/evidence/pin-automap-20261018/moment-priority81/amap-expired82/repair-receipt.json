@@ -1,0 +1,169 @@
+{
+  "status": "SOURCE_FROZEN_DIRECT_WIDGETS_PASS_DEVICE_REVALIDATION_REQUIRED",
+  "recordedUTC": "2026-10-18T22:51:51.061887+00:00",
+  "scope": [
+    "apps/client/lib/src/city/amap_city_map_io.dart",
+    "apps/client/test/amap_city_map_motion_test.dart"
+  ],
+  "workerFreezeSHA256": {
+    "apps/client/lib/src/city/amap_city_map_io.dart": "280614dec21468befb4ff105a8e9fcf630ace4dfd7b7ab5ccb649faf2e9999a7",
+    "apps/client/test/amap_city_map_motion_test.dart": "1983520007e1e4abb70351b528b3bdbf1bc95a1dcca3ee2735732d6623e6fca6"
+  },
+  "finalCommand": [
+    "D:/DevTools/flutter/bin/flutter.bat",
+    "test",
+    "--no-pub",
+    "--reporter=expanded",
+    "test/amap_city_map_motion_test.dart"
+  ],
+  "cwd": "D:\\Project\\birdtie\\apps\\client",
+  "exitCode": 0,
+  "sourceStableDuringFinalRun": true,
+  "uniqueTests": 10,
+  "existingTests": 8,
+  "newTests": 2,
+  "passed": 10,
+  "failed": 0,
+  "skipped": 0,
+  "productionChanges": [
+    {
+      "line": 1264,
+      "change": "Reject expired original MapMediaPixels deadline before png selection, native bitmap key, and copiedMediaIDs. Render the already-authorized basic square instead; never extend source/media TTL."
+    },
+    {
+      "line": 1276,
+      "change": "Only Place recent-Moment auxiliary counts enter copiedAuxiliaryIDs and their independent labelAt TTL guards, including label composition. Moment subtitle remains bound to unchanged source/readGrant/current. Existing invalidAt/handoff/expiry consumers remain strict."
+    }
+  ],
+  "verifiedBehavior": [
+    "Fresh Moment subtitle and actual verified photo commit alongside unrelated valid Place; source-current remains required.",
+    "Expired photo, despite media.current true, falls back to actual bare-square RGBA while future original basic source authority still permits that point.",
+    "Fallback key excludes expired photo and no expired media copy/lease enters the ACK/retirement set; same-source refresh stays visible without a retirement cover.",
+    "Fresh independent photo descriptor with the same media key and new future deadline changes the bare native bitmap and restores verified photo RGBA.",
+    "A genuinely elapsed basic readGrant with media still future/current removes that point and its semantics; unrelated live Place remains.",
+    "Native map element preserved; original tests retain old authority ABA, pending ACK, source/media expiry, and motion/background guards.",
+    "Old whole PNG comparison now compares the entire real 30dp glyph RGBA at its normalized native anchor; caption canvas expansion is allowed without accepting a fallback glyph or wrong DPR."
+  ],
+  "independentRedGreenTestHash": "c5d15d0b2e33bd69a61bbd5fbe948955441c56647be6c3ead736b1561ed48a66",
+  "history": [
+    {
+      "evidence": "D:\\Project\\birdtie\\work\\content-first-20261019\\moment-priority80\\amap-expired82\\red01\\receipt.json",
+      "exitCode": 1,
+      "sourceSHA256": {
+        "apps/client/lib/src/city/amap_city_map_io.dart": "a2bd0d643d5ffd9e30d409af09843518821e87fb5f8ff54d8c3041490169930f",
+        "apps/client/test/amap_city_map_motion_test.dart": "2fd35dc9da2d67b48ec75b63083d7b198c30250ff9199ee9c497632a26b48aa9"
+      },
+      "classification": "Historical mixed defect: expired photo plus wrongly typed Moment auxiliary; not an independent expired-photo proof."
+    },
+    {
+      "evidence": "D:\\Project\\birdtie\\work\\content-first-20261019\\moment-priority80\\amap-expired82\\green01\\receipt.json",
+      "exitCode": 1,
+      "sourceSHA256": {
+        "apps/client/lib/src/city/amap_city_map_io.dart": "f622f09c9dcf8aa6bc4a83989c02a1d314d203fde86ea42e718ebd45af0e111f",
+        "apps/client/test/amap_city_map_motion_test.dart": "2fd35dc9da2d67b48ec75b63083d7b198c30250ff9199ee9c497632a26b48aa9"
+      },
+      "classification": "PNG-only fix still failed because Moment auxiliary was still incorrectly checked against Place recent count."
+    },
+    {
+      "evidence": "D:\\Project\\birdtie\\work\\content-first-20261019\\moment-priority80\\amap-expired82\\fixture02\\receipt.json",
+      "exitCode": 1,
+      "sourceSHA256": {
+        "apps/client/lib/src/city/amap_city_map_io.dart": "f622f09c9dcf8aa6bc4a83989c02a1d314d203fde86ea42e718ebd45af0e111f",
+        "apps/client/test/amap_city_map_motion_test.dart": "185232cdaa661c4d52cdc9d20ca366773c11fb6de64116986922bc0d7a7fed53"
+      },
+      "classification": "Same remaining auxiliary failure; bounded SDK projection demonstrated repeated batches instead of an unstarted fake."
+    },
+    {
+      "evidence": "D:\\Project\\birdtie\\work\\content-first-20261019\\moment-priority80\\amap-expired82\\isolated-green03\\receipt.json",
+      "exitCode": 1,
+      "sourceSHA256": {
+        "apps/client/lib/src/city/amap_city_map_io.dart": "f622f09c9dcf8aa6bc4a83989c02a1d314d203fde86ea42e718ebd45af0e111f",
+        "apps/client/test/amap_city_map_motion_test.dart": "ea072833205235b6723607057924ee9ce6cdd2ba33bca1badd0f1cdcc33f4d4a"
+      },
+      "classification": "Behavioral assertions completed, but framework rejected a leaked SemanticsHandle; exit remains FAIL, not PASS."
+    },
+    {
+      "evidence": "D:\\Project\\birdtie\\work\\content-first-20261019\\moment-priority80\\amap-expired82\\subtitle-red04\\receipt.json",
+      "exitCode": 1,
+      "sourceSHA256": {
+        "apps/client/lib/src/city/amap_city_map_io.dart": "a2bd0d643d5ffd9e30d409af09843518821e87fb5f8ff54d8c3041490169930f",
+        "apps/client/test/amap_city_map_motion_test.dart": "c5d15d0b2e33bd69a61bbd5fbe948955441c56647be6c3ead736b1561ed48a66"
+      },
+      "classification": "Independent RED with fresh pixels and live basic source: incorrectly typed Moment subtitle left entire batch empty."
+    },
+    {
+      "evidence": "D:\\Project\\birdtie\\work\\content-first-20261019\\moment-priority80\\amap-expired82\\subtitle-green04\\receipt.json",
+      "exitCode": 0,
+      "sourceSHA256": {
+        "apps/client/lib/src/city/amap_city_map_io.dart": "6344e19b9ad2cbd0c67a71a69c35fb85903e13fdc94a174001bbe6352c851b84",
+        "apps/client/test/amap_city_map_motion_test.dart": "c5d15d0b2e33bd69a61bbd5fbe948955441c56647be6c3ead736b1561ed48a66"
+      },
+      "classification": "Independent GREEN after only the Place auxiliary classification/guard fix; same test bytes as corresponding RED."
+    },
+    {
+      "evidence": "D:\\Project\\birdtie\\work\\content-first-20261019\\moment-priority80\\amap-expired82\\expired-red05\\receipt.json",
+      "exitCode": 1,
+      "sourceSHA256": {
+        "apps/client/lib/src/city/amap_city_map_io.dart": "6344e19b9ad2cbd0c67a71a69c35fb85903e13fdc94a174001bbe6352c851b84",
+        "apps/client/test/amap_city_map_motion_test.dart": "c5d15d0b2e33bd69a61bbd5fbe948955441c56647be6c3ead736b1561ed48a66"
+      },
+      "classification": "Independent RED after auxiliary fix, glyph-only viewport removes labels; expired photo still blocks both live basic pins."
+    },
+    {
+      "evidence": "D:\\Project\\birdtie\\work\\content-first-20261019\\moment-priority80\\amap-expired82\\expired-green05\\receipt.json",
+      "exitCode": 0,
+      "sourceSHA256": {
+        "apps/client/lib/src/city/amap_city_map_io.dart": "280614dec21468befb4ff105a8e9fcf630ace4dfd7b7ab5ccb649faf2e9999a7",
+        "apps/client/test/amap_city_map_motion_test.dart": "c5d15d0b2e33bd69a61bbd5fbe948955441c56647be6c3ead736b1561ed48a66"
+      },
+      "classification": "Independent GREEN after additional original-PNG-deadline check; same test bytes as corresponding RED."
+    },
+    {
+      "evidence": "D:\\Project\\birdtie\\work\\content-first-20261019\\moment-priority80\\amap-expired82\\direct-final06\\receipt.json",
+      "exitCode": 1,
+      "sourceSHA256": {
+        "apps/client/lib/src/city/amap_city_map_io.dart": "280614dec21468befb4ff105a8e9fcf630ace4dfd7b7ab5ccb649faf2e9999a7",
+        "apps/client/test/amap_city_map_motion_test.dart": "c5d15d0b2e33bd69a61bbd5fbe948955441c56647be6c3ead736b1561ed48a66"
+      },
+      "classification": "7 PASS, 3 FAIL: old encoded whole-PNG assertion rejected legitimate larger caption canvas; later native widget cases also exposed cached first-platform fake lifecycle."
+    },
+    {
+      "evidence": "D:\\Project\\birdtie\\work\\content-first-20261019\\moment-priority80\\amap-expired82\\direct-final07\\receipt.json",
+      "exitCode": 1,
+      "sourceSHA256": {
+        "apps/client/lib/src/city/amap_city_map_io.dart": "280614dec21468befb4ff105a8e9fcf630ace4dfd7b7ab5ccb649faf2e9999a7",
+        "apps/client/test/amap_city_map_motion_test.dart": "7839bfb89eba25bc4df6a5ae8666d2c7fb8dd47696808398e1a9a9724577ce93"
+      },
+      "classification": "8 PASS, 2 FAIL: old photo assertion adapted to full 30dp RGBA; new cases still failed because vendored final transport retained first fake whose createdOnce was already true."
+    },
+    {
+      "evidence": "D:\\Project\\birdtie\\work\\content-first-20261019\\moment-priority80\\amap-expired82\\direct-final08\\receipt.json",
+      "exitCode": 0,
+      "sourceSHA256": {
+        "apps/client/lib/src/city/amap_city_map_io.dart": "280614dec21468befb4ff105a8e9fcf630ace4dfd7b7ab5ccb649faf2e9999a7",
+        "apps/client/test/amap_city_map_motion_test.dart": "1983520007e1e4abb70351b528b3bdbf1bc95a1dcca3ee2735732d6623e6fca6"
+      },
+      "classification": "10 PASS, 0 FAIL. Fake surface delegates view creation through current test platform; independent view IDs 73/74/75 and matched channels; real production source unchanged since expired-green05."
+    }
+  ],
+  "limitations": [
+    "Device81 failure is preserved. These are deterministic model/widget proofs, not proof of the complete device root cause. Root must test82 after reader dwell beyond old media/source lease and check real pins+semantics return.",
+    "No worker APK build, native SDK execution, ADB, production query/mutation, vendor bridge or shared MapMediaPixels changes.",
+    "Final worker test kept original working-file CRLF; root will restore unchanged HEAD line endings and record final byte SHA/targeted analysis separately."
+  ],
+  "whitespaceCheck": {
+    "command": [
+      "git",
+      "-c",
+      "core.whitespace=cr-at-eol",
+      "diff",
+      "--check",
+      "--",
+      "apps/client/lib/src/city/amap_city_map_io.dart",
+      "apps/client/test/amap_city_map_motion_test.dart"
+    ],
+    "cwd": "D:\\Project\\birdtie",
+    "exitCode": 0
+  },
+  "handoff": "Root notified source freeze and Flutter lock release; no more worker source edits."
+}

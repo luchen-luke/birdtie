@@ -170,29 +170,46 @@ class _NowMapContentPanelState extends State<NowMapContentPanel>
     old?.dispose();
   }
 
+  bool _publicCommentSource(OwnedMapMomentDetail detail) =>
+      detail.visibility == 'public' && detail.status == 'published';
+
   void _notifyCommentTarget() {
     final notice = ++_targetNotice;
     final selected = _current ? _selectedDetail : null;
+    final publicSelected = selected != null && _publicCommentSource(selected);
+    final explicitReadOnly =
+        selected != null &&
+        !publicSelected &&
+        selected.id != _lastCommentDetail?.id;
     final explicitList =
-        _current && !_contentMode && (_placeID != null || _hasRead);
-    if (selected != null) {
+        _current && !_contentMode && (_placeID != null || _hasRead) ||
+        explicitReadOnly;
+    if (publicSelected) {
       _lastCommentDetail = selected;
       _lastCommentReply = _commentReply;
     } else if (explicitList) {
       _lastCommentDetail = null;
       _lastCommentReply = null;
     }
-    final detail = explicitList ? null : selected ?? _lastCommentDetail;
+    // The same public target becoming unavailable keeps its original draft
+    // identity. Reading a different private Moment is an explicit new target,
+    // so it must not inherit the previous Moment's public comment mode.
+    final detail = explicitList
+        ? null
+        : publicSelected
+        ? selected
+        : _lastCommentDetail;
     final reply = explicitList
         ? null
         : selected == null
         ? _lastCommentReply
         : _commentReply;
-    final interaction = selected == null ? null : _interaction;
+    final interaction = publicSelected ? _interaction : null;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || notice != _targetNotice) return;
       final valid =
           _current &&
+          publicSelected &&
           detail != null &&
           _selectedDetail?.id == detail.id &&
           c.detailCurrent(detail) &&
@@ -247,8 +264,7 @@ class _NowMapContentPanelState extends State<NowMapContentPanel>
     if (previous != detail.id) _commentReply = null;
     final client = widget.interactionClient;
     if (client == null ||
-        detail.visibility != 'public' ||
-        detail.status != 'published' ||
+        !_publicCommentSource(detail) ||
         c.organizationWorkspaceID() != null) {
       _disposeInteraction();
       _notifyCommentTarget();
@@ -1281,7 +1297,10 @@ class _NowMapContentPanelState extends State<NowMapContentPanel>
                                           item.canEdit,
                                     ),
                                   ),
-                                  if (_expanded && _contentMode)
+                                  if (_expanded &&
+                                      _contentMode &&
+                                      _publicCommentSource(item) &&
+                                      c.detailCurrent(item))
                                     Padding(
                                       padding: const EdgeInsets.symmetric(
                                         horizontal: 16,

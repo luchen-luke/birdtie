@@ -44,8 +44,10 @@ func collectionReadTx(ctx context.Context, tx pgx.Tx, owner, kind, id string, lo
 		return v, content.ErrUnavailable
 	}
 	if kind == "journey" {
-		if e = readJourneyOwnerMetadataTx(ctx, tx, &v); e != nil {
-			return v, e
+		if content.JourneysEnabled {
+			if e = readJourneyOwnerMetadataTx(ctx, tx, &v); e != nil {
+				return v, e
+			}
 		}
 		v.JourneyDetails, e = readJourneyDetailsTx(ctx, tx, owner, id)
 		if e != nil {
@@ -244,6 +246,9 @@ func (s *Store) CreateHumanCollection(ctx context.Context, d [32]byte, a identit
 	if !errors.Is(e, pgx.ErrNoRows) {
 		return content.PersonalCollection{}, content.ErrUnavailable
 	}
+	if in.Kind == "journey" && !content.JourneysEnabled {
+		return content.PersonalCollection{}, content.ErrUnavailable
+	}
 	if handled, _, _, err := journeyDetailsAuthorityTx(ctx, tx, a.ID, "", in); err != nil {
 		return content.PersonalCollection{}, err
 	} else if !handled {
@@ -328,7 +333,7 @@ func (s *Store) GetHumanCollectionOperation(ctx context.Context, d [32]byte, a i
 	return v, nil
 }
 func (s *Store) ListHumanCollections(ctx context.Context, d [32]byte, a identity.Actor, kind, cursor string) (content.CollectionPage, error) {
-	if kind == "journey" {
+	if kind == "journey" && content.JourneysEnabled {
 		return s.listJourneyOwnerCollections(ctx, d, a, cursor)
 	}
 	table, _, _, e := collectionTables(kind)

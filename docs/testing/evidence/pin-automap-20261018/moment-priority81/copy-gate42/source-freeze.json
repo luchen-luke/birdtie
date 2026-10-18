@@ -1,0 +1,28 @@
+{
+  "status": "SOURCE_FROZEN_TESTS_PENDING",
+  "utc": "2026-10-18T22:58:03.610058+00:00",
+  "source": [
+    {
+      "path": "apps/api/internal/httpapi/collection_copy.go",
+      "sha256": "2c101aa80ec80718fa6503252605f9db72e914c7cfc3ea97d9e9b27d86bba6ad"
+    },
+    {
+      "path": "apps/api/internal/postgres/collection_copy.go",
+      "sha256": "e917f6dc8df508698de5b5b99bfdefac205fcc77cc55d7ed0599e609971c25ee"
+    },
+    {
+      "path": "apps/api/internal/httpapi/journey_availability_test.go",
+      "sha256": "b63e97b8efea54c96bdd04459c29bc6e85278c0b1d03515fd47771854df9e402"
+    },
+    {
+      "path": "apps/api/internal/httpapi/collection_copy_test.go",
+      "sha256": "c3ed628524d9f4f38d7cd98e2e169bb25627ac0923097b12d70d79748a29e7f0"
+    },
+    {
+      "path": "apps/api/internal/postgres/journey_copy_availability_native_test.go",
+      "sha256": "95cec3c292329f31958cea57b4921fd128331d4bf37665b293510359566cfd35"
+    }
+  ],
+  "productionAccess": false,
+  "ddlChanges": false
+}

@@ -1,0 +1,90 @@
+{
+  "recordedAt": "2026-10-18T22:05:58.284Z",
+  "sourceFrozen": true,
+  "sources": [
+    {
+      "path": "apps/api/internal/content/feature_availability.go",
+      "sha256": "9fd3794bff9fa47c80904550f969cfee3d1eb9d9e38aab0cc23858828334c7f9"
+    },
+    {
+      "path": "apps/api/internal/postgres/map_content_routes.go",
+      "sha256": "e0f4f8dd81bdd115ef4e7da0fc362ffa01ab0402dae0ab9fc1ab68f6395bac16"
+    },
+    {
+      "path": "apps/api/internal/httpapi/collection_publication.go",
+      "sha256": "fbe77ccb1edec18ef91bd88d733a2dc7afc9585d18d00b1ae566450f9a7ed0fc"
+    },
+    {
+      "path": "apps/api/internal/postgres/collections.go",
+      "sha256": "7ea57ca0329a02ee05f0c23096ba8d75a7843eacf08c4290d39d78ed85558995"
+    },
+    {
+      "path": "apps/api/internal/postgres/collection_publication.go",
+      "sha256": "15b653f286cfbb9ff8a0819c40b564bce3a080d16a1aa4753313cb015be6f49e"
+    },
+    {
+      "path": "apps/api/internal/httpapi/journey_availability_test.go",
+      "sha256": "3b7f061597a073aa59530fd9b64a06621ff15f334904bb1568098bc1dfe5b2dc"
+    },
+    {
+      "path": "apps/api/internal/postgres/map_content_journey_gate_native_test.go",
+      "sha256": "64e2830d007cf5ff962bcc081bd60499ae14efa447916fbc0adaaaa538c879af"
+    },
+    {
+      "path": "apps/api/internal/postgres/moments.go",
+      "sha256": "63277c2a8e11c5da89014a381c653f3fe53f099e79322f90d12c951fdad54f89"
+    },
+    {
+      "path": "apps/api/internal/postgres/moment_control_native_test.go",
+      "sha256": "d5348b8ba4a295e4539e47fdb7fce848e020526833c45f28d876849f924d0535"
+    }
+  ],
+  "checks": [
+    {
+      "command": "go test ./internal/postgres -run '^TestMomentContextLocationAuthoritySeparation$' -count=1 -v",
+      "cwd": "D:/Project/birdtie/apps/api",
+      "run": "context81-helper01.log",
+      "exitCode": 0,
+      "result": "PASS",
+      "topLevel": 1,
+      "subtests": 3,
+      "note": "Intermediate source; preserved. Final source tested separately below."
+    },
+    {
+      "command": "go test ./internal/postgres -run '^TestMomentContextLocationAuthoritySeparation$' -count=1 -v",
+      "cwd": "D:/Project/birdtie/apps/api",
+      "run": "context81-helper02.log",
+      "exitCode": 0,
+      "result": "PASS",
+      "topLevel": 1,
+      "subtests": 3
+    }
+  ],
+  "changeBoundaries": [
+    "Moment compatibility City remains NULL for Place-only geography.",
+    "Explicit new Activity/Community uses already captured Available exact context City, not Moment compatibility City.",
+    "A changed geography cannot silently carry an omitted Activity into another City, including the legacy draft writer.",
+    "Exact unavailable private Place relation can be retained without current public name, anchor, or re-selection authority.",
+    "New revoked Place relation and changed unavailable precision are rejected.",
+    "The final Session-wait source mutation changes an independently visible Activity with a bounded context; source TTL test unchanged."
+  ],
+  "native": {
+    "status": "ROOT_RUNNING_SEPARATELY",
+    "requiredMigrations": "001–179 plus181, no180",
+    "workerExecuted": false,
+    "tests": [
+      "TestMomentControlNativeCanonicalEffectsAndOriginalHistory",
+      "TestMomentControlNativeOriginalFrameSourceAfterWait",
+      "TestMomentControlNativeRetainedSelectorAndCleanup"
+    ],
+    "pastFailureEvidence": "work/content-first-20261019/moment-priority80/native80-02/go-native-direct01.log"
+  },
+  "notRunByWorker": [
+    "native PostgreSQL",
+    "API build",
+    "migration",
+    "deployment",
+    "device"
+  ],
+  "productionDependency": "181 decouples Moment-side Activity FK; Activity-side city FK retained. API40 old binary remains undeployed."
+}

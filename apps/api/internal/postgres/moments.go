@@ -66,6 +66,10 @@ func createMomentDraftInTx(ctx context.Context, tx pgx.Tx, authorID string, inpu
 			return content.Moment{}, err
 		}
 	}
+	contextCity, err := momentContextCity(input, captured)
+	if err != nil {
+		return content.Moment{}, err
+	}
 	input.CityID, input.PlaceID, input.LocationPrecision = momentLocationLegacyFields(captured.Effective)
 	m, err := scanMoment(tx.QueryRow(ctx, `INSERT INTO moments AS m (
         author_account_id, city_id, place_id, title, body, occurred_at,
@@ -91,7 +95,7 @@ func createMomentDraftInTx(ctx context.Context, tx pgx.Tx, authorID string, inpu
 	if err = applyMomentLocationsInTx(ctx, humanWriteFrame{tx: tx, a: identity.Actor{ID: authorID}}, m.ID, m.Revision, captured); err != nil {
 		return content.Moment{}, err
 	}
-	if err = setMomentContexts(ctx, tx, authorID, m, input); err != nil {
+	if err = setMomentContexts(ctx, tx, authorID, m, input, contextCity); err != nil {
 		return content.Moment{}, err
 	}
 	_, err = tx.Exec(ctx, `INSERT INTO audit_events (
@@ -169,6 +173,20 @@ func updateMomentDraftInTx(ctx context.Context, tx pgx.Tx, authorID, momentID st
 			return content.Moment{}, err
 		}
 	}
+	contextCity, err := momentContextCity(input, captured)
+	if err != nil {
+		return content.Moment{}, err
+	}
+	// The compatibility City projection is intentionally empty for a Place
+	// selector. It cannot decide whether an existing private context survives.
+	// Unchanged private relations need no renewed external authority. A
+	// geography edit must instead keep each omitted association in its own
+	// proven City, or explicitly replace/remove it through the normal checks.
+	existing, e := readMomentLocationRows(ctx, tx, momentID)
+	if e != nil {
+		return content.Moment{}, e
+	}
+	retainContexts := momentContextLocationsUnchanged(existing, captured.Effective)
 	input.CityID, input.PlaceID, input.LocationPrecision = momentLocationLegacyFields(captured.Effective)
 	m, err := scanMoment(tx.QueryRow(ctx, `UPDATE moments m
         SET city_id = NULLIF($4, ''), place_id = NULLIF($5, '')::uuid,
@@ -177,14 +195,17 @@ func updateMomentDraftInTx(ctx context.Context, tx pgx.Tx, authorID, momentID st
             revision = m.revision + 1, updated_at = now()
         WHERE m.id = $1 AND m.author_account_id = $2
           AND m.revision = $3 AND m.status = 'draft' AND m.visibility = 'private'
-          AND (($4 = '' AND (($5 = '' AND $10 = 'none') OR($5 <> '' AND $10='place'))
-            AND ($11 OR NOT EXISTS(SELECT 1 FROM moment_activity_links l WHERE l.moment_id=m.id))
-            AND ($12 OR NOT EXISTS(SELECT 1 FROM moment_community_links l WHERE l.moment_id=m.id))
-            AND ($13 OR NOT EXISTS(SELECT 1 FROM moment_organization_links l WHERE l.moment_id=m.id)))
+          AND (($4 = '' AND (($5 = '' AND $10 = 'none') OR($5 <> '' AND $10='place')))
           OR ($4 <> '' AND EXISTS (
             SELECT 1 FROM cities c WHERE c.id = $4
               AND c.publication_status = 'published'
           )))
+          AND ($14 OR $11 OR NOT EXISTS(SELECT 1 FROM moment_activity_links l
+            WHERE l.moment_id=m.id AND l.city_id<>$15))
+          AND ($14 OR $12 OR NOT EXISTS(SELECT 1 FROM moment_community_links l
+            JOIN communities c ON c.id=l.community_id
+            WHERE l.moment_id=m.id AND (c.city_id IS NOT NULL AND c.city_id<>$15 OR $15='')))
+          AND ($14 OR $13 OR $15<>'' OR NOT EXISTS(SELECT 1 FROM moment_organization_links l WHERE l.moment_id=m.id))
           AND ($5 = '' OR m.place_id = NULLIF($5, '')::uuid OR EXISTS (
             SELECT 1 FROM places p WHERE p.id = NULLIF($5, '')::uuid
               AND ($4 = '' OR p.city_id = $4) AND p.publication_status = 'published'
@@ -192,7 +213,7 @@ func updateMomentDraftInTx(ctx context.Context, tx pgx.Tx, authorID, momentID st
         RETURNING `+momentColumns, momentID, authorID, revision,
 		input.CityID, input.PlaceID, input.Title, input.Body, input.OccurredAt,
 		input.TimePrecision, input.LocationPrecision,
-		input.ActivityID != nil && *input.ActivityID == "", input.CommunityID != nil && *input.CommunityID == "", input.OrganizationID != nil && *input.OrganizationID == ""))
+		input.ActivityID != nil, input.CommunityID != nil, input.OrganizationID != nil, retainContexts, contextCity))
 	if errors.Is(err, pgx.ErrNoRows) {
 		return content.Moment{}, content.ErrConflict
 	}
@@ -202,7 +223,7 @@ func updateMomentDraftInTx(ctx context.Context, tx pgx.Tx, authorID, momentID st
 	if err = applyMomentLocationsInTx(ctx, humanWriteFrame{tx: tx, a: identity.Actor{ID: authorID}}, m.ID, m.Revision, captured); err != nil {
 		return content.Moment{}, err
 	}
-	if err = setMomentContexts(ctx, tx, authorID, m, input); err != nil {
+	if err = setMomentContexts(ctx, tx, authorID, m, input, contextCity); err != nil {
 		return content.Moment{}, err
 	}
 	_, err = tx.Exec(ctx, `INSERT INTO audit_events (
@@ -221,7 +242,37 @@ func updateMomentDraftInTx(ctx context.Context, tx pgx.Tx, authorID, momentID st
 // Context changes are explicit. Omitted fields preserve old-client links;
 // an empty string removes that one relation. Everything shares the draft
 // update transaction, so an invalid reference rolls the draft revision back.
-func setMomentContexts(ctx context.Context, tx pgx.Tx, authorID string, m content.Moment, in content.MomentInput) error {
+func momentContextCity(in content.MomentInput, captured momentLocationsSnapshot) (string, error) {
+	// A context City is a proof for the explicitly selected association. It
+	// never becomes the Moment's own City or creates another location link.
+	if in.CityID != "" {
+		for _, r := range captured.Resolved {
+			if r.Available && r.CityID == in.CityID {
+				return in.CityID, nil
+			}
+		}
+	}
+	for _, slot := range []*string{in.ActivityID, in.CommunityID, in.OrganizationID} {
+		if slot != nil && *slot != "" {
+			return "", content.ErrConflict
+		}
+	}
+	return "", nil
+}
+
+func momentContextLocationsUnchanged(old []momentLocationRow, next []content.MomentLocationInput) bool {
+	if len(old) != len(next) {
+		return false
+	}
+	for _, row := range old {
+		if row.status != "ACTIVE" || row.position < 0 || row.position >= len(next) || row.input != next[row.position] {
+			return false
+		}
+	}
+	return true
+}
+
+func setMomentContexts(ctx context.Context, tx pgx.Tx, authorID string, m content.Moment, in content.MomentInput, contextCity string) error {
 	if in.ActivityID != nil {
 		if _, err := tx.Exec(ctx, `DELETE FROM moment_activity_links WHERE moment_id=$1`, m.ID); err != nil {
 			return err
@@ -231,7 +282,7 @@ func setMomentContexts(ctx context.Context, tx pgx.Tx, authorID string, m conten
                 (moment_id,activity_id,city_id,author_confirmed_at)
                 SELECT $1,a.id,a.city_id,now() FROM activities a
                 WHERE a.id=$2 AND a.city_id=$3 AND a.publication_status='published'
-                  AND birdtie_activity_visible_to(a.id,$4)`, m.ID, *in.ActivityID, m.CityID, authorID)
+                  AND birdtie_activity_visible_to(a.id,$4)`, m.ID, *in.ActivityID, contextCity, authorID)
 			if err != nil {
 				return err
 			}
@@ -251,7 +302,7 @@ func setMomentContexts(ctx context.Context, tx pgx.Tx, authorID string, m conten
                 JOIN community_memberships cm ON cm.community_id=c.id
                 WHERE c.id=$2 AND (c.city_id IS NULL OR c.city_id=$3)
                   AND c.lifecycle_status='active' AND c.publication_status='published'
-                  AND cm.user_account_id=$4 AND cm.status='active'`, m.ID, *in.CommunityID, m.CityID, authorID)
+                  AND cm.user_account_id=$4 AND cm.status='active'`, m.ID, *in.CommunityID, contextCity, authorID)
 			if err != nil {
 				return err
 			}

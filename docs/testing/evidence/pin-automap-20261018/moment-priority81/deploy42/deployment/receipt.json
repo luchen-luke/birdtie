@@ -1,0 +1,43 @@
+{
+  "startedUTC": "2026-10-18T23:01:25.147162+00:00",
+  "action": "deploy",
+  "remoteScriptSHA256": "bf5f224c2a5e36167b4050f3d159ce568c6999afc553c784bfe308a811b2f5df",
+  "businessTestContentWritten": false,
+  "appliedMigrations": [],
+  "exitCode": 0,
+  "status": "REMOTE_COMPLETED",
+  "result": {
+    "status": "READY",
+    "release": "/opt/birdtie/releases/social181-20261019-build42",
+    "previousRelease": "/opt/birdtie/releases/social181-20261019-build41",
+    "apiSHA256": "97cd8df6c5b48eec094d66039458541387f87fac82ff46d45c62cf1d61069913",
+    "previousApiSHA256": "de1c4aaed3317fda6c02720fb75fe0c2d76fe571e0c617499e4cddb5d07c5933",
+    "pid": 919340,
+    "schema": {
+      "maxVersion": 181,
+      "migrationCount": 180,
+      "skipped": [
+        180
+      ]
+    },
+    "ledgerSHA256": "017bce491e462fc7577098ebecba481371fb33ab7fda8b07e7faa60650fe661e",
+    "appliedMigrations": [],
+    "journey180Applied": false,
+    "apiEnvironmentUnchanged": true,
+    "manifestCount": 192,
+    "backup": {
+      "path": "/srv/birdtie-data/backups/api42/before-bin42-20261019070230-5b5a026b/database.dump",
+      "sha256": "9c66b2c84c5d3aa3043942e7121a05d12b3afe2be86e3c3ad635936be2340a94",
+      "bytes": 502697438,
+      "archiveReadable": true,
+      "restore": "NOT_RUN"
+    },
+    "businessTestContentWritten": false,
+    "configurationChanges": "Only service executable/working-directory and deployment release pointer; api.env unchanged.",
+    "readinessRollback": "available; not invoked"
+  },
+  "completedUTC": "2026-10-18T23:03:13.856262+00:00",
+  "elapsedSeconds": 108.704,
+  "sourceManifestSHA256": "0d3cd59acdb7986515d7e0a4086b2a19a479a97a28114de23e9519c039b95cae",
+  "apiSHA256": "97cd8df6c5b48eec094d66039458541387f87fac82ff46d45c62cf1d61069913"
+}

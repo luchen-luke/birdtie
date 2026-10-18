@@ -1,0 +1,36 @@
+Flutter assets will be downloaded from https://storage.flutter-io.cn. Make sure you trust this source!
+00:00 +0: loading D:/Project/birdtie/apps/client/test/now_map_reader_occlusion_test.dart
+00:00 +0: D:/Project/birdtie/apps/client/test/now_map_reader_occlusion_test.dart: actual Now reader clips covered map points and restores the same map on close
+00:00 +1: D:/Project/birdtie/apps/client/test/now_map_reader_occlusion_test.dart: actual Now reader clips covered map points and restores the same map on close
+00:00 +2: D:/Project/birdtie/apps/client/test/now_map_reader_occlusion_test.dart: actual Now reader clips covered map points and restores the same map on close
+00:00 +3: D:/Project/birdtie/apps/client/test/now_map_reader_occlusion_test.dart: actual Now reader clips covered map points and restores the same map on close
+00:00 +4: D:/Project/birdtie/apps/client/test/now_map_reader_occlusion_test.dart: actual Now reader clips covered map points and restores the same map on close
+00:01 +5: D:/Project/birdtie/apps/client/test/now_map_reader_occlusion_test.dart: actual Now reader clips covered map points and restores the same map on close
+00:01 +6: D:/Project/birdtie/apps/client/test/now_map_reader_occlusion_test.dart: actual Now reader clips covered map points and restores the same map on close
+00:01 +7: D:/Project/birdtie/apps/client/test/now_map_reader_occlusion_test.dart: actual Now reader clips covered map points and restores the same map on close
+00:01 +8: D:/Project/birdtie/apps/client/test/now_map_reader_occlusion_test.dart: actual Now reader clips covered map points and restores the same map on close
+00:01 +9: D:/Project/birdtie/apps/client/test/now_map_reader_occlusion_test.dart: actual Now reader clips covered map points and restores the same map on close
+00:01 +10: D:/Project/birdtie/apps/client/test/now_map_reader_occlusion_test.dart: actual Now reader clips covered map points and restores the same map on close
+00:01 +11: D:/Project/birdtie/apps/client/test/now_map_reader_occlusion_test.dart: actual Now reader clips covered map points and restores the same map on close
+00:01 +12: D:/Project/birdtie/apps/client/test/now_map_reader_occlusion_test.dart: actual Now reader clips covered map points and restores the same map on close
+00:01 +13: D:/Project/birdtie/apps/client/test/now_map_reader_occlusion_test.dart: actual Now reader clips covered map points and restores the same map on close
+00:01 +14: D:/Project/birdtie/apps/client/test/now_map_reader_occlusion_test.dart: actual Now reader clips covered map points and restores the same map on close
+00:01 +15: D:/Project/birdtie/apps/client/test/now_map_reader_occlusion_test.dart: actual Now reader clips covered map points and restores the same map on close
+00:01 +16: D:/Project/birdtie/apps/client/test/now_map_reader_occlusion_test.dart: actual Now reader clips covered map points and restores the same map on close
+00:01 +17: D:/Project/birdtie/apps/client/test/now_map_reader_occlusion_test.dart: actual Now reader clips covered map points and restores the same map on close
+00:01 +18: D:/Project/birdtie/apps/client/test/now_map_reader_occlusion_test.dart: actual Now reader clips covered map points and restores the same map on close
+00:01 +19: D:/Project/birdtie/apps/client/test/now_map_reader_occlusion_test.dart: actual Now reader clips covered map points and restores the same map on close
+00:01 +20: D:/Project/birdtie/apps/client/test/now_map_reader_occlusion_test.dart: actual Now reader clips covered map points and restores the same map on close
+00:01 +21: D:/Project/birdtie/apps/client/test/now_moment_entry_composer_test.dart: actual published editor reads with one composer and restores separate edit and comment drafts
+00:01 +22: D:/Project/birdtie/apps/client/test/now_moment_entry_composer_test.dart: actual published editor reads with one composer and restores separate edit and comment drafts
+00:01 +23: D:/Project/birdtie/apps/client/test/now_moment_entry_composer_test.dart: actual published editor reads with one composer and restores separate edit and comment drafts
+00:01 +24: D:/Project/birdtie/apps/client/test/now_moment_entry_composer_test.dart: actual published editor reads with one composer and restores separate edit and comment drafts
+00:01 +25: D:/Project/birdtie/apps/client/test/now_moment_entry_composer_test.dart: actual published editor reads with one composer and restores separate edit and comment drafts
+00:01 +26: D:/Project/birdtie/apps/client/test/now_moment_entry_composer_test.dart: actual published editor reads with one composer and restores separate edit and comment drafts
+00:01 +27: D:/Project/birdtie/apps/client/test/now_moment_entry_composer_test.dart: actual published editor reads with one composer and restores separate edit and comment drafts
+00:02 +28: D:/Project/birdtie/apps/client/test/now_moment_entry_composer_test.dart: return from actual editor reader rejects a late interaction response
+00:02 +29: D:/Project/birdtie/apps/client/test/now_moment_entry_composer_test.dart: switching editor reader to map pin retires A late replies and preserves its draft
+00:03 +30: D:/Project/birdtie/apps/client/test/now_moment_entry_composer_test.dart: switching editor reader to overlap group retires A late replies and preserves its draft
+00:04 +31: D:/Project/birdtie/apps/client/test/now_moment_entry_composer_test.dart: actual editor reader public lease expiry cannot publish
+00:04 +32: D:/Project/birdtie/apps/client/test/now_moment_entry_composer_test.dart: actual editor reader owner ABA cannot publish
+00:05 +33: All tests passed!

@@ -43,6 +43,50 @@ func mc144Write(t *testing.T, f *savedPageNativeFixture, in content.MomentContro
 	return r, in
 }
 
+func TestMomentContextLocationAuthoritySeparation(t *testing.T) {
+	activity := "b1700000-0000-4000-8000-000000000017"
+	in := content.MomentInput{CityID: "aberdeen-gb", ActivityID: &activity}
+	for _, tc := range []struct {
+		name, city string
+		available  bool
+		want       string
+		wantErr    bool
+	}{
+		{"current_place_same_city", "aberdeen-gb", true, "aberdeen-gb", false},
+		{"current_place_other_city", "another-city", true, "", true},
+		{"unavailable_selector", "aberdeen-gb", false, "", true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			captured := momentLocationsSnapshot{Resolved: []content.MomentLocationResolved{{Kind: "PLACE", CityID: tc.city, Available: tc.available}}}
+			got, err := momentContextCity(in, captured)
+			if got != tc.want || (err != nil) != tc.wantErr {
+				t.Fatal("association authority did not use current exact City", got, err)
+			}
+		})
+	}
+	// An omitted or explicitly removed context does not acquire a fresh
+	// external read simply because the person retains a private location ID.
+	in.ActivityID = nil
+	if city, err := momentContextCity(in, momentLocationsSnapshot{}); err != nil || city != "" {
+		t.Fatal("omitted private context acquired new authority", err)
+	}
+	clear := ""
+	in.ActivityID = &clear
+	if city, err := momentContextCity(in, momentLocationsSnapshot{}); err != nil || city != "" {
+		t.Fatal("explicit cleanup needed new external authority", err)
+	}
+	link := content.MomentLocationInput{ID: "b1700000-0000-4000-8000-000000000001", Kind: "PLACE", PlaceID: "b1700000-0000-4000-8000-000000000015", Precision: "place"}
+	old := []momentLocationRow{{input: link, position: 0, status: "ACTIVE"}}
+	if !momentContextLocationsUnchanged(old, []content.MomentLocationInput{link}) {
+		t.Fatal("exact private location did not retain original context")
+	}
+	changed := link
+	changed.Precision = "city"
+	if momentContextLocationsUnchanged(old, []content.MomentLocationInput{changed}) || momentContextLocationsUnchanged(old, nil) {
+		t.Fatal("changed or removed location bypassed no-geography protection")
+	}
+}
+
 type mc144Counters struct{ moments, audits, outbox, history, links int }
 
 func mc144Count(t *testing.T, f *savedPageNativeFixture) mc144Counters {
@@ -118,6 +162,12 @@ func TestMomentControlNativeCanonicalEffectsAndOriginalHistory(t *testing.T) {
 	in.Input.CommunityID = momentString(community)
 	in.Input.OrganizationID = momentString(org)
 	created, approved := mc144Write(t, f, in)
+	var ownCity *string
+	var contextCity string
+	var locationCount int
+	if e := f.pool.QueryRow(f.ctx, `SELECT m.city_id,l.city_id,(SELECT count(*) FROM moment_location_links ml WHERE ml.moment_id=m.id AND ml.status='ACTIVE' AND ml.kind='PLACE' AND ml.place_id=$3) FROM moments m JOIN moment_activity_links l ON l.moment_id=m.id AND l.activity_id=$2 WHERE m.id=$1`, created.MomentID, activity, place).Scan(&ownCity, &contextCity, &locationCount); e != nil || ownCity != nil || contextCity != "aberdeen-gb" || locationCount != 1 {
+		t.Fatal("approved context City was lost or promoted into Moment geography", e)
+	}
 	if created.MomentID == in.OperationID || created.AppliedRevision != 1 {
 		t.Fatal("CREATE reused op as result identity")
 	}
@@ -125,6 +175,19 @@ func TestMomentControlNativeCanonicalEffectsAndOriginalHistory(t *testing.T) {
 	if first.moments != 1 || first.audits != 1 || first.outbox != 0 || first.history != 1 || first.links != 3 {
 		t.Fatal("ordinary Person must not need/create Agent", first)
 	}
+	otherCity := "isolated-context181-" + f.id(t)
+	f.exec(t, `INSERT INTO cities(id,name,region,country_code,time_zone,publication_status,source_label,source_ref,maintainer_label)VALUES($1,'仅合成关联边界城市181','isolated','GB','Europe/London','published','LOCAL_SYNTHETIC_FIXTURE','https://example.invalid/context181','仅合成维护')`, otherCity)
+	crossCity := mc144Input(t, f)
+	crossCity.Action, crossCity.MomentID, crossCity.ExpectedRevision = "UPDATE", created.MomentID, 1
+	crossCity.Input.CityID = otherCity // Omitted Activity is not a re-selection in this City.
+	crossCity, _ = mc144Preview(t, f, crossCity)
+	if _, e := f.store.CommitMomentControl(f.ctx, f.digest, f.actor, crossCity); !errors.Is(e, content.ErrConflict) {
+		t.Fatal("ordinary approved edit moved an omitted Activity across City", e)
+	}
+	if _, e := f.store.UpdateMomentDraft(f.ctx, f.actor.ID, created.MomentID, 1, *crossCity.Input); !errors.Is(e, content.ErrConflict) {
+		t.Fatal("legacy draft writer bypassed omitted Activity City", e)
+	}
+	mc144NoEffect(t, f, first)
 	var ordinaryAgents int
 	if e := f.pool.QueryRow(f.ctx, `SELECT count(*) FROM agents WHERE principal_account_id=$1`, f.actor.ID).Scan(&ordinaryAgents); e != nil || ordinaryAgents != 0 {
 		t.Fatal("ordinary fixture acquired an Agent", ordinaryAgents, e)
@@ -458,16 +521,26 @@ func TestMomentControlNativeOriginalFrameSourceAfterWait(t *testing.T) {
 		mc144Result(t, done, nil)
 	})
 	t.Run("previewSourceAfterFinalSessionWait", func(t *testing.T) {
+		const activity = "b1700000-0000-4000-8000-000000000017"
 		in := mc144Input(t, f)
 		in.Action = "UPDATE"
 		in.MomentID = created.MomentID
 		in.ExpectedRevision = 2
+		in.Input.ActivityID = momentString(activity)
 		_, p := mc144Preview(t, f, in)
 		outer, pid := mc144Outer(t, f, `SELECT id FROM sessions WHERE id=$1 FOR UPDATE`, f.session)
 		done := make(chan error, 1)
 		go func() { done <- p.ResponseProof.RevalidateHumanControl(f.ctx) }()
 		hcNativeWaitPID(t, f, pid)
-		f.exec(t, `UPDATE cities SET name=name WHERE id='aberdeen-gb'`)
+		// Location reads hold the City row FOR SHARE while the proof waits
+		// for the Session. Mutating that City here would make the test's
+		// three connections wait on one another. An independently visible
+		// Activity is also part of the captured source and is not that lock.
+		mutationCtx, cancel := context.WithTimeout(f.ctx, 2*time.Second)
+		defer cancel()
+		if tag, e := f.pool.Exec(mutationCtx, `UPDATE activities SET title=title||' · source changed' WHERE id=$1`, activity); e != nil || tag.RowsAffected() != 1 {
+			t.Fatal("independent source mutation before final Session release", e)
+		}
 		if e := outer.Commit(f.ctx); e != nil {
 			t.Fatal(e)
 		}
@@ -576,17 +649,29 @@ func TestMomentControlNativeRetainedSelectorAndCleanup(t *testing.T) {
 	created, _ := mc144Write(t, f, in)
 	f.exec(t, `UPDATE place_source_permissions SET state='PROHIBITED',version=version+1,revoked_at=clock_timestamp(),updated_at=clock_timestamp() WHERE id=$1`, permission)
 	before := mc144Count(t, f)
-	for _, action := range []string{"CREATE", "UPDATE"} {
+	newDraft := mc144Input(t, f)
+	newDraft.Input.PlaceID, newDraft.Input.LocationPrecision = place, "place"
+	if _, e := f.store.PreviewMomentControl(f.ctx, f.digest, f.actor, newDraft); !errors.Is(e, identity.ErrControlChanged) {
+		t.Fatal("revoked114 source admitted a new draft selector", e)
+	}
+	var retainedID string
+	if e := f.pool.QueryRow(f.ctx, `SELECT id FROM moment_location_links WHERE moment_id=$1 AND status='ACTIVE' AND kind='PLACE' AND place_id=$2`, created.MomentID, place).Scan(&retainedID); e != nil {
+		t.Fatal(e)
+	}
+	// 160 preserves the exact existing private selector, without renewing
+	// its public name, coordinates, or ability to choose a new relation.
+	for _, precision := range []string{"place", "city"} {
 		v := mc144Input(t, f)
-		v.Action = action
-		v.Input.PlaceID = place
-		v.Input.LocationPrecision = "place"
-		if action == "UPDATE" {
-			v.MomentID = created.MomentID
-			v.ExpectedRevision = 1
+		v.Action, v.MomentID, v.ExpectedRevision = "UPDATE", created.MomentID, 1
+		v.Input.CityID, v.Input.PlaceID, v.Input.LocationPrecision = "", "", "none"
+		id := retainedID
+		if precision == "place" {
+			id = f.id(t) // A fresh relation is not the retained private selector.
 		}
+		locations := []content.MomentLocationInput{{ID: id, Kind: "PLACE", PlaceID: place, Precision: precision}}
+		v.Input.Locations = &locations
 		if _, e := f.store.PreviewMomentControl(f.ctx, f.digest, f.actor, v); !errors.Is(e, identity.ErrControlChanged) {
-			t.Fatal("revoked114 source renewed current Place selection", action, e)
+			t.Fatal("revoked114 source admitted a new relation or changed precision", precision, e)
 		}
 	}
 	mc144NoEffect(t, f, before)
@@ -600,9 +685,9 @@ func TestMomentControlNativeRetainedSelectorAndCleanup(t *testing.T) {
 	edit.ExpectedRevision = 1
 	edit.Input.PlaceID = place
 	edit.Input.Title = "本人旧稿在来源撤回后仍可编辑"
-	edit.Input.LocationPrecision = "city"
+	edit.Input.LocationPrecision = "place"
 	approved, p := mc144Preview(t, f, edit)
-	if !p.PreservedPlaceUnavailable {
+	if !p.PreservedPlaceUnavailable || len(p.Locations) != 1 || p.Locations[0].ID != retainedID || p.Locations[0].Available || p.Locations[0].Anchor != nil || p.Locations[0].PlaceName != "" || p.Locations[0].CityName != "" {
 		t.Fatal("unavailable own selector presented as new public authority")
 	}
 	updated, e := f.store.CommitMomentControl(f.ctx, f.digest, f.actor, approved)
@@ -610,7 +695,7 @@ func TestMomentControlNativeRetainedSelectorAndCleanup(t *testing.T) {
 		t.Fatal("private text preservation rejected", e)
 	}
 	own, e = f.store.GetHumanMoment(f.ctx, f.digest, f.actor, created.MomentID)
-	if e != nil || own.PlaceID != place || own.LocationPrecision != "city" || own.Title != edit.Input.Title {
+	if e != nil || own.CityID != "" || own.PlaceID != place || own.LocationPrecision != "place" || own.Title != edit.Input.Title {
 		t.Fatal("preserved own selector/precision mismatch", e)
 	}
 	wrongCity := edit
@@ -621,8 +706,9 @@ func TestMomentControlNativeRetainedSelectorAndCleanup(t *testing.T) {
 	f.exec(t, `INSERT INTO cities(id,name,region,country_code,time_zone,publication_status,source_label,source_ref,maintainer_label)VALUES($1,'仅合成另一城市144','isolated','GB','Europe/London','published','LOCAL_SYNTHETIC_FIXTURE','https://example.invalid/city144','仅合成维护')`, copy.CityID)
 	wrongCity.Input = &copy
 	before = mc144Count(t, f)
-	if _, e = f.store.PreviewMomentControl(f.ctx, f.digest, f.actor, wrongCity); e == nil {
-		t.Fatal("old-ID branch bypassed sameCity")
+	_, preserved := mc144Preview(t, f, wrongCity)
+	if !preserved.PreservedPlaceUnavailable || len(preserved.Locations) != 1 || preserved.Locations[0].ID != retainedID || preserved.Locations[0].Available || preserved.Locations[0].CityID != "" || preserved.Locations[0].Anchor != nil {
+		t.Fatal("compatibility City input promoted an unavailable Place into new geography")
 	}
 	mc144NoEffect(t, f, before)
 	max := content.MomentControlMaxRevision

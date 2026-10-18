@@ -1,3 +1,4 @@
+import '../config/birdtie_environment.dart';
 import 'map_entities.dart';
 
 /// Edges are explicit current server relationships, never inferred geometry.
@@ -17,7 +18,10 @@ List<MapContentEdge> currentMapContentEdges(Iterable<MapEntity> entities) {
   };
   final edges = <MapContentEdge>[];
   for (final e in byID.values) {
-    for (final route in e.journeyEdges) {
+    for (final route
+        in BirdtieEnvironment.journeysEnabled
+            ? e.journeyEdges
+            : const <MapJourneyEdge>[]) {
       final next = byID[route.nextID];
       if (next != null &&
           e.placeID.isNotEmpty &&

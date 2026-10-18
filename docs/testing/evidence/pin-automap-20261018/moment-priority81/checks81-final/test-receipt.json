@@ -1,0 +1,29 @@
+{
+  "startedUTC": "2026-10-18T22:27:43.431049+00:00",
+  "completedUTC": "2026-10-18T22:27:52.113708+00:00",
+  "command": [
+    "D:/DevTools/flutter/bin/flutter.bat",
+    "test",
+    "--no-pub",
+    "--reporter",
+    "expanded",
+    "test/now_map_reader_occlusion_test.dart",
+    "test/now_content_first_test.dart",
+    "test/now_public_moment_composer_test.dart",
+    "test/now_moment_entry_composer_test.dart",
+    "test/now_moment_only_test.dart",
+    "test/saved_collection_append_test.dart"
+  ],
+  "cwd": "D:\\Project\\birdtie\\apps\\client",
+  "exitCode": 0,
+  "log": "test.log",
+  "testFiles": {
+    "now_map_reader_occlusion_test.dart": "e282491b4aed1fe3fa170218e55cc6df5d129fa550c51f9787774a13ad03a074",
+    "now_content_first_test.dart": "51e086a2eed4b7819de0aaa2323a5a4d5652cec20709f1b7beb36b36302022b3",
+    "now_public_moment_composer_test.dart": "f3d9ee19bf6b41b0e5954f5d16f86e558a9901faec8dc33071f02e270b17cef6",
+    "now_moment_entry_composer_test.dart": "43e24434cb692eaceefd00b4fe4fbc0f036dc827aa61eb5d32d8422b89570a45",
+    "now_moment_only_test.dart": "484deb541ab36688c635d45fccb72651f24562f2838d9e9be0dd0b74645c778a",
+    "saved_collection_append_test.dart": "27c00f3be82e0124eb73a5a5ce76e3229376681fbd169a1ffd64f681b8148d54"
+  },
+  "scope": "Six directly related Journey-hidden and Moment reader/composer/target/restore files; not full Flutter suite"
+}

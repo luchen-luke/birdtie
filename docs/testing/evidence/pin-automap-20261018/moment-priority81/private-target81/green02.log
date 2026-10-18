@@ -1,0 +1,7 @@
+Flutter assets will be downloaded from https://storage.flutter-io.cn. Make sure you trust this source!
+00:00 +0: loading D:/Project/birdtie/apps/client/test/now_content_first_test.dart
+00:00 +0: Now private target initial published stays read only
+00:00 +1: Now private target initial draft stays read only
+00:00 +2: Now private target withdrawal retains original public reply disabled
+00:00 +3: Now private target explicit other Moment does not retain public target
+00:00 +4: All tests passed!

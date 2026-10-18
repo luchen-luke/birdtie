@@ -5,6 +5,8 @@ import 'package:birdtie_client/src/city/public_city_map.dart';
 import 'package:birdtie_client/src/content/private_moment_controller.dart';
 import 'package:birdtie_client/src/content/now_journey_panel.dart';
 import 'package:birdtie_client/src/workspace/map_canvas.dart';
+import 'package:birdtie_client/src/workspace/agent_composer.dart';
+import 'package:birdtie_client/src/workspace/sidebar.dart';
 import 'package:birdtie_client/src/workspace/map_display_policy.dart';
 import 'package:birdtie_client/src/workspace/map_workspace.dart';
 import 'package:birdtie_client/src/workspace/now_map_content_panel.dart';
@@ -244,6 +246,57 @@ void main() {
           findsNothing,
         );
         expect(find.byTooltip('返回地图').hitTestable(), findsOneWidget);
+        // A semantic field and its correct geometry are insufficient: an
+        // opaque reader can paint over and absorb taps in the reserved gap.
+        // Use the actual root composer, without requesting focus directly.
+        // A private draft does not grant public-comment eligibility. When an
+        // unavailable previous comment target is retained, deliberately return
+        // the shared composer to Now before testing this independent hit area.
+        final retainedComposer = t.widget<AgentComposer>(
+          find.byType(AgentComposer),
+        );
+        expect(
+          retainedComposer.contentLabel ?? '',
+          isNot(contains('公开可见')),
+        );
+        retainedComposer.onExitContent?.call();
+        // Let the independent fixture's initial transient notice finish its
+        // normal four-second lifetime; it must not become the tap target.
+        await t.pump(const Duration(seconds: 5));
+        await t.pumpAndSettle();
+        expect(find.byType(SnackBar), findsNothing);
+        final composerState = t.state<AgentComposerState>(
+          find.byType(AgentComposer),
+        );
+        final field = find.descendant(
+          of: find.byType(AgentComposer),
+          matching: find.byType(TextField),
+        );
+        expect(field, findsOneWidget);
+        expect(t.widget<TextField>(field).readOnly, isFalse);
+        expect(field.hitTestable(), findsOneWidget);
+        await t.tap(field, warnIfMissed: false);
+        await t.pumpAndSettle();
+        final editable = t.widget<EditableText>(
+          find.descendant(
+            of: find.byType(AgentComposer),
+            matching: find.byType(EditableText),
+          ),
+        );
+        expect(
+          editable.focusNode.hasFocus,
+          isTrue,
+          reason: 'Expanded reading must leave the Now composer tappable.',
+        );
+        expect(field.hitTestable(), findsOneWidget);
+        expect(
+          t.state<AgentComposerState>(find.byType(AgentComposer)),
+          same(composerState),
+        );
+        expect(t.element(find.byType(PublicCityMapView)), same(mapElement));
+        expect(t.element(find.byType(MapCanvas)), same(canvasElement));
+        FocusManager.instance.primaryFocus?.unfocus();
+        await t.pumpAndSettle();
         final readsBeforeClose = (mapReads, pageReads);
         await t.tap(find.byTooltip('返回地图'));
         await t.pumpAndSettle();
@@ -259,15 +312,16 @@ void main() {
         expect(canvas().mapState.viewportBounds, mapTestBounds);
         expect(canvas().workspace.selectedEntityId, pin.mapID);
         expect((mapReads, pageReads), readsBeforeClose);
-        expect(find.byKey(const Key('now-journey-entry')), findsOneWidget);
-        await t.tap(find.byKey(const Key('now-journey-entry')));
-        await t.pumpAndSettle();
-        expect(find.byType(NowJourneyPanel), findsOneWidget);
+        expect(find.byKey(const Key('now-journey-entry')), findsNothing);
+        final composer = t.widget<AgentComposer>(find.byType(AgentComposer));
+        expect(composer.onCreateJourney, isNull);
+        expect(composer.onCreateMoment, isNotNull);
+        expect(composer.onCreateThread, isNotNull);
+        final sidebar = t.widget<Scaffold>(find.byType(Scaffold)).drawer! as Sidebar;
+        expect(sidebar.onJourneys, isNull);
+        expect(find.byType(NowJourneyPanel), findsNothing);
         expect(find.byType(TextField), findsOneWidget);
         expect(t.element(find.byType(PublicCityMapView)), same(mapElement));
-        await t.tap(find.byTooltip('关闭旅程'));
-        await t.pumpAndSettle();
-        expect(find.byType(NowJourneyPanel), findsNothing);
         expect(t.element(find.byType(MapCanvas)), same(canvasElement));
         expect(methods.every((method) => method == 'GET'), isTrue);
         expect(t.takeException(), isNull);

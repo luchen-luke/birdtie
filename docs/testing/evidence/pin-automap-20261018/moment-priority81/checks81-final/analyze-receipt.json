@@ -1,0 +1,35 @@
+{
+  "startedUTC": "2026-10-18T22:27:52.176652+00:00",
+  "completedUTC": "2026-10-18T22:28:19.378768+00:00",
+  "command": [
+    "D:/DevTools/flutter/bin/cache/dart-sdk/bin/dart.exe",
+    "analyze",
+    "lib/src/config/birdtie_environment.dart",
+    "lib/src/content/saved_collection_append.dart",
+    "lib/src/workspace/map_content_routes.dart",
+    "lib/src/workspace/map_workspace.dart",
+    "lib/src/workspace/now_map_content_panel.dart",
+    "test/now_moment_entry_composer_test.dart",
+    "test/now_map_reader_occlusion_test.dart",
+    "test/now_content_first_test.dart",
+    "test/saved_collection_append_test.dart"
+  ],
+  "cwd": "D:\\Project\\birdtie\\apps\\client",
+  "exitCode": 0,
+  "errors": 0,
+  "warnings": 0,
+  "infos": 247,
+  "log": "analyze.log",
+  "scope": "Nine changed Dart source/test files; not whole Flutter project",
+  "sourceHashes": {
+    "lib/src/config/birdtie_environment.dart": "69a1703e92e25843c3c3c687574c3ad3ca9adf27c5738096757b831b43c11d78",
+    "lib/src/content/saved_collection_append.dart": "aeae8c436f2d9b56a58cc8d04244e9fa5019683bc703beeef53b4ec159eaebc4",
+    "lib/src/workspace/map_content_routes.dart": "78961f834d1e5e54bf7095f32ac1ad92671a42c2cf45e66306b96e9b914fafa1",
+    "lib/src/workspace/map_workspace.dart": "a81d7cc42e1059ca23a78d92f7f176d3db57c73dfd2648e8e8112de09d9c688b",
+    "lib/src/workspace/now_map_content_panel.dart": "75962abf27bc5b9e1480e84bd2828f6dffa64280347145e99870c72d30abf495",
+    "test/now_moment_entry_composer_test.dart": "43e24434cb692eaceefd00b4fe4fbc0f036dc827aa61eb5d32d8422b89570a45",
+    "test/now_map_reader_occlusion_test.dart": "e282491b4aed1fe3fa170218e55cc6df5d129fa550c51f9787774a13ad03a074",
+    "test/now_content_first_test.dart": "51e086a2eed4b7819de0aaa2323a5a4d5652cec20709f1b7beb36b36302022b3",
+    "test/saved_collection_append_test.dart": "27c00f3be82e0124eb73a5a5ce76e3229376681fbd169a1ffd64f681b8148d54"
+  }
+}

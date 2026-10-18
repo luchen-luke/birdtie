@@ -1,0 +1,4 @@
+=== RUN   TestContentFirstStableChronology
+--- PASS: TestContentFirstStableChronology (0.00s)
+PASS
+ok  	github.com/birdtie/birdtie/apps/api/internal/postgres	2.046s

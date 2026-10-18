@@ -1,0 +1,147 @@
+Flutter assets will be downloaded from https://storage.flutter-io.cn. Make sure you trust this source!
+00:00 +0: loading D:/Project/birdtie/apps/client/test/moment_thread_test.dart
+00:00 +0: D:/Project/birdtie/apps/client/test/moment_thread_test.dart: 整串撤回批准经公开详情能力及祖先重建仍提交一次且身份变化退休
+00:00 +1: D:/Project/birdtie/apps/client/test/moment_thread_test.dart: 整串撤回批准经公开详情能力及祖先重建仍提交一次且身份变化退休
+00:00 +2: D:/Project/birdtie/apps/client/test/moment_thread_test.dart: 整串撤回批准经公开详情能力及祖先重建仍提交一次且身份变化退休
+00:00 +3: D:/Project/birdtie/apps/client/test/moment_thread_test.dart: 整串撤回批准经公开详情能力及祖先重建仍提交一次且身份变化退休
+00:00 +4: D:/Project/birdtie/apps/client/test/moment_thread_test.dart: 整串撤回批准经公开详情能力及祖先重建仍提交一次且身份变化退休
+00:00 +5: D:/Project/birdtie/apps/client/test/moment_thread_test.dart: 整串撤回批准经公开详情能力及祖先重建仍提交一次且身份变化退休
+00:00 +6: D:/Project/birdtie/apps/client/test/moment_thread_test.dart: 整串撤回批准经公开详情能力及祖先重建仍提交一次且身份变化退休
+00:00 +7: D:/Project/birdtie/apps/client/test/moment_thread_test.dart: 整串撤回批准经公开详情能力及祖先重建仍提交一次且身份变化退休
+00:00 +8: D:/Project/birdtie/apps/client/test/moment_thread_test.dart: 整串撤回批准经公开详情能力及祖先重建仍提交一次且身份变化退休
+00:00 +9: D:/Project/birdtie/apps/client/test/moment_thread_test.dart: 整串撤回批准经公开详情能力及祖先重建仍提交一次且身份变化退休
+00:00 +10: D:/Project/birdtie/apps/client/test/moment_thread_test.dart: 整串撤回批准经公开详情能力及祖先重建仍提交一次且身份变化退休
+00:00 +11: D:/Project/birdtie/apps/client/test/moment_thread_test.dart: 整串撤回批准经公开详情能力及祖先重建仍提交一次且身份变化退休
+00:00 +12: D:/Project/birdtie/apps/client/test/moment_thread_test.dart: 整串撤回批准经公开详情能力及祖先重建仍提交一次且身份变化退休
+00:01 +12 -1: D:/Project/birdtie/apps/client/test/moment_thread_test.dart: 整串撤回批准经公开详情能力及祖先重建仍提交一次且身份变化退休
+00:01 +12 -1: D:/Project/birdtie/apps/client/test/saved_collection_append_test.dart: paused Journey is absent from picker; original uncertain operation remains recoverable [E]
+  Null check operator used on a null value
+  test\saved_collection_append_test.dart 122:46  main.<fn>
+  
+00:01 +12 -2: D:/Project/birdtie/apps/client/test/moment_thread_test.dart: 整串撤回批准经公开详情能力及祖先重建仍提交一次且身份变化退休
+00:01 +12 -2: D:/Project/birdtie/apps/client/test/saved_collection_append_test.dart: collectionAppend preview取消零写，去重且不复制Saved私人note [E]
+  Bad state: No element
+  dart:core                                      _Array.single
+  test\saved_collection_append_test.dart 139:24  main.<fn>
+  
+00:01 +12 -3: D:/Project/birdtie/apps/client/test/moment_thread_test.dart: 整串撤回批准经公开详情能力及祖先重建仍提交一次且身份变化退休
+00:01 +12 -3: D:/Project/birdtie/apps/client/test/saved_collection_append_test.dart: collectionAppend 一次CAS原operation提交，hidden位置与空备注 [E]
+  Expected: <true>
+    Actual: <false>
+  
+  package:matcher                                     expect
+  package:flutter_test/src/widget_tester.dart 473:18  expect
+  test\saved_collection_append_test.dart 149:5        main.<fn>
+  
+00:01 +12 -4: D:/Project/birdtie/apps/client/test/moment_thread_test.dart: 整串撤回批准经公开详情能力及祖先重建仍提交一次且身份变化退休
+00:01 +12 -4: D:/Project/birdtie/apps/client/test/saved_collection_append_test.dart: collectionAppend 丢响应仅核原回执，重启也不POST重发 [E]
+  Null check operator used on a null value
+  test\saved_collection_append_test.dart 167:38  main.<fn>
+  
+00:01 +12 -5: D:/Project/birdtie/apps/client/test/moment_thread_test.dart: 整串撤回批准经公开详情能力及祖先重建仍提交一次且身份变化退休
+00:01 +12 -5: D:/Project/birdtie/apps/client/test/saved_collection_append_test.dart: collectionAppend 已有pending抢占另一选择，零新POST [E]
+  Expected: <true>
+    Actual: <false>
+  
+  package:matcher                                     expect
+  package:flutter_test/src/widget_tester.dart 473:18  expect
+  test\saved_collection_append_test.dart 194:5        main.<fn>
+  
+00:01 +13 -5: D:/Project/birdtie/apps/client/test/moment_thread_test.dart: 整串撤回批准经公开详情能力及祖先重建仍提交一次且身份变化退休
+00:01 +14 -5: D:/Project/birdtie/apps/client/test/moment_thread_test.dart: 整串撤回批准经公开详情能力及祖先重建仍提交一次且身份变化退休
+00:01 +14 -6: D:/Project/birdtie/apps/client/test/moment_thread_test.dart: 整串撤回批准经公开详情能力及祖先重建仍提交一次且身份变化退休
+00:01 +14 -6: D:/Project/birdtie/apps/client/test/saved_collection_append_test.dart: collectionAppend 普通同主体认证续期保留具体版本选择 [E]
+  Expected: '22222222-2222-4222-8222-222222222222'
+    Actual: <null>
+     Which: not an <Instance of 'String'>
+  
+  package:matcher                                     expect
+  package:flutter_test/src/widget_tester.dart 473:18  expect
+  test\saved_collection_append_test.dart 218:5        main.<fn>
+  
+00:01 +15 -6: D:/Project/birdtie/apps/client/test/moment_thread_test.dart: 整串撤回批准经公开详情能力及祖先重建仍提交一次且身份变化退休
+00:01 +16 -6: D:/Project/birdtie/apps/client/test/moment_thread_test.dart: 整串撤回批准经公开详情能力及祖先重建仍提交一次且身份变化退休
+00:01 +16 -7: D:/Project/birdtie/apps/client/test/moment_thread_test.dart: 整串撤回批准经公开详情能力及祖先重建仍提交一次且身份变化退休
+00:01 +16 -7: D:/Project/birdtie/apps/client/test/saved_collection_append_test.dart: collectionAppend 原公开UNKNOWN阻止选择，不绕过原发布门槛 [E]
+  Expected: contains '公开操作待核实'
+    Actual: <null>
+     Which: is not a string, map or iterable
+  
+  package:matcher                                     expect
+  package:flutter_test/src/widget_tester.dart 473:18  expect
+  test\saved_collection_append_test.dart 237:5        main.<fn>
+  
+00:01 +16 -8: D:/Project/birdtie/apps/client/test/moment_thread_test.dart: 整串撤回批准经公开详情能力及祖先重建仍提交一次且身份变化退休
+00:01 +16 -8: D:/Project/birdtie/apps/client/test/saved_collection_append_test.dart: collectionAppend 提交后401仍保留原journal，结束读取原成功不移除 [E]
+  Null check operator used on a null value
+  test\saved_collection_append_test.dart 247:31  main.<fn>
+  
+00:01 +16 -9: D:/Project/birdtie/apps/client/test/moment_thread_test.dart: 整串撤回批准经公开详情能力及祖先重建仍提交一次且身份变化退休
+00:01 +16 -9: D:/Project/birdtie/apps/client/test/saved_collection_append_test.dart: collectionAppend 原GET404不判失败，STOPPED解除原阻塞并刷新选择 [E]
+  Expected: '周末路线'
+    Actual: <null>
+     Which: not an <Instance of 'String'>
+  
+  package:matcher                                     expect
+  package:flutter_test/src/widget_tester.dart 473:18  expect
+  test\saved_collection_append_test.dart 273:5        main.<fn>
+  
+00:01 +16 -10: D:/Project/birdtie/apps/client/test/moment_thread_test.dart: 整串撤回批准经公开详情能力及祖先重建仍提交一次且身份变化退休
+00:01 +16 -10: D:/Project/birdtie/apps/client/test/saved_collection_append_test.dart: collectionAppend 不同目标的成功回执不能清除原UNKNOWN [E]
+  Expected: <true>
+    Actual: <false>
+  
+  package:matcher                                     expect
+  package:flutter_test/src/widget_tester.dart 473:18  expect
+  test\saved_collection_append_test.dart 294:5        main.<fn>
+  
+00:01 +17 -10: D:/Project/birdtie/apps/client/test/moment_thread_test.dart: 整串撤回批准经公开详情能力及祖先重建仍提交一次且身份变化退休
+00:01 +18 -10: D:/Project/birdtie/apps/client/test/moment_thread_test.dart: 整串撤回批准经公开详情能力及祖先重建仍提交一次且身份变化退休
+00:01 +19 -10: D:/Project/birdtie/apps/client/test/moment_thread_test.dart: 整串撤回批准经公开详情能力及祖先重建仍提交一次且身份变化退休
+00:01 +20 -10: D:/Project/birdtie/apps/client/test/moment_thread_test.dart: 整串撤回批准经公开详情能力及祖先重建仍提交一次且身份变化退休
+00:01 +21 -10: D:/Project/birdtie/apps/client/test/moment_thread_test.dart: 整串撤回批准经公开详情能力及祖先重建仍提交一次且身份变化退休
+00:01 +22 -10: D:/Project/birdtie/apps/client/test/moment_thread_test.dart: 整串撤回批准经公开详情能力及祖先重建仍提交一次且身份变化退休
+00:01 +23 -10: D:/Project/birdtie/apps/client/test/moment_thread_test.dart: 整串撤回批准经公开详情能力及祖先重建仍提交一次且身份变化退休
+00:01 +24 -10: D:/Project/birdtie/apps/client/test/moment_thread_test.dart: 整串撤回批准经公开详情能力及祖先重建仍提交一次且身份变化退休
+00:02 +25 -10: D:/Project/birdtie/apps/client/test/saved_collection_append_test.dart: collectionAppend 正常窄屏预览需要明确勾选，取消无写
+00:02 +26 -10: D:/Project/birdtie/apps/client/test/saved_collection_append_test.dart: collectionAppend 正常窄屏预览需要明确勾选，取消无写
+00:02 +27 -10: D:/Project/birdtie/apps/client/test/saved_collection_append_test.dart: collectionAppend 正常窄屏预览需要明确勾选，取消无写
+00:02 +28 -10: D:/Project/birdtie/apps/client/test/saved_collection_append_test.dart: collectionAppend 正常窄屏预览需要明确勾选，取消无写
+00:02 +29 -10: D:/Project/birdtie/apps/client/test/saved_collection_append_test.dart: collectionAppend 正常窄屏预览需要明确勾选，取消无写
+00:02 +30 -10: D:/Project/birdtie/apps/client/test/saved_collection_append_test.dart: collectionAppend 正常窄屏预览需要明确勾选，取消无写
+00:02 +31 -10: D:/Project/birdtie/apps/client/test/saved_collection_append_test.dart: collectionAppend 正常窄屏预览需要明确勾选，取消无写
+00:02 +32 -10: D:/Project/birdtie/apps/client/test/saved_collection_append_test.dart: collectionAppend 正常窄屏预览需要明确勾选，取消无写
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following assertion was thrown running a test:
+pumpAndSettle timed out
+
+When the exception was thrown, this was the stack:
+#0      WidgetTester.pumpAndSettle.<anonymous closure> (package:flutter_test/src/widget_tester.dart:717:11)
+<asynchronous suspension>
+#1      TestAsyncUtils.guard.<anonymous closure> (package:flutter_test/src/test_async_utils.dart:130:27)
+<asynchronous suspension>
+#2      main.<anonymous closure> (file:///D:/Project/birdtie/apps/client/test/saved_collection_append_test.dart:305:5)
+<asynchronous suspension>
+#3      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#4      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1952:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+The test description was:
+  collectionAppend 正常窄屏预览需要明确勾选，取消无写
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:03 +32 -11: D:/Project/birdtie/apps/client/test/now_map_reader_occlusion_test.dart: actual Now reader clips covered map points and restores the same map on close
+00:03 +32 -11: D:/Project/birdtie/apps/client/test/saved_collection_append_test.dart: collectionAppend 正常窄屏预览需要明确勾选，取消无写 [E]
+  Test failed. See exception logs above.
+  The test description was: collectionAppend 正常窄屏预览需要明确勾选，取消无写
+  
+00:03 +33 -11: Some tests failed.
+
+Failing tests:
+  D:/Project/birdtie/apps/client/test/saved_collection_append_test.dart: collectionAppend preview取消零写，去重且不复制Saved私人note
+  D:/Project/birdtie/apps/client/test/saved_collection_append_test.dart: collectionAppend 一次CAS原operation提交，hidden位置与空备注
+  D:/Project/birdtie/apps/client/test/saved_collection_append_test.dart: collectionAppend 不同目标的成功回执不能清除原UNKNOWN
+  D:/Project/birdtie/apps/client/test/saved_collection_append_test.dart: collectionAppend 丢响应仅核原回执，重启也不POST重发
+  ... and 7 more

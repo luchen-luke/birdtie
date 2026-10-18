@@ -1,0 +1,58 @@
+{
+  "status": "DIRECT_WIDGET_PASS_SOURCE_FROZEN",
+  "command": [
+    "D:/DevTools/flutter/bin/flutter.bat",
+    "test",
+    "--no-pub",
+    "--reporter=expanded",
+    "test/now_map_reader_occlusion_test.dart"
+  ],
+  "cwd": "D:\\Project\\birdtie\\apps\\client",
+  "uniqueWidgetTests": 1,
+  "redExitCode": 1,
+  "greenExitCode": 0,
+  "sameTestAndPanelInRedGreen": true,
+  "productionDeltaOnlyMaterialForRedGreen": true,
+  "fullWorkerProductionDeltaOnlyMaterialAndNullControllerGuard": true,
+  "mapWorkspaceAllCRLF": true,
+  "sourceHashes": {
+    "apps/client/lib/src/workspace/map_workspace.dart": "370ed4c0dd4e60509ae09969712dbcc373c46217e8c260635c7a53f0869e643b",
+    "apps/client/test/now_map_reader_occlusion_test.dart": "e282491b4aed1fe3fa170218e55cc6df5d129fa550c51f9787774a13ad03a074",
+    "apps/client/lib/src/workspace/now_map_content_panel.dart": "75962abf27bc5b9e1480e84bd2828f6dffa64280347145e99870c72d30abf495"
+  },
+  "regression": "Actual MapWorkspace expanded reader with original content. Requires actual field readOnly=false, transient initial fixture SnackBar finished, physical field tap, EditableText.focusNode.hasFocus=true, same composer/map/canvas elements, current original source and unchanged epoch, restore original selected pin/viewport on close. No static tree mirror assertion.",
+  "nullController": "A retained target may remain disabled with its original draft; a missing controller cannot satisfy _contentSourceCurrent or display a public claim. No permissions broadened.",
+  "preservedFailures": [
+    "red01",
+    "green01",
+    "green02",
+    "red03",
+    "green03",
+    "diagnostic04",
+    "red05"
+  ],
+  "failureClarifications": "Earlier runs were confounded by private readOnly target and then an independent transient SnackBar. diagnostic04 contains exact hit path. red05 is independent Material-only failure; failure-time unmount ancestor noise is retained.",
+  "notRun": [
+    "APK build",
+    "ADB/native/visual verification",
+    "full analysis",
+    "full test suite"
+  ],
+  "handoff": "Root owns batch81 build and actual device verification.",
+  "whitespaceChecks": {
+    "defaultDiffCheckExit": 1,
+    "reason": "Git default whitespace interpreted the required CRLF as trailing whitespace across existing root and new lines; production CRLF intentionally preserved.",
+    "CRAtEOLCheckCommand": [
+      "git",
+      "-c",
+      "core.whitespace=cr-at-eol",
+      "diff",
+      "--check",
+      "--",
+      "apps/client/lib/src/workspace/map_workspace.dart",
+      "apps/client/test/now_map_reader_occlusion_test.dart"
+    ],
+    "CRAtEOLCheckExit": 0,
+    "persistentGitConfigChanged": false
+  }
+}

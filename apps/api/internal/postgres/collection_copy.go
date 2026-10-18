@@ -330,6 +330,9 @@ func (s *Store) PreviewHumanCollectionCopy(ctx context.Context, d [32]byte, a id
 	} else if !errors.Is(e, pgx.ErrNoRows) {
 		return content.CollectionCopyPreview{}, e
 	}
+	if r.Kind == "journey" && !content.JourneysEnabled {
+		return content.CollectionCopyPreview{}, content.ErrUnavailable
+	}
 	v, authority, e := s.collectionCopySource(ctx, tx, d, a, r, in, true, nil)
 	if e != nil {
 		return content.CollectionCopyPreview{}, e
@@ -404,6 +407,11 @@ func (s *Store) CopyHumanCollection(ctx context.Context, d [32]byte, a identity.
 		return out, nil
 	}
 	if !errors.Is(e, pgx.ErrNoRows) {
+		return out, content.ErrUnavailable
+	}
+	// Existing immutable receipts above remain recoverable; the closed release
+	// boundary only rejects a new Journey destination.
+	if r.Kind == "journey" && !content.JourneysEnabled {
 		return out, content.ErrUnavailable
 	}
 	v, authority, e := s.collectionCopySource(ctx, tx, d, a, r, in, true, nil)

@@ -1,0 +1,23 @@
+{
+  "command": [
+    "D:/DevTools/flutter/bin/cache/dart-sdk/bin/dart.exe",
+    "analyze",
+    "--format=machine",
+    "lib/src/city/amap_city_map_io.dart",
+    "test/amap_city_map_motion_test.dart"
+  ],
+  "cwd": "D:\\Project\\birdtie\\apps\\client",
+  "atUTC": "2026-10-18T22:53:47.327889+00:00",
+  "exitCode": 0,
+  "seconds": 1.89,
+  "diagnostics": {
+    "ERROR": 0,
+    "WARNING": 0,
+    "INFO": 30
+  },
+  "sourceSHA256": {
+    "lib/src/city/amap_city_map_io.dart": "280614dec21468befb4ff105a8e9fcf630ace4dfd7b7ab5ccb649faf2e9999a7",
+    "test/amap_city_map_motion_test.dart": "1cd22838c5b3a5ff6692cf1796da30a2d9323b361849c8ace2c9472138e85a17"
+  },
+  "sourceStable": true
+}

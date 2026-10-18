@@ -35,7 +35,13 @@ Map<String, Object?> _lease() {
 }
 
 class _PanelController extends OwnedMapController {
-  _PanelController(this.changes, {this.threaded = false})
+  _PanelController(
+    this.changes, {
+    this.threaded = false,
+    this.visibility = 'public',
+    this.status = 'published',
+    this.momentID = _seed,
+  })
     : super(
         client: MockClient(
           (_) async => throw StateError('unexpected map HTTP'),
@@ -49,7 +55,11 @@ class _PanelController extends OwnedMapController {
       );
   final ValueNotifier<int> changes;
   final bool threaded;
+  final String momentID;
+  String visibility, status;
   bool permitted = true;
+  String get visibilitySource =>
+      visibility == 'private' ? 'SELF_PRIVATE' : 'BIRDTIE_PUBLIC_MOMENT';
   final places = <(String?, String?, String?)>[];
   final threads = <String>[];
   late final pin = OwnedMapPin(
@@ -59,15 +69,15 @@ class _PanelController extends OwnedMapController {
     cityID: null,
     latitude: 57.1,
     longitude: -2.1,
-    visibilitySources: const ['BIRDTIE_PUBLIC_MOMENT'],
+    visibilitySources: [visibilitySource],
     sourceVersion: 'a' * 64,
     momentCount: 1,
     moments: [
       OwnedMapMoment(
-        _seed,
+        momentID,
         2,
-        'BIRDTIE_PUBLIC_MOMENT',
-        '/v1/me/map-content/moments/$_seed',
+        visibilitySource,
+        '/v1/me/map-content/moments/$momentID',
       ),
     ],
     momentsTruncated: false,
@@ -75,8 +85,8 @@ class _PanelController extends OwnedMapController {
     kind: 'MOMENT_ANCHOR',
     markerID: 'anchor:$_placeA',
     anchorID: _placeA,
-    momentID: _seed,
-    entryID: _seed,
+    momentID: momentID,
+    entryID: momentID,
     threadID: threaded ? _threadID : '',
   );
   OwnedMapMomentDetail detail(String id) => OwnedMapMomentDetail.decode(
@@ -85,10 +95,10 @@ class _PanelController extends OwnedMapController {
       'viewerAccountId': _owner,
       'id': id,
       'revision': 2,
-      'visibilitySource': 'BIRDTIE_PUBLIC_MOMENT',
+      'visibilitySource': visibilitySource,
       'canEdit': false,
-      'status': 'published',
-      'visibility': 'public',
+      'status': status,
+      'visibility': visibility,
       'title': '',
       'body': id == _seed
           ? (threaded ? '中段无地点正文' : '原动态正文')
@@ -176,7 +186,7 @@ class _PanelController extends OwnedMapController {
         'viewerAccountId': _owner,
         'seedMomentId': seed.id,
         'seedRevision': 2,
-        'seedVisibilitySource': 'BIRDTIE_PUBLIC_MOMENT',
+        'seedVisibilitySource': seed.visibilitySource,
         'status': 'AVAILABLE',
         'threadId': _threadID,
         'entries': [
@@ -311,6 +321,127 @@ void main() {
   tearDown(
     () => TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(storage, null),
+  );
+
+
+  for (final status in ['published', 'draft']) {
+    testWidgets(
+      'Now private target initial $status stays read only',
+      (t) async {
+        final changes = ValueNotifier(0), requests = <String>[];
+        final c = _PanelController(
+          changes,
+          threaded: true,
+          visibility: 'private',
+          status: status,
+        );
+        final client = _comments(requests);
+        final targets =
+            <(MomentInteractionController?, OwnedMapMomentDetail?, MomentComment?)>[];
+        await t.pumpWidget(
+          _panel(c, client, (controller, moment, reply) {
+            targets.add((controller, moment, reply));
+          }),
+        );
+        await _reads(t);
+        expect(find.text('中段无地点正文'), findsOneWidget);
+        expect(targets, isNotEmpty);
+        expect(targets.every((target) => target.$1 == null &&
+            target.$2 == null && target.$3 == null), true);
+        expect(requests, isEmpty);
+        for (final id in [_first, _seed, _last]) {
+          expect(find.byKey(ValueKey('comment-target:$id')), findsNothing);
+        }
+        expect(find.byType(TextField), findsNothing);
+        await t.pumpWidget(const SizedBox());
+        c.dispose();
+        changes.dispose();
+        client.close();
+      },
+    );
+  }
+
+  testWidgets(
+    'Now private target withdrawal retains original public reply disabled',
+    (t) async {
+      final changes = ValueNotifier(0), requests = <String>[];
+      final c = _PanelController(changes), client = _comments(requests);
+      MomentInteractionController? targetController;
+      OwnedMapMomentDetail? target;
+      MomentComment? targetReply;
+      await t.pumpWidget(
+        _panel(c, client, (controller, moment, reply) {
+          targetController = controller;
+          target = moment;
+          targetReply = reply;
+        }),
+      );
+      await _reads(t);
+      expect(targetController?.canComment, true);
+      final original = target;
+      final originalController = targetController!;
+      await t.ensureVisible(find.text('回复').first);
+      await t.tap(find.text('回复').first);
+      await _reads(t);
+      expect(targetReply?.id, _comment);
+      // A newer owner-readable private response does not reactivate the
+      // former public target. The old cached detail deliberately remains
+      // readable in this fake, exercising the host's null-controller fence.
+      c.visibility = 'private';
+      await t.pump(const Duration(seconds: 16));
+      await _reads(t);
+      expect(targetController, isNull);
+      expect(target, same(original));
+      expect(target?.visibility, 'public');
+      expect(targetReply?.id, _comment);
+      expect(originalController.canComment, false);
+      expect(find.byKey(const ValueKey('comment-target:$_seed')), findsNothing);
+      expect(requests, [_seed]);
+      await t.pumpWidget(const SizedBox());
+      c.dispose();
+      changes.dispose();
+      client.close();
+    },
+  );
+
+  testWidgets(
+    'Now private target explicit other Moment does not retain public target',
+    (t) async {
+      final changes = ValueNotifier(0), requests = <String>[];
+      final first = _PanelController(changes);
+      final next = _PanelController(
+        changes,
+        visibility: 'private',
+        momentID: _first,
+      );
+      final client = _comments(requests);
+      MomentInteractionController? targetController;
+      OwnedMapMomentDetail? target;
+      MomentComment? targetReply;
+      void receive(MomentInteractionController? controller,
+          OwnedMapMomentDetail? moment, MomentComment? reply) {
+        targetController = controller;
+        target = moment;
+        targetReply = reply;
+      }
+      await t.pumpWidget(_panel(first, client, receive));
+      await _reads(t);
+      expect(target?.id, _seed);
+      expect(targetController?.canComment, true);
+      await t.pumpWidget(_panel(next, client, receive));
+      await _reads(t);
+      expect(find.text('第一段正文'), findsOneWidget);
+      expect(targetController, isNull);
+      expect(target, isNull);
+      expect(targetReply, isNull);
+      expect(find.byKey(const ValueKey('comment-target:$_first')), findsNothing);
+      expect(requests, [_seed]);
+      await t.pumpWidget(const SizedBox());
+      first.dispose();
+      next.dispose();
+      changes.dispose();
+      client.close();
+    },
   );
 
   testWidgets(

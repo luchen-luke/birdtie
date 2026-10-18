@@ -1,0 +1,4 @@
+=== RUN   TestJourneyCopyAvailabilityNative179KeepsOriginalRecovery
+--- PASS: TestJourneyCopyAvailabilityNative179KeepsOriginalRecovery (0.35s)
+PASS
+ok  	github.com/birdtie/birdtie/apps/api/internal/postgres	1.807s

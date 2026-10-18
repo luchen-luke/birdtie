@@ -1,0 +1,32 @@
+{
+  "command": "D:/DevTools/flutter/bin/flutter.bat test --no-pub --reporter=expanded test/now_content_first_test.dart --plain-name 'Now private target'",
+  "cwd": "D:/Project/birdtie/apps/client",
+  "exitCode": 1,
+  "selected": 4,
+  "passed": 0,
+  "failed": 4,
+  "cause": "The callback binding fix had landed but the private-entry comment button condition had not yet been written. All four tests reached and failed the findsNothing assertion for comment-target:<MomentID>.",
+  "failures": [
+    {
+      "name": "Now private target initial published stays read only",
+      "line": 353,
+      "key": "comment-target:22222222-2222-4222-8222-222222222222"
+    },
+    {
+      "name": "Now private target initial draft stays read only",
+      "line": 353,
+      "key": "comment-target:22222222-2222-4222-8222-222222222222"
+    },
+    {
+      "name": "Now private target withdrawal retains original public reply disabled",
+      "line": 398,
+      "key": "comment-target:22222222-2222-4222-8222-222222222222"
+    },
+    {
+      "name": "Now private target explicit other Moment does not retain public target",
+      "line": 437,
+      "key": "comment-target:33333333-3333-4333-8333-333333333333"
+    }
+  ],
+  "rawOutputPreserved": "Full native tool output is retained in this Codex task turn (exec chunk 09fe99); this local JSON is a failure summary, not a replacement log."
+}

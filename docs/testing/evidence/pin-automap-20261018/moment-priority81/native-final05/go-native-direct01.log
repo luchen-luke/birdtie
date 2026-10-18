@@ -1,0 +1,135 @@
+=== RUN   TestMomentContextLocationsNative181
+=== RUN   TestMomentContextLocationsNative181/compatibleDownUpPreservesRows
+=== RUN   TestMomentContextLocationsNative181/activityCityAndMomentIdentityRemainForeignKeys
+=== RUN   TestMomentContextLocationsNative181/momentDeletionStillCascades
+=== RUN   TestMomentContextLocationsNative181/incompatibleDownRejectsWithoutRewriting
+--- PASS: TestMomentContextLocationsNative181 (0.36s)
+    --- PASS: TestMomentContextLocationsNative181/compatibleDownUpPreservesRows (0.01s)
+    --- PASS: TestMomentContextLocationsNative181/activityCityAndMomentIdentityRemainForeignKeys (0.03s)
+    --- PASS: TestMomentContextLocationsNative181/momentDeletionStillCascades (0.02s)
+    --- PASS: TestMomentContextLocationsNative181/incompatibleDownRejectsWithoutRewriting (0.02s)
+PASS
+ok  	github.com/birdtie/birdtie/apps/api/internal/postgres	2.369s
+=== RUN   TestContentFirstNativeIndependentMomentsAndRouteGap
+    map_content_first_native_test.go:11: migration roundtrip uses independently owned database birdtie_owned_migration_485214875ba23b0cc0076897 with 181 actual migrations
+--- PASS: TestContentFirstNativeIndependentMomentsAndRouteGap (2.09s)
+=== RUN   TestMapContentJourneyDisabledNative179
+--- PASS: TestMapContentJourneyDisabledNative179 (0.52s)
+=== RUN   TestMapContentThreadNativeOrderedReadAndRetiredPermission
+    map_content_thread_test.go:13: migration roundtrip uses independently owned database birdtie_owned_migration_fdf7fd10e94fd51a24f2ab5e with 181 actual migrations
+--- PASS: TestMapContentThreadNativeOrderedReadAndRetiredPermission (1.74s)
+=== RUN   TestMapContentThreadNativeCrossViewerBlockAndSessionRetirement
+    map_content_thread_test.go:41: migration roundtrip uses independently owned database birdtie_owned_migration_7ab4520de570d6084b29d67e with 181 actual migrations
+--- PASS: TestMapContentThreadNativeCrossViewerBlockAndSessionRetirement (1.87s)
+=== RUN   TestMapContentThreadNativeUsesEditedDisplayOrder
+    map_content_thread_test.go:78: migration roundtrip uses independently owned database birdtie_owned_migration_f5e9cf409d44ad2d8719c2e0 with 181 actual migrations
+--- PASS: TestMapContentThreadNativeUsesEditedDisplayOrder (2.51s)
+=== RUN   TestMomentControlNativeCanonicalEffectsAndOriginalHistory
+    moment_control_native_test.go:149: migration roundtrip uses independently owned database birdtie_owned_migration_5de37c3e783a65d5f39ebcf7 with 181 actual migrations
+=== RUN   TestMomentControlNativeCanonicalEffectsAndOriginalHistory/stopFirstActualLateProducer
+=== RUN   TestMomentControlNativeCanonicalEffectsAndOriginalHistory/optionalMetadataWaitOriginalSession
+--- PASS: TestMomentControlNativeCanonicalEffectsAndOriginalHistory (2.25s)
+    --- PASS: TestMomentControlNativeCanonicalEffectsAndOriginalHistory/stopFirstActualLateProducer (0.07s)
+    --- PASS: TestMomentControlNativeCanonicalEffectsAndOriginalHistory/optionalMetadataWaitOriginalSession (0.04s)
+=== RUN   TestMomentControlNativeOriginalFrameSourceAfterWait
+    moment_control_native_test.go:389: migration roundtrip uses independently owned database birdtie_owned_migration_e4a91943e228125ad19037c0 with 181 actual migrations
+=== RUN   TestMomentControlNativeOriginalFrameSourceAfterWait/principalABA
+=== RUN   TestMomentControlNativeOriginalFrameSourceAfterWait/SessionABA
+=== RUN   TestMomentControlNativeOriginalFrameSourceAfterWait/sameContentSourceABA
+=== RUN   TestMomentControlNativeOriginalFrameSourceAfterWait/membershipABA
+=== RUN   TestMomentControlNativeOriginalFrameSourceAfterWait/sourceBlockABA
+=== RUN   TestMomentControlNativeOriginalFrameSourceAfterWait/ordinaryIdleRenewal
+=== RUN   TestMomentControlNativeOriginalFrameSourceAfterWait/previewSourceAfterFinalSessionWait
+=== RUN   TestMomentControlNativeOriginalFrameSourceAfterWait/ownReaderOriginalGenerationAfterWait
+=== RUN   TestMomentControlNativeOriginalFrameSourceAfterWait/sourceDeadlineAfterTentativeEffects
+--- PASS: TestMomentControlNativeOriginalFrameSourceAfterWait (8.09s)
+    --- PASS: TestMomentControlNativeOriginalFrameSourceAfterWait/principalABA (0.08s)
+    --- PASS: TestMomentControlNativeOriginalFrameSourceAfterWait/SessionABA (0.07s)
+    --- PASS: TestMomentControlNativeOriginalFrameSourceAfterWait/sameContentSourceABA (0.07s)
+    --- PASS: TestMomentControlNativeOriginalFrameSourceAfterWait/membershipABA (0.05s)
+    --- PASS: TestMomentControlNativeOriginalFrameSourceAfterWait/sourceBlockABA (0.08s)
+    --- PASS: TestMomentControlNativeOriginalFrameSourceAfterWait/ordinaryIdleRenewal (0.08s)
+    --- PASS: TestMomentControlNativeOriginalFrameSourceAfterWait/previewSourceAfterFinalSessionWait (0.07s)
+    --- PASS: TestMomentControlNativeOriginalFrameSourceAfterWait/ownReaderOriginalGenerationAfterWait (0.04s)
+    --- PASS: TestMomentControlNativeOriginalFrameSourceAfterWait/sourceDeadlineAfterTentativeEffects (6.09s)
+=== RUN   TestMomentControlNativeRetainedSelectorAndCleanup
+    moment_control_native_test.go:643: migration roundtrip uses independently owned database birdtie_owned_migration_4a5f1cf03e394e2893b91230 with 181 actual migrations
+=== RUN   TestMomentControlNativeRetainedSelectorAndCleanup/actualFieldEvidenceExpiryAfterEffect
+    moment_control_native_test.go:725: migration roundtrip uses independently owned database birdtie_owned_migration_7c3f27d5109a0036afbcfcf9 with 181 actual migrations
+--- PASS: TestMomentControlNativeRetainedSelectorAndCleanup (9.51s)
+    --- PASS: TestMomentControlNativeRetainedSelectorAndCleanup/actualFieldEvidenceExpiryAfterEffect (7.74s)
+=== RUN   TestMomentInteractionNativeOriginalFactsNotificationsAndInboxSnapshot
+    moment_interaction_native_test.go:46: migration roundtrip uses independently owned database birdtie_owned_migration_5574a8917a8951ede5a5968e with 181 actual migrations
+--- PASS: TestMomentInteractionNativeOriginalFactsNotificationsAndInboxSnapshot (2.46s)
+=== RUN   TestMomentRepliesNativeParentCurrentUnknownAndUnavailable
+    moment_interaction_native_test.go:155: migration roundtrip uses independently owned database birdtie_owned_migration_21f8076ec2a2df232e120a94 with 181 actual migrations
+--- PASS: TestMomentRepliesNativeParentCurrentUnknownAndUnavailable (2.25s)
+=== RUN   TestMomentLocationsNativeAtomicCurrentProjectionAndRecovery
+    moment_locations_native_test.go:21: migration roundtrip uses independently owned database birdtie_owned_migration_c51aa5d8a84bed418f3f45e9 with 181 actual migrations
+--- PASS: TestMomentLocationsNativeAtomicCurrentProjectionAndRecovery (3.05s)
+=== RUN   TestMomentMediaNativeNineAtomicReplayRetireAndCompose
+    moment_media_native_test.go:14: migration roundtrip uses independently owned database birdtie_owned_migration_18fbcd06168178692274b80a with 181 actual migrations
+--- PASS: TestMomentMediaNativeNineAtomicReplayRetireAndCompose (1.77s)
+=== RUN   TestPublicMomentVideoNativeCanonicalHTTPAndRetirement
+    moment_media_video_native_test.go:22: migration roundtrip uses independently owned database birdtie_owned_migration_99d97747d8107cfa3f547302 with 181 actual migrations
+2026/10/19 06:06:46 request_id=f655a190d991f40a9c61ea38d41a3db6 method=GET status=200 latency_ms=8
+2026/10/19 06:06:46 request_id=3d94e524c9ce51485c93414a2f08c8bb method=GET status=404 latency_ms=3
+--- PASS: TestPublicMomentVideoNativeCanonicalHTTPAndRetirement (1.90s)
+=== RUN   TestMomentPublicControlNativePublishEditDeleteOriginalFacts
+    moment_public_control_native_test.go:9: migration roundtrip uses independently owned database birdtie_owned_migration_a47a85baaf8e7cc8f49b2b68 with 181 actual migrations
+--- PASS: TestMomentPublicControlNativePublishEditDeleteOriginalFacts (1.73s)
+=== RUN   TestMomentThreadEditingNativeSingleUpgradeOrderedRetirementAndRecovery
+    moment_thread_editing_native_test.go:18: migration roundtrip uses independently owned database birdtie_owned_migration_e229bd72eaffa924c54e5d55 with 181 actual migrations
+--- PASS: TestMomentThreadEditingNativeSingleUpgradeOrderedRetirementAndRecovery (5.74s)
+=== RUN   TestMomentThreadNativeAtomicRollbackOriginalRecoveryAndWholeWithdraw
+    moment_thread_native_test.go:39: migration roundtrip uses independently owned database birdtie_owned_migration_41e2de1c2a32202a5e3837fd with 181 actual migrations
+--- PASS: TestMomentThreadNativeAtomicRollbackOriginalRecoveryAndWholeWithdraw (2.27s)
+=== RUN   TestMomentUnplacedControlNativeOwnedEditAndPublicationBoundary
+    moment_unplaced_control_native_test.go:23: migration roundtrip uses independently owned database birdtie_owned_migration_c1f38b6cd5f72f81d6509493 with 181 actual migrations
+2026/10/19 06:06:57 request_id=c24fcfa18e7106209271bc9c9df06c2c method=POST status=200 latency_ms=31
+2026/10/19 06:06:57 request_id=0df4ec992005a40d7b02419206518093 method=PUT status=200 latency_ms=30
+2026/10/19 06:06:57 request_id=b53abdaa7216e050ab009efbf98d1d53 method=GET status=200 latency_ms=11
+2026/10/19 06:06:57 request_id=557c28a331c436c4e72fde2a531481b0 method=POST status=200 latency_ms=33
+2026/10/19 06:06:57 request_id=81ab355d7196757859266a6ea4ae469a method=PUT status=200 latency_ms=24
+2026/10/19 06:06:57 request_id=17f71d5a314caf3293818dbaaed26107 method=GET status=200 latency_ms=10
+2026/10/19 06:06:57 request_id=902a7e108ed70d70de4a7fc084aad9b9 method=GET status=200 latency_ms=12
+2026/10/19 06:06:57 request_id=b4c896d67ae6a4a11671beba94bf787f method=GET status=200 latency_ms=11
+2026/10/19 06:06:58 request_id=6b26e281b551cb42f8350f6c4943fe06 method=GET status=200 latency_ms=8
+2026/10/19 06:06:58 request_id=1de316eda8234a331a63e4c63d1cad5f method=POST status=200 latency_ms=14
+2026/10/19 06:06:58 request_id=c479d5edd223cd01f6ee08fac38aa416 method=POST status=200 latency_ms=26
+2026/10/19 06:06:58 request_id=707b513babd8ab4b72fbbbffbe780c7f method=PUT status=200 latency_ms=18
+2026/10/19 06:06:58 request_id=e1dbde84e99e8bf5062c2465e44fb7e5 method=POST status=200 latency_ms=26
+2026/10/19 06:06:58 request_id=032df2cd48a2af7481c658e877380e74 method=PUT status=200 latency_ms=23
+2026/10/19 06:06:58 request_id=3a4cb418a3d77fb70f071852234bd12f method=GET status=200 latency_ms=21
+2026/10/19 06:06:58 request_id=11e11aa6dd06add06b1c9ef95a32e0e8 method=POST status=200 latency_ms=16
+2026/10/19 06:06:58 request_id=f3a71caa67f71c9ef79e28cd9ba5b6af method=PUT status=200 latency_ms=16
+2026/10/19 06:06:58 request_id=e86c377a164299c4e01571d7b6d567cc method=POST status=200 latency_ms=32
+2026/10/19 06:06:58 request_id=184f78cbdf928fe935c1dea26ebd5bed method=PUT status=200 latency_ms=41
+2026/10/19 06:06:58 request_id=e2930bc80d03458c4de963ff68513d50 method=GET status=200 latency_ms=21
+2026/10/19 06:06:58 request_id=19969c84dc1b96fc2bf977aff3a6b408 method=GET status=200 latency_ms=19
+2026/10/19 06:06:58 request_id=33a8eaaca1cb5026d6e859951aca321f method=POST status=200 latency_ms=35
+2026/10/19 06:06:58 request_id=bcc44cf624895d800f4063065a477635 method=PUT status=200 latency_ms=30
+2026/10/19 06:06:58 request_id=6a1f2e5fd3485e1f7c56305b1c68565e method=POST status=200 latency_ms=37
+2026/10/19 06:06:58 request_id=35fcb0db927479bd2d7990747f4b43fe method=PUT status=200 latency_ms=26
+2026/10/19 06:06:58 request_id=cf190fd854b00983b4eb287979811335 method=POST status=200 latency_ms=40
+2026/10/19 06:06:58 request_id=5d7c7b9ac9f429b049bb68050bed5dec method=PUT status=200 latency_ms=36
+2026/10/19 06:06:58 request_id=ebe6d8137d8213de3ec281398ee5882e method=POST status=200 latency_ms=37
+2026/10/19 06:06:58 request_id=4894500d81bd14c1683e4f9b2420f20e method=PUT status=200 latency_ms=36
+2026/10/19 06:06:58 request_id=cfcf7d94928bb611e7604b16c28c69f3 method=POST status=400 latency_ms=3
+2026/10/19 06:06:58 request_id=b99c6fdf456c761fec9abaf185b009c5 method=POST status=400 latency_ms=4
+2026/10/19 06:06:58 request_id=104b43e2b6591f8a3b45bb8ebcbb0ff8 method=POST status=409 latency_ms=18
+--- PASS: TestMomentUnplacedControlNativeOwnedEditAndPublicationBoundary (2.85s)
+=== RUN   TestPublicMomentVideoCarryNativeExpiredPurgedAndBoundaries
+    moment_video_carry_native_test.go:25: migration roundtrip uses independently owned database birdtie_owned_migration_096e60c7e1481908d6df1bf7 with 181 actual migrations
+2026/10/19 06:07:01 request_id=a7dfe637a7596afd01f8efae87d5880d method=GET status=200 latency_ms=8
+2026/10/19 06:07:01 request_id=939019aa3c7b014e3f5c869751966af3 method=GET status=200 latency_ms=9
+2026/10/19 06:07:01 request_id=7403db22d4e657ae5ff7f66a421f3125 method=GET status=404 latency_ms=5
+    moment_video_carry_native_test.go:152: expired-stage EDIT/reorder preserved exact bytes, Moment ID, like/comment and retired old URL
+2026/10/19 06:07:01 request_id=f410776ce2d1ac943f765d809ba23311 method=GET status=200 latency_ms=7
+    moment_video_carry_native_test.go:175: purged-stage EDIT carried exact public bytes; same operation replay and original receipt immutable
+2026/10/19 06:07:01 request_id=ee6e041ff41d98c668406a9dcdf1b53a method=GET status=200 latency_ms=6
+2026/10/19 06:07:01 request_id=5652add814472f04405edec0af42a211 method=GET status=200 latency_ms=7
+    moment_video_carry_native_test.go:234: expired new upload, cross-owner/Moment, altered bytes, extended rights and historical-retired carry rejected; NULL no-op cannot forge xmin
+--- PASS: TestPublicMomentVideoCarryNativeExpiredPurgedAndBoundaries (2.64s)
+PASS
+ok  	github.com/birdtie/birdtie/apps/api/internal/postgres	57.255s

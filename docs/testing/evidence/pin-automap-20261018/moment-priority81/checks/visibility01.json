@@ -1,0 +1,14 @@
+{
+  "argv": [
+    "D:/DevTools/flutter/bin/flutter.bat",
+    "test",
+    "--no-pub",
+    "test/now_moment_only_test.dart",
+    "test/now_map_reader_occlusion_test.dart"
+  ],
+  "cwd": "D:\\Project\\birdtie\\apps\\client",
+  "exitCode": 1,
+  "elapsedSeconds": 5.607425212860107,
+  "completedUTC": "2026-10-18T21:36:23.899583+00:00",
+  "log": "D:\\Project\\birdtie\\work\\content-first-20261019\\moment-priority80\\checks\\visibility01.log"
+}

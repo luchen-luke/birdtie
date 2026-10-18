@@ -1,0 +1,432 @@
+Flutter assets will be downloaded from https://storage.flutter-io.cn. Make sure you trust this source!
+00:00 +0: loading D:/Project/birdtie/apps/client/test/now_moment_entry_composer_test.dart
+00:00 +0: switching editor reader to map pin retires A late replies and preserves its draft
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following TestFailure was thrown running a test:
+Expected: false
+  Actual: <true>
+Opening a map reader must retire the editor reader source immediately.
+
+When the exception was thrown, this was the stack:
+#4      main.<anonymous closure> (file:///D:/Project/birdtie/apps/client/test/now_moment_entry_composer_test.dart:484:11)
+<asynchronous suspension>
+#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1952:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///D:/Project/birdtie/apps/client/test/now_moment_entry_composer_test.dart line 484
+The test description was:
+  switching editor reader to map pin retires A late replies and preserves its draft
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:01 +0 -1: switching editor reader to map pin retires A late replies and preserves its draft [E]
+  Test failed. See exception logs above.
+  The test description was: switching editor reader to map pin retires A late replies and preserves its draft
+  
+Warning: At least one test in this suite creates an HttpClient. When running a test suite that uses
+TestWidgetsFlutterBinding, all HTTP requests will return status code 400, and no network request
+will actually be made. Any test expecting a real network connection and status code will fail.
+To test code that needs an HttpClient, provide your own HttpClient implementation to the code under
+test, so that your test can consistently provide a testable response to the code under test.
+00:01 +0 -1: switching editor reader to overlap group retires A late replies and preserves its draft
+══╡ EXCEPTION CAUGHT BY WIDGETS LIBRARY ╞═══════════════════════════════════════════════════════════
+The following assertion was thrown while dispatching notifications for
+WidgetsBindingObserver.didChangeMetrics:
+Looking up a deactivated widget's ancestor is unsafe.
+At this point the state of the widget's element tree is no longer stable.
+To safely refer to a widget's ancestor in its dispose() method, save a reference to the ancestor by
+calling dependOnInheritedWidgetOfExactType() in the widget's didChangeDependencies() method.
+
+When the exception was thrown, this was the stack:
+#0      Element._debugCheckStateIsActiveForAncestorLookup.<anonymous closure> (package:flutter/src/widgets/framework.dart:5049:9)
+#1      Element._debugCheckStateIsActiveForAncestorLookup (package:flutter/src/widgets/framework.dart:5063:6)
+#2      Element.dependOnInheritedWidgetOfExactType (package:flutter/src/widgets/framework.dart:5082:12)
+#3      LookupBoundary.dependOnInheritedWidgetOfExactType (package:flutter/src/widgets/lookup_boundary.dart:99:13)
+#4      View.maybeOf (package:flutter/src/widgets/view.dart:137:27)
+#5      View.of (package:flutter/src/widgets/view.dart:158:33)
+#6      _MapWorkspaceState.didChangeMetrics (package:birdtie_client/src/workspace/map_workspace.dart:10095:27)
+#7      WidgetsBinding.handleMetricsChanged (package:flutter/src/widgets/binding.dart:926:18)
+#8      TestPlatformDispatcher._handleMetricsChanged (package:flutter_test/src/window.dart:215:24)
+#9      TestFlutterView.physicalConstraints= (package:flutter_test/src/window.dart:1156:42)
+#10     TestFlutterView.physicalSize= (package:flutter_test/src/window.dart:1130:5)
+#11     _EntryFixture.mount (file:///D:/Project/birdtie/apps/client/test/now_moment_entry_composer_test.dart:262:12)
+#12     main.<anonymous closure> (file:///D:/Project/birdtie/apps/client/test/now_moment_entry_composer_test.dart:446:17)
+#13     testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:29)
+<asynchronous suspension>
+#14     TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1952:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+════════════════════════════════════════════════════════════════════════════════════════════════════
+══╡ EXCEPTION CAUGHT BY WIDGETS LIBRARY ╞═══════════════════════════════════════════════════════════
+The following assertion was thrown while dispatching notifications for
+WidgetsBindingObserver.didChangeMetrics:
+Looking up a deactivated widget's ancestor is unsafe.
+At this point the state of the widget's element tree is no longer stable.
+To safely refer to a widget's ancestor in its dispose() method, save a reference to the ancestor by
+calling dependOnInheritedWidgetOfExactType() in the widget's didChangeDependencies() method.
+
+When the exception was thrown, this was the stack:
+#0      Element._debugCheckStateIsActiveForAncestorLookup.<anonymous closure> (package:flutter/src/widgets/framework.dart:5049:9)
+#1      Element._debugCheckStateIsActiveForAncestorLookup (package:flutter/src/widgets/framework.dart:5063:6)
+#2      Element.dependOnInheritedWidgetOfExactType (package:flutter/src/widgets/framework.dart:5082:12)
+#3      LookupBoundary.dependOnInheritedWidgetOfExactType (package:flutter/src/widgets/lookup_boundary.dart:99:13)
+#4      View.maybeOf (package:flutter/src/widgets/view.dart:137:27)
+#5      View.of (package:flutter/src/widgets/view.dart:158:33)
+#6      _MapWorkspaceState.didChangeMetrics (package:birdtie_client/src/workspace/map_workspace.dart:10095:27)
+#7      WidgetsBinding.handleMetricsChanged (package:flutter/src/widgets/binding.dart:926:18)
+#8      TestPlatformDispatcher._handleMetricsChanged (package:flutter_test/src/window.dart:215:24)
+#9      TestDisplay.devicePixelRatio= (package:flutter_test/src/window.dart:1346:43)
+#10     TestFlutterView.devicePixelRatio= (package:flutter_test/src/window.dart:1048:14)
+#11     _EntryFixture.mount (file:///D:/Project/birdtie/apps/client/test/now_moment_entry_composer_test.dart:263:12)
+#12     main.<anonymous closure> (file:///D:/Project/birdtie/apps/client/test/now_moment_entry_composer_test.dart:446:17)
+#13     testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:29)
+<asynchronous suspension>
+#14     TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1952:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+════════════════════════════════════════════════════════════════════════════════════════════════════
+══╡ EXCEPTION CAUGHT BY WIDGETS LIBRARY ╞═══════════════════════════════════════════════════════════
+The following assertion was thrown while dispatching notifications for
+WidgetsBindingObserver.didChangeAppLifecycleState:
+Looking up a deactivated widget's ancestor is unsafe.
+At this point the state of the widget's element tree is no longer stable.
+To safely refer to a widget's ancestor in its dispose() method, save a reference to the ancestor by
+calling dependOnInheritedWidgetOfExactType() in the widget's didChangeDependencies() method.
+
+When the exception was thrown, this was the stack:
+#0      Element._debugCheckStateIsActiveForAncestorLookup.<anonymous closure> (package:flutter/src/widgets/framework.dart:5049:9)
+#1      Element._debugCheckStateIsActiveForAncestorLookup (package:flutter/src/widgets/framework.dart:5063:6)
+#2      Element.dependOnInheritedWidgetOfExactType (package:flutter/src/widgets/framework.dart:5082:12)
+#3      InheritedModel.inheritFrom (package:flutter/src/widgets/inherited_model.dart:194:22)
+#4      ModalRoute._of (package:flutter/src/widgets/routes.dart:1317:27)
+#5      ModalRoute.of (package:flutter/src/widgets/routes.dart:1313:12)
+#6      _MapWorkspaceState.initState.<anonymous closure> (package:birdtie_client/src/workspace/map_workspace.dart:3590:22)
+#7      AgentWorkspaceController.updateReplyRefreshVisibility (package:birdtie_client/src/workspace/agent_workspace_controller.dart:2046:55)
+#8      _MapWorkspaceState.didChangeAppLifecycleState (package:birdtie_client/src/workspace/map_workspace.dart:10115:16)
+#9      WidgetsBinding.handleAppLifecycleStateChanged (package:flutter/src/widgets/binding.dart:1334:18)
+#10     _EntryFixture.mount (file:///D:/Project/birdtie/apps/client/test/now_moment_entry_composer_test.dart:265:17)
+#11     main.<anonymous closure> (file:///D:/Project/birdtie/apps/client/test/now_moment_entry_composer_test.dart:446:17)
+#12     testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:29)
+<asynchronous suspension>
+#13     TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1952:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+════════════════════════════════════════════════════════════════════════════════════════════════════
+══╡ EXCEPTION CAUGHT BY FOUNDATION LIBRARY ╞════════════════════════════════════════════════════════
+The following assertion was thrown while dispatching notifications for OwnedMapController:
+Looking up a deactivated widget's ancestor is unsafe.
+At this point the state of the widget's element tree is no longer stable.
+To safely refer to a widget's ancestor in its dispose() method, save a reference to the ancestor by
+calling dependOnInheritedWidgetOfExactType() in the widget's didChangeDependencies() method.
+
+When the exception was thrown, this was the stack:
+#0      Element._debugCheckStateIsActiveForAncestorLookup.<anonymous closure> (package:flutter/src/widgets/framework.dart:5049:9)
+#1      Element._debugCheckStateIsActiveForAncestorLookup (package:flutter/src/widgets/framework.dart:5063:6)
+#2      Element.dependOnInheritedWidgetOfExactType (package:flutter/src/widgets/framework.dart:5082:12)
+#3      InheritedModel.inheritFrom (package:flutter/src/widgets/inherited_model.dart:194:22)
+#4      ModalRoute._of (package:flutter/src/widgets/routes.dart:1317:27)
+#5      ModalRoute.of (package:flutter/src/widgets/routes.dart:1313:12)
+#6      _MapWorkspaceState.initState.<anonymous closure> (package:birdtie_client/src/workspace/map_workspace.dart:3669:23)
+#7      OwnedMapController._allowed (package:birdtie_client/src/workspace/owned_map_controller.dart:147:51)
+#8      OwnedMapController.find (package:birdtie_client/src/workspace/owned_map_controller.dart:198:10)
+#9      _MapWorkspaceState._openMapContentPanel.current (package:birdtie_client/src/workspace/map_workspace.dart:7950:21)
+#10     _NowMapContentPanelState._current (package:birdtie_client/src/workspace/now_map_content_panel.dart:149:21)
+#11     _NowMapContentPanelState._sourceChanged (package:birdtie_client/src/workspace/now_map_content_panel.dart:621:10)
+#12     ChangeNotifier.notifyListeners (package:flutter/src/foundation/change_notifier.dart:435:24)
+#13     OwnedMapController._notify (package:birdtie_client/src/workspace/owned_map_controller.dart:1912:7)
+#14     ChangeNotifier.notifyListeners (package:flutter/src/foundation/change_notifier.dart:435:24)
+#15     OwnedMapMediaController._notify (package:birdtie_client/src/workspace/owned_map_media_controller.dart:351:7)
+#16     OwnedMapMediaController.suspend (package:birdtie_client/src/workspace/owned_map_media_controller.dart:316:5)
+#17     OwnedMapController._retireView (package:birdtie_client/src/workspace/owned_map_controller.dart:1878:14)
+#18     OwnedMapController.didChangeAppLifecycleState (package:birdtie_client/src/workspace/owned_map_controller.dart:1847:5)
+#19     WidgetsBinding.handleAppLifecycleStateChanged (package:flutter/src/widgets/binding.dart:1334:18)
+#20     _EntryFixture.mount (file:///D:/Project/birdtie/apps/client/test/now_moment_entry_composer_test.dart:265:17)
+#21     main.<anonymous closure> (file:///D:/Project/birdtie/apps/client/test/now_moment_entry_composer_test.dart:446:17)
+#22     testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:29)
+<asynchronous suspension>
+#23     TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1952:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+The OwnedMapController sending notification was:
+  Instance of 'OwnedMapController'
+════════════════════════════════════════════════════════════════════════════════════════════════════
+══╡ EXCEPTION CAUGHT BY FOUNDATION LIBRARY ╞════════════════════════════════════════════════════════
+The following assertion was thrown while dispatching notifications for OwnedMapController:
+Looking up a deactivated widget's ancestor is unsafe.
+At this point the state of the widget's element tree is no longer stable.
+To safely refer to a widget's ancestor in its dispose() method, save a reference to the ancestor by
+calling dependOnInheritedWidgetOfExactType() in the widget's didChangeDependencies() method.
+
+When the exception was thrown, this was the stack:
+#0      Element._debugCheckStateIsActiveForAncestorLookup.<anonymous closure> (package:flutter/src/widgets/framework.dart:5049:9)
+#1      Element._debugCheckStateIsActiveForAncestorLookup (package:flutter/src/widgets/framework.dart:5063:6)
+#2      Element.dependOnInheritedWidgetOfExactType (package:flutter/src/widgets/framework.dart:5082:12)
+#3      InheritedModel.inheritFrom (package:flutter/src/widgets/inherited_model.dart:194:22)
+#4      ModalRoute._of (package:flutter/src/widgets/routes.dart:1317:27)
+#5      ModalRoute.of (package:flutter/src/widgets/routes.dart:1313:12)
+#6      _MapWorkspaceState.initState.<anonymous closure> (package:birdtie_client/src/workspace/map_workspace.dart:3669:23)
+#7      OwnedMapController._allowed (package:birdtie_client/src/workspace/owned_map_controller.dart:147:51)
+#8      OwnedMapController.find (package:birdtie_client/src/workspace/owned_map_controller.dart:198:10)
+#9      _MapWorkspaceState._openMapContentPanel.current (package:birdtie_client/src/workspace/map_workspace.dart:7950:21)
+#10     _NowMapContentPanelState._current (package:birdtie_client/src/workspace/now_map_content_panel.dart:149:21)
+#11     _NowMapContentPanelState._sourceChanged (package:birdtie_client/src/workspace/now_map_content_panel.dart:621:10)
+#12     ChangeNotifier.notifyListeners (package:flutter/src/foundation/change_notifier.dart:435:24)
+#13     OwnedMapController._notify (package:birdtie_client/src/workspace/owned_map_controller.dart:1912:7)
+#14     ChangeNotifier.notifyListeners (package:flutter/src/foundation/change_notifier.dart:435:24)
+#15     OwnedMapMediaController._notify (package:birdtie_client/src/workspace/owned_map_media_controller.dart:351:7)
+#16     OwnedMapMediaController.suspend (package:birdtie_client/src/workspace/owned_map_media_controller.dart:316:5)
+#17     OwnedMapController._retireView (package:birdtie_client/src/workspace/owned_map_controller.dart:1878:14)
+#18     OwnedMapController.didChangeAppLifecycleState (package:birdtie_client/src/workspace/owned_map_controller.dart:1847:5)
+#19     WidgetsBinding.handleAppLifecycleStateChanged (package:flutter/src/widgets/binding.dart:1334:18)
+#20     _EntryFixture.mount (file:///D:/Project/birdtie/apps/client/test/now_moment_entry_composer_test.dart:265:17)
+#21     main.<anonymous closure> (file:///D:/Project/birdtie/apps/client/test/now_moment_entry_composer_test.dart:446:17)
+#22     testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:29)
+<asynchronous suspension>
+#23     TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1952:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+The OwnedMapController sending notification was:
+  Instance of 'OwnedMapController'
+════════════════════════════════════════════════════════════════════════════════════════════════════
+══╡ EXCEPTION CAUGHT BY FOUNDATION LIBRARY ╞════════════════════════════════════════════════════════
+The following assertion was thrown while dispatching notifications for OwnedMapController:
+Looking up a deactivated widget's ancestor is unsafe.
+At this point the state of the widget's element tree is no longer stable.
+To safely refer to a widget's ancestor in its dispose() method, save a reference to the ancestor by
+calling dependOnInheritedWidgetOfExactType() in the widget's didChangeDependencies() method.
+
+When the exception was thrown, this was the stack:
+#0      Element._debugCheckStateIsActiveForAncestorLookup.<anonymous closure> (package:flutter/src/widgets/framework.dart:5049:9)
+#1      Element._debugCheckStateIsActiveForAncestorLookup (package:flutter/src/widgets/framework.dart:5063:6)
+#2      Element.dependOnInheritedWidgetOfExactType (package:flutter/src/widgets/framework.dart:5082:12)
+#3      InheritedModel.inheritFrom (package:flutter/src/widgets/inherited_model.dart:194:22)
+#4      ModalRoute._of (package:flutter/src/widgets/routes.dart:1317:27)
+#5      ModalRoute.of (package:flutter/src/widgets/routes.dart:1313:12)
+#6      _MapWorkspaceState.initState.<anonymous closure> (package:birdtie_client/src/workspace/map_workspace.dart:3669:23)
+#7      OwnedMapController._allowed (package:birdtie_client/src/workspace/owned_map_controller.dart:147:51)
+#8      OwnedMapController.find (package:birdtie_client/src/workspace/owned_map_controller.dart:198:10)
+#9      _MapWorkspaceState._openMapContentPanel.current (package:birdtie_client/src/workspace/map_workspace.dart:7950:21)
+#10     _NowMapContentPanelState._current (package:birdtie_client/src/workspace/now_map_content_panel.dart:149:21)
+#11     _NowMapContentPanelState._sourceChanged (package:birdtie_client/src/workspace/now_map_content_panel.dart:621:10)
+#12     ChangeNotifier.notifyListeners (package:flutter/src/foundation/change_notifier.dart:435:24)
+#13     OwnedMapController._notify (package:birdtie_client/src/workspace/owned_map_controller.dart:1912:7)
+#14     OwnedMapController._retireView (package:birdtie_client/src/workspace/owned_map_controller.dart:1882:5)
+#15     OwnedMapController.didChangeAppLifecycleState (package:birdtie_client/src/workspace/owned_map_controller.dart:1847:5)
+#16     WidgetsBinding.handleAppLifecycleStateChanged (package:flutter/src/widgets/binding.dart:1334:18)
+#17     _EntryFixture.mount (file:///D:/Project/birdtie/apps/client/test/now_moment_entry_composer_test.dart:265:17)
+#18     main.<anonymous closure> (file:///D:/Project/birdtie/apps/client/test/now_moment_entry_composer_test.dart:446:17)
+#19     testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:29)
+<asynchronous suspension>
+#20     TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1952:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+The OwnedMapController sending notification was:
+  Instance of 'OwnedMapController'
+════════════════════════════════════════════════════════════════════════════════════════════════════
+══╡ EXCEPTION CAUGHT BY FOUNDATION LIBRARY ╞════════════════════════════════════════════════════════
+The following assertion was thrown while dispatching notifications for OwnedMapController:
+Looking up a deactivated widget's ancestor is unsafe.
+At this point the state of the widget's element tree is no longer stable.
+To safely refer to a widget's ancestor in its dispose() method, save a reference to the ancestor by
+calling dependOnInheritedWidgetOfExactType() in the widget's didChangeDependencies() method.
+
+When the exception was thrown, this was the stack:
+#0      Element._debugCheckStateIsActiveForAncestorLookup.<anonymous closure> (package:flutter/src/widgets/framework.dart:5049:9)
+#1      Element._debugCheckStateIsActiveForAncestorLookup (package:flutter/src/widgets/framework.dart:5063:6)
+#2      Element.dependOnInheritedWidgetOfExactType (package:flutter/src/widgets/framework.dart:5082:12)
+#3      InheritedModel.inheritFrom (package:flutter/src/widgets/inherited_model.dart:194:22)
+#4      ModalRoute._of (package:flutter/src/widgets/routes.dart:1317:27)
+#5      ModalRoute.of (package:flutter/src/widgets/routes.dart:1313:12)
+#6      _MapWorkspaceState.initState.<anonymous closure> (package:birdtie_client/src/workspace/map_workspace.dart:3669:23)
+#7      OwnedMapController._allowed (package:birdtie_client/src/workspace/owned_map_controller.dart:147:51)
+#8      OwnedMapController.find (package:birdtie_client/src/workspace/owned_map_controller.dart:198:10)
+#9      _MapWorkspaceState._openMapContentPanel.current (package:birdtie_client/src/workspace/map_workspace.dart:7950:21)
+#10     _NowMapContentPanelState._current (package:birdtie_client/src/workspace/now_map_content_panel.dart:149:21)
+#11     _NowMapContentPanelState._sourceChanged (package:birdtie_client/src/workspace/now_map_content_panel.dart:621:10)
+#12     ChangeNotifier.notifyListeners (package:flutter/src/foundation/change_notifier.dart:435:24)
+#13     OwnedMapController._notify (package:birdtie_client/src/workspace/owned_map_controller.dart:1912:7)
+#14     OwnedMapController._retireView (package:birdtie_client/src/workspace/owned_map_controller.dart:1882:5)
+#15     OwnedMapController.didChangeAppLifecycleState (package:birdtie_client/src/workspace/owned_map_controller.dart:1847:5)
+#16     WidgetsBinding.handleAppLifecycleStateChanged (package:flutter/src/widgets/binding.dart:1334:18)
+#17     _EntryFixture.mount (file:///D:/Project/birdtie/apps/client/test/now_moment_entry_composer_test.dart:265:17)
+#18     main.<anonymous closure> (file:///D:/Project/birdtie/apps/client/test/now_moment_entry_composer_test.dart:446:17)
+#19     testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:29)
+<asynchronous suspension>
+#20     TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1952:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+The OwnedMapController sending notification was:
+  Instance of 'OwnedMapController'
+════════════════════════════════════════════════════════════════════════════════════════════════════
+══╡ EXCEPTION CAUGHT BY WIDGETS LIBRARY ╞═══════════════════════════════════════════════════════════
+The following assertion was thrown while dispatching notifications for
+WidgetsBindingObserver.didChangeAppLifecycleState:
+Looking up a deactivated widget's ancestor is unsafe.
+At this point the state of the widget's element tree is no longer stable.
+To safely refer to a widget's ancestor in its dispose() method, save a reference to the ancestor by
+calling dependOnInheritedWidgetOfExactType() in the widget's didChangeDependencies() method.
+
+When the exception was thrown, this was the stack:
+#0      Element._debugCheckStateIsActiveForAncestorLookup.<anonymous closure> (package:flutter/src/widgets/framework.dart:5049:9)
+#1      Element._debugCheckStateIsActiveForAncestorLookup (package:flutter/src/widgets/framework.dart:5063:6)
+#2      Element.dependOnInheritedWidgetOfExactType (package:flutter/src/widgets/framework.dart:5082:12)
+#3      InheritedModel.inheritFrom (package:flutter/src/widgets/inherited_model.dart:194:22)
+#4      ModalRoute._of (package:flutter/src/widgets/routes.dart:1317:27)
+#5      ModalRoute.of (package:flutter/src/widgets/routes.dart:1313:12)
+#6      _MapWorkspaceState.initState.<anonymous closure> (package:birdtie_client/src/workspace/map_workspace.dart:3669:23)
+#7      OwnedMapController._allowed (package:birdtie_client/src/workspace/owned_map_controller.dart:147:51)
+#8      OwnedMapController.didChangeAppLifecycleState (package:birdtie_client/src/workspace/owned_map_controller.dart:1848:9)
+#9      WidgetsBinding.handleAppLifecycleStateChanged (package:flutter/src/widgets/binding.dart:1334:18)
+#10     _EntryFixture.mount (file:///D:/Project/birdtie/apps/client/test/now_moment_entry_composer_test.dart:265:17)
+#11     main.<anonymous closure> (file:///D:/Project/birdtie/apps/client/test/now_moment_entry_composer_test.dart:446:17)
+#12     testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:29)
+<asynchronous suspension>
+#13     TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1952:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+════════════════════════════════════════════════════════════════════════════════════════════════════
+══╡ EXCEPTION CAUGHT BY WIDGETS LIBRARY ╞═══════════════════════════════════════════════════════════
+The following assertion was thrown while dispatching notifications for
+WidgetsBindingObserver.didChangeAppLifecycleState:
+Looking up a deactivated widget's ancestor is unsafe.
+At this point the state of the widget's element tree is no longer stable.
+To safely refer to a widget's ancestor in its dispose() method, save a reference to the ancestor by
+calling dependOnInheritedWidgetOfExactType() in the widget's didChangeDependencies() method.
+
+When the exception was thrown, this was the stack:
+#0      Element._debugCheckStateIsActiveForAncestorLookup.<anonymous closure> (package:flutter/src/widgets/framework.dart:5049:9)
+#1      Element._debugCheckStateIsActiveForAncestorLookup (package:flutter/src/widgets/framework.dart:5063:6)
+#2      Element.dependOnInheritedWidgetOfExactType (package:flutter/src/widgets/framework.dart:5082:12)
+#3      InheritedModel.inheritFrom (package:flutter/src/widgets/inherited_model.dart:194:22)
+#4      ModalRoute._of (package:flutter/src/widgets/routes.dart:1317:27)
+#5      ModalRoute.of (package:flutter/src/widgets/routes.dart:1313:12)
+#6      _MapWorkspaceState.initState.<anonymous closure> (package:birdtie_client/src/workspace/map_workspace.dart:3669:23)
+#7      OwnedMapController._allowed (package:birdtie_client/src/workspace/owned_map_controller.dart:147:51)
+#8      OwnedMapController.find (package:birdtie_client/src/workspace/owned_map_controller.dart:198:10)
+#9      _MapWorkspaceState._openMapContentPanel.current (package:birdtie_client/src/workspace/map_workspace.dart:7950:21)
+#10     _NowMapContentPanelState._current (package:birdtie_client/src/workspace/now_map_content_panel.dart:149:21)
+#11     _NowMapContentPanelState._sourceChanged (package:birdtie_client/src/workspace/now_map_content_panel.dart:621:10)
+#12     _NowMapContentPanelState.didChangeAppLifecycleState (package:birdtie_client/src/workspace/now_map_content_panel.dart:590:7)
+#13     WidgetsBinding.handleAppLifecycleStateChanged (package:flutter/src/widgets/binding.dart:1334:18)
+#14     _EntryFixture.mount (file:///D:/Project/birdtie/apps/client/test/now_moment_entry_composer_test.dart:265:17)
+#15     main.<anonymous closure> (file:///D:/Project/birdtie/apps/client/test/now_moment_entry_composer_test.dart:446:17)
+#16     testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:29)
+<asynchronous suspension>
+#17     TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1952:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+════════════════════════════════════════════════════════════════════════════════════════════════════
+══╡ EXCEPTION CAUGHT BY RENDERING LIBRARY ╞═════════════════════════════════════════════════════════
+The following assertion was thrown during layout:
+A RenderFlex overflowed by 44 pixels on the bottom.
+
+The relevant error-causing widget was:
+  Column
+  Column:file:///D:/Project/birdtie/apps/client/lib/src/workspace/now_map_content_panel.dart:2867:14
+
+The overflowing RenderFlex has an orientation of Axis.vertical.
+The edge of the RenderFlex that is overflowing has been marked in the rendering with a yellow and
+black striped pattern. This is usually caused by the contents being too big for the RenderFlex.
+Consider applying a flex factor (e.g. using an Expanded widget) to force the children of the
+RenderFlex to fit within the available space instead of being sized to their natural size.
+This is considered an error condition because it indicates that there is content that cannot be
+seen. If the content is legitimately bigger than the available space, consider clipping it with a
+ClipRect widget before putting it in the flex, or using a scrollable container rather than a Flex,
+like a ListView.
+The specific RenderFlex in question is: RenderFlex#1ddc4 relayoutBoundary=up4 OVERFLOWING:
+  needs compositing
+  creator: Column ← DefaultTextStyle ← AnimatedDefaultTextStyle ← _InkFeatures-[GlobalKey#a0132 ink
+    renderer] ← NotificationListener<LayoutChangedNotification> ← PhysicalModel ←
+    AnimatedPhysicalModel ← Material ← SizedBox ← Align ← LayoutBuilder ←
+    NowMapContentGroupPanel-[GlobalObjectKey Object#6840c] ← ⋯
+  parentData: <none> (can use size)
+  constraints: BoxConstraints(0.0<=w<=390.0, h=12.0)
+  size: Size(390.0, 12.0)
+  direction: vertical
+  mainAxisAlignment: start
+  mainAxisSize: max
+  crossAxisAlignment: center
+  verticalDirection: down
+  spacing: 0.0
+◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤
+════════════════════════════════════════════════════════════════════════════════════════════════════
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following TestFailure was thrown running a test:
+Expected: false
+  Actual: <true>
+Opening a group must retire the editor reader source immediately.
+
+When the exception was thrown, this was the stack:
+#4      main.<anonymous closure> (file:///D:/Project/birdtie/apps/client/test/now_moment_entry_composer_test.dart:472:11)
+<asynchronous suspension>
+#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1952:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///D:/Project/birdtie/apps/client/test/now_moment_entry_composer_test.dart line 472
+The test description was:
+  switching editor reader to overlap group retires A late replies and preserves its draft
+════════════════════════════════════════════════════════════════════════════════════════════════════
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following message was thrown:
+Multiple exceptions (11) were detected during the running of the current test, and at least one was
+unexpected.
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:02 +0 -2: switching editor reader to overlap group retires A late replies and preserves its draft [E]
+  Test failed. See exception logs above.
+  The test description was: switching editor reader to overlap group retires A late replies and preserves its draft
+  
+══╡ EXCEPTION CAUGHT BY WIDGETS LIBRARY ╞═══════════════════════════════════════════════════════════
+The following assertion was thrown while dispatching notifications for
+WidgetsBindingObserver.didChangeMetrics:
+Looking up a deactivated widget's ancestor is unsafe.
+At this point the state of the widget's element tree is no longer stable.
+To safely refer to a widget's ancestor in its dispose() method, save a reference to the ancestor by
+calling dependOnInheritedWidgetOfExactType() in the widget's didChangeDependencies() method.
+
+When the exception was thrown, this was the stack:
+#0      Element._debugCheckStateIsActiveForAncestorLookup.<anonymous closure> (package:flutter/src/widgets/framework.dart:5049:9)
+#1      Element._debugCheckStateIsActiveForAncestorLookup (package:flutter/src/widgets/framework.dart:5063:6)
+#2      Element.dependOnInheritedWidgetOfExactType (package:flutter/src/widgets/framework.dart:5082:12)
+#3      LookupBoundary.dependOnInheritedWidgetOfExactType (package:flutter/src/widgets/lookup_boundary.dart:99:13)
+#4      View.maybeOf (package:flutter/src/widgets/view.dart:137:27)
+#5      View.of (package:flutter/src/widgets/view.dart:158:33)
+#6      _MapWorkspaceState.didChangeMetrics (package:birdtie_client/src/workspace/map_workspace.dart:10095:27)
+#7      WidgetsBinding.handleMetricsChanged (package:flutter/src/widgets/binding.dart:926:18)
+#8      TestPlatformDispatcher._handleMetricsChanged (package:flutter_test/src/window.dart:215:24)
+#9      TestFlutterView.resetPhysicalConstraints (package:flutter_test/src/window.dart:1162:42)
+#10     TestFlutterView.resetPhysicalSize (package:flutter_test/src/window.dart:1137:5)
+#12     Invoker.runTearDowns.<anonymous closure>.<anonymous closure> (package:test_api/src/backend/invoker.dart:296:18)
+#13     Invoker._waitForOutstandingCallbacks.<anonymous closure> (package:test_api/src/backend/invoker.dart:318:17)
+#18     Invoker._waitForOutstandingCallbacks (package:test_api/src/backend/invoker.dart:314:5)
+#19     Invoker.runTearDowns.<anonymous closure> (package:test_api/src/backend/invoker.dart:295:9)
+<asynchronous suspension>
+#20     Invoker._waitForOutstandingCallbacks.<anonymous closure> (package:test_api/src/backend/invoker.dart:318:9)
+<asynchronous suspension>
+(elided 5 frames from dart:async)
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:02 +0 -2: Some tests failed.
+
+Failing tests:
+  D:/Project/birdtie/apps/client/test/now_moment_entry_composer_test.dart: switching editor reader to map pin retires A late replies and preserves its draft
+  D:/Project/birdtie/apps/client/test/now_moment_entry_composer_test.dart: switching editor reader to overlap group retires A late replies and preserves its draft

@@ -1,0 +1,43 @@
+{
+  "startedUTC": "2026-10-18T22:07:37.830139+00:00",
+  "completedUTC": "2026-10-18T22:09:28.911223+00:00",
+  "exitCode": 0,
+  "elapsedSeconds": 111.081,
+  "scriptSHA256": "34c753b67355d7ccd42127ec7d0b24ca871d5228b45b127a2fe5287b9fc4bcc5",
+  "archiveSHA256": "1322944c7e021459965aa3d3640a52a0f8445d81fa3661a9ad28f559549d1c14",
+  "apiSHA256": "de1c4aaed3317fda6c02720fb75fe0c2d76fe571e0c617499e4cddb5d07c5933",
+  "businessTestContentWritten": false,
+  "result": {
+    "status": "READY",
+    "release": "/opt/birdtie/releases/social181-20261019-build41",
+    "previousRelease": "/opt/birdtie/releases/social178-20261018-build38",
+    "apiSHA256": "de1c4aaed3317fda6c02720fb75fe0c2d76fe571e0c617499e4cddb5d07c5933",
+    "pid": 918548,
+    "schema": {
+      "maxVersion": 181,
+      "migrationCount": 180,
+      "skipped": [
+        180
+      ]
+    },
+    "appliedMigrations": [
+      179,
+      181
+    ],
+    "journey180Applied": false,
+    "ledgerSHA256": "017bce491e462fc7577098ebecba481371fb33ab7fda8b07e7faa60650fe661e",
+    "originalContentUnchangedByMigration": true,
+    "backup": {
+      "path": "/srv/birdtie-data/backups/moment181/native-before179-181-20261019060846-c9da9a26.dump",
+      "sha256": "ad539230b0c074f2dc0192d2238f6b8f54a3edd8d21d036373ebc2723ebe5068",
+      "bytes": 502691950,
+      "schema": 178,
+      "archiveReadable": true,
+      "restore": "NOT_RUN"
+    },
+    "apiEnvironmentUnchanged": true,
+    "routingChanged": false,
+    "civuWrites": 0,
+    "readinessRollback": "available; not invoked"
+  }
+}

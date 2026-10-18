@@ -173,6 +173,10 @@ func (s *server) previewCollectionCopy(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
+	if ref.Kind == "journey" && !content.JourneysEnabled {
+		respondError(w, http.StatusServiceUnavailable, "journey_unavailable")
+		return
+	}
 	out, e := g.PreviewHumanCollectionCopy(r.Context(), d, a, ref, in)
 	respondCollectionCopy(w, r, out, e)
 }

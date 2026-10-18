@@ -1,0 +1,9 @@
+Flutter assets will be downloaded from https://storage.flutter-io.cn. Make sure you trust this source!
+00:00 +0: loading D:/Project/birdtie/apps/client/test/now_moment_entry_composer_test.dart
+00:00 +0: actual published editor reads with one composer and restores separate edit and comment drafts
+00:01 +1: return from actual editor reader rejects a late interaction response
+00:02 +2: switching editor reader to map pin retires A late replies and preserves its draft
+00:03 +3: switching editor reader to overlap group retires A late replies and preserves its draft
+00:03 +4: actual editor reader public lease expiry cannot publish
+00:04 +5: actual editor reader owner ABA cannot publish
+00:04 +6: All tests passed!

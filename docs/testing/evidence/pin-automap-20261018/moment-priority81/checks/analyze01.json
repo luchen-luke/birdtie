@@ -1,0 +1,18 @@
+{
+  "argv": [
+    "D:/DevTools/flutter/bin/cache/dart-sdk/bin/dart.exe",
+    "analyze",
+    "lib/src/config/birdtie_environment.dart",
+    "lib/src/content/saved_collection_append.dart",
+    "lib/src/workspace/map_content_routes.dart",
+    "lib/src/workspace/map_workspace.dart",
+    "test/now_moment_entry_composer_test.dart",
+    "test/now_map_reader_occlusion_test.dart",
+    "test/saved_collection_append_test.dart"
+  ],
+  "cwd": "D:\\Project\\birdtie\\apps\\client",
+  "exitCode": 0,
+  "elapsedSeconds": 3.181317090988159,
+  "completedUTC": "2026-10-18T21:37:00.831063+00:00",
+  "log": "D:\\Project\\birdtie\\work\\content-first-20261019\\moment-priority80\\checks\\analyze01.log"
+}

@@ -1,0 +1,8 @@
+Flutter assets will be downloaded from https://storage.flutter-io.cn. Make sure you trust this source!
+00:00 +0: loading D:/Project/birdtie/apps/client/test/amap_city_map_motion_test.dart
+00:00 +0: (setUpAll)
+00:00 +0: expired photo falls back without blocking live source pins or semantics (variant: TargetPlatform.android)
+initState AMapWidget
+deactivate AMapWidget
+00:02 +1: (tearDownAll)
+00:02 +1: All tests passed!

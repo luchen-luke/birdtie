@@ -1,0 +1,123 @@
+{
+  "status": "PARTIAL",
+  "originalTask": "BT-FIX-NOW-UI-001",
+  "humanScope": "Hide Journey now; complete existing Moment capabilities incrementally",
+  "createdUTC": "2026-10-18T23:06:38.700721+00:00",
+  "evidenceDirectoryNote": "moment-priority81 is the stable evidence directory for the complete 80–82 increment; latest installed client is 82 and deployed API is 42.",
+  "implemented": [
+    "Hide Journey homepage/sidebar/material/action entries and route projection; keep existing data and operation recovery",
+    "One Now composer with distinct editor/comment/reply drafts and current-source/identity/version fencing; old reader retires before another owns composer",
+    "Private/draft reader does not acquire public comment target; retained public draft stays disabled after source revocation",
+    "Reader Material respects bottom composer region and physical hit testing",
+    "Moment contextual Activity/Community/Organization links use approved location context while canonical Place-only city remains NULL",
+    "AMap Moment subtitle uses its source authority, only Place recent count uses auxiliary lease; expired photo falls back without poisoning the entire current marker batch",
+    "Disable new Journey publication/discovery/copy; original copy receipts/replay/stop and ThemeMap remain"
+  ],
+  "client": {
+    "version": "0.1.2(82)",
+    "installed": true,
+    "actualAPKHashMatched": true,
+    "sha256": "f5d34de47cb7a286fdb3f1e1c93358bbf2b898e4d3d881b31319fb7aeac6d040",
+    "inputCount": 8129,
+    "inputManifestSHA256": "17e0968c965cc719296eaf6c782f1575c1148751f271941485a98daef7cd9473",
+    "inputStable": true,
+    "appDataCleared": false
+  },
+  "api": {
+    "build": 42,
+    "ready": true,
+    "sha256": "97cd8df6c5b48eec094d66039458541387f87fac82ff46d45c62cf1d61069913",
+    "inputCount": 2105,
+    "inputManifestSHA256": "0d3cd59acdb7986515d7e0a4086b2a19a479a97a28114de23e9519c039b95cae",
+    "inputStable": true,
+    "release": "/opt/birdtie/releases/social181-20261019-build42",
+    "migrationsAppliedThisIncrement": [
+      179,
+      181
+    ],
+    "migration180Applied": false,
+    "migrationCount": 180,
+    "maxVersion": 181,
+    "latest42DDL": false,
+    "productionTestContentCreated": false,
+    "backupArchiveReadable": true,
+    "restoreTest": "NOT_RUN"
+  },
+  "tests": [
+    {
+      "kind": "Flutter direct reader/composer/entry/restore",
+      "passed": 33,
+      "exitCode": 0,
+      "receipt": "checks81-final/test-receipt.json"
+    },
+    {
+      "kind": "Flutter actual AMap widget/SDK channel fixture",
+      "passed": 10,
+      "exitCode": 0,
+      "receipt": "amap-expired82/direct-final09/receipt.json"
+    },
+    {
+      "kind": "PostgreSQL isolated direct native cases",
+      "passed": 19,
+      "failed": 0,
+      "skipped": 0,
+      "receipt": "native-final05/receipt.json",
+      "scope": "Parent 001–179 +181 without180; targeted gate/context cases execute there. Some legacy helper children apply full through181 including180, as recorded; not all19 are no180 fixtures."
+    },
+    {
+      "kind": "Journey copy gate HTTP",
+      "passed": 4,
+      "failed": 0,
+      "skipped": 0,
+      "receipt": "copy-gate42/http01-receipt.json"
+    },
+    {
+      "kind": "Journey copy gate real PostgreSQL",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "receipt": "copy-gate42/native01/receipt.json",
+      "scope": "Exact owned parent 001–179 +181,180 absent; actual source grant, denied new copy, original recovery, ThemeMap write/read, session ABA. Fixture DB and container removed."
+    }
+  ],
+  "analysis": [
+    {
+      "files": 9,
+      "exitCode": 0,
+      "errors": 0,
+      "warnings": 0,
+      "info": 247,
+      "receipt": "checks81-final/analyze-receipt.json"
+    },
+    {
+      "files": 2,
+      "exitCode": 0,
+      "errors": 0,
+      "warnings": 0,
+      "info": 30,
+      "receipt": "amap-expired82/analyze-final09/receipt.json"
+    }
+  ],
+  "phone": "device/acceptance82.json",
+  "history": [
+    "device/acceptance81.json",
+    "amap-expired82/repair-receipt.json",
+    "client-overlay-fix/repair-receipt.json",
+    "private-target81/receipt.json",
+    "client-overlay-fix/exclusive-repair-receipt.json"
+  ],
+  "remaining": {
+    "realPhonePublishEditDeleteComments": "NOT_RUN",
+    "weakNetworkNewPerformanceLargeOnlineVideo": "NOT_RUN",
+    "fullRepositorySuites": "NOT_RUN",
+    "web": "NOT_RUN_USER_DEFERRED",
+    "talkBack": "NOT_RUN_USER_DEFERRED",
+    "largeFont": "USER_EXCLUDED",
+    "ios": "NOT_RUN_OUTSIDE_THIS_ANDROID_ROUND",
+    "amapLabelStyleExport": "BLOCKED_EXTERNAL_APPROVED_STYLE_MISSING",
+    "backupRestore": "NOT_RUN",
+    "vendorMarkerAckFailureRecovery": "STATIC_RISK_NOT_REPRODUCED_NOT_FIXED: vendor async marker update advances local cache before confirmed native ACK; not claimed as proven device root cause",
+    "originalClosedPilotGates": "UNCHANGED"
+  },
+  "privacy": "Only source and curated receipts/logs committed. Raw real phone screenshots/media/semantics and private configuration remain local; no fake production Moments or Places."
+}

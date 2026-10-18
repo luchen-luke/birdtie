@@ -16,7 +16,9 @@ import (
 
 func (s *server) registerCollectionPublicationRoutes(mux *http.ServeMux) {
 	s.registerCollectionCopyRoutes(mux)
-	mux.HandleFunc("GET /v1/me/journeys/discovery", s.listJourneyDiscovery)
+	if content.JourneysEnabled {
+		mux.HandleFunc("GET /v1/me/journeys/discovery", s.listJourneyDiscovery)
+	}
 	mux.HandleFunc("POST /v1/me/personal-collections/{kind}/{collectionID}/publication", s.publishPersonalCollection)
 	mux.HandleFunc("POST /v1/me/personal-collections/{kind}/{collectionID}/unpublish", s.unpublishPersonalCollection)
 	mux.HandleFunc("GET /v1/me/personal-collections/publication-operations/{operationID}/receipt", s.getCollectionPublicationReceipt)
@@ -41,6 +43,10 @@ func (s *server) collectionPublicationGateway(w http.ResponseWriter, r *http.Req
 func (s *server) publishPersonalCollection(w http.ResponseWriter, r *http.Request) {
 	a, d, g, ok := s.collectionPublicationGateway(w, r)
 	if !ok || !momentNoQuery(w, r) || !collectionPath(w, r) {
+		return
+	}
+	if r.PathValue("kind") == "journey" && !content.JourneysEnabled {
+		respondError(w, http.StatusServiceUnavailable, "journey_unavailable")
 		return
 	}
 	media, _, e := mime.ParseMediaType(r.Header.Get("Content-Type"))

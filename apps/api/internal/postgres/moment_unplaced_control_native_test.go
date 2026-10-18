@@ -18,7 +18,7 @@ import (
 )
 
 // One routed, native chain in the independently owned disposable fixture.
-// Root runs it with the final 156 schema; it never alters a shared/real source.
+// Root supplies the current migrations; it never alters a shared/real source.
 func TestMomentUnplacedControlNativeOwnedEditAndPublicationBoundary(t *testing.T) {
 	f := savedPageNative(t)
 	token, digest, err := identity.NewToken()
@@ -205,13 +205,35 @@ func TestMomentUnplacedControlNativeOwnedEditAndPublicationBoundary(t *testing.T
 	placeOnly := content.MomentInput{Body: "仅明确选择地点", PlaceID: nativePlace, TimePrecision: "unknown", LocationPrecision: "place"}
 	placeDraft, _ := write(content.MomentControlInput{OperationID: f.id(t), Action: "CREATE", Input: &placeOnly})
 	placePublic, _ := write(content.MomentControlInput{OperationID: f.id(t), Action: "PUBLISH", MomentID: placeDraft.MomentID, ExpectedRevision: 1, Input: &placeOnly})
+	// The author selected one Place, not a City. Check the canonical storage and
+	// owner reader separately from the public compatibility projection, whose
+	// migration-160 contract includes that Place's current parent City metadata.
+	var placeOnlyStored bool
+	if e = f.pool.QueryRow(f.ctx, `SELECT m.author_account_id=$2 AND m.city_id IS NULL AND m.place_id=$3 AND m.location_precision='place'
+ AND m.status='published' AND m.visibility='public' AND m.revision=$4 AND m.title='' AND m.body=$5
+ AND(SELECT count(*)FROM moment_location_links l WHERE l.moment_id=m.id AND l.status='ACTIVE')=1
+ AND EXISTS(SELECT 1 FROM moment_location_links l WHERE l.moment_id=m.id AND l.status='ACTIVE' AND l.kind='PLACE' AND l.precision='place' AND l.position=0 AND l.city_id IS NULL AND l.place_id=$3 AND l.reference_id IS NULL)
+ FROM moments m WHERE m.id=$1`, placePublic.MomentID, f.actor.ID, nativePlace, placePublic.AppliedRevision, placeOnly.Body).Scan(&placeOnlyStored); e != nil || !placeOnlyStored {
+		t.Fatal("Place-only canonical storage changed owner, content or selected geography", e)
+	}
+	ownerPlaceView, e := f.store.GetHumanMoment(f.ctx, f.digest, f.actor, placePublic.MomentID)
+	if e != nil || ownerPlaceView.ID != placePublic.MomentID || ownerPlaceView.AuthorAccountID != f.actor.ID || ownerPlaceView.CityID != "" || ownerPlaceView.PlaceID != nativePlace || ownerPlaceView.LocationPrecision != "place" || ownerPlaceView.Revision != placePublic.AppliedRevision || ownerPlaceView.Title != "" || ownerPlaceView.Body != placeOnly.Body {
+		t.Fatal("Place-only owner reader inferred a City or replaced canonical content", e)
+	}
+	if _, e = f.store.GetHumanMoment(f.ctx, peer.SessionDigest, identity.Actor{ID: peer.AccountID, AccountType: "person"}, placePublic.MomentID); !errors.Is(e, content.ErrNotFound) {
+		t.Fatal("public compatibility access granted foreign owner-reader access", e)
+	}
+	var parentCityID, parentCityName, selectedPlaceName string
+	if e = f.pool.QueryRow(f.ctx, `SELECT p.city_id,c.name,p.name FROM places p JOIN cities c ON c.id=p.city_id WHERE p.id=$1`, nativePlace).Scan(&parentCityID, &parentCityName, &selectedPlaceName); e != nil || parentCityID == "" || parentCityName == "" || selectedPlaceName == "" {
+		t.Fatal("selected Place's authoritative parent City unavailable", e)
+	}
 	placeProof, e := f.store.CapturePublicMomentWithContext(f.ctx, content.PublicMomentAccess{}, placePublic.MomentID, false, false)
 	if e != nil {
 		t.Fatal("Place-only current source", e)
 	}
 	placeView, e := f.store.FinalizePublicMomentWithContext(f.ctx, content.PublicMomentAccess{}, placeProof)
-	if e != nil || placeView.CityID != "" || placeView.CityName != "" || placeView.PlaceID != nativePlace {
-		t.Fatal("Place-only publication inferred author City or disappeared", e)
+	if e != nil || placeView.ID != placePublic.MomentID || placeView.Revision != placePublic.AppliedRevision || placeView.Title != "" || placeView.Body != placeOnly.Body || placeView.CityID != parentCityID || placeView.CityName != parentCityName || placeView.PlaceID != nativePlace || placeView.PlaceName != selectedPlaceName || placeView.LocationPrecision != "place" {
+		t.Fatal("Place-only public compatibility differs from canonical content or selected Place source", e)
 	}
 	mapRead, e := f.store.ReadMapLayers(f.ctx, mapdto.Access{}, mapdto.Query{CityID: "aberdeen-gb", West: -2.2, South: 57.1, East: -2.0, North: 57.3})
 	if e != nil {

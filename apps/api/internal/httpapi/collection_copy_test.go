@@ -98,7 +98,7 @@ func copyHTTPBody(commit bool) string {
 	return string(b)
 }
 func TestCollectionCopyHTTPClosedPreviewAndSeparateRecovery(t *testing.T) {
-	base := "/v1/public-collections/journey/" + imageMomentID + "/copy"
+	base := "/v1/public-collections/theme_map/" + imageMomentID + "/copy"
 	for _, c := range []struct {
 		name, method, path, body, org string
 		want                          int
@@ -119,7 +119,7 @@ func TestCollectionCopyHTTPClosedPreviewAndSeparateRecovery(t *testing.T) {
 	}
 }
 func TestCollectionCopyHTTPFinalOriginalFrameAndSourceProof(t *testing.T) {
-	path := "/v1/public-collections/journey/" + imageMomentID + "/copy/preview"
+	path := "/v1/public-collections/theme_map/" + imageMomentID + "/copy/preview"
 	for _, c := range []struct {
 		name   string
 		retire bool

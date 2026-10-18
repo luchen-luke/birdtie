@@ -1,0 +1,25 @@
+{
+  "command": [
+    "D:/DevTools/flutter/bin/flutter.bat",
+    "test",
+    "--no-pub",
+    "--reporter=expanded",
+    "test/now_map_reader_occlusion_test.dart"
+  ],
+  "cwd": "D:\\Project\\birdtie\\apps\\client",
+  "startedUTC": "2026-10-18T22:20:10.552038+00:00",
+  "seconds": 4.781,
+  "exitCode": 1,
+  "sourceBefore": {
+    "apps/client/lib/src/workspace/map_workspace.dart": "f0941356123465efa636457ca2fb54ab998c056f3c9c66aba18cea6c02d31f54",
+    "apps/client/test/now_map_reader_occlusion_test.dart": "e282491b4aed1fe3fa170218e55cc6df5d129fa550c51f9787774a13ad03a074",
+    "apps/client/lib/src/workspace/now_map_content_panel.dart": "75962abf27bc5b9e1480e84bd2828f6dffa64280347145e99870c72d30abf495"
+  },
+  "sourceAfter": {
+    "apps/client/lib/src/workspace/map_workspace.dart": "f0941356123465efa636457ca2fb54ab998c056f3c9c66aba18cea6c02d31f54",
+    "apps/client/test/now_map_reader_occlusion_test.dart": "e282491b4aed1fe3fa170218e55cc6df5d129fa550c51f9787774a13ad03a074",
+    "apps/client/lib/src/workspace/now_map_content_panel.dart": "75962abf27bc5b9e1480e84bd2828f6dffa64280347145e99870c72d30abf495"
+  },
+  "sourceStable": true,
+  "boundary": "Only actual MapWorkspace widget regression; no native/ADB/build/production."
+}

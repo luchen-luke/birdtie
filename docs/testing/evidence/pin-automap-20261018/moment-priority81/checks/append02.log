@@ -1,0 +1,16 @@
+Flutter assets will be downloaded from https://storage.flutter-io.cn. Make sure you trust this source!
+00:00 +0: loading D:/Project/birdtie/apps/client/test/saved_collection_append_test.dart
+00:00 +0: paused Journey is absent from picker; original uncertain operation remains recoverable
+00:00 +1: collectionAppend preview取消零写，去重且不复制Saved私人note
+00:00 +2: collectionAppend 一次CAS原operation提交，hidden位置与空备注
+00:00 +3: collectionAppend 丢响应仅核原回执，重启也不POST重发
+00:00 +4: collectionAppend 已有pending抢占另一选择，零新POST
+00:00 +5: collectionAppend 主体ABA永久退休且不借新批准
+00:00 +6: collectionAppend 普通同主体认证续期保留具体版本选择
+00:00 +7: collectionAppend 已公开集合不被当可编辑草稿
+00:00 +8: collectionAppend 原公开UNKNOWN阻止选择，不绕过原发布门槛
+00:00 +9: collectionAppend 提交后401仍保留原journal，结束读取原成功不移除
+00:00 +10: collectionAppend 原GET404不判失败，STOPPED解除原阻塞并刷新选择
+00:00 +11: collectionAppend 不同目标的成功回执不能清除原UNKNOWN
+00:00 +12: collectionAppend 正常窄屏预览需要明确勾选，取消无写
+00:00 +13: All tests passed!

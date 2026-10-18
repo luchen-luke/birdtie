@@ -1,0 +1,50 @@
+=== RUN   TestCollectionCopyHTTPClosedPreviewAndSeparateRecovery
+=== RUN   TestCollectionCopyHTTPClosedPreviewAndSeparateRecovery/preview
+=== RUN   TestCollectionCopyHTTPClosedPreviewAndSeparateRecovery/commit
+=== RUN   TestCollectionCopyHTTPClosedPreviewAndSeparateRecovery/originalget
+=== RUN   TestCollectionCopyHTTPClosedPreviewAndSeparateRecovery/bodylessstop
+=== RUN   TestCollectionCopyHTTPClosedPreviewAndSeparateRecovery/duplicate
+=== RUN   TestCollectionCopyHTTPClosedPreviewAndSeparateRecovery/privatefields
+=== RUN   TestCollectionCopyHTTPClosedPreviewAndSeparateRecovery/missingapproval
+=== RUN   TestCollectionCopyHTTPClosedPreviewAndSeparateRecovery/orgdenied
+=== RUN   TestCollectionCopyHTTPClosedPreviewAndSeparateRecovery/querydenied
+=== RUN   TestCollectionCopyHTTPClosedPreviewAndSeparateRecovery/stopbody
+--- PASS: TestCollectionCopyHTTPClosedPreviewAndSeparateRecovery (0.01s)
+    --- PASS: TestCollectionCopyHTTPClosedPreviewAndSeparateRecovery/preview (0.01s)
+    --- PASS: TestCollectionCopyHTTPClosedPreviewAndSeparateRecovery/commit (0.00s)
+    --- PASS: TestCollectionCopyHTTPClosedPreviewAndSeparateRecovery/originalget (0.00s)
+    --- PASS: TestCollectionCopyHTTPClosedPreviewAndSeparateRecovery/bodylessstop (0.00s)
+    --- PASS: TestCollectionCopyHTTPClosedPreviewAndSeparateRecovery/duplicate (0.00s)
+    --- PASS: TestCollectionCopyHTTPClosedPreviewAndSeparateRecovery/privatefields (0.00s)
+    --- PASS: TestCollectionCopyHTTPClosedPreviewAndSeparateRecovery/missingapproval (0.00s)
+    --- PASS: TestCollectionCopyHTTPClosedPreviewAndSeparateRecovery/orgdenied (0.00s)
+    --- PASS: TestCollectionCopyHTTPClosedPreviewAndSeparateRecovery/querydenied (0.00s)
+    --- PASS: TestCollectionCopyHTTPClosedPreviewAndSeparateRecovery/stopbody (0.00s)
+=== RUN   TestCollectionCopyHTTPFinalOriginalFrameAndSourceProof
+=== RUN   TestCollectionCopyHTTPFinalOriginalFrameAndSourceProof/SessionABA
+=== RUN   TestCollectionCopyHTTPFinalOriginalFrameAndSourceProof/sourceRetired
+--- PASS: TestCollectionCopyHTTPFinalOriginalFrameAndSourceProof (0.00s)
+    --- PASS: TestCollectionCopyHTTPFinalOriginalFrameAndSourceProof/SessionABA (0.00s)
+    --- PASS: TestCollectionCopyHTTPFinalOriginalFrameAndSourceProof/sourceRetired (0.00s)
+=== RUN   TestJourneyAvailabilityDisabledKeepsOriginalRecovery
+--- PASS: TestJourneyAvailabilityDisabledKeepsOriginalRecovery (0.00s)
+=== RUN   TestJourneyCopyAvailabilityDisabledKeepsOriginalRecovery
+=== RUN   TestJourneyCopyAvailabilityDisabledKeepsOriginalRecovery/newJourneyPreview
+=== RUN   TestJourneyCopyAvailabilityDisabledKeepsOriginalRecovery/originalJourneyReplay
+=== RUN   TestJourneyCopyAvailabilityDisabledKeepsOriginalRecovery/originalReceipt
+=== RUN   TestJourneyCopyAvailabilityDisabledKeepsOriginalRecovery/originalStop
+=== RUN   TestJourneyCopyAvailabilityDisabledKeepsOriginalRecovery/themeMapPreview
+=== RUN   TestJourneyCopyAvailabilityDisabledKeepsOriginalRecovery/themeMapCommit
+=== RUN   TestJourneyCopyAvailabilityDisabledKeepsOriginalRecovery/organizationStillDenied
+=== RUN   TestJourneyCopyAvailabilityDisabledKeepsOriginalRecovery/originalReplaySessionRetired
+--- PASS: TestJourneyCopyAvailabilityDisabledKeepsOriginalRecovery (0.00s)
+    --- PASS: TestJourneyCopyAvailabilityDisabledKeepsOriginalRecovery/newJourneyPreview (0.00s)
+    --- PASS: TestJourneyCopyAvailabilityDisabledKeepsOriginalRecovery/originalJourneyReplay (0.00s)
+    --- PASS: TestJourneyCopyAvailabilityDisabledKeepsOriginalRecovery/originalReceipt (0.00s)
+    --- PASS: TestJourneyCopyAvailabilityDisabledKeepsOriginalRecovery/originalStop (0.00s)
+    --- PASS: TestJourneyCopyAvailabilityDisabledKeepsOriginalRecovery/themeMapPreview (0.00s)
+    --- PASS: TestJourneyCopyAvailabilityDisabledKeepsOriginalRecovery/themeMapCommit (0.00s)
+    --- PASS: TestJourneyCopyAvailabilityDisabledKeepsOriginalRecovery/organizationStillDenied (0.00s)
+    --- PASS: TestJourneyCopyAvailabilityDisabledKeepsOriginalRecovery/originalReplaySessionRetired (0.00s)
+PASS
+ok  	github.com/birdtie/birdtie/apps/api/internal/httpapi	3.093s

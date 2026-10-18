@@ -4,6 +4,7 @@ import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
+import '../config/birdtie_environment.dart';
 import '../workspace/entity_share_pending_store.dart';
 import '../workspace/saved_items.dart';
 import 'personal_collection_controller.dart';
@@ -98,6 +99,7 @@ class SavedCollectionAppendController extends ChangeNotifier {
     required this.identityChanges,
     CollectionAppendJournal? journal,
     this.publicationRecoveryReader,
+    this.includeJourneys = BirdtieEnvironment.journeysEnabled,
   }) : journal = journal ?? SecureCollectionAppendJournal() {
     _owner = ownerID();
     _authorization = saved.authorizationHeader();
@@ -106,7 +108,7 @@ class SavedCollectionAppendController extends ChangeNotifier {
     _createControllers();
   }
   void _createControllers() {
-    for (final kind in ['journey', 'theme_map']) {
+    for (final kind in [if (includeJourneys) 'journey', 'theme_map']) {
       collections[kind] = PersonalCollectionController(
         kind: kind,
         cityID: _city,
@@ -128,6 +130,7 @@ class SavedCollectionAppendController extends ChangeNotifier {
     }
   }
 
+  final bool includeJourneys;
   final SavedController saved;
   final List<SavedItem> selected;
   final String? Function() ownerID;
@@ -515,7 +518,9 @@ class _SavedCollectionAppendPageState extends State<SavedCollectionAppendPage> {
     builder: (context, _) {
       final c = widget.controller, t = c.target;
       return Scaffold(
-        appBar: AppBar(title: const Text('加入已有旅程或主题地图')),
+        appBar: AppBar(
+          title: Text(c.includeJourneys ? '加入已有旅程或主题地图' : '加入已有主题地图'),
+        ),
         body: ListView(
           padding: const EdgeInsets.all(16),
           children: [
@@ -526,7 +531,7 @@ class _SavedCollectionAppendPageState extends State<SavedCollectionAppendPage> {
               if (c.error != null) Text(c.error!),
               if (c.notice != null) Text(c.notice!),
               if (c.succeeded)
-                const Text('原操作已确认生效，可在原旅程或主题地图查看。')
+                const Text('原操作已确认生效，可在原记录查看。')
               else if (c.uncertain) ...[
                 Text(
                   c.recoveryTitle == null

@@ -1,0 +1,102 @@
+{
+  "startedUTC": "2026-10-18T22:53:56.060823+00:00",
+  "status": "BUILT_INPUTS_STABLE_NOT_INSTALLED",
+  "mode": "apk82",
+  "executed": true,
+  "installed": false,
+  "clearedAppData": false,
+  "deployed": false,
+  "databaseMigration": "NOT_RUN",
+  "scriptSHA256": "15fc26925cc88a77f2251401b982276c08d8a286473bda1af2f973886ced03dc",
+  "normalPreviewApplicationId": "app.civu.civu_mobile.birdtiepreview",
+  "configuredAPIOrigin": "https://47.110.154.133",
+  "configuredVersionName": "0.1.2",
+  "configuredVersionCode": 82,
+  "normalizationExclusions": {
+    "local.properties": [
+      "flutter.buildMode",
+      "flutter.versionCode",
+      "flutter.versionName"
+    ]
+  },
+  "inputScopeLimit": "Resolved local source/config/assets/fonts/package tree and tool identity snapshot; not a claim of a hermetic Maven/SDK/cache reproduction.",
+  "beforeManifestSHA256": "17e0968c965cc719296eaf6c782f1575c1148751f271941485a98daef7cd9473",
+  "inputCount": 8129,
+  "inputBytes": 195890407,
+  "sourceHead": "f24683d74cfebdcdcf4e94faed264147a75ef9d8",
+  "command": [
+    "D:\\DevTools\\flutter\\bin\\flutter.bat",
+    "build",
+    "apk",
+    "--profile",
+    "--build-name=0.1.2",
+    "--build-number=82",
+    "--no-pub",
+    "--no-tree-shake-icons",
+    "--dart-define=BIRDTIE_ENVIRONMENT=development",
+    "--dart-define=BIRDTIE_FRIEND_IMAGE_ENABLED=true",
+    "--dart-define=BIRDTIE_API_BASE_URL=https://47.110.154.133",
+    "--dart-define-from-file=.env.maps.mobile.provided.local.json"
+  ],
+  "cwd": "D:\\Project\\birdtie\\apps\\client",
+  "build": {
+    "command": [
+      "D:\\DevTools\\flutter\\bin\\flutter.bat",
+      "build",
+      "apk",
+      "--profile",
+      "--build-name=0.1.2",
+      "--build-number=82",
+      "--no-pub",
+      "--no-tree-shake-icons",
+      "--dart-define=BIRDTIE_ENVIRONMENT=development",
+      "--dart-define=BIRDTIE_FRIEND_IMAGE_ENABLED=true",
+      "--dart-define=BIRDTIE_API_BASE_URL=https://47.110.154.133",
+      "--dart-define-from-file=.env.maps.mobile.provided.local.json"
+    ],
+    "cwd": "D:\\Project\\birdtie\\apps\\client",
+    "exitCode": 0,
+    "elapsedSeconds": 54.54,
+    "log": "D:\\Project\\birdtie\\work\\content-first-20261019\\moment-priority80\\build-evidence\\build82\\attempt-20261018T225356Z-9f4e4b1b\\build.log"
+  },
+  "sourceStable": true,
+  "afterManifestSHA256": "17e0968c965cc719296eaf6c782f1575c1148751f271941485a98daef7cd9473",
+  "changes": {
+    "added": [],
+    "removed": [],
+    "modified": [],
+    "metadataChanged": {}
+  },
+  "rawNormalizedBefore": {
+    "apps/client/android/local.properties": {
+      "rawSHA256": "07eab0673a40b22d77743dba60ba83cf53e83d8d727aca618dffd36cbd860232",
+      "rawBytes": 163,
+      "excludedGeneratedKeys": [
+        "flutter.buildMode",
+        "flutter.versionCode",
+        "flutter.versionName"
+      ]
+    }
+  },
+  "rawNormalizedAfter": {
+    "apps/client/android/local.properties": {
+      "rawSHA256": "4bbaaa2452f1904e33f9bd77d58f06ef731f77b0ee17d8d81c617810e6b2ea9a",
+      "rawBytes": 163,
+      "excludedGeneratedKeys": [
+        "flutter.buildMode",
+        "flutter.versionCode",
+        "flutter.versionName"
+      ]
+    }
+  },
+  "artifactChecks": {
+    "applicationId": "app.civu.civu_mobile.birdtiepreview",
+    "versionCode": 82,
+    "versionName": "0.1.2",
+    "bundledRoutingAssetSHA256": "37858edb3ca811e4b2de7a85b44803b753da7b9e74113cfec66ac1934ff4cb55"
+  },
+  "artifact": "D:\\Project\\birdtie\\work\\content-first-20261019\\delivery82\\Birdtie-Moment-Priority-20261019-82.apk",
+  "artifactSHA256": "f5d34de47cb7a286fdb3f1e1c93358bbf2b898e4d3d881b31319fb7aeac6d040",
+  "artifactBytes": 357715227,
+  "completedUTC": "2026-10-18T22:55:04.816675+00:00"
+}

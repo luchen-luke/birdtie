@@ -1,3 +1,4 @@
+import '../workspace/map_content_routes.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:math' as math;
@@ -1878,6 +1879,26 @@ class _AMapCityMapViewState extends State<AMapCityMapView>
                 initialCameraPosition: initial,
                 customStyleOptions: _offlineStyle,
                 markers: _markers.values.toSet(),
+                polylines: {
+                  if (!_retiring && _foreground)
+                    for (final edge in currentMapContentEdges(_displayed))
+                      amap.Polyline(
+                        points: [
+                          _displayCoordinate(
+                            edge.from.latitude,
+                            edge.from.longitude,
+                          ),
+                          _displayCoordinate(
+                            edge.to.latitude,
+                            edge.to.longitude,
+                          ),
+                        ],
+                        color: edge.selected(widget.selectedEntityId)
+                            ? const Color(0xff267264)
+                            : const Color(0x993d8174),
+                        width: edge.selected(widget.selectedEntityId) ? 3 : 1.5,
+                      )..setIdForCopy('content-order:${edge.id}'),
+                },
                 onMapCreated: (map) => _onCreated(map, sdk),
                 onCameraMove: (camera) {
                   if (sdk == _sdkEpoch &&

@@ -1,0 +1,15 @@
+{
+  "stage": "host",
+  "argv": [
+    "D:/DevTools/flutter/bin/flutter.bat",
+    "test",
+    "--no-pub",
+    "test/now_public_moment_composer_test.dart",
+    "test/now_map_reader_occlusion_test.dart"
+  ],
+  "cwd": "D:\\Project\\birdtie\\apps\\client",
+  "exitCode": 0,
+  "elapsedSeconds": 7.933438062667847,
+  "log": "D:\\Project\\birdtie\\work\\content-first-20261019\\checks\\host04.log",
+  "completedUTC": "2026-10-18T21:11:40.987957+00:00"
+}

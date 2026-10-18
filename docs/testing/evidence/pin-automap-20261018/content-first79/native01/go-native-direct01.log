@@ -1,0 +1,19 @@
+=== RUN   TestJourneyPublicationNativeSnapshotPrivateEditRecoveryAndRetirement
+    journey_publication_native_test.go:38: migration roundtrip uses independently owned database birdtie_owned_migration_3b4f6cbbbcb3254c716a0ae8 with 180 actual migrations
+    journey_publication_native_test.go:51: private nonSTOP/reordered publication content unavailable
+--- FAIL: TestJourneyPublicationNativeSnapshotPrivateEditRecoveryAndRetirement (1.85s)
+=== RUN   TestJourneyPublicationNativeDiscoveryPaginationAndUnknownLifecycle
+    journey_publication_native_test.go:143: migration roundtrip uses independently owned database birdtie_owned_migration_caa99a15a17560a49d0c43cf with 180 actual migrations
+--- PASS: TestJourneyPublicationNativeDiscoveryPaginationAndUnknownLifecycle (2.83s)
+=== RUN   TestContentFirstNativeIndependentMomentsAndRouteGap
+    map_content_first_native_test.go:11: migration roundtrip uses independently owned database birdtie_owned_migration_6d9a67b062c5cffee8acd1f7 with 180 actual migrations
+--- PASS: TestContentFirstNativeIndependentMomentsAndRouteGap (2.06s)
+=== RUN   TestMomentInteractionNativeOriginalFactsNotificationsAndInboxSnapshot
+    moment_interaction_native_test.go:46: migration roundtrip uses independently owned database birdtie_owned_migration_33f0240c28b0d893886e8d0c with 180 actual migrations
+--- PASS: TestMomentInteractionNativeOriginalFactsNotificationsAndInboxSnapshot (2.26s)
+=== RUN   TestMomentRepliesNativeParentCurrentUnknownAndUnavailable
+    moment_interaction_native_test.go:155: migration roundtrip uses independently owned database birdtie_owned_migration_79857365843e6ee8e83245ec with 180 actual migrations
+--- PASS: TestMomentRepliesNativeParentCurrentUnknownAndUnavailable (2.28s)
+FAIL
+FAIL	github.com/birdtie/birdtie/apps/api/internal/postgres	13.274s
+FAIL

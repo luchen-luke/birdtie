@@ -1,0 +1,16 @@
+{
+  "stage": "journey-field",
+  "argv": [
+    "D:/DevTools/flutter/bin/flutter.bat",
+    "test",
+    "--no-pub",
+    "test/now_journey_test.dart",
+    "--plain-name",
+    "private place reorder"
+  ],
+  "cwd": "D:\\Project\\birdtie\\apps\\client",
+  "exitCode": 0,
+  "elapsedSeconds": 3.7580854892730713,
+  "log": "D:\\Project\\birdtie\\work\\content-first-20261019\\checks\\journey-field01.log",
+  "completedUTC": "2026-10-18T21:01:20.457070+00:00"
+}

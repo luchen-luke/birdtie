@@ -1,0 +1,56 @@
+Flutter assets will be downloaded from https://storage.flutter-io.cn. Make sure you trust this source!
+00:00 +0: loading D:/Project/birdtie/apps/client/test/now_journey_test.dart
+lib/src/content/collection_publication_page.dart:211:25: Error: The getter 'journeySnapshot' isn't defined for the type 'PersonalCollection'.
+ - 'PersonalCollection' is from 'package:birdtie_client/src/content/personal_collection_controller.dart' ('lib/src/content/personal_collection_controller.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'journeySnapshot'.
+                  if (v.journeySnapshot case final snapshot?)
+                        ^^^^^^^^^^^^^^^
+00:00 +0 -1: loading D:/Project/birdtie/apps/client/test/now_journey_test.dart [E]
+  Failed to load "D:/Project/birdtie/apps/client/test/now_journey_test.dart":
+  Compilation failed for testPath=D:/Project/birdtie/apps/client/test/now_journey_test.dart: lib/src/content/collection_publication_page.dart:211:25: Error: The getter 'journeySnapshot' isn't defined for the type 'PersonalCollection'.
+   - 'PersonalCollection' is from 'package:birdtie_client/src/content/personal_collection_controller.dart' ('lib/src/content/personal_collection_controller.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'journeySnapshot'.
+                    if (v.journeySnapshot case final snapshot?)
+                          ^^^^^^^^^^^^^^^
+  .
+  Error: The Dart compiler exited unexpectedly.
+  package:flutter_tools/src/base/common.dart 34:3  throwToolExit
+  package:flutter_tools/src/compile.dart 1009:11   DefaultResidentCompiler._compile.<fn>
+  dart:async/zone_root.dart 48:47                  _rootRunUnary
+  dart:async/zone.dart 733:19                      _CustomZone.runUnary
+  dart:async/future_impl.dart 948:45               Future._propagateToListeners.handleValueCallback
+  dart:async/future_impl.dart 977:13               Future._propagateToListeners
+  dart:async/future_impl.dart 862:9                Future._propagateToListeners
+  dart:async/future_impl.dart 720:5                Future._completeWithValue
+  dart:async/future_impl.dart 804:7                Future._asyncCompleteWithValue.<fn>
+  dart:async/zone_root.dart 35:13                  _rootRun
+  dart:async/zone.dart 726:19                      _CustomZone.run
+  dart:async/zone.dart 625:7                       _CustomZone.runGuarded
+  dart:async/zone.dart 666:23                      _CustomZone.bindCallbackGuarded.<fn>
+  dart:async/schedule_microtask.dart 40:35         _microtaskLoop
+  dart:async/schedule_microtask.dart 49:5          _startMicrotaskLoop
+  dart:isolate-patch/isolate_patch.dart 127:13     _runPendingImmediateCallback
+  dart:isolate-patch/isolate_patch.dart 193:5      _RawReceivePort._handleMessage
+  
+00:00 +0 -1: D:/Project/birdtie/apps/client/test/now_content_composer_test.dart: comment, reply and Journey fields persist independently without approval or routing authority
+00:00 +1 -1: D:/Project/birdtie/apps/client/test/now_content_composer_test.dart: one composer shows explicit target, preserves drafts and blocks readonly IME send
+00:00 +2 -1: D:/Project/birdtie/apps/client/test/now_content_composer_test.dart: one composer shows explicit target, preserves drafts and blocks readonly IME send
+00:00 +3 -1: D:/Project/birdtie/apps/client/test/now_content_composer_test.dart: one composer shows explicit target, preserves drafts and blocks readonly IME send
+00:00 +4 -1: D:/Project/birdtie/apps/client/test/now_content_composer_test.dart: one composer shows explicit target, preserves drafts and blocks readonly IME send
+00:00 +5 -1: D:/Project/birdtie/apps/client/test/now_content_composer_test.dart: one composer shows explicit target, preserves drafts and blocks readonly IME send
+00:00 +6 -1: D:/Project/birdtie/apps/client/test/now_content_composer_test.dart: one composer shows explicit target, preserves drafts and blocks readonly IME send
+00:00 +7 -1: D:/Project/birdtie/apps/client/test/now_content_composer_test.dart: one composer shows explicit target, preserves drafts and blocks readonly IME send
+00:00 +8 -1: D:/Project/birdtie/apps/client/test/now_content_composer_test.dart: one composer shows explicit target, preserves drafts and blocks readonly IME send
+00:00 +9 -1: D:/Project/birdtie/apps/client/test/now_content_composer_test.dart: one composer shows explicit target, preserves drafts and blocks readonly IME send
+00:00 +10 -1: D:/Project/birdtie/apps/client/test/now_content_composer_test.dart: one composer shows explicit target, preserves drafts and blocks readonly IME send
+00:00 +11 -1: D:/Project/birdtie/apps/client/test/now_content_composer_test.dart: one composer shows explicit target, preserves drafts and blocks readonly IME send
+00:00 +12 -1: D:/Project/birdtie/apps/client/test/now_content_composer_test.dart: one composer shows explicit target, preserves drafts and blocks readonly IME send
+00:00 +13 -1: D:/Project/birdtie/apps/client/test/now_content_composer_test.dart: one composer shows explicit target, preserves drafts and blocks readonly IME send
+00:00 +14 -1: D:/Project/birdtie/apps/client/test/now_content_composer_test.dart: one composer shows explicit target, preserves drafts and blocks readonly IME send
+00:00 +15 -1: D:/Project/birdtie/apps/client/test/now_content_composer_test.dart: one composer shows explicit target, preserves drafts and blocks readonly IME send
+00:00 +16 -1: D:/Project/birdtie/apps/client/test/now_content_composer_test.dart: one composer shows explicit target, preserves drafts and blocks readonly IME send
+00:00 +17 -1: D:/Project/birdtie/apps/client/test/now_content_composer_test.dart: one composer shows explicit target, preserves drafts and blocks readonly IME send
+00:00 +18 -1: Some tests failed.
+
+Failing tests:
+  D:/Project/birdtie/apps/client/test/now_journey_test.dart: loading D:/Project/birdtie/apps/client/test/now_journey_test.dart

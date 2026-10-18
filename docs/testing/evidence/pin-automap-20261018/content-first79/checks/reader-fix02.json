@@ -1,0 +1,15 @@
+{
+  "stage": "reader-fix",
+  "argv": [
+    "D:/DevTools/flutter/bin/flutter.bat",
+    "test",
+    "--no-pub",
+    "test/now_content_first_test.dart",
+    "test/now_map_content_test.dart"
+  ],
+  "cwd": "D:\\Project\\birdtie\\apps\\client",
+  "exitCode": 0,
+  "elapsedSeconds": 4.357212066650391,
+  "log": "D:\\Project\\birdtie\\work\\content-first-20261019\\checks\\reader-fix02.log",
+  "completedUTC": "2026-10-18T21:11:32.983680+00:00"
+}

@@ -10,14 +10,51 @@ class NowComposerTarget {
   const NowComposerTarget.agent()
     : conversationID = null,
       recipientAccountID = null,
-      displayName = null;
+      displayName = null,
+      mode = 'agent',
+      contentID = '',
+      replyID = '';
   NowComposerTarget.human(HumanConversation conversation)
     : conversationID = conversation.id,
       recipientAccountID = conversation.otherAccountId,
-      displayName = conversation.otherName;
+      displayName = conversation.otherName,
+      mode = 'human',
+      contentID = '',
+      replyID = '';
+  const NowComposerTarget.comment({
+    required this.contentID,
+    this.replyID = '',
+    this.displayName,
+  }) : conversationID = null,
+       recipientAccountID = null,
+       mode = 'comment';
+  const NowComposerTarget.edit({
+    required this.mode,
+    required this.contentID,
+    this.displayName,
+    this.replyID = '',
+  }) : conversationID = null,
+       recipientAccountID = null;
   final String? conversationID, recipientAccountID, displayName;
-  bool get human => conversationID != null;
-  Object get key => (conversationID, recipientAccountID);
+  final String mode, contentID, replyID;
+  bool get human => mode == 'human';
+  bool get comment => mode == 'comment';
+  bool get agent => mode == 'agent';
+  bool get content => !human && !agent;
+  Object get key => content
+      ? (mode, contentID, replyID)
+      : (conversationID, recipientAccountID);
+  String get draftKind => comment
+      ? (replyID.isEmpty ? 'comment' : 'reply')
+      : mode == 'edit-moment'
+      ? 'moment'
+      : mode == 'edit-journey'
+      ? 'journey'
+      : human
+      ? 'message'
+      : 'intent';
+  String get draftSlot =>
+      content ? 'now-content:$mode:$contentID:$replyID' : 'primary';
 }
 
 /// In-memory, owner/recipient-separated editable material. Tokens, approvals,
@@ -45,6 +82,7 @@ class NowComposerDraftState extends ChangeNotifier {
   String? get owner => _owner;
   String? get workspaceID => _workspaceID;
   bool get suspended => _suspendedOwner != null;
+  bool get hasDraft => _drafts.containsKey(_key);
   TextEditingValue get value => _drafts[_key] ?? TextEditingValue.empty;
   TypedLocalDraft? get envelope {
     final owner = _owner;
@@ -55,7 +93,8 @@ class NowComposerDraftState extends ChangeNotifier {
         owner: owner,
         origin: _activeOrigin,
         workspaceID: _workspaceID,
-        kind: target.human ? 'message' : 'intent',
+        kind: target.draftKind,
+        slotID: target.draftSlot,
         text: value.text,
         conversationID: target.conversationID,
         recipientID: target.recipientAccountID,
@@ -92,7 +131,7 @@ class NowComposerDraftState extends ChangeNotifier {
     if (workspaceID == _workspaceID) return;
     unawaited(flush());
     _workspaceID = workspaceID;
-    if (target.human) target = const NowComposerTarget.agent();
+    if (!target.agent) target = const NowComposerTarget.agent();
     ++_generation;
     _notify();
     if (_activeOrigin.isNotEmpty && _store != null) unawaited(restore());
@@ -121,11 +160,26 @@ class NowComposerDraftState extends ChangeNotifier {
         if (row.owner != owner || row.origin != origin)
           throw const FormatException();
         // Route/import views share this private store, not the send target.
-        if (!const {'intent', 'message'}.contains(row.kind)) continue;
+        NowComposerTarget? restored;
+        if (row.slotID.startsWith('now-content:')) {
+          final fields = row.slotID.split(':');
+          if (fields.length != 4) continue;
+          restored = fields[1] == 'comment'
+              ? NowComposerTarget.comment(
+                  contentID: fields[2],
+                  replyID: fields[3],
+                )
+              : NowComposerTarget.edit(
+                  mode: fields[1],
+                  contentID: fields[2],
+                  replyID: fields[3],
+                );
+        } else if (!const {'intent', 'message'}.contains(row.kind))
+          continue;
         final key = (
           row.origin,
           row.workspaceID,
-          (row.conversationID, row.recipientID),
+          restored?.key ?? (row.conversationID, row.recipientID),
         );
         // A slow disk read cannot replace an edit already made in this session.
         if (_drafts.containsKey(key)) continue;
@@ -349,7 +403,7 @@ class NowComposerDraftState extends ChangeNotifier {
 
   void select(NowComposerTarget next) {
     if (next.key == target.key) return;
-    if (_workspaceID != null && next.human) return;
+    if (_workspaceID != null && (next.human || next.content)) return;
     unawaited(flush());
     target = next;
     ++_generation;

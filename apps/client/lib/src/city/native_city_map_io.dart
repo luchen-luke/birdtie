@@ -1,3 +1,4 @@
+import '../workspace/map_content_routes.dart';
 import 'dart:async';
 import 'map_cluster_members_sheet.dart';
 import 'map_point_selection_sheet.dart';
@@ -146,6 +147,9 @@ class _NativeCityMapViewState extends State<NativeCityMapView>
       ValueNotifier<List<({MapEntity entity, Offset point})>>([]);
   int _readerEpoch = 0;
   PointAnnotationManager? _markers;
+  PolylineAnnotationManager? _contentLines;
+  final _lineAnnotations = <String, PolylineAnnotation>{};
+  final _lineFingerprints = <String, String>{};
   final Map<String, PointAnnotation> _annotations = {};
   final Map<String, String> _annotationFingerprints = {};
   late final _markerQueue = LatestMapRenderQueue((serial) async {
@@ -592,7 +596,7 @@ class _NativeCityMapViewState extends State<NativeCityMapView>
     }
   }
 
-  Future<void> _suppressProviderPoi(MapboxMap map) async {
+  Future<void> _tuneProviderLabels(MapboxMap map) async {
     var candidates = 0, applied = 0, skipped = 0;
     try {
       final layers = await map.style.getStyleLayers();
@@ -618,10 +622,9 @@ class _NativeCityMapViewState extends State<NativeCityMapView>
           }
         }
         if (!mounted || map != _map) return;
-        if (poi) {
-          await map.style.setStyleLayerProperty(layer.id, 'visibility', 'none');
-          continue;
-        }
+        // Ordinary provider POIs remain part of the basemap. Birdtie content
+        // uses its own square identities rather than replacing the directory.
+        if (poi) continue;
         if (mapboxSecondaryLabelFactor(
               layer.id,
               layer.type,
@@ -902,7 +905,7 @@ class _NativeCityMapViewState extends State<NativeCityMapView>
   String _entityFingerprint(List<MapEntity> entities) => entities
       .map(
         (entity) =>
-            '${entity.id}:${entity.latitude}:${entity.longitude}:${entity.kind}:${entity.title}:${entity.subtitle}:${entity.placeID}:${entity.precision}:${entity.publicLocation}:${entity.isTaskResult}:${entity.decorationKey}',
+            '${entity.id}:${entity.latitude}:${entity.longitude}:${entity.kind}:${entity.title}:${entity.subtitle}:${entity.placeID}:${entity.precision}:${entity.publicLocation}:${entity.isTaskResult}:${entity.decorationKey}:${entity.sourceVersion}:${entity.threadID}:${entity.threadPosition}:${entity.nextContentIDs.join(",")}',
       )
       .join('|');
 
@@ -955,11 +958,12 @@ class _NativeCityMapViewState extends State<NativeCityMapView>
       await _updateOrnaments();
     }
     if (!mounted || map != _map) return;
-    await _suppressProviderPoi(map);
+    await _tuneProviderLabels(map);
     if (!mounted || map != _map) return;
     _styleReady = true;
     if (!kReleaseMode && contentMapMetrics.styleReadyMicros == 0)
       contentMapMetrics.styleReadyMicros = _mapLifetime.elapsedMicroseconds;
+    _contentLines ??= await map.annotations.createPolylineAnnotationManager();
     _markers ??= await map.annotations.createPointAnnotationManager();
     await _markers!.setIconAllowOverlap(true);
     // The shared plan measures visible glyphs and actual labels. Transparent
@@ -1368,6 +1372,75 @@ class _NativeCityMapViewState extends State<NativeCityMapView>
   Set<String> _previousVisibleIDs = const {};
   Map<String, MapLabelPlacement> _previousPlacements = const {};
 
+  Future<void> _syncContentLines(
+    List<MapEntity> source,
+    bool Function() current,
+  ) async {
+    final lines = _contentLines;
+    if (lines == null) return;
+    final edges = {
+      for (final edge in currentMapContentEdges(source)) edge.id: edge,
+    };
+    bool authorized(MapContentEdge edge) =>
+        mounted &&
+        currentMapContentEdges(widget.entities).any(
+          (fresh) =>
+              fresh.id == edge.id &&
+              fresh.from.sourceVersion == edge.from.sourceVersion &&
+              fresh.to.sourceVersion == edge.to.sourceVersion,
+        );
+    for (final id in _lineAnnotations.keys.toList()) {
+      if (!edges.containsKey(id)) {
+        final old = _lineAnnotations.remove(id)!;
+        _lineFingerprints.remove(id);
+        await lines.delete(old);
+      }
+    }
+    for (final edge in edges.values) {
+      if (!current()) return;
+      final selected = edge.selected(widget.selectedEntityId);
+      final fingerprint =
+          '${edge.from.sourceVersion}:${edge.to.sourceVersion}:$selected';
+      if (_lineFingerprints[edge.id] == fingerprint) continue;
+      final geometry = LineString(
+        coordinates: [
+          Position(edge.from.longitude, edge.from.latitude),
+          Position(edge.to.longitude, edge.to.latitude),
+        ],
+      );
+      final color =
+          (selected ? const Color(0xff267264) : const Color(0x993d8174))
+              .toARGB32();
+      final old = _lineAnnotations[edge.id];
+      if (old != null) {
+        old.geometry = geometry;
+        old.lineColor = color;
+        old.lineWidth = selected ? 3 : 1.5;
+        await lines.update(old);
+        if (!authorized(edge)) {
+          await lines.delete(old);
+          _lineAnnotations.remove(edge.id);
+          _lineFingerprints.remove(edge.id);
+          return;
+        }
+      } else {
+        final created = await lines.create(
+          PolylineAnnotationOptions(
+            geometry: geometry,
+            lineColor: color,
+            lineWidth: selected ? 3 : 1.5,
+          ),
+        );
+        if (!authorized(edge)) {
+          await lines.delete(created);
+          return;
+        }
+        _lineAnnotations[edge.id] = created;
+      }
+      _lineFingerprints[edge.id] = fingerprint;
+    }
+  }
+
   Future<void> _syncMarkers(int serial) async {
     final elapsed = Stopwatch()..start();
     if (!kReleaseMode) contentMapMetrics.renderPasses++;
@@ -1414,6 +1487,8 @@ class _NativeCityMapViewState extends State<NativeCityMapView>
       if (entity.hasMapAnchor) unique.putIfAbsent(entity.id, () => entity);
     }
     final source = unique.values.toList(growable: false);
+    await _syncContentLines(source, current);
+    if (!current()) return;
     // Remove retired source identities before awaiting a camera projection.
     // A stale cluster count must not keep a withdrawn/expired member visible.
     for (final previous in _renderedEntities) {

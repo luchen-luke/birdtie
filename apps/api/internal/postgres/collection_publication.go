@@ -100,15 +100,18 @@ func (s *Store) PublishHumanCollection(ctx context.Context, d [32]byte, a identi
 	if e != nil {
 		return content.PersonalCollection{}, e
 	}
-	return s.mutateCollectionPublication(ctx, d, a, kind, id, in.OperationID, in.Revision, "PUBLISH", in.Entries, in.AllowPrivatePlaceCopy)
+	if in.JourneySnapshot != nil && kind != "journey" {
+		return content.PersonalCollection{}, content.ErrInvalid
+	}
+	return s.mutateCollectionPublication(ctx, d, a, kind, id, in.OperationID, in.Revision, "PUBLISH", in.Entries, in.AllowPrivatePlaceCopy, in.JourneySnapshot)
 }
 func (s *Store) UnpublishHumanCollection(ctx context.Context, d [32]byte, a identity.Actor, kind, id string, in content.CollectionUnpublishInput) (content.PersonalCollection, error) {
 	if !content.ValidCollectionID(in.OperationID) || in.Revision < 1 || in.Revision >= math.MaxInt64 {
 		return content.PersonalCollection{}, content.ErrInvalid
 	}
-	return s.mutateCollectionPublication(ctx, d, a, kind, id, strings.ToLower(in.OperationID), in.Revision, "UNPUBLISH", nil, false)
+	return s.mutateCollectionPublication(ctx, d, a, kind, id, strings.ToLower(in.OperationID), in.Revision, "UNPUBLISH", nil, false, nil)
 }
-func (s *Store) mutateCollectionPublication(ctx context.Context, d [32]byte, a identity.Actor, kind, id, op string, revision int64, action string, entries []content.CollectionPublicationEntry, allowCopy bool) (content.PersonalCollection, error) {
+func (s *Store) mutateCollectionPublication(ctx context.Context, d [32]byte, a identity.Actor, kind, id, op string, revision int64, action string, entries []content.CollectionPublicationEntry, allowCopy bool, snapshot *content.JourneyPublicationInput) (content.PersonalCollection, error) {
 	table, entryTable, key, e := collectionTables(kind)
 	if e != nil || !content.ValidCollectionID(id) {
 		return content.PersonalCollection{}, content.ErrInvalid
@@ -127,6 +130,9 @@ func (s *Store) mutateCollectionPublication(ctx context.Context, d [32]byte, a i
 		return content.PersonalCollection{}, content.ErrUnavailable
 	}
 	digest := content.CollectionPublicationCopyDigest(kind, id, action, revision, entries, allowCopy)
+	if snapshot != nil {
+		digest = content.JourneyPublicationDigest(kind, id, action, revision, snapshot)
+	}
 	oldKind, oldID, meta, oldDigest, e := readCollectionPublicationOperation(ctx, tx, a.ID, op)
 	if e == nil {
 		// A terminal NO_EFFECT reservation forbids all late payloads for this
@@ -166,11 +172,24 @@ func (s *Store) mutateCollectionPublication(ctx context.Context, d [32]byte, a i
 	if v.Revision != revision {
 		return content.PersonalCollection{}, content.ErrConflict
 	}
-	if v.JourneyDetails != nil {
-		return content.PersonalCollection{}, content.ErrConflict
-	}
+	rich := v.JourneyDetails != nil
+	richSource := v
+	richStamp := ""
 	var source *content.CollectionInput
-	if action == "PUBLISH" {
+	if rich {
+		if allowCopy || len(entries) != 0 {
+			return content.PersonalCollection{}, content.ErrInvalid
+		}
+		richStamp, e = s.writeJourneyPublicationTx(ctx, tx, content.PublicMomentAccess{Actor: a, SessionDigest: d}, v, op, action, snapshot)
+		if e != nil {
+			// Rich approval can reject a stale STOP, revision or source before
+			// any SQL effect. Preserve that domain result instead of mapping it
+			// through the legacy branch's SQL-only availability error handler.
+			return content.PersonalCollection{}, e
+		}
+	} else if snapshot != nil {
+		return content.PersonalCollection{}, content.ErrInvalid
+	} else if action == "PUBLISH" {
 		if v.Status != "draft" || v.Visibility != "private" || len(entries) != len(v.Entries) {
 			return content.PersonalCollection{}, content.ErrConflict
 		}
@@ -213,7 +232,7 @@ func (s *Store) mutateCollectionPublication(ctx context.Context, d [32]byte, a i
 	if e != nil {
 		return content.PersonalCollection{}, content.ErrUnavailable
 	}
-	{
+	if !rich {
 		_, e = tx.Exec(ctx, `INSERT INTO personal_collection_copy_grants(kind,target_id,owner_account_id,publication_revision,grant_version,allow_private_place_copy) SELECT $1,$2,$3,$4,1,$5 WHERE $5::boolean OR EXISTS(SELECT 1 FROM personal_collection_copy_grants WHERE kind=$1 AND target_id=$2) ON CONFLICT(kind,target_id) DO UPDATE SET publication_revision=EXCLUDED.publication_revision,grant_version=least(personal_collection_copy_grants.grant_version+1,8999999999999999),allow_private_place_copy=EXCLUDED.allow_private_place_copy,updated_at=clock_timestamp()`, kind, id, a.ID, revision+1, allowCopy)
 		if e != nil {
 			return content.PersonalCollection{}, content.ErrUnavailable
@@ -237,6 +256,15 @@ func (s *Store) mutateCollectionPublication(ctx context.Context, d [32]byte, a i
 		return v, e
 	}
 	v.PublicationOperation = &content.CollectionPublicationOperation{OperationID: op, Action: action, Outcome: "COMMITTED", ExpectedRevision: revision, ResultRevision: revision + 1}
+	if rich && action == "PUBLISH" {
+		_, freshStamp, err := s.journeyApprovalTx(ctx, tx, content.PublicMomentAccess{Actor: a, SessionDigest: d}, richSource, *snapshot)
+		if err != nil {
+			return content.PersonalCollection{}, err
+		}
+		if freshStamp != richStamp {
+			return content.PersonalCollection{}, content.ErrConflict
+		}
+	}
 	if e = s.collectionPublicationFinish(ctx, tx, d, a.ID, fence, source); e != nil {
 		return content.PersonalCollection{}, e
 	}
@@ -408,6 +436,12 @@ func (s *Store) readPublicCollection(ctx context.Context, access content.PublicM
 	id = strings.ToLower(id)
 	if ctx == nil || ctx.Err() != nil || s == nil || s.pool == nil {
 		return v, content.ErrUnavailable
+	}
+	if kind == "journey" {
+		rich, e := s.readPublicJourney(ctx, access, id, until)
+		if !errors.Is(e, content.ErrNotFound) {
+			return rich, e
+		}
 	}
 	var viewer any
 	if access.Actor.ID != "" {

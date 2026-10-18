@@ -9,41 +9,107 @@ import '../content/moment_control.dart';
 import 'human_causal_control.dart';
 import 'public_moment_api.dart';
 
+class MomentCommentReply {
+  const MomentCommentReply(
+    this.commentID,
+    this.version,
+    this.available,
+    this.body,
+    this.author,
+  );
+  final String commentID;
+  final int version;
+  final bool available;
+  final String? body;
+  final PublicMomentAuthorProfile? author;
+  factory MomentCommentReply.decode(Object? raw) {
+    final d = humanControlObject(
+      raw,
+      {'commentId', 'version', 'status'},
+      optional: {'body', 'authorPublicProfile'},
+    );
+    if (!humanControlID(d['commentId']) ||
+        !humanControlVersion(d['version'], zero: false) ||
+        !const {'AVAILABLE', 'UNAVAILABLE'}.contains(d['status']))
+      throw const FormatException('回复引用不符');
+    final available = d['status'] == 'AVAILABLE';
+    if (available
+        ? d['body'] is! String ||
+              (d['body'] as String).isEmpty ||
+              utf8.encode(d['body']).length > 2000
+        : d.containsKey('body') || d.containsKey('authorPublicProfile'))
+      throw const FormatException('不可用回复引用泄漏内容');
+    final profile = d['authorPublicProfile'];
+    if (profile != null && profile is! Map<String, dynamic>)
+      throw const FormatException('回复作者格式不符');
+    final author = profile == null
+        ? null
+        : PublicMomentAuthorProfile.fromPublicPair({
+            'authorId': profile['accountId'],
+            'authorPublicProfile': profile,
+          });
+    return MomentCommentReply(
+      d['commentId'],
+      d['version'],
+      available,
+      d['body'],
+      author,
+    );
+  }
+}
+
 class MomentComment {
   const MomentComment(
     this.id,
     this.body,
     this.createdAt,
     this.author,
-    this.canDelete,
-  );
+    this.canDelete, {
+    this.version = 0,
+    this.canReply = false,
+    this.replyTo,
+  });
   final String id, body;
   final DateTime createdAt;
   final PublicMomentAuthorProfile? author;
-  final bool canDelete;
-
+  final bool canDelete, canReply;
+  final int version;
+  final MomentCommentReply? replyTo;
   factory MomentComment.decode(Object? raw) {
-    final d = humanControlObject(raw, {
-      'id',
-      'body',
-      'createdAt',
-      'authorId',
-      'authorPublicProfile',
-      'canDelete',
-    });
+    final d = humanControlObject(
+      raw,
+      {
+        'id',
+        'body',
+        'createdAt',
+        'authorId',
+        'authorPublicProfile',
+        'canDelete',
+      },
+      optional: {'version', 'canReply', 'replyTo'},
+    );
     if (!humanControlID(d['id']) ||
         d['body'] is! String ||
         (d['body'] as String).isEmpty ||
         utf8.encode(d['body']).length > 2000 ||
-        d['canDelete'] is! bool) {
+        d['canDelete'] is! bool ||
+        d.containsKey('version') &&
+            !humanControlVersion(d['version'], zero: false) ||
+        d.containsKey('canReply') && d['canReply'] is! bool ||
+        d['canReply'] == true &&
+            !humanControlVersion(d['version'], zero: false))
       throw const FormatException('评论格式不符');
-    }
     return MomentComment(
       d['id'],
       d['body'],
       humanControlTime(d['createdAt']),
       PublicMomentAuthorProfile.fromPublicPair(d),
       d['canDelete'],
+      version: d['version'] ?? 0,
+      canReply: d['canReply'] ?? false,
+      replyTo: d['replyTo'] == null
+          ? null
+          : MomentCommentReply.decode(d['replyTo']),
     );
   }
 }
@@ -60,8 +126,10 @@ class MomentInteractionPage {
     this.nextCursor,
     this.observedAt,
     this.validUntil,
-    this.sourceVersion,
-  );
+    this.sourceVersion, {
+    this.canComment = false,
+  });
+  final bool canComment;
   final String momentID, sourceVersion;
   final int revision, likeCount, commentCount, likeVersion;
   final bool liked;
@@ -70,23 +138,32 @@ class MomentInteractionPage {
   final DateTime observedAt, validUntil;
   bool get current => validUntil.isAfter(DateTime.now().toUtc());
   factory MomentInteractionPage.decode(Object? raw, String id) {
-    final d = humanControlObject(raw, {
-      'schemaVersion',
-      'momentId',
-      'momentRevision',
-      'likeCount',
-      'commentCount',
-      'liked',
-      'likeVersion',
-      'comments',
-      'nextCursor',
-      'observedAt',
-      'validUntil',
-      'sourceVersion',
-    });
+    final d = humanControlObject(
+      raw,
+      {
+        'schemaVersion',
+        'momentId',
+        'momentRevision',
+        'likeCount',
+        'commentCount',
+        'liked',
+        'likeVersion',
+        'comments',
+        'nextCursor',
+        'observedAt',
+        'validUntil',
+        'sourceVersion',
+      },
+      optional: {'canComment'},
+    );
     final observed = humanControlTime(d['observedAt']),
         until = humanControlTime(d['validUntil']);
-    if (d['schemaVersion'] != 'moment-interaction-page-v1' ||
+    if (!const {
+          'moment-interaction-page-v1',
+          'moment-interaction-page-v2',
+        }.contains(d['schemaVersion']) ||
+        d['schemaVersion'] == 'moment-interaction-page-v2' &&
+            d['canComment'] is! bool ||
         d['momentId'] != id ||
         !humanControlID(id) ||
         !humanControlVersion(d['momentRevision'], zero: false) ||
@@ -116,6 +193,15 @@ class MomentInteractionPage {
             !RegExp(r'^[A-Za-z0-9_-]+$').hasMatch(cursor))) {
       throw const FormatException('评论翻页位置不符');
     }
+    if (d['schemaVersion'] == 'moment-interaction-page-v2' &&
+        (d['comments'] as List).any(
+          (c) =>
+              c is! Map<String, dynamic> ||
+              !c.containsKey('version') ||
+              !c.containsKey('canReply') ||
+              !c.containsKey('replyTo'),
+        ))
+      throw const FormatException('评论回复合同缺失');
     final comments = (d['comments'] as List)
         .map(MomentComment.decode)
         .toList(growable: false);
@@ -135,6 +221,7 @@ class MomentInteractionPage {
       observed,
       until,
       d['sourceVersion'],
+      canComment: d['canComment'] == true,
     );
   }
 }
@@ -150,6 +237,11 @@ String socialOperationDigest(String family, Map<String, dynamic> v) {
       v['expectedLikeVersion'],
       v['commentId'],
       base64.encode(utf8.encode(v['body'] as String)),
+      if ((v['parentCommentId'] ?? '') != '') ...[
+        'reply-v1',
+        v['parentCommentId'],
+        v['expectedParentCommentVersion'],
+      ],
     ]);
   }
   if (family == 'INBOX_MANAGEMENT') {
@@ -383,6 +475,13 @@ class SocialOperationReceipt {
   }
 }
 
+class SocialOperationFailure implements Exception {
+  const SocialOperationFailure(this.status);
+  final int status;
+  @override
+  String toString() => '当前操作暂不可用（$status）';
+}
+
 class SocialOperationAPI {
   const SocialOperationAPI({
     required this.client,
@@ -418,7 +517,7 @@ class SocialOperationAPI {
       throw StateError('身份或连接已变化');
     }
     if (response.statusCode != 200) {
-      throw StateError('当前操作暂不可用（${response.statusCode}）');
+      throw SocialOperationFailure(response.statusCode);
     }
     if (response.bodyBytes.length > 256 * 1024) {
       throw const FormatException('操作响应过大');
@@ -617,6 +716,9 @@ class SocialOperationController extends ChangeNotifier {
                 'commentId',
                 'body',
               },
+        optional: inbox
+            ? const {}
+            : {'parentCommentId', 'expectedParentCommentVersion'},
       );
       if (input.entries.any((e) => echoed[e.key] != e.value) ||
           p['operationId'] != input['operationId'] ||
@@ -828,122 +930,122 @@ class SocialOperationRecovery extends StatelessWidget {
   );
 }
 
-class MomentInteractionPanel extends StatefulWidget {
-  const MomentInteractionPanel({
-    super.key,
+/// One current original Moment's comments/actions. The Now host owns its sole
+/// composer and draft; this controller never retains or persists comment text.
+class MomentInteractionController extends ChangeNotifier {
+  MomentInteractionController({
     required this.momentID,
     required this.authorizationHeader,
     required this.ownerID,
-    required this.apiBaseUrl,
-    required this.client,
+    required String apiBaseUrl,
+    required http.Client client,
     required this.current,
     this.identityChanges,
     this.commentID,
-    this.recoveryOnly = false,
-  });
-  final String momentID, apiBaseUrl;
+    SocialPendingStore? pendingStore,
+  }) {
+    _owner = ownerID();
+    _header = authorizationHeader();
+    api = SocialOperationAPI(
+      client: client,
+      baseUrl: apiBaseUrl,
+      authorizationHeader: authorizationHeader,
+      current: () => _live,
+    );
+    operations = SocialOperationController(
+      api: api,
+      family: 'MOMENT_INTERACTION',
+      ownerID: ownerID,
+      targetID: momentID,
+      identityChanges: identityChanges,
+      pendingStore: pendingStore,
+    );
+    identityChanges?.addListener(_sourceChanged);
+    operations.addListener(_notify);
+    unawaited(operations.restore());
+  }
+  final String momentID;
   final String? commentID;
-  final bool recoveryOnly;
   final String? Function() authorizationHeader, ownerID;
-  final http.Client client;
   final bool Function() current;
   final Listenable? identityChanges;
-  @override
-  State<MomentInteractionPanel> createState() => _MomentInteractionPanelState();
-}
-
-class _MomentInteractionPanelState extends State<MomentInteractionPanel> {
-  bool sourceRetired = false;
-  late final SocialOperationAPI api = SocialOperationAPI(
-    client: widget.client,
-    baseUrl: widget.apiBaseUrl,
-    authorizationHeader: () => widget.authorizationHeader(),
-    current: () => mounted && !sourceRetired && widget.current(),
-  );
-  late final SocialOperationController control = SocialOperationController(
-    api: api,
-    family: 'MOMENT_INTERACTION',
-    ownerID: () => widget.ownerID(),
-    targetID: widget.momentID,
-    identityChanges: widget.identityChanges,
-  );
-  final text = TextEditingController();
+  late final SocialOperationAPI api;
+  late final SocialOperationController operations;
+  String? _owner, _header;
+  bool _disposed = false, _retired = false, anchored = true, loading = false;
+  int _serial = 0;
+  Timer? _lease;
   MomentInteractionPage? page;
-  List<MomentComment> comments = [];
+  List<MomentComment> comments = const [];
   String? error;
-  bool loading = false;
-  int serial = 0;
-  Timer? lease;
-  bool anchored = true;
-  @override
-  void initState() {
-    super.initState();
-    text.addListener(control.retirePreview);
-    unawaited(control.restore());
-    if (!widget.recoveryOnly) unawaited(load());
+  bool get _live => !_disposed && !_retired && current() && _owner == ownerID();
+  bool get canComment =>
+      _live &&
+      page?.current == true &&
+      page?.canComment == true &&
+      operations.canStart;
+  void _notify() {
+    if (!_disposed) notifyListeners();
   }
 
-  @override
-  void didUpdateWidget(MomentInteractionPanel old) {
-    super.didUpdateWidget(old);
-    if (old.client != widget.client ||
-        old.apiBaseUrl != widget.apiBaseUrl ||
-        old.momentID != widget.momentID ||
-        old.identityChanges != widget.identityChanges) {
-      sourceRetired = true;
-      ++serial;
-      lease?.cancel();
+  void _sourceChanged() {
+    if (_disposed) return;
+    if (_owner != ownerID() || !current()) _retired = true;
+    if (!_live || _header != authorizationHeader()) {
+      _header = authorizationHeader();
+      ++_serial;
+      _lease?.cancel();
       page = null;
-      comments = [];
-      text.clear();
-      control.retirePreview();
+      comments = const [];
+      loading = false;
+      operations.retirePreview();
+      error = '身份或动态来源已变化，请重新读取评论。';
     }
+    _notify();
   }
 
-  @override
-  void dispose() {
-    ++serial;
-    lease?.cancel();
-    text.removeListener(control.retirePreview);
-    text.dispose();
-    control.dispose();
-    super.dispose();
-  }
-
+  bool replyCurrent(MomentComment target) =>
+      _live &&
+      page?.current == true &&
+      page?.canComment == true &&
+      target.canReply &&
+      comments.any(
+        (c) =>
+            c.id == target.id &&
+            c.version == target.version &&
+            c.body == target.body &&
+            c.canReply,
+      );
   Future<void> load({bool more = false}) async {
-    if (loading || sourceRetired || !widget.current()) return;
-    final token = widget.authorizationHeader(),
-        owner = widget.ownerID(),
-        request = ++serial,
-        cursor = more ? page?.nextCursor : null;
-    if (more && cursor == null) return;
-    setState(() {
-      loading = true;
-      error = null;
-    });
+    if (!_live || loading) return;
+    final cursor = more ? page?.nextCursor : null;
+    if (more && (cursor == null || page?.current != true)) return;
+    final request = ++_serial, token = authorizationHeader(), owner = ownerID();
+    bool valid() =>
+        _live &&
+        request == _serial &&
+        token == authorizationHeader() &&
+        owner == ownerID();
+    loading = true;
+    error = null;
+    _notify();
     try {
       final value = await api.page(
-        widget.momentID,
+        momentID,
         cursor: cursor,
-        commentID: !more && anchored ? widget.commentID : null,
+        commentID: !more && anchored ? commentID : null,
       );
-      if (!mounted ||
-          request != serial ||
-          !widget.current() ||
-          token != widget.authorizationHeader() ||
-          owner != widget.ownerID()) {
-        return;
-      }
-      if (more && value.revision != page?.revision) {
-        throw StateError('动态已修改，请刷新评论');
-      }
+      if (!valid()) return;
       final previous = page;
-      var expiry = value.validUntil;
-      // Pagination must never extend the lease of bodies from earlier pages.
-      if (more && previous != null && previous.validUntil.isBefore(expiry))
-        expiry = previous.validUntil;
-      if (!expiry.isAfter(DateTime.now().toUtc()))
-        throw StateError('原评论快照已到期，请刷新');
+      if (more &&
+          (previous == null ||
+              value.revision != previous.revision ||
+              value.sourceVersion != previous.sourceVersion))
+        throw StateError('原动态已变化，请刷新评论');
+      final expiry = more && previous!.validUntil.isBefore(value.validUntil)
+          ? previous.validUntil
+          : value.validUntil;
+      if (!expiry.isAfter(DateTime.now().toUtc())) throw StateError('评论快照已到期');
       final accepted = MomentInteractionPage(
         value.momentID,
         value.revision,
@@ -956,133 +1058,301 @@ class _MomentInteractionPanelState extends State<MomentInteractionPanel> {
         value.observedAt,
         expiry,
         value.sourceVersion,
+        canComment: value.canComment,
       );
-      setState(() {
-        page = accepted;
-        comments = more
+      page = accepted;
+      comments = List.unmodifiable(
+        more
             ? [
                 ...comments,
                 ...value.comments.where(
                   (c) => !comments.any((old) => old.id == c.id),
                 ),
               ]
-            : value.comments;
-      });
-      lease?.cancel();
-      lease = Timer(expiry.difference(DateTime.now().toUtc()), () {
-        if (mounted && identical(accepted, page)) {
-          setState(() {
-            page = null;
-            comments = [];
-            error = '评论资料已到期，请刷新查看。';
-          });
+            : value.comments,
+      );
+      _lease?.cancel();
+      _lease = Timer(expiry.difference(DateTime.now().toUtc()), () {
+        if (!_disposed && identical(page, accepted)) {
+          page = null;
+          comments = const [];
+          operations.retirePreview();
+          error = '评论资料已到期，请刷新查看。';
+          _notify();
         }
       });
-    } catch (_) {
-      if (mounted && request == serial) {
-        setState(() {
+    } catch (e) {
+      if (valid()) {
+        final denied =
+            e is SocialOperationFailure &&
+            const {401, 403, 404, 409}.contains(e.status);
+        if (!more || page?.current != true || denied || e is FormatException) {
           page = null;
-          comments = [];
-          error = widget.commentID != null && anchored
-              ? '这条评论已删除、不可查看，或暂时无法读取。'
-              : '互动暂不可读取，请重试。';
-        });
+          comments = const [];
+          operations.retirePreview();
+        }
+        error = commentID != null && anchored
+            ? '这条评论已删除、不可查看，或暂时无法读取。'
+            : '互动暂不可读取，请重试。';
       }
     } finally {
-      if (mounted && request == serial) setState(() => loading = false);
+      if (valid()) {
+        loading = false;
+        _notify();
+      }
     }
   }
 
-  Future<void> act(String action, {String commentID = ''}) async {
+  Future<SocialOperationReceipt?> publish(
+    BuildContext context, {
+    required String body,
+    MomentComment? replyTo,
+    bool Function()? draftCurrent,
+  }) async {
+    body = body.trim();
+    if (!canComment ||
+        body.isEmpty ||
+        utf8.encode(body).length > 2000 ||
+        replyTo != null && !replyCurrent(replyTo))
+      return null;
+    return _act(
+      context,
+      'COMMENT',
+      body: body,
+      replyTo: replyTo,
+      draftCurrent: draftCurrent,
+    );
+  }
+
+  Future<SocialOperationReceipt?> like(BuildContext context) =>
+      _act(context, page?.liked == true ? 'UNLIKE' : 'LIKE');
+  Future<SocialOperationReceipt?> deleteComment(
+    BuildContext context,
+    MomentComment comment,
+  ) async {
+    if (!comment.canDelete ||
+        !comments.any(
+          (c) =>
+              c.id == comment.id && c.version == comment.version && c.canDelete,
+        ))
+      return null;
+    return _act(context, 'DELETE_COMMENT', commentID: comment.id);
+  }
+
+  Future<SocialOperationReceipt?> _act(
+    BuildContext context,
+    String action, {
+    String body = '',
+    String commentID = '',
+    MomentComment? replyTo,
+    bool Function()? draftCurrent,
+  }) async {
     final source = page;
-    if (source == null || !source.current || !control.canStart) return;
-    final body = action == 'COMMENT' ? text.text.trim() : '';
-    if (action == 'COMMENT' &&
-        (body.isEmpty || utf8.encode(body).length > 2000)) {
-      return;
-    }
-    final label = switch (action) {
-      'LIKE' => '赞这条动态',
-      'UNLIKE' => '取消赞',
-      'COMMENT' => '发布评论',
-      _ => '删除本人评论',
-    };
-    final result = await control.run(
+    if (!_live || source?.current != true || !operations.canStart) return null;
+    final label = action == 'COMMENT'
+        ? (replyTo == null ? '发布评论' : '发布回复')
+        : action == 'LIKE'
+        ? '赞这条动态'
+        : action == 'UNLIKE'
+        ? '取消赞'
+        : '删除本人评论';
+    final result = await operations.run(
       context,
       {
         'operationId': newMomentOperationID(),
         'action': action,
-        'momentId': widget.momentID,
-        'expectedMomentRevision': source.revision,
+        'momentId': momentID,
+        'expectedMomentRevision': source!.revision,
         'expectedLikeVersion': source.likeVersion,
         'commentId': commentID,
         'body': body,
+        if (replyTo != null) ...{
+          'parentCommentId': replyTo.id,
+          'expectedParentCommentVersion': replyTo.version,
+        },
       },
       label,
       action == 'COMMENT'
-          ? '评论会公开显示在这条动态下：\n\n$body'
+          ? '${replyTo == null ? '评论' : '回复 ${replyTo.author?.displayName ?? '这条评论'}'}会公开显示在这条动态下：\n\n$body'
           : action == 'LIKE'
           ? '作者可收到这次点赞的站内通知。'
           : action == 'UNLIKE'
           ? '取消这条动态的点赞。'
           : '这条本人评论将停止公开展示。',
       contentCurrent: () =>
-          mounted &&
-          widget.current() &&
+          _live &&
           identical(source, page) &&
-          source.current,
+          source.current &&
+          (draftCurrent?.call() ?? true) &&
+          (replyTo == null || replyCurrent(replyTo)),
     );
-    if (!mounted) return;
-    if (result?.status == 'SUCCEEDED' &&
-        action == 'COMMENT' &&
-        text.text.trim() == body) {
+    if (!_disposed && result != null) await load();
+    return result;
+  }
+
+  @override
+  void dispose() {
+    _disposed = true;
+    ++_serial;
+    _lease?.cancel();
+    identityChanges?.removeListener(_sourceChanged);
+    operations.removeListener(_notify);
+    operations.dispose();
+    super.dispose();
+  }
+}
+
+class MomentInteractionPanel extends StatefulWidget {
+  const MomentInteractionPanel({
+    super.key,
+    required this.momentID,
+    required this.authorizationHeader,
+    required this.ownerID,
+    required this.apiBaseUrl,
+    required this.client,
+    required this.current,
+    this.identityChanges,
+    this.commentID,
+    this.recoveryOnly = false,
+    this.controller,
+    this.showComposer = true,
+    this.onReply,
+    this.onComment,
+  });
+  final String momentID, apiBaseUrl;
+  final String? commentID;
+  final bool recoveryOnly, showComposer;
+  final String? Function() authorizationHeader, ownerID;
+  final http.Client client;
+  final bool Function() current;
+  final Listenable? identityChanges;
+  final MomentInteractionController? controller;
+  final ValueChanged<MomentComment>? onReply;
+  final VoidCallback? onComment;
+  @override
+  State<MomentInteractionPanel> createState() => _MomentInteractionPanelState();
+}
+
+class _MomentInteractionPanelState extends State<MomentInteractionPanel> {
+  late MomentInteractionController controller;
+  late bool owns;
+  final text = TextEditingController();
+  MomentComment? reply;
+  bool retired = false;
+  @override
+  void initState() {
+    super.initState();
+    _attach();
+    text.addListener(_draftChanged);
+  }
+
+  void _attach() {
+    owns = widget.controller == null;
+    controller =
+        widget.controller ??
+        MomentInteractionController(
+          momentID: widget.momentID,
+          authorizationHeader: () => widget.authorizationHeader(),
+          ownerID: () => widget.ownerID(),
+          apiBaseUrl: widget.apiBaseUrl,
+          client: widget.client,
+          current: () => mounted && !retired && widget.current(),
+          identityChanges: widget.identityChanges,
+          commentID: widget.commentID,
+        );
+    if (controller.momentID != widget.momentID)
+      throw ArgumentError('评论controller目标不符');
+    if (!widget.recoveryOnly && controller.page == null)
+      unawaited(controller.load());
+  }
+
+  void _draftChanged() => controller.operations.retirePreview();
+  @override
+  void didUpdateWidget(MomentInteractionPanel old) {
+    super.didUpdateWidget(old);
+    if (old.controller != widget.controller ||
+        old.momentID != widget.momentID ||
+        old.client != widget.client ||
+        old.apiBaseUrl != widget.apiBaseUrl ||
+        old.identityChanges != widget.identityChanges) {
+      if (owns) controller.dispose();
       text.clear();
+      reply = null;
+      retired = false;
+      _attach();
     }
-    if (result != null) await load();
+  }
+
+  Future<void> _publish() async {
+    final body = text.text.trim(), parent = reply;
+    final result = await controller.publish(
+      context,
+      body: body,
+      replyTo: parent,
+      draftCurrent: () =>
+          mounted && text.text.trim() == body && identical(reply, parent),
+    );
+    if (mounted &&
+        result?.status == 'SUCCEEDED' &&
+        text.text.trim() == body &&
+        identical(reply, parent))
+      setState(() {
+        text.clear();
+        reply = null;
+      });
+  }
+
+  @override
+  void dispose() {
+    retired = true;
+    text.removeListener(_draftChanged);
+    text.dispose();
+    if (owns) controller.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) => AnimatedBuilder(
-    animation: control,
+    animation: controller,
     builder: (_, _) => widget.recoveryOnly
-        ? SocialOperationRecovery(controller: control)
-        : sourceRetired
-        ? const Text('动态来源已变化，请返回当前入口重新打开。')
+        ? SocialOperationRecovery(controller: controller.operations)
         : Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Divider(height: 28),
               const Text('动态互动'),
-              if (loading) const LinearProgressIndicator(),
-              if (error != null) Text(error!),
+              if (controller.loading) const LinearProgressIndicator(),
+              if (controller.error != null) Text(controller.error!),
               Wrap(
                 children: [
                   TextButton(
-                    onPressed: !loading ? load : null,
+                    onPressed: controller.loading
+                        ? null
+                        : () => controller.load(),
                     child: const Text('刷新互动'),
                   ),
-                  if (widget.commentID != null && anchored)
+                  if (widget.commentID != null && controller.anchored)
                     TextButton(
                       onPressed: () {
-                        anchored = false;
-                        unawaited(load());
+                        controller.anchored = false;
+                        unawaited(controller.load());
                       },
                       child: const Text('查看全部评论'),
                     ),
                 ],
               ),
-              if (page case final value?) ...[
+              if (controller.page case final value?) ...[
                 Text('${value.likeCount} 个赞 · ${value.commentCount} 条评论'),
                 TextButton.icon(
-                  onPressed: control.canStart && !loading && value.current
-                      ? () => act(value.liked ? 'UNLIKE' : 'LIKE')
+                  onPressed: controller.operations.canStart && value.current
+                      ? () => controller.like(context)
                       : null,
                   icon: Icon(
                     value.liked ? Icons.favorite : Icons.favorite_border,
                   ),
                   label: Text(value.liked ? '取消赞' : '赞'),
                 ),
-                for (final comment in comments)
+                for (final comment in controller.comments)
                   Padding(
                     key: ValueKey('moment-comment:${comment.id}'),
                     padding: const EdgeInsets.symmetric(vertical: 8),
@@ -1090,44 +1360,93 @@ class _MomentInteractionPanelState extends State<MomentInteractionPanel> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(comment.author?.displayName ?? '用户评论'),
-                        Text(comment.body),
-                        if (comment.canDelete)
-                          TextButton(
-                            onPressed: control.canStart
-                                ? () => act(
-                                    'DELETE_COMMENT',
-                                    commentID: comment.id,
-                                  )
-                                : null,
-                            child: const Text('删除本人评论'),
+                        if (comment.replyTo case final parent?)
+                          Text(
+                            parent.available
+                                ? '回复 ${parent.author?.displayName ?? '用户评论'}：${parent.body}'
+                                : '原评论暂不可查看',
                           ),
+                        Text(comment.body),
+                        Wrap(
+                          children: [
+                            if (comment.canReply)
+                              TextButton(
+                                onPressed:
+                                    controller.canComment &&
+                                        controller.replyCurrent(comment)
+                                    ? () {
+                                        if (widget.onReply != null) {
+                                          widget.onReply!(comment);
+                                        } else if (widget.showComposer) {
+                                          setState(() => reply = comment);
+                                          controller.operations.retirePreview();
+                                        }
+                                      }
+                                    : null,
+                                child: const Text('回复'),
+                              ),
+                            if (comment.canDelete)
+                              TextButton(
+                                onPressed: controller.operations.canStart
+                                    ? () => controller.deleteComment(
+                                        context,
+                                        comment,
+                                      )
+                                    : null,
+                                child: const Text('删除本人评论'),
+                              ),
+                          ],
+                        ),
                       ],
                     ),
                   ),
                 if (value.nextCursor != null)
                   TextButton(
-                    onPressed: loading ? null : () => load(more: true),
+                    onPressed: controller.loading
+                        ? null
+                        : () => controller.load(more: true),
                     child: const Text('更多评论'),
                   ),
-                if (humanControlID(widget.ownerID()) &&
+                if (value.canComment &&
+                    humanControlID(widget.ownerID()) &&
                     widget.authorizationHeader() != null) ...[
-                  TextField(
-                    controller: text,
-                    maxLines: 3,
-                    minLines: 1,
-                    enabled: !control.busy && control.pending == null,
-                    decoration: const InputDecoration(labelText: '写一条公开评论'),
-                  ),
-                  TextButton(
-                    onPressed: control.canStart ? () => act('COMMENT') : null,
-                    child: const Text('发布评论'),
-                  ),
+                  if (widget.showComposer) ...[
+                    if (reply != null)
+                      Text(
+                        '回复 ${reply!.author?.displayName ?? '用户评论'} · ${reply!.body}',
+                      ),
+                    TextField(
+                      controller: text,
+                      maxLines: 3,
+                      minLines: 1,
+                      enabled:
+                          !controller.operations.busy &&
+                          controller.operations.pending == null,
+                      decoration: InputDecoration(
+                        labelText: reply == null ? '写一条公开评论' : '回复这条评论',
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: controller.canComment ? _publish : null,
+                      child: Text(reply == null ? '发布评论' : '发布回复'),
+                    ),
+                  ] else if (widget.onComment != null)
+                    TextButton(
+                      onPressed: controller.canComment
+                          ? widget.onComment
+                          : null,
+                      child: const Text('评论这条动态'),
+                    ),
                 ] else
-                  const Text('登录个人账号后可以点赞和评论。'),
+                  Text(
+                    widget.authorizationHeader() == null
+                        ? '登录个人账号后可以点赞和评论。'
+                        : '这条内容当前不可发表评论。',
+                  ),
               ],
               SocialOperationRecovery(
-                controller: control,
-                onResolved: () => unawaited(load()),
+                controller: controller.operations,
+                onResolved: () => unawaited(controller.load()),
               ),
             ],
           ),

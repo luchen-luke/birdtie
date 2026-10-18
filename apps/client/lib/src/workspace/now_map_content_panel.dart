@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:video_player/video_player.dart';
 
 import '../content/video_material_player_stub.dart'
@@ -12,6 +13,7 @@ import '../content/video_material_player_stub.dart'
 import 'owned_map_api.dart';
 import 'owned_map_controller.dart';
 import 'map_media_read_metrics.dart';
+import 'moment_interaction.dart';
 
 /// Read-only content stays over the original Now map. It never grants public
 /// access or changes the source of a legacy record.
@@ -19,8 +21,45 @@ class NowMapReadingPosition {
   double offset = 0;
   double collectionOffset = 0;
   String? threadSeedMomentID;
+  String? currentMomentID;
   bool expanded = false;
   final mediaPages = <String, int>{};
+}
+
+class _ReaderFrame {
+  const _ReaderFrame({
+    required this.items,
+    required this.thread,
+    required this.nextCursor,
+    required this.collectionItems,
+    required this.collectionCursor,
+    required this.collectionOffset,
+    required this.seedID,
+    required this.selectedID,
+    required this.offset,
+    required this.placeID,
+    required this.placeName,
+    required this.relation,
+    required this.placeOriginMomentID,
+    required this.desired,
+    required this.expanded,
+    required this.reply,
+  });
+  final List<OwnedMapMomentDetail> items;
+  final OwnedMapThread? thread;
+  final String? nextCursor,
+      collectionCursor,
+      seedID,
+      selectedID,
+      placeID,
+      placeName,
+      placeOriginMomentID;
+  final List<OwnedMapMomentDetail>? collectionItems;
+  final OwnedMapMomentDetail? relation;
+  final double offset, collectionOffset;
+  final int desired;
+  final bool expanded;
+  final MomentComment? reply;
 }
 
 class NowMapContentPanel extends StatefulWidget {
@@ -36,11 +75,22 @@ class NowMapContentPanel extends StatefulWidget {
     this.initialExpanded = false,
     this.closeLabel,
     this.readingPosition,
+    this.interactionClient,
+    this.onCommentTarget,
+    this.onCommentIntent,
   });
   final bool initialExpanded;
   final String? closeLabel;
   final NowMapReadingPosition? readingPosition;
   final OwnedMapController controller;
+  final http.Client? interactionClient;
+  final void Function(
+    MomentInteractionController? controller,
+    OwnedMapMomentDetail? moment,
+    MomentComment? reply,
+  )?
+  onCommentTarget;
+  final VoidCallback? onCommentIntent;
   final OwnedMapPin pin;
   final bool Function() current;
   final Listenable changes;
@@ -66,6 +116,19 @@ class _NowMapContentPanelState extends State<NowMapContentPanel>
   int _request = 0, _desiredCount = 1;
   String? _viewerMoment;
   final _mediaPages = <String, int>{};
+  final _entryKeys = <String, GlobalKey>{};
+  final _backStack = <_ReaderFrame>[];
+  String? _placeID, _placeName, _placeOriginMomentID, _selectedMomentID;
+  OwnedMapMomentDetail? _placeRelation;
+  MomentInteractionController? _interaction;
+  String? _interactionBinding;
+  String? _blockedInteractionBinding;
+  bool _interactionRetiring = false;
+  MomentComment? _commentReply;
+  OwnedMapMomentDetail? _lastCommentDetail;
+  MomentComment? _lastCommentReply;
+  int _targetNotice = 0;
+  bool _pickScheduled = false;
   late final _images = _MapReaderImages(() => c, () => _current);
   double _restoreOffset = 0;
   bool _expanded = false,
@@ -87,6 +150,364 @@ class _NowMapContentPanelState extends State<NowMapContentPanel>
       (_livePin != null && c.sourceCurrent(_livePin!)) &&
       _livePin != null;
 
+  bool get _contentMode =>
+      _collectionItems != null ||
+      _placeID == null &&
+          (_livePin?.isMomentAnchor == true ||
+              _items.length == 1 && _nextCursor == null);
+
+  OwnedMapMomentDetail? get _selectedDetail => _contentMode
+      ? _items
+            .where((d) => d.id == _selectedMomentID && c.detailCurrent(d))
+            .firstOrNull
+      : null;
+
+  void _disposeInteraction() {
+    final old = _interaction;
+    _interaction = null;
+    _interactionBinding = null;
+    old?.removeListener(_interactionChanged);
+    old?.dispose();
+  }
+
+  void _notifyCommentTarget() {
+    final notice = ++_targetNotice;
+    final selected = _current ? _selectedDetail : null;
+    final explicitList =
+        _current && !_contentMode && (_placeID != null || _hasRead);
+    if (selected != null) {
+      _lastCommentDetail = selected;
+      _lastCommentReply = _commentReply;
+    } else if (explicitList) {
+      _lastCommentDetail = null;
+      _lastCommentReply = null;
+    }
+    final detail = explicitList ? null : selected ?? _lastCommentDetail;
+    final reply = explicitList
+        ? null
+        : selected == null
+        ? _lastCommentReply
+        : _commentReply;
+    final interaction = selected == null ? null : _interaction;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || notice != _targetNotice) return;
+      final valid =
+          _current &&
+          detail != null &&
+          _selectedDetail?.id == detail.id &&
+          c.detailCurrent(detail) &&
+          identical(interaction, _interaction) &&
+          (interaction == null || interaction.current());
+      widget.onCommentTarget?.call(valid ? interaction : null, detail, reply);
+    });
+    WidgetsBinding.instance.ensureVisualUpdate();
+  }
+
+  void _interactionChanged() {
+    final interaction = _interaction, detail = _selectedDetail;
+    if (interaction != null &&
+        detail != null &&
+        interaction.page != null &&
+        interaction.page!.revision != detail.revision) {
+      _blockedInteractionBinding = _interactionBinding;
+      // A newer comment page is not approval to comment on an older body.
+      // Retire after notifyListeners unwinds; current() rejects immediately.
+      if (!_interactionRetiring) {
+        _interactionRetiring = true;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _interactionRetiring = false;
+          if (!mounted || !identical(interaction, _interaction)) return;
+          setState(_disposeInteraction);
+          _notifyCommentTarget();
+        });
+      }
+    }
+    _notifyCommentTarget();
+  }
+
+  void _syncInteraction({String? preferred}) {
+    final ids = _items.map((d) => d.id).toSet();
+    _entryKeys.removeWhere((id, _) => !ids.contains(id));
+    if (!_current || !_contentMode || _items.isEmpty) {
+      _disposeInteraction();
+      _notifyCommentTarget();
+      return;
+    }
+    final previous = _selectedMomentID;
+    final live = _items.where(c.detailCurrent).toList();
+    final detail = previous == null
+        ? live.where((d) => d.id == preferred).firstOrNull ?? live.firstOrNull
+        : live.where((d) => d.id == previous).firstOrNull;
+    if (detail == null) {
+      _disposeInteraction();
+      _notifyCommentTarget();
+      return;
+    }
+    _selectedMomentID = detail.id;
+    if (previous != detail.id) _commentReply = null;
+    final client = widget.interactionClient;
+    if (client == null ||
+        detail.visibility != 'public' ||
+        detail.status != 'published' ||
+        c.organizationWorkspaceID() != null) {
+      _disposeInteraction();
+      _notifyCommentTarget();
+      return;
+    }
+    final id = detail.id,
+        revision = detail.revision,
+        source = detail.sourceVersion,
+        base = c.apiBaseUrl(),
+        owner = c.ownerID(),
+        header = c.authorizationHeader();
+    final binding = '$id:$revision:$source:$base:$owner:$header';
+    if (_blockedInteractionBinding == binding) {
+      _disposeInteraction();
+      _notifyCommentTarget();
+      return;
+    }
+    if (_interaction == null || _interactionBinding != binding) {
+      _disposeInteraction();
+      _interactionBinding = binding;
+      final controller = MomentInteractionController(
+        momentID: id,
+        authorizationHeader: c.authorizationHeader,
+        ownerID: c.ownerID,
+        apiBaseUrl: base,
+        client: client,
+        identityChanges: c.identityChanges,
+        current: () {
+          final fresh = _selectedDetail;
+          return _current &&
+              _blockedInteractionBinding != binding &&
+              identical(widget.interactionClient, client) &&
+              c.apiBaseUrl() == base &&
+              c.ownerID() == owner &&
+              c.authorizationHeader() == header &&
+              fresh?.id == id &&
+              fresh?.revision == revision &&
+              fresh?.sourceVersion == source;
+        },
+      );
+      _interaction = controller;
+      controller.addListener(_interactionChanged);
+      unawaited(controller.load());
+    }
+    _notifyCommentTarget();
+  }
+
+  void _selectMoment(OwnedMapMomentDetail detail, {MomentComment? reply}) {
+    if (!_current || !_contentMode || !c.detailCurrent(detail)) return;
+    if (reply != null &&
+        (_interaction?.momentID != detail.id ||
+            _interaction?.replyCurrent(reply) != true))
+      return;
+    setState(() {
+      _selectedMomentID = detail.id;
+      _commentReply =
+          reply; // Only an explicit top-level action clears a reply.
+      _syncInteraction(preferred: detail.id);
+    });
+    _rememberPosition();
+  }
+
+  void _pickVisibleMoment() {
+    if (_pickScheduled ||
+        !_expanded ||
+        !_contentMode ||
+        !_current ||
+        !_scroll.hasClients ||
+        !_scroll.position.isScrollingNotifier.value)
+      return;
+    _pickScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _pickScheduled = false;
+      if (!_current || !_contentMode) return;
+      final box = context.findRenderObject();
+      if (box is! RenderBox || !box.hasSize) return;
+      final origin = box.localToGlobal(Offset.zero);
+      OwnedMapMomentDetail? best;
+      var visible = 0.0;
+      for (final detail in _items) {
+        final tile = _entryKeys[detail.id]?.currentContext?.findRenderObject();
+        if (tile is! RenderBox || !tile.hasSize || !c.detailCurrent(detail))
+          continue;
+        final top = tile.localToGlobal(Offset.zero).dy - origin.dy;
+        final extent =
+            math.min(top + tile.size.height, box.size.height) -
+            math.max(52.0, top);
+        if (extent > visible) {
+          visible = extent;
+          best = detail;
+        }
+      }
+      if (best != null && best.id != _selectedMomentID) _selectMoment(best);
+    });
+  }
+
+  Widget _commentsSection() {
+    final detail = _selectedDetail;
+    if (!_expanded ||
+        !_current ||
+        detail == null ||
+        widget.interactionClient == null)
+      return const SizedBox.shrink();
+    final interaction = _interaction;
+    final changed =
+        _blockedInteractionBinding?.startsWith(
+              '${detail.id}:${detail.revision}:${detail.sourceVersion}:',
+            ) ==
+            true ||
+        interaction?.page != null &&
+            interaction!.page!.revision != detail.revision;
+    final position = _thread?.entries
+        .where((e) => e.detail?.id == detail.id)
+        .firstOrNull
+        ?.position;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          position == null ? '当前动态的评论' : '第${position + 1}段的评论',
+          key: ValueKey('reading-comments:${detail.id}'),
+          style: Theme.of(context).textTheme.titleSmall,
+        ),
+        if (changed) ...[
+          const Text('动态版本已变化，请重新读取正文后再评论'),
+          TextButton(
+            onPressed: _loading
+                ? null
+                : () {
+                    _blockedInteractionBinding = null;
+                    unawaited(_read());
+                  },
+            child: const Text('重新读取动态'),
+          ),
+        ] else if (interaction == null)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 12),
+            child: Text('这条动态暂不支持公开评论'),
+          )
+        else
+          MomentInteractionPanel(
+            key: ObjectKey(interaction),
+            controller: interaction,
+            momentID: detail.id,
+            authorizationHeader: c.authorizationHeader,
+            ownerID: c.ownerID,
+            apiBaseUrl: c.apiBaseUrl(),
+            client: widget.interactionClient!,
+            identityChanges: c.identityChanges,
+            current: interaction.current,
+            showComposer: false,
+            onReply: (reply) {
+              if (!interaction.replyCurrent(reply)) return;
+              widget.onCommentIntent?.call();
+              _selectMoment(detail, reply: reply);
+            },
+            onComment: () {
+              if (!interaction.canComment) return;
+              widget.onCommentIntent?.call();
+              _selectMoment(detail);
+            },
+          ),
+      ],
+    );
+  }
+
+  _ReaderFrame _captureReader() => _ReaderFrame(
+    items: _items,
+    thread: _thread,
+    nextCursor: _nextCursor,
+    collectionItems: _collectionItems,
+    collectionCursor: _collectionCursor,
+    collectionOffset: _collectionOffset,
+    seedID: _activeSeedID,
+    selectedID: _selectedMomentID,
+    offset: _scroll.hasClients ? _scroll.offset : 0,
+    placeID: _placeID,
+    placeName: _placeName,
+    relation: _placeRelation,
+    placeOriginMomentID: _placeOriginMomentID,
+    desired: _desiredCount,
+    expanded: _expanded,
+    reply: _commentReply,
+  );
+
+  void _openPlace(OwnedMapMomentDetail source, OwnedMapLocation location) {
+    if (!_current ||
+        !c.detailCurrent(source) ||
+        !source.locations.any((p) => p.placeID == location.placeID))
+      return;
+    if (_backStack.length >= 8) {
+      setState(() => _error = '请先返回上一层内容');
+      return;
+    }
+    _backStack.add(_captureReader());
+    ++_request;
+    setState(() {
+      _placeID = location.placeID;
+      _placeName = location.name;
+      _placeRelation = source;
+      _placeOriginMomentID = source.id;
+      _items = const [];
+      _thread = null;
+      _collectionItems = null;
+      _collectionCursor = _nextCursor = _activeSeedID = _selectedMomentID =
+          null;
+      _collectionOffset = _restoreOffset = 0;
+      _desiredCount = 20;
+      _expanded = true;
+      _loading = _hasRead = false;
+      _viewerMoment = null;
+      _error = null;
+      _syncInteraction();
+    });
+    widget.onExpand();
+    unawaited(_read());
+  }
+
+  void _returnToContent() {
+    if (!_current || _backStack.isEmpty) return;
+    final frame = _backStack.removeLast();
+    ++_request;
+    setState(() {
+      _items = List.unmodifiable(frame.items.where(c.detailCurrent));
+      _thread = frame.thread;
+      _nextCursor = frame.nextCursor;
+      _collectionItems = frame.collectionItems;
+      _collectionCursor = frame.collectionCursor;
+      _collectionOffset = frame.collectionOffset;
+      _activeSeedID = frame.seedID;
+      _selectedMomentID = frame.selectedID;
+      _commentReply = frame.reply;
+      _restoreOffset = frame.offset;
+      _placeID = frame.placeID;
+      _placeName = frame.placeName;
+      _placeRelation = frame.relation;
+      _placeOriginMomentID = frame.placeOriginMomentID;
+      _desiredCount = frame.desired;
+      _expanded = frame.expanded;
+      _loading = false;
+      _hasRead = _items.isNotEmpty;
+      _error = null;
+      _syncInteraction();
+      _armLease();
+    });
+    _rememberPosition();
+    unawaited(_read());
+    final request = _request;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_current && request == _request && _scroll.hasClients)
+        _scroll.jumpTo(
+          frame.offset.clamp(
+            _scroll.position.minScrollExtent,
+            _scroll.position.maxScrollExtent,
+          ),
+        );
+    });
+  }
+
   @override
   void initState() {
     super.initState();
@@ -96,6 +517,7 @@ class _NowMapContentPanelState extends State<NowMapContentPanel>
     _restoreOffset = widget.readingPosition?.offset ?? 0;
     _collectionOffset = widget.readingPosition?.collectionOffset ?? 0;
     _activeSeedID = widget.readingPosition?.threadSeedMomentID;
+    _selectedMomentID = widget.readingPosition?.currentMomentID;
     _mediaPages.addAll(widget.readingPosition?.mediaPages ?? const {});
     _scroll.addListener(_rememberPosition);
     _listen();
@@ -127,11 +549,18 @@ class _NowMapContentPanelState extends State<NowMapContentPanel>
       _activeSeedID = null;
       _collectionItems = null;
       _collectionCursor = null;
+      _placeID = _placeName = _placeOriginMomentID = null;
+      _placeRelation = null;
+      _selectedMomentID = null;
+      _backStack.clear();
       _mediaPages.clear();
       if (_scroll.hasClients) _scroll.jumpTo(0);
       unawaited(_read());
     } else if (!_current) {
       _retire();
+    } else if (oldWidget.interactionClient != widget.interactionClient) {
+      _disposeInteraction();
+      _syncInteraction();
     }
   }
 
@@ -147,6 +576,8 @@ class _NowMapContentPanelState extends State<NowMapContentPanel>
   }
 
   void _retire() {
+    _disposeInteraction();
+    _notifyCommentTarget();
     _images.clear();
     _rememberPosition();
     if (_items.isNotEmpty && _scroll.hasClients)
@@ -159,6 +590,14 @@ class _NowMapContentPanelState extends State<NowMapContentPanel>
     _nextCursor = null;
     _loading = false;
     _hasRead = false;
+    _backStack.clear();
+    _collectionItems = null;
+    _placeRelation = null;
+    _entryKeys.clear();
+    _placeID = _placeName = _placeOriginMomentID = _activeSeedID =
+        _selectedMomentID = null;
+    _commentReply = null;
+    _blockedInteractionBinding = null;
   }
 
   void _sourceChanged() {
@@ -169,6 +608,7 @@ class _NowMapContentPanelState extends State<NowMapContentPanel>
       unawaited(_read());
     }
     _images.prune();
+    _syncInteraction();
     setState(() {});
   }
 
@@ -182,9 +622,12 @@ class _NowMapContentPanelState extends State<NowMapContentPanel>
         .reduce((a, b) => a.isBefore(b) ? a : b);
     if (_thread != null && _thread!.validUntil.isBefore(until))
       until = _thread!.validUntil;
+    if (_placeRelation != null && _placeRelation!.validUntil.isBefore(until))
+      until = _placeRelation!.validUntil;
     final remaining = until.difference(now);
     if (remaining <= Duration.zero) {
       _items = const [];
+      _syncInteraction();
       return;
     }
     _expiry = Timer(remaining, () {
@@ -197,9 +640,12 @@ class _NowMapContentPanelState extends State<NowMapContentPanel>
         // A user-confirmed playback read may have renewed just one entry.
         // Expiring neighbours must not retire that independently current grant.
         _items = List.unmodifiable(_items.where(c.detailCurrent));
+        if (_placeRelation != null && !c.detailCurrent(_placeRelation!))
+          _items = const [];
         _nextCursor = null;
         _hasRead = _items.isNotEmpty;
         if (_items.isNotEmpty) _armLease();
+        _syncInteraction();
       });
     });
     if (remaining > const Duration(seconds: 2)) {
@@ -225,7 +671,18 @@ class _NowMapContentPanelState extends State<NowMapContentPanel>
       final collected = <OwnedMapMomentDetail>[];
       final seen = <String>{}, cursors = <String>{};
       String? cursor;
-      if (pin.isMomentAnchor) {
+      if (_placeID != null && _placeRelation != null && !more) {
+        final original = _placeRelation!;
+        final fresh = await c.readMoment(original.selector);
+        if (!pending()) return;
+        if (fresh.id != original.id ||
+            fresh.revision != original.revision ||
+            fresh.sourceVersion != original.sourceVersion ||
+            !fresh.locations.any((p) => p.placeID == _placeID))
+          throw const FormatException('原地点关联已变化');
+        _placeRelation = fresh;
+      }
+      if (pin.isMomentAnchor && _placeID == null) {
         final target = pin.moments
             .where((item) => item.id == pin.entryID)
             .single;
@@ -234,7 +691,14 @@ class _NowMapContentPanelState extends State<NowMapContentPanel>
       } else
         do {
           trace.requests++;
-          final page = await c.readPlaceMoments(pin, cursor: cursor);
+          final page = _placeID == null
+              ? await c.readPlaceMoments(pin, cursor: cursor)
+              : await c.readPlaceMoments(
+                  pin,
+                  cursor: cursor,
+                  placeID: _placeID,
+                  relationSource: _placeRelation,
+                );
           if (!pending()) return;
           for (final item in page.items) {
             if (!seen.add(item.id) || !c.detailCurrent(item)) {
@@ -250,7 +714,9 @@ class _NowMapContentPanelState extends State<NowMapContentPanel>
       OwnedMapThread? thread;
       final seedID =
           _activeSeedID ??
-          (pin.isMomentAnchor
+          (_placeID != null
+              ? null
+              : pin.isMomentAnchor
               ? pin.entryID
               : collected.length == 1 && cursor == null
               ? collected.first.id
@@ -266,7 +732,7 @@ class _NowMapContentPanelState extends State<NowMapContentPanel>
         trace.requests++;
         thread = await c.readThread(pin, seed);
         if (!pending()) return;
-        if (!pin.isMomentAnchor &&
+        if ((!pin.isMomentAnchor || _placeID != null) &&
             (_collectionItems != null ||
                 collected.length > 1 ||
                 cursor != null)) {
@@ -287,6 +753,7 @@ class _NowMapContentPanelState extends State<NowMapContentPanel>
       _hasRead = true;
       _nextCursor = _collectionItems != null ? null : cursor;
       _desiredCount = math.max(1, collected.length);
+      _syncInteraction(preferred: seedID);
       _armLease();
       trace.mark(MapMediaReadStage.detailReady);
     } catch (_) {
@@ -295,6 +762,7 @@ class _NowMapContentPanelState extends State<NowMapContentPanel>
     } finally {
       if (pending()) {
         _loading = false;
+        _syncInteraction();
         setState(() {});
         if ((_restoreOffset != 0 || enteringThread) && _items.isNotEmpty) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -338,6 +806,7 @@ class _NowMapContentPanelState extends State<NowMapContentPanel>
         _items = List.unmodifiable(next.where(c.detailCurrent));
       }
       _armLease();
+      _syncInteraction();
     });
     return true;
   }
@@ -356,11 +825,23 @@ class _NowMapContentPanelState extends State<NowMapContentPanel>
   }
 
   void _rememberPosition() {
+    _pickVisibleMoment();
     final position = widget.readingPosition;
     if (position == null) return;
+    if (_backStack.isNotEmpty) {
+      final original = _backStack.first;
+      position.offset = original.offset;
+      position.collectionOffset = original.collectionOffset;
+      position.expanded = original.expanded;
+      position.threadSeedMomentID = original.seedID;
+      position.currentMomentID = original.selectedID;
+      position.mediaPages.addAll(_mediaPages);
+      return;
+    }
     if (_scroll.hasClients) position.offset = _scroll.offset;
     position.expanded = _expanded;
     position.threadSeedMomentID = _activeSeedID;
+    position.currentMomentID = _selectedMomentID;
     position.collectionOffset = _collectionOffset;
     position.mediaPages.addAll(_mediaPages);
   }
@@ -394,12 +875,14 @@ class _NowMapContentPanelState extends State<NowMapContentPanel>
       final thread = await c.readThread(pin, seed);
       if (!pending() || !c.detailCurrent(seed)) return;
       if (thread == null && selected == null) return;
-      if (selected != null && !pin.isMomentAnchor) {
+      if (selected != null && (!pin.isMomentAnchor || _placeID != null)) {
         _collectionItems = originItems;
         _collectionCursor = originCursor;
         _collectionOffset = originOffset;
       }
       _activeSeedID = seed.id;
+      _selectedMomentID = seed.id;
+      _commentReply = null;
       _thread = thread;
       _items = List.unmodifiable(
         thread == null
@@ -411,6 +894,7 @@ class _NowMapContentPanelState extends State<NowMapContentPanel>
       _nextCursor = null;
       _restoreOffset = 0;
       _armLease();
+      _syncInteraction(preferred: seed.id);
       _rememberPosition();
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (pending() && _scroll.hasClients) _scroll.jumpTo(0);
@@ -435,6 +919,7 @@ class _NowMapContentPanelState extends State<NowMapContentPanel>
       _collectionCursor = null;
       _loading = false;
       _error = null;
+      _syncInteraction();
     });
     _rememberPosition();
     _armLease();
@@ -531,6 +1016,9 @@ class _NowMapContentPanelState extends State<NowMapContentPanel>
           ),
         );
       }
+      // The Now host owns the interruptible expansion transition. A second
+      // height tween here changes the scroll viewport after a reader has
+      // already scrolled, clamping the retained position during renewal.
       return SizedBox(
         height: height,
         child: Material(
@@ -549,6 +1037,12 @@ class _NowMapContentPanelState extends State<NowMapContentPanel>
                           icon: const Icon(Icons.arrow_back),
                           onPressed: _returnToCollection,
                         )
+                      else if (_backStack.isNotEmpty)
+                        IconButton(
+                          tooltip: '返回原动态',
+                          icon: const Icon(Icons.arrow_back),
+                          onPressed: _returnToContent,
+                        )
                       else
                         Icon(
                           pin?.isMomentAnchor == true
@@ -566,6 +1060,8 @@ class _NowMapContentPanelState extends State<NowMapContentPanel>
                               ? '串文 · ${thread.entries.length}段'
                               : _collectionItems != null
                               ? '动态'
+                              : _placeID != null
+                              ? '这里的动态 · ${_placeName ?? '地点'}'
                               : pin == null
                               ? '动态'
                               : pin.isMomentAnchor
@@ -579,6 +1075,7 @@ class _NowMapContentPanelState extends State<NowMapContentPanel>
                       if (thread == null &&
                           _collectionItems == null &&
                           pin != null &&
+                          _placeID == null &&
                           !pin.isMomentAnchor &&
                           pin.momentCount > 0)
                         Padding(
@@ -654,6 +1151,7 @@ class _NowMapContentPanelState extends State<NowMapContentPanel>
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
+                                  if (_expanded) _commentsSection(),
                                   if (_error != null) Text('动态暂时无法加载'),
                                   if (!_loading && _items.isEmpty && _hasRead)
                                     const Text('这里还没有可查看的动态'),
@@ -685,12 +1183,34 @@ class _NowMapContentPanelState extends State<NowMapContentPanel>
                               padding: const EdgeInsets.all(16),
                               child: Text('第${entry!.position + 1}段暂不可查看'),
                             );
+                          if (_placeID != null && _collectionItems == null) {
+                            return ListTile(
+                              key: _entryKey(item),
+                              title: Text(
+                                item.title.trim().isNotEmpty
+                                    ? item.title
+                                    : item.body,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              subtitle: Text(
+                                '${_momentTime(item)}${item.id == _placeOriginMomentID ? ' · 正在阅读' : ''}',
+                              ),
+                              trailing: const Icon(Icons.chevron_right),
+                              onTap: () =>
+                                  unawaited(_readCurrentThread(selected: item)),
+                            );
+                          }
                           return Align(
                             key: _entryKey(item),
                             alignment: Alignment.topCenter,
                             child: ConstrainedBox(
                               constraints: const BoxConstraints(maxWidth: 720),
                               child: Column(
+                                key: _entryKeys.putIfAbsent(
+                                  item.id,
+                                  () => GlobalKey(),
+                                ),
                                 crossAxisAlignment: CrossAxisAlignment.stretch,
                                 children: [
                                   if (entry != null)
@@ -701,11 +1221,27 @@ class _NowMapContentPanelState extends State<NowMapContentPanel>
                                         16,
                                         4,
                                       ),
-                                      child: Text(
-                                        '第${entry.position + 1}段',
-                                        style: Theme.of(
-                                          context,
-                                        ).textTheme.labelLarge,
+                                      child: Row(
+                                        children: [
+                                          Text(
+                                            '第${entry.position + 1}段',
+                                            style: Theme.of(
+                                              context,
+                                            ).textTheme.labelLarge,
+                                          ),
+                                          if (_selectedMomentID == item.id) ...[
+                                            const SizedBox(width: 8),
+                                            Text(
+                                              '正在阅读',
+                                              key: ValueKey(
+                                                'current-thread-entry:${item.id}',
+                                              ),
+                                              style: Theme.of(
+                                                context,
+                                              ).textTheme.bodySmall,
+                                            ),
+                                          ],
+                                        ],
                                       ),
                                     ),
                                   _MapMomentTile(
@@ -725,6 +1261,8 @@ class _NowMapContentPanelState extends State<NowMapContentPanel>
                                     onOpenMedia: (page) =>
                                         _openMedia(item, page),
                                     onExpand: _expand,
+                                    onOpenPlace: (location) =>
+                                        _openPlace(item, location),
                                     onReadThread:
                                         _expanded &&
                                             thread == null &&
@@ -743,6 +1281,28 @@ class _NowMapContentPanelState extends State<NowMapContentPanel>
                                           item.canEdit,
                                     ),
                                   ),
+                                  if (_expanded && _contentMode)
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 16,
+                                      ),
+                                      child: TextButton.icon(
+                                        key: ValueKey(
+                                          'comment-target:${item.id}',
+                                        ),
+                                        icon: Icon(
+                                          _selectedMomentID == item.id
+                                              ? Icons.chat_bubble
+                                              : Icons.chat_bubble_outline,
+                                        ),
+                                        label: Text(
+                                          entry == null
+                                              ? '评论这条动态'
+                                              : '评论第${entry.position + 1}段',
+                                        ),
+                                        onPressed: () => _selectMoment(item),
+                                      ),
+                                    ),
                                 ],
                               ),
                             ),
@@ -866,6 +1426,7 @@ class _MapMomentTile extends StatelessWidget {
     required this.onPageChanged,
     required this.onOpenMedia,
     required this.onExpand,
+    required this.onOpenPlace,
     this.onReadThread,
   });
   final OwnedMapController controller;
@@ -878,6 +1439,7 @@ class _MapMomentTile extends StatelessWidget {
   final VoidCallback? onReadThread;
   final int page;
   final ValueChanged<int> onPageChanged, onOpenMedia;
+  final ValueChanged<OwnedMapLocation> onOpenPlace;
 
   @override
   Widget build(BuildContext context) {
@@ -1101,25 +1663,23 @@ class _MapMomentTile extends StatelessWidget {
           if (!compact && detail.locations.isNotEmpty)
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 4,
                 children: [
-                  Icon(
-                    Icons.location_on_outlined,
-                    size: 16,
-                    color: colors.onSurfaceVariant,
-                  ),
-                  const SizedBox(width: 4),
-                  Expanded(
-                    child: Text(
-                      detail.locations.map((p) => p.name).join(' · '),
-                      style: TextStyle(
-                        fontSize: 13,
-                        height: 1.5,
-                        color: colors.onSurfaceVariant,
+                  for (final location in detail.locations)
+                    ActionChip(
+                      key: ValueKey(
+                        'moment-place:${detail.id}:${location.placeID}',
                       ),
+                      materialTapTargetSize: MaterialTapTargetSize.padded,
+                      avatar: const Icon(Icons.place_outlined, size: 18),
+                      label: Text(location.name),
+                      tooltip: '查看${location.name}的动态',
+                      onPressed: () {
+                        if (current()) onOpenPlace(location);
+                      },
                     ),
-                  ),
                 ],
               ),
             ),
@@ -2004,6 +2564,9 @@ class NowMapContentGroupPanel extends StatefulWidget {
     required this.changes,
     required this.onClose,
     required this.onEdit,
+    this.interactionClient,
+    this.onCommentTarget,
+    this.onCommentIntent,
   });
   final OwnedMapController controller;
   final OwnedMapPin? cluster;
@@ -2012,6 +2575,14 @@ class NowMapContentGroupPanel extends StatefulWidget {
   final Listenable changes;
   final VoidCallback onClose;
   final void Function(String, bool Function()) onEdit;
+  final http.Client? interactionClient;
+  final void Function(
+    MomentInteractionController? controller,
+    OwnedMapMomentDetail? moment,
+    MomentComment? reply,
+  )?
+  onCommentTarget;
+  final VoidCallback? onCommentIntent;
   @override
   State<NowMapContentGroupPanel> createState() =>
       _NowMapContentGroupPanelState();
@@ -2029,6 +2600,8 @@ class _NowMapContentGroupPanelState extends State<NowMapContentGroupPanel> {
   late final int _permissionEpoch;
   String? _windowStart;
   final _pageStarts = <String?>[];
+  OwnedMapMomentDetail? _lastCommentDetail;
+  MomentComment? _lastCommentReply;
   double _restoreOffset = 0;
   bool get _current =>
       mounted &&
@@ -2039,6 +2612,7 @@ class _NowMapContentGroupPanelState extends State<NowMapContentGroupPanel> {
     super.initState();
     _permissionEpoch = widget.controller.permissionEpoch;
     _pins = widget.pins;
+    _notifyGroupTarget(explicitList: true);
     _desiredCount = math.max(1, _pins.length);
     widget.changes.addListener(_changed);
     if (widget.cluster != null) {
@@ -2046,6 +2620,32 @@ class _NowMapContentGroupPanelState extends State<NowMapContentGroupPanel> {
     } else {
       _armLease();
     }
+  }
+
+  void _forwardCommentTarget(
+    MomentInteractionController? controller,
+    OwnedMapMomentDetail? moment,
+    MomentComment? reply,
+  ) {
+    _lastCommentDetail = moment;
+    _lastCommentReply = reply;
+    widget.onCommentTarget?.call(controller, moment, reply);
+  }
+
+  void _notifyGroupTarget({bool explicitList = false}) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || explicitList && _selected != null) return;
+      if (explicitList && _current) {
+        _forwardCommentTarget(null, null, null);
+      } else {
+        widget.onCommentTarget?.call(
+          null,
+          _lastCommentDetail,
+          _lastCommentReply,
+        );
+      }
+    });
+    WidgetsBinding.instance.ensureVisualUpdate();
   }
 
   void _rememberPosition() {
@@ -2066,6 +2666,7 @@ class _NowMapContentGroupPanelState extends State<NowMapContentGroupPanel> {
   void _changed() {
     if (!mounted) return;
     if (!_current) {
+      _notifyGroupTarget();
       ++_request;
       _clearMembers();
       if (_permissionEpoch != widget.controller.permissionEpoch) {
@@ -2208,6 +2809,7 @@ class _NowMapContentGroupPanelState extends State<NowMapContentGroupPanel> {
       void back() => setState(() {
         _selected = null;
         _restoreSelection = null;
+        _notifyGroupTarget(explicitList: true);
       });
       if (selected.isCluster) {
         return NowMapContentGroupPanel(
@@ -2217,6 +2819,9 @@ class _NowMapContentGroupPanelState extends State<NowMapContentGroupPanel> {
           changes: widget.changes,
           onClose: back,
           onEdit: widget.onEdit,
+          interactionClient: widget.interactionClient,
+          onCommentTarget: _forwardCommentTarget,
+          onCommentIntent: widget.onCommentIntent,
         );
       }
       return NowMapContentPanel(
@@ -2230,6 +2835,9 @@ class _NowMapContentGroupPanelState extends State<NowMapContentGroupPanel> {
         initialExpanded: true,
         closeLabel: '返回内容列表',
         onEdit: widget.onEdit,
+        interactionClient: widget.interactionClient,
+        onCommentTarget: _forwardCommentTarget,
+        onCommentIntent: widget.onCommentIntent,
       );
     }
     final visible = _current

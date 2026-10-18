@@ -117,6 +117,7 @@ type interactionSource struct {
 	likeVersion    int64
 	liked          bool
 	commentVersion int64
+	parentProof    string
 	author         string
 }
 
@@ -167,7 +168,20 @@ func (s *Store) interactionSource(ctx context.Context, f humanWriteFrame, in con
 			return out, content.ErrNotFound
 		}
 	}
-	out.version = content.MomentControlHash([]any{"moment-interaction-source-v1", base.BaseProof, principal, likeStamp, out.likeVersion, out.liked, in.CommentID, commentStamp})
+	if in.ParentCommentID != "" {
+		var version int64
+		e = f.tx.QueryRow(ctx, `SELECT comment.version,`+interactionCommentProofSQL+` FROM moment_comments comment JOIN accounts actor ON actor.id=comment.author_account_id WHERE comment.id=$3 AND comment.moment_id=$1 AND NOT comment.deleted AND `+legalInteractionActorSQL+` FOR UPDATE OF comment FOR SHARE OF actor`, in.MomentID, f.a.ID, in.ParentCommentID).Scan(&version, &out.parentProof)
+		if errors.Is(e, pgx.ErrNoRows) {
+			return out, content.ErrNotFound
+		}
+		if e != nil {
+			return out, identity.ErrControlUnavailable
+		}
+		if version != in.ExpectedParentCommentVersion {
+			return out, identity.ErrControlChanged
+		}
+	}
+	out.version = content.MomentControlHash([]any{"moment-interaction-source-v1", base.BaseProof, principal, likeStamp, out.likeVersion, out.liked, in.CommentID, commentStamp, in.ParentCommentID, in.ExpectedParentCommentVersion, out.parentProof})
 	return out, nil
 }
 func (s *Store) PreviewMomentInteraction(ctx context.Context, d [32]byte, a identity.Actor, in content.MomentInteractionInput) (content.MomentInteractionPreview, error) {
@@ -264,7 +278,7 @@ func (s *Store) CommitMomentInteraction(ctx context.Context, d [32]byte, a ident
 			notify = want
 		}
 	case "COMMENT":
-		e = f.tx.QueryRow(ctx, `INSERT INTO moment_comments(id,moment_id,author_account_id,body,version)VALUES(gen_random_uuid(),$1,$2,$3,1)RETURNING id`, in.MomentID, a.ID, in.Body).Scan(&commentID)
+		e = f.tx.QueryRow(ctx, `INSERT INTO moment_comments(id,moment_id,author_account_id,body,version,parent_comment_id,parent_comment_version)VALUES(gen_random_uuid(),$1,$2,$3,1,nullif($4,'')::uuid,nullif($5,0))RETURNING id`, in.MomentID, a.ID, in.Body, in.ParentCommentID, in.ExpectedParentCommentVersion).Scan(&commentID)
 		notify = true
 	case "DELETE_COMMENT":
 		applied = src.commentVersion + 1
@@ -305,6 +319,15 @@ func (s *Store) CommitMomentInteraction(ctx context.Context, d [32]byte, a ident
 		if e != nil || current != post {
 			return identity.ErrControlChanged
 		}
+		if in.ParentCommentID != "" {
+			fresh, err := s.interactionSource(ctx, f, in, true)
+			if err != nil {
+				return err
+			}
+			if fresh.parentProof != src.parentProof {
+				return identity.ErrControlChanged
+			}
+		}
 		return nil
 	}))
 	return r, e
@@ -335,15 +358,19 @@ func decodeInteractionCursor(raw, id, viewer, binding string) (*interactionCurso
 	return &c, nil
 }
 
+// Includes the reply author's block epoch, so block/unblock ABA cannot reuse approval.
+var interactionCommentProofSQL = `jsonb_build_array(comment.xmin::text,actor.xmin::text,` + publicMomentAuthorBindingSQL("actor") + `,(SELECT coalesce(jsonb_agg(jsonb_build_array(ep.owner_account_id,ep.target_account_id,ep.version,ep.xmin::text) ORDER BY ep.owner_account_id,ep.target_account_id),'[]') FROM person_block_control_epochs ep WHERE $2::uuid IS NOT NULL AND((ep.owner_account_id=$2 AND ep.target_account_id=actor.id)OR(ep.owner_account_id=actor.id AND ep.target_account_id=$2))))::text`
+
 const legalInteractionActorSQL = `actor.account_type='person' AND actor.status='active' AND birdtie_moment_public_binding($1,actor.id,clock_timestamp()) IS NOT NULL AND NOT EXISTS(SELECT 1 FROM account_blocks b WHERE $2::uuid IS NOT NULL AND((b.blocker_account_id=$2 AND b.blocked_account_id=actor.id)OR(b.blocker_account_id=actor.id AND b.blocked_account_id=$2)))`
 
 func (s *Store) readInteractionPageTx(ctx context.Context, tx pgx.Tx, a content.PublicMomentAccess, id, cursor, anchor string) (content.MomentInteractionPage, error) {
-	out := content.MomentInteractionPage{SchemaVersion: "moment-interaction-page-v1", MomentID: id, Comments: []content.MomentComment{}}
+	out := content.MomentInteractionPage{SchemaVersion: "moment-interaction-page-v2", MomentID: id, Comments: []content.MomentComment{}}
 	base, e := readPublicMomentContextTx(ctx, tx, a, id, false, false, s.devPhoneEnabled)
 	if e != nil {
 		return out, e
 	}
 	out.MomentRevision = base.View.Revision
+	out.CanComment = identity.HumanControlUUID(a.Actor.ID) && a.Actor.AccountType == "person"
 	out.ObservedAt, out.ValidUntil = base.View.ObservedAt, base.View.ValidUntil
 	out.SourceVersion = base.BaseProof
 	c, e := decodeInteractionCursor(cursor, id, a.Actor.ID, base.BaseProof)
@@ -364,23 +391,34 @@ func (s *Store) readInteractionPageTx(ctx context.Context, tx pgx.Tx, a content.
 	if anchor != "" && (!identity.HumanControlUUID(anchor) || cursor != "") {
 		return out, content.ErrInvalid
 	}
-	rows, e := tx.Query(ctx, `SELECT comment.id,comment.body,comment.created_at,`+publicMomentAuthorProfileSQL("actor")+`,comment.author_account_id=$2,jsonb_build_array(comment.xmin::text,actor.xmin::text,`+publicMomentAuthorBindingSQL("actor")+`)::text FROM moment_comments comment JOIN accounts actor ON actor.id=comment.author_account_id WHERE comment.moment_id=$1 AND NOT comment.deleted AND `+legalInteractionActorSQL+` AND comment.created_at<=$3 AND($4::boolean=false OR(comment.created_at,comment.id)<($5,$6::uuid)) AND($7='' OR comment.id=nullif($7,'')::uuid) ORDER BY comment.created_at DESC,comment.id DESC LIMIT 21`, id, viewer, window, c != nil, before, beforeID, anchor)
+	rows, e := tx.Query(ctx, `SELECT comment.id,comment.body,comment.created_at,`+publicMomentAuthorProfileSQL("actor")+`,comment.author_account_id=$2,`+interactionCommentProofSQL+`,comment.version,comment.parent_comment_id,comment.parent_comment_version FROM moment_comments comment JOIN accounts actor ON actor.id=comment.author_account_id WHERE comment.moment_id=$1 AND NOT comment.deleted AND `+legalInteractionActorSQL+` AND comment.created_at<=$3 AND($4::boolean=false OR(comment.created_at,comment.id)<($5,$6::uuid)) AND($7='' OR comment.id=nullif($7,'')::uuid) ORDER BY comment.created_at DESC,comment.id DESC LIMIT 21`, id, viewer, window, c != nil, before, beforeID, anchor)
 	if e != nil {
 		return out, content.ErrUnavailable
 	}
 	defer rows.Close()
 	proofs := []string{}
+	type parentRef struct {
+		id      string
+		version int64
+	}
+	parents := map[string]parentRef{}
 	for rows.Next() {
 		var item content.MomentComment
 		var raw []byte
 		var own *bool
 		var proof string
-		if e = rows.Scan(&item.ID, &item.Body, &item.CreatedAt, &raw, &own, &proof); e != nil {
+		var parentID *string
+		var parentVersion *int64
+		if e = rows.Scan(&item.ID, &item.Body, &item.CreatedAt, &raw, &own, &proof, &item.Version, &parentID, &parentVersion); e != nil {
 			return out, content.ErrUnavailable
 		}
 		proofs = append(proofs, proof)
 		item.CreatedAt = item.CreatedAt.UTC()
 		item.CanDelete = own != nil && *own
+		item.CanReply = out.CanComment
+		if parentID != nil && parentVersion != nil {
+			parents[item.ID] = parentRef{*parentID, *parentVersion}
+		}
 		if len(raw) > 0 {
 			if json.Unmarshal(raw, &item.AuthorPublicProfile) != nil {
 				return out, content.ErrUnavailable
@@ -394,6 +432,31 @@ func (s *Store) readInteractionPageTx(ctx context.Context, tx pgx.Tx, a content.
 	}
 	if rows.Err() != nil {
 		return out, content.ErrUnavailable
+	}
+	rows.Close()
+	for i := range out.Comments {
+		item := &out.Comments[i]
+		ref, ok := parents[item.ID]
+		if !ok {
+			continue
+		}
+		reply := &content.MomentCommentReply{CommentID: ref.id, Version: ref.version, Status: "UNAVAILABLE"}
+		var body, proof string
+		var raw []byte
+		var available bool
+		e = tx.QueryRow(ctx, `SELECT comment.body,comment.version=$4 AND NOT comment.deleted AND (`+legalInteractionActorSQL+`),`+publicMomentAuthorProfileSQL("actor")+`,`+interactionCommentProofSQL+` FROM moment_comments comment JOIN accounts actor ON actor.id=comment.author_account_id WHERE comment.id=$3 AND comment.moment_id=$1`, id, viewer, ref.id, ref.version).Scan(&body, &available, &raw, &proof)
+		if e != nil && !errors.Is(e, pgx.ErrNoRows) {
+			return out, content.ErrUnavailable
+		}
+		proofs = append(proofs, proof)
+		if e == nil && available {
+			reply.Status = "AVAILABLE"
+			reply.Body = body
+			if len(raw) > 0 && json.Unmarshal(raw, &reply.AuthorPublicProfile) != nil {
+				return out, content.ErrUnavailable
+			}
+		}
+		item.ReplyTo = reply
 	}
 	out.ReadProof = content.MomentControlHash(proofs)
 	if anchor != "" && len(out.Comments) != 1 {

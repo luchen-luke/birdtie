@@ -231,6 +231,11 @@ class OwnedMapPin {
     this.bounds,
     this.anchorCount = 1,
     this.precision = 'point',
+    this.contentTime,
+    this.timeSource = 'UNKNOWN',
+    this.nextMarkerIDs = const [],
+    this.journeyEdges = const [],
+    this.threadPosition = 0,
   });
   final String placeID, name, categoryCode, sourceVersion;
   final String kind,
@@ -249,7 +254,11 @@ class OwnedMapPin {
   final List<OwnedMapMoment> moments;
   final bool momentsTruncated;
   final OwnedMapCover? cover;
-  final DateTime? observedAt, validUntil;
+  final DateTime? observedAt, validUntil, contentTime;
+  final String timeSource;
+  final List<String> nextMarkerIDs;
+  final List<MapJourneyEdge> journeyEdges;
+  final int threadPosition;
   String get canonicalMarkerID =>
       markerID.isEmpty ? 'place:$placeID' : markerID;
   String get mapID => 'owned-map:$canonicalMarkerID';
@@ -260,6 +269,23 @@ class OwnedMapPin {
   String get visibilityLabel => hasPrivateContent
       ? (visibilitySources.length == 1 ? '仅本人可见' : '含本人私人内容')
       : '可访问动态';
+  String get contentTypeLabel => threadID.isEmpty ? '单条动态' : '串文';
+  String get contentTimeLabel {
+    final at = contentTime?.toLocal();
+    if (at == null) return '时间未记录';
+    final date = '${at.year}年${at.month}月${at.day}日';
+    return timeSource == 'PUBLISHED' ? date : '$date · 创建';
+  }
+
+  static int newestFirst(OwnedMapPin a, OwnedMapPin b) {
+    final time = (b.contentTime ?? DateTime(0)).compareTo(
+      a.contentTime ?? DateTime(0),
+    );
+    if (time != 0) return time;
+    final moment = a.momentID.compareTo(b.momentID);
+    return moment != 0 ? moment : a.mapID.compareTo(b.mapID);
+  }
+
   MapEntity get entity => MapEntity(
     id: mapID,
     kind: isCluster
@@ -268,7 +294,13 @@ class OwnedMapPin {
         ? MapEntityKind.moment
         : MapEntityKind.place,
     title: name,
-    subtitle: '$visibilityLabel · $momentCount条动态',
+    subtitle: isMomentAnchor
+        ? '$contentTypeLabel · $contentTimeLabel'
+        : '$visibilityLabel · $momentCount条动态',
+    contentTime: contentTime,
+    nextContentIDs: [for (final id in nextMarkerIDs) 'owned-map:$id'],
+    journeyEdges: journeyEdges,
+    threadPosition: threadPosition,
     latitude: latitude,
     longitude: longitude,
     placeID: placeID,
@@ -331,6 +363,11 @@ class OwnedMapPin {
         'representativeMarkerId',
         'representativePlaceId',
         'representativeMomentId',
+        'contentTime',
+        'timeSource',
+        'nextMarkerIds',
+        'journeyEdges',
+        'threadPosition',
       },
     );
     final kind = v['kind'], place = v['placeId'], marker = v['markerId'];
@@ -358,7 +395,7 @@ class OwnedMapPin {
             v['bounds'] == null &&
             v['anchorCount'] == 1,
       'MOMENT_ANCHOR' =>
-        place == '' &&
+        (place == '' || humanControlID(place)) &&
             humanControlID(anchorID) &&
             humanControlID(moment) &&
             marker == 'anchor:$anchorID' &&
@@ -488,7 +525,9 @@ class OwnedMapPin {
         ? null
         : OwnedMapCover.marker(
             v['cover'],
-            placeID: kind == 'CLUSTER' ? representativePlace : place,
+            placeID: kind == 'CLUSTER'
+                ? representativePlace
+                : (kind == 'MOMENT_ANCHOR' ? '' : place),
             momentID: kind == 'CLUSTER' ? representativeMoment : moment,
           );
     if (moments.map((m) => m.id).toSet().length != moments.length ||
@@ -507,7 +546,89 @@ class OwnedMapPin {
             )) {
       throw const FormatException('地图动态数量不符');
     }
+    final nextIDs = v['nextMarkerIds'] ?? const <String>[];
+    final position = v['threadPosition'] ?? 0;
+    if (nextIDs is! List ||
+        nextIDs.length > 1 ||
+        nextIDs.any(
+          (id) =>
+              id is! String ||
+              !id.startsWith('anchor:') ||
+              !humanControlID(id.substring(7)),
+        ) ||
+        position is! int ||
+        position < 0 ||
+        position >= 20 ||
+        nextIDs.isNotEmpty && thread == '') {
+      throw const FormatException('串文地点顺序不符');
+    }
+    final rawEdges = v['journeyEdges'] ?? const [];
+    if (rawEdges is! List || rawEdges.length > 200)
+      throw const FormatException('旅程关系不符');
+    final edges = <MapJourneyEdge>[], edgeKeys = <String>{};
+    for (final row in rawEdges) {
+      if (row is! Map<String, dynamic> ||
+          row.keys.any(
+            (k) => !const {
+              'journeyId',
+              'publicationRevision',
+              'nextMarkerId',
+              'fromPosition',
+              'toPosition',
+              'sourceVersion',
+            }.contains(k),
+          ) ||
+          !humanControlID(row['journeyId'] as String? ?? '') ||
+          row['publicationRevision'] is! int ||
+          row['publicationRevision'] < 2 ||
+          row['fromPosition'] is! int ||
+          row['fromPosition'] < 1 ||
+          row['toPosition'] != row['fromPosition'] + 1 ||
+          row['toPosition'] > 500 ||
+          row['nextMarkerId'] is! String ||
+          !(row['nextMarkerId'] as String).startsWith('anchor:') ||
+          !humanControlID((row['nextMarkerId'] as String).substring(7)) ||
+          row['nextMarkerId'] == marker ||
+          !RegExp(
+            r'^[0-9a-f]{64}$',
+          ).hasMatch(row['sourceVersion'] as String? ?? '') ||
+          !edgeKeys.add('${row['journeyId']}:${row['fromPosition']}:${row['nextMarkerId']}'))
+        throw const FormatException('旅程顺序来源不符');
+      edges.add(
+        MapJourneyEdge(
+          journeyID: row['journeyId'],
+          publicationRevision: row['publicationRevision'],
+          nextID: 'owned-map:${row['nextMarkerId']}',
+          fromPosition: row['fromPosition'],
+          toPosition: row['toPosition'],
+          sourceVersion: row['sourceVersion'],
+        ),
+      );
+    }
+    final contentTime = v['contentTime'] == null
+        ? null
+        : onlineStamp(v['contentTime']);
+    final timeSource = v['timeSource'] ?? 'UNKNOWN';
+    if (!const {
+          'PUBLISHED',
+          'NATIVE',
+          'CIVU_ORIGINAL',
+          'UNKNOWN',
+        }.contains(timeSource) ||
+        (contentTime != null &&
+            (timeSource == 'UNKNOWN' ||
+                observedAt != null &&
+                    contentTime.isAfter(
+                      observedAt.add(const Duration(seconds: 1)),
+                    )))) {
+      throw const FormatException('动态时间来源不符');
+    }
     return OwnedMapPin(
+      contentTime: contentTime,
+      nextMarkerIDs: List<String>.unmodifiable(nextIDs),
+      journeyEdges: List.unmodifiable(edges),
+      threadPosition: position,
+      timeSource: timeSource,
       placeID: place,
       markerID: marker,
       kind: kind,

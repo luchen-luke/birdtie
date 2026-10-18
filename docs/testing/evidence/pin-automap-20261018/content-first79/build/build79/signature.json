@@ -1,0 +1,17 @@
+{
+  "command": [
+    "C:/Users/chens/AppData/Local/Android/Sdk/build-tools/36.0.0/apksigner.bat",
+    "verify",
+    "--verbose",
+    "--print-certs",
+    "D:\\Project\\birdtie\\work\\content-first-20261019\\delivery79\\Birdtie-Content-First-20261019-79.apk"
+  ],
+  "cwd": "D:\\Project\\birdtie",
+  "exitCode": 0,
+  "certificateSHA256": "58a1ae46f53decc63a8b54f3a02901f5b31def2c664214a72957777e8e88e165",
+  "matchesInstalled78Certificate": true,
+  "apkSHA256": "e08f116dfe256809789048af32fb0bfedaf03d7651cef5df3d2b4d7ee40e3338",
+  "log": "D:\\Project\\birdtie\\work\\content-first-20261019\\build-evidence\\build79\\signature.log",
+  "installed": false,
+  "completedUTC": "2026-10-18T21:16:59.038413+00:00"
+}

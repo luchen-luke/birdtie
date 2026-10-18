@@ -1,0 +1,11 @@
+NOTICE:  trigger "organizations_validate_account" for relation "organizations" does not exist, skipping
+NOTICE:  trigger "agents_validate_principal" for relation "agents" does not exist, skipping
+NOTICE:  trigger "organization_memberships_validate_principals" for relation "organization_memberships" does not exist, skipping
+NOTICE:  trigger "agent_tasks_validate_principal" for relation "agent_tasks" does not exist, skipping
+NOTICE:  trigger "agent_tasks_validate_principal" for relation "agent_tasks" does not exist, skipping
+NOTICE:  trigger "activities_validate_organization" for relation "activities" does not exist, skipping
+NOTICE:  trigger "activity_participations_validate_person" for relation "activity_participations" does not exist, skipping
+NOTICE:  trigger "activity_participation_open_guard" for relation "activity_participations" does not exist, skipping
+NOTICE:  trigger "place_source_permission_guard" for relation "place_source_permissions" does not exist, skipping
+NOTICE:  trigger "place_candidate_permission_guard" for relation "place_candidates" does not exist, skipping
+NOTICE:  trigger "place_field_evidence_guard" for relation "place_field_evidence" does not exist, skipping

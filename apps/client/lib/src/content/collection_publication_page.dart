@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -11,16 +12,31 @@ class CollectionPublicationPage extends StatelessWidget {
     super.key,
     required this.controller,
     required this.cityName,
+    this.embedded = false,
+    this.onClose,
   });
   final CollectionPublicationController controller;
   final String cityName;
+  final bool embedded;
+  final VoidCallback? onClose;
   @override
   Widget build(BuildContext context) => AnimatedBuilder(
     animation: controller,
     builder: (context, _) {
       final c = controller, current = c.current, v = c.record;
       return Scaffold(
-        appBar: AppBar(title: const Text('公开发布')),
+        appBar: AppBar(
+          automaticallyImplyLeading: !embedded,
+          title: const Text('公开发布'),
+          actions: [
+            if (onClose != null)
+              IconButton(
+                tooltip: '返回旅程',
+                onPressed: onClose,
+                icon: const Icon(Icons.close),
+              ),
+          ],
+        ),
         body: !current || v == null
             ? Center(child: Text(c.error ?? '请先保存并重新打开这份内容。'))
             : ListView(
@@ -41,12 +57,157 @@ class CollectionPublicationPage extends StatelessWidget {
                     ),
                   const SizedBox(height: 12),
                   Text(
-                    v.status == 'published'
+                    c.richJourney
+                        ? '仅发布下面明确勾选的站点。私人安排、预算、成员、住宿和来源不会进入公开版本；后续修改私人计划不会自动更新公开版本。'
+                        : v.status == 'published'
                         ? '已公开。其他人可通过分享代码读取当前内容。'
                         : '请检查以下完整内容。名称、说明和每个地点的备注都会公开；每个地点的位置范围由你选择。',
                   ),
                   const SizedBox(height: 12),
                   if (v.summary.isNotEmpty) SelectableText(v.summary),
+                  if (c.richJourney) ...[
+                    if (v.publishedSnapshot case final published?)
+                      Text(
+                        '当前公开版本 ${published.publicationRevision} · ${published.stopCount} 站。重新发布会替换公开版本，私人计划保持独立。',
+                      ),
+                    if (utf8.encode(v.title).length > 160 ||
+                        utf8.encode(v.summary).length > 5000)
+                      const Text('公开名称或说明超过服务长度限制。请先返回修改并保存，再检查公开内容。'),
+                    for (final stop in c.journeyStops)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            CheckboxListTile(
+                              contentPadding: EdgeInsets.zero,
+                              title: Text(
+                                '${stop.values['position']}. ${stop.text('title')}',
+                              ),
+                              subtitle: stop.text('note').isEmpty
+                                  ? null
+                                  : Text(stop.text('note')),
+                              value: c.selectedStops.contains(stop.id),
+                              onChanged: c.canConfigure
+                                  ? (value) =>
+                                        c.selectStop(stop.id, value == true)
+                                  : null,
+                            ),
+                            if (c.selectedStops.contains(stop.id)) ...[
+                              if (utf8.encode(stop.text('title')).length >
+                                      160 ||
+                                  utf8.encode(stop.text('note')).length > 2000)
+                                const Text('此站标题或备注超过公开长度限制；请返回调整后重新检查。'),
+                              DropdownButtonFormField<String>(
+                                key: Key(
+                                  'journey-publication-precision:${stop.id}',
+                                ),
+                                initialValue:
+                                    c.stopPrecision[stop.id] ?? 'hidden',
+                                decoration: const InputDecoration(
+                                  labelText: '本次公开位置范围',
+                                ),
+                                items: const [
+                                  DropdownMenuItem(
+                                    value: 'hidden',
+                                    child: Text('不显示地点'),
+                                  ),
+                                  DropdownMenuItem(
+                                    value: 'city',
+                                    child: Text('隐藏精确地点'),
+                                  ),
+                                  DropdownMenuItem(
+                                    value: 'place',
+                                    child: Text('显示原站点的当前公开地点'),
+                                  ),
+                                ],
+                                onChanged: c.canConfigure
+                                    ? (value) {
+                                        if (value != null)
+                                          c.setStopPrecision(stop.id, value);
+                                      }
+                                    : null,
+                              ),
+                              TextButton(
+                                onPressed: c.canConfigure && !c.loadingMoments
+                                    ? () => unawaited(c.loadMomentChoices())
+                                    : null,
+                                child: const Text('读取本人已发布动态以选择引用'),
+                              ),
+                              if (c.stopMoments[stop.id] case final moment?)
+                                ListTile(
+                                  contentPadding: EdgeInsets.zero,
+                                  title: Text(
+                                    moment.title.isEmpty
+                                        ? moment.body
+                                        : moment.title,
+                                    maxLines: 3,
+                                  ),
+                                  subtitle: Text(
+                                    '已选动态 · 版本 ${moment.revision}',
+                                  ),
+                                  trailing: IconButton(
+                                    tooltip: '移除动态引用',
+                                    onPressed: c.canConfigure
+                                        ? () => c.setStopMoment(stop.id, null)
+                                        : null,
+                                    icon: const Icon(Icons.close),
+                                  ),
+                                ),
+                              if (c.momentChoices.isNotEmpty)
+                                DropdownButtonFormField<String>(
+                                  key: Key(
+                                    'journey-publication-moment:${stop.id}:${c.stopMoments[stop.id]?.id}:${c.momentChoices.map((m) => '${m.id}:${m.revision}').join(',')}',
+                                  ),
+                                  isExpanded: true,
+                                  initialValue: null,
+                                  decoration: const InputDecoration(
+                                    labelText: '明确选择本次关联动态',
+                                  ),
+                                  items: [
+                                    for (final moment in c.momentChoices)
+                                      DropdownMenuItem(
+                                        value: moment.id,
+                                        child: Text(
+                                          moment.title.isEmpty
+                                              ? moment.body
+                                              : moment.title,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                  ],
+                                  onChanged: c.canConfigure
+                                      ? (id) {
+                                          for (final m in c.momentChoices) {
+                                            if (m.id == id) {
+                                              c.setStopMoment(stop.id, m);
+                                              break;
+                                            }
+                                          }
+                                        }
+                                      : null,
+                                ),
+                              if (c.stopMoments[stop.id] != null)
+                                CheckboxListTile(
+                                  contentPadding: EdgeInsets.zero,
+                                  title: const Text('用这条动态承载此站的评论入口'),
+                                  value: c.commentStops.contains(stop.id),
+                                  onChanged: c.canConfigure
+                                      ? (v) =>
+                                            c.setStopComment(stop.id, v == true)
+                                      : null,
+                                ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    if (c.selectedStops.length > 50)
+                      const Text('每个公开版本最多选择50站，请减少本次选择。'),
+                    if (c.journeyStops.isEmpty) const Text('这份计划暂无可公开的停留站点。'),
+                    if (c.loadingMoments) const LinearProgressIndicator(),
+                    if (c.momentsError != null) Text(c.momentsError!),
+                  ],
                   for (var i = 0; i < v.entries.length; i++)
                     Padding(
                       padding: const EdgeInsets.symmetric(vertical: 12),
@@ -90,7 +251,7 @@ class CollectionPublicationPage extends StatelessWidget {
                   const Text(
                     '不显示地点不会改写你在名称、说明或备注中写出的地点信息。公开分享只展示这份内容，不证明你到访过，也不授权模型处理。',
                   ),
-                  if (v.status == 'draft') ...[
+                  if (v.status == 'draft' && !c.richJourney) ...[
                     SwitchListTile.adaptive(
                       key: const Key('publication-allow-private-place-copy'),
                       contentPadding: EdgeInsets.zero,
@@ -178,7 +339,8 @@ class CollectionPublicationPage extends StatelessWidget {
                           : null,
                       child: const Text('结束并核实原操作'),
                     ),
-                  ] else if (v.status == 'published') ...[
+                  ] else if (v.status == 'published' ||
+                      v.publishedSnapshot != null) ...[
                     FilledButton.icon(
                       onPressed: c.canUnpublish
                           ? () => unawaited(c.unpublish())
@@ -219,6 +381,15 @@ class CollectionPublicationPage extends StatelessWidget {
                       child: const Text('将以上内容公开发布'),
                     ),
                   ],
+                  if (c.richJourney &&
+                      v.publishedSnapshot != null &&
+                      !c.uncertain)
+                    FilledButton(
+                      onPressed: c.canPublish
+                          ? () => unawaited(c.publish())
+                          : null,
+                      child: const Text('以本次勾选内容更新公开版本'),
+                    ),
                 ],
               ),
       );
@@ -281,11 +452,37 @@ class _PublicCollectionPageState extends State<PublicCollectionPage>
             if (v != null && current) ...[
               Text(v.title, style: NowUiTokens.of(context).sheetTitle),
               Text(
-                widget.cityNameFor?.call(v.cityID) ?? '公开城市尚未载入',
+                v.journeySnapshot != null
+                    ? '公开旅程版本 ${v.revision}'
+                    : widget.cityNameFor?.call(v.cityID) ?? '公开城市尚未载入',
                 style: NowUiTokens.of(context).metadata,
               ),
               const SizedBox(height: 12),
               if (v.summary.isNotEmpty) SelectableText(v.summary),
+              if (v.journeySnapshot case final snapshot?)
+                for (final stop in snapshot.stops)
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: Text('${stop['position']}'),
+                    title: Text(
+                      stop['available'] == true
+                          ? (stop['title'] as String).isEmpty
+                                ? '停留点'
+                                : stop['title'] as String
+                          : '当前不可读',
+                    ),
+                    subtitle: stop['available'] != true
+                        ? null
+                        : Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              if ((stop['note'] as String).isNotEmpty)
+                                Text(stop['note'] as String),
+                              if (stop['placeName'] case final String name)
+                                Text(name),
+                            ],
+                          ),
+                  ),
               for (var i = 0; i < v.entries.length; i++)
                 ListTile(
                   contentPadding: EdgeInsets.zero,

@@ -1,0 +1,8 @@
+Flutter assets will be downloaded from https://storage.flutter-io.cn. Make sure you trust this source!
+00:00 +0: loading D:/Project/birdtie/apps/client/test/now_journey_test.dart
+00:00 +0: Public Journey retains original gaps and rejects private fields or unreadable source details
+00:00 +1: Journey discovery retires late identity reads instead of reviving public snapshots
+00:00 +2: Rich Journey publication requires explicit STOP selection and sends only approved snapshot
+00:00 +3: normal-size rich Journey preview publishes only the explicitly selected STOP
+00:00 +4: cross-city Journey pages forward signed opaque cursors and retain earlier rows
+00:00 +5: All tests passed!

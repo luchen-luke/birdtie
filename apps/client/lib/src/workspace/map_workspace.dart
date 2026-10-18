@@ -48,6 +48,12 @@ import '../content/private_moment_media_controller.dart';
 import '../content/legacy_moment_materials_panel.dart';
 import '../content/personal_collection_controller.dart';
 import '../content/personal_collection_page.dart';
+import '../content/now_journey_controller.dart';
+import '../content/now_journey_panel.dart';
+import '../content/collection_publication_controller.dart';
+import '../content/collection_publication_page.dart';
+import '../content/collection_publication_pending_store.dart';
+import 'moment_interaction.dart';
 import '../content/selected_place_journey.dart';
 import '../content/selected_place_journey_page.dart';
 import '../content/video_material_controller.dart';
@@ -3262,13 +3268,26 @@ class _MapWorkspaceState extends State<MapWorkspace>
   late final MapMediaController _mapMedia;
   late final OwnedMapController _mapContent;
   String? _mapContentLastThreadOperation;
+  NowComposerTarget? _beforeContentTarget;
+  Object? _beforeContentIdentity;
+  MomentInteractionController? _contentInteraction;
+  MomentComment? _contentReply;
+  String? _contentTitle;
+  bool Function()? _contentSourceCurrent;
+  Object? _contentOptOut;
+  bool _contentSubmitting = false;
+  NowJourneyController? _nowJourneys;
+  NowJourneyFieldEdit? _journeyField;
+  CollectionPublicationController? _journeyPublication;
+  bool _journeyHost = false;
+  MapCameraSnapshot? _lastNowCamera;
+  MapNavigationTarget? _beforeJourneyMap;
+  Object? _beforeJourneyMapIdentity;
   Widget? _publicPlacePanel;
   final _mapReadingPositions = <String, NowMapReadingPosition>{};
   bool _publicPlacePreview = false, _socialExpanded = false;
   bool _humanConversationExpanded = false;
-  bool _publicPlaceStoriesExpanded = false;
   String? _previewObservedSelection;
-  String? _publicPlaceMapID;
   late NowSocialEdgeSource _socialSource;
   late RemoteInboxSource _socialInbox;
   late final Listenable _socialChanges;
@@ -3631,6 +3650,7 @@ class _MapWorkspaceState extends State<MapWorkspace>
       contentRect: _mapContentRect,
       focusRevision: _mapFocusRevision,
       onContentOverlap: _openMapContentOverlap,
+      onCameraSnapshot: (camera) => _lastNowCamera = camera,
       onEntityPicked: (id) {
         final content = _mapContent.find(id);
         if (content != null && _collectionProjection.value == null) {
@@ -4021,6 +4041,15 @@ class _MapWorkspaceState extends State<MapWorkspace>
   }
 
   void _retireSeedEntry() {
+    _beforeJourneyMap = null;
+    _beforeJourneyMapIdentity = null;
+    _journeyPublication?.dispose();
+    _journeyPublication = null;
+    _nowJourneys?.dispose();
+    _nowJourneys = null;
+    _beforeContentTarget = null;
+    _beforeContentIdentity = null;
+    _restoreContentTarget(endSession: true);
     _imageDraftCityID = _retainedImageDraft?.city;
     _workspace.retireReplyRefresh();
     ++_seedEntryEpoch;
@@ -4591,6 +4620,9 @@ class _MapWorkspaceState extends State<MapWorkspace>
     _retireCreationApprovals();
     _disposeCreationPublicPhoto();
     _creationCollection?.dispose();
+    _contentInteraction?.removeListener(_contentComposerChanged);
+    _journeyPublication?.dispose();
+    _nowJourneys?.dispose();
     _composerDrafts.removeListener(_onTypedDraftRestore);
     unawaited(_composerDrafts.flush());
     _composerDrafts.dispose();
@@ -4733,7 +4765,7 @@ class _MapWorkspaceState extends State<MapWorkspace>
       _lastMapNavigationGeneration = generation;
       if (widget.city.mapTarget?.source != MapNavigationSource.task) {
         _workspace.detachTaskMapProjection();
-        _retirePublicPlacePanel();
+        if (!_journeyHost) _retirePublicPlacePanel();
         if (!_selectingCity && !_loadingCityCatalog) {
           ++_viewSerial;
           _pendingCityCurrent = null;
@@ -4743,7 +4775,7 @@ class _MapWorkspaceState extends State<MapWorkspace>
       }
     }
     if (!browseChanged) return;
-    _retirePublicPlacePanel();
+    if (!_journeyHost) _retirePublicPlacePanel();
     // A geographic destination does not revoke the current conversation.
     // The map filters that conversation by its original city; identity and
     // projection leases continue to guard its cards and source links.
@@ -5565,6 +5597,10 @@ class _MapWorkspaceState extends State<MapWorkspace>
   }
 
   void _submit(String query, {String? localMaterialApproval}) {
+    if (_composerDrafts.target.content) {
+      unawaited(_submitContent(query));
+      return;
+    }
     if (_composerDrafts.suspended) {
       unawaited(_signInHere());
       return;
@@ -7284,11 +7320,444 @@ class _MapWorkspaceState extends State<MapWorkspace>
           ],
         );
 
+  void _contentComposerChanged() {
+    if (!mounted) return;
+    if (SchedulerBinding.instance.schedulerPhase ==
+        SchedulerPhase.persistentCallbacks) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) setState(() {});
+      });
+    } else {
+      setState(() {});
+    }
+  }
+
+  void _rememberContentTarget() {
+    if (_beforeContentTarget != null) return;
+    _beforeContentTarget = _composerDrafts.target.content
+        ? const NowComposerTarget.agent()
+        : _composerDrafts.target;
+    _beforeContentIdentity = (_currentSeedIdentity, _seedEntryEpoch);
+  }
+
+  void _restoreContentTarget({bool endSession = false}) {
+    _contentInteraction?.removeListener(_contentComposerChanged);
+    _contentInteraction = null;
+    _contentSourceCurrent = null;
+    _contentReply = null;
+    _contentTitle = null;
+    _journeyField = null;
+    if (_composerDrafts.target.content) {
+      final previous =
+          _beforeContentIdentity == (_currentSeedIdentity, _seedEntryEpoch)
+          ? _beforeContentTarget
+          : null;
+      _composerDrafts.select(previous ?? const NowComposerTarget.agent());
+    }
+    if (endSession) {
+      _beforeContentTarget = null;
+      _beforeContentIdentity = null;
+      _contentOptOut = null;
+    }
+  }
+
+  void _bindContentTarget(
+    Object source,
+    MomentInteractionController? controller,
+    String? momentID,
+    String? title,
+    MomentComment? reply,
+    bool Function() readable,
+  ) {
+    if (!mounted || !identical(_publicPlacePanelSource, source)) return;
+    if (momentID == null && title == null) {
+      setState(_restoreContentTarget);
+      return;
+    }
+    final id =
+        controller?.momentID ?? momentID ?? _composerDrafts.target.contentID;
+    if (id.isEmpty) return;
+    if (_contentOptOut == (source, id) && reply == null) return;
+    _contentOptOut = null;
+    _rememberContentTarget();
+    final next = NowComposerTarget.comment(
+      contentID: id,
+      replyID: reply?.id ?? '',
+    );
+    if (_composerDrafts.target.key != next.key) _pauseComposer();
+    if (!identical(_contentInteraction, controller)) {
+      _contentInteraction?.removeListener(_contentComposerChanged);
+      _contentInteraction = controller;
+      controller?.addListener(_contentComposerChanged);
+    }
+    setState(() {
+      _journeyField = null;
+      _contentTitle = title;
+      _contentReply = reply;
+      _contentSourceCurrent = () =>
+          readable() && (controller == null || controller.current());
+      _composerDrafts.select(next);
+    });
+  }
+
+  bool get _contentCanSubmit {
+    if (_composerDrafts.suspended ||
+        _contentSubmitting ||
+        _organizations.active != null)
+      return false;
+    if (_composerDrafts.target.comment) {
+      final c = _contentInteraction;
+      return _contentSourceCurrent?.call() == true &&
+          c?.canComment == true &&
+          c!.momentID == _composerDrafts.target.contentID &&
+          (_contentReply == null || c.replyCurrent(_contentReply!));
+    }
+    return _composerDrafts.target.mode == 'edit-journey' &&
+        _journeyField?.current() == true;
+  }
+
+  String? get _contentComposerLabel {
+    final target = _composerDrafts.target;
+    if (!target.content) return null;
+    if (!target.comment)
+      return '编辑我的旅程 · ${_journeyField?.label ?? '当前字段'} · 私人草稿';
+    if (_contentSourceCurrent?.call() != true) return '原评论对象暂不可用 · 草稿已保留';
+    final reply = _contentReply;
+    if (reply != null) {
+      if (_contentInteraction?.replyCurrent(reply) != true)
+        return '原回复对象暂不可用 · 草稿已保留';
+      return '回复 ${reply.author?.displayName ?? '用户评论'} · ${_shortContent(reply.body)} · 公开可见';
+    }
+    return '评论《${_shortContent(_contentTitle ?? '当前动态')}》 · 公开可见';
+  }
+
+  static String _shortContent(String value) {
+    final text = value.replaceAll(RegExp(r'\s+'), ' ').trim();
+    return text.runes.length <= 38
+        ? text
+        : '${String.fromCharCodes(text.runes.take(38))}…';
+  }
+
+  String? get _contentComposerHint {
+    if (!_composerDrafts.target.content) return null;
+    if (_composerDrafts.target.mode == 'edit-journey')
+      return _journeyField?.current() == true
+          ? '输入${_journeyField!.label}，仅更新私人草稿'
+          : '此字段已变化，请重新点选编辑';
+    if (_contentInteraction?.loading == true) return '正在读取评论权限…';
+    return _contentCanSubmit
+        ? (_contentReply == null ? '写评论…' : '写回复…')
+        : '当前无法评论，草稿已保留';
+  }
+
+  Future<void> _submitContent(String text) async {
+    if (!_contentCanSubmit || _composerDrafts.value.text != text) return;
+    final identity = _composerDrafts.identity,
+        version = _composerDrafts.contentVersion;
+    final value = _composerDrafts.value;
+    if (value.composing.isValid && !value.composing.isCollapsed) return;
+    if (_composerDrafts.target.mode == 'edit-journey') {
+      final field = _journeyField;
+      if (field?.current() != true || !field!.apply(text)) return;
+      _composerDrafts.clearSent(
+        identity,
+        expectedText: text,
+        expectedVersion: version,
+      );
+      setState(_restoreContentTarget);
+      return;
+    }
+    final c = _contentInteraction!,
+        reply = _contentReply,
+        source = _publicPlacePanelSource;
+    bool draftCurrent() =>
+        mounted &&
+        identical(_contentInteraction, c) &&
+        identical(_publicPlacePanelSource, source) &&
+        _contentSourceCurrent?.call() == true &&
+        _composerDrafts.identity == identity &&
+        _composerDrafts.contentVersion == version &&
+        _composerDrafts.value.text == text &&
+        (reply == null || c.replyCurrent(reply));
+    setState(() => _contentSubmitting = true);
+    try {
+      final receipt = await c.publish(
+        context,
+        body: text,
+        replyTo: reply,
+        draftCurrent: draftCurrent,
+      );
+      if (mounted && receipt?.status == 'SUCCEEDED' && draftCurrent()) {
+        _composerDrafts.clearSent(
+          identity,
+          expectedText: text,
+          expectedVersion: version,
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _contentSubmitting = false);
+    }
+  }
+
+  Future<void> _openNowJourneys() async {
+    if (_creationBusy || _friendConversation?.audioActive == true) return;
+    if (!widget.auth.signedIn) await _signInHere();
+    if (!mounted || !widget.auth.signedIn || _organizations.active != null)
+      return;
+    final cityID = widget.city.selectedCity?.id;
+    if (cityID == null) return;
+    var c = _nowJourneys;
+    if (c == null || !c.current) {
+      c?.removeListener(_contentComposerChanged);
+      c?.dispose();
+      final identity = _currentSeedIdentity, epoch = _seedEntryEpoch;
+      final client = widget.seedClient,
+          base = widget.seedApiBaseUrl,
+          auth = widget.auth;
+      bool current() =>
+          mounted &&
+          identical(widget.auth, auth) &&
+          _currentSeedIdentity == identity &&
+          _seedEntryEpoch == epoch &&
+          widget.seedClient == client &&
+          widget.seedApiBaseUrl == base &&
+          _organizations.active == null;
+      c = NowJourneyController(
+        authorizationHeader: () => current() ? auth.authorizationHeader : null,
+        ownerID: () => current() ? auth.accountID : null,
+        currentScope: current,
+        identityChanges: _seedEntryChanges,
+        client: _authenticatedTransport(client),
+        apiBaseUrl: base ?? BirdtieEnvironment.apiBaseUrl,
+        cityID: cityID,
+      );
+      _nowJourneys = c;
+      c.addListener(_contentComposerChanged);
+    }
+    _pauseComposer();
+    setState(() {
+      _retirePublicPlacePanel();
+      _socialExpanded = false;
+      _journeyHost = true;
+      _publicPlacePanelSource = Object();
+      _publicPlacePreview = false;
+      _publicPlacePanel = _journeyPanel(c!);
+    });
+  }
+
+  Widget _journeyPanel(NowJourneyController c) => NowJourneyPanel(
+    key: ValueKey(c),
+    controller: c,
+    onClose: () {
+      if (mounted) setState(_retirePublicPlacePanel);
+    },
+    onEditField: (field) {
+      if (!c.current || !field.current()) return;
+      _pauseComposer();
+      _rememberContentTarget();
+      setState(() {
+        _restoreContentTarget();
+        _journeyField = field;
+        _composerDrafts.select(
+          NowComposerTarget.edit(
+            mode: 'edit-journey',
+            contentID: field.journeyID,
+            replyID: field.fieldID,
+          ),
+        );
+        if (!_composerDrafts.hasDraft)
+          _composerDrafts.update(
+            TextEditingValue(
+              text: field.value,
+              selection: TextSelection.collapsed(offset: field.value.length),
+            ),
+          );
+      });
+    },
+    onOpenMoment: (id, current) => _openJourneyMoment(c, id, current),
+    onViewPlan: (editor) {
+      final record = editor.editing;
+      if (!c.current || record == null || !editor.current || editor.dirty)
+        return;
+      final before = widget.city.mapTarget,
+          camera = _lastNowCamera ?? before?.camera;
+      if (_beforeJourneyMap == null &&
+          before != null &&
+          camera != null &&
+          camera.isValid) {
+        _beforeJourneyMapIdentity = (_currentSeedIdentity, _seedEntryEpoch);
+        _beforeJourneyMap = MapNavigationTarget(
+          key: 'return:${before.key}',
+          source: before.source,
+          generation: before.generation,
+          camera: camera,
+          sourceVersion: before.sourceVersion,
+          countryCode: before.countryCode,
+          regionCode: before.regionCode,
+          catalogCityID: before.catalogCityID,
+        );
+      }
+      unawaited(
+        _showPersonalCollectionMap(
+          record,
+          sourceCurrent: () =>
+              c.current &&
+              editor.current &&
+              identical(editor.editing, record) &&
+              _journeyHost,
+          onReady: () {
+            if (mounted) setState(() => _publicPlacePanelMapVisible = true);
+          },
+        ),
+      );
+    },
+    onPublish: (editor) => _openJourneyPublication(c, editor),
+  );
+
+  void _restoreJourneyMap() {
+    final target = _beforeJourneyMap, identity = _beforeJourneyMapIdentity;
+    _beforeJourneyMap = null;
+    _beforeJourneyMapIdentity = null;
+    if (target == null) return;
+    ++_collectionMapNavigation;
+    _collectionProjectionExpiry?.cancel();
+    _collectionProjection.value = null;
+    if (mounted && identity == (_currentSeedIdentity, _seedEntryEpoch)) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted &&
+            _publicPlacePanel == null &&
+            _beforeJourneyMap == null &&
+            identity == (_currentSeedIdentity, _seedEntryEpoch))
+          widget.city.navigateMapTarget(target);
+      });
+    }
+  }
+
+  void _openJourneyPublication(
+    NowJourneyController c,
+    PersonalCollectionController editor,
+  ) {
+    final record = editor.editing;
+    if (!c.current ||
+        record == null ||
+        !editor.publicationVersionCurrent ||
+        editor.dirty)
+      return;
+    _pauseComposer();
+    _restoreContentTarget();
+    _journeyPublication?.dispose();
+    final publication = CollectionPublicationController(
+      source: editor,
+      authorizationHeader: c.authorizationHeader,
+      ownerID: c.ownerID,
+      client: c.client,
+      apiBaseUrl: c.apiBaseUrl,
+      pendingStore: CollectionPublicationPendingStore(
+        origin: c.apiBaseUrl,
+        owner: record.ownerID,
+        kind: record.kind,
+        id: record.id,
+      ),
+    );
+    _journeyPublication = publication;
+    unawaited(publication.restorePending());
+    setState(() {
+      _publicPlacePanelMapVisible = false;
+      _publicPlacePanelSource = Object();
+      _publicPlacePanel = CollectionPublicationPage(
+        controller: publication,
+        cityName: '我的旅程',
+        embedded: true,
+        onClose: () {
+          if (!mounted || !identical(_journeyPublication, publication)) return;
+          _journeyPublication = null;
+          publication.dispose();
+          setState(() => _publicPlacePanel = _journeyPanel(c));
+        },
+      );
+    });
+  }
+
+  void _openJourneyMoment(
+    NowJourneyController c,
+    String id,
+    bool Function() readable,
+  ) {
+    if (!c.current || !readable()) return;
+    _pauseComposer();
+    _restoreContentTarget();
+    final source = Object();
+    bool current() =>
+        mounted &&
+        c.current &&
+        readable() &&
+        identical(_publicPlacePanelSource, source);
+    setState(() {
+      _publicPlacePanelSource = source;
+      _publicPlacePanelMapVisible = false;
+      _publicPlacePanel = Column(
+        children: [
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton.icon(
+              onPressed: () {
+                if (!mounted || !identical(_publicPlacePanelSource, source))
+                  return;
+                _restoreContentTarget();
+                setState(() {
+                  _publicPlacePanelSource = Object();
+                  _publicPlacePanel = _journeyPanel(c);
+                });
+              },
+              icon: const Icon(Icons.arrow_back),
+              label: const Text('返回旅程'),
+            ),
+          ),
+          Expanded(
+            child: PublicMomentPage(
+              key: ValueKey((source, id)),
+              momentID: id,
+              embedded: true,
+              showManagement: false,
+              authorizationHeader: () =>
+                  current() ? c.authorizationHeader() : null,
+              ownerID: c.ownerID,
+              workspaceID: () => _organizations.active?.id,
+              identityChanges: Listenable.merge([_seedEntryChanges, c]),
+              apiBaseUrl: c.apiBaseUrl,
+              client: c.client,
+              sourceCurrent: current,
+              useNowComposer: true,
+              onCommentIntent: () {
+                if (current()) _contentOptOut = null;
+              },
+              onOpenActivity: (activity) {
+                if (current()) _openFallbackActivity(activity, source: 'place');
+              },
+              onCommentTarget: (interaction, momentID, title, reply) =>
+                  _bindContentTarget(
+                    source,
+                    interaction,
+                    momentID,
+                    title,
+                    reply,
+                    current,
+                  ),
+            ),
+          ),
+        ],
+      );
+    });
+  }
+
   void _retirePublicPlacePanel({bool leaveAuthor = true}) {
+    _restoreContentTarget(endSession: true);
+    _journeyHost = false;
+    _journeyPublication?.dispose();
+    _journeyPublication = null;
+    _restoreJourneyMap();
     _publicPlacePanel = null;
     _publicPlacePreview = false;
-    _publicPlaceStoriesExpanded = false;
-    _publicPlaceMapID = null;
     _publicPlacePanelSource = null;
     _publicPlacePanelMapVisible = false;
     if (leaveAuthor) _layers.leaveAuthor();
@@ -7329,17 +7798,34 @@ class _MapWorkspaceState extends State<MapWorkspace>
         identical(_publicPlacePanelSource, source);
     if (parents.isEmpty || !parents.every(_mapContent.sourceCurrent)) return;
     _pauseComposer();
-    if (_composerDrafts.target.human) _exitFriendConversation();
     ++_previewSelectionSerial;
     setState(() {
       _retirePublicPlacePanel();
       _socialExpanded = false;
       _publicPlacePanelSource = source;
-      _publicPlaceMapID = cluster?.mapID ?? pins.first.mapID;
       _publicPlacePreview = false;
       _publicPlacePanel = NowMapContentGroupPanel(
         key: GlobalObjectKey(source),
         controller: _mapContent,
+        interactionClient: _authenticatedTransport(widget.seedClient),
+        onCommentIntent: () {
+          if (current()) _contentOptOut = null;
+        },
+        onCommentTarget: (controller, moment, reply) {
+          if (!mounted || !identical(_publicPlacePanelSource, source)) return;
+          _bindContentTarget(
+            source,
+            controller,
+            moment?.id,
+            moment == null
+                ? null
+                : (moment.title.isNotEmpty ? moment.title : moment.body),
+            reply,
+            () =>
+                current() &&
+                (moment == null || _mapContent.detailCurrent(moment)),
+          );
+        },
         cluster: cluster,
         pins: pins,
         current: current,
@@ -7394,19 +7880,36 @@ class _MapWorkspaceState extends State<MapWorkspace>
         _mapContent.find(pin.mapID)?.sourceVersion == pin.sourceVersion &&
         identical(_publicPlacePanelSource, source);
     _pauseComposer();
-    if (_composerDrafts.target.human) _exitFriendConversation();
     ++_previewSelectionSerial;
     _previewObservedSelection = pin.mapID;
     setState(() {
       _retirePublicPlacePanel();
       _socialExpanded = false;
       _publicPlacePanelSource = source;
-      _publicPlaceMapID = pin.mapID;
       _publicPlacePreview = !position.expanded;
       _publicPlacePanel = NowMapContentPanel(
         // Preview and expanded reader have different parents in the Now stack.
         key: GlobalObjectKey(source),
         controller: _mapContent,
+        interactionClient: _authenticatedTransport(widget.seedClient),
+        onCommentIntent: () {
+          if (current()) _contentOptOut = null;
+        },
+        onCommentTarget: (controller, moment, reply) {
+          if (!mounted || !identical(_publicPlacePanelSource, source)) return;
+          _bindContentTarget(
+            source,
+            controller,
+            moment?.id,
+            moment == null
+                ? null
+                : (moment.title.isNotEmpty ? moment.title : moment.body),
+            reply,
+            () =>
+                current() &&
+                (moment == null || _mapContent.detailCurrent(moment)),
+          );
+        },
         pin: pin,
         readingPosition: position,
         current: current,
@@ -7508,7 +8011,6 @@ class _MapWorkspaceState extends State<MapWorkspace>
     _publicPlacePanelSource = source;
     _socialSelectionSerial++;
     _socialExpanded = false;
-    _publicPlaceMapID = item.mapID;
     final priorSelection = _workspace.selectedEntityId;
     final taskEpoch = _workspace.taskEpoch;
     // Author browsing is a read of taskless Now's existing city range. It
@@ -7691,14 +8193,7 @@ class _MapWorkspaceState extends State<MapWorkspace>
         current: current,
         revalidate: revalidate,
         onClose: closePanel,
-        onExpandedChanged: (expanded) {
-          if (mounted &&
-              _publicPlacePreview &&
-              identical(_publicPlacePanelSource, source) &&
-              (!expanded || current())) {
-            setState(() => _publicPlaceStoriesExpanded = expanded);
-          }
-        },
+        onExpandedChanged: (_) {},
         onOpenPlace: () => openReader(),
         onOpenMoment: (id) => openReader(momentID: id),
         apiBaseUrl: base,
@@ -9600,11 +10095,17 @@ class _MapWorkspaceState extends State<MapWorkspace>
     _layers.updateRefreshVisibility();
     _mapContent.updateRefreshVisibility();
     return PopScope(
-      canPop: !_socialExpanded && !_threadCurrent && !_creationCurrent,
+      canPop:
+          _publicPlacePanel == null &&
+          !_socialExpanded &&
+          !_threadCurrent &&
+          !_creationCurrent,
       onPopInvokedWithResult: (didPop, _) {
         if (!didPop) {
           if (MediaQuery.viewInsetsOf(context).bottom > 0) {
             FocusManager.instance.primaryFocus?.unfocus();
+          } else if (_publicPlacePanel != null) {
+            setState(_retirePublicPlacePanel);
           } else if (_threadCurrent) {
             _closeMomentThread();
           } else if (_creationCurrent) {
@@ -9974,6 +10475,25 @@ class _MapWorkspaceState extends State<MapWorkspace>
                     ),
                   ),
                 ),
+              if (_publicPlacePanel == null &&
+                  !hasCreation &&
+                  !hasThread &&
+                  !showSocial &&
+                  !hasHumanConversation &&
+                  !editing)
+                Positioned(
+                  left: 16,
+                  top: chromeBottom + 8,
+                  child: FilledButton.tonalIcon(
+                    key: const Key('now-journey-entry'),
+                    style: FilledButton.styleFrom(
+                      minimumSize: const Size(48, 48),
+                    ),
+                    onPressed: () => unawaited(_openNowJourneys()),
+                    icon: const Icon(Icons.route_outlined, size: 20),
+                    label: const Text('旅程'),
+                  ),
+                ),
               // Authentication controls use the same host interaction layer as
               // the toolbar, outside the stable native map subtree. The host's
               // auth listener updates recovery state without recreating the map.
@@ -10087,7 +10607,9 @@ class _MapWorkspaceState extends State<MapWorkspace>
                     ),
                   ),
                 ),
-              if (_publicPlacePanel != null && !_publicPlacePreview)
+              if (_publicPlacePanel != null &&
+                  !_publicPlacePreview &&
+                  _publicPlacePanel is! NowMapContentPanel)
                 Positioned(
                   top: expandedReaderTop,
                   left: 0,
@@ -10451,6 +10973,21 @@ class _MapWorkspaceState extends State<MapWorkspace>
                                 }
                               },
                               workspace: _workspace,
+                              contentLabel: _contentComposerLabel,
+                              contentInputHint: _contentComposerHint,
+                              contentSubmitLabel: _composerDrafts.target.comment
+                                  ? (_contentReply == null ? '发布评论' : '发布回复')
+                                  : '更新私人草稿',
+                              allowEmptyContent:
+                                  _composerDrafts.target.mode == 'edit-journey',
+                              onExitContent: () {
+                                _contentOptOut = (
+                                  _publicPlacePanelSource,
+                                  _composerDrafts.target.contentID,
+                                );
+                                _pauseComposer();
+                                setState(() => _restoreContentTarget());
+                              },
                               creationLabel: hasThread
                                   ? '动态'
                                   : hasCreation
@@ -10472,22 +11009,32 @@ class _MapWorkspaceState extends State<MapWorkspace>
                                   : hasCreation
                                   ? _exitCreation
                                   : null,
-                              inputReadOnly: hasThread
+                              inputReadOnly: _composerDrafts.target.content
+                                  ? !_contentCanSubmit
+                                  : hasThread
                                   ? !_momentThread!.editable
                                   : hasCreation &&
                                         (_creationBusy ||
                                             _creationUncertain ||
                                             _creationMedia?.busy == true ||
                                             _creationMedia?.uncertain == true),
-                              maxDraftBytes: hasCreation || hasThread
+                              maxDraftBytes: _composerDrafts.target.content
+                                  ? (_composerDrafts.target.comment
+                                        ? 2000
+                                        : 5000)
+                                  : hasCreation || hasThread
                                   ? (hasThread &&
                                             _momentThread!.activeField ==
                                                 'title'
                                         ? 160
                                         : 5000)
                                   : 240,
-                              videoPreview: _creationVideoPreview(),
-                              videoStatus: _videoMaterials?.current == true
+                              videoPreview: _composerDrafts.target.content
+                                  ? null
+                                  : _creationVideoPreview(),
+                              videoStatus:
+                                  !_composerDrafts.target.content &&
+                                      _videoMaterials?.current == true
                                   ? _videoMaterials?.error
                                   : null,
                               recipientName: _composerDrafts.suspended
@@ -10512,6 +11059,7 @@ class _MapWorkspaceState extends State<MapWorkspace>
                                 }
                               },
                               submitBusy:
+                                  _contentSubmitting ||
                                   (hasThread &&
                                       (_momentThread!.busy ||
                                           _momentThread!.uncertain ||
@@ -10559,51 +11107,52 @@ class _MapWorkspaceState extends State<MapWorkspace>
                               friendConversation: _friendConversation,
                               needsLogin: _needsLogin,
                               onSignIn: () => unawaited(_signInHere()),
-                              onVideoMaterial: !_composerDrafts.target.human
+                              onVideoMaterial: _composerDrafts.target.agent
                                   ? () => unawaited(_openVideoMaterials())
                                   : null,
                               onAnalyzeImage:
                                   !hasCreation &&
                                       !hasThread &&
                                       !hasThread &&
-                                      !_composerDrafts.target.human &&
+                                      _composerDrafts.target.agent &&
                                       _imageDraft?.current == true
                                   ? (query) =>
                                         unawaited(_openAgentVisual(query))
                                   : null,
-                              onCreateMoment: !_composerDrafts.target.human
+                              onCreateMoment: _composerDrafts.target.agent
                                   ? () => unawaited(_beginCreation('moment'))
                                   : null,
-                              onCreatePhotoMoment: !_composerDrafts.target.human
+                              onCreatePhotoMoment: _composerDrafts.target.agent
                                   ? () => unawaited(_beginPhotoMoment())
                                   : null,
-                              onCreateThread: !_composerDrafts.target.human
+                              onCreateThread: _composerDrafts.target.agent
                                   ? () => unawaited(_beginMomentThread())
                                   : null,
-                              onCreateActivity: !_composerDrafts.target.human
+                              onCreateActivity: _composerDrafts.target.agent
                                   ? () => unawaited(_beginCreation('activity'))
                                   : null,
-                              onCreateJourney: !_composerDrafts.target.human
+                              onCreateJourney: _composerDrafts.target.agent
                                   ? () => unawaited(_beginCreation('journey'))
                                   : null,
-                              onCreateThemeMap: !_composerDrafts.target.human
+                              onCreateThemeMap: _composerDrafts.target.agent
                                   ? () => unawaited(_beginCreation('theme_map'))
                                   : null,
-                              onCreateRoute: !_composerDrafts.target.human
+                              onCreateRoute: _composerDrafts.target.agent
                                   ? () => unawaited(_openRouteDraft())
                                   : null,
-                              onImportPlan: !_composerDrafts.target.human
+                              onImportPlan: _composerDrafts.target.agent
                                   ? () => unawaited(
                                       _openRouteDraft(importPlan: true),
                                     )
                                   : null,
                               onDraftContext:
-                                  _composerDrafts.envelope != null &&
+                                  !_composerDrafts.target.content &&
+                                      _composerDrafts.envelope != null &&
                                       !_composerDrafts.suspended
                                   ? () => unawaited(_openDraftContext())
                                   : null,
                               onSavePlace:
-                                  !_composerDrafts.target.human &&
+                                  _composerDrafts.target.agent &&
                                       (_workspace.result?.projectionItems?.any(
                                             (item) =>
                                                 item.bookmarkKind == 'place' &&
@@ -10616,18 +11165,20 @@ class _MapWorkspaceState extends State<MapWorkspace>
                                           false)
                                   ? () => unawaited(_choosePlaceToSave())
                                   : null,
-                              imageUpload: _composerDrafts.target.human
+                              imageUpload: !_composerDrafts.target.agent
                                   ? null
                                   : _taskImages,
-                              imageDraft: _composerDrafts.target.human
+                              imageDraft: !_composerDrafts.target.agent
                                   ? null
                                   : _imageDraft,
-                              onCaptureImage: _imageSourceAction(
-                                MomentImageSource.camera,
-                              ),
-                              onImageFile: _imageSourceAction(
-                                MomentImageSource.file,
-                              ),
+                              onCaptureImage: _composerDrafts.target.content
+                                  ? null
+                                  : _imageSourceAction(
+                                      MomentImageSource.camera,
+                                    ),
+                              onImageFile: _composerDrafts.target.content
+                                  ? null
+                                  : _imageSourceAction(MomentImageSource.file),
                               onDraftImage: _composerDrafts.target.human
                                   ? widget.friendImageEnabled &&
                                             _friendConversation?.current ==
@@ -10639,11 +11190,12 @@ class _MapWorkspaceState extends State<MapWorkspace>
                                                 Future<void>.value(),
                                           )
                                         : null
-                                  : _imageDraft?.canSelect == true
+                                  : _composerDrafts.target.agent &&
+                                        _imageDraft?.canSelect == true
                                   ? () => unawaited(_openDraftImage())
                                   : null,
                               onTaskImage:
-                                  !_composerDrafts.target.human &&
+                                  _composerDrafts.target.agent &&
                                       _taskImages?.canOpen == true
                                   ? () => unawaited(_openTaskImages())
                                   : null,
@@ -10755,7 +11307,43 @@ class _MapWorkspaceState extends State<MapWorkspace>
                     onUsePersonal: () => _organizations.select(null),
                   ),
                 ),
-              if (_publicPlacePanel != null && _publicPlacePreview)
+              if (_publicPlacePanel is NowMapContentPanel)
+                AnimatedPositioned(
+                  key: const Key('now-content-reader-position'),
+                  duration: media.disableAnimations
+                      ? Duration.zero
+                      : const Duration(milliseconds: 260),
+                  curve: Curves.easeOutCubic,
+                  top: _publicPlacePreview
+                      ? mapBottom - previewViewport
+                      : expandedReaderTop,
+                  left: _publicPlacePreview ? 16 : 0,
+                  right: _publicPlacePreview ? 16 : 0,
+                  bottom: _publicPlacePreview
+                      ? constraints.maxHeight - mapBottom
+                      : 0,
+                  child: _RetainedMapContext(
+                    visible: !_publicPlacePreview || previewVisible,
+                    child: Material(
+                      color: Theme.of(context).colorScheme.surface,
+                      child: AnimatedPadding(
+                        duration: media.disableAnimations
+                            ? Duration.zero
+                            : const Duration(milliseconds: 260),
+                        curve: Curves.easeOutCubic,
+                        padding: EdgeInsets.only(
+                          bottom: _publicPlacePreview
+                              ? 0
+                              : layout.bottom + layout.surfaceHeight,
+                        ),
+                        child: FocusTraversalGroup(child: _publicPlacePanel!),
+                      ),
+                    ),
+                  ),
+                ),
+              if (_publicPlacePanel != null &&
+                  _publicPlacePreview &&
+                  _publicPlacePanel is! NowMapContentPanel)
                 Positioned(
                   key: const Key('now-place-preview-position'),
                   left: 16,

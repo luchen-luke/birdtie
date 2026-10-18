@@ -123,6 +123,8 @@ class TypedLocalDraft {
   final List<LocalDraftAttachment> attachments;
   static const kinds = {
     'intent',
+    'comment',
+    'reply',
     'message',
     'moment',
     'activity',
@@ -171,7 +173,8 @@ class TypedLocalDraft {
   /// Conversion produces another editable view. It performs no domain write.
   /// A sending target is never inherited by a private Moment/collection.
   TypedLocalDraft converted(String next) {
-    if (!kinds.contains(next) || next == 'message')
+    if (!kinds.contains(next) ||
+        const {'message', 'comment', 'reply'}.contains(next))
       throw const FormatException('请先明确实际收件人');
     return TypedLocalDraft(
       id: id,
@@ -274,6 +277,17 @@ class TypedLocalDraft {
       throw const FormatException('附件记录不能重复');
     if (!const {'route', 'external_plan'}.contains(value.kind) &&
         value.slotID != 'primary' &&
+        !(const {
+              'comment',
+              'reply',
+              'moment',
+              'journey',
+            }.contains(value.kind) &&
+            value.references.isEmpty &&
+            value.attachments.isEmpty &&
+            RegExp(
+              r'^now-content:(comment|edit-moment|edit-journey):[a-f0-9-]{36}:([a-f0-9-]{36})?$',
+            ).hasMatch(value.slotID)) &&
         !(const {
               'moment',
               'activity',

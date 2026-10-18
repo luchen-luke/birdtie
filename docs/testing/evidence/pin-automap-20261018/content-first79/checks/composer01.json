@@ -1,0 +1,17 @@
+{
+  "stage": "composer",
+  "argv": [
+    "D:/DevTools/flutter/bin/flutter.bat",
+    "test",
+    "--no-pub",
+    "test/now_journey_test.dart",
+    "test/now_content_composer_test.dart",
+    "test/now_composer_draft_state_test.dart",
+    "test/typed_local_draft_test.dart"
+  ],
+  "cwd": "D:\\Project\\birdtie\\apps\\client",
+  "exitCode": 1,
+  "elapsedSeconds": 7.909424066543579,
+  "log": "D:\\Project\\birdtie\\work\\content-first-20261019\\checks\\composer01.log",
+  "completedUTC": "2026-10-18T20:54:13.789271+00:00"
+}

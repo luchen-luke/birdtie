@@ -1,6 +1,7 @@
 import 'package:birdtie_client/src/city/amap_city_map_stub.dart';
 import 'package:birdtie_client/src/workspace/map_display_policy.dart';
 import 'package:birdtie_client/src/workspace/map_entities.dart';
+import 'package:birdtie_client/src/workspace/map_content_routes.dart';
 import 'package:birdtie_client/src/workspace/map_marker_visual.dart';
 import 'package:birdtie_client/src/workspace/map_marker_widget.dart';
 import 'package:flutter/material.dart';
@@ -18,6 +19,74 @@ MapEntity _row(int index) => MapEntity(
 );
 
 void main() {
+  test(
+    'default content edges preserve original gaps and retire with source grants',
+    () {
+      var current = true;
+      final until = DateTime.now().toUtc().add(const Duration(minutes: 1));
+      MapEntity node(int position, List<String> next, {DateTime? deadline}) {
+        final source = MapEntity(
+          id: 'content:$position',
+          kind: MapEntityKind.moment,
+          title: '隔离串文',
+          subtitle: '',
+          latitude: 31.2,
+          longitude: 121.5,
+          sourceVersion: 'current-$position',
+          threadID: 'thread',
+          threadPosition: position,
+          nextContentIDs: next,
+        );
+        return source.withMediaPixels(
+          null,
+          readGrant: MapEntityReadGrant(
+            source: source,
+            validUntil: deadline ?? until,
+            current: () => current,
+          ),
+        );
+      }
+
+      final first = node(0, []),
+          third = node(2, ['content:3']),
+          fourth = node(3, []);
+      final source = [first, third, fourth];
+      expect(
+        currentMapContentEdges(
+          source,
+        ).map((e) => (e.from.threadPosition, e.to.threadPosition)),
+        [(2, 3)],
+      );
+      final edge = currentMapContentEdges(source).single;
+      expect(edge.selected(null), isFalse);
+      expect(edge.selected(third.id), isTrue);
+      expect(currentMapContentEdges(source).single.id, edge.id);
+      expect(currentMapContentEdges([first, third]), isEmpty);
+      expect(
+        currentMapContentEdges([
+          first,
+          third,
+          node(
+            3,
+            [],
+            deadline: DateTime.now().toUtc().subtract(
+              const Duration(seconds: 1),
+            ),
+          ),
+        ]),
+        isEmpty,
+      );
+      current = false;
+      expect(currentMapContentEdges(source), isEmpty);
+      current = true;
+      expect(
+        currentMapContentEdges(source),
+        isEmpty,
+        reason: 'retired grants never revive',
+      );
+    },
+  );
+
   test(
     'AMap frame clips marker transport and stale actions, then restores originals',
     () {

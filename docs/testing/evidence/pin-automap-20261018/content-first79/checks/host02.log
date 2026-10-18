@@ -1,0 +1,6 @@
+Flutter assets will be downloaded from https://storage.flutter-io.cn. Make sure you trust this source!
+00:00 +0: loading D:/Project/birdtie/apps/client/test/now_public_moment_composer_test.dart
+00:00 +0: D:/Project/birdtie/apps/client/test/now_public_moment_composer_test.dart: Now public reader binds original comment target without input and retires source
+00:00 +1: D:/Project/birdtie/apps/client/test/now_map_reader_occlusion_test.dart: actual Now reader clips covered map points and restores the same map on close
+00:00 +2: D:/Project/birdtie/apps/client/test/now_map_reader_occlusion_test.dart: actual Now reader clips covered map points and restores the same map on close
+00:01 +3: All tests passed!

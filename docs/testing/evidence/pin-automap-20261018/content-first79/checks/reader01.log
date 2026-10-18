@@ -1,0 +1,97 @@
+Flutter assets will be downloaded from https://storage.flutter-io.cn. Make sure you trust this source!
+00:00 +0: loading D:/Project/birdtie/apps/client/test/now_content_first_test.dart
+00:00 +0: D:/Project/birdtie/apps/client/test/now_content_first_test.dart: Now reply uses host input and source retirement keeps exact disabled target
+00:00 +1: D:/Project/birdtie/apps/client/test/now_content_first_test.dart: Now reply uses host input and source retirement keeps exact disabled target
+00:00 +2: D:/Project/birdtie/apps/client/test/now_content_first_test.dart: Now reply uses host input and source retirement keeps exact disabled target
+00:00 +3: D:/Project/birdtie/apps/client/test/now_content_first_test.dart: Now reply uses host input and source retirement keeps exact disabled target
+00:00 +4: D:/Project/birdtie/apps/client/test/content_map_thread_test.dart: multiple place entries open their own authoritative thread at the selected position and return
+00:00 +5: D:/Project/birdtie/apps/client/test/now_map_content_test.dart: Now compact expands in place pages renew without scroll reset and retires private content
+00:00 +6: D:/Project/birdtie/apps/client/test/now_map_content_test.dart: Now compact expands in place pages renew without scroll reset and retires private content
+00:00 +7: D:/Project/birdtie/apps/client/test/now_map_content_test.dart: Now compact expands in place pages renew without scroll reset and retires private content
+00:01 +8: D:/Project/birdtie/apps/client/test/now_map_content_test.dart: Now compact expands in place pages renew without scroll reset and retires private content
+00:01 +8: D:/Project/birdtie/apps/client/test/now_content_first_test.dart: authoritative middle entry without location retains gaps and explicit current Moment
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following TestFailure was thrown running a test:
+Expected: exactly one matching candidate
+  Actual: _TextWidgetFinder:<Found 0 widgets with text "中段无地点正文": []>
+   Which: means none were found but one was expected
+
+When the exception was thrown, this was the stack:
+#4      main.<anonymous closure> (file:///D:/Project/birdtie/apps/client/test/now_content_first_test.dart:411:7)
+<asynchronous suspension>
+#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1952:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///D:/Project/birdtie/apps/client/test/now_content_first_test.dart line 411
+The test description was:
+  authoritative middle entry without location retains gaps and explicit current Moment
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:01 +8 -1: D:/Project/birdtie/apps/client/test/now_map_content_test.dart: Now compact expands in place pages renew without scroll reset and retires private content
+00:01 +8 -1: D:/Project/birdtie/apps/client/test/now_content_first_test.dart: authoritative middle entry without location retains gaps and explicit current Moment [E]
+  Test failed. See exception logs above.
+  The test description was: authoritative middle entry without location retains gaps and explicit current Moment
+  
+00:01 +9 -1: D:/Project/birdtie/apps/client/test/now_map_content_test.dart: Now compact expands in place pages renew without scroll reset and retires private content
+00:01 +9 -1: D:/Project/birdtie/apps/client/test/now_content_first_test.dart: newer interaction revision cannot approve a comment on older displayed body
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following TestFailure was thrown running a test:
+Expected: null
+  Actual: <Instance of 'MomentInteractionController'>
+
+When the exception was thrown, this was the stack:
+#4      main.<anonymous closure> (file:///D:/Project/birdtie/apps/client/test/now_content_first_test.dart:478:7)
+<asynchronous suspension>
+#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1952:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///D:/Project/birdtie/apps/client/test/now_content_first_test.dart line 478
+The test description was:
+  newer interaction revision cannot approve a comment on older displayed body
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:01 +9 -2: D:/Project/birdtie/apps/client/test/now_map_content_test.dart: Now compact expands in place pages renew without scroll reset and retires private content
+00:01 +9 -2: D:/Project/birdtie/apps/client/test/now_content_first_test.dart: newer interaction revision cannot approve a comment on older displayed body [E]
+  Test failed. See exception logs above.
+  The test description was: newer interaction revision cannot approve a comment on older displayed body
+  
+00:01 +9 -2: D:/Project/birdtie/apps/client/test/now_map_content_test.dart: Now compact expands in place pages renew without scroll reset and retires private content
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following TestFailure was thrown running a test:
+Expected: a numeric value within <1> of <718.0639565455914>
+  Actual: <688.5>
+   Which:  differs by <29.563956545591395>
+
+When the exception was thrown, this was the stack:
+#4      main.<anonymous closure> (file:///D:/Project/birdtie/apps/client/test/now_map_content_test.dart:260:9)
+<asynchronous suspension>
+#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1952:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///D:/Project/birdtie/apps/client/test/now_map_content_test.dart line 260
+The test description was:
+  Now compact expands in place pages renew without scroll reset and retires private content
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:01 +9 -3: D:/Project/birdtie/apps/client/test/now_map_content_test.dart: Now compact expands in place pages renew without scroll reset and retires private content [E]
+  Test failed. See exception logs above.
+  The test description was: Now compact expands in place pages renew without scroll reset and retires private content
+  
+00:01 +9 -3: Some tests failed.
+
+Failing tests:
+  D:/Project/birdtie/apps/client/test/now_content_first_test.dart: authoritative middle entry without location retains gaps and explicit current Moment
+  D:/Project/birdtie/apps/client/test/now_content_first_test.dart: newer interaction revision cannot approve a comment on older displayed body
+  D:/Project/birdtie/apps/client/test/now_map_content_test.dart: Now compact expands in place pages renew without scroll reset and retires private content

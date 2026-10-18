@@ -49,6 +49,8 @@ type PersonalCollection struct {
 	PublicationOperation       *CollectionPublicationOperation `json:"publicationOperation,omitempty"`
 	ResponseProof              CollectionReadProof             `json:"-"`
 	PrivatePlaceCopyRestricted bool                            `json:"privatePlaceCopyRestricted,omitempty"`
+	PublishedSnapshot          *JourneyPublishedSummary        `json:"publishedSnapshot,omitempty"`
+	JourneyLifecycle           *JourneyLifecycle               `json:"journeyLifecycle,omitempty"`
 }
 type CollectionPage struct {
 	Items      []PersonalCollection `json:"items"`

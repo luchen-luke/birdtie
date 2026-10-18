@@ -51,6 +51,7 @@ class MapCanvas extends StatefulWidget {
     this.onSelectedAnchor,
     this.onEntityPicked,
     this.onContentOverlap,
+    this.onCameraSnapshot,
     this.onMapReaderVisibilityChanged,
     this.personalCollection,
   });
@@ -76,6 +77,7 @@ class MapCanvas extends StatefulWidget {
   final ValueChanged<({String? id, Offset? point})>? onSelectedAnchor;
   final ValueChanged<String>? onEntityPicked;
   final ValueChanged<List<MapEntity>>? onContentOverlap;
+  final ValueChanged<MapCameraSnapshot>? onCameraSnapshot;
   final ValueChanged<({Object token, bool visible})>?
   onMapReaderVisibilityChanged;
 
@@ -689,6 +691,7 @@ class _MapCanvasState extends State<MapCanvas> {
             onCameraSnapshot: (camera) {
               if (navigationGeneration != widget.city.navigationGeneration)
                 return;
+              widget.onCameraSnapshot?.call(camera);
               final bounds = widget.mapState.viewportBounds;
               widget.city.mapCameraSettled(
                 camera,

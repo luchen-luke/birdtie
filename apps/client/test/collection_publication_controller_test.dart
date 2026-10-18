@@ -276,7 +276,7 @@ void main() {
       expect(c.editable, true);
       expect(c.publicationVersionCurrent, false);
       expect(p.canPublish, false);
-      expect(await c.save(), false);
+      expect(await c.prepareControl('UPDATE'), isNull);
       expect(originalReads, 2);
       expect(closes, 1);
       expect(c.summary, '原本机未保存说明');

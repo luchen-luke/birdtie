@@ -273,13 +273,15 @@ class MapDisplayPolicy {
         ? 0
         : protectedIDs.contains(e.id) || e.isTaskResult
         ? 1
-        : previouslyVisibleIDs.contains(e.id)
-        ? 2
-        : 3;
+        : 2;
     final displayed = List<MapEntity>.of(original)
       ..sort((a, b) {
         final rank = priority(a).compareTo(priority(b));
-        return rank != 0 ? rank : a.id.compareTo(b.id);
+        if (rank != 0) return rank;
+        final time = (b.contentTime ?? DateTime(0)).compareTo(
+          a.contentTime ?? DateTime(0),
+        );
+        return time != 0 ? time : a.id.compareTo(b.id);
       });
     bool point(MapEntity e) =>
         e.precision == 'point' &&
@@ -356,18 +358,18 @@ class MapDisplayPolicy {
     };
     final maximumLabels = overview
         ? 1
-        : scale != null && scale >= 8
+        : scale >= 8
         ? 6
         : 10;
     for (final e in displayed) {
       if (occluded.contains(e.id) || dense.contains(e.id)) continue;
       final selected = e.id == selectedID;
       if (placed.length >= maximumLabels && !selected) continue;
-      if (e.kind == MapEntityKind.moment && !selected ||
-          e.kind == MapEntityKind.cluster && !selected)
-        continue;
+      if (e.kind == MapEntityKind.cluster && !selected) continue;
       final raw = e.kind == MapEntityKind.cluster
           ? '${MapMarkerVisual.clusterCount(categoryCode: e.categoryCode, contentCount: e.contentCount, anchorCount: e.anchorCount, fallback: e.memberIDs.length)}${MapMarkerVisual.clusterUnit(e.categoryCode)}'
+          : e.kind == MapEntityKind.moment
+          ? '${e.threadID.isEmpty ? '动态' : '串文'} · ${e.title}'
           : e.title;
       if (raw.isEmpty || e.kind == MapEntityKind.moment && raw == '动态')
         continue;
@@ -383,9 +385,10 @@ class MapDisplayPolicy {
       )..layout(maxWidth: 112);
       final nameWidth = math.max(16.0, namePainter.width);
       namePainter.dispose();
-      final auxiliary =
-          e.kind == MapEntityKind.place &&
-              (selected || scale != null && scale < 8)
+      final auxiliary = e.kind == MapEntityKind.moment
+          ? e.subtitle
+          : e.kind == MapEntityKind.place &&
+                (selected || scale != null && scale < 8)
           ? e.recentMoments?.labelAt(DateTime.now().toUtc())
           : null;
       final p = positions[e.id]!,
@@ -557,7 +560,11 @@ class MapDisplayPolicy {
     return unique.values.toList()..sort((a, b) {
       final distance = (positions[a.id]! - touchPosition).distanceSquared
           .compareTo((positions[b.id]! - touchPosition).distanceSquared);
-      return distance != 0 ? distance : a.id.compareTo(b.id);
+      if (distance != 0) return distance;
+      final time = (b.contentTime ?? DateTime(0)).compareTo(
+        a.contentTime ?? DateTime(0),
+      );
+      return time != 0 ? time : a.id.compareTo(b.id);
     });
   }
 

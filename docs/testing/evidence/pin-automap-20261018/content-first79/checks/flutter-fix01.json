@@ -1,0 +1,15 @@
+{
+  "stage": "flutter-fix",
+  "argv": [
+    "D:/DevTools/flutter/bin/flutter.bat",
+    "test",
+    "--no-pub",
+    "test/now_journey_test.dart",
+    "test/collection_publication_controller_test.dart"
+  ],
+  "cwd": "D:\\Project\\birdtie\\apps\\client",
+  "exitCode": 0,
+  "elapsedSeconds": 3.4227113723754883,
+  "log": "D:\\Project\\birdtie\\work\\content-first-20261019\\checks\\flutter-fix01.log",
+  "completedUTC": "2026-10-18T20:40:15.024845+00:00"
+}

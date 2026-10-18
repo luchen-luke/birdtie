@@ -82,7 +82,8 @@ func (s *server) listPersonalCollections(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	q, e := url.ParseQuery(r.URL.RawQuery)
-	if e != nil || len(q["kind"]) != 1 || !content.ValidCollectionKind(q.Get("kind")) || len(q) > 2 || (len(q) == 2 && (len(q["cursor"]) != 1 || !content.ValidCollectionID(q.Get("cursor")))) {
+	validCursor := content.ValidCollectionID(q.Get("cursor")) || q.Get("kind") == "journey" && content.ValidJourneyOwnerCursor(q.Get("cursor"))
+	if e != nil || len(q["kind"]) != 1 || !content.ValidCollectionKind(q.Get("kind")) || len(q) > 2 || (len(q) == 2 && (len(q["cursor"]) != 1 || !validCursor)) {
 		respondError(w, 400, "invalid_collection_query")
 		return
 	}

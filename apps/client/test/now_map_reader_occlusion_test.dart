@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:birdtie_client/src/app/birdtie_surfaces.dart';
 import 'package:birdtie_client/src/city/public_city_map.dart';
 import 'package:birdtie_client/src/content/private_moment_controller.dart';
+import 'package:birdtie_client/src/content/now_journey_panel.dart';
 import 'package:birdtie_client/src/workspace/map_canvas.dart';
 import 'package:birdtie_client/src/workspace/map_display_policy.dart';
 import 'package:birdtie_client/src/workspace/map_workspace.dart';
@@ -258,6 +259,16 @@ void main() {
         expect(canvas().mapState.viewportBounds, mapTestBounds);
         expect(canvas().workspace.selectedEntityId, pin.mapID);
         expect((mapReads, pageReads), readsBeforeClose);
+        expect(find.byKey(const Key('now-journey-entry')), findsOneWidget);
+        await t.tap(find.byKey(const Key('now-journey-entry')));
+        await t.pumpAndSettle();
+        expect(find.byType(NowJourneyPanel), findsOneWidget);
+        expect(find.byType(TextField), findsOneWidget);
+        expect(t.element(find.byType(PublicCityMapView)), same(mapElement));
+        await t.tap(find.byTooltip('关闭旅程'));
+        await t.pumpAndSettle();
+        expect(find.byType(NowJourneyPanel), findsNothing);
+        expect(t.element(find.byType(MapCanvas)), same(canvasElement));
         expect(methods.every((method) => method == 'GET'), isTrue);
         expect(t.takeException(), isNull);
       } finally {

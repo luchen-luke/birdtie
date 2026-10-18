@@ -188,10 +188,7 @@
             if (layer.type !== 'symbol') continue;
             const labels = `${layer.id} ${layer['source-layer'] || ''}`.toLowerCase();
             if (/(^|[\s_:/.-])poi([\s_:/.-]|$)/.test(labels)) {
-              try {
-                map.setLayoutProperty(layer.id, 'visibility', 'none');
-                ++metrics.poiHidden;
-              } catch (_) { ++metrics.skipped; }
+              // Keep ordinary provider POIs; Now overlays original Moments.
               continue;
             }
             const factor = secondaryLabelFactor(layer, job.labelPolicy);

@@ -1,0 +1,278 @@
+{
+  "summary.json": {
+    "sha256": "064a76ca026570acaa0686047caf4212ff2668273f2dc7fd3957b2674f7b3197",
+    "bytes": 25061
+  },
+  "checks/analyze01.json": {
+    "sha256": "f68383f6bdfb1a2d7e73d6ea945e39f135fe77c1de12545707b7be81b9f47320",
+    "bytes": 1405
+  },
+  "checks/analyze01.log": {
+    "sha256": "6c6e6a283b27a02e0e0d1a2089fe34b06ea0e45bb8ad56de91d5f8d00f954c87",
+    "bytes": 98810
+  },
+  "checks/analyze02.json": {
+    "sha256": "227e4a231ae080b9e9b8d3ea82c60e85118f36e9d9f26623171d9b14a4789b71",
+    "bytes": 1456
+  },
+  "checks/analyze02.log": {
+    "sha256": "8a5c01a08036d6b73ca1fdfd672693419df141bd6cedf894118c3bddd3292c48",
+    "bytes": 106484
+  },
+  "checks/analyze03.json": {
+    "sha256": "ad9f9566851fe84ea778839693fe6ae1bad4e0aae8211c3cbe04266068213d2f",
+    "bytes": 1457
+  },
+  "checks/analyze03.log": {
+    "sha256": "a2ca460441689a7ed885534bc0235845788e1e3829f04b85c465f39694631ded",
+    "bytes": 106291
+  },
+  "checks/analyze04.json": {
+    "sha256": "44e0abb1d791fe7bf0ae0ab006ce47c2e515e7d3a60f017f93a2c388b2a9dd8e",
+    "bytes": 1456
+  },
+  "checks/analyze04.log": {
+    "sha256": "cb9cfd5f98f6bc0d96835bae883206e2c2c8cbc25df116de53c2708eedf35033",
+    "bytes": 106292
+  },
+  "checks/composer01.json": {
+    "sha256": "8079ec44e53612cdf9f1a96decc9dfd032bd2860a5c4f268565df6ffc7a3860c",
+    "bytes": 536
+  },
+  "checks/composer01.log": {
+    "sha256": "3bca1f58dcbe98a664d6752008912082d320dfc4168f2d89834e4f9164eebf33",
+    "bytes": 5969
+  },
+  "checks/flutter-fix01.json": {
+    "sha256": "f5f7719db96195f367fad698689473382ae6e1d297bfe54d2ad85d0a4d34993a",
+    "bytes": 467
+  },
+  "checks/flutter-fix01.log": {
+    "sha256": "c7ec50099ee471e04be58de5ac380e24aed7fd1e418c376928ef3a1240c3288f",
+    "bytes": 3321
+  },
+  "checks/flutter01.json": {
+    "sha256": "529c7b3e8067320dd3bb4114c21f5434205e9d3ae3d67eaf0060a5e1ea06e190",
+    "bytes": 771
+  },
+  "checks/flutter01.log": {
+    "sha256": "78ffd45a26852a8077173b9ac725e8e47d65d6ddae61101071f0c8731691be74",
+    "bytes": 20398
+  },
+  "checks/go01.json": {
+    "sha256": "ace6241c3e488a49c6cf63b3aea4f27c65242ae38adab947779f40a15a8ff4c4",
+    "bytes": 682
+  },
+  "checks/go01.log": {
+    "sha256": "34a506f54916dda5480f647219f7d0e51e37c570b66a7218927117dada3182e9",
+    "bytes": 196
+  },
+  "checks/go02.json": {
+    "sha256": "299ba2eed28e092889564de2b56262538e8906e091a39c37285b7dee669f6ec5",
+    "bytes": 681
+  },
+  "checks/go02.log": {
+    "sha256": "a17c06fcf7d0765cc95998eb67bbcfd38b4a6511351c59a17dc6ed76a6628448",
+    "bytes": 196
+  },
+  "checks/host01.json": {
+    "sha256": "b8c9c27eb00789451a0c3a0347d3dcf58c7804f7d664db0f1b67c2c905c518b4",
+    "bytes": 457
+  },
+  "checks/host01.log": {
+    "sha256": "a47a8d2f9476a5214fa75674bee4141cc10629062b1a2de3c6422bb2b52bc4f2",
+    "bytes": 2822
+  },
+  "checks/host02.json": {
+    "sha256": "fe6529ac1ac48b18c3872449858cfd59fab67c8289f3a79c2d0a61a677c8dede",
+    "bytes": 458
+  },
+  "checks/host02.log": {
+    "sha256": "f813d628851f6d5d247c97b9956e65f9796cbd63400b036d985c8c0cc44558f0",
+    "bytes": 707
+  },
+  "checks/host03.json": {
+    "sha256": "b9a686288f71702f27308db72b474cf1ed7713dff80c42cf0848c4a0e6c11b33",
+    "bytes": 458
+  },
+  "checks/host03.log": {
+    "sha256": "ffcf249ad5a994f1f062cd46a49b9682b641b9a7b019fb11a5656a79dcd852d7",
+    "bytes": 867
+  },
+  "checks/host04.json": {
+    "sha256": "1b261f1596132cc165591b6c47862f438377d4db2b2c348f6c473a438f6e36af",
+    "bytes": 458
+  },
+  "checks/host04.log": {
+    "sha256": "5e917c0fb91c057c9045053b4eee12f325694e1fdbe3acf350bc7fd4094c2528",
+    "bytes": 882
+  },
+  "checks/journey-field01.json": {
+    "sha256": "a6c076b4e3a0b13ec9492f008f7531fedba93e4e62704123a6d272d695e0681e",
+    "bytes": 465
+  },
+  "checks/journey-field01.log": {
+    "sha256": "95acc9dd60e4cac2b23c22b81862bdc25a61f0e185e77d5e3ccedaaad626edd9",
+    "bytes": 295
+  },
+  "checks/journey01.json": {
+    "sha256": "eaba83384970cffdd46fa8b844056061025a22c66a046b1473c6198f86ef6ca0",
+    "bytes": 401
+  },
+  "checks/journey01.log": {
+    "sha256": "66895d9279a46ad6ebad773d96de3df35ef12c58e2f0ce9a395ca94f7c7f5881",
+    "bytes": 680
+  },
+  "checks/journey02.json": {
+    "sha256": "318c76447b50157563969845ff300736321404721e14e04d341a1a371c00c725",
+    "bytes": 401
+  },
+  "checks/journey02.log": {
+    "sha256": "9baf30ebea63a40567eca67aac70f9754bdeae432542b182d2e7052d9844dc82",
+    "bytes": 2498
+  },
+  "checks/public-normal01.json": {
+    "sha256": "36542ead93d04e979c78b950523a3f81ef1da57905185d57a38b389d85ebe602",
+    "bytes": 467
+  },
+  "checks/public-normal01.log": {
+    "sha256": "d5fdd05b4132a625eb52a78b485c5a28d25d12eb23ee6a48e10ee1a2f11a1e27",
+    "bytes": 302
+  },
+  "checks/reader-fix01.json": {
+    "sha256": "5ff66611a82d082623dea812ffcc9f0015b63ddfd0e0e4115ff2d98e01fc4d5d",
+    "bytes": 452
+  },
+  "checks/reader-fix01.log": {
+    "sha256": "b9cb487c7c1e3de3235353dd103fa80dbeb9244cde3b825bc30744ebbd8e08c6",
+    "bytes": 1152
+  },
+  "checks/reader-fix02.json": {
+    "sha256": "ada0501fcfacf26a689ac4ed52009ceeba536ee0b557ccf630c96b9831983e02",
+    "bytes": 452
+  },
+  "checks/reader-fix02.log": {
+    "sha256": "200fee3cb4ac536f2f637db2ef4ee25d3f77a55e5f1a0426472a664f309e8992",
+    "bytes": 1152
+  },
+  "checks/reader01.json": {
+    "sha256": "117090db11adb247279ebdbb9ae415157d84659b25770a399a3f2e87b9869502",
+    "bytes": 486
+  },
+  "checks/reader01.log": {
+    "sha256": "d70d1871321b51378737cb0d8c7b1b7a1e49bf5e531f0f861128fbbe411e1abd",
+    "bytes": 8451
+  },
+  "native01/docker-start.log": {
+    "sha256": "a2b5cf2bce7af0bf86c81b66d3d8aa8e0a90b02f409dc4c516064acc5d9c0171",
+    "bytes": 65
+  },
+  "native01/docker-stop.log": {
+    "sha256": "ea90e35e31b68b3d005651ebb439fa0e97ccbbff202227a393120f5e96c119fd",
+    "bytes": 120
+  },
+  "native01/drop-owned-parent.log": {
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0
+  },
+  "native01/go-native-direct01.log": {
+    "sha256": "bef8a17614db68761418361131d69d0da194c9fb6f8efed8083b7e7f068d75e2",
+    "bytes": 1813
+  },
+  "native01/migrations.log": {
+    "sha256": "21105a890ec6323ef9ccb7fa9159801b2f74d217041b60957bc1abed308f36fc",
+    "bytes": 1202
+  },
+  "native01/receipt.json": {
+    "sha256": "d401099a3dc0e82c0a358050b40e51665a9d9fb3974290d8451d79ecdfc0b260",
+    "bytes": 6528
+  },
+  "native02/docker-start.log": {
+    "sha256": "7f2455033da7a19f155a764807ad7bbec77ac66efbadb9904ae936bb287c8aa0",
+    "bytes": 65
+  },
+  "native02/docker-stop.log": {
+    "sha256": "f0728bad7502d16826d6f40cb8f1558d37d9a5b86b91ae57d5318754b35fde97",
+    "bytes": 120
+  },
+  "native02/drop-owned-parent.log": {
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0
+  },
+  "native02/go-native-direct01.log": {
+    "sha256": "b526dc4e2f480d091499e4bc42b8391d3782768f49489a4acc3ef48168a65c83",
+    "bytes": 746
+  },
+  "native02/migrations.log": {
+    "sha256": "21105a890ec6323ef9ccb7fa9159801b2f74d217041b60957bc1abed308f36fc",
+    "bytes": 1202
+  },
+  "native02/receipt.json": {
+    "sha256": "c986f7a7ce9e4425203ed399979a04063ea02b8a89835e1c2cdb1c9171202f18",
+    "bytes": 6223
+  },
+  "build/api39/receipt.json": {
+    "sha256": "541e99b3f14bea4366de08be7d29c8d3c64779a71f4bc40bbcb491a57046f9b9",
+    "bytes": 2482
+  },
+  "build/build79/receipt.json": {
+    "sha256": "7c8db69527d13a03011b18c63159c3286c522f17a572a21a946d14a08e09ad1c",
+    "bytes": 3753
+  },
+  "build/build79/signature.json": {
+    "sha256": "8e74e7c91b037f8e779cefb58545908dfa10e28b0b9a55fa83dcd0a8b7815b02",
+    "bytes": 723
+  },
+  "build/build79/signature.log": {
+    "sha256": "82c9506438c7efb610fb0638217221d0f4309d99a6945d5dd62484c0ec7a6827",
+    "bytes": 972
+  },
+  "build/api39/attempt-20261018T205255Z-c18c3bda/build.log": {
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0
+  },
+  "build/api39/attempt-20261018T205255Z-c18c3bda/receipt.json": {
+    "sha256": "6c81cbe85cfe02ecfcbb8b97b0f5ceaebc483044ed85ed7fd2eeec40e131486b",
+    "bytes": 2464
+  },
+  "build/api39/attempt-20261018T211249Z-2ab4f98e/receipt.json": {
+    "sha256": "5a1d7fc0e7eb486cac9b05c43867acbed1fdecd64a3bd4c9ec05715dec556054",
+    "bytes": 1461
+  },
+  "build/api39/attempt-20261018T211308Z-c5529136/build.log": {
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0
+  },
+  "build/api39/attempt-20261018T211308Z-c5529136/receipt.json": {
+    "sha256": "541e99b3f14bea4366de08be7d29c8d3c64779a71f4bc40bbcb491a57046f9b9",
+    "bytes": 2482
+  },
+  "build/api39/prepare-20261018T205241Z-6c36aac5/receipt.json": {
+    "sha256": "508a0e2ecfc7a85c4617446f22b21f32a7f82f92dc6bb72e5e66f7020e6c28ce",
+    "bytes": 1723
+  },
+  "build/api39/prepare-20261018T211223Z-ca85fcb8/receipt.json": {
+    "sha256": "3c7492baacfcf6ede8f5c4b82b02ad8a8b5eef92714420a8c3a12320f172b119",
+    "bytes": 1729
+  },
+  "build/build79/attempt-20261018T211324Z-ff7ed6ea/build.log": {
+    "sha256": "46d07c5852c6636b67560b882cbbc23fb22be0605a0e801b52e93324d94215b5",
+    "bytes": 1195
+  },
+  "build/build79/attempt-20261018T211324Z-ff7ed6ea/receipt.json": {
+    "sha256": "b573cd150bcb0e6d782bcadfe1b8f2506c7b919b896059b7a0a72140e9d69de3",
+    "bytes": 3597
+  },
+  "build/build79/attempt-20261018T211516Z-70651134/build.log": {
+    "sha256": "7d3878362c77cd5c5a46f54561c4d9df605128531f4d78113f474d78f42128a3",
+    "bytes": 1195
+  },
+  "build/build79/attempt-20261018T211516Z-70651134/receipt.json": {
+    "sha256": "7c8db69527d13a03011b18c63159c3286c522f17a572a21a946d14a08e09ad1c",
+    "bytes": 3753
+  },
+  "build/build79/prepare-20261018T211226Z-b169086c/receipt.json": {
+    "sha256": "e77d0b8d8561d992633e484a8e044026699454817f4f57115d50da7d278c95be",
+    "bytes": 2546
+  }
+}

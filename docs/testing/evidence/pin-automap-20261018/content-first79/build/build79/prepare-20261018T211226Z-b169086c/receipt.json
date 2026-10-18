@@ -1,0 +1,74 @@
+{
+  "startedUTC": "2026-10-18T21:12:26.764293+00:00",
+  "status": "PREPARED_NOT_RUN",
+  "mode": "apk79",
+  "executed": false,
+  "installed": false,
+  "clearedAppData": false,
+  "deployed": false,
+  "databaseMigration": "NOT_RUN",
+  "scriptSHA256": "a8b6a3ed0894f48b0b14e8eb6036e39188e3ad911436a25d68a7d146475f85ec",
+  "normalPreviewApplicationId": "app.civu.civu_mobile.birdtiepreview",
+  "configuredAPIOrigin": "https://47.110.154.133",
+  "configuredVersionName": "0.1.2",
+  "configuredVersionCode": 79,
+  "normalizationExclusions": {
+    "local.properties": [
+      "flutter.buildMode",
+      "flutter.versionCode",
+      "flutter.versionName"
+    ]
+  },
+  "inputScopeLimit": "Resolved local source/config/assets/fonts/package tree and tool identity snapshot; not a claim of a hermetic Maven/SDK/cache reproduction.",
+  "beforeManifestSHA256": "f88a334fe74d0ef67ae152f2f395830100fd2e9034906b49ff732b4b7009ebec",
+  "inputCount": 8129,
+  "inputBytes": 195865381,
+  "sourceHead": "8bd39a24a9bc74182415d4c3ea375b2ae8c9a787",
+  "command": [
+    "D:\\DevTools\\flutter\\bin\\flutter.bat",
+    "build",
+    "apk",
+    "--profile",
+    "--build-name=0.1.2",
+    "--build-number=79",
+    "--no-pub",
+    "--no-tree-shake-icons",
+    "--dart-define=BIRDTIE_ENVIRONMENT=development",
+    "--dart-define=BIRDTIE_FRIEND_IMAGE_ENABLED=true",
+    "--dart-define=BIRDTIE_API_BASE_URL=https://47.110.154.133",
+    "--dart-define-from-file=.env.maps.mobile.provided.local.json"
+  ],
+  "cwd": "D:\\Project\\birdtie\\apps\\client",
+  "sourceFreeze": "NOT_CONFIRMED",
+  "sourceStable": true,
+  "afterManifestSHA256": "f88a334fe74d0ef67ae152f2f395830100fd2e9034906b49ff732b4b7009ebec",
+  "changes": {
+    "added": [],
+    "removed": [],
+    "modified": [],
+    "metadataChanged": {}
+  },
+  "rawNormalizedBefore": {
+    "apps/client/android/local.properties": {
+      "rawSHA256": "444f5a2c7ac46b0a5abe48184564cd7311ef9bf7f13139833f01a4debc613e31",
+      "rawBytes": 163,
+      "excludedGeneratedKeys": [
+        "flutter.buildMode",
+        "flutter.versionCode",
+        "flutter.versionName"
+      ]
+    }
+  },
+  "rawNormalizedAfter": {
+    "apps/client/android/local.properties": {
+      "rawSHA256": "444f5a2c7ac46b0a5abe48184564cd7311ef9bf7f13139833f01a4debc613e31",
+      "rawBytes": 163,
+      "excludedGeneratedKeys": [
+        "flutter.buildMode",
+        "flutter.versionCode",
+        "flutter.versionName"
+      ]
+    }
+  },
+  "completedUTC": "2026-10-18T21:12:48.472686+00:00"
+}

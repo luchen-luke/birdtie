@@ -1,0 +1,206 @@
+{
+  "startedUTC": "2026-10-18T20:38:06.076162+00:00",
+  "status": "PASS_STOPPED_CLEANED",
+  "databaseName": "birdtie_fixture_pmap_621862dffd6141a3",
+  "containerName": "birdtie-pmap-pg-621862dffd61",
+  "ownerMarker": "257c0acaa9b840439b921e9aa09eed85",
+  "commands": [
+    {
+      "argv": [
+        "C:/Program Files/Docker/Docker/resources/bin/docker.exe",
+        "image",
+        "inspect",
+        "postgres:16-alpine",
+        "--format",
+        "{{.Id}}"
+      ],
+      "cwd": "D:\\Project\\birdtie",
+      "exitCode": 0,
+      "elapsedSeconds": 0.174,
+      "log": null
+    },
+    {
+      "argv": [
+        "C:/Program Files/Docker/Docker/resources/bin/docker.exe",
+        "run",
+        "-d",
+        "--rm",
+        "--name",
+        "birdtie-pmap-pg-621862dffd61",
+        "--label",
+        "birdtie.pmap-owner=257c0acaa9b840439b921e9aa09eed85",
+        "--tmpfs",
+        "/var/lib/postgresql/data:rw",
+        "--memory",
+        "512m",
+        "--cpus",
+        "2",
+        "-e",
+        "POSTGRES_USER=birdtie",
+        "-e",
+        "POSTGRES_DB=birdtie_fixture_pmap_621862dffd6141a3",
+        "-e",
+        "POSTGRES_PASSWORD",
+        "-p",
+        "127.0.0.1::5432",
+        "postgres:16-alpine",
+        "-c",
+        "shared_buffers=64MB"
+      ],
+      "cwd": "D:\\Project\\birdtie",
+      "exitCode": 0,
+      "elapsedSeconds": 0.315,
+      "log": "docker-start.log"
+    },
+    {
+      "argv": [
+        "C:/Program Files/Docker/Docker/resources/bin/docker.exe",
+        "exec",
+        "-i",
+        "9aff3bb9457e6ae9c69964d9eb855389b1f5f66a55a3fae9a3dac206d2703817",
+        "psql",
+        "-X",
+        "-qAt",
+        "-v",
+        "ON_ERROR_STOP=1",
+        "-U",
+        "birdtie",
+        "-d",
+        "birdtie_fixture_pmap_621862dffd6141a3"
+      ],
+      "cwd": "D:\\Project\\birdtie",
+      "exitCode": 0,
+      "elapsedSeconds": 1.758,
+      "log": "migrations.log"
+    },
+    {
+      "argv": [
+        "C:/Program Files/Docker/Docker/resources/bin/docker.exe",
+        "exec",
+        "-i",
+        "9aff3bb9457e6ae9c69964d9eb855389b1f5f66a55a3fae9a3dac206d2703817",
+        "psql",
+        "-X",
+        "-qAt",
+        "-v",
+        "ON_ERROR_STOP=1",
+        "-U",
+        "birdtie",
+        "-d",
+        "postgres"
+      ],
+      "cwd": "D:\\Project\\birdtie",
+      "exitCode": 0,
+      "elapsedSeconds": 0.209,
+      "log": "drop-owned-parent.log"
+    },
+    {
+      "argv": [
+        "C:/Program Files/Docker/Docker/resources/bin/docker.exe",
+        "stop",
+        "--time",
+        "10",
+        "9aff3bb9457e6ae9c69964d9eb855389b1f5f66a55a3fae9a3dac206d2703817"
+      ],
+      "cwd": "D:\\Project\\birdtie",
+      "exitCode": 0,
+      "elapsedSeconds": 0.397,
+      "log": "docker-stop.log"
+    }
+  ],
+  "productionAccess": false,
+  "postgresImageId": "sha256:cf78e76683b9ca8c5733cbbdce6c9262b45b6767934dd0a95e671f9a0fc20685",
+  "containerId": "9aff3bb9457e6ae9c69964d9eb855389b1f5f66a55a3fae9a3dac206d2703817",
+  "loopbackHost": "127.0.0.1",
+  "exclusiveHostPort": 11882,
+  "dsnGuard": {
+    "literalLoopback": true,
+    "dedicatedDatabase": true,
+    "exclusiveOwnedPort": true,
+    "noInheritedDSN": true,
+    "passwordPersisted": false
+  },
+  "databaseBindingBefore": {
+    "name": "birdtie_fixture_pmap_621862dffd6141a3",
+    "oid": 16384,
+    "marker": "BIRDTIE_ISOLATED_FIXTURE_V1:birdtie_fixture_pmap_621862dffd6141a3",
+    "owner": "birdtie",
+    "actor": "birdtie",
+    "systemId": "7698109915782848547"
+  },
+  "migrationCount": 180,
+  "seedCount": 3,
+  "migrationSourceSHA256": "a5c5bbb93e3159001f132434282ee6c5e1cd6565254d1f74b1045f55c034ca49",
+  "databaseBindingAfterMigrations": {
+    "name": "birdtie_fixture_pmap_621862dffd6141a3",
+    "oid": 16384,
+    "marker": "BIRDTIE_ISOLATED_FIXTURE_V1:birdtie_fixture_pmap_621862dffd6141a3",
+    "owner": "birdtie",
+    "actor": "birdtie",
+    "systemId": "7698109915782848547"
+  },
+  "guardFunctionPresent": true,
+  "testSource": [
+    {
+      "path": "apps\\api\\internal\\postgres\\map_content_spatial.go",
+      "sha256": "b34efd2dd04b09373e5f4613044d7166df9bc45b0c630611f7fe010ac5cbc42e"
+    },
+    {
+      "path": "apps\\api\\internal\\postgres\\map_content_first_native_test.go",
+      "sha256": "e4b389ea14f82e691def8f098c63e50d7ada4a106178e459d335cd70f7ceecb2"
+    },
+    {
+      "path": "apps\\api\\internal\\postgres\\journey_publication_native_test.go",
+      "sha256": "92462823fbd07982a869c0c866ca15187ce0a353768585aeab0b5fba3ba9baf3"
+    },
+    {
+      "path": "apps\\api\\internal\\postgres\\moment_interaction_native_test.go",
+      "sha256": "5509657de29f4e4670ec008599db4c1666b94f1485eb51bcb998dbd4ed4bf60a"
+    }
+  ],
+  "goRun": {
+    "command": [
+      "C:/Program Files/Go/bin/go.exe",
+      "test",
+      "-p",
+      "1",
+      "./internal/postgres",
+      "-run",
+      "^TestJourneyPublicationNative",
+      "-count=1",
+      "-v",
+      "-timeout",
+      "240s"
+    ],
+    "cwd": "D:\\Project\\birdtie\\apps\\api",
+    "exitCode": 0,
+    "elapsedSeconds": 16.734,
+    "log": "D:\\Project\\birdtie\\work\\content-first-20261019\\native02\\go-native-direct01.log"
+  },
+  "testPass": [
+    "TestJourneyPublicationNativeSnapshotPrivateEditRecoveryAndRetirement",
+    "TestJourneyPublicationNativeDiscoveryPaginationAndUnknownLifecycle"
+  ],
+  "testFail": [],
+  "testSkip": [],
+  "databaseBindingAfterTests": {
+    "name": "birdtie_fixture_pmap_621862dffd6141a3",
+    "oid": 16384,
+    "marker": "BIRDTIE_ISOLATED_FIXTURE_V1:birdtie_fixture_pmap_621862dffd6141a3",
+    "owner": "birdtie",
+    "actor": "birdtie",
+    "systemId": "7698109915782848547"
+  },
+  "remainingChildDatabases": [],
+  "databaseBindingBeforeCleanup": {
+    "name": "birdtie_fixture_pmap_621862dffd6141a3",
+    "oid": 16384,
+    "marker": "BIRDTIE_ISOLATED_FIXTURE_V1:birdtie_fixture_pmap_621862dffd6141a3",
+    "owner": "birdtie",
+    "actor": "birdtie",
+    "systemId": "7698109915782848547"
+  },
+  "ownedParentDropped": true,
+  "ownedContainerRemoved": true,
+  "completedUTC": "2026-10-18T20:38:30.389611+00:00"
+}

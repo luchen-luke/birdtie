@@ -1,0 +1,66 @@
+{
+  "startedUTC": "2026-10-18T21:13:08.669358+00:00",
+  "status": "BUILT_INPUTS_STABLE_NOT_INSTALLED",
+  "mode": "api39",
+  "executed": true,
+  "installed": false,
+  "clearedAppData": false,
+  "deployed": false,
+  "databaseMigration": "NOT_RUN",
+  "scriptSHA256": "8b97dc5557b08d1adf3e3df9a6b22a233219d90f921869657658cf24d2d226cf",
+  "normalPreviewApplicationId": "app.civu.civu_mobile.birdtiepreview",
+  "configuredAPIOrigin": "https://47.110.154.133",
+  "configuredVersionName": "0.1.2",
+  "configuredVersionCode": 60,
+  "normalizationExclusions": {
+    "local.properties": [
+      "flutter.buildMode",
+      "flutter.versionCode",
+      "flutter.versionName"
+    ]
+  },
+  "inputScopeLimit": "Resolved local source/config/assets/fonts/package tree and tool identity snapshot; not a claim of a hermetic Maven/SDK/cache reproduction.",
+  "beforeManifestSHA256": "96ccbd65870fa3dff8b4c2322192dd0e788052561eeac99a820df8b496e3eeb1",
+  "inputCount": 2098,
+  "inputBytes": 33192950,
+  "sourceHead": "8bd39a24a9bc74182415d4c3ea375b2ae8c9a787",
+  "command": [
+    "C:\\Program Files\\Go\\bin\\go.exe",
+    "build",
+    "-mod=readonly",
+    "-trimpath",
+    "-o",
+    "D:\\Project\\birdtie\\work\\content-first-20261019\\delivery79\\birdtie-api-linux-amd64-content-first39-final",
+    "."
+  ],
+  "cwd": "D:\\Project\\birdtie\\apps\\api",
+  "build": {
+    "command": [
+      "C:\\Program Files\\Go\\bin\\go.exe",
+      "build",
+      "-mod=readonly",
+      "-trimpath",
+      "-o",
+      "D:\\Project\\birdtie\\work\\content-first-20261019\\delivery79\\birdtie-api-linux-amd64-content-first39-final",
+      "."
+    ],
+    "cwd": "D:\\Project\\birdtie\\apps\\api",
+    "exitCode": 0,
+    "elapsedSeconds": 3.429,
+    "log": "D:\\Project\\birdtie\\work\\content-first-20261019\\build-evidence\\api39\\attempt-20261018T211308Z-c5529136\\build.log"
+  },
+  "sourceStable": true,
+  "afterManifestSHA256": "96ccbd65870fa3dff8b4c2322192dd0e788052561eeac99a820df8b496e3eeb1",
+  "changes": {
+    "added": [],
+    "removed": [],
+    "modified": [],
+    "metadataChanged": {}
+  },
+  "rawNormalizedBefore": {},
+  "rawNormalizedAfter": {},
+  "artifact": "D:\\Project\\birdtie\\work\\content-first-20261019\\delivery79\\birdtie-api-linux-amd64-content-first39-final",
+  "artifactSHA256": "1ae9e3ff094e3a1d4a4b9ce9b6dd2789f52da8794135c293e3d04ca4e3506f96",
+  "artifactBytes": 36346904,
+  "completedUTC": "2026-10-18T21:13:14.847176+00:00"
+}

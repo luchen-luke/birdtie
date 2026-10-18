@@ -184,6 +184,8 @@ class _FeedbackPanelController extends OwnedMapController {
   Future<OwnedMapPlacePage> readPlaceMoments(
     OwnedMapPin value, {
     String? cursor,
+    String? placeID,
+    OwnedMapMomentDetail? relationSource,
   }) async {
     final now = DateTime.now().toUtc();
     return OwnedMapPlacePage(

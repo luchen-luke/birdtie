@@ -16,6 +16,7 @@ import (
 
 func (s *server) registerCollectionPublicationRoutes(mux *http.ServeMux) {
 	s.registerCollectionCopyRoutes(mux)
+	mux.HandleFunc("GET /v1/me/journeys/discovery", s.listJourneyDiscovery)
 	mux.HandleFunc("POST /v1/me/personal-collections/{kind}/{collectionID}/publication", s.publishPersonalCollection)
 	mux.HandleFunc("POST /v1/me/personal-collections/{kind}/{collectionID}/unpublish", s.unpublishPersonalCollection)
 	mux.HandleFunc("GET /v1/me/personal-collections/publication-operations/{operationID}/receipt", s.getCollectionPublicationReceipt)
@@ -47,12 +48,12 @@ func (s *server) publishPersonalCollection(w http.ResponseWriter, r *http.Reques
 		respondError(w, 415, "json_required")
 		return
 	}
-	raw, e := io.ReadAll(io.LimitReader(r.Body, 16385))
+	raw, e := io.ReadAll(io.LimitReader(r.Body, 131073))
 	if e != nil {
 		momentFailure(w, content.ErrInvalid)
 		return
 	}
-	in, e := content.DecodeCollectionPublication(raw)
+	in, e := content.DecodeJourneyOrCollectionPublication(raw)
 	if e != nil {
 		momentFailure(w, e)
 		return

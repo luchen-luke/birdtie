@@ -25,7 +25,7 @@ func mapContentSpatialSQL() string {
 	spatialIDs := `SELECT p.id pid FROM places p WHERE p.coordinate_system='wgs84' AND p.location_precision='point' AND p.publication_status IN('draft','published') AND ` + bbox("p.latitude", "p.longitude") + ` UNION SELECT f.place_id FROM legacy_map_place_facts f JOIN places p ON p.id=f.place_id WHERE NOT ` + nativePoint + ` AND ` + bbox("f.latitude", "f.longitude")
 	places = strings.Replace(places, "FROM places p LEFT JOIN", "FROM spatial_place_ids spatial JOIN places p ON p.id=spatial.pid LEFT JOIN", 1)
 	moments := strings.Replace(mapContentMomentsSQL, "WHERE m.status<>", "WHERE m.id IN(SELECT mid FROM raw_ids) AND m.status<>", 1)
-	moments = strings.Replace(moments, " ORDER BY created_at DESC,id LIMIT 10001", "", 1)
+	moments = strings.Replace(moments, " ORDER BY coalesce(published_at,CASE WHEN original_run IS NULL OR created_at<adapted_at THEN created_at END) DESC NULLS LAST,id LIMIT 10001", "", 1)
 	rel := strings.Replace(mapContentCurrentMomentPlacesSQL(), "q.mid=ANY($1::uuid[])", "q.mid IN(SELECT id::uuid FROM vm)", 1)
 	return `WITH spatial_place_ids AS MATERIALIZED (` + spatialIDs + `), sp(id,name,category,city,lat,lon,catalog,published,deadline,public_deadline,stamp) AS MATERIALIZED (` + places + `),
  anchors AS MATERIALIZED(
@@ -44,17 +44,17 @@ func mapContentSpatialSQL() string {
  SELECT l.moment_id mid FROM moment_location_links l JOIN sp ON sp.id::uuid=l.place_id WHERE l.status='ACTIVE' AND l.kind='PLACE'
  UNION SELECT c.moment_id FROM private_moment_media_contexts c JOIN private_moment_media_context_places p ON p.context_id=c.id JOIN sp ON sp.id::uuid=p.place_id WHERE c.status='ACTIVE'
  UNION SELECT moment_id FROM anchors UNION SELECT moment_id FROM refs
- ),vm(id,owner,revision,status,visibility,title,body,created_at,source,stamp) AS MATERIALIZED (` + moments + `),
- relations(mid,pid,stamp,original_relation,private_context,native_public_relation) AS MATERIALIZED (` + rel + `),
+ ),vm(id,owner,revision,status,visibility,title,body,created_at,source,stamp,published_at,time_source) AS MATERIALIZED (` + moments + `),
+ relations(mid,pid,stamp,original_relation,private_context,native_public_relation,relation_id) AS MATERIALIZED (` + rel + `),
  leaves AS(
- SELECT 'PLACE_CONTENT' kind,sp.id leaf,sp.id entity,sp.name,sp.category,sp.city,sp.lat,sp.lon,'point' coordinate_precision,vm.id mid,vm.revision,vm.source,jsonb_build_array(sp.stamp,vm.stamp,relations.stamp)::text stamp,''::text media,least(sp.deadline,sp.public_deadline) deadline
+ SELECT 'MOMENT_ANCHOR' kind,relations.relation_id leaf,vm.id entity,coalesce(nullif(vm.title,''),nullif(left(vm.body,80),''),'动态') name,'moment' category,sp.city,sp.lat,sp.lon,'point' coordinate_precision,vm.id mid,vm.revision,vm.source,jsonb_build_array(sp.stamp,vm.stamp,relations.stamp)::text stamp,''::text media,least(sp.deadline,sp.public_deadline) deadline,sp.id place_id,coalesce(vm.published_at,CASE WHEN vm.time_source<>'UNKNOWN' THEN vm.created_at END) content_time,CASE WHEN vm.published_at IS NOT NULL THEN 'PUBLISHED' ELSE vm.time_source END time_source
  FROM sp JOIN relations ON relations.pid=sp.id JOIN vm ON vm.id=relations.mid
  WHERE sp.lat IS NOT NULL AND sp.lon IS NOT NULL AND(vm.source<>'CIVU_PUBLIC_MOMENT' OR relations.original_relation)
  AND(vm.source<>'BIRDTIE_PUBLIC_MOMENT' OR vm.owner=$1::text OR(NOT relations.private_context AND relations.native_public_relation))
  AND(vm.owner=$1::text OR(vm.source='CIVU_PUBLIC_MOMENT' AND sp.catalog) OR(vm.source='BIRDTIE_PUBLIC_MOMENT' AND sp.published))
- UNION ALL SELECT 'MOMENT_ANCHOR',a.id::text,vm.id,CASE WHEN vm.title='' THEN '动态' ELSE vm.title END,'moment',NULL::text,a.lat,a.lon,a.precision,vm.id,vm.revision,vm.source,jsonb_build_array(a.stamp,vm.stamp)::text,coalesce(a.media_id::text,''),NULL::timestamptz FROM anchors a JOIN vm ON vm.id=a.moment_id::text
- UNION ALL SELECT 'MOMENT_ANCHOR',r.id::text,vm.id,CASE WHEN vm.title='' THEN '动态' ELSE vm.title END,'moment',NULL::text,r.lat,r.lon,'point',vm.id,vm.revision,vm.source,jsonb_build_array(r.stamp,vm.stamp)::text,''::text,r.deadline FROM refs r JOIN vm ON vm.id=r.moment_id::text WHERE vm.source IN('SELF_PRIVATE','BIRDTIE_PUBLIC_MOMENT')
- ) SELECT kind,leaf,entity,name,category,city,lat,lon,coordinate_precision,mid,revision,source,stamp,media,deadline FROM leaves ORDER BY kind,leaf,mid`
+ UNION ALL SELECT 'MOMENT_ANCHOR',a.id::text,vm.id,coalesce(nullif(vm.title,''),nullif(left(vm.body,80),''),'动态'),'moment',NULL::text,a.lat,a.lon,a.precision,vm.id,vm.revision,vm.source,jsonb_build_array(a.stamp,vm.stamp)::text,coalesce(a.media_id::text,''),NULL::timestamptz,''::text,coalesce(vm.published_at,CASE WHEN vm.time_source<>'UNKNOWN' THEN vm.created_at END),CASE WHEN vm.published_at IS NOT NULL THEN 'PUBLISHED' ELSE vm.time_source END FROM anchors a JOIN vm ON vm.id=a.moment_id::text
+ UNION ALL SELECT 'MOMENT_ANCHOR',r.id::text,vm.id,coalesce(nullif(vm.title,''),nullif(left(vm.body,80),''),'动态'),'moment',NULL::text,r.lat,r.lon,'point',vm.id,vm.revision,vm.source,jsonb_build_array(r.stamp,vm.stamp)::text,''::text,r.deadline,''::text,coalesce(vm.published_at,CASE WHEN vm.time_source<>'UNKNOWN' THEN vm.created_at END),CASE WHEN vm.published_at IS NOT NULL THEN 'PUBLISHED' ELSE vm.time_source END FROM refs r JOIN vm ON vm.id=r.moment_id::text WHERE vm.source IN('SELF_PRIVATE','BIRDTIE_PUBLIC_MOMENT')
+ ) SELECT kind,leaf,entity,name,category,city,lat,lon,coordinate_precision,mid,revision,source,stamp,media,deadline,place_id,content_time,time_source FROM leaves ORDER BY content_time DESC NULLS LAST,mid,leaf`
 }
 
 type mapSpatialLeaf struct {
@@ -80,7 +80,7 @@ func mapClusterCategory(leaves []mapSpatialLeaf, members []int) (string, string)
 	return "地图内容", "mixed_cluster"
 }
 
-func readMapSpatial(ctx context.Context, f humanWriteFrame, q content.MapContentQuery) ([]mapSpatialLeaf, string, time.Time, time.Time, error) {
+func readMapSpatial(ctx context.Context, f humanWriteFrame, q content.MapContentQuery, stores ...*Store) ([]mapSpatialLeaf, string, time.Time, time.Time, error) {
 	at := time.Now().UTC()
 	until := at.Add(30 * time.Second)
 	if e := ownedContextLeaseTx(ctx, f, &until); e != nil {
@@ -92,14 +92,14 @@ func readMapSpatial(ctx context.Context, f humanWriteFrame, q content.MapContent
 	}
 	defer rows.Close()
 	grouped := map[string]*mapSpatialLeaf{}
-	facts := []any{content.MapContentSchema, historyReader(f), q.Bounds, q.Zoom, "DEFAULT_CONTENT", "INDEPENDENT_POINTS_V3"}
+	facts := []any{content.MapContentSchema, historyReader(f), q.Bounds, q.Zoom, "DEFAULT_CONTENT", "CONTENT_FIRST_V4"}
 	for rows.Next() {
-		var kind, id, entity, name, category, precision, mid, scope, stamp, media string
+		var kind, id, entity, name, category, precision, mid, scope, stamp, media, placeID, timeSource string
 		var city *string
 		var lat, lon float64
 		var rev int64
-		var deadline *time.Time
-		if e = rows.Scan(&kind, &id, &entity, &name, &category, &city, &lat, &lon, &precision, &mid, &rev, &scope, &stamp, &media, &deadline); e != nil {
+		var deadline, contentTime *time.Time
+		if e = rows.Scan(&kind, &id, &entity, &name, &category, &city, &lat, &lon, &precision, &mid, &rev, &scope, &stamp, &media, &deadline, &placeID, &contentTime, &timeSource); e != nil {
 			return nil, "", at, until, content.ErrUnavailable
 		}
 		anchor := content.MapContentAnchor{CoordinateSystem: "wgs84", Precision: precision, Latitude: lat, Longitude: lon}
@@ -112,10 +112,8 @@ func readMapSpatial(ctx context.Context, f humanWriteFrame, q content.MapContent
 		}
 		x := grouped[key]
 		if x == nil {
-			x = &mapSpatialLeaf{pin: content.MapContentPin{MarkerID: key, Kind: kind, EntityID: entity, Name: name, CategoryCode: category, CityID: city, Anchor: anchor, AnchorCount: 1, VisibilitySources: []string{}, Moments: []content.MapContentMomentSelector{}}, moments: map[string]content.MapContentMomentSelector{}, media: media}
-			if kind == "PLACE_CONTENT" {
-				x.pin.PlaceID = id
-			} else {
+			x = &mapSpatialLeaf{pin: content.MapContentPin{MarkerID: key, Kind: kind, EntityID: entity, Name: name, CategoryCode: category, CityID: city, Anchor: anchor, AnchorCount: 1, PlaceID: placeID, ContentTime: contentTime, TimeSource: timeSource, VisibilitySources: []string{}, Moments: []content.MapContentMomentSelector{}}, moments: map[string]content.MapContentMomentSelector{}, media: media}
+			if kind == "MOMENT_ANCHOR" {
 				x.pin.AnchorID = id
 				x.pin.MomentID = mid
 				x.pin.EntryID = mid
@@ -142,7 +140,7 @@ func readMapSpatial(ctx context.Context, f humanWriteFrame, q content.MapContent
 	}
 	sort.Strings(keys)
 	out := []mapSpatialLeaf{}
-	// Only stable Place/anchor identity merges rows. Equal coordinates or a
+	// Only stable relation/anchor identity merges rows. Equal coordinates or a
 	// shared Moment ID do not prove separate anchors are duplicates.
 	for _, k := range keys {
 		x := grouped[k]
@@ -162,6 +160,7 @@ func readMapSpatial(ctx context.Context, f humanWriteFrame, q content.MapContent
 		x.pin.SourceVersion = mapSpatialLeafSourceVersion(historyReader(f), x)
 		out = append(out, *x)
 	}
+	sort.SliceStable(out, func(i, j int) bool { return mapContentPinNewer(out[i].pin, out[j].pin) })
 	momentIDs, placeIDs := []string{}, []string{}
 	seenMID := map[string]bool{}
 	for _, x := range out {
@@ -184,6 +183,17 @@ func readMapSpatial(ctx context.Context, f humanWriteFrame, q content.MapContent
 	if e = mapSpatialMediaVersions(out, mediaFacts); e != nil {
 		return nil, "", at, until, e
 	}
+	var store *Store
+	if len(stores) > 0 {
+		store = stores[0]
+	} else {
+		store = &Store{}
+	}
+	routeFacts, e := mapContentRouteFacts(ctx, f, out, store, &until)
+	if e != nil {
+		return nil, "", at, until, e
+	}
+	facts = append(facts, routeFacts)
 	for _, x := range out {
 		facts = append(facts, x.pin.SourceVersion)
 	}
@@ -264,7 +274,7 @@ func mapSpatialGroups(leaves []mapSpatialLeaf, _ float64) [][]int {
 func mapSpatialLeafSourceVersion(reader string, x *mapSpatialLeaf) string {
 	stamps := append([]string(nil), x.stamps...)
 	sort.Strings(stamps)
-	return content.MomentControlHash([]any{reader, x.pin.MarkerID, stamps, x.pin.Moments, x.media})
+	return content.MomentControlHash([]any{reader, x.pin.MarkerID, stamps, x.pin.Moments, x.pin.ContentTime, x.pin.TimeSource, x.media})
 }
 
 func mapClusterID(reader string, leaves []mapSpatialLeaf, ids []int) string {
@@ -349,7 +359,7 @@ func (s *Store) ReadHumanMapContent(ctx context.Context, d [32]byte, a identity.
 		return p, e
 	}
 	defer f.tx.Rollback(context.Background())
-	leaves, source, at, until, e := readMapSpatial(ctx, f, q)
+	leaves, source, at, until, e := readMapSpatial(ctx, f, q, s)
 	if e != nil {
 		return p, e
 	}
@@ -597,7 +607,7 @@ func (s *Store) ReadHumanMapContent(ctx context.Context, d [32]byte, a identity.
 	// Re-evaluate the exact spatial query before commit; late withdraw/block or
 	// newly visible content cannot escape by changing only a selected subset.
 	if e = s.humanWriteFinish(ctx, f, humanWriteGateDeadline(ctx, f, p.ValidUntil, func() error {
-		_, fresh, _, end, err := readMapSpatial(ctx, f, q)
+		_, fresh, _, end, err := readMapSpatial(ctx, f, q, s)
 		if err != nil {
 			return err
 		}
@@ -617,4 +627,18 @@ func (s *Store) ReadHumanMapContent(ctx context.Context, d [32]byte, a identity.
 	}
 	p.ResponseProof = &mapContentResponseProof{s: s, d: d, a: a, kind: "map", q: q, source: p.SourceVersion, until: p.ValidUntil}
 	return p, nil
+}
+
+// Unknown import timestamps sort last rather than looking newly published.
+func mapContentPinNewer(a, b content.MapContentPin) bool {
+	if a.ContentTime != nil && b.ContentTime != nil && !a.ContentTime.Equal(*b.ContentTime) {
+		return a.ContentTime.After(*b.ContentTime)
+	}
+	if (a.ContentTime == nil) != (b.ContentTime == nil) {
+		return a.ContentTime != nil
+	}
+	if a.MomentID != b.MomentID {
+		return a.MomentID < b.MomentID
+	}
+	return a.MarkerID < b.MarkerID
 }

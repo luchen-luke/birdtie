@@ -1,0 +1,14 @@
+{
+  "stage": "journey",
+  "argv": [
+    "D:/DevTools/flutter/bin/flutter.bat",
+    "test",
+    "--no-pub",
+    "test/now_journey_test.dart"
+  ],
+  "cwd": "D:\\Project\\birdtie\\apps\\client",
+  "exitCode": 0,
+  "elapsedSeconds": 4.101236343383789,
+  "log": "D:\\Project\\birdtie\\work\\content-first-20261019\\checks\\journey01.log",
+  "completedUTC": "2026-10-18T20:54:35.853020+00:00"
+}

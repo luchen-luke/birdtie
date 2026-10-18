@@ -180,7 +180,6 @@ class _PersonalCollectionPageState extends State<PersonalCollectionPage> {
         c.controlBlocked ||
         c.editing == null)
       return;
-    if (c.draftJourneyDetails != null) return;
     if (c.hasPrivateLegacyReferences && c.publicationPending == null) return;
     if (c.editing!.privatePlaceCopyRestricted &&
         c.editing!.status == 'draft' &&
@@ -1283,9 +1282,7 @@ class _PersonalCollectionPageState extends State<PersonalCollectionPage> {
                 icon: const Icon(Icons.map_outlined),
                 label: const Text('在地图查看'),
               ),
-            if (c.editing != null &&
-                !c.uncertain &&
-                c.draftJourneyDetails == null)
+            if (c.editing != null && !c.uncertain)
               OutlinedButton.icon(
                 key: const Key('collection-publication'),
                 onPressed:

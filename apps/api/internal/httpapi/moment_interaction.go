@@ -69,7 +69,7 @@ func (s *server) commitMomentInteraction(w http.ResponseWriter, r *http.Request)
 		momentControlFailure(w, e)
 		return
 	}
-	if !content.ValidMomentInteractionReceipt(v, in.OperationID) || v.Status == "SUCCEEDED" && (v.PayloadDigest != content.MomentInteractionDigest(in) || v.MomentID != in.MomentID || v.Action != in.Action) {
+	if !content.ValidMomentInteractionReceipt(v, in.OperationID) || v.Status == "SUCCEEDED" && (v.PayloadDigest != content.MomentInteractionDigest(in) || v.MomentID != in.MomentID || v.Action != in.Action || in.Action == "DELETE_COMMENT" && v.CommentID != in.CommentID) {
 		respondError(w, 503, "moment_interaction_unavailable")
 		return
 	}

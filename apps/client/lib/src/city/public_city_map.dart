@@ -23,6 +23,7 @@ import 'public_city_controller.dart';
 import 'map_navigation_target.dart';
 import '../workspace/map_entities.dart';
 import '../workspace/map_display_policy.dart';
+import '../workspace/map_content_routes.dart';
 
 String get _mapboxPublicToken => BirdtieEnvironment.mapboxGlWebPublicToken;
 const _mapboxMobileToken = BirdtieEnvironment.mapboxMobilePublicToken;
@@ -1010,17 +1011,36 @@ class _WebMapDisplayLayerState extends State<WebMapDisplayLayer> {
         widget.onSelectedAnchor?.call(anchor);
       }
     });
-    return MapEntityLayer(
-      entities: _plan!.entities
-          .where((e) => !_plan!.occludedGlyphIDs.contains(e.id))
-          .toList(),
-      labelIDs: _plan!.labelIDs,
-      denseIDs: _plan!.denseIDs,
-      placements: _plan!.placements,
-      selectedId: widget.selectedID,
-      onSelected: (entity) {
-        if (scope == _pointReaderScope()) _selectPoint(entity);
-      },
+    return Stack(
+      children: [
+        PolylineLayer(
+          polylines: [
+            for (final edge in currentMapContentEdges(unique.values))
+              Polyline(
+                points: [
+                  LatLng(edge.from.latitude, edge.from.longitude),
+                  LatLng(edge.to.latitude, edge.to.longitude),
+                ],
+                color: edge.selected(widget.selectedID)
+                    ? const Color(0xff267264)
+                    : const Color(0x993d8174),
+                strokeWidth: edge.selected(widget.selectedID) ? 3 : 1.5,
+              ),
+          ],
+        ),
+        MapEntityLayer(
+          entities: _plan!.entities
+              .where((e) => !_plan!.occludedGlyphIDs.contains(e.id))
+              .toList(),
+          labelIDs: _plan!.labelIDs,
+          denseIDs: _plan!.denseIDs,
+          placements: _plan!.placements,
+          selectedId: widget.selectedID,
+          onSelected: (entity) {
+            if (scope == _pointReaderScope()) _selectPoint(entity);
+          },
+        ),
+      ],
     );
   }
 }

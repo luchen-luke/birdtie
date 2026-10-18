@@ -1,0 +1,34 @@
+Flutter assets will be downloaded from https://storage.flutter-io.cn. Make sure you trust this source!
+00:00 +0: loading D:/Project/birdtie/apps/client/test/now_public_moment_composer_test.dart
+00:00 +0: D:/Project/birdtie/apps/client/test/now_public_moment_composer_test.dart: Now public reader binds original comment target without input and retires source
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following assertion was thrown running a test:
+The finder "Found 0 widgets with text "返回上一层": []" (used in a call to "tap()") could not find any
+matching widgets.
+
+When the exception was thrown, this was the stack:
+#0      WidgetController._getElementPoint (package:flutter_test/src/controller.dart:2095:7)
+#1      WidgetController.getCenter (package:flutter_test/src/controller.dart:1947:12)
+#2      WidgetController.tap (package:flutter_test/src/controller.dart:1080:7)
+#3      main.<anonymous closure> (file:///D:/Project/birdtie/apps/client/test/now_public_moment_composer_test.dart:109:15)
+<asynchronous suspension>
+#4      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#5      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1952:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+The test description was:
+  Now public reader binds original comment target without input and retires source
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:00 +0 -1: D:/Project/birdtie/apps/client/test/now_public_moment_composer_test.dart: Now public reader binds original comment target without input and retires source [E]
+  Test failed. See exception logs above.
+  The test description was: Now public reader binds original comment target without input and retires source
+  
+00:00 +0 -1: D:/Project/birdtie/apps/client/test/now_public_moment_composer_test.dart: Now public comment revision mismatch disables original target without replacing body authority
+00:01 +1 -1: D:/Project/birdtie/apps/client/test/now_map_reader_occlusion_test.dart: actual Now reader clips covered map points and restores the same map on close
+00:02 +2 -1: Some tests failed.
+
+Failing tests:
+  D:/Project/birdtie/apps/client/test/now_public_moment_composer_test.dart: Now public reader binds original comment target without input and retires source

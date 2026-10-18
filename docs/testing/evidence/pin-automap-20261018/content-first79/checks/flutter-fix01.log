@@ -1,0 +1,24 @@
+Flutter assets will be downloaded from https://storage.flutter-io.cn. Make sure you trust this source!
+00:00 +0: loading D:/Project/birdtie/apps/client/test/now_journey_test.dart
+00:00 +0: D:/Project/birdtie/apps/client/test/now_journey_test.dart: Public Journey retains original gaps and rejects private fields or unreadable source details
+00:00 +1: D:/Project/birdtie/apps/client/test/now_journey_test.dart: Journey discovery retires late identity reads instead of reviving public snapshots
+00:00 +2: D:/Project/birdtie/apps/client/test/now_journey_test.dart: Rich Journey publication requires explicit STOP selection and sends only approved snapshot
+00:00 +3: D:/Project/birdtie/apps/client/test/now_journey_test.dart: normal-size rich Journey preview publishes only the explicitly selected STOP
+00:00 +4: D:/Project/birdtie/apps/client/test/now_journey_test.dart: normal-size rich Journey preview publishes only the explicitly selected STOP
+00:00 +5: D:/Project/birdtie/apps/client/test/now_journey_test.dart: normal-size rich Journey preview publishes only the explicitly selected STOP
+00:00 +6: D:/Project/birdtie/apps/client/test/now_journey_test.dart: normal-size rich Journey preview publishes only the explicitly selected STOP
+00:00 +7: D:/Project/birdtie/apps/client/test/now_journey_test.dart: normal-size rich Journey preview publishes only the explicitly selected STOP
+00:00 +8: D:/Project/birdtie/apps/client/test/now_journey_test.dart: normal-size rich Journey preview publishes only the explicitly selected STOP
+00:00 +9: D:/Project/birdtie/apps/client/test/now_journey_test.dart: normal-size rich Journey preview publishes only the explicitly selected STOP
+00:00 +10: D:/Project/birdtie/apps/client/test/now_journey_test.dart: normal-size rich Journey preview publishes only the explicitly selected STOP
+00:00 +11: D:/Project/birdtie/apps/client/test/now_journey_test.dart: normal-size rich Journey preview publishes only the explicitly selected STOP
+00:00 +12: D:/Project/birdtie/apps/client/test/now_journey_test.dart: normal-size rich Journey preview publishes only the explicitly selected STOP
+00:00 +13: D:/Project/birdtie/apps/client/test/now_journey_test.dart: normal-size rich Journey preview publishes only the explicitly selected STOP
+00:00 +14: D:/Project/birdtie/apps/client/test/now_journey_test.dart: normal-size rich Journey preview publishes only the explicitly selected STOP
+00:00 +15: D:/Project/birdtie/apps/client/test/now_journey_test.dart: normal-size rich Journey preview publishes only the explicitly selected STOP
+00:00 +16: D:/Project/birdtie/apps/client/test/now_journey_test.dart: normal-size rich Journey preview publishes only the explicitly selected STOP
+00:00 +17: D:/Project/birdtie/apps/client/test/now_journey_test.dart: normal-size rich Journey preview publishes only the explicitly selected STOP
+00:00 +18: D:/Project/birdtie/apps/client/test/now_journey_test.dart: normal-size rich Journey preview publishes only the explicitly selected STOP
+00:00 +19: D:/Project/birdtie/apps/client/test/now_journey_test.dart: normal-size rich Journey preview publishes only the explicitly selected STOP
+00:00 +20: D:/Project/birdtie/apps/client/test/now_journey_test.dart: normal-size rich Journey preview publishes only the explicitly selected STOP
+00:00 +21: All tests passed!

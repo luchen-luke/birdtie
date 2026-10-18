@@ -42,3 +42,32 @@ func TestMomentInteractionClosedContractAndInboxConcreteSnapshot(t *testing.T) {
 		t.Fatal("cursor granted a different notification filter")
 	}
 }
+
+func TestMomentReplyClosedParentVersionAndDigest(t *testing.T) {
+	top := MomentInteractionInput{OperationID: momentControlTestOp, Action: "COMMENT", MomentID: momentControlTestID, ExpectedMomentRevision: 2, Body: "reply"}
+	reply := top
+	reply.ParentCommentID = momentControlTestOp
+	reply.ExpectedParentCommentVersion = 1
+	raw, _ := json.Marshal(reply)
+	got, e := DecodeMomentInteraction(raw, false)
+	if e != nil || got.ParentCommentID != reply.ParentCommentID {
+		t.Fatal("reply decode", e)
+	}
+	if MomentInteractionDigest(top) == MomentInteractionDigest(reply) {
+		t.Fatal("reply target omitted from digest")
+	}
+	changed := reply
+	changed.ExpectedParentCommentVersion++
+	if MomentInteractionDigest(changed) == MomentInteractionDigest(reply) {
+		t.Fatal("parent revision omitted")
+	}
+	for _, bad := range []MomentInteractionInput{{OperationID: top.OperationID, Action: "COMMENT", MomentID: top.MomentID, ExpectedMomentRevision: 2, Body: "reply", ParentCommentID: reply.ParentCommentID}, {OperationID: top.OperationID, Action: "COMMENT", MomentID: top.MomentID, ExpectedMomentRevision: 2, Body: "reply", ExpectedParentCommentVersion: 1}, {OperationID: top.OperationID, Action: "LIKE", MomentID: top.MomentID, ExpectedMomentRevision: 2, ParentCommentID: reply.ParentCommentID, ExpectedParentCommentVersion: 1}} {
+		if _, e := NormalizeMomentInteraction(bad, false); e == nil {
+			t.Fatal("invalid parent pair/action accepted")
+		}
+	}
+	duplicate := strings.TrimSuffix(string(raw), "}") + `,"parentCommentId":"` + momentControlTestID + `"}`
+	if _, e := DecodeMomentInteraction([]byte(duplicate), false); e == nil {
+		t.Fatal("duplicate parent accepted")
+	}
+}

@@ -44,26 +44,28 @@ type mapContentSnapshot struct {
 // not turn a private native draft into a publication. Initial suspended import
 // accounts are distinguished from a later suspension by their original xmin.
 const mapContentMomentsSQL = `WITH cl AS MATERIALIZED(SELECT clock_timestamp() at),candidates AS(
- SELECT m.*,a.status actor_status,a.xmin::text actor_stamp,
+ SELECT m.*,a.status actor_status,a.xmin::text actor_stamp,x.run_id original_run,adapted.created_at adapted_at,
  CASE WHEN m.status='draft' AND m.visibility='private' AND m.author_account_id=$1 THEN 'SELF_PRIVATE'
  WHEN m.status='published' AND m.visibility='public' AND a.status='active' AND m.author_confirmed_at IS NOT NULL AND m.published_at<=cl.at AND m.author_confirmed_at<=m.published_at AND birdtie_moment_public_binding(m.id,$1,cl.at) IS NOT NULL THEN 'BIRDTIE_PUBLIC_MOMENT'
  WHEN m.status='draft' AND m.visibility='private' AND m.revision=1 AND original.run_id IS NOT NULL AND n.source_visibility='public' AND n.source_moderation_status='ok' AND NOT n.deleted
  AND m.title=n.title AND m.body=n.body AND u.source_status='active'
  AND(a.status='active' OR(a.status='suspended' AND a.xmin=original.xmin)) THEN 'CIVU_PUBLIC_MOMENT' END visibility_source,
- jsonb_build_array(m.xmin::text,a.xmin::text,n.xmin::text,x.xmin::text,u.xmin::text,r.xmin::text,original.xmin::text,
+ jsonb_build_array(m.xmin::text,a.xmin::text,adapted.xmin::text,n.xmin::text,x.xmin::text,u.xmin::text,r.xmin::text,original.xmin::text,
  (SELECT jsonb_agg(jsonb_build_array(owner_account_id,target_account_id,version,xmin::text)ORDER BY owner_account_id,target_account_id) FROM person_block_control_epochs WHERE(owner_account_id=$1 AND target_account_id=a.id)OR(owner_account_id=a.id AND target_account_id=$1)),
  (SELECT jsonb_build_array(version,xmin::text) FROM moment_location_epochs WHERE moment_id=m.id),
  (SELECT jsonb_agg(jsonb_build_array(l.id,l.xmin::text)ORDER BY l.id) FROM moment_location_links l WHERE l.moment_id=m.id AND l.status='ACTIVE'))::text stamp
  FROM moments m JOIN accounts a ON a.id=m.author_account_id AND a.account_type='person' CROSS JOIN cl
  LEFT JOIN legacy_native_adaptation_entities x ON x.kind='moment' AND x.target_id=m.id::text AND x.owner_account_id=m.author_account_id
+ LEFT JOIN legacy_native_adaptation_runs adapted ON adapted.run_id=x.run_id
  LEFT JOIN legacy_note_archives n ON n.run_id=x.run_id AND n.source_note_id::text=x.source_key AND n.source_sha256=x.source_sha256 AND n.owner_account_id=x.owner_account_id
  LEFT JOIN legacy_entity_mappings u ON u.run_id=n.run_id AND u.entity_kind='user' AND u.target_id=n.owner_account_id AND u.owner_account_id=n.owner_account_id
  LEFT JOIN legacy_map_visibility_runs r ON r.run_id=n.run_id
  LEFT JOIN legacy_import_runs original ON original.run_id=r.run_id AND original.source_file_sha256=r.source_file_sha256 AND original.manifest_file_sha256=r.manifest_file_sha256 AND original.snapshot_sha256=r.snapshot_sha256
  WHERE m.status<>'withdrawn' AND a.status IN('active','suspended')
  AND NOT EXISTS(SELECT 1 FROM account_blocks b WHERE(b.blocker_account_id=$1 AND b.blocked_account_id=a.id)OR(b.blocker_account_id=a.id AND b.blocked_account_id=$1))
- ) SELECT id::text,author_account_id::text,revision,status,visibility,title,body,created_at,visibility_source,stamp
- FROM candidates WHERE visibility_source IS NOT NULL AND(visibility_source<>'CIVU_PUBLIC_MOMENT' OR stamp IS NOT NULL) ORDER BY created_at DESC,id LIMIT 10001`
+ ) SELECT id::text,author_account_id::text,revision,status,visibility,title,body,created_at,visibility_source,stamp,published_at,
+ CASE WHEN original_run IS NULL THEN 'NATIVE' WHEN created_at<adapted_at THEN 'CIVU_ORIGINAL' ELSE 'UNKNOWN' END
+ FROM candidates WHERE visibility_source IS NOT NULL AND(visibility_source<>'CIVU_PUBLIC_MOMENT' OR stamp IS NOT NULL) ORDER BY coalesce(published_at,CASE WHEN original_run IS NULL OR created_at<adapted_at THEN created_at END) DESC NULLS LAST,id LIMIT 10001`
 
 func mapContentCurrentMomentPlacesSQL() string {
 	return `WITH original_links AS(
@@ -74,13 +76,13 @@ func mapContentCurrentMomentPlacesSQL() string {
  WHERE EXISTS(SELECT 1 FROM jsonb_array_elements(archive.source_relationships->'places') r WHERE r->>'sourcePlaceId'=pf.source_place_id::text)
  AND(EXISTS(SELECT 1 FROM legacy_native_context_entities proof WHERE proof.run_id=mapping.run_id AND proof.kind='note_location' AND proof.target_id=l.id AND proof.owner_account_id=mapping.owner_account_id AND proof.source_parent_key=mapping.source_key AND proof.source_parent_sha256=mapping.source_sha256)
  OR(l.id=md5('moment-locations-v1:'||l.moment_id::text)::uuid AND EXISTS(SELECT 1 FROM moment_location_compatibility_backfill b WHERE b.moment_id=l.moment_id AND b.place_id=l.place_id AND b.revision=1)))
- ) SELECT DISTINCT q.mid::text,q.pid::text,q.stamp,q.original_relation,q.private_context,q.native_public_relation FROM(
- SELECT l.moment_id mid,l.place_id pid,jsonb_build_array(l.xmin::text)::text stamp,original.id IS NOT NULL original_relation,false private_context,l.precision='place' native_public_relation FROM moment_location_links l LEFT JOIN original_links original ON original.id=l.id WHERE l.status='ACTIVE' AND l.kind='PLACE' AND(l.precision='place' OR original.id IS NOT NULL)
+ ) SELECT DISTINCT q.mid::text,q.pid::text,q.stamp,q.original_relation,q.private_context,q.native_public_relation,q.relation_id::text FROM(
+ SELECT l.moment_id mid,l.place_id pid,jsonb_build_array(l.xmin::text)::text stamp,original.id IS NOT NULL original_relation,false private_context,l.precision='place' native_public_relation,l.id relation_id FROM moment_location_links l LEFT JOIN original_links original ON original.id=l.id WHERE l.status='ACTIVE' AND l.kind='PLACE' AND(l.precision='place' OR original.id IS NOT NULL)
  UNION ALL SELECT c.moment_id,p.place_id,jsonb_build_array(c.xmin::text,p.xmin::text,i.xmin::text,v.xmin::text,asset.xmin::text)::text,
  EXISTS(SELECT 1 FROM legacy_native_context_entities ce JOIN legacy_note_archives archive ON archive.run_id=ce.run_id AND archive.source_note_id::text=ce.source_parent_key AND archive.source_sha256=ce.source_parent_sha256 AND archive.owner_account_id=ce.owner_account_id AND NOT archive.deleted
  JOIN legacy_native_adaptation_entities mm ON mm.kind='moment' AND mm.run_id=archive.run_id AND mm.source_key=archive.source_note_id::text AND mm.source_sha256=archive.source_sha256 AND mm.owner_account_id=archive.owner_account_id AND mm.target_id=c.moment_id::text
  JOIN legacy_native_context_entities cp ON cp.kind='media_place' AND cp.run_id=ce.run_id AND cp.target_id=p.id AND cp.owner_account_id=ce.owner_account_id AND cp.source_parent_key=ce.source_parent_key AND cp.source_parent_sha256=ce.source_parent_sha256
- WHERE ce.kind='media_context' AND ce.target_id=c.id AND ce.owner_account_id=c.owner_account_id) original_relation,true,false
+ WHERE ce.kind='media_context' AND ce.target_id=c.id AND ce.owner_account_id=c.owner_account_id) original_relation,true,false,p.id
  FROM private_moment_media_contexts c JOIN private_moment_media_context_places p ON p.context_id=c.id
  JOIN media_assets asset ON asset.id=coalesce(c.image_id,c.video_id) AND asset.owner_account_id=c.owner_account_id AND asset.state='ready_private'
  LEFT JOIN private_moment_images i ON i.id=c.image_id AND i.owner_account_id=c.owner_account_id AND i.moment_id=c.moment_id AND i.status='ready_private' AND i.retain_until>clock_timestamp() AND i.derivative IS NOT NULL
@@ -199,7 +201,7 @@ func readMapContentSnapshot(ctx context.Context, f humanWriteFrame, filters ...*
 	}
 	for rows.Next() {
 		m := &mapContentMoment{v: content.MapContentMoment{SchemaVersion: content.MapContentMomentSchema, ViewerAccountID: f.a.ID, Locations: []content.MapContentLocation{}, Media: []content.MapContentMedia{}, ObservedAt: v.at, ValidUntil: v.until}, places: []string{}}
-		if e = rows.Scan(&m.v.ID, &m.owner, &m.v.Revision, &m.v.Status, &m.v.Visibility, &m.v.Title, &m.v.Body, &m.v.CreatedAt, &m.v.VisibilitySource, &m.stamp); e != nil {
+		if e = rows.Scan(&m.v.ID, &m.owner, &m.v.Revision, &m.v.Status, &m.v.Visibility, &m.v.Title, &m.v.Body, &m.v.CreatedAt, &m.v.VisibilitySource, &m.stamp, &m.v.PublishedAt, &m.v.CreatedAtSource); e != nil {
 			break
 		}
 		m.v.CreatedAt = m.v.CreatedAt.UTC()
@@ -220,15 +222,26 @@ func readMapContentSnapshot(ctx context.Context, f humanWriteFrame, filters ...*
 		return v, e
 	}
 	facts = append(facts, authorFacts)
+	sort.SliceStable(v.order, func(i, j int) bool {
+		a, b := v.moments[v.order[i]].v, v.moments[v.order[j]].v
+		at, bt := a.PublishedAt, b.PublishedAt
+		if at == nil && a.CreatedAtSource != "UNKNOWN" {
+			at = &a.CreatedAt
+		}
+		if bt == nil && b.CreatedAtSource != "UNKNOWN" {
+			bt = &b.CreatedAt
+		}
+		return mapContentPinNewer(content.MapContentPin{MomentID: a.ID, ContentTime: at}, content.MapContentPin{MomentID: b.ID, ContentTime: bt})
+	})
 	if len(v.order) > 0 {
 		rows, e = f.tx.Query(ctx, mapContentCurrentMomentPlacesSQL(), v.order)
 		if e != nil {
 			return v, content.ErrUnavailable
 		}
 		for rows.Next() {
-			var mid, pid, stamp string
+			var mid, pid, stamp, relationID string
 			var originalRelation, privateContext, nativePublicRelation bool
-			if e = rows.Scan(&mid, &pid, &stamp, &originalRelation, &privateContext, &nativePublicRelation); e != nil {
+			if e = rows.Scan(&mid, &pid, &stamp, &originalRelation, &privateContext, &nativePublicRelation, &relationID); e != nil {
 				break
 			}
 			m := v.moments[mid]

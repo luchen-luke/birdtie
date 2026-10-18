@@ -1,0 +1,8 @@
+=== RUN   TestJourneyPublicationNativeSnapshotPrivateEditRecoveryAndRetirement
+    journey_publication_native_test.go:38: migration roundtrip uses independently owned database birdtie_owned_migration_dc456ea5c329c65ff65bd419 with 180 actual migrations
+--- PASS: TestJourneyPublicationNativeSnapshotPrivateEditRecoveryAndRetirement (2.39s)
+=== RUN   TestJourneyPublicationNativeDiscoveryPaginationAndUnknownLifecycle
+    journey_publication_native_test.go:143: migration roundtrip uses independently owned database birdtie_owned_migration_2964488499cb73af2487c958 with 180 actual migrations
+--- PASS: TestJourneyPublicationNativeDiscoveryPaginationAndUnknownLifecycle (2.78s)
+PASS
+ok  	github.com/birdtie/birdtie/apps/api/internal/postgres	6.569s

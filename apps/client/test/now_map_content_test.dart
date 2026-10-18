@@ -126,6 +126,8 @@ class _PanelController extends OwnedMapController {
   Future<OwnedMapPlacePage> readPlaceMoments(
     OwnedMapPin pin, {
     String? cursor,
+    String? placeID,
+    OwnedMapMomentDetail? relationSource,
   }) async {
     if (!allowed) throw const FormatException();
     reads.add(cursor);

@@ -23,6 +23,7 @@ type CollectionPublicationInput struct {
 	Revision              int64                        `json:"revision"`
 	Entries               []CollectionPublicationEntry `json:"entries"`
 	AllowPrivatePlaceCopy bool                         `json:"allowPrivatePlaceCopy,omitempty"`
+	JourneySnapshot       *JourneyPublicationInput     `json:"journeySnapshot,omitempty"`
 }
 type CollectionUnpublishInput struct {
 	OperationID string `json:"operationId"`
@@ -70,6 +71,7 @@ type PublicCollection struct {
 	SourceBinding   string                  `json:"-"`
 	ResponseProof   any                     `json:"-"`
 	CopyGrant       *CollectionCopyGrant    `json:"copyGrant,omitempty"`
+	JourneySnapshot *PublicJourneySnapshot  `json:"journeySnapshot,omitempty"`
 }
 type CollectionPublicationStore interface {
 	PublishHumanCollection(context.Context, [32]byte, identity.Actor, string, string, CollectionPublicationInput) (PersonalCollection, error)
@@ -126,6 +128,19 @@ func DecodeCollectionPublicationClose(raw []byte) (CollectionPublicationCloseInp
 }
 
 func NormalizeCollectionPublication(in CollectionPublicationInput) (CollectionPublicationInput, error) {
+	if in.JourneySnapshot != nil {
+		if !ValidCollectionID(in.OperationID) || in.Revision < 1 || in.Revision >= math.MaxInt64 || len(in.Entries) != 0 || in.AllowPrivatePlaceCopy {
+			return CollectionPublicationInput{}, ErrInvalid
+		}
+		v, e := NormalizeJourneyPublication(*in.JourneySnapshot)
+		if e != nil {
+			return CollectionPublicationInput{}, e
+		}
+		in.JourneySnapshot = &v
+		in.OperationID = strings.ToLower(in.OperationID)
+		in.Entries = []CollectionPublicationEntry{}
+		return in, nil
+	}
 	if !ValidCollectionID(in.OperationID) || in.Revision < 1 || in.Revision >= math.MaxInt64 || len(in.Entries) < 1 || len(in.Entries) > 50 {
 		return CollectionPublicationInput{}, ErrInvalid
 	}
@@ -151,6 +166,12 @@ func CollectionPublicationDigest(kind, id, action string, revision int64, entrie
 	return sha256.Sum256(b)
 }
 func ValidatePublicCollection(v PublicCollection, kind, id string) error {
+	if v.JourneySnapshot != nil {
+		if v.ID != id || v.Kind != kind || !ValidCollectionID(id) || len(v.CityID) > 80 || !journeyText(v.Title, 160) || len(strings.TrimSpace(v.Title)) == 0 || !journeyText(v.Summary, 5000) || v.SourceExpiresAt.IsZero() || len(v.SourceBinding) != 64 {
+			return ErrInvalid
+		}
+		return ValidatePublicJourney(v)
+	}
 	if v.ID != id || v.Kind != kind || !ValidCollectionID(v.ID) || !ValidCollectionKind(v.Kind) || v.CityID == "" || len(v.CityID) > 80 || len(v.Title) < 1 || len(v.Title) > 160 || !utf8.ValidString(v.Title) || len(v.Summary) > 5000 || !utf8.ValidString(v.Summary) || v.Revision < 2 || v.SourceExpiresAt.IsZero() || v.SourceBinding == "" || len(v.Entries) < 1 || len(v.Entries) > 50 {
 		return ErrInvalid
 	}

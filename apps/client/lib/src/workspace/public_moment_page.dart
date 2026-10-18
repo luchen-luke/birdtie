@@ -10,12 +10,14 @@ import 'supplier_profile_api.dart';
 import 'now_ui_tokens.dart';
 import '../app/birdtie_app_bar.dart';
 import 'moment_interaction.dart';
+import 'place_detail_sheet.dart';
 import 'public_moment_media.dart';
 import 'moment_thread_api.dart';
 import 'moment_thread_panel.dart';
 import 'moment_locations_api.dart';
 import 'now_moment_editor_host.dart';
 import '../city/map_navigation_target.dart';
+import '../city/public_city_controller.dart';
 
 /// One current, explicitly public human publication. It is not attendance evidence.
 class PublicMomentPage extends StatefulWidget {
@@ -29,11 +31,18 @@ class PublicMomentPage extends StatefulWidget {
     this.onOpenPlace,
     this.onNavigateMap,
     this.onOpenAuthor,
+    this.onOpenActivity,
     this.embedded = false,
     this.apiBaseUrl,
     this.client,
     this.commentID,
     this.showManagement = true,
+    this.sourceCurrent,
+    this.useNowComposer = false,
+    this.onCommentTarget,
+    this.onCommentIntent,
+    this.nowDepth = 0,
+    this.composerCurrent,
   });
   final String momentID;
   final String? Function() authorizationHeader;
@@ -43,17 +52,235 @@ class PublicMomentPage extends StatefulWidget {
   final ValueChanged<String>? onOpenPlace;
   final ValueChanged<MapNavigationTarget>? onNavigateMap;
   final ValueChanged<String>? onOpenAuthor;
+  final ValueChanged<PublicActivity>? onOpenActivity;
   final bool embedded;
   final String? apiBaseUrl;
   final http.Client? client;
   final String? commentID;
   final bool showManagement;
+  final bool Function()? sourceCurrent;
+  final bool useNowComposer;
+  final int nowDepth;
+  final bool Function()? composerCurrent;
+  final void Function(
+    MomentInteractionController? controller,
+    String? momentID,
+    String? title,
+    MomentComment? reply,
+  )?
+  onCommentTarget;
+  final VoidCallback? onCommentIntent;
   @override
   State<PublicMomentPage> createState() => _PublicMomentPageState();
 }
 
 class _PublicMomentPageState extends State<PublicMomentPage> {
   final _shareSource = HumanCausalSourceSerial();
+  MomentInteractionController? _nowInteraction;
+  MomentComment? _nowReply;
+  String? _nowTitle;
+  bool _nowSourceRetired = false, _nowRevisionBlocked = false;
+  int _nowNotice = 0;
+  late ({String? id, String? title, MomentComment? reply}) _nowTarget;
+  final _nowFrames = <({Object key, Widget content, bool place})>[];
+  bool get _composerActive =>
+      _nowFrames.isEmpty && widget.composerCurrent?.call() != false;
+  bool get _externalCurrent =>
+      !_nowSourceRetired && widget.sourceCurrent?.call() != false;
+  bool get _readable =>
+      mounted &&
+      _externalCurrent &&
+      _identity == _current &&
+      _moment?.current == true;
+
+  void _emitNowTarget({bool place = false, bool preserveActive = false}) {
+    if (!widget.useNowComposer) return;
+    final notice = ++_nowNotice;
+    if (place) {
+      _nowTarget = (id: null, title: null, reply: null);
+    } else if (!preserveActive) {
+      _nowTarget = (
+        id: widget.momentID,
+        title: _nowTitle ?? '当前动态',
+        reply: _nowReply,
+      );
+    }
+    final target = _nowTarget;
+    final interaction = _nowInteraction;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || notice != _nowNotice) return;
+      final live =
+          interaction != null &&
+          identical(interaction, _nowInteraction) &&
+          interaction.momentID == target.id &&
+          interaction.current();
+      widget.onCommentTarget?.call(
+        live ? interaction : null,
+        target.id,
+        target.title,
+        target.reply,
+      );
+    });
+  }
+
+  void _retireNowInteraction({bool emit = true}) {
+    final previous = _nowInteraction;
+    _nowInteraction = null;
+    previous?.removeListener(_nowInteractionChanged);
+    previous?.dispose();
+    if (emit) _emitNowTarget(preserveActive: true);
+  }
+
+  void _nowInteractionChanged() {
+    final c = _nowInteraction;
+    if (c == null || !mounted) return;
+    if (c.page != null && c.page!.revision != _moment?.revision) {
+      _nowRevisionBlocked = true;
+      _emitNowTarget();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || !identical(c, _nowInteraction)) return;
+        setState(() {
+          _retireNowInteraction();
+          _error = '动态版本已变化，请重新核实后评论。';
+        });
+      });
+      return;
+    }
+    _emitNowTarget();
+  }
+
+  void _startNowInteraction() {
+    if (!widget.useNowComposer ||
+        !_readable ||
+        _nowFrames.isNotEmpty ||
+        widget.workspaceID?.call() != null ||
+        widget.ownerID?.call() == null)
+      return;
+    _retireNowInteraction(emit: false);
+    final value = _moment!, epoch = _epoch, identity = _current;
+    _nowTitle = value.title.isEmpty ? value.body : value.title;
+    _nowRevisionBlocked = false;
+    final c = MomentInteractionController(
+      momentID: value.id,
+      authorizationHeader: widget.authorizationHeader,
+      ownerID: () => widget.ownerID?.call(),
+      apiBaseUrl: _api.baseUrl,
+      client: _api.borrowedClient,
+      identityChanges: _shareSource,
+      commentID: widget.commentID,
+      current: () =>
+          _readable &&
+          epoch == _epoch &&
+          identity == _current &&
+          identical(_moment, value) &&
+          _composerActive &&
+          !_nowRevisionBlocked &&
+          widget.workspaceID?.call() == null,
+    );
+    _nowInteraction = c;
+    c.addListener(_nowInteractionChanged);
+    _emitNowTarget();
+    unawaited(c.load());
+  }
+
+  bool _canPushNow() {
+    if (!_readable) return false;
+    if (widget.nowDepth + _nowFrames.length >= 8) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('请先返回上一层，再继续打开内容。')));
+      return false;
+    }
+    return true;
+  }
+
+  void _pushNowMoment(String id) {
+    if (!_canPushNow()) return;
+    _retireNowInteraction(emit: false);
+    ++_nowNotice;
+    final key = Object(), value = _moment;
+    bool current() =>
+        _readable &&
+        identical(_moment, value) &&
+        _nowFrames.any((f) => identical(f.key, key));
+    final child = PublicMomentPage(
+      key: ValueKey(key),
+      momentID: id,
+      authorizationHeader: widget.authorizationHeader,
+      ownerID: widget.ownerID,
+      workspaceID: widget.workspaceID,
+      identityChanges: _shareSource,
+      apiBaseUrl: _api.baseUrl,
+      client: _api.borrowedClient,
+      embedded: true,
+      useNowComposer: true,
+      showManagement: false,
+      sourceCurrent: current,
+      onOpenActivity: widget.onOpenActivity,
+      onCommentIntent: widget.onCommentIntent,
+      composerCurrent: () =>
+          _readable &&
+          identical(_nowFrames.lastOrNull?.key, key) &&
+          widget.composerCurrent?.call() != false,
+      nowDepth: widget.nowDepth + _nowFrames.length + 1,
+      onCommentTarget: (c, momentID, title, reply) {
+        if (current() && identical(_nowFrames.last.key, key)) {
+          ++_nowNotice;
+          _nowTarget = (id: momentID, title: title, reply: reply);
+          widget.onCommentTarget?.call(c, momentID, title, reply);
+        }
+      },
+    );
+    setState(() => _nowFrames.add((key: key, content: child, place: false)));
+    _shareSource.notifyReadBindingChanged();
+    // The user explicitly selected this original Moment; loading never borrows
+    // the parent Moment's reply or draft slot.
+    _nowTarget = (id: id, title: '正在读取动态', reply: null);
+    _emitNowTarget(preserveActive: true);
+  }
+
+  void _pushNowPlace(String id) {
+    if (!_canPushNow()) return;
+    _retireNowInteraction(emit: false);
+    final key = Object(), value = _moment;
+    bool current() =>
+        _readable &&
+        identical(_moment, value) &&
+        _nowFrames.any((f) => identical(f.key, key));
+    final child = PlaceDetailSheet(
+      key: ValueKey(key),
+      placeID: id,
+      publicContentFirst: true,
+      authorizationHeader: () =>
+          current() ? widget.authorizationHeader() : null,
+      ownerID: () => current() ? widget.ownerID?.call() : null,
+      organizationWorkspaceID: widget.workspaceID,
+      workspaceChanges: _shareSource,
+      apiBaseUrl: _api.baseUrl,
+      client: _api.borrowedClient,
+      onOpenActivity: (activity) {
+        if (current()) widget.onOpenActivity?.call(activity);
+      },
+      onOpenMoment: (mid) {
+        if (current()) _pushNowMoment(mid);
+      },
+    );
+    setState(() => _nowFrames.add((key: key, content: child, place: true)));
+    _shareSource.notifyReadBindingChanged();
+    _emitNowTarget(place: true);
+  }
+
+  void _popNowFrame() {
+    if (_nowFrames.isEmpty) return;
+    ++_nowNotice;
+    setState(() => _nowFrames.removeLast());
+    _shareSource.notifyReadBindingChanged();
+    if (_nowFrames.isEmpty)
+      _startNowInteraction();
+    else if (_nowFrames.last.place)
+      _emitNowTarget(place: true);
+  }
+
   void _observeShareSource() {
     _shareSource.observe((
       widget.momentID,
@@ -88,6 +315,7 @@ class _PublicMomentPageState extends State<PublicMomentPage> {
   @override
   void initState() {
     super.initState();
+    _nowTarget = (id: widget.momentID, title: '当前动态', reply: null);
     _observeShareSource();
     _identity = _current;
     widget.identityChanges?.addListener(_changed);
@@ -96,8 +324,30 @@ class _PublicMomentPageState extends State<PublicMomentPage> {
 
   void _changed() {
     _observeShareSource();
-    if (_identity == _current) return;
+    if (!_externalCurrent) {
+      _nowSourceRetired = true;
+      ++_epoch;
+      _retireNowInteraction();
+      _shareSource.notifyReadBindingChanged();
+      setState(() {
+        _moment = null;
+        _nowFrames.clear();
+        _error = '原内容来源已变化，请返回当前旅程重新打开。';
+      });
+      return;
+    }
+    if (_identity == _current) {
+      if (widget.useNowComposer &&
+          _composerActive &&
+          _readable &&
+          !_nowRevisionBlocked &&
+          (_nowInteraction == null || !_nowInteraction!.current()))
+        _startNowInteraction();
+      return;
+    }
     _identity = _current;
+    _retireNowInteraction();
+    _nowFrames.clear();
     ++_epoch;
     setState(() {
       _moment = null;
@@ -138,6 +388,13 @@ class _PublicMomentPageState extends State<PublicMomentPage> {
   }
 
   Future<void> _load() async {
+    _retireNowInteraction();
+    _nowFrames.clear();
+    if (!_externalCurrent) {
+      _nowSourceRetired = true;
+      setState(() => _error = '原内容来源已变化，请返回当前旅程重新打开。');
+      return;
+    }
     final epoch = ++_epoch, identity = _current, id = widget.momentID;
     _leaseTimer?.cancel();
     _photoCapabilityTimer?.cancel();
@@ -158,6 +415,7 @@ class _PublicMomentPageState extends State<PublicMomentPage> {
       );
       if (mounted &&
           epoch == _epoch &&
+          _externalCurrent &&
           identity == _current &&
           id == widget.momentID) {
         // Retain the exact transport and identity binding for this read. Normal
@@ -169,6 +427,7 @@ class _PublicMomentPageState extends State<PublicMomentPage> {
           authorizationHeader: () => widget.authorizationHeader(),
           current: () =>
               mounted &&
+              _externalCurrent &&
               epoch == _epoch &&
               identity == _current &&
               id == widget.momentID &&
@@ -183,6 +442,7 @@ class _PublicMomentPageState extends State<PublicMomentPage> {
           authorizationHeader: () => widget.authorizationHeader(),
           current: () =>
               mounted &&
+              _externalCurrent &&
               epoch == _epoch &&
               identity == _current &&
               id == widget.momentID &&
@@ -190,6 +450,8 @@ class _PublicMomentPageState extends State<PublicMomentPage> {
               _moment?.current == true,
         );
         setState(() => _moment = value);
+        _nowReply = null;
+        _startNowInteraction();
         if (value.validUntil case final expiry?) {
           if (!value.current) {
             setState(() {
@@ -201,14 +463,17 @@ class _PublicMomentPageState extends State<PublicMomentPage> {
           _leaseTimer = Timer(expiry.difference(DateTime.now().toUtc()), () {
             if (mounted && epoch == _epoch)
               setState(() {
+                _retireNowInteraction();
                 _moment = null;
+                _shareSource.notifyReadBindingChanged();
                 _canManagePhoto = false;
                 _canManageMoment = false;
                 _error = '当前动态资料已到期，请重新核实。';
               });
           });
         }
-        unawaited(_readPhotoCapability(epoch, identity, id));
+        if (widget.showManagement)
+          unawaited(_readPhotoCapability(epoch, identity, id));
       }
     } catch (_) {
       if (mounted && epoch == _epoch && identity == _current) {
@@ -219,6 +484,8 @@ class _PublicMomentPageState extends State<PublicMomentPage> {
 
   @override
   void dispose() {
+    ++_nowNotice;
+    _retireNowInteraction(emit: false);
     _leaseTimer?.cancel();
     _photoCapabilityTimer?.cancel();
     _mediaAPI?.dispose();
@@ -326,7 +593,33 @@ class _PublicMomentPageState extends State<PublicMomentPage> {
 
   @override
   Widget build(BuildContext context) {
-    final body = _body(context);
+    final root = _body(context);
+    final frames = _readable
+        ? _nowFrames
+        : const <({Object key, Widget content, bool place})>[];
+    final body = widget.useNowComposer
+        ? Column(
+            children: [
+              if (frames.isNotEmpty)
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton.icon(
+                    onPressed: _popNowFrame,
+                    icon: const Icon(Icons.arrow_back),
+                    label: Text(frames.last.place ? '返回原动态' : '返回内容列表'),
+                  ),
+                )
+              else
+                const SizedBox.shrink(),
+              Expanded(
+                child: IndexedStack(
+                  index: frames.length,
+                  children: [root, for (final frame in frames) frame.content],
+                ),
+              ),
+            ],
+          )
+        : root;
     if (widget.embedded) return body;
     return Scaffold(
       appBar: birdtieAppBar(
@@ -340,6 +633,8 @@ class _PublicMomentPageState extends State<PublicMomentPage> {
   void _threadWithdrawn(MomentThreadAPI source) {
     if (!mounted || !identical(source, _threadAPI) || !source.current()) return;
     ++_epoch;
+    _retireNowInteraction();
+    _nowFrames.clear();
     _leaseTimer?.cancel();
     _photoCapabilityTimer?.cancel();
     _threadAPI = null;
@@ -368,6 +663,8 @@ class _PublicMomentPageState extends State<PublicMomentPage> {
 
   Widget _body(BuildContext context) {
     final tokens = NowUiTokens.of(context);
+    if (!_externalCurrent)
+      return const Center(child: Text('原内容来源已变化，请返回当前旅程重新打开。'));
     final generation = _shareSource.generation;
     final threadAPI = _threadAPI;
     final editor = NowMomentEditorScope.maybeOf(context);
@@ -414,6 +711,7 @@ class _PublicMomentPageState extends State<PublicMomentPage> {
                       client: _api.borrowedClient,
                       identityChanges: _shareSource,
                       recoveryOnly: true,
+                      showComposer: !widget.useNowComposer,
                       current: () =>
                           mounted &&
                           generation == _shareSource.generation &&
@@ -438,6 +736,7 @@ class _PublicMomentPageState extends State<PublicMomentPage> {
                   api: _photoAPI(),
                   current: () =>
                       mounted &&
+                      _externalCurrent &&
                       _moment?.current == true &&
                       _identity == _current,
                   identityChanges: _shareSource,
@@ -459,6 +758,10 @@ class _PublicMomentPageState extends State<PublicMomentPage> {
                   onOpenMoment: (id) async {
                     if (id == widget.momentID || _moment?.current != true)
                       return;
+                    if (widget.useNowComposer) {
+                      _pushNowMoment(id);
+                      return;
+                    }
                     await Navigator.of(context).push(
                       MaterialPageRoute<void>(
                         builder: (_) => PublicMomentPage(
@@ -517,12 +820,15 @@ class _PublicMomentPageState extends State<PublicMomentPage> {
                   authorizationHeader: widget.authorizationHeader,
                   sourceCurrent: () =>
                       mounted &&
+                      _externalCurrent &&
                       _moment?.current == true &&
                       _identity == _current,
                   identityChanges: _shareSource,
                   apiBaseUrl: _api.baseUrl,
                   client: _api.borrowedClient,
-                  onOpenPlace: widget.onOpenPlace,
+                  onOpenPlace: widget.useNowComposer
+                      ? _pushNowPlace
+                      : widget.onOpenPlace,
                   onNavigateMap: widget.onNavigateMap,
                 ),
                 const SizedBox(height: 12),
@@ -569,7 +875,7 @@ class _PublicMomentPageState extends State<PublicMomentPage> {
                           : () => widget.ownerID?.call(),
                       workspaceID: () => widget.workspaceID?.call(),
                       sourceKey: () => _shareSource.generation,
-                      sourceCurrent: () => mounted,
+                      sourceCurrent: () => _readable,
                       type: 'moment',
                       id: widget.momentID,
                       apiBaseUrl: widget.apiBaseUrl,
@@ -578,27 +884,47 @@ class _PublicMomentPageState extends State<PublicMomentPage> {
                     icon: const Icon(Icons.chat_bubble_outline),
                     label: const Text('发给好友'),
                   ),
-                MomentInteractionPanel(
-                  key: ValueKey((
-                    'moment-interactions',
-                    widget.momentID,
-                    widget.commentID,
-                    generation,
-                    _epoch,
-                  )),
-                  momentID: widget.momentID,
-                  commentID: widget.commentID,
-                  authorizationHeader: () => widget.authorizationHeader(),
-                  ownerID: () => widget.ownerID?.call(),
-                  apiBaseUrl: _api.baseUrl,
-                  client: _api.borrowedClient,
-                  identityChanges: _shareSource,
-                  current: () =>
-                      mounted &&
-                      generation == _shareSource.generation &&
-                      _identity == _current &&
-                      widget.workspaceID?.call() == null,
-                ),
+                if (!widget.useNowComposer || _nowInteraction != null)
+                  MomentInteractionPanel(
+                    key: ValueKey((
+                      'moment-interactions',
+                      widget.momentID,
+                      widget.commentID,
+                      generation,
+                      _epoch,
+                    )),
+                    controller: widget.useNowComposer ? _nowInteraction : null,
+                    showComposer: !widget.useNowComposer,
+                    onReply: widget.useNowComposer
+                        ? (reply) {
+                            if (_nowInteraction?.replyCurrent(reply) != true)
+                              return;
+                            widget.onCommentIntent?.call();
+                            _nowReply = reply;
+                            _emitNowTarget();
+                          }
+                        : null,
+                    onComment: widget.useNowComposer
+                        ? () {
+                            if (_nowInteraction?.canComment != true) return;
+                            widget.onCommentIntent?.call();
+                            _nowReply = null;
+                            _emitNowTarget();
+                          }
+                        : null,
+                    momentID: widget.momentID,
+                    commentID: widget.commentID,
+                    authorizationHeader: () => widget.authorizationHeader(),
+                    ownerID: () => widget.ownerID?.call(),
+                    apiBaseUrl: _api.baseUrl,
+                    client: _api.borrowedClient,
+                    identityChanges: _shareSource,
+                    current: () =>
+                        mounted &&
+                        generation == _shareSource.generation &&
+                        _identity == _current &&
+                        widget.workspaceID?.call() == null,
+                  ),
               ],
             ),
           );

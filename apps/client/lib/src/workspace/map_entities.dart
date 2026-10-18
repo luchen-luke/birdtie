@@ -201,6 +201,10 @@ class MapEntityReadGrant {
       entity.anchorID == _source.anchorID &&
       entity.entryID == _source.entryID &&
       entity.threadID == _source.threadID &&
+      entity.contentTime == _source.contentTime &&
+      entity.threadPosition == _source.threadPosition &&
+      listEquals(entity.nextContentIDs, _source.nextContentIDs) &&
+      listEquals(entity.journeyEdges, _source.journeyEdges) &&
       listEquals(entity.memberIDs, _source.memberIDs) &&
       entity.contentCount == _source.contentCount &&
       entity.anchorCount == _source.anchorCount;
@@ -231,6 +235,40 @@ class MapEntityReadGrant {
       at.isBefore(pixels.validUntil!);
 }
 
+/// A published Journey's explicit adjacent, location-approved content edge.
+class MapJourneyEdge {
+  const MapJourneyEdge({
+    required this.journeyID,
+    required this.publicationRevision,
+    required this.nextID,
+    required this.fromPosition,
+    required this.toPosition,
+    required this.sourceVersion,
+  });
+  final String journeyID, nextID, sourceVersion;
+  final int publicationRevision, fromPosition, toPosition;
+  String get identity =>
+      'journey:$journeyID:$publicationRevision:$fromPosition:$toPosition';
+  @override
+  bool operator ==(Object other) =>
+      other is MapJourneyEdge &&
+      journeyID == other.journeyID &&
+      publicationRevision == other.publicationRevision &&
+      nextID == other.nextID &&
+      fromPosition == other.fromPosition &&
+      toPosition == other.toPosition &&
+      sourceVersion == other.sourceVersion;
+  @override
+  int get hashCode => Object.hash(
+    journeyID,
+    publicationRevision,
+    nextID,
+    fromPosition,
+    toPosition,
+    sourceVersion,
+  );
+}
+
 class MapEntity {
   const MapEntity({
     required this.id,
@@ -253,6 +291,10 @@ class MapEntity {
     this.sourceVersion = '',
     this.momentID = '',
     this.momentRevision = 0,
+    this.contentTime,
+    this.nextContentIDs = const [],
+    this.journeyEdges = const [],
+    this.threadPosition = 0,
     this.categoryCode = '',
     this.anchorID = '',
     this.entryID = '',
@@ -281,6 +323,10 @@ class MapEntity {
   // The native Moment selector is separate from a pin's compound map ID.
   final String momentID;
   final int momentRevision;
+  final DateTime? contentTime;
+  final List<String> nextContentIDs;
+  final List<MapJourneyEdge> journeyEdges;
+  final int threadPosition;
 
   /// A typed selector never weakens the complete pin/source binding. Legacy
   /// callers may still supply exactly moment:UUID plus a canonical revision.
@@ -347,6 +393,10 @@ class MapEntity {
     sourceVersion: sourceVersion,
     momentID: momentID,
     momentRevision: momentRevision,
+    contentTime: contentTime,
+    nextContentIDs: nextContentIDs,
+    journeyEdges: journeyEdges,
+    threadPosition: threadPosition,
     categoryCode: categoryCode,
     anchorID: anchorID,
     entryID: entryID,
@@ -390,6 +440,10 @@ class MapEntity {
     sourceVersion: sourceVersion,
     momentID: momentID,
     momentRevision: momentRevision,
+    contentTime: contentTime,
+    nextContentIDs: nextContentIDs,
+    journeyEdges: journeyEdges,
+    threadPosition: threadPosition,
     categoryCode: categoryCode,
     anchorID: anchorID,
     entryID: entryID,

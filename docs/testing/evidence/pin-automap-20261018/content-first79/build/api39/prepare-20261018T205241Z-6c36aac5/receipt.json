@@ -1,0 +1,49 @@
+{
+  "startedUTC": "2026-10-18T20:52:41.933681+00:00",
+  "status": "PREPARED_NOT_RUN",
+  "mode": "api39",
+  "executed": false,
+  "installed": false,
+  "clearedAppData": false,
+  "deployed": false,
+  "databaseMigration": "NOT_RUN",
+  "scriptSHA256": "94ae21e0b658c202daca86d826cc92d2ad08a8197af3684d67e7be74c2282850",
+  "normalPreviewApplicationId": "app.civu.civu_mobile.birdtiepreview",
+  "configuredAPIOrigin": "https://47.110.154.133",
+  "configuredVersionName": "0.1.2",
+  "configuredVersionCode": 60,
+  "normalizationExclusions": {
+    "local.properties": [
+      "flutter.buildMode",
+      "flutter.versionCode",
+      "flutter.versionName"
+    ]
+  },
+  "inputScopeLimit": "Resolved local source/config/assets/fonts/package tree and tool identity snapshot; not a claim of a hermetic Maven/SDK/cache reproduction.",
+  "beforeManifestSHA256": "4231571a62b84c5788111854c47fe4b16d74d8af7fdca480509d90c3c4c2d079",
+  "inputCount": 2098,
+  "inputBytes": 33194667,
+  "sourceHead": "8bd39a24a9bc74182415d4c3ea375b2ae8c9a787",
+  "command": [
+    "C:\\Program Files\\Go\\bin\\go.exe",
+    "build",
+    "-mod=readonly",
+    "-trimpath",
+    "-o",
+    "D:\\Project\\birdtie\\work\\content-first-20261019\\delivery79\\birdtie-api-linux-amd64-content-first39",
+    "."
+  ],
+  "cwd": "D:\\Project\\birdtie\\apps\\api",
+  "sourceFreeze": "NOT_CONFIRMED",
+  "sourceStable": true,
+  "afterManifestSHA256": "4231571a62b84c5788111854c47fe4b16d74d8af7fdca480509d90c3c4c2d079",
+  "changes": {
+    "added": [],
+    "removed": [],
+    "modified": [],
+    "metadataChanged": {}
+  },
+  "rawNormalizedBefore": {},
+  "rawNormalizedAfter": {},
+  "completedUTC": "2026-10-18T20:52:44.636484+00:00"
+}

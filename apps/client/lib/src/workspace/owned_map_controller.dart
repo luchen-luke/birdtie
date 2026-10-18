@@ -510,13 +510,23 @@ class OwnedMapController extends ChangeNotifier with WidgetsBindingObserver {
   Future<OwnedMapPlacePage> readPlaceMoments(
     OwnedMapPin pin, {
     String? cursor,
+    String? placeID,
+    OwnedMapMomentDetail? relationSource,
   }) async {
+    final targetPlace = placeID ?? pin.placeID;
+    bool relationCurrent() =>
+        placeID == null ||
+        relationSource != null &&
+            detailCurrent(relationSource) &&
+            relationSource.locations.any((p) => p.placeID == targetPlace);
     final identity = _identity, epoch = _epoch;
     final previous = cursor == null ? null : _cursors[cursor];
     bool pending() =>
         epoch == _epoch &&
         identity == _identity &&
         sourceCurrent(pin) &&
+        relationCurrent() &&
+        targetPlace.isNotEmpty &&
         (cursor == null ||
             previous != null &&
                 _grantCurrent(previous.$1) &&
@@ -525,7 +535,7 @@ class OwnedMapController extends ChangeNotifier with WidgetsBindingObserver {
     if (!pending() || identity == null)
       throw const FormatException('地点动态读取已失效，请重新读取');
     final value = await _api.readPlaceMoments(
-      pin.placeID,
+      targetPlace,
       cursor: cursor,
       ownerID: identity.$2!,
       authorization: identity.$3!,
@@ -982,7 +992,7 @@ class OwnedMapController extends ChangeNotifier with WidgetsBindingObserver {
         }
       }
     }
-    return pins.values.toList()..sort((a, b) => a.mapID.compareTo(b.mapID));
+    return pins.values.toList()..sort(OwnedMapPin.newestFirst);
   }
 
   OwnedMapView? get _continuation {

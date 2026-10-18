@@ -11,19 +11,25 @@ import (
 )
 
 type MomentInteractionInput struct {
-	OperationID            string `json:"operationId"`
-	Action                 string `json:"action"`
-	MomentID               string `json:"momentId"`
-	ExpectedMomentRevision int64  `json:"expectedMomentRevision"`
-	ExpectedLikeVersion    int64  `json:"expectedLikeVersion"`
-	CommentID              string `json:"commentId"`
-	Body                   string `json:"body"`
-	SourceVersion          string `json:"sourceVersion,omitempty"`
-	Approval               string `json:"approval,omitempty"`
+	OperationID                  string `json:"operationId"`
+	Action                       string `json:"action"`
+	MomentID                     string `json:"momentId"`
+	ExpectedMomentRevision       int64  `json:"expectedMomentRevision"`
+	ExpectedLikeVersion          int64  `json:"expectedLikeVersion"`
+	CommentID                    string `json:"commentId"`
+	Body                         string `json:"body"`
+	ParentCommentID              string `json:"parentCommentId,omitempty"`
+	ExpectedParentCommentVersion int64  `json:"expectedParentCommentVersion,omitempty"`
+	SourceVersion                string `json:"sourceVersion,omitempty"`
+	Approval                     string `json:"approval,omitempty"`
 }
 
 func MomentInteractionDigest(v MomentInteractionInput) string {
-	return MomentControlHash([]any{"moment-interaction-v1", v.OperationID, v.Action, v.MomentID, v.ExpectedMomentRevision, v.ExpectedLikeVersion, v.CommentID, base64.StdEncoding.EncodeToString([]byte(v.Body))})
+	facts := []any{"moment-interaction-v1", v.OperationID, v.Action, v.MomentID, v.ExpectedMomentRevision, v.ExpectedLikeVersion, v.CommentID, base64.StdEncoding.EncodeToString([]byte(v.Body))}
+	if v.ParentCommentID != "" {
+		facts = append(facts, "reply-v1", v.ParentCommentID, v.ExpectedParentCommentVersion)
+	}
+	return MomentControlHash(facts)
 }
 func DecodeMomentInteraction(raw []byte, commit bool) (MomentInteractionInput, error) {
 	var v MomentInteractionInput
@@ -31,7 +37,7 @@ func DecodeMomentInteraction(raw []byte, commit bool) (MomentInteractionInput, e
 	if commit {
 		required = append(required, "sourceVersion", "approval")
 	}
-	if _, e := momentControlClosed(raw, required, nil, ""); e != nil {
+	if _, e := momentControlClosed(raw, required, []string{"parentCommentId", "expectedParentCommentVersion"}, ""); e != nil {
 		return v, e
 	}
 	if json.Unmarshal(raw, &v) != nil {
@@ -42,6 +48,13 @@ func DecodeMomentInteraction(raw []byte, commit bool) (MomentInteractionInput, e
 func NormalizeMomentInteraction(v MomentInteractionInput, commit bool) (MomentInteractionInput, error) {
 	bad := func() (MomentInteractionInput, error) { return MomentInteractionInput{}, identity.ErrControlInvalid }
 	if !identity.HumanControlUUID(v.OperationID) || !identity.HumanControlUUID(v.MomentID) || v.ExpectedMomentRevision < 2 || v.ExpectedMomentRevision > MomentControlMaxRevision || v.ExpectedLikeVersion < 0 || v.ExpectedLikeVersion >= MomentControlMaxRevision {
+		return bad()
+	}
+	if v.ParentCommentID == "" {
+		if v.ExpectedParentCommentVersion != 0 {
+			return bad()
+		}
+	} else if v.Action != "COMMENT" || !identity.HumanControlUUID(v.ParentCommentID) || v.ExpectedParentCommentVersion < 1 || v.ExpectedParentCommentVersion > MomentControlMaxRevision {
 		return bad()
 	}
 	switch v.Action {
@@ -106,6 +119,13 @@ func ValidMomentInteractionReceipt(v MomentInteractionReceipt, op string) bool {
 	return false
 }
 
+type MomentCommentReply struct {
+	CommentID           string              `json:"commentId"`
+	Version             int64               `json:"version"`
+	Status              string              `json:"status"`
+	Body                string              `json:"body,omitempty"`
+	AuthorPublicProfile *PublicMomentAuthor `json:"authorPublicProfile,omitempty"`
+}
 type MomentComment struct {
 	ID                  string              `json:"id"`
 	Body                string              `json:"body"`
@@ -113,11 +133,15 @@ type MomentComment struct {
 	AuthorID            *string             `json:"authorId"`
 	AuthorPublicProfile *PublicMomentAuthor `json:"authorPublicProfile"`
 	CanDelete           bool                `json:"canDelete"`
+	Version             int64               `json:"version"`
+	CanReply            bool                `json:"canReply"`
+	ReplyTo             *MomentCommentReply `json:"replyTo"`
 }
 type MomentInteractionPage struct {
 	SchemaVersion  string                     `json:"schemaVersion"`
 	MomentID       string                     `json:"momentId"`
 	MomentRevision int64                      `json:"momentRevision"`
+	CanComment     bool                       `json:"canComment"`
 	LikeCount      int                        `json:"likeCount"`
 	CommentCount   int                        `json:"commentCount"`
 	Liked          bool                       `json:"liked"`

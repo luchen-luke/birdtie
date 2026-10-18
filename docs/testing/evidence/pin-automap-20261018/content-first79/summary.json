@@ -1,0 +1,616 @@
+{
+  "schema": "birdtie-content-first79-local-evidence-v1",
+  "status": "CODE_BUILT_MOBILE_NOT_RUN",
+  "baseline": "Android78 already verified separately; no inherited acceptance for Android79",
+  "changes": [
+    "Independent original Moment anchors with real chronology and adjacent permitted thread/Journey lines",
+    "Original Now composer comment/reply targets and isolated drafts",
+    "Same content host with retained reading/place stack and exact disabled target on retirement",
+    "Private Journey entry, field edits, original preview/commit/reconciliation and explicit public snapshots"
+  ],
+  "checks": [
+    {
+      "stage": "analyze",
+      "argv": [
+        "D:/DevTools/flutter/bin/cache/dart-sdk/bin/dart.exe",
+        "analyze",
+        "lib/src/content/now_journey_controller.dart",
+        "lib/src/content/now_journey_panel.dart",
+        "lib/src/content/personal_collection_controller.dart",
+        "lib/src/content/personal_collection_page.dart",
+        "lib/src/content/collection_publication_controller.dart",
+        "lib/src/content/collection_publication_page.dart",
+        "lib/src/workspace/map_workspace.dart",
+        "lib/src/workspace/now_map_content_panel.dart",
+        "lib/src/workspace/now_composer_draft_state.dart",
+        "lib/src/workspace/typed_local_draft.dart",
+        "lib/src/workspace/agent_composer.dart",
+        "lib/src/workspace/moment_interaction.dart",
+        "lib/src/workspace/owned_map_api.dart",
+        "lib/src/workspace/owned_map_controller.dart",
+        "lib/src/workspace/map_entities.dart",
+        "lib/src/workspace/map_display_policy.dart",
+        "lib/src/workspace/map_content_routes.dart",
+        "lib/src/city/amap_city_map_io.dart",
+        "lib/src/city/native_city_map_io.dart",
+        "lib/src/city/public_city_map.dart",
+        "test/now_journey_test.dart"
+      ],
+      "cwd": "D:\\Project\\birdtie\\apps\\client",
+      "exitCode": 2,
+      "elapsedSeconds": 5.15601110458374,
+      "log": "D:\\Project\\birdtie\\work\\content-first-20261019\\checks\\analyze01.log",
+      "completedUTC": "2026-10-18T20:37:32.116730+00:00"
+    },
+    {
+      "stage": "analyze",
+      "argv": [
+        "D:/DevTools/flutter/bin/cache/dart-sdk/bin/dart.exe",
+        "analyze",
+        "lib/src/content/now_journey_controller.dart",
+        "lib/src/content/now_journey_panel.dart",
+        "lib/src/content/personal_collection_controller.dart",
+        "lib/src/content/personal_collection_page.dart",
+        "lib/src/content/collection_publication_controller.dart",
+        "lib/src/content/collection_publication_page.dart",
+        "lib/src/workspace/map_workspace.dart",
+        "lib/src/workspace/public_moment_page.dart",
+        "lib/src/workspace/now_map_content_panel.dart",
+        "lib/src/workspace/now_composer_draft_state.dart",
+        "lib/src/workspace/typed_local_draft.dart",
+        "lib/src/workspace/agent_composer.dart",
+        "lib/src/workspace/moment_interaction.dart",
+        "lib/src/workspace/owned_map_api.dart",
+        "lib/src/workspace/owned_map_controller.dart",
+        "lib/src/workspace/map_entities.dart",
+        "lib/src/workspace/map_display_policy.dart",
+        "lib/src/workspace/map_content_routes.dart",
+        "lib/src/city/amap_city_map_io.dart",
+        "lib/src/city/native_city_map_io.dart",
+        "lib/src/city/public_city_map.dart",
+        "test/now_journey_test.dart"
+      ],
+      "cwd": "D:\\Project\\birdtie\\apps\\client",
+      "exitCode": 0,
+      "elapsedSeconds": 3.277804136276245,
+      "log": "D:\\Project\\birdtie\\work\\content-first-20261019\\checks\\analyze02.log",
+      "completedUTC": "2026-10-18T21:05:24.862047+00:00"
+    },
+    {
+      "stage": "analyze",
+      "argv": [
+        "D:/DevTools/flutter/bin/cache/dart-sdk/bin/dart.exe",
+        "analyze",
+        "lib/src/content/now_journey_controller.dart",
+        "lib/src/content/now_journey_panel.dart",
+        "lib/src/content/personal_collection_controller.dart",
+        "lib/src/content/personal_collection_page.dart",
+        "lib/src/content/collection_publication_controller.dart",
+        "lib/src/content/collection_publication_page.dart",
+        "lib/src/workspace/map_workspace.dart",
+        "lib/src/workspace/public_moment_page.dart",
+        "lib/src/workspace/now_map_content_panel.dart",
+        "lib/src/workspace/now_composer_draft_state.dart",
+        "lib/src/workspace/typed_local_draft.dart",
+        "lib/src/workspace/agent_composer.dart",
+        "lib/src/workspace/moment_interaction.dart",
+        "lib/src/workspace/owned_map_api.dart",
+        "lib/src/workspace/owned_map_controller.dart",
+        "lib/src/workspace/map_entities.dart",
+        "lib/src/workspace/map_display_policy.dart",
+        "lib/src/workspace/map_content_routes.dart",
+        "lib/src/city/amap_city_map_io.dart",
+        "lib/src/city/native_city_map_io.dart",
+        "lib/src/city/public_city_map.dart",
+        "test/now_journey_test.dart"
+      ],
+      "cwd": "D:\\Project\\birdtie\\apps\\client",
+      "exitCode": 0,
+      "elapsedSeconds": 3.6225006580352783,
+      "log": "D:\\Project\\birdtie\\work\\content-first-20261019\\checks\\analyze03.log",
+      "completedUTC": "2026-10-18T21:10:42.555881+00:00"
+    },
+    {
+      "stage": "analyze",
+      "argv": [
+        "D:/DevTools/flutter/bin/cache/dart-sdk/bin/dart.exe",
+        "analyze",
+        "lib/src/content/now_journey_controller.dart",
+        "lib/src/content/now_journey_panel.dart",
+        "lib/src/content/personal_collection_controller.dart",
+        "lib/src/content/personal_collection_page.dart",
+        "lib/src/content/collection_publication_controller.dart",
+        "lib/src/content/collection_publication_page.dart",
+        "lib/src/workspace/map_workspace.dart",
+        "lib/src/workspace/public_moment_page.dart",
+        "lib/src/workspace/now_map_content_panel.dart",
+        "lib/src/workspace/now_composer_draft_state.dart",
+        "lib/src/workspace/typed_local_draft.dart",
+        "lib/src/workspace/agent_composer.dart",
+        "lib/src/workspace/moment_interaction.dart",
+        "lib/src/workspace/owned_map_api.dart",
+        "lib/src/workspace/owned_map_controller.dart",
+        "lib/src/workspace/map_entities.dart",
+        "lib/src/workspace/map_display_policy.dart",
+        "lib/src/workspace/map_content_routes.dart",
+        "lib/src/city/amap_city_map_io.dart",
+        "lib/src/city/native_city_map_io.dart",
+        "lib/src/city/public_city_map.dart",
+        "test/now_journey_test.dart"
+      ],
+      "cwd": "D:\\Project\\birdtie\\apps\\client",
+      "exitCode": 0,
+      "elapsedSeconds": 4.210869789123535,
+      "log": "D:\\Project\\birdtie\\work\\content-first-20261019\\checks\\analyze04.log",
+      "completedUTC": "2026-10-18T21:15:33.645385+00:00"
+    },
+    {
+      "stage": "composer",
+      "argv": [
+        "D:/DevTools/flutter/bin/flutter.bat",
+        "test",
+        "--no-pub",
+        "test/now_journey_test.dart",
+        "test/now_content_composer_test.dart",
+        "test/now_composer_draft_state_test.dart",
+        "test/typed_local_draft_test.dart"
+      ],
+      "cwd": "D:\\Project\\birdtie\\apps\\client",
+      "exitCode": 1,
+      "elapsedSeconds": 7.909424066543579,
+      "log": "D:\\Project\\birdtie\\work\\content-first-20261019\\checks\\composer01.log",
+      "completedUTC": "2026-10-18T20:54:13.789271+00:00"
+    },
+    {
+      "stage": "flutter-fix",
+      "argv": [
+        "D:/DevTools/flutter/bin/flutter.bat",
+        "test",
+        "--no-pub",
+        "test/now_journey_test.dart",
+        "test/collection_publication_controller_test.dart"
+      ],
+      "cwd": "D:\\Project\\birdtie\\apps\\client",
+      "exitCode": 0,
+      "elapsedSeconds": 3.4227113723754883,
+      "log": "D:\\Project\\birdtie\\work\\content-first-20261019\\checks\\flutter-fix01.log",
+      "completedUTC": "2026-10-18T20:40:15.024845+00:00"
+    },
+    {
+      "stage": "flutter",
+      "argv": [
+        "D:/DevTools/flutter/bin/flutter.bat",
+        "test",
+        "--no-pub",
+        "test/now_journey_test.dart",
+        "test/moment_interaction_test.dart",
+        "test/moment_reply_test.dart",
+        "test/map_independent_pins_test.dart",
+        "test/owned_map_test.dart",
+        "test/owned_map_progressive_points_test.dart",
+        "test/collection_publication_controller_test.dart",
+        "test/collection_publication_page_test.dart",
+        "test/personal_collection_controller_test.dart"
+      ],
+      "cwd": "D:\\Project\\birdtie\\apps\\client",
+      "exitCode": 1,
+      "elapsedSeconds": 10.457769393920898,
+      "log": "D:\\Project\\birdtie\\work\\content-first-20261019\\checks\\flutter01.log",
+      "completedUTC": "2026-10-18T20:38:45.965567+00:00"
+    },
+    {
+      "stage": "go",
+      "argv": [
+        "C:/Program Files/Go/bin/go.exe",
+        "test",
+        "./internal/content",
+        "./internal/httpapi",
+        "./internal/postgres",
+        "-run",
+        "Test(MomentInteraction|MomentReplies|JourneyPublication|JourneyDiscoveryHTTP|CollectionPublication|ContentFirstStableChronology)$|Test(JourneyPublication|JourneyDiscoveryHTTP|CollectionPublication|MomentInteraction|MomentReplies)",
+        "-count=1"
+      ],
+      "cwd": "D:\\Project\\birdtie\\apps\\api",
+      "exitCode": 0,
+      "elapsedSeconds": 32.089611768722534,
+      "log": "D:\\Project\\birdtie\\work\\content-first-20261019\\checks\\go01.log",
+      "completedUTC": "2026-10-18T20:36:06.170805+00:00"
+    },
+    {
+      "stage": "go",
+      "argv": [
+        "C:/Program Files/Go/bin/go.exe",
+        "test",
+        "./internal/content",
+        "./internal/httpapi",
+        "./internal/postgres",
+        "-run",
+        "Test(MomentInteraction|MomentReplies|JourneyPublication|JourneyDiscoveryHTTP|CollectionPublication|ContentFirstStableChronology)$|Test(JourneyPublication|JourneyDiscoveryHTTP|CollectionPublication|MomentInteraction|MomentReplies)",
+        "-count=1"
+      ],
+      "cwd": "D:\\Project\\birdtie\\apps\\api",
+      "exitCode": 0,
+      "elapsedSeconds": 27.66428256034851,
+      "log": "D:\\Project\\birdtie\\work\\content-first-20261019\\checks\\go02.log",
+      "completedUTC": "2026-10-18T21:16:18.699464+00:00"
+    },
+    {
+      "stage": "host",
+      "argv": [
+        "D:/DevTools/flutter/bin/flutter.bat",
+        "test",
+        "--no-pub",
+        "test/now_public_moment_composer_test.dart",
+        "test/now_map_reader_occlusion_test.dart"
+      ],
+      "cwd": "D:\\Project\\birdtie\\apps\\client",
+      "exitCode": 1,
+      "elapsedSeconds": 5.88919734954834,
+      "log": "D:\\Project\\birdtie\\work\\content-first-20261019\\checks\\host01.log",
+      "completedUTC": "2026-10-18T21:08:45.323127+00:00"
+    },
+    {
+      "stage": "host",
+      "argv": [
+        "D:/DevTools/flutter/bin/flutter.bat",
+        "test",
+        "--no-pub",
+        "test/now_public_moment_composer_test.dart",
+        "test/now_map_reader_occlusion_test.dart"
+      ],
+      "cwd": "D:\\Project\\birdtie\\apps\\client",
+      "exitCode": 0,
+      "elapsedSeconds": 5.480975866317749,
+      "log": "D:\\Project\\birdtie\\work\\content-first-20261019\\checks\\host02.log",
+      "completedUTC": "2026-10-18T21:09:18.775174+00:00"
+    },
+    {
+      "stage": "host",
+      "argv": [
+        "D:/DevTools/flutter/bin/flutter.bat",
+        "test",
+        "--no-pub",
+        "test/now_public_moment_composer_test.dart",
+        "test/now_map_reader_occlusion_test.dart"
+      ],
+      "cwd": "D:\\Project\\birdtie\\apps\\client",
+      "exitCode": 0,
+      "elapsedSeconds": 5.234044790267944,
+      "log": "D:\\Project\\birdtie\\work\\content-first-20261019\\checks\\host03.log",
+      "completedUTC": "2026-10-18T21:10:15.768386+00:00"
+    },
+    {
+      "stage": "host",
+      "argv": [
+        "D:/DevTools/flutter/bin/flutter.bat",
+        "test",
+        "--no-pub",
+        "test/now_public_moment_composer_test.dart",
+        "test/now_map_reader_occlusion_test.dart"
+      ],
+      "cwd": "D:\\Project\\birdtie\\apps\\client",
+      "exitCode": 0,
+      "elapsedSeconds": 7.933438062667847,
+      "log": "D:\\Project\\birdtie\\work\\content-first-20261019\\checks\\host04.log",
+      "completedUTC": "2026-10-18T21:11:40.987957+00:00"
+    },
+    {
+      "stage": "journey-field",
+      "argv": [
+        "D:/DevTools/flutter/bin/flutter.bat",
+        "test",
+        "--no-pub",
+        "test/now_journey_test.dart",
+        "--plain-name",
+        "private place reorder"
+      ],
+      "cwd": "D:\\Project\\birdtie\\apps\\client",
+      "exitCode": 0,
+      "elapsedSeconds": 3.7580854892730713,
+      "log": "D:\\Project\\birdtie\\work\\content-first-20261019\\checks\\journey-field01.log",
+      "completedUTC": "2026-10-18T21:01:20.457070+00:00"
+    },
+    {
+      "stage": "journey",
+      "argv": [
+        "D:/DevTools/flutter/bin/flutter.bat",
+        "test",
+        "--no-pub",
+        "test/now_journey_test.dart"
+      ],
+      "cwd": "D:\\Project\\birdtie\\apps\\client",
+      "exitCode": 0,
+      "elapsedSeconds": 4.101236343383789,
+      "log": "D:\\Project\\birdtie\\work\\content-first-20261019\\checks\\journey01.log",
+      "completedUTC": "2026-10-18T20:54:35.853020+00:00"
+    },
+    {
+      "stage": "journey",
+      "argv": [
+        "D:/DevTools/flutter/bin/flutter.bat",
+        "test",
+        "--no-pub",
+        "test/now_journey_test.dart"
+      ],
+      "cwd": "D:\\Project\\birdtie\\apps\\client",
+      "exitCode": 1,
+      "elapsedSeconds": 4.085185289382935,
+      "log": "D:\\Project\\birdtie\\work\\content-first-20261019\\checks\\journey02.log",
+      "completedUTC": "2026-10-18T21:00:58.511160+00:00"
+    },
+    {
+      "stage": "public-normal",
+      "argv": [
+        "D:/DevTools/flutter/bin/flutter.bat",
+        "test",
+        "--no-pub",
+        "test/public_moment_page_test.dart",
+        "--plain-name",
+        "PMAP public retry"
+      ],
+      "cwd": "D:\\Project\\birdtie\\apps\\client",
+      "exitCode": 0,
+      "elapsedSeconds": 4.981738805770874,
+      "log": "D:\\Project\\birdtie\\work\\content-first-20261019\\checks\\public-normal01.log",
+      "completedUTC": "2026-10-18T21:10:44.637977+00:00"
+    },
+    {
+      "stage": "reader-fix",
+      "argv": [
+        "D:/DevTools/flutter/bin/flutter.bat",
+        "test",
+        "--no-pub",
+        "test/now_content_first_test.dart",
+        "test/now_map_content_test.dart"
+      ],
+      "cwd": "D:\\Project\\birdtie\\apps\\client",
+      "exitCode": 0,
+      "elapsedSeconds": 4.410472631454468,
+      "log": "D:\\Project\\birdtie\\work\\content-first-20261019\\checks\\reader-fix01.log",
+      "completedUTC": "2026-10-18T21:02:18.033065+00:00"
+    },
+    {
+      "stage": "reader-fix",
+      "argv": [
+        "D:/DevTools/flutter/bin/flutter.bat",
+        "test",
+        "--no-pub",
+        "test/now_content_first_test.dart",
+        "test/now_map_content_test.dart"
+      ],
+      "cwd": "D:\\Project\\birdtie\\apps\\client",
+      "exitCode": 0,
+      "elapsedSeconds": 4.357212066650391,
+      "log": "D:\\Project\\birdtie\\work\\content-first-20261019\\checks\\reader-fix02.log",
+      "completedUTC": "2026-10-18T21:11:32.983680+00:00"
+    },
+    {
+      "stage": "reader",
+      "argv": [
+        "D:/DevTools/flutter/bin/flutter.bat",
+        "test",
+        "--no-pub",
+        "test/now_content_first_test.dart",
+        "test/content_map_thread_test.dart",
+        "test/now_map_content_test.dart"
+      ],
+      "cwd": "D:\\Project\\birdtie\\apps\\client",
+      "exitCode": 1,
+      "elapsedSeconds": 4.943997621536255,
+      "log": "D:\\Project\\birdtie\\work\\content-first-20261019\\checks\\reader01.log",
+      "completedUTC": "2026-10-18T20:58:39.705345+00:00"
+    }
+  ],
+  "native": {
+    "uniqueCasesWithPassEvidence": 5,
+    "native01": "4 PASS, 1 FAIL; cleaned",
+    "native02": "2 Journey cases PASS; cleaned",
+    "productionAccess": false,
+    "migrationCountIsolatedOnly": 180
+  },
+  "analyze": {
+    "scope": "Explicit changed client file list in checks/analyze04.json",
+    "errors": 0,
+    "warnings": 0,
+    "infos": 542,
+    "exitCode": 0
+  },
+  "builds": {
+    "android79": {
+      "startedUTC": "2026-10-18T21:15:16.030165+00:00",
+      "status": "BUILT_INPUTS_STABLE_NOT_INSTALLED",
+      "mode": "apk79",
+      "executed": true,
+      "installed": false,
+      "clearedAppData": false,
+      "deployed": false,
+      "databaseMigration": "NOT_RUN",
+      "scriptSHA256": "8b97dc5557b08d1adf3e3df9a6b22a233219d90f921869657658cf24d2d226cf",
+      "normalPreviewApplicationId": "app.civu.civu_mobile.birdtiepreview",
+      "configuredAPIOrigin": "https://47.110.154.133",
+      "configuredVersionName": "0.1.2",
+      "configuredVersionCode": 79,
+      "normalizationExclusions": {
+        "local.properties": [
+          "flutter.buildMode",
+          "flutter.versionCode",
+          "flutter.versionName"
+        ]
+      },
+      "inputScopeLimit": "Resolved local source/config/assets/fonts/package tree and tool identity snapshot; not a claim of a hermetic Maven/SDK/cache reproduction.",
+      "beforeManifestSHA256": "49c431b784ca4563c6b01ad77f7c2704d3ebaac72a3fad81df831cf6be279916",
+      "inputCount": 8129,
+      "inputBytes": 195883696,
+      "sourceHead": "8bd39a24a9bc74182415d4c3ea375b2ae8c9a787",
+      "command": [
+        "D:\\DevTools\\flutter\\bin\\flutter.bat",
+        "build",
+        "apk",
+        "--profile",
+        "--build-name=0.1.2",
+        "--build-number=79",
+        "--no-pub",
+        "--no-tree-shake-icons",
+        "--dart-define=BIRDTIE_ENVIRONMENT=development",
+        "--dart-define=BIRDTIE_FRIEND_IMAGE_ENABLED=true",
+        "--dart-define=BIRDTIE_API_BASE_URL=https://47.110.154.133",
+        "--dart-define-from-file=.env.maps.mobile.provided.local.json"
+      ],
+      "cwd": "D:\\Project\\birdtie\\apps\\client",
+      "build": {
+        "command": [
+          "D:\\DevTools\\flutter\\bin\\flutter.bat",
+          "build",
+          "apk",
+          "--profile",
+          "--build-name=0.1.2",
+          "--build-number=79",
+          "--no-pub",
+          "--no-tree-shake-icons",
+          "--dart-define=BIRDTIE_ENVIRONMENT=development",
+          "--dart-define=BIRDTIE_FRIEND_IMAGE_ENABLED=true",
+          "--dart-define=BIRDTIE_API_BASE_URL=https://47.110.154.133",
+          "--dart-define-from-file=.env.maps.mobile.provided.local.json"
+        ],
+        "cwd": "D:\\Project\\birdtie\\apps\\client",
+        "exitCode": 0,
+        "elapsedSeconds": 57.769,
+        "log": "D:\\Project\\birdtie\\work\\content-first-20261019\\build-evidence\\build79\\attempt-20261018T211516Z-70651134\\build.log"
+      },
+      "sourceStable": true,
+      "afterManifestSHA256": "49c431b784ca4563c6b01ad77f7c2704d3ebaac72a3fad81df831cf6be279916",
+      "changes": {
+        "added": [],
+        "removed": [],
+        "modified": [],
+        "metadataChanged": {}
+      },
+      "rawNormalizedBefore": {
+        "apps/client/android/local.properties": {
+          "rawSHA256": "5d392fff43ddf6edf305ce95780fe61e5d5a7f31acc24145fb290e32a29261e9",
+          "rawBytes": 163,
+          "excludedGeneratedKeys": [
+            "flutter.buildMode",
+            "flutter.versionCode",
+            "flutter.versionName"
+          ]
+        }
+      },
+      "rawNormalizedAfter": {
+        "apps/client/android/local.properties": {
+          "rawSHA256": "5d392fff43ddf6edf305ce95780fe61e5d5a7f31acc24145fb290e32a29261e9",
+          "rawBytes": 163,
+          "excludedGeneratedKeys": [
+            "flutter.buildMode",
+            "flutter.versionCode",
+            "flutter.versionName"
+          ]
+        }
+      },
+      "artifactChecks": {
+        "applicationId": "app.civu.civu_mobile.birdtiepreview",
+        "versionCode": 79,
+        "versionName": "0.1.2",
+        "bundledRoutingAssetSHA256": "37858edb3ca811e4b2de7a85b44803b753da7b9e74113cfec66ac1934ff4cb55"
+      },
+      "artifact": "D:\\Project\\birdtie\\work\\content-first-20261019\\delivery79\\Birdtie-Content-First-20261019-79.apk",
+      "artifactSHA256": "e08f116dfe256809789048af32fb0bfedaf03d7651cef5df3d2b4d7ee40e3338",
+      "artifactBytes": 358141211,
+      "completedUTC": "2026-10-18T21:16:28.079085+00:00"
+    },
+    "api39": {
+      "startedUTC": "2026-10-18T21:13:08.669358+00:00",
+      "status": "BUILT_INPUTS_STABLE_NOT_INSTALLED",
+      "mode": "api39",
+      "executed": true,
+      "installed": false,
+      "clearedAppData": false,
+      "deployed": false,
+      "databaseMigration": "NOT_RUN",
+      "scriptSHA256": "8b97dc5557b08d1adf3e3df9a6b22a233219d90f921869657658cf24d2d226cf",
+      "normalPreviewApplicationId": "app.civu.civu_mobile.birdtiepreview",
+      "configuredAPIOrigin": "https://47.110.154.133",
+      "configuredVersionName": "0.1.2",
+      "configuredVersionCode": 60,
+      "normalizationExclusions": {
+        "local.properties": [
+          "flutter.buildMode",
+          "flutter.versionCode",
+          "flutter.versionName"
+        ]
+      },
+      "inputScopeLimit": "Resolved local source/config/assets/fonts/package tree and tool identity snapshot; not a claim of a hermetic Maven/SDK/cache reproduction.",
+      "beforeManifestSHA256": "96ccbd65870fa3dff8b4c2322192dd0e788052561eeac99a820df8b496e3eeb1",
+      "inputCount": 2098,
+      "inputBytes": 33192950,
+      "sourceHead": "8bd39a24a9bc74182415d4c3ea375b2ae8c9a787",
+      "command": [
+        "C:\\Program Files\\Go\\bin\\go.exe",
+        "build",
+        "-mod=readonly",
+        "-trimpath",
+        "-o",
+        "D:\\Project\\birdtie\\work\\content-first-20261019\\delivery79\\birdtie-api-linux-amd64-content-first39-final",
+        "."
+      ],
+      "cwd": "D:\\Project\\birdtie\\apps\\api",
+      "build": {
+        "command": [
+          "C:\\Program Files\\Go\\bin\\go.exe",
+          "build",
+          "-mod=readonly",
+          "-trimpath",
+          "-o",
+          "D:\\Project\\birdtie\\work\\content-first-20261019\\delivery79\\birdtie-api-linux-amd64-content-first39-final",
+          "."
+        ],
+        "cwd": "D:\\Project\\birdtie\\apps\\api",
+        "exitCode": 0,
+        "elapsedSeconds": 3.429,
+        "log": "D:\\Project\\birdtie\\work\\content-first-20261019\\build-evidence\\api39\\attempt-20261018T211308Z-c5529136\\build.log"
+      },
+      "sourceStable": true,
+      "afterManifestSHA256": "96ccbd65870fa3dff8b4c2322192dd0e788052561eeac99a820df8b496e3eeb1",
+      "changes": {
+        "added": [],
+        "removed": [],
+        "modified": [],
+        "metadataChanged": {}
+      },
+      "rawNormalizedBefore": {},
+      "rawNormalizedAfter": {},
+      "artifact": "D:\\Project\\birdtie\\work\\content-first-20261019\\delivery79\\birdtie-api-linux-amd64-content-first39-final",
+      "artifactSHA256": "1ae9e3ff094e3a1d4a4b9ce9b6dd2789f52da8794135c293e3d04ca4e3506f96",
+      "artifactBytes": 36346904,
+      "completedUTC": "2026-10-18T21:13:14.847176+00:00"
+    }
+  },
+  "failuresPreserved": [
+    "flutter01: old controller assertion repaired in flutter-fix01; historical large-font test still failed and is outside user-cancelled scope, not counted as pass or current gate",
+    "composer01: misplaced publication block compile failure fixed, Journey rerun PASS",
+    "reader01: fixture lease, interaction revision and duplicate animation failures repaired in reader-fix01/02",
+    "journey02: typed test fixture failure repaired in journey-field01",
+    "host01: incorrect test back-label repaired in host02; nested reply source case added and host04 passes",
+    "api39 final preparation: destination guard stopped stale output path before build; corrected path and final build PASS",
+    "apk79 first compile: input guard rejected EOL normalization during compile; final same-input rebuild PASS"
+  ],
+  "acceptance": {
+    "android79Functional": "NOT_RUN",
+    "android79Performance": "NOT_RUN",
+    "android79ScreenshotsRecording": "NOT_RUN_NOT_AUTHORIZED_THIS_INCREMENT",
+    "productionDeployAndMigrations": "NOT_RUN_NOT_AUTHORIZED_THIS_INCREMENT",
+    "fullFlutterGoSuites": "NOT_RUN",
+    "webLoggedIn": "NOT_RUN_USER_DEFERRED",
+    "talkBack": "NOT_RUN_USER_DEFERRED",
+    "iOS": "NOT_RUN",
+    "amapFurtherLabelStyle": "BLOCKED_APPROVED_STYLE_EXPORT_MISSING"
+  },
+  "privacy": {
+    "realFakePlacesOrMomentsAdded": 0,
+    "realBusinessWrites": 0,
+    "phoneInstall": false,
+    "screenRecording": false,
+    "rawScreenshotsOrPrivateConfigCommitted": false
+  },
+  "completedUTC": "2026-10-18T21:18:38.154050+00:00"
+}

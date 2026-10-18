@@ -1,0 +1,16 @@
+{
+  "stage": "public-normal",
+  "argv": [
+    "D:/DevTools/flutter/bin/flutter.bat",
+    "test",
+    "--no-pub",
+    "test/public_moment_page_test.dart",
+    "--plain-name",
+    "PMAP public retry"
+  ],
+  "cwd": "D:\\Project\\birdtie\\apps\\client",
+  "exitCode": 0,
+  "elapsedSeconds": 4.981738805770874,
+  "log": "D:\\Project\\birdtie\\work\\content-first-20261019\\checks\\public-normal01.log",
+  "completedUTC": "2026-10-18T21:10:44.637977+00:00"
+}

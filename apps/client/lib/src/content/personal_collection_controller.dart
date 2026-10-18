@@ -213,6 +213,84 @@ Map<String, dynamic> _freezeCollectionInput(Map<String, dynamic> value) {
   return Map.unmodifiable(j);
 }
 
+class JourneyLifecycle {
+  const JourneyLifecycle(
+    this.state,
+    this.timeZone,
+    this.asOfDate,
+    this.startDate,
+    this.endDate,
+  );
+  final String state, timeZone, asOfDate, startDate, endDate;
+  String get label => const {
+    'NOT_STARTED': '未出发',
+    'IN_PROGRESS': '进行中',
+    'ENDED': '已结束',
+    'UNKNOWN': '日期待确定',
+  }[state]!;
+  factory JourneyLifecycle.decode(Object? raw) {
+    if (raw is! Map<String, dynamic> ||
+        !const {
+          'NOT_STARTED',
+          'IN_PROGRESS',
+          'ENDED',
+          'UNKNOWN',
+        }.contains(raw['state']))
+      throw const FormatException('旅程状态无法核对');
+    for (final key in ['timeZone', 'asOfDate', 'startDate', 'endDate']) {
+      if (raw[key] is! String) throw const FormatException('旅程日期无法核对');
+    }
+    if (raw['state'] != 'UNKNOWN' &&
+        (raw['timeZone'] == '' ||
+            raw['asOfDate'] == '' ||
+            raw['startDate'] == '' ||
+            raw['endDate'] == ''))
+      throw const FormatException('旅程时区无法核对');
+    return JourneyLifecycle(
+      raw['state'],
+      raw['timeZone'],
+      raw['asOfDate'],
+      raw['startDate'],
+      raw['endDate'],
+    );
+  }
+}
+
+class JourneyPublishedSummary {
+  const JourneyPublishedSummary(
+    this.publicationRevision,
+    this.sourceRevision,
+    this.publishedAt,
+    this.title,
+    this.summary,
+    this.stopCount,
+  );
+  final int publicationRevision, sourceRevision, stopCount;
+  final DateTime publishedAt;
+  final String title, summary;
+  factory JourneyPublishedSummary.decode(Object? raw) {
+    if (raw is! Map<String, dynamic> ||
+        raw['publicationRevision'] is! int ||
+        raw['sourceRevision'] is! int ||
+        raw['publicationRevision'] <= raw['sourceRevision'] ||
+        raw['sourceRevision'] < 1 ||
+        raw['stopCount'] is! int ||
+        raw['stopCount'] < 1 ||
+        raw['stopCount'] > 500 ||
+        raw['title'] is! String ||
+        raw['summary'] is! String)
+      throw const FormatException('旅程公开版本无法核对');
+    return JourneyPublishedSummary(
+      raw['publicationRevision'],
+      raw['sourceRevision'],
+      DateTime.parse(raw['publishedAt'] as String).toUtc(),
+      raw['title'],
+      raw['summary'],
+      raw['stopCount'],
+    );
+  }
+}
+
 class PersonalCollection {
   const PersonalCollection({
     required this.id,
@@ -227,12 +305,16 @@ class PersonalCollection {
     this.visibility = 'private',
     this.privatePlaceCopyRestricted = false,
     this.journeyDetails,
+    this.publishedSnapshot,
+    this.journeyLifecycle,
   });
   final String id, ownerID, kind, cityID, title, summary, status, visibility;
   final int revision;
   final bool privatePlaceCopyRestricted;
   final List<PersonalCollectionEntry> entries;
   final JourneyDetails? journeyDetails;
+  final JourneyPublishedSummary? publishedSnapshot;
+  final JourneyLifecycle? journeyLifecycle;
   bool get hasPrivateLegacyReferences =>
       entries.any((e) => e.legacyReference != null);
   factory PersonalCollection.fromJson(Map<String, dynamic> p) {
@@ -286,6 +368,12 @@ class PersonalCollection {
       summary: p['summary'] as String,
       entries: List.unmodifiable(entries),
       journeyDetails: details,
+      publishedSnapshot: p['publishedSnapshot'] == null
+          ? null
+          : JourneyPublishedSummary.decode(p['publishedSnapshot']),
+      journeyLifecycle: p['journeyLifecycle'] == null
+          ? null
+          : JourneyLifecycle.decode(p['journeyLifecycle']),
       revision: revision,
       status: status,
       visibility: p['visibility'] as String,
@@ -681,8 +769,7 @@ class PersonalCollectionController extends ChangeNotifier {
       current &&
       !_editingNeedsRevalidation &&
       !controlBlocked &&
-      !hasPrivateLegacyReferences &&
-      draftJourneyDetails == null;
+      !hasPrivateLegacyReferences;
   bool get canSwitchDraft =>
       current &&
       !saving &&
@@ -979,7 +1066,12 @@ class PersonalCollectionController extends ChangeNotifier {
       final cursor = p['nextCursor'] as String?;
       if (records.length > 20 ||
           (cursor != null &&
-              (!_collectionUUID.hasMatch(cursor) || cursor == after)))
+              (!(_collectionUUID.hasMatch(cursor) ||
+                      kind == 'journey' &&
+                          RegExp(
+                            r'^jl1\.[A-Za-z0-9_-]{1,208}\.[A-Za-z0-9_-]{43}$',
+                          ).hasMatch(cursor)) ||
+                  cursor == after)))
         throw const FormatException();
       final combined = <String, PersonalCollection>{
         if (more)

@@ -1,0 +1,18 @@
+{
+  "stage": "go",
+  "argv": [
+    "C:/Program Files/Go/bin/go.exe",
+    "test",
+    "./internal/content",
+    "./internal/httpapi",
+    "./internal/postgres",
+    "-run",
+    "Test(MomentInteraction|MomentReplies|JourneyPublication|JourneyDiscoveryHTTP|CollectionPublication|ContentFirstStableChronology)$|Test(JourneyPublication|JourneyDiscoveryHTTP|CollectionPublication|MomentInteraction|MomentReplies)",
+    "-count=1"
+  ],
+  "cwd": "D:\\Project\\birdtie\\apps\\api",
+  "exitCode": 0,
+  "elapsedSeconds": 27.66428256034851,
+  "log": "D:\\Project\\birdtie\\work\\content-first-20261019\\checks\\go02.log",
+  "completedUTC": "2026-10-18T21:16:18.699464+00:00"
+}

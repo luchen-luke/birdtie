@@ -81,6 +81,11 @@ class AgentComposer extends StatefulWidget {
     this.onCreateRoute,
     this.onImportPlan,
     this.onDraftContext,
+    this.contentLabel,
+    this.contentInputHint,
+    this.contentSubmitLabel,
+    this.onExitContent,
+    this.allowEmptyContent = false,
     this.creationLabel,
     this.creationInputHint,
     this.onExitCreation,
@@ -128,6 +133,9 @@ class AgentComposer extends StatefulWidget {
   final TaskImageController? imageUpload;
   final bool needsLogin;
   final VoidCallback? onSignIn;
+  final String? contentLabel, contentInputHint, contentSubmitLabel;
+  final VoidCallback? onExitContent;
+  final bool allowEmptyContent;
   final String? creationLabel, creationInputHint;
   final VoidCallback? onExitCreation;
   final int maxDraftBytes;
@@ -744,7 +752,7 @@ class AgentComposerState extends State<AgentComposer> {
       widget.onSignIn?.call();
       return;
     }
-    if (widget.submitBusy) return;
+    if (widget.submitBusy || widget.inputReadOnly) return;
     if (_voice.active) {
       _cancelVoice();
       return;
@@ -767,6 +775,17 @@ class AgentComposerState extends State<AgentComposer> {
           }
         });
       }
+      return;
+    }
+    if (widget.contentLabel != null) {
+      final text = _text.text;
+      if ((!widget.allowEmptyContent && text.trim().isEmpty) ||
+          utf8.encode(text).length > widget.maxDraftBytes)
+        return;
+      ++_pasteSerial;
+      _readingClipboard = false;
+      _focus.unfocus();
+      widget.onSubmit(text);
       return;
     }
     if (!widget.humanMode && widget.creationLabel != null) {
@@ -1388,7 +1407,9 @@ class AgentComposerState extends State<AgentComposer> {
           final recording = widget.humanMode
               ? (friend?.recording ?? false)
               : _voice.recording;
-          final creating = !widget.humanMode && widget.creationLabel != null;
+          final content = widget.contentLabel != null;
+          final creating =
+              !content && !widget.humanMode && widget.creationLabel != null;
           final hasText = _text.text.trim().isNotEmpty;
           final elapsed = widget.humanMode
               ? (friend?.elapsedLabel ?? '0:00')
@@ -1409,6 +1430,8 @@ class AgentComposerState extends State<AgentComposer> {
               ? (recording
                     ? '录音 $elapsed'
                     : '发给 ${widget.recipientName ?? '当前联系人'}')
+              : widget.contentInputHint != null
+              ? widget.contentInputHint!
               : widget.creationInputHint != null
               ? widget.creationInputHint!
               : widget.onlineMode
@@ -1423,7 +1446,9 @@ class AgentComposerState extends State<AgentComposer> {
               ? null
               : widget.videoStatus?.trim();
           final hasVideoStatus = videoStatus?.isNotEmpty == true;
-          final creationHeight = creating ? actionRowHeight + 8 : 0.0;
+          final creationHeight = creating || content
+              ? actionRowHeight + 8
+              : 0.0;
           final preferredImageHeight =
               math.max(72.0, actionRowHeight) + NowUiTokens.space8;
           final preferredVideoHeight = hasVideo ? 80.0 : 0.0;
@@ -1460,6 +1485,7 @@ class AgentComposerState extends State<AgentComposer> {
           _friendImageVisible = widget.humanMode && showImage;
           final canSend =
               !widget.submitBusy &&
+              !widget.inputReadOnly &&
               !widget.needsLogin &&
               !voiceActive &&
               (widget.humanMode
@@ -1469,6 +1495,7 @@ class AgentComposerState extends State<AgentComposer> {
                         ? friend?.canSendText == true
                         : friend?.canSendAudio == true
                   : (hasText ||
+                            (content && widget.allowEmptyContent) ||
                             (creating
                                 ? hasImage || hasVideo
                                 : hasImage &&
@@ -1585,6 +1612,32 @@ class AgentComposerState extends State<AgentComposer> {
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        if (content) ...[
+                          SizedBox(
+                            height: actionRowHeight,
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    widget.contentLabel!,
+                                    key: const Key(
+                                      'now-composer-content-target',
+                                    ),
+                                    style: tokens.metadata,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                IconButton(
+                                  tooltip: '回到 Now 对话',
+                                  onPressed: widget.onExitContent,
+                                  icon: const Icon(Icons.close, size: 18),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                        ],
                         if (creating) ...[
                           SizedBox(
                             height: actionRowHeight,
@@ -1898,7 +1951,7 @@ class AgentComposerState extends State<AgentComposer> {
                             : '语音输入',
                         onPressed: widget.needsLogin
                             ? widget.onSignIn
-                            : widget.submitBusy
+                            : widget.submitBusy || widget.inputReadOnly
                             ? null
                             : voiceActive
                             ? (recording
@@ -1941,6 +1994,8 @@ class AgentComposerState extends State<AgentComposer> {
                             : birdtieFloatingButtonStyle,
                         tooltip: widget.needsLogin
                             ? '登录后继续'
+                            : content
+                            ? widget.contentSubmitLabel ?? '更新草稿'
                             : widget.humanMode
                             ? '发送消息'
                             : creating

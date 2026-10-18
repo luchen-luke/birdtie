@@ -44,6 +44,9 @@ func collectionReadTx(ctx context.Context, tx pgx.Tx, owner, kind, id string, lo
 		return v, content.ErrUnavailable
 	}
 	if kind == "journey" {
+		if e = readJourneyOwnerMetadataTx(ctx, tx, &v); e != nil {
+			return v, e
+		}
 		v.JourneyDetails, e = readJourneyDetailsTx(ctx, tx, owner, id)
 		if e != nil {
 			return v, e
@@ -325,6 +328,9 @@ func (s *Store) GetHumanCollectionOperation(ctx context.Context, d [32]byte, a i
 	return v, nil
 }
 func (s *Store) ListHumanCollections(ctx context.Context, d [32]byte, a identity.Actor, kind, cursor string) (content.CollectionPage, error) {
+	if kind == "journey" {
+		return s.listJourneyOwnerCollections(ctx, d, a, cursor)
+	}
 	table, _, _, e := collectionTables(kind)
 	if e != nil || (cursor != "" && !content.ValidCollectionID(cursor)) {
 		return content.CollectionPage{}, content.ErrInvalid

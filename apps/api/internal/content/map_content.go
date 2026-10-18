@@ -5,6 +5,7 @@ import (
 	"github.com/birdtie/birdtie/apps/api/internal/identity"
 	av "github.com/birdtie/birdtie/apps/api/internal/profileavatar"
 	"math"
+	"strconv"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -90,7 +91,20 @@ type MapContentMomentSelector struct {
 	VisibilitySource string `json:"visibilitySource"`
 	DetailPath       string `json:"detailPath"`
 }
+type MapContentJourneyEdge struct {
+	JourneyID           string `json:"journeyId"`
+	PublicationRevision int64  `json:"publicationRevision"`
+	NextMarkerID        string `json:"nextMarkerId"`
+	FromPosition        int    `json:"fromPosition"`
+	ToPosition          int    `json:"toPosition"`
+	SourceVersion       string `json:"sourceVersion"`
+}
 type MapContentPin struct {
+	JourneyEdges           []MapContentJourneyEdge    `json:"journeyEdges,omitempty"`
+	NextMarkerIDs          []string                   `json:"nextMarkerIds,omitempty"`
+	ThreadPosition         int                        `json:"threadPosition,omitempty"`
+	ContentTime            *time.Time                 `json:"contentTime,omitempty"`
+	TimeSource             string                     `json:"timeSource,omitempty"`
 	RepresentativeMarkerID string                     `json:"representativeMarkerId,omitempty"`
 	RepresentativePlaceID  string                     `json:"representativePlaceId,omitempty"`
 	RepresentativeMomentID string                     `json:"representativeMomentId,omitempty"`
@@ -149,6 +163,31 @@ func (v MapContentPage) Valid(now time.Time) bool {
 		if !p.validIdentity() || seen[p.MarkerID] || p.Name == "" || !utf8.ValidString(p.Name) || len(p.Name) > 16000 || !p.Anchor.Valid() || !MomentControlHex(p.SourceVersion) || len(p.VisibilitySources) == 0 || len(p.VisibilitySources) > 4 || p.Moments == nil || len(p.Moments) > 20 || p.MomentCount < 1 || p.AnchorCount < 1 || p.MomentCount < len(p.Moments) || p.MomentsTruncated != (p.MomentCount > len(p.Moments)) {
 			return false
 		}
+		if p.ContentTime != nil && (p.ContentTime.IsZero() || p.ContentTime.After(v.ObservedAt.Add(time.Second)) || (p.TimeSource != "PUBLISHED" && p.TimeSource != "NATIVE" && p.TimeSource != "CIVU_ORIGINAL")) {
+			return false
+		}
+		if p.TimeSource != "" && p.TimeSource != "UNKNOWN" && p.TimeSource != "PUBLISHED" && p.TimeSource != "NATIVE" && p.TimeSource != "CIVU_ORIGINAL" {
+			return false
+		}
+		if len(p.JourneyEdges) > 200 {
+			return false
+		}
+		routeIDs := map[string]bool{}
+		for _, edge := range p.JourneyEdges {
+			key := edge.JourneyID + ":" + strconv.Itoa(edge.FromPosition) + ":" + edge.NextMarkerID
+			if !identity.HumanControlUUID(edge.JourneyID) || edge.PublicationRevision < 2 || edge.FromPosition < 1 || edge.ToPosition != edge.FromPosition+1 || edge.ToPosition > 500 || !MomentControlHex(edge.SourceVersion) || !strings.HasPrefix(edge.NextMarkerID, "anchor:") || !identity.HumanControlUUID(strings.TrimPrefix(edge.NextMarkerID, "anchor:")) || edge.NextMarkerID == p.MarkerID || routeIDs[key] {
+				return false
+			}
+			routeIDs[key] = true
+		}
+		if len(p.NextMarkerIDs) > 1 || p.ThreadPosition < 0 || p.ThreadPosition >= MomentThreadMaxEntries {
+			return false
+		}
+		for _, next := range p.NextMarkerIDs {
+			if p.ThreadID == "" || !strings.HasPrefix(next, "anchor:") || !identity.HumanControlUUID(strings.TrimPrefix(next, "anchor:")) || next == p.MarkerID {
+				return false
+			}
+		}
 		seen[p.MarkerID] = true
 		scopes := map[string]bool{}
 		for _, s := range p.VisibilitySources {
@@ -176,7 +215,7 @@ func (p MapContentPin) validIdentity() bool {
 	case "PLACE_CONTENT":
 		return identity.HumanControlUUID(p.PlaceID) && p.MarkerID == "place:"+p.PlaceID && p.EntityID == p.PlaceID && p.MomentID == "" && p.AnchorID == "" && p.AnchorCount == 1
 	case "MOMENT_ANCHOR":
-		return p.PlaceID == "" && identity.HumanControlUUID(p.AnchorID) && identity.HumanControlUUID(p.MomentID) && p.EntryID == p.MomentID && p.EntityID == p.MomentID && p.MarkerID == "anchor:"+p.AnchorID && p.AnchorCount == 1 && (p.ThreadID == "" || identity.HumanControlUUID(p.ThreadID))
+		return (p.PlaceID == "" || identity.HumanControlUUID(p.PlaceID)) && identity.HumanControlUUID(p.AnchorID) && identity.HumanControlUUID(p.MomentID) && p.EntryID == p.MomentID && p.EntityID == p.MomentID && p.MarkerID == "anchor:"+p.AnchorID && p.AnchorCount == 1 && (p.ThreadID == "" || identity.HumanControlUUID(p.ThreadID))
 	case "CLUSTER":
 		return p.PlaceID == "" && p.EntityID == p.MarkerID && strings.HasPrefix(p.MarkerID, "cluster:") && MomentControlHex(strings.TrimPrefix(p.MarkerID, "cluster:")) && p.AnchorCount > 1 && p.Bounds != nil && p.Bounds.Valid() && (p.RepresentativeMarkerID == "" || validMapSelectedMarker(p.RepresentativeMarkerID)) && strings.HasPrefix(p.MembersPath, "/v1/me/map-content?")
 	}

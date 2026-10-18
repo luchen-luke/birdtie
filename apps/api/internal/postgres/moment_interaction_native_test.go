@@ -150,3 +150,82 @@ func TestMomentInteractionNativeOriginalFactsNotificationsAndInboxSnapshot(t *te
 		t.Fatal("late original comment submitted after stop", e)
 	}
 }
+
+func TestMomentRepliesNativeParentCurrentUnknownAndUnavailable(t *testing.T) {
+	f := savedPageNative(t)
+	parentActor := interactionNativeActor(t, f)
+	replier := interactionNativeActor(t, f)
+	draft, _ := mc144Write(t, f, mc144Input(t, f))
+	input := mc144Input(t, f).Input
+	mc144Write(t, f, content.MomentControlInput{OperationID: f.id(t), Action: "PUBLISH", MomentID: draft.MomentID, ExpectedRevision: 1, Input: input})
+	mid := draft.MomentID
+	parent, _ := interactionNativeWrite(t, parentActor, content.MomentInteractionInput{OperationID: f.id(t), Action: "COMMENT", MomentID: mid, ExpectedMomentRevision: 2, Body: "parent current public body"})
+	replyInput := content.MomentInteractionInput{OperationID: f.id(t), Action: "COMMENT", MomentID: mid, ExpectedMomentRevision: 2, Body: "actual same moment reply", ParentCommentID: parent.CommentID, ExpectedParentCommentVersion: 1}
+	replied, approved := interactionNativeWrite(t, replier, replyInput)
+	replay, e := f.store.CommitMomentInteraction(f.ctx, replier.digest, replier.actor, approved)
+	if e != nil || replay.CommentID != replied.CommentID {
+		t.Fatal("reply duplicated original operation", e)
+	}
+	fact, e := f.store.ReadMomentInteractionOperation(f.ctx, replier.digest, replier.actor, replyInput.OperationID, false)
+	if e != nil || fact.PayloadDigest != content.MomentInteractionDigest(replyInput) {
+		t.Fatal("reply original unknown recovery", e)
+	}
+	page, e := f.store.ReadMomentInteractions(f.ctx, content.PublicMomentAccess{Actor: f.actor, SessionDigest: f.digest}, mid, "", replied.CommentID)
+	if e != nil || !page.CanComment || len(page.Comments) != 1 || page.Comments[0].Version != 1 || !page.Comments[0].CanReply || page.Comments[0].ReplyTo == nil || page.Comments[0].ReplyTo.Status != "AVAILABLE" || page.Comments[0].ReplyTo.Body != "parent current public body" {
+		t.Fatal("canonical reply relation unavailable", e, page)
+	}
+	anonymous, e := f.store.ReadMomentInteractions(f.ctx, content.PublicMomentAccess{}, mid, "", replied.CommentID)
+	if e != nil || anonymous.CanComment || anonymous.Comments[0].CanReply {
+		t.Fatal("anonymous reply eligibility", e)
+	}
+	changed := replyInput
+	changed.OperationID = f.id(t)
+	changed.ExpectedParentCommentVersion = 2
+	if _, e = f.store.PreviewMomentInteraction(f.ctx, replier.digest, replier.actor, changed); !errors.Is(e, identity.ErrControlChanged) {
+		t.Fatal("stale parent revision allowed", e)
+	}
+
+	blocked := replyInput
+	blocked.OperationID = f.id(t)
+	bp, err := f.store.PreviewMomentInteraction(f.ctx, replier.digest, replier.actor, blocked)
+	if err != nil {
+		t.Fatal(err)
+	}
+	blocked.SourceVersion, blocked.Approval = bp.SourceVersion, bp.Approval
+	hcNativeBlock(t, replier, identity.BlockControlInput{OperationID: f.id(t), Action: "BLOCK", AccountID: parentActor.actor.ID})
+	if _, err = f.store.CommitMomentInteraction(f.ctx, replier.digest, replier.actor, blocked); !errors.Is(err, content.ErrNotFound) {
+		t.Fatal("blocked reply parent accepted", err)
+	}
+	hcNativeBlock(t, replier, identity.BlockControlInput{OperationID: f.id(t), Action: "UNBLOCK", AccountID: parentActor.actor.ID, ExpectedVersion: 1})
+	if _, err = f.store.CommitMomentInteraction(f.ctx, replier.digest, replier.actor, blocked); !errors.Is(err, identity.ErrControlChanged) {
+		t.Fatal("parent block ABA reused approval", err)
+	}
+	pending := replyInput
+	pending.OperationID = f.id(t)
+	preview, e := f.store.PreviewMomentInteraction(f.ctx, replier.digest, replier.actor, pending)
+	if e != nil {
+		t.Fatal(e)
+	}
+	pending.SourceVersion, pending.Approval = preview.SourceVersion, preview.Approval
+	interactionNativeWrite(t, parentActor, content.MomentInteractionInput{OperationID: f.id(t), Action: "DELETE_COMMENT", MomentID: mid, ExpectedMomentRevision: 2, CommentID: parent.CommentID})
+	if _, e = f.store.CommitMomentInteraction(f.ctx, replier.digest, replier.actor, pending); !errors.Is(e, content.ErrNotFound) {
+		t.Fatal("deleted parent silently downgraded to top level", e)
+	}
+	if e = page.ResponseProof.RevalidateHumanControl(f.ctx); e == nil {
+		t.Fatal("withdrawn parent reused old response proof")
+	}
+	after, e := f.store.ReadMomentInteractions(f.ctx, content.PublicMomentAccess{Actor: f.actor, SessionDigest: f.digest}, mid, "", replied.CommentID)
+	if e != nil || len(after.Comments) != 1 || after.Comments[0].ReplyTo == nil || after.Comments[0].ReplyTo.Status != "UNAVAILABLE" || after.Comments[0].ReplyTo.Body != "" || after.Comments[0].ReplyTo.AuthorPublicProfile != nil {
+		t.Fatal("unavailable parent leaked content", e)
+	}
+	var count int
+	if e = f.pool.QueryRow(f.ctx, `SELECT count(*) FROM moment_comments WHERE moment_id=$1`, mid).Scan(&count); e != nil || count != 2 {
+		t.Fatal("invalid reply wrote another comment", e, count)
+	}
+	wrongMoment := replyInput
+	wrongMoment.OperationID = f.id(t)
+	wrongMoment.ParentCommentID = f.id(t)
+	if _, e = f.store.PreviewMomentInteraction(f.ctx, replier.digest, replier.actor, wrongMoment); !errors.Is(e, content.ErrNotFound) {
+		t.Fatal("unknown parent accepted", e)
+	}
+}

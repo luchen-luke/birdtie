@@ -9,7 +9,7 @@ import androidx.annotation.NonNull;
 import com.amap.api.maps.AMap;
 import com.amap.api.maps.CameraUpdate;
 import com.amap.api.maps.CameraUpdateFactory;
-import com.amap.api.maps.MapView;
+import com.amap.api.maps.TextureMapView;
 import com.amap.api.maps.model.CameraPosition;
 import com.amap.api.maps.model.CustomMapStyleOptions;
 import com.amap.api.maps.model.LatLng;
@@ -46,12 +46,12 @@ public class MapController
     private static final String CLASS_NAME = "MapController";
     private final MethodChannel methodChannel;
     private final AMap amap;
-    private final MapView mapView;
+    private final TextureMapView mapView;
     private MethodChannel.Result mapReadyResult;
     private boolean mapLoaded = false;
     private boolean myLocationShowing = false;
 
-    public MapController(MethodChannel methodChannel, MapView mapView) {
+    public MapController(MethodChannel methodChannel, TextureMapView mapView) {
         this.methodChannel = methodChannel;
         this.mapView = mapView;
         amap = mapView.getMap();

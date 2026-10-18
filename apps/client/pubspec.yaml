@@ -41,6 +41,7 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
+    - assets/map_routing/region_routes_v1.json
     - assets/destinations/shanghai.png
     - assets/destinations/aberdeen.png
     - assets/destinations/beijing.png

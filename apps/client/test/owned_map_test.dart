@@ -37,11 +37,13 @@ void main() {
       Completer<http.Response>? delayed;
       bool delayNextMap = false;
       DateTime? pageUntil;
+      DateTime? heldMapUntil;
       Map<String, Object?> lease() => {
         'observedAt': now.toIso8601String(),
         'validUntil': now.add(const Duration(seconds: 30)).toIso8601String(),
       };
-      String scope(int n) => n == 2 ? 'SELF_PRIVATE' : 'CIVU_PUBLIC_MOMENT';
+      String scope(int n) =>
+          n == 2 || n == 136 ? 'SELF_PRIVATE' : 'CIVU_PUBLIC_MOMENT';
       Map<String, Object?> selector(int n) => {
         'id': _id(n),
         'revision': 1,
@@ -124,6 +126,30 @@ void main() {
         'momentsTruncated': n == 0,
         'cover': n == 0 ? cover() : null,
       };
+      // Place covers remain readable in a detail, but PMAP renders only an
+      // independent Moment's verified image on the map. Keep all pixel/ABA
+      // assertions below on that real domain shape instead of restoring the
+      // obsolete Place-cover transfer behavior.
+      Map<String, Object?> momentPin() => {
+        ...pin(35),
+        'kind': 'MOMENT_ANCHOR',
+        'markerId': 'anchor:${_id(7036)}',
+        'anchorId': _id(7036),
+        'entityId': _id(136),
+        'momentId': _id(136),
+        'entryId': _id(136),
+        'placeId': '',
+        'categoryCode': '',
+        'visibilitySources': ['SELF_PRIVATE'],
+        'moments': [selector(136)],
+        'cover': {
+          ...cover(),
+          'kind': 'MOMENT_IMAGE',
+          'visibilitySource': 'SELF_PRIVATE',
+          'contentPath':
+              '/v1/me/map-content/moments/${_id(136)}/media/${_id(8001)}/content?sourceVersion=$source&variant=marker',
+        },
+      };
       http.Response json(Object value) => http.Response(
         jsonEncode({'data': value}),
         200,
@@ -154,12 +180,13 @@ void main() {
                 k: double.parse(request.url.queryParameters[k]!),
             },
             'sourceVersion': source,
-            'pins': List.generate(36, pin),
+            'pins': List.generate(36, (n) => n == 35 ? momentPin() : pin(n)),
             'truncated': false,
             ...lease(),
           });
           if (delayNextMap) {
             delayNextMap = false;
+            heldMapUntil = now.add(const Duration(seconds: 30));
             final wait = delayed!;
             await wait.future;
           }
@@ -168,10 +195,10 @@ void main() {
         if (request.url.path ==
             '/v1/me/map-content/places/${_id(5000)}/moments') {
           final last = request.url.queryParameters['cursor'] == 'page-two';
-          expectSync(
-            request.url.queryParameters.keys,
-            last ? ['cursor'] : isEmpty,
-          );
+          expectSync(request.url.queryParameters, {
+            'mediaMode': 'lazy',
+            if (last) 'cursor': 'page-two',
+          });
           if (!last) pageUntil = now.add(const Duration(seconds: 30));
           final items = last
               ? [detail(21)]
@@ -264,22 +291,39 @@ void main() {
       expect(verified!.length, markerJpeg.length);
       verified.fillRange(0, verified.length, 0);
       wire.dispose();
+      MapEntity imageEntity() => controller.entities.singleWhere(
+        (e) => e.kind == MapEntityKind.moment,
+      );
+      OwnedMapPin placePin() =>
+          controller.items.singleWhere((p) => p.placeID == _id(5000));
+      MapEntity placeEntity() =>
+          controller.entities.singleWhere((e) => e.placeID == _id(5000));
       controller.sync(cityID: 'aberdeen', bounds: bounds);
       await drain(
         () =>
             controller.entities.length == 36 &&
-            controller.entities.first.mediaPixels != null,
+            imageEntity().mediaPixels != null,
       );
-      final initial = controller.items.first,
-          pixels = controller.entities.first.mediaPixels!;
+      final initial = placePin(), pixels = imageEntity().mediaPixels!;
+      expect(placeEntity().kind, MapEntityKind.place);
+      expect(placeEntity().mediaPixels, isNull);
+      expect(
+        calls.where(
+          (r) =>
+              r.url.path.contains('/places/') &&
+              r.url.path.endsWith('/content'),
+        ),
+        hasLength(1),
+        reason: 'Only the explicit detail-wire probe fetched a Place image',
+      );
       expect(initial.cityID, isNull);
       expect(
         initial.visibilitySources,
         containsAll(['CIVU_PUBLIC_CATALOG', 'SELF_PRIVATE']),
       );
-      expect(controller.entities.first.memberIDs, isEmpty);
-      expect(controller.entities.first.categoryCode, 'culture.museum');
-      expect(controller.entities.first.recentMoments!.labelAt(now), '21条动态');
+      expect(placeEntity().memberIDs, isEmpty);
+      expect(placeEntity().categoryCode, 'culture.museum');
+      expect(placeEntity().recentMoments!.labelAt(now), '21条动态');
       expect(pixels.current(), isTrue);
       expect(pixels.image.width, 36);
       expect(pixels.image.height, 20);
@@ -314,11 +358,8 @@ void main() {
       expect(now.isAfter(oldUntil), isTrue);
       expect(controller.sourceCurrent(initial), isTrue);
       expect(pixels.current(), isFalse);
-      expect(controller.entities.first.mediaPixels!.current(), isTrue);
-      expect(
-        identical(controller.entities.first.mediaPixels!.image, pixels.image),
-        isTrue,
-      );
+      expect(imageEntity().mediaPixels!.current(), isTrue);
+      expect(identical(imageEntity().mediaPixels!.image, pixels.image), isTrue);
 
       // The native reader can return up to 200 independently verified media
       // objects. This is separate from the editor's entry count of 20.
@@ -392,23 +433,20 @@ void main() {
 
       now = now.add(const Duration(seconds: 5));
       await t.runAsync(controller.refresh);
-      expect(identical(initial, controller.items.first), isFalse);
+      expect(identical(initial, placePin()), isFalse);
       expect(controller.sourceCurrent(initial), isTrue);
       expect(pixels.current(), isFalse);
-      expect(controller.entities.first.mediaPixels!.current(), isTrue);
-      expect(
-        identical(controller.entities.first.mediaPixels!.image, pixels.image),
-        isTrue,
-      );
+      expect(imageEntity().mediaPixels!.current(), isTrue);
+      expect(identical(imageEntity().mediaPixels!.image, pixels.image), isTrue);
       expect(controller.detailCurrent(reread), isTrue);
       source = _hash('changed-source');
       await t.runAsync(controller.refresh);
       expect(controller.sourceCurrent(initial), isFalse);
       expect(controller.detailCurrent(reread), isFalse);
       expect(pixels.current(), isFalse);
-      await drain(() => controller.entities.first.mediaPixels != null);
-      final beforeABA = controller.items.first,
-          beforeABAPixels = controller.entities.first.mediaPixels!;
+      await drain(() => imageEntity().mediaPixels != null);
+      final beforeABA = placePin(),
+          beforeABAPixels = imageEntity().mediaPixels!;
       final oldEpoch = controller.epoch;
       delayed = Completer<http.Response>();
       delayNextMap = true;
@@ -432,20 +470,20 @@ void main() {
       await drain(() => controller.current);
       expect(controller.epoch, greaterThan(oldEpoch));
       expect(controller.sourceCurrent(beforeABA), isFalse);
-      final preTransport = controller.items.first;
+      final preTransport = placePin();
       controller.replaceTransport(client: client);
       expect(controller.items, isEmpty);
       controller.sync(cityID: 'aberdeen', bounds: bounds);
       await drain(() => controller.current);
       expect(controller.sourceCurrent(preTransport), isFalse);
-      final preOrigin = controller.items.first;
+      final preOrigin = placePin();
       origin = 'https://new-owned-map.test';
       expect(controller.items, isEmpty);
       identity.value++;
       await drain(() => controller.current);
       expect(controller.sourceCurrent(preOrigin), isFalse);
       controller.updateRefreshVisibility();
-      final beforeHidden = controller.items.first;
+      final beforeHidden = placePin();
       allowed = false;
       controller.updateRefreshVisibility();
       expect(controller.items, isEmpty);
@@ -470,7 +508,7 @@ void main() {
         calls.where((r) => r.url.path == '/v1/me/map-content').length,
         beforeReturn + 1,
       );
-      final expires = controller.items.first;
+      final expires = placePin();
       delayed = Completer<http.Response>();
       delayNextMap = true;
       now = now.add(const Duration(seconds: 15));
@@ -484,12 +522,46 @@ void main() {
       expect(controller.current, isFalse);
       expect(controller.entities, isEmpty);
       expect(controller.sourceCurrent(expires), isFalse);
-      expect(controller.error, contains('已到期'));
+      expect(controller.view, isNull);
+      expect(controller.items, isEmpty);
+      expect(
+        controller.loading,
+        isTrue,
+        reason:
+            'The pending renewal survives, while every old source grant expires',
+      );
+      expect(
+        controller.error,
+        isNull,
+        reason: 'An in-flight renewal is loading, not a completed read failure',
+      );
+      // The pending response carries its own original deadline. Let that
+      // deadline pass too: an actually expired response must never resurrect
+      // content, whereas a still-valid fresh renewal may legitimately return.
+      now = now.add(const Duration(seconds: 16));
+      await t.pump(const Duration(seconds: 16));
       delayed.complete(http.Response('', 200));
       await t.runAsync(
         () => Future<void>.delayed(const Duration(milliseconds: 10)),
       );
-      expect(controller.entities, isEmpty);
+      // The 12s HTTP timeout may already have requested a separate recovery.
+      // Only that genuinely newer grant can restore the map, never the held
+      // response whose own deadline has now passed.
+      await drain(() => controller.current && !controller.loading);
+      expect(
+        controller.view!.observedAt.isAfter(expires.validUntil!),
+        isTrue,
+        reason: 'Recovery must be observed after the expired original grant',
+      );
+      expect(
+        controller.view!.validUntil.isAfter(heldMapUntil!),
+        isTrue,
+        reason: 'The restored view must carry a newer server lease',
+      );
+      expect(controller.momentCurrent(beyond.selector), isFalse);
+      final requestsBeforeClear = calls
+          .where((r) => r.url.path == '/v1/me/map-content')
+          .length;
       controller.retire(clearQuery: true);
       allowed = false;
       controller.updateRefreshVisibility();
@@ -499,7 +571,7 @@ void main() {
       await t.pump();
       expect(
         calls.where((r) => r.url.path == '/v1/me/map-content').length,
-        beforeReturn + 2,
+        requestsBeforeClear,
       );
       expect(
         calls.every(

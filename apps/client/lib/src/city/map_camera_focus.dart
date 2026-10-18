@@ -19,21 +19,36 @@ class MapCameraFocusInput {
          city?.map?.latitude,
          city?.map?.longitude,
          city?.map?.defaultZoom,
+         city?.map?.bearing,
+         city?.map?.pitch,
+         city?.map?.navigationGeneration,
+         city?.map?.cameraBounds?.west,
+         city?.map?.cameraBounds?.south,
+         city?.map?.cameraBounds?.east,
+         city?.map?.cameraBounds?.north,
        ]),
        cityCenter = city?.map == null
            ? null
            : MapCameraPoint('', city!.map!.latitude, city.map!.longitude),
-       cityZoom = city?.map?.defaultZoom {
+       cityZoom = city?.map?.defaultZoom,
+       cityBounds = city?.map?.cameraBounds,
+       bearing = city?.map?.bearing ?? 0,
+       pitch = city?.map?.pitch ?? 0 {
     final publicPoints = <MapCameraPoint>[
-      for (final entity in entities)
-        MapCameraPoint(entity.id, entity.latitude, entity.longitude),
-      for (final place in places)
-        if (place.location.hasPublicPoint)
-          MapCameraPoint(
-            'place:${place.id}',
-            place.location.latitude!,
-            place.location.longitude!,
-          ),
+      if (cityBounds?.isValid == true) ...[
+        MapCameraPoint('', cityBounds!.south, cityBounds!.west),
+        MapCameraPoint('', cityBounds!.north, cityBounds!.east),
+      ] else ...[
+        for (final entity in entities)
+          MapCameraPoint(entity.id, entity.latitude, entity.longitude),
+        for (final place in places)
+          if (place.location.hasPublicPoint)
+            MapCameraPoint(
+              'place:${place.id}',
+              place.location.latitude!,
+              place.location.longitude!,
+            ),
+      ],
     ].where((point) => point.isValid).toList();
     selected = publicPoints
         .where((point) => point.id == selectedEntityId)
@@ -53,6 +68,8 @@ class MapCameraFocusInput {
   final bool preserveViewport;
   final MapCameraPoint? cityCenter;
   final double? cityZoom;
+  final MapBounds? cityBounds;
+  final double bearing, pitch;
   late final List<MapCameraPoint> points;
   late final MapCameraPoint? selected;
   late final String coordinatesKey;
@@ -97,7 +114,7 @@ class MapCameraFocusInput {
   }
 
   bool get fitsBounds =>
-      contextKey != 'idle' &&
+      (cityBounds?.isValid == true || contextKey != 'idle') &&
       selected == null &&
       points.map((point) => (point.latitude, point.longitude)).toSet().length >
           1;

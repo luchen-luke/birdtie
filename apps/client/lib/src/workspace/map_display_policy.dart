@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:math' as math;
 import 'package:crypto/crypto.dart';
 import 'package:flutter/painting.dart';
+import 'map_pin_category.dart';
 
 import 'map_entities.dart';
 import 'map_marker_visual.dart';
@@ -59,10 +60,20 @@ class MapDisplayPlan {
     this.omittedIDs, {
     this.denseIDs = const {},
     this.clusterPositions = const {},
+    this.placements = const {},
+    this.glyphSizes = const {},
+    this.metersPerPixel,
+    this.occludedGlyphIDs = const {},
   });
   final List<MapEntity> entities;
   final Set<String> labelIDs, omittedIDs, denseIDs;
   final Map<String, Offset> clusterPositions;
+  final Map<String, MapLabelPlacement> placements;
+  final Map<String, double> glyphSizes;
+  final double? metersPerPixel;
+  // Display clipping only. Entities and original cluster members remain in
+  // the authorized source/list; no coordinate is moved to avoid app chrome.
+  final Set<String> occludedGlyphIDs;
 }
 
 class MapDisplayLevel {
@@ -74,6 +85,11 @@ class MapDisplayLevel {
 /// Provider-independent policy. Input positions are map-local logical pixels
 /// returned by the current camera, after the source has enforced its ACL/lease.
 class MapDisplayPolicy {
+  // Real Shanghai calibration: the SDK's rounded "2 km" scale can still mean
+  // 18.49 m/dp. A 375dp viewport covering 6km is already a city overview;
+  // count rows belong to a closer neighbourhood view, independent of SDK zoom.
+  static const overviewMetersPerLogicalPixel = 16.0;
+
   /// Longitude is unwrapped around the actual projected centre, so a rotated
   /// viewport spanning 180 degrees stays a short crossing interval. Inputs
   /// come from provider screen projection, never a city/GPS approximation.
@@ -121,6 +137,15 @@ class MapDisplayPolicy {
                 e.title,
                 e.subtitle,
                 e.precision,
+                e.categoryCode,
+                e.contentCount,
+                e.anchorCount,
+                e.placeID,
+                e.momentID,
+                e.momentRevision,
+                e.anchorID,
+                e.entryID,
+                e.threadID,
               ],
           ]),
         ),
@@ -143,79 +168,6 @@ class MapDisplayPolicy {
             _membersVersion(members) == cluster.sourceVersion
         ? members
         : const [];
-  }
-
-  static ({List<MapEntity> entities, Map<String, Offset> positions})
-  _boundedTasks(
-    List<MapEntity> source,
-    Map<String, Offset> positions,
-    String? selectedID,
-    int budget,
-  ) {
-    final keep = source
-        .where((e) => contentEntity(e) || e.id == selectedID)
-        .toList();
-    final candidates = source
-        .where((e) => !contentEntity(e) && e.id != selectedID)
-        .toList();
-    final slots = math.max(1, budget - keep.length);
-    if (candidates.length <= slots)
-      return (entities: source, positions: const {});
-    Map<(int, int), List<MapEntity>> cells = {};
-    var edge = 64.0;
-    for (var attempt = 0; attempt < 24; attempt++, edge *= 2) {
-      cells = {};
-      for (final entity in candidates) {
-        final p = positions[entity.id]!;
-        (cells[((p.dx / edge).floor(), (p.dy / edge).floor())] ??= []).add(
-          entity,
-        );
-      }
-      if (cells.length <= slots) break;
-    }
-    var groups = cells.values.toList();
-    if (groups.length > slots) {
-      // At low budgets a screen may straddle the grid origin. Spatially
-      // ordered partitions stay bounded without dropping any member.
-      candidates.sort((a, b) {
-        final x = positions[a.id]!.dx.compareTo(positions[b.id]!.dx);
-        return x != 0 ? x : positions[a.id]!.dy.compareTo(positions[b.id]!.dy);
-      });
-      final count = (candidates.length / slots).ceil();
-      groups = [
-        for (var i = 0; i < candidates.length; i += count)
-          candidates.sublist(i, math.min(i + count, candidates.length)),
-      ];
-    }
-    final result = <MapEntity>[...keep], projected = <String, Offset>{};
-    for (final members in groups) {
-      if (members.length == 1) {
-        result.add(members.single);
-        continue;
-      }
-      members.sort((a, b) => a.id.compareTo(b.id));
-      final id =
-          'display-cluster:${sha256.convert(utf8.encode(jsonEncode(members.map((e) => e.id).toList())))}';
-      // The container is anchored on a real member, never a fabricated POI.
-      final anchor = members.first;
-      result.add(
-        MapEntity(
-          id: id,
-          kind: MapEntityKind.cluster,
-          title: '${members.length}项内容',
-          subtitle: '查看当前范围内的对象',
-          latitude: anchor.latitude,
-          longitude: anchor.longitude,
-          precision: 'area',
-          memberIDs: members.map((e) => e.id).toList(),
-          sourceVersion: _membersVersion(members),
-          groupSummary: '${members.length}个当前对象',
-          isTaskResult: true,
-        ),
-      );
-      projected[id] = positions[anchor.id]!;
-    }
-    return (entities: result, positions: projected);
   }
 
   // Concept mapping from the reviewed Civu proposed display policy. These
@@ -249,6 +201,47 @@ class MapDisplayPolicy {
       .firstWhere((level) => zoom < level.maxZoomExclusive)
       .collisionRadius;
 
+  static double? scaleFromSegment(Offset a, Offset b, double logicalPixels) {
+    if (!logicalPixels.isFinite ||
+        logicalPixels <= 0 ||
+        !a.dx.isFinite ||
+        !a.dy.isFinite ||
+        !b.dx.isFinite ||
+        !b.dy.isFinite)
+      return null;
+    const radians = math.pi / 180;
+    final dlat = (b.dy - a.dy) * radians, dlon = (b.dx - a.dx) * radians;
+    final h =
+        math.pow(math.sin(dlat / 2), 2) +
+        math.cos(a.dy * radians) *
+            math.cos(b.dy * radians) *
+            math.pow(math.sin(dlon / 2), 2);
+    final distance = 12742000 * math.asin(math.sqrt(h.clamp(0, 1)));
+    final value = distance / logicalPixels;
+    return value.isFinite && value > 0 ? value : null;
+  }
+
+  static double? _sourceScale(
+    List<MapEntity> rows,
+    Map<String, Offset> points,
+  ) {
+    final values = <double>[];
+    for (var i = 1; i < rows.length && values.length < 12; i++) {
+      final a = rows.first, b = rows[i];
+      final pixels = (points[a.id]! - points[b.id]!).distance;
+      if (pixels < 24) continue;
+      final scale = scaleFromSegment(
+        Offset(a.longitude, a.latitude),
+        Offset(b.longitude, b.latitude),
+        pixels,
+      );
+      if (scale != null) values.add(scale);
+    }
+    if (values.isEmpty) return null;
+    values.sort();
+    return values[values.length ~/ 2];
+  }
+
   static MapDisplayPlan plan({
     required List<MapEntity> entities,
     required Map<String, Offset> positions,
@@ -256,161 +249,236 @@ class MapDisplayPolicy {
     String? selectedID,
     Rect? contentRect,
     Set<String> previouslyVisibleIDs = const {},
+    Map<String, MapLabelPlacement> previousPlacements = const {},
     Set<String> protectedIDs = const {},
     double? collisionRadius,
+    double? metersPerPixel,
     int ambientLimit = 40,
   }) {
     final unique = <String, MapEntity>{};
-    for (final entity in entities) {
-      final point = positions[entity.id];
-      if (entity.hasMapAnchor &&
-          point != null &&
-          point.dx.isFinite &&
-          point.dy.isFinite) {
-        unique.putIfAbsent(entity.id, () => entity);
-      }
+    for (final e in entities) {
+      final p = positions[e.id];
+      if (e.hasMapAnchor && p != null && p.dx.isFinite && p.dy.isFinite)
+        unique.putIfAbsent(e.id, () => e);
     }
-    final bounded = _boundedTasks(
-      unique.values.toList(),
-      positions,
-      selectedID,
-      ambientLimit.clamp(1, 40),
-    );
-    positions = {...positions, ...bounded.positions};
-    final ordered = bounded.entities..sort((a, b) => a.id.compareTo(b.id));
-    final emphasized = {...protectedIDs, ?selectedID};
-    final requestedRadius = collisionRadius ?? radiusForZoom(zoom);
-    final radius = requestedRadius.isFinite && requestedRadius > 0
-        ? requestedRadius
-        : 24.0;
-    final cells = <(int, int), List<MapEntity>>{};
-    (int, int) cell(Offset p) =>
-        ((p.dx / radius).floor(), (p.dy / radius).floor());
-    for (final entity in ordered) {
-      (cells[cell(positions[entity.id]!)] ??= []).add(entity);
-    }
-    final dense = <String>{};
-    for (final entity in ordered) {
-      if (emphasized.contains(entity.id) ||
-          entity.precision != 'point' ||
-          contentEntity(entity))
-        continue;
-      final point = positions[entity.id]!, key = cell(point);
-      var nearby = false;
-      for (var dx = -1; dx <= 1 && !nearby; dx++) {
-        for (var dy = -1; dy <= 1 && !nearby; dy++) {
-          nearby = (cells[(key.$1 + dx, key.$2 + dy)] ?? const <MapEntity>[])
-              .any(
-                (other) =>
-                    other.id != entity.id &&
-                    (positions[other.id]! - point).distance <= radius,
-              );
+    final original = unique.values.toList()
+      ..sort((a, b) => a.id.compareTo(b.id));
+    final scale = metersPerPixel ?? _sourceScale(original, positions);
+    // Unknown scale is conservatively compact. Provider zoom numbers are not
+    // treated as interchangeable geographic units.
+    final overview = scale == null || scale >= overviewMetersPerLogicalPixel;
+    double size(MapEntity e) =>
+        !{
+          MapEntityKind.place,
+          MapEntityKind.moment,
+          MapEntityKind.cluster,
+        }.contains(e.kind)
+        ? 48
+        : e.kind == MapEntityKind.cluster
+        ? (e.id == selectedID ? 30 : 28)
+        : MapMarkerVisual.diameter(
+            selected: e.id == selectedID,
+            dense: overview,
+            moment: e.kind == MapEntityKind.moment,
+          );
+    final assigned = <String>{}, displayed = <MapEntity>[];
+    final clusterPositions = <String, Offset>{};
+    bool groupable(MapEntity e) =>
+        e.id != selectedID &&
+        e.precision == 'point' &&
+        {MapEntityKind.place, MapEntityKind.moment}.contains(e.kind);
+    for (final e in original) {
+      if (!assigned.add(e.id)) continue;
+      final members = <MapEntity>[e];
+      if (groupable(e)) {
+        for (final other in original) {
+          if (assigned.contains(other.id) || !groupable(other)) continue;
+          final distance = (positions[e.id]! - positions[other.id]!).distance;
+          // A bounded local group, not a transitive chain across the city.
+          if (distance <= (size(e) + size(other)) / 2 + 2 &&
+              distance <= 36 &&
+              members.length < 32) {
+            members.add(other);
+            assigned.add(other.id);
+          }
         }
       }
-      if (nearby) dense.add(entity.id);
+      if (members.length == 1) {
+        displayed.add(e);
+        continue;
+      }
+      members.sort((a, b) => a.id.compareTo(b.id));
+      final kind = members.every((v) => v.kind == MapEntityKind.place)
+          ? 'place_cluster'
+          : members.every((v) => v.kind == MapEntityKind.moment)
+          ? 'moment_cluster'
+          : 'mixed_cluster';
+      final moments = members
+          .where((v) => v.kind == MapEntityKind.moment)
+          .map((v) => v.momentID.isEmpty ? v.id : v.momentID)
+          .toSet()
+          .length;
+      final count = kind == 'moment_cluster' ? moments : members.length;
+      final id =
+          'display-cluster:${sha256.convert(utf8.encode(jsonEncode(members.map((v) => v.id).toList())))}';
+      final anchor = members.first;
+      displayed.add(
+        MapEntity(
+          id: id,
+          kind: MapEntityKind.cluster,
+          title: '$count${MapMarkerVisual.clusterUnit(kind)}',
+          subtitle: '查看附近成员',
+          latitude: anchor.latitude,
+          longitude: anchor.longitude,
+          precision: 'area',
+          categoryCode: kind,
+          memberIDs: members.map((v) => v.id).toList(),
+          sourceVersion: _membersVersion(members),
+          groupSummary: '$count${MapMarkerVisual.clusterUnit(kind)}',
+          contentCount: moments,
+          anchorCount: members.length,
+          isTaskResult: members.any((v) => v.isTaskResult),
+        ),
+      );
+      clusterPositions[id] = positions[anchor.id]!;
     }
-    final labels = <String>{};
-    // Civu content is useful at the opening city zoom too. Keep a small,
-    // collision-aware set of real photo/story points legible among catalog
-    // points. Density changes presentation only, never source coordinates.
-    final content = ordered
-        .where((e) => e.id.startsWith('owned-map:'))
-        .toList();
-    int contentRank(MapEntity e) =>
-        (e.recentMoments?.labelAt(DateTime.now().toUtc()) != null ? 4 : 0) +
-        (e.mediaPixels?.current() == true ? 2 : 0);
-    content.sort((a, b) {
-      final rank = contentRank(b).compareTo(contentRank(a));
+    positions = {...positions, ...clusterPositions};
+    int priority(MapEntity e) => e.id == selectedID
+        ? 0
+        : protectedIDs.contains(e.id) || e.isTaskResult
+        ? 1
+        : previouslyVisibleIDs.contains(e.id)
+        ? 2
+        : 3;
+    displayed.sort((a, b) {
+      final rank = priority(a).compareTo(priority(b));
       return rank != 0 ? rank : a.id.compareTo(b.id);
     });
-    Rect labelRect(MapEntity e) {
-      final p = positions[e.id]!;
-      final selected = e.id == selectedID;
-      final start = e.kind == MapEntityKind.cluster
-          ? (selected ? 25.0 : 23.0)
-          : MapMarkerVisual.diameter(
-                      selected: selected,
-                      dense: dense.contains(e.id),
-                    ) /
-                    2 +
-                MapMarkerVisual.labelGap;
-      return Rect.fromLTWH(
-        p.dx + start,
-        p.dy - 20,
-        MapMarkerVisual.labelWidth,
-        40,
-      );
-    }
-
-    // Icon overlap remains resolvable through the existing content chooser.
-    // Labels must not paint over another current glyph, especially the count
-    // inside a content cluster. This changes no identity or real coordinate.
-    final glyphs = <String, Rect>{
-      for (final e in ordered)
-        if (e.kind == MapEntityKind.cluster ||
-            (e.precision == 'point' &&
-                {MapEntityKind.place, MapEntityKind.moment}.contains(e.kind)))
-          e.id: Rect.fromCenter(
-            center: positions[e.id]!,
-            width: e.kind == MapEntityKind.cluster
-                ? 44
-                : MapMarkerVisual.diameter(
-                    selected: e.id == selectedID,
-                    dense: dense.contains(e.id),
-                  ),
-            height: e.kind == MapEntityKind.cluster
-                ? 44
-                : MapMarkerVisual.diameter(
-                    selected: e.id == selectedID,
-                    dense: dense.contains(e.id),
-                  ),
-          ),
+    final sizes = {for (final e in displayed) e.id: size(e)};
+    final glyphs = {
+      for (final e in displayed)
+        e.id: Rect.fromCenter(
+          center: positions[e.id]!,
+          width: sizes[e.id]!,
+          height: sizes[e.id]!,
+        ),
     };
-    final occupied = <Rect>[];
-    bool addLabel(MapEntity entity) {
-      if (labels.contains(entity.id)) return true;
-      if (labels.length >= MapMarkerVisual.labelBudget) return false;
-      final rect = labelRect(entity);
-      if (occupied.any((other) => other.overlaps(rect.inflate(4))) ||
-          glyphs.entries.any(
-            (other) =>
-                other.key != entity.id && other.value.overlaps(rect.inflate(4)),
-          ))
-        return false;
-      labels.add(entity.id);
-      occupied.add(rect);
-      return true;
-    }
-
-    for (final entity in [
-      ...ordered.where((e) => e.id == selectedID),
-      ...ordered.where((e) => e.id != selectedID && emphasized.contains(e.id)),
-    ]) {
-      addLabel(entity);
-    }
-    for (final entity in content) {
-      if (labels.length >= MapMarkerVisual.labelBudget) break;
-      if (labels.contains(entity.id)) continue;
-      if (contentRect != null && !contentRect.contains(positions[entity.id]!))
+    final placed = <String, MapLabelPlacement>{}, occupied = <Rect>[];
+    final occluded = <String>{
+      if (contentRect != null)
+        for (final entry in glyphs.entries)
+          if (!contentRect.contains(entry.value.topLeft) ||
+              !contentRect.contains(
+                entry.value.bottomRight - const Offset(.01, .01),
+              ))
+            entry.key,
+    };
+    final maximumLabels = overview ? 6 : 10;
+    for (final e in displayed) {
+      if (occluded.contains(e.id)) continue;
+      final selected = e.id == selectedID;
+      if (placed.length >= maximumLabels && !selected) continue;
+      if (e.kind == MapEntityKind.moment && !selected ||
+          e.kind == MapEntityKind.cluster && !selected)
         continue;
-      if (!addLabel(entity)) continue;
-      if (contentRank(entity) > 0) dense.remove(entity.id);
-    }
-    if (zoom >= 16) {
-      for (final entity in ordered) {
-        if (labels.length >= MapMarkerVisual.labelBudget) break;
-        if (!dense.contains(entity.id)) addLabel(entity);
+      final raw = e.kind == MapEntityKind.cluster
+          ? '${MapMarkerVisual.clusterCount(categoryCode: e.categoryCode, contentCount: e.contentCount, anchorCount: e.anchorCount, fallback: e.memberIDs.length)}${MapMarkerVisual.clusterUnit(e.categoryCode)}'
+          : e.title;
+      if (raw.isEmpty || e.kind == MapEntityKind.moment && raw == '动态')
+        continue;
+      final name = MapMarkerVisual.nativeLabel(raw, selected: selected);
+      final font = selected ? 13.0 : 12.0;
+      final namePainter = TextPainter(
+        text: TextSpan(
+          text: name,
+          style: TextStyle(fontSize: font, fontWeight: FontWeight.w500),
+        ),
+        textDirection: TextDirection.ltr,
+        maxLines: 1,
+      )..layout(maxWidth: 112);
+      final nameWidth = math.max(16.0, namePainter.width);
+      namePainter.dispose();
+      final auxiliary = e.kind == MapEntityKind.place && (selected || !overview)
+          ? e.recentMoments?.labelAt(DateTime.now().toUtc())
+          : null;
+      final p = positions[e.id]!,
+          radius = sizes[e.id]! / 2 + MapMarkerVisual.labelGap;
+      final prior = previousPlacements[e.id]?.side;
+      final sides = {
+        if (prior != null) prior,
+        MapLabelSide.right,
+        MapLabelSide.left,
+        MapLabelSide.top,
+        MapLabelSide.bottom,
+      };
+      for (final aux in [if (auxiliary != null) auxiliary, null]) {
+        if (placed.containsKey(e.id)) break;
+        var width = nameWidth;
+        if (aux != null) {
+          final painter = TextPainter(
+            text: TextSpan(text: aux, style: const TextStyle(fontSize: 11)),
+            textDirection: TextDirection.ltr,
+            maxLines: 1,
+          )..layout(maxWidth: 112);
+          width = math.max(width, painter.width);
+          painter.dispose();
+        }
+        final height = font * 1.25 + (aux == null ? 0 : 15);
+        for (final side in sides) {
+          final origin = switch (side) {
+            MapLabelSide.right => Offset(p.dx + radius, p.dy - height / 2),
+            MapLabelSide.left => Offset(
+              p.dx - radius - width,
+              p.dy - height / 2,
+            ),
+            MapLabelSide.top => Offset(
+              p.dx - width / 2,
+              p.dy - radius - height,
+            ),
+            MapLabelSide.bottom => Offset(p.dx - width / 2, p.dy + radius),
+          };
+          final rect = origin & Size(width, height);
+          if (contentRect != null &&
+              (!contentRect.contains(rect.topLeft) ||
+                  !contentRect.contains(
+                    rect.bottomRight - const Offset(.01, .01),
+                  )))
+            continue;
+          if (occupied.any((v) => v.overlaps(rect.inflate(2))) ||
+              glyphs.entries.any(
+                (v) => v.key != e.id && v.value.overlaps(rect.inflate(2)),
+              ))
+            continue;
+          placed[e.id] = MapLabelPlacement(
+            side: side,
+            rect: rect,
+            name: name,
+            fontSize: font,
+            color: e.kind == MapEntityKind.place
+                ? MapPinCategory.forCode(e.categoryCode).label
+                : MapPinCategory.other.label,
+            auxiliary: aux,
+            offset: origin - p,
+          );
+          occupied.add(rect);
+          break;
+        }
       }
     }
-    // Source ACL, scenario, viewport and lease filters own eligibility.
-    // Task overflow is represented by temporary, revalidated member containers;
-    // no source record or route is deleted and owned content stays server-bound.
     return MapDisplayPlan(
-      List.unmodifiable(ordered),
-      Set.unmodifiable(labels),
-      const <String>{},
-      denseIDs: Set.unmodifiable(dense),
-      clusterPositions: Map.unmodifiable(bounded.positions),
+      List.unmodifiable(displayed),
+      Set.unmodifiable(placed.keys),
+      const {},
+      denseIDs: {
+        for (final e in displayed)
+          if (overview && e.kind == MapEntityKind.place && e.id != selectedID)
+            e.id,
+      },
+      clusterPositions: Map.unmodifiable(clusterPositions),
+      placements: Map.unmodifiable(placed),
+      glyphSizes: Map.unmodifiable(sizes),
+      metersPerPixel: scale,
+      occludedGlyphIDs: Set.unmodifiable(occluded),
     );
   }
 

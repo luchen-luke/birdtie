@@ -28,7 +28,16 @@ class NowQaBridge {
       hideKeyboard();
       return true;
     }
-    if (!const {'keyboardShow', 'mapPan'}.contains(call.method)) return false;
+    final observe = call.method == 'mapObserve60';
+    // This fixed observation action accepts no location, text or other input.
+    if (observe && call.arguments != null) return false;
+    if (!const {
+      'keyboardShow',
+      'mapPan',
+      'mapObserve60',
+    }.contains(call.method)) {
+      return false;
+    }
     _probe?.dispose();
     _probe = NowPerfProbe(
       enabled: true,
@@ -39,11 +48,11 @@ class NowQaBridge {
       },
     );
     _probe!.beginWindow(
-      scene: call.method == 'mapPan'
+      scene: call.method == 'mapPan' || observe
           ? NowPerfScene.mapPan
           : NowPerfScene.keyboard,
       refreshRateHz: refreshRate(),
-      duration: const Duration(seconds: 8),
+      duration: Duration(seconds: observe ? 60 : 8),
     );
     if (call.method == 'keyboardShow') showKeyboard();
     return true;

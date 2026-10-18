@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import '../app/birdtie_app_bar.dart';
 import '../auth/birdtie_auth_controller.dart';
 import '../city/public_city_controller.dart';
+import '../city/map_navigation_target.dart';
 import '../config/birdtie_environment.dart';
 import 'activity_detail_sheet.dart';
 import 'community_api.dart';
@@ -38,6 +39,7 @@ Future<void> openChatEntity(
   String? Function()? workspaceID,
   String? apiBaseUrl,
   http.Client? client,
+  ValueChanged<MapNavigationTarget>? onNavigateMap,
 }) async {
   if (!card.available ||
       !chatEntityTypes.contains(card.type) ||
@@ -55,6 +57,7 @@ Future<void> openChatEntity(
         workspaceID: workspaceID,
         apiBaseUrl: apiBaseUrl,
         client: client,
+        onNavigateMap: onNavigateMap,
       ),
     ),
   );
@@ -73,6 +76,7 @@ class ChatEntityDetail extends StatefulWidget {
     this.workspaceID,
     this.apiBaseUrl,
     this.client,
+    this.onNavigateMap,
   });
   final String type, id;
   final BirdtieAuthController auth;
@@ -80,6 +84,7 @@ class ChatEntityDetail extends StatefulWidget {
   final String? Function()? workspaceID;
   final String? apiBaseUrl;
   final http.Client? client;
+  final ValueChanged<MapNavigationTarget>? onNavigateMap;
   @override
   State<ChatEntityDetail> createState() => _ChatEntityDetailState();
 }
@@ -330,6 +335,9 @@ class _ChatEntityDetailState extends State<ChatEntityDetail> {
       apiBaseUrl: _base,
       client: _client,
       onOpenPlace: (id) => _open('place', id),
+      onNavigateMap: (target) {
+        if (_valid) widget.onNavigateMap?.call(target);
+      },
     ),
   };
   @override

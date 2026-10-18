@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
 import 'map_marker_visual.dart';
+import 'map_pin_category.dart';
 
-/// A compact map point, independent of entity decoding, routing and media fetches.
-/// Only the existing live pixel guard can make a photo visible.
+/// A 48 dp action target, independent of its compact geographic glyph.
 class CompactMapPointMarker extends StatelessWidget {
   const CompactMapPointMarker({
     super.key,
@@ -18,29 +18,45 @@ class CompactMapPointMarker extends StatelessWidget {
     this.dense = false,
     this.showLabel = false,
     this.categoryCode = '',
+    this.placement,
   });
-
-  final String id, title, subtitle;
-  final String categoryCode;
+  final String id, title, subtitle, categoryCode;
   final bool moment, selected, dense, showLabel;
   final VoidCallback onTap;
   final MapMediaPixels? mediaPixels;
   final MapRecentMoments? recentMoments;
+  final MapLabelPlacement? placement;
 
   @override
   Widget build(BuildContext context) {
-    final pale = dense && !selected;
-    final size = MapMarkerVisual.diameter(selected: selected, dense: pale);
-    final pixels = !pale && mediaPixels?.current() == true ? mediaPixels : null;
+    final size = MapMarkerVisual.diameter(
+      selected: selected,
+      dense: dense,
+      moment: moment,
+    );
+    final pixels = moment && mediaPixels?.current() == true
+        ? mediaPixels
+        : null;
     final recent = !moment
         ? recentMoments?.labelAt(DateTime.now().toUtc())
         : null;
-    final color = moment
-        ? MapMarkerVisual.momentColor
-        : pale
-        ? MapMarkerVisual.densePlaceColor
-        : MapMarkerVisual.placeColor;
-    final radius = moment ? MapMarkerVisual.radius(dense: pale) : size / 2;
+    final category = MapPinCategory.forCode(categoryCode);
+    final color = moment ? MapMarkerVisual.momentColor : category.fill;
+    final radius = moment ? 6.0 : size / 2;
+    final fallbackAux = !moment && (selected || !dense) ? recent : null;
+    final font = selected ? 13.0 : 12.0;
+    final fallbackHeight = font * 1.25 + (fallbackAux == null ? 0 : 15);
+    final caption =
+        placement ??
+        MapLabelPlacement(
+          side: MapLabelSide.right,
+          rect: Rect.fromLTWH(0, 0, 112, fallbackHeight),
+          offset: Offset(size / 2 + 4, -fallbackHeight / 2),
+          name: MapMarkerVisual.nativeLabel(title, selected: selected),
+          fontSize: font,
+          color: category.label,
+          auxiliary: fallbackAux,
+        );
     return Semantics(
       identifier: 'birdtie-map-point:$id',
       button: true,
@@ -53,18 +69,15 @@ class CompactMapPointMarker extends StatelessWidget {
       excludeSemantics: true,
       onTap: onTap,
       child: SizedBox(
-        width: MapMarkerVisual.hitSize,
-        height: MapMarkerVisual.hitSize,
+        width: 48,
+        height: 48,
         child: Stack(
           clipBehavior: Clip.none,
           children: [
             IconButton(
               key: ValueKey('individual-map-target:$id'),
               tooltip: title.isEmpty && moment ? '查看动态' : title,
-              constraints: const BoxConstraints.tightFor(
-                width: MapMarkerVisual.hitSize,
-                height: MapMarkerVisual.hitSize,
-              ),
+              constraints: const BoxConstraints.tightFor(width: 48, height: 48),
               padding: EdgeInsets.zero,
               onPressed: onTap,
               icon: Container(
@@ -75,86 +88,31 @@ class CompactMapPointMarker extends StatelessWidget {
                   shape: moment ? BoxShape.rectangle : BoxShape.circle,
                   borderRadius: moment ? BorderRadius.circular(radius) : null,
                   color: color,
-                  border: Border.all(
-                    color: selected ? MapMarkerVisual.placeColor : Colors.white,
-                    width: selected
-                        ? 2
-                        : pale
-                        ? .75
-                        : 1.5,
-                  ),
+                  border: Border.all(color: Colors.white, width: 1.5),
                 ),
+                clipBehavior: Clip.antiAlias,
                 child: pixels != null
-                    ? Padding(
-                        padding: EdgeInsets.all(selected ? 1 : 0),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(radius),
-                          child: ColoredBox(
-                            color: Colors.white,
-                            child: Padding(
-                              padding: EdgeInsets.all(selected ? 1 : 0),
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(radius),
-                                child: RawImage(
-                                  key: ValueKey(
-                                    '${moment ? 'map-moment-photo' : 'map-place-photo'}:$id',
-                                  ),
-                                  image: pixels.image,
-                                  fit: BoxFit.cover,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
+                    ? RawImage(
+                        key: ValueKey('map-moment-photo:$id'),
+                        image: pixels.image,
+                        fit: BoxFit.cover,
                       )
-                    : pale
-                    ? null
                     : Icon(
-                        moment
-                            ? Icons.notes_outlined
-                            : MapMarkerVisual.placeIcon(categoryCode),
+                        moment ? Icons.notes_outlined : category.icon,
                         color: Colors.white,
-                        size: selected
-                            ? 18
-                            : pale
-                            ? 10
-                            : 14,
+                        size: !moment && dense && !selected ? 12 : 14,
                       ),
               ),
             ),
-            if (showLabel && !pale && (title.isNotEmpty || recent != null))
+            if (showLabel && caption.name.isNotEmpty && (!moment || selected))
               Positioned(
                 key: ValueKey('individual-map-caption:$id'),
-                left:
-                    MapMarkerVisual.hitSize / 2 +
-                    size / 2 +
-                    MapMarkerVisual.labelGap,
-                top: 0,
-                bottom: 0,
-                width: MapMarkerVisual.labelWidth,
+                left: 24 + caption.offset.dx,
+                top: 24 + caption.offset.dy,
+                width: caption.rect.width,
+                height: caption.rect.height,
                 child: IgnorePointer(
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (title.isNotEmpty)
-                          _MapCaption(
-                            text: title,
-                            maxLines: selected ? 2 : 1,
-                            weight: FontWeight.w500,
-                            color: MapMarkerVisual.labelColor,
-                          ),
-                        if (recent != null)
-                          _MapCaption(
-                            key: ValueKey('map-place-recent:$id'),
-                            text: recent,
-                            color: MapMarkerVisual.countColor,
-                          ),
-                      ],
-                    ),
-                  ),
+                  child: MapPinLabel(placement: caption, id: id),
                 ),
               ),
           ],
@@ -164,24 +122,52 @@ class CompactMapPointMarker extends StatelessWidget {
   }
 }
 
+/// Measured name/auxiliary hierarchy shared by Flutter and native overlays.
+class MapPinLabel extends StatelessWidget {
+  const MapPinLabel({super.key, required this.placement, this.id = ''});
+  final MapLabelPlacement placement;
+  final String id;
+  @override
+  Widget build(BuildContext context) => Column(
+    mainAxisSize: MainAxisSize.min,
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      _MapCaption(
+        text: placement.name,
+        color: placement.color,
+        fontSize: placement.fontSize,
+        weight: FontWeight.w500,
+      ),
+      if (placement.auxiliary case final auxiliary?) ...[
+        const SizedBox(height: 1),
+        _MapCaption(
+          key: ValueKey('map-place-recent:$id'),
+          text: auxiliary,
+          color: MapMarkerVisual.countColor,
+          fontSize: 11,
+        ),
+      ],
+    ],
+  );
+}
+
 class _MapCaption extends StatelessWidget {
   const _MapCaption({
     super.key,
     required this.text,
     required this.color,
-    this.maxLines = 1,
+    required this.fontSize,
     this.weight = FontWeight.w400,
   });
   final String text;
   final Color color;
-  final int maxLines;
+  final double fontSize;
   final FontWeight weight;
-
   @override
   Widget build(BuildContext context) {
     final style = TextStyle(
-      fontSize: MapMarkerVisual.labelFontSize,
-      height: 1.2,
+      fontSize: fontSize,
+      height: 1.25,
       fontWeight: weight,
     );
     return Stack(
@@ -189,19 +175,19 @@ class _MapCaption extends StatelessWidget {
         ExcludeSemantics(
           child: Text(
             text,
-            maxLines: maxLines,
+            maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: style.copyWith(
               foreground: Paint()
                 ..color = Colors.white
                 ..style = PaintingStyle.stroke
-                ..strokeWidth = 3,
+                ..strokeWidth = 2.5,
             ),
           ),
         ),
         Text(
           text,
-          maxLines: maxLines,
+          maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: style.copyWith(color: color),
         ),

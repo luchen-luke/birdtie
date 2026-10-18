@@ -341,6 +341,7 @@ class MapEntityLayer extends StatelessWidget {
     required this.onSelected,
     this.labelIDs,
     this.denseIDs = const {},
+    this.placements = const {},
     this.visualOffsets = const {},
   });
   final List<MapEntity> entities;
@@ -348,6 +349,7 @@ class MapEntityLayer extends StatelessWidget {
   final ValueChanged<MapEntity> onSelected;
   final Set<String>? labelIDs;
   final Set<String> denseIDs;
+  final Map<String, MapLabelPlacement> placements;
   final Map<String, Offset> visualOffsets;
 
   @override
@@ -398,6 +400,7 @@ class MapEntityLayer extends StatelessWidget {
                   entity: entity,
                   selected: selectedId == entity.id,
                   dense: denseIDs.contains(entity.id),
+                  placement: placements[entity.id],
                   showLabel: labelIDs == null || labelIDs!.contains(entity.id),
                   onTap: () => onSelected(entity),
                 )
@@ -471,9 +474,11 @@ class IndividualMapMarker extends StatelessWidget {
     required this.onTap,
     this.dense = false,
     this.showLabel = false,
+    this.placement,
   });
   final MapEntity entity;
   final bool selected, dense, showLabel;
+  final MapLabelPlacement? placement;
   final VoidCallback onTap;
 
   @override
@@ -486,6 +491,7 @@ class IndividualMapMarker extends StatelessWidget {
     onTap: onTap,
     dense: dense,
     showLabel: showLabel,
+    placement: placement,
     mediaPixels: entity.mediaPixels,
     recentMoments: entity.recentMoments,
     categoryCode: entity.categoryCode,
@@ -677,12 +683,14 @@ class ContentClusterMapMarker extends StatelessWidget {
   final VoidCallback onTap;
   @override
   Widget build(BuildContext context) {
-    final count = entity.contentCount > 0
-        ? entity.contentCount
-        : entity.memberIDs.length;
-    final label = entity.contentCount > 0 ? '同一位置的$count条动态' : '$count项内容';
-    final pixels = entity.mediaPixels;
-    final size = selected ? 36.0 : 28.0;
+    final count = MapMarkerVisual.clusterCount(
+      categoryCode: entity.categoryCode,
+      contentCount: entity.contentCount,
+      anchorCount: entity.anchorCount,
+      fallback: entity.memberIDs.length,
+    );
+    final label = '$count${MapMarkerVisual.clusterUnit(entity.categoryCode)}';
+    final size = selected ? 30.0 : 28.0;
     return Semantics(
       identifier: 'birdtie-map-point:${entity.id}',
       button: true,
@@ -694,54 +702,22 @@ class ContentClusterMapMarker extends StatelessWidget {
           tooltip: label,
           padding: EdgeInsets.zero,
           onPressed: onTap,
-          icon: SizedBox(
+          icon: Container(
             width: size,
             height: size,
-            child: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                Positioned.fill(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF315E50),
-                      border: Border.all(color: Colors.white, width: 1.5),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    clipBehavior: Clip.antiAlias,
-                    child: pixels?.current() == true
-                        ? RawImage(image: pixels!.image, fit: BoxFit.cover)
-                        : const Icon(
-                            Icons.notes_outlined,
-                            size: 15,
-                            color: Colors.white,
-                          ),
-                  ),
-                ),
-                Positioned(
-                  right: -6,
-                  bottom: -5,
-                  child: Container(
-                    constraints: const BoxConstraints(
-                      minWidth: 16,
-                      minHeight: 14,
-                    ),
-                    padding: const EdgeInsets.symmetric(horizontal: 3),
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(5),
-                    ),
-                    child: Text(
-                      count > 99 ? '99+' : '$count',
-                      style: const TextStyle(
-                        color: Color(0xFF315E50),
-                        fontSize: 9,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: const Color(0xFF64707A),
+              shape: BoxShape.circle,
+              border: Border.all(color: Colors.white, width: 1.5),
+            ),
+            child: Text(
+              count > 99 ? '99+' : '$count',
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
         ),

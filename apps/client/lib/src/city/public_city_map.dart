@@ -20,6 +20,7 @@ import 'map_camera_focus.dart';
 import 'native_city_map_stub.dart'
     if (dart.library.io) 'native_city_map_io.dart';
 import 'public_city_controller.dart';
+import 'map_navigation_target.dart';
 import '../workspace/map_entities.dart';
 import '../workspace/map_display_policy.dart';
 
@@ -96,6 +97,7 @@ class PublicCityMapView extends StatefulWidget {
     this.onEntitySelected,
     this.onViewportSettled,
     this.onViewportInitialized,
+    this.onCameraSnapshot,
     this.onContentViewportSettled,
     this.onContentOverlap,
     this.onCameraMotion,
@@ -111,6 +113,7 @@ class PublicCityMapView extends StatefulWidget {
     this.readerChanges,
     this.currentReaderEntities,
     this.currentReaderScope,
+    this.currentRenderAuthorityScope,
     this.onMapReaderVisibilityChanged,
     this.onCoordinateSelected,
     this.coordinateSourceCurrent,
@@ -123,6 +126,7 @@ class PublicCityMapView extends StatefulWidget {
   final List<MapEntity> entities;
   final String? selectedEntityId;
   final ValueChanged<MapEntity>? onEntitySelected;
+  final ValueChanged<MapCameraSnapshot>? onCameraSnapshot;
   final ValueChanged<MapBounds>? onViewportSettled;
   final ValueChanged<MapBounds>? onViewportInitialized;
   final void Function(MapBounds bounds, double zoom)? onContentViewportSettled;
@@ -140,6 +144,7 @@ class PublicCityMapView extends StatefulWidget {
   final Listenable? readerChanges;
   final List<MapEntity> Function()? currentReaderEntities;
   final Object? Function()? currentReaderScope;
+  final Object? Function()? currentRenderAuthorityScope;
   final ValueChanged<({Object token, bool visible})>?
   onMapReaderVisibilityChanged;
 
@@ -181,7 +186,10 @@ class _PublicCityMapViewState extends State<PublicCityMapView> {
       east: visible.east,
       north: visible.north,
     );
-    if (settled.isValid) widget.onViewportSettled?.call(settled);
+    if (settled.isValid) {
+      widget.onViewportSettled?.call(settled);
+      _publishWebCamera(camera);
+    }
     if (_webBasemapReady) _publishWebContentViewport(camera);
   }
 
@@ -252,9 +260,22 @@ class _PublicCityMapViewState extends State<PublicCityMapView> {
         east: bounds.east,
         north: bounds.north,
       );
-      if (initial.isValid) widget.onViewportInitialized?.call(initial);
+      if (initial.isValid) {
+        widget.onViewportInitialized?.call(initial);
+        _publishWebCamera(_webMapController.camera);
+      }
       _publishWebContentViewport(_webMapController.camera);
     }
+  }
+
+  void _publishWebCamera(MapCamera camera) {
+    final snapshot = MapCameraSnapshot(
+      latitude: camera.center.latitude,
+      longitude: camera.center.longitude,
+      zoom: camera.zoom,
+      bearing: -camera.rotation,
+    );
+    if (snapshot.isValid) widget.onCameraSnapshot?.call(snapshot);
   }
 
   void _publishWebContentViewport(MapCamera camera) {
@@ -307,6 +328,7 @@ class _PublicCityMapViewState extends State<PublicCityMapView> {
       }
       final center = input.center;
       if (center == null) return;
+      _webMapController.rotate(-input.bearing);
       if (input.fitsBounds) {
         _webMapController.fitCamera(
           CameraFit.bounds(
@@ -388,6 +410,7 @@ class _PublicCityMapViewState extends State<PublicCityMapView> {
         entities: city == null ? const [] : widget.entities,
         selectedEntityId: city == null ? null : widget.selectedEntityId,
         onEntitySelected: widget.onEntitySelected,
+        onCameraSnapshot: widget.onCameraSnapshot,
         onViewportSettled: city == null ? null : widget.onViewportSettled,
         onViewportInitialized: city == null
             ? null
@@ -417,7 +440,7 @@ class _PublicCityMapViewState extends State<PublicCityMapView> {
       return const _MapUnavailable('当前平台的底图暂不可用，可选择城市查看公开内容。');
     }
     if (viewport == null) {
-      return const _MapUnavailable('该城市尚未配置地图视图。');
+      return const _MapUnavailable('该目的地的地图暂不可用，请使用地点列表。');
     }
     if (provider == 'amap') {
       return AMapCityMapView(
@@ -433,6 +456,7 @@ class _PublicCityMapViewState extends State<PublicCityMapView> {
         readerChanges: widget.readerChanges,
         currentReaderEntities: widget.currentReaderEntities,
         currentReaderScope: widget.currentReaderScope,
+        currentRenderAuthorityScope: widget.currentRenderAuthorityScope,
         onMapReaderVisibilityChanged: widget.onMapReaderVisibilityChanged,
         onSelectedAnchor: widget.onSelectedAnchor,
         onCameraMotion: widget.onCameraMotion,
@@ -442,6 +466,7 @@ class _PublicCityMapViewState extends State<PublicCityMapView> {
         contentRect: widget.contentRect,
         ornamentTop: widget.ornamentTop,
         onViewportInitialized: widget.onViewportInitialized,
+        onCameraSnapshot: widget.onCameraSnapshot,
         onViewportSettled: widget.onViewportSettled,
         onContentViewportSettled: widget.onContentViewportSettled,
         onContentOverlap: widget.onContentOverlap,
@@ -459,7 +484,7 @@ class _PublicCityMapViewState extends State<PublicCityMapView> {
           return const _MapUnavailable('地图暂不可用，请使用地点列表。');
         }
         // Valid native configuration returned above independently of catalog.
-        return const _MapUnavailable('地图配置暂不可用，可选择城市查看公开内容。');
+        return const _MapUnavailable('地图暂不可用，可选择目的地查看公开内容。');
       }
       return const _MapUnavailable('该城市地图暂不可用，请使用地点列表。');
     }
@@ -507,6 +532,7 @@ class _PublicCityMapViewState extends State<PublicCityMapView> {
                         },
                   initialCenter: LatLng(center.latitude, center.longitude),
                   initialZoom: focusInput.zoom,
+                  initialRotation: -focusInput.bearing,
                   onMapReady: () {
                     if (!mounted ||
                         !_usesWebMapbox ||
@@ -640,6 +666,7 @@ class _PublicCityMapViewState extends State<PublicCityMapView> {
                 latitude: place.location.latitude!,
                 longitude: place.location.longitude!,
                 placeID: place.id,
+                categoryCode: place.categoryCode,
                 publicLocation: true,
               ),
         ];
@@ -671,6 +698,7 @@ class _PublicCityMapViewState extends State<PublicCityMapView> {
                 latitude: place.location.latitude!,
                 longitude: place.location.longitude!,
                 placeID: place.id,
+                categoryCode: place.categoryCode,
                 publicLocation: true,
               ),
         ];
@@ -894,6 +922,7 @@ class _WebMapDisplayLayerState extends State<WebMapDisplayLayer> {
             latitude: place.location.latitude!,
             longitude: place.location.longitude!,
             placeID: place.id,
+            categoryCode: place.categoryCode,
             publicLocation: true,
           ),
     ]) {
@@ -918,6 +947,46 @@ class _WebMapDisplayLayerState extends State<WebMapDisplayLayer> {
             if (entity.isTaskResult) entity.id,
         },
         positions: positions,
+        previousPlacements: _plan?.placements ?? const {},
+        metersPerPixel: MapDisplayPolicy.scaleFromSegment(
+          Offset(
+            camera
+                .pointToLatLng(
+                  math.Point(
+                    camera.nonRotatedSize.x / 2 - 24,
+                    camera.nonRotatedSize.y / 2,
+                  ),
+                )
+                .longitude,
+            camera
+                .pointToLatLng(
+                  math.Point(
+                    camera.nonRotatedSize.x / 2 - 24,
+                    camera.nonRotatedSize.y / 2,
+                  ),
+                )
+                .latitude,
+          ),
+          Offset(
+            camera
+                .pointToLatLng(
+                  math.Point(
+                    camera.nonRotatedSize.x / 2 + 24,
+                    camera.nonRotatedSize.y / 2,
+                  ),
+                )
+                .longitude,
+            camera
+                .pointToLatLng(
+                  math.Point(
+                    camera.nonRotatedSize.x / 2 + 24,
+                    camera.nonRotatedSize.y / 2,
+                  ),
+                )
+                .latitude,
+          ),
+          48,
+        ),
       );
     }
     final selected = unique[widget.selectedID];
@@ -938,6 +1007,7 @@ class _WebMapDisplayLayerState extends State<WebMapDisplayLayer> {
       entities: _plan!.entities,
       labelIDs: _plan!.labelIDs,
       denseIDs: _plan!.denseIDs,
+      placements: _plan!.placements,
       selectedId: widget.selectedID,
       onSelected: (entity) {
         if (scope == _pointReaderScope()) _selectPoint(entity);

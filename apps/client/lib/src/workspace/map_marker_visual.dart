@@ -2,63 +2,70 @@ import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'now_ui_tokens.dart';
+import 'map_pin_category.dart';
+
+enum MapLabelSide { right, left, top, bottom }
+
+/// The same measured logical rectangle is consumed by every provider.
+class MapLabelPlacement {
+  const MapLabelPlacement({
+    required this.side,
+    required this.rect,
+    required this.name,
+    required this.fontSize,
+    required this.color,
+    this.auxiliary,
+    this.offset = Offset.zero,
+  });
+  final MapLabelSide side;
+  final Rect rect;
+  final String name;
+  final String? auxiliary;
+  final double fontSize;
+  final Color color;
+  final Offset offset;
+  @override
+  bool operator ==(Object other) =>
+      other is MapLabelPlacement &&
+      other.side == side &&
+      other.rect == rect &&
+      other.name == name &&
+      other.auxiliary == auxiliary &&
+      other.fontSize == fontSize &&
+      other.color == color &&
+      other.offset == offset;
+  @override
+  int get hashCode =>
+      Object.hash(side, rect, name, auxiliary, fontSize, color, offset);
+  double get nameHeight => fontSize * 1.25;
+  Offset get auxiliaryOrigin => rect.topLeft + Offset(0, nameHeight + 1);
+}
 
 /// Shared geometry; decoration never changes a geographic anchor or hit target.
 class MapMarkerVisual {
   static const hitSize = 48.0, labelWidth = 112.0, labelFontSize = 12.0;
-  static const labelGap = 3.0;
+  static const labelGap = 4.0;
   static const labelColor = NowUiTokens.lightSurfaceTitle;
-  static const countColor = NowUiTokens.lightSurfaceBody;
+  static const countColor = Color(0xFF69717A);
   static const labelBudget = 6;
-  static double diameter({required bool selected, required bool dense}) =>
-      selected
-      ? 36
+  static double diameter({
+    required bool selected,
+    required bool dense,
+    bool moment = false,
+  }) => moment
+      ? (selected ? 34 : 30)
+      : selected
+      ? 28
       : dense
-      ? 6
-      : 28;
-  static double radius({required bool dense}) => dense ? 2 : 4;
+      ? 20
+      : 24;
+  static double radius({required bool dense}) => 6;
   static const placeColor = Color(0xFF193B32);
   static const densePlaceColor = Color(0xFF678779);
   static const momentColor = Color(0xFF87683C);
 
-  static IconData placeIcon(String categoryCode) => switch (categoryCode
-      .trim()
-      .toLowerCase()) {
-    'cafe' || 'coffee_shop' || 'tea_house' => Icons.local_cafe_outlined,
-    'restaurant' ||
-    'food' ||
-    'food_drink' ||
-    'fast_food' ||
-    'snack_shop' => Icons.restaurant_outlined,
-    'bar' ||
-    'pub' ||
-    'nightclub' ||
-    'wine_tasting_room' => Icons.local_bar_outlined,
-    'distillery' ||
-    'brewery' ||
-    'winery' ||
-    'specialty_production' => Icons.factory_outlined,
-    'museum' || 'culture_scenery' || 'culture' => Icons.museum_outlined,
-    'art_gallery' || 'creative_park' => Icons.palette_outlined,
-    'park' ||
-    'forest' ||
-    'nature' ||
-    'nature_outdoor' ||
-    'nature_reserve' => Icons.park_outlined,
-    'hotel' || 'hostel' || 'lodging' || 'guest_house' => Icons.hotel_outlined,
-    'shop' ||
-    'shopping' ||
-    'shopping_mall' ||
-    'gift_shop' ||
-    'liquor_store' => Icons.storefront_outlined,
-    'bookstore' || 'library' => Icons.menu_book_outlined,
-    'transport' || 'transport_hub' => Icons.directions_transit_outlined,
-    'airport' => Icons.local_airport_outlined,
-    'beach' || 'island' => Icons.beach_access_outlined,
-    'mountain' || 'hiking_trail' || 'viewpoint' => Icons.landscape_outlined,
-    _ => Icons.place_outlined,
-  };
-
+  static IconData placeIcon(String categoryCode) =>
+      MapPinCategory.forCode(categoryCode).icon;
   static String nativeLabel(
     String title, {
     required bool selected,
@@ -69,13 +76,13 @@ class MapMarkerVisual {
       final painter = TextPainter(
         text: TextSpan(
           text: value,
-          style: const TextStyle(
-            fontSize: labelFontSize,
+          style: TextStyle(
+            fontSize: selected ? 13 : labelFontSize,
             fontWeight: FontWeight.w500,
           ),
         ),
         textDirection: TextDirection.ltr,
-        maxLines: selected ? 2 : 1,
+        maxLines: 1,
       )..layout(maxWidth: labelWidth);
       final okay = !painter.didExceedMaxLines;
       painter.dispose();
@@ -106,6 +113,22 @@ class MapMarkerVisual {
     (diameter(selected: selected, dense: dense) / 2 + labelGap) / labelFontSize,
     0,
   ];
+
+  static int clusterCount({
+    required String categoryCode,
+    required int contentCount,
+    required int anchorCount,
+    int fallback = 0,
+  }) => categoryCode == 'moment_cluster'
+      ? contentCount
+      : anchorCount > 0
+      ? anchorCount
+      : fallback;
+  static String clusterUnit(String categoryCode) => switch (categoryCode) {
+    'place_cluster' => '个地点',
+    'moment_cluster' => '条动态',
+    _ => '项',
+  };
 }
 
 /// A complete, authorized count has its own deadline. Unknown is never zero.

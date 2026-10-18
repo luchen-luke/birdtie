@@ -15,6 +15,7 @@ import 'moment_thread_api.dart';
 import 'moment_thread_panel.dart';
 import 'moment_locations_api.dart';
 import 'now_moment_editor_host.dart';
+import '../city/map_navigation_target.dart';
 
 /// One current, explicitly public human publication. It is not attendance evidence.
 class PublicMomentPage extends StatefulWidget {
@@ -26,6 +27,7 @@ class PublicMomentPage extends StatefulWidget {
     this.ownerID,
     this.workspaceID,
     this.onOpenPlace,
+    this.onNavigateMap,
     this.onOpenAuthor,
     this.embedded = false,
     this.apiBaseUrl,
@@ -39,6 +41,7 @@ class PublicMomentPage extends StatefulWidget {
   final String? Function()? ownerID;
   final String? Function()? workspaceID;
   final ValueChanged<String>? onOpenPlace;
+  final ValueChanged<MapNavigationTarget>? onNavigateMap;
   final ValueChanged<String>? onOpenAuthor;
   final bool embedded;
   final String? apiBaseUrl;
@@ -467,6 +470,7 @@ class _PublicMomentPageState extends State<PublicMomentPage> {
                           apiBaseUrl: widget.apiBaseUrl,
                           client: widget.client,
                           onOpenPlace: widget.onOpenPlace,
+                          onNavigateMap: widget.onNavigateMap,
                           onOpenAuthor: widget.onOpenAuthor,
                         ),
                       ),
@@ -519,6 +523,7 @@ class _PublicMomentPageState extends State<PublicMomentPage> {
                   apiBaseUrl: _api.baseUrl,
                   client: _api.borrowedClient,
                   onOpenPlace: widget.onOpenPlace,
+                  onNavigateMap: widget.onNavigateMap,
                 ),
                 const SizedBox(height: 12),
                 Text('这是用户的公开分享，不代表已核验到访或出席。', style: tokens.metadata),

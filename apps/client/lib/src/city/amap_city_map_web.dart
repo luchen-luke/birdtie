@@ -7,7 +7,10 @@ import '../config/birdtie_environment.dart';
 import '../workspace/map_entities.dart';
 import '../workspace/map_display_policy.dart';
 import 'public_city_controller.dart';
+import 'map_navigation_target.dart';
 import 'map_camera_focus.dart';
+import 'amap_session_consent.dart';
+import 'map_privacy_sheet.dart';
 import 'map_coordinate_boundary.dart';
 import 'map_point_selection_sheet.dart';
 import 'map_cluster_members_sheet.dart';
@@ -50,6 +53,7 @@ class AMapCityMapView extends StatefulWidget {
     this.readerChanges,
     this.currentReaderEntities,
     this.currentReaderScope,
+    this.currentRenderAuthorityScope,
     this.onMapReaderVisibilityChanged,
     this.onSelectedAnchor,
     this.onCameraMotion,
@@ -60,6 +64,7 @@ class AMapCityMapView extends StatefulWidget {
     this.ornamentTop,
     this.onViewportSettled,
     this.onViewportInitialized,
+    this.onCameraSnapshot,
     this.onContentViewportSettled,
     this.onContentOverlap,
     this.onCoordinateSelected,
@@ -76,6 +81,7 @@ class AMapCityMapView extends StatefulWidget {
   final Listenable? readerChanges;
   final List<MapEntity> Function()? currentReaderEntities;
   final Object? Function()? currentReaderScope;
+  final Object? Function()? currentRenderAuthorityScope;
   final ValueChanged<({Object token, bool visible})>?
   onMapReaderVisibilityChanged;
   final ValueChanged<({String? id, Offset? point})>? onSelectedAnchor;
@@ -84,6 +90,7 @@ class AMapCityMapView extends StatefulWidget {
   final int focusRevision;
   final Rect? contentRect;
   final double? ornamentTop;
+  final ValueChanged<MapCameraSnapshot>? onCameraSnapshot;
   final ValueChanged<MapBounds>? onViewportSettled, onViewportInitialized;
   final void Function(MapBounds, double)? onContentViewportSettled;
   final ValueChanged<List<MapEntity>>? onContentOverlap;
@@ -113,6 +120,55 @@ class _AMapCityMapViewState extends State<AMapCityMapView> {
   (MapBounds, double)? _lastViewport;
   Object? _sourceScope;
   int _sourceScopeSerial = 0;
+  bool _privacyPromptAttempted = false;
+
+  bool get _serviceConfigured {
+    final host = Uri.tryParse(_serviceHost);
+    return _key.isNotEmpty &&
+        host != null &&
+        (host.scheme == 'https' ||
+            host.scheme == 'http' &&
+                (host.host == 'localhost' || host.host == '127.0.0.1')) &&
+        host.path.endsWith('/_AMapService');
+  }
+
+  Future<void> _preparePrivacy({bool review = false}) async {
+    if (!_serviceConfigured) return;
+    final consent = AMapSessionConsent.controller;
+    await consent.load();
+    if (!mounted) return;
+    if (!review &&
+        (consent.accepted || consent.hasDecision || _privacyPromptAttempted)) {
+      setState(() {});
+      return;
+    }
+    _privacyPromptAttempted = true;
+    final navigation = widget.city.map?.navigationGeneration;
+    await showMapServicePrivacySheet(
+      context,
+      current: () =>
+          mounted && navigation == widget.city.map?.navigationGeneration,
+      reviewExisting: review,
+    );
+    if (mounted) _privacyChanged();
+  }
+
+  void _privacyChanged() {
+    if (!mounted) return;
+    if (!AMapSessionConsent.accepted && _handle != null) {
+      ++_mountEpoch;
+      ++_renderEpoch;
+      _destroyAMap(_handle!);
+      _handle = null;
+      _frame = null;
+      _viewportInitialized = false;
+      _lastViewport = null;
+      _gate.retireProjection();
+      ++_viewEpoch;
+      _changes.changed();
+    }
+    setState(() {});
+  }
 
   List<MapEntity> _source() =>
       widget.currentReaderEntities?.call() ??
@@ -128,6 +184,7 @@ class _AMapCityMapViewState extends State<AMapCityMapView> {
               latitude: p.location.latitude!,
               longitude: p.location.longitude!,
               placeID: p.id,
+              categoryCode: p.categoryCode,
               publicLocation: true,
             ),
       ];
@@ -135,6 +192,7 @@ class _AMapCityMapViewState extends State<AMapCityMapView> {
       ? (
           _gate.revision,
           widget.city.id,
+          widget.city.map?.navigationGeneration,
           widget.contextKey,
           widget.currentReaderScope?.call(),
         )
@@ -151,7 +209,11 @@ class _AMapCityMapViewState extends State<AMapCityMapView> {
   void initState() {
     super.initState();
     widget.readerChanges?.addListener(_sourceChanged);
+    AMapSessionConsent.controller.addListener(_privacyChanged);
     _syncSource();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) unawaited(_preparePrivacy());
+    });
   }
 
   @override
@@ -211,8 +273,9 @@ class _AMapCityMapViewState extends State<AMapCityMapView> {
         'precision': e.precision,
         'contentCount': e.contentCount,
         'anchorCount': e.anchorCount,
+        'categoryCode': e.categoryCode,
         'ownedContent': MapDisplayPolicy.contentEntity(e),
-        if ({MapEntityKind.place, MapEntityKind.moment}.contains(e.kind) &&
+        if (e.kind == MapEntityKind.moment &&
             e.mediaPixels?.current() == true &&
             (e.mediaPixels?.validUntil ??
                     e.momentPhoto?.expiresAt ??
@@ -245,7 +308,16 @@ class _AMapCityMapViewState extends State<AMapCityMapView> {
       'latitude': input.center!.latitude,
       'longitude': input.center!.longitude,
       'zoom': input.zoom,
+      'bearing': input.bearing,
+      'pitch': input.pitch,
       'fit': input.fitsBounds,
+      if (input.cityBounds?.isValid == true)
+        'bounds': {
+          'west': input.cityBounds!.west,
+          'south': input.cityBounds!.south,
+          'east': input.cityBounds!.east,
+          'north': input.cityBounds!.north,
+        },
       'padding': [padding.top, padding.right, padding.bottom, padding.left],
     };
   }
@@ -254,13 +326,18 @@ class _AMapCityMapViewState extends State<AMapCityMapView> {
     if (!mounted) return;
     final sourceScope = (
       widget.city.id,
+      widget.city.map?.navigationGeneration,
       widget.contextKey,
       widget.currentReaderScope?.call(),
     );
     // Every source revision replaces the complete authorized set and retires
     // its clicks. Viewport/source-version changes can retain unchanged nodes;
     // city/task changes reset the provider transport as a separate boundary.
-    final transportScope = (widget.city.id, widget.contextKey);
+    final transportScope = (
+      widget.city.id,
+      widget.contextKey,
+      widget.city.map?.navigationGeneration,
+    );
     if (_sourceScope != transportScope) {
       _sourceScope = transportScope;
       _sourceScopeSerial++;
@@ -304,6 +381,7 @@ class _AMapCityMapViewState extends State<AMapCityMapView> {
   }
 
   void _created(Object element) {
+    if (!AMapSessionConsent.accepted) return;
     final div = element as web.HTMLDivElement;
     final id = 'birdtie-amap-${_nextID++}', epoch = ++_mountEpoch;
     div.id = id;
@@ -312,7 +390,8 @@ class _AMapCityMapViewState extends State<AMapCityMapView> {
     if (_handle case final h?) _destroyAMap(h);
     _handle = null;
     _syncSource();
-    bool current() => mounted && epoch == _mountEpoch;
+    bool current() =>
+        mounted && epoch == _mountEpoch && AMapSessionConsent.accepted;
     _onFrame = ((JSString raw) {
       if (!current()) return;
       _syncSource();
@@ -407,10 +486,22 @@ class _AMapCityMapViewState extends State<AMapCityMapView> {
           _viewportInitialized = true;
           widget.onViewportInitialized?.call(bounds);
         }
+        final center = MapCoordinateBoundary.fromAmap(
+          points.last.dy,
+          points.last.dx,
+        );
+        final snapshot = MapCameraSnapshot(
+          latitude: center.latitude,
+          longitude: center.longitude,
+          zoom: zoom,
+          bearing: v['bearing'] is num ? (v['bearing'] as num).toDouble() : 0,
+          pitch: v['pitch'] is num ? (v['pitch'] as num).toDouble() : 0,
+        );
         if (_lastViewport == (bounds, zoom)) return;
         _lastViewport = (bounds, zoom);
         widget.onViewportSettled?.call(bounds);
         widget.onContentViewportSettled?.call(bounds, zoom);
+        if (snapshot.isValid) widget.onCameraSnapshot?.call(snapshot);
       } catch (_) {}
     }).toJS;
     _onCoordinate = ((JSString raw) {
@@ -568,6 +659,7 @@ class _AMapCityMapViewState extends State<AMapCityMapView> {
     ++_mountEpoch;
     ++_renderEpoch;
     widget.readerChanges?.removeListener(_sourceChanged);
+    AMapSessionConsent.controller.removeListener(_privacyChanged);
     _gate.dispose();
     _changes.changed();
     _changes.dispose();
@@ -578,14 +670,31 @@ class _AMapCityMapViewState extends State<AMapCityMapView> {
 
   @override
   Widget build(BuildContext context) {
-    final host = Uri.tryParse(_serviceHost);
-    if (_key.isEmpty ||
-        host == null ||
-        !(host.scheme == 'https' ||
-            (host.scheme == 'http' &&
-                (host.host == 'localhost' || host.host == '127.0.0.1'))) ||
-        !host.path.endsWith('/_AMapService'))
-      return const Center(child: Text('高德地图尚未配置，请使用地点列表。'));
+    if (!_serviceConfigured)
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('地图暂不可用，请稍后重试或查看内容列表。'),
+            TextButton(onPressed: _retry, child: const Text('重试')),
+          ],
+        ),
+      );
+    if (!AMapSessionConsent.accepted)
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              AMapSessionConsent.controller.error ?? '地图服务隐私选择尚未同意，仍可查看可用内容。',
+            ),
+            TextButton(
+              onPressed: () => unawaited(_preparePrivacy(review: true)),
+              child: const Text('地图服务隐私说明'),
+            ),
+          ],
+        ),
+      );
     return ClipRRect(
       borderRadius: BorderRadius.circular(widget.fullBleed ? 0 : 18),
       child: SizedBox(

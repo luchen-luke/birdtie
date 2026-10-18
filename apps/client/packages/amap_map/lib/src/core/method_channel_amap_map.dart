@@ -137,7 +137,10 @@ class MethodChannelAMapFlutterMap implements AMapFlutterPlatform {
           );
         },
         onCreatePlatformView: (PlatformViewCreationParams params) {
-          return PlatformViewsService.initExpensiveAndroidView(
+          // Birdtie's native host is TextureMapView. Prefer TLHC, with the
+          // framework's supported HC fallback; never force virtual display or
+          // bypass native input/accessibility/lifecycle handling.
+          return PlatformViewsService.initSurfaceAndroidView(
             id: params.id,
             viewType: VIEW_TYPE,
             layoutDirection: TextDirection.ltr,

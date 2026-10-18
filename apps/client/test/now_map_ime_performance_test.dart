@@ -13,6 +13,7 @@ import 'package:birdtie_client/src/city/amap_city_map_io.dart';
 import 'package:birdtie_client/src/city/amap_native_configuration.dart';
 import 'package:birdtie_client/src/city/amap_offline_style.dart';
 import 'package:birdtie_client/src/city/amap_session_consent.dart';
+import 'package:birdtie_client/src/city/map_privacy_consent.dart';
 import 'package:birdtie_client/src/city/public_city_controller.dart';
 import 'package:birdtie_client/src/workspace/now_map_inset_gate.dart';
 
@@ -94,10 +95,15 @@ void main() {
   testWidgets(
     'ready AMap republishes settled viewport after initial callback changes scope',
     (tester) async {
-      final consent = AMapSessionConsent.accepted;
+      final consentController = MapPrivacyConsentController(
+        store: MemoryMapPrivacyConsentStore(),
+      );
+      await consentController.setDecision(true);
+      final consent = AMapSessionConsent.replaceControllerForTesting(
+        consentController,
+      );
       final surface = _surface..started = false;
       AMapFlutterPlatform.instance = surface;
-      AMapSessionConsent.accepted = true;
       var scope = Object();
       var initialized = 0, contentQueries = 0;
       const native = MethodChannel('amap_map_753');
@@ -122,7 +128,8 @@ void main() {
       });
       addTearDown(() {
         AMapFlutterPlatform.instance = _surface;
-        AMapSessionConsent.accepted = consent;
+        AMapSessionConsent.replaceControllerForTesting(consent);
+        consentController.dispose();
         binding.defaultBinaryMessenger.setMockMethodCallHandler(
           AMapNativeConfiguration.channel,
           null,
@@ -169,10 +176,15 @@ void main() {
   testWidgets(
     'ready AMap rect-only update skips projection barrier; source change does not',
     (tester) async {
-      final consent = AMapSessionConsent.accepted;
+      final consentController = MapPrivacyConsentController(
+        store: MemoryMapPrivacyConsentStore(),
+      );
+      await consentController.setDecision(true);
+      final consent = AMapSessionConsent.replaceControllerForTesting(
+        consentController,
+      );
       final surface = _surface..started = false;
       AMapFlutterPlatform.instance = surface;
-      AMapSessionConsent.accepted = true;
       var projections = 0;
       const native = MethodChannel('amap_map_753');
       binding.defaultBinaryMessenger.setMockMethodCallHandler(
@@ -191,7 +203,8 @@ void main() {
       });
       addTearDown(() {
         AMapFlutterPlatform.instance = _surface;
-        AMapSessionConsent.accepted = consent;
+        AMapSessionConsent.replaceControllerForTesting(consent);
+        consentController.dispose();
         binding.defaultBinaryMessenger.setMockMethodCallHandler(
           AMapNativeConfiguration.channel,
           null,
@@ -234,10 +247,15 @@ void main() {
   testWidgets(
     'ready AMap retirement timeout keeps pixels covered and retry releases the queue',
     (tester) async {
-      final consent = AMapSessionConsent.accepted;
+      final consentController = MapPrivacyConsentController(
+        store: MemoryMapPrivacyConsentStore(),
+      );
+      await consentController.setDecision(true);
+      final consent = AMapSessionConsent.replaceControllerForTesting(
+        consentController,
+      );
       final surface = _surface..started = false;
       AMapFlutterPlatform.instance = surface;
-      AMapSessionConsent.accepted = true;
       const native = MethodChannel('amap_map_753');
       Completer<Object?>? blocked;
       var projections = 0;
@@ -260,7 +278,8 @@ void main() {
         if (blocked?.isCompleted == false)
           blocked!.complete({'x': 100, 'y': 100});
         AMapFlutterPlatform.instance = _surface;
-        AMapSessionConsent.accepted = consent;
+        AMapSessionConsent.replaceControllerForTesting(consent);
+        consentController.dispose();
         binding.defaultBinaryMessenger.setMockMethodCallHandler(
           AMapNativeConfiguration.channel,
           null,

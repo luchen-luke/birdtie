@@ -11,7 +11,7 @@ import androidx.lifecycle.LifecycleOwner;
 
 import com.amap.api.maps.AMap;
 import com.amap.api.maps.AMapOptions;
-import com.amap.api.maps.MapView;
+import com.amap.api.maps.TextureMapView;
 import com.amap.flutter.map.core.MapController;
 import com.amap.flutter.map.core.MapsInitializerController;
 import com.amap.flutter.map.overlays.marker.MarkersController;
@@ -51,7 +51,7 @@ public class AMapPlatformView
     private MarkersController markersController;
     private PolylinesController polylinesController;
     private PolygonsController polygonsController;
-    private MapView mapView;
+    private TextureMapView mapView;
     private boolean disposed = false;
     private final LifecycleOwner lifecycleOwner;
     private final MapRenderLifecycle renderLifecycle;
@@ -73,7 +73,10 @@ public class AMapPlatformView
         myMethodCallHandlerMap = new HashMap<>(8);
 
         try {
-            mapView = new MapView(context, options);
+            // Birdtie: use the SDK's TextureView-backed surface so Flutter can
+            // compose IME, sheets and map without a forced SurfaceView/HC path.
+            // The same SDK, lifecycle and coordinate APIs remain in use.
+            mapView = new TextureMapView(context, options);
             AMap amap = mapView.getMap();
             mapsInitializerController = new MapsInitializerController(methodChannel);
             mapController = new MapController(methodChannel, mapView);
@@ -299,7 +302,7 @@ public class AMapPlatformView
         if (mapView == null) {
             return;
         }
-        MapView destroyedMap = mapView;
+        TextureMapView destroyedMap = mapView;
         mapView = null;
         destroyedMap.onDestroy();
     }

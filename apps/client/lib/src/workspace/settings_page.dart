@@ -9,6 +9,7 @@ import '../app/birdtie_app_bar.dart';
 import '../auth/birdtie_auth_controller.dart';
 import '../auth/birdtie_login_sheet.dart';
 import '../city/public_city_controller.dart';
+import '../city/map_privacy_sheet.dart';
 import '../content/private_moment_controller.dart';
 import '../content/legacy_archive_page.dart';
 import '../content/agent_seed_sheet.dart';
@@ -887,6 +888,19 @@ class _SettingsPageState extends State<SettingsPage> {
     onTap: () => unawaited(showVoiceInputInformation(context)),
   );
 
+  Widget _mapPrivacyEntry() => ListTile(
+    leading: const Icon(Icons.map_outlined),
+    title: const Text('地图服务隐私说明'),
+    subtitle: const Text('按目的地区域自动显示地图；不会自动开启定位'),
+    onTap: () => unawaited(
+      showMapServicePrivacySheet(
+        context,
+        current: () => mounted,
+        reviewExisting: true,
+      ),
+    ),
+  );
+
   Widget _heading(String label) => Padding(
     padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
     child: Text(label, style: Theme.of(context).textTheme.titleMedium),
@@ -1019,6 +1033,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   : null,
             ),
           _voiceInputEntry(),
+          _mapPrivacyEntry(),
           _helpEntry(),
           if (kDebugMode) _debugEntry(),
         ],
@@ -1087,6 +1102,7 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
           _entry(Icons.schedule_outlined, '定时汇总', _openNotificationSchedule),
           _heading('隐私'),
+          _mapPrivacyEntry(),
           _entry(Icons.visibility_outlined, '资料可见范围', _openProfileVisibility),
           _entry(
             Icons.mark_email_unread_outlined,

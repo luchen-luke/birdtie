@@ -12,6 +12,7 @@ import 'package:birdtie_client/src/workspace/moment_thread_pending_store.dart';
 import 'package:birdtie_client/src/workspace/now_creation_draft.dart';
 import 'package:birdtie_client/src/workspace/now_creation_panel.dart';
 import 'package:birdtie_client/src/workspace/map_layers_api.dart';
+import 'package:birdtie_client/src/city/map_navigation_target.dart';
 import 'moment_control_test.dart'
     show mcOp, mcOwner, mcTarget, mcInput, mcPreview;
 import 'map_layers_api_test.dart' show mapTestBounds, mapTestItem, mapTestView;
@@ -85,8 +86,110 @@ http.Response reply(Object value) => http.Response.bytes(
   headers: {'content-type': 'application/json'},
 );
 
+/// Public, explicitly permitted point. A city-only location never gets an
+/// anchor; this fixture does not promote a private location to public precision.
+Map<String, Object?> locatedPublicMapView(String momentID) {
+  final at = DateTime.now().toUtc();
+  return {
+    ...view(at),
+    'momentId': momentID,
+    'items': [
+      {
+        ...resolved(first, 0, at, own: false),
+        'anchor': {
+          'placeId': first.placeID,
+          'label': '合成甲地点',
+          'coordinateSystem': 'wgs84',
+          'precision': 'point',
+          'latitude': 57.14,
+          'longitude': -2.1,
+        },
+      },
+      resolved(second, 1, at, own: false),
+    ],
+  };
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  for (final retirement in [
+    'identity ABA',
+    'source revoked',
+    'lease expired',
+  ]) {
+    testWidgets(
+      'PMAP moment locations current map callback and $retirement normal font',
+      (t) async {
+        var token = 'Bearer synthetic-a', current = true, reads = 0;
+        final identity = ValueNotifier(0), targets = <MapNavigationTarget>[];
+        final client = MockClient((r) async {
+          expect(r.method, 'GET');
+          expect(
+            r.headers['Authorization'],
+            isIn(['Bearer synthetic-a', 'Bearer synthetic-b']),
+          );
+          reads++;
+          return reply(locatedPublicMapView(mcTarget));
+        });
+        await t.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: MomentLocationsSidecar(
+                momentID: mcTarget,
+                expectedRevision: 2,
+                authorizationHeader: () => token,
+                sourceCurrent: () => current,
+                identityChanges: identity,
+                client: client,
+                apiBaseUrl: 'https://locations.test',
+                onNavigateMap: targets.add,
+              ),
+            ),
+          ),
+        );
+        await t.pumpAndSettle();
+        final mapButton = find.widgetWithText(
+          TextButton,
+          '在地图查看合成甲地点 · 合成地区 · GB',
+        );
+        expect(mapButton, findsOneWidget);
+        expect(find.textContaining('在地图查看合成乙城'), findsNothing);
+        final captured = t.widget<TextButton>(mapButton).onPressed!;
+        await t.tap(mapButton);
+        expect(targets, hasLength(1));
+        final target = targets.single;
+        expect(target.key, 'moment:$mcTarget:$mcOp');
+        expect(target.source, MapNavigationSource.moment);
+        expect(target.sourceVersion, source);
+        expect(target.countryCode, 'GB');
+        expect(target.camera.latitude, 57.14);
+        expect(target.camera.longitude, -2.1);
+        expect(target.camera.coordinateSystem, 'wgs84');
+        expect(target.canPersistCamera, isFalse);
+        targets.clear();
+        if (retirement == 'identity ABA') {
+          token = 'Bearer synthetic-b';
+          identity.value++;
+          token = 'Bearer synthetic-a';
+          identity.value++;
+          await t.pumpAndSettle();
+        } else if (retirement == 'source revoked') {
+          current = false;
+        } else {
+          await t.pump(const Duration(seconds: 31));
+        }
+        final settledReads = reads;
+        captured();
+        await t.pump();
+        expect(targets, isEmpty);
+        expect(reads, settledReads);
+        expect(t.takeException(), isNull);
+        await t.pumpWidget(const SizedBox.shrink());
+        identity.dispose();
+        client.close();
+      },
+    );
+  }
   test(
     'locations preserve old hashes and seal ordered selectors without restoring names or approval',
     () async {

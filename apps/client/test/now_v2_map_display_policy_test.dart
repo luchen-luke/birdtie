@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:birdtie_client/src/workspace/map_display_policy.dart';
 import 'package:birdtie_client/src/workspace/map_entities.dart';
 import 'package:birdtie_client/src/workspace/map_marker_bitmap.dart';
+import 'package:birdtie_client/src/workspace/map_marker_visual.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -27,6 +28,89 @@ MapEntity point(
 );
 
 void main() {
+  test('chrome clips glyphs without moving or dropping authorized members', () {
+    final a = point('place:a'), b = point('place:b'), c = point('place:c');
+    final source = [a, b, c];
+    final positions = {
+      a.id: const Offset(100, 100),
+      b.id: const Offset(102, 100),
+      c.id: const Offset(250, 300),
+    };
+    MapDisplayPlan at(Rect rect) => MapDisplayPolicy.plan(
+      entities: source,
+      positions: positions,
+      zoom: 18,
+      metersPerPixel: 20,
+      contentRect: rect,
+    );
+    final chrome = at(const Rect.fromLTRB(16, 110, 359, 550));
+    final cluster = chrome.entities.singleWhere(
+      MapDisplayPolicy.displayCluster,
+    );
+    expect(chrome.occludedGlyphIDs, {cluster.id});
+    expect(chrome.placements.containsKey(cluster.id), false);
+    expect(chrome.omittedIDs, isEmpty);
+    expect(MapDisplayPolicy.currentDisplayClusterMembers(cluster, source), [
+      a,
+      b,
+    ]);
+    expect(chrome.clusterPositions[cluster.id], positions[a.id]);
+    expect(chrome.entities.singleWhere((e) => e.id == c.id), same(c));
+    final uncovered = at(const Rect.fromLTRB(16, 40, 359, 550));
+    expect(uncovered.occludedGlyphIDs, isEmpty);
+    expect(
+      uncovered.entities.map((e) => e.id),
+      chrome.entities.map((e) => e.id),
+    );
+    expect(uncovered.clusterPositions, chrome.clusterPositions);
+  });
+  test(
+    'city ground coverage hides auxiliary counts independent of provider zoom',
+    () {
+      final now = DateTime.now().toUtc();
+      final row = MapEntity(
+        id: 'place:calibration',
+        kind: MapEntityKind.place,
+        title: '当前地点',
+        subtitle: '',
+        latitude: 57,
+        longitude: -2,
+        recentMoments: MapRecentMoments.visible(
+          count: 1,
+          checkedAt: now,
+          validUntil: now.add(const Duration(minutes: 1)),
+          sourceVersion: 'unit-current',
+        ),
+      );
+      for (final zoom in [3.0, 18.0]) {
+        for (final scale in [8.0, 15.99, 16.0, 18.49, 24.0, 40.0]) {
+          final plan = MapDisplayPolicy.plan(
+            entities: [row],
+            positions: {row.id: const Offset(150, 200)},
+            zoom: zoom,
+            metersPerPixel: scale,
+            contentRect: const Rect.fromLTWH(0, 0, 375, 600),
+          );
+          expect(plan.entities.single, same(row));
+          expect(plan.glyphSizes[row.id], scale >= 16 ? 20 : 24);
+          expect(
+            plan.placements[row.id]!.auxiliary,
+            scale >= 16 ? null : '1条动态',
+          );
+          expect(plan.metersPerPixel, scale);
+        }
+      }
+      final selected = MapDisplayPolicy.plan(
+        entities: [row],
+        positions: {row.id: const Offset(150, 200)},
+        zoom: 3,
+        metersPerPixel: 40,
+        selectedID: row.id,
+      );
+      expect(selected.glyphSizes[row.id], 28);
+      expect(selected.placements[row.id]!.auxiliary, '1条动态');
+    },
+  );
   test(
     'actual touch uses 48dp point targets and nearest-first current candidates',
     () {
@@ -289,6 +373,7 @@ void main() {
           entities: nearby,
           positions: positions,
           zoom: 18,
+          metersPerPixel: 2,
         ).denseIDs,
         isEmpty,
       );
@@ -329,22 +414,30 @@ void main() {
           previouslyVisibleIDs: {'withdrawn:old'},
           selectedID: 'place:113',
         );
-        expect(plan.entities, hasLength(114));
-        expect(
-          plan.entities.map((e) => e.id).toSet(),
-          source.map((e) => e.id).toSet(),
-        );
-        expect(
-          plan.entities.every((e) => !e.isCluster && e.memberIDs.isEmpty),
-          isTrue,
-        );
-        expect(plan.omittedIDs, isEmpty);
-        expect(plan.labelIDs, contains('place:113'));
-        expect(plan.denseIDs, isNot(contains('place:113')));
-        expect(plan.denseIDs, hasLength(113));
+        // New PMAP local display groups retain each original ID exactly once.
+        final represented = <String>[];
         for (final entity in plan.entities) {
-          expect(entity, same(source.singleWhere((e) => e.id == entity.id)));
+          if (MapDisplayPolicy.displayCluster(entity)) {
+            expect(entity.memberIDs.length, lessThanOrEqualTo(32));
+            final members = MapDisplayPolicy.currentDisplayClusterMembers(
+              entity,
+              source,
+            );
+            expect(members.length, entity.memberIDs.length);
+            represented.addAll(members.map((e) => e.id));
+          } else {
+            represented.add(entity.id);
+          }
         }
+        expect(represented.toSet(), source.map((e) => e.id).toSet());
+        expect(represented, hasLength(114));
+        expect(plan.entities.any((e) => e.id == 'place:113'), isTrue);
+        expect(plan.omittedIDs, isEmpty);
+        expect(
+          plan.labelIDs,
+          isEmpty,
+        ); // No label is allowed outside contentRect.
+        expect(plan.denseIDs, isNot(contains('place:113')));
       },
     );
   }
@@ -518,17 +611,28 @@ void main() {
         positions: {for (final e in source) e.id: const Offset(100, 100)},
       );
       expect(fixture['scope'], 'PUBLIC');
-      expect(plan.entities, hasLength(19));
+      expect(source, hasLength(19));
+      final represented = [
+        for (final e in plan.entities)
+          if (MapDisplayPolicy.displayCluster(e))
+            ...MapDisplayPolicy.currentDisplayClusterMembers(e, source)
+          else
+            e,
+      ];
       expect(
-        plan.entities.where((e) => e.kind == MapEntityKind.place),
+        represented.map((e) => e.id).toSet(),
+        source.map((e) => e.id).toSet(),
+      );
+      expect(
+        represented.where((e) => e.kind == MapEntityKind.place),
         hasLength(18),
       );
       expect(
-        plan.entities.where((e) => e.kind == MapEntityKind.moment),
+        represented.where((e) => e.kind == MapEntityKind.moment),
         hasLength(1),
       );
       expect(
-        plan.entities.map((e) => (e.latitude, e.longitude)).toSet(),
+        represented.map((e) => (e.latitude, e.longitude)).toSet(),
         hasLength(18),
       );
     },
@@ -589,7 +693,9 @@ void main() {
             t.getSize(
               find.byKey(ValueKey('individual-map-shape:${entity.id}')),
             ),
-            const Size(16, 16),
+            kind == MapEntityKind.place
+                ? const Size(20, 20)
+                : const Size(30, 30),
           );
           expect(shape.color!.a, 1);
           expect(shape.border, isNotNull);
@@ -622,7 +728,7 @@ void main() {
         dense: true,
       );
       expect(circle, isNot(orderedEquals(square)));
-      expect(square, isNot(orderedEquals(pale)));
+      expect(square, orderedEquals(pale));
       expect(
         identical(
           pale,

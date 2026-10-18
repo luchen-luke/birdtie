@@ -109,12 +109,11 @@ class CompositeDestinationSearchService implements DestinationSearchService {
     ]) {
       if (seen.add(item.browseKey)) destinations.add(item);
     }
-    final chineseQuery = RegExp(r'[\u3400-\u9fff]').hasMatch(query);
     return DestinationSearchResult(
       destinations: List.unmodifiable(destinations),
       domesticUnavailable: useDomestic
           ? domesticError != null || (domestic?.domesticUnavailable ?? false)
-          : chineseQuery || (overseas?.domesticUnavailable ?? false),
+          : overseas?.domesticUnavailable ?? false,
       attribution: {
         if (overseas?.attribution.isNotEmpty == true) overseas!.attribution,
         if (domestic?.attribution.isNotEmpty == true) domestic!.attribution,

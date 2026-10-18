@@ -1,4 +1,5 @@
 import 'package:birdtie_client/src/workspace/entity_action_contract.dart';
+import 'package:birdtie_client/src/city/map_navigation_target.dart';
 import 'entity_action_contract_test.dart' show actionWire;
 import 'dart:async';
 import 'dart:convert';
@@ -19,8 +20,10 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'entity_share_pending_store_test.dart';
 import 'public_moment_api_test.dart';
-import 'share_entity_to_chat_test.dart' show ShareFixture;
+import 'share_entity_to_chat_test.dart' show ShareFixture, shareSettle;
 import 'supplier_profile_api_test.dart' show publicSupplier;
+import 'moment_locations_test.dart' show locatedPublicMapView;
+import 'entity_cover_test.dart' show coverSettle;
 
 class ChatTestAuth extends BirdtieAuthController {
   String token = 'Bearer A', person = shareOwner;
@@ -100,6 +103,106 @@ http.Response chatDomainReply(http.Request r) {
 }
 
 void main() {
+  testWidgets(
+    'PMAP chat nested thread forwards actual map callback and retires actor ABA normal font',
+    (t) async {
+      FlutterSecureStorage.setMockInitialValues({});
+      const childID = '77900000-0000-4000-8000-000000000002';
+      final auth = ChatTestAuth(),
+          targets = <MapNavigationTarget>[],
+          paths = <String>[];
+      final client = MockClient((r) async {
+        expect(r.method, 'GET');
+        paths.add(r.url.path);
+        if (r.url.path.endsWith('/locations')) {
+          return chatReply(locatedPublicMapView(r.url.path.split('/')[3]));
+        }
+        if (r.url.path.endsWith('/thread')) {
+          final at = DateTime.now().toUtc();
+          return chatReply({
+            'schemaVersion': 'moment-thread-view-v1',
+            'threadId': '77900000-0000-4000-8000-000000000001',
+            'rootMomentId': shareTarget,
+            'audience': 'PUBLIC',
+            'version': 1,
+            'canWithdraw': false,
+            'sourceVersion': 'b' * 64,
+            'observedAt': at.toIso8601String(),
+            'validUntil': at.add(const Duration(seconds: 30)).toIso8601String(),
+            'members': [
+              for (var i = 0; i < 2; i++)
+                {
+                  'position': i,
+                  'momentId': i == 0 ? shareTarget : childID,
+                  'revision': 2,
+                  'status': 'AVAILABLE',
+                },
+            ],
+          });
+        }
+        if (r.url.path == '/v1/moments/$shareTarget' ||
+            r.url.path == '/v1/moments/$childID') {
+          final id = r.url.path.split('/').last;
+          return momentReply({
+            ...publicMomentV3Data(photo: false),
+            'id': id,
+            'title': id == childID ? '合成第二条' : '合成第一条',
+          });
+        }
+        return http.Response('{}', 404);
+      });
+      await t.pumpWidget(
+        MaterialApp(
+          home: ChatEntityDetail(
+            type: 'moment',
+            id: shareTarget,
+            auth: auth,
+            client: client,
+            apiBaseUrl: 'https://api.example',
+            onNavigateMap: targets.add,
+          ),
+        ),
+      );
+      await coverSettle(t);
+      await t.scrollUntilVisible(
+        find.text('第2条'),
+        160,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await t.tap(find.text('第2条'));
+      await coverSettle(t);
+      expect(find.text('合成第二条'), findsOneWidget);
+      final mapButton = find.widgetWithText(
+        TextButton,
+        '在地图查看合成甲地点 · 合成地区 · GB',
+      );
+      await t.scrollUntilVisible(
+        mapButton,
+        160,
+        scrollable: find.byType(Scrollable).first,
+      );
+      final captured = t.widget<TextButton>(mapButton).onPressed!;
+      await t.tap(mapButton);
+      expect(targets, hasLength(1));
+      expect(targets.single.key, startsWith('moment:$childID:'));
+      expect(targets.single.source, MapNavigationSource.moment);
+      expect(targets.single.camera.longitude, -2.1);
+      expect(targets.single.canPersistCamera, false);
+      expect(paths, contains('/v1/moments/$childID/locations'));
+      targets.clear();
+      auth.use('Bearer B');
+      auth.use('Bearer A');
+      await t.pumpAndSettle();
+      captured();
+      await t.pump();
+      expect(targets, isEmpty);
+      expect(find.textContaining('工作身份已变化'), findsOneWidget);
+      expect(t.takeException(), isNull);
+      await t.pumpWidget(const SizedBox());
+      auth.dispose();
+      client.close();
+    },
+  );
   for (final changed in [false, true]) {
     testWidgets('聊天原Person卡MESSAGE实际Tie开原会话 $changed，零自动消息身份更换拒旧操作', (t) async {
       FlutterSecureStorage.setMockInitialValues({});
@@ -288,9 +391,15 @@ void main() {
       client.close();
     });
   }
-  testWidgets('嵌套公开动态分享确认在身份ABA后整个撤除，无旧收件人与POST', (t) async {
+  testWidgets('嵌套公开动态分享确认在身份ABA后退休原批准，无旧收件人与POST', (t) async {
     FlutterSecureStorage.setMockInitialValues({});
     final auth = ChatTestAuth(), f = ShareFixture();
+    final client = MockClient((r) async {
+      if (r.url.path == '/v1/moments/$shareTarget') {
+        return momentReply(publicMomentV3Data(photo: false));
+      }
+      return f.handle(r);
+    });
     await t.pumpWidget(
       MaterialApp(
         home: ChatEntityDetail(
@@ -298,27 +407,42 @@ void main() {
           id: shareTarget,
           auth: auth,
           apiBaseUrl: 'https://api.example',
-          client: f.client,
+          client: client,
         ),
       ),
     );
     await t.pumpAndSettle();
-    await t.ensureVisible(find.text('发给好友'));
+    await t.scrollUntilVisible(
+      find.text('发给好友'),
+      180,
+      scrollable: find.byType(Scrollable).first,
+    );
     await t.tap(find.text('发给好友'));
-    await t.pumpAndSettle();
+    await shareSettle(t);
     await t.ensureVisible(find.text('本地合成好友'));
     await t.tap(find.text('本地合成好友'));
-    await t.pumpAndSettle();
-    expect(find.text('确认发送卡片'), findsOneWidget);
+    await shareSettle(t);
+    expect(find.text('检查分享'), findsOneWidget);
+    expect(find.text('收件人：本地合成好友'), findsOneWidget);
+    final confirm = find.widgetWithText(FilledButton, '确认发送');
+    final oldConfirm = t.widget<FilledButton>(confirm).onPressed!;
     auth.use('Bearer B');
     auth.use('Bearer A');
     await t.pumpAndSettle();
-    expect(find.text('确认发送卡片'), findsNothing);
+    expect(find.textContaining('这次确认已失效'), findsOneWidget);
+    expect(t.widget<FilledButton>(confirm).onPressed, isNull);
     expect(find.textContaining('本地合成好友'), findsNothing);
+    expect(find.text(f.title), findsNothing);
+    oldConfirm();
+    await t.pump();
+    expect(f.posted, isEmpty);
+    await t.tap(find.text('取消'));
+    await shareSettle(t);
     expect(find.textContaining('工作身份已变化'), findsOneWidget);
     expect(f.posted, isEmpty);
     await t.pumpWidget(const SizedBox());
     auth.dispose();
+    client.close();
     f.dispose();
   });
   testWidgets('活动稳定读取迟到不进入新身份的详情', (t) async {

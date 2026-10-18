@@ -64,7 +64,13 @@ void main() {
             ScreenCoordinate(x: p.dx, y: p.dy);
       }
       MapEntity? selected;
-      await _mount(t, map, source, onSelected: (e) => selected = e);
+      await _mount(
+        t,
+        map,
+        source,
+        selected: target.id,
+        onSelected: (e) => selected = e,
+      );
       await mediaWait(t, () => map.points.created.length == source.length);
       // The adapter must not subscribe to SDK image-box selections: that sink
       // consumes the actual map tap before touchPosition can reach Flutter.
@@ -108,7 +114,7 @@ void main() {
 
       // A genuine source cluster retains its original BOTTOM-painted canvas,
       // even where its visible graphic lies above a point's 48 dp target.
-      _tapAt(t, const Offset(330, 281));
+      _tapAt(t, const Offset(330, 330));
       await t.pumpAndSettle();
       final members = find.byKey(const Key('current-map-cluster-members'));
       expect(members, findsOneWidget);
@@ -179,11 +185,15 @@ void main() {
       final map = _Map();
       await _mount(t, map, [row], selected: row.id);
       await mediaWait(t, () => map.points.created.containsKey(row.id));
+      final local = (await t.runAsync(
+        () => MapMarkerBitmap.render(kind: MapEntityKind.place, selected: true),
+      ))!;
+      expect(map.points.created[row.id]!.image, orderedEquals(local));
+      expect(map.points.created[row.id]!.textField, isNot(contains('241')));
       expect(
-        map.points.created[row.id]!.image,
-        orderedEquals(pixels.selectedPNG),
+        map.points.created['map-aux:${row.id}']!.textField,
+        '近30天 · 241条动态',
       );
-      expect(map.points.created[row.id]!.textField, contains('近30天 · 241条动态'));
       final native = find.byType(NativeCityMapView).evaluate().single,
           sdk = find.byType(MapWidget).evaluate().single;
       map.flights.clear();
@@ -192,7 +202,8 @@ void main() {
       await _update(t, map, [base], selected: row.id);
       await mediaWait(t, () => map.points.updated.containsKey(row.id));
       final early = map.points.updated[row.id]!;
-      expect(early.image, isNot(orderedEquals(pixels.selectedPNG)));
+      expect(early.image, orderedEquals(local));
+      expect(map.points.created.containsKey('map-aux:${row.id}'), isFalse);
       expect(early.geometry.coordinates.lng, base.longitude);
       expect(early.textField, base.title);
       expect(map.flights, isEmpty);
@@ -261,43 +272,43 @@ void main() {
         }
       });
       await _mount(t, map, source);
-      Offset center(String id) =>
-          t.getCenter(find.byKey(ValueKey('native-map-point-semantics:$id')));
-      for (final moment in moments) {
-        expect(
-          (center(moment.id) - center(place.id) - offsets[moment.id]!).distance,
-          lessThan(1e-5),
-        );
-        final expected = await MapMarkerBitmap.render(
-          kind: MapEntityKind.moment,
-          selected: false,
-          dense: true,
-          visualOffset: offsets[moment.id]!,
-        );
-        expect(map.points.created[moment.id]!.image, orderedEquals(expected));
-        expect(map.points.created[moment.id]!.geometry.coordinates.lng, -2.1);
-      }
-      _tapMarker(t, map, map.points.created[moments.first.id]!);
+      final plan = _display(map, source);
+      final cluster = plan.entities.singleWhere(
+        MapDisplayPolicy.displayCluster,
+      );
+      expect(
+        cluster.memberIDs.toSet(),
+        [place, ...moments].map((e) => e.id).toSet(),
+      );
+      final option = map.points.created[cluster.id]!;
+      expect(option.geometry.coordinates.lng, -2.1);
+      expect(option.geometry.coordinates.lat, 57.145);
+      final semantics = find.byKey(
+        ValueKey('native-map-point-semantics:${cluster.id}'),
+      );
+      expect(t.getSize(semantics), const Size(48, 48));
+      t.widget<Semantics>(semantics).properties.onTap!();
       await t.pumpAndSettle();
-      final sheet = find.byKey(const Key('current-map-point-choices'));
+      final members = find.byKey(const Key('current-map-cluster-members'));
+      expect(members, findsOneWidget);
       final list = t.widget<ListView>(
-        find.descendant(of: sheet, matching: find.byType(ListView)),
+        find.descendant(of: members, matching: find.byType(ListView)),
       );
       final keys = (list.childrenDelegate as SliverChildListDelegate).children
           .cast<ListTile>()
-          .map((r) => r.key)
+          .where((v) => v.key != null)
+          .map((v) => v.key)
           .toSet();
-      for (final entity in [place, ...moments]) {
-        expect(keys, contains(ValueKey('map-point-choice:${entity.id}')));
-      }
-      await t.tap(find.byTooltip('关闭对象选择'));
+      for (final e in [place, ...moments])
+        expect(keys, contains(ValueKey('current-map-member:${e.id}')));
+      Navigator.of(t.element(members)).pop();
       await t.pumpAndSettle();
       await _update(t, map, [place, ...moments]);
-      expect(center(moments.first.id) - center(place.id), Offset.zero);
       expect(
         find.byKey(ValueKey('native-map-point-semantics:${neighbour.id}')),
         findsNothing,
       );
+      expect(map.points.created[cluster.id]!.geometry.coordinates.lng, -2.1);
       expect(t.takeException(), isNull);
       await t.pumpWidget(const SizedBox());
     },
@@ -328,18 +339,21 @@ void main() {
       final map = _Map();
       MapEntity? chosen;
       await _mount(t, map, source, onSelected: (e) => chosen = e);
-      _tapMarker(t, map, map.points.created['moment:0']!);
+      final cluster = _display(map, source).entities.single;
+      _tapMarker(t, map, map.points.created[cluster.id]!);
       await t.pumpAndSettle();
-      final choices = find.byKey(const Key('current-map-point-choices'));
+      final choices = find.byKey(const Key('current-map-cluster-members'));
       expect(choices, findsOneWidget);
       final list = t.widget<ListView>(
         find.descendant(of: choices, matching: find.byType(ListView)),
       );
       final rows = (list.childrenDelegate as SliverChildListDelegate).children
-          .cast<ListTile>();
+          .cast<ListTile>()
+          .where((r) => r.key != null)
+          .toList();
       expect(
         rows.map((r) => r.key).toSet(),
-        source.map((e) => ValueKey('map-point-choice:${e.id}')).toSet(),
+        source.map((e) => ValueKey('current-map-member:${e.id}')).toSet(),
       );
       final oldTap = rows.first.onTap!;
       await _update(t, map, const [], onSelected: (e) => chosen = e);
@@ -373,7 +387,13 @@ void main() {
         longitude: -2.1,
       );
       final map = _Map();
-      await _mount(t, map, [moment, place], pixelRatio: 3.25);
+      await _mount(
+        t,
+        map,
+        [moment, place],
+        selected: moment.id,
+        pixelRatio: 3.25,
+      );
       expect(map.points.iconOverlap, isTrue);
       expect(map.points.textOptional, isTrue);
       expect(map.points.created.length, 2);
@@ -384,8 +404,8 @@ void main() {
       await t.runAsync(() async {
         final codec = await ui.instantiateImageCodec(option.image!);
         final frame = await codec.getNextFrame();
-        expect(frame.image.width, 312);
-        expect(frame.image.height, 312);
+        expect(frame.image.width, 156);
+        expect(frame.image.height, 156);
         frame.image.dispose();
         codec.dispose();
       });
@@ -427,8 +447,8 @@ void main() {
       await t.runAsync(() async {
         final codec = await ui.instantiateImageCodec(updated.image!);
         final frame = await codec.getNextFrame();
-        expect(frame.image.width, 192);
-        expect(frame.image.height, 192);
+        expect(frame.image.width, 96);
+        expect(frame.image.height, 96);
         frame.image.dispose();
         codec.dispose();
       });
@@ -474,7 +494,13 @@ void main() {
         });
       }
       MapEntity? hit;
-      await _mount(t, map, source, onSelected: (entity) => hit = entity);
+      await _mount(
+        t,
+        map,
+        source,
+        selected: source.singleWhere((e) => e.kind == MapEntityKind.moment).id,
+        onSelected: (entity) => hit = entity,
+      );
       final options = map.points.created.values;
       expect(options.length, 19);
       expect(
@@ -530,7 +556,7 @@ void main() {
   );
 
   testWidgets(
-    'actual native pipeline keeps 114 coincident annotations and per-object semantic actions',
+    'actual native pipeline bounds coincident containers and retains all 114 current members',
     (t) async {
       final source = [
         for (var n = 0; n < 114; n++)
@@ -546,30 +572,33 @@ void main() {
       final map = _Map();
       final semantics = t.ensureSemantics();
       await _mount(t, map, source);
-      expect(map.points.created.keys.toSet(), source.map((e) => e.id).toSet());
+      final plan = _display(map, source);
       expect(
-        map.points.created.values.every(
-          (o) =>
-              o.geometry.coordinates.lng == -2.1 &&
-              o.geometry.coordinates.lat == 57.145,
-        ),
-        isTrue,
+        map.points.created.keys.toSet(),
+        plan.entities.map((e) => e.id).toSet(),
       );
-      expect(
-        find.byKey(const ValueKey('native-map-point-semantics:moment:113')),
-        findsOneWidget,
-      );
-      expect(find.bySemanticsLabel('动态 · 合成动态 113 · 当前合法来源'), findsOneWidget);
-      final node = t.widget<Semantics>(
-        find.byKey(const ValueKey('native-map-point-semantics:moment:113')),
-      );
-      expect(node.properties.onTap, isNotNull);
-      expect(
-        t.getSize(
-          find.byKey(const ValueKey('native-map-point-semantics:moment:113')),
-        ),
-        const Size(48, 48),
-      );
+      final represented = <String>[];
+      for (final entity in plan.entities) {
+        expect(entity.memberIDs.length, lessThanOrEqualTo(32));
+        represented.addAll(
+          MapDisplayPolicy.currentDisplayClusterMembers(
+            entity,
+            source,
+          ).map((e) => e.id),
+        );
+        final option = map.points.created[entity.id]!;
+        expect(
+          (option.geometry.coordinates.lng, option.geometry.coordinates.lat),
+          (-2.1, 57.145),
+        );
+        final node = find.byKey(
+          ValueKey('native-map-point-semantics:${entity.id}'),
+        );
+        expect(t.getSize(node), const Size(48, 48));
+        expect(t.widget<Semantics>(node).properties.onTap, isNotNull);
+      }
+      expect(represented, hasLength(114));
+      expect(represented.toSet(), source.map((e) => e.id).toSet());
       expect(t.takeException(), isNull);
       semantics.dispose();
       await t.pumpWidget(const SizedBox());
@@ -605,12 +634,42 @@ void main() {
         contentRect: const Rect.fromLTRB(0, 130, 430, 450),
       );
       expect(map.flights, isEmpty);
-      expect(map.projectionCalls, projections);
+      expect(map.projectionCalls, greaterThan(projections));
       expect(
         identical(native, find.byType(NativeCityMapView).evaluate().single),
         isTrue,
       );
       expect(identical(sdk, find.byType(MapWidget).evaluate().single), isTrue);
+      await _update(
+        t,
+        map,
+        [entity],
+        selected: entity.id,
+        revision: 0,
+        contentRect: const Rect.fromLTRB(0, 250, 430, 450),
+      );
+      expect(
+        find.byKey(ValueKey('native-map-point-semantics:${entity.id}')),
+        findsNothing,
+      );
+      expect(
+        map.points.created.values.where(
+          (v) => v.customData?['entityId'] == entity.id,
+        ),
+        isEmpty,
+      );
+      await _update(
+        t,
+        map,
+        [entity],
+        selected: entity.id,
+        revision: 0,
+        contentRect: const Rect.fromLTRB(0, 130, 430, 450),
+      );
+      expect(
+        find.byKey(ValueKey('native-map-point-semantics:${entity.id}')),
+        findsOneWidget,
+      );
       await _update(t, map, [entity], selected: entity.id, revision: 1);
       final flight = map.flights.single;
       expect(flight.center!.coordinates.lng, entity.longitude);
@@ -709,6 +768,22 @@ final _city = PublicCity(
   ),
 );
 
+MapDisplayPlan _display(_Map map, List<MapEntity> source, {String? selected}) =>
+    MapDisplayPolicy.plan(
+      entities: source,
+      zoom: 12,
+      metersPerPixel: 1,
+      selectedID: selected,
+      positions: {
+        for (final e in source)
+          e.id: Offset(
+            map.positions['${e.longitude}:${e.latitude}']?.x ?? 100,
+            map.positions['${e.longitude}:${e.latitude}']?.y ?? 200,
+          ),
+      },
+      contentRect: const Rect.fromLTRB(0, 130, 430, 610),
+    );
+
 Future<void> _mount(
   WidgetTester t,
   _Map map,
@@ -770,6 +845,25 @@ Future<void> _mount(
           );
         }
       }
+    }
+    for (final e in _display(
+      map,
+      entities,
+      selected: selected,
+    ).entities.where((e) => e.isCluster)) {
+      await MapMarkerBitmap.render(
+        kind: MapEntityKind.cluster,
+        selected: false,
+        count: MapMarkerVisual.clusterCount(
+          categoryCode: e.categoryCode,
+          contentCount: e.contentCount,
+          anchorCount: e.anchorCount,
+          fallback: e.memberIDs.length,
+        ),
+        categoryCode: e.categoryCode,
+        approximate: true,
+        devicePixelRatio: pixelRatio,
+      );
     }
     await MapMarkerBitmap.render(
       kind: MapEntityKind.cluster,
@@ -845,7 +939,7 @@ Future<void> _update(
 }
 
 PointAnnotation _annotation(PointAnnotationOptions option) => PointAnnotation(
-  id: option.customData!['entityId'] as String,
+  id: '${option.textSize == 11 ? 'map-aux:' : ''}${option.customData!['entityId']}',
   geometry: option.geometry,
   customData: option.customData,
   textField: option.textField,
@@ -888,6 +982,13 @@ class _Points extends Fake implements PointAnnotationManager {
   }
 
   @override
+  Future<void> setIconIgnorePlacement(bool value) async {}
+  @override
+  Future<void> setTextAllowOverlap(bool value) async {}
+  @override
+  Future<void> setTextIgnorePlacement(bool value) async {}
+
+  @override
   Future<void> setTextOptional(bool value) async {
     textOptional = value;
   }
@@ -900,18 +1001,18 @@ class _Points extends Fake implements PointAnnotationManager {
 
   @override
   Future<PointAnnotation> create(PointAnnotationOptions option) async {
-    created[option.customData!['entityId'] as String] = option;
+    created[_annotation(option).id] = option;
     return _annotation(option);
   }
 
   @override
   Future<void> update(PointAnnotation annotation) async {
-    updated[annotation.customData!['entityId'] as String] = annotation;
+    updated[annotation.id] = annotation;
   }
 
   @override
   Future<void> delete(PointAnnotation annotation) async {
-    created.remove(annotation.customData!['entityId']);
+    created.remove(annotation.id);
   }
 }
 
@@ -960,6 +1061,14 @@ class _Map extends Fake implements MapboxMap {
             ScreenCoordinate(x: 100, y: 200),
     ];
   }
+
+  @override
+  Future<List<Point?>> coordinatesForPixels(
+    List<ScreenCoordinate?> pixels,
+  ) async => [
+    for (final p in pixels.whereType<ScreenCoordinate>())
+      Point(coordinates: Position(-2.1 + p.x / 60000, 57.145 - p.y / 111000)),
+  ];
 
   @override
   Future<void> flyTo(

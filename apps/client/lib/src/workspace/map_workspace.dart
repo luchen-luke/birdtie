@@ -35,6 +35,8 @@ import 'now_map_inset_gate.dart';
 import 'now_qa_bridge.dart';
 import '../city/amap_destination_search.dart';
 import '../city/amap_session_consent.dart';
+import '../city/map_privacy_sheet.dart';
+import '../city/map_navigation_target.dart';
 import '../content/private_moment_controller.dart';
 import '../content/agent_seed_controller.dart';
 import '../content/moment_image_picker.dart';
@@ -1059,6 +1061,7 @@ class _MapWorkspaceState extends State<MapWorkspace>
                 entry.expectedRevision,
               )),
               momentID: entry.momentID,
+              onNavigateMap: _navigateToMapTarget,
               embedded: true,
               showManagement: false,
               authorizationHeader: () =>
@@ -2982,6 +2985,7 @@ class _MapWorkspaceState extends State<MapWorkspace>
               child: PublicMomentPage(
                 key: ValueKey((_creationMomentID, _creationPublishedRevision)),
                 momentID: _creationMomentID!,
+                onNavigateMap: _navigateToMapTarget,
                 embedded: true,
                 showManagement: false,
                 authorizationHeader: () =>
@@ -3180,7 +3184,10 @@ class _MapWorkspaceState extends State<MapWorkspace>
   final _selectedPlaceJourneyRecovery =
       <(String, String, String), PersonalCollectionRetainedLocalDraft>{};
   final _personalJourneyDrafts =
-      <(String, String, String), PersonalCollectionRetainedLocalDraft>{};
+      <
+        (String, String, String, String),
+        PersonalCollectionRetainedLocalDraft
+      >{};
   // Retain routing selectors only. Private history must be read again under
   // the replacement credential, and recovery must never replay an Agent turn.
   AgentTask? _rejectedAgentTask;
@@ -3227,6 +3234,7 @@ class _MapWorkspaceState extends State<MapWorkspace>
   );
   Timer? _collectionProjectionExpiry;
   SavedMapProjectionSource? _savedMapSource;
+  int _collectionMapNavigation = 0;
   Object? _imageDraftObservedScope;
   int _imageDraftEpoch = 0;
   String? _imageDraftCityID;
@@ -3276,6 +3284,7 @@ class _MapWorkspaceState extends State<MapWorkspace>
   late Listenable _activeIntentChanges;
   late final String? Function() _activeIntentWorkspace;
   String? _lastCityID;
+  int? _lastMapNavigationGeneration;
   final _credentialTransports = <http.Client, AuthenticatedClient>{};
 
   http.Client _authenticatedTransport(http.Client? client) {
@@ -3351,6 +3360,7 @@ class _MapWorkspaceState extends State<MapWorkspace>
   final Map<Object, Object> _mapReaderOverlays = {};
   Object get _mapReaderBinding => (
     widget.city.browseKey,
+    widget.city.navigationGeneration,
     _layers.epoch,
     _currentSeedIdentity,
     _layers.cityID,
@@ -3647,6 +3657,7 @@ class _MapWorkspaceState extends State<MapWorkspace>
       },
     );
     _lastCityID = widget.city.browseKey;
+    _lastMapNavigationGeneration = widget.city.navigationGeneration;
     widget.city.addListener(_onCityChange);
     _organizations.addListener(_refreshWorkspaceTasks);
     widget.auth.addListener(_onAuthChange);
@@ -4041,6 +4052,7 @@ class _MapWorkspaceState extends State<MapWorkspace>
       // session string happens to stay equal. Returning to A cannot revive it.
       _layers.retire();
       _mapContent.retire();
+      widget.city.retireContentMapTarget();
       _retireSeedEntry();
       _scheduleMapIdentityReload();
     }
@@ -4700,13 +4712,30 @@ class _MapWorkspaceState extends State<MapWorkspace>
   void _onCityChange() {
     _observeMomentEntrySource();
     final cityID = widget.city.browseKey;
-    if (cityID == _lastCityID) return;
+    final browseChanged = cityID != _lastCityID;
+    _lastCityID = cityID;
+    final generation = widget.city.navigationGeneration;
+    var fencedNavigation = false;
+    if (_lastMapNavigationGeneration != generation) {
+      _lastMapNavigationGeneration = generation;
+      if (widget.city.mapTarget?.source != MapNavigationSource.task) {
+        _workspace.detachTaskMapProjection();
+        _retirePublicPlacePanel();
+        if (!_selectingCity && !_loadingCityCatalog) {
+          ++_viewSerial;
+          _pendingCityCurrent = null;
+          _workspace.retirePendingQueryForViewChange();
+          fencedNavigation = true;
+        }
+      }
+    }
+    if (!browseChanged) return;
     _retirePublicPlacePanel();
     // A geographic destination does not revoke the current conversation.
     // The map filters that conversation by its original city; identity and
     // projection leases continue to guard its cards and source links.
     _workspace.retireReplyRefresh();
-    if (!_selectingCity && !_loadingCityCatalog) {
+    if (!fencedNavigation && !_selectingCity && !_loadingCityCatalog) {
       ++_viewSerial;
       _pendingCityCurrent = null;
       _workspace.retirePendingQueryForViewChange();
@@ -4720,6 +4749,20 @@ class _MapWorkspaceState extends State<MapWorkspace>
   }
 
   void _pauseComposer() => _composerKey.currentState?.pauseEditing();
+
+  void _navigateToMapTarget(MapNavigationTarget target) {
+    if (!mounted ||
+        _organizations.active != null ||
+        widget.auth.sessionRestoring)
+      return;
+    final route = ModalRoute.of(context);
+    if (!widget.city.navigateMapTarget(target)) return;
+    _pauseComposer();
+    if (route != null)
+      Navigator.of(
+        context,
+      ).popUntil((candidate) => identical(candidate, route));
+  }
 
   Rect? _sidebarTraceRect() {
     final surface = _sidebarTraceHeader?.currentContext?.findRenderObject();
@@ -4841,7 +4884,7 @@ class _MapWorkspaceState extends State<MapWorkspace>
     );
   }
 
-  Future<void> _openPersonalJourneys() async {
+  Future<void> _openPersonalJourneys({String kind = 'journey'}) async {
     _pauseComposer();
     if (!widget.auth.signedIn) await _signInHere();
     final auth = widget.auth, city = widget.city;
@@ -4865,9 +4908,9 @@ class _MapWorkspaceState extends State<MapWorkspace>
         identical(client, widget.seedClient) &&
         base == widget.seedApiBaseUrl;
     final changes = Listenable.merge([auth, city, _organizations]);
-    final key = (owner, chosen.id, origin);
+    final key = (owner, chosen.id, origin, kind);
     final controller = PersonalCollectionController(
-      kind: 'journey',
+      kind: kind,
       cityID: chosen.id,
       ownerID: () => auth.accountID,
       authorizationHeader: () => auth.authorizationHeader,
@@ -4894,6 +4937,16 @@ class _MapWorkspaceState extends State<MapWorkspace>
             for (final item in city.cities)
               item.id: destinationDisplayName(item),
           },
+          onViewMap: (collection) => unawaited(
+            _showPersonalCollectionMap(
+              collection,
+              sourceCurrent: () =>
+                  current() &&
+                  controller.current &&
+                  identical(controller.editing, collection),
+              onReady: () => Navigator.of(context).pop(),
+            ),
+          ),
         ),
       ),
     );
@@ -4966,6 +5019,12 @@ class _MapWorkspaceState extends State<MapWorkspace>
                     child: ListView(
                       children: [
                         for (final tool in [
+                          (
+                            Icons.map_outlined,
+                            '我的主题地图',
+                            '查看已保存的主题地图',
+                            () => _openPersonalJourneys(kind: 'theme_map'),
+                          ),
                           (
                             Icons.article_outlined,
                             '城市动态',
@@ -6127,7 +6186,7 @@ class _MapWorkspaceState extends State<MapWorkspace>
     final base = _baseVisibleEntities();
     if (_collectionProjection.value != null ||
         _layers.authorID != null ||
-        _mapContent.cityID != widget.city.selectedCity?.id)
+        _mapContent.cityID != widget.city.contentCityID)
       return base;
     final area = _workspace.areaOperation;
     final areaCurrent =
@@ -6137,6 +6196,7 @@ class _MapWorkspaceState extends State<MapWorkspace>
         ? _workspace.mapBackgroundCityID
         : _workspace.task?.cityID;
     if (!areaCurrent &&
+        _workspace.taskMapProjectionCurrent &&
         _mapProjectionResult?.projectionItems != null &&
         resultCity == widget.city.selectedCity?.id)
       return base;
@@ -6173,7 +6233,8 @@ class _MapWorkspaceState extends State<MapWorkspace>
     final cityID = online
         ? _workspace.mapBackgroundCityID
         : _workspace.task?.cityID;
-    if ((result?.projectionItems != null ||
+    if (_workspace.taskMapProjectionCurrent &&
+        (result?.projectionItems != null ||
             result?.onlinePlaceSearch != null) &&
         cityID == widget.city.selectedCity?.id) {
       return result!.entities;
@@ -6346,11 +6407,25 @@ class _MapWorkspaceState extends State<MapWorkspace>
         item.anchor?.precision != 'point')
       return;
     final cityID = source.task?.cityID ?? _workspace.task?.cityID;
-    if (cityID != null &&
-        cityID != widget.city.selectedCity?.id &&
-        widget.city.cities.any((city) => city.id == cityID)) {
-      _selectPublicCity(cityID);
-    }
+    final city = widget.city.cities.where((c) => c.id == cityID).firstOrNull;
+    final anchor = item.anchor!;
+    if (city == null ||
+        !widget.city.navigateMapTarget(
+          MapNavigationTarget(
+            key: 'reply:${item.entity.mapID}',
+            source: MapNavigationSource.task,
+            generation: 0,
+            catalogCityID: city.id,
+            countryCode: city.countryCode,
+            sourceVersion: item.sourceVersion,
+            camera: MapCameraSnapshot(
+              latitude: anchor.latitude,
+              longitude: anchor.longitude,
+              zoom: 14,
+            ),
+          ),
+        ))
+      return;
     if (!_agentResultRouter(reply: source).current(item)) return;
     _workspace.showReplyOnMap(source, item.entity.mapID);
     if (_workspace.selectedEntityId == item.entity.mapID) {
@@ -7106,6 +7181,7 @@ class _MapWorkspaceState extends State<MapWorkspace>
             authorID: authorID ?? '',
           ),
           cityName: authorID == null ? city!.name : '',
+          onNavigateMap: _navigateToMapTarget,
           authorizationHeader: () => auth.authorizationHeader,
           ownerID: () => auth.accountID,
           workspaceID: () => _organizations.active?.id,
@@ -7654,6 +7730,7 @@ class _MapWorkspaceState extends State<MapWorkspace>
             onOpenMoment: (id) => openChatEntity(
               context,
               ChatEntityCard(type: 'moment', id: id, available: true),
+              onNavigateMap: _navigateToMapTarget,
               auth: auth,
               workspaceChanges: changes,
               workspaceID: workspaceID,
@@ -8240,6 +8317,7 @@ class _MapWorkspaceState extends State<MapWorkspace>
                   onOpenEntity: (entity) => openChatEntity(
                     context,
                     entity,
+                    onNavigateMap: _navigateToMapTarget,
                     auth: widget.auth,
                     workspaceChanges: _socialChanges,
                     workspaceID: () => _organizations.active?.id,
@@ -8877,10 +8955,261 @@ class _MapWorkspaceState extends State<MapWorkspace>
   }
 
   void _showSavedOnMap(List<SavedItem> items, {String title = '收藏地点'}) {
-    final city = widget.city.selectedCity, auth = widget.auth, saved = _saved;
-    if (city == null || !auth.signedIn || _organizations.active != null) return;
+    unawaited(_showSavedMapTarget(items, title: title));
+  }
+
+  Future<void> _showPersonalCollectionMap(
+    PersonalCollection collection, {
+    required bool Function() sourceCurrent,
+    required VoidCallback onReady,
+  }) async {
+    if (!sourceCurrent()) return;
+    final auth = widget.auth, owner = auth.accountID;
+    final identity = _currentSeedIdentity, serial = _personalSourceSerial;
+    final identityEpoch = _seedEntryEpoch;
+    final navigationRequest = ++_collectionMapNavigation;
+    final client = widget.seedClient, base = widget.seedApiBaseUrl;
+    final origin = base ?? BirdtieEnvironment.apiBaseUrl;
+    bool identityCurrent() =>
+        mounted &&
+        auth == widget.auth &&
+        auth.signedIn &&
+        auth.accountID == owner &&
+        collection.ownerID == owner &&
+        _currentSeedIdentity == identity &&
+        _personalSourceSerial == serial &&
+        _seedEntryEpoch == identityEpoch &&
+        _organizations.active == null &&
+        client == widget.seedClient &&
+        base == widget.seedApiBaseUrl &&
+        navigationRequest == _collectionMapNavigation;
+    if (!identityCurrent()) return;
+    final byCity = <String, Set<String>>{};
+    for (final entry in collection.entries) {
+      if (entry.sourceCurrent && entry.legacyReference == null) {
+        byCity.putIfAbsent(collection.cityID, () => {}).add(entry.placeID);
+      }
+    }
+    for (final stop in collection.journeyDetails?.itinerary ?? const []) {
+      if (stop.type == 'NOTE' || stop.text('placeId').isEmpty) continue;
+      final cityID = stop.text('cityId').isEmpty
+          ? collection.cityID
+          : stop.text('cityId');
+      byCity.putIfAbsent(cityID, () => {}).add(stop.text('placeId'));
+    }
+    String? chosenID = byCity.length == 1 ? byCity.keys.single : null;
+    if (byCity.length > 1) {
+      chosenID = await showModalBottomSheet<String>(
+        context: context,
+        useSafeArea: true,
+        showDragHandle: true,
+        builder: (sheetContext) => ListView(
+          shrinkWrap: true,
+          children: [
+            const ListTile(title: Text('选择要查看的目的地')),
+            for (final city in widget.city.cities.where(
+              (c) => byCity.containsKey(c.id),
+            ))
+              ListTile(
+                title: Text(destinationDisplayName(city)),
+                subtitle: Text('${byCity[city.id]!.length}个地点引用'),
+                onTap: () => Navigator.pop(sheetContext, city.id),
+              ),
+          ],
+        ),
+      );
+    }
+    if (!identityCurrent() || !sourceCurrent()) return;
+    final city = widget.city.cities.where((c) => c.id == chosenID).firstOrNull;
+    if (city == null || byCity[chosenID]!.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('暂无可核对的地图地点，文字安排仍保留。')));
+      return;
+    }
+    final ids = byCity[chosenID]!.toList(growable: false);
+    final points = <MapEntity>[];
+    // Re-read the real canonical Place interface in bounded batches. A saved
+    // selector or free-text address never becomes invented map geometry.
+    final transport = _authenticatedTransport(client);
+    final token = auth.authorizationHeader;
+    for (var offset = 0; offset < ids.length; offset += 4) {
+      final batch = ids.skip(offset).take(4).toList();
+      final results = await Future.wait(
+        batch.map((id) async {
+          try {
+            final response = await transport
+                .get(
+                  Uri.parse(
+                    '${origin.replaceFirst(RegExp(r'/$'), '')}/v1/places/${Uri.encodeComponent(id)}',
+                  ),
+                  headers: {if (token != null) 'Authorization': token},
+                )
+                .timeout(const Duration(seconds: 12));
+            if (response.statusCode != 200) return null;
+            final data =
+                (jsonDecode(utf8.decode(response.bodyBytes))
+                    as Map<String, dynamic>)['data'];
+            final place = PublicPlace.fromJson(data as Map<String, dynamic>);
+            if (place.id != id || !place.location.hasPublicPoint) return null;
+            return MapEntity(
+              id: 'place:$id',
+              kind: MapEntityKind.place,
+              title: place.name,
+              subtitle: place.summary,
+              placeID: id,
+              categoryCode: place.categoryCode,
+              latitude: place.location.latitude!,
+              longitude: place.location.longitude!,
+              precision: 'point',
+              publicLocation: true,
+            );
+          } catch (_) {
+            return null;
+          }
+        }),
+      );
+      if (!identityCurrent() || !sourceCurrent()) return;
+      points.addAll(
+        results.whereType<MapEntity>().where((e) => e.hasMapAnchor),
+      );
+    }
+    if (points.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('当前地点坐标暂不可读取，请稍后重试。')));
+      return;
+    }
+    final first = points.first;
+    onReady();
+    if (!identityCurrent()) return;
+    if (!widget.city.navigateMapTarget(
+      MapNavigationTarget(
+        key: '${collection.kind}:${collection.id}:${collection.revision}',
+        source: collection.kind == 'journey'
+            ? MapNavigationSource.journey
+            : MapNavigationSource.thematicMap,
+        generation: 0,
+        countryCode: city.countryCode,
+        catalogCityID: city.id,
+        sourceVersion: '${collection.id}:${collection.revision}',
+        camera: MapCameraSnapshot(
+          latitude: first.latitude,
+          longitude: first.longitude,
+          zoom: 14,
+        ),
+      ),
+    ))
+      return;
+    final generation = widget.city.navigationGeneration;
+    final expires = DateTime.now().add(const Duration(seconds: 30));
+    _savedMapSource?.dispose();
+    _savedMapSource = null;
+    _collectionProjectionExpiry?.cancel();
+    late final PersonalCollectionProjection projection;
+    projection = PersonalCollectionProjection(
+      id: '${collection.kind}:${collection.id}:${collection.revision}:$generation',
+      cityID: city.id,
+      title: collection.title,
+      entities: points,
+      sourceCurrent: () =>
+          identityCurrent() &&
+          generation == widget.city.navigationGeneration &&
+          DateTime.now().isBefore(expires),
+    );
+    setState(() => _collectionProjection.value = projection);
+    _collectionProjectionExpiry = Timer(expires.difference(DateTime.now()), () {
+      if (mounted && identical(_collectionProjection.value, projection)) {
+        setState(() => _collectionProjection.value = null);
+      }
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('显示${points.length}/${ids.length}个当前可读地点；文字安排与未定位地点保留。'),
+      ),
+    );
+  }
+
+  Future<void> _showSavedMapTarget(
+    List<SavedItem> items, {
+    required String title,
+  }) async {
+    final auth = widget.auth, saved = _saved;
+    if (!auth.signedIn || _organizations.active != null) return;
+    final ownerBeforeChoice = auth.accountID;
+    final sourceBeforeChoice = _personalSourceSerial;
+    final identityEpoch = _seedEntryEpoch;
+    final request = ++_collectionMapNavigation;
+    final beforeNavigation = widget.city.navigationGeneration;
+    final savedGeneration = saved.identityGeneration;
+    final savedQuery = (saved.query, saved.queryKind, saved.queryCity);
+    final savedRows = saved.items;
+    bool sourceCurrent() =>
+        mounted &&
+        identical(auth, widget.auth) &&
+        identical(saved, _saved) &&
+        auth.signedIn &&
+        auth.accountID == ownerBeforeChoice &&
+        sourceBeforeChoice == _personalSourceSerial &&
+        _organizations.active == null &&
+        _seedEntryEpoch == identityEpoch &&
+        request == _collectionMapNavigation &&
+        beforeNavigation == widget.city.navigationGeneration &&
+        savedGeneration == saved.identityGeneration &&
+        identical(savedRows, saved.items) &&
+        savedQuery == (saved.query, saved.queryKind, saved.queryCity) &&
+        !saved.failed &&
+        !saved.pageChanged;
+    final candidates = items
+        .where(
+          (i) =>
+              i.mapCurrent &&
+              saved.items.any(
+                (row) =>
+                    row.id == i.id &&
+                    row.targetId == i.targetId &&
+                    row.mapCurrent &&
+                    row.latitude == i.latitude &&
+                    row.longitude == i.longitude &&
+                    row.sourceExpiresAt == i.sourceExpiresAt,
+              ),
+        )
+        .toList(growable: false);
+    final cityIDs = candidates.map((i) => i.cityId).toSet();
+    String? chosenID = cityIDs.length == 1 ? cityIDs.single : null;
+    if (cityIDs.length > 1) {
+      chosenID = await showModalBottomSheet<String>(
+        context: context,
+        showDragHandle: true,
+        useSafeArea: true,
+        builder: (sheetContext) => ListView(
+          shrinkWrap: true,
+          children: [
+            const ListTile(title: Text('选择要查看的目的地')),
+            for (final city in widget.city.cities.where(
+              (c) => cityIDs.contains(c.id),
+            ))
+              ListTile(
+                title: Text(destinationDisplayName(city)),
+                subtitle: Text(
+                  '${candidates.where((i) => i.cityId == city.id).length}个收藏地点',
+                ),
+                onTap: () => Navigator.pop(sheetContext, city.id),
+              ),
+          ],
+        ),
+      );
+    }
+    if (!sourceCurrent()) return;
+    final city = widget.city.cities.where((c) => c.id == chosenID).firstOrNull;
+    if (city == null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('没有当前可定位的收藏地点，请重新读取。')));
+      return;
+    }
     final usable = <String, SavedItem>{
-      for (final i in items)
+      for (final i in candidates)
         if (i.mapCurrent && i.cityId == city.id) i.targetId: i,
     };
     if (usable.isEmpty) {
@@ -8889,7 +9218,25 @@ class _MapWorkspaceState extends State<MapWorkspace>
       ).showSnackBar(const SnackBar(content: Text('当前城市没有可上图的收藏地点。')));
       return;
     }
+    final first = usable.values.first;
+    if (!widget.city.navigateMapTarget(
+      MapNavigationTarget(
+        key: 'saved:${city.id}',
+        source: MapNavigationSource.place,
+        generation: 0,
+        catalogCityID: city.id,
+        countryCode: city.countryCode,
+        sourceVersion: first.sourceExpiresAt!.toIso8601String(),
+        camera: MapCameraSnapshot(
+          latitude: first.latitude!,
+          longitude: first.longitude!,
+          zoom: 14,
+        ),
+      ),
+    ))
+      return;
     final owner = auth.accountID, scope = _personalSourceSerial;
+    final navigation = widget.city.navigationGeneration;
     bool current() =>
         mounted &&
         identical(auth, widget.auth) &&
@@ -8898,6 +9245,7 @@ class _MapWorkspaceState extends State<MapWorkspace>
         auth.signedIn &&
         _organizations.active == null &&
         widget.city.selectedCity?.id == city.id &&
+        widget.city.navigationGeneration == navigation &&
         _personalSourceSerial == scope;
     _savedMapSource?.dispose();
     _collectionProjectionExpiry?.cancel();
@@ -10567,6 +10915,8 @@ class _NowCityPickerState extends State<_NowCityPicker> {
   late final DestinationSearchController _destinations;
   bool _refreshQueued = false;
   bool _retired = false;
+  bool _mapPrivacyPromptQueued = false;
+  bool _mapPrivacyPromptAttempted = false;
   bool get _valid => mounted && !_retired && widget.current();
   @override
   void initState() {
@@ -10582,6 +10932,8 @@ class _NowCityPickerState extends State<_NowCityPicker> {
     widget.city.addListener(_changed);
     widget.identityChanges.addListener(_changed);
     _search.addListener(_searchChanged);
+    AMapSessionConsent.controller.addListener(_changed);
+    unawaited(AMapSessionConsent.controller.load());
   }
 
   void _searchChanged() {
@@ -10618,50 +10970,17 @@ class _NowCityPickerState extends State<_NowCityPicker> {
     _search.clear();
   }
 
-  Future<void> _enableDomesticSearch() async {
+  Future<void> _reviewMapPrivacy() async {
     if (!_valid || !AMapDestinationSearchService.supported) return;
-    final accepted = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('启用国内目的地搜索'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              '国内地图与地理搜索由高德提供。启用后，高德会处理你输入的搜索词，以及提供服务所需的设备和网络信息。不会开启设备定位。',
-            ),
-            TextButton(
-              onPressed: () async {
-                final opened = await launchUrl(
-                  Uri.parse('https://lbs.amap.com/pages/privacy/'),
-                  mode: LaunchMode.externalApplication,
-                );
-                if (!opened && dialogContext.mounted) {
-                  ScaffoldMessenger.maybeOf(dialogContext)?.showSnackBar(
-                    const SnackBar(content: Text('暂时无法打开隐私权政策，请稍后再试。')),
-                  );
-                }
-              },
-              child: const Text('查看高德隐私权政策'),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('暂不启用'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('同意并启用'),
-          ),
-        ],
-      ),
+    final query = _destinations.query;
+    final accepted = await showMapServicePrivacySheet(
+      context,
+      current: () => _valid && query == _destinations.query,
+      reviewExisting: true,
     );
-    if (!_valid || accepted != true) return;
-    AMapSessionConsent.accepted = true;
-    await _destinations.retry();
+    if (_valid && accepted && query == _destinations.query) {
+      await _destinations.retry();
+    }
   }
 
   void _changed() {
@@ -10669,6 +10988,32 @@ class _NowCityPickerState extends State<_NowCityPicker> {
     if (!widget.current() && !_retired) {
       _retired = true;
       _destinations.cancel();
+    }
+    if (_valid &&
+        !_mapPrivacyPromptAttempted &&
+        !_mapPrivacyPromptQueued &&
+        AMapDestinationSearchService.supported &&
+        AMapSessionConsent.controller.loaded &&
+        !AMapSessionConsent.controller.hasDecision &&
+        _destinations.domesticUnavailable &&
+        !_destinations.loading) {
+      _mapPrivacyPromptQueued = true;
+      final query = _destinations.query;
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        _mapPrivacyPromptQueued = false;
+        if (!_valid ||
+            query != _destinations.query ||
+            !_destinations.domesticUnavailable)
+          return;
+        _mapPrivacyPromptAttempted = true;
+        final accepted = await showMapServicePrivacySheet(
+          context,
+          current: () => _valid && query == _destinations.query,
+        );
+        if (_valid && accepted && query == _destinations.query) {
+          await _destinations.retry();
+        }
+      });
     }
     if (SchedulerBinding.instance.schedulerPhase ==
         SchedulerPhase.persistentCallbacks) {
@@ -10686,6 +11031,7 @@ class _NowCityPickerState extends State<_NowCityPicker> {
   @override
   void dispose() {
     widget.city.removeListener(_changed);
+    AMapSessionConsent.controller.removeListener(_changed);
     widget.identityChanges.removeListener(_changed);
     _destinations.removeListener(_changed);
     _destinations.dispose();
@@ -10946,9 +11292,9 @@ class _NowCityPickerState extends State<_NowCityPicker> {
                                 AMapDestinationSearchService.supported &&
                                         !AMapSessionConsent.accepted
                                     ? TextButton.icon(
-                                        onPressed: _enableDomesticSearch,
+                                        onPressed: _reviewMapPrivacy,
                                         icon: const Icon(Icons.map_outlined),
-                                        label: const Text('启用国内目的地搜索'),
+                                        label: const Text('地图服务隐私说明'),
                                       )
                                     : Text(
                                         '国内目的地搜索暂不可用，仍可选择目录城市。',

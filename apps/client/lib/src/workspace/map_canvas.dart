@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 
 import '../city/public_city_controller.dart';
 import '../city/public_city_map.dart';
+import '../city/map_navigation_target.dart';
 import 'agent_workspace_controller.dart';
 import 'agent_result_projection.dart';
 import 'map_entities.dart';
@@ -88,10 +89,12 @@ class _MapCanvasState extends State<MapCanvas> {
   late int _selectionEpoch;
   AgentResult? _selectionResult;
   TypedMapView? _selectionAuthorView;
+  late int _navigationGeneration;
 
   @override
   void initState() {
     super.initState();
+    _navigationGeneration = widget.city.navigationGeneration;
     widget.city.addListener(_refreshProjection);
     widget.workspace.addListener(_refreshProjection);
     widget.discovery.addListener(_refreshProjection);
@@ -188,10 +191,14 @@ class _MapCanvasState extends State<MapCanvas> {
       widget.workspace.task == null;
   bool get _showCityRecovery =>
       _needsCityRecovery && !widget.workspace.inputFocused;
-  AgentResult? get _mapResult => widget.workspace.queryContextType == 'ONLINE'
+  AgentResult? get _mapResult => !widget.workspace.taskMapProjectionCurrent
+      ? null
+      : widget.workspace.queryContextType == 'ONLINE'
       ? _cityResult
       : widget.workspace.presentedResult;
-  String get _mapContextKey => widget.workspace.queryContextType == 'ONLINE'
+  String get _mapContextKey => !widget.workspace.taskMapProjectionCurrent
+      ? 'idle'
+      : widget.workspace.queryContextType == 'ONLINE'
       ? _cityTaskKey
       : widget.workspace.presentedResult == null
       ? 'idle'
@@ -402,6 +409,7 @@ class _MapCanvasState extends State<MapCanvas> {
       if (city == null) '${widget.city.cityError}:${widget.city.citiesLoading}',
       'cityRecovery:$_needsCityRecovery',
       map?.provider ?? '',
+      'navigation:${widget.city.navigationGeneration}',
       '${map?.latitude}:${map?.longitude}:${map?.defaultZoom}',
       widget.workspace.selectedEntityId ?? '',
       _mapContextKey,
@@ -418,7 +426,22 @@ class _MapCanvasState extends State<MapCanvas> {
   }
 
   void _refreshProjection() {
-    if (widget.workspace.queryContextType != 'ONLINE') {
+    final generation = widget.city.navigationGeneration;
+    if (_navigationGeneration != generation) {
+      _navigationGeneration = generation;
+      if (widget.city.mapTarget?.source != MapNavigationSource.task) {
+        final wasCurrent = widget.workspace.taskMapProjectionCurrent;
+        widget.workspace.detachTaskMapProjection(notify: false);
+        if (wasCurrent && widget.workspace.task != null) {
+          widget.workspace.retirePendingQueryForViewChange();
+        }
+      }
+    }
+    if (!widget.workspace.taskMapProjectionCurrent) {
+      _cityResult = null;
+      _cityTaskCityID = null;
+      _cityTaskKey = 'idle';
+    } else if (widget.workspace.queryContextType != 'ONLINE') {
       _cityResult = widget.workspace.presentedResult;
       _cityTaskCityID = widget.workspace.task?.cityID;
       _cityTaskKey = widget.workspace.presentedResult == null
@@ -491,6 +514,7 @@ class _MapCanvasState extends State<MapCanvas> {
     final selectedCity = widget.city.selectedCity;
     final renderCity = widget.city.renderCity;
     final browseKey = widget.city.browseKey;
+    final navigationGeneration = widget.city.navigationGeneration;
     final contentCityID = widget.city.contentCityID;
     final selectionWorkspace = widget.workspace;
     final selectionEpoch = selectionWorkspace.taskEpoch;
@@ -509,6 +533,7 @@ class _MapCanvasState extends State<MapCanvas> {
       MapEntity? shownEntity,
       PublicPlace? shownPlace,
     }) {
+      if (navigationGeneration != widget.city.navigationGeneration) return;
       final workspace = widget.workspace;
       if (personalCollection != null) {
         if (!identical(personalCollection, widget.personalCollection?.value) ||
@@ -662,10 +687,26 @@ class _MapCanvasState extends State<MapCanvas> {
             onPlaceSelected: (place) =>
                 selectMapEntity('place:${place.id}', shownPlace: place),
             onContentOverlap: widget.onContentOverlap,
+            onCameraSnapshot: (camera) {
+              if (navigationGeneration != widget.city.navigationGeneration)
+                return;
+              final bounds = widget.mapState.viewportBounds;
+              widget.city.mapCameraSettled(
+                camera,
+                navigationGeneration,
+                longitudeSpan: bounds?.longitudeSpan,
+                latitudeSpan: bounds == null
+                    ? null
+                    : bounds.north - bounds.south,
+              );
+            },
             onContentViewportSettled: renderCity == null
                 ? null
                 : (bounds, zoom) {
-                    if (browseKey != widget.city.browseKey) return;
+                    if (browseKey != widget.city.browseKey ||
+                        navigationGeneration !=
+                            widget.city.navigationGeneration)
+                      return;
                     widget.mapState.zoom = zoom;
                     widget.mapContent?.sync(
                       cityID: contentCityID,
@@ -677,13 +718,30 @@ class _MapCanvasState extends State<MapCanvas> {
                   },
             onViewportSettled: renderCity == null
                 ? null
-                : widget.mapState.cameraSettled,
+                : (bounds) {
+                    if (navigationGeneration !=
+                        widget.city.navigationGeneration)
+                      return;
+                    widget.mapState.cameraSettled(bounds);
+                  },
             onViewportInitialized: renderCity == null
                 ? null
-                : widget.onInitialViewport,
+                : (bounds) {
+                    if (navigationGeneration !=
+                        widget.city.navigationGeneration)
+                      return;
+                    widget.city.markMapPresented(navigationGeneration);
+                    widget.onInitialViewport(bounds);
+                  },
             onCameraMotion: renderCity == null
                 ? null
-                : widget.mapState.cameraStarted,
+                : () {
+                    if (navigationGeneration !=
+                        widget.city.navigationGeneration)
+                      return;
+                    widget.city.mapCameraStarted(navigationGeneration);
+                    widget.mapState.cameraStarted();
+                  },
             onMapUnavailable: widget.onMapUnavailable,
             fullBleed: true,
             ornamentTop: widget.ornamentTop?.value,
@@ -701,7 +759,30 @@ class _MapCanvasState extends State<MapCanvas> {
               widget.mapContent,
               widget.personalCollection,
             ]),
+            // Runtime comparison only: never serialize identity credentials.
+            // Viewport/query epochs remain in the stricter reader scope below.
+            currentRenderAuthorityScope: () => (
+              widget.mediaOwnerID?.call(),
+              widget.mediaAuthorizationHeader?.call(),
+              widget.mediaWorkspaceID?.call(),
+              widget.city.navigationGeneration,
+              widget.city.selectedCity?.id,
+              widget.city.browseKey,
+              widget.layers,
+              widget.layers?.epoch,
+              widget.layers?.cityID,
+              widget.layers?.authorID,
+              widget.layers?.authorCityID,
+              (widget.layers?.visible.toList()?..sort())?.join(','),
+              widget.mapContent,
+              widget.mapContent?.permissionEpoch,
+              widget.mapContent?.cityID,
+              widget.workspace.taskEpoch,
+              widget.workspace.task?.id,
+              widget.personalCollection?.value,
+            ),
             currentReaderScope: () => (
+              widget.city.navigationGeneration,
               widget.layers,
               widget.layers?.epoch,
               widget.layers?.cityID,

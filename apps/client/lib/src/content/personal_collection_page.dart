@@ -1261,11 +1261,24 @@ class _PersonalCollectionPageState extends State<PersonalCollectionPage> {
             if (c.editing != null &&
                 !c.uncertain &&
                 !c.hasPrivateLegacyReferences &&
-                c.draftJourneyDetails == null &&
                 widget.onViewMap != null)
               OutlinedButton.icon(
-                onPressed: !c.saving
-                    ? () => widget.onViewMap!(c.editing!)
+                onPressed: c.current && !c.saving && !c.dirty
+                    ? () {
+                        if (!mounted ||
+                            !identical(c, source) ||
+                            epoch != _pageEpoch ||
+                            !source.current ||
+                            source.saving ||
+                            source.dirty ||
+                            source.uncertain ||
+                            source.hasPrivateLegacyReferences ||
+                            record == null ||
+                            !identical(source.editing, record) ||
+                            source.editing?.revision != record.revision)
+                          return;
+                        widget.onViewMap?.call(record);
+                      }
                     : null,
                 icon: const Icon(Icons.map_outlined),
                 label: const Text('在地图查看'),

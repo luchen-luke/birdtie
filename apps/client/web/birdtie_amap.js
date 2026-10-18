@@ -139,7 +139,14 @@
       const zoom = s.map.getZoom();
       if (!finite(zoom) || zoom < 1 || zoom > 20) return status(s, false);
       s.projections = points; const frame = ++s.frameSerial; s.latestFrame = frame;
-      s.onFrame(JSON.stringify({schema: 'birdtie-amap-frame-v1', revision, frame, zoom, positions}));
+      const element = document.getElementById(s.elementID), cx = element.clientWidth / 2, cy = element.clientHeight / 2;
+      const scalePoints = [-24, 24].map(dx => {
+        const p = s.map.containerToLngLat(new s.sdk.Pixel(cx + dx, cy));
+        return [p?.getLng?.() ?? p?.lng, p?.getLat?.() ?? p?.lat];
+      });
+      if (scalePoints.some(p => !finite(p[0]) || !finite(p[1]))) return status(s, false);
+      s.onFrame(JSON.stringify({schema: 'birdtie-amap-frame-v1', revision, frame, zoom, positions,
+        scalePoints, scalePixels: 48}));
     });
   }
   // One replaceable quiet-period slot covers drag, wheel, rotation, resize and
@@ -161,7 +168,7 @@
         const zoom = s.map.getZoom();
         if (!finite(zoom) || zoom < 1 || zoom > 20 || points.some(p =>
           !finite(p[0]) || !finite(p[1]) || Math.abs(p[0]) > 180 || Math.abs(p[1]) > 90)) return;
-        s.onViewport?.(JSON.stringify({schema: 'birdtie-amap-viewport-v1', revision: s.revision, zoom, points}));
+        s.onViewport?.(JSON.stringify({schema: 'birdtie-amap-viewport-v1', revision: s.revision, zoom, points, bearing: s.map.getRotation?.() ?? 0, pitch: s.map.getPitch?.() ?? 0}));
       } catch (_) { status(s, false); }
     }, 180);
   }
@@ -172,7 +179,14 @@
     const target = await convert(s, request.longitude, request.latitude, revision, work);
     if (!current(s, revision, work) || s.focus !== request || s.motion !== motion || request.serial <= s.appliedFocus) return;
     s.appliedFocus = request.serial;
-    const positions = [...s.source.values()].map(x => x.converted).filter(Boolean);
+    let positions = [...s.source.values()].map(x => x.converted).filter(Boolean);
+    const bounds = request.bounds;
+    if (request.fit && bounds && [bounds.west, bounds.south, bounds.east, bounds.north].every(finite)) {
+      positions = await Promise.all([
+        convert(s, bounds.west, bounds.south, revision, work),
+        convert(s, bounds.east, bounds.north, revision, work)]);
+      if (!current(s, revision, work) || s.focus !== request || s.motion !== motion) return;
+    }
     s.programmatic = true;
     try {
     if (request.fit && positions.length > 1) {
@@ -183,6 +197,8 @@
         true, [p[0], p[2], p[3], p[1]]);
       if (s.map.getZoom() > 14 && s.map.setZoom) s.map.setZoom(14, true);
     } else s.map.setZoomAndCenter(request.zoom, target, true);
+    if (finite(request.bearing)) s.map.setRotation?.(request.bearing, true);
+    if (finite(request.pitch)) s.map.setPitch?.(request.pitch, true);
     // Camera-only adjustment through the SDK's inverse pixel projection. It
     // never changes an object's geographic coordinate or declares WGS bounds.
     const element = document.getElementById(s.elementID), p = request.padding;
@@ -309,7 +325,7 @@
   function mediaValid(item) {
     const png = s => typeof s === 'string' && s.length <= 360000 &&
       /^iVBORw0KGgo[A-Za-z0-9+/]*={0,2}$/.test(s);
-    return ['place', 'moment'].includes(item.kind) && ['point', 'approximate'].includes(item.precision) &&
+    return item.kind === 'moment' && ['point', 'approximate'].includes(item.precision) &&
       typeof item.mediaKey === 'string' && item.mediaKey.length <= 2048 &&
       png(item.mediaPNG) && png(item.mediaSelectedPNG) &&
       finite(item.mediaDPR) && item.mediaDPR > 0 && item.mediaDPR <= 8 &&
@@ -318,26 +334,29 @@
   }
   function paintMedia(s, item, row, selected, pale) {
     const current = !pale && mediaValid(item);
-    const size = selected ? 36 : pale ? 6 : 28;
-    row.shape.style.border = current ? '0' : `${selected ? 2 : 1.5}px solid ${selected ? '#193B32' : 'white'}`;
+    const size = row.logicalSize ?? (item.kind === 'moment' ? (selected ? 34 : 30) : selected ? 28 : pale ? 20 : 24);
+    row.shape.style.border = current ? '0' : '1.5px solid white';
     const cluster = item.kind === 'cluster';
-    row.icon.style.display = current || cluster || pale ? 'none' : '';
-    row.count.textContent = cluster ? String(item.contentCount || item.anchorCount || item.memberIDs?.length || '') : '';
+    row.icon.style.display = current || cluster ? 'none' : '';
+    row.count.textContent = cluster ? String(row.clusterCount ?? (item.categoryCode === 'moment_cluster' ? item.contentCount : item.anchorCount || item.memberIDs?.length || 0)) : '';
     row.count.style.display = cluster ? '' : 'none';
     if (current) {
       const src = `data:image/png;base64,${selected ? item.mediaSelectedPNG : item.mediaPNG}`;
       if (row.image.src !== src) row.image.src = src;
-      const pixels = 96; // MapMarkerBitmap.pointCanvasSize logical pixels.
+      const pixels = 48; // MapMarkerBitmap.pointCanvasSize logical pixels.
       Object.assign(row.image.style, {position: 'absolute', display: '', width: `${pixels}px`, height: `${pixels}px`,
         maxWidth: 'none', left: `${(size - pixels) / 2}px`, top: `${(size - pixels) / 2}px`});
     } else { row.image.removeAttribute('src'); row.image.style.display = 'none'; }
-    const recent = item.kind === 'place' && typeof item.recentLabel === 'string' &&
-      item.recentLabel.length <= 80 && item.recentExpiresAt > Date.now();
-    row.name.textContent = item.title;
-    row.name.style.WebkitLineClamp = selected ? '2' : '1';
-    row.recent.textContent = recent ? item.recentLabel : '';
-    row.text.style.whiteSpace = 'normal';
-    row.text.style.maxHeight = `${selected ? (recent ? 48 : 32) : (recent ? 32 : 16)}px`;
+    // Layout names/counts come from the same measured Dart plan as native.
+    const label = row.layoutLabel;
+    row.name.textContent = label?.name ?? '';
+    row.name.style.WebkitLineClamp = '1';
+    row.name.style.whiteSpace = 'nowrap';
+    row.recent.textContent = item.recentExpiresAt > Date.now() ? label?.auxiliary ?? '' : '';
+    row.recent.style.fontSize = '11px'; row.recent.style.lineHeight = '13.75px';
+    row.recent.style.color = '#69717A';
+    row.text.style.whiteSpace = 'nowrap';
+    row.text.style.maxHeight = label ? `${label.height}px` : '0';
     row.selected = selected; row.pale = pale;
   }
   function scheduleMedia(s) {
@@ -477,7 +496,14 @@
       }
       if (ids.has(m.id) || (!c && (!s.source.has(m.id) || !s.projections.has(m.id))) ||
         !finite(m.dx) || !finite(m.dy) || m.dx !== 0 || m.dy !== 0 ||
-        typeof m.selected !== 'boolean' || typeof m.dense !== 'boolean' || typeof m.showLabel !== 'boolean') return;
+        typeof m.selected !== 'boolean' || typeof m.dense !== 'boolean' || typeof m.showLabel !== 'boolean' ||
+        !finite(m.size) || m.size < 20 || m.size > 48 || !Number.isSafeInteger(m.clusterCount) || m.clusterCount < 0 ||
+        !/^#[0-9a-f]{6}$/i.test(m.fill)) return;
+      if (m.label && (!finite(m.label.x) || !finite(m.label.y) || !finite(m.label.width) ||
+        m.label.width < 0 || m.label.width > 112 || !finite(m.label.height) || m.label.height > 48 ||
+        typeof m.label.name !== 'string' || m.label.name.length > 300 ||
+        ![12, 13].includes(m.label.fontSize) || !/^#[0-9a-f]{6}$/i.test(m.label.color) ||
+        (m.label.auxiliary != null && (typeof m.label.auxiliary !== 'string' || m.label.auxiliary.length > 80)))) return;
       const source = c || s.source.get(m.id);
       if ((source.precision !== 'point' || !['place', 'moment'].includes(source.kind)) && (m.dx || m.dy)) return;
       ids.add(m.id);
@@ -487,15 +513,31 @@
     for (const m of v.markers) {
       const item = clusters.get(m.id) || s.source.get(m.id), p = s.projections.get(item.anchorID && clusters.has(m.id) ? item.anchorID : m.id);
       let row = s.nodes.get(m.id); if (!row) { row = node(s, item); s.nodes.set(m.id, row); }
-      const pale = m.dense && !m.selected && !item.ownedContent && item.kind !== 'cluster', size = m.selected ? 36 : pale ? 6 : 28;
+      const pale = m.dense && !m.selected && item.kind === 'place', size = m.size;
+      row.logicalSize = size; row.clusterCount = m.clusterCount; row.layoutLabel = m.label;
       row.button.style.left = `${p.x - 24}px`; row.button.style.top = `${p.y - 24}px`;
       row.button.disabled = s.reader; row.button.tabIndex = s.reader ? -1 : 0;
       row.button.style.zIndex = m.selected ? '3' : '2'; row.button.setAttribute('aria-pressed', String(m.selected));
       Object.assign(row.shape.style, {width: `${size}px`, height: `${size}px`,
-        borderRadius: item.ownedContent || ['moment', 'cluster'].includes(item.kind) ? `${pale ? 2 : 4}px` : '50%',
-        background: item.kind === 'moment' ? '#87683C' : '#193B32'});
-      row.icon.style.width = row.icon.style.height = `${m.selected ? 18 : pale ? 10 : 14}px`;
-      row.text.style.display = m.showLabel && !pale ? '' : 'none';
+        borderRadius: item.kind === 'moment' ? '6px' : '50%',
+        background: item.kind === 'moment' ? '#87683C' : item.kind === 'cluster' ? '#64707A' : m.fill});
+      const glyphs = {
+        dining: 'M4 2h2v7h1V2h2v7h1V2h2v7c0 2-1 3-3 4v9H6v-9c-2-1-3-2-3-4V2zm13 0h3v20h-3v-9h-2V6c0-2 1-4 2-4z',
+        cafe: 'M3 3h15v3h3v7h-3v2c0 3-3 5-7 5s-7-2-7-5V5H3zm15 5v3h1V8zM2 21h20v1H2z',
+        nightlife: 'M3 2h18L13 12v8h5v2H6v-2h5v-8zm5 3 4 5 4-5z',
+        culture: 'M2 8 12 2l10 6v2H2zm2 3h3v8H4zm6 0h4v8h-4zm7 0h3v8h-3zM2 20h20v2H2z',
+        nature: 'm12 2 7 9h-3l5 7h-7v4h-4v-4H3l5-7H5z',
+        sport: 'M4 4h4v5H4zm12 0h4v5h-4zM2 10h20v4H2zm2 5h4v5H4zm12 0h4v5h-4z',
+        shopping: 'M5 7h3V5a4 4 0 0 1 8 0v2h3l2 15H3zm5 0h4V5a2 2 0 0 0-4 0z',
+        other: 'M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7zm0 10a3 3 0 1 1 0-6 3 3 0 0 1 0 6z',
+      };
+      row.icon.firstChild.setAttribute('d', item.kind === 'moment' ? 'M4 5h16v2H4zm0 6h16v2H4zm0 6h10v2H4z' : glyphs[m.category] ?? glyphs.other);
+      row.icon.style.width = row.icon.style.height = `${pale ? 12 : 14}px`;
+      row.text.style.display = m.showLabel && m.label ? '' : 'none';
+      if (m.label) Object.assign(row.text.style, {left: `${24 + m.label.x}px`, top: `${24 + m.label.y}px`,
+        width: `${m.label.width}px`, height: `${m.label.height}px`, fontSize: `${m.label.fontSize}px`,
+        lineHeight: '1.25', color: m.label.color, fontWeight: '500',
+        textShadow: '-1px 0 white, 1px 0 white, 0 -1px white, 0 1px white'});
       paintMedia(s, item, row, m.selected, pale);
     }
   };

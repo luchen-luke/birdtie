@@ -701,6 +701,20 @@ class AgentWorkspaceController extends ChangeNotifier {
   // never substitute the latest turn's entities for the selected older reply.
   AgentResult? get presentedResult => _mapReply ?? result;
   bool preserveReplyCamera = false;
+  bool _taskMapDetached = false;
+  bool get taskMapProjectionCurrent => !_taskMapDetached;
+
+  /// A geographic navigation changes the map, not the conversation. Keep its
+  /// results, task and drafts, but retire the previous map selection and layer.
+  void detachTaskMapProjection({bool notify = true}) {
+    if (!taskMapProjectionCurrent) return;
+    _taskMapDetached = true;
+    selectedEntityId = null;
+    preserveReplyCamera = false;
+    retireMapArea(notify: false);
+    if (notify) notifyListeners();
+  }
+
   Timer? _replyExpiryTimer;
   Timer? _externalPlaceExpiryTimer;
   Timer? _replyRefreshTimer;
@@ -1715,6 +1729,8 @@ class AgentWorkspaceController extends ChangeNotifier {
   }
 
   void newTask({bool preserveMapSelection = false}) {
+    final retainTaskMap = preserveMapSelection && taskMapProjectionCurrent;
+    _taskMapDetached = false;
     _retireExternalPlaces();
     ++_taskIdentityEpoch;
     retireMapArea(notify: false);
@@ -1723,13 +1739,12 @@ class AgentWorkspaceController extends ChangeNotifier {
     preserveReplyCamera = false;
     _mapReply = null;
     _mapReplyMessageIndex = null;
-    if (preserveMapSelection &&
-        result != null &&
-        result!.onlineContext == null) {
+    if (retainTaskMap && result != null && result!.onlineContext == null) {
       mapBackgroundResult = result;
       mapBackgroundCityID = task?.cityID;
     }
-    if (!preserveMapSelection && queryContextType != 'ONLINE') {
+    if ((preserveMapSelection && !retainTaskMap) ||
+        (!preserveMapSelection && queryContextType != 'ONLINE')) {
       mapBackgroundResult = null;
       mapBackgroundCityID = null;
     }
@@ -1829,6 +1844,9 @@ class AgentWorkspaceController extends ChangeNotifier {
   // answer. This projection neither rewrites stored Task history nor approves
   // an action. Earlier turns keep their original text.
   void _presentCurrentTypedAnswer(AgentResult current) {
+    // Only an accepted new/read-restored answer or a verified explicit reply
+    // selection resumes a Task layer. Canceling an old request cannot do so.
+    _taskMapDetached = false;
     if (current.onlinePlaceSearch != null) return;
     for (final reply in List<AgentReply>.of(replies)) {
       final index = reply.messageIndex;
@@ -2259,6 +2277,7 @@ class AgentWorkspaceController extends ChangeNotifier {
         !source.onlinePlaceSearch!.places.contains(place)) {
       return;
     }
+    _taskMapDetached = false;
     preserveReplyCamera = false;
     _mapReply = source;
     _mapReplyMessageIndex = replies
@@ -2334,6 +2353,7 @@ class AgentWorkspaceController extends ChangeNotifier {
         !source.entities.any((entity) => entity.id == id)) {
       return;
     }
+    _taskMapDetached = false;
     preserveReplyCamera = false;
     _mapReply = source;
     _mapReplyMessageIndex = replies

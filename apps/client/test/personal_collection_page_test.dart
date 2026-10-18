@@ -1,10 +1,10 @@
 import 'dart:convert';
 import 'dart:ui' show SemanticsAction;
-import 'package:birdtie_client/src/content/collection_control.dart';
 import 'package:birdtie_client/src/content/collection_control_pending_store.dart';
 import 'package:birdtie_client/src/content/collection_create_pending_store.dart';
 import 'collection_control_test.dart';
 import 'package:birdtie_client/src/content/personal_collection_page.dart';
+import 'package:birdtie_client/src/content/personal_collection_controller.dart';
 import 'package:birdtie_client/src/content/collection_copy_pending_store.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -32,8 +32,116 @@ import 'collection_copy_page_test.dart'
         openCopyPreview,
         copyLoadFonts;
 import 'collection_copy_pending_store_test.dart' show copyStored;
+import 'journey_detail_test.dart' as journey;
 
 void main() {
+  for (final variant in ['journey', 'theme_map', 'rich journey']) {
+    testWidgets(
+      'PMAP $variant actual map callback rejects replaced record and actor ABA normal390',
+      (t) async {
+        copyViewport(t);
+        final identity = ValueNotifier(0), opened = <PersonalCollection>[];
+        var owner = collectionOwner, revision = 1, writes = 0;
+        final kind = variant == 'theme_map' ? 'theme_map' : 'journey';
+        Map<String, dynamic> record() {
+          final raw = collectionReceipt(kind: kind, revision: revision);
+          if (variant == 'rich journey') {
+            final original = journey.fixture();
+            raw['entries'] = <Object>[];
+            raw['journeyDetails'] = original
+                .changed(
+                  itinerary: [
+                    original.itinerary.first,
+                    original.itinerary.last.changed({
+                      'placeId': collectionPlaceID,
+                      'cityId': 'aberdeen-gb',
+                    }),
+                  ],
+                )
+                .toInput();
+          }
+          return raw;
+        }
+
+        final client = MockClient((r) async {
+          if (r.method != 'GET') writes++;
+          return collectionResponse(
+            r.url.path.endsWith(collectionID)
+                ? record()
+                : {
+                    'items': [record()],
+                  },
+          );
+        });
+        final c = collectionController(
+          client,
+          kind: kind,
+          owner: () => owner,
+          changes: identity,
+        );
+        try {
+          expect(await c.openID(collectionID), true, reason: c.error);
+          await t.pumpWidget(
+            copyApp(
+              PersonalCollectionPage(
+                controller: c,
+                cityName: '合成城市',
+                onViewMap: opened.add,
+                copyPendingStore: MemoryCollectionCopyPendingStore(),
+              ),
+            ),
+          );
+          await copySettle(t);
+          final button = find.widgetWithText(OutlinedButton, '在地图查看');
+          await t.scrollUntilVisible(
+            button,
+            200,
+            scrollable: find.byType(Scrollable).first,
+          );
+          final captured = t.widget<OutlinedButton>(button).onPressed!;
+          await t.tap(button);
+          expect(opened, hasLength(1));
+          expect(opened.single.id, collectionID);
+          expect(opened.single.revision, 1);
+          if (variant == 'rich journey') {
+            expect(opened.single.entries, isEmpty);
+            expect(
+              opened.single.journeyDetails!.itinerary.last.text('placeId'),
+              collectionPlaceID,
+            );
+          }
+          opened.clear();
+          revision = 2;
+          expect(await c.openID(collectionID), true);
+          await copySettle(t);
+          captured();
+          await t.pump();
+          expect(
+            opened,
+            isEmpty,
+            reason:
+                'A previously rendered action cannot adopt the replacement record.',
+          );
+          final currentCallback = t.widget<OutlinedButton>(button).onPressed!;
+          owner = '44444444-4444-4444-8444-444444444444';
+          identity.value++;
+          owner = collectionOwner;
+          identity.value++;
+          await t.pump();
+          currentCallback();
+          await t.pump();
+          expect(opened, isEmpty);
+          expect(writes, 0);
+          expect(t.takeException(), isNull);
+        } finally {
+          await t.pumpWidget(const SizedBox());
+          c.dispose();
+          client.close();
+          identity.dispose();
+        }
+      },
+    );
+  }
   testWidgets(
     'create recovery normal390 cold secure page offers semantic original GET only then shows verified record',
     (t) async {

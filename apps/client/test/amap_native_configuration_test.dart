@@ -4,6 +4,8 @@ import 'package:amap_map/amap_map.dart' as amap;
 import 'package:birdtie_client/src/city/amap_city_map_io.dart';
 import 'package:birdtie_client/src/city/amap_native_configuration.dart';
 import 'package:birdtie_client/src/city/amap_offline_style.dart';
+import 'package:birdtie_client/src/city/amap_session_consent.dart';
+import 'package:birdtie_client/src/city/map_privacy_consent.dart';
 import 'package:birdtie_client/src/city/public_city_controller.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -48,6 +50,15 @@ Widget _map() => MaterialApp(
 void main() {
   final binding = TestWidgetsFlutterBinding.ensureInitialized();
   final messenger = binding.defaultBinaryMessenger;
+  late MapPrivacyConsentController consent, previousConsent;
+
+  setUp(() async {
+    consent = MapPrivacyConsentController(
+      store: MemoryMapPrivacyConsentStore(),
+    );
+    previousConsent = AMapSessionConsent.replaceControllerForTesting(consent);
+    await consent.load();
+  });
 
   // These cases isolate key detection. Prepare the real Android style pair
   // outside each widget's fake clock; style loading/failure has its own tests.
@@ -57,6 +68,8 @@ void main() {
 
   tearDown(() {
     messenger.setMockMethodCallHandler(AMapNativeConfiguration.channel, null);
+    AMapSessionConsent.replaceControllerForTesting(previousConsent);
+    consent.dispose();
     debugDefaultTargetPlatformOverride = null;
   });
 
@@ -158,7 +171,7 @@ void main() {
   );
 
   testWidgets(
-    'loading and missing config retry reach consent without initializing SDK',
+    'PMAP normal loading missing config retry requires real privacy choice without SDK',
     (tester) async {
       final pending = <Completer<bool>>[];
       messenger.setMockMethodCallHandler(AMapNativeConfiguration.channel, (_) {
@@ -171,18 +184,26 @@ void main() {
         await androidAMapOfflineStyle.load();
       });
       await tester.pump();
-      expect(find.text('正在检查高德地图配置…'), findsOneWidget);
+      expect(find.text('正在加载地图…'), findsOneWidget);
       expect(find.byType(amap.AMapWidget), findsNothing);
       pending.single.complete(false);
       await tester.pump();
-      expect(find.text('该设备的高德地图尚未配置，请使用地点列表。'), findsOneWidget);
+      expect(find.text('地图暂不可用，请重试或使用地点列表。'), findsOneWidget);
       expect(find.byType(amap.AMapWidget), findsNothing);
       await tester.tap(find.text('重试'));
       await tester.pump();
-      expect(find.text('正在检查高德地图配置…'), findsOneWidget);
+      expect(find.text('正在加载地图…'), findsOneWidget);
       pending.last.complete(true);
-      await tester.pump();
-      expect(find.text('同意并启用高德地图'), findsOneWidget);
+      await tester.pumpAndSettle();
+      expect(find.widgetWithText(AlertDialog, '地图服务隐私说明'), findsOneWidget);
+      expect(find.text('同意并启用高德地图'), findsNothing);
+      expect(consent.hasDecision, isFalse);
+      expect(consent.accepted, isFalse);
+      expect(find.byType(amap.AMapWidget), findsNothing);
+      await tester.tap(find.text('暂不使用'));
+      await tester.pumpAndSettle();
+      expect(consent.hasDecision, isTrue);
+      expect(consent.accepted, isFalse);
       expect(find.byType(amap.AMapWidget), findsNothing);
       expect(pending.length, 2);
       await tester.pumpWidget(const SizedBox());
@@ -191,7 +212,7 @@ void main() {
   );
 
   testWidgets(
-    'timeout is retryable and its late response cannot replace current probe',
+    'PMAP normal config timeout late reply cannot bypass current privacy choice',
     (tester) async {
       final pending = <Completer<bool>>[];
       messenger.setMockMethodCallHandler(AMapNativeConfiguration.channel, (_) {
@@ -205,16 +226,23 @@ void main() {
       });
       await tester.pump();
       await tester.pump(const Duration(seconds: 5));
-      expect(find.text('暂时无法读取高德地图配置，请重试或使用地点列表。'), findsOneWidget);
+      expect(find.text('地图暂不可用，请重试或使用地点列表。'), findsOneWidget);
       expect(find.byType(amap.AMapWidget), findsNothing);
       await tester.tap(find.text('重试'));
       await tester.pump();
       pending.first.complete(false);
       await tester.pump();
-      expect(find.text('正在检查高德地图配置…'), findsOneWidget);
+      expect(find.text('正在加载地图…'), findsOneWidget);
       pending.last.complete(true);
-      await tester.pump();
-      expect(find.text('同意并启用高德地图'), findsOneWidget);
+      await tester.pumpAndSettle();
+      expect(find.widgetWithText(AlertDialog, '地图服务隐私说明'), findsOneWidget);
+      expect(consent.hasDecision, isFalse);
+      expect(consent.accepted, isFalse);
+      expect(find.byType(amap.AMapWidget), findsNothing);
+      await tester.tap(find.text('暂不使用'));
+      await tester.pumpAndSettle();
+      expect(consent.hasDecision, isTrue);
+      expect(consent.accepted, isFalse);
       expect(find.byType(amap.AMapWidget), findsNothing);
       await tester.pumpWidget(const SizedBox());
     },

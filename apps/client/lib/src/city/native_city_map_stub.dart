@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'public_city_controller.dart';
+import 'map_navigation_target.dart';
 import '../workspace/map_entities.dart';
 
 class NativeCityMapView extends StatelessWidget {
@@ -18,6 +19,7 @@ class NativeCityMapView extends StatelessWidget {
     this.onContentViewportSettled,
     this.onContentOverlap,
     this.onViewportInitialized,
+    this.onCameraSnapshot,
     this.onCameraMotion,
     this.onMapUnavailable,
     this.fullBleed = false,
@@ -43,6 +45,7 @@ class NativeCityMapView extends StatelessWidget {
   final List<MapEntity> entities;
   final String? selectedEntityId;
   final ValueChanged<MapEntity>? onEntitySelected;
+  final ValueChanged<MapCameraSnapshot>? onCameraSnapshot;
   final ValueChanged<MapBounds>? onViewportSettled;
   final void Function(MapBounds bounds, double zoom)? onContentViewportSettled;
   final ValueChanged<List<MapEntity>>? onContentOverlap;

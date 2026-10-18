@@ -172,7 +172,13 @@ final birdtieFloatingButtonStyle = IconButton.styleFrom(
 );
 
 class BirdtieSurface extends StatelessWidget {
-  const BirdtieSurface({super.key, required this.kind, required this.child});
+  const BirdtieSurface({
+    super.key,
+    required this.kind,
+    required this.child,
+    this.backdropEnabled = true,
+  });
+  final bool backdropEnabled;
 
   final BirdtieSurfaceKind kind;
   final Widget child;
@@ -215,6 +221,7 @@ class BirdtieSurface extends StatelessWidget {
       borderRadius: radius,
       child: floating && !opaque && tokens.blurSigma > 0
           ? BackdropFilter(
+              enabled: backdropEnabled,
               filter: ImageFilter.blur(
                 sigmaX: tokens.blurSigma,
                 sigmaY: tokens.blurSigma,

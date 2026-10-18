@@ -362,6 +362,12 @@ class _Points extends Fake implements PointAnnotationManager {
   @override
   Future<void> setIconAllowOverlap(bool value) async {}
   @override
+  Future<void> setIconIgnorePlacement(bool value) async {}
+  @override
+  Future<void> setTextAllowOverlap(bool value) async {}
+  @override
+  Future<void> setTextIgnorePlacement(bool value) async {}
+  @override
   Future<void> setTextOptional(bool value) async {}
   @override
   Cancelable tapEvents({required Function(PointAnnotation) onTap}) => _Cancel();

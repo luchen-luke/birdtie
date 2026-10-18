@@ -230,6 +230,7 @@ class MapMediaController extends ChangeNotifier {
   String _setKey(MapEntity entity) =>
       '$_epoch:${entity.id}:${entity.sourceVersion}';
   _MapSourcePhoto? _photoFor(MapEntity entity) {
+    if (entity.kind != MapEntityKind.moment) return null;
     final set = _mediaSets[_setKey(entity)],
         target = entity.publicMediaIdentity;
     if (entity.kind == MapEntityKind.moment &&

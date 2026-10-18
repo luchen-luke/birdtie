@@ -65,6 +65,42 @@ type mapSpatialLeaf struct {
 	until   *time.Time
 }
 
+// Only the current, authorized spatial projection can represent a Moment.
+// A raw relation, a hidden Place or a Place outside this viewport cannot hide
+// an independently readable anchor. Different real anchors remain distinct.
+func suppressRepresentedMapAnchors(grouped map[string]*mapSpatialLeaf) {
+	represented := map[string]bool{}
+	for _, x := range grouped {
+		if x.pin.Kind != "PLACE_CONTENT" || !x.pin.Anchor.Valid() ||
+			(x.pin.Anchor.Latitude == 0 && x.pin.Anchor.Longitude == 0) {
+			continue
+		}
+		for mid := range x.moments {
+			represented[mid] = true
+		}
+	}
+	for key, x := range grouped {
+		if x.pin.Kind == "MOMENT_ANCHOR" && represented[x.pin.MomentID] {
+			delete(grouped, key)
+		}
+	}
+}
+
+func mapClusterCategory(leaves []mapSpatialLeaf, members []int) (string, string) {
+	places, anchors := false, false
+	for _, i := range members {
+		places = places || leaves[i].pin.Kind == "PLACE_CONTENT"
+		anchors = anchors || leaves[i].pin.Kind == "MOMENT_ANCHOR"
+	}
+	if places && !anchors {
+		return "地点", "place_cluster"
+	}
+	if anchors && !places {
+		return "动态", "moment_cluster"
+	}
+	return "地图内容", "mixed_cluster"
+}
+
 func readMapSpatial(ctx context.Context, f humanWriteFrame, q content.MapContentQuery) ([]mapSpatialLeaf, string, time.Time, time.Time, error) {
 	at := time.Now().UTC()
 	until := at.Add(30 * time.Second)
@@ -121,6 +157,7 @@ func readMapSpatial(ctx context.Context, f humanWriteFrame, q content.MapContent
 		return nil, "", at, until, content.ErrUnavailable
 	}
 	rows.Close()
+	suppressRepresentedMapAnchors(grouped)
 	keys := []string{}
 	for k := range grouped {
 		keys = append(keys, k)
@@ -447,7 +484,8 @@ func (s *Store) ReadHumanMapContent(ctx context.Context, d [32]byte, a identity.
 				continue
 			}
 			first := leaves[g[0]].pin
-			x := content.MapContentPin{Kind: "CLUSTER", Name: "动态", CategoryCode: "moment", Anchor: first.Anchor, AnchorCount: len(g), VisibilitySources: []string{}, Moments: []content.MapContentMomentSelector{}}
+			name, category := mapClusterCategory(leaves, g)
+			x := content.MapContentPin{Kind: "CLUSTER", Name: name, CategoryCode: category, Anchor: first.Anchor, AnchorCount: len(g), VisibilitySources: []string{}, Moments: []content.MapContentMomentSelector{}}
 			x.MarkerID = mapClusterID(q, leaves, g)
 			x.EntityID = x.MarkerID
 			x.RepresentativeMarkerID = first.MarkerID

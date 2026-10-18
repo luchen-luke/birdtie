@@ -32,6 +32,10 @@ class NowGlassSurface extends StatelessWidget {
         tokens.reduceEffects ||
         highContrast ||
         (media?.disableAnimations ?? false);
+    // Sampling a live native-map texture for moving IME chrome is expensive
+    // even when the blur radius is small. Keep the local material/content,
+    // and restore its backdrop only after the keyboard has fully closed.
+    final keyboardVisible = (media?.viewInsets.bottom ?? 0) > 0;
     final blur = backdropBlur && role != NowGlassRole.navigation;
     final opacity = switch (role) {
       NowGlassRole.control =>
@@ -60,6 +64,9 @@ class NowGlassSurface extends StatelessWidget {
       ),
       child: BirdtieSurface(
         kind: BirdtieSurfaceKind.floating,
+        // Keep the filter widget and input subtree mounted while bypassing
+        // only its compositor layer. Removing the wrapper would retire focus.
+        backdropEnabled: !keyboardVisible,
         child: DecoratedBox(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(borderRadius),

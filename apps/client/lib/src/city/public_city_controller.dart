@@ -8,8 +8,11 @@ import 'exploration_city_store.dart';
 import 'browse_destination.dart';
 import 'destination_artwork.dart';
 import 'map_provider_policy.dart';
+import 'map_navigation_target.dart';
+import 'map_route_region.dart';
 import '../workspace/entity_cover.dart';
 import '../workspace/place_photo.dart';
+import '../workspace/map_entities.dart' show MapBounds;
 
 class PublicSource {
   const PublicSource({
@@ -86,6 +89,10 @@ class PublicCityMap {
     required this.longitude,
     required this.defaultZoom,
     required this.sourceRef,
+    this.bearing = 0,
+    this.pitch = 0,
+    this.navigationGeneration = 0,
+    this.cameraBounds,
   });
 
   final String provider;
@@ -93,6 +100,10 @@ class PublicCityMap {
   final double longitude;
   final double defaultZoom;
   final String sourceRef;
+  final double bearing;
+  final double pitch;
+  final int navigationGeneration;
+  final MapBounds? cameraBounds;
 
   factory PublicCityMap.fromJson(Map<String, dynamic> json) => PublicCityMap(
     provider: json['provider'] as String,
@@ -318,6 +329,7 @@ class PublicCityController extends ChangeNotifier {
     http.Client? client,
     String? apiBaseUrl,
     ExplorationCityStore? explorationStore,
+    MapRouteRegionIndex? routeRegions,
     this.defaultExplorationCityID = const String.fromEnvironment(
       'BIRDTIE_DEFAULT_EXPLORATION_CITY_ID',
       defaultValue: 'aberdeen-gb',
@@ -325,6 +337,7 @@ class PublicCityController extends ChangeNotifier {
   }) : _client = client ?? http.Client(),
        _ownsClient = client == null,
        _explorationStore = explorationStore,
+       _routeRegions = routeRegions,
        _apiBase = (apiBaseUrl ?? BirdtieEnvironment.apiBaseUrl).trim();
 
   final bool loadUnrequestedPlaces;
@@ -358,6 +371,304 @@ class PublicCityController extends ChangeNotifier {
   bool _explorationFallback = false;
   Future<void>? _explorationRestore;
   Future<void> _explorationWriteTail = Future.value();
+  int _navigationGeneration = 0;
+  int _displayedGeneration = -1;
+  MapNavigationTarget? _mapTarget;
+  MapRouteDecision? _mapRoute;
+  MapRouteRegionIndex? _routeRegions;
+  Future<void>? _routeRegionLoad;
+  final _destinationCameras = <String, MapCameraSnapshot>{};
+  String? _viewportRouteCandidate;
+  DateTime? _viewportRouteCandidateSince;
+  Timer? _viewportRouteTimer;
+  int _cameraMotionGeneration = 0;
+  MapCameraSnapshot? _lastSettledCamera;
+
+  int get navigationGeneration => _navigationGeneration;
+  int get displayedGeneration => _displayedGeneration;
+  MapNavigationTarget? get mapTarget => _mapTarget;
+  String get mapProvider =>
+      _mapRoute?.provider ??
+      mapProviderForCountry(
+        countryCode: selectedCity?.countryCode ?? '',
+        configuredProvider: selectedCity?.map?.provider ?? 'mapbox',
+      );
+
+  void markMapPresented(int generation) {
+    if (_closed || generation != _navigationGeneration) return;
+    _displayedGeneration = generation;
+  }
+
+  void mapCameraStarted(int generation) {
+    if (_closed || generation != _navigationGeneration) return;
+    ++_cameraMotionGeneration;
+    _viewportRouteTimer?.cancel();
+    _viewportRouteCandidate = null;
+    _viewportRouteCandidateSince = null;
+  }
+
+  void _loadRouteRegions() {
+    if (_routeRegions != null) return;
+    _routeRegionLoad ??= () async {
+      try {
+        final index = await MapRouteRegionIndex.load();
+        if (!_closed) _routeRegions = index;
+      } catch (_) {
+        // Explicit structured destinations still route correctly. Free-pan
+        // routing remains conservative when the versioned region asset fails.
+      }
+    }();
+  }
+
+  void _activateMapTarget(MapNavigationTarget target) {
+    _mapTarget = target;
+    _mapRoute = resolveMapRoute(
+      target,
+      regions: _routeRegions,
+      previousProvider: mapProvider,
+    );
+    _viewportRouteCandidate = null;
+    _viewportRouteCandidateSince = null;
+    _viewportRouteTimer?.cancel();
+  }
+
+  void _targetCatalogCity(PublicCity city, {bool taskView = false}) {
+    final map = city.map;
+    if (map == null ||
+        !MapCameraSnapshot(
+          latitude: map.latitude,
+          longitude: map.longitude,
+          zoom: map.defaultZoom,
+          bearing: map.bearing,
+          pitch: map.pitch,
+        ).isValid) {
+      ++_navigationGeneration;
+      _mapTarget = null;
+      _mapRoute = null;
+      _viewportRouteTimer?.cancel();
+      _viewportRouteCandidate = null;
+      _viewportRouteCandidateSince = null;
+      return;
+    }
+    final camera =
+        (taskView ? null : _destinationCameras[city.id]) ??
+        MapCameraSnapshot(
+          latitude: map.latitude,
+          longitude: map.longitude,
+          zoom: map.defaultZoom,
+          bearing: map.bearing,
+          pitch: map.pitch,
+        );
+    _activateMapTarget(
+      MapNavigationTarget(
+        key: taskView ? 'task-city:${city.id}' : city.id,
+        source: taskView
+            ? MapNavigationSource.task
+            : MapNavigationSource.catalogCity,
+        generation: ++_navigationGeneration,
+        camera: camera,
+        countryCode: city.countryCode,
+        catalogCityID: city.id,
+        sourceVersion:
+            city.source.updatedAt?.toIso8601String() ??
+            'catalog:${city.id}:${map.sourceRef}',
+      ),
+    );
+    final store = _explorationStore;
+    final generation = _navigationGeneration;
+    final motion = _cameraMotionGeneration;
+    if (!taskView &&
+        store is ExplorationCameraStore &&
+        !_destinationCameras.containsKey(city.id)) {
+      unawaited(() async {
+        try {
+          final saved = await (store as ExplorationCameraStore).readCamera(
+            city.id,
+          );
+          if (_closed ||
+              saved == null ||
+              !saved.isValid ||
+              generation != _navigationGeneration ||
+              motion != _cameraMotionGeneration ||
+              _mapTarget?.source != MapNavigationSource.catalogCity)
+            return;
+          _destinationCameras[city.id] = saved;
+          _activateMapTarget(
+            MapNavigationTarget(
+              key: city.id,
+              source: MapNavigationSource.catalogCity,
+              generation: ++_navigationGeneration,
+              camera: saved,
+              countryCode: city.countryCode,
+              catalogCityID: city.id,
+              sourceVersion:
+                  city.source.updatedAt?.toIso8601String() ??
+                  'catalog:${city.id}:${map.sourceRef}',
+            ),
+          );
+          _notify();
+        } catch (_) {
+          /* A local preference never blocks navigation. */
+        }
+      }());
+    }
+  }
+
+  /// Navigation changes a view only. The caller retains the source lease,
+  /// identity checks and explicit-layer projection; this cannot grant access.
+  bool navigateMapTarget(MapNavigationTarget target) {
+    if (_closed || !target.isValid || target.camera.coordinateSystem != 'wgs84')
+      return false;
+    final catalogID = target.catalogCityID;
+    if (catalogID != null && _catalogCity(catalogID) == null) return false;
+    ++_explorationChoiceRevision;
+    _selectedDestination = null;
+    if (catalogID != null) {
+      final changed = catalogID != _selectedCityID;
+      _setSelectedCity(catalogID);
+      if (changed) unawaited(_loadSelectedCityContent());
+    } else {
+      _setSelectedCity(null);
+    }
+    _activateMapTarget(
+      MapNavigationTarget(
+        key: target.key,
+        source: target.source,
+        generation: ++_navigationGeneration,
+        camera: target.camera,
+        countryCode: target.countryCode,
+        catalogCityID: catalogID,
+        sourceVersion: target.sourceVersion,
+        regionCode: target.regionCode,
+        viewportLongitudeSpan: target.viewportLongitudeSpan,
+        viewportLatitudeSpan: target.viewportLatitudeSpan,
+      ),
+    );
+    _notify();
+    return true;
+  }
+
+  /// Retire an identity-bound content camera without retaining its coordinates
+  /// as another account's exploration preference. Catalog cameras are public
+  /// view preferences and remain separate from these temporary sources.
+  void retireContentMapTarget() {
+    if (_closed ||
+        !const {
+          MapNavigationSource.task,
+          MapNavigationSource.place,
+          MapNavigationSource.moment,
+          MapNavigationSource.journey,
+          MapNavigationSource.thematicMap,
+        }.contains(_mapTarget?.source))
+      return;
+    _selectedDestination = null;
+    final safe =
+        selectedCity ?? _catalogCity('aberdeen-gb') ?? cities.firstOrNull;
+    if (safe == null) {
+      ++_navigationGeneration;
+      _mapTarget = null;
+      _mapRoute = null;
+      _viewportRouteTimer?.cancel();
+    } else {
+      _setSelectedCity(safe.id);
+      _targetCatalogCity(safe);
+    }
+    _notify();
+  }
+
+  /// Called only after the real SDK settles. Camera preferences are confined
+  /// to catalog destinations; temporary geocoder geometry is never persisted.
+  void mapCameraSettled(
+    MapCameraSnapshot camera,
+    int generation, {
+    double? longitudeSpan,
+    double? latitudeSpan,
+  }) {
+    if (_closed || generation != _navigationGeneration || !camera.isValid)
+      return;
+    final target = _mapTarget;
+    if (target == null) return;
+    _lastSettledCamera = camera;
+    final candidate = MapNavigationTarget(
+      key: 'viewport:$generation',
+      source: MapNavigationSource.viewport,
+      generation: generation,
+      camera: camera,
+      sourceVersion: 'sdk-settled-wgs84',
+      viewportLongitudeSpan: longitudeSpan,
+      viewportLatitudeSpan: latitudeSpan,
+    );
+    final route = resolveMapRoute(
+      candidate,
+      regions: _routeRegions,
+      previousProvider: mapProvider,
+    );
+    if (target.source == MapNavigationSource.catalogCity &&
+        selectedCity?.id == target.catalogCityID &&
+        route.provider == mapProvider) {
+      _destinationCameras[target.catalogCityID!] = camera;
+      final store = _explorationStore;
+      if (store is ExplorationCameraStore) {
+        final saved = MapNavigationTarget(
+          key: target.key,
+          source: MapNavigationSource.catalogCity,
+          generation: generation,
+          camera: camera,
+          countryCode: target.countryCode,
+          catalogCityID: target.catalogCityID,
+          sourceVersion: target.sourceVersion,
+        );
+        unawaited(
+          (store as ExplorationCameraStore)
+              .writeCamera(saved)
+              .catchError((_) {}),
+        );
+      }
+    }
+    if (!route.isDefinite || route.provider == mapProvider) {
+      _viewportRouteCandidate = null;
+      _viewportRouteCandidateSince = null;
+      return;
+    }
+    // A brief boundary gesture cannot churn native renderers. The next settled
+    // observation must still agree after a bounded quiet interval.
+    final now = DateTime.now();
+    if (_viewportRouteCandidate != route.provider) {
+      _viewportRouteCandidate = route.provider;
+      _viewportRouteCandidateSince = now;
+      final motion = _cameraMotionGeneration;
+      _viewportRouteTimer?.cancel();
+      _viewportRouteTimer = Timer(const Duration(milliseconds: 750), () {
+        if (!_closed &&
+            generation == _navigationGeneration &&
+            motion == _cameraMotionGeneration &&
+            identical(camera, _lastSettledCamera)) {
+          mapCameraSettled(
+            camera,
+            generation,
+            longitudeSpan: longitudeSpan,
+            latitudeSpan: latitudeSpan,
+          );
+        }
+      });
+      return;
+    }
+    if (now.difference(_viewportRouteCandidateSince!) <
+        const Duration(milliseconds: 700))
+      return;
+    _activateMapTarget(
+      MapNavigationTarget(
+        key: 'viewport:${++_navigationGeneration}',
+        source: MapNavigationSource.viewport,
+        generation: _navigationGeneration,
+        camera: camera,
+        sourceVersion: route.regionVersion,
+        viewportLongitudeSpan: longitudeSpan,
+        viewportLatitudeSpan: latitudeSpan,
+      ),
+    );
+    _notify();
+  }
 
   bool get configured => _apiBase.isNotEmpty;
   List<PublicCity> get cities => _cities;
@@ -373,38 +684,98 @@ class PublicCityController extends ChangeNotifier {
   }
 
   BrowseDestination? get selectedDestination => _selectedDestination;
-  String? get browseKey => selectedCity?.id ?? _selectedDestination?.browseKey;
+  String? get browseKey =>
+      selectedCity?.id ?? _selectedDestination?.browseKey ?? _mapTarget?.key;
   List<String> get recentCityIDs => List.unmodifiable(_recentCityIDs);
   String get browseLabel =>
-      _selectedDestination?.name ?? selectedCity?.name ?? '选择目的地';
+      _selectedDestination?.name ??
+      selectedCity?.name ??
+      (_mapTarget == null ? '选择目的地' : '地图位置');
   String get contentCityID => selectedCity?.id ?? '';
 
   /// Renderer-only compatibility projection. This object is never inserted into
   /// [cities], persisted or used by a City API / task / publication operation.
   PublicCity? get renderCity {
     final destination = _selectedDestination;
-    if (destination == null) return selectedCity;
-    final catalogCity = selectedCity;
+    final catalog = selectedCity;
+    final base = destination == null
+        ? catalog
+        : PublicCity(
+            id: catalog?.id ?? destination.browseKey,
+            name: destination.name,
+            region: destination.region,
+            countryCode: destination.countryCode,
+            timeZone: catalog?.timeZone ?? 'UTC',
+            artwork: catalog?.artwork,
+            contentStatus: 'unknown',
+            source: PublicSource(
+              label: destination.provider == 'amap' ? '高德地图' : 'Mapbox',
+              maintainer: '',
+              freshness: 'temporary',
+              updatedAt: null,
+            ),
+            map: PublicCityMap(
+              provider: destination.provider,
+              latitude: destination.latitude,
+              longitude: destination.longitude,
+              defaultZoom: destination.defaultZoom,
+              sourceRef: 'temporary-destination',
+              cameraBounds: destination.bounds,
+            ),
+          );
+    final target = _mapTarget;
+    if (target == null) return base;
+    final renderBase =
+        base ??
+        PublicCity(
+          id: 'view:${target.key}',
+          name: '地图位置',
+          region: '',
+          countryCode: target.countryCode,
+          contentStatus: 'unknown',
+          source: const PublicSource(
+            label: '当前地图目标',
+            maintainer: '',
+            freshness: 'temporary',
+            updatedAt: null,
+          ),
+          map: null,
+        );
+    final camera = target.camera;
+    final lonSpan = target.viewportLongitudeSpan,
+        latSpan = target.viewportLatitudeSpan;
+    double wrap(double lon) => (lon + 180) % 360 - 180;
+    final frame =
+        target.source == MapNavigationSource.viewport &&
+            lonSpan != null &&
+            latSpan != null
+        ? MapBounds(
+            west: wrap(camera.longitude - lonSpan / 2),
+            east: wrap(camera.longitude + lonSpan / 2),
+            south: (camera.latitude - latSpan / 2).clamp(-90, 90).toDouble(),
+            north: (camera.latitude + latSpan / 2).clamp(-90, 90).toDouble(),
+          )
+        : renderBase.map?.cameraBounds;
     return PublicCity(
-      id: catalogCity?.id ?? destination.browseKey,
-      name: destination.name,
-      region: destination.region,
-      countryCode: destination.countryCode,
-      timeZone: catalogCity?.timeZone ?? 'UTC',
-      artwork: catalogCity?.artwork,
-      contentStatus: 'unknown',
-      source: PublicSource(
-        label: destination.provider == 'amap' ? '高德地图' : 'Mapbox',
-        maintainer: '',
-        freshness: 'temporary',
-        updatedAt: null,
-      ),
+      id: renderBase.id,
+      name: renderBase.name,
+      region: renderBase.region,
+      countryCode: target.countryCode,
+      timeZone: renderBase.timeZone,
+      contentStatus: renderBase.contentStatus,
+      source: renderBase.source,
+      artwork: renderBase.artwork,
+      artworkDeclared: renderBase.artworkDeclared,
       map: PublicCityMap(
-        provider: destination.provider,
-        latitude: destination.latitude,
-        longitude: destination.longitude,
-        defaultZoom: destination.defaultZoom,
-        sourceRef: 'temporary-destination',
+        provider: mapProvider,
+        latitude: camera.latitude,
+        longitude: camera.longitude,
+        defaultZoom: camera.zoom,
+        bearing: camera.bearing,
+        pitch: camera.pitch,
+        navigationGeneration: _navigationGeneration,
+        cameraBounds: frame,
+        sourceRef: renderBase.map?.sourceRef ?? target.sourceVersion,
       ),
     );
   }
@@ -426,6 +797,21 @@ class PublicCityController extends ChangeNotifier {
       ++_explorationChoiceRevision;
       _explorationFallback = false;
       _selectedDestination = destination;
+      _activateMapTarget(
+        MapNavigationTarget(
+          key: destination.browseKey,
+          source: MapNavigationSource.temporaryDestination,
+          generation: ++_navigationGeneration,
+          camera: MapCameraSnapshot(
+            latitude: destination.latitude,
+            longitude: destination.longitude,
+            zoom: destination.defaultZoom,
+          ),
+          countryCode: destination.countryCode,
+          catalogCityID: catalogID,
+          sourceVersion: destination.attribution,
+        ),
+      );
       _rememberExplorationCity(catalogID);
       final changed = _selectedCityID != catalogID;
       _setSelectedCity(catalogID);
@@ -444,6 +830,20 @@ class PublicCityController extends ChangeNotifier {
     // Fence pending catalog writes/restores without storing Temporary results.
     _storedExplorationCityID = null;
     _selectedDestination = destination;
+    _activateMapTarget(
+      MapNavigationTarget(
+        key: destination.browseKey,
+        source: MapNavigationSource.temporaryDestination,
+        generation: ++_navigationGeneration,
+        camera: MapCameraSnapshot(
+          latitude: destination.latitude,
+          longitude: destination.longitude,
+          zoom: destination.defaultZoom,
+        ),
+        countryCode: destination.countryCode,
+        sourceVersion: destination.attribution,
+      ),
+    );
     _setSelectedCity(null);
     _notify();
     return true;
@@ -521,16 +921,15 @@ class PublicCityController extends ChangeNotifier {
     }
     // A configured camera remains a usable preference during tile failures.
     // Android now has the existing native AMap adapter as well.
-    if (mapProviderForCountry(
-          countryCode: city.countryCode,
-          configuredProvider: map.provider,
-        ) !=
-        map.provider) {
-      return false;
-    }
-    return map.provider == 'mapbox' ||
-        (map.provider == 'amap' &&
-            ((!kIsWeb && defaultTargetPlatform == TargetPlatform.android) ||
+    final provider = mapProviderForCountry(
+      countryCode: city.countryCode,
+      configuredProvider: map.provider,
+    );
+    return provider == 'mapbox' ||
+        (provider == 'amap' &&
+            ((!kIsWeb &&
+                    (defaultTargetPlatform == TargetPlatform.android ||
+                        defaultTargetPlatform == TargetPlatform.iOS)) ||
                 (kIsWeb &&
                     BirdtieEnvironment.amapWebPublicKey.isNotEmpty &&
                     BirdtieEnvironment.amapServiceHost.isNotEmpty)));
@@ -589,6 +988,7 @@ class PublicCityController extends ChangeNotifier {
     }
     final chosen = saved ?? _defaultExplorationCity();
     _setSelectedCity(chosen?.id);
+    if (chosen != null) _targetCatalogCity(chosen);
     _explorationFallback = _storedExplorationCityID != null && saved == null;
     if (removedCityName != null) {
       _explorationNotice = chosen == null
@@ -624,6 +1024,7 @@ class PublicCityController extends ChangeNotifier {
 
   Future<void> loadCities() async {
     if (_closed || _citiesLoading) return;
+    _loadRouteRegions();
     // Read in parallel. A stalled/failed local store cannot block the catalog
     // default. A later read may restore a destination only before a new choice.
     _restoreExplorationChoice();
@@ -656,7 +1057,12 @@ class PublicCityController extends ChangeNotifier {
           !_cities.any((city) => city.id == resolvedCatalogID)) {
         _selectedDestination = null;
       }
-      if (_selectedDestination == null &&
+      final independentTarget =
+          _mapTarget != null &&
+          _mapTarget!.catalogCityID == null &&
+          _mapTarget!.source != MapNavigationSource.catalogCity;
+      if (!independentTarget &&
+          _selectedDestination == null &&
           !next.any((city) => city.id == _selectedCityID)) {
         _selectRestoredOrDefault(removedCityName: previous?.name);
       } else if (_selectedDestination == null &&
@@ -691,10 +1097,12 @@ class PublicCityController extends ChangeNotifier {
       _rememberExplorationCity(cityID);
     }
     if (cityID == _selectedCityID) {
+      _targetCatalogCity(_catalogCity(cityID)!, taskView: !rememberExploration);
       _notify();
       return;
     }
     _setSelectedCity(cityID);
+    _targetCatalogCity(_catalogCity(cityID)!, taskView: !rememberExploration);
     _notify();
     unawaited(loadPlaces());
     unawaited(loadActivities());
@@ -848,6 +1256,7 @@ class PublicCityController extends ChangeNotifier {
 
   @override
   void dispose() {
+    _viewportRouteTimer?.cancel();
     _closed = true;
     if (_ownsClient) _client.close();
     super.dispose();

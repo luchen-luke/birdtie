@@ -4,6 +4,8 @@ import 'dart:js_interop';
 import 'package:flutter/material.dart';
 import 'package:web/web.dart' as web;
 
+import 'mapbox_style.dart';
+
 @JS('birdtieMapboxMount')
 external JSPromise<JSBoolean> _mountMapbox(
   JSString elementID,
@@ -88,6 +90,7 @@ class _MapboxWebBasemapViewState extends State<MapboxWebBasemapView> {
         jsonEncode({
           'accessToken': widget.accessToken,
           'style': widget.styleURI,
+          'labelWeightPolicy': mapboxLabelWeightPolicy,
           'camera': jsonDecode(widget.cameraJSON),
         }).toJS,
         _statusCallback!,

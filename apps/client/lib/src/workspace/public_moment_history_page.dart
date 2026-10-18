@@ -6,6 +6,7 @@ import 'now_ui_tokens.dart';
 import 'public_moment_history_api.dart';
 import 'public_moment_history_controller.dart';
 import 'public_moment_page.dart';
+import '../city/map_navigation_target.dart';
 
 class PublicMomentHistoryPage extends StatefulWidget {
   const PublicMomentHistoryPage({
@@ -20,6 +21,7 @@ class PublicMomentHistoryPage extends StatefulWidget {
     this.client,
     this.apiBaseUrl,
     this.onOpenAuthor,
+    this.onNavigateMap,
   });
   final PublicMomentHistoryQuery query;
   final String cityName;
@@ -30,6 +32,7 @@ class PublicMomentHistoryPage extends StatefulWidget {
   final http.Client? client;
   final String? apiBaseUrl;
   final ValueChanged<String>? onOpenAuthor;
+  final ValueChanged<MapNavigationTarget>? onNavigateMap;
   @override
   State<PublicMomentHistoryPage> createState() =>
       _PublicMomentHistoryPageState();
@@ -263,6 +266,7 @@ class _PublicMomentHistoryPageState extends State<PublicMomentHistoryPage> {
                             client: widget.client,
                             apiBaseUrl: widget.apiBaseUrl,
                             onOpenAuthor: widget.onOpenAuthor,
+                            onNavigateMap: widget.onNavigateMap,
                           ),
                         ),
                       );

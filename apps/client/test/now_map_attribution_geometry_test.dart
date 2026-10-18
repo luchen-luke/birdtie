@@ -21,6 +21,14 @@ import 'now_scope_recovery_test.dart';
 /// Real Now render boxes and the exact SDK argument carrier. The fixture has
 /// no basemap: these checks do not stand in for native logo/link/device proof.
 void main() {
+  testWidgets(
+    'PMAP normal attribution follows actual interactive controls',
+    (t) => _normalGeometry(t, ime: false),
+  );
+  testWidgets(
+    'PMAP normal IME stream avoids attribution and preserves camera element',
+    (t) => _normalGeometry(t, ime: true),
+  );
   for (final scale in [1.0, 1.7]) {
     testWidgets('署名几何$scale字号跟随实测顶部控件且公开首屏不被私人错误卡占据', (t) async {
       t.view.devicePixelRatio = 1;
@@ -40,7 +48,7 @@ void main() {
         t.getRect(find.byKey(const Key('now-native-context-scroll'))).top,
         greaterThanOrEqualTo(top + 48 + 7.5),
       );
-      expect(find.text('该城市尚未配置地图视图。'), findsOneWidget);
+      expect(find.text('该目的地的地图暂不可用，请使用地点列表。'), findsOneWidget);
       await t.enterText(nowField(), '保留的四行\n第二行\n第三行\n第四行');
       await t.pumpAndSettle();
       expect(identical(element, map.evaluate().single), true);
@@ -112,7 +120,7 @@ void main() {
   }
   for (final selected in [true, false]) {
     testWidgets(
-      '实际SDK构造：${selected ? "已有真实范围控制" : "无目录世界底图与恢复"}',
+      'PMAP normal SDK ${selected ? "explicit selected scope" : "no directory Aberdeen exploration"}',
       (t) async {
         const tokenChannel =
             'dev.flutter.pigeon.mapbox_maps_flutter._MapboxOptions.setAccessToken';
@@ -213,9 +221,28 @@ void main() {
         final camera =
             t.widget<MapWidget>(find.byType(MapWidget)).viewport
                 as CameraViewportState;
-        expect(camera.center!.coordinates.lng, selected ? -2 : 0);
-        expect(camera.center!.coordinates.lat, selected ? 57 : 0);
-        expect(camera.zoom, selected ? 11 : 1);
+        debugPrint(
+          'PMAP_SDK_ARGUMENTS selected=$selected longitude=${camera.center!.coordinates.lng} latitude=${camera.center!.coordinates.lat} zoom=${camera.zoom}',
+        );
+        expect(camera.center!.coordinates.lng, selected ? -2 : -2.0943);
+        expect(camera.center!.coordinates.lat, selected ? 57 : 57.1497);
+        expect(camera.zoom, selected ? 11 : 13);
+        // Verify the actual platform creation arguments as well as the later
+        // viewport transition; the latter alone permits the SDK default globe.
+        final creation = t
+            .widget<MapWidget>(find.byType(MapWidget))
+            .cameraOptions!;
+        expect(
+          creation.center!.coordinates.lng,
+          camera.center!.coordinates.lng,
+        );
+        expect(
+          creation.center!.coordinates.lat,
+          camera.center!.coordinates.lat,
+        );
+        expect(creation.zoom, camera.zoom);
+        expect(creation.bearing, camera.bearing);
+        expect(creation.pitch, camera.pitch);
         if (!selected) {
           expect(native.city, isNull);
           expect(native.onViewportInitialized, isNull);
@@ -251,6 +278,93 @@ void main() {
       variant: TargetPlatformVariant.only(TargetPlatform.android),
     );
   }
+}
+
+Future<void> _normalGeometry(WidgetTester t, {required bool ime}) async {
+  t.view.devicePixelRatio = 1;
+  t.view.physicalSize = const Size(390, 844);
+  addTearDown(t.view.resetDevicePixelRatio);
+  addTearDown(t.view.resetPhysicalSize);
+  final f = NowFixture();
+  addTearDown(f.dispose);
+  await f.mount(t, scale: 1, keyboardInset: ime ? 280 : 0, safeBottom: 24);
+  final map = find.byType(PublicCityMapView), element = map.evaluate().single;
+  final controlRects = [
+    for (final key in [
+      'now-sidebar-button',
+      'now-social-button',
+      'now-notifications-button',
+      'now-city-picker',
+    ])
+      t.getRect(find.byKey(Key(key))),
+  ];
+  final controlsBottom = controlRects
+      .map((r) => r.bottom)
+      .reduce((a, b) => a > b ? a : b);
+  final top = t.widget<PublicCityMapView>(map).ornamentTop!;
+  debugPrint(
+    'PMAP_NORMAL_ATTRIBUTION ime=$ime controlsBottom=$controlsBottom ornamentTop=$top reservedBottom=${top + 48}',
+  );
+  // Measure clickable controls, excluding the old noninteractive fade-tail gap.
+  // No native basemap exists in this fixture: this proves the SDK slot carrier,
+  // not actual logo paint, native attribution links or provider network access.
+  expect(top, closeTo(controlsBottom + 8, .5));
+  expect(find.byType(ActiveSocialIntentCard), findsNothing);
+  if (!ime) {
+    // No exploratory context has been opened on the current public first page.
+    // Measure the actually visible composer rather than a retired idle overlay.
+    expect(find.byKey(const Key('now-native-context-scroll')), findsNothing);
+    final composer = t.getRect(find.byType(AgentComposer));
+    debugPrint(
+      'PMAP_NORMAL_EMPTY_SURFACE composerTop=${composer.top} reservedBottom=${top + 48}',
+    );
+    expect(composer.top, greaterThanOrEqualTo(top + 48 + 7.5));
+    await t.enterText(nowField(), '保留的四行\n第二行\n第三行\n第四行');
+    await t.pumpAndSettle();
+  } else {
+    await nowSend(t, '找地点');
+    const draft = '尚未发送的第一行\n第二行地点\n第三行时间\n第四行范围';
+    await t.enterText(nowField(), draft);
+    await t.pumpAndSettle();
+    f.workspace(t).setSheetExtent(AgentSheetExtent.expanded);
+    await t.pumpAndSettle();
+    final sheet = t.getRect(find.byType(AgentResultsSheet));
+    final composer = t.getRect(find.byType(AgentComposer));
+    debugPrint(
+      'PMAP_NORMAL_SURFACE sheetTop=${sheet.top} sheetBottom=${sheet.bottom} composerTop=${composer.top} composerBottom=${composer.bottom} keyboardTop=${844 - 280}',
+    );
+    expect(sheet.top, greaterThanOrEqualTo(top + 48 + 7.5));
+    // The current Now surface joins stream and composer without an external
+    // 12dp gutter. They may touch but their interactive boxes cannot overlap.
+    expect(sheet.bottom, lessThanOrEqualTo(composer.top + .5));
+    expect(composer.bottom, lessThanOrEqualTo(844 - 280 + .5));
+    expect(f.workspace(t).contentMode, AgentContentMode.conversation);
+    expect(
+      find.descendant(
+        of: find.byType(AgentConversation),
+        matching: find.text('合成权威响应：找地点'),
+      ),
+      findsOneWidget,
+    );
+    await nowTap(t, find.byKey(const Key('now-city-picker')));
+    expect(
+      find.descendant(
+        of: find.byType(BottomSheet),
+        matching: find.text('选择目的地'),
+      ),
+      findsOneWidget,
+    );
+    await nowBack(t);
+    await nowTap(t, find.byTooltip('打开侧边栏'));
+    expect(find.byType(Drawer), findsOneWidget);
+    await nowBack(t);
+    expect(f.source.queries, ['找地点']);
+    expect(t.widget<TextField>(nowField()).controller!.text, draft);
+  }
+  expect(identical(element, map.evaluate().single), true);
+  expect(t.widget<PublicCityMapView>(map).ornamentTop, top);
+  expect(t.takeException(), isNull);
+  await f.unmount(t);
 }
 
 class _NoDirectoryCity extends PublicCityController {

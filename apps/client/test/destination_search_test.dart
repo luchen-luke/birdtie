@@ -237,10 +237,30 @@ void main() {
         domesticEnabled: () => false,
       );
       final result = await gated.search('巴黎');
-      expect(result.domesticUnavailable, true);
+      expect(
+        result.domesticUnavailable,
+        false,
+        reason: 'Chinese spelling of an overseas target is not CN evidence',
+      );
       expect(result.destinations, [destination]);
       expect(domestic.calls, 2);
       gated.dispose();
+      final needsDomestic = CompositeDestinationSearchService(
+        overseas: FixedSearch(
+          result: const DestinationSearchResult(
+            destinations: [],
+            domesticUnavailable: true,
+          ),
+        ),
+        domestic: domestic,
+        domesticEnabled: () => false,
+      );
+      expect(
+        (await needsDomestic.search('Shanghai')).domesticUnavailable,
+        true,
+      );
+      expect(domestic.calls, 2, reason: 'no implicit SDK consent');
+      needsDomestic.dispose();
     },
   );
   test(

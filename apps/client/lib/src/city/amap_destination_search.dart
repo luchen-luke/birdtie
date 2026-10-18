@@ -5,30 +5,51 @@ import 'amap_session_consent.dart';
 import 'browse_destination.dart';
 import 'destination_search_service.dart';
 import 'map_coordinate_boundary.dart';
+import 'map_privacy_consent.dart';
 
 /// Android SDK service shares the map's installed Manifest Key. Neither Key nor
 /// Web-service credentials cross the bridge. Results live only in this session.
 class AMapDestinationSearchService implements DestinationSearchService {
+  AMapDestinationSearchService({MapPrivacyConsentController? consent})
+    : _consent = consent ?? AMapSessionConsent.controller {
+    _consent.addListener(_consentChanged);
+  }
+
   static const channel = MethodChannel('birdtie/destination_search');
   static int _sequence = 0;
   final _pending = <String>{};
+  final MapPrivacyConsentController _consent;
+  int _consentEpoch = 0;
   bool _closed = false;
   static bool get supported =>
       !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
   static bool get enabled => supported && AMapSessionConsent.accepted;
+
+  void _consentChanged() {
+    if (_closed || _consent.accepted) return;
+    ++_consentEpoch;
+    for (final id in _pending) {
+      unawaited(
+        channel
+            .invokeMethod<void>('cancel', {'requestId': id})
+            .catchError((Object _) {}),
+      );
+    }
+  }
 
   @override
   Future<DestinationSearchResult> search(
     String query, {
     Future<void>? abortTrigger,
   }) async {
-    if (_closed || !enabled) {
+    if (_closed || !supported || !_consent.accepted) {
       return const DestinationSearchResult(
         destinations: [],
         domesticUnavailable: true,
       );
     }
     final id = 'destination-${++_sequence}';
+    final consentEpoch = _consentEpoch;
     _pending.add(id);
     var cancelled = false;
     var finished = false;
@@ -51,7 +72,11 @@ class AMapDestinationSearchService implements DestinationSearchService {
             'consent': true,
           })
           .timeout(const Duration(seconds: 14));
-      if (_closed || cancelled || !_pending.contains(id))
+      if (_closed ||
+          cancelled ||
+          !_pending.contains(id) ||
+          !_consent.accepted ||
+          consentEpoch != _consentEpoch)
         throw const FormatException('retired');
       if (raw == null ||
           raw['items'] is! List ||
@@ -117,6 +142,7 @@ class AMapDestinationSearchService implements DestinationSearchService {
   @override
   void dispose() {
     _closed = true;
+    _consent.removeListener(_consentChanged);
     for (final id in _pending) {
       unawaited(
         channel

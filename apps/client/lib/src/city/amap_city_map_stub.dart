@@ -1,8 +1,11 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'public_city_controller.dart';
+import 'map_navigation_target.dart';
 import '../workspace/map_entities.dart';
 import '../workspace/map_display_policy.dart';
+import '../workspace/map_marker_visual.dart';
+import '../workspace/map_pin_category.dart';
 import 'map_coordinate_boundary.dart';
 
 /// SDK returns GCJ-02 screen corners. Only this boundary makes WGS84 query
@@ -36,11 +39,13 @@ class AMapSourceGate {
   String? _fingerprint;
   bool _disposed = false;
   Map<String, MapEntity> _rows = const {};
+  Map<String, MapLabelPlacement> _placements = const {};
   List<MapEntity> get rows => List.unmodifiable(_rows.values);
   void retireProjection() {
     if (_disposed) return;
     ++revision;
     _latestFrame = 0;
+    _placements = const {};
   }
 
   bool replace(List<MapEntity> source, Object? scope) {
@@ -87,6 +92,7 @@ class AMapSourceGate {
           return [
             e.id,
             e.kind.name,
+            e.categoryCode,
             e.title,
             e.subtitle,
             e.latitude,
@@ -134,7 +140,10 @@ class AMapSourceGate {
     try {
       final v = jsonDecode(raw);
       if (v is! Map ||
-          v.length != 5 ||
+          !(v.length == 5 ||
+              v.length == 7 &&
+                  v.containsKey('scalePoints') &&
+                  v.containsKey('scalePixels')) ||
           v['schema'] != 'birdtie-amap-frame-v1' ||
           v['revision'] != revision ||
           v['frame'] is! int ||
@@ -170,13 +179,43 @@ class AMapSourceGate {
         rows,
         positions: positions,
       );
+      double? metersPerPixel;
+      if (v['scalePoints'] case final List segment) {
+        if (segment.length != 2 ||
+            v['scalePixels'] is! num ||
+            !(v['scalePixels'] as num).isFinite ||
+            (v['scalePixels'] as num) <= 0)
+          return null;
+        final canonical = <Offset>[];
+        for (final pair in segment) {
+          if (pair is! List ||
+              pair.length != 2 ||
+              pair.any((n) => n is! num || !n.isFinite) ||
+              (pair[0] as num).abs() > 180 ||
+              (pair[1] as num).abs() > 90)
+            return null;
+          final p = MapCoordinateBoundary.fromAmap(
+            (pair[1] as num).toDouble(),
+            (pair[0] as num).toDouble(),
+          );
+          canonical.add(Offset(p.longitude, p.latitude));
+        }
+        metersPerPixel = MapDisplayPolicy.scaleFromSegment(
+          canonical[0],
+          canonical[1],
+          (v['scalePixels'] as num).toDouble(),
+        );
+      }
       final plan = MapDisplayPolicy.plan(
         entities: rows,
         positions: positions,
         zoom: (v['zoom'] as num).toDouble(),
         selectedID: selectedID,
         contentRect: contentRect,
+        previousPlacements: _placements,
+        metersPerPixel: metersPerPixel,
       );
+      _placements = plan.placements;
       return AMapDisplayFrame(
         revision,
         _latestFrame,
@@ -257,6 +296,29 @@ class AMapDisplayFrame {
           'selected': selectedID == e.id,
           'dense': plan.denseIDs.contains(e.id),
           'showLabel': plan.labelIDs.contains(e.id),
+          'size': plan.glyphSizes[e.id],
+          'category': MapPinCategory.forCode(e.categoryCode).kind.name,
+          'fill':
+              '#${MapPinCategory.forCode(e.categoryCode).fill.toARGB32().toRadixString(16).substring(2)}',
+          'categoryCode': e.categoryCode,
+          'clusterCount': MapMarkerVisual.clusterCount(
+            categoryCode: e.categoryCode,
+            contentCount: e.contentCount,
+            anchorCount: e.anchorCount,
+            fallback: e.memberIDs.length,
+          ),
+          if (plan.placements[e.id] case final label?)
+            'label': {
+              'x': label.offset.dx,
+              'y': label.offset.dy,
+              'width': label.rect.width,
+              'height': label.rect.height,
+              'name': label.name,
+              'auxiliary': label.auxiliary,
+              'fontSize': label.fontSize,
+              'color':
+                  '#${label.color.toARGB32().toRadixString(16).substring(2)}',
+            },
           if (MapDisplayPolicy.displayCluster(e)) ...{
             'cluster': {
               'id': e.id,
@@ -264,7 +326,9 @@ class AMapDisplayFrame {
               'title': e.title,
               'subtitle': e.subtitle,
               'memberIDs': e.memberIDs,
-              'contentCount': e.memberIDs.length,
+              'contentCount': e.contentCount,
+              'anchorCount': e.anchorCount,
+              'categoryCode': e.categoryCode,
               'precision': 'area',
               'anchorID': e.memberIDs.first,
             },
@@ -288,6 +352,7 @@ class AMapCityMapView extends StatelessWidget {
     this.readerChanges,
     this.currentReaderEntities,
     this.currentReaderScope,
+    this.currentRenderAuthorityScope,
     this.onMapReaderVisibilityChanged,
     this.onSelectedAnchor,
     this.onCameraMotion,
@@ -298,6 +363,7 @@ class AMapCityMapView extends StatelessWidget {
     this.ornamentTop,
     this.onViewportSettled,
     this.onViewportInitialized,
+    this.onCameraSnapshot,
     this.onContentViewportSettled,
     this.onContentOverlap,
     this.onCoordinateSelected,
@@ -314,6 +380,7 @@ class AMapCityMapView extends StatelessWidget {
   final Listenable? readerChanges;
   final List<MapEntity> Function()? currentReaderEntities;
   final Object? Function()? currentReaderScope;
+  final Object? Function()? currentRenderAuthorityScope;
   final ValueChanged<({Object token, bool visible})>?
   onMapReaderVisibilityChanged;
   final ValueChanged<({String? id, Offset? point})>? onSelectedAnchor;
@@ -322,6 +389,7 @@ class AMapCityMapView extends StatelessWidget {
   final int focusRevision;
   final Rect? contentRect;
   final double? ornamentTop;
+  final ValueChanged<MapCameraSnapshot>? onCameraSnapshot;
   final ValueChanged<MapBounds>? onViewportSettled, onViewportInitialized;
   final void Function(MapBounds, double)? onContentViewportSettled;
   final ValueChanged<List<MapEntity>>? onContentOverlap;

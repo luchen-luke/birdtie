@@ -73,6 +73,44 @@ class _TrackedPlatform extends MethodChannelAMapFlutterMap
 
 void main() {
   testWidgets(
+    'texture native host requests TLHC with supported HC fallback',
+    (tester) async {
+      final calls = <MethodCall>[];
+      final messenger = tester.binding.defaultBinaryMessenger;
+      messenger.setMockMethodCallHandler(SystemChannels.platform_views,
+          (call) async {
+        calls.add(call);
+        if (call.method == 'resize') {
+          final args = call.arguments as Map;
+          return {'width': args['width'], 'height': args['height']};
+        }
+        return call.method == 'create' ? 71 : null;
+      });
+      addTearDown(() => messenger.setMockMethodCallHandler(
+          SystemChannels.platform_views, null));
+      final platform = MethodChannelAMapFlutterMap();
+      await tester.pumpWidget(MaterialApp(
+          home: SizedBox(
+        width: 300,
+        height: 500,
+        child: platform.buildView({'debugMode': true}, const {}, (_) {}),
+      )));
+      await tester.pumpAndSettle();
+      final args =
+          calls.singleWhere((c) => c.method == 'create').arguments as Map;
+      expect(args['hybrid'], isNot(true));
+      expect(args['hybridFallback'], true);
+      final params = const StandardMessageCodec()
+          .decodeMessage(ByteData.sublistView(args['params'] as Uint8List)) as Map;
+      expect(params['debugMode'], false);
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump();
+      expect(calls.where((c) => c.method == 'dispose'), hasLength(1));
+      expect(tester.takeException(), isNull);
+    },
+    variant: TargetPlatformVariant.only(TargetPlatform.android),
+  );
+  testWidgets(
     'AMap disposal cancels all streams and native handlers without late revival',
     (tester) async {
       final platform = _TrackedPlatform();

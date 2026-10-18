@@ -28,7 +28,9 @@ internal class NativeUiAcceptance(private val activity: Activity, engine: Flutte
     fun armFrom(intent: Intent?) {
         val action = intent?.getStringExtra("birdtie.qa.uiAction") ?: return
         intent.removeExtra("birdtie.qa.uiAction")
-        if (!allowed || action !in setOf("keyboardShow", "keyboardHide", "mapPan")) return
+        if (!allowed || action !in setOf("keyboardShow", "keyboardHide", "mapPan", "mapObserve60")) return
+        // Observation must never emit even a cancellation touch of its own.
+        if (action == "mapObserve60" && active) return
         cancel()
         val serial = generation
         // Dart additionally checks the current Now route and unobstructed map

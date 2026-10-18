@@ -1,5 +1,17 @@
 # Civu 只读现状审计与 Birdtie 复用清单
 
+## 2026-10-18 PMAP 增量（本轮当前状态）
+
+用户明确要求按 `D:/Project/birdtie/Birdtie-Now-Pin-AutoMap-Codex-2026-10-18.md` 及 `birdtie-pin-automap-handoff/references/` 两图实施分类小 pin、独立地理动态方形媒体、必要局部聚合与自动地图路由。本轮的局部聚合授权覆盖下文10月12日“不聚合”的旧设计快照；它不允许随机移动坐标、伪造位置或隐藏权限边界。
+
+复用对象为已经在 Birdtie 的 Civu 原生内容迁移关联、`map-content-v2` 当前 ACL、真实 taxonomy 字段、WGS84/GCJ02 边界、目录图卡与两端地图适配器。仍先审矩阵和现有权利，不整体复制 Civu、不调用旧中心补齐写库接口、不新增另一套地点库。`D:/Program/Civu` 和 `D:/BirdTie` 零写；本轮没有从两处复制新业务源码、账号、Session、坐标或媒体。现有获准的 GeoHUB 两份样式原字节保持，进一步高德路名/区名权重需要新的获准样式导出，当前 BLOCKED。
+
+新区域判断数据独立来自官方 Natural Earth map units5.1.1 public domain，原归档、派生方法、许可、SHA均在 `apps/client/assets/map_routing/README.md`；不是 Civu 业务数据、城市目录或供应商结果，不写回旧坐标。地图类别符号沿用项目 Material 图标体系，无截取参考App资产或生产emoji。目录/临时地理结果/动态/收藏/旅程目标共享 `MapNavigationTarget`，保留其原来源、坐标系、访问上下文与寿命；临时搜索数据不持久，不升级为 City/Place 或批准。
+
+API36只更新读取投影，schema178及账本完全不变；隔离数据库用例与真实环境零fixture边界分开记录。源码/直接测试/构建/装机/真实截图分别记账，不能用旧APK59证明本轮视觉和性能。当前状态以 [PMAP执行报告](../reports/BIRDTIE-PIN-AUTOMAP-2026-10-18.md) 与原队列增量字段为准。
+
+64版Android性能适配仅修改Birdtie已vendored的Apache-2.0 `amap_map`宿主：使用同一锁定SDK的TextureMapView并同步原控制器类型、生命周期与Flutter TLHC/HC回退，不从Civu复制新代码或引入新地图服务/许可证。原作者许可保留；已核本机11.2.100 jar API与官方TextureMapView文档。性能和原生输入/读屏仍按新包实际证据验收，不能由接口兼容或编译通过推定。
+
 2026-10-14 集合映射增量：当前 Birdtie `124_personal_collections.sql` 已有私人 ThemeMap 表与原个人集合 writer，旧材料中的“ThemeMap 没有目标表”不再是当前事实。批 F 增加 Birdtie 自有的 `scripts/prepare_civu_collections.py`，只接收明确选择、规范化的导出与映射，生成本地待确认 Journey/ThemeMap 候选；没有复制 Civu 业务代码、依赖、数据、Session 或媒体。仅只读核对了旧 `006_journeys_workspace.sql`、`032_creator_theme_maps.sql` 的字段与当前原输入闭集，未把旧公开、复制、成员、备注、媒体或地点权利直接映射为新许可。真实保全、隔离恢复、身份/Place 当前读取及导入仍未运行。见 [准备合同](../migration/CIVU-SELECTED-COLLECTION-PREPARATION.md)。
 
 Birdtie 当前身份和 Agent 权限边界以 [Accepted Agent Identity and Ownership Model](AGENT-IDENTITY-AND-OWNERSHIP-MODEL.md) 为准；早期复用表中平行 City Agent 的表述已被 shared Agent Runtime + CityContext 设计替代。

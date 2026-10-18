@@ -74,6 +74,40 @@ MapEntity distinctMediaEntity(
   );
 }
 
+// Map Place pins no longer acquire photos. Keep the public Place fixture
+// above for detail/cover tests; these map transfer regressions use Moments.
+MapEntity momentMediaEntity(int n, {DateTime? until, String? digest}) =>
+    distinctMomentMediaEntity(n, coverJPEG(), until: until, digest: digest);
+MapEntity distinctMomentMediaEntity(
+  int n,
+  Uint8List bytes, {
+  int version = 1,
+  DateTime? until,
+  String? digest,
+}) {
+  final place = mediaEntity(n, until: until);
+  return MapEntity(
+    id: 'moment:${place.placeID}',
+    kind: MapEntityKind.moment,
+    title: place.title,
+    subtitle: place.subtitle,
+    latitude: place.latitude,
+    longitude: place.longitude,
+    sourceVersion: place.sourceVersion,
+    momentPhoto: PublicMomentPhotoMetadata(
+      momentID: place.placeID,
+      momentRevision: 3,
+      photoID: mapMediaOwner,
+      version: version,
+      path: publicMomentPhotoPath(place.placeID, 3, mapMediaOwner, version),
+      byteCount: bytes.length,
+      digest: digest ?? sha256.convert(bytes).toString(),
+      expiresAt: place.placePhoto!.expiresAt,
+      attribution: '仅本机隔离素材',
+    ),
+  );
+}
+
 Future<List<int>> decodedCenter(ui.Image image) async {
   final raw = (await image.toByteData(format: ui.ImageByteFormat.rawRgba))!;
   final offset = ((image.height ~/ 2) * image.width + image.width ~/ 2) * 4;
@@ -118,7 +152,7 @@ Future<void> mediaWait(WidgetTester t, bool Function() done) async {
 
 void main() {
   testWidgets(
-    'Place and public Moment with same UUID use distinct actual JPEG pixels; photo replacement and retirement preserve original anchors',
+    'Place skips map photo HTTP while same UUID Moment replacement and retirement preserve original anchors',
     (t) async {
       final files = (await t.runAsync(
         () => Future.wait([
@@ -190,25 +224,13 @@ void main() {
             controller.inFlight == 0 &&
             controller.decorate(original).mediaPixels != null,
       );
-      final placePixels = controller.decorate(place).mediaPixels!,
-          oldPixels = controller.decorate(original).mediaPixels!;
-      final centers = (await t.runAsync(
-        () => Future.wait([
-          decodedCenter(placePixels.image),
-          decodedCenter(oldPixels.image),
-        ]),
-      ))!;
-      expectFixtureCenter(centers[0], [34, 118, 85]);
-      expectFixtureCenter(centers[1], [197, 97, 37]);
-      expect(placePixels.key, isNot(oldPixels.key));
-      expect(
-        sha256.convert(placePixels.normalPNG).toString(),
-        isNot(sha256.convert(oldPixels.normalPNG).toString()),
+      expect(controller.decorate(place).mediaPixels, isNull);
+      final oldPixels = controller.decorate(original).mediaPixels!;
+      expectFixtureCenter(
+        (await t.runAsync(() => decodedCenter(oldPixels.image)))!,
+        [197, 97, 37],
       );
-      expect(requests.toSet(), {
-        place.placePhoto!.path,
-        original.momentPhoto!.path,
-      });
+      expect(requests, [original.momentPhoto!.path]);
       syncMedia(controller, [place, replacement]);
       expect(oldPixels.current(), isFalse);
       expect(controller.decorate(replacement).mediaPixels, isNull);
@@ -226,8 +248,8 @@ void main() {
         ))!,
         [34, 118, 85],
       );
-      expect(controller.decorate(place).mediaPixels!.key, placePixels.key);
-      expect(requests.length, 3);
+      expect(controller.decorate(place).mediaPixels, isNull);
+      expect(requests.length, 2);
       expect(requests.last, replacement.momentPhoto!.path);
       final retired = moment(a, version: 2, photo: false),
           newPixels = controller.decorate(replacement).mediaPixels!;
@@ -237,8 +259,8 @@ void main() {
       expect(retired.id, original.id);
       expect(retired.latitude, original.latitude);
       expect(retired.longitude, original.longitude);
-      expect(controller.decorate(place).mediaPixels, isNotNull);
-      expect(requests.length, 3);
+      expect(controller.decorate(place).mediaPixels, isNull);
+      expect(requests.length, 2);
       controller.dispose();
       await t.pump();
       client.close();
@@ -256,12 +278,12 @@ void main() {
       final a = files[0],
           b = files[1],
           until = DateTime.now().toUtc().add(const Duration(seconds: 50));
-      final first = distinctMediaEntity(1, a, until: until),
-          second = distinctMediaEntity(2, b, until: until);
+      final first = distinctMomentMediaEntity(1, a, until: until),
+          second = distinctMomentMediaEntity(2, b, until: until);
       final requests = <String>[];
       final payloads = <String, Uint8List>{
-        first.placePhoto!.path: a,
-        second.placePhoto!.path: b,
+        first.momentPhoto!.path: a,
+        second.momentPhoto!.path: b,
       };
       final c = MapMediaController(
         apiBaseUrl: 'https://map-fixture.test',
@@ -298,7 +320,7 @@ void main() {
       expectFixtureCenter(centers[0], [34, 118, 86]);
       expectFixtureCenter(centers[1], [198, 97, 37]);
       expect(firstPixels.key, isNot(secondPixels.key));
-      expect(first.placePhoto!.digest, isNot(second.placePhoto!.digest));
+      expect(first.momentPhoto!.digest, isNot(second.momentPhoto!.digest));
       expect(
         sha256.convert(firstPixels.normalPNG).toString(),
         isNot(sha256.convert(secondPixels.normalPNG).toString()),
@@ -313,10 +335,15 @@ void main() {
       );
       expect(
         requests,
-        unorderedEquals([first.placePhoto!.path, second.placePhoto!.path]),
+        unorderedEquals([first.momentPhoto!.path, second.momentPhoto!.path]),
       );
-      final replacement = distinctMediaEntity(1, b, version: 2, until: until);
-      payloads[replacement.placePhoto!.path] = b;
+      final replacement = distinctMomentMediaEntity(
+        1,
+        b,
+        version: 2,
+        until: until,
+      );
+      payloads[replacement.momentPhoto!.path] = b;
       syncMedia(c, [replacement, second]);
       expect(firstPixels.current(), isFalse);
       expect(secondPixels.current(), isTrue);
@@ -357,7 +384,7 @@ void main() {
         ),
       );
       expect(requests.length, 3);
-      expect(requests.last, replacement.placePhoto!.path);
+      expect(requests.last, replacement.momentPhoto!.path);
       c.dispose();
       await t.pump();
     },
@@ -375,7 +402,7 @@ void main() {
         }),
         apiBaseUrl: 'https://map-fixture.test',
       );
-      final source = [for (var n = 1; n <= 5; n++) mediaEntity(n)];
+      final source = [for (var n = 1; n <= 5; n++) momentMediaEntity(n)];
       syncMedia(c, source);
       syncMedia(c, source);
       await mediaWait(t, () => requests.length == 3);
@@ -400,7 +427,7 @@ void main() {
     (t) async {
       final held = Completer<ui.Image>();
       var decodes = 0;
-      final source = [mediaEntity(1)];
+      final source = [momentMediaEntity(1)];
       final c = MapMediaController(
         client: MockClient((_) async => http.Response.bytes(coverJPEG(), 200)),
         apiBaseUrl: 'https://map-fixture.test',
@@ -450,7 +477,7 @@ void main() {
         }),
         apiBaseUrl: 'https://map-fixture.test',
       );
-      final source = [mediaEntity(1, digest: 'a' * 64)];
+      final source = [momentMediaEntity(1, digest: 'a' * 64)];
       syncMedia(c, source);
       await mediaWait(t, () => gets == 1 && c.inFlight == 0);
       for (var i = 0; i < 10; i++) {
@@ -468,7 +495,7 @@ void main() {
     (t) async {
       var now = DateTime.now().toUtc();
       final source = [
-        mediaEntity(1, until: now.add(const Duration(seconds: 2))),
+        momentMediaEntity(1, until: now.add(const Duration(seconds: 2))),
       ];
       final c = MapMediaController(
         client: MockClient((_) async => http.Response.bytes(coverJPEG(), 200)),
@@ -506,7 +533,7 @@ void main() {
         maxItems: 2,
         maxBytes: 2 * 1024 * 1024,
       );
-      final source = [for (var i = 1; i <= 20; i++) mediaEntity(i)];
+      final source = [for (var i = 1; i <= 20; i++) momentMediaEntity(i)];
       syncMedia(c, source, owner: null);
       await t.pump();
       expect(gets, 0);

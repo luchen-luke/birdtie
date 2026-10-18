@@ -14,6 +14,7 @@ import 'native_map_diagnostics.dart';
 import 'native_map_failure.dart';
 import 'now_map_compass.dart';
 import 'public_city_controller.dart';
+import 'map_navigation_target.dart';
 import '../workspace/map_entities.dart';
 import '../workspace/map_marker_bitmap.dart';
 import '../workspace/map_marker_visual.dart';
@@ -79,6 +80,7 @@ class NativeCityMapView extends StatefulWidget {
     this.onEntitySelected,
     this.onViewportSettled,
     this.onViewportInitialized,
+    this.onCameraSnapshot,
     this.onContentViewportSettled,
     this.onContentOverlap,
     this.onCameraMotion,
@@ -106,6 +108,7 @@ class NativeCityMapView extends StatefulWidget {
   final List<MapEntity> entities;
   final String? selectedEntityId;
   final ValueChanged<MapEntity>? onEntitySelected;
+  final ValueChanged<MapCameraSnapshot>? onCameraSnapshot;
   final ValueChanged<MapBounds>? onViewportSettled;
   final ValueChanged<MapBounds>? onViewportInitialized;
   final void Function(MapBounds bounds, double zoom)? onContentViewportSettled;
@@ -163,6 +166,8 @@ class _NativeCityMapViewState extends State<NativeCityMapView>
   int _ornamentSerial = 0;
   final _bearing = ValueNotifier<double>(0);
   int _scopeGeneration = 0;
+  final _styleOpacityOriginals = <String, Object?>{};
+  String _lastLayoutDiagnostic = '';
   int _focusSerial = 0;
   int _northEvidenceSerial = 0;
   _NorthCameraEvidence? _northEvidence;
@@ -191,6 +196,8 @@ class _NativeCityMapViewState extends State<NativeCityMapView>
       // The requested initial Aberdeen camera is only an exploration view.
       // No GPS fix, selected city, public location or entity is manufactured.
       zoom: viewport?.defaultZoom ?? 13,
+      bearing: viewport?.bearing ?? 0,
+      pitch: viewport?.pitch ?? 0,
     );
   }
 
@@ -260,7 +267,8 @@ class _NativeCityMapViewState extends State<NativeCityMapView>
             _placeFingerprint(widget.places) ||
         _entityFingerprint(oldWidget.entities) !=
             _entityFingerprint(widget.entities) ||
-        oldWidget.selectedEntityId != widget.selectedEntityId) {
+        oldWidget.selectedEntityId != widget.selectedEntityId ||
+        oldWidget.contentRect != widget.contentRect) {
       unawaited(_refreshMarkers());
     }
   }
@@ -311,21 +319,23 @@ class _NativeCityMapViewState extends State<NativeCityMapView>
           CoordinateBounds(
             southwest: Point(
               coordinates: Position(
-                longitudes.reduce((a, b) => a < b ? a : b),
+                input.cityBounds?.west ??
+                    longitudes.reduce((a, b) => a < b ? a : b),
                 latitudes.reduce((a, b) => a < b ? a : b),
               ),
             ),
             northeast: Point(
               coordinates: Position(
-                longitudes.reduce((a, b) => a > b ? a : b),
+                input.cityBounds?.east ??
+                    longitudes.reduce((a, b) => a > b ? a : b),
                 latitudes.reduce((a, b) => a > b ? a : b),
               ),
             ),
             infiniteBounds: false,
           ),
           _focusPadding(),
-          0,
-          0,
+          input.bearing,
+          input.pitch,
           14,
           null,
         );
@@ -335,6 +345,8 @@ class _NativeCityMapViewState extends State<NativeCityMapView>
             coordinates: Position(center.longitude, center.latitude),
           ),
           zoom: input.zoom,
+          bearing: input.bearing,
+          pitch: input.pitch,
           padding: widget.contentRect == null ? null : _focusPadding(),
         );
       }
@@ -565,11 +577,13 @@ class _NativeCityMapViewState extends State<NativeCityMapView>
   }
 
   Future<void> _suppressProviderPoi(MapboxMap map) async {
+    var candidates = 0, applied = 0, skipped = 0;
     try {
       final layers = await map.style.getStyleLayers();
       for (final layer in layers) {
         if (!mounted || map != _map) return;
         if (layer == null || layer.type != 'symbol') continue;
+        var sourceLayer = '';
         var poi = mapboxProviderPoiLayer(layer.id, layer.type);
         if (!poi) {
           try {
@@ -577,22 +591,76 @@ class _NativeCityMapViewState extends State<NativeCityMapView>
               layer.id,
               'source-layer',
             );
+            sourceLayer = source.value is String ? source.value as String : '';
             poi = mapboxProviderPoiLayer(
               layer.id,
               layer.type,
               sourceLayer: source.value is String ? source.value as String : '',
             );
           } catch (_) {
-            continue;
+            /* Unknown source metadata cannot establish a match. */
           }
         }
         if (!mounted || map != _map) return;
-        if (poi)
+        if (poi) {
           await map.style.setStyleLayerProperty(layer.id, 'visibility', 'none');
+          continue;
+        }
+        if (mapboxSecondaryLabelFactor(
+              layer.id,
+              layer.type,
+              sourceLayer: sourceLayer,
+            ) ==
+            null)
+          continue;
+        candidates++;
+        try {
+          final icon = await map.style.getStyleLayerProperty(
+            layer.id,
+            'icon-image',
+          );
+          final factor = mapboxSecondaryLabelFactor(
+            layer.id,
+            layer.type,
+            sourceLayer: sourceLayer,
+            hasIconImage: icon.value != null && icon.value != '',
+          );
+          if (factor == null) {
+            skipped++;
+            continue;
+          }
+          if (!_styleOpacityOriginals.containsKey(layer.id)) {
+            final original = await map.style.getStyleLayerProperty(
+              layer.id,
+              'text-opacity',
+            );
+            _styleOpacityOriginals[layer.id] = original.value;
+          }
+          final weighted = mapboxWeightedTextOpacity(
+            _styleOpacityOriginals[layer.id],
+            factor,
+          );
+          if (weighted == null || !mounted || map != _map) {
+            skipped++;
+            continue;
+          }
+          await map.style.setStyleLayerProperty(
+            layer.id,
+            'text-opacity',
+            weighted,
+          );
+          applied++;
+        } catch (_) {
+          skipped++;
+        }
       }
     } catch (_) {
       // Style availability cannot retire authenticated Birdtie content.
     }
+    if (!kReleaseMode)
+      debugPrint(
+        'BIRDTIE_MAP_LABEL_WEIGHT ${jsonEncode({'candidates': candidates, 'applied': applied, 'skipped': skipped})}',
+      );
   }
 
   Future<bool> _waitForInitialViewport(Duration duration) {
@@ -614,6 +682,7 @@ class _NativeCityMapViewState extends State<NativeCityMapView>
     final map = _map;
     if (map == null ||
         (widget.onViewportInitialized == null &&
+            widget.onCameraSnapshot == null &&
             widget.onContentViewportSettled == null) ||
         _mapFailure.failure != null) {
       return;
@@ -663,12 +732,24 @@ class _NativeCityMapViewState extends State<NativeCityMapView>
           if (contentBounds != null) {
             widget.onContentViewportSettled?.call(contentBounds, camera.zoom);
           }
+          _publishCameraSnapshot(camera);
           return;
         }
       } catch (_) {
         // Mapbox can reject a snapshot while the first style is still loading.
       }
     }
+  }
+
+  void _publishCameraSnapshot(CameraState camera) {
+    final snapshot = MapCameraSnapshot(
+      latitude: camera.center.coordinates.lat.toDouble(),
+      longitude: camera.center.coordinates.lng.toDouble(),
+      zoom: camera.zoom,
+      bearing: camera.bearing,
+      pitch: camera.pitch,
+    );
+    if (snapshot.isValid) widget.onCameraSnapshot?.call(snapshot);
   }
 
   void _onCameraChanged(CameraChangedEventData event) {
@@ -729,6 +810,7 @@ class _NativeCityMapViewState extends State<NativeCityMapView>
     final map = _map;
     if (map == null ||
         (widget.onViewportSettled == null &&
+            widget.onCameraSnapshot == null &&
             widget.onContentViewportSettled == null))
       return;
     try {
@@ -759,6 +841,7 @@ class _NativeCityMapViewState extends State<NativeCityMapView>
         if (contentBounds != null) {
           widget.onContentViewportSettled?.call(contentBounds, camera.zoom);
         }
+        _publishCameraSnapshot(camera);
         unawaited(_refreshMarkers());
       }
     } catch (_) {
@@ -863,7 +946,11 @@ class _NativeCityMapViewState extends State<NativeCityMapView>
       contentMapMetrics.styleReadyMicros = _mapLifetime.elapsedMicroseconds;
     _markers ??= await map.annotations.createPointAnnotationManager();
     await _markers!.setIconAllowOverlap(true);
-    // A colliding label must not hide the object's independently drawn icon.
+    // The shared plan measures visible glyphs and actual labels. Transparent
+    // bitmap padding must not introduce a second native collision layout.
+    await _markers!.setIconIgnorePlacement(true);
+    await _markers!.setTextAllowOverlap(true);
+    await _markers!.setTextIgnorePlacement(true);
     await _markers!.setTextOptional(true);
     // With no annotation tap sink, the native SDK forwards the recognized tap
     // to MapWidget.onTapListener. Its real touch position avoids transparent
@@ -962,6 +1049,7 @@ class _NativeCityMapViewState extends State<NativeCityMapView>
       _retryContextKey = widget.contextKey;
       _retrySelectionID = widget.selectedEntityId;
       // Reload only provider resources on the existing native map instance.
+      _styleOpacityOriginals.clear();
       await map.loadStyleURI(mapboxStyleUri);
     } catch (_) {
       _mapRetryTimer?.cancel();
@@ -992,6 +1080,7 @@ class _NativeCityMapViewState extends State<NativeCityMapView>
                 latitude: place.location.latitude!,
                 longitude: place.location.longitude!,
                 placeID: place.id,
+                categoryCode: place.categoryCode,
                 publicLocation: true,
               ),
         ];
@@ -1218,6 +1307,7 @@ class _NativeCityMapViewState extends State<NativeCityMapView>
                 latitude: place.location.latitude!,
                 longitude: place.location.longitude!,
                 placeID: place.id,
+                categoryCode: place.categoryCode,
                 publicLocation: true,
               ),
         ];
@@ -1259,6 +1349,7 @@ class _NativeCityMapViewState extends State<NativeCityMapView>
   int get _markerSerial => _markerQueue.serial;
   String? _lastDisplayInputs;
   Set<String> _previousVisibleIDs = const {};
+  Map<String, MapLabelPlacement> _previousPlacements = const {};
 
   Future<void> _syncMarkers(int serial) async {
     final elapsed = Stopwatch()..start();
@@ -1298,6 +1389,7 @@ class _NativeCityMapViewState extends State<NativeCityMapView>
             latitude: place.location.latitude!,
             longitude: place.location.longitude!,
             placeID: place.id,
+            categoryCode: place.categoryCode,
             publicLocation: true,
           ),
     ]) {
@@ -1310,6 +1402,17 @@ class _NativeCityMapViewState extends State<NativeCityMapView>
       // Retire cached private pixels before any camera/projection await. Keep
       // the authorized object's annotation at exactly the existing geometry.
       final existing = _annotations[previous.id];
+      final fresh = unique[previous.id];
+      if (fresh == null ||
+          fresh.sourceVersion != previous.sourceVersion ||
+          fresh.recentMoments?.currentAt(DateTime.now().toUtc()) != true) {
+        final auxiliary = _annotations.remove('map-aux:${previous.id}');
+        _annotationFingerprints.remove('map-aux:${previous.id}');
+        if (auxiliary != null) {
+          await markers.delete(auxiliary);
+          if (!current()) return;
+        }
+      }
       if (existing != null &&
           previous.recentMoments != null &&
           !previous.recentMoments!.currentAt(DateTime.now().toUtc()) &&
@@ -1317,7 +1420,9 @@ class _NativeCityMapViewState extends State<NativeCityMapView>
                 DateTime.now().toUtc(),
               ) !=
               true) {
-        existing.textField = previous.title;
+        existing.textField = previous.kind == MapEntityKind.place
+            ? previous.title
+            : '';
         existing.iconImage = null;
         await markers.update(existing);
         if (!kReleaseMode) contentMapMetrics.markerUpdates++;
@@ -1338,14 +1443,21 @@ class _NativeCityMapViewState extends State<NativeCityMapView>
         if (!current()) return;
         existing.image = fallback;
         existing.iconImage = null;
-        existing.textField = previous.title;
+        existing.textField = previous.kind == MapEntityKind.place
+            ? previous.title
+            : '';
         await markers.update(existing);
         if (!kReleaseMode) contentMapMetrics.markerUpdates++;
         _annotationFingerprints.remove(previous.id);
         if (!current()) return;
       }
-      final members = previous.isCluster ? previous.memberIDs : [previous.id];
-      if (members.any((id) => !unique.containsKey(id))) {
+      final retired = MapDisplayPolicy.displayCluster(previous)
+          ? MapDisplayPolicy.currentDisplayClusterMembers(
+              previous,
+              source,
+            ).isEmpty
+          : !unique.containsKey(previous.id);
+      if (retired) {
         final annotation = _annotations.remove(previous.id);
         _annotationFingerprints.remove(previous.id);
         if (annotation != null) {
@@ -1359,9 +1471,9 @@ class _NativeCityMapViewState extends State<NativeCityMapView>
     if (!current()) return;
     final cameraKey =
         '${camera.center.coordinates.lng}:${camera.center.coordinates.lat}:${camera.zoom}:${camera.bearing}:${camera.pitch}:${camera.padding.left}:${camera.padding.top}:${camera.padding.right}:${camera.padding.bottom}';
-    final displayInputs = '$sourceKey:$cameraKey:$ratio';
-    // ContentRect is consumed on real source/camera updates, not on each IME
-    // layout frame. Keyboard motion never bulk-removes the existing markers.
+    final displayInputs = '$sourceKey:$cameraKey:$ratio:${widget.contentRect}';
+    // The workspace IME gate offers only settled contentRect changes. Clip
+    // covered glyphs then, while retaining annotations that remain visible.
     if (_lastDisplayInputs == displayInputs) {
       _pointSemantics.value = [
         for (final entity in _renderedEntities)
@@ -1383,6 +1495,31 @@ class _NativeCityMapViewState extends State<NativeCityMapView>
       id: widget.selectedEntityId,
       point: positions[widget.selectedEntityId],
     ));
+    // Project a fixed logical screen segment under this exact SDK camera.
+    // Neither provider zoom numbers nor pixel density stand in for map scale.
+    double? metersPerPixel;
+    final box = context.findRenderObject();
+    if (box is RenderBox && box.hasSize) {
+      final center = box.size.center(Offset.zero);
+      final segment = await map.coordinatesForPixels([
+        ScreenCoordinate(x: center.dx - 24, y: center.dy),
+        ScreenCoordinate(x: center.dx + 24, y: center.dy),
+      ]);
+      if (!current()) return;
+      if (segment.length == 2 && segment[0] != null && segment[1] != null) {
+        metersPerPixel = MapDisplayPolicy.scaleFromSegment(
+          Offset(
+            segment[0]!.coordinates.lng.toDouble(),
+            segment[0]!.coordinates.lat.toDouble(),
+          ),
+          Offset(
+            segment[1]!.coordinates.lng.toDouble(),
+            segment[1]!.coordinates.lat.toDouble(),
+          ),
+          48,
+        );
+      }
+    }
     final plan = MapDisplayPolicy.plan(
       entities: source,
       positions: positions,
@@ -1390,21 +1527,45 @@ class _NativeCityMapViewState extends State<NativeCityMapView>
       selectedID: widget.selectedEntityId,
       contentRect: widget.contentRect,
       previouslyVisibleIDs: _previousVisibleIDs,
+      previousPlacements: _previousPlacements,
+      metersPerPixel: metersPerPixel,
       protectedIDs: {
         for (final entity in source)
           if (entity.isTaskResult) entity.id,
       },
     );
+    if (kProfileMode) {
+      final metrics = jsonEncode({
+        'provider': 'mapbox',
+        'cameraEpoch': _cameraMotionGeneration,
+        'metersPerLogicalPixel': plan.metersPerPixel,
+        'screenRatio': ratio,
+        'visible': plan.entities.length - plan.occludedGlyphIDs.length,
+        'occludedGlyphs': plan.occludedGlyphIDs.length,
+        'dense': plan.denseIDs.length,
+        'labels': plan.placements.length,
+        'auxiliary': plan.placements.values
+            .where((p) => p.auxiliary != null)
+            .length,
+      });
+      if (metrics != _lastLayoutDiagnostic) {
+        _lastLayoutDiagnostic = metrics;
+        debugPrint('BIRDTIE_MAP_LAYOUT $metrics');
+      }
+    }
     final displayedPositions = {...positions, ...plan.clusterPositions};
     final specs = <String, PointAnnotationOptions>{};
     final imageKeys = <String, String>{};
     for (final entity in plan.entities) {
+      if (plan.occludedGlyphIDs.contains(entity.id)) continue;
       final contentCluster = entity.kind == MapEntityKind.cluster;
       final compactPoint =
           contentCluster ||
           ({MapEntityKind.place, MapEntityKind.moment}.contains(entity.kind) &&
               entity.precision == 'point');
-      final media = entity.mediaPixels;
+      final media = entity.kind == MapEntityKind.moment
+          ? entity.mediaPixels
+          : null;
       final photo = media?.png(
         selected: entity.id == widget.selectedEntityId,
         dense: plan.denseIDs.contains(entity.id),
@@ -1412,16 +1573,19 @@ class _NativeCityMapViewState extends State<NativeCityMapView>
       );
       imageKeys[entity.id] = photo != null
           ? 'media:${media!.key}:$ratio:${entity.id == widget.selectedEntityId}'
-          : 'glyph:${entity.kind}:${entity.categoryCode}:${entity.precision}:${entity.contentCount}:${entity.memberIDs.length}:$ratio:${entity.id == widget.selectedEntityId}:${plan.denseIDs.contains(entity.id)}';
+          : 'glyph:${entity.kind}:${entity.categoryCode}:${entity.precision}:${entity.contentCount}:${entity.anchorCount}:${entity.memberIDs.length}:$ratio:${entity.id == widget.selectedEntityId}:${plan.denseIDs.contains(entity.id)}';
       final bytes =
           photo ??
           await MapMarkerBitmap.render(
             kind: entity.kind,
             selected: entity.id == widget.selectedEntityId,
             count: entity.isCluster
-                ? (entity.contentCount > 0
-                      ? entity.contentCount
-                      : entity.memberIDs.length)
+                ? MapMarkerVisual.clusterCount(
+                    categoryCode: entity.categoryCode,
+                    contentCount: entity.contentCount,
+                    anchorCount: entity.anchorCount,
+                    fallback: entity.memberIDs.length,
+                  )
                 : 0,
             approximate: entity.precision == 'area',
             dense: plan.denseIDs.contains(entity.id),
@@ -1444,47 +1608,51 @@ class _NativeCityMapViewState extends State<NativeCityMapView>
             : 0.78,
         symbolSortKey: entity.id == widget.selectedEntityId ? 100 : 0,
         customData: {'entityId': entity.id, 'kind': entity.kind.name},
-        textField: plan.labelIDs.contains(entity.id) &&
-                (!contentCluster || entity.id == widget.selectedEntityId)
-            ? (entity.groupSummary.isNotEmpty &&
-                      entity.id == widget.selectedEntityId
-                  ? '${entity.title}\n${entity.groupSummary}'
-                  : MapMarkerVisual.nativeLabel(
-                      entity.title,
-                      selected: entity.id == widget.selectedEntityId,
-                      recent: entity.recentMoments?.labelAt(
-                        DateTime.now().toUtc(),
-                      ),
-                    ))
-            : '',
-        textSize: compactPoint ? MapMarkerVisual.labelFontSize : 14,
-        textMaxWidth: compactPoint
-            ? MapMarkerVisual.labelWidth / MapMarkerVisual.labelFontSize
-            : 10.28,
-        textOffset: contentCluster
-            ? [
-                (entity.id == widget.selectedEntityId ? 25.0 : 23.0) /
-                    MapMarkerVisual.labelFontSize,
-                0,
-              ]
-            : compactPoint
-            ? MapMarkerVisual.nativeLabelOffset(
-                selected: entity.id == widget.selectedEntityId,
-                dense: plan.denseIDs.contains(entity.id),
-              )
-            : [0, 0.6],
-        textAnchor: compactPoint ? TextAnchor.LEFT : TextAnchor.TOP,
+        textField: plan.placements[entity.id]?.name ?? '',
+        textSize: plan.placements[entity.id]?.fontSize ?? 12,
+        textMaxWidth:
+            MapMarkerVisual.labelWidth /
+            (plan.placements[entity.id]?.fontSize ?? 12),
+        textOffset: [
+          (plan.placements[entity.id]?.offset.dx ?? 0) /
+              (plan.placements[entity.id]?.fontSize ?? 12),
+          (plan.placements[entity.id]?.offset.dy ?? 0) /
+              (plan.placements[entity.id]?.fontSize ?? 12),
+        ],
+        textAnchor: TextAnchor.TOP_LEFT,
         textColor:
-            (compactPoint
-                    ? MapMarkerVisual.labelColor
-                    : const Color(0xFF193B32))
+            (plan.placements[entity.id]?.color ?? MapMarkerVisual.labelColor)
                 .toARGB32(),
         textHaloColor: Colors.white.toARGB32(),
-        textHaloWidth: 2,
+        textHaloWidth: 1.25,
       );
+      final placement = plan.placements[entity.id];
+      if (placement?.auxiliary != null) {
+        final id = 'map-aux:${entity.id}';
+        specs[id] = PointAnnotationOptions(
+          geometry: Point(
+            coordinates: Position(entity.longitude, entity.latitude),
+          ),
+          textField: placement!.auxiliary,
+          textSize: 11,
+          textMaxWidth: 112 / 11,
+          textAnchor: TextAnchor.TOP_LEFT,
+          textOffset: [
+            placement.offset.dx / 11,
+            (placement.offset.dy + placement.nameHeight + 1) / 11,
+          ],
+          textColor: MapMarkerVisual.countColor.toARGB32(),
+          textHaloColor: Colors.white.toARGB32(),
+          textHaloWidth: 1.25,
+          symbolSortKey: entity.id == widget.selectedEntityId ? 100 : 0,
+          customData: {'entityId': entity.id, 'kind': entity.kind.name},
+        );
+      }
     }
     if (!current()) return;
-    _renderedEntities = plan.entities;
+    _renderedEntities = plan.entities
+        .where((e) => !plan.occludedGlyphIDs.contains(e.id))
+        .toList();
     final stale = _annotations.keys
         .where((id) => !specs.containsKey(id))
         .toList();
@@ -1502,7 +1670,7 @@ class _NativeCityMapViewState extends State<NativeCityMapView>
       final id = entry.key;
       final option = entry.value;
       final fingerprint =
-          '${option.geometry.coordinates.lng}:${option.geometry.coordinates.lat}:${imageKeys[id]}:${option.symbolSortKey}:${option.iconSize}:${option.textField}:${option.textSize}';
+          '${option.geometry.coordinates.lng}:${option.geometry.coordinates.lat}:${imageKeys[id]}:${option.symbolSortKey}:${option.iconSize}:${option.textField}:${option.textSize}:${option.textOffset}:${option.textColor}:${option.textAnchor}';
       final annotation = _annotations[id];
       if (annotation == null) {
         final created = await markers.create(option);
@@ -1541,12 +1709,13 @@ class _NativeCityMapViewState extends State<NativeCityMapView>
     if (!current()) return;
     _lastPointPositions = displayedPositions;
     _pointSemantics.value = [
-      for (final entity in plan.entities)
+      for (final entity in _renderedEntities)
         if (displayedPositions[entity.id] case final point?)
           (entity: entity, point: point),
     ];
     _lastDisplayInputs = displayInputs;
     _previousVisibleIDs = plan.entities.map((e) => e.id).toSet();
+    _previousPlacements = plan.placements;
     if (!kReleaseMode) {
       contentMapMetrics.lastRenderMicros = elapsed.elapsedMicroseconds;
       if (elapsed.elapsedMicroseconds > contentMapMetrics.maxRenderMicros)
@@ -1622,6 +1791,15 @@ class _NativeCityMapViewState extends State<NativeCityMapView>
                 key: const ValueKey('now-mapbox-sdk'),
                 styleUri: mapboxStyleUri,
                 viewport: _initialViewport,
+                // In locked SDK 2.26 viewport transitions start after the
+                // platform view exists. Seed native creation as well, so a new
+                // overseas map cannot first show the SDK's default globe.
+                cameraOptions: CameraOptions(
+                  center: _initialViewport.center,
+                  zoom: _initialViewport.zoom,
+                  bearing: _initialViewport.bearing,
+                  pitch: _initialViewport.pitch,
+                ),
                 onMapCreated: (map) {
                   _map = map;
                   _diagnostics.created();

@@ -59,12 +59,13 @@ class OwnedMapMediaController extends ChangeNotifier {
     final renewed = !identical(_latestView, view);
     _latestView = view;
     final ratio = MapMarkerBitmap.pixelRatio(devicePixelRatio);
-    final chosen = view.items.where((p) => p.cover != null).toList()
-      ..sort(
-        (a, b) =>
-            (b.canonicalMarkerID == selectedMarkerID ? 1 : 0) -
-            (a.canonicalMarkerID == selectedMarkerID ? 1 : 0),
-      );
+    final chosen =
+        view.items.where((p) => p.isMomentAnchor && p.cover != null).toList()
+          ..sort(
+            (a, b) =>
+                (b.canonicalMarkerID == selectedMarkerID ? 1 : 0) -
+                (a.canonicalMarkerID == selectedMarkerID ? 1 : 0),
+          );
     final next = <String, _ActivePixels>{};
     for (final pin in chosen.take(math.min(12, maxItems))) {
       final cover = pin.cover!;
@@ -137,6 +138,7 @@ class OwnedMapMediaController extends ChangeNotifier {
       canonicalAuthOrigin(api.apiBaseUrl()) == _origin;
 
   MapEntity decorate(OwnedMapPin pin) {
+    if (!pin.isMomentAnchor) return pin.entity;
     final grant = _active[pin.mapID];
     if (grant == null ||
         !_current(grant) ||

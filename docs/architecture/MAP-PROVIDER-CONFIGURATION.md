@@ -1,5 +1,17 @@
 # Birdtie map provider configuration
 
+## 2026-10-18 PMAP 当前接线与配置边界
+
+本节覆盖下面的旧实现/配置快照，保留历史失败证据。普通用户仅选择目的地或查看真实内容，不选择/启用供应商。所有显式导航源汇入 `MapNavigationTarget`：大陆明确目标自动 AMap，HK/MO/TW和海外明确目标沿现有适配约定使用Mapbox；不依据语言、IP或手机所在地。自由拖动仅在相机稳定、真实地表跨度和有出处的陆地区域均确定后切换，边界/海上/世界保留当前供应商。详见 `map_provider_policy.dart`、`map_route_region.dart` 及区域资产README；坐标转换的包络不用于判定路由。
+
+AMap真实隐私选择已改为版本化secure storage记录，仅经过当前披露和显式用户决定才调用SDK同意接口。首次需要服务时展示“地图服务隐私说明”，明确拒绝后不反复弹；设置页可查看/更改。自动路由不代表同意条款，不申请GPS、不写定位权限；撤回会退休旧SDK回调和视图。历史手动供应商偏好不覆盖地理路由。配置失败只向用户给简短重试/列表提示，具体供应商诊断留开发日志，保留logo/版权/信息入口。
+
+Android继续使用现有已授权preview Key、包名与签名配置，Key值不入日志、Git或交付报告；本轮无需新Key。iOS构建/实机NOT_RUN（当前Windows无Xcode）。Web Key/受信AMap代理仍是外部配置，缺失时BLOCKED，用户此前“暂不部署网页”继续有效，不能静默用Mapbox代替国内服务。当前高德离线样式仍是已获准原GeoHUB导出，插件无单路名/区名opacity接口；新视觉导出缺失为PMAP10的BLOCKED。Mapbox仅对已识别次要路名/区名降权，保护主路、图标盾牌、水系、主要地名与署名；保留原zoom表达式、未知层跳过，按style实例缓存原opacity防重复降权。
+
+本批build/API/装机和两端实际证据逐项见 [PMAP执行报告](../reports/BIRDTIE-PIN-AUTOMAP-2026-10-18.md)，不能由下文旧APK40/37的成功推定新包通过。
+
+2026-10-18 性能增量：63版真实高德键盘/阅读窗口仍有系统慢帧，不能以Flutter UI/raster分项低耗时当总性能通过。当前vendored Android host从锁定11.2.100的MapView(GLSurfaceView)改为同SDK的TextureMapView；MapController、销毁与全部生命周期类型同步适配，Flutter使用已锁定框架的initSurfaceAndroidView（TLHC，系统不支持时HC回退），不强制Virtual Display/HCPP。原有隐私、投影转换、原生触摸/读屏和生命周期授权边界保留；64版是否改善须以新真机证据为准，63失败不能删除。
+
 ## 2026-10-16 Android37 增量更正（当前状态）
 
 本节优先于下方较早配置快照；旧失败证据保留。用户本轮明确暂不做网页，Web34保持，不要求网页Key，也不部署174。

@@ -3,6 +3,9 @@ import 'package:crypto/crypto.dart';
 import 'package:birdtie_client/src/workspace/public_moment_page.dart';
 import 'package:birdtie_client/src/workspace/public_moment_media.dart';
 import 'package:birdtie_client/src/workspace/public_moment_video.dart';
+import 'package:birdtie_client/src/workspace/now_moment_editor_host.dart';
+import 'package:birdtie_client/src/city/map_navigation_target.dart';
+import 'moment_locations_test.dart' show locatedPublicMapView;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -16,6 +19,68 @@ import 'package:birdtie_client/src/workspace/public_moment_photo.dart';
 import 'entity_share_pending_store_test.dart' show shareTarget;
 
 void main() {
+  testWidgets(
+    'PMAP public retry exposes permitted place and actual map callback normal font',
+    (t) async {
+      var reads = 0;
+      final targets = <MapNavigationTarget>[], places = <String>[];
+      final client = MockClient((r) async {
+        expect(r.method, 'GET');
+        if (r.url.path == '/v1/moments/$shareTarget') {
+          return ++reads == 1
+              ? http.Response('{}', 404)
+              : momentReply(publicMomentV3Data(photo: false));
+        }
+        if (r.url.path.endsWith('/locations')) {
+          return momentReply(
+            locatedPublicMapView(shareTarget).cast<String, dynamic>(),
+          );
+        }
+        return http.Response('{}', 404);
+      });
+      await t.pumpWidget(
+        MaterialApp(
+          home: PublicMomentPage(
+            momentID: shareTarget,
+            authorizationHeader: () => null,
+            apiBaseUrl: 'https://api.example',
+            client: client,
+            onOpenPlace: places.add,
+            onNavigateMap: targets.add,
+          ),
+        ),
+      );
+      await coverSettle(t);
+      await t.tap(find.text('重新核实'));
+      await coverSettle(t);
+      final place = find.widgetWithText(TextButton, '合成甲地点 · 合成地区 · GB');
+      await t.scrollUntilVisible(
+        place,
+        160,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await t.tap(place);
+      expect(places, ['11111111-1111-4111-8111-111111111111']);
+      final mapButton = find.widgetWithText(
+        TextButton,
+        '在地图查看合成甲地点 · 合成地区 · GB',
+      );
+      await t.scrollUntilVisible(
+        mapButton,
+        160,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await t.tap(mapButton);
+      expect(targets, hasLength(1));
+      expect(targets.single.key, startsWith('moment:$shareTarget:'));
+      expect(targets.single.source, MapNavigationSource.moment);
+      expect(targets.single.canPersistCamera, false);
+      expect(reads, 2);
+      expect(t.takeException(), isNull);
+      await t.pumpWidget(const SizedBox());
+      client.close();
+    },
+  );
   testWidgets(
     'public video API survives ordinary parent rebuilds and retires on identity change',
     (t) async {
@@ -172,10 +237,11 @@ void main() {
     },
   );
   testWidgets(
-    'public hidden author remains independent from actual owner photo control and captured actor ABA',
+    'public hidden author owner photo action hands off to Now and captured actor ABA stays retired normal font',
     (t) async {
       FlutterSecureStorage.setMockInitialValues({});
       final owner = ValueNotifier(photoOwner);
+      final opened = <String>[];
       var stateReads = 0;
       final client = MockClient((r) async {
         if (r.url.path.endsWith('/public-photo')) {
@@ -188,15 +254,29 @@ void main() {
         });
       });
       await t.pumpWidget(
-        MaterialApp(
-          home: PublicMomentPage(
-            momentID: photoMoment,
-            authorizationHeader: () => 'Bearer isolated-A',
-            ownerID: () => owner.value,
-            identityChanges: owner,
-            onOpenAuthor: (_) {},
-            client: client,
-            apiBaseUrl: 'https://api.example',
+        NowMomentEditorScope(
+          child: MaterialApp(
+            home: NowMomentEditorHost(
+              ownerID: () => owner.value,
+              authorizationHeader: () => 'Bearer isolated-A',
+              apiBaseUrl: () => 'https://api.example',
+              workspaceID: () => null,
+              canOpen: () => true,
+              onOpen: (id, current) async {
+                expect(current(), isTrue);
+                opened.add(id);
+              },
+              identityChanges: owner,
+              child: PublicMomentPage(
+                momentID: photoMoment,
+                authorizationHeader: () => 'Bearer isolated-A',
+                ownerID: () => owner.value,
+                identityChanges: owner,
+                onOpenAuthor: (_) {},
+                client: client,
+                apiBaseUrl: 'https://api.example',
+              ),
+            ),
           ),
         ),
       );
@@ -213,12 +293,13 @@ void main() {
       old();
       await coverSettle(t);
       expect(stateReads, after);
+      expect(opened, isEmpty);
       expect(find.text('公开动态图片'), findsNothing);
       await t.ensureVisible(find.text('管理本人公开图片'));
       await t.tap(find.text('管理本人公开图片'));
       await coverSettle(t);
-      expect(find.text('公开动态图片'), findsOneWidget);
-      expect(find.text('重新选择本机图片'), findsOneWidget);
+      expect(opened, [photoMoment]);
+      expect(find.text('公开动态图片'), findsNothing);
       expect(find.byType(Image), findsNothing);
       await t.pumpWidget(const SizedBox());
       owner.dispose();

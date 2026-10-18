@@ -89,8 +89,8 @@ class _PanelController extends OwnedMapController {
       revision: 1,
       visibilitySource: own ? 'SELF_PRIVATE' : 'CIVU_PUBLIC_MOMENT',
       canEdit: own,
-      status: 'draft',
-      visibility: 'private',
+      status: own ? 'draft' : 'published',
+      visibility: own ? 'private' : 'public',
       title: '',
       body: own ? _privateBody : '原公开的另一条记录，只读内容。',
       createdAt: now.subtract(const Duration(days: 1)),
@@ -143,9 +143,14 @@ class _PanelController extends OwnedMapController {
   @override
   Future<Uint8List> momentContent(
     OwnedMapMomentDetail detail,
-    OwnedMapMomentMedia media,
-  ) async {
-    if (!detailCurrent(detail)) throw const FormatException();
+    OwnedMapMomentMedia media, {
+    bool Function()? current,
+  }) async {
+    if (!detailCurrent(detail) ||
+        current?.call() == false ||
+        !detail.media.any((item) => identical(item, media))) {
+      throw const FormatException();
+    }
     final data = Uint8List.fromList(jpeg);
     imageBuffers.add(data);
     return data;
@@ -201,20 +206,22 @@ void main() {
           () async => Future<void>.delayed(const Duration(milliseconds: 30)),
         );
         await tester.pump();
-        expect(find.text('博物馆 · 2条动态'), findsOneWidget);
+        expect(find.text(pin.name), findsOneWidget);
+        expect(find.text('2条动态'), findsOneWidget);
         expect(find.text(_privateBody), findsOneWidget);
         expect(find.text('原公开的另一条记录，只读内容。'), findsNothing);
         expect(find.byType(Image), findsOneWidget);
-        await tester.tap(find.text('编辑动态'));
-        expect(edited, [_ownMoment]);
-        expect(editCurrent!(), isTrue);
-        await tester.ensureVisible(find.text('查看动态'));
+        final expand = find.text('查看此地点的全部2条动态');
+        await tester.ensureVisible(expand);
         await tester.pump();
-        expect(find.text('查看动态').hitTestable(), findsOneWidget);
-        await tester.tap(find.text('查看动态'));
+        expect(expand.hitTestable(), findsOneWidget);
+        await tester.tap(expand);
         await tester.pump();
         expect(expansions, 1);
         expect(find.byType(NowMapContentPanel), findsOneWidget);
+        await tester.tap(find.byTooltip('编辑动态'));
+        expect(edited, [_ownMoment]);
+        expect(editCurrent!(), isTrue);
         final mainScroll = find
             .descendant(
               of: find.byType(ListView),
@@ -236,8 +243,7 @@ void main() {
           scrollable: mainScroll,
         );
         await tester.pump();
-        expect(find.text('原公开记录'), findsOneWidget);
-        expect(find.text('编辑动态'), findsOneWidget);
+        expect(find.byTooltip('编辑动态'), findsOneWidget);
         expect(find.text('CIVU_PUBLIC_MOMENT'), findsNothing);
         final scroll = tester
             .widget<ListView>(find.byType(ListView))
@@ -257,7 +263,7 @@ void main() {
         expect(find.text(_privateBody), findsNothing);
         expect(find.text('原公开的另一条记录，只读内容。'), findsNothing);
         expect(find.byType(Image), findsNothing);
-        expect(find.text('当前内容已不可读。'), findsOneWidget);
+        expect(find.text('这条动态暂时无法查看'), findsOneWidget);
         expect(c.imageBuffers, isNotEmpty);
         expect(
           c.imageBuffers.every((bytes) => bytes.every((byte) => byte == 0)),

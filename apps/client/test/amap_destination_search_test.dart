@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:birdtie_client/src/city/amap_destination_search.dart';
 import 'package:birdtie_client/src/city/amap_session_consent.dart';
+import 'package:birdtie_client/src/city/destination_search_service.dart';
+import 'package:birdtie_client/src/city/map_privacy_consent.dart';
 import 'package:birdtie_client/src/city/map_coordinate_boundary.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
@@ -8,13 +10,18 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  late MapPrivacyConsentController consent, previous;
   setUp(() {
     debugDefaultTargetPlatformOverride = TargetPlatform.android;
-    AMapSessionConsent.accepted = false;
+    consent = MapPrivacyConsentController(
+      store: MemoryMapPrivacyConsentStore(),
+    );
+    previous = AMapSessionConsent.replaceControllerForTesting(consent);
   });
   tearDown(() {
     debugDefaultTargetPlatformOverride = null;
-    AMapSessionConsent.accepted = false;
+    AMapSessionConsent.replaceControllerForTesting(previous);
+    consent.dispose();
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(AMapDestinationSearchService.channel, null);
   });
@@ -35,7 +42,7 @@ void main() {
   test(
     'native GCJ result converts once, remains temporary and has no internal city',
     () async {
-      AMapSessionConsent.accepted = true;
+      await consent.setDecision(true);
       final gcj = MapCoordinateBoundary.toAmap(31.2304, 121.4737);
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(AMapDestinationSearchService.channel, (
@@ -86,7 +93,7 @@ void main() {
     },
   );
   test('cancellation retires a late native response', () async {
-    AMapSessionConsent.accepted = true;
+    await consent.setDecision(true);
     final pending = Completer<Object?>(), abort = Completer<void>();
     var cancels = 0;
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
@@ -109,4 +116,35 @@ void main() {
     expect(cancels, greaterThanOrEqualTo(1));
     service.dispose();
   });
+
+  test(
+    'revocation and re-agreement cannot adopt an old native search reply',
+    () async {
+      await consent.setDecision(true);
+      final pending = Completer<Object?>();
+      var cancels = 0;
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(AMapDestinationSearchService.channel, (
+            call,
+          ) async {
+            if (call.method == 'cancel') {
+              cancels++;
+              return null;
+            }
+            return pending.future;
+          });
+      final service = AMapDestinationSearchService();
+      final job = service.search('上海');
+      final rejected = expectLater(
+        job,
+        throwsA(isA<DestinationSearchFailure>()),
+      );
+      await consent.setDecision(false);
+      await consent.setDecision(true);
+      pending.complete({'attribution': '高德地图', 'items': []});
+      await rejected;
+      expect(cancels, greaterThan(0));
+      service.dispose();
+    },
+  );
 }

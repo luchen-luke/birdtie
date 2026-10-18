@@ -8,6 +8,7 @@ const vm = require('node:vm');
 const source = fs.readFileSync(path.join(__dirname, '..', 'web', 'birdtie_amap.js'), 'utf8');
 class Element {
   constructor(tag) { this.tagName = tag; this.style = {}; this.dataset = {}; this.attrs = {}; this.children = []; this.events = {}; this.isConnected = true; this.clientWidth = 600; this.clientHeight = 800; this.title = ''; this._text = ''; }
+  get firstChild() { return this.children[0]; }
   appendChild(x) { x.parent = this; this.children.push(x); return x; }
   replaceChildren() { for (const child of this.children) child.parent = undefined; this.children = []; this._text = ''; }
   remove() { if (this.parent) this.parent.children = this.parent.children.filter(x => x !== this); this.parent = undefined; }
@@ -63,7 +64,8 @@ function fixture({lateSDK = false, lateLoader = false, holdCoordinate = false, b
     if (!frame) return;
     window.birdtieAMapLayout(handle, JSON.stringify({schema: 'birdtie-amap-layout-v1', revision: frame.revision, frame: frame.frame,
       markers: frame.positions.map(p => ({id: p.id, dx: 0, dy: 0,
-        selected: false, dense: true, showLabel: false}))}));
+        selected: false, dense: false, showLabel: false, size: p.id.includes('cluster') ? 28 : p.id.startsWith('place:') ? 24 : 30,
+        fill: '#73808a', category: 'other', clusterCount: p.id.includes('cluster') ? 9 : 0}))}));
   };
   async function flush() { for (let i = 0; i < 150; i++) { await Promise.resolve(); await Promise.resolve(); for (const f of raf.splice(0)) f(); } }
   return {window, container, maps, conversions, scripts, frames, selected, statuses, viewports, coordinates, handle, update, buttons, layout, flush,
@@ -113,7 +115,8 @@ test('retired nonzero ring layout is rejected and no leader nodes can return', a
     f.window.birdtieAMapLayout(f.handle, JSON.stringify({schema: 'birdtie-amap-layout-v1',
       revision: frame.revision, frame: frame.frame,
       markers: frame.positions.map((p, i) => ({id: p.id, dx: i ? 28 : 0, dy: 0,
-        selected: false, dense: true, showLabel: false}))}));
+        selected: false, dense: false, showLabel: false, size: p.id.includes('cluster') ? 28 : p.id.startsWith('place:') ? 24 : 30,
+        fill: '#73808a', category: 'other', clusterCount: p.id.includes('cluster') ? 9 : 0}))}));
     assert.deepEqual(f.buttons().map(b => [b.style.left, b.style.top]), before);
     assert.equal(f.container.children.flatMap(x => x.children).filter(x => x.tagName === 'svg').length, 0);
     for (const b of f.buttons()) b.fire('click');
@@ -233,24 +236,25 @@ test('display task cluster is bounded transport with exact current members and r
     f.update(1,[item('task:a'),item('task:b')],1);await f.flush();
     const frame=f.frames.at(-1),id='display-cluster:synthetic';
     f.window.birdtieAMapLayout(f.handle,JSON.stringify({schema:'birdtie-amap-layout-v1',revision:frame.revision,frame:frame.frame,
-      markers:[{id,dx:0,dy:0,selected:false,dense:false,showLabel:false,
+      markers:[{id,dx:0,dy:0,selected:false,dense:false,showLabel:false,size:28,fill:'#73808a',category:'other',clusterCount:2,
         cluster:{id,kind:'cluster',title:'2项内容',subtitle:'',memberIDs:['task:a','task:b'],anchorID:'task:a',contentCount:2,precision:'area'}}]}));
     assert.equal(f.buttons().length,1);f.buttons()[0].fire('click');assert.equal(f.selected.at(-1).id,id);
     f.update(2,[item('task:a')],1);assert.equal(f.buttons().length,0);
     await f.flush();f.layout();assert.equal(f.buttons()[0].dataset.birdtieMapId,'task:a');
   }finally{f.destroy();}
 });
-test('owned content and aggregate retain square full-size targets, counts and explicit map coordinate selection', async () => {
+test('Moment square and unknown aggregate circle keep typed counts 48dp targets and explicit coordinate selection', async () => {
   const f = fixture();
   try {
     f.update(1, [{...item('owned-map:anchor:first'), ownedContent: true},
       {...item('owned-map:cluster:second', 'cluster'), ownedContent: true, contentCount: 7, anchorCount: 9, precision: 'area'}]);
     await f.flush(); f.layout();
-    for (const button of f.buttons()) {
-      assert.equal(button.style.width, '48px'); assert.equal(button.children[0].style.width, '28px');
-      assert.equal(button.children[0].style.borderRadius, '4px');
-    }
-    assert.equal(f.buttons()[1].children[0].children.at(-1).textContent, '7');
+    for (const button of f.buttons()) assert.equal(button.style.width, '48px');
+    assert.equal(f.buttons()[0].children[0].style.width, '30px');
+    assert.equal(f.buttons()[0].children[0].style.borderRadius, '6px');
+    assert.equal(f.buttons()[1].children[0].style.width, '28px');
+    assert.equal(f.buttons()[1].children[0].style.borderRadius, '50%');
+    assert.equal(f.buttons()[1].children[0].children.at(-1).textContent, '9');
     f.window.birdtieAMapUpdate(f.handle, JSON.stringify({schema: 'birdtie-amap-source-v1', revision: 1, coordinateSelection: true}));
     const click = f.maps[0].events.click[0]; click({lnglat: {lng: 121.4, lat: 31.2}});
     assert.equal(f.coordinates.length, 1); assert.equal(f.coordinates[0].revision, 1);
@@ -271,4 +275,25 @@ test('loader/SDK/coordinate deadlines report failure, ignore late callbacks and 
       await f.flush(); assert.equal(f.frames.length, 0); assert.equal(f.buttons().length, 0);
     } finally { f.destroy(); assert.equal(f.timerCount(), 0); }
   }
+});
+
+// PMAP plan data is measured/authorized in Dart, never inferred from a name.
+test('category glyph label placement and auxiliary hierarchy consume one plan and Place photos stay local', async () => {
+  const f=fixture();
+  try {
+    const cover={...item('place:category','place'), categoryCode:'cafe',
+      mediaKey:'fixture',mediaPNG:'iVBORw0KGgoAAA==',mediaSelectedPNG:'iVBORw0KGgoBBB==',
+      mediaDPR:2,mediaExpiresAt:Date.now()+30000,recentLabel:'3条动态',recentExpiresAt:Date.now()+30000};
+    f.update(1,[cover],1);await f.flush();
+    const frame=f.frames.at(-1);
+    f.window.birdtieAMapLayout(f.handle,JSON.stringify({schema:'birdtie-amap-layout-v1',revision:1,frame:frame.frame,
+      markers:[{id:cover.id,dx:0,dy:0,selected:true,dense:false,showLabel:true,size:28,fill:'#c27a45',
+        category:'cafe',clusterCount:0,label:{x:-94,y:-15,width:76,height:31,name:'当前合法对象',auxiliary:'3条动态',fontSize:13,color:'#8d5126'}}]}));
+    const [shape,text]=f.buttons()[0].children;
+    assert.equal(shape.style.background,'#c27a45');assert.equal(shape.children[0].style.display,'none');
+    assert.equal(shape.style.width,'28px');assert.equal(text.style.left,'-70px');
+    assert.equal(text.style.fontSize,'13px');assert.equal(text.children[1].style.fontSize,'11px');
+    assert.equal(text.children[1].textContent,'3条动态');
+    assert.equal(f.frames.at(-1).scalePixels,48);assert.equal(f.frames.at(-1).scalePoints.length,2);
+  }finally{f.destroy();}
 });

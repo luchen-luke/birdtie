@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:birdtie_client/src/auth/session_vault.dart';
 import 'package:birdtie_client/src/city/exploration_city_store.dart';
+import 'package:birdtie_client/src/city/map_navigation_target.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -27,15 +28,93 @@ void main() {
 
   test('退出只清auth scoped key，不清已选探索城市', () async {
     FlutterSecureStorage.setMockInitialValues({});
-    const store = SecureExplorationCityStore(), vault = SecureSessionVault();
+    const store = SecureExplorationCityStore(),
+        vault = SecureSessionVault(origin: 'http://localhost:8080');
     await store.writeCityID('edinburgh-gb');
     await vault.write(
-      const StoredSession(token: 'synthetic-token', method: 'dev_phone'),
+      const StoredSession(
+        token: 'synthetic-token',
+        method: 'dev_phone',
+        origin: 'http://localhost:8080',
+      ),
     );
     await vault.delete();
     expect(await vault.read(), isNull);
     expect(await store.readCityID(), 'edinburgh-gb');
   });
+
+  test(
+    'only catalog canonical cameras survive restart; temporary binding never persists',
+    () async {
+      FlutterSecureStorage.setMockInitialValues({});
+      const store = SecureExplorationCityStore();
+      await store.writeCityID('aberdeen-gb');
+      const camera = MapCameraSnapshot(
+        latitude: 57.1497,
+        longitude: -2.0943,
+        zoom: 13,
+        bearing: 45,
+        pitch: 20,
+      );
+      const target = MapNavigationTarget(
+        key: 'catalog:aberdeen',
+        source: MapNavigationSource.catalogCity,
+        generation: 7,
+        camera: camera,
+        sourceVersion: 'current-private-canary-not-persisted',
+        countryCode: 'GB',
+        catalogCityID: 'aberdeen-gb',
+      );
+      await store.writeCamera(target);
+      expect(
+        (await const SecureExplorationCityStore().readCamera(
+          'aberdeen-gb',
+        ))!.toJson(),
+        camera.toJson(),
+      );
+      final rows = await const FlutterSecureStorage().readAll();
+      expect(rows.values.join(), isNot(contains('private-canary')));
+      expect(rows.values.join(), isNot(contains('generation')));
+      expect(rows.values.join(), isNot(contains('provider')));
+      final temporary = MapNavigationTarget(
+        key: 'provider:bound-city',
+        source: MapNavigationSource.temporaryDestination,
+        generation: 8,
+        camera: camera,
+        sourceVersion: 'temporary',
+        catalogCityID: 'aberdeen-gb',
+      );
+      await expectLater(store.writeCamera(temporary), throwsArgumentError);
+      expect(await const FlutterSecureStorage().readAll(), rows);
+      expect(await store.readCityID(), 'aberdeen-gb');
+    },
+  );
+
+  test(
+    'camera read rejects different City, unknown CRS and extra payload',
+    () async {
+      const store = SecureExplorationCityStore();
+      const camera = MapCameraSnapshot(latitude: 31, longitude: 121, zoom: 12);
+      final valid = {
+        'schema': SecureExplorationCityStore.cameraSchema,
+        'cityId': 'one-city',
+        'camera': camera.toJson(),
+      };
+      for (final row in [
+        {...valid, 'cityId': 'other-city'},
+        {
+          ...valid,
+          'camera': {...camera.toJson(), 'coordinateSystem': 'gcj02'},
+        },
+        {...valid, 'ownerId': 'not-a-view-preference'},
+      ]) {
+        FlutterSecureStorage.setMockInitialValues({
+          SecureExplorationCityStore.cameraKey('one-city'): jsonEncode(row),
+        });
+        expect(await store.readCamera('one-city'), isNull);
+      }
+    },
+  );
 
   test('损坏或越界本机schema不作为探索选择，不尝试恢复私人内容', () async {
     for (final raw in [

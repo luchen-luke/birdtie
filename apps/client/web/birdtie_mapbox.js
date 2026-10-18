@@ -85,6 +85,58 @@
     if (job.map) job.map.jumpTo(job.camera);
   }
 
+  // The Dart helper supplies this closed public policy. Missing/unknown policy
+  // leaves text untouched; it does not select a fallback style or hide labels.
+  function labelPolicy(raw) {
+    if (!raw || raw.version !== 1 ||
+        ![raw.roadFactor, raw.localityFactor].every(v => Number.isFinite(v) && v > 0 && v <= 1)) return null;
+    const lists = ['roadIDs', 'localityIDs', 'localitySourceLayers', 'protectedTokens'];
+    if (!lists.every(k => Array.isArray(raw[k]) && raw[k].length <= 32 &&
+      raw[k].every(v => typeof v === 'string' && v.length > 0 && v.length <= 80))) return null;
+    return raw;
+  }
+
+  function secondaryLabelFactor(layer, policy) {
+    if (!policy || layer.type !== 'symbol' ||
+        (layer.layout?.['icon-image'] != null && layer.layout['icon-image'] !== '')) return null;
+    const name = layer.id.toLowerCase(), source = (layer['source-layer'] || '').toLowerCase();
+    const all = `${name} ${source}`;
+    if (/(^|[\s_:/.-])poi([\s_:/.-]|$)/.test(all)) return null;
+    if (all.split(/[\s_:/.-]+/).some(t => policy.protectedTokens.includes(t))) return null;
+    if (policy.roadIDs.includes(name)) return policy.roadFactor;
+    if (policy.localityIDs.includes(name) || policy.localitySourceLayers.includes(source)) return policy.localityFactor;
+    return null;
+  }
+
+  // Mirrors mapboxWeightedTextOpacity. In particular, do not wrap a zoom
+  // expression in multiplication: zoom must remain at outer step/interpolate.
+  function weightedTextOpacity(original, factor) {
+    if (!Number.isFinite(factor) || factor <= 0 || factor > 1) return null;
+    if (original == null) return factor;
+    const opacity = v => Number.isFinite(v) && v >= 0 && v <= 1;
+    if (opacity(original)) return original * factor;
+    if (!Array.isArray(original) || original.length === 0) return null;
+    const zoom = v => Array.isArray(v) && v.length === 1 && v[0] === 'zoom';
+    const result = original.slice();
+    if (original[0] === 'step' && original.length >= 5 &&
+        (original.length - 3) % 2 === 0 && zoom(original[1]) && opacity(original[2])) {
+      result[2] = original[2] * factor;
+    } else if (original[0] === 'interpolate' && original.length >= 7 &&
+        (original.length - 3) % 2 === 0 && zoom(original[2])) {
+      const mode = original[1];
+      if (!Array.isArray(mode) || !((mode.length === 1 && mode[0] === 'linear') ||
+          (mode.length === 2 && mode[0] === 'exponential' && Number.isFinite(mode[1]) && mode[1] > 0))) return null;
+    } else return null;
+    let previous;
+    for (let i = 3; i < original.length; i += 2) {
+      const stop = original[i], output = original[i + 1];
+      if (!Number.isFinite(stop) || (previous != null && stop <= previous) || !opacity(output)) return null;
+      previous = stop;
+      result[i + 1] = output * factor;
+    }
+    return result;
+  }
+
   window.birdtieMapboxMount = async (id, json, onStatus) => {
     window.birdtieMapboxDestroy(id);
     const config = JSON.parse(json);
@@ -92,7 +144,9 @@
         typeof config.style !== 'string' || !config.style.startsWith('mapbox://styles/')) {
       throw new Error('Map configuration unavailable');
     }
-    const job = {cancelled: false, camera: camera(config.camera), map: null, observer: null, attachTimer: null};
+    const job = {cancelled: false, camera: camera(config.camera), map: null, observer: null, attachTimer: null,
+      labelPolicy: labelPolicy(config.labelWeightPolicy), originalOpacity: new Map(), styleGeneration: 0,
+      styleMetrics: null};
     jobs.set(id, job);
     try {
       const gl = await loader();
@@ -121,20 +175,47 @@
           onStatus(value);
         }
       };
-      const suppressProviderPoi = () => {
+      const applyLabelWeights = (newStyle = false) => {
         if (!current(id, job)) return;
+        if (newStyle) {
+          job.originalOpacity.clear();
+          ++job.styleGeneration;
+        }
+        const metrics = {version: 1, styleGeneration: job.styleGeneration,
+          poiHidden: 0, matched: 0, applied: 0, skipped: 0};
         try {
           for (const layer of map.getStyle().layers || []) {
             if (layer.type !== 'symbol') continue;
             const labels = `${layer.id} ${layer['source-layer'] || ''}`.toLowerCase();
             if (/(^|[\s_:/.-])poi([\s_:/.-]|$)/.test(labels)) {
-              map.setLayoutProperty(layer.id, 'visibility', 'none');
+              try {
+                map.setLayoutProperty(layer.id, 'visibility', 'none');
+                ++metrics.poiHidden;
+              } catch (_) { ++metrics.skipped; }
+              continue;
             }
+            const factor = secondaryLabelFactor(layer, job.labelPolicy);
+            if (factor == null) continue;
+            ++metrics.matched;
+            if (!job.originalOpacity.has(layer.id)) {
+              // Clone before mutation. A second load callback must not scale
+              // our already-applied opacity; only a real style.load resets it.
+              const value = layer.paint?.['text-opacity'];
+              job.originalOpacity.set(layer.id, value == null ? null :
+                (typeof value === 'number' ? value : JSON.parse(JSON.stringify(value))));
+            }
+            const opacity = weightedTextOpacity(job.originalOpacity.get(layer.id), factor);
+            if (opacity == null) { ++metrics.skipped; continue; }
+            try {
+              map.setPaintProperty(layer.id, 'text-opacity', opacity);
+              ++metrics.applied;
+            } catch (_) { ++metrics.skipped; }
           }
         } catch (_) { /* A style error does not remove Birdtie content. */ }
+        job.styleMetrics = metrics;
       };
-      map.on('style.load', suppressProviderPoi);
-      map.on('load', () => { if (current(id, job)) { suppressProviderPoi(); apply(job); status('ready'); } });
+      map.on('style.load', () => applyLabelWeights(true));
+      map.on('load', () => { if (current(id, job)) { applyLabelWeights(); apply(job); status('ready'); } });
       // Handle errors without logging provider URLs or public token contents.
       map.on('error', () => status('failed'));
       job.observer = new ResizeObserver(() => {
@@ -169,6 +250,13 @@
     job.observer?.disconnect();
     job.map?.remove();
     jobs.delete(id);
+  };
+
+  // Numeric-only read-only diagnostics. Map readiness is separate from label
+  // policy coverage; an unknown layer/property is never reported as applied.
+  window.birdtieMapboxStyleMetrics = (id) => {
+    const job = jobs.get(id);
+    return job && current(id, job) && job.styleMetrics ? JSON.stringify(job.styleMetrics) : null;
   };
 
   // Read-only CSS-pixel projection for checking alignment with FlutterMap.

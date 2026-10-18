@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../app/birdtie_app_bar.dart';
 import '../city/public_city_controller.dart';
 import '../city/public_city_map.dart';
+import '../city/map_provider_policy.dart';
 import '../config/birdtie_environment.dart';
 import 'now_ui_tokens.dart';
 
@@ -17,8 +18,27 @@ typedef OrganizationCoordinateMapBuilder =
     );
 
 String? organizationCoordinateUnavailable(PublicCity city) {
-  if (city.map?.provider == 'amap') return '当前地图尚不支持可核对的 WGS84 选点，请返回填写获准坐标。';
-  if (city.map?.provider != 'mapbox') return '该城市尚无可用的坐标选点地图。';
+  final provider = mapProviderForCountry(
+    countryCode: city.countryCode,
+    configuredProvider: city.map?.provider ?? '',
+  );
+  if (provider == 'amap') {
+    if (kIsWeb) {
+      return BirdtieEnvironment.amapWebPublicKey.isNotEmpty &&
+              BirdtieEnvironment.amapServiceHost.isNotEmpty
+          ? null
+          : '地图暂不可用，请返回填写获准坐标。';
+    }
+    // Both existing native adapters return canonical coordinates at the
+    // boundary. Key inspection/consent remain the adapter's real SDK gates.
+    return const {
+          TargetPlatform.android,
+          TargetPlatform.iOS,
+        }.contains(defaultTargetPlatform)
+        ? null
+        : '当前平台的坐标选点地图暂不可用，请返回填写获准坐标。';
+  }
+  if (provider != 'mapbox') return '该城市尚无可用的坐标选点地图。';
   if (kIsWeb) {
     if (!BirdtieEnvironment.mapboxGlWebPublicToken.startsWith('pk.'))
       return '地图暂不可用，请返回填写获准坐标。';

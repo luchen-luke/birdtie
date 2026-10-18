@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import '../config/birdtie_environment.dart';
 import '../content/moment_locations.dart';
 import 'human_causal_control.dart';
+import '../city/map_navigation_target.dart';
 
 class MomentLocationsAPI {
   MomentLocationsAPI({
@@ -148,6 +149,7 @@ class MomentLocationsSidecar extends StatefulWidget {
     this.client,
     this.identityChanges,
     this.onOpenPlace,
+    this.onNavigateMap,
   });
   final String momentID;
   final int? expectedRevision;
@@ -157,6 +159,7 @@ class MomentLocationsSidecar extends StatefulWidget {
   final http.Client? client;
   final Listenable? identityChanges;
   final ValueChanged<String>? onOpenPlace;
+  final ValueChanged<MapNavigationTarget>? onNavigateMap;
   @override
   State<MomentLocationsSidecar> createState() => _MomentLocationsSidecarState();
 }
@@ -292,7 +295,7 @@ class _MomentLocationsSidecarState extends State<MomentLocationsSidecar>
       mainAxisSize: MainAxisSize.min,
       children: [
         for (final item in value.items)
-          if (item.current)
+          if (item.current) ...[
             TextButton.icon(
               icon: Icon(
                 item.precision == 'place'
@@ -337,6 +340,38 @@ class _MomentLocationsSidecarState extends State<MomentLocationsSidecar>
                     }
                   : null,
             ),
+            if (item.anchor != null && widget.onNavigateMap != null)
+              TextButton.icon(
+                icon: const Icon(Icons.map_outlined, size: 18),
+                label: Text('在地图查看${item.label}'),
+                onPressed: () {
+                  if (!mounted ||
+                      !identical(value, _value) ||
+                      !value.current ||
+                      !item.current ||
+                      !widget.sourceCurrent() ||
+                      _background ||
+                      _token != widget.authorizationHeader())
+                    return;
+                  final anchor = item.anchor!;
+                  widget.onNavigateMap!(
+                    MapNavigationTarget(
+                      key: 'moment:${widget.momentID}:${item.id}',
+                      source: MapNavigationSource.moment,
+                      generation: 0,
+                      sourceVersion: item.sourceVersion,
+                      countryCode: item.countryCode,
+                      catalogCityID: item.cityID.isEmpty ? null : item.cityID,
+                      camera: MapCameraSnapshot(
+                        latitude: anchor.latitude,
+                        longitude: anchor.longitude,
+                        zoom: 14,
+                      ),
+                    ),
+                  );
+                },
+              ),
+          ],
       ],
     );
   }

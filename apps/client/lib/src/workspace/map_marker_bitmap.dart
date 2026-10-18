@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 import 'map_entities.dart';
 import 'map_marker_visual.dart';
+import 'map_pin_category.dart';
 
 typedef _MarkerKey = (
   MapEntityKind,
@@ -18,15 +19,149 @@ typedef _MarkerKey = (
   String,
 );
 
+class MapMarkerLabelBitmap {
+  const MapMarkerLabelBitmap(
+    this.png,
+    this.anchor,
+    this.logicalBounds,
+    this.pixelWidth,
+    this.pixelHeight,
+  );
+  final Uint8List png;
+  final Offset anchor;
+  final Rect logicalBounds;
+  final int pixelWidth, pixelHeight;
+}
+
 class MapMarkerBitmap {
   static final Map<_MarkerKey, Uint8List> _cache = {};
 
   // Bounded across source revisions and DPRs. Every glyph stays at its anchor.
   static const cacheLimit = 128;
-  static const pointCanvasSize = 96.0;
+  static const pointCanvasSize = 48.0;
   static const contentClusterSide = 28.0;
   static double pixelRatio(double value) =>
       value.isFinite && value > 0 ? value.clamp(.5, 8.0) : 1.0;
+
+  /// Instance-owned native marker pixels only: labels may be private and must
+  /// never enter the process-wide category glyph cache. The label uses the
+  /// settled collision plan, relative to the unchanged geographic anchor.
+  static Future<MapMarkerLabelBitmap?> withNativeLabel({
+    required Uint8List glyph,
+    required double devicePixelRatio,
+    required Offset glyphAnchor,
+    required MapLabelPlacement placement,
+    required bool Function() current,
+  }) async {
+    if (!current()) return null;
+    final ratio = pixelRatio(devicePixelRatio);
+    final codec = await ui.instantiateImageCodec(glyph);
+    ui.Image? source;
+    try {
+      source = (await codec.getNextFrame()).image;
+      if (!current()) return null;
+      final size = Size(source.width / ratio, source.height / ratio);
+      final glyphRect = Rect.fromLTWH(
+        -glyphAnchor.dx * size.width,
+        -glyphAnchor.dy * size.height,
+        size.width,
+        size.height,
+      );
+      final union = glyphRect.expandToInclude(
+        (placement.offset & placement.rect.size).inflate(2),
+      );
+      final bounds = Rect.fromLTRB(
+        union.left.floorToDouble(),
+        union.top.floorToDouble(),
+        union.right.ceilToDouble(),
+        union.bottom.ceilToDouble(),
+      );
+      final width = (bounds.width * ratio).ceil(),
+          height = (bounds.height * ratio).ceil();
+      final recorder = ui.PictureRecorder();
+      final canvas = Canvas(recorder)
+        ..scale(ratio)
+        ..translate(-bounds.left, -bounds.top);
+      canvas.drawImageRect(
+        source,
+        Rect.fromLTWH(0, 0, source.width.toDouble(), source.height.toDouble()),
+        glyphRect,
+        Paint()..filterQuality = FilterQuality.medium,
+      );
+      void caption(
+        String text,
+        Offset origin,
+        double font,
+        Color color,
+        FontWeight weight,
+      ) {
+        for (final outline in [true, false]) {
+          final style = TextStyle(
+            fontSize: font,
+            height: 1.25,
+            fontWeight: weight,
+            foreground: Paint()
+              ..color = outline ? Colors.white : color
+              ..style = outline ? PaintingStyle.stroke : PaintingStyle.fill
+              ..strokeWidth = outline ? 2.5 : 0,
+          );
+          final painter = TextPainter(
+            text: TextSpan(text: text, style: style),
+            textDirection: TextDirection.ltr,
+            maxLines: 1,
+            ellipsis: '…',
+          )..layout(maxWidth: placement.rect.width);
+          painter.paint(canvas, origin);
+          painter.dispose();
+        }
+      }
+
+      caption(
+        placement.name,
+        placement.offset,
+        placement.fontSize,
+        placement.color,
+        FontWeight.w500,
+      );
+      if (placement.auxiliary case final auxiliary?) {
+        caption(
+          auxiliary,
+          placement.offset + Offset(0, placement.nameHeight + 1),
+          11,
+          MapMarkerVisual.countColor,
+          FontWeight.w400,
+        );
+      }
+      final picture = recorder.endRecording();
+      try {
+        final image = await picture.toImage(width, height);
+        try {
+          if (!current()) return null;
+          final data = await image.toByteData(format: ui.ImageByteFormat.png);
+          if (data == null) return null;
+          final bytes = data.buffer.asUint8List();
+          if (!current()) {
+            bytes.fillRange(0, bytes.length, 0);
+            return null;
+          }
+          return MapMarkerLabelBitmap(
+            bytes,
+            Offset(-bounds.left * ratio / width, -bounds.top * ratio / height),
+            bounds,
+            width,
+            height,
+          );
+        } finally {
+          image.dispose();
+        }
+      } finally {
+        picture.dispose();
+      }
+    } finally {
+      source?.dispose();
+      codec.dispose();
+    }
+  }
 
   static void _remember(_MarkerKey key, Uint8List bytes) {
     _cache.remove(key);
@@ -38,9 +173,9 @@ class MapMarkerBitmap {
   }
 
   /// The glyph is centered on its true coordinate, without layout connectors.
-  /// Native SDKs divide PNG pixels by the map/screen pixel ratio, so rasterize
-  /// at that ratio rather than shrinking the painted glyph on high-DPI phones.
-  /// Native SDK touch bounds/assistive navigation require device verification.
+  /// Rasterize at a bounded ratio; each adapter owns the SDK display scale.
+  /// The 48 dp canvas includes the largest glyph without extra transparent
+  /// texture area. Native paint and touch behavior require device verification.
   static Future<Uint8List> _individualPoint(
     MapEntityKind kind,
     bool selected,
@@ -51,14 +186,15 @@ class MapMarkerBitmap {
   ) async {
     const anchor = Offset(pointCanvasSize / 2, pointCanvasSize / 2);
     const center = anchor;
-    final pale = dense && !selected;
-    final diameter = MapMarkerVisual.diameter(selected: selected, dense: pale);
     final moment = kind == MapEntityKind.moment;
+    final diameter = MapMarkerVisual.diameter(
+      selected: selected,
+      dense: dense,
+      moment: moment,
+    );
     final color = moment
         ? MapMarkerVisual.momentColor
-        : pale
-        ? MapMarkerVisual.densePlaceColor
-        : MapMarkerVisual.placeColor;
+        : MapPinCategory.forCode(categoryCode).fill;
     final recorder = ui.PictureRecorder(), canvas = Canvas(recorder);
     canvas.scale(ratio);
     final rect = Rect.fromCenter(
@@ -68,116 +204,51 @@ class MapMarkerBitmap {
     );
     final shape = Path();
     if (moment) {
-      shape.addRRect(
-        RRect.fromRectAndRadius(
-          rect,
-          Radius.circular(MapMarkerVisual.radius(dense: pale)),
-        ),
-      );
+      shape.addRRect(RRect.fromRectAndRadius(rect, const Radius.circular(6)));
     } else {
       shape.addOval(rect);
     }
     canvas.drawPath(shape, Paint()..color = color);
-    if (!pale && photo != null) {
+    // Place pins always use a local category. Only independent Moments may
+    // carry verified pixels, without changing the true geographic anchor.
+    if (moment && photo != null) {
       canvas.save();
       canvas.clipPath(shape);
       paintImage(canvas: canvas, rect: rect, image: photo, fit: BoxFit.cover);
       canvas.restore();
     }
-    {
-      // The shared 28/36/6 diameter is the outside edge, as in the Flutter
-      // marker. Clip the centered stroke inward so native pixels do not grow.
-      canvas.save();
-      canvas.clipPath(shape);
-      canvas.drawPath(
-        shape,
-        Paint()
-          ..color = selected ? MapMarkerVisual.placeColor : Colors.white
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = selected
-              ? 4
-              : pale
-              ? 1.5
-              : 3,
-      );
-      if (selected && !pale && photo != null) {
-        // Keep a small white separation between the selected rim and real
-        // pixels. This is presentation only; the original image is untouched.
-        final inner = rect.deflate(3);
-        final innerShape = Path();
-        if (moment) {
-          innerShape.addRRect(
-            RRect.fromRectAndRadius(inner, const Radius.circular(2)),
-          );
-        } else {
-          innerShape.addOval(inner);
-        }
-        canvas.drawPath(
-          innerShape,
-          Paint()
-            ..color = Colors.white
-            ..style = PaintingStyle.stroke
-            ..strokeWidth = 2,
-        );
-      }
-      final glyph = Paint()
+    canvas.save();
+    canvas.clipPath(shape);
+    canvas.drawPath(
+      shape,
+      Paint()
         ..color = Colors.white
         ..style = PaintingStyle.stroke
-        ..strokeWidth = selected ? 1.8 : 1.4;
-      if (pale) {
-        // A dense point marks its true location without adding a second ring
-        // or unreadable glyph. Full content markers keep photos and labels.
-      } else if (moment && photo == null) {
-        final halfWidth = selected
-            ? 7.0
-            : pale
-            ? 3.0
-            : 5.0;
-        final gap = pale ? 3.0 : 4.0;
-        for (final y in [-gap, 0.0, gap]) {
-          // Solid 2 dp lines retain an opaque white core at DPR 1. A thin
-          // stroke through an integer pixel center otherwise becomes a blur.
-          canvas.drawRect(
-            Rect.fromCenter(
-              center: center + Offset(0, y),
-              width: halfWidth * 2,
-              height: 2,
-            ),
-            Paint()..color = Colors.white,
-          );
-        }
-      } else if (!moment && photo == null && !pale) {
-        final icon = MapMarkerVisual.placeIcon(categoryCode);
-        final painter = TextPainter(
-          text: TextSpan(
-            text: String.fromCharCode(icon.codePoint),
-            style: TextStyle(
-              fontFamily: icon.fontFamily,
-              package: icon.fontPackage,
-              color: Colors.white,
-              fontSize: selected ? 18 : 14,
-              height: 1,
-            ),
+        ..strokeWidth = 3,
+    );
+    canvas.restore();
+    if (!moment || photo == null) {
+      final icon = moment
+          ? Icons.notes_outlined
+          : MapMarkerVisual.placeIcon(categoryCode);
+      final painter = TextPainter(
+        text: TextSpan(
+          text: String.fromCharCode(icon.codePoint),
+          style: TextStyle(
+            fontFamily: icon.fontFamily,
+            package: icon.fontPackage,
+            color: Colors.white,
+            fontSize: !moment && dense && !selected ? 12 : 14,
+            height: 1,
           ),
-          textDirection: TextDirection.ltr,
-        )..layout();
-        painter.paint(
-          canvas,
-          center - Offset(painter.width / 2, painter.height / 2),
-        );
-        painter.dispose();
-      } else if (photo == null || pale) {
-        canvas.drawCircle(
-          center,
-          selected
-              ? 5
-              : pale
-              ? 3
-              : 4,
-          glyph,
-        );
-      }
-      canvas.restore();
+        ),
+        textDirection: TextDirection.ltr,
+      )..layout();
+      painter.paint(
+        canvas,
+        center - Offset(painter.width / 2, painter.height / 2),
+      );
+      painter.dispose();
     }
     final picture = recorder.endRecording();
     final extent = (pointCanvasSize * ratio).ceil();
@@ -201,58 +272,32 @@ class MapMarkerBitmap {
     ui.Image? photo,
   ) async {
     const center = Offset(pointCanvasSize / 2, pointCanvasSize / 2);
-    const color = Color(0xFF315E50);
-    final side = selected ? 36.0 : contentClusterSide;
+    const color = Color(0xFF64707A);
+    final side = selected ? 30.0 : contentClusterSide;
     final rect = Rect.fromCenter(center: center, width: side, height: side);
     final recorder = ui.PictureRecorder(), canvas = Canvas(recorder);
     canvas.scale(ratio);
-    final shape = RRect.fromRectAndRadius(rect, const Radius.circular(4));
-    canvas.drawRRect(shape, Paint()..color = color);
-    if (photo != null) {
-      canvas.save();
-      canvas.clipRRect(shape);
-      paintImage(canvas: canvas, rect: rect, image: photo, fit: BoxFit.cover);
-      canvas.restore();
-    } else {
-      for (final dy in [-4.0, 0.0, 4.0]) {
-        canvas.drawLine(
-          center + Offset(-5, dy),
-          center + Offset(5, dy),
-          Paint()
-            ..color = Colors.white
-            ..strokeWidth = 1.5,
-        );
-      }
-    }
-    canvas.drawRRect(
-      shape,
+    canvas.drawOval(rect, Paint()..color = color);
+    canvas.drawOval(
+      rect.deflate(.75),
       Paint()
         ..color = Colors.white
         ..style = PaintingStyle.stroke
         ..strokeWidth = 1.5,
     );
-    final badge = Rect.fromCenter(
-      center: rect.bottomRight - const Offset(1, 1),
-      width: 16,
-      height: 14,
-    );
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(badge, const Radius.circular(5)),
-      Paint()..color = Colors.white,
-    );
     final text = TextPainter(
       text: TextSpan(
         text: count > 99 ? '99+' : '$count',
         style: const TextStyle(
-          color: color,
-          fontSize: 9,
-          fontWeight: FontWeight.w700,
+          color: Colors.white,
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
           height: 1,
         ),
       ),
       textDirection: TextDirection.ltr,
     )..layout();
-    text.paint(canvas, badge.center - Offset(text.width / 2, text.height / 2));
+    text.paint(canvas, center - Offset(text.width / 2, text.height / 2));
     text.dispose();
     final picture = recorder.endRecording();
     final extent = (pointCanvasSize * ratio).ceil();
@@ -278,6 +323,7 @@ class MapMarkerBitmap {
     ui.Image? photo,
     String categoryCode = '',
   }) async {
+    if (kind != MapEntityKind.moment) photo = null;
     final individual =
         !approximate &&
         (kind == MapEntityKind.place || kind == MapEntityKind.moment);

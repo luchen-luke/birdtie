@@ -13,6 +13,102 @@ import 'map_media_rendering_test.dart' show mapFixtureImage;
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   testWidgets(
+    'native label bitmap retains the real anchor at every side and DPR',
+    (t) async {
+      await t.runAsync(() async {
+        for (final ratio in [1.0, 2.0, 3.25]) {
+          final recorder = ui.PictureRecorder();
+          final canvas = Canvas(recorder)..scale(ratio);
+          canvas.drawRect(
+            const Rect.fromLTWH(0, 0, 48, 48),
+          Paint()..color = const Color(0xFFFF0000),
+          );
+          final picture = recorder.endRecording();
+          final image = await picture.toImage(
+            (48 * ratio).round(),
+            (48 * ratio).round(),
+          );
+          final glyph = (await image.toByteData(
+            format: ui.ImageByteFormat.png,
+          ))!.buffer.asUint8List();
+          image.dispose();
+          picture.dispose();
+          for (final side in MapLabelSide.values) {
+            final offset = switch (side) {
+              MapLabelSide.right => const Offset(16, -7.5),
+              MapLabelSide.left => const Offset(-128, -7.5),
+              MapLabelSide.top => const Offset(-56, -36),
+              MapLabelSide.bottom => const Offset(-56, 24),
+            };
+            MapLabelPlacement at(Offset origin) => MapLabelPlacement(
+              side: side,
+              rect: (origin + offset) & const Size(112, 31),
+              offset: offset,
+              name: '中文 English long name',
+              fontSize: 12,
+              color: Colors.black,
+              auxiliary: '7条动态',
+            );
+            final result = (await MapMarkerBitmap.withNativeLabel(
+              glyph: glyph,
+              devicePixelRatio: ratio,
+              glyphAnchor: const Offset(.5, .5),
+              placement: at(Offset.zero),
+              current: () => true,
+            ))!;
+            // Physical anchor reconstructs O exactly after ceil/floor and DPR.
+            expect(
+              result.anchor.dx * result.pixelWidth / ratio +
+                  result.logicalBounds.left,
+              closeTo(0, 1e-8),
+            );
+            expect(
+              result.anchor.dy * result.pixelHeight / ratio +
+                  result.logicalBounds.top,
+              closeTo(0, 1e-8),
+            );
+            final moved = (await MapMarkerBitmap.withNativeLabel(
+              glyph: glyph,
+              devicePixelRatio: ratio,
+              glyphAnchor: const Offset(.5, .5),
+              placement: at(const Offset(80, 190)),
+              current: () => true,
+            ))!;
+            expect(moved.png, orderedEquals(result.png));
+            final codec = await ui.instantiateImageCodec(result.png);
+            final rendered = (await codec.getNextFrame()).image;
+            final rgba = (await rendered.toByteData(
+              format: ui.ImageByteFormat.rawRgba,
+            ))!.buffer.asUint8List();
+            final x = (result.anchor.dx * result.pixelWidth).floor();
+            final y = (result.anchor.dy * result.pixelHeight).floor();
+            final index = (y * rendered.width + x) * 4;
+            expect(rgba.sublist(index, index + 4), [255, 0, 0, 255]);
+            rendered.dispose();
+            codec.dispose();
+          }
+          var allowed = true;
+          final pending = MapMarkerBitmap.withNativeLabel(
+            glyph: glyph,
+            devicePixelRatio: ratio,
+            glyphAnchor: const Offset(.5, .5),
+            placement: MapLabelPlacement(
+              side: MapLabelSide.right,
+              rect: const Rect.fromLTWH(16, -7.5, 112, 15),
+              offset: const Offset(16, -7.5),
+              name: 'private fixture',
+              fontSize: 12,
+              color: Colors.black,
+            ),
+            current: () => allowed,
+          );
+          allowed = false;
+          expect(await pending, isNull);
+        }
+      });
+    },
+  );
+  testWidgets(
     'visible all-time totals and exact category survive decoration and expire independently',
     (tester) async {
       final now = DateTime.now().toUtc();
@@ -89,7 +185,7 @@ void main() {
     },
   );
   testWidgets(
-    'compact photo marker keeps right name count and 48dp target while retired pixels disappear',
+    'Place category ignores supplied pixels and keeps name count and 48dp target',
     (tester) async {
       late ui.Image image;
       late Uint8List normal, selected;
@@ -107,15 +203,13 @@ void main() {
         );
         final normalPixels = await _pixels(normal);
         final selectedPixels = await _pixels(selected);
-        expect(normalPixels.bounds(220).width, closeTo(28, 2.1));
-        expect(selectedPixels.bounds(220).width, closeTo(36, 2.1));
-        final whiteRim = (48 * selectedPixels.width + 33) * 4;
-        expect(selectedPixels.bytes.sublist(whiteRim, whiteRim + 4), [
-          255,
-          255,
-          255,
-          255,
-        ]);
+        expect(normalPixels.bounds(220).width, closeTo(24, 2.1));
+        expect(selectedPixels.bounds(220).width, closeTo(28, 2.1));
+        final whiteRim = (24 * selectedPixels.width + 11) * 4;
+        // Subpixel circle coverage blends the inward white rim; its outer
+        // painted alpha bounds above remain the actual size contract.
+        expect(selectedPixels.bytes[whiteRim], greaterThan(180));
+        expect(selectedPixels.bytes[whiteRim + 3], 255);
       });
       var current = true, taps = 0;
       final now = DateTime.now().toUtc();
@@ -164,16 +258,16 @@ void main() {
         expect(find.byType(CompactMapPointMarker), findsOneWidget);
         expect(
           find.byKey(const ValueKey('map-place-photo:place:qa-place')),
-          findsOneWidget,
+          findsNothing,
         );
         expect(
           tester.getRect(find.byKey(caption)).left,
-          greaterThan(tester.getCenter(find.byKey(target)).dx + 18),
+          greaterThan(tester.getCenter(find.byKey(target)).dx + 14),
         );
         expect(find.text('近30天 · 4条动态'), findsNWidgets(2));
         expect(
           MapMarkerVisual.nativeLabelOffset(selected: true, dense: false),
-          [21 / 12, 0],
+          [18 / 12, 0],
         );
         await tester.tap(find.byKey(target));
         expect(taps, 1);
@@ -197,7 +291,7 @@ void main() {
     },
   );
   test(
-    'public Moment actual JPEG uses square crop without record overlay and dense fallback remains6',
+    'public Moment retains 30dp actual JPEG square at every density',
     () async {
       final image = await mapFixtureImage();
       try {
@@ -229,16 +323,16 @@ void main() {
             photo: image,
           ),
         );
-        expect(square.alphaAt(36, 36), greaterThan(220));
-        expect(circle.alphaAt(36, 36), lessThan(30));
-        final center = (48 * square.width + 48) * 4;
+        expect(square.alphaAt(12, 12), greaterThan(220));
+        expect(circle.alphaAt(12, 12), lessThan(30));
+        final center = (24 * square.width + 24) * 4;
         expect(
           square.bytes.sublist(center, center + 4),
           isNot(record.bytes.sublist(center, center + 4)),
         );
-        expect(square.bounds(220).width, closeTo(28, 2.1));
-        expect(dense.bounds(220).width, closeTo(6, 2.1));
-        expect(dense.colorCount([135, 104, 60]), greaterThan(0));
+        expect(square.bounds(220).width, closeTo(30, 2.1));
+        expect(dense.bounds(220).width, closeTo(30, 2.1));
+        expect(dense.bytes, orderedEquals(square.bytes));
       } finally {
         image.dispose();
       }
@@ -311,10 +405,10 @@ void main() {
         final pixels = await _pixels(bytes);
         // Dense marks retain a small opaque center at the original anchor.
         // A transparent image or an off-anchor cached slot cannot pass.
-        final x = (48 * 3.25).floor();
-        final y = (48 * 3.25).floor();
+        final x = (24 * 3.25).floor();
+        final y = (24 * 3.25).floor();
         final index = (y * pixels.width + x) * 4;
-        expect(pixels.bytes.sublist(index, index + 4), [0x87, 0x68, 0x3c, 255]);
+        expect(pixels.bytes[index + 3], 255);
       }
       expect(unique, hasLength(1));
       for (var i = 0; i < offsets.length; i++) {
@@ -340,9 +434,9 @@ void main() {
         '${kind.name} actual opaque glyph has readable density at DPR $ratio',
         () async {
           for (final state in [
-            (false, true, 6.0),
-            (false, false, 28.0),
-            (true, true, 36.0),
+            (false, true, kind == MapEntityKind.moment ? 30.0 : 20.0),
+            (false, false, kind == MapEntityKind.moment ? 30.0 : 24.0),
+            (true, true, kind == MapEntityKind.moment ? 34.0 : 28.0),
           ]) {
             final bytes = await MapMarkerBitmap.render(
               kind: kind,
@@ -351,17 +445,15 @@ void main() {
               devicePixelRatio: ratio,
             );
             final pixels = await _pixels(bytes);
-            expect(pixels.width, (96 * ratio).ceil());
-            expect(pixels.height, (96 * ratio).ceil());
+            expect(pixels.width, (48 * ratio).ceil());
+            expect(pixels.height, (48 * ratio).ceil());
             final opaque = pixels.bounds(220);
             // Actual painted alpha bounds, not merely a nonempty transparent PNG.
             expect(opaque.width, closeTo(state.$3 * ratio, 2.1));
             expect(opaque.height, closeTo(state.$3 * ratio, 2.1));
             final small = state.$2 && !state.$1;
             final color = kind == MapEntityKind.place
-                ? small
-                      ? [0x67, 0x87, 0x79]
-                      : [0x19, 0x3b, 0x32]
+                ? [0x73, 0x80, 0x8a]
                 : [0x87, 0x68, 0x3c];
             expect(
               pixels.colorCount(color),
@@ -401,9 +493,9 @@ void main() {
       expect(moved, orderedEquals(centered));
       expect(hd, isNot(orderedEquals(moved)));
       final pixels = await _pixels(moved);
-      expect(pixels.bounds(220).right, lessThanOrEqualTo(58));
-      expect(pixels.alphaAt(48, 48), greaterThan(220));
-      expect(pixels.alphaAt(66, 48), 0);
+      expect(pixels.bounds(220).right, lessThanOrEqualTo(39));
+      expect(pixels.alphaAt(24, 24), greaterThan(220));
+      expect(pixels.alphaAt(42, 24), 0);
       expect(
         identical(
           moved,
@@ -474,17 +566,15 @@ void main() {
           final before = await _pixels(anchor);
           final after = await _composite([anchor, ...fan]);
           final diameter = state.$1
-              ? 36.0
+              ? 28.0
               : state.$2
-              ? 6.0
-              : 28.0;
+              ? 20.0
+              : 24.0;
           expect(before.bounds(220).width, closeTo(diameter * ratio, 2.1));
-          expect(after.bounds(220).width, closeTo(diameter * ratio, 2.1));
-          expect(after.bounds(220).height, closeTo(diameter * ratio, 2.1));
+          expect(after.bounds(220).width, closeTo(30 * ratio, 2.1));
+          expect(after.bounds(220).height, closeTo(30 * ratio, 2.1));
           expect(
-            before.colorCount(
-              state.$2 && !state.$1 ? [0x67, 0x87, 0x79] : [0x19, 0x3b, 0x32],
-            ),
+            before.colorCount([0x73, 0x80, 0x8a]),
             greaterThan((state.$2 && !state.$1 ? 6 : 35) * ratio * ratio),
           );
           expect(
@@ -495,9 +585,9 @@ void main() {
         // Former cardinal slots have no connector and the glyph occupies its
         // real anchor. Overlap is resolved by the complete current-ID chooser.
         final east = await _pixels(fan[2]);
-        expect(east.alphaAt((66 * ratio).floor(), (48 * ratio).floor()), 0);
+        expect(east.alphaAt((42 * ratio).floor(), (24 * ratio).floor()), 0);
         expect(
-          east.alphaAt((48 * ratio).floor(), (48 * ratio).floor()),
+          east.alphaAt((24 * ratio).floor(), (24 * ratio).floor()),
           greaterThan(220),
         );
       },

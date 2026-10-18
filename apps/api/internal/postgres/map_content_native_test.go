@@ -308,10 +308,27 @@ func TestMapContent170NativeOriginalPublicAndOwnPrivateCurrent(t *testing.T) {
 	if e = continued.ResponseProof.RevalidateHumanControl(ctx); e != nil {
 		t.Fatal("continued page current proof", e)
 	}
+	// Eager reading details carry a display selector, not an original/empty
+	// selector. Follow that declared path while retaining exact actor/source
+	// binding and the original-variant negative below.
+	mediaVariant := func(asset content.MapContentMedia) string {
+		t.Helper()
+		u, err := url.Parse(asset.ContentPath)
+		if err != nil || u.Scheme != "" || u.Host != "" || u.Fragment != "" ||
+			u.Path != fmt.Sprintf("/v1/me/map-content/moments/%s/media/%s/content", mid, asset.ID) ||
+			len(u.Query()) != 2 || u.Query().Get("sourceVersion") != asset.SourceVersion ||
+			u.Query().Get("variant") != "display" {
+			t.Fatal("current display path/source contract")
+		}
+		return u.Query().Get("variant")
+	}
 	asset := detail.Media[0]
-	binary, e := store.ReadHumanMapContentBinary(ctx, digest, viewer, "moments", mid, asset.ID, asset.SourceVersion, "")
+	if _, e = store.ReadHumanMapContentBinary(ctx, digest, viewer, "moments", mid, asset.ID, asset.SourceVersion, ""); !errors.Is(e, content.ErrNotFound) {
+		t.Fatal("display source accepted as original/empty variant", e)
+	}
+	binary, e := store.ReadHumanMapContentBinary(ctx, digest, viewer, "moments", mid, asset.ID, asset.SourceVersion, mediaVariant(asset))
 	if e != nil || len(binary.Bytes) != asset.ByteCount || legacymedia.Hash(binary.Bytes) != asset.SHA256 {
-		t.Fatal("source-public canonical bytes", e)
+		t.Fatal("source-public declared display bytes", e)
 	}
 	if e = binary.ResponseProof.RevalidateHumanControl(ctx); e != nil {
 		t.Fatal("binary metadata-only output proof", e)
@@ -334,7 +351,7 @@ func TestMapContent170NativeOriginalPublicAndOwnPrivateCurrent(t *testing.T) {
 	}
 	clear(binary.Bytes)
 	other, otherDigest, otherSession := newReader("map170-other-viewer")
-	if _, e = store.ReadHumanMapContentBinary(ctx, otherDigest, other, "moments", mid, asset.ID, asset.SourceVersion, ""); !errors.Is(e, content.ErrNotFound) {
+	if _, e = store.ReadHumanMapContentBinary(ctx, otherDigest, other, "moments", mid, asset.ID, asset.SourceVersion, mediaVariant(asset)); !errors.Is(e, content.ErrNotFound) {
 		t.Fatal("selector was not actor bound", e)
 	}
 	if _, e = f.Pool.Exec(ctx, `INSERT INTO account_blocks(blocker_account_id,blocked_account_id)VALUES($1,$2)`, viewer.ID, owner); e != nil {
@@ -392,7 +409,7 @@ func TestMapContent170NativeOriginalPublicAndOwnPrivateCurrent(t *testing.T) {
 	// Establish this selector after the intentional location mutation above,
 	// so the assertion isolates the unrelated attachment deletion only.
 	unchangedAsset := beforeDelete.Items[0].Media[0]
-	unchangedBinary, e := store.ReadHumanMapContentBinary(ctx, digest, viewer, "moments", mid, unchangedAsset.ID, unchangedAsset.SourceVersion, "")
+	unchangedBinary, e := store.ReadHumanMapContentBinary(ctx, digest, viewer, "moments", mid, unchangedAsset.ID, unchangedAsset.SourceVersion, mediaVariant(unchangedAsset))
 	if e != nil {
 		t.Fatal("current exact media selector before deletion", e)
 	}
@@ -416,7 +433,7 @@ func TestMapContent170NativeOriginalPublicAndOwnPrivateCurrent(t *testing.T) {
 	if e != nil || len(afterDelete.Items) != 2 || len(afterDelete.Items[0].Media) != 1 || afterDelete.SourceVersion == beforeDelete.SourceVersion {
 		t.Fatal("media source fact absent from current page", e)
 	}
-	if _, e = store.ReadHumanMapContentBinary(ctx, digest, viewer, "moments", mid, deletedImage.ID, deletedImage.SourceVersion, ""); !errors.Is(e, content.ErrNotFound) {
+	if _, e = store.ReadHumanMapContentBinary(ctx, digest, viewer, "moments", mid, deletedImage.ID, deletedImage.SourceVersion, mediaVariant(deletedImage)); !errors.Is(e, content.ErrNotFound) {
 		t.Fatal("deleted original-public image selector remained live", e)
 	}
 	if _, e = f.Pool.Exec(ctx, `UPDATE moments SET body='only current owner text',revision=revision+1,updated_at=clock_timestamp() WHERE id=$1`, mid); e != nil {
@@ -431,7 +448,7 @@ func TestMapContent170NativeOriginalPublicAndOwnPrivateCurrent(t *testing.T) {
 	if _, e = f.Pool.Exec(ctx, `UPDATE moments SET status='withdrawn',revision=revision+1,updated_at=clock_timestamp() WHERE id=$1`, mid); e != nil {
 		t.Fatal(e)
 	}
-	if _, e = store.ReadHumanMapContentBinary(ctx, digest, viewer, "moments", mid, asset.ID, asset.SourceVersion, ""); !errors.Is(e, content.ErrNotFound) {
+	if _, e = store.ReadHumanMapContentBinary(ctx, digest, viewer, "moments", mid, asset.ID, asset.SourceVersion, mediaVariant(asset)); !errors.Is(e, content.ErrNotFound) {
 		t.Fatal("withdrawn old bytes resurrected", e)
 	}
 	// Original Civu none precision is readable under its original source grant,

@@ -70,7 +70,7 @@ void main() {
       expect(native.onPlaceSelected, isNotNull);
       expect(
         organizationCoordinateUnavailable(coordinateCity(provider: 'amap')),
-        contains('WGS84'),
+        isNull,
       );
       expect(
         organizationCoordinateUnavailable(
@@ -205,7 +205,7 @@ void main() {
     );
   }
   testWidgets(
-    'coordinate picker AMap cannot infer WGS84 and has a working cancel',
+    'coordinate picker AMap uses canonical adapter and missing SDK configuration cannot invent a point',
     (t) async {
       final identity = ValueNotifier(0);
       var returned = false;
@@ -237,7 +237,7 @@ void main() {
       );
       await t.tap(find.text('从位置页进入选点'));
       await t.pumpAndSettle();
-      expect(find.textContaining('可核对的 WGS84'), findsOneWidget);
+      expect(find.textContaining('可核对的 WGS84'), findsNothing);
       expect(
         t
             .widget<FilledButton>(
@@ -246,7 +246,7 @@ void main() {
             .onPressed,
         isNull,
       );
-      expect(find.byType(PublicCityMapView), findsNothing);
+      expect(find.byType(PublicCityMapView), findsOneWidget);
       expect(find.text('取消选点'), findsOneWidget);
       await t.tap(find.text('取消选点'));
       await t.pumpAndSettle();

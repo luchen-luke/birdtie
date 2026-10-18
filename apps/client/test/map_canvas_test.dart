@@ -45,7 +45,7 @@ class _MapCity extends PublicCityController {
 
 void main() {
   testWidgets(
-    'Map1 failed photo stays same typed point and independent count expiry preserves task selection map',
+    'category Place pin never downloads cover and independent count expiry preserves task selection map',
     (t) async {
       final city = _MapCity(),
           ws = AgentWorkspaceController(),
@@ -98,7 +98,7 @@ void main() {
           ),
         ),
       );
-      await mediaWait(t, () => photoGets == 1 && media.inFlight == 0);
+      await mediaWait(t, () => photoGets == 0 && media.inFlight == 0);
       final element = find.byType(PublicCityMapView).evaluate().single;
       final initial = t
           .widget<PublicCityMapView>(find.byType(PublicCityMapView))
@@ -121,7 +121,7 @@ void main() {
       expect(layers.publicView, isNotNull);
       expect(ws.selectedEntityId, id);
       expect(ws.task!.id, 'preserved-map1-task');
-      expect(photoGets, 1);
+      expect(photoGets, 0);
       expect(find.byType(PublicCityMapView).evaluate().single, same(element));
       await t.pumpWidget(const SizedBox());
       media.dispose();
@@ -793,6 +793,8 @@ void main() {
   testWidgets(
     'typed layers and cards share exact IDs toggles preserve map Element selection and task',
     (t) async {
+      var owner = 'isolated-owner-a';
+      var authorization = 'isolated-test-authorization-a';
       final city = _MapCity(),
           ws = AgentWorkspaceController(),
           map = MapViewportState(),
@@ -828,6 +830,8 @@ void main() {
             mapState: map,
             discovery: discovery,
             layers: layers,
+            mediaOwnerID: () => owner,
+            mediaAuthorizationHeader: () => authorization,
             onInitialViewport: (_) {},
             onMapUnavailable: (_) {},
           ),
@@ -838,11 +842,33 @@ void main() {
         find.byType(PublicCityMapView),
       );
       expect(projection.places, isEmpty);
+      final authority = projection.currentRenderAuthorityScope!();
+      final reader = projection.currentReaderScope!();
+      final originalBounds = layers.bounds;
+      layers.bounds = const MapBounds(west: -3, south: 56, east: -1, north: 58);
+      expect(
+        projection.currentRenderAuthorityScope!(),
+        authority,
+        reason: 'Ordinary viewport changes preserve current native pixels',
+      );
+      expect(
+        projection.currentReaderScope!(),
+        isNot(reader),
+        reason: 'The same viewport change must still retire delayed reads',
+      );
+      layers.bounds = originalBounds;
+      owner = 'isolated-owner-b';
+      expect(projection.currentRenderAuthorityScope!(), isNot(authority));
+      owner = 'isolated-owner-a';
+      authorization = 'isolated-test-authorization-b';
+      expect(projection.currentRenderAuthorityScope!(), isNot(authority));
+      authorization = 'isolated-test-authorization-a';
       expect(
         projection.entities.map((i) => i.id).toSet(),
         layers.items.map((i) => i.mapID).toSet(),
       );
       layers.toggle('MOMENT', false);
+      expect(projection.currentRenderAuthorityScope!(), isNot(authority));
       await t.pump();
       projection = t.widget<PublicCityMapView>(find.byType(PublicCityMapView));
       expect(projection.entities.map((i) => i.id), isNot(contains(originalID)));

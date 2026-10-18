@@ -1,8 +1,12 @@
 package app.civu.civu_mobile
 
 import android.app.Activity
+import android.content.BroadcastReceiver
+import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.ApplicationInfo
+import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
@@ -24,6 +28,36 @@ internal class NativeUiAcceptance(private val activity: Activity, engine: Flutte
     private val allowed: Boolean get() = BuildConfig.BUILD_TYPE == "profile" &&
         (activity.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0 &&
         (activity.packageName.endsWith(".birdtiepreview") || activity.packageName.endsWith(".birdtieacceptance"))
+
+    // Fixed read-only observation endpoint. Shell must hold DUMP; ordinary
+    // applications cannot invoke it. Unlike starting the Activity, this does
+    // not pause/resume the map, cancel touches or accept arbitrary arguments.
+    private val observationReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            if (intent?.action != OBSERVE_MAP || !allowed || active || !activity.hasWindowFocus()) return
+            channel.invokeMethod("mapObserve60", null, object : MethodChannel.Result {
+                override fun success(result: Any?) {
+                    Log.i("BirdtieUiQA", "event=observe_broadcast accepted=${result == true}")
+                }
+                override fun error(code: String, message: String?, details: Any?) { Log.i("BirdtieUiQA", "event=unavailable") }
+                override fun notImplemented() { Log.i("BirdtieUiQA", "event=unavailable") }
+            })
+        }
+    }
+    private var observationRegistered = false
+
+    init {
+        if (allowed) {
+            val filter = IntentFilter(OBSERVE_MAP)
+            if (Build.VERSION.SDK_INT >= 33) {
+                activity.registerReceiver(observationReceiver, filter, "android.permission.DUMP", handler, Context.RECEIVER_EXPORTED)
+            } else {
+                @Suppress("DEPRECATION")
+                activity.registerReceiver(observationReceiver, filter, "android.permission.DUMP", handler)
+            }
+            observationRegistered = true
+        }
+    }
 
     fun armFrom(intent: Intent?) {
         val action = intent?.getStringExtra("birdtie.qa.uiAction") ?: return
@@ -92,5 +126,13 @@ internal class NativeUiAcceptance(private val activity: Activity, engine: Flutte
         if (active) send(MotionEvent.ACTION_CANCEL, lastX, lastY)
         active = false
     }
-    override fun close() = cancel()
+    override fun close() {
+        if (observationRegistered) {
+            activity.unregisterReceiver(observationReceiver)
+            observationRegistered = false
+        }
+        cancel()
+    }
+
+    private companion object { const val OBSERVE_MAP = "app.birdtie.qa.OBSERVE_MAP" }
 }

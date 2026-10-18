@@ -64,3 +64,36 @@ func TestMapClusterCategoryUsesObjectComposition(t *testing.T) {
 		}
 	}
 }
+
+func TestCoincidentClusterIdentityAndSourceIsolation(t *testing.T) {
+	anchor := content.MapContentAnchor{CoordinateSystem: "wgs84", Precision: "point", Latitude: 31.2, Longitude: 121.4}
+	leaves := []mapSpatialLeaf{
+		{pin: content.MapContentPin{MarkerID: "place:a", Kind: "PLACE_CONTENT", Name: "隔离地点", Anchor: anchor, SourceVersion: "fact-a"}},
+		{pin: content.MapContentPin{MarkerID: "anchor:b", Kind: "MOMENT_ANCHOR", Name: "隔离动态", Anchor: anchor, SourceVersion: "fact-b"}},
+		{pin: content.MapContentPin{MarkerID: "place:unrelated", Kind: "PLACE_CONTENT", Anchor: content.MapContentAnchor{CoordinateSystem: "wgs84", Precision: "point", Latitude: 31.3, Longitude: 121.5}, SourceVersion: "other"}},
+	}
+	ids := []int{0, 1}
+	baseID, baseSource := mapClusterID("reader-a", leaves, ids), mapClusterSourceVersion("reader-a", leaves, ids)
+	if mapClusterID("reader-a", leaves, []int{1, 0}) != baseID || mapClusterSourceVersion("reader-a", leaves, []int{1, 0}) != baseSource {
+		t.Fatal("input ordering must not replace a coincident group's identity or source")
+	}
+	leaves[2].pin.SourceVersion = "unrelated-updated"
+	if mapClusterID("reader-a", leaves, ids) != baseID || mapClusterSourceVersion("reader-a", leaves, ids) != baseSource {
+		t.Fatal("an unrelated viewport group must not retire this group's source")
+	}
+	if mapClusterID("reader-b", leaves, ids) == baseID || mapClusterSourceVersion("reader-b", leaves, ids) == baseSource {
+		t.Fatal("reader authority must remain fenced")
+	}
+	leaves[1].pin.SourceVersion = "changed-member-authority"
+	if mapClusterID("reader-a", leaves, ids) != baseID || mapClusterSourceVersion("reader-a", leaves, ids) == baseSource {
+		t.Fatal("changed member facts must retire its source without inventing a new position")
+	}
+	if mapClusterID("reader-a", leaves, []int{0}) == baseID {
+		t.Fatal("removed members must change group identity")
+	}
+	leaves[0].pin.Anchor.Latitude += .01
+	leaves[1].pin.Anchor = leaves[0].pin.Anchor
+	if mapClusterID("reader-a", leaves, ids) == baseID {
+		t.Fatal("a changed true anchor must change group identity")
+	}
+}

@@ -45,14 +45,57 @@ bool amapRequiresNativeRetirement({
   final at = now ?? DateTime.now().toUtc();
   for (final old in previous) {
     final fresh = next[old.id];
-    if (fresh == null || fresh.sourceVersion != old.sourceVersion) return true;
+    final grant = old.readGrant;
+    if (grant != null && !grant.authorizes(old, at)) return true;
+    final mediaWasCopied =
+        copiedMediaIDs == null || copiedMediaIDs.contains(old.id);
+    final auxiliaryWasCopied =
+        copiedAuxiliaryIDs == null || copiedAuxiliaryIDs.contains(old.id);
+    final retainedDecorationAllowed =
+        (!mediaWasCopied ||
+            old.mediaPixels == null ||
+            grant?.authorizesCopiedPixels(old.mediaPixels!, at) == true) &&
+        (!auxiliaryWasCopied ||
+            old.recentMoments == null ||
+            old.recentMoments!.currentAt(at));
+    if (fresh == null) {
+      // A viewport no longer selects this row. Its independently issued finite
+      // permission may still allow the already copied native pixels until the
+      // incremental removal ACK. It grants no new media reads or rendering.
+      if (grant != null && retainedDecorationAllowed) continue;
+      return true;
+    }
+    if (fresh.sourceVersion != old.sourceVersion ||
+        fresh.kind != old.kind ||
+        fresh.latitude != old.latitude ||
+        fresh.longitude != old.longitude ||
+        fresh.precision != old.precision ||
+        fresh.categoryCode != old.categoryCode ||
+        fresh.title != old.title ||
+        fresh.subtitle != old.subtitle ||
+        fresh.contentCount != old.contentCount ||
+        fresh.anchorCount != old.anchorCount)
+      return true;
+    if (grant != null && retainedDecorationAllowed) continue;
     final pixels = old.mediaPixels;
+    final freshPixels = fresh.mediaPixels;
     if ((copiedMediaIDs == null || copiedMediaIDs.contains(old.id)) &&
         pixels != null &&
-        (!pixels.current() ||
-            (pixels.validUntil != null && !at.isBefore(pixels.validUntil!)) ||
-            fresh.mediaPixels?.key != pixels.key ||
-            fresh.mediaPixels?.current() != true)) {
+        ((pixels.validUntil != null && !at.isBefore(pixels.validUntil!)) ||
+            freshPixels == null ||
+            !freshPixels.current() ||
+            (freshPixels.validUntil != null &&
+                !at.isBefore(freshPixels.validUntil!)) ||
+            freshPixels.key != pixels.key ||
+            (!pixels.current() &&
+                (pixels.validUntil == null ||
+                    freshPixels.validUntil == null)) ||
+            // A successful read can replace the active grant before the old
+            // deadline. Only the exact immutable cached PNGs may be reauthorized;
+            // equal IDs/keys alone do not prove equal pixels.
+            !identical(pixels.normalPNG, freshPixels.normalPNG) ||
+            !identical(pixels.selectedPNG, freshPixels.selectedPNG) ||
+            pixels.devicePixelRatio != freshPixels.devicePixelRatio)) {
       return true;
     }
     if ((copiedAuxiliaryIDs == null || copiedAuxiliaryIDs.contains(old.id)) &&
@@ -76,7 +119,64 @@ List<DateTime> amapCopiedMarkerDeadlines(
     entity.mediaPixels!.validUntil!,
   if (auxiliaryCopied && entity.recentMoments != null)
     entity.recentMoments!.validUntil,
+  if (entity.readGrant != null) entity.readGrant!.validUntil,
 ];
+
+class _AMapNativeCopy {
+  const _AMapNativeCopy(this.entity, this.mediaCopied, this.auxiliaryCopied);
+  final MapEntity entity;
+  final bool mediaCopied, auxiliaryCopied;
+  List<DateTime> get deadlines => amapCopiedMarkerDeadlines(
+    entity,
+    mediaCopied: mediaCopied,
+    auxiliaryCopied: auxiliaryCopied,
+  );
+  bool invalidAt(DateTime at) {
+    final grant = entity.readGrant, pixels = entity.mediaPixels;
+    if (grant != null && !grant.authorizes(entity, at)) return true;
+    if (mediaCopied &&
+        (pixels == null ||
+            (grant != null
+                ? !grant.authorizesCopiedPixels(pixels, at)
+                : !pixels.current() ||
+                      (pixels.validUntil != null &&
+                          !at.isBefore(pixels.validUntil!)))))
+      return true;
+    return auxiliaryCopied && entity.recentMoments?.currentAt(at) != true;
+  }
+
+  bool canHandoffTo(MapEntity? fresh, DateTime at) {
+    if (fresh == null || invalidAt(at)) return false;
+    if (entity.readGrant != null &&
+        fresh.readGrant?.authorizes(fresh, at) != true)
+      return false;
+    if (mediaCopied) {
+      final old = entity.mediaPixels, next = fresh.mediaPixels;
+      if (old == null ||
+          next == null ||
+          !next.current() ||
+          next.key != old.key ||
+          !identical(next.normalPNG, old.normalPNG) ||
+          !identical(next.selectedPNG, old.selectedPNG) ||
+          next.devicePixelRatio != old.devicePixelRatio ||
+          next.validUntil == null ||
+          !at.isBefore(next.validUntil!))
+        return false;
+    }
+    return !auxiliaryCopied ||
+        fresh.recentMoments?.labelAt(at) == entity.recentMoments?.labelAt(at);
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      other is _AMapNativeCopy &&
+      identical(entity, other.entity) &&
+      mediaCopied == other.mediaCopied &&
+      auxiliaryCopied == other.auxiliaryCopied;
+  @override
+  int get hashCode =>
+      Object.hash(identityHashCode(entity), mediaCopied, auxiliaryCopied);
+}
 
 /// Serial native render control. Losing focus (for example while showing the
 /// IME) is not a hidden surface and must not tear down/restart the GL renderer.
@@ -234,7 +334,10 @@ class _AMapCityMapViewState extends State<AMapCityMapView>
   Object? _sourceScope;
   Object? _sourceAuthority;
   Set<String> _copiedMediaIDs = const {}, _copiedAuxiliaryIDs = const {};
+  Set<String> _nativeSourceIDs = const {};
+  List<_AMapNativeCopy> _nativeCopies = const [];
   List<DateTime> _copiedDeadlines = const [];
+  bool _nativeWritePending = false;
   String _sourceKey = '';
   int _sourceEpoch = 0, _cameraEpoch = 0, _sdkEpoch = 0, _focusSerial = 0;
   bool _foreground = true, _configured = false, _moving = false;
@@ -533,7 +636,10 @@ class _AMapCityMapViewState extends State<AMapCityMapView>
     final unique = <String, MapEntity>{};
     if (_foreground) {
       for (final e in _source()) {
-        if (e.hasMapAnchor && e.id.isNotEmpty)
+        if (e.hasMapAnchor &&
+            e.id.isNotEmpty &&
+            (e.readGrant == null ||
+                e.readGrant!.authorizes(e, DateTime.now().toUtc())))
           unique.putIfAbsent(e.id, () => e);
       }
     }
@@ -550,22 +656,60 @@ class _AMapCityMapViewState extends State<AMapCityMapView>
           unique[id]!.subtitle,
           unique[id]!.decorationKey,
           unique[id]!.mediaPixels?.validUntil?.microsecondsSinceEpoch,
+          unique[id]!.readGrant?.validUntil.microsecondsSinceEpoch,
           unique[id]!.memberIDs,
         ],
     ]);
     if (scope != _sourceScope ||
         authority != _sourceAuthority ||
-        key != _sourceKey) {
+        key != _sourceKey ||
+        _nativeCopies.any((copy) => copy.invalidAt(DateTime.now().toUtc()))) {
       final authorityChanged = authority != _sourceAuthority;
-      final retire = amapRequiresNativeRetirement(
-        previousAuthority: _sourceAuthority,
-        authority: authority,
-        previous: _rows.values,
-        next: unique,
-        copiedMediaIDs: _copiedMediaIDs,
-        copiedAuxiliaryIDs: _copiedAuxiliaryIDs,
-      );
+      final now = DateTime.now().toUtc();
+      final copiedIDs = {..._copiedMediaIDs, ..._copiedAuxiliaryIDs};
+      final retire =
+          authorityChanged ||
+          _copiedDeadlines.any((d) => !now.isBefore(d)) ||
+          _nativeCopies.any(
+            (copy) =>
+                copy.invalidAt(now) ||
+                amapRequiresNativeRetirement(
+                  previousAuthority: _sourceAuthority,
+                  authority: authority,
+                  previous: [copy.entity],
+                  next: unique,
+                  copiedMediaIDs: {if (copy.mediaCopied) copy.entity.id},
+                  copiedAuxiliaryIDs: {
+                    if (copy.auxiliaryCopied) copy.entity.id,
+                  },
+                  now: now,
+                ),
+          );
+      if (kProfileMode && retire) {
+        debugPrint(
+          'BIRDTIE_AMAP_RETIRE ${jsonEncode({'stage': 'source', 'authorityChanged': authorityChanged, 'moving': _moving, 'nativeWritePending': _nativeWritePending, 'expiredCopy': _copiedDeadlines.any((d) => !now.isBefore(d)), 'missingCopy': copiedIDs.any((id) => !unique.containsKey(id))})}',
+        );
+      }
       if (retire) _retiring = true;
+      if (!_retiring && !_nativeWritePending) {
+        // These bytes remain in the SDK during a drag. A fresh authorized
+        // response may grant the identical cached bytes a new deadline without
+        // a native repaint. Never cancel a retirement that has already begun.
+        _nativeCopies = [
+          for (final copy in _nativeCopies)
+            if (copy.canHandoffTo(unique[copy.entity.id], now))
+              _AMapNativeCopy(
+                unique[copy.entity.id]!,
+                copy.mediaCopied,
+                copy.auxiliaryCopied,
+              )
+            else
+              copy,
+        ];
+        _copiedDeadlines = [
+          for (final copy in _nativeCopies) ...copy.deadlines,
+        ];
+      }
       ++_sourceEpoch;
       _sourceScope = scope;
       _sourceAuthority = authority;
@@ -599,13 +743,15 @@ class _AMapCityMapViewState extends State<AMapCityMapView>
   void _armExpiry() {
     _expiry?.cancel();
     final now = DateTime.now().toUtc();
-    // Only copied sensitive pixels need a native retirement timer. Place
-    // covers and hidden overview counts never entered the native bitmap.
+    // Every copied source has its own finite grant, including bare names and
+    // coordinates. Unpainted Place covers/counts still add no pixel deadline.
     final deadlines = _copiedDeadlines.where((d) => d.isAfter(now)).toList();
     if (deadlines.isEmpty) return;
     deadlines.sort();
     _expiry = Timer(deadlines.first.difference(now), () {
       if (!mounted) return;
+      if (kProfileMode)
+        debugPrint('BIRDTIE_AMAP_RETIRE {"stage":"copied_expiry"}');
       // Retire copied native pixels at the grant deadline, including when the
       // source's identity stays stable and only its media grant has expired.
       _retiring = true;
@@ -884,10 +1030,64 @@ class _AMapCityMapViewState extends State<AMapCityMapView>
   }
 
   Future<void> _render(int serial) async {
-    final map = _map, source = _sourceEpoch, camera = _cameraEpoch;
+    final map = _map,
+        source = _sourceEpoch,
+        camera = _cameraEpoch,
+        sdk = _sdkEpoch;
     final scope = _scope();
     final authority = _renderAuthorityScope();
-    if (map == null || _size.isEmpty || _moving) return;
+    if (map == null || _size.isEmpty) return;
+    // This priority phase is the sole writer, in the same latest-work queue as
+    // layout. Removing copied private pixels must not wait for a drag to stop.
+    // Camera ticks invalidate geometry, not this permission-retirement ACK.
+    bool retirementCurrent() =>
+        mounted &&
+        map == _map &&
+        sdk == _sdkEpoch &&
+        serial == _renderQueue.serial &&
+        source == _sourceEpoch &&
+        scope == _scope() &&
+        authority == _renderAuthorityScope();
+    if (_retiring) {
+      try {
+        if (!retirementCurrent()) return;
+        _nativeWritePending = true;
+        _change(() {
+          if (!retirementCurrent()) return;
+          _markers = const {};
+          _markerKeys = const {};
+          _positions = const {};
+          _displayed = const [];
+          _placements = const {};
+        });
+        await WidgetsBinding.instance.endOfFrame;
+        if (!retirementCurrent()) return;
+        await map
+            .toScreenCoordinate(
+              _camera?.target ??
+                  _displayCoordinate(
+                    widget.city.map!.latitude,
+                    widget.city.map!.longitude,
+                  ),
+            )
+            .timeout(const Duration(seconds: 3));
+        if (!retirementCurrent()) return;
+        _copiedMediaIDs = const {};
+        _copiedAuxiliaryIDs = const {};
+        _copiedDeadlines = const [];
+        _nativeSourceIDs = const {};
+        _nativeCopies = const [];
+        _nativeWritePending = false;
+        _armExpiry();
+        _change(() {
+          if (retirementCurrent()) _retiring = false;
+        });
+      } catch (_) {
+        if (retirementCurrent()) _fail('地图内容暂时无法显示，请重试。');
+        return;
+      }
+    }
+    if (_moving || !retirementCurrent()) return;
     bool current() =>
         mounted &&
         map == _map &&
@@ -897,7 +1097,13 @@ class _AMapCityMapViewState extends State<AMapCityMapView>
         scope == _scope() &&
         authority == _renderAuthorityScope() &&
         !_moving;
-    final rows = _rows.values.toList();
+    final rows = _rows.values
+        .where(
+          (e) =>
+              e.readGrant == null ||
+              e.readGrant!.authorizes(e, DateTime.now().toUtc()),
+        )
+        .toList();
     final positions = <String, Offset>{};
     final geometry =
         <String, ({double latitude, double longitude, Offset point})>{};
@@ -978,11 +1184,14 @@ class _AMapCityMapViewState extends State<AMapCityMapView>
       }
       final next = <String, amap.Marker>{}, keys = <String, String>{};
       final copiedMediaIDs = <String>{}, copiedAuxiliaryIDs = <String>{};
-      final copiedDeadlines = <DateTime>[];
       final copiedGuards = <bool Function()>[];
       final visibleEntities = plan.entities
           .where((e) => !plan.occludedGlyphIDs.contains(e.id))
           .toList();
+      final nativeSourceIDs = {
+        for (final e in visibleEntities)
+          if (_rows.containsKey(e.id)) e.id else ...e.memberIDs,
+      };
       for (final e in visibleEntities) {
         final placement = plan.placements[e.id];
         final selected = e.id == widget.selectedEntityId;
@@ -1008,13 +1217,6 @@ class _AMapCityMapViewState extends State<AMapCityMapView>
                 placement!.auxiliary,
           );
         }
-        copiedDeadlines.addAll(
-          amapCopiedMarkerDeadlines(
-            e,
-            mediaCopied: png != null,
-            auxiliaryCopied: placement?.auxiliary != null,
-          ),
-        );
         final key = jsonEncode([
           e.kind.name,
           e.sourceVersion,
@@ -1148,19 +1350,43 @@ class _AMapCityMapViewState extends State<AMapCityMapView>
       // Until the SDK acknowledges removal, it may still hold an old bitmap
       // clipped out by the new content rect. Keep that copy's live guards and
       // deadline, even though the next display plan no longer paints it.
-      if (barrierNeeded &&
-          _copiedDeadlines.any((d) => !DateTime.now().toUtc().isBefore(d))) {
+      if (_copiedDeadlines.any((d) => !DateTime.now().toUtc().isBefore(d))) {
         _retiring = true;
+        _change(() {});
+        unawaited(_renderQueue.schedule());
+        return;
       }
-      _copiedMediaIDs = barrierNeeded
+      final pendingBarrier = barrierNeeded || _nativeWritePending || _retiring;
+      final nativeCopies = [
+        for (final id in nativeSourceIDs)
+          _AMapNativeCopy(
+            _rows[id]!,
+            copiedMediaIDs.contains(id),
+            copiedAuxiliaryIDs.contains(id),
+          ),
+      ];
+      final pendingCopies = pendingBarrier
+          ? {..._nativeCopies, ...nativeCopies}.toList()
+          : nativeCopies;
+      if (pendingCopies.length > 2048 ||
+          pendingCopies.any((copy) => copy.invalidAt(DateTime.now().toUtc()))) {
+        _retiring = true;
+        _change(() {});
+        unawaited(_renderQueue.schedule());
+        return;
+      }
+      _nativeCopies = pendingCopies;
+      _nativeWritePending = pendingBarrier;
+      _nativeSourceIDs = pendingBarrier
+          ? {..._nativeSourceIDs, ...nativeSourceIDs}
+          : nativeSourceIDs;
+      _copiedMediaIDs = pendingBarrier
           ? {..._copiedMediaIDs, ...copiedMediaIDs}
           : copiedMediaIDs;
-      _copiedAuxiliaryIDs = barrierNeeded
+      _copiedAuxiliaryIDs = pendingBarrier
           ? {..._copiedAuxiliaryIDs, ...copiedAuxiliaryIDs}
           : copiedAuxiliaryIDs;
-      _copiedDeadlines = barrierNeeded
-          ? [..._copiedDeadlines, ...copiedDeadlines]
-          : copiedDeadlines;
+      _copiedDeadlines = [for (final copy in _nativeCopies) ...copy.deadlines];
       _armExpiry();
       _previousVisible = plan.entities.map((e) => e.id).toSet();
       if (nativeChanged || overlayChanged) {
@@ -1177,7 +1403,7 @@ class _AMapCityMapViewState extends State<AMapCityMapView>
       }
       // Rect-only and cached geometry updates need no native write barrier.
       // A retiring ACL/source scope must always keep the full barrier below.
-      if (!nativeChanged && !_retiring) {
+      if (!pendingBarrier) {
         _reportAnchor(nextPositions[widget.selectedEntityId]);
         return;
       }
@@ -1196,9 +1422,18 @@ class _AMapCityMapViewState extends State<AMapCityMapView>
           )
           .timeout(const Duration(seconds: 3));
       if (!current()) return;
+      if (_nativeCopies.any((copy) => copy.invalidAt(DateTime.now().toUtc()))) {
+        _retiring = true;
+        _change(() {});
+        unawaited(_renderQueue.schedule());
+        return;
+      }
       _copiedMediaIDs = copiedMediaIDs;
       _copiedAuxiliaryIDs = copiedAuxiliaryIDs;
-      _copiedDeadlines = copiedDeadlines;
+      _nativeCopies = nativeCopies;
+      _copiedDeadlines = [for (final copy in _nativeCopies) ...copy.deadlines];
+      _nativeSourceIDs = nativeSourceIDs;
+      _nativeWritePending = false;
       _armExpiry();
       _change(() {
         if (current()) _retiring = false;
@@ -1642,7 +1877,10 @@ class _AMapCityMapViewState extends State<AMapCityMapView>
                   ),
                 ],
             if (_retiring || !_foreground)
-              const ColoredBox(color: Color(0xFFF3F4EF)),
+              const ColoredBox(
+                key: Key('amap-retiring-cover'),
+                color: Color(0xFFF3F4EF),
+              ),
             if (_map == null && _failure == null)
               Center(
                 child: Semantics(

@@ -307,12 +307,26 @@ func mapSpatialGroups(leaves []mapSpatialLeaf, _ float64) [][]int {
 	}
 	return groups
 }
-func mapClusterID(q content.MapContentQuery, leaves []mapSpatialLeaf, ids []int) string {
+func mapClusterID(reader string, leaves []mapSpatialLeaf, ids []int) string {
 	members := []string{}
 	for _, i := range ids {
 		members = append(members, leaves[i].pin.MarkerID)
 	}
-	return "cluster:" + content.MomentControlHash([]any{q.Bounds, q.Zoom, members})
+	sort.Strings(members)
+	return "cluster:" + content.MomentControlHash([]any{"coincident-cluster-v2", reader, leaves[ids[0]].pin.Anchor, members})
+}
+
+// Viewport/cursor identity still fences the complete response. A displayed
+// coincident group has its own facts: unrelated regions and zoom changes must
+// not revoke identical authorized glyphs or names in this group.
+func mapClusterSourceVersion(reader string, leaves []mapSpatialLeaf, ids []int) string {
+	facts := []string{}
+	for _, i := range ids {
+		p := leaves[i].pin
+		facts = append(facts, content.MomentControlHash([]any{p.MarkerID, p.SourceVersion, p.Kind, p.Name, p.CategoryCode, p.Anchor, p.MomentCount, p.AnchorCount, p.Moments, p.VisibilitySources}))
+	}
+	sort.Strings(facts)
+	return content.MomentControlHash([]any{"coincident-cluster-source-v2", reader, facts})
 }
 func mapClusterBounds(q content.MapContentQuery, leaves []mapSpatialLeaf, ids []int) content.MapContentBounds {
 	b := content.MapContentBounds{West: 540, East: -540, South: 90, North: -90}
@@ -404,7 +418,7 @@ func (s *Store) ReadHumanMapContent(ctx context.Context, d [32]byte, a identity.
 		}
 		found := false
 		for _, g := range groups {
-			if len(g) > 1 && mapClusterID(q, leaves, g) == q.ClusterID {
+			if len(g) > 1 && mapClusterID(historyReader(f), leaves, g) == q.ClusterID {
 				selected = g
 				found = true
 				break
@@ -486,7 +500,7 @@ func (s *Store) ReadHumanMapContent(ctx context.Context, d [32]byte, a identity.
 			first := leaves[g[0]].pin
 			name, category := mapClusterCategory(leaves, g)
 			x := content.MapContentPin{Kind: "CLUSTER", Name: name, CategoryCode: category, Anchor: first.Anchor, AnchorCount: len(g), VisibilitySources: []string{}, Moments: []content.MapContentMomentSelector{}}
-			x.MarkerID = mapClusterID(q, leaves, g)
+			x.MarkerID = mapClusterID(historyReader(f), leaves, g)
 			x.EntityID = x.MarkerID
 			x.RepresentativeMarkerID = first.MarkerID
 			x.RepresentativePlaceID = first.PlaceID
@@ -520,7 +534,7 @@ func (s *Store) ReadHumanMapContent(ctx context.Context, d [32]byte, a identity.
 			sort.Strings(x.VisibilitySources)
 			x.MomentCount = len(ms)
 			x.MomentsTruncated = len(ms) > 20
-			x.SourceVersion = content.MomentControlHash([]any{source, x.MarkerID})
+			x.SourceVersion = mapClusterSourceVersion(historyReader(f), leaves, g)
 			p.Pins = append(p.Pins, x)
 		}
 	}

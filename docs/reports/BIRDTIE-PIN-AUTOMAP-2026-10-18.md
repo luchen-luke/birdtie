@@ -1,6 +1,6 @@
 # Now 分类 Pin 与自动地图：2026-10-18
 
-状态：API36 已部署，Android65 已覆盖安装、数据保留；65号键盘取得改善证据，但用户随后报告整张底图闪白与pin/名称消失重现两种问题。67修复候选已构建成功，安装时ADB无设备，尚未真机复验；65号末轮观察未覆盖用户实际拖动，不算连续手势通过。本轮仍为 PARTIAL，未关闭 PMAP-12 或原发布门槛。唯一 live 状态继续放在 `BT-FIX-NOW-UI-001.pinAutoMap20261018`，不另建任务队列。
+状态：API37 已部署且就绪，Android70 已覆盖安装、数据保留，实际产物与构建哈希一致。69真人确认键盘3次弹出/收起已不卡顿；拖动缩放仍重新读取并整图闪动，明确 FAIL_USER_REPRODUCED。70修复候选已通过相关19项回归（最终时间边界变动后controller6项再次通过），高德实际拖缩尚未验收，不能当作已解决。本轮仍为 PARTIAL，未关闭 PMAP-12 或原发布门槛。唯一 live 状态继续放在 `BT-FIX-NOW-UI-001.pinAutoMap20261018`，不另建任务队列。
 
 ## 本轮输入与边界
 
@@ -40,14 +40,14 @@
 | PMAP-02 地点/独立动态/显式层语义 | 01 | 代码、隔离 ACL/去重检查通过；61 上海真实方形独立动态、类别地点与局部聚合可见；全部点击/撤权真机组合 NOT_RUN |
 | PMAP-03 尺寸/名称/触达 | 02 | DPR、文字测量、命中测试通过；61 两端实际正常字号截图可用；多 DPR 真机与完整名称读屏 NOT_RUN |
 | PMAP-04 分类与颜色 | 02 | 共用分类映射与未知兜底通过；61 两端真实分类符号截图已取得；相同地点跨供应商对照 NOT_RUN |
-| PMAP-05 密度/碰撞/稳定 | 03、04 | 63/64真实上海2km已隐藏概览计数、分类pin与方形动态保留；65用户反馈两种闪屏，66/67继续修复；最新候选真机复验待执行 |
+| PMAP-05 密度/碰撞/稳定 | 03、04 | 63/64真实上海2km已隐藏概览计数、分类pin与方形动态保留；67/68/69真人闪屏失败，70修复候选待真机复验 |
 | PMAP-06 统一地图目标 | 01 | 目录/临时目标/动态/收藏/旅程/主题地图接线；直接路由矩阵通过 |
 | PMAP-07 坐标与区域出处 | 01、06 | 共用 WGS84 边界与有出处的陆地区域判断；未改写 Civu/业务坐标；两本城图可见；逐点实地坐标测量 NOT_RUN |
 | PMAP-08 无缝切换/迟到/恢复 | 06、07 | 导航/迟到/目录恢复直接检查通过；61跨区有白底/默认北美地球；62补同源创建镜头，66/67拆分普通query与真实退休；最新跨区录屏仍待复验 |
 | PMAP-09 删除供应商选择/启用入口 | 06、08 | 旧启用按钮与强制选择入口移除；真实用户在60隐私页同意、61重启读取恢复；跨区自动切换与署名已取证 |
 | PMAP-10 底图/安全区域 | 05 | Mapbox实际style命中1/applied1；两端署名与键盘截图已取得；高德路名/区名进一步降权 BLOCKED（需获准新样式导出） |
-| PMAP-11 缓存/媒体/性能 | 05、08 | 61两端有效60秒手势、65键盘改善有实际指标；65末轮手势窗未覆盖且用户报闪屏；67修复候选待复验，完整网络计数 NOT_RUN |
-| PMAP-12 真机/权限/构建交付 | 02–11 | API36已部署；Android60–67构建成功，60/61/63/64/65覆盖安装；66保留不安装，67因ADB无设备未装；iOS/Web真运行、真实读屏及其余缺证据仍未关闭 |
+| PMAP-11 缓存/媒体/性能 | 05、08 | 69真实键盘反馈通过，拖缩闪屏失败；70有限授权显示基线及增量路径修复通过相关回归，真机待验；完整网络计数 NOT_RUN |
+| PMAP-12 真机/权限/构建交付 | 02–11 | API37已部署；Android60–70构建成功，67重连后及68/69/70覆盖安装均核对实际APK；70高德拖缩未验收；iOS/Web真运行、真实读屏及其余缺证据仍未关闭 |
 
 ## 本轮运行证据
 
@@ -166,6 +166,53 @@ D:/DevTools/flutter/bin/flutter.bat build apk --profile --build-name=0.1.2 --bui
 11:04:29UTC（19:04:29本地）覆盖安装尝试返回 `device 'c641566b' not found`，随后 `adb devices -l` 无设备；`device/install67/receipt.json` installed=false、before/after为空、dataClearCommands=0。这不是USB安装被拒，不能沿用旧权限错误；没有弹出新隐私或安装选择。本轮最终67安装、上海/阿伯丁新截图、两种闪屏手势复验、键盘和跨区新录屏均 **BLOCKED_DEVICE_OFFLINE / NOT_RUN**。原61/63/64/65真实材料及65用户失败反馈保留，不能作为67已验收。已向用户请求重新连接；仓库内交付继续推进。
 
 独立65复核 `work/pin-automap-20261018/gesture-window65-review/timeline.json` 确认：窗口主体近静止，首运动晚于窗止18.031秒；原始PTS15.37s确实有整图浅白遮罩和读取提示、15.43s底图恢复/名称短失、94.92s地图位移且名称消失。没有把空闲帧数当用户手势。源码审查终核 `flicker66-review/receipt.json` 已确认67的old∪next交接及直接authority fence，无新增已证实源码阻断；此审查不代替手机验收。
+
+### 67重新连接、真实失败与68续授权修复
+
+用户重新连接后，67已实际覆盖65，`device/install67-retry01/receipt.json`确认数据清理0、拉回APK哈希与构建一致。67的上海2km截图、用户真人手势及90秒无QA入口的对照录屏均已采集；用户明确反馈两种闪屏仍在。`work/pin-automap-20261018/gesture67-control-review/timeline.json`核3382帧、35个白候选帧/13组，其中多组原帧确认底图、业务标记和名称一起消失，不能将其归因QA入口。前三组静止白帧间隔约15.25秒。原67失败不得被69或数值帧率覆盖。
+
+旧的`am start`验收入口会触发当前Activity生命周期，因而67 synthetic pan与`amap67-human-pan`的观察存在干扰；后者60秒采样也不含连续60秒真人运动，不作手势通过。68新增仅profile/debuggable/preview可注册的固定观察广播，发送者须持DUMP，转发固定null参数、检查焦点和Dart当前地图守卫；不启动Activity、不取消或注入触摸。它不是普通产品入口。
+
+68修复两处代码路径：同一最新工作队列优先清空退休标记并取得SDK屏障，不再等待拖动结束才显示干净底图；正常续期可由新的真实授权继续许可同ID/source/key、相同不可变PNG字节，旧期限已到、权限/内容变化、已退休或原生更新待ACK时仍走原退休屏障。实际copied期限及pending old∪next均保留，未修改旧授权对象或给过期内容续命。直接测试`native-clear-renew68-pending` 8 PASS；首轮误写transport字段名失败保留。
+
+68实际构建/安装哈希`a473824dcab6efcdc3c3891a881319cf8d591a6a06ac2f709ba7f3cf0def0fc4`，8126输入摘要`818fcb3e8b78d8ab50576f2779381973dadb1245598a72b3ff4d38063eb0582e`。75秒静止录像的2343帧白候选为0，但后续真人明确反馈仍闪屏，并在缩放时出现无动态、延迟闪屏。故68为**FAIL_USER_REPRODUCED**；不能用静止改善冒充动态验收。其标准分析退出1、0 error/14 warning/2261 info，非全绿。
+
+用户指出的一条旧媒体定位已做精确只读来源核对，迁移前后的保存数值及媒体关联一致；存档未保留可复核GPS。用户随后明确“先不用管，相册地标确实一致”，已停止追查，未改坐标或业务数据。该事实不等于证明所有历史CRS正确。
+
+### 69 / API37：缩放覆盖、聚合身份与实际原生源
+
+- 缩放覆盖改为同城市、同zoom、有效期限的视口缓存。旧zoom只可给显式选中项保留原读授权；旧整页、邻居和cursor不能证明新区已覆盖。新zoom必走正确查询，选中项续读仍用原zoom/范围，原授权到期与撤权继续拒绝。
+- 新完整响应仅淘汰被其完整包含的同zoom旧范围；部分重叠外侧仍受原期限约束。已确认同ID换版和同zoom完整响应中的移除仍立即退休。组合显示期限取真正贡献当前page/选中项的来源，不能把未贡献旧view的期限压到新图片上，也不取max延长任何旧pin。
+- 服务端同坐标聚合ID改为reader、真实锚点与排序成员身份；局部source version仅含本组实际事实。全局viewport source仍用于分页、MembersPath、ACL和最终响应证明，未绕过权威复核。该版本仍仅聚合相同坐标和精度，不把低zoom当作移动地点的许可。
+- 高德单独跟踪实际写入SDK的源ID；本地聚合跟踪真实成员。未绘制行变动不再误盖全图；待ACK保持old∪next，只有当前ACK可替换/清空。不能用刷新时已清空的Flutter `_displayed`推断SDK中没有旧glyph。
+
+实际直接验证：`coverage69-related`既有controller5项+新增zoom2项全部PASS；新测试先在旧代码复现“不发新zoom GET”，然后验证修复、回到旧zoom复用、原选中source期限和旧cursor隔离。`unpainted69-repair2` 8 PASS，另含续期、运动中清除、pending同key重ACK及ABA；误放contentRect的夹具失败和发现原生源跟踪缺口的失败均保留。`work/pin-automap-20261018/server-tests/native03/receipt.json`实际5 PASS/0 FAIL/0 SKIP，包含170/171真实PostgreSQL权限与撤回，以及3个纯语义用例；178迁移仅在临时隔离容器，parent/child DB和容器均已清理，生产访问false。
+
+69构建输入8126项、前后摘要`54f246920443031fb05ea04dddc63867ab57dd0c395501f8616ccd65bfbd3df8`一致。APK 357109019B，SHA256 `525a11bc85cd6b56ea287f502576957e1aa690b85d40096107a590035fff5169`，preview 0.1.2(69)、签名同59–68、路由资源哈希一致。覆盖68成功、数据清理0、installed base哈希一致。`analyze-final69`标准退出1，0 error/14 warning/2262 info，2276条与工具摘要一致、输入稳定；不能报告分析通过。
+
+API37构建2084项宽输入摘要`1a7ae22ec531c6ace244e545a3d0eb6a41898b527f387265bf2832e6de746a8a`稳定（含测试源码哈希；测试文件不编入二进制）。Linux amd64产物SHA256 `97c4c68f0bbce3f31339db39b102e7792467640f4bf151c9c9c829a3ead07f5d`。`api37-deploy/receipt.json`确认build36→37就绪，schema178/ledger不变、业务数据库写入0、API环境和路由不变、Civu写入0、可回退未调用。只读产物审计见`work/pin-automap-20261018/build69-api37-readonly-audit/receipt.json`。69后续真人结果见下；跨区新录像仍 NOT_RUN，不沿用61材料冒充69。
+
+### 69实际反馈与70增量显示修复
+
+`device/amap69-idle`为75秒静止样本，不能替代拖缩。`device/amap69-keyboard-zoom`为110秒真人操作录屏，无观察广播、Activity启动或注入动作；用户实际弹出/收起键盘3次后拖缩约20秒并停留观察。用户明确确认键盘已不卡顿，但地图仍重新读取并整图闪动。该段未开启Flutter60秒采样，FrameReports为空，不能用系统jank0覆盖用户的闪屏失败。独立系统窗口4326帧/p95 5ms、874帧/p95 6ms分母分开；原生最终present仍 NOT_RUN。数值诊断记录到settle后`authorityChanged=false / expiredCopy=false / missingCopy=true`的退休，支持核查缺项触发，不单凭此认定全部白帧根因。
+
+对照的是当前仓库实际Mapbox `_syncMarkers`（`native_city_map_io.dart`）：按annotation增删改，内容缺项不会盖住底图。高德同样已有MarkerUpdates增量路径，但此前把视口兴趣变化与原源授权失效混在一起，开启opaque退休盖层。两端队列均只保留一个最新待执行任务，未发现无限旧任务FIFO；异步投影仍可能延迟最新更新，不能当作原生零延迟证明。
+
+70在原控制器和适配器内实施：
+
+- 新增有限`MapEntityReadGrant`，绑定原source事实、账户/epoch、原期限及实际不可变PNG；仅用于判断SDK已经复制的内容是否须清除，不赋予新媒体读取、详情或操作权限。原源失效/到期永久锁定，安全装饰复制保留grant；issuer已知无权时过滤实体，不能降为legacy无grant裸名称/坐标。
+- 高德独立保存实际原生副本的完整source+真实media/aux标志；pending保留old∪next（同ID多个版本也不合并），ACK后再次核查全部授权。普通视口缺项在原有限授权有效时可等待增量替换；真正撤权、身份变化或到期仍优先清理，不能等拖动结束。裸glyph、名称和坐标的source期限也入定时器。有限预算2048，超限失败关闭。
+- 同事实、同不可变字节的接棒逐copy进行。某个合法缺项保留自身原期限，不再连带阻止其他fresh项接棒；已退休/到期/pending不能被新对象取消或复活。
+- 新zoom独立取coverage；已有同城市有限lease只提供有界显示基线，不提供新区coverage、旧cursor或分页证明。按精确WGS84坐标与原pin.precision选最新表示，新的同anchor表示整体替换旧表示，不推测截断moments中的成员、不相加新旧数量。实际显示基线贡献其原view期限，续读仍用其原zoom。
+- 修复“续期尾页nextCursor=null误撤第一页”的缺项判定及缓存淘汰：只有请求cursor为空、响应nextCursor为空且非truncated的完整单页读才能给负证据；负证据还不能早于基线。正向同ID换版和实际撤权继续退休。
+
+相关测试：`source-grant70-incremental-repair1`在`apps/client`执行`flutter test --no-pub --reporter=expanded test/owned_map_zoom_coverage_test.dart test/amap_city_map_motion_test.dart test/content_map_controller_test.dart`，退出0，19 PASS；最终仅补负证据时间约束后`coverage70-final`执行zoom测试6 PASS、退出0。覆盖新zoom等待期/不完整分页保留、尾页刷新不撤首屏、同anchor不重复计数、旧cursor隔离、原期限与身份ABA，以及pending/移动期间真实source失效的优先清除。两名独立只读源码复核无剩余已发现P1，不等于真机通过。
+
+**旧测试覆盖纠正**：68/69“同PNG接棒跨期限”的widget夹具DPR默认为3而PNG夹具为1，实际走fallback glyph；旧PASS能支持队列/ABA/裸glyph流程，不能证明照片真的复制进SDK。70已显式DPR1，断言实际Marker.icon PNG与已验证图片逐字节相等，再覆盖接棒跨旧期限、另一个长授权缺项不阻塞、旧∪新ACK及裸source期限。旧测试失败及记录均保留，不继续沿用旧照片覆盖说法。
+
+70实际构建退出0、8126输入前后摘要`f94c4075b02c8071042594a322bd3038cad08188ad591120cf5eaf11bbb16ce8`一致。APK 357125403B，SHA256`0eba04ae2c31fb2d517d42aec633d41f32d32419dae244f6c04d9dd2c3adcd91`，preview0.1.2(70)、原签名及路由资产一致；69→70仅三个预期Dart生产源改变。`build70-readonly-audit/receipt.json`复核当前全部输入与实际产物，并重核59–69历史11个APK哈希未变。`device/install70/receipt.json`确认69→70覆盖成功、dataClearCommands=0、拉回base.apk与构建完全一致。标准`flutter analyze --no-pub`退出1、0 error/18 warning/2271 info（2289条），输入稳定；其中新增4条为MapEntityReadGrant中不必要的非空断言，未改分析器flag掩盖，不报告全量分析通过。
+
+70冷启动实际恢复的是**阿伯丁/Mapbox**，`device/shanghai70-initial`文件名在看图前误拟，已附`annotation.json`纠正，原截图/回执保留；该图既不是上海图，也不是内容加载完成证据。`device/amap70-human-zoom`130秒录像无QA/observer/注入，当前无已收到的真人手势完成反馈，numeric-runtime-progress为空、系统帧数0，4950ms是不可用哨兵，不是延迟测量。不能把该录像文件名、阿伯丁静止画面或0 jank当高德复验。已请求用户实际切到上海后20秒快速拖缩、停留10秒；70高德实际拖缩、跨区、真实读屏与原生present均 NOT_RUN/未验收，旧69失败继续有效。API继续为已验证37，不重复迁移或向真实库写测试内容。
 
 iOS 构建与运行：NOT_RUN（Windows 主机无 Xcode/真机）。Web 实际浏览器/供应商服务：NOT_RUN；AMap Web 的已授权 Key/受信代理缺失时为 BLOCKED，旧“暂不部署网页”指示继续有效。高德现有 GeoHUB `style.data/style_extra.data` 原字节保留，当前插件没有路名/区名的单层 opacity 接口；未通过改二进制、关闭全部标签或盖白蒙版伪造降权。
 

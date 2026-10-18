@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
@@ -149,6 +150,62 @@ class MapViewportState extends ChangeNotifier {
   }
 }
 
+/// Finite issuer authority for a source already read by this controller.
+/// Used only to retire native copies; never authorizes a new read or action.
+class MapEntityReadGrant {
+  MapEntityReadGrant({
+    required MapEntity source,
+    required this.validUntil,
+    required bool Function() current,
+    MapMediaPixels? copiedPixels,
+  }) : _source = source,
+       _current = current,
+       _pixels = copiedPixels;
+  final MapEntity _source;
+  final DateTime validUntil;
+  final bool Function() _current;
+  final MapMediaPixels? _pixels;
+  bool _retired = false;
+
+  bool currentAt(DateTime at) {
+    if (_retired) return false;
+    if (!at.isBefore(validUntil) || !_current()) _retired = true;
+    return !_retired;
+  }
+
+  bool authorizes(MapEntity entity, DateTime at) =>
+      currentAt(at) &&
+      entity.id == _source.id &&
+      entity.kind == _source.kind &&
+      entity.sourceVersion == _source.sourceVersion &&
+      entity.latitude == _source.latitude &&
+      entity.longitude == _source.longitude &&
+      entity.precision == _source.precision &&
+      entity.publicLocation == _source.publicLocation &&
+      entity.title == _source.title &&
+      entity.subtitle == _source.subtitle &&
+      entity.categoryCode == _source.categoryCode &&
+      entity.placeID == _source.placeID &&
+      entity.momentID == _source.momentID &&
+      entity.momentRevision == _source.momentRevision &&
+      entity.anchorID == _source.anchorID &&
+      entity.entryID == _source.entryID &&
+      entity.threadID == _source.threadID &&
+      listEquals(entity.memberIDs, _source.memberIDs) &&
+      entity.contentCount == _source.contentCount &&
+      entity.anchorCount == _source.anchorCount;
+
+  bool authorizesCopiedPixels(MapMediaPixels pixels, DateTime at) =>
+      currentAt(at) &&
+      _pixels != null &&
+      _pixels!.key == pixels.key &&
+      identical(_pixels!.normalPNG, pixels.normalPNG) &&
+      identical(_pixels!.selectedPNG, pixels.selectedPNG) &&
+      _pixels!.devicePixelRatio == pixels.devicePixelRatio &&
+      pixels.validUntil != null &&
+      at.isBefore(pixels.validUntil!);
+}
+
 class MapEntity {
   const MapEntity({
     required this.id,
@@ -167,6 +224,7 @@ class MapEntity {
     this.momentPhoto,
     this.recentMoments,
     this.mediaPixels,
+    this.readGrant,
     this.sourceVersion = '',
     this.momentID = '',
     this.momentRevision = 0,
@@ -190,6 +248,7 @@ class MapEntity {
   final PublicMomentPhotoMetadata? momentPhoto;
   final MapRecentMoments? recentMoments;
   final MapMediaPixels? mediaPixels;
+  final MapEntityReadGrant? readGrant;
   final String sourceVersion;
   final String categoryCode;
   final String anchorID, entryID, threadID;
@@ -237,6 +296,7 @@ class MapEntity {
     MapMediaPixels? pixels, {
     DateTime? now,
     bool clearRecent = false,
+    MapEntityReadGrant? readGrant,
   }) => MapEntity(
     id: id,
     kind: kind,
@@ -258,6 +318,7 @@ class MapEntity {
         ? recentMoments
         : null,
     mediaPixels: pixels,
+    readGrant: readGrant ?? this.readGrant,
     sourceVersion: sourceVersion,
     momentID: momentID,
     momentRevision: momentRevision,
@@ -300,6 +361,7 @@ class MapEntity {
     momentPhoto: momentPhoto,
     recentMoments: recentMoments,
     mediaPixels: mediaPixels,
+    readGrant: readGrant,
     sourceVersion: sourceVersion,
     momentID: momentID,
     momentRevision: momentRevision,

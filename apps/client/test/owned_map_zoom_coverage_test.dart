@@ -114,6 +114,7 @@ class Scenario {
     identityChanges: identity,
     refreshAllowed: () => true,
     now: () => now,
+    progressiveBatchPages: 1,
   );
   Future<void> read(MapBounds bounds, double zoom, {String? selected}) async {
     controller.sync(
@@ -270,7 +271,12 @@ void main() {
       expect(s.calls.length, greaterThan(count));
       expect(s.calls.last.queryParameters['zoom'], '15.0');
       expect(s.calls.last.queryParameters.containsKey('cursor'), isFalse);
-      expect(s.controller.items.single.placeID, id(2));
+      expect(
+        s.controller.items.map((p) => p.placeID),
+        containsAll([id(1), id(2)]),
+        reason:
+            'Loaded authorized offscreen points stay in the base set; renderer clips them',
+      );
       expect(s.controller.view!.zoom, 15);
       expect(
         oldGrant.authorizes(oldEntity, s.now),
@@ -308,7 +314,7 @@ void main() {
     },
   );
   test(
-    'current anchor representation replaces old zoom without adding counts',
+    'different coincident IDs survive zoom without merging their counts',
     () async {
       final s = Scenario()
         ..highUsesOldAnchor = true
@@ -317,8 +323,8 @@ void main() {
       await s.read(broad, 8);
       final old = s.controller.items.single;
       await s.read(broad, 15);
-      expect(s.controller.items.map((p) => p.placeID), [id(2)]);
-      expect(s.controller.items.single.momentCount, 1);
+      expect(s.controller.items.map((p) => p.placeID), [id(1), id(2)]);
+      expect(s.controller.items.every((p) => p.momentCount == 1), isTrue);
       expect(
         s.controller.sourceCurrent(old),
         isTrue,

@@ -273,23 +273,22 @@ void main() {
       });
       await _mount(t, map, source);
       final plan = _display(map, source);
-      final cluster = plan.entities.singleWhere(
-        MapDisplayPolicy.displayCluster,
-      );
-      expect(
-        cluster.memberIDs.toSet(),
-        [place, ...moments].map((e) => e.id).toSet(),
-      );
-      final option = map.points.created[cluster.id]!;
-      expect(option.geometry.coordinates.lng, -2.1);
-      expect(option.geometry.coordinates.lat, 57.145);
-      final semantics = find.byKey(
-        ValueKey('native-map-point-semantics:${cluster.id}'),
-      );
-      expect(t.getSize(semantics), const Size(48, 48));
-      t.widget<Semantics>(semantics).properties.onTap!();
+      expect(plan.entities.toSet(), source.toSet());
+      expect(plan.entities.any(MapDisplayPolicy.displayCluster), isFalse);
+      for (final entity in source) {
+        final option = map.points.created[entity.id]!;
+        expect(option.geometry.coordinates.lng, entity.longitude);
+        expect(option.geometry.coordinates.lat, entity.latitude);
+        expect(
+          t.getSize(
+            find.byKey(ValueKey('native-map-point-semantics:${entity.id}')),
+          ),
+          const Size(48, 48),
+        );
+      }
+      _tapAt(t, const Offset(100, 300));
       await t.pumpAndSettle();
-      final members = find.byKey(const Key('current-map-cluster-members'));
+      final members = find.byKey(const Key('current-map-point-choices'));
       expect(members, findsOneWidget);
       final list = t.widget<ListView>(
         find.descendant(of: members, matching: find.byType(ListView)),
@@ -300,7 +299,7 @@ void main() {
           .map((v) => v.key)
           .toSet();
       for (final e in [place, ...moments])
-        expect(keys, contains(ValueKey('current-map-member:${e.id}')));
+        expect(keys, contains(ValueKey('map-point-choice:${e.id}')));
       Navigator.of(t.element(members)).pop();
       await t.pumpAndSettle();
       await _update(t, map, [place, ...moments]);
@@ -308,7 +307,7 @@ void main() {
         find.byKey(ValueKey('native-map-point-semantics:${neighbour.id}')),
         findsNothing,
       );
-      expect(map.points.created[cluster.id]!.geometry.coordinates.lng, -2.1);
+      expect(map.points.created[place.id]!.geometry.coordinates.lng, -2.1);
       expect(t.takeException(), isNull);
       await t.pumpWidget(const SizedBox());
     },
@@ -339,10 +338,10 @@ void main() {
       final map = _Map();
       MapEntity? chosen;
       await _mount(t, map, source, onSelected: (e) => chosen = e);
-      final cluster = _display(map, source).entities.single;
-      _tapMarker(t, map, map.points.created[cluster.id]!);
+      expect(_display(map, source).entities.toSet(), source.toSet());
+      _tapMarker(t, map, map.points.created[source.first.id]!);
       await t.pumpAndSettle();
-      final choices = find.byKey(const Key('current-map-cluster-members'));
+      final choices = find.byKey(const Key('current-map-point-choices'));
       expect(choices, findsOneWidget);
       final list = t.widget<ListView>(
         find.descendant(of: choices, matching: find.byType(ListView)),
@@ -353,7 +352,7 @@ void main() {
           .toList();
       expect(
         rows.map((r) => r.key).toSet(),
-        source.map((e) => ValueKey('current-map-member:${e.id}')).toSet(),
+        source.map((e) => ValueKey('map-point-choice:${e.id}')).toSet(),
       );
       final oldTap = rows.first.onTap!;
       await _update(t, map, const [], onSelected: (e) => chosen = e);
@@ -556,7 +555,7 @@ void main() {
   );
 
   testWidgets(
-    'actual native pipeline bounds coincident containers and retains all 114 current members',
+    'actual native pipeline keeps all 114 coincident points independently reachable',
     (t) async {
       final source = [
         for (var n = 0; n < 114; n++)
@@ -579,13 +578,8 @@ void main() {
       );
       final represented = <String>[];
       for (final entity in plan.entities) {
-        expect(entity.memberIDs.length, lessThanOrEqualTo(32));
-        represented.addAll(
-          MapDisplayPolicy.currentDisplayClusterMembers(
-            entity,
-            source,
-          ).map((e) => e.id),
-        );
+        expect(MapDisplayPolicy.displayCluster(entity), isFalse);
+        represented.add(entity.id);
         final option = map.points.created[entity.id]!;
         expect(
           (option.geometry.coordinates.lng, option.geometry.coordinates.lat),

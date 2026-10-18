@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated": "2026-10-18T15:13:54.415288+00:00",
+  "updated": "2026-10-18T18:49:45.928988+00:00",
   "tasks": [
     {
       "id": "BT-AUD-001",
@@ -18812,7 +18812,7 @@
       "epic": "Repository compatibility defects",
       "priority": "P0",
       "title": "录屏消费者交互回归：运行/选城/Now面板/查询/焦点/身份入口/私人草稿",
-      "status": "PARTIAL",
+      "status": "IN_PROGRESS",
       "depends_on": [
         "BT-V4-TST-001",
         "BT-V5-INT-001"
@@ -18935,7 +18935,7 @@
         "UIR-022",
         "UIR-023"
       ],
-      "started_at": "2026-10-18T14:08:04.617953+00:00",
+      "started_at": "2026-10-18T15:54:32.704495+00:00",
       "verification_history": [
         {
           "at": "2026-10-05T22:11:46.003682+00:00",
@@ -21316,6 +21316,11 @@
           "action": "PMAP_INCREMENTAL_SCOPE_REGISTERED",
           "owner": "root",
           "detail": "New 2026-10-18 user request resumes scoped PMAP implementation; source audit done; prior task state/gates retained."
+        },
+        {
+          "at": "2026-10-18T18:00:44.775218+00:00",
+          "action": "ACCEPTANCE74_RETAIN_FAILURE_CONTINUE75",
+          "detail": "74 frozen APK built/installed with data preserved; actual Mapbox reader return remains failed. 75 corrects source-chain pagination and investigates delayed marker restoration. Web/TalkBack remain user-deferred; no production fixture writes."
         }
       ],
       "social_core_execution_20261015": {
@@ -22455,7 +22460,7 @@
         }
       },
       "pinAutoMap20261018": {
-        "status": "PARTIAL_CANDIDATE72_INSTALLED_NOT_ACCEPTED",
+        "status": "PHONE_CORE_FUNCTIONAL_PASSED_PERFORMANCE_AND_OTHER_GATES_PARTIAL",
         "requestSource": "Birdtie-Now-Pin-AutoMap-Codex-2026-10-18.md",
         "scope": "Incremental PMAP overlay on existing task; no duplicate live tasks; prior release gates and failures preserved",
         "requirements": [
@@ -22624,43 +22629,278 @@
             "previousStatus": "FIXING_SAME_FACTS_NEW_PROOF_72_AFTER_70_FAIL",
             "status": "PARTIAL_CANDIDATE72_INSTALLED_NOT_ACCEPTED",
             "evidence": "docs/reports/BIRDTIE-PIN-AUTOMAP-2026-10-18.md"
+          },
+          {
+            "atUTC": "2026-10-18T17:14:46.226911+00:00",
+            "previousStatus": "PARTIAL_CANDIDATE72_INSTALLED_NOT_ACCEPTED",
+            "status": "IMPLEMENTING_INDEPENDENT_POINTS_REVISION_20261019",
+            "reason": "Verified original user messages in thread01a14feb-51fe-70b0-b702-406e24edc0bb: keep objects separate; handoff for actual edits. No clustering supersedes prior PMAP aggregation. Preserve73 functional failure and all evidence."
+          },
+          {
+            "atUTC": "2026-10-18T18:49:45.928988+00:00",
+            "status": "PHONE_CORE_FUNCTIONAL_PASSED_PERFORMANCE_AND_OTHER_GATES_PARTIAL",
+            "reason": "78 real reader return restored within29ms nativeACK; both cold restores/cross video passed; user confirmed both map providers no white/batch disappearance; measured windows are not continuous60s motion; no broad task completion."
           }
         ],
-        "updatedUTC": "2026-10-18T15:13:53.946530+00:00",
+        "updatedUTC": "2026-10-18T18:49:45.928988+00:00",
         "currentStage": {
-          "candidate": 72,
-          "build": "BUILT_INPUTS_STABLE_NOT_INSTALLED",
-          "installedVerified": 72,
-          "userAcceptance70": "FAIL: whole-map white and pin disappearance",
-          "diagnostic71": "RUNTIME_REPRODUCED: sameIDSourceChanged3, visibleFactsChanged0, oldReadGrantInvalid3; native instance stable",
-          "sourceChecks": "reproof72-final20 PASS + issuer-reproof72 real controller1 PASS; API37 unchanged",
-          "apiDeployed": 37,
-          "keyboard69": "PASS_USER",
-          "gesture72": "4 brief unprompted movements recorded in60s, no in-window RETIRE; not continuous60s, visual/user acceptance pending",
-          "crossRegion72": "NOT_RUN",
-          "analyze72": {
-            "exitCode": 1,
-            "severityCounts": {
-              "error": 0,
-              "warning": 14,
-              "info": 2277
-            },
-            "standardPassed": false
-          },
-          "git70": "DELIVERED_EXACT_ed6351b3fba27d20eb2e8d9ae8cdfebd6e9d56eb_NON_FORCE",
-          "git72": "PREPARING_COMMIT",
+          "candidate": 78,
+          "build": "PASS_FROZEN_INPUTS_AND_SIGNED_APK78",
+          "installedVerified": 78,
+          "apiDeployed": 38,
+          "gesture73": "PASS_USER_NO_WHITE_OR_BATCH_PIN_LOSS; evidence contains only5shortmovements notcontinuous60s",
+          "performance73": "NOT_PASSED: raster p95 22.123ms; no valid continuous60s per-vendor sample",
+          "reader73": "FAIL_MAPBOX_RETURN:3pins missing after5s; actual snapshot preserved",
+          "return74": "FAIL_REAL_MAPBOX_RETURN:3pins missing after5s; recovered on later refresh",
+          "independent74Client": "57uniqueDartPASS;visual71uniqueDart+17JS;API38server pending",
+          "crossRegion73": "PASS_LIMITED_SEMANTIC_UI_3SWITCHES; nothumanTalkBack",
+          "web": "NOT_RUN_USER_DEFERRED",
+          "talkBack": "NOT_RUN_USER_DEFERRED",
+          "largeFont": "OUT_OF_SCOPE_USER",
+          "git72": "DELIVERED_EXACT_74a10a5c2dc58e90a6c47d657bf912e54a26e3a6",
+          "git74": "NOT_COMMITTED",
           "report": "docs/reports/BIRDTIE-PIN-AUTOMAP-2026-10-18.md",
-          "buildSHA256": "ac2369d7343e3610bd8b19ff9d050f578b0713ab05ba1c6007cbc91d034e6149",
-          "buildInputSHA256": "af6cf0742840c76dbd2cb1589b57e7abd04c40ada9e4d1d868a038aded8ea681"
+          "build74": "PASS_FROZEN_INPUTS;SHA256:3cf293576f05c9610f50fe744ec29bcaea0b8112478e7e438274fb274543797e",
+          "continuation75": "28_DIRECT_TESTS_PASS",
+          "api38": "READY_SHA_f2856316b5249b8df2febc071fa090d4647c02d6fb1c87cb782b3c4d3bd903df_SCHEMA178_UNCHANGED",
+          "return75": "FAIL_REAL_MAPBOX_RETURN; source6 retained but marker restoration only after next refresh",
+          "server38": "7_ISOLATED_PG_TESTS_PASS_ZERO_SKIP_CLEANED",
+          "return76": "FAIL_REAL_MAPBOX_READER_RETURN; same3pins absent after5s",
+          "return77": "FAIL_REPRODUCED_WITH_DIAGNOSTICS: close inset/input/begin reached renderer; Rect.toString collision in profile skipped paint until source renewal",
+          "profileRect78": "12_RELATED_COMPONENT_TESTS_PASS;RED_OLD_CODE_REPRO_PRESERVED",
+          "build76": "PASS_SHA256_92086045ab6064746123632e88e82548bfd5fd866842c8c6cffe1defec1b20b0",
+          "build77": "PASS_SHA256_6ae845e57badf5e32e0ecd806a7c2b8ba3118f31e655057f55d1ae9e88a68bfd",
+          "buildSHA256": "20617ef27072e5aac447c609c2b6acafae997679ddcd81d49de0a0749d7fcf46",
+          "return78": "PASS_REAL_MAPBOX_CLOSE_TO_NATIVE_ACK29MS_AND_REAL_PIXELS; samePID/camera; original3pins restored",
+          "coldRestore78": "PASS_AMAP_AND_MAPBOX_REAL_PROCESS_DEATH_AND_RESTART",
+          "gesture78": "PASS_USER_BOTH_PROVIDERS_NO_WHITE_OR_BATCH_PIN_LOSS;MAPBOX_NO_OBVIOUS_JANK",
+          "crossRegion78": "PASS_3_REAL_UI_SWITCHES_43.934S_VIDEO_NO_AUDIO;SEMANTIC_CLICKS_NOT_HUMAN_TALKBACK",
+          "performance78": "PARTIAL:60S_WINDOWS_OBSERVED; actual movingAMAP7.838S/MAPBOX3.388S;NATIVE_PRESENT_AND_FULL_REQUEST_COUNTER_NOT_RUN",
+          "performance78Metrics": {
+            "amap": {
+              "status": "OBSERVED_LIMITED_MOTION_SAMPLE_NOT_ABSOLUTE_PERFORMANCE_PASS",
+              "videoSHA256": "5dfa8a2cadf233ffb567594622da2cf780bb5a5eea7bd1d50fb4859b023db544",
+              "videoSeconds": 90.014478,
+              "frames": 2666,
+              "windowMs": 60000.652,
+              "uiP95ms": 2.264,
+              "rasterP95ms": 8.944,
+              "rasterOver60HzCount": 50,
+              "rasterOver60HzRatio": 0.018754688672168042,
+              "totalP95ms": 12.147,
+              "motionIntervalsInWindow": 22,
+              "movingSecondsInWindow": 7.838,
+              "firstToLastMotionSpanSeconds": 42.994,
+              "providers": [
+                1
+              ],
+              "hosts": [
+                [
+                  6,
+                  6
+                ]
+              ],
+              "nativeMapPresentTimingsIncluded": false,
+              "absolutePerformancePass": false,
+              "allNetworkRequestCount": "NOT_RUN: no complete per-client request counter in this build; media diagnostics are only a subset",
+              "memoryKiB": {
+                "first": 532333,
+                "peak": 602670,
+                "last": 558112
+              },
+              "userFunctionalFeedback": "No white flash or batch pin loss",
+              "businessWrites": 0
+            },
+            "mapbox": {
+              "status": "OBSERVED_LIMITED_MOTION_SAMPLE_NOT_ABSOLUTE_PERFORMANCE_PASS",
+              "videoSHA256": "0efd44452fa32c931131208cce74cc7adba4daf556c1853fa80e3c7b5246b402",
+              "videoSeconds": 86.081311,
+              "frames": 806,
+              "windowMs": 60001.103,
+              "uiP95ms": 1.897,
+              "rasterP95ms": 3.368,
+              "rasterOver60HzCount": 0,
+              "rasterOver60HzRatio": 0.0,
+              "totalP95ms": 7.089,
+              "motionIntervalsInWindow": 4,
+              "movingSecondsInWindow": 3.388,
+              "firstToLastMotionSpanSeconds": 5.594,
+              "providers": [
+                0
+              ],
+              "hosts": [
+                [
+                  7,
+                  7
+                ]
+              ],
+              "nativeMapPresentTimingsIncluded": false,
+              "absolutePerformancePass": false,
+              "allNetworkRequestCount": "NOT_RUN: no complete per-client request counter in this build; media diagnostics are only a subset",
+              "memoryKiB": {
+                "first": 593266,
+                "peak": 593266,
+                "last": 560352
+              },
+              "userFunctionalFeedback": "No white flash or batch pin loss; no obvious jank",
+              "businessWrites": 0
+            },
+            "cross": {
+              "videoSHA256": "4759f8c4c076172296a16dd2316ed7d68c1ae47aa2da683bdfc7525df8150e54",
+              "seconds": 43.934,
+              "frames": 1532,
+              "focusLost": false,
+              "sameAppPID": true,
+              "audio": false,
+              "scope": "Semantic UI entry clicks, not human gestures/TalkBack"
+            }
+          },
+          "analysis78": "EXIT2;0ERROR_2EXISTING_UNUSED_FIELD_WARNINGS_215INFO",
+          "helper": "REMOVED_VERIFIED;REAL_APP78_AND_DATA_RETAINED",
+          "git78": "PREPARING_EXACT_CODE_COMMIT_DELIVERY",
+          "finalAcceptance": "PHONE_CORE_FUNCTIONAL_PASS;PERFORMANCE_AND_UNRUN_PERMISSION/FAILURE_COMBINATIONS_REMAIN_PARTIAL;WEB_TALKBACK_USER_DEFERRED"
         },
         "currentWriters": {
-          "root": "All production integration and queue/report; official repository only",
-          "artifact_build_audit": "Build preparation/execution and read-only signature/input verification",
-          "integration_audit": "Read-only authority/retirement review",
-          "destination_controller": "Read-only evidence review"
-        }
-      },
-      "partial_reason": "72 fresh-proof fix built and installed with matching artifact,20 related tests+1 real controller pass. 4 brief actual motions have zero RETIRE inside60s capture, but user/visual final and cross-region/TalkBack/native-present remain unaccepted.70 failure preserved. Evidence docs/reports/BIRDTIE-PIN-AUTOMAP-2026-10-18.md."
+          "root": "All writes and actual device/build operations; original task remains IN_PROGRESS",
+          "artifact_build_audit": "Read-only implementation/evidence review",
+          "integration_audit": "Read-only remaining acceptance audit"
+        },
+        "independentPointsRevision": {
+          "atUTC": "2026-10-18T17:14:46.226911+00:00",
+          "sourceThread": "01a14feb-51fe-70b0-b702-406e24edc0bb",
+          "authorization": "Original user request and explicit handoff read/verified",
+          "rules": [
+            "No spatial or coincident clustering or coordinate deduplication",
+            "Stable Place point and independent Moment anchors; circular/square micro rendering",
+            "Progressive bounded page transport with cumulative authorized base points; no40 display limit",
+            "Keep explicit area-search, ACL, lease, late-response, real data and original gates"
+          ],
+          "writers": {
+            "root": "controller/media/canvas/workspace and queue/report",
+            "artifact_build_audit": "visual/native renderer plus return-to-map repair",
+            "destination_controller": "server spatial leaf/identity and direct regressions"
+          },
+          "scope": "normal-font phone; Web and TalkBack deferred by user; no new recording requirement",
+          "status": "IMPLEMENTED_API38_DEPLOYED_ANDROID78_INSTALLED_PHONE_CORE_PASS_PERFORMANCE_PARTIAL"
+        },
+        "priorStages": [
+          {
+            "candidate": 72,
+            "build": "BUILT_INPUTS_STABLE_NOT_INSTALLED",
+            "installedVerified": 72,
+            "userAcceptance70": "FAIL: whole-map white and pin disappearance",
+            "diagnostic71": "RUNTIME_REPRODUCED: sameIDSourceChanged3, visibleFactsChanged0, oldReadGrantInvalid3; native instance stable",
+            "sourceChecks": "reproof72-final20 PASS + issuer-reproof72 real controller1 PASS; API37 unchanged",
+            "apiDeployed": 37,
+            "keyboard69": "PASS_USER",
+            "gesture72": "4 brief unprompted movements recorded in60s, no in-window RETIRE; not continuous60s, visual/user acceptance pending",
+            "crossRegion72": "NOT_RUN",
+            "analyze72": {
+              "exitCode": 1,
+              "severityCounts": {
+                "error": 0,
+                "warning": 14,
+                "info": 2277
+              },
+              "standardPassed": false
+            },
+            "git70": "DELIVERED_EXACT_ed6351b3fba27d20eb2e8d9ae8cdfebd6e9d56eb_NON_FORCE",
+            "git72": "PREPARING_COMMIT",
+            "report": "docs/reports/BIRDTIE-PIN-AUTOMAP-2026-10-18.md",
+            "buildSHA256": "ac2369d7343e3610bd8b19ff9d050f578b0713ab05ba1c6007cbc91d034e6149",
+            "buildInputSHA256": "af6cf0742840c76dbd2cb1589b57e7abd04c40ada9e4d1d868a038aded8ea681"
+          },
+          {
+            "candidate": 74,
+            "build": "IN_PROGRESS_ANDROID74",
+            "installedVerified": 73,
+            "apiDeployed": 37,
+            "gesture73": "PASS_USER_NO_WHITE_OR_BATCH_PIN_LOSS; evidence contains only5shortmovements notcontinuous60s",
+            "performance73": "NOT_PASSED: raster p95 22.123ms; no valid continuous60s per-vendor sample",
+            "reader73": "FAIL_MAPBOX_RETURN:3pins missing after5s; actual snapshot preserved",
+            "return74": "FIXED_DIRECT_REGRESSION; DEVICE_NOT_RUN",
+            "independent74Client": "57uniqueDartPASS;visual71uniqueDart+17JS;API38server pending",
+            "crossRegion73": "PASS_LIMITED_SEMANTIC_UI_3SWITCHES; nothumanTalkBack",
+            "web": "NOT_RUN_USER_DEFERRED",
+            "talkBack": "NOT_RUN_USER_DEFERRED",
+            "largeFont": "OUT_OF_SCOPE_USER",
+            "git72": "DELIVERED_EXACT_74a10a5c2dc58e90a6c47d657bf912e54a26e3a6",
+            "git74": "NOT_COMMITTED",
+            "report": "docs/reports/BIRDTIE-PIN-AUTOMAP-2026-10-18.md"
+          },
+          {
+            "candidate": 75,
+            "build": "NOT_RUN_ANDROID75",
+            "installedVerified": 74,
+            "apiDeployed": 37,
+            "gesture73": "PASS_USER_NO_WHITE_OR_BATCH_PIN_LOSS; evidence contains only5shortmovements notcontinuous60s",
+            "performance73": "NOT_PASSED: raster p95 22.123ms; no valid continuous60s per-vendor sample",
+            "reader73": "FAIL_MAPBOX_RETURN:3pins missing after5s; actual snapshot preserved",
+            "return74": "FAIL_REAL_MAPBOX_RETURN:3pins missing after5s; recovered on later refresh",
+            "independent74Client": "57uniqueDartPASS;visual71uniqueDart+17JS;API38server pending",
+            "crossRegion73": "PASS_LIMITED_SEMANTIC_UI_3SWITCHES; nothumanTalkBack",
+            "web": "NOT_RUN_USER_DEFERRED",
+            "talkBack": "NOT_RUN_USER_DEFERRED",
+            "largeFont": "OUT_OF_SCOPE_USER",
+            "git72": "DELIVERED_EXACT_74a10a5c2dc58e90a6c47d657bf912e54a26e3a6",
+            "git74": "NOT_COMMITTED",
+            "report": "docs/reports/BIRDTIE-PIN-AUTOMAP-2026-10-18.md",
+            "build74": "PASS_FROZEN_INPUTS;SHA256:3cf293576f05c9610f50fe744ec29bcaea0b8112478e7e438274fb274543797e",
+            "continuation75": "RED_REPRODUCED_OLD_SOURCE_TAIL;FIX_APPLIED_GREEN_PENDING"
+          },
+          {
+            "candidate": 76,
+            "build": "NOT_RUN_ANDROID76",
+            "installedVerified": 75,
+            "apiDeployed": 38,
+            "gesture73": "PASS_USER_NO_WHITE_OR_BATCH_PIN_LOSS; evidence contains only5shortmovements notcontinuous60s",
+            "performance73": "NOT_PASSED: raster p95 22.123ms; no valid continuous60s per-vendor sample",
+            "reader73": "FAIL_MAPBOX_RETURN:3pins missing after5s; actual snapshot preserved",
+            "return74": "FAIL_REAL_MAPBOX_RETURN:3pins missing after5s; recovered on later refresh",
+            "independent74Client": "57uniqueDartPASS;visual71uniqueDart+17JS;API38server pending",
+            "crossRegion73": "PASS_LIMITED_SEMANTIC_UI_3SWITCHES; nothumanTalkBack",
+            "web": "NOT_RUN_USER_DEFERRED",
+            "talkBack": "NOT_RUN_USER_DEFERRED",
+            "largeFont": "OUT_OF_SCOPE_USER",
+            "git72": "DELIVERED_EXACT_74a10a5c2dc58e90a6c47d657bf912e54a26e3a6",
+            "git74": "NOT_COMMITTED",
+            "report": "docs/reports/BIRDTIE-PIN-AUTOMAP-2026-10-18.md",
+            "build74": "PASS_FROZEN_INPUTS;SHA256:3cf293576f05c9610f50fe744ec29bcaea0b8112478e7e438274fb274543797e",
+            "continuation75": "28_DIRECT_TESTS_PASS",
+            "api38": "READY_SHA_f2856316b5249b8df2febc071fa090d4647c02d6fb1c87cb782b3c4d3bd903df_SCHEMA178_UNCHANGED",
+            "return75": "FAIL_REAL_MAPBOX_RETURN; source6 retained but marker restoration only after next refresh",
+            "server38": "7_ISOLATED_PG_TESTS_PASS_ZERO_SKIP_CLEANED"
+          },
+          {
+            "candidate": 78,
+            "build": "IN_PROGRESS_ANDROID78",
+            "installedVerified": 77,
+            "apiDeployed": 38,
+            "gesture73": "PASS_USER_NO_WHITE_OR_BATCH_PIN_LOSS; evidence contains only5shortmovements notcontinuous60s",
+            "performance73": "NOT_PASSED: raster p95 22.123ms; no valid continuous60s per-vendor sample",
+            "reader73": "FAIL_MAPBOX_RETURN:3pins missing after5s; actual snapshot preserved",
+            "return74": "FAIL_REAL_MAPBOX_RETURN:3pins missing after5s; recovered on later refresh",
+            "independent74Client": "57uniqueDartPASS;visual71uniqueDart+17JS;API38server pending",
+            "crossRegion73": "PASS_LIMITED_SEMANTIC_UI_3SWITCHES; nothumanTalkBack",
+            "web": "NOT_RUN_USER_DEFERRED",
+            "talkBack": "NOT_RUN_USER_DEFERRED",
+            "largeFont": "OUT_OF_SCOPE_USER",
+            "git72": "DELIVERED_EXACT_74a10a5c2dc58e90a6c47d657bf912e54a26e3a6",
+            "git74": "NOT_COMMITTED",
+            "report": "docs/reports/BIRDTIE-PIN-AUTOMAP-2026-10-18.md",
+            "build74": "PASS_FROZEN_INPUTS;SHA256:3cf293576f05c9610f50fe744ec29bcaea0b8112478e7e438274fb274543797e",
+            "continuation75": "28_DIRECT_TESTS_PASS",
+            "api38": "READY_SHA_f2856316b5249b8df2febc071fa090d4647c02d6fb1c87cb782b3c4d3bd903df_SCHEMA178_UNCHANGED",
+            "return75": "FAIL_REAL_MAPBOX_RETURN; source6 retained but marker restoration only after next refresh",
+            "server38": "7_ISOLATED_PG_TESTS_PASS_ZERO_SKIP_CLEANED",
+            "return76": "FAIL_REAL_MAPBOX_READER_RETURN; same3pins absent after5s",
+            "return77": "FAIL_REPRODUCED_WITH_DIAGNOSTICS: close inset/input/begin reached renderer; Rect.toString collision in profile skipped paint until source renewal",
+            "profileRect78": "RED_OLD_CODE_FAIL;GREEN_12_RELATED_COMPONENT_TESTS_PASS;DEVICE_NOT_RUN",
+            "build76": "PASS_SHA256_92086045ab6064746123632e88e82548bfd5fd866842c8c6cffe1defec1b20b0",
+            "build77": "PASS_SHA256_6ae845e57badf5e32e0ecd806a7c2b8ba3118f31e655057f55d1ae9e88a68bfd"
+          }
+        ]
+      }
     },
     {
       "id": "BT-FIX-INT-DRAFT-001",
@@ -22888,7 +23128,58 @@
   "parallel_execution": {
     "coordinator": "root",
     "limit": 3,
-    "leases": {},
+    "leases": {
+      "BT-FIX-NOW-UI-001": {
+        "owner": "root",
+        "write_scope": [
+          "apps/api/internal/postgres/map_content_display_native_test.go",
+          "apps/api/internal/postgres/map_content_native_test.go",
+          "apps/api/internal/postgres/map_content_spatial.go",
+          "apps/api/internal/postgres/map_content_spatial_perf_native_test.go",
+          "apps/api/internal/postgres/map_independent_pins_test.go",
+          "apps/api/internal/postgres/map_pin_semantics_test.go",
+          "apps/client/.dart_tool",
+          "apps/client/build",
+          "apps/client/lib/src/city/amap_city_map_io.dart",
+          "apps/client/lib/src/city/amap_city_map_stub.dart",
+          "apps/client/lib/src/city/amap_city_map_web.dart",
+          "apps/client/lib/src/city/native_city_map_io.dart",
+          "apps/client/lib/src/city/native_city_map_web.dart",
+          "apps/client/lib/src/city/public_city_map.dart",
+          "apps/client/lib/src/workspace/map_canvas.dart",
+          "apps/client/lib/src/workspace/map_display_policy.dart",
+          "apps/client/lib/src/workspace/map_marker_bitmap.dart",
+          "apps/client/lib/src/workspace/map_marker_visual.dart",
+          "apps/client/lib/src/workspace/map_marker_widget.dart",
+          "apps/client/lib/src/workspace/map_workspace.dart",
+          "apps/client/lib/src/workspace/owned_map_api.dart",
+          "apps/client/lib/src/workspace/owned_map_controller.dart",
+          "apps/client/lib/src/workspace/owned_map_media_controller.dart",
+          "apps/client/test/amap_web_bridge_test.cjs",
+          "apps/client/test/content_map_controller_test.dart",
+          "apps/client/test/content_map_renderer_test.dart",
+          "apps/client/test/map_canvas_test.dart",
+          "apps/client/test/map_display_policy_test.dart",
+          "apps/client/test/map_independent_pins_test.dart",
+          "apps/client/test/map_marker_bitmap_test.dart",
+          "apps/client/test/map_marker_test.dart",
+          "apps/client/test/map_marker_visual_test.dart",
+          "apps/client/test/native_map_reader_test.dart",
+          "apps/client/test/now_map_reader_occlusion_test.dart",
+          "apps/client/test/now_v2_map_display_policy_test.dart",
+          "apps/client/test/now_v2_native_map_display_test.dart",
+          "apps/client/test/owned_map_progressive_points_test.dart",
+          "apps/client/test/owned_map_zoom_coverage_test.dart",
+          "apps/client/web/birdtie_amap.js",
+          "automation/codex_task_queue.json",
+          "docs/product/birdtie-map-content-execution-spec-2026-10-14.md",
+          "docs/reports/birdtie-pin-automap-2026-10-18.md",
+          "docs/testing/evidence/pin-automap-20261018",
+          "work/pin-automap-20261018"
+        ],
+        "leased_at": "2026-10-18T15:54:32.836469+00:00"
+      }
+    },
     "lease_history": [
       {
         "owner": "root",

@@ -659,9 +659,8 @@ class _MapCanvasState extends State<MapCanvas> {
         : widget.mapContent?.error ??
               (widget.mapContent?.loading == true && _entities().isEmpty
                   ? '正在读取地图内容…'
-                  : widget.mapContent?.hasNextMapPage == true ||
-                        widget.mapContent?.hasPreviousMapPage == true
-                  ? '第 ${widget.mapContent!.mapPageNumber} 组位置'
+                  : widget.mapContent?.mapContentIncomplete == true
+                  ? '已加载 ${widget.mapContent!.loadedPointCount} 个位置'
                   : widget.mapContent?.current == true && _entities().isEmpty
                   ? '这个范围内暂无可访问动态。'
                   : null);
@@ -708,7 +707,8 @@ class _MapCanvasState extends State<MapCanvas> {
                             widget.city.navigationGeneration)
                       return;
                     widget.mapState.zoom = zoom;
-                    widget.mapContent?.sync(
+                    widget.mapContent?.observeViewport(
+                      navigationGeneration: navigationGeneration,
                       cityID: contentCityID,
                       bounds: bounds,
                       zoom: zoom,
@@ -854,7 +854,7 @@ class _MapCanvasState extends State<MapCanvas> {
                           onPressed: widget.mapContent!.loading
                               ? null
                               : widget.mapContent!.nextMapPage,
-                          child: const Text('下一组'),
+                          child: const Text('继续加载'),
                         ),
                       if (widget.mapContent?.error != null)
                         TextButton(

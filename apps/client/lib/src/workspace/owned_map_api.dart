@@ -694,8 +694,7 @@ class OwnedMapView {
           (p) =>
               p.momentCount > v['totalContentCount'] ||
               p.anchorCount > v['totalAnchorCount'],
-        ) ||
-        items.isEmpty && v['nextCursor'] != null)
+        ))
       throw const FormatException('地图内容重复或统计不符');
     return OwnedMapView(
       viewerAccountID: ownerID,

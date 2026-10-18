@@ -34,7 +34,8 @@ class CompactMapPointMarker extends StatelessWidget {
       dense: dense,
       moment: moment,
     );
-    final pixels = moment && mediaPixels?.current() == true
+    final micro = dense && !selected;
+    final pixels = moment && !micro && mediaPixels?.current() == true
         ? mediaPixels
         : null;
     final recent = !moment
@@ -42,7 +43,7 @@ class CompactMapPointMarker extends StatelessWidget {
         : null;
     final category = MapPinCategory.forCode(categoryCode);
     final color = moment ? MapMarkerVisual.momentColor : category.fill;
-    final radius = moment ? 6.0 : size / 2;
+    final radius = moment ? (micro ? 1.0 : 6.0) : size / 2;
     final fallbackAux = !moment && (selected || !dense) ? recent : null;
     final font = selected ? 13.0 : 12.0;
     final fallbackHeight = font * 1.25 + (fallbackAux == null ? 0 : 15);
@@ -88,7 +89,10 @@ class CompactMapPointMarker extends StatelessWidget {
                   shape: moment ? BoxShape.rectangle : BoxShape.circle,
                   borderRadius: moment ? BorderRadius.circular(radius) : null,
                   color: color,
-                  border: Border.all(color: Colors.white, width: 1.5),
+                  border: Border.all(
+                    color: Colors.white,
+                    width: micro ? 1 : 1.5,
+                  ),
                 ),
                 clipBehavior: Clip.antiAlias,
                 child: pixels != null
@@ -97,6 +101,8 @@ class CompactMapPointMarker extends StatelessWidget {
                         image: pixels.image,
                         fit: BoxFit.cover,
                       )
+                    : micro
+                    ? null
                     : Icon(
                         moment ? Icons.notes_outlined : category.icon,
                         color: Colors.white,
@@ -104,7 +110,10 @@ class CompactMapPointMarker extends StatelessWidget {
                       ),
               ),
             ),
-            if (showLabel && caption.name.isNotEmpty && (!moment || selected))
+            if (!micro &&
+                showLabel &&
+                caption.name.isNotEmpty &&
+                (!moment || selected))
               Positioned(
                 key: ValueKey('individual-map-caption:$id'),
                 left: 24 + caption.offset.dx,

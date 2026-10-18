@@ -8,6 +8,7 @@ import 'business_console_page.dart';
 import 'map_media_controller.dart';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kProfileMode;
 import '../city/map_cluster_members_sheet.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/rendering.dart';
@@ -3435,9 +3436,21 @@ class _MapWorkspaceState extends State<MapWorkspace>
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted &&
             _mapInsetGate.value == rect &&
-            _mapContentRect.value != rect)
+            _mapContentRect.value != rect) {
           _mapContentRect.value = rect;
+          if (kProfileMode)
+            debugPrint(
+              'BIRDTIE_MAP_INSET ${jsonEncode({
+                'rect': [rect.left, rect.top, rect.right, rect.bottom],
+                'readerOpen': _publicPlacePanel != null,
+              })}',
+            );
+        }
       });
+      // An IME settle timer can commit while Flutter is idle. Post-frame
+      // callbacks alone do not request a frame; never wait for an unrelated
+      // source refresh to restore the native marker clipping rectangle.
+      WidgetsBinding.instance.ensureVisualUpdate();
     });
     _qaBridge = NowQaBridge(
       current: () =>
@@ -7338,7 +7351,7 @@ class _MapWorkspaceState extends State<MapWorkspace>
         onClose: () {
           if (!mounted || !identical(_publicPlacePanelSource, source)) return;
           setState(() => _retirePublicPlacePanel());
-          _workspace.selectEntity(null, preserveViewport: true);
+          // Closing the reader does not cancel its map selection.
         },
         onEdit: (momentID, readable) {
           if (current() && readable())
@@ -7405,7 +7418,7 @@ class _MapWorkspaceState extends State<MapWorkspace>
         onClose: () {
           if (!mounted || !identical(_publicPlacePanelSource, source)) return;
           setState(() => _retirePublicPlacePanel());
-          _workspace.selectEntity(null, preserveViewport: true);
+          // Closing the reader does not cancel its map selection.
         },
         onExpand: () {
           if (current()) setState(() => _publicPlacePreview = false);
@@ -9816,17 +9829,39 @@ class _MapWorkspaceState extends State<MapWorkspace>
                           ? 56
                           : 8))
                   .clamp(chromeBottom, constraints.maxHeight);
-          final mapRect = Rect.fromLTRB(
-            16,
-            chromeBottom,
-            (constraints.maxWidth - 16).clamp(16, double.infinity),
-            mapBottom,
-          );
           // A short preview belongs to the screen, not the projected marker.
           // Camera movement (including a temporarily unavailable native anchor)
           // must not change its width, height or reading position.
           final previewViewport = (mapBottom - chromeBottom).clamp(0.0, 288.0);
           final previewVisible = !editing && previewViewport >= 120;
+          final expandedReaderTop = _publicPlacePanelMapVisible
+              ? (visibleHeight - 200).clamp(chromeBottom, constraints.maxHeight)
+              : chromeBottom;
+          // Keep the native map mounted, but never expose glyphs, hit targets
+          // or semantics below the actual reader. A fully expanded opaque
+          // reader leaves an empty content rect; toolbar and SDK attribution
+          // stay outside this marker-only clipping contract.
+          var readableMapBottom = mapBottom;
+          if (_publicPlacePanel != null) {
+            if (_publicPlacePreview && previewVisible) {
+              readableMapBottom = math.min(
+                readableMapBottom,
+                mapBottom - previewViewport,
+              );
+            } else if (!_publicPlacePreview &&
+                _publicPlacePanel is! NowMapContentGroupPanel) {
+              readableMapBottom = math.min(
+                readableMapBottom,
+                expandedReaderTop,
+              );
+            }
+          }
+          final mapRect = Rect.fromLTRB(
+            16,
+            chromeBottom,
+            (constraints.maxWidth - 16).clamp(16, double.infinity),
+            readableMapBottom.clamp(chromeBottom, mapBottom),
+          );
           // The composer follows every IME frame. Native map chrome only
           // receives the settled geometry; ACL/source changes never use this gate.
           _mapInsetGate.offer(mapRect, keyboard);
@@ -10054,12 +10089,7 @@ class _MapWorkspaceState extends State<MapWorkspace>
                 ),
               if (_publicPlacePanel != null && !_publicPlacePreview)
                 Positioned(
-                  top: _publicPlacePanelMapVisible
-                      ? (visibleHeight - 200).clamp(
-                          chromeBottom,
-                          constraints.maxHeight,
-                        )
-                      : chromeBottom,
+                  top: expandedReaderTop,
                   left: 0,
                   right: 0,
                   bottom: 0,

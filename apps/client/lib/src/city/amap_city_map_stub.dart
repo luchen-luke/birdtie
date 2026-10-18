@@ -253,20 +253,25 @@ class AMapDisplayFrame {
   final MapDisplayPlan plan;
   Map<String, Offset> get displayed =>
       Map.unmodifiable({...positions, ...plan.clusterPositions});
-  MapEntity? resolveDisplay(String id, String kind) =>
-      plan.entities.where((e) => e.id == id && e.kind.name == kind).firstOrNull;
+  List<MapEntity> get _visibleEntities => plan.entities
+      .where((e) => !plan.occludedGlyphIDs.contains(e.id))
+      .toList(growable: false);
+  MapEntity? resolveDisplay(String id, String kind) => _visibleEntities
+      .where((e) => e.id == id && e.kind.name == kind)
+      .firstOrNull;
   List<MapEntity> candidates(String id) {
-    final tapped = rows.where((e) => e.id == id).firstOrNull;
+    final visible = _visibleEntities;
+    final tapped = visible.where((e) => e.id == id).firstOrNull;
     if (tapped == null) return const [];
     final ids = MapDisplayPolicy.overlappingHitTargets(
-      entities: rows,
+      entities: visible,
       positions: displayed,
       tappedID: id,
     ).map((e) => e.id).toSet();
     if (tapped.precision == 'point' &&
         {MapEntityKind.place, MapEntityKind.moment}.contains(tapped.kind)) {
       ids.addAll(
-        rows
+        visible
             .where(
               (e) =>
                   e.precision == 'point' &&
@@ -280,7 +285,7 @@ class AMapDisplayFrame {
             .map((e) => e.id),
       );
     }
-    return rows.where((e) => ids.contains(e.id)).toList();
+    return visible.where((e) => ids.contains(e.id)).toList();
   }
 
   Map<String, Object?> layout(String? selectedID) => {
@@ -288,7 +293,7 @@ class AMapDisplayFrame {
     'revision': revision,
     'frame': frame,
     'markers': [
-      for (final e in plan.entities)
+      for (final e in _visibleEntities)
         {
           'id': e.id,
           'dx': 0,

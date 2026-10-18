@@ -37,6 +37,9 @@ class OwnedMapController extends ChangeNotifier with WidgetsBindingObserver {
     this.maxCachedViews = 8,
     this.maxCachedPins = 320,
     this.maxCachedBytes = 2 * 1024 * 1024,
+    this.progressiveBatchPages = 4,
+    this.maxActivePins = 2048,
+    this.maxActiveBytes = 16 * 1024 * 1024,
   }) : _now = now ?? (() => DateTime.now().toUtc()) {
     _api = OwnedMapAPI(
       client: client,
@@ -61,6 +64,14 @@ class OwnedMapController extends ChangeNotifier with WidgetsBindingObserver {
   final bool Function() refreshAllowed;
   final DateTime Function() _now;
   final int maxCachedViews, maxCachedPins, maxCachedBytes;
+  final int progressiveBatchPages, maxActivePins, maxActiveBytes;
+  // Current pagination grants are not evicted by the opportunistic view LRU.
+  // The finite budget stops new reads visibly; it never samples loaded points.
+  final _activePages = <Object, OwnedMapView>{};
+  MapBounds? _visibleBounds;
+  int? _navigationGeneration;
+  bool _activeBudgetReached = false;
+  String? _paginationError;
   late OwnedMapAPI _api;
   late OwnedMapMediaController _media;
   (String, String?, String?, String?)? _identity;
@@ -98,12 +109,13 @@ class OwnedMapController extends ChangeNotifier with WidgetsBindingObserver {
   // Continuations locate a page; they do not authorize its content. Every
   // use still needs a fresh parent grant and a server ACL/source check.
   final _clusterCursors = <String, (OwnedMapPin, int, String, DateTime)>{};
-  int _pageOffset = 0;
-  final _usedPageCursors = <String>{};
-  int get mapPageNumber => _pageOffset ~/ 40 + 1;
-  bool get hasPreviousMapPage => _pageOffset > 0;
-  bool get hasNextMapPage =>
-      _visibleCachedPins().length > _pageOffset + 40 || _continuation != null;
+  final _usedPageCursors = <(String, String?)>{};
+  // Compatibility accessors: base points no longer have replacement pages.
+  int get mapPageNumber => 1;
+  bool get hasPreviousMapPage => false;
+  bool get hasNextMapPage => !_activeBudgetReached && _continuation != null;
+  bool get mapContentIncomplete => current && _view!.truncated;
+  int get loadedPointCount => items.length;
   int requests = 0, cancellations = 0, cacheHits = 0, responseBytes = 0;
   int get epoch => _epoch;
   int get permissionEpoch => _permissionEpoch;
@@ -841,8 +853,16 @@ class OwnedMapController extends ChangeNotifier with WidgetsBindingObserver {
         _retireView(preserveMedia: true);
       }
       _cancelRequest();
-      _pageOffset = 0;
+      _paginationError = null;
+      _activeBudgetReached = false;
       _query = query;
+      // A committed new area can release previous offscreen page grants. A
+      // passive camera movement never enters this path or evicts loaded IDs.
+      _activePages.removeWhere(
+        (_, page) =>
+            !MapContentCoverage.intersects(page.bounds, query.$2) &&
+            !page.items.any((p) => p.canonicalMarkerID == selected),
+      );
     }
     if (!_allowed) {
       _retireView(preserveMedia: true);
@@ -874,7 +894,7 @@ class OwnedMapController extends ChangeNotifier with WidgetsBindingObserver {
   }
 
   Iterable<OwnedMapView> get _leasedViews => [
-    ..._cache.values,
+    ...{..._cache.values, ..._activePages.values},
     if (_activeUncached != null) _activeUncached!,
   ].where((v) => v.cityID == _query?.$1 && v.validUntil.isAfter(_now()));
 
@@ -912,37 +932,29 @@ class OwnedMapController extends ChangeNotifier with WidgetsBindingObserver {
     final query = _query;
     if (query == null) return [];
     final pins = <String, OwnedMapPin>{};
-    final representedAnchors = <Object, String>{};
     final views = _coverageViews.toList()
       ..sort((a, b) => a.observedAt.compareTo(b.observedAt));
     for (final v in views) {
       for (final p in v.items) {
-        if (_invalidPins[p] != true &&
-            (query.$2.contains(p.latitude, p.longitude) ||
-                p.canonicalMarkerID == query.$4)) {
-          final anchor = _displayAnchor(p);
-          final previous = representedAnchors[anchor];
-          if (previous != null) pins.remove(previous);
-          representedAnchors[anchor] = p.mapID;
+        if (_invalidPins[p] != true) {
           pins[p.mapID] = p;
         }
       }
     }
     // A new zoom needs its own coverage, but a pending read is not evidence
     // that already loaded objects disappeared. Keep a bounded display baseline
-    // under each original source lease. A positive current-zoom anchor replaces
-    // its old representation as a whole; never infer cluster members/counts.
-    final currentAnchors = pins.values.map(_displayAnchor).toSet();
+    // under each original source lease. Only the same stable identity can
+    // replace its old representation; coincident independent objects survive.
+    final currentIDs = pins.keys.toSet();
     final baseline = _leasedViews.where((v) => v.zoom != query.$3).toList()
       ..sort((a, b) => a.observedAt.compareTo(b.observedAt));
-    final baselinePins = <Object, OwnedMapPin>{};
+    final baselinePins = <String, OwnedMapPin>{};
     for (final v in baseline) {
       for (final p in v.items) {
-        final anchor = _displayAnchor(p);
+        final id = p.mapID;
         if (!sourceCurrent(p) ||
             p.validUntil?.isAfter(_now()) != true ||
-            !query.$2.contains(p.latitude, p.longitude) ||
-            currentAnchors.contains(anchor) ||
+            currentIDs.contains(id) ||
             pins.containsKey(p.mapID))
           continue;
         // A last pagination page alone cannot prove absence in its rectangle.
@@ -955,20 +967,17 @@ class OwnedMapController extends ChangeNotifier with WidgetsBindingObserver {
               !read.truncated &&
               read.bounds.contains(p.latitude, p.longitude),
         );
-        if (!absent) baselinePins[anchor] = p;
+        if (!absent) baselinePins[id] = p;
       }
     }
     for (final p in baselinePins.values) pins.putIfAbsent(p.mapID, () => p);
-    // Preserve a selected reader under its original lease without drawing a
-    // second representation of the same exact geographic anchor.
+    // Preserve a selected reader under its own original identity and lease.
     final selectedView = _selectedCoverage;
     if (selectedView != null && selectedView.zoom != query.$3) {
       for (final p in selectedView.items) {
         if (sourceCurrent(p) &&
             p.canonicalMarkerID == query.$4 &&
-            !pins.values.any(
-              (shown) => _displayAnchor(shown) == _displayAnchor(p),
-            )) {
+            !pins.containsKey(p.mapID)) {
           pins.putIfAbsent(p.mapID, () => p);
         }
       }
@@ -976,18 +985,132 @@ class OwnedMapController extends ChangeNotifier with WidgetsBindingObserver {
     return pins.values.toList()..sort((a, b) => a.mapID.compareTo(b.mapID));
   }
 
-  Object _displayAnchor(OwnedMapPin pin) =>
-      (pin.latitude, pin.longitude, pin.precision);
+  OwnedMapView? get _continuation {
+    final candidates = _coverageViews
+        .where((v) => MapContentCoverage.intersects(v.bounds, _query!.$2))
+        .toList();
+    final roots =
+        candidates.where((v) => _requestCursorByView[v] == null).toList()
+          ..sort((a, b) => b.observedAt.compareTo(a.observedAt));
+    final regions = <(MapBounds, double)>{};
+    for (final root in roots) {
+      // Older snapshots are finite display baselines. Only the latest root
+      // for this exact region can authorize a continuation, regardless of LRU
+      // ordering or which obsolete tail still has an unused cursor.
+      if (!regions.add((root.bounds, root.zoom))) continue;
+      final chain = candidates
+          .where(
+            (v) =>
+                v.bounds == root.bounds &&
+                v.zoom == root.zoom &&
+                v.sourceVersion == root.sourceVersion,
+          )
+          .toList();
+      final seen = <String>{};
+      var page = root;
+      while (true) {
+        final next = page.nextCursor;
+        if (next == null || !seen.add(next)) break;
+        final child = chain
+            .where((v) => _requestCursorByView[v] == next)
+            .firstOrNull;
+        if (child == null) {
+          // A live parent may reauthorize an expired missing child. A used
+          // cursor alone proves neither a still-readable child nor coverage.
+          if (page.viewportPath.isNotEmpty) return page;
+          break;
+        }
+        page = child;
+      }
+    }
+    return null;
+  }
 
-  OwnedMapView? get _continuation => _coverageViews
-      .where(
-        (v) =>
-            MapContentCoverage.intersects(v.bounds, _query!.$2) &&
-            v.viewportPath.isNotEmpty &&
-            v.nextCursor != null &&
-            !_usedPageCursors.contains(v.nextCursor),
-      )
-      .firstOrNull;
+  List<OwnedMapView>? _completePageChain(OwnedMapView page) {
+    final candidates = _leasedViews
+        .where(
+          (v) =>
+              v.bounds == page.bounds &&
+              v.zoom == page.zoom &&
+              v.sourceVersion == page.sourceVersion,
+        )
+        .toList();
+    final root = candidates
+        .where((v) => _requestCursorByView[v] == null)
+        .firstOrNull;
+    if (root == null) return null;
+    final chain = <OwnedMapView>[], seenCursors = <String>{};
+    var current = root;
+    while (true) {
+      if (current.rejectedItemCount > 0 ||
+          current.totalPointCount != root.totalPointCount)
+        return null;
+      chain.add(current);
+      final next = current.nextCursor;
+      if (next == null) {
+        if (current.truncated) return null;
+        break;
+      }
+      if (!seenCursors.add(next)) return null;
+      final child = candidates
+          .where((v) => _requestCursorByView[v] == next)
+          .firstOrNull;
+      if (child == null) return null;
+      current = child;
+    }
+    // The connected root-to-tail proof also checks distinct point cardinality.
+    // Neither a terminal page nor a transport/label budget implies completion.
+    final ids = {
+      for (final v in chain)
+        for (final p in v.items)
+          if (_invalidPins[p] != true) p.mapID,
+    };
+    return ids.length == root.totalPointCount ? chain : null;
+  }
+
+  bool get _hasUnfinishedPageChain {
+    final seen = <(MapBounds, double, String)>{};
+    for (final page in _coverageViews) {
+      if (MapContentCoverage.intersects(page.bounds, _query!.$2) &&
+          seen.add((page.bounds, page.zoom, page.sourceVersion)) &&
+          _completePageChain(page) == null)
+        return true;
+    }
+    return false;
+  }
+
+  void _retireAbsentFromCompleteChain(OwnedMapView page) {
+    final chain = _completePageChain(page);
+    if (chain == null) return;
+    final ids = {
+      for (final v in chain)
+        for (final p in v.items) p.mapID,
+    };
+    final earliest = chain
+        .map((v) => v.observedAt)
+        .reduce((a, b) => a.isBefore(b) ? a : b);
+    for (final old in _leasedViews) {
+      if (old.sourceVersion == page.sourceVersion ||
+          old.zoom != page.zoom ||
+          old.observedAt.isAfter(earliest))
+        continue;
+      for (final pin in old.items) {
+        if (page.bounds.contains(pin.latitude, pin.longitude) &&
+            !ids.contains(pin.mapID)) {
+          _invalidPins[pin] = true;
+        }
+      }
+    }
+    bool superseded(Object _, OwnedMapView old) =>
+        old.sourceVersion != page.sourceVersion &&
+        old.zoom == page.zoom &&
+        !old.observedAt.isAfter(earliest) &&
+        MapContentCoverage.missing(old.bounds, [page.bounds]).isEmpty;
+    _cache.removeWhere(superseded);
+    _activePages.removeWhere(superseded);
+    if (_activeUncached != null && superseded('', _activeUncached!))
+      _activeUncached = null;
+  }
 
   void _publishCoverage() {
     final query = _query;
@@ -1017,16 +1140,7 @@ class OwnedMapController extends ChangeNotifier with WidgetsBindingObserver {
       _notify();
       return;
     }
-    if (_pageOffset >= pins.length)
-      _pageOffset = math.max(0, (pins.length - 1) ~/ 40 * 40);
-    final page = pins.skip(_pageOffset).take(40).toList();
-    final selected = pins
-        .where((p) => p.canonicalMarkerID == query.$4)
-        .firstOrNull;
-    if (selected != null && !page.contains(selected)) {
-      if (page.length == 40) page.removeLast();
-      page.add(selected);
-    }
+    final page = pins;
     final contributors = views
         .where(
           (v) => page.any(
@@ -1057,7 +1171,11 @@ class OwnedMapController extends ChangeNotifier with WidgetsBindingObserver {
             .toString(),
         items: List.unmodifiable(page),
         zoom: query.$3,
-        truncated: pins.length > _pageOffset + 40 || next != null,
+        truncated:
+            next != null ||
+            _paginationError != null ||
+            _activeBudgetReached ||
+            _hasUnfinishedPageChain,
         // These composed counts describe loaded objects only. Regional server
         // totals cannot be added across overlapping, paginated coverage.
         totalContentCount: pins
@@ -1074,23 +1192,48 @@ class OwnedMapController extends ChangeNotifier with WidgetsBindingObserver {
     );
   }
 
-  void previousMapPage() {
-    if (_pageOffset == 0) return;
-    _pageOffset = math.max(0, _pageOffset - 40);
-    _publishCoverage();
-  }
+  void previousMapPage() {}
 
   Future<void> nextMapPage() async {
-    if (_loading) return;
-    final query = _query, epoch = _epoch;
-    if (_visibleCachedPins().length <= _pageOffset + 40) {
-      final next = _continuation;
-      if (next == null) return;
-      await _loadRegions([next.bounds], continuation: next);
+    if (_loading || _activeBudgetReached) return;
+    final next = _continuation;
+    if (next == null) return;
+    _paginationError = null;
+    await _loadRegions([next.bounds], continuation: next);
+  }
+
+  /// A gesture updates projection and the media budget, not the search scope.
+  /// A new explicit navigation starts from the renderer's real settled bounds.
+  void observeViewport({
+    required String cityID,
+    required MapBounds bounds,
+    required int navigationGeneration,
+    double devicePixelRatio = 1,
+    double zoom = 12,
+    String? selectedMarkerID,
+  }) {
+    if (!bounds.isValid) return;
+    _visibleBounds = bounds;
+    _ratio = devicePixelRatio;
+    if (_query == null ||
+        _query!.$1 != cityID ||
+        _navigationGeneration != navigationGeneration) {
+      _navigationGeneration = navigationGeneration;
+      sync(
+        cityID: cityID,
+        bounds: bounds,
+        zoom: zoom,
+        devicePixelRatio: devicePixelRatio,
+        selectedMarkerID: selectedMarkerID,
+      );
+    } else if (current) {
+      _media.sync(
+        _view!,
+        devicePixelRatio: _ratio,
+        selectedMarkerID: selectedMarkerID,
+        visibleBounds: bounds,
+      );
     }
-    if (query != _query || epoch != _epoch || !_allowed) return;
-    if (_visibleCachedPins().length > _pageOffset + 40) _pageOffset += 40;
-    _publishCoverage();
   }
 
   void sync({
@@ -1115,6 +1258,9 @@ class OwnedMapController extends ChangeNotifier with WidgetsBindingObserver {
 
   void _pruneCache() {
     _cache.removeWhere((_, v) => !v.validUntil.isAfter(_now()));
+    _activePages.removeWhere(
+      (_, v) => !v.validUntil.isAfter(_now()) || v.cityID != _query?.$1,
+    );
     final selected = _selectedCoverage;
     while (_cache.isNotEmpty &&
         (cachedViews > maxCachedViews ||
@@ -1132,12 +1278,19 @@ class OwnedMapController extends ChangeNotifier with WidgetsBindingObserver {
     _expiry?.cancel();
     _view = value;
     _leaseExpired = false;
-    _error = value.rejectedItemCount > 0 ? '部分地图内容暂不可读，请重试。' : null;
+    _error =
+        _paginationError ??
+        (value.rejectedItemCount > 0 ? '部分地图内容暂不可读，请重试。' : null);
     for (final pin in value.items) _registerPin(pin);
     _extraPins.removeWhere(
       (_, extra) => !sourceCurrent(extra.$2) || !extra.$3.isAfter(_now()),
     );
-    _media.sync(value, devicePixelRatio: _ratio, selectedMarkerID: _query?.$4);
+    _media.sync(
+      value,
+      devicePixelRatio: _ratio,
+      selectedMarkerID: _query?.$4,
+      visibleBounds: _visibleBounds,
+    );
     final remaining = value.validUntil.difference(_now());
     _expiry = Timer(remaining, () {
       if (_closed || !identical(_view, value)) return;
@@ -1226,6 +1379,9 @@ class OwnedMapController extends ChangeNotifier with WidgetsBindingObserver {
       for (final key in _cache.keys.toList()) {
         _cache[key] = withoutDenied(_cache[key]!);
       }
+      for (final key in _activePages.keys.toList()) {
+        _activePages[key] = withoutDenied(_activePages[key]!);
+      }
       if (_activeUncached != null)
         _activeUncached = withoutDenied(_activeUncached!);
       _extraPins.removeWhere((_, value) {
@@ -1287,6 +1443,8 @@ class OwnedMapController extends ChangeNotifier with WidgetsBindingObserver {
   Future<void> refresh() {
     if (_flight != null) return _flight!;
     if (!_allowed || _query == null) return Future<void>.value();
+    _paginationError = null;
+    _activeBudgetReached = false;
     final missing = MapContentCoverage.missing(
       _query!.$2,
       _coverageViews.map((v) => v.bounds),
@@ -1311,6 +1469,29 @@ class OwnedMapController extends ChangeNotifier with WidgetsBindingObserver {
     }
     if (selected != null && !renewals.contains(selected))
       renewals.add(selected);
+    // Renew linked pages in source order, independent of view-LRU ordering.
+    // A root can rotate the next signed token before its child is read.
+    final unordered = List<OwnedMapView>.of(renewals);
+    renewals.clear();
+    while (unordered.isNotEmpty) {
+      final index = unordered.indexWhere((v) {
+        final cursor = _requestCursorByView[v];
+        return cursor == null ||
+            !unordered.any(
+              (parent) =>
+                  !identical(parent, v) &&
+                  parent.bounds == v.bounds &&
+                  parent.zoom == v.zoom &&
+                  parent.sourceVersion == v.sourceVersion &&
+                  parent.nextCursor == cursor,
+            );
+      });
+      if (index < 0) {
+        renewals.addAll(unordered);
+        break;
+      }
+      renewals.add(unordered.removeAt(index));
+    }
     return _loadRegions(
       renewals.map((v) => v.bounds).toList(),
       renewals: renewals,
@@ -1353,28 +1534,43 @@ class OwnedMapController extends ChangeNotifier with WidgetsBindingObserver {
                 _coverageViews.map((v) => v.bounds),
               )
             : regions;
-        final targets = [
-          if (selectedRenewal != null) selectedRenewal.bounds,
-          ...uncovered,
-        ];
+        final targets =
+            <({MapBounds bounds, OwnedMapView? renewal, OwnedMapView? after})>[
+              if (selectedRenewal != null)
+                (
+                  bounds: selectedRenewal.bounds,
+                  renewal: selectedRenewal,
+                  after: null,
+                ),
+              for (var i = 0; i < uncovered.length; i++)
+                (
+                  bounds: uncovered[i],
+                  renewal: renewals?[i],
+                  after: continuation,
+                ),
+            ];
+        var extraPages = 0;
+        final batchCursors = <String>{};
         final changedSources = <String>{};
         for (var targetIndex = 0; targetIndex < targets.length; targetIndex++) {
-          final bounds = targets[targetIndex];
-          final renewing = selectedRenewal != null
-              ? targetIndex == 0
-                    ? selectedRenewal
-                    : null
-              : renewals?[targetIndex];
+          final target = targets[targetIndex];
+          final bounds = target.bounds,
+              renewing = target.renewal,
+              after = target.after;
           if (renewing != null &&
               changedSources.contains(renewing.sourceVersion))
             continue;
           final requestCursor =
-              continuation?.nextCursor ??
+              after?.nextCursor ??
               (renewing == null ? null : _requestCursorByView[renewing]);
           final path =
-              continuation?.viewportPath ??
+              after?.viewportPath ??
               (requestCursor != null ? renewing?.viewportPath : null);
           if (!pending()) return;
+          if (after != null && !batchCursors.add(requestCursor!)) {
+            _paginationError = _error = '部分位置尚未加载，请重试。';
+            break;
+          }
           requests++;
           final value = await _api.read(
             cityID: query.$1,
@@ -1393,6 +1589,41 @@ class OwnedMapController extends ChangeNotifier with WidgetsBindingObserver {
           if (!pending() || !value.validUntil.isAfter(_now())) return;
           _transientRetries = 0;
           responseBytes += value.byteCount;
+          if (after != null &&
+              (value.sourceVersion != after.sourceVersion ||
+                  value.bounds != after.bounds ||
+                  value.zoom != after.zoom)) {
+            _paginationError = _error = '地图内容已变化，请重新读取。';
+            break;
+          }
+          if (value.items.isEmpty && value.nextCursor != null) {
+            _paginationError = _error = '部分位置尚未加载，请重试。';
+            break;
+          }
+          final key = (
+            _cacheKey((query.$1, value.bounds, value.zoom, query.$4)),
+            requestCursor ?? '',
+          );
+          final retainPage = requestCursor != null || value.nextCursor != null;
+          final activeOthers = _activePages.entries
+              .where((e) => e.key != key && !identical(e.value, renewing))
+              .map((e) => e.value)
+              .toList();
+          final retainedIDs = {
+            for (final v in activeOthers)
+              for (final pin in v.items) pin.mapID,
+            for (final pin in _visibleCachedPins()) pin.mapID,
+            for (final pin in value.items) pin.mapID,
+          };
+          if (retainPage &&
+              (retainedIDs.length > maxActivePins ||
+                  activeOthers.fold(0, (n, v) => n + v.byteCount) +
+                          value.byteCount >
+                      maxActiveBytes)) {
+            _activeBudgetReached = true;
+            _paginationError = _error = '已加载的位置已保留，请缩小范围后继续搜索。';
+            break;
+          }
           // A newer authority response retires known changed/withdrawn pins
           // even if another still-leased rectangle also contains the old pin.
           final incoming = {for (final pin in value.items) pin.mapID: pin};
@@ -1405,6 +1636,7 @@ class OwnedMapController extends ChangeNotifier with WidgetsBindingObserver {
               final fresh = incoming[old.mapID];
               if (fresh != null && fresh.sourceVersion != old.sourceVersion ||
                   oldView.zoom == value.zoom &&
+                      !value.observedAt.isBefore(oldView.observedAt) &&
                       completeRead &&
                       value.bounds.contains(old.latitude, old.longitude) &&
                       fresh == null) {
@@ -1419,39 +1651,52 @@ class OwnedMapController extends ChangeNotifier with WidgetsBindingObserver {
           if (renewing != null &&
               value.sourceVersion == renewing.sourceVersion) {
             _cache.removeWhere((_, old) => identical(old, renewing));
-            if (_usedPageCursors.contains(renewing.nextCursor) &&
+            _activePages.removeWhere((_, old) => identical(old, renewing));
+            if (renewing.nextCursor != _requestCursorByView[renewing] &&
+                _usedPageCursors.contains((
+                  renewing.sourceVersion,
+                  renewing.nextCursor,
+                )) &&
                 value.nextCursor != null) {
-              _usedPageCursors.add(value.nextCursor!);
+              // Same snapshot and same page position may issue a renewed
+              // signed next token. Preserve only an already proven child link;
+              // never extend that child's original read grant or pixel lease.
+              for (final child in _leasedViews) {
+                if (child.sourceVersion == renewing.sourceVersion &&
+                    child.bounds == renewing.bounds &&
+                    child.zoom == renewing.zoom &&
+                    _requestCursorByView[child] == renewing.nextCursor) {
+                  _requestCursorByView[child] = value.nextCursor;
+                }
+              }
+              _usedPageCursors.add((value.sourceVersion, value.nextCursor));
             }
-          } else if (continuation == null) {
+          } else if (after == null) {
             if (renewing != null) changedSources.add(renewing.sourceVersion);
             // A new complete read supersedes old grants in that rectangle.
             // Touching edges of the incremental strips do not invalidate a
             // neighbouring cached region.
-            _cache.removeWhere(
-              (_, old) =>
-                  old.cityID == value.cityID &&
-                  old.zoom == value.zoom &&
-                  completeRead &&
-                  MapContentCoverage.missing(old.bounds, [
-                    value.bounds,
-                  ]).isEmpty &&
-                  !(identical(old, selectedCoverage) &&
-                      selectedPin != null &&
-                      !value.bounds.contains(
-                        selectedPin.latitude,
-                        selectedPin.longitude,
-                      )),
-            );
+            bool superseded(Object _, OwnedMapView old) =>
+                old.cityID == value.cityID &&
+                old.zoom == value.zoom &&
+                !value.observedAt.isBefore(old.observedAt) &&
+                completeRead &&
+                MapContentCoverage.missing(old.bounds, [
+                  value.bounds,
+                ]).isEmpty &&
+                !(identical(old, selectedCoverage) &&
+                    selectedPin != null &&
+                    !value.bounds.contains(
+                      selectedPin.latitude,
+                      selectedPin.longitude,
+                    ));
+            _cache.removeWhere(superseded);
+            _activePages.removeWhere(superseded);
           } else {
-            _usedPageCursors.add(continuation.nextCursor!);
+            _usedPageCursors.add((after.sourceVersion, after.nextCursor));
             if (_usedPageCursors.length > 256)
               _usedPageCursors.remove(_usedPageCursors.first);
           }
-          final key = (
-            _cacheKey((query.$1, value.bounds, value.zoom, query.$4)),
-            requestCursor ?? '',
-          );
           if (requestCursor != null)
             _requestCursorByView[value] = requestCursor;
           while (_usedPageCursors.length > 256)
@@ -1463,9 +1708,28 @@ class OwnedMapController extends ChangeNotifier with WidgetsBindingObserver {
             _activeUncached = null;
             _cache[key] = value;
           }
+          if (retainPage) _activePages[key] = value;
           for (final pin in value.items) _registerPin(pin);
           _pruneCache();
+          _retireAbsentFromCompleteChain(value);
+          if (value.nextCursor == null &&
+              !value.truncated &&
+              _completePageChain(value) == null) {
+            _paginationError = '部分位置尚未加载，请重新读取。';
+          }
           _publishCoverage();
+          final nextCursor = value.nextCursor;
+          if (nextCursor != null && batchCursors.contains(nextCursor)) {
+            _paginationError = _error = '部分位置尚未加载，请重试。';
+            break;
+          }
+          if (nextCursor != null &&
+              value.items.isNotEmpty &&
+              !_usedPageCursors.contains((value.sourceVersion, nextCursor)) &&
+              extraPages < math.max(0, progressiveBatchPages - 1)) {
+            extraPages++;
+            targets.add((bounds: value.bounds, renewal: null, after: value));
+          }
         }
       } catch (failure) {
         if (pending()) {
@@ -1478,6 +1742,8 @@ class OwnedMapController extends ChangeNotifier with WidgetsBindingObserver {
             return;
           }
           _error = '地图内容暂不可读，请重试。';
+          if (continuation != null || _continuation != null)
+            _paginationError = _error;
           if (_transientRetries < 1 &&
               (failure is TimeoutException ||
                   failure is http.ClientException ||
@@ -1587,6 +1853,9 @@ class OwnedMapController extends ChangeNotifier with WidgetsBindingObserver {
     _expiry?.cancel();
     _recovery?.cancel();
     _view = null;
+    _activePages.clear();
+    _paginationError = null;
+    _activeBudgetReached = false;
     _leaseExpired = true;
     _loading = false;
     _error = null;
@@ -1610,9 +1879,11 @@ class OwnedMapController extends ChangeNotifier with WidgetsBindingObserver {
     _transientRetries = 0;
     _clusterCursors.clear();
     _cache.clear();
+    _activePages.clear();
     _activeUncached = null;
+    _paginationError = null;
+    _activeBudgetReached = false;
     _usedPageCursors.clear();
-    _pageOffset = 0;
     if (clearQuery) _query = null;
     _retireView(preserveMedia: false);
   }

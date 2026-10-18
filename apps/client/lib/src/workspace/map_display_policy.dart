@@ -267,6 +267,60 @@ class MapDisplayPolicy {
     // Unknown scale is conservatively compact. Provider zoom numbers are not
     // treated as interchangeable geographic units.
     final overview = scale == null || scale >= overviewMetersPerLogicalPixel;
+    // Density changes decoration only. Every legal source object retains its
+    // original identity and coordinate, including exact-coordinate siblings.
+    int priority(MapEntity e) => e.id == selectedID
+        ? 0
+        : protectedIDs.contains(e.id) || e.isTaskResult
+        ? 1
+        : previouslyVisibleIDs.contains(e.id)
+        ? 2
+        : 3;
+    final displayed = List<MapEntity>.of(original)
+      ..sort((a, b) {
+        final rank = priority(a).compareTo(priority(b));
+        return rank != 0 ? rank : a.id.compareTo(b.id);
+      });
+    bool point(MapEntity e) =>
+        e.precision == 'point' &&
+        {MapEntityKind.place, MapEntityKind.moment}.contains(e.kind);
+    double fullSize(MapEntity e) => MapMarkerVisual.diameter(
+      selected: e.id == selectedID,
+      dense: false,
+      moment: e.kind == MapEntityKind.moment,
+    );
+    final dense = <String>{
+      if (overview)
+        for (final e in displayed)
+          if (point(e) && e.id != selectedID) e.id,
+    };
+    // A small screen-space neighbourhood replaces pairwise city aggregation.
+    // Touch targets stay 48dp; only colliding nonselected glyphs become dots.
+    if (!overview) {
+      const cell = 48.0;
+      final grid = <(int, int), List<MapEntity>>{};
+      for (final e in displayed.where(point)) {
+        final p = positions[e.id]!;
+        final x = (p.dx / cell).floor(), y = (p.dy / cell).floor();
+        MapEntity? collision;
+        for (var dx = -1; dx <= 1 && collision == null; dx++) {
+          for (var dy = -1; dy <= 1 && collision == null; dy++) {
+            for (final other in grid[(x + dx, y + dy)] ?? const <MapEntity>[]) {
+              if ((p - positions[other.id]!).distance <=
+                  (fullSize(e) + fullSize(other)) / 2 + 4) {
+                collision = other;
+                break;
+              }
+            }
+          }
+        }
+        if (collision != null) {
+          if (e.id != selectedID) dense.add(e.id);
+          if (collision.id != selectedID) dense.add(collision.id);
+        }
+        (grid[(x, y)] ??= []).add(e);
+      }
+    }
     double size(MapEntity e) =>
         !{
           MapEntityKind.place,
@@ -278,82 +332,9 @@ class MapDisplayPolicy {
         ? (e.id == selectedID ? 30 : 28)
         : MapMarkerVisual.diameter(
             selected: e.id == selectedID,
-            dense: overview,
+            dense: dense.contains(e.id),
             moment: e.kind == MapEntityKind.moment,
           );
-    final assigned = <String>{}, displayed = <MapEntity>[];
-    final clusterPositions = <String, Offset>{};
-    bool groupable(MapEntity e) =>
-        e.id != selectedID &&
-        e.precision == 'point' &&
-        {MapEntityKind.place, MapEntityKind.moment}.contains(e.kind);
-    for (final e in original) {
-      if (!assigned.add(e.id)) continue;
-      final members = <MapEntity>[e];
-      if (groupable(e)) {
-        for (final other in original) {
-          if (assigned.contains(other.id) || !groupable(other)) continue;
-          final distance = (positions[e.id]! - positions[other.id]!).distance;
-          // A bounded local group, not a transitive chain across the city.
-          if (distance <= (size(e) + size(other)) / 2 + 2 &&
-              distance <= 36 &&
-              members.length < 32) {
-            members.add(other);
-            assigned.add(other.id);
-          }
-        }
-      }
-      if (members.length == 1) {
-        displayed.add(e);
-        continue;
-      }
-      members.sort((a, b) => a.id.compareTo(b.id));
-      final kind = members.every((v) => v.kind == MapEntityKind.place)
-          ? 'place_cluster'
-          : members.every((v) => v.kind == MapEntityKind.moment)
-          ? 'moment_cluster'
-          : 'mixed_cluster';
-      final moments = members
-          .where((v) => v.kind == MapEntityKind.moment)
-          .map((v) => v.momentID.isEmpty ? v.id : v.momentID)
-          .toSet()
-          .length;
-      final count = kind == 'moment_cluster' ? moments : members.length;
-      final id =
-          'display-cluster:${sha256.convert(utf8.encode(jsonEncode(members.map((v) => v.id).toList())))}';
-      final anchor = members.first;
-      displayed.add(
-        MapEntity(
-          id: id,
-          kind: MapEntityKind.cluster,
-          title: '$count${MapMarkerVisual.clusterUnit(kind)}',
-          subtitle: '查看附近成员',
-          latitude: anchor.latitude,
-          longitude: anchor.longitude,
-          precision: 'area',
-          categoryCode: kind,
-          memberIDs: members.map((v) => v.id).toList(),
-          sourceVersion: _membersVersion(members),
-          groupSummary: '$count${MapMarkerVisual.clusterUnit(kind)}',
-          contentCount: moments,
-          anchorCount: members.length,
-          isTaskResult: members.any((v) => v.isTaskResult),
-        ),
-      );
-      clusterPositions[id] = positions[anchor.id]!;
-    }
-    positions = {...positions, ...clusterPositions};
-    int priority(MapEntity e) => e.id == selectedID
-        ? 0
-        : protectedIDs.contains(e.id) || e.isTaskResult
-        ? 1
-        : previouslyVisibleIDs.contains(e.id)
-        ? 2
-        : 3;
-    displayed.sort((a, b) {
-      final rank = priority(a).compareTo(priority(b));
-      return rank != 0 ? rank : a.id.compareTo(b.id);
-    });
     final sizes = {for (final e in displayed) e.id: size(e)};
     final glyphs = {
       for (final e in displayed)
@@ -373,9 +354,13 @@ class MapDisplayPolicy {
               ))
             entry.key,
     };
-    final maximumLabels = overview ? 6 : 10;
+    final maximumLabels = overview
+        ? 1
+        : scale != null && scale >= 8
+        ? 6
+        : 10;
     for (final e in displayed) {
-      if (occluded.contains(e.id)) continue;
+      if (occluded.contains(e.id) || dense.contains(e.id)) continue;
       final selected = e.id == selectedID;
       if (placed.length >= maximumLabels && !selected) continue;
       if (e.kind == MapEntityKind.moment && !selected ||
@@ -398,7 +383,9 @@ class MapDisplayPolicy {
       )..layout(maxWidth: 112);
       final nameWidth = math.max(16.0, namePainter.width);
       namePainter.dispose();
-      final auxiliary = e.kind == MapEntityKind.place && (selected || !overview)
+      final auxiliary =
+          e.kind == MapEntityKind.place &&
+              (selected || scale != null && scale < 8)
           ? e.recentMoments?.labelAt(DateTime.now().toUtc())
           : null;
       final p = positions[e.id]!,
@@ -469,12 +456,8 @@ class MapDisplayPolicy {
       List.unmodifiable(displayed),
       Set.unmodifiable(placed.keys),
       const {},
-      denseIDs: {
-        for (final e in displayed)
-          if (overview && e.kind == MapEntityKind.place && e.id != selectedID)
-            e.id,
-      },
-      clusterPositions: Map.unmodifiable(clusterPositions),
+      denseIDs: Set.unmodifiable(dense),
+      clusterPositions: const {},
       placements: Map.unmodifiable(placed),
       glyphSizes: Map.unmodifiable(sizes),
       metersPerPixel: scale,

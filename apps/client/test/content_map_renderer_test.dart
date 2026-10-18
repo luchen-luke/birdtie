@@ -96,11 +96,11 @@ void main() {
       ui.SemanticsAction.tap,
     );
     expect(selected, ['moment', 'moment', 'place']);
-      semantics.dispose();
+    semantics.dispose();
   });
 
   test(
-    'bounded latest render, crossing viewport and complete task aggregation',
+    'bounded latest render, crossing viewport and complete independent task points',
     () async {
       final gate = Completer<void>(), serials = <int>[];
       final queue = LatestMapRenderQueue((serial) async {
@@ -171,7 +171,8 @@ void main() {
           selectedID: source.last.id,
           protectedIDs: source.map((e) => e.id).toSet(),
         );
-        expect(plan.entities.length, lessThanOrEqualTo(40));
+        expect(plan.entities.length, count);
+        expect(plan.entities.any(MapDisplayPolicy.displayCluster), isFalse);
         expect(plan.entities.any((e) => e.id == source.last.id), isTrue);
         final reachable = <String>{};
         for (final entity in plan.entities) {
@@ -209,7 +210,7 @@ void main() {
         positions: {for (final e in content) e.id: const Offset(50, 50)},
         zoom: 3,
       );
-      expect(plan.denseIDs, isEmpty);
+      expect(plan.denseIDs, content.map((e) => e.id).toSet());
       expect(plan.entities.map((e) => e.id), content.map((e) => e.id));
     },
   );
@@ -221,6 +222,7 @@ void main() {
       var source = [row('owned-map:moment:a'), row('owned-map:moment:b')];
       List<MapEntity>? overlap;
       MapEntity? selected;
+      Rect contentRect = const _ProfileRect(0, 0, 800, 600);
       Future<void> mount() => t.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -236,7 +238,7 @@ void main() {
                   places: const [],
                   entities: source,
                   selectedID: null,
-                  contentRect: null,
+                  contentRect: contentRect,
                   revision: 1,
                   readerChanges: changes,
                   currentReaderEntities: () => source,
@@ -253,6 +255,35 @@ void main() {
       await t.pumpAndSettle();
       final element = find.byType(FlutterMap).evaluate().single;
       final center = camera.camera.center;
+      // Profile/release delete dart:ui toString overrides. The actual layer
+      // must invalidate coverage even when both rectangles stringify alike.
+      const covered = _ProfileRect(0, 0, 800, 0);
+      expect(contentRect.toString(), covered.toString());
+      for (final e in source) {
+        expect(
+          find.byKey(ValueKey('individual-map-target:${e.id}')),
+          findsOneWidget,
+        );
+      }
+      contentRect = covered;
+      await mount();
+      await t.pumpAndSettle();
+      for (final e in source) {
+        expect(
+          find.byKey(ValueKey('individual-map-target:${e.id}')),
+          findsNothing,
+        );
+      }
+      contentRect = const _ProfileRect(0, 0, 800, 600);
+      await mount();
+      await t.pumpAndSettle();
+      for (final e in source) {
+        expect(
+          find.byKey(ValueKey('individual-map-target:${e.id}')),
+          findsOneWidget,
+        );
+      }
+
       await t.tap(
         find.byKey(const ValueKey('individual-map-target:owned-map:moment:b')),
       );
@@ -322,6 +353,11 @@ void main() {
       MapEntity? selected;
       final viewports = <(MapBounds, double)>[];
       await t.runAsync(() async {
+        await MapMarkerBitmap.render(
+          kind: MapEntityKind.moment,
+          selected: false,
+          dense: true,
+        );
         await MapMarkerBitmap.render(
           kind: MapEntityKind.moment,
           selected: false,
@@ -571,6 +607,12 @@ class _Points extends Fake implements PointAnnotationManager {
   @override
   Future<void> setIconAllowOverlap(bool value) async {}
   @override
+  Future<void> setIconIgnorePlacement(bool value) async {}
+  @override
+  Future<void> setTextAllowOverlap(bool value) async {}
+  @override
+  Future<void> setTextIgnorePlacement(bool value) async {}
+  @override
   Future<void> setTextOptional(bool value) async {}
   @override
   Future<PointAnnotation> create(PointAnnotationOptions option) async {
@@ -633,6 +675,12 @@ class _Map extends Fake implements MapboxMap {
   Future<List<Point?>> coordinatesForPixels(
     List<ScreenCoordinate?> pixels,
   ) async {
+    if (pixels.length == 2) {
+      return [
+        for (final pixel in pixels.whereType<ScreenCoordinate>())
+          Point(coordinates: Position(-2.1 + pixel.x / 60000, 57.14)),
+      ];
+    }
     capture = pixels;
     if (longitude case final lon?)
       return [
@@ -710,3 +758,10 @@ vm.runInNewContext(fs.readFileSync(process.argv[1],'utf8'),
   window.birdtieMapboxDestroy('map'); console.log('PROVIDER_POI_PASS');
 })().catch(e=>{console.error(e.message);process.exitCode=1});
 ''';
+
+class _ProfileRect extends Rect {
+  const _ProfileRect(double left, double top, double right, double bottom)
+    : super.fromLTRB(left, top, right, bottom);
+  @override
+  String toString() => "Instance of 'Rect'";
+}

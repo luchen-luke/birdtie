@@ -6,40 +6,37 @@ import (
 	"github.com/birdtie/birdtie/apps/api/internal/content"
 )
 
-func TestMapPinRepresentedMomentSemantics(t *testing.T) {
-	leaf := func(kind, id, mid string, lat, lon float64) *mapSpatialLeaf {
-		return &mapSpatialLeaf{pin: content.MapContentPin{
-			Kind: kind, MarkerID: id, MomentID: mid,
-			Anchor: content.MapContentAnchor{CoordinateSystem: "wgs84", Precision: "point", Latitude: lat, Longitude: lon},
-		}, moments: map[string]content.MapContentMomentSelector{mid: {ID: mid}}}
+func TestMapIndependentCoincidentObjects(t *testing.T) {
+	anchor := content.MapContentAnchor{CoordinateSystem: "wgs84", Precision: "point", Latitude: 31.2, Longitude: 121.4}
+	leaves := []mapSpatialLeaf{
+		{pin: content.MapContentPin{Kind: "PLACE_CONTENT", MarkerID: "place:a", PlaceID: "a", Anchor: anchor}},
+		{pin: content.MapContentPin{Kind: "PLACE_CONTENT", MarkerID: "place:b", PlaceID: "b", Anchor: anchor}},
+		{pin: content.MapContentPin{Kind: "MOMENT_ANCHOR", MarkerID: "anchor:a", MomentID: "m1", Anchor: anchor}},
+		{pin: content.MapContentPin{Kind: "MOMENT_ANCHOR", MarkerID: "anchor:b", MomentID: "m1", Anchor: anchor}},
 	}
-	for _, sameCoordinate := range []bool{true, false} {
-		p := leaf("PLACE_CONTENT", "place:a", "m1", 31.2, 121.4)
-		a := leaf("MOMENT_ANCHOR", "anchor:a", "m1", 31.3, 121.5)
-		if sameCoordinate {
-			a.pin.Anchor = p.pin.Anchor
+	for _, zoom := range []float64{0, 5, 12, 19} {
+		groups := mapSpatialGroups(leaves, zoom)
+		if len(groups) != len(leaves) {
+			t.Fatal("distinct stable objects merged", zoom)
 		}
-		b := leaf("MOMENT_ANCHOR", "anchor:b", "independent", 31.2, 121.4)
-		c := leaf("MOMENT_ANCHOR", "anchor:c", "independent", 31.25, 121.45)
-		p2 := leaf("PLACE_CONTENT", "place:b", "m1", 31.4, 121.6)
-		rows := map[string]*mapSpatialLeaf{"p": p, "a": a, "b": b, "c": c, "p2": p2}
-		suppressRepresentedMapAnchors(rows)
-		if len(rows) != 4 || rows["a"] != nil || rows["p"] != p || rows["p2"] != p2 || rows["b"] != b || rows["c"] != c {
-			t.Fatalf("sameCoordinate=%v: linked duplication or independent anchors changed: %#v", sameCoordinate, rows)
+		for i, group := range groups {
+			if len(group) != 1 || group[0] != i {
+				t.Fatal("object identity or coordinate replaced", zoom, group)
+			}
 		}
 	}
-	// Hidden/out-of-viewport Places are absent from the authorized leaf set.
-	a := leaf("MOMENT_ANCHOR", "anchor:a", "m1", 31.3, 121.5)
-	rows := map[string]*mapSpatialLeaf{"a": a}
-	suppressRepresentedMapAnchors(rows)
-	if rows["a"] != a {
-		t.Fatal("raw association must not suppress current independent anchor")
+}
+
+func TestMapIndependentLeafSourceIgnoresJoinOrder(t *testing.T) {
+	a := &mapSpatialLeaf{pin: content.MapContentPin{MarkerID: "place:a"}, stamps: []string{"z-relation", "a-relation"}}
+	b := &mapSpatialLeaf{pin: a.pin, stamps: []string{"a-relation", "z-relation"}}
+	original := mapSpatialLeafSourceVersion("reader-a", a)
+	if mapSpatialLeafSourceVersion("reader-a", b) != original {
+		t.Fatal("SQL join order retired unchanged leaf")
 	}
-	p := leaf("PLACE_CONTENT", "invalid", "m1", 0, 0)
-	rows["p"] = p
-	suppressRepresentedMapAnchors(rows)
-	if rows["a"] != a {
-		t.Fatal("invalid Place cannot represent anchor")
+	b.stamps[1] = "changed-relation"
+	if mapSpatialLeafSourceVersion("reader-a", b) == original || mapSpatialLeafSourceVersion("reader-b", a) == original {
+		t.Fatal("changed facts or reader did not retire old source")
 	}
 }
 

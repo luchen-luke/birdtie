@@ -52,14 +52,12 @@ class MapMarkerVisual {
     required bool selected,
     required bool dense,
     bool moment = false,
-  }) => moment
-      ? (selected ? 34 : 30)
-      : selected
-      ? 28
+  }) => selected
+      ? (moment ? 34 : 28)
       : dense
-      ? 20
-      : 24;
-  static double radius({required bool dense}) => 6;
+      ? (moment ? 8 : 7)
+      : (moment ? 30 : 24);
+  static double radius({required bool dense}) => dense ? 1 : 6;
   static const placeColor = Color(0xFF193B32);
   static const densePlaceColor = Color(0xFF678779);
   static const momentColor = Color(0xFF87683C);

@@ -333,11 +333,12 @@
       item.mediaExpiresAt <= Date.now() + 61000;
   }
   function paintMedia(s, item, row, selected, pale) {
-    const current = !pale && mediaValid(item);
+    const micro = row.micro === true;
+    const current = !micro && !pale && mediaValid(item);
     const size = row.logicalSize ?? (item.kind === 'moment' ? (selected ? 34 : 30) : selected ? 28 : pale ? 20 : 24);
-    row.shape.style.border = current ? '0' : '1.5px solid white';
+    row.shape.style.border = current ? '0' : micro ? '1px solid white' : '1.5px solid white';
     const cluster = item.kind === 'cluster';
-    row.icon.style.display = current || cluster ? 'none' : '';
+    row.icon.style.display = current || cluster || micro ? 'none' : '';
     row.count.textContent = cluster ? String(row.clusterCount ?? (item.categoryCode === 'moment_cluster' ? item.contentCount : item.anchorCount || item.memberIDs?.length || 0)) : '';
     row.count.style.display = cluster ? '' : 'none';
     if (current) {
@@ -486,18 +487,12 @@
     const clusters = new Map();
     for (const m of v.markers) {
       const c = m.cluster;
-      if (c) {
-        if (!m.id.startsWith('display-cluster:') || c.id !== m.id || c.kind !== 'cluster' ||
-          typeof c.title !== 'string' || typeof c.subtitle !== 'string' ||
-          !Array.isArray(c.memberIDs) || c.memberIDs.length < 2 ||
-          new Set(c.memberIDs).size !== c.memberIDs.length || !c.memberIDs.every(id => s.source.has(id)) ||
-          c.anchorID !== c.memberIDs[0] || !s.projections.has(c.anchorID)) return;
-        clusters.set(m.id, c);
-      }
+      // The layout cannot invent spatial/same-coordinate aggregates.
+      if (c) return;
       if (ids.has(m.id) || (!c && (!s.source.has(m.id) || !s.projections.has(m.id))) ||
         !finite(m.dx) || !finite(m.dy) || m.dx !== 0 || m.dy !== 0 ||
         typeof m.selected !== 'boolean' || typeof m.dense !== 'boolean' || typeof m.showLabel !== 'boolean' ||
-        !finite(m.size) || m.size < 20 || m.size > 48 || !Number.isSafeInteger(m.clusterCount) || m.clusterCount < 0 ||
+        !finite(m.size) || m.size < 7 || m.size > 48 || !Number.isSafeInteger(m.clusterCount) || m.clusterCount < 0 ||
         !/^#[0-9a-f]{6}$/i.test(m.fill)) return;
       if (m.label && (!finite(m.label.x) || !finite(m.label.y) || !finite(m.label.width) ||
         m.label.width < 0 || m.label.width > 112 || !finite(m.label.height) || m.label.height > 48 ||
@@ -513,13 +508,14 @@
     for (const m of v.markers) {
       const item = clusters.get(m.id) || s.source.get(m.id), p = s.projections.get(item.anchorID && clusters.has(m.id) ? item.anchorID : m.id);
       let row = s.nodes.get(m.id); if (!row) { row = node(s, item); s.nodes.set(m.id, row); }
-      const pale = m.dense && !m.selected && item.kind === 'place', size = m.size;
+      const pale = m.dense && !m.selected, size = m.size;
+      row.micro = pale && ['place', 'moment'].includes(item.kind);
       row.logicalSize = size; row.clusterCount = m.clusterCount; row.layoutLabel = m.label;
       row.button.style.left = `${p.x - 24}px`; row.button.style.top = `${p.y - 24}px`;
       row.button.disabled = s.reader; row.button.tabIndex = s.reader ? -1 : 0;
       row.button.style.zIndex = m.selected ? '3' : '2'; row.button.setAttribute('aria-pressed', String(m.selected));
       Object.assign(row.shape.style, {width: `${size}px`, height: `${size}px`,
-        borderRadius: item.kind === 'moment' ? '6px' : '50%',
+        borderRadius: item.kind === 'moment' ? (row.micro ? '1px' : '6px') : '50%',
         background: item.kind === 'moment' ? '#87683C' : item.kind === 'cluster' ? '#64707A' : m.fill});
       const glyphs = {
         dining: 'M4 2h2v7h1V2h2v7h1V2h2v7c0 2-1 3-3 4v9H6v-9c-2-1-3-2-3-4V2zm13 0h3v20h-3v-9h-2V6c0-2 1-4 2-4z',

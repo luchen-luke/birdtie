@@ -65,27 +65,6 @@ type mapSpatialLeaf struct {
 	until   *time.Time
 }
 
-// Only the current, authorized spatial projection can represent a Moment.
-// A raw relation, a hidden Place or a Place outside this viewport cannot hide
-// an independently readable anchor. Different real anchors remain distinct.
-func suppressRepresentedMapAnchors(grouped map[string]*mapSpatialLeaf) {
-	represented := map[string]bool{}
-	for _, x := range grouped {
-		if x.pin.Kind != "PLACE_CONTENT" || !x.pin.Anchor.Valid() ||
-			(x.pin.Anchor.Latitude == 0 && x.pin.Anchor.Longitude == 0) {
-			continue
-		}
-		for mid := range x.moments {
-			represented[mid] = true
-		}
-	}
-	for key, x := range grouped {
-		if x.pin.Kind == "MOMENT_ANCHOR" && represented[x.pin.MomentID] {
-			delete(grouped, key)
-		}
-	}
-}
-
 func mapClusterCategory(leaves []mapSpatialLeaf, members []int) (string, string) {
 	places, anchors := false, false
 	for _, i := range members {
@@ -113,7 +92,7 @@ func readMapSpatial(ctx context.Context, f humanWriteFrame, q content.MapContent
 	}
 	defer rows.Close()
 	grouped := map[string]*mapSpatialLeaf{}
-	facts := []any{content.MapContentSchema, historyReader(f), q.Bounds, q.Zoom, "DEFAULT_CONTENT"}
+	facts := []any{content.MapContentSchema, historyReader(f), q.Bounds, q.Zoom, "DEFAULT_CONTENT", "INDEPENDENT_POINTS_V3"}
 	for rows.Next() {
 		var kind, id, entity, name, category, precision, mid, scope, stamp, media string
 		var city *string
@@ -157,34 +136,16 @@ func readMapSpatial(ctx context.Context, f humanWriteFrame, q content.MapContent
 		return nil, "", at, until, content.ErrUnavailable
 	}
 	rows.Close()
-	suppressRepresentedMapAnchors(grouped)
 	keys := []string{}
 	for k := range grouped {
 		keys = append(keys, k)
 	}
 	sort.Strings(keys)
 	out := []mapSpatialLeaf{}
-	dedup := map[string]bool{}
-	// Exact coordinate equality only: nearby real positions remain distinct.
-	coordinateKey := func(mid string, a content.MapContentAnchor) string {
-		return mid + ":" + strconv.FormatFloat(a.Latitude, 'g', -1, 64) + ":" + strconv.FormatFloat(a.Longitude, 'g', -1, 64) + ":" + a.Precision
-	}
-	for _, x := range grouped {
-		if x.pin.Kind == "PLACE_CONTENT" {
-			for mid := range x.moments {
-				dedup[coordinateKey(mid, x.pin.Anchor)] = true
-			}
-		}
-	}
+	// Only stable Place/anchor identity merges rows. Equal coordinates or a
+	// shared Moment ID do not prove separate anchors are duplicates.
 	for _, k := range keys {
 		x := grouped[k]
-		if x.pin.Kind == "MOMENT_ANCHOR" {
-			same := coordinateKey(x.pin.MomentID, x.pin.Anchor)
-			if dedup[same] {
-				continue
-			}
-			dedup[same] = true
-		}
 		mids := []string{}
 		for m := range x.moments {
 			mids = append(mids, m)
@@ -198,7 +159,7 @@ func readMapSpatial(ctx context.Context, f humanWriteFrame, q content.MapContent
 		sort.Strings(x.pin.VisibilitySources)
 		x.pin.MomentCount = len(mids)
 		x.pin.MomentsTruncated = len(mids) > 20
-		x.pin.SourceVersion = content.MomentControlHash([]any{historyReader(f), x.pin.MarkerID, x.stamps, x.pin.Moments, x.media})
+		x.pin.SourceVersion = mapSpatialLeafSourceVersion(historyReader(f), x)
 		out = append(out, *x)
 	}
 	momentIDs, placeIDs := []string{}, []string{}
@@ -290,23 +251,22 @@ func mapContentTargetFilter(ctx context.Context, f humanWriteFrame, kind, id str
 	return v, nil
 }
 
-// Group only identical, equally precise source positions. A low zoom level is
-// not authority to relocate separate content into a synthetic numbered point.
-// Drawing limits are enforced by page size, never by merging distinct locations.
+// Each stable object owns its real point, including coincident objects.
+// Transport stays bounded to 40 independently selectable points per page.
 func mapSpatialGroups(leaves []mapSpatialLeaf, _ float64) [][]int {
-	groups := [][]int{}
-	positions := map[content.MapContentAnchor]int{}
-	for i, leaf := range leaves {
-		at, found := positions[leaf.pin.Anchor]
-		if !found {
-			at = len(groups)
-			positions[leaf.pin.Anchor] = at
-			groups = append(groups, []int{})
-		}
-		groups[at] = append(groups[at], i)
+	groups := make([][]int, len(leaves))
+	for i := range leaves {
+		groups[i] = []int{i}
 	}
 	return groups
 }
+
+func mapSpatialLeafSourceVersion(reader string, x *mapSpatialLeaf) string {
+	stamps := append([]string(nil), x.stamps...)
+	sort.Strings(stamps)
+	return content.MomentControlHash([]any{reader, x.pin.MarkerID, stamps, x.pin.Moments, x.media})
+}
+
 func mapClusterID(reader string, leaves []mapSpatialLeaf, ids []int) string {
 	members := []string{}
 	for _, i := range ids {

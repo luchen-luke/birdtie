@@ -21,7 +21,7 @@ void main() {
           final canvas = Canvas(recorder)..scale(ratio);
           canvas.drawRect(
             const Rect.fromLTWH(0, 0, 48, 48),
-          Paint()..color = const Color(0xFFFF0000),
+            Paint()..color = const Color(0xFFFF0000),
           );
           final picture = recorder.endRecording();
           final image = await picture.toImage(
@@ -291,7 +291,7 @@ void main() {
     },
   );
   test(
-    'public Moment retains 30dp actual JPEG square at every density',
+    'Moment retains 30dp actual JPEG nearby and becomes an 8dp image-free micro square',
     () async {
       final image = await mapFixtureImage();
       try {
@@ -331,8 +331,8 @@ void main() {
           isNot(record.bytes.sublist(center, center + 4)),
         );
         expect(square.bounds(220).width, closeTo(30, 2.1));
-        expect(dense.bounds(220).width, closeTo(30, 2.1));
-        expect(dense.bytes, orderedEquals(square.bytes));
+        expect(dense.bounds(220).width, closeTo(8, 2.1));
+        expect(dense.bytes, isNot(orderedEquals(square.bytes)));
       } finally {
         image.dispose();
       }
@@ -434,7 +434,7 @@ void main() {
         '${kind.name} actual opaque glyph has readable density at DPR $ratio',
         () async {
           for (final state in [
-            (false, true, kind == MapEntityKind.moment ? 30.0 : 20.0),
+            (false, true, kind == MapEntityKind.moment ? 8.0 : 7.0),
             (false, false, kind == MapEntityKind.moment ? 30.0 : 24.0),
             (true, true, kind == MapEntityKind.moment ? 34.0 : 28.0),
           ]) {
@@ -568,11 +568,17 @@ void main() {
           final diameter = state.$1
               ? 28.0
               : state.$2
-              ? 20.0
+              ? 7.0
               : 24.0;
           expect(before.bounds(220).width, closeTo(diameter * ratio, 2.1));
-          expect(after.bounds(220).width, closeTo(30 * ratio, 2.1));
-          expect(after.bounds(220).height, closeTo(30 * ratio, 2.1));
+          expect(
+            after.bounds(220).width,
+            closeTo((diameter < 8 ? 8 : diameter) * ratio, 2.1),
+          );
+          expect(
+            after.bounds(220).height,
+            closeTo((diameter < 8 ? 8 : diameter) * ratio, 2.1),
+          );
           expect(
             before.colorCount([0x73, 0x80, 0x8a]),
             greaterThan((state.$2 && !state.$1 ? 6 : 35) * ratio * ratio),

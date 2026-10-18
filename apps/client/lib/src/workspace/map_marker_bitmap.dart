@@ -187,6 +187,7 @@ class MapMarkerBitmap {
     const anchor = Offset(pointCanvasSize / 2, pointCanvasSize / 2);
     const center = anchor;
     final moment = kind == MapEntityKind.moment;
+    final micro = dense && !selected;
     final diameter = MapMarkerVisual.diameter(
       selected: selected,
       dense: dense,
@@ -204,14 +205,16 @@ class MapMarkerBitmap {
     );
     final shape = Path();
     if (moment) {
-      shape.addRRect(RRect.fromRectAndRadius(rect, const Radius.circular(6)));
+      shape.addRRect(
+        RRect.fromRectAndRadius(rect, Radius.circular(micro ? 1 : 6)),
+      );
     } else {
       shape.addOval(rect);
     }
     canvas.drawPath(shape, Paint()..color = color);
     // Place pins always use a local category. Only independent Moments may
     // carry verified pixels, without changing the true geographic anchor.
-    if (moment && photo != null) {
+    if (moment && photo != null && !micro) {
       canvas.save();
       canvas.clipPath(shape);
       paintImage(canvas: canvas, rect: rect, image: photo, fit: BoxFit.cover);
@@ -224,10 +227,10 @@ class MapMarkerBitmap {
       Paint()
         ..color = Colors.white
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 3,
+        ..strokeWidth = micro ? 2 : 3,
     );
     canvas.restore();
-    if (!moment || photo == null) {
+    if (!micro && (!moment || photo == null)) {
       final icon = moment
           ? Icons.notes_outlined
           : MapMarkerVisual.placeIcon(categoryCode);

@@ -45,6 +45,7 @@ class OwnedMapMediaController extends ChangeNotifier {
     OwnedMapView view, {
     required double devicePixelRatio,
     String? selectedMarkerID,
+    MapBounds? visibleBounds,
   }) {
     if (_closed) return;
     final origin = canonicalAuthOrigin(api.apiBaseUrl()),
@@ -60,7 +61,16 @@ class OwnedMapMediaController extends ChangeNotifier {
     _latestView = view;
     final ratio = MapMarkerBitmap.pixelRatio(devicePixelRatio);
     final chosen =
-        view.items.where((p) => p.isMomentAnchor && p.cover != null).toList()
+        view.items
+            .where(
+              (p) =>
+                  p.isMomentAnchor &&
+                  p.cover != null &&
+                  (p.canonicalMarkerID == selectedMarkerID ||
+                      visibleBounds == null ||
+                      visibleBounds.contains(p.latitude, p.longitude)),
+            )
+            .toList()
           ..sort(
             (a, b) =>
                 (b.canonicalMarkerID == selectedMarkerID ? 1 : 0) -

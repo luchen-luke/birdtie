@@ -775,7 +775,7 @@ class WebMapDisplayLayer extends StatefulWidget {
 }
 
 class _WebMapDisplayLayerState extends State<WebMapDisplayLayer> {
-  String? _inputs;
+  ({String content, Rect? rect})? _inputs;
   MapDisplayPlan? _plan;
 
   final _readerChanges = MapReaderChanges();
@@ -789,7 +789,11 @@ class _WebMapDisplayLayerState extends State<WebMapDisplayLayer> {
 
   List<MapEntity> _currentRenderedPointSource() {
     final source = _currentPointSource();
-    final visible = _plan?.entities ?? const <MapEntity>[];
+    final visible =
+        _plan?.entities
+            .where((e) => !_plan!.occludedGlyphIDs.contains(e.id))
+            .toList() ??
+        const <MapEntity>[];
     final ids = visible.map((e) => e.id).toSet();
     return [
       ...source.where((e) => ids.contains(e.id)),
@@ -929,8 +933,11 @@ class _WebMapDisplayLayerState extends State<WebMapDisplayLayer> {
       unique.putIfAbsent(entity.id, () => entity);
     }
     final positions = _project(unique.values, camera);
-    final inputs =
+    final contentInputs =
         '${widget.revision}:${widget.selectedID}:${unique.values.map((e) => '${e.id}:${e.kind}:${e.title}:${e.subtitle}:${e.latitude}:${e.longitude}:${e.placeID}:${e.precision}:${e.isTaskResult}:${e.memberIDs.join(',')}:${e.decorationKey}').join('|')}';
+    // Production builds strip Rect.toString; retain its numeric value in
+    // the cache key so reader/keyboard coverage always invalidates the plan.
+    final inputs = (content: contentInputs, rect: widget.contentRect);
     // Moving the camera repositions the existing MarkerLayer. Recompute its
     // density only after the camera settles, or authorized source changes.
     if (_inputs != inputs) {
@@ -1004,7 +1011,9 @@ class _WebMapDisplayLayerState extends State<WebMapDisplayLayer> {
       }
     });
     return MapEntityLayer(
-      entities: _plan!.entities,
+      entities: _plan!.entities
+          .where((e) => !_plan!.occludedGlyphIDs.contains(e.id))
+          .toList(),
       labelIDs: _plan!.labelIDs,
       denseIDs: _plan!.denseIDs,
       placements: _plan!.placements,

@@ -832,10 +832,15 @@ SELECT md5('map171-cont-link:'||i)::uuid,md5('map171-cont-moment:'||i)::uuid,'PL
 	a := identity.Actor{ID: owner, AccountType: "person"}
 	q := content.MapContentQuery{Bounds: content.MapContentBounds{West: 19, South: 9, East: 21, North: 11}, Zoom: 0}
 	page, e := s.ReadHumanMapContent(ctx, digest, a, q)
-	if e != nil || len(page.Pins) != 1 || page.TotalAnchorCount != 81 {
-		t.Fatal("complete overlap cluster", e)
+	if e != nil || len(page.Pins) != 40 || page.TotalAnchorCount != 81 || page.TotalPointCount != 81 {
+		t.Fatal("independent coincident points keep bounded transport", e)
 	}
-	q.ClusterID, q.SourceVersion = page.Pins[0].MarkerID, page.SourceVersion
+	for _, pin := range page.Pins {
+		if pin.Kind != "PLACE_CONTENT" {
+			t.Fatal("independent Place replaced by cluster")
+		}
+	}
+	q.SourceVersion = page.SourceVersion
 	first, e := s.ReadHumanMapContent(ctx, digest, a, q)
 	if e != nil || len(first.Pins) != 40 || first.NextCursor == nil {
 		t.Fatal("first", e)

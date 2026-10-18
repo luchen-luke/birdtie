@@ -1,6 +1,6 @@
 # Now 分类 Pin 与自动地图：2026-10-18
 
-状态：API37 已部署且就绪，Android72已覆盖安装、数据保留，实际产物与构建哈希一致。69真人确认键盘3次弹出/收起已不卡顿；70真人继续报告整图闪白和pin消失，明确 FAIL_USER_REPRODUCED。71已抓到同ID版本变化、可见facts不变而整图退休的原因计数。72据此接入严格的新证明接棒，相关20项回归及真实controller1项通过，实际短运动窗口内没有RETIRE记录，但尚未得到本版完整视觉/用户验收，不能当作已解决。本轮仍为 PARTIAL，未关闭 PMAP-12 或原发布门槛。唯一 live 状态继续放在 `BT-FIX-NOW-UI-001.pinAutoMap20261018`，不另建任务队列。
+状态（2026-10-19，78号）：API38已上线，Android78已构建并覆盖安装、数据保留；阅读关闭恢复、两端冷启动及跨区切换通过，用户确认两端无闪白/视野内pin整批消失。性能仅有有限运动样本；完整原生呈现和未测权限/异常组合仍未关闭。Web、TalkBack按用户选择未验收。原任务保持IN_PROGRESS，不宣称全部PMAP或全产品验收完成。
 
 ## 本轮输入与边界
 
@@ -32,7 +32,7 @@
 
 已复核 `docs/architecture/CIVU-REUSE-MATRIX.md`：复用 Birdtie 已迁移内容接口、分类字段和地图适配能力。本轮不复制 Civu 仓库或生产数据。适用 UX-CHECK-01、04、05、06、07、08、09、10、11、12、13、14（正常字号）、15、16。
 
-## 依赖与验收状态
+## 初轮依赖与分项历史状态（61–70；后续版本见文末）
 
 | 项目 | 依赖 | 当前状态 |
 | --- | --- | --- |
@@ -243,3 +243,74 @@ iOS 构建与运行：NOT_RUN（Windows 主机无 Xcode/真机）。Web 实际�
 - [高德 Android 隐私合规说明](https://lbs.amap.com/api/maps-sdk-for-android/guide/create-project/dev-attention)
 - [高德 Flutter 说明](https://lbs.amap.com/api/flutter/summary)
 - [Mapbox 署名要求](https://docs.mapbox.com/help/dive-deeper/attribution/)
+
+
+## 73真实验收与74增量实施（2026-10-19，尚未发布74）
+
+用户确认73上海拖动/缩放后“没有出现闪白和整批的pin消失”。`device/acceptance73-amap-triggered`实际100.031933秒、3237视频帧、无音频；视频SHA256为`7a8f78d8f88ff79fb71c18606c2a74335ebf869e60c4b1eeb8c3bdddd9184bce`。独立审查`work/pin-automap-20261018/acceptance73-review/audit.json`核对原视频/数值摘要并看6个原帧；中央带阈值候选0不等于人工逐帧零闪。数值仅5次短运动合2.739502秒，不能算连续60秒手势性能通过。1986 Flutter帧UI/raster p95为1.531/22.123ms，133帧raster超过16.67ms（6.697%）；性能目标仍未通过。PSS首504514/峰509581/末485235KiB只属于该窗口，不证明无泄漏。
+
+73短预览和展开阅读的遮挡、原地图元素及返回在相关回归中通过；真实阿伯丁→上海→阿伯丁→上海切换完整录像`device/acceptance73-cross-complete-video`为45.564秒/1581帧，SHA256`9c40c85877d1f7c05d04670952f43d60da73d5a6cbceffca8fdef6c6cd0e0bff`。由自己的验收工具按当前有效语义入口点击，非用户实际手势、非TalkBack。三个供应商切换按旧实例先销毁、新实例后创建完成；系统不同窗口指标不得混成连续操作基准。
+
+**保留真实失败：** `device/acceptance73-final-functional/receipt.json`为FAILED。上海冷启动确认旧PID19618已退出并由PID20037恢复，之后阿伯丁打开地点的3条动态阅读、返回地图，等待5秒仍没有原3个标记及其语义。`acceptance73-final-mapbox-before-reader/expanded/restored`保留对照。后续新来源刷新才恢复，故73不得报告全部阅读返回验收通过；该脚本的后续Mapbox冷启动/回上海分支未执行。
+
+74修复已由真实组件回归复现：原生标记删除/创建完成前就提交`_renderedEntities`，中途取消时成功显示缓存仍保留旧key，返回相同区域被误判无需更新。现在更新前作废旧成功key，原生ACK和当前来源确认后才提交显示状态；不清空底图、不改坐标或放宽授权。`work/pin-automap-20261018/return74-fix/red01`保留红测，`green01`2项通过：中断删除后恢复原3个对象及语义；迟到ACK与同ID新来源守卫。74未构建前不能把单元通过称真机修复通过。
+
+用户最新独立点要求已核对原始授权并增量登记原队列，详见`docs/product/BIRDTIE-MAP-CONTENT-EXECUTION-SPEC-2026-10-14.md`的2026-10-19节。空间聚合和同坐标合并被新规则覆盖；以前版本的对应测试/截图保留作历史，不再当现行目标。当前客户端取消显示聚合和40点替换页，加入稳定ID累积、有限续页及显式区域搜索边界。视觉批次`independent74-visual/receipt.json`记录71个唯一Dart用例及17个JS用例通过，首轮旧fixture失败及修正全保留；不是全套Flutter/Web验收。控制器相关测试、服务端、74构建部署与设备证据待本轮实际完成后续记。
+
+范围：TalkBack与已登录Web均按用户选择`NOT_RUN`，不再要求用户启用；大字号不在本轮。历史UNKNOWN保存56进程终止恢复及59线上大视频证据保留，但不外推为74新跑或视频全性能通过。未确认的原10967历史白图原因仍`NOT_RECOVERED`，不猜测原动态坐标。
+
+## 74构建、安装与真实失败，继续75
+
+74冻结8126个构建输入，前后清单一致；APK 357,223,703字节，SHA256 `3cf293576f05c9610f50fe744ec29bcaea0b8112478e7e438274fb274543797e`，构建退出0、62.573秒。`build74/receipt.json`与`build74/readonly-audit.json`保留证据。59至73产物未覆盖。`device/install74/receipt.json`核对已安装base APK与交付SHA一致，保留现有数据。
+
+`device/acceptance74-final-functional/receipt.json`仍为FAILED：上海进程终止后恢复成功；阿伯丁阅读前3个真实标记，展开后0个（预期遮挡），返回5秒后仍0个（失败）。截图和语义均证实，不是只缺名称。后续约9秒才出现原标记；`layout-failure-numeric.log`显示地图host/instance/cameraEpoch不变，01:51:55.482 visible0、01:52:18.638 visible3。不能把74原生ACK单元修复宣称全部真机问题已解决。该脚本剩余Mapbox冷启动/回上海分支NOT_RUN。
+
+75另修复已复现分页缺陷：新来源的根页出现后，旧来源尾页可能因LRU顺序抢占“继续加载”。`work/pin-automap-20261018/independent75-controller/red/receipt.json`记录单例退出1，实际sourceVersion错误。修复仅让最新同区域根页的有效链授权续页，旧点仍受原有限期约束；绿色回归、75构建/设备验收待实际完成续记。API38尚未构建或部署。
+
+## 75与API38实际结果（继续76）
+
+75 APK SHA256 `c02e1eef59a04e276c19102ea89b348149576d249d51ee153370e3a331b8295b`，357,223,707字节；8126输入清单前后稳定，签名/应用身份/路由资源核验通过。安装回执确认手机实际APK一致，保留数据。分页28个直接用例通过；native 3个回归通过，包括真实Now在空闲帧时恢复IME后的裁剪区域。定向analyze退出2，无error；MapWorkspace已有2个unused_field警告保留，不能标为零告警。
+
+75真机仍FAILED：`device/acceptance75-final-functional`及相邻before/expanded/restored截图保存。Native ACK后日志显示sourceCount始终6，展开rect高度0/nativeAnnotationCount0符合遮挡；关闭后等待5秒未恢复，随后30秒来源刷新才恢复3个可见标记。Mapbox host/instance不变，未重建底图。IME调度修复不能替代此路径验收。76检查关闭期间scope变化取消正在进行的更新后未调度最新渲染的窗口；尚未构建或验收。
+
+API38已上线：`api38-deploy/receipt.json`为READY，运行二进制SHA256 `f2856316b5249b8df2febc071fa090d4647c02d6fb1c87cb782b3c4d3bd903df`，迁移账本仍178且SHA不变，无业务数据写入、无环境或路由配置变更，保留API37回滚。仅3个Go文件变化；取消按同坐标/同MomentID压制独立点，Place仍按其稳定ID归并关联动态；40只作为传输页，不再聚合不同对象。新查询来源版本拒绝旧规则游标，leaf来源哈希对SQL关联行顺序稳定。
+
+`work/pin-automap-20261018/server-tests/independent38-20261018T180538Z-79702c1d/receipt.json`记录7项实际RUN/PASS、0失败/跳过：同坐标独立对象、关联行次序、公开与私有ACL、坐标撤权、81同坐标地点分页/签名期限/来源变化/撤权、有限分组预算与媒体来源稳定。测试仅新建loopback临时PostgreSQL、独立标记数据库及子库；全部已清理，没有连接真实DB。完整10k PostgreSQL压力基准未在此版本重跑。
+
+
+## 76/77失败定位与78矩形缓存修复
+
+76将view-only范围变化纳入最新绘制调度，5项组件回归通过；但`device/acceptance76-final-functional`仍在真实阅读返回后5秒缺失原3个pin。76实际APK SHA256 `92086045ab6064746123632e88e82548bfd5fd866842c8c6cffe1defec1b20b0`；不把单元修复称为真机通过。
+
+77只增加针对性诊断，APK SHA256 `6ae845e57badf5e32e0ecd806a7c2b8ba3118f31e655057f55d1ae9e88a68bfd`；冻结输入、签名及实际覆盖安装base均匹配，历史APK保留。首次选择上海的验收工具中断后，重新读取确认仍在面板，才用当前有效入口继续。`device/acceptance77-final-functional/diagnostic-numeric.log`显示02:29:41.068关闭面板布局已提交、.069原生输入/绘制队列已执行，未出现异常或中止；直到02:29:53.326来源更新才恢复3点。真实返回复验仍失败，后续Mapbox冷启动分支未运行。
+
+根因：Flutter profile/release编译使用`--delete-tostring-package-uri=dart:ui`（本机SDK `packages/flutter_tools/lib/src/compile.dart`），使Rect诊断字符串成为`Instance of 'Rect'`。原生成功缓存把contentRect插值为字符串，不同面板遮挡范围因此碰撞；Web共享层也有同类缓存。78改为包含Rect值的结构化record，保留来源/相机/倍率字段、原生实例和原有当前授权检查；不修改坐标或制造新内容。诊断日志改记矩形数值，去除77逐轮begin/input/abort噪声。
+
+`work/pin-automap-20261018/return74-fix/profile-rect78/red01`用真实NativeCityMapView和受控SDK，模拟生产相同字符串但几何不同的Rect；保持选中项及合法来源，旧代码covered→visible实际仍Set[]，退出1。`green01`6项通过（包括重复遮挡/恢复、迟到ACK、来源替换、idle调度）；`related-green01`6项通过（实际Now宿主、共享Web层、内容点路由/权限）。全部生产HTTP和业务写入0。它们是组件证据，不替代78真机或Web已登录验收。78正在按冻结输入构建，安装及同包复验待续记。
+
+
+## 78号实际交付与本轮手机验收结果
+
+78 APK为`work/pin-automap-20261018/delivery78/Birdtie-Pin-AutoMap-20261018-78.apk`，357,223,707字节，SHA256 `20617ef27072e5aac447c609c2b6acafae997679ddcd81d49de0a0749d7fcf46`。8126项构建输入前后摘要`d882b437b8473676bac0db507a4b7d34afb52d269c7ce30bdf7a10e92d9bb33c`一致；签名、应用身份和路由资源通过核验，59–77产物哈希未变。`device/install78/receipt.json`确认实际base APK完全匹配，数据清理0。首轮审计脚本版本替换误改固定证书对照常量，断言阻止安装；已恢复历史证书常量并重新核验通过，未修改APK；失败记录保留在`build78/audit-template-first-failure.json`。
+
+`device/acceptance78-final-functional/receipt.json`通过两端真实进程退出后冷恢复，以及阿伯丁地点短预览→3条关联动态展开阅读→返回。返回期间PID31511、相机代次1、来源6个对象均不变；关闭布局于02:37:20.806提交，原生标记于.835完成ACK，间隔29ms，恢复3个可见对象和名称/数量。root已看实际恢复截图，确有2个分类圆点和1个方形动态媒体；这29ms是原生操作确认，不是屏幕present性能。详情在`return-timing-verification.json`，此前73–77失败保留。
+
+`device/acceptance78-cross-complete-video/recording.mp4`为同78安装包43.934秒、1532帧、无音频，SHA256 `4759f8c4c076172296a16dd2316ed7d68c1ae47aa2da683bdfc7525df8150e54`。阿伯丁→上海→阿伯丁→上海三次由实际目的地面板自动路由，应用PID不变，无离开前台；操作来源为本应用语义入口点击，不标为真人手势或TalkBack。两端真实底图及署名入口可见。跨区上海截图视野内内容点少，不能用它们单独证明分类；最终`device/acceptance78-final-shanghai-after-human/screen.png`保留实际用户视野，显示同坐标附近独立小圆点、分类地点和方形动态媒体，高德署名保留。境外图为`device/acceptance78-final-mapbox-restored/screen.png`与`acceptance78-final-mapbox-after-human/screen.png`。这些都是手机原始截图，无静态合成或生产假数据。
+
+用户分别确认78上海“没有闪白和pin的整批消失”、78阿伯丁“没有闪白、pin整批消失或明显卡顿”，因此这两项真人功能反馈通过。`work/pin-automap-20261018/acceptance78-review/numeric-audit.json`逐项核对视频和采样：
+
+| 同包60秒观测 | 高德上海 | Mapbox阿伯丁 |
+| --- | --- | --- |
+| Flutter帧数 | 2666 | 806 |
+| UI / raster p95 | 2.264 / 8.944 ms | 1.897 / 3.368 ms |
+| raster >16.67ms | 50/2666（1.875%） | 0/806 |
+| 数值记录实际运动 | 22段，合7.838s，首末跨度42.994s | 4段，合3.388s，首末跨度5.594s |
+| PSS首/峰/末 KiB | 532333 / 602670 / 558112 | 593266 / 593266 / 560352 |
+
+这是两个含实际运动的60秒窗口，不能写成连续60秒拖缩完成。原生GPU/present未计入，完整网络请求计数`NOT_RUN`，系统gfx的4950ms是不可用值，不当延迟；`absolutePerformancePass=false`原样保留。历史73 raster22.123ms与本轮动作覆盖不同，只能列各自测值，不算严格同负载性能提升百分比或无泄漏证明。
+
+78定向静态分析退出2：0 error、2个已有unused_field warning、215 info；生产3文件及2个直接回归文件输入稳定，不报告标准分析全绿。全套Flutter/Go未重跑；最新服务端是API38的7项隔离PG测试通过（无跳过、已清理），此前直接测试和失败记录继续保留。
+
+**本轮未关闭：** 完整连续手势压力/原生present/GPU/请求计数、真机撤权/删除/换号/弱网及各入口的完整组合均不冒充已测。Web与真实TalkBack为`NOT_RUN_USER_DEFERRED`；iOS为`NOT_RUN`且在本轮手机之外；高德进一步降低路名/区名权重为`BLOCKED`（缺获准样式导出）。历史10967白图原始素材缺失和视频精确原生首帧保持原状态，不另建重复队列。正常字号范围、原Closed Pilot门槛不变。
+
+`device/helper78-cleanup/receipt.json`确认临时`app.birdtie.evidence`已卸载，78号正式预览应用与数据保留；未修改系统辅助服务设置。构建、部署和实机证据本地保留，真实截图/录像与私有配置不提交GitHub。代码及原报告/原队列按明确文件范围提交，精确GitHub交付回执在`work/pin-automap-20261018/git-delivery78/`（提交时仍准备中，完成后追加实际提交号）。

@@ -44,17 +44,12 @@ void main() {
       contentRect: rect,
     );
     final chrome = at(const Rect.fromLTRB(16, 110, 359, 550));
-    final cluster = chrome.entities.singleWhere(
-      MapDisplayPolicy.displayCluster,
-    );
-    expect(chrome.occludedGlyphIDs, {cluster.id});
-    expect(chrome.placements.containsKey(cluster.id), false);
+    expect(chrome.entities.toSet(), source.toSet());
+    expect(chrome.entities.any(MapDisplayPolicy.displayCluster), isFalse);
+    expect(chrome.occludedGlyphIDs, {a.id, b.id});
+    expect(chrome.placements, isEmpty);
     expect(chrome.omittedIDs, isEmpty);
-    expect(MapDisplayPolicy.currentDisplayClusterMembers(cluster, source), [
-      a,
-      b,
-    ]);
-    expect(chrome.clusterPositions[cluster.id], positions[a.id]);
+    expect(chrome.clusterPositions, isEmpty);
     expect(chrome.entities.singleWhere((e) => e.id == c.id), same(c));
     final uncovered = at(const Rect.fromLTRB(16, 40, 359, 550));
     expect(uncovered.occludedGlyphIDs, isEmpty);
@@ -92,11 +87,8 @@ void main() {
             contentRect: const Rect.fromLTWH(0, 0, 375, 600),
           );
           expect(plan.entities.single, same(row));
-          expect(plan.glyphSizes[row.id], scale >= 16 ? 20 : 24);
-          expect(
-            plan.placements[row.id]!.auxiliary,
-            scale >= 16 ? null : '1条动态',
-          );
+          expect(plan.glyphSizes[row.id], scale >= 16 ? 7 : 24);
+          expect(plan.placements[row.id]?.auxiliary, null);
           expect(plan.metersPerPixel, scale);
         }
       }
@@ -178,6 +170,7 @@ void main() {
             source[i].id: Offset(i * 100.0, 0),
         },
         zoom: 18,
+        metersPerPixel: 8,
         selectedID: 'place:18',
         protectedIDs: {'place:19'},
       );
@@ -414,7 +407,7 @@ void main() {
           previouslyVisibleIDs: {'withdrawn:old'},
           selectedID: 'place:113',
         );
-        // New PMAP local display groups retain each original ID exactly once.
+        // Every original ID stays independent, even with a one-item decoration budget.
         final represented = <String>[];
         for (final entity in plan.entities) {
           if (MapDisplayPolicy.displayCluster(entity)) {
@@ -693,9 +686,7 @@ void main() {
             t.getSize(
               find.byKey(ValueKey('individual-map-shape:${entity.id}')),
             ),
-            kind == MapEntityKind.place
-                ? const Size(20, 20)
-                : const Size(30, 30),
+            kind == MapEntityKind.place ? const Size(7, 7) : const Size(8, 8),
           );
           expect(shape.color!.a, 1);
           expect(shape.border, isNotNull);
@@ -728,7 +719,7 @@ void main() {
         dense: true,
       );
       expect(circle, isNot(orderedEquals(square)));
-      expect(square, orderedEquals(pale));
+      expect(square, isNot(orderedEquals(pale)));
       expect(
         identical(
           pale,

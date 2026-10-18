@@ -69,7 +69,7 @@ void main() {
             selectedID: selected,
           );
       expect(plan(4, 2).glyphSizes[entity.id], 24);
-      expect(plan(18, 50).glyphSizes[entity.id], 20);
+      expect(plan(18, 50).glyphSizes[entity.id], 7);
       expect(plan(4, 50, selected: entity.id).glyphSizes[entity.id], 28);
       final distance = MapDisplayPolicy.scaleFromSegment(
         const Offset(0, 0),
@@ -129,7 +129,7 @@ void main() {
         metersPerPixel: 50,
         positions: {entity.id: const Offset(150, 80)},
       );
-      expect(overview.placements[entity.id]!.auxiliary, isNull);
+      expect(overview.placements, isEmpty);
     },
   );
   testWidgets(

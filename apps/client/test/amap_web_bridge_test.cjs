@@ -230,7 +230,7 @@ test('leased owned cover updates without null legacy photo metadata, expired byt
     await f.flush();f.layout();assert.equal(image.style.display,'none');
   } finally { f.destroy(); }
 });
-test('display task cluster is bounded transport with exact current members and retires when a member is removed', async () => {
+test('layout rejects invented display clusters and retains original independent source identities', async () => {
   const f=fixture();
   try {
     f.update(1,[item('task:a'),item('task:b')],1);await f.flush();
@@ -238,10 +238,43 @@ test('display task cluster is bounded transport with exact current members and r
     f.window.birdtieAMapLayout(f.handle,JSON.stringify({schema:'birdtie-amap-layout-v1',revision:frame.revision,frame:frame.frame,
       markers:[{id,dx:0,dy:0,selected:false,dense:false,showLabel:false,size:28,fill:'#73808a',category:'other',clusterCount:2,
         cluster:{id,kind:'cluster',title:'2项内容',subtitle:'',memberIDs:['task:a','task:b'],anchorID:'task:a',contentCount:2,precision:'area'}}]}));
-    assert.equal(f.buttons().length,1);f.buttons()[0].fire('click');assert.equal(f.selected.at(-1).id,id);
-    f.update(2,[item('task:a')],1);assert.equal(f.buttons().length,0);
+    assert.equal(f.buttons().length,0);f.layout();assert.equal(f.buttons().length,2);
+    assert.deepEqual(new Set(f.buttons().map(b=>b.dataset.birdtieMapId)),new Set(['task:a','task:b']));
+    const retained = f.buttons().find(b => b.dataset.birdtieMapId === 'task:a');
+    f.update(2,[item('task:a')],1);assert.equal(f.buttons().length,1);
+    assert.equal(f.buttons()[0], retained);
     await f.flush();f.layout();assert.equal(f.buttons()[0].dataset.birdtieMapId,'task:a');
   }finally{f.destroy();}
+});
+test('7dp circle and 8dp square retain 48dp original actions without image or category detail', async () => {
+  const f = fixture();
+  try {
+    f.update(1, [item('place:micro', 'place'), {...item('moment:micro'),
+      mediaKey: 'synthetic-current', mediaPNG: 'iVBORw0KGgoAAA==', mediaSelectedPNG: 'iVBORw0KGgoBBB==',
+      mediaDPR: 2, mediaExpiresAt: Date.now() + 30000}]);
+    await f.flush();
+    const frame = f.frames.at(-1);
+    f.window.birdtieAMapLayout(f.handle, JSON.stringify({schema: 'birdtie-amap-layout-v1',
+      revision: frame.revision, frame: frame.frame,
+      markers: frame.positions.map(p => ({id: p.id, dx: 0, dy: 0, selected: false,
+        dense: true, showLabel: false, size: p.id.startsWith('place:') ? 7 : 8,
+        fill: '#73808a', category: 'other', clusterCount: 0}))}));
+    assert.equal(f.buttons().length, 2);
+    for (const b of f.buttons()) {
+      const moment = b.dataset.birdtieMapId.startsWith('moment:');
+      assert.equal(b.style.width, '48px'); assert.equal(b.style.height, '48px');
+      const shape = b.firstChild;
+      assert.equal(shape.style.width, moment ? '8px' : '7px');
+      assert.equal(shape.style.borderRadius, moment ? '1px' : '50%');
+      assert.equal(shape.children[0].src, undefined);
+      assert.equal(shape.children[1].style.display, 'none');
+      b.fire('click');
+    }
+    assert.deepEqual(new Set(f.selected.map(x => x.id)), new Set(['place:micro', 'moment:micro']));
+    assert.equal(f.buttons()[0].style.left, f.buttons()[1].style.left);
+    assert.equal(f.buttons()[0].style.top, f.buttons()[1].style.top);
+    assert.equal(f.maps.length, 1);
+  } finally { f.destroy(); }
 });
 test('Moment square and unknown aggregate circle keep typed counts 48dp targets and explicit coordinate selection', async () => {
   const f = fixture();

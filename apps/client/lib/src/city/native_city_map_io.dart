@@ -6,6 +6,7 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 
 import 'mapbox_style.dart';
@@ -147,7 +148,17 @@ class _NativeCityMapViewState extends State<NativeCityMapView>
   PointAnnotationManager? _markers;
   final Map<String, PointAnnotation> _annotations = {};
   final Map<String, String> _annotationFingerprints = {};
-  late final _markerQueue = LatestMapRenderQueue(_syncMarkers);
+  late final _markerQueue = LatestMapRenderQueue((serial) async {
+    try {
+      await _syncMarkers(serial);
+    } catch (error) {
+      if (kProfileMode)
+        debugPrint(
+          'BIRDTIE_MAP_SYNC ${jsonEncode({'event': 'error', 'serial': serial, 'type': error.runtimeType.toString(), 'code': error is PlatformException ? error.code : ''})}',
+        );
+      rethrow;
+    }
+  });
   final contentMapMetrics = NativeContentMapMetrics();
   final _mapLifetime = Stopwatch()..start();
   Timer? _cameraSettleTimer, _initialViewportTimer;
@@ -237,7 +248,8 @@ class _NativeCityMapViewState extends State<NativeCityMapView>
             _placeFingerprint(widget.places) ||
         _entityFingerprint(oldWidget.entities) !=
             _entityFingerprint(widget.entities) ||
-        oldWidget.selectedEntityId != widget.selectedEntityId) {
+        oldWidget.selectedEntityId != widget.selectedEntityId ||
+        oldWidget.contentRect != widget.contentRect) {
       _pointSemantics.value = const [];
     }
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -246,7 +258,8 @@ class _NativeCityMapViewState extends State<NativeCityMapView>
     final previous = _focusInput(oldWidget);
     final current = _focusInput(widget);
     final explicitFocus = oldWidget.focusRevision != widget.focusRevision;
-    if (!current.hasSameViewInputs(previous)) {
+    final viewInputsChanged = !current.hasSameViewInputs(previous);
+    if (viewInputsChanged) {
       _scopeGeneration++;
       _focusSerial++;
     }
@@ -263,7 +276,10 @@ class _NativeCityMapViewState extends State<NativeCityMapView>
     if (oldWidget.accessToken != widget.accessToken) {
       MapboxOptions.setAccessToken(widget.accessToken);
     }
-    if (_placeFingerprint(oldWidget.places) !=
+    // Every input that retires an in-flight pass also queues its replacement.
+    // Reader restoration must not wait for a later source lease refresh.
+    if (viewInputsChanged ||
+        _placeFingerprint(oldWidget.places) !=
             _placeFingerprint(widget.places) ||
         _entityFingerprint(oldWidget.entities) !=
             _entityFingerprint(widget.entities) ||
@@ -1347,7 +1363,8 @@ class _NativeCityMapViewState extends State<NativeCityMapView>
   Future<void> _refreshMarkers() => _markerQueue.schedule();
 
   int get _markerSerial => _markerQueue.serial;
-  String? _lastDisplayInputs;
+  ({String source, String camera, double ratio, Rect? rect})?
+  _lastDisplayInputs;
   Set<String> _previousVisibleIDs = const {};
   Map<String, MapLabelPlacement> _previousPlacements = const {};
 
@@ -1376,6 +1393,7 @@ class _NativeCityMapViewState extends State<NativeCityMapView>
         ratio == _bitmapPixelRatio &&
         sourceKey ==
             '${_entityFingerprint(widget.entities)}:${_placeFingerprint(widget.places)}:${widget.selectedEntityId}';
+
     final unique = <String, MapEntity>{};
     for (final entity in <MapEntity>[
       ...widget.entities,
@@ -1409,6 +1427,7 @@ class _NativeCityMapViewState extends State<NativeCityMapView>
         final auxiliary = _annotations.remove('map-aux:${previous.id}');
         _annotationFingerprints.remove('map-aux:${previous.id}');
         if (auxiliary != null) {
+          _lastDisplayInputs = null;
           await markers.delete(auxiliary);
           if (!current()) return;
         }
@@ -1420,6 +1439,7 @@ class _NativeCityMapViewState extends State<NativeCityMapView>
                 DateTime.now().toUtc(),
               ) !=
               true) {
+        _lastDisplayInputs = null;
         existing.textField = previous.kind == MapEntityKind.place
             ? previous.title
             : '';
@@ -1441,6 +1461,7 @@ class _NativeCityMapViewState extends State<NativeCityMapView>
           categoryCode: previous.categoryCode,
         );
         if (!current()) return;
+        _lastDisplayInputs = null;
         existing.image = fallback;
         existing.iconImage = null;
         existing.textField = previous.kind == MapEntityKind.place
@@ -1461,6 +1482,7 @@ class _NativeCityMapViewState extends State<NativeCityMapView>
         final annotation = _annotations.remove(previous.id);
         _annotationFingerprints.remove(previous.id);
         if (annotation != null) {
+          _lastDisplayInputs = null;
           await markers.delete(annotation);
           if (!kReleaseMode) contentMapMetrics.markerDeletes++;
         }
@@ -1471,7 +1493,14 @@ class _NativeCityMapViewState extends State<NativeCityMapView>
     if (!current()) return;
     final cameraKey =
         '${camera.center.coordinates.lng}:${camera.center.coordinates.lat}:${camera.zoom}:${camera.bearing}:${camera.pitch}:${camera.padding.left}:${camera.padding.top}:${camera.padding.right}:${camera.padding.bottom}';
-    final displayInputs = '$sourceKey:$cameraKey:$ratio:${widget.contentRect}';
+    // dart:ui toString overrides are stripped in profile/release builds.
+    // Compare Rect by value; its diagnostic string cannot key layout state.
+    final displayInputs = (
+      source: sourceKey,
+      camera: cameraKey,
+      ratio: ratio,
+      rect: widget.contentRect,
+    );
     // The workspace IME gate offers only settled contentRect changes. Clip
     // covered glyphs then, while retaining annotations that remain visible.
     if (_lastDisplayInputs == displayInputs) {
@@ -1482,6 +1511,10 @@ class _NativeCityMapViewState extends State<NativeCityMapView>
       ];
       return;
     }
+    // A different display pass can mutate native annotations before its final
+    // ACK. An interrupted pass must never reuse the previous successful key
+    // with an empty or partially changed native set when the reader closes.
+    _lastDisplayInputs = null;
     final pixels = await map.pixelsForCoordinates([
       for (final entity in source)
         Point(coordinates: Position(entity.longitude, entity.latitude)),
@@ -1534,25 +1567,6 @@ class _NativeCityMapViewState extends State<NativeCityMapView>
           if (entity.isTaskResult) entity.id,
       },
     );
-    if (kProfileMode) {
-      final metrics = jsonEncode({
-        'provider': 'mapbox',
-        'cameraEpoch': _cameraMotionGeneration,
-        'metersPerLogicalPixel': plan.metersPerPixel,
-        'screenRatio': ratio,
-        'visible': plan.entities.length - plan.occludedGlyphIDs.length,
-        'occludedGlyphs': plan.occludedGlyphIDs.length,
-        'dense': plan.denseIDs.length,
-        'labels': plan.placements.length,
-        'auxiliary': plan.placements.values
-            .where((p) => p.auxiliary != null)
-            .length,
-      });
-      if (metrics != _lastLayoutDiagnostic) {
-        _lastLayoutDiagnostic = metrics;
-        debugPrint('BIRDTIE_MAP_LAYOUT $metrics');
-      }
-    }
     final displayedPositions = {...positions, ...plan.clusterPositions};
     final specs = <String, PointAnnotationOptions>{};
     final imageKeys = <String, String>{};
@@ -1650,7 +1664,7 @@ class _NativeCityMapViewState extends State<NativeCityMapView>
       }
     }
     if (!current()) return;
-    _renderedEntities = plan.entities
+    final nextRenderedEntities = plan.entities
         .where((e) => !plan.occludedGlyphIDs.contains(e.id))
         .toList();
     final stale = _annotations.keys
@@ -1707,6 +1721,7 @@ class _NativeCityMapViewState extends State<NativeCityMapView>
       }
     }
     if (!current()) return;
+    _renderedEntities = nextRenderedEntities;
     _lastPointPositions = displayedPositions;
     _pointSemantics.value = [
       for (final entity in _renderedEntities)
@@ -1714,6 +1729,36 @@ class _NativeCityMapViewState extends State<NativeCityMapView>
           (entity: entity, point: point),
     ];
     _lastDisplayInputs = displayInputs;
+    if (kProfileMode) {
+      final metrics = jsonEncode({
+        'provider': 'mapbox',
+        'cameraEpoch': _cameraMotionGeneration,
+        'applied': 1,
+        'sourceCount': source.length,
+        'nativeAnnotationCount': _annotations.length,
+        'contentRect': widget.contentRect == null
+            ? null
+            : [
+                widget.contentRect!.left,
+                widget.contentRect!.top,
+                widget.contentRect!.right,
+                widget.contentRect!.bottom,
+              ],
+        'metersPerLogicalPixel': plan.metersPerPixel,
+        'screenRatio': ratio,
+        'visible': plan.entities.length - plan.occludedGlyphIDs.length,
+        'occludedGlyphs': plan.occludedGlyphIDs.length,
+        'dense': plan.denseIDs.length,
+        'labels': plan.placements.length,
+        'auxiliary': plan.placements.values
+            .where((p) => p.auxiliary != null)
+            .length,
+      });
+      if (metrics != _lastLayoutDiagnostic) {
+        _lastLayoutDiagnostic = metrics;
+        debugPrint('BIRDTIE_MAP_LAYOUT $metrics');
+      }
+    }
     _previousVisibleIDs = plan.entities.map((e) => e.id).toSet();
     _previousPlacements = plan.placements;
     if (!kReleaseMode) {

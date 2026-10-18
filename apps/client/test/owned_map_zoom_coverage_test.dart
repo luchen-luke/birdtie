@@ -137,6 +137,76 @@ class Scenario {
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   test(
+    'later native proof cannot borrow a different issuer, metadata, or expired source',
+    () {
+      const before = MapEntity(
+        id: 'isolated-proof',
+        kind: MapEntityKind.place,
+        title: '隔离',
+        subtitle: '',
+        latitude: 31.2,
+        longitude: 121.4,
+        sourceVersion: 'v1',
+      );
+      const after = MapEntity(
+        id: 'isolated-proof',
+        kind: MapEntityKind.place,
+        title: '隔离',
+        subtitle: '',
+        latitude: 31.2,
+        longitude: 121.4,
+        sourceVersion: 'v2',
+      );
+      final now = DateTime.utc(2026, 10, 18);
+      final issuer = Object();
+      final oldGrant = MapEntityReadGrant(
+        source: before,
+        validUntil: now.add(const Duration(seconds: 30)),
+        current: () => false,
+        issuerScope: issuer,
+        observedAt: now,
+      );
+      final old = before.withMediaPixels(null, readGrant: oldGrant);
+      expect(oldGrant.currentAt(now), isFalse);
+      MapEntityReadGrant fresh({
+        Object? scope,
+        DateTime? observed,
+        bool live = true,
+      }) => MapEntityReadGrant(
+        source: after,
+        validUntil: now.add(const Duration(seconds: 60)),
+        current: () => live,
+        issuerScope: scope ?? issuer,
+        observedAt: observed ?? now.add(const Duration(seconds: 1)),
+      );
+      expect(fresh().authorizesNativeReplacement(old, now), isTrue);
+      expect(oldGrant.currentAt(now), isFalse);
+      expect(
+        fresh(scope: Object()).authorizesNativeReplacement(old, now),
+        isFalse,
+      );
+      expect(
+        fresh(observed: now).authorizesNativeReplacement(old, now),
+        isFalse,
+      );
+      expect(fresh(live: false).authorizesNativeReplacement(old, now), isFalse);
+      expect(
+        fresh().authorizesNativeReplacement(
+          old.withAnchorMetadata(placeID: 'changed', precision: 'area'),
+          now,
+        ),
+        isFalse,
+      );
+      expect(
+        fresh().authorizesNativeReplacement(
+          old,
+          now.add(const Duration(seconds: 30)),
+        ),
+        isFalse,
+      );
+    },
+  );
+  test(
     'zoom keeps a leased display baseline while fetching and incomplete pages do not prove absence',
     () async {
       final s = Scenario();

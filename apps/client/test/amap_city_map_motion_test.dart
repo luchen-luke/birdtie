@@ -390,6 +390,8 @@ void main() {
       addTearDown(image.dispose);
       var oldGrantLive = true;
       var sourceLive = true;
+      var nativeVersion = 'v1';
+      final nativeIssuer = Object();
       MapMediaPixels grant(bool Function() current, DateTime until) =>
           MapMediaPixels(
             key: pixels.key,
@@ -401,6 +403,7 @@ void main() {
             validUntil: until,
           );
       MapEntity row(MapMediaPixels media) {
+        final version = nativeVersion;
         final source = MapEntity(
           id: 'isolated-clear',
           kind: MapEntityKind.moment,
@@ -408,7 +411,7 @@ void main() {
           subtitle: '',
           latitude: 31.2,
           longitude: 121.4,
-          sourceVersion: 'v1',
+          sourceVersion: version,
           mediaPixels: media,
         );
         return source.withMediaPixels(
@@ -417,7 +420,9 @@ void main() {
             source: source,
             validUntil: media.validUntil!,
             copiedPixels: media,
-            current: () => sourceLive,
+            issuerScope: nativeIssuer,
+            observedAt: DateTime.now().toUtc(),
+            current: () => sourceLive && version == nativeVersion,
           ),
         );
       }
@@ -539,6 +544,7 @@ void main() {
             'This test must actually copy the verified photo PNG, not a DPR fallback glyph',
       );
       final element = tester.element(find.byType(amap.AMapWidget));
+      final oldNative = rows.first;
       holdProjection = true;
       await tester.pumpWidget(host(selected: 'isolated-clear'));
       await drain(3);
@@ -562,6 +568,11 @@ void main() {
       await drain(3);
       move(1);
       oldGrantLive = false;
+      nativeVersion = 'v2';
+      expect(
+        oldNative.readGrant!.authorizes(oldNative, DateTime.now().toUtc()),
+        isFalse,
+      );
       rows = [
         row(
           grant(
@@ -575,6 +586,11 @@ void main() {
       await drain(3);
       expect(find.byKey(const Key('amap-retiring-cover')), findsNothing);
       expect(mapWidget().markers, hasLength(2));
+      expect(
+        oldNative.readGrant!.currentAt(DateTime.now().toUtc()),
+        isFalse,
+        reason: 'A fresh proof must not revive the old reader grant',
+      );
       await tester.runAsync(
         () => Future<void>.delayed(const Duration(milliseconds: 2100)),
       );

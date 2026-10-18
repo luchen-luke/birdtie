@@ -158,13 +158,18 @@ class MapEntityReadGrant {
     required this.validUntil,
     required bool Function() current,
     MapMediaPixels? copiedPixels,
+    Object? issuerScope,
+    this.observedAt,
   }) : _source = source,
        _current = current,
-       _pixels = copiedPixels;
+       _pixels = copiedPixels,
+       _issuerScope = issuerScope;
   final MapEntity _source;
   final DateTime validUntil;
   final bool Function() _current;
   final MapMediaPixels? _pixels;
+  final Object? _issuerScope;
+  final DateTime? observedAt;
   bool _retired = false;
 
   bool currentAt(DateTime at) {
@@ -175,13 +180,18 @@ class MapEntityReadGrant {
 
   bool authorizes(MapEntity entity, DateTime at) =>
       currentAt(at) &&
+      entity.sourceVersion == _source.sourceVersion &&
+      _sameNativeFacts(entity);
+
+  bool _sameNativeFacts(MapEntity entity) =>
       entity.id == _source.id &&
       entity.kind == _source.kind &&
-      entity.sourceVersion == _source.sourceVersion &&
       entity.latitude == _source.latitude &&
       entity.longitude == _source.longitude &&
       entity.precision == _source.precision &&
       entity.publicLocation == _source.publicLocation &&
+      entity.isTaskResult == _source.isTaskResult &&
+      entity.groupSummary == _source.groupSummary &&
       entity.title == _source.title &&
       entity.subtitle == _source.subtitle &&
       entity.categoryCode == _source.categoryCode &&
@@ -195,13 +205,28 @@ class MapEntityReadGrant {
       entity.contentCount == _source.contentCount &&
       entity.anchorCount == _source.anchorCount;
 
+  /// A later independent proof can authorize the exact same displayed facts.
+  /// This never changes or revives the previous grant, its reads, or deadline.
+  bool authorizesNativeReplacement(MapEntity previous, DateTime at) {
+    final old = previous.readGrant;
+    return old != null &&
+        _issuerScope != null &&
+        _issuerScope == old._issuerScope &&
+        observedAt != null &&
+        old.observedAt != null &&
+        observedAt!.isAfter(old.observedAt!) &&
+        at.isBefore(old.validUntil) &&
+        currentAt(at) &&
+        _sameNativeFacts(previous);
+  }
+
   bool authorizesCopiedPixels(MapMediaPixels pixels, DateTime at) =>
       currentAt(at) &&
       _pixels != null &&
-      _pixels!.key == pixels.key &&
-      identical(_pixels!.normalPNG, pixels.normalPNG) &&
-      identical(_pixels!.selectedPNG, pixels.selectedPNG) &&
-      _pixels!.devicePixelRatio == pixels.devicePixelRatio &&
+      _pixels.key == pixels.key &&
+      identical(_pixels.normalPNG, pixels.normalPNG) &&
+      identical(_pixels.selectedPNG, pixels.selectedPNG) &&
+      _pixels.devicePixelRatio == pixels.devicePixelRatio &&
       pixels.validUntil != null &&
       at.isBefore(pixels.validUntil!);
 }

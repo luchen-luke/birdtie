@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:birdtie_client/src/city/amap_city_map_io.dart';
 import 'package:birdtie_client/src/workspace/map_entities.dart';
 import 'package:birdtie_client/src/workspace/owned_map_api.dart';
 import 'package:birdtie_client/src/workspace/owned_map_controller.dart';
@@ -112,7 +113,8 @@ void main() {
         'anchor': {
           'coordinateSystem': 'wgs84',
           'precision': 'point',
-          'latitude': 57.2,
+          // Distinct real-shaped anchors: the server groups exact coincidences.
+          'latitude': 57.2 + n / 10000,
           'longitude': -2.1,
         },
         'visibilitySources': n == 0
@@ -305,6 +307,8 @@ void main() {
             imageEntity().mediaPixels != null,
       );
       final initial = placePin(), pixels = imageEntity().mediaPixels!;
+      final nativeCopy = imageEntity();
+      expect(nativeCopy.readGrant!.authorizes(nativeCopy, now), isTrue);
       expect(placeEntity().kind, MapEntityKind.place);
       expect(placeEntity().mediaPixels, isNull);
       expect(
@@ -345,6 +349,7 @@ void main() {
         () => Future<void>.delayed(const Duration(milliseconds: 10)),
       );
       expect(controller.loading, isTrue);
+      expect(nativeCopy.readGrant!.authorizes(nativeCopy, now), isTrue);
       expect(delayNextMap, isFalse);
       now = now.add(const Duration(seconds: 7));
       await t.pump(const Duration(seconds: 7));
@@ -353,11 +358,32 @@ void main() {
       await drain(() => !controller.loading);
       expect(controller.epoch, renewEpoch);
       expect(controller.view!.validUntil.isAfter(oldUntil), isTrue);
+      final renewedNative = imageEntity();
+      expect(nativeCopy.readGrant!.authorizes(nativeCopy, now), isTrue);
+      expect(nativeCopy.readGrant!.authorizesCopiedPixels(pixels, now), isTrue);
+      expect(
+        amapRequiresNativeRetirement(
+          previousAuthority: 'isolated-same-actor',
+          authority: 'isolated-same-actor',
+          previous: [nativeCopy],
+          next: {renewedNative.id: renewedNative},
+          copiedMediaIDs: {nativeCopy.id},
+          copiedAuxiliaryIDs: {},
+          now: now,
+        ),
+        isFalse,
+        reason: 'Real controller renewal must not clear its native photo',
+      );
       now = now.add(const Duration(seconds: 9));
       await t.pump(const Duration(seconds: 9));
       expect(now.isAfter(oldUntil), isTrue);
       expect(controller.sourceCurrent(initial), isTrue);
       expect(pixels.current(), isFalse);
+      expect(
+        nativeCopy.readGrant!.authorizes(nativeCopy, now),
+        isFalse,
+        reason: 'A native copy cannot keep its original expired lease',
+      );
       expect(imageEntity().mediaPixels!.current(), isTrue);
       expect(identical(imageEntity().mediaPixels!.image, pixels.image), isTrue);
 

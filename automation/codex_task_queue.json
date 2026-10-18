@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated": "2026-10-18T14:05:44.399534+00:00",
+  "updated": "2026-10-18T15:13:54.415288+00:00",
   "tasks": [
     {
       "id": "BT-AUD-001",
@@ -18935,7 +18935,7 @@
         "UIR-022",
         "UIR-023"
       ],
-      "started_at": "2026-10-18T11:45:47.411525+00:00",
+      "started_at": "2026-10-18T14:08:04.617953+00:00",
       "verification_history": [
         {
           "at": "2026-10-05T22:11:46.003682+00:00",
@@ -22455,7 +22455,7 @@
         }
       },
       "pinAutoMap20261018": {
-        "status": "PARTIAL_CANDIDATE70_INSTALLED_NOT_ACCEPTED",
+        "status": "PARTIAL_CANDIDATE72_INSTALLED_NOT_ACCEPTED",
         "requestSource": "Birdtie-Now-Pin-AutoMap-Codex-2026-10-18.md",
         "scope": "Incremental PMAP overlay on existing task; no duplicate live tasks; prior release gates and failures preserved",
         "requirements": [
@@ -22612,38 +22612,46 @@
             "previousStatus": "FIXING_REPRODUCED_69_FLASH_INCREMENTAL_70",
             "status": "PARTIAL_CANDIDATE70_INSTALLED_NOT_ACCEPTED",
             "evidence": "docs/reports/BIRDTIE-PIN-AUTOMAP-2026-10-18.md"
+          },
+          {
+            "atUTC": "2026-10-18T15:00:31.858130+00:00",
+            "previousStatus": "PARTIAL_CANDIDATE70_INSTALLED_NOT_ACCEPTED",
+            "status": "FIXING_SAME_FACTS_NEW_PROOF_72_AFTER_70_FAIL",
+            "evidence": "docs/reports/BIRDTIE-PIN-AUTOMAP-2026-10-18.md"
+          },
+          {
+            "atUTC": "2026-10-18T15:13:53.946530+00:00",
+            "previousStatus": "FIXING_SAME_FACTS_NEW_PROOF_72_AFTER_70_FAIL",
+            "status": "PARTIAL_CANDIDATE72_INSTALLED_NOT_ACCEPTED",
+            "evidence": "docs/reports/BIRDTIE-PIN-AUTOMAP-2026-10-18.md"
           }
         ],
-        "updatedUTC": "2026-10-18T14:04:39.350343+00:00",
+        "updatedUTC": "2026-10-18T15:13:53.946530+00:00",
         "currentStage": {
-          "candidate": 70,
+          "candidate": 72,
           "build": "BUILT_INPUTS_STABLE_NOT_INSTALLED",
-          "installedVerified": 70,
-          "userAcceptance69": {
-            "keyboard": "PASS_USER: 3 physical show/hide cycles no lag",
-            "dragZoom": "FAIL_USER: reread and whole-map flash"
-          },
+          "installedVerified": 72,
+          "userAcceptance70": "FAIL: whole-map white and pin disappearance",
+          "diagnostic71": "RUNTIME_REPRODUCED: sameIDSourceChanged3, visibleFactsChanged0, oldReadGrantInvalid3; native instance stable",
+          "sourceChecks": "reproof72-final20 PASS + issuer-reproof72 real controller1 PASS; API37 unchanged",
           "apiDeployed": 37,
-          "api37Build": "BUILT_HASH_VERIFIED",
-          "api37Deploy": "READY_SCHEMA178_UNCHANGED_NO_BUSINESS_WRITES",
-          "sourceChecks": "controller/zoom/AMap19 PASS; final clock-boundary controller6 PASS; server5 PASS",
-          "sourceReview": "2 read-only reviewers: no outstanding source P1; not native visual acceptance",
-          "coordinateInvestigation": "USER_DEFERRED; no data writes",
-          "standardAnalyze69": "EXIT1_0ERROR_14WARNING_2262INFO",
-          "analyze70": {
-            "status": "LINT_EXIT1_NOT_PASS",
+          "keyboard69": "PASS_USER",
+          "gesture72": "4 brief unprompted movements recorded in60s, no in-window RETIRE; not continuous60s, visual/user acceptance pending",
+          "crossRegion72": "NOT_RUN",
+          "analyze72": {
             "exitCode": 1,
             "severityCounts": {
               "error": 0,
-              "warning": 18,
-              "info": 2271
-            }
+              "warning": 14,
+              "info": 2277
+            },
+            "standardPassed": false
           },
-          "device70": "INSTALLED_HASH_VERIFIED; manual pan/zoom NOT_YET_ACCEPTED",
-          "crossRegion70": "NOT_RUN",
+          "git70": "DELIVERED_EXACT_ed6351b3fba27d20eb2e8d9ae8cdfebd6e9d56eb_NON_FORCE",
+          "git72": "PREPARING_COMMIT",
           "report": "docs/reports/BIRDTIE-PIN-AUTOMAP-2026-10-18.md",
-          "buildSHA256": "0eba04ae2c31fb2d517d42aec633d41f32d32419dae244f6c04d9dd2c3adcd91",
-          "buildInputSHA256": "f94c4075b02c8071042594a322bd3038cad08188ad591120cf5eaf11bbb16ce8"
+          "buildSHA256": "ac2369d7343e3610bd8b19ff9d050f578b0713ab05ba1c6007cbc91d034e6149",
+          "buildInputSHA256": "af6cf0742840c76dbd2cb1589b57e7abd04c40ada9e4d1d868a038aded8ea681"
         },
         "currentWriters": {
           "root": "All production integration and queue/report; official repository only",
@@ -22652,7 +22660,7 @@
           "destination_controller": "Read-only evidence review"
         }
       },
-      "partial_reason": "70 code, related tests19 plus final6, build, verified data-preserving installation complete;69 keyboard accepted but drag/zoom FAIL;70 actual Shanghai gestures and cross-region, TalkBack/native-present not yet accepted. Evidence docs/reports/BIRDTIE-PIN-AUTOMAP-2026-10-18.md. Do not mark PMAP12 or release gate DONE."
+      "partial_reason": "72 fresh-proof fix built and installed with matching artifact,20 related tests+1 real controller pass. 4 brief actual motions have zero RETIRE inside60s capture, but user/visual final and cross-region/TalkBack/native-present remain unaccepted.70 failure preserved. Evidence docs/reports/BIRDTIE-PIN-AUTOMAP-2026-10-18.md."
     },
     {
       "id": "BT-FIX-INT-DRAFT-001",
@@ -31677,6 +31685,25 @@
         "task_id": "BT-FIX-NOW-UI-001",
         "status": "PARTIAL",
         "released_at": "2026-10-18T14:05:44.399534+00:00"
+      },
+      {
+        "owner": "root",
+        "write_scope": [
+          "apps/client/lib/src/city/amap_city_map_io.dart",
+          "apps/client/lib/src/workspace/map_entities.dart",
+          "apps/client/lib/src/workspace/owned_map_controller.dart",
+          "apps/client/test/amap_city_map_motion_test.dart",
+          "apps/client/test/owned_map_test.dart",
+          "apps/client/test/owned_map_zoom_coverage_test.dart",
+          "automation/codex_task_queue.json",
+          "docs/reports/birdtie-pin-automap-2026-10-18.md",
+          "docs/testing/evidence/pin-automap-20261018",
+          "work/pin-automap-20261018"
+        ],
+        "leased_at": "2026-10-18T14:08:05.028365+00:00",
+        "task_id": "BT-FIX-NOW-UI-001",
+        "status": "PARTIAL",
+        "released_at": "2026-10-18T15:13:54.415288+00:00"
       }
     ]
   }

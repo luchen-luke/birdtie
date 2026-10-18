@@ -170,6 +170,8 @@ class OwnedMapController extends ChangeNotifier with WidgetsBindingObserver {
           source: entity,
           validUntil: until,
           copiedPixels: entity.mediaPixels,
+          issuerScope: (this, identity, _permissionEpoch),
+          observedAt: pin.observedAt,
           current: () =>
               epoch == _epoch && identity == _identity && sourceCurrent(pin),
         ),

@@ -146,7 +146,21 @@ class _AMapNativeCopy {
   }
 
   bool canHandoffTo(MapEntity? fresh, DateTime at) {
-    if (fresh == null || invalidAt(at)) return false;
+    if (fresh == null || deadlines.any((d) => !at.isBefore(d))) return false;
+    final replacement =
+        fresh.readGrant?.authorizesNativeReplacement(entity, at) == true;
+    if (!replacement &&
+        (invalidAt(at) ||
+            amapRequiresNativeRetirement(
+              previousAuthority: 'same',
+              authority: 'same',
+              previous: [entity],
+              next: {fresh.id: fresh},
+              copiedMediaIDs: {if (mediaCopied) entity.id},
+              copiedAuxiliaryIDs: {if (auxiliaryCopied) entity.id},
+              now: at,
+            )))
+      return false;
     if (entity.readGrant != null &&
         fresh.readGrant?.authorizes(fresh, at) != true)
       return false;
@@ -155,7 +169,7 @@ class _AMapNativeCopy {
       if (old == null ||
           next == null ||
           !next.current() ||
-          next.key != old.key ||
+          (!replacement && next.key != old.key) ||
           !identical(next.normalPNG, old.normalPNG) ||
           !identical(next.selectedPNG, old.selectedPNG) ||
           next.devicePixelRatio != old.devicePixelRatio ||
@@ -164,7 +178,9 @@ class _AMapNativeCopy {
         return false;
     }
     return !auxiliaryCopied ||
-        fresh.recentMoments?.labelAt(at) == entity.recentMoments?.labelAt(at);
+        entity.recentMoments?.currentAt(at) == true &&
+            fresh.recentMoments?.labelAt(at) ==
+                entity.recentMoments?.labelAt(at);
   }
 
   @override
@@ -666,6 +682,25 @@ class _AMapCityMapViewState extends State<AMapCityMapView>
         _nativeCopies.any((copy) => copy.invalidAt(DateTime.now().toUtc()))) {
       final authorityChanged = authority != _sourceAuthority;
       final now = DateTime.now().toUtc();
+      if (!authorityChanged && !_retiring && !_nativeWritePending) {
+        // A new verified response may independently authorize unchanged native
+        // facts/bytes even when its permission source version changed. Only
+        // already copied display data transfers; old readers remain retired.
+        _nativeCopies = [
+          for (final copy in _nativeCopies)
+            if (copy.canHandoffTo(unique[copy.entity.id], now))
+              _AMapNativeCopy(
+                unique[copy.entity.id]!,
+                copy.mediaCopied,
+                copy.auxiliaryCopied,
+              )
+            else
+              copy,
+        ];
+        _copiedDeadlines = [
+          for (final copy in _nativeCopies) ...copy.deadlines,
+        ];
+      }
       final copiedIDs = {..._copiedMediaIDs, ..._copiedAuxiliaryIDs};
       final retire =
           authorityChanged ||
@@ -686,30 +721,56 @@ class _AMapCityMapViewState extends State<AMapCityMapView>
                 ),
           );
       if (kProfileMode && retire) {
+        var invalidReadGrant = 0, invalidCopiedPixels = 0, expiredAux = 0;
+        var sameIDSourceChanged = 0, sameIDFactsChanged = 0;
+        var freshMatchButOldGrantFalse = 0, strictNoGrant = 0;
+        for (final copy in _nativeCopies) {
+          final old = copy.entity, fresh = unique[copy.entity.id];
+          final grant = old.readGrant;
+          final readInvalid = grant != null && !grant.authorizes(old, now);
+          if (readInvalid) invalidReadGrant++;
+          if (copy.mediaCopied &&
+              old.mediaPixels != null &&
+              grant?.authorizesCopiedPixels(old.mediaPixels!, now) == false)
+            invalidCopiedPixels++;
+          if (copy.auxiliaryCopied && old.recentMoments?.currentAt(now) != true)
+            expiredAux++;
+          if (fresh == null) continue;
+          final sourceChanged = fresh.sourceVersion != old.sourceVersion;
+          final factsChanged =
+              fresh.kind != old.kind ||
+              fresh.latitude != old.latitude ||
+              fresh.longitude != old.longitude ||
+              fresh.precision != old.precision ||
+              fresh.categoryCode != old.categoryCode ||
+              fresh.title != old.title ||
+              fresh.subtitle != old.subtitle ||
+              fresh.contentCount != old.contentCount ||
+              fresh.anchorCount != old.anchorCount;
+          if (sourceChanged) sameIDSourceChanged++;
+          if (factsChanged) sameIDFactsChanged++;
+          if (readInvalid &&
+              !sourceChanged &&
+              !factsChanged &&
+              fresh.readGrant?.authorizes(fresh, now) == true)
+            freshMatchButOldGrantFalse++;
+          if (grant == null &&
+              amapRequiresNativeRetirement(
+                previousAuthority: authority,
+                authority: authority,
+                previous: [old],
+                next: unique,
+                copiedMediaIDs: {if (copy.mediaCopied) old.id},
+                copiedAuxiliaryIDs: {if (copy.auxiliaryCopied) old.id},
+                now: now,
+              ))
+            strictNoGrant++;
+        }
         debugPrint(
-          'BIRDTIE_AMAP_RETIRE ${jsonEncode({'stage': 'source', 'authorityChanged': authorityChanged, 'moving': _moving, 'nativeWritePending': _nativeWritePending, 'expiredCopy': _copiedDeadlines.any((d) => !now.isBefore(d)), 'missingCopy': copiedIDs.any((id) => !unique.containsKey(id))})}',
+          'BIRDTIE_AMAP_RETIRE ${jsonEncode({'stage': 'source', 'authorityChanged': authorityChanged, 'moving': _moving, 'nativeWritePending': _nativeWritePending, 'expiredCopy': _copiedDeadlines.any((d) => !now.isBefore(d)), 'missingCopy': copiedIDs.any((id) => !unique.containsKey(id)), 'invalidReadGrant': invalidReadGrant, 'invalidCopiedPixels': invalidCopiedPixels, 'expiredAux': expiredAux, 'sameIDSourceChanged': sameIDSourceChanged, 'sameIDFactsChanged': sameIDFactsChanged, 'freshMatchButOldGrantFalse': freshMatchButOldGrantFalse, 'strictNoGrant': strictNoGrant})}',
         );
       }
       if (retire) _retiring = true;
-      if (!_retiring && !_nativeWritePending) {
-        // These bytes remain in the SDK during a drag. A fresh authorized
-        // response may grant the identical cached bytes a new deadline without
-        // a native repaint. Never cancel a retirement that has already begun.
-        _nativeCopies = [
-          for (final copy in _nativeCopies)
-            if (copy.canHandoffTo(unique[copy.entity.id], now))
-              _AMapNativeCopy(
-                unique[copy.entity.id]!,
-                copy.mediaCopied,
-                copy.auxiliaryCopied,
-              )
-            else
-              copy,
-        ];
-        _copiedDeadlines = [
-          for (final copy in _nativeCopies) ...copy.deadlines,
-        ];
-      }
       ++_sourceEpoch;
       _sourceScope = scope;
       _sourceAuthority = authority;

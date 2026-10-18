@@ -1,6 +1,6 @@
 # Now 分类 Pin 与自动地图：2026-10-18
 
-状态：API37 已部署且就绪，Android70 已覆盖安装、数据保留，实际产物与构建哈希一致。69真人确认键盘3次弹出/收起已不卡顿；拖动缩放仍重新读取并整图闪动，明确 FAIL_USER_REPRODUCED。70修复候选已通过相关19项回归（最终时间边界变动后controller6项再次通过），高德实际拖缩尚未验收，不能当作已解决。本轮仍为 PARTIAL，未关闭 PMAP-12 或原发布门槛。唯一 live 状态继续放在 `BT-FIX-NOW-UI-001.pinAutoMap20261018`，不另建任务队列。
+状态：API37 已部署且就绪，Android72已覆盖安装、数据保留，实际产物与构建哈希一致。69真人确认键盘3次弹出/收起已不卡顿；70真人继续报告整图闪白和pin消失，明确 FAIL_USER_REPRODUCED。71已抓到同ID版本变化、可见facts不变而整图退休的原因计数。72据此接入严格的新证明接棒，相关20项回归及真实controller1项通过，实际短运动窗口内没有RETIRE记录，但尚未得到本版完整视觉/用户验收，不能当作已解决。本轮仍为 PARTIAL，未关闭 PMAP-12 或原发布门槛。唯一 live 状态继续放在 `BT-FIX-NOW-UI-001.pinAutoMap20261018`，不另建任务队列。
 
 ## 本轮输入与边界
 
@@ -215,6 +215,28 @@ API37构建2084项宽输入摘要`1a7ae22ec531c6ace244e545a3d0eb6a41898b527f3872
 70冷启动实际恢复的是**阿伯丁/Mapbox**，`device/shanghai70-initial`文件名在看图前误拟，已附`annotation.json`纠正，原截图/回执保留；该图既不是上海图，也不是内容加载完成证据。`device/amap70-human-zoom`130秒录像无QA/observer/注入，当前无已收到的真人手势完成反馈，numeric-runtime-progress为空、系统帧数0，4950ms是不可用哨兵，不是延迟测量。不能把该录像文件名、阿伯丁静止画面或0 jank当高德复验。已请求用户实际切到上海后20秒快速拖缩、停留10秒；70高德实际拖缩、跨区、真实读屏与原生present均 NOT_RUN/未验收，旧69失败继续有效。API继续为已验证37，不重复迁移或向真实库写测试内容。
 
 iOS 构建与运行：NOT_RUN（Windows 主机无 Xcode/真机）。Web 实际浏览器/供应商服务：NOT_RUN；AMap Web 的已授权 Key/受信代理缺失时为 BLOCKED，旧“暂不部署网页”指示继续有效。高德现有 GeoHUB `style.data/style_extra.data` 原字节保留，当前插件没有路名/区名的单层 opacity 接口；未通过改二进制、关闭全部标签或盖白蒙版伪造降权。
+
+### 70失败、71原因计数与72新证明接棒
+
+70用户明确反馈“还整图闪白，并且有些pin会消失”，因此前述等待期已结束，结果为失败。`device/amap70-filtered-runtime`是14:08UTC晚采93行的数值日志，22:06:57.381→22:07:12.820→22:07:28.262→22:07:43.702→22:07:59.139间隔约15.44秒；authorityChanged/expiredCopy/missingCopy均false，不能仅凭这些旧计数确定具体分支。`device/amap70-static-retirement`后续60秒仅本应用无QA录像保留；原生host2/instance2/creations1稳定，没有每轮重建底图的证据。
+
+71仅增加不含实体ID、标题、坐标、版本值或凭据的分类原因计数，并去掉70新增四处无用非空断言。构建8126项输入摘要`aab8e8d99b9f8ec0100fcc67569bf1e3651c61ab58d3825f3bf13e1fe72ee196`前后一致，APK SHA256`67a5171f073239990753501252c880dc0356c76876dbb9fdca7d17b5fce57131`；70→71覆盖后base APK匹配，数据清理0。71标准全量分析 NOT_RUN，不沿用70结果。
+
+71静止60秒窗口未捕获相同周期；随后应用内6秒单向拖动诊断使用现有profile入口，含Activity生命周期，明确`OWN_WINDOW_SYNTHETIC_NOT_OS_HARDWARE_INPUT`，不能当真人复验。其8秒Flutter306帧UI/raster p95 1.990/17.944ms、totalSpan25.385ms，不宣称性能通过。接着用户真人缩放移动的数值日志在22:27:32.648明确记录`sameIDSourceChanged=3 / sameIDFactsChanged=0 / invalidReadGrant=3 / expiredCopy=false / authorityChanged=false`。链路为新源版本→controller使旧pin失效→旧grant失效→高德整图遮罩；37/43秒后的旧grant失效是后续状态，不倒当首次原因。22:27:46.519为前台丢失，单独区分。该次自采录像按既定规则因离开Birdtie而整段丢弃，receipt为`DISCARDED_FOREGROUND_LOSS`；保留的纯数值日志不等于有可交付自采真人视频。
+
+用户另外提供30.07秒HEVC竖屏录像（592×1280，含AAC）。原文件只读，未向GitHub上传；单独审阅可见前段拖缩时pin消失/恢复，后段通知栏切换前后出现整图浅白与读取提示，需区分普通拖缩与真正生命周期。文件名和手机时钟不能代替包号/哈希或逐秒日志对齐证明，不将它冒充自采版本已核录屏，也不发布其中通知内容。root仅查看2秒接触表，微闪精确PTS需逐帧审阅，不用低频抽帧声称没有短闪。
+
+72修复在真实新响应已独立授权**完全相同显示事实**时，使用新证明接管原生显示副本。由Owned controller签发的opaque issuerScope绑定控制器实例、完整identity和permissionEpoch，observedAt须严格晚于旧证明；真实ID、名称、坐标、精度、publicLocation、任务/组摘要、place/anchor/entry/thread/moment/revision、成员顺序和counts全部匹配，仅允许sourceVersion变化。实际已复制source/media/aux原截止均须未来；媒体还须新current、同normal/selected PNG实例、相同DPR、新有限截止，aux新旧有效且文字一致。同renderAuthority、非retiring、无pending才可在退休判定前逐副本接棒。已失效的旧grant、详情、点击、媒体读取和期限完全不复活；任一条件不满足仍走原清理。
+
+`reproof72-final`从apps/client执行三个相关controller/zoom/AMap测试文件，退出0、20 PASS，覆盖真实PNG v1→v2使旧grant永久false、新证明接棒后跨旧期限，以及不同issuer、过早证明、元数据变化、旧到期、新无权等拒绝条件。`issuer-native71-distinct`真实controller主case1 PASS，覆盖15秒loading、22秒新响应后原显示grant仍有限有效、31秒旧原期限拒绝；此前夹具36个相同坐标未按服务端同位置聚合，现改隔离位置为不同真实形状坐标，失败记录保留，没有删除旧断言或恢复Place封面传输。独立源码审阅未发现新增P1，不替代72真人验收。
+
+另发现服务端多条同Moment→Place关系的stamp并列排序风险：SQL仅按kind/leaf/mid，leaf哈希的stamps未规范排序；存在同事实排列改变sourceVersion的确定反例。尚未证明这就是上述3个真实源变化的具体分量，当前没有以猜测修改生产业务记录或部署未验修补，此风险保持未关闭。
+
+70增量提交`ed6351b3fba27d20eb2e8d9ae8cdfebd6e9d56eb`已通过Git Data API逐blob/tree/commit SHA一致核验后，以force:false快进原分支；三次常规Git网络失败保留。见`work/pin-automap-20261018/git-delivery70-retry/api-exact.receipt.json`。这不包含71/72后续未提交代码，不把70已上传说成72已上传。
+
+72实际构建8126输入前后摘要`af6cf0742840c76dbd2cb1589b57e7abd04c40ada9e4d1d868a038aded8ea681`一致，APK 357125399B/SHA256`ac2369d7343e3610bd8b19ff9d050f578b0713ab05ba1c6007cbc91d034e6149`，原preview身份0.1.2(72)、历史证书及路由资源均核对。71→72只有AMap IO、map_entities、OwnedMapController三个Dart生产源变动；`build72-readonly-audit`重核59–71共13历史APK哈希未变。71→72覆盖成功、数据清理0、installed base拉回哈希一致。标准`flutter analyze --no-pub`退出1，0 error/14 warning/2277 info（2291条），输入稳定，不报告通过；70新增4条无用非空断言已移除。
+
+`device/amap72-static`名字不代表纯静止：23:08:10.029–23:09:10.449录制60.000333秒，root未开启QA/observer或注入手势，实际记录4次短运动（16.212–16.650、18.843–19.213、20.887–21.219、23.232–23.569），不是连续60秒。layout真实m/px由14.49变10.05再11.91；native host2/instance2/creations1/loaded1稳定，0错误/0丢弃计数，progress中的3条RETIRE均为23:08:08启动期、早于录制窗口，窗口内RETIRE计数0。该有限诊断结果不能替代逐帧白闪审阅或用户确认，也不因系统1871帧/jank0就宣称通过。截图`shanghai72-before-pan`实际有系统录屏浮窗，原图保留，不作为无覆盖的整洁界面稿。72跨区、连续手势、读屏、原生present仍NOT_RUN/未验收。
 
 原生 SDK 官方要求：
 

@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated": "2026-10-18T18:49:45.928988+00:00",
+  "updated": "2026-10-18T18:54:28.371950+00:00",
   "tasks": [
     {
       "id": "BT-AUD-001",
@@ -22640,9 +22640,17 @@
             "atUTC": "2026-10-18T18:49:45.928988+00:00",
             "status": "PHONE_CORE_FUNCTIONAL_PASSED_PERFORMANCE_AND_OTHER_GATES_PARTIAL",
             "reason": "78 real reader return restored within29ms nativeACK; both cold restores/cross video passed; user confirmed both map providers no white/batch disappearance; measured windows are not continuous60s motion; no broad task completion."
+          },
+          {
+            "atUTC": "2026-10-18T18:54:28.371950+00:00",
+            "status": "CODE78_DELIVERED_TO_EXISTING_GITHUB_BRANCH",
+            "commit": "de8fe949c90f57e00dde397dd5498192a1178a20",
+            "force": false,
+            "originalTaskStatus": "IN_PROGRESS",
+            "evidence": "work/pin-automap-20261018/git-delivery78/code-ref-update.json"
           }
         ],
-        "updatedUTC": "2026-10-18T18:49:45.928988+00:00",
+        "updatedUTC": "2026-10-18T18:54:28.371950+00:00",
         "currentStage": {
           "candidate": 78,
           "build": "PASS_FROZEN_INPUTS_AND_SIGNED_APK78",
@@ -22757,7 +22765,7 @@
           },
           "analysis78": "EXIT2;0ERROR_2EXISTING_UNUSED_FIELD_WARNINGS_215INFO",
           "helper": "REMOVED_VERIFIED;REAL_APP78_AND_DATA_RETAINED",
-          "git78": "PREPARING_EXACT_CODE_COMMIT_DELIVERY",
+          "git78": "DELIVERED_EXACT_CODE_de8fe949c90f57e00dde397dd5498192a1178a20_NON_FORCE",
           "finalAcceptance": "PHONE_CORE_FUNCTIONAL_PASS;PERFORMANCE_AND_UNRUN_PERMISSION/FAILURE_COMBINATIONS_REMAIN_PARTIAL;WEB_TALKBACK_USER_DEFERRED"
         },
         "currentWriters": {

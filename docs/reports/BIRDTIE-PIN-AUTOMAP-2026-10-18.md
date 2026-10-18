@@ -314,3 +314,8 @@ API38已上线：`api38-deploy/receipt.json`为READY，运行二进制SHA256 `f2
 **本轮未关闭：** 完整连续手势压力/原生present/GPU/请求计数、真机撤权/删除/换号/弱网及各入口的完整组合均不冒充已测。Web与真实TalkBack为`NOT_RUN_USER_DEFERRED`；iOS为`NOT_RUN`且在本轮手机之外；高德进一步降低路名/区名权重为`BLOCKED`（缺获准样式导出）。历史10967白图原始素材缺失和视频精确原生首帧保持原状态，不另建重复队列。正常字号范围、原Closed Pilot门槛不变。
 
 `device/helper78-cleanup/receipt.json`确认临时`app.birdtie.evidence`已卸载，78号正式预览应用与数据保留；未修改系统辅助服务设置。构建、部署和实机证据本地保留，真实截图/录像与私有配置不提交GitHub。代码及原报告/原队列按明确文件范围提交，精确GitHub交付回执在`work/pin-automap-20261018/git-delivery78/`（提交时仍准备中，完成后追加实际提交号）。
+
+
+78真实代码提交`de8fe949c90f57e00dde397dd5498192a1178a20`已上传现有`codex/birdtie-import`。30个明确文件逐blob/tree/commit SHA一致，随后force:false快进并重新读取远端SHA确认。回执`work/pin-automap-20261018/git-delivery78/code-api-exact.receipt.json`及`code-ref-update.json`；附件三处和所有私有配置/真实媒体未加入提交。本段仅登记已生效代码交付，不把剩余验收改为DONE。
+
+采样后的上海曾显示“本次地图来源已失效，请重新搜索。”：源码来源为`AgentAreaOperation.summary`，属于显式区域搜索结果的有限授权快照；当时4个地图内容点仍可用。阿伯丁及再回上海后旧区域结果正确退休，最后实际截图中提示已消失、4点仍显示。现有证据没有记录原查询的具体触发动作，不能据此断言自动搜索或底图重载故障；没有为隐藏提示延长旧授权或改写真实数据。

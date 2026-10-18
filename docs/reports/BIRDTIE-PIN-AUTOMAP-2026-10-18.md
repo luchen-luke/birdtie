@@ -340,3 +340,6 @@ Android79：`work/content-first-20261019/delivery79/Birdtie-Content-First-202610
 API39最终二进制`work/content-first-20261019/delivery79/birdtie-api-linux-amd64-content-first39-final`，SHA256 `1ae9e3ff094e3a1d4a4b9ce9b6dd2789f52da8794135c293e3d04ca4e3506f96`；2098项最终输入摘要`96ccbd65870fa3dff8b4c2322192dd0e788052561eeac99a820df8b496e3eeb1`稳定，构建退出0。早期构建与最终构建字节相同，但各自输入清单与行尾变化分别记录。
 
 本轮没有安装79、部署API39、录屏或写真实业务数据。79仍配置既有API地址；新增评论/旅程协议需配套API39及179/180迁移上线后才可做完整真实验收，不能只安装新APK就宣称功能已上线。Android79功能/性能/两端截图/跨区录屏均NOT_RUN；Web与TalkBack保持NOT_RUN_USER_DEFERRED，iOS NOT_RUN；高德进一步减弱底图标签保持BLOCKED（缺获准样式导出）。原Closed Pilot及历史未闭合门槛保留。源代码与脱敏检查回执上传现有GitHub分支，私有配置、真实媒体和APK不加入Git历史；实际提交号由最终Git交付回执记录。
+
+
+2026-10-19 05:23（Asia/Shanghai）用户明确要求安装后，79号已成功覆盖安装到同一手机，数据目录保留且未清数据；设备base.apk SHA256与上述79产物完全一致。`work/content-first-20261019/device/install79-20261018T212227Z/receipt.json`及`launch.json`保存实际安装、版本和启动回执。Activity冷启动返回Status:ok并取得PID；这不是完整功能或性能验收。API39仍未部署，新包完整真机验收仍NOT_RUN。

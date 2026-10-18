@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated": "2026-10-18T21:18:38.345644+00:00",
+  "updated": "2026-10-18T21:23:22.230475+00:00",
   "tasks": [
     {
       "id": "BT-AUD-001",
@@ -23055,7 +23055,7 @@
             "sha256": "e08f116dfe256809789048af32fb0bfedaf03d7651cef5df3d2b4d7ee40e3338",
             "path": "D:\\Project\\birdtie\\work\\content-first-20261019\\delivery79\\Birdtie-Content-First-20261019-79.apk",
             "bytes": 358141211,
-            "installed": false
+            "installed": true
           },
           "api39": {
             "sha256": "1ae9e3ff094e3a1d4a4b9ce9b6dd2789f52da8794135c293e3d04ca4e3506f96",
@@ -23074,9 +23074,19 @@
           "iOS": "NOT_RUN",
           "amapFurtherLabelStyle": "BLOCKED_APPROVED_STYLE_EXPORT_MISSING"
         },
-        "completedLocalUTC": "2026-10-18T21:18:38.154050+00:00"
+        "completedLocalUTC": "2026-10-18T21:18:38.154050+00:00",
+        "installation79": {
+          "status": "INSTALLED_EXACT_BYTES_VERIFIED",
+          "receipt": "work/content-first-20261019/device/install79-20261018T212227Z/receipt.json",
+          "installedSHA256": "e08f116dfe256809789048af32fb0bfedaf03d7651cef5df3d2b4d7ee40e3338",
+          "versionCode": 79,
+          "dataCleared": false,
+          "launch": "PASS_COLD_START_COMMAND_AND_PROCESS_ONLY",
+          "mobileAcceptance": "NOT_RUN",
+          "authorization": "2026-10-19 human explicitly requested install on connected phone"
+        }
       },
-      "partial_reason": "Android78 human AMap/Mapbox flash/batch-loss feedback accepted separately. Content-first79/API39 real source and local builds complete; new phone functional/performance/recording and paired production deployment NOT_RUN in current authorization. Original PMAP full device matrix, Web/TalkBack deferred, AMap approved-style BLOCKED remain. See original report and content-first79 evidence."
+      "partial_reason": "Android78 human AMap/Mapbox flash/batch-loss feedback accepted separately. Content-first79/API39 real source and local builds complete; 79 installed and launched on explicit user request; new phone full functional/performance/recording and paired API39 production deployment NOT_RUN. Original PMAP full device matrix, Web/TalkBack deferred, AMap approved-style BLOCKED remain. See original report and content-first79 evidence."
     },
     {
       "id": "BT-FIX-INT-DRAFT-001",

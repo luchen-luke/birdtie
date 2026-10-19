@@ -290,8 +290,140 @@ void main() {
       }
     },
   );
+  testWidgets(
+    'dense Moment keeps verified pixels and planned name, then retires at its own deadline',
+    (t) async {
+      final image = (await t.runAsync(mapFixtureImage))!;
+      var live = true;
+      final until = DateTime.now().toUtc().add(const Duration(minutes: 1));
+      try {
+        for (final ratio in [1.0, 2.0, 3.25]) {
+          final normal = (await t.runAsync(
+            () => MapMarkerBitmap.render(
+              kind: MapEntityKind.moment,
+              selected: false,
+              devicePixelRatio: ratio,
+              photo: image,
+            ),
+          ))!;
+          final selected = (await t.runAsync(
+            () => MapMarkerBitmap.render(
+              kind: MapEntityKind.moment,
+              selected: true,
+              devicePixelRatio: ratio,
+              photo: image,
+            ),
+          ))!;
+          MapMediaPixels grant(DateTime deadline) => MapMediaPixels(
+            key: 'synthetic-density-$ratio',
+            image: image,
+            normalPNG: normal,
+            selectedPNG: selected,
+            devicePixelRatio: ratio,
+            current: () => live,
+            validUntil: deadline,
+          );
+          final pixels = grant(until);
+          expect(
+            pixels.png(selected: false, dense: true, ratio: ratio),
+            same(normal),
+          );
+          expect(
+            pixels.png(selected: true, dense: true, ratio: ratio),
+            same(selected),
+          );
+          expect(
+            pixels.png(selected: false, dense: true, ratio: ratio + .1),
+            isNull,
+          );
+          final core = await t.runAsync(() => _pixels(normal));
+          final picked = await t.runAsync(() => _pixels(selected));
+          expect(core!.bounds(220).width, closeTo(18 * ratio, 2.1));
+          expect(picked!.bounds(220).width, closeTo(20 * ratio, 2.1));
+          Widget host(MapMediaPixels media) => MaterialApp(
+            home: Scaffold(
+              body: Center(
+                child: CompactMapPointMarker(
+                  id: 'moment:synthetic-density',
+                  title: '合成动态名',
+                  subtitle: '',
+                  moment: true,
+                  selected: false,
+                  dense: true,
+                  showLabel: true,
+                  mediaPixels: media,
+                  onTap: () {},
+                  placement: const MapLabelPlacement(
+                    side: MapLabelSide.right,
+                    rect: Rect.fromLTWH(13, -7.5, 80, 15),
+                    offset: Offset(13, -7.5),
+                    name: '合成动态名',
+                    fontSize: 12,
+                    color: Colors.black,
+                  ),
+                ),
+              ),
+            ),
+          );
+          await t.pumpWidget(host(pixels));
+          expect(find.byType(RawImage), findsOneWidget);
+          expect(
+            t.getSize(
+              find.byKey(
+                const ValueKey(
+                  'individual-map-target:moment:synthetic-density',
+                ),
+              ),
+            ),
+            const Size(48, 48),
+          );
+          expect(
+            t.getSize(
+              find.byKey(
+                const ValueKey('individual-map-shape:moment:synthetic-density'),
+              ),
+            ),
+            const Size(18, 18),
+          );
+          expect(
+            find.byKey(
+              const ValueKey('individual-map-caption:moment:synthetic-density'),
+            ),
+            findsOneWidget,
+          );
+          final expired = grant(
+            DateTime.now().toUtc().subtract(const Duration(seconds: 1)),
+          );
+          expect(expired.current(), isTrue);
+          expect(
+            expired.png(selected: false, dense: true, ratio: ratio),
+            isNull,
+          );
+          await t.pumpWidget(host(expired));
+          expect(find.byType(RawImage), findsNothing);
+          expect(
+            t.getSize(
+              find.byKey(
+                const ValueKey('individual-map-shape:moment:synthetic-density'),
+              ),
+            ),
+            const Size(18, 18),
+          );
+          live = false;
+          expect(
+            pixels.png(selected: false, dense: true, ratio: ratio),
+            isNull,
+          );
+          live = true;
+        }
+      } finally {
+        await t.pumpWidget(const SizedBox.shrink());
+        image.dispose();
+      }
+    },
+  );
   test(
-    'Moment retains 30dp actual JPEG nearby and becomes an 8dp image-free micro square',
+    'Moment retains the same 18dp verified photo at ordinary and overview density',
     () async {
       final image = await mapFixtureImage();
       try {
@@ -323,16 +455,16 @@ void main() {
             photo: image,
           ),
         );
-        expect(square.alphaAt(12, 12), greaterThan(220));
+        expect(square.alphaAt(24, 24), greaterThan(220));
         expect(circle.alphaAt(12, 12), lessThan(30));
         final center = (24 * square.width + 24) * 4;
         expect(
           square.bytes.sublist(center, center + 4),
           isNot(record.bytes.sublist(center, center + 4)),
         );
-        expect(square.bounds(220).width, closeTo(30, 2.1));
-        expect(dense.bounds(220).width, closeTo(8, 2.1));
-        expect(dense.bytes, isNot(orderedEquals(square.bytes)));
+        expect(square.bounds(220).width, closeTo(18, 2.1));
+        expect(dense.bounds(220).width, closeTo(18, 2.1));
+        expect(dense.bytes, orderedEquals(square.bytes));
       } finally {
         image.dispose();
       }
@@ -434,9 +566,9 @@ void main() {
         '${kind.name} actual opaque glyph has readable density at DPR $ratio',
         () async {
           for (final state in [
-            (false, true, kind == MapEntityKind.moment ? 8.0 : 7.0),
-            (false, false, kind == MapEntityKind.moment ? 30.0 : 24.0),
-            (true, true, kind == MapEntityKind.moment ? 34.0 : 28.0),
+            (false, true, kind == MapEntityKind.moment ? 18.0 : 7.0),
+            (false, false, kind == MapEntityKind.moment ? 18.0 : 24.0),
+            (true, true, kind == MapEntityKind.moment ? 20.0 : 28.0),
           ]) {
             final bytes = await MapMarkerBitmap.render(
               kind: kind,
@@ -451,7 +583,7 @@ void main() {
             // Actual painted alpha bounds, not merely a nonempty transparent PNG.
             expect(opaque.width, closeTo(state.$3 * ratio, 2.1));
             expect(opaque.height, closeTo(state.$3 * ratio, 2.1));
-            final small = state.$2 && !state.$1;
+            final small = kind == MapEntityKind.place && state.$2 && !state.$1;
             final color = kind == MapEntityKind.place
                 ? [0x73, 0x80, 0x8a]
                 : [0x87, 0x68, 0x3c];
@@ -573,11 +705,11 @@ void main() {
           expect(before.bounds(220).width, closeTo(diameter * ratio, 2.1));
           expect(
             after.bounds(220).width,
-            closeTo((diameter < 8 ? 8 : diameter) * ratio, 2.1),
+            closeTo((diameter < 18 ? 18 : diameter) * ratio, 2.1),
           );
           expect(
             after.bounds(220).height,
-            closeTo((diameter < 8 ? 8 : diameter) * ratio, 2.1),
+            closeTo((diameter < 18 ? 18 : diameter) * ratio, 2.1),
           );
           expect(
             before.colorCount([0x73, 0x80, 0x8a]),

@@ -26,11 +26,7 @@ func mapContentRouteFacts(ctx context.Context, f humanWriteFrame, leaves []mapSp
  FROM moment_threads t JOIN moment_thread_members x ON x.thread_id=t.id
  LEFT JOIN moment_thread_edit_states e ON e.thread_id=t.id
  LEFT JOIN moment_thread_display_members d ON d.thread_id=x.thread_id AND d.moment_id=x.moment_id
- WHERE t.status<>'withdrawn' AND(t.audience='PUBLIC' OR t.author_account_id=$2::uuid OR
- (t.version=1 AND e.thread_id IS NULL AND EXISTS(SELECT 1 FROM legacy_native_context_entities original
- JOIN legacy_native_context_runs run ON run.run_id=original.run_id
- JOIN legacy_import_runs imported ON imported.run_id=run.run_id AND imported.source_file_sha256=run.source_file_sha256 AND imported.manifest_file_sha256=run.manifest_file_sha256
- WHERE original.kind='thread' AND original.target_id=t.id AND original.owner_account_id=t.author_account_id)))
+ WHERE `+mapContentThreadIdentitySQL("t")+` AND `+mapContentThreadAccessSQL("t", "e", "$2")+`
  AND x.thread_id IN(SELECT thread_id FROM moment_thread_members WHERE moment_id=ANY($1::uuid[]))
  AND(e.thread_id IS NULL OR d.display_position IS NOT NULL)
  ORDER BY t.id,3`, ids, f.a.ID)
@@ -60,16 +56,65 @@ func mapContentRouteFacts(ctx context.Context, f humanWriteFrame, leaves []mapSp
 		return "", content.ErrUnavailable
 	}
 	rows.Close()
+	// Explicit imported legs disambiguate which associated Place is an endpoint.
+	// The leg must retain its own sealed provenance and match current members;
+	// it cannot bridge an unavailable, unlocated or unloaded position.
+	tids := []string{}
+	for tid := range threads {
+		tids = append(tids, tid)
+	}
+	sort.Strings(tids)
+	type routeLeg struct{ fromMoment, toMoment, fromPlace, toPlace string }
+	legs := map[string]map[int]routeLeg{}
+	if len(tids) > 0 {
+		legRows, err := f.tx.Query(ctx, `SELECT l.thread_id::text,l.from_moment_id::text,l.to_moment_id::text,l.from_position,l.to_position,coalesce(l.from_place_id::text,''),coalesce(l.to_place_id::text,''),
+ jsonb_build_array(l.id,l.xmin::text,proof.xmin::text,original.xmin::text,run.xmin::text)::text
+ FROM moment_thread_route_legs l
+ JOIN moment_threads t ON t.id=l.thread_id
+ JOIN legacy_native_context_entities original ON original.kind='thread' AND original.target_id=t.id AND original.owner_account_id=t.author_account_id
+ JOIN legacy_native_context_entities proof ON proof.kind='thread_leg' AND proof.target_id=l.id AND proof.run_id=original.run_id AND proof.owner_account_id=original.owner_account_id AND proof.source_parent_key=original.source_key AND proof.source_parent_sha256=original.source_sha256
+ JOIN legacy_native_context_runs run ON run.run_id=original.run_id
+ JOIN legacy_import_runs sealed ON sealed.run_id=run.run_id AND sealed.source_file_sha256=run.source_file_sha256 AND sealed.manifest_file_sha256=run.manifest_file_sha256
+ WHERE l.thread_id=ANY($1::uuid[]) ORDER BY l.thread_id,l.from_position,l.to_position,l.id`, tids)
+		if err != nil {
+			return "", content.ErrUnavailable
+		}
+		for legRows.Next() {
+			var tid, stamp string
+			var pos, nextPos int
+			var leg routeLeg
+			if legRows.Scan(&tid, &leg.fromMoment, &leg.toMoment, &pos, &nextPos, &leg.fromPlace, &leg.toPlace, &stamp) != nil {
+				legRows.Close()
+				return "", content.ErrUnavailable
+			}
+			if nextPos != pos+1 || threads[tid][pos] != leg.fromMoment || threads[tid][nextPos] != leg.toMoment {
+				continue
+			}
+			if legs[tid] == nil {
+				legs[tid] = map[int]routeLeg{}
+			}
+			legs[tid][pos] = leg
+			facts = append(facts, []any{tid, pos, nextPos, stamp})
+		}
+		if legRows.Err() != nil {
+			legRows.Close()
+			return "", content.ErrUnavailable
+		}
+		legRows.Close()
+	}
 	for tid, nodes := range threads {
 		for pos, mid := range nodes {
 			next := nodes[pos+1]
-			a, b := byMoment[mid], byMoment[next]
-			// More than one legal geographic projection has no authoritative in-entry
-			// order. Preserve all points, but do not choose an arbitrary route endpoint.
-			if len(a) != 1 || len(b) != 1 {
+			fromPlace, toPlace := "", ""
+			if leg, exists := legs[tid][pos]; exists {
+				fromPlace, toPlace = leg.fromPlace, leg.toPlace
+			}
+			a, okA := mapContentRouteEndpoint(leaves, byMoment[mid], fromPlace)
+			b, okB := mapContentRouteEndpoint(leaves, byMoment[next], toPlace)
+			if !okA || !okB {
 				continue
 			}
-			from, to := &leaves[a[0]], &leaves[b[0]]
+			from, to := &leaves[a], &leaves[b]
 			if from.pin.ThreadID != tid || to.pin.ThreadID != tid {
 				continue
 			}
@@ -124,4 +169,30 @@ func mapContentRouteFacts(ctx context.Context, f humanWriteFrame, leaves []mapSp
 		p.SourceVersion = content.MomentControlHash([]any{p.SourceVersion, p.ThreadID, p.ThreadPosition, p.NextMarkerIDs, p.JourneyEdges})
 	}
 	return content.MomentControlHash(facts), nil
+}
+
+// Multiple media/relationship projections at the same authoritative Place are
+// one geometric line endpoint. This selects a stable rendering representative;
+// every original marker remains in the result. Equal coordinates alone do not
+// establish a shared Place, and distinct geographic alternatives stay ambiguous.
+func mapContentRouteEndpoint(leaves []mapSpatialLeaf, candidates []int, place string) (int, bool) {
+	selected := -1
+	for _, i := range candidates {
+		p := leaves[i].pin
+		if place != "" && p.PlaceID != place {
+			continue
+		}
+		if selected < 0 {
+			selected = i
+			continue
+		}
+		prior := leaves[selected].pin
+		if p.MomentID != prior.MomentID || p.PlaceID == "" || p.PlaceID != prior.PlaceID || p.Anchor != prior.Anchor {
+			return -1, false
+		}
+		if p.MarkerID < prior.MarkerID {
+			selected = i
+		}
+	}
+	return selected, selected >= 0
 }

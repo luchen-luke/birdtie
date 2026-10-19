@@ -334,8 +334,8 @@
   }
   function paintMedia(s, item, row, selected, pale) {
     const micro = row.micro === true;
-    const current = !micro && !pale && mediaValid(item);
-    const size = row.logicalSize ?? (item.kind === 'moment' ? (selected ? 34 : 30) : selected ? 28 : pale ? 20 : 24);
+    const current = !micro && (!pale || item.kind === 'moment') && mediaValid(item);
+    const size = row.logicalSize ?? (item.kind === 'moment' ? (selected ? 20 : 18) : selected ? 28 : pale ? 20 : 24);
     row.shape.style.border = current ? '0' : micro ? '1px solid white' : '1.5px solid white';
     const cluster = item.kind === 'cluster';
     row.icon.style.display = current || cluster || micro ? 'none' : '';
@@ -509,13 +509,13 @@
       const item = clusters.get(m.id) || s.source.get(m.id), p = s.projections.get(item.anchorID && clusters.has(m.id) ? item.anchorID : m.id);
       let row = s.nodes.get(m.id); if (!row) { row = node(s, item); s.nodes.set(m.id, row); }
       const pale = m.dense && !m.selected, size = m.size;
-      row.micro = pale && ['place', 'moment'].includes(item.kind);
+      row.micro = pale && item.kind === 'place';
       row.logicalSize = size; row.clusterCount = m.clusterCount; row.layoutLabel = m.label;
       row.button.style.left = `${p.x - 24}px`; row.button.style.top = `${p.y - 24}px`;
       row.button.disabled = s.reader; row.button.tabIndex = s.reader ? -1 : 0;
       row.button.style.zIndex = m.selected ? '3' : '2'; row.button.setAttribute('aria-pressed', String(m.selected));
       Object.assign(row.shape.style, {width: `${size}px`, height: `${size}px`,
-        borderRadius: item.kind === 'moment' ? (row.micro ? '1px' : '6px') : '50%',
+        borderRadius: item.kind === 'moment' ? '3px' : '50%',
         background: item.kind === 'moment' ? '#87683C' : item.kind === 'cluster' ? '#64707A' : m.fill});
       const glyphs = {
         dining: 'M4 2h2v7h1V2h2v7h1V2h2v7c0 2-1 3-3 4v9H6v-9c-2-1-3-2-3-4V2zm13 0h3v20h-3v-9h-2V6c0-2 1-4 2-4z',

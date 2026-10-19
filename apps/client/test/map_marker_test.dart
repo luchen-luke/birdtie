@@ -162,7 +162,7 @@ void main() {
       );
       expect(
         t.getSize(find.byKey(const ValueKey('individual-map-shape:moment:m'))),
-        const Size(30, 30),
+        const Size(18, 18),
       );
       for (final e in source)
         expect(

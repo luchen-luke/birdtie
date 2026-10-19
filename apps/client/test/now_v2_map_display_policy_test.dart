@@ -686,7 +686,7 @@ void main() {
             t.getSize(
               find.byKey(ValueKey('individual-map-shape:${entity.id}')),
             ),
-            kind == MapEntityKind.place ? const Size(7, 7) : const Size(8, 8),
+            kind == MapEntityKind.place ? const Size(7, 7) : const Size(18, 18),
           );
           expect(shape.color!.a, 1);
           expect(shape.border, isNotNull);
@@ -703,7 +703,7 @@ void main() {
     }
   }
   test(
-    'native precise circle square and pale bitmaps remain distinct and cached',
+    'native circle stays distinct while compact Moment density preserves its cached face',
     () async {
       final circle = await MapMarkerBitmap.render(
         kind: MapEntityKind.place,
@@ -719,7 +719,7 @@ void main() {
         dense: true,
       );
       expect(circle, isNot(orderedEquals(square)));
-      expect(square, isNot(orderedEquals(pale)));
+      expect(square, orderedEquals(pale));
       expect(
         identical(
           pale,

@@ -40,6 +40,12 @@ class OwnedMapMediaController extends ChangeNotifier {
   int get inFlight => _running;
   int get cachedItems => _entries.length;
   int get cachedBytes => _reserved;
+  int get _itemLimit => math.min(24, maxItems);
+  int get _byteLimit => math.min(24 * 1024 * 1024, maxBytes);
+  String _cacheKey(OwnedMapPin pin, double ratio) {
+    final cover = pin.cover!;
+    return '${cover.identity}:${cover.width}:${cover.height}:${pin.entity.kind.name}:${pin.categoryCode}:${pin.isCluster ? pin.momentCount : 0}:$ratio';
+  }
 
   void sync(
     OwnedMapView view, {
@@ -57,6 +63,11 @@ class OwnedMapMediaController extends ChangeNotifier {
       retire();
       return;
     }
+    final at = now();
+    if (!view.validUntil.isAfter(at)) {
+      suspend();
+      return;
+    }
     final renewed = !identical(_latestView, view);
     _latestView = view;
     final ratio = MapMarkerBitmap.pixelRatio(devicePixelRatio);
@@ -66,23 +77,29 @@ class OwnedMapMediaController extends ChangeNotifier {
               (p) =>
                   p.isMomentAnchor &&
                   p.cover != null &&
+                  (p.validUntil == null || p.validUntil!.isAfter(at)) &&
                   (p.canonicalMarkerID == selectedMarkerID ||
                       visibleBounds == null ||
                       visibleBounds.contains(p.latitude, p.longitude)),
             )
             .toList()
-          ..sort(
-            (a, b) =>
+          ..sort((a, b) {
+            final selected =
                 (b.canonicalMarkerID == selectedMarkerID ? 1 : 0) -
-                (a.canonicalMarkerID == selectedMarkerID ? 1 : 0),
-          );
-    final next = <String, _ActivePixels>{};
-    for (final pin in chosen.take(math.min(12, maxItems))) {
+                (a.canonicalMarkerID == selectedMarkerID ? 1 : 0);
+            if (selected != 0) return selected;
+            final cached =
+                (_entries.containsKey(_cacheKey(b, ratio)) ? 1 : 0) -
+                (_entries.containsKey(_cacheKey(a, ratio)) ? 1 : 0);
+            return cached != 0 ? cached : a.mapID.compareTo(b.mapID);
+          });
+    final next = <String, _ActivePixels>{}, admitted = <String>{};
+    for (final pin in chosen) {
       final cover = pin.cover!;
-      // Media sourceVersion describes this asset and its permission facts,
-      // not a viewport hash. A renewed camera lease does not redownload it.
-      final key =
-          '${cover.identity}:${cover.width}:${cover.height}:${pin.entity.kind.name}:${pin.categoryCode}:${pin.isCluster ? pin.momentCount : 0}:$ratio';
+      // Budget distinct immutable pixel entries, not their independently
+      // authorized anchors. Shared images consume one slot and one transfer.
+      final key = _cacheKey(pin, ratio);
+      if (!admitted.contains(key) && admitted.length >= _itemLimit) continue;
       var entry = _entries.remove(key);
       if (entry != null) _entries[key] = entry;
       if (entry != null && entry.finished && entry.image == null && renewed) {
@@ -92,21 +109,27 @@ class OwnedMapMediaController extends ChangeNotifier {
       if (entry == null) {
         final edge = (MapMarkerBitmap.pointCanvasSize * ratio).ceil();
         final reservation = 160 * 160 * 4 + edge * edge * 4 * 4;
-        _makeRoom(reservation, next.keys.toSet());
-        if (_entries.length >= maxItems || _reserved + reservation > maxBytes)
+        _makeRoom(reservation, admitted);
+        if (_entries.length >= _itemLimit ||
+            _reserved + reservation > _byteLimit)
           continue;
         entry = _OwnedMapPixels(key, ratio, _epoch, reservation);
         _entries[key] = entry;
         _reserved += reservation;
       }
+      admitted.add(key);
+      final until =
+          pin.validUntil != null && pin.validUntil!.isBefore(view.validUntil)
+          ? pin.validUntil!
+          : view.validUntil;
       final old = _active[pin.mapID];
       final active =
           old != null &&
               identical(old.pin, pin) &&
               old.entry == entry &&
-              old.until == view.validUntil
+              old.until == until
           ? old
-          : _ActivePixels(pin, cover, entry, view.validUntil);
+          : _ActivePixels(pin, cover, entry, until);
       if (!identical(old, active) && entry.image != null) cacheHits++;
       next[pin.mapID] = active;
       if (!entry.running && !entry.finished && !_queue.contains(key))
@@ -121,14 +144,11 @@ class OwnedMapMediaController extends ChangeNotifier {
     _drain();
   }
 
-  void _makeRoom(int reservation, Set<String> keepIDs) {
+  void _makeRoom(int reservation, Set<String> keepKeys) {
     for (final entry in _entries.values.toList()) {
-      if (_entries.length < maxItems && _reserved + reservation <= maxBytes)
+      if (_entries.length < _itemLimit && _reserved + reservation <= _byteLimit)
         break;
-      if (_active.values.any(
-        (g) => g.entry == entry && keepIDs.contains(g.pin.mapID),
-      ))
-        continue;
+      if (keepKeys.contains(entry.key)) continue;
       if (entry.running) continue;
       _retire(entry);
     }

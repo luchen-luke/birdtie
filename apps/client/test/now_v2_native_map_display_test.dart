@@ -395,7 +395,16 @@ void main() {
       );
       expect(map.points.iconOverlap, isTrue);
       expect(map.points.textOptional, isTrue);
-      expect(map.points.created.length, 2);
+      expect(
+        map.points.created.keys
+            .where((id) => !id.startsWith('map-aux:'))
+            .toSet(),
+        {moment.id, place.id},
+      );
+      final auxiliary = map.points.created['map-aux:${moment.id}']!;
+      expect(auxiliary.textField, moment.subtitle);
+      expect(auxiliary.geometry.coordinates.lng, moment.longitude);
+      expect(auxiliary.geometry.coordinates.lat, moment.latitude);
       final option = map.points.created[moment.id]!;
       expect(option.geometry.coordinates.lng, -2.1);
       expect(option.geometry.coordinates.lat, 57.145);
@@ -684,6 +693,128 @@ void main() {
     },
     variant: TargetPlatformVariant.only(TargetPlatform.android),
   );
+
+  testWidgets(
+    'normal native thread lines require live adjacent endpoints and discard late retired creation',
+    (t) async {
+      var liveA = true, liveB = true;
+      MapEntity row(
+        String id,
+        int position,
+        double longitude,
+        List<String> next,
+        bool Function() current, {
+        String source = 'current-source',
+      }) {
+        final entity = MapEntity(
+          id: id,
+          kind: MapEntityKind.moment,
+          title: id,
+          subtitle: '合成串文关系',
+          latitude: 57.145,
+          longitude: longitude,
+          sourceVersion: source,
+          momentID: id,
+          threadID: 'explicit-thread',
+          threadPosition: position,
+          nextContentIDs: next,
+          publicLocation: true,
+        );
+        return entity.withMediaPixels(
+          null,
+          readGrant: MapEntityReadGrant(
+            source: entity,
+            validUntil: DateTime.now().toUtc().add(const Duration(seconds: 30)),
+            current: current,
+          ),
+        );
+      }
+
+      const aID = 'moment:original-a',
+          bID = 'moment:original-b',
+          gapID = 'moment:after-gap';
+      final a = row(aID, 0, -2.1, [bID], () => liveA);
+      final b = row(bID, 1, -2.099, [gapID], () => liveB);
+      final gap = row(gapID, 3, -2.098, const [], () => true);
+      final map = _Map();
+      await _mount(t, map, [a, b, gap]);
+      await mediaWait(
+        t,
+        () => map.lines.active.length == 1 && map.points.created.length == 3,
+      );
+      final initial = map.lines.active.values.single;
+      final lineID = initial.id;
+      expect(initial.geometry.coordinates.map((p) => (p.lng, p.lat)), [
+        (-2.1, 57.145),
+        (-2.099, 57.145),
+      ]);
+      expect(initial.lineWidth, 1.5);
+      expect(
+        map.lines.created,
+        hasLength(1),
+      ); // Position 1 must not bridge to 3.
+      for (final entity in [a, b, gap]) {
+        expect(
+          map.points.created[entity.id]!.geometry.coordinates.lng,
+          entity.longitude,
+        );
+        expect(
+          map.points.created[entity.id]!.geometry.coordinates.lat,
+          entity.latitude,
+        );
+      }
+      await _update(t, map, [a, b, gap], selected: aID);
+      await mediaWait(t, () => map.lines.updated.isNotEmpty);
+      expect(map.lines.active.keys, [lineID]);
+      expect(map.lines.active.values.single.lineWidth, 3);
+      liveB = false;
+      await _update(t, map, [a, gap]);
+      // This source change requests fitBounds. The fake SDK records flyTo but
+      // must also deliver its real idle callback to publish the replacement
+      // render after that motion correctly retires the in-flight pass.
+      t.widget<MapWidget>(find.byType(MapWidget)).onMapIdleListener!(
+        MapIdleEventData.fromJson({'timestamp': 2}),
+      );
+      await mediaWait(
+        t,
+        () =>
+            map.lines.active.isEmpty &&
+            map.points.created.length == 2 &&
+            map.points.created.keys.toSet().containsAll({aID, gapID}),
+      );
+      expect(map.lines.deleted, contains(lineID));
+      expect(map.points.created.keys.toSet(), {aID, gapID});
+      // A fresh independently authorized B can start a new create, but a late
+      // SDK response cannot reinstate that line after the source is removed.
+      liveB = true;
+      final freshB = row(
+        bID,
+        1,
+        -2.099,
+        [gapID],
+        () => liveB,
+        source: 'fresh-source',
+      );
+      final held = Completer<void>();
+      map.lines.createGate = held;
+      await _update(t, map, [a, freshB, gap]);
+      await mediaWait(t, () => map.lines.created.length == 2);
+      liveA = false;
+      await _update(t, map, const []);
+      map.lines.createGate = null;
+      held.complete();
+      await mediaWait(
+        t,
+        () => map.lines.active.isEmpty && map.points.created.isEmpty,
+      );
+      expect(map.lines.deleted, contains(map.lines.created.last.id));
+      expect(map.lines.created, hasLength(2));
+      expect(t.takeException(), isNull);
+      await t.pumpWidget(const SizedBox());
+    },
+    variant: TargetPlatformVariant.only(TargetPlatform.android),
+  );
+
   for (final scale in [1.0, 1.3, 2.0]) {
     testWidgets(
       'full-bleed native compass is left 48dp and keeps north-only SDK operation at scale $scale',
@@ -1010,9 +1141,75 @@ class _Points extends Fake implements PointAnnotationManager {
   }
 }
 
+class _Lines extends Fake implements PolylineAnnotationManager {
+  final active = <String, PolylineAnnotation>{};
+  final created = <PolylineAnnotation>[];
+  final updated = <PolylineAnnotation>[];
+  final deleted = <String>[];
+  Completer<void>? createGate;
+  int serial = 0, deleteAllCalls = 0;
+  @override
+  String get id => 'synthetic-line-manager';
+  @override
+  Future<PolylineAnnotation> create(PolylineAnnotationOptions option) async {
+    final annotation = PolylineAnnotation(
+      id: 'synthetic-line-${++serial}',
+      geometry: option.geometry,
+      lineColor: option.lineColor,
+      lineWidth: option.lineWidth,
+      customData: option.customData,
+    );
+    created.add(annotation);
+    final gate = createGate;
+    if (gate != null) await gate.future;
+    active[annotation.id] = annotation;
+    return annotation;
+  }
+
+  @override
+  Future<List<PolylineAnnotation?>> createMulti(
+    List<PolylineAnnotationOptions> options,
+  ) async => [for (final option in options) await create(option)];
+  @override
+  Future<void> update(PolylineAnnotation annotation) async {
+    if (!active.containsKey(annotation.id))
+      throw StateError('updating absent line');
+    active[annotation.id] = annotation;
+    updated.add(annotation);
+  }
+
+  @override
+  Future<void> delete(PolylineAnnotation annotation) async {
+    active.remove(annotation.id);
+    deleted.add(annotation.id);
+  }
+
+  @override
+  Future<void> deleteAll() async {
+    deleteAllCalls++;
+    deleted.addAll(active.keys);
+    active.clear();
+  }
+
+  @override
+  Future<void> deleteMulti(List<PolylineAnnotation> annotations) async {
+    for (final annotation in annotations) await delete(annotation);
+  }
+
+  @override
+  Future<List<PolylineAnnotation>> getAnnotations() async =>
+      active.values.toList(growable: false);
+}
+
 class _Annotations extends Fake implements AnnotationManager {
-  _Annotations(this.points);
+  _Annotations(this.points, this.lines);
   final _Points points;
+  final _Lines lines;
+  @override
+  Future<PolylineAnnotationManager> createPolylineAnnotationManager({
+    String? id,
+    String? below,
+  }) async => lines;
   @override
   Future<PointAnnotationManager> createPointAnnotationManager({
     String? id,
@@ -1022,6 +1219,7 @@ class _Annotations extends Fake implements AnnotationManager {
 
 class _Map extends Fake implements MapboxMap {
   final points = _Points();
+  final lines = _Lines();
   final positions = <String, ScreenCoordinate>{};
   final flights = <CameraOptions>[];
   final northEases = <CameraOptions>[];
@@ -1030,7 +1228,7 @@ class _Map extends Fake implements MapboxMap {
   Completer<CameraState>? cameraGate;
   Completer<List<ScreenCoordinate?>>? projectionGate;
   @override
-  AnnotationManager get annotations => _Annotations(points);
+  AnnotationManager get annotations => _Annotations(points, lines);
   @override
   Future<CameraState> getCameraState() async {
     if (cameraGate != null) return await cameraGate!.future;

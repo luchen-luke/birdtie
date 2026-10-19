@@ -152,7 +152,7 @@ void main() {
           expect(plan.entities.any(MapDisplayPolicy.displayCluster), isFalse);
           expect(plan.clusterPositions, isEmpty);
           expect(plan.omittedIDs, isEmpty);
-          expect(plan.glyphSizes[source.last.id], 34);
+          expect(plan.glyphSizes[source.last.id], 20);
           expect(plan.denseIDs, isNot(contains(source.last.id)));
         }
       }
@@ -174,7 +174,7 @@ void main() {
       expect(plan.entities.toSet(), source.toSet());
       expect(plan.denseIDs.length, 115);
       for (final e in source) {
-        expect(plan.glyphSizes[e.id], e.kind == MapEntityKind.place ? 7 : 8);
+        expect(plan.glyphSizes[e.id], e.kind == MapEntityKind.place ? 7 : 18);
       }
       expect(
         MapDisplayPolicy.hitTargetsAt(
@@ -184,7 +184,271 @@ void main() {
         ).toSet(),
         source.toSet(),
       );
-      expect(plan.placements, isEmpty);
+      expect(plan.placements.length, lessThanOrEqualTo(6));
+      expect(
+        plan.labelIDs.every(
+          (id) =>
+              source.singleWhere((e) => e.id == id).kind ==
+              MapEntityKind.moment,
+        ),
+        isTrue,
+      );
+      final labels = plan.placements.values.toList();
+      for (var i = 0; i < labels.length; i++) {
+        for (var j = i + 1; j < labels.length; j++) {
+          expect(labels[i].rect.overlaps(labels[j].rect), isFalse);
+        }
+      }
+    },
+  );
+
+  test(
+    'overview keeps six nonoverlapping Moment names and compact original faces',
+    () {
+      final rows = [
+        for (var i = 0; i < 12; i++)
+          MapEntity(
+            id: 'moment:overview:$i',
+            kind: MapEntityKind.moment,
+            title: '动态$i',
+            subtitle: '动态$i',
+            latitude: 31.2 + i / 100,
+            longitude: 121.4,
+            sourceVersion: 'synthetic-$i',
+          ),
+      ];
+      final positions = {
+        for (var i = 0; i < rows.length; i++)
+          rows[i].id: Offset(60 + i % 4 * 140.0, 100 + i ~/ 4 * 100.0),
+      };
+      for (final scale in [16.0, 100.0]) {
+        final plan = MapDisplayPolicy.plan(
+          entities: rows,
+          positions: positions,
+          zoom: 4,
+          metersPerPixel: scale,
+          selectedID: rows.last.id,
+          contentRect: const Rect.fromLTWH(0, 0, 600, 500),
+        );
+        expect(plan.entities.toSet(), rows.toSet());
+        expect(plan.omittedIDs, isEmpty);
+        expect(plan.labelIDs.length, 6);
+        expect(plan.labelIDs.first, rows.last.id);
+        for (final row in rows)
+          expect(plan.glyphSizes[row.id], row == rows.last ? 20 : 18);
+        final labels = plan.placements.values.toList();
+        expect(
+          labels.every((p) => p.auxiliary == null),
+          isTrue,
+          reason:
+              'Unselected subtitles and selected title duplicates must not form a second row',
+        );
+        for (var i = 0; i < labels.length; i++)
+          for (var j = i + 1; j < labels.length; j++) {
+            expect(labels[i].rect.overlaps(labels[j].rect), isFalse);
+          }
+      }
+      final unknown = MapDisplayPolicy.plan(
+        entities: [rows.first],
+        positions: {rows.first.id: const Offset(120, 120)},
+        zoom: 4,
+      );
+      expect(unknown.glyphSizes[rows.first.id], 18);
+      expect(unknown.labelIDs, contains(rows.first.id));
+    },
+  );
+
+  test('fallback Moment names never consume meaningful overview labels', () {
+    final rows = [
+      for (var i = 0; i < 6; i++)
+        MapEntity(
+          id: 'moment:placeholder:$i',
+          kind: MapEntityKind.moment,
+          title: i.isEven ? '动态' : '  ',
+          subtitle: '',
+          latitude: 31.2 + i / 100,
+          longitude: 121.4,
+          momentID: 'placeholder-$i',
+          sourceVersion: 'synthetic',
+          contentTime: DateTime.utc(2026, 10, 19),
+        ),
+      for (var i = 0; i < 6; i++)
+        MapEntity(
+          id: 'moment:authored:$i',
+          kind: MapEntityKind.moment,
+          title: '确有正文$i',
+          subtitle: '',
+          latitude: 31.3 + i / 100,
+          longitude: 121.4,
+          momentID: 'authored-$i',
+          sourceVersion: 'synthetic',
+          contentTime: DateTime.utc(2026, 10, 18),
+        ),
+    ];
+    final points = {
+      for (var i = 0; i < rows.length; i++)
+        rows[i].id: Offset(60 + i % 4 * 160.0, 100 + i ~/ 4 * 110.0),
+    };
+    MapDisplayPlan at([String? selected]) => MapDisplayPolicy.plan(
+      entities: rows,
+      positions: points,
+      zoom: 8,
+      metersPerPixel: 40,
+      selectedID: selected,
+      contentRect: const Rect.fromLTWH(0, 0, 700, 500),
+    );
+    final regular = at();
+    expect(regular.labelIDs.toSet(), rows.skip(6).map((e) => e.id).toSet());
+    expect(
+      regular.placements.values.any((p) => p.name.contains('动态 · 动态')),
+      isFalse,
+    );
+    final selected = at(rows.first.id);
+    expect(selected.labelIDs.length, 6);
+    expect(selected.labelIDs.first, rows.first.id);
+    expect(selected.placements[rows.first.id]!.name, '动态');
+    expect(
+      selected.labelIDs.where((id) => id.startsWith('moment:authored:')).length,
+      5,
+    );
+    expect(regular.entities.toSet(), rows.toSet());
+    expect(regular.omittedIDs, isEmpty);
+  });
+
+  test(
+    'one exact Moment Place projection label prefers selected without losing actions',
+    () {
+      final rows = [
+        for (var i = 0; i < 4; i++)
+          MapEntity(
+            id: 'a-projection:$i',
+            kind: MapEntityKind.moment,
+            title: '正文',
+            subtitle: '',
+            latitude: 31.2,
+            longitude: 121.4,
+            placeID: 'place-original',
+            momentID: 'original-moment',
+            sourceVersion: 'source-$i',
+          ),
+        for (var i = 0; i < 6; i++)
+          MapEntity(
+            id: 'z-independent:$i',
+            kind: MapEntityKind.moment,
+            title: '独立正文$i',
+            subtitle: '',
+            latitude: 31.3 + i / 100,
+            longitude: 121.4,
+            momentID: 'independent-$i',
+            sourceVersion: 'source-$i',
+          ),
+      ];
+      final points = {
+        for (var i = 0; i < rows.length; i++)
+          rows[i].id: i < 4
+              ? const Offset(360, 100)
+              : Offset(80 + (i - 4) % 3 * 180.0, 240 + (i - 4) ~/ 3 * 120.0),
+      };
+      final plan = MapDisplayPolicy.plan(
+        entities: rows,
+        positions: points,
+        zoom: 8,
+        metersPerPixel: 40,
+        selectedID: rows[3].id,
+        contentRect: const Rect.fromLTWH(0, 0, 700, 500),
+      );
+      expect(plan.labelIDs.length, 6);
+      expect(plan.labelIDs.where((id) => id.startsWith('a-projection:')), [
+        rows[3].id,
+      ]);
+      expect(plan.entities.toSet(), rows.toSet());
+      expect(plan.omittedIDs, isEmpty);
+      expect(
+        MapDisplayPolicy.hitTargetsAt(
+          entities: plan.entities,
+          positions: points,
+          touchPosition: const Offset(360, 100),
+        ).toSet(),
+        rows.take(4).toSet(),
+      );
+      for (final row in rows) {
+        expect(plan.glyphSizes[row.id], row.id == rows[3].id ? 20 : 18);
+      }
+    },
+  );
+
+  test(
+    'labels retain distinct Moment IDs and real locations without text deduplication',
+    () {
+      final rows = [
+        for (var i = 0; i < 4; i++)
+          MapEntity(
+            id: 'original:$i',
+            kind: MapEntityKind.moment,
+            title: '相同正文',
+            subtitle: '',
+            latitude: i == 1 ? 31.3 : 31.2,
+            longitude: 121.4,
+            placeID: i == 2 ? 'place-other' : 'place-original',
+            momentID: i == 3 ? 'different-moment' : 'same-moment',
+            sourceVersion: 'source-$i',
+          ),
+      ];
+      final points = {
+        rows[0].id: const Offset(300, 200),
+        rows[1].id: const Offset(300, 400),
+        rows[2].id: const Offset(300, 200),
+        rows[3].id: const Offset(300, 200),
+      };
+      final plan = MapDisplayPolicy.plan(
+        entities: rows,
+        positions: points,
+        zoom: 8,
+        metersPerPixel: 40,
+        contentRect: const Rect.fromLTWH(0, 0, 800, 600),
+      );
+      expect(plan.labelIDs.toSet(), rows.map((e) => e.id).toSet());
+      expect(plan.entities.toSet(), rows.toSet());
+      final labels = plan.placements.values.toList();
+      for (var i = 0; i < labels.length; i++) {
+        for (var j = i + 1; j < labels.length; j++) {
+          expect(labels[i].rect.overlaps(labels[j].rect), isFalse);
+        }
+      }
+    },
+  );
+
+  test(
+    'selected Moment auxiliary removes only known repeated kind prefixes',
+    () {
+      for (final entry in const {
+        '串文 · 2026年10月19日': '2026年10月19日',
+        '单条动态 · 10月19日创建': '10月19日创建',
+        '仅本人可见 · 来源待核实': '仅本人可见 · 来源待核实',
+        '来源未知': '来源未知',
+        '串文 · ': null,
+      }.entries) {
+        final row = MapEntity(
+          id: 'moment:selected',
+          kind: MapEntityKind.moment,
+          title: '原始标题',
+          subtitle: entry.key,
+          latitude: 31.2,
+          longitude: 121.4,
+          threadID: 'authoritative-thread',
+          sourceVersion: 'synthetic',
+        );
+        final plan = MapDisplayPolicy.plan(
+          entities: [row],
+          positions: {row.id: const Offset(150, 150)},
+          zoom: 14,
+          metersPerPixel: 2,
+          selectedID: row.id,
+          contentRect: const Rect.fromLTWH(0, 0, 500, 400),
+        );
+        expect(plan.placements[row.id]!.auxiliary, entry.value);
+        expect(plan.placements[row.id]!.name, startsWith('串文 · '));
+      }
     },
   );
 
@@ -254,7 +518,7 @@ void main() {
         const Size(48, 48),
       );
       final shape = find.byKey(ValueKey('individual-map-shape:$id'));
-      expect(t.getSize(shape), Size.square(moment ? 8 : 7));
+      expect(t.getSize(shape), Size.square(moment ? 18 : 7));
       expect(t.widget<Container>(shape).decoration is BoxDecoration, isTrue);
       final box = t.widget<Container>(shape).decoration! as BoxDecoration;
       expect(box.shape, moment ? BoxShape.rectangle : BoxShape.circle);

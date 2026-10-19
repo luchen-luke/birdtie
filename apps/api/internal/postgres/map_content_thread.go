@@ -39,7 +39,7 @@ func mapContentThreadFilter(ctx context.Context, f humanWriteFrame, ids []string
 func (s *Store) mapContentThreadTx(ctx context.Context, f humanWriteFrame, seed string) (content.MapContentThread, error) {
 	v := content.MapContentThread{SchemaVersion: content.MapContentThreadSchema, ViewerAccountID: f.a.ID, SeedMomentID: seed, Status: "NOT_A_THREAD", Entries: []content.MapContentThreadEntry{}}
 	var thread, stamp string
-	err := f.tx.QueryRow(ctx, `SELECT t.id::text,jsonb_build_array(t.xmin::text,t.version,t.status,e.xmin::text,e.version)::text FROM moment_threads t JOIN moment_thread_members x ON x.thread_id=t.id LEFT JOIN moment_thread_edit_states e ON e.thread_id=t.id WHERE x.moment_id=$1`, seed).Scan(&thread, &stamp)
+	err := f.tx.QueryRow(ctx, `SELECT t.id::text,jsonb_build_array(t.xmin::text,t.version,t.status,e.xmin::text,e.version)::text FROM moment_threads t JOIN moment_thread_members x ON x.thread_id=t.id LEFT JOIN moment_thread_edit_states e ON e.thread_id=t.id WHERE x.moment_id=$1 AND `+mapContentThreadIdentitySQL("t")+` AND `+mapContentThreadAccessSQL("t", "e", "$2"), seed, f.a.ID).Scan(&thread, &stamp)
 	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
 		return v, content.ErrUnavailable
 	}

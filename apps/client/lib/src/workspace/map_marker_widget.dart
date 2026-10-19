@@ -34,8 +34,12 @@ class CompactMapPointMarker extends StatelessWidget {
       dense: dense,
       moment: moment,
     );
-    final micro = dense && !selected;
-    final pixels = moment && !micro && mediaPixels?.current() == true
+    final micro = !moment && dense && !selected;
+    final pixels =
+        moment &&
+            mediaPixels?.current() == true &&
+            (mediaPixels!.validUntil == null ||
+                DateTime.now().toUtc().isBefore(mediaPixels!.validUntil!))
         ? mediaPixels
         : null;
     final recent = !moment
@@ -43,7 +47,7 @@ class CompactMapPointMarker extends StatelessWidget {
         : null;
     final category = MapPinCategory.forCode(categoryCode);
     final color = moment ? MapMarkerVisual.momentColor : category.fill;
-    final radius = moment ? (micro ? 1.0 : 6.0) : size / 2;
+    final radius = moment ? MapMarkerVisual.momentRadius : size / 2;
     final fallbackAux = !moment && (selected || !dense) ? recent : null;
     final font = selected ? 13.0 : 12.0;
     final fallbackHeight = font * 1.25 + (fallbackAux == null ? 0 : 15);
@@ -113,7 +117,7 @@ class CompactMapPointMarker extends StatelessWidget {
             if (!micro &&
                 showLabel &&
                 caption.name.isNotEmpty &&
-                (!moment || selected))
+                (!moment || selected || placement != null))
               Positioned(
                 key: ValueKey('individual-map-caption:$id'),
                 left: 24 + caption.offset.dx,

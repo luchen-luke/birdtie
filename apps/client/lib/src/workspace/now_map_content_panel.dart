@@ -2859,9 +2859,20 @@ class _NowMapContentGroupPanelState extends State<NowMapContentGroupPanel> {
         onCommentIntent: widget.onCommentIntent,
       );
     }
-    final visible = _current
-        ? _pins.where(widget.controller.sourceCurrent).toList()
-        : const <OwnedMapPin>[];
+    // A Moment may have several body/media location projections. The chooser
+    // selects original content, so list that Moment once, retaining one exact
+    // current projection as its read source. Never merge distinct Moments by
+    // text, thread, location, or author, and never borrow an expired grant.
+    final choices = <String, OwnedMapPin>{};
+    if (_current) {
+      for (final pin in _pins.where(widget.controller.sourceCurrent)) {
+        final key = pin.isMomentAnchor && pin.momentID.isNotEmpty
+            ? 'moment:${pin.momentID}'
+            : pin.mapID;
+        choices.putIfAbsent(key, () => pin);
+      }
+    }
+    final visible = choices.values.toList(growable: false);
     final list = Material(
       color: Theme.of(context).colorScheme.surface,
       child: Column(
@@ -2889,6 +2900,8 @@ class _NowMapContentGroupPanelState extends State<NowMapContentGroupPanel> {
                 ? const Center(child: Text('当前内容已不可读，请返回地图重新选择。'))
                 : ListView.builder(
                     controller: _scroll,
+                    // The retained Now host already applies system insets.
+                    padding: EdgeInsets.zero,
                     itemCount: visible.length + 1,
                     itemBuilder: (context, index) {
                       if (index == visible.length)
@@ -2923,7 +2936,13 @@ class _NowMapContentGroupPanelState extends State<NowMapContentGroupPanel> {
                           pin.isCluster
                               ? '${pin.anchorCount}个内容位置'
                               : pin.isMomentAnchor
-                              ? (pin.threadID.isEmpty ? '动态' : '串文动态')
+                              ? [
+                                  pin.threadID.isEmpty
+                                      ? '动态'
+                                      : '串文 · 第${pin.threadPosition + 1}段',
+                                  if (pin.contentTime != null)
+                                    pin.contentTimeLabel,
+                                ].join(' · ')
                               : '地点 · ${pin.momentCount}条动态',
                         ),
                         onTap: () => setState(() {
@@ -2944,7 +2963,7 @@ class _NowMapContentGroupPanelState extends State<NowMapContentGroupPanel> {
         final available = limits.hasBoundedHeight ? limits.maxHeight : 560.0;
         final height = math.min(
           available,
-          88.0 +
+          64.0 +
               visible.length * 88.0 +
               (_loading ? 4.0 : 0.0) +
               (_error != null || _cursor != null ? 48.0 : 0.0),

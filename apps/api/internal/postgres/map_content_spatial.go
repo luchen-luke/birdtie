@@ -530,75 +530,46 @@ func (s *Store) ReadHumanMapContent(ctx context.Context, d [32]byte, a identity.
 		return p, e
 	}
 	shrinkMapLease(&p.ValidUntil, &v.until)
-	if e = s.loadMapContentReferenceAssetsTx(ctx, f, &v, filter.PlaceIDs); e != nil {
-		return p, e
+	targets := make([]mapContentCoverTarget, 0, len(p.Pins))
+	wantedMedia := map[string]string{}
+	for _, i := range selected {
+		wantedMedia[leaves[i].pin.MarkerID] = leaves[i].media
 	}
-	coverOrder := []int{}
-	for i := range p.Pins {
-		if p.Pins[i].MarkerID == q.SelectedMarkerID {
-			coverOrder = append(coverOrder, i)
-		}
-	}
-	for i := range p.Pins {
-		if p.Pins[i].MarkerID != q.SelectedMarkerID {
-			coverOrder = append(coverOrder, i)
-		}
-	}
-	if len(coverOrder) > 12 {
-		coverOrder = coverOrder[:12]
-	}
-	for _, i := range coverOrder {
-		pin := &p.Pins[i]
-		target := *pin
+	for i, pin := range p.Pins {
+		target := pin
 		if li, ok := representatives[pin.MarkerID]; ok {
 			target = leaves[li].pin
 		}
-		var cover *content.MapContentImage
-		if target.Kind == "PLACE_CONTENT" {
-			cover, e = s.mapContentCoverTx(ctx, f, &v, target.PlaceID)
-		} else {
+		targets = append(targets, mapContentCoverTarget{i, target, wantedMedia[target.MarkerID]})
+	}
+	e = attachMapContentCovers(ctx, p.Pins, targets, q.SelectedMarkerID,
+		func(target content.MapContentPin) ([]content.MapContentImage, error) {
+			if target.Kind == "PLACE_CONTENT" {
+				cover, err := s.mapContentCoverTx(ctx, f, &v, target.PlaceID)
+				if err != nil || cover == nil {
+					return nil, err
+				}
+				return []content.MapContentImage{*cover}, nil
+			}
 			m := v.moments[target.MomentID]
-			if m != nil {
-				var assets []mapContentAsset
-				assets, e = s.mapContentMomentMediaTx(ctx, f, &v, m)
-				if e == nil {
-					wanted := ""
-					for _, li := range selected {
-						if leaves[li].pin.MarkerID == target.MarkerID {
-							wanted = leaves[li].media
-							break
-						}
-					}
-					for _, asset := range assets {
-						if wanted == "" || asset.media.ID == wanted {
-							x := asset.image
-							cover = &x
-							break
-						}
-					}
-				}
+			if m == nil {
+				return nil, nil
 			}
-		}
-		if e != nil {
-			if ctx.Err() != nil {
-				return p, content.ErrUnavailable
+			assets, err := s.mapContentMomentMediaTx(ctx, f, &v, m)
+			if err != nil {
+				return nil, err
 			}
-			cover = nil
-		}
-		if cover != nil {
-			cover, e = s.mapMarkerThumbnailTx(ctx, f, &v, *cover)
-			if e != nil {
-				if ctx.Err() != nil {
-					return p, content.ErrUnavailable
-				}
-				continue
+			images := make([]content.MapContentImage, 0, len(assets))
+			for _, asset := range assets {
+				images = append(images, asset.image)
 			}
-			pin.Cover = cover
-			if !containsMapString(pin.VisibilitySources, cover.VisibilitySource) {
-				pin.VisibilitySources = append(pin.VisibilitySources, cover.VisibilitySource)
-				sort.Strings(pin.VisibilitySources)
-			}
-		}
+			return images, nil
+		},
+		func(original content.MapContentImage) (*content.MapContentImage, error) {
+			return s.mapMarkerThumbnailTx(ctx, f, &v, original)
+		})
+	if e != nil {
+		return p, e
 	}
 	shrinkMapLease(&p.ValidUntil, &v.until)
 	if !p.Valid(time.Now().UTC()) {
@@ -627,6 +598,122 @@ func (s *Store) ReadHumanMapContent(ctx context.Context, d [32]byte, a identity.
 	}
 	p.ResponseProof = &mapContentResponseProof{s: s, d: d, a: a, kind: "map", q: q, source: p.SourceVersion, until: p.ValidUntil}
 	return p, nil
+}
+
+const mapContentCoverBudget = 24
+
+type mapContentCoverTarget struct {
+	index  int
+	pin    content.MapContentPin
+	wanted string
+}
+type mapContentCoverSource struct{ kind, id string }
+type mapContentCoverDescriptor struct {
+	source mapContentCoverSource
+	image  content.MapContentImage
+}
+
+// Request-local dual budgets count source containers and exact authorized image
+// descriptors, never anchor projections. Failed/empty attempts count too. A
+// later projection may reuse an admitted descriptor even after both limits fill.
+// The source key prevents an equal file SHA (or even image fields) from lending
+// one Moment/Place's authority to another; every new request rebuilds its ACL.
+func attachMapContentCovers(ctx context.Context, pins []content.MapContentPin, targets []mapContentCoverTarget, selected string,
+	resolve func(content.MapContentPin) ([]content.MapContentImage, error),
+	thumbnail func(content.MapContentImage) (*content.MapContentImage, error)) error {
+	ordered := append([]mapContentCoverTarget{}, targets...)
+	sort.SliceStable(ordered, func(i, j int) bool {
+		a, b := ordered[i].index, ordered[j].index
+		return a >= 0 && a < len(pins) && pins[a].MarkerID == selected &&
+			!(b >= 0 && b < len(pins) && pins[b].MarkerID == selected)
+	})
+	for i := range pins {
+		pins[i].Cover = nil
+	}
+	sources := map[mapContentCoverSource][]content.MapContentImage{}
+	descriptors := map[mapContentCoverDescriptor]*content.MapContentImage{}
+	for _, candidate := range ordered {
+		if ctx.Err() != nil {
+			return content.ErrUnavailable
+		}
+		if candidate.index < 0 || candidate.index >= len(pins) {
+			continue
+		}
+		target := candidate.pin
+		source := mapContentCoverSource{kind: target.Kind}
+		switch target.Kind {
+		case "PLACE_CONTENT":
+			source.id = target.PlaceID
+		case "MOMENT_ANCHOR":
+			source.id = target.MomentID
+		default:
+			continue
+		}
+		if source.id == "" {
+			continue
+		}
+		images, admitted := sources[source]
+		if !admitted {
+			if len(sources) >= mapContentCoverBudget {
+				continue
+			}
+			var err error
+			images, err = resolve(target)
+			if err != nil {
+				if ctx.Err() != nil {
+					return content.ErrUnavailable
+				}
+				images = nil
+			}
+			sources[source] = images
+		}
+		if ctx.Err() != nil {
+			return content.ErrUnavailable
+		}
+		var original *content.MapContentImage
+		for _, image := range images {
+			if candidate.wanted == "" || image.ID == candidate.wanted {
+				if image.Valid() {
+					copy := image
+					original = &copy
+				}
+				break
+			}
+		}
+		if original == nil {
+			continue
+		}
+		key := mapContentCoverDescriptor{source, *original}
+		cover, attempted := descriptors[key]
+		if !attempted {
+			if len(descriptors) >= mapContentCoverBudget {
+				continue
+			}
+			var err error
+			cover, err = thumbnail(*original)
+			if err != nil {
+				if ctx.Err() != nil {
+					return content.ErrUnavailable
+				}
+				cover = nil
+			}
+			descriptors[key] = cover
+		}
+		if ctx.Err() != nil {
+			return content.ErrUnavailable
+		}
+		if cover == nil {
+			continue
+		}
+		pin := &pins[candidate.index]
+		copy := *cover
+		pin.Cover = &copy
+		if !containsMapString(pin.VisibilitySources, cover.VisibilitySource) {
+			pin.VisibilitySources = append(pin.VisibilitySources, cover.VisibilitySource)
+			sort.Strings(pin.VisibilitySources)
+		}
+	}
+	return nil
 }
 
 // Unknown import timestamps sort last rather than looking newly published.

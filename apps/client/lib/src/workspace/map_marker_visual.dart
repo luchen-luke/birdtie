@@ -52,11 +52,14 @@ class MapMarkerVisual {
     required bool selected,
     required bool dense,
     bool moment = false,
-  }) => selected
-      ? (moment ? 34 : 28)
+  }) => moment
+      ? (selected ? 20 : 18)
+      : selected
+      ? 28
       : dense
-      ? (moment ? 8 : 7)
-      : (moment ? 30 : 24);
+      ? 7
+      : 24;
+  static const momentRadius = 3.0;
   static double radius({required bool dense}) => dense ? 1 : 6;
   static const placeColor = Color(0xFF193B32);
   static const densePlaceColor = Color(0xFF678779);
@@ -182,7 +185,11 @@ class MapMediaPixels {
     required bool selected,
     required bool dense,
     double? ratio,
-  }) => current() && !dense && (ratio == null || ratio == devicePixelRatio)
+  }) =>
+      current() &&
+          (validUntil == null ||
+              DateTime.now().toUtc().isBefore(validUntil!)) &&
+          (ratio == null || ratio == devicePixelRatio)
       ? (selected ? selectedPNG : normalPNG)
       : null;
 }

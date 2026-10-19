@@ -64,13 +64,13 @@ class _LiveMapSurface extends MethodChannelAMapFlutterMap
 }
 
 // Labels expand the native PNG canvas while the glyph stays at its anchor.
-// Compare every pixel of the actual 30dp photo glyph, rather than mistaking
+// Compare every pixel of the actual 18dp photo glyph, rather than mistaking
 // a larger caption canvas for a missing photo or a wrong DPR.
 Future<Uint8List> _glyphPixels(Uint8List png, Offset anchor) async {
   final codec = await ui.instantiateImageCodec(png);
   final image = (await codec.getNextFrame()).image;
   try {
-    const side = 30;
+    const side = 18;
     final left = (anchor.dx * image.width - side / 2).round();
     final top = (anchor.dy * image.height - side / 2).round();
     expect(left, inInclusiveRange(0, image.width - side));

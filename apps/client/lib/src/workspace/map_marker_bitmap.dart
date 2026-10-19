@@ -187,7 +187,7 @@ class MapMarkerBitmap {
     const anchor = Offset(pointCanvasSize / 2, pointCanvasSize / 2);
     const center = anchor;
     final moment = kind == MapEntityKind.moment;
-    final micro = dense && !selected;
+    final micro = !moment && dense && !selected;
     final diameter = MapMarkerVisual.diameter(
       selected: selected,
       dense: dense,
@@ -206,7 +206,10 @@ class MapMarkerBitmap {
     final shape = Path();
     if (moment) {
       shape.addRRect(
-        RRect.fromRectAndRadius(rect, Radius.circular(micro ? 1 : 6)),
+        RRect.fromRectAndRadius(
+          rect,
+          const Radius.circular(MapMarkerVisual.momentRadius),
+        ),
       );
     } else {
       shape.addOval(rect);

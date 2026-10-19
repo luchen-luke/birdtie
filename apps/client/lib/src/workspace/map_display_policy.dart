@@ -356,23 +356,48 @@ class MapDisplayPolicy {
               ))
             entry.key,
     };
+    final namedMomentProjections = <(String, String, double, double)>{};
+    var overviewMomentNames = 0, otherNames = 0;
     final maximumLabels = overview
         ? 1
         : scale >= 8
         ? 6
         : 10;
     for (final e in displayed) {
-      if (occluded.contains(e.id) || dense.contains(e.id)) continue;
+      final moment = e.kind == MapEntityKind.moment;
+      if (occluded.contains(e.id) || !moment && dense.contains(e.id)) continue;
       final selected = e.id == selectedID;
-      if (placed.length >= maximumLabels && !selected) continue;
+      final title = e.title.trim();
+      final authoredMomentName = title.isNotEmpty && title != '动态';
+      // Placeholder names do not spend scarce content-label slots. Selection
+      // can still identify an otherwise untitled original Moment explicitly.
+      if (moment && !authoredMomentName && !selected) continue;
+      final projection = moment && e.momentID.isNotEmpty
+          ? (e.momentID, e.placeID, e.latitude, e.longitude)
+          : null;
+      // Equivalent projections share only a label. Distinct Moments, Places
+      // and real positions retain independent names, glyphs and hit targets.
+      if (projection != null && namedMomentProjections.contains(projection)) {
+        continue;
+      }
+      // Moment faces stay compact and readable at every density. In overview
+      // allow six measured, non-overlapping names, selected first; Place's
+      // existing geometry and overview name budget remain unchanged.
+      if (overview && moment) {
+        if (overviewMomentNames >= MapMarkerVisual.labelBudget) continue;
+      } else if ((overview ? otherNames : placed.length) >= maximumLabels &&
+          !selected) {
+        continue;
+      }
       if (e.kind == MapEntityKind.cluster && !selected) continue;
       final raw = e.kind == MapEntityKind.cluster
           ? '${MapMarkerVisual.clusterCount(categoryCode: e.categoryCode, contentCount: e.contentCount, anchorCount: e.anchorCount, fallback: e.memberIDs.length)}${MapMarkerVisual.clusterUnit(e.categoryCode)}'
-          : e.kind == MapEntityKind.moment
-          ? '${e.threadID.isEmpty ? '动态' : '串文'} · ${e.title}'
+          : moment
+          ? authoredMomentName
+                ? '${e.threadID.isEmpty ? '动态' : '串文'} · $title'
+                : '动态'
           : e.title;
-      if (raw.isEmpty || e.kind == MapEntityKind.moment && raw == '动态')
-        continue;
+      if (raw.isEmpty) continue;
       final name = MapMarkerVisual.nativeLabel(raw, selected: selected);
       final font = selected ? 13.0 : 12.0;
       final namePainter = TextPainter(
@@ -385,8 +410,22 @@ class MapDisplayPolicy {
       )..layout(maxWidth: 112);
       final nameWidth = math.max(16.0, namePainter.width);
       namePainter.dispose();
-      final auxiliary = e.kind == MapEntityKind.moment
-          ? e.subtitle
+      var momentAuxiliary = e.subtitle.trimLeft();
+      if (moment) {
+        for (final prefix in const ['串文 · ', '单条动态 · ']) {
+          if (momentAuxiliary.startsWith(prefix)) {
+            momentAuxiliary = momentAuxiliary.substring(prefix.length);
+            break;
+          }
+        }
+      }
+      momentAuxiliary = momentAuxiliary.trim();
+      final auxiliary = moment
+          ? (selected &&
+                    momentAuxiliary.isNotEmpty &&
+                    momentAuxiliary != e.title.trim()
+                ? momentAuxiliary
+                : null)
           : e.kind == MapEntityKind.place &&
                 (selected || scale != null && scale < 8)
           ? e.recentMoments?.labelAt(DateTime.now().toUtc())
@@ -451,6 +490,11 @@ class MapDisplayPolicy {
             offset: origin - p,
           );
           occupied.add(rect);
+          if (projection != null) namedMomentProjections.add(projection);
+          if (moment)
+            overviewMomentNames++;
+          else
+            otherNames++;
           break;
         }
       }

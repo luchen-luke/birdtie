@@ -64,7 +64,7 @@ function fixture({lateSDK = false, lateLoader = false, holdCoordinate = false, b
     if (!frame) return;
     window.birdtieAMapLayout(handle, JSON.stringify({schema: 'birdtie-amap-layout-v1', revision: frame.revision, frame: frame.frame,
       markers: frame.positions.map(p => ({id: p.id, dx: 0, dy: 0,
-        selected: false, dense: false, showLabel: false, size: p.id.includes('cluster') ? 28 : p.id.startsWith('place:') ? 24 : 30,
+        selected: false, dense: false, showLabel: false, size: p.id.includes('cluster') ? 28 : p.id.startsWith('place:') ? 24 : 18,
         fill: '#73808a', category: 'other', clusterCount: p.id.includes('cluster') ? 9 : 0}))}));
   };
   async function flush() { for (let i = 0; i < 150; i++) { await Promise.resolve(); await Promise.resolve(); for (const f of raf.splice(0)) f(); } }
@@ -115,7 +115,7 @@ test('retired nonzero ring layout is rejected and no leader nodes can return', a
     f.window.birdtieAMapLayout(f.handle, JSON.stringify({schema: 'birdtie-amap-layout-v1',
       revision: frame.revision, frame: frame.frame,
       markers: frame.positions.map((p, i) => ({id: p.id, dx: i ? 28 : 0, dy: 0,
-        selected: false, dense: false, showLabel: false, size: p.id.includes('cluster') ? 28 : p.id.startsWith('place:') ? 24 : 30,
+        selected: false, dense: false, showLabel: false, size: p.id.includes('cluster') ? 28 : p.id.startsWith('place:') ? 24 : 18,
         fill: '#73808a', category: 'other', clusterCount: p.id.includes('cluster') ? 9 : 0}))}));
     assert.deepEqual(f.buttons().map(b => [b.style.left, b.style.top]), before);
     assert.equal(f.container.children.flatMap(x => x.children).filter(x => x.tagName === 'svg').length, 0);
@@ -246,7 +246,7 @@ test('layout rejects invented display clusters and retains original independent 
     await f.flush();f.layout();assert.equal(f.buttons()[0].dataset.birdtieMapId,'task:a');
   }finally{f.destroy();}
 });
-test('7dp circle and 8dp square retain 48dp original actions without image or category detail', async () => {
+test('7dp Place and compact18dp Moment retain48dp original actions and current verified media', async () => {
   const f = fixture();
   try {
     f.update(1, [item('place:micro', 'place'), {...item('moment:micro'),
@@ -257,16 +257,16 @@ test('7dp circle and 8dp square retain 48dp original actions without image or ca
     f.window.birdtieAMapLayout(f.handle, JSON.stringify({schema: 'birdtie-amap-layout-v1',
       revision: frame.revision, frame: frame.frame,
       markers: frame.positions.map(p => ({id: p.id, dx: 0, dy: 0, selected: false,
-        dense: true, showLabel: false, size: p.id.startsWith('place:') ? 7 : 8,
+        dense: true, showLabel: false, size: p.id.startsWith('place:') ? 7 : 18,
         fill: '#73808a', category: 'other', clusterCount: 0}))}));
     assert.equal(f.buttons().length, 2);
     for (const b of f.buttons()) {
       const moment = b.dataset.birdtieMapId.startsWith('moment:');
       assert.equal(b.style.width, '48px'); assert.equal(b.style.height, '48px');
       const shape = b.firstChild;
-      assert.equal(shape.style.width, moment ? '8px' : '7px');
-      assert.equal(shape.style.borderRadius, moment ? '1px' : '50%');
-      assert.equal(shape.children[0].src, undefined);
+      assert.equal(shape.style.width, moment ? '18px' : '7px');
+      assert.equal(shape.style.borderRadius, moment ? '3px' : '50%');
+      assert.equal(shape.children[0].src, moment ? 'data:image/png;base64,iVBORw0KGgoAAA==' : undefined);
       assert.equal(shape.children[1].style.display, 'none');
       b.fire('click');
     }
@@ -283,8 +283,8 @@ test('Moment square and unknown aggregate circle keep typed counts 48dp targets 
       {...item('owned-map:cluster:second', 'cluster'), ownedContent: true, contentCount: 7, anchorCount: 9, precision: 'area'}]);
     await f.flush(); f.layout();
     for (const button of f.buttons()) assert.equal(button.style.width, '48px');
-    assert.equal(f.buttons()[0].children[0].style.width, '30px');
-    assert.equal(f.buttons()[0].children[0].style.borderRadius, '6px');
+    assert.equal(f.buttons()[0].children[0].style.width, '18px');
+    assert.equal(f.buttons()[0].children[0].style.borderRadius, '3px');
     assert.equal(f.buttons()[1].children[0].style.width, '28px');
     assert.equal(f.buttons()[1].children[0].style.borderRadius, '50%');
     assert.equal(f.buttons()[1].children[0].children.at(-1).textContent, '9');

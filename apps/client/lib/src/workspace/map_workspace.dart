@@ -7478,7 +7478,17 @@ class _MapWorkspaceState extends State<MapWorkspace>
   String? _mapCommentUnavailableReason(OwnedMapMomentDetail? moment) {
     if (moment == null) return null;
     if (_organizations.active != null) return '当前组织身份无法发表评论';
-    if (moment.status != 'published') return '未发布的内容暂不支持评论';
+    // Legacy reading permission is independent of the migrated native draft.
+    // Describe current capability without relabelling an original Civu post.
+    if (moment.createdAtSource == 'CIVU_ORIGINAL' ||
+        moment.visibilitySource == 'CIVU_PUBLIC_MOMENT') {
+      return '当前无法评论';
+    }
+    if (moment.status != 'published') {
+      return moment.createdAtSource == 'NATIVE'
+          ? '未发布的内容暂不支持评论'
+          : '当前无法评论';
+    }
     if (moment.visibility != 'public') return '非公开内容暂不支持评论';
     return null;
   }
@@ -7506,23 +7516,24 @@ class _MapWorkspaceState extends State<MapWorkspace>
       return '编辑我的旅程 · ${_journeyField?.label ?? '当前字段'} · 私人草稿';
     if (_contentSourceCurrent?.call() != true) return '原评论对象暂不可用 · 草稿已保留';
     final interaction = _contentInteraction;
-    final title = _shortContent(_contentTitle ?? '当前内容');
+    final title = _shortContent(_contentTitle ?? '');
+    final subject = title.isEmpty ? '当前内容' : '《$title》';
     if (interaction == null) {
-      return '《$title》 · ${_contentUnavailableReason ?? '当前无法评论'}';
+      return '$subject · ${_contentUnavailableReason ?? '当前无法评论'}';
     }
     if (interaction.loading && interaction.page == null)
-      return '《$title》 · 正在读取评论资格';
+      return '$subject · 正在读取评论资格';
     if (interaction.error != null)
-      return '《$title》 · 评论暂未读取，请重试';
+      return '$subject · 评论暂未读取，请重试';
     if (interaction.page?.canComment == false)
-      return '《$title》 · 当前无法发表评论';
+      return '$subject · 当前无法发表评论';
     final reply = _contentReply;
     if (reply != null) {
       if (_contentInteraction?.replyCurrent(reply) != true)
         return '原回复对象暂不可用 · 草稿已保留';
       return '回复 ${reply.author?.displayName ?? '用户评论'} · ${_shortContent(reply.body)} · 公开可见';
     }
-    return '评论《${_shortContent(_contentTitle ?? '当前动态')}》 · 公开可见';
+    return '评论$subject · 公开可见';
   }
 
   static String _shortContent(String value) {
@@ -10735,27 +10746,33 @@ class _MapWorkspaceState extends State<MapWorkspace>
                     ),
                   ),
                 ),
-              if (_publicPlacePanel != null &&
-                  !_publicPlacePreview &&
-                  _publicPlacePanel is! NowMapContentPanel)
+              // One opaque reading surface includes the composer and safe area.
+              // Keep it below the composer: the retained reader above it reserves
+              // the composer height, so neither layer covers the other's controls.
+              if (_publicPlacePanel != null && !_publicPlacePreview)
                 Positioned(
                   top: expandedReaderTop,
                   left: 0,
                   right: 0,
                   bottom: 0,
                   child: Material(
+                    key: const Key('now-expanded-reader-surface'),
                     type: _publicPlacePanel is NowMapContentGroupPanel
                         ? MaterialType.transparency
                         : MaterialType.canvas,
                     color: _publicPlacePanel is NowMapContentGroupPanel
                         ? null
                         : Theme.of(context).colorScheme.surface,
-                    child: Padding(
-                      padding: EdgeInsets.only(
-                        bottom: layout.bottom + layout.surfaceHeight,
-                      ),
-                      child: FocusTraversalGroup(child: _publicPlacePanel!),
-                    ),
+                    child: _publicPlacePanel is NowMapContentPanel
+                        ? const SizedBox.expand()
+                        : Padding(
+                            padding: EdgeInsets.only(
+                              bottom: layout.bottom + layout.surfaceHeight,
+                            ),
+                            child: FocusTraversalGroup(
+                              child: _publicPlacePanel!,
+                            ),
+                          ),
                   ),
                 ),
               Positioned(

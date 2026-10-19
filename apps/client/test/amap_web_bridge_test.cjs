@@ -22,7 +22,8 @@ class Element {
 }
 const deferred = () => { let resolve; const promise = new Promise(r => { resolve = r; }); return {promise, resolve}; };
 function fixture({lateSDK = false, lateLoader = false, holdCoordinate = false, badBatch = false} = {}) {
-  const container = new Element('div'), raf = [], maps = [], conversions = [], scripts = [], timers = new global.Map();
+  const container = new Element('div'), raf = [], maps = [], conversions = [], scripts = [], timers = new global.Map(), polylines=[];
+  let clockNow=null; class Clock extends Date {static now(){return clockNow??Date.now();}}
   const timeout = (fn, delay) => { const id = setTimeout(() => { timers.delete(id); fn(); }, delay); timers.set(id, {fn, delay}); return id; };
   const clear = id => { timers.delete(id); clearTimeout(id); };
   const sdkWait = deferred(); let loadCalls = 0;
@@ -38,7 +39,8 @@ function fixture({lateSDK = false, lateLoader = false, holdCoordinate = false, b
     setBounds(b) { this.bounds = b; } setCenter(p) { this.center = p; }
     destroy() { this.destroyed = true; }
   }
-  const sdk = {Map, Pixel, Bounds: class {constructor(sw, ne) {this.sw = sw; this.ne = ne;}},
+  class Polyline {constructor(options){this.options=options;this.map=null;polylines.push(this);}setMap(map){this.map=map;}setOptions(options){this.options=options;}}
+  const sdk = {Map, Pixel, Polyline, Bounds: class {constructor(sw, ne) {this.sw = sw; this.ne = ne;}},
     convertFrom: (coords, kind, callback) => {
       assert.equal(kind, 'gps');
       const batch = Array.isArray(coords[0]) ? coords : [coords]; assert.ok(batch.length <= 40);
@@ -52,13 +54,13 @@ function fixture({lateSDK = false, lateLoader = false, holdCoordinate = false, b
   const api = {load: () => { loadCalls++; return lateSDK ? sdkWait.promise : Promise.resolve(sdk); }};
   const window = lateLoader ? {} : {AMapLoader: api};
   const document = {head: {appendChild(script) { scripts.push(script); if (!lateLoader) throw new Error('external loader forbidden'); }}, getElementById: () => container, createElement: tag => new Element(tag), createElementNS: (_, tag) => new Element(tag)};
-  vm.runInNewContext(source, {window, document, URL, Map: global.Map, Set, Promise, JSON, Number, Math, Object, Error,
+  vm.runInNewContext(source, {window, document, URL, Map: global.Map, Set, Promise, JSON, Number, Math, Object, Error, Date:Clock,
     setTimeout: timeout, clearTimeout: clear, requestAnimationFrame: f => raf.push(f)}, {filename: 'birdtie_amap.js'});
   const frames = [], selected = [], statuses = [], viewports = [], coordinates = [];
   const handle = window.birdtieAMapMount('test', JSON.stringify({key: 'synthetic-public', serviceHost: 'https://proxy.example.invalid/_AMapService', latitude: 30, longitude: 120, zoom: 14}),
     v => frames.push(JSON.parse(v)), v => selected.push(JSON.parse(v)), v => statuses.push(JSON.parse(v)), () => {},
     v => viewports.push(JSON.parse(v)), v => coordinates.push(JSON.parse(v)));
-  const update = (revision, markers, scope) => window.birdtieAMapUpdate(handle, JSON.stringify({schema: 'birdtie-amap-source-v1', revision, markers, scope}));
+  const update = (revision, markers, scope, routes=[]) => window.birdtieAMapUpdate(handle, JSON.stringify({schema: 'birdtie-amap-source-v1', revision, markers, scope, routes}));
   const buttons = () => container.children.flatMap(x => x.children).filter(x => x.tagName === 'button');
   const layout = (frame = frames.at(-1)) => {
     if (!frame) return;
@@ -68,7 +70,7 @@ function fixture({lateSDK = false, lateLoader = false, holdCoordinate = false, b
         fill: '#73808a', category: 'other', clusterCount: p.id.includes('cluster') ? 9 : 0}))}));
   };
   async function flush() { for (let i = 0; i < 150; i++) { await Promise.resolve(); await Promise.resolve(); for (const f of raf.splice(0)) f(); } }
-  return {window, container, maps, conversions, scripts, frames, selected, statuses, viewports, coordinates, handle, update, buttons, layout, flush,
+  return {window, container, maps, polylines, now:()=>clockNow??Date.now(), advance:ms=>{clockNow=(clockNow??Date.now())+ms;for(const [id,timer]of [...timers])if(timer.delay<=ms){clear(id);timer.fn();}}, conversions, scripts, frames, selected, statuses, viewports, coordinates, handle, update, buttons, layout, flush,
     loadCalls: () => loadCalls, finishSDK: () => sdkWait.resolve(sdk), finishLoader: () => { window.AMapLoader = api; scripts[0].onload(); },
     timerCount: () => timers.size, expire: delay => { for (const [id, timer] of [...timers]) if (timer.delay === delay) { clear(id); timer.fn(); } },
     destroy: () => window.birdtieAMapDestroy(handle)};
@@ -329,4 +331,32 @@ test('category glyph label placement and auxiliary hierarchy consume one plan an
     assert.equal(text.children[1].textContent,'3条动态');
     assert.equal(f.frames.at(-1).scalePixels,48);assert.equal(f.frames.at(-1).scalePoints.length,2);
   }finally{f.destroy();}
+});
+
+test('actual AMap SDK receives segmented bends with arrows, no fallback or second coordinate conversion, and stable native map', async()=>{
+ const f=fixture();
+ const markers=[{...item('moment:a'),sourceVersion:'source-a'},{...item('moment:b'),sourceVersion:'source-b'}];
+ const route=(id,points)=>({id,fingerprint:`real-road:${id}`,fromId:'moment:a',toId:'moment:b',fromSourceVersion:'source-a',toSourceVersion:'source-b',expiresAt:f.now()+30000,coordinateSystem:'gcj02',selected:false,points});
+ const routes=[route('segment:0',[[121.406,31.203],[121.407,31.2035],[121.408,31.204]]),route('segment:1',[[121.409,31.205],[121.410,31.206]])];
+ try{
+  f.update(1,markers,1);await f.flush();f.layout();assert.equal(f.polylines.length,0,'Endpoints alone cannot draw');
+  const conversions=f.conversions.length;f.update(2,markers,1,routes);await f.flush();f.layout();
+  assert.equal(f.maps.length,1);assert.equal(f.polylines.length,2);assert.equal(f.conversions.length,conversions);
+  assert.deepEqual(JSON.parse(JSON.stringify(f.polylines.map(x=>x.options.path))),routes.map(x=>x.points));
+  for(const line of f.polylines){assert.equal(line.map,f.maps[0]);assert.equal(line.options.strokeWeight,3);assert.equal(line.options.strokeColor,'#2c6b58');assert.equal(line.options.strokeStyle,'dashed');assert.equal(line.options.showDir,true);}
+  f.update(3,markers,1,routes);await f.flush();assert.equal(f.polylines.length,2,'same authorized geometry reuses SDK objects');
+  f.update(4,markers,1,[]);assert.ok(f.polylines.every(x=>x.map===null));assert.equal(f.buttons().length,2);
+ }finally{f.destroy();}
+});
+test('route TTL, withdrawn endpoint and identity ABA retire real SDK polylines without affecting live pins',async()=>{
+ const f=fixture();const markers=[{...item('moment:a'),sourceVersion:'a'},{...item('moment:b'),sourceVersion:'b'}];
+ const route=()=>[{id:'edge:0',fingerprint:'route',fromId:'moment:a',toId:'moment:b',fromSourceVersion:'a',toSourceVersion:'b',expiresAt:f.now()+30000,coordinateSystem:'gcj02',selected:true,points:[[121.4,31.2],[121.401,31.201]]}];
+ try{
+  f.update(1,markers,1,route());await f.flush();f.layout();assert.equal(f.polylines[0].map,f.maps[0]);
+  f.advance(30001);assert.equal(f.polylines[0].map,null);assert.equal(f.buttons().length,2);
+  f.update(2,markers,1,route());await f.flush();assert.equal(f.polylines[1].map,f.maps[0]);
+  f.update(3,[markers[0]],1,route());assert.equal(f.polylines[1].map,null);
+  f.update(4,markers,2,[]);await f.flush();f.layout();f.update(3,markers,1,route());await f.flush();
+  assert.equal(f.polylines.filter(x=>x.map).length,0,'late old scope cannot restore a retired route');assert.equal(f.maps.length,1);
+ }finally{f.destroy();}assert.equal(f.timerCount(),0);
 });

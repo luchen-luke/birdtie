@@ -128,7 +128,6 @@ class _NowMapContentPanelState extends State<NowMapContentPanel>
   OwnedMapMomentDetail? _lastCommentDetail;
   MomentComment? _lastCommentReply;
   int _targetNotice = 0;
-  bool _pickScheduled = false;
   late final _images = _MapReaderImages(() => c, () => _current);
   double _restoreOffset = 0;
   bool _expanded = false,
@@ -177,33 +176,26 @@ class _NowMapContentPanelState extends State<NowMapContentPanel>
     final notice = ++_targetNotice;
     final selected = _current ? _selectedDetail : null;
     final publicSelected = selected != null && _publicCommentSource(selected);
-    final explicitReadOnly =
-        selected != null &&
-        !publicSelected &&
-        selected.id != _lastCommentDetail?.id;
-    final explicitList =
-        _current && !_contentMode && (_placeID != null || _hasRead) ||
-        explicitReadOnly;
-    if (publicSelected) {
+    final explicitList = _current && !_contentMode &&
+        (_placeID != null || _hasRead);
+    final retiredPublicTarget = selected != null && !publicSelected &&
+        _lastCommentDetail?.id == selected.id &&
+        _lastCommentDetail?.visibility == 'public' &&
+        _lastCommentDetail?.status == 'published';
+    if (selected != null && !retiredPublicTarget) {
       _lastCommentDetail = selected;
       _lastCommentReply = _commentReply;
     } else if (explicitList) {
       _lastCommentDetail = null;
       _lastCommentReply = null;
     }
-    // The same public target becoming unavailable keeps its original draft
-    // identity. Reading a different private Moment is an explicit new target,
-    // so it must not inherit the previous Moment's public comment mode.
-    final detail = explicitList
-        ? null
-        : publicSelected
-        ? selected
-        : _lastCommentDetail;
-    final reply = explicitList
-        ? null
-        : selected == null
-        ? _lastCommentReply
-        : _commentReply;
+    // A readable target remains explicit even when it cannot accept comments.
+    // Retirement retains that target's draft; only entering a list clears it.
+    final detail = explicitList ? null
+        : retiredPublicTarget ? _lastCommentDetail
+        : selected ?? _lastCommentDetail;
+    final reply = explicitList ? null
+        : selected == null || retiredPublicTarget ? _lastCommentReply : _commentReply;
     final interaction = publicSelected ? _interaction : null;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || notice != _targetNotice) return;
@@ -327,107 +319,68 @@ class _NowMapContentPanelState extends State<NowMapContentPanel>
     _rememberPosition();
   }
 
-  void _pickVisibleMoment() {
-    if (_pickScheduled ||
-        !_expanded ||
-        !_contentMode ||
-        !_current ||
-        !_scroll.hasClients ||
-        !_scroll.position.isScrollingNotifier.value)
-      return;
-    _pickScheduled = true;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _pickScheduled = false;
-      if (!_current || !_contentMode) return;
-      final box = context.findRenderObject();
-      if (box is! RenderBox || !box.hasSize) return;
-      final origin = box.localToGlobal(Offset.zero);
-      OwnedMapMomentDetail? best;
-      var visible = 0.0;
-      for (final detail in _items) {
-        final tile = _entryKeys[detail.id]?.currentContext?.findRenderObject();
-        if (tile is! RenderBox || !tile.hasSize || !c.detailCurrent(detail))
-          continue;
-        final top = tile.localToGlobal(Offset.zero).dy - origin.dy;
-        final extent =
-            math.min(top + tile.size.height, box.size.height) -
-            math.max(52.0, top);
-        if (extent > visible) {
-          visible = extent;
-          best = detail;
-        }
-      }
-      if (best != null && best.id != _selectedMomentID) _selectMoment(best);
-    });
-  }
-
   Widget _commentsSection() {
     final detail = _selectedDetail;
-    if (!_expanded ||
-        !_current ||
-        detail == null ||
-        widget.interactionClient == null)
+    if (!_expanded || !_current || detail == null)
       return const SizedBox.shrink();
     final interaction = _interaction;
-    final changed =
-        _blockedInteractionBinding?.startsWith(
-              '${detail.id}:${detail.revision}:${detail.sourceVersion}:',
-            ) ==
-            true ||
-        interaction?.page != null &&
-            interaction!.page!.revision != detail.revision;
-    final position = _thread?.entries
-        .where((e) => e.detail?.id == detail.id)
-        .firstOrNull
-        ?.position;
-    return Column(
+    final changed = _blockedInteractionBinding?.startsWith(
+      '${detail.id}:${detail.revision}:${detail.sourceVersion}:',
+    ) == true;
+    if (changed) return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          position == null ? '当前动态的评论' : '第${position + 1}段的评论',
-          key: ValueKey('reading-comments:${detail.id}'),
-          style: Theme.of(context).textTheme.titleSmall,
+        const Text('动态版本已变化，请重新读取正文后再评论'),
+        TextButton(
+          onPressed: _loading ? null : () {
+            _blockedInteractionBinding = null;
+            unawaited(_read());
+          },
+          child: const Text('重新读取动态'),
         ),
-        if (changed) ...[
-          const Text('动态版本已变化，请重新读取正文后再评论'),
-          TextButton(
-            onPressed: _loading
-                ? null
-                : () {
-                    _blockedInteractionBinding = null;
-                    unawaited(_read());
-                  },
-            child: const Text('重新读取动态'),
-          ),
-        ] else if (interaction == null)
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 12),
-            child: Text('这条动态暂不支持公开评论'),
-          )
-        else
-          MomentInteractionPanel(
-            key: ObjectKey(interaction),
-            controller: interaction,
-            momentID: detail.id,
-            authorizationHeader: c.authorizationHeader,
-            ownerID: c.ownerID,
-            apiBaseUrl: c.apiBaseUrl(),
-            client: widget.interactionClient!,
-            identityChanges: c.identityChanges,
-            current: interaction.current,
-            showComposer: false,
-            onReply: (reply) {
-              if (!interaction.replyCurrent(reply)) return;
-              widget.onCommentIntent?.call();
-              _selectMoment(detail, reply: reply);
-            },
-            onComment: () {
-              if (!interaction.canComment) return;
-              widget.onCommentIntent?.call();
-              _selectMoment(detail);
-            },
-          ),
       ],
+    );
+    // Read eligibility belongs to the interaction response, independently of
+    // canComment. Missing clients/unsupported identities are not author choices.
+    if (interaction == null || widget.interactionClient == null)
+      return const SizedBox.shrink();
+    return AnimatedBuilder(
+      animation: interaction,
+      builder: (context, _) {
+        if (!interaction.current()) return const SizedBox.shrink();
+        if (interaction.page == null && interaction.error == null)
+          return interaction.loading
+              ? const LinearProgressIndicator(minHeight: 2)
+              : const SizedBox.shrink();
+        if (interaction.page != null &&
+            interaction.comments.isEmpty &&
+            interaction.page!.nextCursor == null &&
+            interaction.error == null &&
+            interaction.operations.pending == null)
+          return const SizedBox.shrink();
+        return MomentInteractionPanel(
+          key: ObjectKey(interaction),
+          controller: interaction,
+          momentID: detail.id,
+          authorizationHeader: c.authorizationHeader,
+          ownerID: c.ownerID,
+          apiBaseUrl: c.apiBaseUrl(),
+          client: widget.interactionClient!,
+          identityChanges: c.identityChanges,
+          current: interaction.current,
+          showComposer: false,
+          onReply: (reply) {
+            if (!interaction.replyCurrent(reply)) return;
+            widget.onCommentIntent?.call();
+            _selectMoment(detail, reply: reply);
+          },
+          onComment: () {
+            if (!interaction.canComment) return;
+            widget.onCommentIntent?.call();
+            _selectMoment(detail);
+          },
+        );
+      },
     );
   }
 
@@ -833,6 +786,7 @@ class _NowMapContentPanelState extends State<NowMapContentPanel>
 
   @override
   void dispose() {
+    _foreground = false;
     _retire();
     _changes?.removeListener(_sourceChanged);
     WidgetsBinding.instance.removeObserver(this);
@@ -841,7 +795,6 @@ class _NowMapContentPanelState extends State<NowMapContentPanel>
   }
 
   void _rememberPosition() {
-    _pickVisibleMoment();
     final position = widget.readingPosition;
     if (position == null) return;
     if (_backStack.isNotEmpty) {
@@ -1059,30 +1012,20 @@ class _NowMapContentPanelState extends State<NowMapContentPanel>
                           icon: const Icon(Icons.arrow_back),
                           onPressed: _returnToContent,
                         )
-                      else
-                        Icon(
-                          pin?.isMomentAnchor == true
-                              ? Icons.photo_outlined
-                              : Icons.place_outlined,
-                          size: 20,
-                          semanticLabel: pin?.isMomentAnchor == true
-                              ? '动态'
-                              : '地点',
-                        ),
-                      const SizedBox(width: 8),
+                      else if (pin != null && !pin.isMomentAnchor)
+                        const Icon(Icons.place_outlined, size: 20),
+                      if (pin != null && !pin.isMomentAnchor)
+                        const SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           thread != null
-                              ? '串文 · ${thread.entries.length}段'
-                              : _collectionItems != null
-                              ? '动态'
-                              : _placeID != null
+                              ? '${thread.entries.length}段'
+                              : _placeID != null && _collectionItems == null
                               ? '这里的动态 · ${_placeName ?? '地点'}'
-                              : pin == null
-                              ? '动态'
-                              : pin.isMomentAnchor
-                              ? (pin.threadID.isEmpty ? '动态' : '串文中的动态')
-                              : pin.name,
+                              : pin != null && !pin.isMomentAnchor &&
+                                    _collectionItems == null
+                              ? pin.name
+                              : '',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: Theme.of(context).textTheme.titleMedium,
@@ -1199,9 +1142,25 @@ class _NowMapContentPanelState extends State<NowMapContentPanel>
                               padding: const EdgeInsets.all(16),
                               child: Text('第${entry!.position + 1}段暂不可查看'),
                             );
-                          if (_placeID != null && _collectionItems == null) {
+                          if (_expanded && !_contentMode && thread == null) {
                             return ListTile(
-                              key: _entryKey(item),
+                              key: ValueKey('read-thread:${item.id}'),
+                              leading: item.media.isEmpty || item.media.first.isVideo ? null : SizedBox(
+                                width: 56,
+                                height: 56,
+                                child: _LeasePicture(
+                                  identity: item.media.first.identity,
+                                  width: item.media.first.width,
+                                  height: item.media.first.height,
+                                  validUntil: item.validUntil,
+                                  current: () => _current && c.detailCurrent(item),
+                                  read: () => _images.read(item, item.media.first,
+                                      () => _current && c.detailCurrent(item)),
+                                  contentUntil: _images.deadline,
+                                  contentTrace: _images.trace,
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
                               title: Text(
                                 item.title.trim().isNotEmpty
                                     ? item.title
@@ -1279,14 +1238,6 @@ class _NowMapContentPanelState extends State<NowMapContentPanel>
                                     onExpand: _expand,
                                     onOpenPlace: (location) =>
                                         _openPlace(item, location),
-                                    onReadThread:
-                                        _expanded &&
-                                            thread == null &&
-                                            _collectionItems == null
-                                        ? () => unawaited(
-                                            _readCurrentThread(selected: item),
-                                          )
-                                        : null,
                                     onEdit: () => widget.onEdit(
                                       item.id,
                                       () =>
@@ -1426,7 +1377,7 @@ class _MapReadingList extends StatelessWidget {
 
 String _momentTime(OwnedMapMomentDetail item) {
   final time = item.displayPublishedAt?.toLocal();
-  if (time == null) return '时间未提供';
+  if (time == null) return '';
   String two(int n) => n.toString().padLeft(2, '0');
   return '${time.year}.${two(time.month)}.${two(time.day)}  ${two(time.hour)}:${two(time.minute)}';
 }
@@ -1446,7 +1397,6 @@ class _MapMomentTile extends StatelessWidget {
     required this.onOpenMedia,
     required this.onExpand,
     required this.onOpenPlace,
-    this.onReadThread,
   });
   final OwnedMapController controller;
   final _MapReaderImages images;
@@ -1455,7 +1405,6 @@ class _MapMomentTile extends StatelessWidget {
   final bool Function() current;
   final bool compact;
   final VoidCallback onEdit, onExpand;
-  final VoidCallback? onReadThread;
   final int page;
   final ValueChanged<int> onPageChanged, onOpenMedia;
   final ValueChanged<OwnedMapLocation> onOpenPlace;
@@ -1490,18 +1439,20 @@ class _MapMomentTile extends StatelessWidget {
                   onOpen: onOpenMedia,
                 ),
               ),
-            const SizedBox(height: 4),
-            Text(
-              '${name == null || name.isEmpty ? '作者未提供' : name} · ${_momentTime(detail)}',
-              key: ValueKey('moment-author:${detail.id}'),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: 12,
-                height: 1.2,
-                color: colors.onSurfaceVariant,
+            if ((name != null && name.isNotEmpty) ||
+                detail.displayPublishedAt != null) ...[
+              const SizedBox(height: 4),
+              Text(
+                [if (name != null && name.isNotEmpty) name,
+                  if (detail.displayPublishedAt != null) _momentTime(detail),
+                ].join(' · '),
+                key: ValueKey('moment-author:${detail.id}'),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(fontSize: 12, height: 1.2,
+                    color: colors.onSurfaceVariant),
               ),
-            ),
+            ],
             if (body.isNotEmpty || title.isNotEmpty) ...[
               const SizedBox(height: 4),
               Text(
@@ -1525,119 +1476,61 @@ class _MapMomentTile extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 4, 8, 12),
-            child: Row(
-              children: [
-                Semantics(
-                  label: '作者头像',
-                  image: true,
-                  child: ClipOval(
-                    child: SizedBox(
-                      width: 36,
-                      height: 36,
-                      child: avatar == null
-                          ? ColoredBox(
-                              color: colors.surfaceContainerHighest,
-                              child: name != null && name.isNotEmpty
-                                  ? Center(
-                                      child: Text(
-                                        name.characters.first,
-                                        style: TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w600,
-                                          color: colors.onSurfaceVariant,
-                                        ),
-                                      ),
-                                    )
-                                  : Icon(
-                                      Icons.person_outline,
-                                      size: 20,
-                                      color: colors.onSurfaceVariant,
-                                    ),
-                            )
-                          : _LeasePicture(
-                              key: ValueKey(
-                                'author:${avatar.accountID}:${avatar.version}:${avatar.digest}',
-                              ),
-                              identity:
-                                  '${avatar.accountID}:${avatar.version}:${avatar.digest}',
-                              width: 128,
-                              height: 128,
-                              validUntil: detail.validUntil,
-                              current: current,
-                              placeholder: const Icon(
-                                Icons.person_outline,
-                                size: 20,
-                              ),
-                              read: () =>
-                                  controller.authorAvatarContent(detail),
-                            ),
+          if (name != null && name.isNotEmpty || avatar != null ||
+              detail.displayPublishedAt != null ||
+              detail.visibility == 'private' ||
+              detail.visibilitySource == 'SELF_PRIVATE' && detail.canEdit)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 4, 8, 12),
+              child: Row(
+                children: [
+                  if (avatar != null) ...[
+                    Semantics(
+                      label: '作者头像', image: true,
+                      child: ClipOval(child: SizedBox(width: 32, height: 32,
+                        child: _LeasePicture(
+                          key: ValueKey('author:${avatar.accountID}:${avatar.version}:${avatar.digest}'),
+                          identity: '${avatar.accountID}:${avatar.version}:${avatar.digest}',
+                          width: 128, height: 128,
+                          validUntil: detail.validUntil, current: current,
+                          placeholder: const SizedBox.shrink(),
+                          read: () => controller.authorAvatarContent(detail),
+                        ),
+                      )),
                     ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
+                    const SizedBox(width: 10),
+                  ],
+                  Expanded(child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        name == null || name.isEmpty ? '作者未提供' : name,
-                        key: ValueKey('moment-author:${detail.id}'),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 14,
-                          height: 1.3,
-                          fontWeight: FontWeight.w600,
-                          color: colors.onSurface,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Tooltip(
-                        message: detail.publishedAt != null
-                            ? '发布时间'
+                      if (name != null && name.isNotEmpty)
+                        Text(name, key: ValueKey('moment-author:${detail.id}'),
+                          style: TextStyle(fontSize: 14, height: 1.3,
+                            fontWeight: FontWeight.w600, color: colors.onSurface)),
+                      if (detail.displayPublishedAt != null)
+                        Tooltip(
+                          message: detail.publishedAt != null ? '发布时间'
                             : detail.createdAtSource == 'CIVU_ORIGINAL'
-                            ? '原创建时间'
-                            : detail.createdAtSource == 'NATIVE'
-                            ? '创建时间'
-                            : '未提供原时间',
-                        child: Text(
-                          _momentTime(detail),
-                          key: ValueKey('moment-time:${detail.id}'),
-                          style: TextStyle(
-                            fontSize: 12,
-                            height: 1.35,
-                            color: colors.onSurfaceVariant,
-                          ),
+                            ? '原创建时间' : '创建时间',
+                          child: Text(_momentTime(detail),
+                            key: ValueKey('moment-time:${detail.id}'),
+                            style: TextStyle(fontSize: 12, height: 1.35,
+                                color: colors.onSurfaceVariant)),
                         ),
-                      ),
                     ],
-                  ),
-                ),
-                if (detail.visibility == 'private')
-                  Tooltip(
-                    message: '仅自己可见',
-                    child: Padding(
+                  )),
+                  if (detail.visibility == 'private')
+                    Tooltip(message: '仅自己可见', child: Padding(
                       padding: const EdgeInsets.all(8),
-                      child: Icon(
-                        Icons.lock_outline,
-                        size: 16,
-                        color: colors.onSurfaceVariant,
-                      ),
-                    ),
-                  ),
-                if (detail.visibilitySource == 'SELF_PRIVATE' && detail.canEdit)
-                  IconButton(
-                    tooltip: '编辑动态',
-                    icon: const Icon(Icons.edit_outlined, size: 20),
-                    onPressed: () {
-                      if (current()) onEdit();
-                    },
-                  ),
-              ],
+                      child: Icon(Icons.lock_outline, size: 16,
+                          color: colors.onSurfaceVariant))),
+                  if (detail.visibilitySource == 'SELF_PRIVATE' && detail.canEdit)
+                    IconButton(tooltip: '编辑动态',
+                      icon: const Icon(Icons.edit_outlined, size: 20),
+                      onPressed: () { if (current()) onEdit(); }),
+                ],
+              ),
             ),
-          ),
           if (title.isNotEmpty && title != body)
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
@@ -1661,14 +1554,16 @@ class _MapMomentTile extends StatelessWidget {
                 maxLines: compact ? 2 : null,
                 overflow: compact ? TextOverflow.ellipsis : null,
                 style: TextStyle(
-                  fontSize: 16,
-                  height: 1.55,
+                  fontSize: 15,
+                  height: 1.5,
                   color: colors.onSurface,
                 ),
               ),
             ),
           if (detail.media.isNotEmpty)
-            _MapMediaPager(
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: _MapMediaPager(
               controller: controller,
               images: images,
               detail: detail,
@@ -1678,6 +1573,7 @@ class _MapMomentTile extends StatelessWidget {
               initialPage: page,
               onPageChanged: onPageChanged,
               onOpen: onOpenMedia,
+              ),
             ),
           if (!compact && detail.locations.isNotEmpty)
             Padding(
@@ -1687,31 +1583,22 @@ class _MapMomentTile extends StatelessWidget {
                 runSpacing: 4,
                 children: [
                   for (final location in detail.locations)
-                    ActionChip(
+                    TextButton.icon(
                       key: ValueKey(
                         'moment-place:${detail.id}:${location.placeID}',
                       ),
-                      materialTapTargetSize: MaterialTapTargetSize.padded,
-                      avatar: const Icon(Icons.place_outlined, size: 18),
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                        minimumSize: const Size(48, 48),
+                        alignment: Alignment.centerLeft,
+                      ),
+                      icon: const Icon(Icons.place_outlined, size: 16),
                       label: Text(location.name),
-                      tooltip: '查看${location.name}的动态',
                       onPressed: () {
                         if (current()) onOpenPlace(location);
                       },
                     ),
                 ],
-              ),
-            ),
-          if (onReadThread != null)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-              child: TextButton.icon(
-                key: ValueKey('read-thread:${detail.id}'),
-                onPressed: () {
-                  if (current()) onReadThread!();
-                },
-                icon: const Icon(Icons.view_stream_outlined, size: 18),
-                label: const Text('连续阅读'),
               ),
             ),
         ],
@@ -1940,12 +1827,16 @@ class _MapMediaPagerState extends State<_MapMediaPager> {
   @override
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, box) {
-      // One reading frame for the whole gallery: a portrait/landscape/video
-      // transition changes only the fitted content, never the surrounding list.
+      final media = widget.detail.media[_index];
       final height = widget.full
           ? box.maxHeight
-          : math.min(box.maxWidth * .75, widget.compact ? 144.0 : 360.0);
-      return SizedBox(
+          : widget.compact
+          ? math.min(box.maxWidth * .75, 144.0)
+          : box.maxWidth * media.height / media.width;
+      return Semantics(
+        onIncrease: _index + 1 < widget.detail.media.length ? () => _move(1) : null,
+        onDecrease: _index > 0 ? () => _move(-1) : null,
+        child: SizedBox(
         key: ValueKey('moment-media-frame:${widget.detail.id}:${widget.full}'),
         height: height,
         child: Stack(
@@ -2031,7 +1922,7 @@ class _MapMediaPagerState extends State<_MapMediaPager> {
                       vertical: 4,
                     ),
                     child: Text(
-                      '媒体 ${_index + 1} / ${widget.detail.media.length}',
+                      '${_index + 1}/${widget.detail.media.length}',
                       style: const TextStyle(fontSize: 12, color: Colors.white),
                     ),
                   ),
@@ -2039,12 +1930,13 @@ class _MapMediaPagerState extends State<_MapMediaPager> {
               ),
             // Touch galleries swipe directly. Desktop/full-view navigation
             // retains buttons without covering the compact media preview.
-            if (widget.detail.media.length > 1 && !widget.compact) ...[
+            if (widget.detail.media.length > 1 && widget.full) ...[
               if (_index > 0)
                 Positioned(
                   left: 4,
                   top: height / 2 - 24,
-                  child: IconButton.filledTonal(
+                  child: IconButton(
+                    color: Colors.white,
                     tooltip: '上一张',
                     onPressed: () => _move(-1),
                     icon: const Icon(Icons.chevron_left),
@@ -2054,24 +1946,16 @@ class _MapMediaPagerState extends State<_MapMediaPager> {
                 Positioned(
                   right: 4,
                   top: height / 2 - 24,
-                  child: IconButton.filledTonal(
+                  child: IconButton(
+                    color: Colors.white,
                     tooltip: '下一张',
                     onPressed: () => _move(1),
                     icon: const Icon(Icons.chevron_right),
                   ),
                 ),
             ],
-            if (!widget.full)
-              Positioned(
-                right: 4,
-                bottom: 4,
-                child: IconButton.filledTonal(
-                  tooltip: '查看完整媒体',
-                  onPressed: () => widget.onOpen?.call(_index),
-                  icon: const Icon(Icons.open_in_full, size: 20),
-                ),
-              ),
           ],
+        ),
         ),
       );
     },
@@ -2090,6 +1974,7 @@ class _LeasePicture extends StatefulWidget {
     required this.current,
     required this.read,
     this.decodeLimit = 1280,
+    this.fit = BoxFit.contain,
     this.placeholder,
     this.contentUntil,
     this.contentTrace,
@@ -2098,6 +1983,7 @@ class _LeasePicture extends StatefulWidget {
   final String identity;
   final int width, height;
   final int decodeLimit;
+  final BoxFit fit;
   final Widget? placeholder;
   final DateTime validUntil;
   final bool Function() current;
@@ -2226,7 +2112,7 @@ class _LeasePictureState extends State<_LeasePicture> {
       : _image != null
       ? Image(
           image: _image!,
-          fit: BoxFit.contain,
+          fit: widget.fit,
           frameBuilder: (_, child, frame, synchronous) {
             if (frame != null && _current)
               _trace?.mark(MapMediaReadStage.imageVisible);
@@ -2622,6 +2508,7 @@ class _NowMapContentGroupPanelState extends State<NowMapContentGroupPanel> {
   OwnedMapMomentDetail? _lastCommentDetail;
   MomentComment? _lastCommentReply;
   double _restoreOffset = 0;
+  bool _initialChoice = true, _singleChoice = false;
   bool get _current =>
       mounted &&
       _permissionEpoch == widget.controller.permissionEpoch &&
@@ -2637,6 +2524,7 @@ class _NowMapContentGroupPanelState extends State<NowMapContentGroupPanel> {
     if (widget.cluster != null) {
       unawaited(_load());
     } else {
+      _chooseOnlyContent();
       _armLease();
     }
   }
@@ -2723,6 +2611,28 @@ class _NowMapContentGroupPanelState extends State<NowMapContentGroupPanel> {
     });
   }
 
+  List<OwnedMapPin> _contentChoices() {
+    final choices = <String, OwnedMapPin>{};
+    if (_current) {
+      for (final pin in _pins.where(widget.controller.sourceCurrent)) {
+        final key = pin.isMomentAnchor && pin.momentID.isNotEmpty
+            ? 'moment:${pin.momentID}' : pin.mapID;
+        choices.putIfAbsent(key, () => pin);
+      }
+    }
+    return choices.values.toList(growable: false);
+  }
+
+  void _chooseOnlyContent() {
+    if (!_initialChoice || !_current) return;
+    _initialChoice = false;
+    if (_cursor != null || _windowStart != null || _error != null) return;
+    final choices = _contentChoices();
+    if (choices.length != 1 || !choices.single.isMomentAnchor) return;
+    _selected = choices.single;
+    _singleChoice = true;
+  }
+
   void _restoreValidSelection() {
     final target = _restoreSelection;
     if (target != null) {
@@ -2802,6 +2712,7 @@ class _NowMapContentGroupPanelState extends State<NowMapContentGroupPanel> {
       _cursor = cursor;
       _desiredCount = math.min(320, math.max(_desiredCount, next.length));
       _restoreValidSelection();
+      _chooseOnlyContent();
       _armLease();
     } catch (_) {
       if (_current && serial == _request) _error = '内容列表暂不可读，请重试。';
@@ -2825,11 +2736,14 @@ class _NowMapContentGroupPanelState extends State<NowMapContentGroupPanel> {
     if (_current &&
         selected != null &&
         widget.controller.sourceCurrent(selected)) {
-      void back() => setState(() {
+      void back() {
+        if (_singleChoice) { widget.onClose(); return; }
+        setState(() {
         _selected = null;
         _restoreSelection = null;
         _notifyGroupTarget(explicitList: true);
-      });
+        });
+      }
       if (selected.isCluster) {
         return NowMapContentGroupPanel(
           controller: widget.controller,
@@ -2852,7 +2766,7 @@ class _NowMapContentGroupPanelState extends State<NowMapContentGroupPanel> {
         onClose: back,
         onExpand: () {},
         initialExpanded: true,
-        closeLabel: '返回内容列表',
+        closeLabel: _singleChoice ? '返回地图' : '返回内容列表',
         onEdit: widget.onEdit,
         interactionClient: widget.interactionClient,
         onCommentTarget: _forwardCommentTarget,
@@ -2863,16 +2777,7 @@ class _NowMapContentGroupPanelState extends State<NowMapContentGroupPanel> {
     // selects original content, so list that Moment once, retaining one exact
     // current projection as its read source. Never merge distinct Moments by
     // text, thread, location, or author, and never borrow an expired grant.
-    final choices = <String, OwnedMapPin>{};
-    if (_current) {
-      for (final pin in _pins.where(widget.controller.sourceCurrent)) {
-        final key = pin.isMomentAnchor && pin.momentID.isNotEmpty
-            ? 'moment:${pin.momentID}'
-            : pin.mapID;
-        choices.putIfAbsent(key, () => pin);
-      }
-    }
-    final visible = choices.values.toList(growable: false);
+    final visible = _contentChoices();
     final list = Material(
       color: Theme.of(context).colorScheme.surface,
       child: Column(
@@ -2882,7 +2787,7 @@ class _NowMapContentGroupPanelState extends State<NowMapContentGroupPanel> {
               !_current
                   ? '地图内容'
                   : widget.cluster == null
-                  ? '选择查看'
+                  ? '此处内容'
                   : '${widget.cluster!.momentCount}条动态',
             ),
             subtitle: !_current || widget.cluster == null
@@ -2920,31 +2825,53 @@ class _NowMapContentGroupPanelState extends State<NowMapContentGroupPanel> {
                       final pin = visible[index];
                       return ListTile(
                         key: ValueKey(pin.mapID),
-                        leading: Icon(
-                          pin.isCluster
-                              ? Icons.layers_outlined
-                              : pin.isMomentAnchor
-                              ? Icons.photo_camera_outlined
-                              : Icons.place_outlined,
-                        ),
-                        title: Text(
-                          pin.name.isEmpty ? '动态' : pin.name,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        subtitle: Text(
-                          pin.isCluster
-                              ? '${pin.anchorCount}个内容位置'
-                              : pin.isMomentAnchor
-                              ? [
-                                  pin.threadID.isEmpty
-                                      ? '动态'
-                                      : '串文 · 第${pin.threadPosition + 1}段',
-                                  if (pin.contentTime != null)
-                                    pin.contentTimeLabel,
-                                ].join(' · ')
-                              : '地点 · ${pin.momentCount}条动态',
-                        ),
+                        leading: pin.cover != null && pin.validUntil != null
+                            ? ClipRRect(
+                                borderRadius: BorderRadius.circular(6),
+                                child: SizedBox(width: 56, height: 56,
+                                  child: _LeasePicture(
+                                    identity: '${pin.mapID}:${pin.cover!.sha256}',
+                                    width: pin.cover!.width,
+                                    height: pin.cover!.height,
+                                    validUntil: pin.validUntil!,
+                                    current: () => _current &&
+                                        widget.controller.sourceCurrent(pin),
+                                    read: () => widget.controller.coverContent(
+                                      pin.cover!, current: () => _current &&
+                                          widget.controller.sourceCurrent(pin)),
+                                    fit: BoxFit.cover,
+                                    placeholder: const SizedBox.shrink(),
+                                  ),
+                                ),
+                              )
+                            : pin.isMomentAnchor ? null
+                            : Icon(pin.isCluster ? Icons.layers_outlined
+                                : Icons.place_outlined, size: 20),
+                        title: pin.name.trim().isNotEmpty
+                            ? Text(pin.name, maxLines: 2,
+                                overflow: TextOverflow.ellipsis)
+                            : pin.cover != null ? null
+                            : const Text('查看内容'),
+                        minVerticalPadding: 12,
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                        horizontalTitleGap: 12,
+                        subtitle:
+                            pin.isMomentAnchor &&
+                                pin.threadID.isEmpty &&
+                                pin.contentTime == null
+                            ? null
+                            : Text(
+                                pin.isCluster
+                                    ? '${pin.anchorCount}个内容位置'
+                                    : pin.isMomentAnchor
+                                    ? [
+                                        if (pin.threadID.isNotEmpty)
+                                          '第${pin.threadPosition + 1}段',
+                                        if (pin.contentTime != null)
+                                          pin.contentTimeLabel,
+                                      ].join(' · ')
+                                    : '地点 · ${pin.momentCount}条动态',
+                              ),
                         onTap: () => setState(() {
                           _rememberPosition();
                           _selected = pin;

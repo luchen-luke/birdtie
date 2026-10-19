@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'package:birdtie_client/src/workspace/map_content_route_geometry.dart';
+import 'map_content_route_geometry_test.dart' show routeQuery,routeGeometry;
 import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
@@ -39,6 +41,36 @@ MapEntity row(
 );
 
 void main() {
+  testWidgets('actual Flutter map renders only verified segmented roads and removes expired authority without rebuilding map', (t) async {
+    final now=DateTime.now().toUtc(),q=routeQuery(DateTime.now().toUtc());
+    var live=true;
+    MapEntity point(bool first,MapContentRouteGeometry? geometry){
+      final e=MapEntity(id:'owned-map:${first?q.from.markerID:q.to.markerID}',kind:MapEntityKind.moment,title:'合成原段',subtitle:'',
+        latitude:first?57.1:57.2,longitude:first?-2.1:-2.05,sourceVersion:first?q.from.sourceVersion:q.to.sourceVersion,
+        threadID:q.threadID,threadPosition:first?0:1,nextContentIDs:first?['owned-map:${q.to.markerID}']:const []);
+      return e.withMediaPixels(null,contentRoute:geometry,readGrant:MapEntityReadGrant(source:e,validUntil:q.validUntil,current:()=>live));
+    }
+    var source=[point(true,null),point(false,null)];
+    final changes=ChangeNotifier(),camera=MapController();
+    Future<void> mount()=>t.pumpWidget(MaterialApp(home:Scaffold(body:FlutterMap(key:const ValueKey('route-map'),mapController:camera,
+      options:const MapOptions(initialCenter:LatLng(57.17,-2.08),initialZoom:11),children:[WebMapDisplayLayer(places:const [],entities:source,selectedID:null,
+        contentRect:const Rect.fromLTWH(0,0,800,600),revision:1,onSelected:(_){},readerChanges:changes,currentReaderEntities:()=>source,currentReaderScope:()=>1)]))));
+    try{
+      await mount();await t.pumpAndSettle();final element=find.byType(FlutterMap).evaluate().single;
+      expect(t.widget<PolylineLayer>(find.byType(PolylineLayer)).polylines,isEmpty);
+      source=[point(true,routeGeometry(q,now).bind(until:q.validUntil,current:()=>live)),source.last];
+      await mount();await t.pumpAndSettle();
+      final lines=t.widget<PolylineLayer>(find.byType(PolylineLayer)).polylines;
+      expect(lines.map((p)=>p.points.length),[3,2]);expect(lines.first.points[1],const LatLng(57.15,-2.08));
+      expect(lines.every((l)=>l.strokeWidth==3),isTrue);expect(find.byIcon(Icons.navigation),findsNWidgets(2));
+      expect(find.byType(FlutterMap).evaluate().single,same(element));
+      live=false;changes.notifyListeners();await t.pumpAndSettle();
+      expect(t.widget<PolylineLayer>(find.byType(PolylineLayer)).polylines,isEmpty);
+      expect(find.byIcon(Icons.navigation),findsNothing);
+      expect(find.byType(FlutterMap).evaluate().single,same(element));
+    }finally{await t.pumpWidget(const SizedBox());changes.dispose();camera.dispose();}
+  });
+
   testWidgets('map semantics keep full labels and distinct 48dp actions', (
     t,
   ) async {
@@ -216,7 +248,7 @@ void main() {
   );
 
   testWidgets(
-    'actual Web content overlap and server cluster preserve one map and dispatch to Now',
+    'explicit Web content ID opens directly and real source cluster preserves one map',
     (t) async {
       final changes = ChangeNotifier(), camera = MapController();
       var source = [row('owned-map:moment:a'), row('owned-map:moment:b')];
@@ -288,14 +320,17 @@ void main() {
         find.byKey(const ValueKey('individual-map-target:owned-map:moment:b')),
       );
       await t.pumpAndSettle();
-      expect(
-        overlap?.map((e) => e.id).toSet(),
-        source.map((e) => e.id).toSet(),
-      );
+      expect(overlap,isNull,reason:'Known marker ID is not replaced by nearby or same-coordinate halos');
+      expect(selected?.id,source.last.id);
+      final knownLayer=t.widget<MapEntityLayer>(find.byType(MapEntityLayer));
+      knownLayer.onSelected(source.first);await t.pumpAndSettle();
+      expect(selected?.id,source.first.id);
+      final staleTarget=source.last,staleAction=knownLayer.onSelected;
       expect(find.byKey(const Key('current-map-point-choices')), findsNothing);
       source = [row('owned-map:cluster:one', kind: MapEntityKind.cluster)];
       await mount();
       await t.pumpAndSettle();
+      selected=null;staleAction(staleTarget);await t.pumpAndSettle();expect(selected,isNull);
       final layer = t.widget<MapEntityLayer>(find.byType(MapEntityLayer));
       layer.onSelected(source.single);
       await t.pumpAndSettle();
@@ -590,7 +625,7 @@ void main() {
   );
 
   test(
-    'actual JS vector style hides only provider POI and keeps roads and map instance',
+    'actual JS vector style preserves POI and weights only approved secondary labels on same map',
     () async {
       final process = await Process.run(
         Platform.environment['BIRDTIE_TEST_NODE'] ?? 'node',
@@ -730,14 +765,14 @@ class _Map extends Fake implements MapboxMap {
 
 const _poiHarness = r'''
 const fs = require('node:fs'), vm = require('node:vm'), assert = require('node:assert/strict');
-const created = [], hidden = [], layers = [
+const created = [], hidden = [], paint = [], layers = [
   {id:'poi-label',type:'symbol'}, {id:'custom',type:'symbol','source-layer':'poi_label'},
   {id:'road-label',type:'symbol'}, {id:'place-label',type:'symbol'},
   {id:'poi-fill',type:'fill'}, {id:'point-annotations',type:'symbol'}];
 class Map {
   constructor(options) { this.options=options; this.listeners={}; created.push(this); }
   on(kind,fn) { this.listeners[kind]=fn; } jumpTo(value) { this.camera=value; }
-  getStyle() { return {layers}; } setLayoutProperty(id,key,value) { hidden.push([id,key,value]); }
+  getStyle() { return {layers}; } setLayoutProperty(id,key,value) { hidden.push([id,key,value]); } setPaintProperty(id,key,value){paint.push([id,key,value]);}
   resize() {} remove() {}
 }
 const element={isConnected:true,clientWidth:430,clientHeight:900,style:{}};
@@ -749,10 +784,11 @@ vm.runInNewContext(fs.readFileSync(process.argv[1],'utf8'),
   {window,document,ResizeObserver,setTimeout,clearTimeout,performance});
 (async()=>{
   await window.birdtieMapboxMount('map',JSON.stringify({accessToken:'pk.synthetic',
-    style:'mapbox://styles/synthetic',camera:{center:[179,50],zoom:12,bearing:0,pitch:0}}),()=>{});
+    style:'mapbox://styles/synthetic',labelWeightPolicy:{version:1,roadFactor:.75,localityFactor:.7,roadIDs:['road-label'],localityIDs:['place-label'],localitySourceLayers:[],protectedTokens:['water']},camera:{center:[179,50],zoom:12,bearing:0,pitch:0}}),()=>{});
   const map=created[0]; map.listeners.load();
-  assert.deepEqual(hidden.map(v=>v[0]),['poi-label','custom']);
-  assert(hidden.every(v=>v[1]==='visibility'&&v[2]==='none'));
+  assert.deepEqual(hidden,[]);
+  assert.deepEqual(paint,[['road-label','text-opacity',.75],['place-label','text-opacity',.7]]);
+  assert.deepEqual(layers.filter(x=>x.id==='poi-label'||x.id==='custom').map(x=>x.layout),[undefined,undefined]);
   window.birdtieMapboxUpdate('map',JSON.stringify({center:[-179,50],zoom:13,bearing:20,pitch:0}));
   assert.equal(created.length,1); assert.equal(map.options.attributionControl,false);
   window.birdtieMapboxDestroy('map'); console.log('PROVIDER_POI_PASS');

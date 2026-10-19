@@ -446,7 +446,7 @@ void main() {
       await t.pump();
       await t.pump(const Duration(milliseconds: 100));
       expect(c.threadReads, [_sibling]);
-      expect(find.text('串文 · 3段'), findsOneWidget);
+      expect(find.text('3段'), findsOneWidget);
       expect(find.text('目标第3段正文').hitTestable(), findsOneWidget);
       expect(find.text('首段正文').hitTestable(), findsNothing);
       await t.drag(find.byType(CustomScrollView), const Offset(0, 350));
@@ -455,7 +455,7 @@ void main() {
       await t.tap(find.byTooltip('返回地点动态'));
       await t.pump();
       await t.pump(const Duration(milliseconds: 100));
-      expect(find.text('串文 · 3段'), findsNothing);
+      expect(find.text('3段'), findsNothing);
       expect(
         find.byKey(const ValueKey('read-thread:$_sibling')),
         findsOneWidget,

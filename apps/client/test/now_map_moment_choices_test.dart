@@ -212,11 +212,23 @@ void main() {
       await t.pumpWidget(panel(c));
       await t.pump();
       expect(find.text(caption), findsNWidgets(2));
-      expect(find.text('串文 · 第1段'), findsOneWidget);
-      expect(find.text('串文 · 第3段'), findsOneWidget);
+      expect(find.text('第1段'), findsOneWidget);
+      expect(find.text('第3段'), findsOneWidget);
       await t.pumpWidget(const SizedBox());
       c.dispose();
       c.changes.dispose();
     },
   );
+  testWidgets('one original Moment after projection dedup opens content without chooser', (t) async {
+    final c = ChoicesController(ValueNotifier(0), [anchor(1, 21), anchor(2, 21)]);
+    await t.pumpWidget(panel(c));
+    await t.pump();
+    await t.pump(const Duration(milliseconds: 100));
+    expect(c.reads, [id(21)]);
+    expect(find.text('正文 ${id(21)}'), findsOneWidget);
+    expect(find.text('此处内容'), findsNothing);
+    expect(find.byTooltip('返回地图'), findsOneWidget);
+    await t.pumpWidget(const SizedBox()); c.dispose(); c.changes.dispose();
+  });
+
 }

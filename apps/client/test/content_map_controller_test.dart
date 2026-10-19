@@ -1,4 +1,8 @@
 import 'dart:async';
+import 'package:birdtie_client/src/city/amap_session_consent.dart';
+import 'package:birdtie_client/src/city/map_privacy_consent.dart';
+import 'package:birdtie_client/src/workspace/map_content_route_geometry.dart';
+import 'map_content_route_geometry_test.dart' show routeJSON;
 import 'package:birdtie_client/src/workspace/map_content_coverage.dart';
 import 'dart:convert';
 import 'dart:typed_data';
@@ -247,6 +251,48 @@ class Fixture extends http.BaseClient {
   }
 }
 
+class RouteFixture extends Fixture {
+  bool holdRoutes=false;
+  int routeAborts=0;
+  final routeBodies=<Map<String,dynamic>>[];
+  final routeWaiters=<Completer<void>>[];
+  RouteFixture(){now=DateTime.now().toUtc();}
+  @override
+  Map<String,Object?> pin(int n,MapBounds b)=>{...super.pin(n,b),
+    'threadPosition':n-1,'nextMarkerIds':n==1?['anchor:${id(1002)}']: <String>[]};
+  @override
+  Map<String,Object?> page(Uri uri){
+    final v=super.page(uri), params={...uri.queryParameters};
+    params.remove('cursor');
+    params['sourceVersion']=source;params['filterScope']='DEFAULT_CONTENT';
+    v['viewportPath']=Uri(path:'/v1/me/map-content',queryParameters:params).toString();
+    final b=MapBounds(west:double.parse(params['west']!),east:double.parse(params['east']!),south:double.parse(params['south']!),north:double.parse(params['north']!));
+    v['pins']=[pin(uri.queryParameters['cursor']==null?1:2,b)];
+    v['nextCursor']=uri.queryParameters['cursor']==null?'actual-original-cursor':null;
+    v['totalContentCount']=2;v['totalAnchorCount']=2;
+    return v;
+  }
+  @override
+  Future<http.StreamedResponse> send(http.BaseRequest request) async{
+    if(request.url.path!='/v1/me/map-content/thread-route')return super.send(request);
+    requests.add(request);
+    final raw=jsonDecode((request as http.Request).body) as Map<String,dynamic>;
+    routeBodies.add(raw);
+    expectSync(raw.keys.toSet(),{'threadId','expectedProvider','from','to'});
+    final q=MapContentRouteQuery(threadID:raw['threadId'],expectedProvider:raw['expectedProvider'],validUntil:now.add(const Duration(seconds:30)),
+      from:MapContentRouteEndpoint(viewportPath:raw['from']['viewportPath'],markerID:raw['from']['markerId'],sourceVersion:raw['from']['sourceVersion']),
+      to:MapContentRouteEndpoint(viewportPath:raw['to']['viewportPath'],markerID:raw['to']['markerId'],sourceVersion:raw['to']['sourceVersion']));
+    if(holdRoutes){
+      final wait=Completer<void>();routeWaiters.add(wait);
+      await Future.any([wait.future,(request as http.AbortableRequest).abortTrigger!.then((_) {routeAborts++;throw http.RequestAbortedException(request.url);})]);
+    }
+    final v=routeJSON(q,now)..['viewerAccountId']=owner..['provider']=q.expectedProvider;
+    final body=utf8.encode(jsonEncode({'data':v}));
+    return http.StreamedResponse(Stream.value(body),200,contentLength:body.length,
+      headers:{'cache-control':'no-store','content-type':'application/json'});
+  }
+}
+
 Future<void> drain(WidgetTester t, bool Function() done) async {
   for (var i = 0; i < 150 && !done(); i++) {
     await t.runAsync(
@@ -258,6 +304,47 @@ Future<void> drain(WidgetTester t, bool Function() done) async {
 }
 
 void main() {
+  testWidgets('road routes use original issuer pages and cursor, not composed coverage, and retire identity', (t) async{
+    final f=RouteFixture(), identity=ValueNotifier(0);
+    final c=OwnedMapController(client:f,apiBaseUrl:()=>base,ownerID:()=>f.owner,
+      authorizationHeader:()=>'Bearer fixture',organizationWorkspaceID:()=>null,
+      identityChanges:identity,refreshAllowed:()=>true,routeProvider:()=>'mapbox',now:()=>f.now);
+    c.updateQuery('',bounds,zoom:17);
+    await drain(t,()=>c.items.length==2 && c.entities.any((e)=>e.contentRoute!=null));
+    expect(f.routeBodies,hasLength(1));
+    final body=f.routeBodies.single;
+    expect(Uri.parse(body['from']['viewportPath']).queryParameters['cursor'],isNull);
+    expect(Uri.parse(body['to']['viewportPath']).queryParameters['cursor'],'actual-original-cursor');
+    expect(body['expectedProvider'],'mapbox');
+    final old=c.entities.firstWhere((e)=>e.contentRoute!=null).contentRoute!;
+    expect(old.segments.map((e)=>e.length),[3,2]);
+    f.owner=id(9001);identity.value++;
+    expect(old.availableAt(f.now),isFalse);expect(c.entities,isEmpty);
+    c.dispose();identity.dispose();await t.pump();
+  });
+  testWidgets('AMap consent blocks route work, Mapbox is independent, revoke cancels and late result cannot return', (t) async{
+    final consent=MapPrivacyConsentController(store:MemoryMapPrivacyConsentStore());
+    final previous=AMapSessionConsent.replaceControllerForTesting(consent);
+    final f=RouteFixture()..holdRoutes=true, identity=ValueNotifier(0),provider=ValueNotifier('amap');
+    final c=OwnedMapController(client:f,apiBaseUrl:()=>base,ownerID:()=>f.owner,
+      authorizationHeader:()=>'Bearer fixture',organizationWorkspaceID:()=>null,
+      identityChanges:identity,refreshAllowed:()=>true,routeProvider:()=>provider.value,routeChanges:provider,now:()=>f.now);
+    try{
+      c.updateQuery('',bounds,zoom:17);await drain(t,()=>c.items.length==2&&!c.loading);
+      expect(f.routeBodies,isEmpty);expect(c.entities,hasLength(2));
+      provider.value='mapbox';await drain(t,()=>f.routeBodies.length==1);
+      expect(f.routeBodies.last['expectedProvider'],'mapbox');
+      provider.value='amap';await drain(t,()=>f.routeAborts==1);
+      expect(c.entities.every((e)=>e.contentRoute==null),isTrue);
+      await consent.setDecision(true);await drain(t,()=>f.routeBodies.length==2);
+      expect(f.routeBodies.last['expectedProvider'],'amap');
+      await consent.setDecision(false);await drain(t,()=>f.routeAborts==2);
+      for(final w in f.routeWaiters)if(!w.isCompleted)w.complete();
+      await t.pump();expect(c.entities.every((e)=>e.contentRoute==null),isTrue);
+      expect(c.entities,hasLength(2),reason:'Route consent never changes original pin grants');
+    }finally{c.dispose();identity.dispose();provider.dispose();AMapSessionConsent.replaceControllerForTesting(previous);consent.dispose();await t.pump();}
+  });
+
   testWidgets(
     'selected coverage survives empty pan and bounded eviction without rereading detail',
     (t) async {
@@ -619,7 +706,7 @@ void main() {
     },
   );
   testWidgets(
-    '12 covers 4 transports selected first, real DPR decode and renewed grants reuse pixels',
+    '20 distinct covers keep 4 transports selected first, real DPR decode and renewed grants reuse pixels',
     (t) async {
       final f = Fixture()
         ..covers = true
@@ -658,11 +745,11 @@ void main() {
       );
       await drain(t, () => f.mediaWaiters.length == 4);
       expect(media.inFlight, 4);
-      expect(media.cachedItems, 12);
+      expect(media.cachedItems, 20);
       expect(f.requests.first.url.path, contains('/${id(20)}/'));
       f.releaseMedia();
-      await drain(t, () => media.decodes == 12 && media.inFlight == 0);
-      expect(media.requests, 12);
+      await drain(t, () => media.decodes == 20 && media.inFlight == 0);
+      expect(media.requests, 20);
       expect(media.inFlightPeak, 4);
       expect(media.cachedBytes, lessThanOrEqualTo(24 * 1024 * 1024));
       final pixels = media.decorate(first.items.last).mediaPixels!;
@@ -671,7 +758,7 @@ void main() {
       expect(pixels.validUntil, first.validUntil);
       media.suspend();
       expect(pixels.current(), false);
-      expect(media.cachedItems, 12);
+      expect(media.cachedItems, 20);
       f.source = hash('other-viewport');
       final renewed = view();
       media.sync(
@@ -679,9 +766,9 @@ void main() {
         devicePixelRatio: 2,
         selectedMarkerID: 'anchor:${id(1020)}',
       );
-      expect(media.requests, 12);
-      expect(media.decodes, 12);
-      expect(media.cacheHits, 12);
+      expect(media.requests, 20);
+      expect(media.decodes, 20);
+      expect(media.cacheHits, 20);
       final next = media.decorate(renewed.items.last).mediaPixels!;
       expect(next.current(), true);
       expect(next.validUntil, renewed.validUntil);

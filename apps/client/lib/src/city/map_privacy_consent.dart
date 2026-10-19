@@ -4,11 +4,11 @@ import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
-const mapPrivacyPolicyVersion = 'amap-map-search-20261018-v1';
+const mapPrivacyPolicyVersion = 'amap-map-search-routes-20261019-v2';
 const mapPrivacyPolicyURL = 'https://lbs.amap.com/pages/privacy/';
 const mapPrivacyDisclosure =
-    '国内地图与地理搜索由高德提供。为提供地图服务，高德会按其隐私权政策处理所需的设备和网络信息；'
-    '你主动搜索时，搜索词也会交给高德处理。这不会开启设备定位。'
+    '国内地图、地理搜索与道路规划由高德提供。为提供地图服务，高德会按其隐私权政策处理所需的设备和网络信息；'
+    '你主动搜索时，搜索词也会交给高德处理。展示同一串文的道路路线时，已获准查看的起点和终点坐标会交给高德规划。此操作不会开启设备定位。'
     '你可以暂不使用该服务，继续选择目录目的地和查看可用内容，也可稍后在地图服务隐私说明中更改选择。';
 
 abstract interface class MapPrivacyConsentStore {

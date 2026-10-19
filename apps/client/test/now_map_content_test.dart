@@ -143,6 +143,10 @@ class _PanelController extends OwnedMapController {
   }
 
   @override
+  Future<OwnedMapThread?> readThread(OwnedMapPin pin,
+      OwnedMapMomentDetail seed) async => null;
+
+  @override
   Future<Uint8List> momentContent(
     OwnedMapMomentDetail detail,
     OwnedMapMomentMedia media, {
@@ -221,9 +225,15 @@ void main() {
         await tester.pump();
         expect(expansions, 1);
         expect(find.byType(NowMapContentPanel), findsOneWidget);
+        await tester.tap(find.byKey(const ValueKey('read-thread:$_ownMoment')));
+        await tester.pump();
+        await tester.pump();
         await tester.tap(find.byTooltip('编辑动态'));
         expect(edited, [_ownMoment]);
         expect(editCurrent!(), isTrue);
+        await tester.tap(find.byTooltip('返回地点动态'));
+        await tester.pump();
+        await tester.pump();
         final mainScroll = find
             .descendant(
               of: find.byType(ListView),
@@ -245,20 +255,26 @@ void main() {
           scrollable: mainScroll,
         );
         await tester.pump();
-        expect(find.byTooltip('编辑动态'), findsOneWidget);
+        expect(find.byTooltip('编辑动态'), findsNothing);
         expect(find.text('CIVU_PUBLIC_MOMENT'), findsNothing);
+        await tester.tap(find.byKey(const ValueKey('read-thread:$_ownMoment')));
+        await tester.pump();
+        await tester.pump();
+        await tester.drag(find.byType(ListView), const Offset(0, -350));
+        await tester.pumpAndSettle();
         final scroll = tester
             .widget<ListView>(find.byType(ListView))
             .controller!;
         final offset = scroll.offset;
         expect(offset, greaterThan(0));
         final element = tester.element(find.byType(NowMapContentPanel));
+        final readsBeforeRenewal = c.reads.length;
         await c.refresh();
         await tester.pump(const Duration(seconds: 25));
         await tester.pump();
         expect(tester.element(find.byType(NowMapContentPanel)), same(element));
         expect(scroll.offset, closeTo(offset, 1));
-        expect(c.reads, [null, null, 'next.page', null, 'next.page']);
+        expect(c.reads.skip(readsBeforeRenewal), [null, 'next.page']);
         expect(closes, 0);
         c.revoke();
         await tester.pump();

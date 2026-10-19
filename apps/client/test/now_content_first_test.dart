@@ -239,7 +239,8 @@ Future<void> _reads(WidgetTester t) async {
   }
 }
 
-http.Client _comments(List<String> reads, {int revision = 2}) =>
+http.Client _comments(List<String> reads, {int revision = 2,
+    bool canComment = true, bool empty = false}) =>
     MockClient((r) async {
       if (r.method != 'GET' || !r.url.path.endsWith('/interactions'))
         throw StateError('unexpected comment write');
@@ -249,13 +250,13 @@ http.Client _comments(List<String> reads, {int revision = 2}) =>
         'schemaVersion': 'moment-interaction-page-v2',
         'momentId': id,
         'momentRevision': revision,
-        'canComment': true,
+        'canComment': canComment,
         'likeCount': 0,
-        'commentCount': 1,
+        'commentCount': empty ? 0 : 1,
         'liked': false,
         'likeVersion': 0,
         'comments': [
-          {
+          if (!empty) {
             'id': _comment,
             'body': '可以明确回复的原评论',
             'createdAt': DateTime.now().toUtc().toIso8601String(),
@@ -263,7 +264,7 @@ http.Client _comments(List<String> reads, {int revision = 2}) =>
             'authorPublicProfile': null,
             'canDelete': false,
             'version': 1,
-            'canReply': true,
+            'canReply': canComment,
             'replyTo': null,
           },
         ],
@@ -346,8 +347,10 @@ void main() {
         await _reads(t);
         expect(find.text('中段无地点正文'), findsOneWidget);
         expect(targets, isNotEmpty);
-        expect(targets.every((target) => target.$1 == null &&
-            target.$2 == null && target.$3 == null), true);
+        expect(targets.last.$1, isNull);
+        expect(targets.last.$2?.id, _seed);
+        expect(targets.last.$2?.visibility, 'private');
+        expect(targets.last.$3, isNull);
         expect(requests, isEmpty);
         for (final id in [_first, _seed, _last]) {
           expect(find.byKey(ValueKey('comment-target:$id')), findsNothing);
@@ -432,7 +435,8 @@ void main() {
       await _reads(t);
       expect(find.text('第一段正文'), findsOneWidget);
       expect(targetController, isNull);
-      expect(target, isNull);
+      expect(target?.id, _first);
+      expect(target?.visibility, 'private');
       expect(targetReply, isNull);
       expect(find.byKey(const ValueKey('comment-target:$_first')), findsNothing);
       expect(requests, [_seed]);
@@ -541,10 +545,11 @@ void main() {
       await _reads(t);
       expect(find.text('中段无地点正文'), findsOneWidget);
       expect(target?.id, _seed);
-      expect(find.text('串文 · 4段'), findsOneWidget);
+      expect(find.text('4段'), findsOneWidget);
       expect(c.threads, [_seed]);
       await t.drag(find.byType(CustomScrollView), const Offset(0, 420));
       await _reads(t);
+      expect(target?.id, _seed, reason: 'scrolling cannot retarget a draft');
       final first = find.byKey(const ValueKey('comment-target:$_first'));
       await t.ensureVisible(first);
       await t.tap(first);
@@ -620,4 +625,27 @@ void main() {
       client.close();
     },
   );
+  testWidgets('readable comments remain when publishing is forbidden, empty pages leave no shell', (t) async {
+    final changes = ValueNotifier(0), requests = <String>[];
+    final c = _PanelController(changes);
+    final readOnly = _comments(requests, canComment: false);
+    MomentInteractionController? target;
+    await t.pumpWidget(_panel(c, readOnly, (controller, _, __) => target = controller));
+    await _reads(t);
+    expect(target?.canComment, isFalse);
+    expect(find.text('可以明确回复的原评论'), findsOneWidget);
+    expect(find.text('回复'), findsNothing);
+    final empty = _comments(requests, canComment: false, empty: true);
+    await t.pumpWidget(_panel(c, empty, (controller, _, __) => target = controller));
+    await _reads(t);
+    expect(target?.page, isNotNull);
+    expect(target?.canComment, isFalse);
+    expect(find.text('动态互动'), findsNothing);
+    expect(find.text('当前动态的评论'), findsNothing);
+    expect(find.text('0 个赞 · 0 条评论'), findsNothing);
+    expect(find.byType(TextField), findsNothing);
+    await t.pumpWidget(const SizedBox());
+    c.dispose(); changes.dispose(); readOnly.close(); empty.close();
+  });
+
 }

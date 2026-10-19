@@ -370,7 +370,7 @@ class MapDisplayPolicy {
       final title = e.title.trim();
       final authoredMomentName = title.isNotEmpty && title != '动态';
       // Placeholder names do not spend scarce content-label slots. Selection
-      // can still identify an otherwise untitled original Moment explicitly.
+      // remains a visual focus even when no authored name is available.
       if (moment && !authoredMomentName && !selected) continue;
       final projection = moment && e.momentID.isNotEmpty
           ? (e.momentID, e.placeID, e.latitude, e.longitude)
@@ -394,8 +394,8 @@ class MapDisplayPolicy {
           ? '${MapMarkerVisual.clusterCount(categoryCode: e.categoryCode, contentCount: e.contentCount, anchorCount: e.anchorCount, fallback: e.memberIDs.length)}${MapMarkerVisual.clusterUnit(e.categoryCode)}'
           : moment
           ? authoredMomentName
-                ? '${e.threadID.isEmpty ? '动态' : '串文'} · $title'
-                : '动态'
+                ? title
+                : ''
           : e.title;
       if (raw.isEmpty) continue;
       final name = MapMarkerVisual.nativeLabel(raw, selected: selected);
@@ -566,6 +566,93 @@ class MapDisplayPolicy {
       }
     }
     return unique.values.toList()..sort((a, b) => a.id.compareTo(b.id));
+  }
+
+  /// A known original target is rechecked, never replaced by a nearby ID or a
+  /// same-ID late grant from another source/identity.
+  static bool samePointSource(MapEntity original, MapEntity current) {
+    final now = DateTime.now().toUtc();
+    return original.id == current.id &&
+        original.kind == current.kind &&
+        original.hasMapAnchor &&
+        current.hasMapAnchor &&
+        original.sourceVersion == current.sourceVersion &&
+        original.latitude == current.latitude &&
+        original.longitude == current.longitude &&
+        original.precision == current.precision &&
+        original.placeID == current.placeID &&
+        original.title == current.title &&
+        original.subtitle == current.subtitle &&
+        original.momentID == current.momentID &&
+        original.momentRevision == current.momentRevision &&
+        original.anchorID == current.anchorID &&
+        original.entryID == current.entryID &&
+        original.threadID == current.threadID &&
+        (original.readGrant == null ||
+            original.readGrant!.authorizes(original, now)) &&
+        (current.readGrant == null ||
+            current.readGrant!.authorizes(current, now));
+  }
+
+  /// Visible names are explicit targets. Otherwise test actual painted shapes
+  /// before using the larger accessible target only for an uncertain touch.
+  static List<MapEntity> visibleHitTargetsAt({
+    required List<MapEntity> entities,
+    required Map<String, Offset> positions,
+    required Offset touchPosition,
+    Map<String, MapLabelPlacement> placements = const {},
+    Map<String, double> glyphSizes = const {},
+    Map<String, Rect> nonPointHitRects = const {},
+  }) {
+    if (!touchPosition.dx.isFinite || !touchPosition.dy.isFinite)
+      return const [];
+    final live = entities
+        .where((e) => e.hasMapAnchor && samePointSource(e, e))
+        .toList();
+    final labels = live
+        .where(
+          (e) =>
+              positions[e.id]?.dx.isFinite == true &&
+              positions[e.id]?.dy.isFinite == true &&
+              placements[e.id]?.rect.contains(touchPosition) == true,
+        )
+        .toList();
+    if (labels.isNotEmpty) return labels;
+    final painted = <MapEntity>[];
+    for (final e in live) {
+      final p = positions[e.id];
+      if (p == null || !p.dx.isFinite || !p.dy.isFinite) continue;
+      final compact =
+          e.precision == 'point' &&
+          {MapEntityKind.place, MapEntityKind.moment}.contains(e.kind);
+      final size = glyphSizes[e.id];
+      final rect = !compact ? nonPointHitRects[e.id] : null;
+      if (rect != null) {
+        if (rect.contains(touchPosition)) painted.add(e);
+        continue;
+      }
+      if (size == null || !size.isFinite || size <= 0) continue;
+      final hit = e.kind == MapEntityKind.place
+          ? (touchPosition - p).distanceSquared <= size * size / 4
+          : Rect.fromCenter(
+              center: p,
+              width: size,
+              height: size,
+            ).contains(touchPosition);
+      if (hit) painted.add(e);
+    }
+    if (painted.isNotEmpty)
+      return painted..sort(
+        (a, b) => (positions[a.id]! - touchPosition).distanceSquared.compareTo(
+          (positions[b.id]! - touchPosition).distanceSquared,
+        ),
+      );
+    return hitTargetsAt(
+      entities: live,
+      positions: positions,
+      touchPosition: touchPosition,
+      nonPointHitRects: nonPointHitRects,
+    );
   }
 
   /// A physical tap belongs to its screen position, not to an SDK annotation's

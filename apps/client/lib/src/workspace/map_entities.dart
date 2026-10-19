@@ -1,3 +1,4 @@
+import 'map_content_route_geometry.dart';
 import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -288,6 +289,7 @@ class MapEntity {
     this.recentMoments,
     this.mediaPixels,
     this.readGrant,
+    this.contentRoute,
     this.sourceVersion = '',
     this.momentID = '',
     this.momentRevision = 0,
@@ -316,6 +318,7 @@ class MapEntity {
   final MapRecentMoments? recentMoments;
   final MapMediaPixels? mediaPixels;
   final MapEntityReadGrant? readGrant;
+  final MapContentRouteGeometry? contentRoute;
   final String sourceVersion;
   final String categoryCode;
   final String anchorID, entryID, threadID;
@@ -362,12 +365,13 @@ class MapEntity {
   // Immutable fingerprints make a removal visible even when the old live
   // pixel guard already became false before a provider's didUpdateWidget.
   String get decorationKey =>
-      '$categoryCode:${mediaPixels?.key ?? ''}:${recentMoments?.sourceKey ?? ''}';
+      '$categoryCode:${mediaPixels?.key ?? ''}:${recentMoments?.sourceKey ?? ''}:${contentRoute?.fingerprint ?? ''}';
   MapEntity withMediaPixels(
     MapMediaPixels? pixels, {
     DateTime? now,
     bool clearRecent = false,
     MapEntityReadGrant? readGrant,
+    MapContentRouteGeometry? contentRoute,
   }) => MapEntity(
     id: id,
     kind: kind,
@@ -390,6 +394,7 @@ class MapEntity {
         : null,
     mediaPixels: pixels,
     readGrant: readGrant ?? this.readGrant,
+    contentRoute: contentRoute ?? this.contentRoute,
     sourceVersion: sourceVersion,
     momentID: momentID,
     momentRevision: momentRevision,
@@ -437,6 +442,7 @@ class MapEntity {
     recentMoments: recentMoments,
     mediaPixels: mediaPixels,
     readGrant: readGrant,
+    contentRoute: contentRoute,
     sourceVersion: sourceVersion,
     momentID: momentID,
     momentRevision: momentRevision,

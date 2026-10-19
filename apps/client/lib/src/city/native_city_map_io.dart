@@ -150,6 +150,8 @@ class _NativeCityMapViewState extends State<NativeCityMapView>
   PolylineAnnotationManager? _contentLines;
   final _lineAnnotations = <String, PolylineAnnotation>{};
   final _lineFingerprints = <String, String>{};
+  final _directionAnnotations = <String, PointAnnotation>{};
+  final _directionFingerprints = <String, String>{};
   final Map<String, PointAnnotation> _annotations = {};
   final Map<String, String> _annotationFingerprints = {};
   late final _markerQueue = LatestMapRenderQueue((serial) async {
@@ -963,7 +965,6 @@ class _NativeCityMapViewState extends State<NativeCityMapView>
     _styleReady = true;
     if (!kReleaseMode && contentMapMetrics.styleReadyMicros == 0)
       contentMapMetrics.styleReadyMicros = _mapLifetime.elapsedMicroseconds;
-    _contentLines ??= await map.annotations.createPolylineAnnotationManager();
     _markers ??= await map.annotations.createPointAnnotationManager();
     await _markers!.setIconAllowOverlap(true);
     // The shared plan measures visible glyphs and actual labels. Transparent
@@ -1127,7 +1128,7 @@ class _NativeCityMapViewState extends State<NativeCityMapView>
 
   void _dispatchCurrentPoint(MapEntity chosen) {
     final current = _currentPointSource()
-        .where((e) => e.id == chosen.id && e.kind == chosen.kind)
+        .where((e) => MapDisplayPolicy.samePointSource(chosen, e))
         .firstOrNull;
     if (current == null) return;
     for (final place in widget.places) {
@@ -1139,6 +1140,17 @@ class _NativeCityMapViewState extends State<NativeCityMapView>
       }
     }
     widget.onEntitySelected?.call(current);
+  }
+
+  VoidCallback _pointSemanticAction(MapEntity original) {
+    final scope = _pointReaderScope();
+    return () {
+      if (!mounted || scope != _pointReaderScope()) return;
+      final fresh = _renderedEntities
+          .where((e) => MapDisplayPolicy.samePointSource(original, e))
+          .firstOrNull;
+      if (fresh != null) unawaited(_selectMapPoint(fresh.id));
+    };
   }
 
   bool _pointChoiceOpen = false;
@@ -1162,6 +1174,10 @@ class _NativeCityMapViewState extends State<NativeCityMapView>
       await _openClusterMembers(rendered);
       return;
     }
+    if (touchPosition == null) {
+      _dispatchCurrentPoint(rendered!);
+      return;
+    }
     _pointChoiceOpen = true;
     final scope = _pointReaderScope(), generation = _scopeGeneration;
     final motion = _cameraMotionGeneration;
@@ -1175,8 +1191,6 @@ class _NativeCityMapViewState extends State<NativeCityMapView>
       final originals = _currentRenderedPointSource()
           .where((e) => shown.contains((e.id, e.kind)))
           .toList();
-      if (touchPosition == null && !originals.any((e) => e.id == tappedID))
-        return;
       final pixels = await map.pixelsForCoordinates([
         for (final entity in originals)
           Point(coordinates: Position(entity.longitude, entity.latitude)),
@@ -1188,43 +1202,21 @@ class _NativeCityMapViewState extends State<NativeCityMapView>
             originals[i].id: Offset(pixel.x, pixel.y),
       };
       final positions = rawPositions;
-      final hits = touchPosition == null
-          ? MapDisplayPolicy.overlappingHitTargets(
-              entities: originals,
-              positions: positions,
-              tappedID: tappedID!,
-            )
-          : MapDisplayPolicy.hitTargetsAt(
-              entities: originals,
-              positions: positions,
-              touchPosition: touchPosition,
-              nonPointHitRects: _nonPointHitRects(originals, positions),
-            );
-      // Semantic ID actions retain their same-anchor siblings. Physical taps
-      // use only their actual 48 dp targets, without a second ID-centered halo.
-      final tapped = originals
-          .where((entity) => entity.id == tappedID)
-          .firstOrNull;
-      bool preciseRecord(MapEntity entity) =>
-          entity.precision == 'point' &&
-          {MapEntityKind.place, MapEntityKind.moment}.contains(entity.kind);
-      final identities = {
-        ...hits.map((entity) => (entity.id, entity.kind)),
-        if (touchPosition == null && tapped != null && preciseRecord(tapped))
-          for (final entity in originals)
-            if (preciseRecord(entity) &&
-                entity.latitude == tapped.latitude &&
-                entity.longitude == tapped.longitude)
-              (entity.id, entity.kind),
-      };
+      final hits = MapDisplayPolicy.visibleHitTargetsAt(
+        entities: originals,
+        positions: positions,
+        touchPosition: touchPosition,
+        placements: _previousPlacements,
+        glyphSizes: _renderedGlyphSizes,
+        nonPointHitRects: _nonPointHitRects(originals, positions),
+      );
+      final identities = hits.map((entity) => (entity.id, entity.kind)).toSet();
       final rank = {for (var i = 0; i < hits.length; i++) hits[i].id: i};
       List<MapEntity> freshHits() {
         final fresh = _currentRenderedPointSource()
             .where((e) => identities.contains((e.id, e.kind)))
             .toList();
-        if (touchPosition != null) {
-          fresh.sort((a, b) => rank[a.id]!.compareTo(rank[b.id]!));
-        }
+        fresh.sort((a, b) => rank[a.id]!.compareTo(rank[b.id]!));
         return fresh;
       }
 
@@ -1371,23 +1363,32 @@ class _NativeCityMapViewState extends State<NativeCityMapView>
   _lastDisplayInputs;
   Set<String> _previousVisibleIDs = const {};
   Map<String, MapLabelPlacement> _previousPlacements = const {};
+  Map<String, double> _renderedGlyphSizes = const {};
 
   Future<void> _syncContentLines(
     List<MapEntity> source,
     bool Function() current,
   ) async {
-    final lines = _contentLines;
-    if (lines == null) return;
     final edges = {
-      for (final edge in currentMapContentEdges(source)) edge.id: edge,
+      for (final segment in currentMapContentSegments(source))
+        segment.id: segment,
     };
-    bool authorized(MapContentEdge edge) =>
+    var lines = _contentLines;
+    if (lines == null) {
+      if (edges.isEmpty || _map == null) return;
+      lines = await _map!.annotations.createPolylineAnnotationManager();
+      await lines.setLineDasharray([2.25, 1.75]);
+      _contentLines = lines;
+    }
+    bool authorized(MapContentRouteSegment segment) =>
         mounted &&
-        currentMapContentEdges(widget.entities).any(
+        currentMapContentSegments(widget.entities).any(
           (fresh) =>
-              fresh.id == edge.id &&
-              fresh.from.sourceVersion == edge.from.sourceVersion &&
-              fresh.to.sourceVersion == edge.to.sourceVersion,
+              fresh.id == segment.id &&
+              fresh.fingerprint == segment.fingerprint &&
+              fresh.edge.from.sourceVersion ==
+                  segment.edge.from.sourceVersion &&
+              fresh.edge.to.sourceVersion == segment.edge.to.sourceVersion,
         );
     for (final id in _lineAnnotations.keys.toList()) {
       if (!edges.containsKey(id)) {
@@ -1396,26 +1397,79 @@ class _NativeCityMapViewState extends State<NativeCityMapView>
         await lines.delete(old);
       }
     }
+    final directions = edges.values.take(64).toList();
+    final directionIDs = directions.map((e) => e.id).toSet();
+    final points = _markers;
+    if (points != null) {
+      for (final id in _directionAnnotations.keys.toList()) {
+        if (!directionIDs.contains(id)) {
+          await points.delete(_directionAnnotations.remove(id)!);
+          _directionFingerprints.remove(id);
+        }
+      }
+      for (final segment in directions) {
+        if (!current()) return;
+        final arrow = segment.direction;
+        if (arrow == null) continue;
+        final key = '${segment.fingerprint}:${_bearing.value}';
+        if (_directionFingerprints[segment.id] == key) continue;
+        final option = PointAnnotationOptions(
+          geometry: Point(
+            coordinates: Position(arrow.longitude, arrow.latitude),
+          ),
+          textField: '➤',
+          textSize: 14,
+          textColor: const Color(0xff2c6b58).toARGB32(),
+          textHaloColor: Colors.white.toARGB32(),
+          textHaloWidth: 1,
+          textRotate: arrow.bearing - 90 - _bearing.value,
+          customData: {
+            'routeDirection': true,
+            'entityId': 'route-direction:${segment.id}',
+          },
+        );
+        final old = _directionAnnotations[segment.id];
+        if (old != null) {
+          old.geometry = option.geometry;
+          old.textRotate = option.textRotate;
+          await points.update(old);
+          if (!authorized(segment)) {
+            await points.delete(old);
+            _directionAnnotations.remove(segment.id);
+            _directionFingerprints.remove(segment.id);
+            return;
+          }
+        } else {
+          final created = await points.create(option);
+          if (!authorized(segment)) {
+            await points.delete(created);
+            return;
+          }
+          _directionAnnotations[segment.id] = created;
+        }
+        _directionFingerprints[segment.id] = key;
+      }
+    }
     for (final edge in edges.values) {
       if (!current()) return;
       final selected = edge.selected(widget.selectedEntityId);
       final fingerprint =
-          '${edge.from.sourceVersion}:${edge.to.sourceVersion}:$selected';
+          '${edge.edge.from.sourceVersion}:${edge.edge.to.sourceVersion}:${edge.fingerprint}:$selected';
       if (_lineFingerprints[edge.id] == fingerprint) continue;
       final geometry = LineString(
         coordinates: [
-          Position(edge.from.longitude, edge.from.latitude),
-          Position(edge.to.longitude, edge.to.latitude),
+          for (final point in edge.points)
+            Position(point.longitude, point.latitude),
         ],
       );
       final color =
-          (selected ? const Color(0xff267264) : const Color(0x993d8174))
+          (selected ? const Color(0xff2c6b58) : const Color(0xb32c6b58))
               .toARGB32();
       final old = _lineAnnotations[edge.id];
       if (old != null) {
         old.geometry = geometry;
         old.lineColor = color;
-        old.lineWidth = selected ? 3 : 1.5;
+        old.lineWidth = 3;
         await lines.update(old);
         if (!authorized(edge)) {
           await lines.delete(old);
@@ -1428,7 +1482,7 @@ class _NativeCityMapViewState extends State<NativeCityMapView>
           PolylineAnnotationOptions(
             geometry: geometry,
             lineColor: color,
-            lineWidth: selected ? 3 : 1.5,
+            lineWidth: 3,
           ),
         );
         if (!authorized(edge)) {
@@ -1836,6 +1890,7 @@ class _NativeCityMapViewState extends State<NativeCityMapView>
     }
     _previousVisibleIDs = plan.entities.map((e) => e.id).toSet();
     _previousPlacements = plan.placements;
+    _renderedGlyphSizes = plan.glyphSizes;
     if (!kReleaseMode) {
       contentMapMetrics.lastRenderMicros = elapsed.elapsedMicroseconds;
       if (elapsed.elapsedMicroseconds > contentMapMetrics.maxRenderMicros)
@@ -2000,8 +2055,7 @@ class _NativeCityMapViewState extends State<NativeCityMapView>
                         selected: point.entity.id == widget.selectedEntityId,
                         label:
                             '${mapPointKindLabel(point.entity.kind)} · ${point.entity.title} · ${point.entity.subtitle}',
-                        onTap: () =>
-                            unawaited(_selectMapPoint(point.entity.id)),
+                        onTap: _pointSemanticAction(point.entity),
                         // Semantics owns the action; transparent children must not
                         // capture native drag/tap gestures or create a second map.
                         child: const IgnorePointer(child: SizedBox.expand()),

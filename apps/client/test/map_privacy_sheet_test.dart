@@ -43,6 +43,7 @@ void main() {
       await t.tap(find.text('查看隐私说明'));
       await t.pumpAndSettle();
       expect(find.text('地图服务隐私说明'), findsOneWidget);
+      expect(find.textContaining('起点和终点坐标'), findsOneWidget);
       expect(find.text('同意'), findsOneWidget);
       expect(find.text('暂不使用'), findsOneWidget);
       expect(find.textContaining('启用'), findsNothing);

@@ -1,3 +1,7 @@
+import '../city/amap_session_consent.dart';
+import '../city/map_privacy_consent.dart';
+import 'map_content_route_geometry.dart';
+import 'map_content_route_controller.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'package:crypto/crypto.dart';
@@ -33,6 +37,8 @@ class OwnedMapController extends ChangeNotifier with WidgetsBindingObserver {
     required this.organizationWorkspaceID,
     required this.identityChanges,
     required this.refreshAllowed,
+    this.routeProvider,
+    this.routeChanges,
     DateTime Function()? now,
     this.maxCachedViews = 8,
     this.maxCachedPins = 320,
@@ -52,6 +58,12 @@ class OwnedMapController extends ChangeNotifier with WidgetsBindingObserver {
       authorizationHeader: authorizationHeader,
       now: _now,
     )..addListener(_notify);
+    _routes = MapContentRouteController(load: _loadRoute, now: _now)
+      ..addListener(_notify);
+    _routeConsent = AMapSessionConsent.controller;
+    _routeContext = (routeProvider?.call(), _routeConsent.accepted);
+    _routeConsent.addListener(_routeContextChanged);
+    routeChanges?.addListener(_routeContextChanged);
     _identity = _readIdentity();
     identityChanges.addListener(_identityChanged);
     WidgetsBinding.instance.addObserver(this);
@@ -62,6 +74,10 @@ class OwnedMapController extends ChangeNotifier with WidgetsBindingObserver {
       organizationWorkspaceID;
   final Listenable identityChanges;
   final bool Function() refreshAllowed;
+  final String Function()? routeProvider;
+  final Listenable? routeChanges;
+  late final MapPrivacyConsentController _routeConsent;
+  (String?, bool)? _routeContext;
   final DateTime Function() _now;
   final int maxCachedViews, maxCachedPins, maxCachedBytes;
   final int progressiveBatchPages, maxActivePins, maxActiveBytes;
@@ -74,6 +90,7 @@ class OwnedMapController extends ChangeNotifier with WidgetsBindingObserver {
   String? _paginationError;
   late OwnedMapAPI _api;
   late OwnedMapMediaController _media;
+  late MapContentRouteController _routes;
   (String, String?, String?, String?)? _identity;
   _MapQuery? _query;
   OwnedMapView? _view;
@@ -190,7 +207,161 @@ class OwnedMapController extends ChangeNotifier with WidgetsBindingObserver {
       );
       _entityGrants[pin] = issued;
     }
-    return entity.withMediaPixels(entity.mediaPixels, readGrant: issued.grant);
+    final next = pin.nextMarkerIDs.isEmpty
+        ? null
+        : items
+              .where((p) => p.canonicalMarkerID == pin.nextMarkerIDs.first)
+              .firstOrNull;
+    final routeQuery = next == null ? null : _routeQuery(pin, next);
+    return entity.withMediaPixels(
+      entity.mediaPixels,
+      readGrant: issued.grant,
+      contentRoute: routeQuery == null ? null : _routes.geometry(routeQuery),
+    );
+  }
+
+  MapContentRouteQuery? _routeQuery(OwnedMapPin from, OwnedMapPin to) {
+    if (from.threadID.isEmpty ||
+        from.threadID != to.threadID ||
+        to.threadPosition != from.threadPosition + 1 ||
+        from.validUntil == null ||
+        to.validUntil == null ||
+        !sourceCurrent(from) ||
+        !sourceCurrent(to))
+      return null;
+    String? path(OwnedMapPin pin) {
+      final pages =
+          _leasedViews
+              .where(
+                (v) =>
+                    v.viewportPath.isNotEmpty &&
+                    v.items.any((p) => identical(p, pin)),
+              )
+              .toList()
+            ..sort((a, b) => b.observedAt.compareTo(a.observedAt));
+      if (pages.isEmpty) return null;
+      final page = pages.first,
+          uri = Uri.parse(page.viewportPath),
+          cursor = _requestCursorByView[page];
+      return uri
+          .replace(
+            queryParameters: {
+              ...uri.queryParameters,
+              if (cursor != null) 'cursor': cursor,
+            },
+          )
+          .toString();
+    }
+
+    final fromPath = path(from), toPath = path(to);
+    if (fromPath == null || toPath == null) return null;
+    final q = MapContentRouteQuery(
+      threadID: from.threadID,
+      expectedProvider: routeProvider?.call() ?? '',
+      from: MapContentRouteEndpoint(
+        viewportPath: fromPath,
+        markerID: from.canonicalMarkerID,
+        sourceVersion: from.sourceVersion,
+      ),
+      to: MapContentRouteEndpoint(
+        viewportPath: toPath,
+        markerID: to.canonicalMarkerID,
+        sourceVersion: to.sourceVersion,
+      ),
+      validUntil: from.validUntil!.isBefore(to.validUntil!)
+          ? from.validUntil!
+          : to.validUntil!,
+    );
+    return q.valid ? q : null;
+  }
+
+  bool get _routeAllowed {
+    final provider = routeProvider?.call();
+    return _allowed &&
+        (provider == 'mapbox' || provider == 'amap' && _routeConsent.accepted);
+  }
+
+  void _routeContextChanged() {
+    if (_closed) return;
+    final next = (routeProvider?.call(), _routeConsent.accepted);
+    if (next == _routeContext) return;
+    _routeContext = next;
+    _routes.retire();
+    if (_routeAllowed && current) _syncRoutes();
+    _notify();
+  }
+
+  void _syncRoutes() {
+    if (!_routeAllowed) {
+      _routes.retire();
+      return;
+    }
+    final provider = routeProvider?.call();
+    final epoch = _epoch, identity = _identity;
+    final byID = {for (final pin in items) pin.canonicalMarkerID: pin};
+    final candidates = <MapContentRouteCandidate>[];
+    final ordered = items.toList()
+      ..sort(
+        (a, b) =>
+            (b.canonicalMarkerID == _query?.$4 ? 1 : 0) -
+            (a.canonicalMarkerID == _query?.$4 ? 1 : 0),
+      );
+    for (final from in ordered)
+      for (final next in from.nextMarkerIDs) {
+        final to = byID[next];
+        if (to == null) continue;
+        final q = _routeQuery(from, to);
+        if (q == null) continue;
+        candidates.add(
+          MapContentRouteCandidate(
+            q,
+            () =>
+                epoch == _epoch &&
+                identity == _identity &&
+                _routeAllowed &&
+                provider == routeProvider?.call() &&
+                sourceCurrent(from) &&
+                sourceCurrent(to) &&
+                _now().isBefore(q.validUntil),
+          ),
+        );
+      }
+    _routes.sync(candidates);
+  }
+
+  Future<MapContentRouteGeometry> _loadRoute(
+    MapContentRouteQuery query,
+    bool Function() current,
+    Future<void> abort,
+  ) {
+    final identity = _identity!;
+    return _api.readThreadRoute(
+      query,
+      ownerID: identity.$2!,
+      authorization: identity.$3!,
+      origin: identity.$1,
+      current: current,
+      now: _now,
+      abortTrigger: abort,
+      onReadDenied: (failure) {
+        if (!current()) return;
+        if (failure.statusCode == 401 || failure.statusCode == 403) {
+          _accessDenied(failure);
+          return;
+        }
+        if (!failure.retiresGrant) return;
+        final ids = {query.from.markerID, query.to.markerID},
+            retired = <String>{};
+        for (final page in _leasedViews)
+          for (final pin in page.items)
+            if (ids.contains(pin.canonicalMarkerID)) {
+              _invalidPins[pin] = true;
+              retired.add(pin.mapID);
+            }
+        _media.retirePins(retired);
+        _publishCoverage();
+      },
+    );
   }
 
   OwnedMapView? get view => current ? _view : null;
@@ -1147,6 +1318,7 @@ class OwnedMapController extends ChangeNotifier with WidgetsBindingObserver {
       _renew?.cancel();
       _expiry?.cancel();
       _media.suspend();
+      _routes.retire();
       _notify();
       return;
     }
@@ -1301,6 +1473,7 @@ class OwnedMapController extends ChangeNotifier with WidgetsBindingObserver {
       selectedMarkerID: _query?.$4,
       visibleBounds: _visibleBounds,
     );
+    _syncRoutes();
     final remaining = value.validUntil.difference(_now());
     _expiry = Timer(remaining, () {
       if (_closed || !identical(_view, value)) return;
@@ -1874,6 +2047,7 @@ class OwnedMapController extends ChangeNotifier with WidgetsBindingObserver {
       (_, v) => v.$2 != _permissionEpoch || !v.$4.isAfter(_now()),
     );
     _extraPins.clear();
+    _routes.retire();
     if (preserveMedia) {
       _media.suspend();
     } else {
@@ -1921,6 +2095,10 @@ class OwnedMapController extends ChangeNotifier with WidgetsBindingObserver {
     identityChanges.removeListener(_identityChanged);
     WidgetsBinding.instance.removeObserver(this);
     _media.removeListener(_notify);
+    _routeConsent.removeListener(_routeContextChanged);
+    routeChanges?.removeListener(_routeContextChanged);
+    _routes.removeListener(_notify);
+    _routes.dispose();
     _media.dispose();
     _api.dispose();
     super.dispose();

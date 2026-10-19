@@ -102,6 +102,7 @@ void main() {
       final valid = jsonDecode(store.record!) as Map<String, dynamic>;
       for (final changed in [
         {...valid, 'policyVersion': 'old-version'},
+        {...valid, 'policyVersion': 'amap-map-search-20261018-v1'},
         {...valid, 'disclosureSHA256': '0' * 64},
         {...valid, 'accountId': 'not-part-of-sdk-consent'},
       ]) {

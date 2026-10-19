@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'package:birdtie_client/src/workspace/map_content_route_geometry.dart';
+import 'map_content_route_geometry_test.dart' show routeID, routeHash, routeJSON;
 import 'dart:convert';
 import 'dart:io';
 
@@ -20,7 +22,7 @@ import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart' hide Size;
 // PUBLIC capture is an offline replay; no device paint or real network proof.
 void main() {
   testWidgets(
-    'actual touch native selection ignores distant transparent canvases and retains semantic and source-cluster actions',
+    'explicit native glyph label and semantic actions open directly while real overlap retains current choice',
     (t) async {
       MapEntity row(
         String id,
@@ -52,7 +54,7 @@ void main() {
       final map = _Map();
       final positions = {
         target.id: const Offset(160, 365),
-        near.id: const Offset(180, 370),
+        near.id: const Offset(170, 370),
         wrong.id: const Offset(160, 306.5),
         first.id: const Offset(40, 520),
         second.id: const Offset(390, 520),
@@ -78,6 +80,11 @@ void main() {
       _tapAt(t, positions[target.id]!);
       await t.pumpAndSettle();
       final chooser = find.byKey(const Key('current-map-point-choices'));
+      expect(chooser,findsNothing,reason:'Only the target visible glyph is hit; a nearby48dp halo is not ambiguity');
+      expect(selected?.id,target.id);
+      selected=null;
+      _tapAt(t,const Offset(162,366));
+      await t.pumpAndSettle();
       final list = t.widget<ListView>(
         find.descendant(of: chooser, matching: find.byType(ListView)),
       );
@@ -96,6 +103,14 @@ void main() {
       await t.pumpAndSettle();
       expect(selected?.id, target.id);
       selected = null;
+      final label=map.points.created[target.id]!;
+      expect(label.textField,isNotEmpty);
+      final textOffset=label.textOffset!;
+      final labelTouch=positions[target.id]!+Offset(textOffset[0]!*label.textSize!+3,textOffset[1]!*label.textSize!+4);
+      _tapAt(t,labelTouch);await t.pumpAndSettle();
+      expect(selected?.id,target.id,reason:'The actual painted name, even beyond48dp, opens its original object');
+      expect(chooser,findsNothing);
+      selected=null;
       _tapAt(t, const Offset(160, 425));
       await t.pumpAndSettle();
       expect(chooser, findsNothing);
@@ -380,7 +395,7 @@ void main() {
       final moment = MapEntity(
         id: 'moment:record',
         kind: MapEntityKind.moment,
-        title: '动态',
+        title: '合成场地记录',
         subtitle: '场地记录而非作者位置',
         latitude: 57.145,
         longitude: -2.1,
@@ -704,7 +719,8 @@ void main() {
         double longitude,
         List<String> next,
         bool Function() current, {
-        String source = 'current-source',
+        String? source,
+        MapContentRouteGeometry? geometry,
       }) {
         final entity = MapEntity(
           id: id,
@@ -713,15 +729,16 @@ void main() {
           subtitle: '合成串文关系',
           latitude: 57.145,
           longitude: longitude,
-          sourceVersion: source,
+          sourceVersion: source ?? routeHash(id),
           momentID: id,
-          threadID: 'explicit-thread',
+          threadID: routeID(100),
           threadPosition: position,
           nextContentIDs: next,
           publicLocation: true,
         );
         return entity.withMediaPixels(
           null,
+          contentRoute: geometry,
           readGrant: MapEntityReadGrant(
             source: entity,
             validUntil: DateTime.now().toUtc().add(const Duration(seconds: 30)),
@@ -730,25 +747,44 @@ void main() {
         );
       }
 
-      const aID = 'moment:original-a',
-          bID = 'moment:original-b',
-          gapID = 'moment:after-gap';
-      final a = row(aID, 0, -2.1, [bID], () => liveA);
+      final aID = 'owned-map:anchor:${routeID(1)}',
+          bID = 'owned-map:anchor:${routeID(2)}',
+          gapID = 'owned-map:anchor:${routeID(3)}';
+      MapContentRouteGeometry geometry(String bSource) {
+        final now=DateTime.now().toUtc();
+        final q=MapContentRouteQuery(threadID:routeID(100),expectedProvider:'mapbox',
+          from:MapContentRouteEndpoint(viewportPath:'/v1/me/map-content?zoom=17', markerID:aID.substring(10),sourceVersion:routeHash(aID)),
+          to:MapContentRouteEndpoint(viewportPath:'/v1/me/map-content?zoom=17',markerID:bID.substring(10),sourceVersion:bSource),validUntil:now.add(const Duration(seconds:30)));
+        final json=routeJSON(q,now)..['segments']=[[{'latitude':57.145,'longitude':-2.1},{'latitude':57.1455,'longitude':-2.0995},{'latitude':57.145,'longitude':-2.099}]];
+        return MapContentRouteGeometry.decode(json,ownerID:routeID(900),query:q,now:now);
+      }
+      var a = row(aID, 0, -2.1, [bID], () => liveA);
       final b = row(bID, 1, -2.099, [gapID], () => liveB);
       final gap = row(gapID, 3, -2.098, const [], () => true);
       final map = _Map();
       await _mount(t, map, [a, b, gap]);
+      await mediaWait(t, () => map.points.created.length == 3);
+      expect(map.lines.created,isEmpty,reason:'Adjacent endpoints alone never draw a straight fallback');
+      final sdkElement=find.byType(MapWidget).evaluate().single;
+      a=row(aID,0,-2.1,[bID],()=>liveA,geometry:geometry(b.sourceVersion));
+      await _update(t,map,[a,b,gap]);
       await mediaWait(
         t,
-        () => map.lines.active.length == 1 && map.points.created.length == 3,
+        () => map.lines.active.length == 1 && map.points.created.length == 4,
       );
       final initial = map.lines.active.values.single;
       final lineID = initial.id;
       expect(initial.geometry.coordinates.map((p) => (p.lng, p.lat)), [
         (-2.1, 57.145),
+        (-2.0995,57.1455),
         (-2.099, 57.145),
       ]);
-      expect(initial.lineWidth, 1.5);
+      expect(initial.lineWidth, 3);
+      expect(map.lines.dash,[2.25,1.75]);
+      expect(find.byType(MapWidget).evaluate().single,same(sdkElement));
+      final arrow=map.points.created.entries.singleWhere((e)=>e.key.startsWith('route-direction:')).value;
+      expect(arrow.textField,'➤');
+      expect(arrow.textRotate,isNotNull);
       expect(
         map.lines.created,
         hasLength(1),
@@ -793,11 +829,13 @@ void main() {
         -2.099,
         [gapID],
         () => liveB,
-        source: 'fresh-source',
+        source: routeHash('fresh-source'),
       );
+      a=row(aID,0,-2.1,[bID],()=>liveA,geometry:geometry(freshB.sourceVersion));
       final held = Completer<void>();
       map.lines.createGate = held;
       await _update(t, map, [a, freshB, gap]);
+      t.widget<MapWidget>(find.byType(MapWidget)).onMapIdleListener!(MapIdleEventData.fromJson({'timestamp':3}));
       await mediaWait(t, () => map.lines.created.length == 2);
       liveA = false;
       await _update(t, map, const []);
@@ -1142,6 +1180,9 @@ class _Points extends Fake implements PointAnnotationManager {
 }
 
 class _Lines extends Fake implements PolylineAnnotationManager {
+  List<double>? dash;
+  @override
+  Future<void> setLineDasharray(List<double?> value) async {dash=value.whereType<double>().toList();}
   final active = <String, PolylineAnnotation>{};
   final created = <PolylineAnnotation>[];
   final updated = <PolylineAnnotation>[];

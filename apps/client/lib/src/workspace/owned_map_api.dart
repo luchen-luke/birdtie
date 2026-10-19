@@ -1,3 +1,4 @@
+import 'map_content_route_geometry.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
@@ -592,7 +593,9 @@ class OwnedMapPin {
           !RegExp(
             r'^[0-9a-f]{64}$',
           ).hasMatch(row['sourceVersion'] as String? ?? '') ||
-          !edgeKeys.add('${row['journeyId']}:${row['fromPosition']}:${row['nextMarkerId']}'))
+          !edgeKeys.add(
+            '${row['journeyId']}:${row['fromPosition']}:${row['nextMarkerId']}',
+          ))
         throw const FormatException('旅程顺序来源不符');
       edges.add(
         MapJourneyEdge(
@@ -1533,6 +1536,9 @@ class OwnedMapAPI {
     MapMediaReadTrace? trace,
     Future<void> Function(Uint8List bytes)? receive,
     Duration bodyTimeout = const Duration(seconds: 20),
+    Duration headerTimeout = const Duration(seconds: 12),
+    Object? jsonBody,
+    void Function(OwnedMapReadFailure)? onReadDenied,
   }) async {
     final transport = _transport, client = _client;
     bool valid() =>
@@ -1542,15 +1548,17 @@ class OwnedMapAPI {
         canonicalAuthOrigin(apiBaseUrl()) == uri.origin;
     if (!valid()) throw const FormatException('地图读取已失效');
     final request = http.AbortableRequest(
-      'GET',
+      jsonBody == null ? 'GET' : 'POST',
       uri,
       abortTrigger: abortTrigger,
     )..followRedirects = false;
     request.headers['Authorization'] = authorization;
+    if (jsonBody != null) {
+      request.headers['Content-Type'] = 'application/json';
+      request.body = jsonEncode(jsonBody);
+    }
     if (trace != null) trace.requests++;
-    final response = await client
-        .send(request)
-        .timeout(const Duration(seconds: 12));
+    final response = await client.send(request).timeout(headerTimeout);
     trace?.mark(MapMediaReadStage.headers);
     if (response.statusCode != 200) {
       final code = await _errorCode(response, allowMissingRoute: allowMissing);
@@ -1566,7 +1574,7 @@ class OwnedMapAPI {
       if (valid() &&
           failure.retiresGrant &&
           !(allowMissing && code == 'route_not_found')) {
-        onDenied?.call(failure);
+        (onReadDenied ?? onDenied)?.call(failure);
       }
       throw failure;
     }
@@ -1791,6 +1799,49 @@ class OwnedMapAPI {
         zoom: double.parse(params['zoom']!),
         byteCount: bytes.length,
         memberPage: cluster != null,
+      );
+    } finally {
+      bytes.fillRange(0, bytes.length, 0);
+    }
+  }
+
+  Future<MapContentRouteGeometry> readThreadRoute(
+    MapContentRouteQuery query, {
+    required String ownerID,
+    required String authorization,
+    required String origin,
+    required bool Function() current,
+    required DateTime Function() now,
+    required Future<void> abortTrigger,
+    void Function(OwnedMapReadFailure)? onReadDenied,
+  }) async {
+    if (!query.valid ||
+        canonicalAuthOrigin(origin) != origin ||
+        authorization.isEmpty ||
+        !now().isBefore(query.validUntil))
+      throw const FormatException('串文路线读取条件不符');
+    final bytes = await _read(
+      Uri.parse(origin).replace(path: '/v1/me/map-content/thread-route'),
+      authorization: authorization,
+      current: current,
+      limit: 2 * 1024 * 1024,
+      mime: 'application/json',
+      abortTrigger: abortTrigger,
+      allowMissing: true,
+      jsonBody: query.toJson(),
+      headerTimeout: const Duration(seconds: 22),
+      onReadDenied: onReadDenied,
+    );
+    try {
+      final value = humanControlObject(jsonDecode(utf8.decode(bytes)), {
+        'data',
+      })['data'];
+      if (!current()) throw const FormatException('串文路线来源已失效');
+      return MapContentRouteGeometry.decode(
+        value,
+        ownerID: ownerID,
+        query: query,
+        now: now(),
       );
     } finally {
       bytes.fillRange(0, bytes.length, 0);

@@ -28,6 +28,54 @@ MapEntity point(
 );
 
 void main() {
+  test(
+    'Moment map labels preserve authored words without generated type prefixes',
+    () {
+      for (final thread in ['', 'original-thread']) {
+        for (final title in ['散步转角看到灯光', '动态的城市']) {
+          final entity = MapEntity(
+            id: 'anchor:original',
+            kind: MapEntityKind.moment,
+            title: title,
+            subtitle: '串文 · 2026年10月19日',
+            latitude: 31.2,
+            longitude: 121.5,
+            threadID: thread,
+          );
+          final plan = MapDisplayPolicy.plan(
+            entities: [entity],
+            positions: {entity.id: const Offset(150, 200)},
+            zoom: 18,
+            metersPerPixel: 1,
+            selectedID: entity.id,
+          );
+          expect(
+            plan.placements[entity.id]!.name,
+            MapMarkerVisual.nativeLabel(title, selected: true),
+          );
+          expect(plan.placements[entity.id]!.auxiliary, '2026年10月19日');
+        }
+      }
+      final untitled = MapEntity(
+        id: 'anchor:untitled',
+        kind: MapEntityKind.moment,
+        title: '动态',
+        subtitle: '',
+        latitude: 31.2,
+        longitude: 121.5,
+      );
+      final plan = MapDisplayPolicy.plan(
+        entities: [untitled],
+        positions: {untitled.id: const Offset(150, 200)},
+        zoom: 18,
+        metersPerPixel: 1,
+        selectedID: untitled.id,
+      );
+      expect(plan.placements, isEmpty);
+      expect(plan.entities.single, same(untitled));
+    },
+  );
+
   test('chrome clips glyphs without moving or dropping authorized members', () {
     final a = point('place:a'), b = point('place:b'), c = point('place:c');
     final source = [a, b, c];

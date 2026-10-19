@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:math' as math;
 import 'map_cluster_members_sheet.dart';
-import 'map_point_selection_sheet.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
@@ -781,6 +780,35 @@ class _WebMapDisplayLayerState extends State<WebMapDisplayLayer> {
 
   final _readerChanges = MapReaderChanges();
   int _readerEpoch = 0, _anchorFrame = 0;
+  Timer? _routeExpiry;
+  @override
+  void initState() {
+    super.initState();
+    widget.readerChanges.addListener(_routeSourceChanged);
+  }
+
+  void _routeSourceChanged() {
+    if (mounted) setState(() {});
+  }
+
+  void _armRouteExpiry(Iterable<MapEntity> source) {
+    _routeExpiry?.cancel();
+    DateTime? until;
+    final now = DateTime.now().toUtc();
+    for (final segment in currentMapContentSegments(source)) {
+      for (final at in [
+        segment.edge.geometry!.validUntil,
+        segment.edge.from.readGrant!.validUntil,
+        segment.edge.to.readGrant!.validUntil,
+      ]) {
+        if (at.isAfter(now) && (until == null || at.isBefore(until)))
+          until = at;
+      }
+    }
+    if (until != null)
+      _routeExpiry = Timer(until.difference(now), _routeSourceChanged);
+  }
+
   Object? _pointReaderScope() =>
       mounted ? (_readerEpoch, widget.currentReaderScope()) : null;
   List<MapEntity> _currentPointSource() => {
@@ -823,6 +851,10 @@ class _WebMapDisplayLayerState extends State<WebMapDisplayLayer> {
   @override
   void didUpdateWidget(WebMapDisplayLayer oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.readerChanges, widget.readerChanges)) {
+      oldWidget.readerChanges.removeListener(_routeSourceChanged);
+      widget.readerChanges.addListener(_routeSourceChanged);
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _readerChanges.changed();
     });
@@ -830,6 +862,8 @@ class _WebMapDisplayLayerState extends State<WebMapDisplayLayer> {
 
   @override
   void dispose() {
+    widget.readerChanges.removeListener(_routeSourceChanged);
+    _routeExpiry?.cancel();
     ++_readerEpoch;
     ++_anchorFrame;
     _readerChanges.changed();
@@ -840,75 +874,17 @@ class _WebMapDisplayLayerState extends State<WebMapDisplayLayer> {
   bool _pointChoiceOpen = false;
   Future<void> _selectPoint(MapEntity tapped) async {
     if (!mounted || _pointChoiceOpen) return;
-    if (tapped.isCluster) {
-      if (MapDisplayPolicy.displayCluster(tapped) &&
-          MapDisplayPolicy.currentDisplayClusterMembers(
-            tapped,
-            _currentPointSource(),
-          ).isEmpty)
-        return;
-      widget.onSelected(tapped);
+    final current = _currentRenderedPointSource()
+        .where((e) => MapDisplayPolicy.samePointSource(tapped, e))
+        .firstOrNull;
+    if (current == null) return;
+    if (MapDisplayPolicy.displayCluster(current) &&
+        MapDisplayPolicy.currentDisplayClusterMembers(
+          current,
+          _currentPointSource(),
+        ).isEmpty)
       return;
-    }
-    _pointChoiceOpen = true;
-    final scope = _pointReaderScope();
-    try {
-      final source = _currentRenderedPointSource();
-      final camera = MapCamera.of(context);
-      final rawPositions = _project(source, camera);
-      final hits = MapDisplayPolicy.overlappingHitTargets(
-        entities: source,
-        tappedID: tapped.id,
-        positions: rawPositions,
-      );
-      // Independent 48 dp targets may overlap at their true anchors. Keep
-      // every exact-anchor sibling reachable through the current chooser.
-      final sameAnchor = source.where(
-        (entity) =>
-            tapped.precision == 'point' &&
-            entity.precision == 'point' &&
-            {MapEntityKind.place, MapEntityKind.moment}.contains(tapped.kind) &&
-            {MapEntityKind.place, MapEntityKind.moment}.contains(entity.kind) &&
-            entity.latitude == tapped.latitude &&
-            entity.longitude == tapped.longitude,
-      );
-      if (!source.any(
-        (entity) => entity.id == tapped.id && entity.kind == tapped.kind,
-      ))
-        return;
-      final identities = [
-        ...hits,
-        ...sameAnchor,
-      ].map((e) => (e.id, e.kind)).toSet();
-      List<MapEntity> freshHits() => _currentRenderedPointSource()
-          .where((e) => identities.contains((e.id, e.kind)))
-          .toList();
-      final fresh = freshHits();
-      if (fresh.isEmpty || scope != _pointReaderScope()) return;
-      if (fresh.length > 1 &&
-          widget.onContentOverlap != null &&
-          fresh.every(MapDisplayPolicy.contentEntity)) {
-        widget.onContentOverlap!(List.unmodifiable(fresh));
-        return;
-      }
-      final selected = fresh.length == 1
-          ? fresh.single
-          : await showCurrentMapPointChoices(
-              context: context,
-              changes: Listenable.merge([_readerChanges, widget.readerChanges]),
-              currentCandidates: freshHits,
-              currentScope: _pointReaderScope,
-              onVisibilityChanged: widget.onMapReaderVisibilityChanged,
-            );
-      if (selected != null && mounted && scope == _pointReaderScope()) {
-        final current = freshHits()
-            .where((e) => e.id == selected.id && e.kind == selected.kind)
-            .firstOrNull;
-        if (current != null) widget.onSelected(current);
-      }
-    } finally {
-      _pointChoiceOpen = false;
-    }
+    widget.onSelected(current);
   }
 
   @override
@@ -1011,22 +987,48 @@ class _WebMapDisplayLayerState extends State<WebMapDisplayLayer> {
         widget.onSelectedAnchor?.call(anchor);
       }
     });
+    _armRouteExpiry(unique.values);
     return Stack(
       children: [
         PolylineLayer(
           polylines: [
-            for (final edge in currentMapContentEdges(unique.values))
+            for (final edge in currentMapContentSegments(unique.values))
               Polyline(
                 points: [
-                  LatLng(edge.from.latitude, edge.from.longitude),
-                  LatLng(edge.to.latitude, edge.to.longitude),
+                  for (final point in edge.points)
+                    LatLng(point.latitude, point.longitude),
                 ],
                 color: edge.selected(widget.selectedID)
-                    ? const Color(0xff267264)
-                    : const Color(0x993d8174),
-                strokeWidth: edge.selected(widget.selectedID) ? 3 : 1.5,
+                    ? const Color(0xff2c6b58)
+                    : const Color(0xb32c6b58),
+                strokeWidth: 3,
+                pattern: StrokePattern.dashed(segments: [7, 5]),
               ),
           ],
+        ),
+        IgnorePointer(
+          child: MarkerLayer(
+            markers: [
+              for (final segment in currentMapContentSegments(
+                unique.values,
+              ).take(64))
+                if (segment.direction case final direction?)
+                  Marker(
+                    point: LatLng(direction.latitude, direction.longitude),
+                    width: 14,
+                    height: 14,
+                    rotate: false,
+                    child: Transform.rotate(
+                      angle: direction.bearing * math.pi / 180,
+                      child: const Icon(
+                        Icons.navigation,
+                        size: 12,
+                        color: Color(0xff2c6b58),
+                      ),
+                    ),
+                  ),
+            ],
+          ),
         ),
         MapEntityLayer(
           entities: _plan!.entities

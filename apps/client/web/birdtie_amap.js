@@ -59,7 +59,63 @@
       Promise.resolve(promise).then(value => finish(null, value), error => finish(error));
     });
   }
+  function removeRoute(row) {
+    try { row.line?.setMap(null); } catch (_) { /* Retired source cannot be retained. */ }
+  }
+  function clearRoutes(s) {
+    s.pendingRoutes=[];
+    clearTimeout(s.routeTimer); s.routeTimer = undefined;
+    for (const row of s.routes?.values() ?? []) removeRoute(row);
+    s.routes?.clear();
+  }
+  function routeLive(s, row) {
+    return alive(s) && row.expiresAt > Date.now() &&
+      s.source.get(row.fromId)?.sourceVersion === row.fromSourceVersion &&
+      s.source.get(row.toId)?.sourceVersion === row.toSourceVersion;
+  }
+  function armRoutes(s) {
+    clearTimeout(s.routeTimer); s.routeTimer = undefined;
+    let deadline = Infinity;
+    for (const [id, row] of s.routes) {
+      if (!routeLive(s,row)) { removeRoute(row); s.routes.delete(id); }
+      else deadline = Math.min(deadline,row.expiresAt);
+    }
+    if (Number.isFinite(deadline)) s.routeTimer = setTimeout(() => armRoutes(s), Math.max(1,deadline-Date.now()));
+  }
+  function syncRoutes(s, routes) {
+    if (!Array.isArray(routes) || routes.length > 1536) { clearRoutes(s); return; }
+    let points = 0;
+    const ids = new Set();
+    for (const row of routes) {
+      if (typeof row.id !== 'string' || row.id.length > 1024 || ids.has(row.id) ||
+        typeof row.fingerprint !== 'string' || row.fingerprint.length > 512 || row.coordinateSystem !== 'gcj02' ||
+        !Number.isSafeInteger(row.expiresAt) || row.expiresAt <= Date.now() || row.expiresAt > Date.now()+31000 ||
+        typeof row.selected !== 'boolean' || !Array.isArray(row.points) || row.points.length < 2 ||
+        (points += row.points.length) > 24000 || row.points.some(p => !Array.isArray(p) || p.length !== 2 ||
+          !finite(p[0]) || !finite(p[1]) || Math.abs(p[0]) > 180 || Math.abs(p[1]) > 90) || !routeLive(s,row)) {
+        clearRoutes(s); return;
+      }
+      ids.add(row.id);
+    }
+    s.pendingRoutes=routes;
+    for (const [id,row] of s.routes) if (!ids.has(id)) { removeRoute(row); s.routes.delete(id); }
+    for (const value of routes) {
+      const previous = s.routes.get(value.id);
+      if (previous?.fingerprint === value.fingerprint && previous.selected === value.selected) {
+        Object.assign(previous,value); continue;
+      }
+      if (typeof s.sdk?.Polyline !== 'function') continue;
+      const options = {path:value.points,strokeColor:'#2c6b58',strokeWeight:3,strokeOpacity:value.selected?1:.7,
+        strokeStyle:'dashed',strokeDasharray:[7,5],showDir:true,lineJoin:'round',lineCap:'round',bubble:true,zIndex:50};
+      try {
+        if (previous) { previous.line.setOptions(options); Object.assign(previous,value); }
+        else { const line = new s.sdk.Polyline(options); line.setMap(s.map); s.routes.set(value.id,{...value,line}); }
+      } catch (_) { if(previous)removeRoute(previous);s.routes.delete(value.id); }
+    }
+    armRoutes(s);
+  }
   function clearNodes(s) {
+    clearRoutes(s);
     clearTimeout(s.mediaTimer); s.mediaTimer = undefined;
     for (const row of s.nodes.values()) {
       removeNode(row);
@@ -385,7 +441,7 @@
           (host.protocol === 'http:' && ['localhost', '127.0.0.1'].includes(host.hostname)))) throw new Error('configuration unavailable');
     const s = {handle: nextHandle++, elementID, retired: false, revision: 0, work: 0, motion: 0,
       pending: new Set(), mountPending: new Set(), conversions: new Map(), source: new Map(), nodes: new Map(), projections: new Map(),
-      displayClusters: new Map(), frameSerial: 0, latestFrame: 0, appliedFocus: 0, reader: false,
+      routes: new Map(), displayClusters: new Map(), frameSerial: 0, latestFrame: 0, appliedFocus: 0, reader: false,
       onFrame, onSelect, onStatus, onMotion, onViewport, onCoordinate};
     maps.set(s.handle, s);
     (async () => {
@@ -403,6 +459,7 @@
           })), 8000);
         if (!alive(s)) return;
         s.map = new s.sdk.Map(element, {center, zoom: config.zoom, resizeEnable: true, viewMode: '2D', features: ['bg', 'road', 'building']});
+        syncRoutes(s,s.pendingRoutes ?? []);
         s.overlay = document.createElement('div');
         Object.assign(s.overlay.style, {position: 'absolute', inset: '0', pointerEvents: 'none', zIndex: '1000'});
         element.appendChild(s.overlay);
@@ -469,6 +526,7 @@
         paintMedia(s, item, node, node.selected === true, node.pale === true);
       }
       s.source = rows;
+      syncRoutes(s,v.routes ?? []);
       if (rows.size === 0) s.conversions.clear();
       scheduleMedia(s);
     } else if (Object.hasOwn(v, 'markers')) return;

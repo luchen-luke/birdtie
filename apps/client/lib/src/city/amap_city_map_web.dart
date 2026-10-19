@@ -1,3 +1,4 @@
+import '../workspace/map_content_routes.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:js_interop';
@@ -267,6 +268,7 @@ class _AMapCityMapViewState extends State<AMapCityMapView> {
         'id': e.id,
         'kind': e.kind.name,
         'title': e.title,
+        'sourceVersion': e.sourceVersion,
         'subtitle': e.subtitle,
         'latitude': e.latitude,
         'longitude': e.longitude,
@@ -296,6 +298,30 @@ class _AMapCityMapViewState extends State<AMapCityMapView> {
           'recentLabel': e.recentMoments!.labelAt(DateTime.now().toUtc()),
           'recentExpiresAt': e.recentMoments!.validUntil.millisecondsSinceEpoch,
         },
+      },
+  ];
+  List<Map<String, Object?>> _routeJSON() => [
+    for (final segment in currentMapContentSegments(_gate.rows))
+      {
+        'id': segment.id,
+        'fingerprint': segment.fingerprint,
+        'fromId': segment.edge.from.id,
+        'toId': segment.edge.to.id,
+        'fromSourceVersion': segment.edge.from.sourceVersion,
+        'toSourceVersion': segment.edge.to.sourceVersion,
+        'expiresAt': segment.edge.geometry!.validUntil.millisecondsSinceEpoch,
+        'coordinateSystem': 'gcj02',
+        'selected': segment.selected(widget.selectedEntityId),
+        'points': [
+          for (final point in segment.points)
+            (() {
+              final p = MapCoordinateBoundary.toAmap(
+                point.latitude,
+                point.longitude,
+              );
+              return [p.longitude, p.latitude];
+            })(),
+        ],
       },
   ];
   Map<String, Object?> _focusJSON(MapCameraFocusInput input) {
@@ -360,6 +386,7 @@ class _AMapCityMapViewState extends State<AMapCityMapView> {
             'scope': _sourceScopeSerial,
             'coordinateSelection': widget.onCoordinateSelected != null,
             'markers': _markers(),
+            'routes': _routeJSON(),
             if (focus && next.center != null) 'focus': _focusJSON(next),
           }).toJS,
         );
@@ -567,6 +594,10 @@ class _AMapCityMapViewState extends State<AMapCityMapView> {
 
   Future<void> _selectPoint(MapEntity tapped) async {
     if (!mounted || _choiceOpen || _frame == null) return;
+    _syncSource();
+    final exact = _gate.resolve(_gate.revision, tapped.id, tapped.kind.name);
+    if (exact == null || !MapDisplayPolicy.samePointSource(tapped, exact))
+      return;
     if (tapped.isCluster && MapDisplayPolicy.contentEntity(tapped)) {
       widget.onEntitySelected?.call(tapped);
       return;
@@ -578,7 +609,7 @@ class _AMapCityMapViewState extends State<AMapCityMapView> {
           ? MapDisplayPolicy.currentDisplayClusterMembers(tapped, _gate.rows)
           : tapped.isCluster
           ? _gate.rows.where((e) => tapped.memberIDs.contains(e.id)).toList()
-          : _frame!.candidates(tapped.id);
+          : [exact];
       if (candidates.length > 1 &&
           candidates.every(MapDisplayPolicy.contentEntity) &&
           widget.onContentOverlap != null) {

@@ -131,6 +131,7 @@ type server struct {
 	openPlaces             OpenPlaceAcquirer
 	onlinePlaceCache       agentworkspace.PublicOnlinePlaceCache
 	onlinePlaceFlights     *singleflight.Group
+	threadRoutes           content.ThreadRouteProvider
 	videoMaterials         *media.VideoMaterialService
 	agentVisual            agentvisual.Gateway
 	systemPush             systempush.HumanGateway
@@ -516,6 +517,7 @@ func New(catalog foundation.PublicCatalog, access identity.AccessStore, seed cit
 	s.registerSavedNoteRoutes(mux)
 	s.RegisterMapContentRoutes(mux)
 	s.registerMapContentThreadRoutes(mux)
+	s.registerMapContentThreadRoute(mux)
 	s.registerLegacyPlaceReferenceRoutes(mux)
 	s.registerPrivateMomentVideoRoutes(mux)
 	mux.HandleFunc("POST /v1/me/reports", s.createIncidentReport)

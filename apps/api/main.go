@@ -22,6 +22,7 @@ import (
 	"github.com/birdtie/birdtie/apps/api/internal/momentmedia"
 	"github.com/birdtie/birdtie/apps/api/internal/oidcauth"
 	"github.com/birdtie/birdtie/apps/api/internal/postgres"
+	"github.com/birdtie/birdtie/apps/api/internal/threadrouteprovider"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -180,7 +181,7 @@ func main() {
 			log.Fatal("开放地点来源配置无效")
 		}
 	}
-	baseHandler := httpapi.New(store, store, store, store, store, store, store, store, store, store, store, store, devPhoneEnabled, oidc, readyDatabase, allowedOrigins, httpapi.WithMemoryCandidates(candidates), httpapi.WithCandidatePipeline(candidatePipeline), httpapi.WithMultiCandidates(multiCandidates), httpapi.WithHumanActiveIntents(humanActiveIntents), httpapi.WithHumanIntentConversions(humanIntentConversions), httpapi.WithAgentRuns(agentRuns), httpapi.WithAgentActivityJoin(activityJoin), httpapi.WithNowContextSelection(nowContextSelection), httpapi.WithSandboxRecovery(sandboxRecovery), httpapi.WithNowLiveAnswers(liveAnswers), httpapi.WithOpenPlaceAcquirer(openPlaces), httpapi.WithPublicOnlinePlaceCache(store), httpapi.WithVideoMaterials(videoMaterials), httpapi.WithAgentVisualGateway(agentVisual), httpapi.WithSystemPush(systemPush))
+	baseHandler := httpapi.New(store, store, store, store, store, store, store, store, store, store, store, store, devPhoneEnabled, oidc, readyDatabase, allowedOrigins, httpapi.WithMemoryCandidates(candidates), httpapi.WithCandidatePipeline(candidatePipeline), httpapi.WithMultiCandidates(multiCandidates), httpapi.WithHumanActiveIntents(humanActiveIntents), httpapi.WithHumanIntentConversions(humanIntentConversions), httpapi.WithAgentRuns(agentRuns), httpapi.WithAgentActivityJoin(activityJoin), httpapi.WithNowContextSelection(nowContextSelection), httpapi.WithSandboxRecovery(sandboxRecovery), httpapi.WithNowLiveAnswers(liveAnswers), httpapi.WithOpenPlaceAcquirer(openPlaces), httpapi.WithPublicOnlinePlaceCache(store), httpapi.WithVideoMaterials(videoMaterials), httpapi.WithAgentVisualGateway(agentVisual), httpapi.WithSystemPush(systemPush), httpapi.WithThreadRouteProvider(threadrouteprovider.New(os.Getenv("BIRDTIE_AMAP_WEB_SERVICE_KEY"), os.Getenv("BIRDTIE_MAPBOX_DIRECTIONS_TOKEN"))))
 	handler, err := newAgentFeatureBoundaryWithController(featureController, store, baseHandler)
 	if err != nil {
 		log.Fatal("Agent 功能配置无效或边界不可用")

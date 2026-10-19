@@ -3334,7 +3334,7 @@ class _MapWorkspaceState extends State<MapWorkspace>
   Object? _beforeContentIdentity;
   MomentInteractionController? _contentInteraction;
   MomentComment? _contentReply;
-  String? _contentTitle;
+  String? _contentTitle, _contentUnavailableReason;
   bool Function()? _contentSourceCurrent;
   Object? _contentOptOut;
   Object? _contentTargetSource;
@@ -3659,6 +3659,8 @@ class _MapWorkspaceState extends State<MapWorkspace>
           WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed,
     );
     _mapContent = OwnedMapController(
+      routeProvider: () => widget.city.mapProvider,
+      routeChanges: widget.city,
       client: _authenticatedTransport(widget.seedClient),
       apiBaseUrl: () => widget.seedApiBaseUrl ?? BirdtieEnvironment.apiBaseUrl,
       ownerID: () => widget.auth.accountID,
@@ -7412,6 +7414,7 @@ class _MapWorkspaceState extends State<MapWorkspace>
     _contentSourceCurrent = null;
     _contentReply = null;
     _contentTitle = null;
+    _contentUnavailableReason = null;
     _journeyField = null;
     if (_composerDrafts.target.content) {
       final previous =
@@ -7433,8 +7436,9 @@ class _MapWorkspaceState extends State<MapWorkspace>
     String? momentID,
     String? title,
     MomentComment? reply,
-    bool Function() readable,
-  ) {
+    bool Function() readable, {
+    String? unavailableReason,
+  }) {
     if (!mounted ||
         (!identical(_publicPlacePanelSource, source) &&
             !identical(_editorReadSource, source)))
@@ -7463,11 +7467,20 @@ class _MapWorkspaceState extends State<MapWorkspace>
       _journeyField = null;
       _contentTargetSource = source;
       _contentTitle = title;
+      _contentUnavailableReason = unavailableReason;
       _contentReply = reply;
       _contentSourceCurrent = () =>
-          readable() && controller != null && controller.current();
+          readable() && (controller == null || controller.current());
       _composerDrafts.select(next);
     });
+  }
+
+  String? _mapCommentUnavailableReason(OwnedMapMomentDetail? moment) {
+    if (moment == null) return null;
+    if (_organizations.active != null) return '当前组织身份无法发表评论';
+    if (moment.status != 'published') return '未发布的内容暂不支持评论';
+    if (moment.visibility != 'public') return '非公开内容暂不支持评论';
+    return null;
   }
 
   bool get _contentCanSubmit {
@@ -7492,6 +7505,17 @@ class _MapWorkspaceState extends State<MapWorkspace>
     if (!target.comment)
       return '编辑我的旅程 · ${_journeyField?.label ?? '当前字段'} · 私人草稿';
     if (_contentSourceCurrent?.call() != true) return '原评论对象暂不可用 · 草稿已保留';
+    final interaction = _contentInteraction;
+    final title = _shortContent(_contentTitle ?? '当前内容');
+    if (interaction == null) {
+      return '《$title》 · ${_contentUnavailableReason ?? '当前无法评论'}';
+    }
+    if (interaction.loading && interaction.page == null)
+      return '《$title》 · 正在读取评论资格';
+    if (interaction.error != null)
+      return '《$title》 · 评论暂未读取，请重试';
+    if (interaction.page?.canComment == false)
+      return '《$title》 · 当前无法发表评论';
     final reply = _contentReply;
     if (reply != null) {
       if (_contentInteraction?.replyCurrent(reply) != true)
@@ -7851,7 +7875,20 @@ class _MapWorkspaceState extends State<MapWorkspace>
         return;
       pins.add(pin);
     }
-    if (pins.length > 1) _openMapContentGroup(pins: pins);
+    final choices = <String, OwnedMapPin>{};
+    for (final pin in pins) {
+      final key = pin.isMomentAnchor && pin.momentID.isNotEmpty
+          ? 'moment:${pin.momentID}'
+          : pin.mapID;
+      choices.putIfAbsent(key, () => pin);
+    }
+    if (choices.length == 1) {
+      final pin = choices.values.single;
+      _workspace.selectEntity(pin.mapID, preserveViewport: true);
+      _openMapContentPanel(pin);
+    } else if (choices.length > 1) {
+      _openMapContentGroup(pins: choices.values.toList(growable: false));
+    }
   }
 
   void _openMapContentGroup({
@@ -7902,6 +7939,7 @@ class _MapWorkspaceState extends State<MapWorkspace>
             () =>
                 current() &&
                 (moment == null || _mapContent.detailCurrent(moment)),
+            unavailableReason: _mapCommentUnavailableReason(moment),
           );
         },
         cluster: cluster,
@@ -7950,6 +7988,9 @@ class _MapWorkspaceState extends State<MapWorkspace>
     );
     while (_mapReadingPositions.length > 24)
       _mapReadingPositions.remove(_mapReadingPositions.keys.first);
+    // A specific original Moment opens its body and authorized thread now.
+    // Place pins keep their compact place-preview entry path.
+    if (pin.isMomentAnchor) position.expanded = true;
     bool current() =>
         mounted &&
         epoch == _mapContent.permissionEpoch &&
@@ -7986,9 +8027,11 @@ class _MapWorkspaceState extends State<MapWorkspace>
             () =>
                 current() &&
                 (moment == null || _mapContent.detailCurrent(moment)),
+            unavailableReason: _mapCommentUnavailableReason(moment),
           );
         },
         pin: pin,
+        initialExpanded: pin.isMomentAnchor,
         readingPosition: position,
         current: current,
         changes: Listenable.merge([

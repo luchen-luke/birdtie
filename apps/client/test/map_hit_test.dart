@@ -19,6 +19,40 @@ MapEntity row(
   momentID: kind == MapEntityKind.moment ? 'moment-one' : '',
 );
 void main() {
+  test('explicit painted label or glyph wins over nearby48dp halo, genuine overlap stays ambiguous',(){
+    final a=row('moment:a',kind:MapEntityKind.moment),b=row('moment:b',kind:MapEntityKind.moment);
+    final positions={'moment:a':const Offset(100,100),'moment:b':const Offset(120,100)};
+    List<String> hit(Offset touch,{Map<String,Offset>? at,Map<String,MapLabelPlacement> labels=const {}})=>MapDisplayPolicy.visibleHitTargetsAt(entities:[a,b],positions:at??positions,touchPosition:touch,placements:labels,glyphSizes:{a.id:18,b.id:18}).map((e)=>e.id).toList();
+    expect(hit(const Offset(100,100)),[a.id]);
+    expect(hit(const Offset(120,100)),[b.id]);
+    expect(hit(const Offset(110,100)),[a.id,b.id],reason:'Accessible halo fallback stays uncertain');
+    expect(hit(const Offset(106,100),at:{a.id:const Offset(100,100),b.id:const Offset(110,100)}),[b.id,a.id]);
+    final labels={a.id:const MapLabelPlacement(side:MapLabelSide.right,rect:Rect.fromLTWH(125,92,90,18),name:'原文标题',fontSize:12,color:Colors.black)};
+    expect(hit(const Offset(129,100),labels:labels),[a.id],reason:'A label is explicit even beside another glyph/halo');
+    expect(hit(const Offset(210,100),labels:labels),[a.id],reason:'Actual text extends beyond the48dp square');
+    expect(hit(const Offset(300,100),labels:labels),isEmpty);
+    expect((a.latitude,a.longitude,b.latitude,b.longitude),(31,121,31,121));
+  });
+  test('explicit painted targets never include expired or retired source grants',(){
+    var live=true;final now=DateTime.now().toUtc();
+    final original=row('moment:a',kind:MapEntityKind.moment);
+    final a=original.withMediaPixels(null,readGrant:MapEntityReadGrant(source:original,validUntil:now.add(const Duration(seconds:30)),current:()=>live));
+    final b=row('moment:b',kind:MapEntityKind.moment);
+    List<String> hit()=>MapDisplayPolicy.visibleHitTargetsAt(entities:[a,b],positions:{a.id:const Offset(100,100),b.id:const Offset(100,100)},touchPosition:const Offset(100,100),glyphSizes:{a.id:18,b.id:18}).map((e)=>e.id).toList();
+    expect(hit(),[a.id,b.id]);live=false;expect(hit(),[b.id]);live=true;expect(hit(),[b.id],reason:'A retired old grant cannot revive by identity ABA');
+    final expired=original.withMediaPixels(null,readGrant:MapEntityReadGrant(source:original,validUntil:now.subtract(const Duration(seconds:1)),current:()=>true));
+    expect(MapDisplayPolicy.samePointSource(expired,expired),isFalse);
+  });
+  test('known source original ID must retain source and actual facts after late callback',(){
+    final a=row('moment:a',kind:MapEntityKind.moment);
+    expect(MapDisplayPolicy.samePointSource(a,a),isTrue);
+    expect(MapDisplayPolicy.samePointSource(a,row(a.id,kind:a.kind,source:'changed')),isFalse);
+    final moved=MapEntity(id:a.id,kind:a.kind,title:a.title,subtitle:a.subtitle,latitude:31.1,longitude:121,sourceVersion:a.sourceVersion,momentID:a.momentID);
+    expect(MapDisplayPolicy.samePointSource(a,moved),isFalse);
+    final otherOriginal=MapEntity(id:a.id,kind:a.kind,title:a.title,subtitle:a.subtitle,latitude:a.latitude,longitude:a.longitude,sourceVersion:a.sourceVersion,momentID:'another-original');
+    expect(MapDisplayPolicy.samePointSource(a,otherOriginal),isFalse);
+  });
+
   test(
     'bounded local clusters retain all originals once and reject missing or changed member authority',
     () {

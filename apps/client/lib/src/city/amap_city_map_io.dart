@@ -341,6 +341,7 @@ class _AMapCityMapViewState extends State<AMapCityMapView>
   int _geometryCamera = -1;
   List<MapEntity> _displayed = const [];
   Map<String, MapLabelPlacement> _placements = const {};
+  Map<String, double> _glyphSizes = const {};
   Set<String> _previousVisible = const {};
   double? _metersPerPixel;
   int _metersPerPixelCamera = -1;
@@ -1414,8 +1415,10 @@ class _AMapCityMapViewState extends State<AMapCityMapView>
           !mapEquals(_positions, nextPositions) ||
           !mapEquals(_placements, plan.placements) ||
           !listEquals(
-            _displayed.map((e) => e.id).toList(),
-            visibleEntities.map((e) => e.id).toList(),
+            _displayed.map((e) => (e.id, e.contentRoute?.fingerprint)).toList(),
+            visibleEntities
+                .map((e) => (e.id, e.contentRoute?.fingerprint))
+                .toList(),
           );
       // These are geometry caches, never permission or read grants.
       _geometry = geometry;
@@ -1473,6 +1476,7 @@ class _AMapCityMapViewState extends State<AMapCityMapView>
           _displayed = visibleEntities;
           _positions = nextPositions;
           _placements = plan.placements;
+          _glyphSizes = plan.glyphSizes;
         });
       }
       // Rect-only and cached geometry updates need no native write barrier.
@@ -1555,15 +1559,7 @@ class _AMapCityMapViewState extends State<AMapCityMapView>
   }
 
   MapEntity? _currentEntity(MapEntity old) => _source()
-      .where(
-        (e) =>
-            e.id == old.id &&
-            e.kind == old.kind &&
-            e.hasMapAnchor &&
-            e.sourceVersion == old.sourceVersion &&
-            e.latitude == old.latitude &&
-            e.longitude == old.longitude,
-      )
+      .where((e) => MapDisplayPolicy.samePointSource(old, e))
       .firstOrNull;
 
   Future<void> _tap(abase.LatLng point) async {
@@ -1576,9 +1572,11 @@ class _AMapCityMapViewState extends State<AMapCityMapView>
           source != _sourceEpoch ||
           camera != _cameraEpoch)
         return;
-      final candidates = MapDisplayPolicy.hitTargetsAt(
+      final candidates = MapDisplayPolicy.visibleHitTargetsAt(
         entities: _displayed,
         positions: _positions,
+        placements: _placements,
+        glyphSizes: _glyphSizes,
         touchPosition: Offset(
           pixel.x / _projectionScale,
           pixel.y / _projectionScale,
@@ -1592,6 +1590,17 @@ class _AMapCityMapViewState extends State<AMapCityMapView>
     } catch (_) {
       // A stale or failed projection never guesses a target from coordinates.
     }
+  }
+
+  VoidCallback _pointSemanticAction(MapEntity original) {
+    final scope = _scope(), epoch = _sourceEpoch;
+    return () {
+      if (mounted &&
+          scope == _scope() &&
+          epoch == _sourceEpoch &&
+          _currentEntity(original) != null)
+        unawaited(_select([original]));
+    };
   }
 
   Future<void> _select(List<MapEntity> initial) async {
@@ -1893,22 +1902,19 @@ class _AMapCityMapViewState extends State<AMapCityMapView>
                 markers: _markers.values.toSet(),
                 polylines: {
                   if (!_retiring && _foreground)
-                    for (final edge in currentMapContentEdges(_displayed))
+                    for (final edge in currentMapContentSegments(_displayed))
                       amap.Polyline(
                         points: [
-                          _displayCoordinate(
-                            edge.from.latitude,
-                            edge.from.longitude,
-                          ),
-                          _displayCoordinate(
-                            edge.to.latitude,
-                            edge.to.longitude,
-                          ),
+                          for (final point in edge.points)
+                            _displayCoordinate(point.latitude, point.longitude),
                         ],
                         color: edge.selected(widget.selectedEntityId)
-                            ? const Color(0xff267264)
-                            : const Color(0x993d8174),
-                        width: edge.selected(widget.selectedEntityId) ? 3 : 1.5,
+                            ? const Color(0xff2c6b58)
+                            : const Color(0xb32c6b58),
+                        width: 3,
+                        dashLineType: amap.DashLineType.square,
+                        capType: amap.CapType.arrow,
+                        joinType: amap.JoinType.round,
                       )..setIdForCopy('content-order:${edge.id}'),
                 },
                 onMapCreated: (map) => _onCreated(map, sdk),
@@ -1957,15 +1963,7 @@ class _AMapCityMapViewState extends State<AMapCityMapView>
                     child: Semantics(
                       button: true,
                       label: '${mapPointKindLabel(e.kind)} ${e.title}',
-                      onTap: () => unawaited(
-                        _select(
-                          MapDisplayPolicy.overlappingHitTargets(
-                            entities: _displayed,
-                            positions: _positions,
-                            tappedID: e.id,
-                          ),
-                        ),
-                      ),
+                      onTap: _pointSemanticAction(e),
                       child: const SizedBox.expand(),
                     ),
                   ),

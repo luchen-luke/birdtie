@@ -1,4 +1,7 @@
 import 'dart:async';
+import 'package:birdtie_client/src/city/map_coordinate_boundary.dart';
+import 'package:birdtie_client/src/workspace/map_content_route_geometry.dart';
+import 'map_content_route_geometry_test.dart' show routeID,routeHash,routeJSON;
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
@@ -774,6 +777,67 @@ void main() {
     },
     variant: TargetPlatformVariant.only(TargetPlatform.android),
   );
+  testWidgets('actual AMap route and explicit semantic target keep original authority and same SDK', (t) async {
+    t.view.devicePixelRatio=1;t.view.physicalSize=const Size(800,600);
+    addTearDown(t.view.resetDevicePixelRatio);addTearDown(t.view.resetPhysicalSize);
+    AMapFlutterPlatform.instance=_LiveMapSurface(viewID:76);
+    final consent=MapPrivacyConsentController(store:MemoryMapPrivacyConsentStore());
+    await consent.setDecision(true);
+    final old=AMapSessionConsent.replaceControllerForTesting(consent);
+    const channel=MethodChannel('amap_map_76');
+    binding.defaultBinaryMessenger.setMockMethodCallHandler(AMapNativeConfiguration.channel,(_)async=>true);
+    binding.defaultBinaryMessenger.setMockMethodCallHandler(channel,(call) async {
+      if(call.method=='map#toScreenCoordinate')return {'x':200,'y':300};
+      if(call.method=='map#fromScreenCoordinate')return [31.2,121.4];
+      return null;
+    });
+    MapEntity? selected;List<MapEntity>? overlap;
+    var live=true;final now=DateTime.now().toUtc(),until=now.add(const Duration(seconds:30));
+    final aID='owned-map:anchor:${routeID(1)}',bID='owned-map:anchor:${routeID(2)}';
+    final q=MapContentRouteQuery(threadID:routeID(100),expectedProvider:'amap',
+      from:MapContentRouteEndpoint(viewportPath:'/v1/me/map-content?zoom=17',markerID:aID.substring(10),sourceVersion:routeHash('a')),
+      to:MapContentRouteEndpoint(viewportPath:'/v1/me/map-content?zoom=17',markerID:bID.substring(10),sourceVersion:routeHash('b')),validUntil:until);
+    final json=routeJSON(q,now)..['provider']='amap'..['segments']=[
+      [{'latitude':31.2,'longitude':121.4},{'latitude':31.201,'longitude':121.4002},{'latitude':31.202,'longitude':121.401}],
+      [{'latitude':31.203,'longitude':121.402},{'latitude':31.204,'longitude':121.403}]];
+    final geometry=MapContentRouteGeometry.decode(json,ownerID:routeID(900),query:q,now:now).bind(until:until,current:()=>live);
+    MapEntity entity(bool first,MapContentRouteGeometry? geometry){
+      final e=MapEntity(id:first?aID:bID,kind:MapEntityKind.moment,title:first?'合成原段一':'合成原段二',subtitle:'',
+        latitude:31.2,longitude:first?121.4:121.401,sourceVersion:routeHash(first?'a':'b'),threadID:q.threadID,
+        threadPosition:first?0:1,nextContentIDs:first?[bID]:const []);
+      return e.withMediaPixels(null,contentRoute:geometry,readGrant:MapEntityReadGrant(source:e,validUntil:until,current:()=>live));
+    }
+    var a=entity(true,null);final b=entity(false,null);
+    const city=PublicCity(id:'route-test',name:'隔离城市',region:'',countryCode:'CN',contentStatus:'ready',source:PublicSource(label:'test',maintainer:'test',freshness:'test',updatedAt:null),map:PublicCityMap(provider:'amap',latitude:31.2,longitude:121.4,defaultZoom:17,sourceRef:'test'));
+    Future<void> mount()async{await t.pumpWidget(MaterialApp(home:Scaffold(body:AMapCityMapView(city:city,places:const[],entities:[a,b],selectedEntityId:null,onEntitySelected:(e)=>selected=e,onContentOverlap:(e)=>overlap=e,onPlaceSelected:(_){},preserveViewport:true,fullBleed:true))));}
+    Future<void> settle()async{for(var i=0;i<20;i++){await t.runAsync(()=>Future<void>.delayed(const Duration(milliseconds:10)));await t.pump(const Duration(milliseconds:20));}}
+    try{
+      await mount();await settle();
+      final element=t.element(find.byType(amap.AMapWidget));
+      final semanticAction=t.widgetList<Semantics>(find.byType(Semantics)).singleWhere((s)=>s.properties.label=='动态 合成原段一').properties.onTap!;
+      semanticAction();await t.pumpAndSettle();expect(selected?.id,aID);expect(overlap,isNull);
+      selected=null;
+      t.widget<amap.AMapWidget>(find.byType(amap.AMapWidget)).onTap!(base.LatLng(31.2,121.4));
+      await t.pumpAndSettle();expect(overlap?.map((e)=>e.id).toSet(),{aID,bID});
+      expect(selected,isNull,reason:'Truly coincident visible glyphs still require a choice');
+
+      expect(t.widget<amap.AMapWidget>(find.byType(amap.AMapWidget)).polylines,isEmpty);
+      a=entity(true,geometry);await mount();await settle();
+      final map=t.widget<amap.AMapWidget>(find.byType(amap.AMapWidget));
+      expect(map.polylines,hasLength(2));expect(map.markers,hasLength(2));
+      final paths=map.polylines.toList()..sort((a,b)=>a.id.compareTo(b.id));
+      expect(paths.map((p)=>p.points.length),[3,2]);
+      final converted=MapCoordinateBoundary.toAmap(31.201,121.4002);
+      expect(paths.first.points[1].latitude,closeTo(converted.latitude,1e-10));
+      expect(paths.first.points[1].longitude,closeTo(converted.longitude,1e-10));
+      expect(paths.first.width,3);expect(paths.first.color,const Color(0xb32c6b58));
+      expect(paths.first.dashLineType,amap.DashLineType.square);expect(paths.first.capType,amap.CapType.arrow);
+      expect(t.element(find.byType(amap.AMapWidget)),same(element));
+      selected=null;live=false;await mount();await settle();semanticAction();await t.pump();expect(selected,isNull);
+      expect(t.widget<amap.AMapWidget>(find.byType(amap.AMapWidget)).polylines,isEmpty);
+      expect(t.takeException(),isNull);
+    }finally{await t.pumpWidget(const SizedBox());await t.pump();binding.defaultBinaryMessenger.setMockMethodCallHandler(channel,null);binding.defaultBinaryMessenger.setMockMethodCallHandler(AMapNativeConfiguration.channel,null);AMapFlutterPlatform.instance=_MapSurface();AMapSessionConsent.replaceControllerForTesting(old);consent.dispose();}
+  },variant:TargetPlatformVariant.only(TargetPlatform.android));
   for (final expiredPhoto in [false, true])
     testWidgets(
       expiredPhoto
